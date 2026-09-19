@@ -18,6 +18,8 @@ const path = require('path');
 const auth = require('./relayAuth');
 const ownerBadge = require('./ownerBadge');
 const sseClient = require('./sseClient');
+// Which key a relay answers to, pinned when this node took its seat.
+const relayKeys = require('./relayKeys');
 
 function streamUrl(relayUrl, key) {
   return String(relayUrl).replace(/\/+$/, '') +
@@ -34,6 +36,12 @@ function createPresence(opts) {
   // changed. Injected rather than required, so this file keeps knowing
   // nothing about enrolment — see pinRelay below for why it is here.
   const pin = typeof opts.pinRelay === 'function' ? opts.pinRelay : null;
+  // THE NODE FILTERS (Andy, 2026-09-19: "the relay broadcasts, the node
+  // filters"). A relay tells every member who comes and goes; this node
+  // keeps only the keys it has a use for — its own contacts — so its
+  // picture grows with its book, not with the relay's roll. Absent, it
+  // keeps everything (the in-process suites).
+  const knows = typeof opts.knows === 'function' ? opts.knows : null;
   // Given rather than made here, because a node has ONE of these and the
   // hub needs the same instance to post from — an outbound request and
   // the answer that matches it must meet in the same table.
@@ -142,18 +150,27 @@ function createPresence(opts) {
   // node, and it must never reach the traffic log.
   const onRoute = opts.onRoute || null;
 
-  function onRoster(url, body) {
+  // onRoster STOOD HERE. The relay no longer sends the whole roll on
+  // connect (cycle 3, 0012 widened): a relay's picture starts from what
+  // this node already knows about it (seedRelay) and grows by broadcasts.
+
+  // What is true the moment a stream opens: the relay itself is there
+  // (its key, pinned at the seat — so a post addressed to the relay finds
+  // it), and so is this node.
+  function seedRelay(url) {
     const set = Object.create(null);
-    ((body && body.members) || []).forEach(function (m) {
-      if (m && m.key) set[m.key] = !!m.present;
-    });
+    const relayKey = relayKeys.pinned(rootDir, url);
+    if (relayKey) set[relayKey] = true;
+    if (identity && identity.publicKey) set[identity.publicKey] = true;
     byRelay[url] = set;
-    publish();
   }
 
   function onChange(url, body) {
     if (!body || !body.key) return;
     if (!byRelay[url]) byRelay[url] = Object.create(null);
+    // Not somebody this node knows, and not already on its picture: not
+    // this node's business (the relay broadcasts, the node filters).
+    if (knows && !knows(body.key) && byRelay[url][body.key] === undefined) return;
 
     // `gone` is not `present: false`. Absent means a member of that relay
     // is not connected — red, and honestly so. Gone means the relay no
@@ -236,8 +253,7 @@ function createPresence(opts) {
         };
       },
       onEvent: function (msg) {
-        if (msg.event === 'roster') onRoster(url, msg.data);
-        else if (msg.event === 'presence') onChange(url, msg.data);
+        if (msg.event === 'presence') onChange(url, msg.data);
         // -- A ROUTE THIS RELAY PROVED, FOR SOMEBODY WE MAY KNOW --------
         //
         // Not correspondence, so it never reaches the traffic log: that
@@ -323,7 +339,7 @@ function createPresence(opts) {
           try { onOwnerEvent(ev); } catch (e) { /* a witness, never a participant */ }
         }
       },
-      onOpen: function () { publish('connected to ' + url); },
+      onOpen: function () { seedRelay(url); publish('connected to ' + url); },
       onClose: function (reason) { forget(url); publish('lost ' + url + ': ' + reason); },
     });
   }

@@ -1,4 +1,5 @@
 'use strict';
+const rollOf = require('./rollOf');
 
 // spirit/test/boundedByTime.js
 // DOES THIS RESPONSE GROW WITH MEMBERSHIP?
@@ -43,12 +44,14 @@ const { createRelay } = require('../run/js/relay');
 // Measured, not guessed: run the suite and it prints what it found.
 //
 //   census     the public /api/relay/who, fetched by nine callers
-//   roster     pushed to every member on every stream open
+//   roster     REACHED ZERO BY DELETION, 2026-09-19 (cycle 3): the whole
+//              roll pushed to every member on every stream open was a
+//              served member list (0012 widened). Gone from the allowance,
+//              so its return would be a new entry — and a failure.
 //   presence   one event per member per presence change (a COUNT, not
 //              bytes — the fan-out is the cost, not the payload)
 const ALLOWANCE = {
   census: 150,
-  roster: 101,
   presence: 1,
 };
 
@@ -56,7 +59,6 @@ const ALLOWANCE = {
 // have to go and find out what they are looking at.
 const WHAT = {
   census: 'the census — eight callers, all gone. GET /api/relay/who deleted 2026-09-18',
-  roster: 'the stream roster — one job, the three-state dot',
   presence: 'events per presence change — one per member, per change',
 };
 
@@ -117,7 +119,7 @@ function measure(n) {
   const R = relayOf(n);
 
   const census = JSON.stringify({
-    peers: R.box.who(),
+    peers: rollOf(R.box),
     relayPublicKey: R.box.relayPublicKey(),
     relayLabel: R.box.relayLabel(),
   }).length;
@@ -134,7 +136,6 @@ function measure(n) {
     }).length
     : 0;
 
-  const roster = JSON.stringify(R.box.streamRoster()).length;
 
   // Everybody holds a stream, then one more arrives: how many writes does
   // that one arrival cause?
@@ -153,7 +154,7 @@ function measure(n) {
     auth.sign(extra.privateKey, auth.streamMessage(extra.publicKey)), sink([]));
   const after = bags.reduce(function (t, b) { return t + b.length; }, 0);
 
-  return { census: census, narrowed: one, roster: roster, presence: after - before };
+  return { census: census, narrowed: one, presence: after - before };
 }
 
 test.startTest('A relay is fixed-cost per time-unit (0013), measured');
@@ -181,8 +182,7 @@ Object.keys(ALLOWANCE).forEach(function (k) {
 
 // A relay of a thousand, in the units an owner would actually feel.
 test.check('so at 1000 members: census ' + Math.round(slope.census * 1000 / 1024) +
-  ' KB per fetch, roster ' + Math.round(slope.roster * 1000 / 1024) +
-  ' KB per connect, presence ' + Math.round(slope.presence * 1000) +
+  ' KB per fetch, presence ' + Math.round(slope.presence * 1000) +
   ' events per change');
 
 // ── THE ALTERNATIVE, AND WHY THE RATCHET CAN EVER MOVE ────────────

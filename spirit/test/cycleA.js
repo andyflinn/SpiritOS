@@ -1,4 +1,5 @@
 'use strict';
+const rollOf = require('./rollOf');
 
 // Cycle A — create-invitation in Relay Chat.
 //
@@ -93,7 +94,7 @@ function nodeHome(id, urls, seats) {
 // mode every stub in this tree is written against.
 // ── IT SERVES THE KEY DOOR NOW, NOT THE CENSUS (2026-09-18) ─────────
 //
-// This answered `/api/relay/who` with `box.who()` — the whole membership —
+// This answered `/api/relay/who` with `rollOf(box)` — the whole membership —
 // because that is how probe used to learn both who runs a box and whether
 // this node was on it.
 //
@@ -396,7 +397,7 @@ function relayServer(box) {
       // (relayKeys, written at claim), so a fixture says so by writing
       // the seat rather than by being listed in an answer.
       //
-      // THE CENSUS BRANCH STOOD HERE and served `box.who()`. It was added
+      // THE CENSUS BRANCH STOOD HERE and served `rollOf(box)`. It was added
       // because the fake did not serve it at first, so claimedFrom() saw
       // a 404 in every test and answered false — a suite cannot notice a
       // flag that is false because the question was never asked. The same
@@ -465,7 +466,7 @@ function routerTo(boxes, owner) {
       if (!box) return Promise.resolve({ ok: false, status: 502, error: 'no such relay' });
 
       let answered = '';
-      box.streamOpen('andy',
+      box.streamOpen(owner.publicKey,
         auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)), {
           write: function (chunk) {
             const ev = /^event: (.+)$/m.exec(String(chunk));
@@ -621,11 +622,11 @@ function runHubOnLoopback() {
     second.box.claim('victim', auth.sign(victim.privateKey, auth.claimMessage('victim')),
       victim.publicKey, '10.0.0.9', minted.invite.token, 'victim');
 
-    const before = second.box.who().some(function (r) { return r.publicKey === victim.publicKey; });
+    const before = rollOf(second.box).some(function (r) { return r.publicKey === victim.publicKey; });
     return hubPost(hub, second.box.relayPublicKey(),
       { removePeer: { key: victim.publicKey } }, deps)
       .then(function (r) {
-        const gone = !second.box.who().some(function (x) { return x.publicKey === victim.publicKey; });
+        const gone = !rollOf(second.box).some(function (x) { return x.publicKey === victim.publicKey; });
         const said = r.body || {};
         if (before && gone && said.removed && said.removed.key === victim.publicKey) {
           test.check('removing a peer travels as a packet and forgets them on the relay it named');

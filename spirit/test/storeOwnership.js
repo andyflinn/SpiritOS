@@ -47,8 +47,15 @@ test.startTest('Store ownership — one module per store, and no way round it');
 const STORES = [
   { file: 'traffic.jsonl', owner: 'trafficLog.js', what: "this node's WAN traffic, permanent, read back as a table" },
   { file: 'traffic.json', owner: 'trafficLog.js', what: 'the whole-file shape it used to have, read once on the way in' },
-  { file: 'routingTable.json', owner: 'relay.js', what: 'a relay\'s peer rows' },
-  { file: 'invites.json', owner: 'invites.js', what: 'live invite tokens' },
+  // THE RELAY'S DATA IS ONE DATABASE SINCE CYCLE 3 — members, invites and
+  // the partner roll — and exactly one module opens it. This is the
+  // substitution Andy anticipated at the top of this file: the format
+  // changed and nothing above relayStore.js had to notice.
+  { file: 'relay.db', owner: 'relayStore.js', what: 'a relay\'s members, invites and partner roll' },
+  // The files it replaced, read once by the one-time import (D8, see
+  // design/DEPRECATIONS.md) and renamed *.imported. Owned by the import.
+  { file: 'routingTable.json', owner: 'relayStore.js', what: 'a relay\'s peer rows before cycle 3, imported once' },
+  { file: 'invites.json', owner: 'relayStore.js', what: 'live invite tokens before cycle 3, imported once' },
   { file: 'relayKeys.json', owner: 'relayKeys.js', what: 'pinned relay keys' },
   { file: 'contacts.json', owner: 'contacts.js', what: 'the address book' },
   // The name it wore until 2026-09-18, renamed on first load. Listed so a

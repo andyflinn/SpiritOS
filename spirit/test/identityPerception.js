@@ -1,4 +1,5 @@
 'use strict';
+const rollOf = require('./rollOf');
 
 const fs = require('fs');
 const os = require('os');
@@ -144,11 +145,11 @@ test.startTest('Identity vs perception (sticks and stones)');
   } else {
     test.fail('two johns: ' + JSON.stringify({ a: a, b: b }));
   }
-  const listed = box.who().filter(function (p) { return p.publicLabel === 'john'; });
+  const listed = rollOf(box).filter(function (p) { return p.publicLabel === 'john'; });
   if (listed.length === 2) {
     test.check('who lists two johns as two keys');
   } else {
-    test.fail('who johns: ' + JSON.stringify(box.who()));
+    test.fail('who johns: ' + JSON.stringify(rollOf(box)));
   }
   // A fresh, valid token does not buy a key a second seat: the duplicate
   // check runs after the invite check, and the token is not burned by the

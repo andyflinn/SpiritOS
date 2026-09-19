@@ -63,6 +63,10 @@ const createRelay = require(path.join(relayNode, 'js', 'relay.js')).createRelay;
 // createRelay() reads both files at construction, so each phase below gets
 // a clean slate written before it builds its own relay.
 function resetState(allowJson) {
+  // The relay's data is a SQLite file since cycle 3, and Windows will not
+  // delete a directory holding an open one: release it first.
+  // The relay's own copy of the module — it runs out of the fake tree.
+  require(path.join(relayNode, 'js', 'relayStore.js')).closeAll();
   fs.rmSync(RELAY_STATE, { recursive: true, force: true });
   fs.mkdirSync(RELAY_STATE, { recursive: true });
   if (allowJson) {

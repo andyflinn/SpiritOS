@@ -1,4 +1,5 @@
 'use strict';
+const rollOf = require('./rollOf');
 
 // Contacts — the To control lists people this node ACQUIRED
 // (CYCLE-CONTACTS-IMPL.md, replacing chat 2's "To is the census").
@@ -422,7 +423,7 @@ function relayServer(box) {
   return new Promise(function (resolve) {
     const server = http.createServer(function (req, res) {
       const url = new URL(req.url, 'http://127.0.0.1');
-      // A `/api/relay/who` branch STOOD HERE serving box.who(). The
+      // A `/api/relay/who` branch STOOD HERE serving rollOf(box). The
       // census was deleted on 2026-09-18 (decision 0010, 0012), and a
       // fake more capable than the thing it stands in for is how two
       // mocks come to agree about a protocol neither implements.

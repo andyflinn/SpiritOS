@@ -16,6 +16,8 @@ const deviceAuth = require('./deviceAuth');
 const presence = require('./presence');
 const routerTable = require('./router');
 const relayStatus = require('./relayStatus');
+// The relay's data on disc (cycle 3): members, invites, partners.
+const relayStore = require('./relayStore');
 // Cycle 1: the one-lever Governor. Pure; ticked by relayServer.js.
 const governorLib = require('./governor');
 // Once, at load, for the same reason server.js does it: the answer must
@@ -182,98 +184,22 @@ var PARTNER_FLOOR_PER_MIN = 60;
 var WINDOW_MS = 60 * 1000;
 var RATE_KEY_SWEEP_AT = 1000;
 
-// A RELAY IS NOT A MAILBOX, AND THIS FILE IS THE PROOF.
+// ── THE ROLL IS ON DISC (cycle 3) ─────────────────────────────────────
 //
-// It was called mailbox.json once, and what it holds is `peers` — name to
-// public key, when they claimed, and which device keys may speak as
-// them. That is a routing table. The relay had taken the name of a thing
-// it is not.
+//   Andy: "storage is actually moved from RAM to DISC, and RAM must become
+//   a DISC-client."
 //
-// There are no mailboxes in the system (Andy). An application may have
-// something it chooses to call one; this layer does not, and the word
-// belongs nowhere near a box whose whole job is to route and forget.
+// routingTable.json STOOD HERE — read whole at boot into a map, rewritten
+// whole on every claim, rename and removal. The roll, the invites and the
+// partner roll are tables in relay-state/relay.db now (relayStore.js), and
+// every question about them is a query. A relay that still holds the old
+// file imports it once and keeps it as routingTable.json.imported (D8, see
+// design/DEPRECATIONS.md); its legacy handling (D1) went with the reader.
 //
-// The name is now true of the contents. The `messages` ring was the one
-// thing in this file that was not routing, and R8 deleted it — so a file
-// called routingTable.json holds a routing table and nothing else.
-function stateFile(rootDir) {
-  return path.join(rootDir, 'relay-state', 'routingTable.json');
-}
-
-// THE LEGACY READ STOOD HERE, and it is gone.
-//
-//   Andy: "mailbox.json MUST go. NOW."
-//
-// When routingTable.json was named, spirit-3 had a live mailbox.json with
-// everybody's rows in it — so this read the old name when the new one was
-// absent, or an update would have dropped the whole roster with nothing
-// on the outside saying so.
-//
-// It was a READ and never a migration: it re-read the old file on every
-// boot, and only the next persist() — a claim or a removal, and in those
-// days a send — wrote the new name. So deleting it was only safe once a
-// live relay had actually written routingTable.json.
-//
-// spirit-3 has. Forced on 2026-09-13 with one self-addressed ring message
-// (77 messages → 78, which is persist() running), and its census read 10
-// rows before and 10 after. Every other relay in existence is a lab box
-// built fresh.
-//
-// The stale file is left on disk rather than deleted by code — removing
-// somebody's data on their box is their call, not a side effect of a
-// boot. It stays unservable, and servableAssets.js still says so: a full
-// roster sitting in relay-state must not become readable just because
-// nothing reads it any more.
-// DEPRECATED(D1, expires: alpha) — reads a routingTable.json from older
-// code: `name` folded into `publicLabel`, the ring's `messages`/`nextId`
-// dropped. See design/DEPRECATIONS.md (decision 0014).
-function loadRoutingTable(rootDir) {
-  try {
-    var raw = fs.readFileSync(stateFile(rootDir), 'utf8');
-    var parsed = JSON.parse(raw);
-    var peers = Object.create(null);
-    if (parsed && parsed.peers && typeof parsed.peers === 'object') {
-      Object.keys(parsed.peers).forEach(function (k) {
-        var row = parsed.peers[k];
-        if (!row || typeof row !== 'object') return;
-        // ONE LABEL, NORMALISED ON THE WAY IN.
-        //
-        // A row carried `name` AND `publicLabel`, both set to the same
-        // string at claim, and `labelOf()` existed only to reconcile
-        // them. Residue from before peer-by-key: a label was an address
-        // once, and then it stopped being one and nothing collapsed the
-        // pair.
-        //
-        // `publicLabel` wins because it is the one that says what it is.
-        // A row written by older code has the same value in both, so
-        // this is a rename and not a choice — and `name` is dropped so
-        // the next persist() writes one field.
-        var one = {};
-        Object.keys(row).forEach(function (f) {
-          if (f !== 'name') one[f] = row[f];
-        });
-        one.publicLabel = String(row.publicLabel || row.name || '');
-        peers[k] = one;
-      });
-    }
-    // `messages` and `nextId` are READ AND DROPPED, which is the whole of
-    // the ring's migration. A relay upgrading in place still has both in
-    // its routingTable.json; the first persist() after this writes the
-    // file without them, and the mail goes with it. Nothing is copied
-    // anywhere first — Andy inspected spirit-3's 77 entries before
-    // deciding: "they are all noise" (design/andy/relayStorage.md).
-    return { peers: peers };
-  } catch (e) {
-    return { peers: Object.create(null) };
-  }
-}
-
-function saveRoutingTable(rootDir, peers) {
-  fs.mkdirSync(path.dirname(stateFile(rootDir)), { recursive: true });
-  fs.writeFileSync(stateFile(rootDir), JSON.stringify({
-    peers: peers,
-  }));
-}
+// Before that, mailbox.json was this file's name, and the read of the old
+// name was deleted once spirit-3 had written the new one (2026-09-13). The
+// same discipline holds: data on somebody's box is renamed and kept, never
+// deleted by a boot.
 
 // `deps.askPartner(url, relayKey, text)` answers a promise of the partner's
 // reply text, or null. INJECTED, never reached for: it is this relay's own
@@ -285,8 +211,42 @@ function createRelay(rootDir, deps) {
   deps = deps || {};
   var askPartner = typeof deps.askPartner === 'function' ? deps.askPartner : null;
   rootDir = rootDir || path.join(__dirname, '..');
-  var loaded = loadRoutingTable(rootDir);
-  var peers = loaded.peers;
+  // THE ROLL, THE INVITES AND THE PARTNER ROLL — on disc, asked by query
+  // (cycle 3, relayStore.js). Nothing of them is resident here.
+  //
+  // Fetched per use rather than held: open() is a cached lookup, so this
+  // costs nothing, and a handle closed underneath the relay (a test
+  // releasing the file to delete its directory) is simply reopened.
+  var store = {
+    get members() { return relayStore.open(rootDir).members; },
+    get invites() { return relayStore.open(rootDir).invites; },
+    get partners() { return relayStore.open(rootDir).partners; },
+    transaction: function (fn) { return relayStore.open(rootDir).transaction(fn); },
+  };
+
+  // ── THE ACTIVE MEMBERS, IN RAM (cycle 3) ─────────────────────────────
+  //
+  //   Andy: "why doesn't a member row on the relay db cache on relayed,
+  //   incoming requests?"
+  //
+  // Because it should, deliberately — and the spec already says which
+  // rows: RAM holds the ACTIVE members (NODE-AND-RELAY §8). A member's row
+  // is cached when their stream opens and dropped when it closes, so every
+  // request from or to a connected member is answered here without a disc
+  // read. Bounded by the connection allowance — the lever the Governor
+  // moves — so the RAM spent on rows follows connections and is governed.
+  // A member posting without a stream costs one indexed read, behind the
+  // rate gate. Writes go to disc first, then refresh the cached copy.
+  var activeRows = Object.create(null);
+  function rememberActive(key) {
+    var row = store.members.get(key);
+    if (row) activeRows[key] = row;
+    return row;
+  }
+  function forgetActive(key) { delete activeRows[key]; }
+  function refreshActive(key) {
+    if (activeRows[key]) rememberActive(key);
+  }
   var allow = auth.loadAllow(rootDir);
   var claimHits = Object.create(null);
   // Enrolment attempts, per identity being enrolled. The limit lived in
@@ -452,10 +412,6 @@ function createRelay(rootDir, deps) {
   var governor = config ? governorLib.createGovernor({ ramLimitMB: config.ramLimitMB }) : null;
   if (governor) presentNow.setAllowed(governor.allowed());
 
-  function persist() {
-    saveRoutingTable(rootDir, peers);
-  }
-
   function reloadAllow() {
     allow = auth.loadAllow(rootDir);
   }
@@ -510,25 +466,24 @@ function createRelay(rootDir, deps) {
   }
 
   // ONE FIELD. It read `publicLabel || name` while a row carried both,
-  // which is what this function existed for. loadRoutingTable collapses
-  // the pair on the way in, so there is nothing left to reconcile and
-  // this is only a guard against a missing row.
+  // which is what this function existed for. The one-time import (D8)
+  // collapsed the pair, so there is nothing left to reconcile and this is
+  // only a guard against a missing row.
   function labelOf(peer) {
     return (peer && peer.publicLabel) || '';
   }
 
-  function listPeers() {
-    return Object.keys(peers).map(function (k) { return peers[k]; });
-  }
+  // listPeers() STOOD HERE — the whole roll as an array, allocated on
+  // every call, by seven callers. It is gone with the resident roll (cycle
+  // 3): each caller asks the store the one question it has.
 
+  // ONE READ, SUCCESS OR FAIL (cycle 3). The primary key, so an unknown
+  // sender costs one index seek however large the roll — it used to cost a
+  // scan of the whole membership, before the rate gate, for anybody who
+  // cared to send junk (NODE-AND-RELAY §9b).
   function findByKey(publicKey) {
     if (!publicKey) return null;
-    if (peers[publicKey]) return peers[publicKey];
-    var list = listPeers();
-    for (var i = 0; i < list.length; i++) {
-      if (list[i].publicKey === publicKey) return list[i];
-    }
-    return null;
+    return activeRows[publicKey] || store.members.get(publicKey);
   }
 
   // ONE HIT OR NOBODY. Two peers may wear one label by design, so a
@@ -542,8 +497,10 @@ function createRelay(rootDir, deps) {
   // it. A row from older code that has no key is not addressable on this
   // wire by any means, so finding it by label bought nothing.
   function findByLabel(label) {
-    var n = normalizeName(label);
-    var hits = listPeers().filter(function (p) { return labelOf(p) === n; });
+    // SEARCH AND DISPLAY ONLY (cycle 3): nothing resolves an identity by
+    // label any more — every operation is by key. The index answers the
+    // first two holders, which is all "exactly one" needs to know.
+    var hits = store.members.byLabel(normalizeName(label), 2);
     return hits.length === 1 ? hits[0] : null;
   }
 
@@ -573,20 +530,15 @@ function createRelay(rootDir, deps) {
   // it" -- which is the distinction that keeps signatures off query
   // strings while letting this through.
   //
-  // Absent `keys`, this answers exactly what it always did, so every
-  // caller that has not migrated is untouched.
+  // KEYS REQUIRED (cycle 3). Absent keys this used to answer the whole
+  // roll, which is the member list 0012 (widened) forbids serving to
+  // anybody — and, since the roll moved to disc, a whole-table read. Asked
+  // without keys it now answers nothing. A count is store.members.count().
   function who(keys) {
-    var wanted = null;
-    if (Array.isArray(keys) && keys.length) {
-      wanted = Object.create(null);
-      keys.forEach(function (k) {
-        var key = String(k == null ? '' : k).trim();
-        if (key) wanted[key] = true;
-      });
-    }
-    return listPeers().filter(function (p) {
-      return !wanted || (p && p.publicKey && wanted[p.publicKey]);
-    }).map(function (p) {
+    var wanted = (Array.isArray(keys) ? keys : []).map(function (k) {
+      return String(k == null ? '' : k).trim();
+    }).filter(Boolean);
+    return store.members.byKeys(wanted).map(function (p) {
       return {
         // `name` STOOD BESIDE THIS, carrying the identical value. Two
         // spellings of one fact on a public route, so every reader had
@@ -779,23 +731,36 @@ function createRelay(rootDir, deps) {
       return { ok: false, status: 400, error: 'that is this relay' };
     }
 
-    if (row.partner && row.partner.url === at && row.partner.relayKey === theirKey) {
-      return { ok: true, status: 200, unchanged: true, partner: row.partner };
+    // THE PARTNER ROLL (cycle 3): a row keyed by relay key in the §5 shape,
+    // not a flag on this member's row. This verb is the deprecated model
+    // (NODE-AND-RELAY §6) writing to the new store until cycle 5 replaces
+    // it with injection and the minting cycle. One partnership per member,
+    // as before: promoting a member to a different relay replaces theirs.
+    var had = store.partners.byOwner(peerKey)[0] || null;
+    if (had && had.url === at && had.relayKey === theirKey) {
+      return { ok: true, status: 200, unchanged: true, partner: partnerView(had) };
     }
 
-    row.partner = {
-      url: at,
-      relayKey: theirKey,
-      // Written once, like claimedAt: it says when this partnership
-      // began, and a re-promotion to the same relay does not reach here.
-      since: (row.partner && row.partner.since) || new Date().toISOString(),
-    };
-    persist();
+    store.transaction(function () {
+      store.partners.removeOwner(peerKey);
+      store.partners.put({
+        relayKey: theirKey, url: at, ownerKey: peerKey, status: 'partnered',
+        // Written once, like claimedAt: it says when this partnership
+        // began, and a re-promotion to the same relay does not reach here.
+        since: (had && had.since) || new Date().toISOString(),
+      });
+    });
+    var made = store.partners.get(theirKey);
 
     ownerEvent('partner-added', {
       key: peerKey, label: row.publicLabel || '', relayAt: at, cause: hash,
     });
-    return { ok: true, status: 200, partner: row.partner };
+    return { ok: true, status: 200, partner: partnerView(made) };
+  }
+
+  // The shape callers have always been handed for a partnership.
+  function partnerView(p) {
+    return p ? { url: p.url, relayKey: p.relayKey, since: p.since } : null;
   }
 
   // BREAKING IS ONE SIDE'S DECISION, and needs no protocol. A partnership
@@ -808,16 +773,14 @@ function createRelay(rootDir, deps) {
 
     var row = findByKey(peerKey);
     if (!row) return { ok: false, status: 404, error: 'no such peer' };
-    if (!row.partner) return { ok: true, status: 200, unchanged: true };
-
-    var was = row.partner;
-    delete row.partner;
-    persist();
+    var was = store.partners.byOwner(peerKey)[0] || null;
+    if (!was) return { ok: true, status: 200, unchanged: true };
+    store.partners.removeOwner(peerKey);
 
     ownerEvent('partner-removed', {
       key: peerKey, label: row.publicLabel || '', relayAt: was.url, cause: hash,
     });
-    return { ok: true, status: 200, removed: was };
+    return { ok: true, status: 200, removed: partnerView(was) };
   }
 
   // Everything this relay partners with, for the owner's own report. Not
@@ -839,12 +802,10 @@ function createRelay(rootDir, deps) {
   function partnerByRelayKey(key) {
     var k = String(key == null ? '' : key).trim();
     if (!k) return null;
-    var rows = listPeers();
-    for (var i = 0; i < rows.length; i++) {
-      var row = rows[i];
-      if (row && row.partner && row.partner.relayKey === k) return row;
-    }
-    return null;
+    // One seek on the partner roll's key (cycle 3). This was a scan of the
+    // whole membership on the hot path — the unknown-token flood of §9b.
+    var p = store.partners.get(k);
+    return p && p.status === 'partnered' ? { publicKey: p.ownerKey, partner: p } : null;
   }
 
   // The identity a partner gets. Deliberately NOT shaped like a member's:
@@ -868,15 +829,16 @@ function createRelay(rootDir, deps) {
   }
 
   function partners() {
-    return listPeers()
-      .filter(function (p) { return p && p.partner; })
+    return store.partners.all()
+      .filter(function (p) { return p.status === 'partnered'; })
       .map(function (p) {
+        var owner = findByKey(p.ownerKey);
         return {
-          key: p.publicKey,
-          label: p.publicLabel || '',
-          url: p.partner.url,
-          relayKey: p.partner.relayKey,
-          since: p.partner.since,
+          key: p.ownerKey,
+          label: (owner && owner.publicLabel) || '',
+          url: p.url,
+          relayKey: p.relayKey,
+          since: p.since,
         };
       });
   }
@@ -917,7 +879,9 @@ function createRelay(rootDir, deps) {
       // The other half of the pair (Andy: "key and label are a pair, in
       // keyed mode").
       relayLabel: relayLabel(),
-      peers: who(),
+      // A COUNT, not the roll (cycle 3): the report says how many, which
+      // is one query; the rows never leave the store to be counted.
+      peers: store.members.count(),
       // `messages: messages.length` STOOD HERE and went with the ring.
       // A relay stores nothing on anyone's behalf (0006), so there is no
       // count to report — the honest number is not zero, it is that the
@@ -1054,7 +1018,7 @@ function createRelay(rootDir, deps) {
     // it rather than leaving a relay where no name but the pending one
     // can ever be claimed again.
     var pending = auth.loadPendingOwner(rootDir);
-    var empty = listPeers().length === 0;
+    var empty = store.members.count() === 0;
     if (pending && !empty) {
       auth.clearPendingOwner(rootDir);
       pending = null;
@@ -1187,8 +1151,7 @@ function createRelay(rootDir, deps) {
     // KEYED BY KEY, always, because a claim without one is refused
     // above. The map used to be `publicKey || n`, which is how a row
     // could be filed under a label.
-    peers[publicKey] = peer;
-    persist();
+    store.members.put(peer);
     return { ok: true, status: 201, peer: peer, owner: firstOwner };
   }
 
@@ -1389,18 +1352,21 @@ function createRelay(rootDir, deps) {
   function deviceIdentity(token) {
     var t = String(token == null ? '' : token).trim();
 
-    // The owner first, by label, because allow.json is the authority on
-    // who the owner is and holds exactly one row.
+    // A TOKEN IS A KEY (cycle 3). This resolved the owner by label too, and
+    // then fell back to findByLabel for everybody — residue from before
+    // identity was a key, and the label scan in the unknown-sender flood
+    // (NODE-AND-RELAY §9b). Every operation is by key now; labels serve
+    // search and display only (Andy). One read, success or fail.
     var ownerLabel = auth.ownerName(allow);
     if (ownerLabel) {
       var ownerKey = allow.byName && allow.byName[ownerLabel];
-      if (ownerKey && (t === ownerKey || normalizeName(t) === ownerLabel)) {
+      if (ownerKey && t === ownerKey) {
         return { id: ownerKey, label: ownerLabel, publicKey: ownerKey, owner: true };
       }
     }
     if (!t) return null;
 
-    var peer = findByKey(t) || findByLabel(t);
+    var peer = findByKey(t);
     if (!peer || !peer.publicKey) return null;
     return {
       id: peer.publicKey,
@@ -1717,8 +1683,10 @@ function createRelay(rootDir, deps) {
     }
 
     var was = labelOf(row);
-    row.publicLabel = next;
-    persist();
+    store.members.put({
+      publicKey: row.publicKey, publicLabel: next, claimedAt: row.claimedAt, owner: row.owner,
+    });
+    refreshActive(row.publicKey);
 
     // THE OWNER HEARS ABOUT IT (R2). A member changing what they are
     // called is a membership fact, and an owner watching a name appear
@@ -1765,10 +1733,11 @@ function createRelay(rootDir, deps) {
     }
 
     var label = labelOf(target);
-    delete peers[key];
-    // Some older rows are keyed by name rather than by key.
-    Object.keys(peers).forEach(function (k) {
-      if (peers[k] && peers[k].publicKey === key) delete peers[k];
+    // The row, and any partnership it carried: a removed member's relay is
+    // not this relay's partner either (as when the flag lived on the row).
+    store.transaction(function () {
+      store.members.remove(key);
+      store.partners.removeOwner(key);
     });
 
     // A RING PURGE STOOD HERE — "their mail goes with them", because a
@@ -1776,7 +1745,6 @@ function createRelay(rootDir, deps) {
     // argument was right and is now answered by there being no letters:
     // a relay holds nothing on anyone's behalf, so removing the row IS
     // removing everything this box had of them.
-    persist();
 
     // And the invite, or the name is a lie: a live token for that label
     // walks them straight back in.
@@ -1789,6 +1757,7 @@ function createRelay(rootDir, deps) {
     if (presentNow.isPresent(key)) {
       presentNow.disconnect(key, null);
     }
+    forgetActive(key);
 
     // GONE, NOT ABSENT — and the difference is a colour on somebody's
     // screen. `present: false` is a statement ABOUT A MEMBER: this person
@@ -2344,7 +2313,7 @@ function createRelay(rootDir, deps) {
         //   block separately tested and verified, and give it an
         //   independent evolution path."
         //
-        // So this maps `peers` into the plain rows peerSearch takes and
+        // So this maps each member into the plain row peerSearch takes and
         // does nothing else. Presence is resolved HERE, into a field,
         // because `presentNow` is a relay concept with a live socket
         // behind it and peerSearch must stay drivable from a test with
@@ -2352,25 +2321,29 @@ function createRelay(rootDir, deps) {
         //
         // What this file is no longer entitled to an opinion about: what
         // a good match is, what beats what, and how many fit.
-        var rows = listPeers()
-          .filter(function (p) { return p && p.publicKey; })
-          .map(function (p) {
-            return {
-              publicKey: p.publicKey,
-              publicLabel: labelOf(p),
-              claimedAt: p.claimedAt,
-              owner: !!p.owner,
-              // Off the public census, but a search reaches this line only
-              // from a member over a signed post — the authenticated
-              // channel that was always allowed to carry it.
-              present: presentNow.isPresent(p.publicKey),
-              via: null,
-            };
+        // STREAMED FROM DISC (cycle 3). Rows come off a cursor one at a
+        // time and are offered to the bucket, which keeps only the best
+        // SLOTS — so memory is the bucket's size however large the roll,
+        // and the ranking is exactly what it was.
+        var bucket = peerSearch.open(q, peerSearch.SLOTS);
+        store.members.each(function (p) {
+          if (!p || !p.publicKey) return;
+          bucket.offer({
+            publicKey: p.publicKey,
+            publicLabel: labelOf(p),
+            claimedAt: p.claimedAt,
+            owner: !!p.owner,
+            // Off the public census, but a search reaches this line only
+            // from a member over a signed post — the authenticated
+            // channel that was always allowed to carry it.
+            present: presentNow.isPresent(p.publicKey),
+            via: null,
           });
+        });
 
         // ONE BUCKET, offered every row. Never a list of everyone — this
         // relay may hold a million members and `q` may be one letter.
-        var found = peerSearch.search(rows, q, peerSearch.SLOTS);
+        var found = bucket.result();
         var matches = found.matches.map(function (row) {
           // `via` is the merger's field and means nothing in a reply that
           // had one source. It goes back on at the point a reply carries
@@ -3318,83 +3291,20 @@ function createRelay(rootDir, deps) {
     }));
   }
 
-  // THE ROSTER IS PER RECIPIENT, which is the shape agreed when the
-  // census had to show a device to its owner and to nobody else. This is
-  // the same rule reaching its second user:
+  // ── streamRoster STOOD HERE — THE WHOLE ROLL, TO EVERY MEMBER ─────────
   //
-  //   Andy: "We discussed this topic when we discussed how the peer-list
-  //   can be customized for peers or owners."
+  //   Andy: "why on earth is a streamRoster required?" — "the whole design
+  //   implies clearly that access to member rolls is facilitated by search
+  //   only."
   //
-  // The OWNER's roster carries this relay itself; a peer's does not. That
-  // is how the owner's node learns it can address the box — through the
-  // ordinary presence mechanism, rather than through a special case in
-  // whoever wants to post. `relaysNaming` then answers for the relay's
-  // own key exactly as it does for any peer, and nothing above it needs
-  // to know this row is different.
-  //
-  // Still out of `who()`, so the public census is unchanged: addressable
-  // is not published. A relay that listed itself would put its key in
-  // every peer's roster and in every census any stranger can fetch.
-  // NO LONGER PER-RECIPIENT, and the parameter went with the rule. It
-  // took `forKey` so it could decide whether to include the relay row,
-  // and every member gets that row now — so the roster this relay sends
-  // is the same roster for everybody, and a parameter implying otherwise
-  // would be the kind of lie a later reader builds on.
-  function streamRoster() {
-    var members = who().map(function (p) {
-      return {
-        key: p.publicKey || '',
-        label: p.publicLabel || '',
-        present: presentNow.isPresent(p.publicKey || ''),
-      };
-    });
-
-    // ── A RELAY IS A PEER TO EVERY MEMBER, NOT ONLY TO ITS OWNER ─────
-    //
-    // This row went to the owner alone, and that was true enough while
-    // everything answerSelf could be asked was an owner verb. It is not
-    // true any more: `rename` is an own-row verb — a peer renaming
-    // ITSELF — and so is removing your own seat. Both are things a member
-    // must be able to ask the relay directly.
-    //
-    // They work today only because hub.askRelay names a URL and posts to
-    // it, going around presence entirely. The moment the post-path doors
-    // close and a member addresses the relay by KEY like any other peer,
-    // `presence.relaysNaming(relayKey)` is what answers — and it answers
-    // from this roster. Owner-only here would have meant a member could
-    // not rename itself, which is a gate nobody decided.
-    //
-    // Nothing is given away by widening it: the key is already public at
-    // /api/relay/who to anybody who asks. What the roster adds is that a
-    // member holding a stream can now SEE the relay on the other end of
-    // it, which was always the case and was simply unsaid.
-    //
-    // Always present: a relay answering the question is a relay that is
-    // up, and a stream cannot be open to it otherwise.
-    //
-    // MARKED BY KEY, NOT NAMED. This carried `label: 'relay'` — the
-    // reserved caption — which meant a list told a relay from a peer by
-    // reading a string any peer could have worn. `relay: true` is a flag
-    // on the row beside its key, the same shape as `owner` on a census
-    // row, and the caption is left empty because a relay does not have
-    // one. presenceNode reads `key` and `present` and has never looked at
-    // the label.
-    // ONE ROW PER KEY. A roster is read into a map keyed by `key`
-    // (presenceNode.onRoster), so a second row for the same key does not
-    // appear twice — it OVERWRITES, silently, and the last one wins.
-    //
-    // That is not hypothetical: a relay whose identity.json holds the same
-    // keypair its owner claimed with is one key wearing two hats, and this
-    // row would have replaced that member's real presence with `true`.
-    // Nothing in the protocol forbids the arrangement, so this does not
-    // either — it just refuses to say the same key twice.
-    var mine = relayPublicKey();
-    var already = mine && members.some(function (m) { return m.key === mine; });
-    if (mine && !already) {
-      members.push({ key: mine, label: '', relay: true, present: true });
-    }
-    return { members: members };
-  }
+  // Deleted in cycle 3. It sent every member the whole membership on every
+  // connect — a served member list, which 0012 (widened) forbids to anybody
+  // by request or by broadcast, and past PAYLOAD_MAX at ~190 members (0013).
+  // Nothing needed it: the relay refuses an absent target itself (0006,
+  // `503 peer not reachable`), a node learns presence from the `presence`
+  // broadcasts and filters them by its own contacts, and the relay's own key
+  // is pinned (relayKeys) from GET /api/relay/key. A roll is reached by key
+  // or by search, never as a list.
 
   // The gate. Order is load-bearing at every step.
   function streamOpen(token, sig, sink) {
@@ -3430,12 +3340,11 @@ function createRelay(rootDir, deps) {
     //    refused with 503 when the relay is full.
     var opened = presentNow.connect(who_.id, sink, who_.id === currentOwnerKey());
     if (!opened.ok) return opened;
+    // An active member's row is held in RAM while the stream is open.
+    rememberActive(who_.id);
 
-    // 4. The roster, then the fact that this one arrived. Order matters
-    //    for the newcomer too: it must see itself present in its own
-    //    first snapshot rather than learn it from a change it will never
-    //    be sent.
-    presentNow.send(who_.id, 'roster', streamRoster());
+    // 4. The fact that this one arrived. (The roster that went first, the
+    //    whole roll to the newcomer, was deleted in cycle 3 — see above.)
     presentNow.broadcast('presence', { key: who_.id, present: true });
 
     // 5. And the owner learns what its box now looks like. Sent after the
@@ -3491,6 +3400,7 @@ function createRelay(rootDir, deps) {
           })
       : [];
     closed.forEach(function (id) {
+      forgetActive(id);
       presentNow.broadcast('presence', { key: id, present: false });
     });
     decision.closed = closed.length;
@@ -3506,6 +3416,7 @@ function createRelay(rootDir, deps) {
     var who_ = deviceIdentity(token);
     if (!who_) return false;
     if (!presentNow.disconnect(who_.id, sink)) return false;
+    forgetActive(who_.id);
 
     // A MONITOR DIES WITH THE STREAM IT WAS WATCHING ON. A browser that
     // crashed must not leave this relay pushing into nothing, and a timer
@@ -3527,6 +3438,10 @@ function createRelay(rootDir, deps) {
     claim: claim,
     forgetPeer: forgetPeer,
     who: who,
+    // Where this relay keeps its data. In-process only, for the suites that
+    // inspect the roll on disc (test/rollOf.js) — nothing on the wire reads
+    // it, and there is no whole-roll read on the relay itself (cycle 3).
+    rootDir: function () { return rootDir; },
     relayPublicKey: relayPublicKey,
     // The other half of the pair. Read by server.js for the public
     // census; set through the `relayLabel` verb in answerSelf.
@@ -3575,7 +3490,6 @@ function createRelay(rootDir, deps) {
     routes: routes,
     streamOpen: streamOpen,
     streamClose: streamClose,
-    streamRoster: streamRoster,
     presence: presentNow,
     // WHAT THE RING MAY BE SHRUNK TO. Exposed so the governor has one
     // place to ask rather than three constants to respect, and so a suite

@@ -1,4 +1,5 @@
 'use strict';
+const rollOf = require('./rollOf');
 
 // spirit/test/labelIsOwned.js
 // A PUBLIC LABEL BELONGS TO THE KEY THAT WEARS IT.
@@ -49,7 +50,7 @@ const SCENARIO = {
 };
 
 function labels(box) {
-  return box.who().map(function (p) { return p.publicLabel; }).sort().join(',');
+  return rollOf(box).map(function (p) { return p.publicLabel; }).sort().join(',');
 }
 
 test.startTest('A public label is owned by its key');
@@ -62,7 +63,7 @@ test.subHeading('One field, on the row and on the wire');
   const L = world.build(SCENARIO);
   if (!L.ok) { test.fail(L.error); test.reportSuccessFailureCount(); return; }
 
-  const row = L.box.who()[0];
+  const row = rollOf(L.box)[0];
   if (row.publicLabel && row.name === undefined) {
     test.check('a census row says a peer’s label once, under publicLabel');
   } else {
@@ -71,9 +72,8 @@ test.subHeading('One field, on the row and on the wire');
 
   // ON DISK TOO, or the collapse is cosmetic: a file still carrying both
   // is a file the next reader has to reconcile.
-  const onDisk = JSON.parse(
-    fs.readFileSync(path.join(L.home, 'relay-state', 'routingTable.json'), 'utf8'));
-  const stored = Object.keys(onDisk.peers).map(function (k) { return onDisk.peers[k]; });
+  // Read off the relay's disc (relay.db since cycle 3), not asked of it.
+  const stored = rollOf(L.box);
   if (stored.every(function (p) { return p.publicLabel && p.name === undefined; })) {
     test.check('and so does the row it was written from');
   } else {
@@ -83,12 +83,13 @@ test.subHeading('One field, on the row and on the wire');
   // EVERY ROW IS KEYED BY ITS KEY. The map was `publicKey || n`, so a
   // keyless claim filed a row under a LABEL — which is what made
   // `findByLabel` need a keyless branch and kept `name` alive.
-  if (Object.keys(onDisk.peers).every(function (k) {
-    return onDisk.peers[k].publicKey === k;
-  })) {
+  // Since cycle 3 the key IS the members table's primary key, so a row
+  // filed under anything else cannot exist; what is left to check is that
+  // every row has one.
+  if (stored.length && stored.every(function (p) { return typeof p.publicKey === 'string' && p.publicKey; })) {
     test.check('and every row is filed under its key, never its label');
   } else {
-    test.fail('keys: ' + JSON.stringify(Object.keys(onDisk.peers)));
+    test.fail('keys: ' + JSON.stringify(stored.map(function (p) { return p.publicKey; })));
   }
 
   // WHICH MEANS A CLAIM NEEDS ONE. The only path that ever admitted a
@@ -109,31 +110,33 @@ test.subHeading('A row written by older code is read, not reconciled');
 // ---------------------------------------------------------------------
 
 {
-  // A relay upgrading in place has rows carrying both fields. They are
-  // collapsed on the way in and the next persist() writes one — the same
-  // shape of migration the ring got, and for the same reason: a file
-  // that still holds the old shape leaves every reader guessing.
-  const L = world.build({ title: 'one peer', peers: ['bert'] });
-  const file = path.join(L.home, 'relay-state', 'routingTable.json');
-  const doc = JSON.parse(fs.readFileSync(file, 'utf8'));
-  Object.keys(doc.peers).forEach(function (k) {
-    doc.peers[k].name = doc.peers[k].publicLabel;   // as older code wrote it
-    delete doc.peers[k].publicLabel;                 // and the older-still case
+  // A relay upgrading in place has rows carrying the old field. Since
+  // cycle 3 the one-time import (D8, design/DEPRECATIONS.md) is what reads
+  // them, folding `name` into `publicLabel` on the way into relay.db —
+  // so this writes an old-style routingTable.json into a relay home that
+  // has never opened its store, and lets the import find it.
+  const oldHome = fs.mkdtempSync(path.join(require('os').tmpdir(), 'spirit-oldrows-'));
+  fs.mkdirSync(path.join(oldHome, 'relay-state'), { recursive: true });
+  const olds = { andy: auth.generateIdentity('andy'), bert: auth.generateIdentity('bert') };
+  const doc = { peers: {} };
+  Object.keys(olds).forEach(function (label) {
+    const k = olds[label].publicKey;
+    doc.peers[k] = { publicKey: k, name: label, claimedAt: new Date().toISOString(), owner: label === 'andy' };
   });
-  fs.writeFileSync(file, JSON.stringify(doc));
+  fs.writeFileSync(path.join(oldHome, 'relay-state', 'routingTable.json'), JSON.stringify(doc));
 
-  const reopened = require('../run/js/relay').createRelay(L.home);
-  const seen = reopened.who().map(function (p) { return p.publicLabel; }).sort();
+  const reopened = require('../run/js/relay').createRelay(oldHome);
+  const seen = rollOf(reopened).map(function (p) { return p.publicLabel; }).sort();
   if (seen.join(',') === 'andy,bert') {
     test.check('a row carrying only `name` comes back with its label intact');
   } else {
     test.fail('after reopen: ' + JSON.stringify(seen));
   }
 
-  if (reopened.who().every(function (p) { return p.name === undefined; })) {
+  if (rollOf(reopened).every(function (p) { return p.name === undefined; })) {
     test.check('and `name` does not survive the read');
   } else {
-    test.fail('name survived: ' + JSON.stringify(reopened.who()));
+    test.fail('name survived: ' + JSON.stringify(rollOf(reopened)));
   }
 }
 
@@ -189,11 +192,11 @@ test.subHeading('What a rename must not break');
 {
   const L = world.build(SCENARIO);
   const johnA = L.peer('johnA');
-  const before = L.box.who()
+  const before = rollOf(L.box)
     .filter(function (p) { return p.publicKey === johnA.publicKey; })[0];
 
   world.ask(L.box, johnA, { rename: { label: 'johnny' } });
-  const after = L.box.who()
+  const after = rollOf(L.box)
     .filter(function (p) { return p.publicKey === johnA.publicKey; })[0];
 
   // THE LEDGER'S ONE DATE. It says when the KEY enrolled — the fact that
@@ -296,7 +299,7 @@ test.subHeading('The owner’s label lives in two places, and they move together
   // AND THE CENSUS AGREES. The badge is read off `owner` by key since
   // R3, so a row whose flag disagreed with allow.json would be a second
   // authority on who the owner is.
-  const ownerRows = L.box.who().filter(function (p) { return p.owner; });
+  const ownerRows = rollOf(L.box).filter(function (p) { return p.owner; });
   if (ownerRows.length === 1 && ownerRows[0].publicLabel === 'chief' &&
       ownerRows[0].publicKey === L.owner.publicKey) {
     test.check('with one owner row in the census, under the new label');

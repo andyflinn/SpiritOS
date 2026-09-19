@@ -30,8 +30,13 @@ const SCENARIO = {
   peers: ['bert', 'john'],
 };
 
+// WHO IS STILL ON THE ROLL, asked about the keys this suite knows. A relay
+// no longer answers the whole roll to anybody (cycle 3, 0012 widened), so
+// the question is put by key — which is also the only way it is asked on
+// the wire.
+let KNOWN = [];
 function labels(box) {
-  return box.who().map(function (p) { return p.publicLabel || p.name; }).sort().join(',');
+  return box.who(KNOWN).map(function (p) { return p.publicLabel || p.name; }).sort().join(',');
 }
 
 // Asking a relay to forget somebody. The only way to ask, since decision
@@ -48,6 +53,7 @@ function run() {
 
   const bert = L.peer('bert');
   const john = L.peer('john');
+  KNOWN = [L.owner.publicKey, bert.publicKey, john.publicKey];
 
   test.subHeading('Removal is a post, and it is still the one that destroys');
 

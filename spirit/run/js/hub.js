@@ -4,7 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
 const auth = require('./relayAuth');
-const invites = require('./invites');
+// invites.js STOOD HERE, required and never used — it is the relay's
+// waiting room, on the relay's disc (cycle 3), and nothing on a node reads it.
 const ownerBadge = require('./ownerBadge');
 const contactBook = require('./contacts');
 const relayKeys = require('./relayKeys');
@@ -963,12 +964,18 @@ function createHub(rootDir) {
       //
       // Only when the named `via` was not asked for: a caller measuring one
       // path must get that path or a refusal.
+      //
+      // AND WITH NO ROUTES, THE RELAY STILL ANSWERS (cycle 3). This node
+      // no longer holds a roster of each relay's members — the relay stopped
+      // serving one (0012 widened) — so "not in my picture" is not "not
+      // there". It posts through its relay and lets the relay say: it
+      // refuses an absent target at once (0006, 503 peer not reachable).
       if (!where.length && !wanted) {
         var row = contactBook.byPublicKey(rootDir, to);
         var hints = (row && Array.isArray(row.routes)) ? row.routes : [];
         var connected = Object.keys((presence.detail && presence.detail()) || {});
-        if (hints.length && connected.length) {
-          return sendPacket(router, connected[0], to, text, hints).then(function (answer) {
+        if (connected.length) {
+          return sendPacket(router, connected[0], to, text, hints.length ? hints : undefined).then(function (answer) {
             res.writeHead(answer.ok ? 200 : (answer.status || 502),
               { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify(answer));

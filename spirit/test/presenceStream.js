@@ -88,16 +88,16 @@ function run() {
   if (j && j.ok) test.check('and so does another');
   else test.fail('john open: ' + JSON.stringify(j));
 
-  // The newcomer must see ITSELF present in its own first snapshot — it
-  // will never be sent the change that announced it.
-  const johnRoster = johnSink.last('roster');
-  const johnSelf = (johnRoster && johnRoster.members || []).filter(function (m) {
-    return m.key === john.publicKey;
-  })[0];
-  if (johnSelf && johnSelf.present === true) {
-    test.check('the newcomer sees itself present in its own first roster');
+  // NO ROSTER ON CONNECT, since cycle 3 — 0012 widened: no member list is
+  // served, not by request and not by broadcast. This asserted the
+  // newcomer's first roster named itself present; the node now seeds its
+  // own presence and the relay's from the pinned relay key (presenceNode's
+  // seedRelay), and learns everyone else from broadcasts it filters by its
+  // own contacts. The relay broadcasts, the node filters.
+  if (!johnSink.last('roster')) {
+    test.check('the newcomer is sent no roster — no member list is served');
   } else {
-    test.fail('john self: ' + JSON.stringify(johnSelf));
+    test.fail('a roster was sent: ' + JSON.stringify(johnSink.last('roster')));
   }
 
   const bertHeard = bertSink.last('presence');
@@ -107,23 +107,24 @@ function run() {
     test.fail('bert heard: ' + JSON.stringify(bertHeard));
   }
 
-  test.subHeading('The roster names the absent, or white and red collapse');
+  test.subHeading('An absent member is never named to a newcomer');
 
-  // THE test of this stage. A roster of only the connected cannot tell a
-  // member who is away from somebody this relay never heard of — the
-  // first is red and the second white (PRESENCE.md section 4).
-  const andyRow = (johnRoster && johnRoster.members || []).filter(function (m) {
-    return m.key === L.owner.publicKey;
-  })[0];
-  if (andyRow && andyRow.present === false) {
-    test.check('a member who is not connected is IN the roster, marked absent');
+  // This section asserted the opposite until cycle 3: that the roster named
+  // the absent, with labels, so white and red did not collapse. Red versus
+  // white is now the node's distinction, made against its own contacts —
+  // the relay does not tell one member who else is on the roll.
+  const namesAndy = johnSink.lines.some(function (chunk) {
+    return chunk.indexOf(L.owner.publicKey) !== -1;
+  });
+  if (!namesAndy) {
+    test.check('a member who is not connected is not mentioned to anyone');
   } else {
-    test.fail('absent member missing from roster: ' + JSON.stringify(johnRoster));
+    test.fail('the absent owner was named on the wire');
   }
-  if (andyRow && andyRow.label === 'andy') {
-    test.check('and carries a label, so a node need not ask who it was');
+  if (bertHeard && bertHeard.label === undefined) {
+    test.check('and a broadcast carries a key, never a label');
   } else {
-    test.fail('roster row has no label: ' + JSON.stringify(andyRow));
+    test.fail('broadcast carried a label: ' + JSON.stringify(bertHeard));
   }
 
   test.subHeading('Leaving is a change, and it is one key');
@@ -156,10 +157,11 @@ function run() {
   } else {
     test.fail('first.closed=' + first.closed + ' second.closed=' + second.closed);
   }
-  if (second.last('roster')) {
-    test.check('and the new one gets its roster');
+  if (L.box.presence.isPresent(john.publicKey) && !second.last('roster')) {
+    test.check('and the new one is live, with no roster sent to it either');
   } else {
-    test.fail('replacement got no roster');
+    test.fail('replacement: present=' + L.box.presence.isPresent(john.publicKey) +
+      ' roster=' + JSON.stringify(second.last('roster')));
   }
 
   // A teardown arriving late, after the same identity reconnected, must
@@ -292,15 +294,16 @@ function run() {
   // here too.
   //
   // What this still guards, and it is worth keeping: PRESENCE operations
-  // emit presence events and nothing else. A roster or a disconnect that
+  // emit presence events and nothing else. A connect or a disconnect that
   // started carrying a body would fail here, which is the accident the
-  // original fence was really about.
+  // original fence was really about. `roster` left the allowed list with
+  // cycle 3: its return would be a member list served, and fails here.
   const seen = {};
   bertSink.events().concat(johnSink.events()).forEach(function (e) {
     if (e.event) seen[e.event] = true;
   });
   const allowed = Object.keys(seen).every(function (name) {
-    return name === 'roster' || name === 'presence';
+    return name === 'presence';
   });
   if (allowed) {
     test.check('this suite drove only presence, and only presence was written: ' +

@@ -1,4 +1,5 @@
 'use strict';
+const rollOf = require('./rollOf');
 
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
@@ -89,11 +90,11 @@ test.startTest('Invites cycle 3 — mint and redeem on one keys-mode box');
   // AND THE LABEL MOVED TO THE KEY, which is the other half of it: the
   // invite is not lost, it became a row. Checked here because "deleted"
   // and "deleted and forgotten" would look identical without it.
-  const onCensus = box.who().filter(function (r) { return r.publicKey === saint.publicKey; });
+  const onCensus = rollOf(box).filter(function (r) { return r.publicKey === saint.publicKey; });
   if (onCensus.length === 1 && onCensus[0].publicLabel === 'saint') {
     test.check('and the label moved to the key that claimed it');
   } else {
-    test.fail('census: ' + JSON.stringify(box.who()));
+    test.fail('census: ' + JSON.stringify(rollOf(box)));
   }
 
   // Cycle 4 shut this door. The mint-and-burn above is untouched; what

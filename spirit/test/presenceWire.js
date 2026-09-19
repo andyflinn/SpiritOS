@@ -32,6 +32,7 @@ const presenceNode = require('../run/js/presenceNode');
 const { createPeerPost } = require('../run/js/peerPost');
 const buildStamp = require('../run/js/buildStamp');
 const { createRelay } = require('../run/js/relay');
+const rollOf = require('./rollOf');
 
 // A port is CHOSEN AT RUN TIME, not written down, and the server is
 // waited for rather than slept at.
@@ -212,19 +213,22 @@ async function run() {
   await sleep(1000);
   let seen = A.P.table();
 
+  // No roster since cycle 3 (0012 widened). The node seeds itself and the
+  // relay from the pinned relay key when the stream opens, so seeing
+  // itself green is the proof that a real socket opened.
   if (seen[lab.bert.publicKey] === true) {
-    test.check('a roster crosses a real socket and parses');
+    test.check('the stream opens over a real socket and the node sees itself');
   } else {
-    test.fail('no roster arrived: ' + JSON.stringify(seen));
+    test.fail('stream never opened: ' + JSON.stringify(seen));
   }
 
-  // The half that cannot be faked into existence: an absent member has
-  // to be IN the roster, or the node cannot tell red from white — and
-  // that is a property of what the RELAY sends, not of the parser.
-  if (seen[lab.house.publicKey] === false) {
-    test.check('and carries the members who are NOT there, marked absent');
+  // This asserted the opposite until cycle 3: that the roster carried the
+  // absent owner, marked absent. The relay names nobody who has not moved;
+  // an absent member is simply not asserted present.
+  if (seen[lab.house.publicKey] !== true) {
+    test.check('and an absent member is not asserted present — no roll is served');
   } else {
-    test.fail('absent member missing over the wire: ' + JSON.stringify(seen));
+    test.fail('absent member shown present: ' + JSON.stringify(seen));
   }
 
   test.subHeading('Arrivals and departures travel');
@@ -335,19 +339,18 @@ async function run() {
   // It has to answer as well, or a file on disk proves nothing about a
   // process: the key door is what says the box came back up.
   const said = await hub.relayRequest(BASE, 'GET', '/api/relay/key', null);
-  let table = null;
-  try {
-    table = JSON.parse(fs.readFileSync(
-      path.join(lab.runDir, 'relay-state', 'routingTable.json'), 'utf8'));
-  } catch (e) { table = null; }
-  const rows = Object.keys((table && table.peers) || {});
+  // relay.db since cycle 3, read through the store the way suites read
+  // the roll (rollOf.js), and closed so the tree can be removed on Windows.
+  let rows = [];
+  try { rows = rollOf(lab.runDir); } catch (e) { rows = []; }
+  try { require('../run/js/relayStore').closeAll(); } catch (e) { /* none open */ }
 
   if (said.status === 200 && rows.length) {
     test.check('and the relay that came back still knows who its members are: ' +
       rows.length + ' rows');
   } else {
     test.fail('after restart — key door ' + said.status +
-      ', routingTable rows ' + rows.length);
+      ', relay.db rows ' + rows.length);
   }
 }
 

@@ -1,4 +1,5 @@
 'use strict';
+const rollOf = require('./rollOf');
 
 // spirit/test/devicePeers.js
 // B2. One device for ANYONE with a row, not only the owner.
@@ -231,7 +232,7 @@ async function run() {
     const onDisk = fs.readFileSync(
       path.join(N.home, 'relay-state', 'allow.json'), 'utf8');
     const rowsHaveDevice = /devicePublicKey/.test(onDisk) ||
-      N.box.who().some(function (r) { return r.devicePublicKey; });
+      rollOf(N.box).some(function (r) { return r.devicePublicKey; });
     if (!rowsHaveDevice) {
       test.check('and no relay holds a copy — the binding exists in exactly one place');
     } else {
@@ -461,8 +462,8 @@ async function run() {
     const wanted = JSON.stringify({
       app: 'relay', v: 1, body: { invite: { label: 'stranger', days: 7, token: '' } },
     });
-    const minted = D.box.routePost('andy', relayKey, wanted,
-      auth.sign(handheld.privateKey, auth.postMessage('andy', relayKey, wanted)));
+    const minted = D.box.routePost(D.owner.publicKey, relayKey, wanted,
+      auth.sign(handheld.privateKey, auth.postMessage(D.owner.publicKey, relayKey, wanted)));
 
     // THE SECOND HALF IS WHAT MAKES THE FIRST MEAN ANYTHING: it proves
     // the refusal came from who signed, and not from a relay that refuses
@@ -491,7 +492,7 @@ async function run() {
   }
 
   const ownerStream = streaming(L.box, L.owner);
-  const ownerOffer = L.box.deviceOffer('andy', 'pw-owner', ownerPhone.publicKey);
+  const ownerOffer = L.box.deviceOffer(L.owner.publicKey, 'pw-owner', ownerPhone.publicKey);
   const ownerGot = offerOn(ownerStream);
   if (ownerGot && ownerGot.carried && ownerGot.carried.password === 'pw-owner') {
     test.check('and the owner, named, is offered to like everybody else');

@@ -37,6 +37,9 @@ const NOT_A_SUITE = [
   'testSupport.js', 'scenario.js', 'world.js', 'runAll.js',
   'labWorld.js', 'labPopulate.js', 'labMaster.js', 'setupRelayFakes.js',
   'relayProbe.js', 'startTestAndy.js', 'startTestBert.js', 'startTestRelay.js',
+  // A helper, not a suite: reads a relay's roll off its disc for the suites
+  // that inspect it (cycle 3).
+  'rollOf.js',
   // Fails on purpose: it is the worked example of what a failing check
   // looks like, and it would be the one permanent red in every run.
   'testTemplate.js',

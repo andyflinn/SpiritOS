@@ -165,11 +165,12 @@ async function run() {
   test.subHeading('Reading the protocol, including the parts that look like nothing');
 
   {
-    // Three frames down one stream: a heartbeat, a roster, and an event
-    // whose value must survive the space after the colon.
+    // Three frames down one stream: a heartbeat, a reply, and an event
+    // whose value must survive the space after the colon. (The first frame
+    // was a roster until cycle 3 removed the word; the parser never cared.)
     const fed = feeds([
       ':\n\n' +
-      'event: roster\ndata: {"members":[]}\n\n' +
+      'event: reply\ndata: {"members":[]}\n\n' +
       'event: presence\ndata: {"key":"abc"}\n\n',
     ]);
     await new Promise(function (r) { setTimeout(r, 30); });
@@ -186,7 +187,7 @@ async function run() {
     }
 
     const roster = fed.events[0];
-    if (roster && roster.event === 'roster' && roster.data && Array.isArray(roster.data.members)) {
+    if (roster && roster.event === 'reply' && roster.data && Array.isArray(roster.data.members)) {
       test.check('an event carries its name and its parsed data');
     } else {
       test.fail('roster: ' + JSON.stringify(roster));
@@ -783,14 +784,12 @@ async function run() {
     test.fail('job: ' + JSON.stringify(jobs.job));
   }
 
-  relaySays('http://a', 'roster', { members: [
-    { key: 'bert', present: false },
-    { key: 'john', present: true },
-  ] });
-  relaySays('http://b', 'roster', { members: [
-    { key: 'bert', present: true },
-    { key: 'zoe', present: false },
-  ] });
+  // Broadcasts, one key at a time: the relay serves no member list since
+  // cycle 3 (0012 widened), so this is the only way a node learns anything.
+  relaySays('http://a', 'presence', { key: 'bert', present: false });
+  relaySays('http://a', 'presence', { key: 'john', present: true });
+  relaySays('http://b', 'presence', { key: 'bert', present: true });
+  relaySays('http://b', 'presence', { key: 'zoe', present: false });
 
   const merged = P.table();
   if (merged.john === true && merged.zoe === false) {
@@ -820,14 +819,20 @@ async function run() {
   test.subHeading('The shell hears about changes, and only changes');
 
   const before = jobs.updates.length;
-  relaySays('http://a', 'roster', { members: [
-    { key: 'bert', present: false },
-    { key: 'john', present: true },
-  ] });
+  relaySays('http://a', 'presence', { key: 'john', present: true });
   if (jobs.updates.length === before) {
-    test.check('an identical roster publishes nothing — a quiet relay is not news');
+    test.check('a repeated broadcast publishes nothing — a quiet relay is not news');
   } else {
-    test.fail('republished on an identical roster');
+    test.fail('republished on a repeated broadcast');
+  }
+
+  // A relay from before cycle 3 still sends a roster on connect. It is
+  // ignored, not merged: a list of members is not something a node takes.
+  relaySays('http://a', 'roster', { members: [{ key: 'intruder', present: true }] });
+  if (!('intruder' in P.table()) && jobs.updates.length === before) {
+    test.check('a roster from an old relay is ignored — no member list is taken');
+  } else {
+    test.fail('roster was merged: ' + JSON.stringify(P.table()));
   }
 
   relaySays('http://a', 'presence', { key: 'john', present: false });
@@ -840,7 +845,7 @@ async function run() {
   test.subHeading('A relay we cannot reach stops asserting');
 
   // The failure that would make the NODE the liar rather than the relay:
-  // keeping a dead relay's last roster would hold peers green minutes
+  // keeping a dead relay's last word would hold peers green minutes
   // after the connection died.
   relaySays('http://b', 'presence', { key: 'zoe', present: true });
   if (P.table().zoe === true) test.check('zoe is reachable while b is connected');

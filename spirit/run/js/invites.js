@@ -1,14 +1,11 @@
 'use strict';
 
-// relay-state/invites.json — never git.
-// [
-//   {
-//     "token": "hex",
-//     "label": "saint",
-//     "expiresAt": "2026-09-20T00:00:00.000Z",
-//     "invitedBy": "andy"
-//   }
-// ]
+// The relay's invites — the `invites` table in relay-state/relay.db since
+// cycle 3 (relayStore.js). It was relay-state/invites.json until then; a
+// relay that still has that file imports it once (D8). A row:
+//
+//   { "token": "hex", "label": "saint",
+//     "expiresAt": "2026-09-20T00:00:00.000Z", "invitedBy": "andy" }
 //
 // A WAITING ROOM, NOT A GUESTBOOK.
 //
@@ -37,26 +34,13 @@
 // Where the label goes is the other half of Andy's sentence, and it was
 // always true: `claim` writes the peer row, and the label lives there.
 
-const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
-
-function invitesPath(rootDir) {
-  return path.join(rootDir, 'relay-state', 'invites.json');
-}
+// On disc, and read by query (cycle 3). The same store relay.js holds, so
+// both see one connection.
+const relayStore = require('./relayStore');
 
 function load(rootDir) {
-  try {
-    const parsed = JSON.parse(fs.readFileSync(invitesPath(rootDir), 'utf8'));
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function save(rootDir, rows) {
-  fs.mkdirSync(path.join(rootDir, 'relay-state'), { recursive: true });
-  fs.writeFileSync(invitesPath(rootDir), JSON.stringify(rows, null, 2));
+  return relayStore.open(rootDir).invites.all();
 }
 
 function newToken() {
@@ -103,9 +87,7 @@ function add(rootDir, opts) {
     expiresAt: (opts && opts.expiresAt) || new Date(Date.now() + days * 86400000).toISOString(),
     invitedBy: (opts && opts.invitedBy) || '',
   };
-  const rows = load(rootDir);
-  rows.push(row);
-  save(rootDir, rows);
+  relayStore.open(rootDir).invites.add(row);
   return row;
 }
 
@@ -113,29 +95,13 @@ function match(rootDir, token, label) {
   const t = String(token || '').trim();
   const n = String(label || '').trim();
   if (!t || !n) return { ok: false, status: 403, error: 'invite required' };
-  const row = load(rootDir).find(function (r) { return r.token === t; });
+  const row = relayStore.open(rootDir).invites.get(t);
   // A SPENT TOKEN IS NOW `not found`, and that is the better answer. The
   // check that stood here said `invite already used`, which confirmed to
   // whoever held a dead token that it had been real and had been spent.
   // Saying less is correct, and it costs nothing: the row is gone, so
   // there is no second state to distinguish.
   if (!row) return { ok: false, status: 403, error: 'invite not found' };
-
-  // DEPRECATED(D4, expires: alpha) — rows the old `consume` stamped.
-  // See design/DEPRECATIONS.md (decision 0014).
-  // LEGACY ROWS FROM BEFORE SPENT MEANT GONE, and this line is load-
-  // bearing on exactly one day: the day a running relay takes this code.
-  //
-  // A box upgrading in place still has rows the old `consume` stamped
-  // rather than deleted. Without this, every spent-but-not-yet-expired
-  // token on that box becomes live again the moment it restarts — because
-  // nothing else looks at `consumedAt` any more. Verified against a real
-  // spirit-3-shaped row before it was written.
-  //
-  // Not residue and not a second state: no new row can ever have this
-  // field. sweepExpired drains the old ones, and when the last invite
-  // minted before the change has expired this can go.
-  if (row.consumedAt) return { ok: false, status: 403, error: 'invite not found' };
 
   if (row.label !== n) return { ok: false, status: 403, error: 'invite label mismatch' };
   if (Date.parse(row.expiresAt) < Date.now()) {
@@ -147,10 +113,10 @@ function match(rootDir, token, label) {
 // SPENT IS GONE. The row is returned to the caller — claim still needs
 // the label it was for — and then it is not on this box any more.
 function consume(rootDir, token) {
-  const rows = load(rootDir);
-  const row = rows.find(function (r) { return r.token === token; });
+  const store = relayStore.open(rootDir);
+  const row = store.invites.get(token);
   if (!row) return null;
-  save(rootDir, rows.filter(function (r) { return r !== row; }));
+  store.invites.remove(token);
   return row;
 }
 
@@ -181,11 +147,7 @@ function consume(rootDir, token) {
 function revokeInvite(rootDir, label) {
   const n = String(label || '').trim();
   if (!n) return 0;
-  const rows = load(rootDir);
-  const kept = rows.filter(function (r) { return r.label !== n; });
-  const gone = rows.length - kept.length;
-  if (gone) save(rootDir, kept);
-  return gone;
+  return relayStore.open(rootDir).invites.removeLabel(n);
 }
 
 // The other half of "cannot forget": an expired invite is refused for
@@ -198,24 +160,10 @@ function revokeInvite(rootDir, label) {
 // matters are the moments something touches it.
 function sweepExpired(rootDir, nowMs) {
   const now = nowMs == null ? Date.now() : nowMs;
-  const rows = load(rootDir);
-  // `if (r.consumedAt) return true;` stood here and was the reason this
-  // function could not do its job: it protected exactly the rows that had
-  // no reason left to exist.
-  //
-  // DEPRECATED(D4, expires: alpha) — draining the stamped rows.
-  // It is now the opposite — a stamped row is a LEGACY row, from before
-  // spent meant gone, and it goes on sight whatever its expiry says. That
-  // is the migration: a relay upgrading in place drains its old guestbook
-  // the first time anything touches this file, rather than carrying it
-  // until each row times out. `match` refuses them in the meantime.
-  const kept = rows.filter(function (r) {
-    if (r.consumedAt) return false;
-    return Date.parse(r.expiresAt) >= now;
-  });
-  const gone = rows.length - kept.length;
-  if (gone) save(rootDir, kept);
-  return gone;
+  // Spent invites are deleted when spent, so an expired one is the only
+  // kind left to sweep. (Rows the old `consume` stamped instead of deleting
+  // were D4; the one-time import (D8) does not carry them.)
+  return relayStore.open(rootDir).invites.sweepExpired(new Date(now).toISOString());
 }
 
 module.exports = {

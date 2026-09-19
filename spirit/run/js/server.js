@@ -1054,6 +1054,9 @@ common.refuseListenError(server, port, 'js/server.js');
   });
 
   presence = require('./presenceNode').createPresence({
+    // The node filters what the relay broadcasts (cycle 3): only its own
+    // contacts are kept on its presence picture.
+    knows: function (key) { return !!contactBook.byPublicKey(ROOT_DIR, key); },
     rootDir: ROOT_DIR,
     jobs: jobs,
     router: peerRouter,

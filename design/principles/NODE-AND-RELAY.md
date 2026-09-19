@@ -2285,7 +2285,9 @@ shape.
 | before separate shipping | — | version tolerance (§7) | |
 
 **Cycles 2–5 agreed "for now", cycle 2 locked in** (Andy, 2026-09-19).
-Cycle 2 closed the same day.
+Cycle 2 closed the same day. Cycle 3 Part A (disc, RAM its client) is done;
+Part B (the owner's token) is next —
+[the cycle](../cycles/2026-09-19-disc-and-owner-token-cycle-3.md).
 
 > **Andy (2026-09-19), on cycle 3:** *"Can we amend cycle 3 to demand that
 > storage is actually moved from RAM to DISC, and RAM must become a
@@ -2300,7 +2302,9 @@ runs Node v25.9.0 at `/usr/bin/node`, Ubuntu 24.04.4 (Andy, 2026-09-19)**,
 past the floor; v25 is an odd, non-LTS line and the workstation runs 24 LTS,
 so moving spirit-3 to 24 is recommended but not required; a live
 database has side files (`-wal`, `-shm`) that a file-copy backup or a test
-fixture must not catch mid-write; the one-time import keeps the old JSON as
+fixture must not catch mid-write (*this corrects that note: cycle 3 chose
+the rollback journal, not WAL, so after each commit the data is in
+`relay.db` alone — see relayStore.js*); the one-time import keeps the old JSON as
 a renamed backup; and until cycle 4's monitor, a read-only dump tool over
 SSH replaces `cat routingTable.json`.
 The optimization rows stay unordered until the scaffolding is done.

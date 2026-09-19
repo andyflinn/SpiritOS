@@ -64,7 +64,10 @@ function report(opts) {
   var snap = o.snapshot || {};
   var proc = o.proc || {};
 
-  var peers = Array.isArray(snap.peers) ? snap.peers : [];
+  // A number since cycle 3 (a count query); an array is still accepted from
+  // a caller that hands one in.
+  var peerCount = typeof snap.peers === 'number' ? snap.peers
+    : (Array.isArray(snap.peers) ? snap.peers.length : 0);
   var present = Array.isArray(o.present) ? o.present : [];
 
   // Presence is counted against the roster, not reported raw: a relay
@@ -78,7 +81,7 @@ function report(opts) {
     key: snap.relayPublicKey || '',
     version: o.version || '',
 
-    peers: peers.length,
+    peers: peerCount,
     present: present.length,
 
     // In flight right now: posts registered and not yet answered. The

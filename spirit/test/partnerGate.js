@@ -1,4 +1,5 @@
 'use strict';
+const rollOf = require('./rollOf');
 
 // spirit/test/partnerGate.js
 // TWO RELAYS, ONE PROCESS, NO SOCKETS — and the one hop, enforced.
@@ -127,7 +128,7 @@ test.subHeading('A partner is admitted, and is not a member');
 {
   // It has no row, no label, and never appears in a census — the partner
   // is recognised only by the key it signs with.
-  const census = B.box.who();
+  const census = rollOf(B.box);
   const asRow = (census.peers || census || []).filter(function (p) {
     return p && p.publicKey === A.key;
   });
@@ -243,7 +244,7 @@ test.subHeading('A member is unaffected, and still gets its own relay');
 
 {
   const heardByBella = [];
-  B.box.streamOpen('bella',
+  B.box.streamOpen(B.members.bella.publicKey,
     auth.sign(B.members.bella.privateKey, auth.streamMessage(B.members.bella.publicKey)),
     sinkFor(heardByBella));
 

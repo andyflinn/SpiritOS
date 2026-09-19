@@ -100,6 +100,13 @@ This directory contains the vision, principles, and architecture decisions for *
   `routes`, proven routes announced as keys, and nothing tunnelled that
   cannot survive the tunnel, in both directions; errors from the far side
   travel down the chain to the asker, signed by the relay.
+- [2026-09-19 — the relay's data on disc, and the owner's token](cycles/2026-09-19-disc-and-owner-token-cycle-3.md)
+  — **OPEN; Part A done**, 8 requirements. Members, invites and the partner
+  roll are in `relay.db` (node:sqlite), and RAM is its client: 10,000 members
+  cost about the heap of 10. Every operation is by key; no roster is served,
+  so the relay broadcasts and the node filters. A read-only SSH dump is
+  included, and a relay that cannot open its store refuses to start. Part B,
+  the owner's first-claim token, is next.
 - `spirit/test/cycleRequirements.js` goes red if any requirement has neither a
   verification that exists nor a recorded deferral.
 

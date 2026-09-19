@@ -1,4 +1,5 @@
 'use strict';
+const rollOf = require('./rollOf');
 
 // spirit/test/ownerLog.js
 // WHAT THE BOX DID ABOUT WHO BELONGS ON IT — R2.
@@ -551,8 +552,8 @@ test.subHeading('And the relay still keeps nothing');
 
   const dir = path.join(L.home, 'relay-state');
   const files = fs.readdirSync(dir).sort();
-  const known = ['allow.json', 'identity.json', 'invites.json',
-    'pending-owner.json', 'routingTable.json'];
+  // relay.db holds the roll, the invites and the partner roll since cycle 3.
+  const known = ['allow.json', 'identity.json', 'pending-owner.json', 'relay.db'];
   const unexpected = files.filter(function (f) { return known.indexOf(f) === -1; });
   if (!unexpected.length) {
     test.check('the relay grew no new file for any of it — ' + files.join(', '));
@@ -561,11 +562,14 @@ test.subHeading('And the relay still keeps nothing');
   }
 
   // And the one file that could have quietly grown a history did not.
-  const table = fs.readFileSync(path.join(dir, 'routingTable.json'), 'utf8');
-  if (table.indexOf(PHONE) === -1 && Object.keys(JSON.parse(table)).join() === 'peers') {
-    test.check('and routingTable.json still holds peers and nothing else');
+  // Read as bytes, so a deleted row's leftovers would show too: the store
+  // runs with secure_delete, and a spent invite's label must not survive
+  // in a free page of the file (cycle 3).
+  const table = fs.readFileSync(path.join(dir, 'relay.db')).toString('latin1');
+  if (table.indexOf(PHONE) === -1) {
+    test.check('and relay.db holds no trace of the phone number the spent invite carried');
   } else {
-    test.fail('routingTable.json: ' + Object.keys(JSON.parse(table)).join(','));
+    test.fail("the spent invite’s label is still in relay.db");
   }
 }
 
@@ -788,7 +792,7 @@ test.subHeading('Partnership — the flag, and nothing routes differently yet');
   // NOT IN THE PUBLIC CENSUS. A partnership is a public statement of
   // association between two relays, and nothing needs a stranger to read
   // one yet — it travels in the owner's report instead.
-  const row = box.who().filter(function (p) { return p.publicKey === her.publicKey; })[0];
+  const row = rollOf(box).filter(function (p) { return p.publicKey === her.publicKey; })[0];
   if (row && !row.partner) {
     test.check('while the public census says nothing about it — that is the owner’s business');
   } else {
@@ -820,8 +824,13 @@ test.subHeading('Partnership — the flag, and nothing routes differently yet');
   // So the owner's row IS promotable now — that is a fleet, twenty
   // relays one person operates and meshes — and what is refused is the
   // box itself, by its own relay key.
-  const fleet = box.setPartner(owner, owner.publicKey, THEIR_URL, THEIR_RELAY_KEY, 'H');
-  if (fleet.ok && fleet.partner && fleet.partner.relayKey === THEIR_RELAY_KEY) {
+  // A SECOND RELAY, with a key of its own. The partner roll is keyed by
+  // relay key since cycle 3 (NODE-AND-RELAY §5), so one relay is one row —
+  // two members cannot both be "the" partner at one relay key, which the
+  // flag-on-a-member-row model silently allowed.
+  const OWNERS_OTHER_RELAY = 'MCowBQYDK2VwAyEAownersSECONDrelayKEYxxxxxxxxxxxxxxx=';
+  const fleet = box.setPartner(owner, owner.publicKey, THEIR_URL, OWNERS_OTHER_RELAY, 'H');
+  if (fleet.ok && fleet.partner && fleet.partner.relayKey === OWNERS_OTHER_RELAY) {
     test.check('the owner’s own row CAN be a partner — one person may own both relays');
   } else {
     test.fail('an owner could not partner their own second relay: ' + JSON.stringify(fleet));

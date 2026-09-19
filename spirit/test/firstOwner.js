@@ -1,4 +1,5 @@
 'use strict';
+const rollOf = require('./rollOf');
 
 const fs = require('fs');
 const os = require('os');
@@ -145,7 +146,7 @@ test.startTest('First claim is owner; chat to reserved name relay');
   // reads since R3. The flag on the row and the name in allow.json are
   // written by the same claim and must agree — a badge read off a census
   // that disagreed with `ownerName` would be a second authority.
-  const ownerRow = box2.who().filter(function (p) { return p.owner; });
+  const ownerRow = rollOf(box2).filter(function (p) { return p.owner; });
   if (ownerRow.length === 1 && ownerRow[0].publicKey === id.publicKey) {
     test.check('and the census marks that key as owner, with no credential asked');
   } else {

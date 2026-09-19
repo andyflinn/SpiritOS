@@ -1,4 +1,5 @@
 'use strict';
+const rollOf = require('./rollOf');
 
 // spirit/test/relayKeyDoor.js
 // WHO THIS RELAY IS, FROM THE SMALLEST THING THAT KNOWS.
@@ -96,7 +97,7 @@ function nodeAgainst(box, opts) {
         return Promise.resolve({
           status: 200,
           text: JSON.stringify({
-            peers: box.who(),
+            peers: rollOf(box),
             relayPublicKey: box.relayPublicKey(),
             relayLabel: box.relayLabel(),
           }),
@@ -232,7 +233,7 @@ N.answerer.relayKey('https://relay.example').then(function (key) {
       }
 
       const census = JSON.stringify({
-        peers: big.box.who(),
+        peers: rollOf(big.box),
         relayPublicKey: big.box.relayPublicKey(),
         relayLabel: big.box.relayLabel(),
       }).length;

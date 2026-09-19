@@ -239,6 +239,11 @@ the argument for collapsing the other four:
 
 ## The register
 
+> **`roster` deleted 2026-09-19 (cycle 3).** It sent the whole roll to each
+> identity as its stream opened — a served member list, which 0012 (widened)
+> forbids. A roll is reached by key or by search; a node learns presence from
+> `presence` broadcasts and filters them by its own contacts.
+
 Every way of speaking on this wire, and what each one is. A new entry
 requires a decision; `spirit/test/protocolSurface.js` goes red if the tree
 holds one this list does not.
@@ -266,7 +271,6 @@ A door is a way of speaking. So is a word said through it.
 
 | event | what it is |
 |---|---|
-| `roster` | who this relay holds, sent to one identity as its stream opens |
 | `presence` | one member arrived or left — broadcast |
 | `route` | a route this relay **proved** — it carried a packet to that key through that partner and a reply came back signed by it. Broadcast, and forgotten here: the members that care write it down (0013) |
 | `request` | a packet being delivered to the peer it is addressed to |

@@ -189,9 +189,9 @@ test.subHeading('Delivery: the owner\'s sink, and no other');
     };
   }
 
-  const ownerOpen = relay.streamOpen('andy',
+  const ownerOpen = relay.streamOpen(owner.publicKey,
     auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)), sinkFor('andy'));
-  const friendOpen = relay.streamOpen('bella',
+  const friendOpen = relay.streamOpen(friend.publicKey,
     auth.sign(friend.privateKey, auth.streamMessage(friend.publicKey)), sinkFor('bella'));
 
   if (!ownerOpen.ok || !friendOpen.ok) {
@@ -222,8 +222,10 @@ test.subHeading('Delivery: the owner\'s sink, and no other');
   // a relay whose stream is broken. She must be hearing the ordinary
   // traffic.
   const friendHeard = heard.bella.map(function (m) { return m.event; });
-  if (friendHeard.indexOf('roster') !== -1 && friendHeard.indexOf('presence') !== -1) {
-    test.check('while still hearing the roster and presence, so this is silence about ONE thing, not a dead stream');
+  // Presence alone since cycle 3: the roster (the whole roll, to every
+  // member on connect) was deleted — 0012 widened.
+  if (friendHeard.indexOf('presence') !== -1) {
+    test.check('while still hearing presence, so this is silence about ONE thing, not a dead stream');
   } else {
     test.fail('bella heard: ' + friendHeard.join(', '));
   }
@@ -252,7 +254,7 @@ test.subHeading('Delivery: the owner\'s sink, and no other');
   // A quiet relay with nobody watching must not be doing work. The
   // owner leaving is the common case — a laptop closing — and the
   // report has nowhere to go afterwards.
-  relay.streamClose('andy', null);
+  relay.streamClose(owner.publicKey, null);
   const before = heard.andy.length;
   const sentWithNobodyHome = relay.statusToOwner();
   if (sentWithNobodyHome === false && heard.andy.length === before) {

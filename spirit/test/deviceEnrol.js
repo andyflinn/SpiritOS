@@ -138,7 +138,7 @@ async function theRelayPostsAsItself() {
     return;
   }
 
-  const offering = box.deviceOffer('andy', password, phone.publicKey);
+  const offering = box.deviceOffer(owner.publicKey, password, phone.publicKey);
   const got = offerOn(held);
 
   // NOT A DEVICE EVENT. The same `request` a peer's post arrives as, so
@@ -221,7 +221,7 @@ async function theRelayPostsAsItself() {
   const held2 = streaming(W2.box, W2.owner);
 
   async function answerWith(text) {
-    const waiting = W2.box.deviceOffer('andy', deviceAuth.load(home2).password, 'pk-x');
+    const waiting = W2.box.deviceOffer(W2.owner.publicKey, deviceAuth.load(home2).password, 'pk-x');
     const asked = offerOn(held2);
     replyTo(W2.box, W2.owner, asked.req, text);
     return waiting;
@@ -265,7 +265,7 @@ async function theRelayPostsAsItself() {
   deviceAuth.ensurePassword(W3.ownerHome());
   const began = Date.now();
   const away = await W3.box.deviceOffer(
-    'andy', deviceAuth.load(W3.ownerHome()).password, 'pk-away'
+    W3.owner.publicKey, deviceAuth.load(W3.ownerHome()).password, 'pk-away'
   );
   if (away && away.ok === false && away.error === 'not now') {
     test.check('with nobody streaming the offer is refused, not parked');
@@ -294,7 +294,7 @@ async function theRelayPostsAsItself() {
   const codes = [];
   for (let n = 0; n < 12; n += 1) {
     /* eslint-disable no-await-in-loop */
-    const r = await W3.box.deviceOffer('andy', 'x'.repeat(64), 'pk-flood');
+    const r = await W3.box.deviceOffer(W3.owner.publicKey, 'x'.repeat(64), 'pk-flood');
     codes.push(r && r.status);
   }
   // One was already spent above, so the tenth of these is the last one
@@ -309,7 +309,7 @@ async function theRelayPostsAsItself() {
   // now` on purpose; this one is temporary, and a page that can tell the
   // difference waits rather than telling somebody their password is
   // wrong.
-  const flooded = await W3.box.deviceOffer('andy', 'x'.repeat(64), 'pk-flood');
+  const flooded = await W3.box.deviceOffer(W3.owner.publicKey, 'x'.repeat(64), 'pk-flood');
   if (flooded.status === 429 && flooded.error !== 'not now') {
     test.check('and it says so, which is what makes the page wait rather than give up');
   } else {
@@ -378,7 +378,7 @@ async function oneDeviceEveryRelay() {
   // The browser knocks on the SECOND relay, and the node is streaming on
   // it — which is how the offer reaches the node at all.
   const held = streaming(second, owner);
-  const offering = second.deviceOffer('andy', password, phone.publicKey);
+  const offering = second.deviceOffer(owner.publicKey, password, phone.publicKey);
   const got = offerOn(held);
   if (!got) { test.fail('the offer never reached the node'); return; }
 
@@ -480,7 +480,7 @@ async function oneDeviceEveryRelay() {
   }
 
   const held2 = streaming(live, W2.owner);
-  const offering2 = live.deviceOffer('andy', deviceAuth.load(home2).password, phone2.publicKey);
+  const offering2 = live.deviceOffer(W2.owner.publicKey, deviceAuth.load(home2).password, phone2.publicKey);
   const got2 = offerOn(held2);
   const partial = await deviceTick.answerOffer(home2, got2.carried);
   replyTo(live, W2.owner, got2.req, answerText(partial));
@@ -599,7 +599,7 @@ async function rotationKillsTheOldPassword() {
   // THE WHOLE POINT, proved by use rather than by comparing strings: an
   // enrolment carrying the old password is refused.
   const held = streaming(W.box, W.owner);
-  const stale = W.box.deviceOffer('andy', old, phone.publicKey);
+  const stale = W.box.deviceOffer(W.owner.publicKey, old, phone.publicKey);
   const askedStale = offerOn(held);
   const saidStale = await deviceTick.answerOffer(home, askedStale.carried);
   replyTo(W.box, W.owner, askedStale.req, answerText(saidStale));
@@ -614,7 +614,7 @@ async function rotationKillsTheOldPassword() {
 
   // And the new one works, so this is not a check that simply breaks
   // enrolment.
-  const fresh = W.box.deviceOffer('andy', rotated.password, phone.publicKey);
+  const fresh = W.box.deviceOffer(W.owner.publicKey, rotated.password, phone.publicKey);
   const askedFresh = offerOn(held);
   const saidFresh = await deviceTick.answerOffer(home, askedFresh.carried);
   replyTo(W.box, W.owner, askedFresh.req, answerText(saidFresh));
@@ -738,7 +738,7 @@ async function run() {
   }
 
   const held = streaming(box, L.owner);
-  const offering = box.deviceOffer('andy', password, phone.publicKey);
+  const offering = box.deviceOffer(L.owner.publicKey, password, phone.publicKey);
   const got = offerOn(held);
   const did = await deviceTick.answerOffer(home, got.carried);
   replyTo(box, L.owner, got.req, answerText(did));
@@ -788,7 +788,7 @@ async function run() {
 
   const heldW = streaming(W.box, W.owner);
   const offerWrong = W.box.deviceOffer(
-    'andy', live.split('').reverse().join(''), phone.publicKey
+    W.owner.publicKey, live.split('').reverse().join(''), phone.publicKey
   );
   const gotW = offerOn(heldW);
   const rejected = await deviceTick.answerOffer(wrongHome, gotW.carried);

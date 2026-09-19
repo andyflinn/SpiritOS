@@ -79,6 +79,28 @@ common.verifyStartupCwd('js/relayServer.js');
 const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
 const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || DEFAULT_RELAY_PORT;
 
+// ── THE RELAY'S DATA IS ON DISC, OR THERE IS NO RELAY (cycle 3) ──────
+//
+// Members, invites and the partner roll live in relay-state/relay.db
+// through node:sqlite (relayStore.js), and RAM is its client — there is
+// no in-memory copy to fall back on. A Node too old to load the driver
+// (floor 22.13) cannot be a relay, and says so now rather than on the
+// first claim. The node never loads this module.
+const relayStore = require('./relayStore');
+if (!relayStore.available()) {
+  console.error('Refusing to start: node:sqlite is not available in Node ' +
+    process.version + ' — a relay needs 22.13 or later (relayStore.js)');
+  process.exit(1);
+}
+// Opened here, not on the first request, so a store that cannot be opened
+// — a pre-cycle-3 file that cannot be imported — stops the start instead
+// of the first member who knocks.
+try { relayStore.open(spirit.core.node.const.ROOT_DIR); }
+catch (e) {
+  console.error('Refusing to start: ' + e.message);
+  process.exit(1);
+}
+
 // ── THE OWNER'S BOUND, READ ONCE (cycle 1) ───────────────────────────
 //
 // relay-state/config.json, beside allow.json. Bounded by the box: a
@@ -553,6 +575,9 @@ common.refuseListenError(server, port, 'js/relayServer.js');
     catch (e) { /* already gone */ }
     console.log(`${signal} — told ${told} stream(s) to come back in 3s`);
     try { server.close(); } catch (e) { /* not listening */ }
+    // Every commit is already on disc (synchronous=FULL); closing is so
+    // the journal is gone before the next process opens the file.
+    try { relayStore.closeAll(); } catch (e) { /* never opened */ }
     process.exit(0);
   };
   process.on('SIGTERM', function () { goodbye('SIGTERM'); });

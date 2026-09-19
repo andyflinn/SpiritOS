@@ -1,4 +1,5 @@
 'use strict';
+const rollOf = require('./rollOf');
 
 // spirit/test/worldBuilder.js
 // The thing every other suite now stands on.
@@ -142,7 +143,7 @@ function run() {
   });
   if (!L.ok) { test.fail(L.error); test.reportSuccessFailureCount(); return; }
 
-  const roster = L.box.who().map(function (p) { return p.publicLabel || p.name; }).sort();
+  const roster = rollOf(L.box).map(function (p) { return p.publicLabel || p.name; }).sort();
   if (roster.join(',') === 'andy,bert,john,john') {
     test.check('three peers and an owner are on the box, and both johns are there');
   } else {
@@ -207,10 +208,10 @@ function run() {
   // on "key already claimed". Every visual scenario in the tree does
   // exactly this.
   const folded = world.build({ peers: [{ name: 'bella', on: ['lab', 'live'] }] });
-  if (folded.ok && folded.box.who().length === 2) {
+  if (folded.ok && rollOf(folded.box).length === 2) {
     test.check('a peer on both `lab` and `live` joins the one in-process relay exactly once');
   } else {
-    test.fail('folding: ' + (folded.ok ? folded.box.who().length + ' rows' : folded.error));
+    test.fail('folding: ' + (folded.ok ? rollOf(folded.box).length + ' rows' : folded.error));
   }
 
   // CLAIM_PER_MIN is 10, keyed on the address. One address for everybody
@@ -219,19 +220,19 @@ function run() {
   const names = [];
   for (let i = 0; i < 14; i++) names.push('p' + i);
   const crowd = world.build({ peers: names });
-  if (crowd.ok && crowd.box.who().length === 15) {
+  if (crowd.ok && rollOf(crowd.box).length === 15) {
     test.check('and fourteen peers all get on, because each claims from its own address');
   } else {
-    test.fail('crowd: ' + (crowd.ok ? crowd.box.who().length + ' of 15' : crowd.error));
+    test.fail('crowd: ' + (crowd.ok ? rollOf(crowd.box).length + ' of 15' : crowd.error));
   }
 
   test.subHeading('Nobody has claimed, and somebody leaves');
 
   const empty = world.build(scenario.UNCLAIMED);
-  if (empty.ok && empty.owner === null && empty.box.who().length === 0) {
+  if (empty.ok && empty.owner === null && rollOf(empty.box).length === 0) {
     test.check('an unclaimed relay has no owner and no rows — the state first-run needs');
   } else {
-    test.fail('unclaimed: ' + JSON.stringify(empty.ok && empty.box.who()));
+    test.fail('unclaimed: ' + JSON.stringify(empty.ok && rollOf(empty.box)));
   }
 
   // The step that produces the third presence colour. A peer that is
@@ -241,7 +242,7 @@ function run() {
     peers: ['bert', 'zoe'],
     then: [{ remove: 'zoe', from: 'lab' }],
   });
-  const left = after.ok && after.box.who().map(function (p) { return p.publicLabel || p.name; });
+  const left = after.ok && rollOf(after.box).map(function (p) { return p.publicLabel || p.name; });
   if (after.ok && left.indexOf('zoe') === -1 && left.indexOf('bert') !== -1) {
     test.check('and a `then` removal actually takes the row away, which is the only way to white');
   } else {

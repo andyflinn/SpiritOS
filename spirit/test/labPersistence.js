@@ -11,7 +11,7 @@
 // that half cannot be asked any more.
 //
 // What survives is the better subject, and STATE.md said so before this
-// was written: routingTable.json holds `peers` and nothing else now. A
+// was written: the relay holds its roll and nothing else (relay.db since cycle 3). A
 // relay's whole memory is who has a row on it, so "does it still know
 // after a restart" is a sharper question than it was when the answer
 // could also have come from a message queue.
@@ -76,12 +76,26 @@ async function waitServing(timeoutMs) {
   }
 }
 
+// relay.db since cycle 3, opened read-only and closed at once so the
+// running relay and labMaster's cleanup never meet a handle of ours.
+// Answers the shape routingTable.json had — `peers` by key — plus the
+// database's table names, which is what "keeps nothing else" means now.
 function routingTable() {
+  let db = null;
   try {
-    return JSON.parse(fs.readFileSync(
-      path.join(relayHome, 'relay-state', 'routingTable.json'), 'utf8'));
+    const { DatabaseSync } = require('node:sqlite');
+    db = new DatabaseSync(path.join(relayHome, 'relay-state', 'relay.db'), { readOnly: true });
+    const peers = {};
+    db.prepare('SELECT publicKey, publicLabel, owner FROM members').all().forEach(function (r) {
+      peers[r.publicKey] = { publicLabel: r.publicLabel, owner: !!r.owner };
+    });
+    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all()
+      .map(function (t) { return t.name; }).sort();
+    return { peers: peers, tables: tables };
   } catch (e) {
     return null;
+  } finally {
+    if (db) { try { db.close(); } catch (e) { /* closed */ } }
   }
 }
 
@@ -129,19 +143,20 @@ async function run() {
   if (row && row.owner === true && row.publicLabel === 'andy') {
     test.check('and it is written down, under his KEY, before anything is asked to restart');
   } else {
-    test.fail('routingTable.json after the claim: ' + JSON.stringify(onDisk));
+    test.fail('relay.db after the claim: ' + JSON.stringify(onDisk));
   }
 
-  // THE WHOLE FILE, and this is the half the old suite could not assert
-  // because the file used to hold mail too. `peers` is a relay's entire
-  // memory now (decision 0006 — it stores nothing on anyone's behalf),
-  // so anything ELSE appearing here is a relay that has started keeping
-  // something, which is the thing that must not happen quietly.
-  const kept = onDisk ? Object.keys(onDisk).sort() : [];
-  if (kept.length === 1 && kept[0] === 'peers') {
-    test.check('and `peers` is the only thing in it — a relay keeps the routing table and no more');
+  // THE WHOLE DATABASE, and this is the half the old suite could not
+  // assert because the file used to hold mail too. Since cycle 3 it is
+  // three tables — the roll, the invites the owner minted, the partner
+  // roll — all the relay's own bookkeeping (decision 0006 — it stores
+  // nothing on anyone's behalf), so a fourth table is a relay that has
+  // started keeping something, which must not happen quietly.
+  const kept = onDisk ? onDisk.tables : [];
+  if (kept.join(',') === 'invites,members,partners') {
+    test.check('and the roll, invites and partners are all it holds — no table on anyone else’s behalf');
   } else {
-    test.fail('routingTable.json holds: ' + JSON.stringify(kept) +
+    test.fail('relay.db holds: ' + JSON.stringify(kept) +
       ' — a relay stores nothing on anyone else’s behalf (decision 0006)');
   }
 
@@ -187,7 +202,7 @@ async function run() {
   if (survived && survived.owner === true) {
     test.check('andy still holds his row — by KEY, which is what a row is');
   } else {
-    test.fail('routingTable.json after restart: ' +
+    test.fail('relay.db after restart: ' +
       JSON.stringify(Object.keys((reread && reread.peers) || {})
         .map(function (k) { return String(k).slice(-8); })));
   }

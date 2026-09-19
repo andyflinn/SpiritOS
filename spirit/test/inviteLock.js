@@ -1,4 +1,5 @@
 'use strict';
+const rollOf = require('./rollOf');
 
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
@@ -74,9 +75,9 @@ test.startTest('Invites cycle 4 — keys-mode extra claim needs invite');
     test.fail('johns: ' + JSON.stringify({ a: a, b: b }));
   }
 
-  const listed = box.who().filter(function (p) { return p.publicLabel === 'john'; });
+  const listed = rollOf(box).filter(function (p) { return p.publicLabel === 'john'; });
   if (listed.length === 2) test.check('who still lists two johns');
-  else test.fail('who: ' + JSON.stringify(box.who()));
+  else test.fail('who: ' + JSON.stringify(rollOf(box)));
 }
 
 test.reportSuccessFailureCount();

@@ -230,7 +230,8 @@ function run() {
 
   // The relay is a router. What it held during the round trip is gone,
   // and none of it was ever the message.
-  const disk = fs.readFileSync(path.join(L.home, 'relay-state', 'routingTable.json'), 'utf8');
+  // The relay's whole disc, read as bytes: relay.db since cycle 3.
+  const disk = fs.readFileSync(path.join(L.home, 'relay-state', 'relay.db')).toString('latin1');
   if (disk.indexOf('"ping"') === -1 && disk.indexOf('pong') === -1) {
     test.check('no routed body reached the disk');
   } else {

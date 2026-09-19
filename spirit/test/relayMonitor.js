@@ -1,4 +1,5 @@
 'use strict';
+const rollOf = require('./rollOf');
 
 // spirit/test/relayMonitor.js
 // A RELAY STREAMS ITS ACTIVITY ONLY WHILE SOMEBODY IS WATCHING.
@@ -84,8 +85,8 @@ function world() {
   });
 
   const heard = { andy: [], bella: [] };
-  box.streamOpen('andy', auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)), sinkFor(heard.andy));
-  box.streamOpen('bella', auth.sign(bella.privateKey, auth.streamMessage(bella.publicKey)), sinkFor(heard.bella));
+  box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)), sinkFor(heard.andy));
+  box.streamOpen(bella.publicKey, auth.sign(bella.privateKey, auth.streamMessage(bella.publicKey)), sinkFor(heard.bella));
 
   return { home: home, box: box, owner: owner, bella: bella, carl: carl, heard: heard };
 }
@@ -161,6 +162,7 @@ test.subHeading('Silent until asked');
     test.fail('row: ' + JSON.stringify(row));
   }
 
+  require('../run/js/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
@@ -203,6 +205,7 @@ test.subHeading('Silent until asked');
       ' said: ' + JSON.stringify(refused) + ' monitoring=' + w.box.monitoring());
   }
 
+  require('../run/js/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
@@ -246,6 +249,7 @@ test.subHeading('Stopping, both ways');
     test.fail('a stop signature started a monitor: ' + JSON.stringify(wrongWay));
   }
 
+  require('../run/js/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
@@ -255,7 +259,7 @@ test.subHeading('Stopping, both ways');
 
   // A BROWSER THAT CRASHED. There is no stop, and there never will be —
   // the socket closing is the only notice this relay gets.
-  w.box.streamClose('andy', null);
+  w.box.streamClose(w.owner.publicKey, null);
   post(w, w.bella, w.carl, 'while nobody watches');
 
   if (w.box.monitoring() === false) {
@@ -264,6 +268,7 @@ test.subHeading('Stopping, both ways');
     test.fail('the monitor outlived its watcher');
   }
 
+  require('../run/js/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
@@ -296,6 +301,7 @@ test.subHeading('Filtered at the source');
     test.fail('filter dropped what it should have kept');
   }
 
+  require('../run/js/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
@@ -329,6 +335,7 @@ test.subHeading('Filtered at the source');
     test.fail('an unreadable filter silenced the stream');
   }
 
+  require('../run/js/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
   fs.rmSync(w2.home, { recursive: true, force: true });
 })();
@@ -364,6 +371,7 @@ test.subHeading('Filtered at the source');
       ' monitoring=' + w.box.monitoring());
   }
 
+  require('../run/js/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
@@ -416,6 +424,7 @@ test.subHeading('The relay as a peer, for its owner');
     test.fail('answer: ' + replies[0].data.text);
   }
 
+  require('../run/js/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
@@ -469,25 +478,33 @@ test.subHeading('The relay as a peer, for its owner');
   // Nothing is given away by widening it. The key is already public at
   // /api/relay/who to anyone who asks — see the census check below, which
   // is a DIFFERENT claim and still stands.
-  const peerRoster = w.heard.bella.filter(function (m) { return m.event === 'roster'; });
-  const ownerRoster = w.heard.andy.filter(function (m) { return m.event === 'roster'; });
-  const inPeers = JSON.stringify(peerRoster).indexOf(relayKey) !== -1;
-  const inOwners = JSON.stringify(ownerRoster).indexOf(relayKey) !== -1;
-  if (inOwners && inPeers) {
-    test.check('the relay is in every member’s roster — it is a peer to each of them, not only to its owner');
+  //
+  // THE ROSTER WAS DELETED IN CYCLE 3 (0012 widened: no member list served,
+  // by request or by broadcast). What this guarded survives without it: a
+  // node learns the relay's key from its pin (GET /api/relay/key, seeded by
+  // presenceNode), and what matters HERE is that the relay answers any
+  // member who addresses it by that key — not only its owner.
+  const bellaAsks = JSON.stringify({ v: 1, body: { partners: true } });
+  const toRelay = w.box.routePost(w.bella.publicKey, relayKey, bellaAsks,
+    auth.sign(w.bella.privateKey, auth.postMessage(w.bella.publicKey, relayKey, bellaAsks)));
+  const noRoster = !w.heard.bella.some(function (m) { return m.event === 'roster'; }) &&
+    !w.heard.andy.some(function (m) { return m.event === 'roster'; });
+  if (toRelay && toRelay.ok && noRoster) {
+    test.check('a member who is not the owner addresses the relay by its key, and nobody is sent a roster');
   } else {
-    test.fail('owner has it: ' + inOwners + ', peer has it: ' + inPeers);
+    test.fail('member to relay: ' + JSON.stringify(toRelay) + ', roster absent: ' + noRoster);
   }
 
   // AND THE KEY IS STILL IN NO CENSUS. Addressable is not published — a
   // relay that listed itself would put its own key in every peer's roster.
-  const census = JSON.stringify(w.box.who());
+  const census = JSON.stringify(rollOf(w.box));
   if (census.indexOf(relayKey) === -1) {
     test.check('while the relay key stays out of the census — addressable is not published');
   } else {
     test.fail('the relay listed itself as a peer');
   }
 
+  require('../run/js/relayStore').closeAll();
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 

@@ -1,4 +1,5 @@
 'use strict';
+const rollOf = require('./rollOf');
 
 const fs = require('fs');
 const os = require('os');
@@ -185,7 +186,7 @@ test.subHeading('The invite proves; the claimer names themselves');
   // THE FINDING THIS CYCLE OPENED ON. Before R1 the peer row was written
   // `{name: n, publicLabel: n}` with n forced equal to the invite label,
   // and /api/relay/who hands publicLabel to anyone unsigned.
-  const census = JSON.stringify(box.who());
+  const census = JSON.stringify(rollOf(box));
   if (census.indexOf(PHONE) === -1) {
     test.check('and the phone number on the invite is nowhere in the census');
   } else {
@@ -320,14 +321,14 @@ test.subHeading('Dead invites do not accumulate on a box nobody administers');
   box.claim('andy', auth.sign(andy.privateKey, auth.claimMessage('andy')), andy.publicKey);
 
   function plantExpired(label, token) {
-    const rows = invites.load(home);
-    rows.push({
+    // Written straight into the store: the mint verb never makes an
+    // expired row, which is correct and makes one unmakeable through the
+    // door. (It was a hand-written invites.json until cycle 3 moved the
+    // waiting room into relay-state/relay.db.)
+    require('../run/js/relayStore').open(home).invites.add({
       token: token, label: label, invitedBy: 'andy',
       expiresAt: new Date(Date.now() - 60000).toISOString(),
     });
-    // Written straight in: invites.add clamps expiry to the future, which
-    // is correct and makes an expired row unmakeable through the door.
-    fs.writeFileSync(path.join(home, 'relay-state', 'invites.json'), JSON.stringify(rows));
   }
 
   // 1. A FAILED ATTEMPT STILL TIDIES. The claim is refused on expiry —
