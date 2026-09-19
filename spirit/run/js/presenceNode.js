@@ -112,6 +112,27 @@ function createPresence(opts) {
   // history of a box that is supposed to keep nothing.
   const statusByRelay = Object.create(null);
   const onRelayEvent = opts.onRelayEvent || null;
+
+  // The report nudge's pacing (cycle 1): url -> { last, pending }. At most
+  // one nudge a second per relay, and a trailing one for whatever arrived
+  // while it waited. Timers are unref'd — a pending nudge must never keep
+  // a stopping node alive.
+  const nudges = Object.create(null);
+  const NUDGE_MS = 1000;
+  function nudgeStatus(url) {
+    if (!onRelayEvent) return;
+    const n = nudges[url] || (nudges[url] = { last: 0, pending: null });
+    const fire = function () {
+      n.last = Date.now();
+      n.pending = null;
+      try { onRelayEvent({ kind: 'status', relay: url }); } catch (e) { /* a witness */ }
+    };
+    if (n.pending) return;
+    const wait = NUDGE_MS - (Date.now() - n.last);
+    if (wait <= 0) { fire(); return; }
+    n.pending = setTimeout(fire, wait);
+    if (n.pending && typeof n.pending.unref === 'function') n.pending.unref();
+  }
   // The membership half — see the `owner-event` branch below for why it
   // is a separate hook and not a kind on the one above.
   const onOwnerEvent = opts.onOwnerEvent || null;
@@ -248,7 +269,23 @@ function createPresence(opts) {
         // Kept, not acted on. The latest report per relay, overwritten
         // each time, so nothing accumulates and a node that never looks
         // holds exactly one object per relay it owns.
-        else if (msg.event === 'relay-status') statusByRelay[url] = msg.data;
+        else if (msg.event === 'relay-status') {
+          statusByRelay[url] = msg.data;
+          // AND THE PAGE IS NUDGED TO REDRAW (cycle 1). A Governor's lever
+          // move arrives only as a fresh report, and a monitor that
+          // redrew only on membership events would sit frozen through the
+          // very shed it exists to show. The nudge carries no report — the
+          // screen asks for what is true, as it always has — and it goes
+          // down this node's own page channel, not the relay wire: no new
+          // word in the protocol register.
+          //
+          // PACED, at most one a second per relay. A stress run pushes a
+          // report on every member connect — hundreds a minute — and a
+          // page reloading on each would spend the owner's node watching.
+          // The last report in a burst always gets its nudge, so the
+          // screen never settles on a stale picture.
+          nudgeStatus(url);
+        }
         // A WATCHED RELAY REPORTING ONE THING IT DID. Only arrives while
         // this node asked for it, and only from a relay it owns — the
         // rule is enforced at the far end where the owner's key is.

@@ -115,6 +115,16 @@ function report(opts) {
     // its cap is a different problem from both being spent.
     caps: o.caps || undefined,
 
+    // THE GOVERNOR (cycle 1). The owner's configured bound, the position
+    // of the one lever inside it (the connection allowance, in twelfths),
+    // and the last move with its reason. Absent rather than zeroed on a
+    // relay with no configuration, for the same reason as `meter`: "no
+    // Governor" and "a Governor that has not moved" must not be drawn the
+    // same.
+    ramLimitMB: typeof o.ramLimitMB === 'number' ? o.ramLimitMB : undefined,
+    levers: o.levers || undefined,
+    decision: o.decision || undefined,
+
     // THE RING, and it is here so that its disappearance is visible.
     // When R8 deletes send/inbox this number goes to zero and then the
     // field goes, and an owner watching a monitor sees the change rather

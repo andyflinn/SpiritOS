@@ -232,7 +232,7 @@ if (isNode()) {
   // path loadFile/scanFolder/the rest of the static route all share.
   // relayServer.js and serveCommon.js joined the list with cycle 0, when
   // the relay got its own startup module: same kind of file as server.js.
-  const UNSERVABLE_FILES = ['js/kernel.js', 'js/jobs.js', 'js/server.js', 'js/relayServer.js', 'js/serveCommon.js', 'js/relay.js', 'js/hub.js', 'js/relayAuth.js'];
+  const UNSERVABLE_FILES = ['js/kernel.js', 'js/jobs.js', 'js/server.js', 'js/relayServer.js', 'js/serveCommon.js', 'js/relayConfig.js', 'js/governor.js', 'js/relay.js', 'js/hub.js', 'js/relayAuth.js'];
   
   // Consolidates what saveFile/deleteFile each used to inline-check
   // separately. Path-only, caller-independent by design — see kernel.js's

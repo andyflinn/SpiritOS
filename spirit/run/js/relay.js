@@ -16,6 +16,8 @@ const deviceAuth = require('./deviceAuth');
 const presence = require('./presence');
 const routerTable = require('./router');
 const relayStatus = require('./relayStatus');
+// Cycle 1: the one-lever Governor. Pure; ticked by relayServer.js.
+const governorLib = require('./governor');
 // Once, at load, for the same reason server.js does it: the answer must
 // describe the code that is running, not the code on disk.
 const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
@@ -432,6 +434,20 @@ function createRelay(rootDir, deps) {
   // disk. `open()` performs the delivery itself, so nothing here can
   // forward a request it could not match the reply to (ROUTER.md §4b).
   var routes = routerTable.createRouter();
+
+  // ── THE GOVERNOR (cycle 1) ───────────────────────────────────────────
+  //
+  // Present only when the startup module handed this relay a
+  // configuration (relayServer.js reads relay-state/config.json). A relay
+  // built without one — every in-process suite — has no allowance and
+  // behaves exactly as it did before cycle 1.
+  //
+  // The lever is the connection allowance; the remedy is closing the
+  // longest-idle streams. See governor.js for the rule and why heapUsed
+  // governs, and design/cycles/2026-09-19-relay-governor-cycle-1.md.
+  var config = deps.config || null;
+  var governor = config ? governorLib.createGovernor({ ramLimitMB: config.ramLimitMB }) : null;
+  if (governor) presentNow.setAllowed(governor.allowed());
 
   function persist() {
     saveRoutingTable(rootDir, peers);
@@ -3158,6 +3174,13 @@ function createRelay(rootDir, deps) {
       // not built. Partners are told on the reply, per the one-bus rule,
       // and so need no announcement at all.
       caps: { memberPerMin: MEMBER_PER_MIN, partnerPerMin: partnerPerMin() },
+      // THE GOVERNOR'S HALF (cycle 1): the bound the owner configured,
+      // where the one lever sits inside it, and the last move with its
+      // reason — §4's "watch a lever move, read why". Absent on a relay
+      // with no configuration, so "no Governor" is not drawn as "idle".
+      ramLimitMB: governor ? governor.ramLimitMB : undefined,
+      levers: governor ? { connections: governor.state() } : undefined,
+      decision: governor ? (governor.lastDecision() || undefined) : undefined,
       // SWEPT BEFORE IT IS READ.
       //
       //   Andy: "anytime the UI askes for a list of pending invites, the
@@ -3287,7 +3310,12 @@ function createRelay(rootDir, deps) {
     //    for this identity, so it must be unreachable until the caller
     //    has proved they are that identity — otherwise anybody could
     //    knock any peer offline by connecting badly in their name.
-    var opened = presentNow.connect(who_.id, sink);
+    //
+    //    THE OWNER IS THE FLOOR OF THE ALLOWANCE (cycle 1): admitted
+    //    whatever the count, so the monitor never goes blind under the
+    //    load worth watching. Everyone else is measured against it and
+    //    refused with 503 when the relay is full.
+    var opened = presentNow.connect(who_.id, sink, who_.id === currentOwnerKey());
     if (!opened.ok) return opened;
 
     // 4. The roster, then the fact that this one arrived. Order matters
@@ -3304,6 +3332,57 @@ function createRelay(rootDir, deps) {
     //    Silent when the owner is not here — see statusToOwner.
     statusToOwner();
     return { ok: true, status: 200, id: who_.id, label: who_.label };
+  }
+
+  function currentOwnerKey() {
+    var ownerLabel = auth.ownerName(allow);
+    return (ownerLabel && allow.byName && allow.byName[ownerLabel]) || '';
+  }
+
+  // ── ONE GOVERNOR TICK (cycle 1) ──────────────────────────────────────
+  //
+  // Read the cheap numbers, let the Governor decide, carry out what it
+  // said, and tell the owner — the whole loop, and nothing it does is
+  // new to the wire: the allowance refuses with a status, the evicted
+  // streams close, their absence goes out as the ordinary `presence`
+  // event, and the decision rides the ordinary `relay-status` report.
+  //
+  // Returns the decision when the lever moved, null when it held. A relay
+  // with no configuration has no Governor, and this does nothing.
+  function governorTick(readings) {
+    if (!governor) return null;
+    var mem = readings;
+    if (!mem) {
+      try { mem = process.memoryUsage(); } catch (e) { mem = {}; }
+    }
+    var decision = governor.tick({
+      heapUsed: mem.heapUsed,
+      rss: mem.rss,
+      present: presentNow.present().length,
+    }, new Date().toISOString());
+    if (!decision) return null;
+
+    presentNow.setAllowed(decision.allowed);
+    var ownerKey = currentOwnerKey();
+    var closed = decision.close > 0
+      ? presentNow.evictIdlest(
+          decision.close,
+          // Spared: the owner (the floor), and any stream with a post in
+          // flight — closing it would lose a reply mid-air.
+          function (id) { return id === ownerKey || routes.countFor(id) > 0; },
+          // Last active = the member's most recent post, from the rate
+          // bucket this relay already keeps. No new record per member.
+          function (id) {
+            var hits = memberHits[id];
+            return hits && hits.length ? hits[hits.length - 1] : 0;
+          })
+      : [];
+    closed.forEach(function (id) {
+      presentNow.broadcast('presence', { key: id, present: false });
+    });
+    decision.closed = closed.length;
+    statusToOwner();
+    return decision;
   }
 
   // Idempotent, because both `close` and `error` fire on a dying socket
@@ -3361,6 +3440,10 @@ function createRelay(rootDir, deps) {
     // nothing else does — and a monitor that only updates when a peer
     // connects would look frozen on a quiet relay.
     statusToOwner: statusToOwner,
+    // Cycle 1. relayServer.js ticks it on a timer; a suite may tick it with
+    // readings of its own, so the rule is testable without exhausting RAM.
+    governorTick: governorTick,
+    governor: function () { return governor; },
     // Watching, on demand — asked for as a packet (answerSelf), never as
     // a verb of its own. Read-only from out here, and it dies with the
     // owner's stream.

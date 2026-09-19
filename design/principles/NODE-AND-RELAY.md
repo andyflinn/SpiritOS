@@ -184,7 +184,9 @@ moving the lever (§5, scope).*
 
 `present` is `Object.keys(sinks)`
 ([presence.js:143-145](../../spirit/run/js/presence.js#L143-L145)) — free,
-and bounded by the connection cap. `peers` is `who()` over the whole roll,
+and bounded by the connection cap. *This corrects the line as first
+written: there was no connection cap — nothing bounded the total number of
+held streams until cycle 1 built the connection allowance (2026-09-19).* `peers` is `who()` over the whole roll,
 free **only because the roll is resident today**. Under
 [CAPACITY.md](../relay/CAPACITY.md)'s activity-scaled memory the roll goes
 cold, and the enrolment count becomes a file read while the active count
@@ -1998,7 +2000,7 @@ one relay on the monitor.
 |---|---|
 | a configuration file carrying a **RAM ceiling**, which the relay reads and stays under | DISC_LIMIT and every allotment — roll, invites, partner roll |
 | **cheap counts**: posts in flight per partner and per member (`router.js` `pending`), `present`, `rss`, the meter — all on the existing owner report | roll expiry `N`, and recoverable expiry |
-| a **simple Governor**: one rule — under RAM pressure, shed fewest-in-flight first — reporting each move as a lever position and a reason | the monitoring reservation (§9) |
+| a **simple Governor**: one lever, the **connection allowance**; one remedy, close the **longest-idle** streams — reporting each move as a lever position and a reason. *Corrected while planning (Andy, 2026-09-19): this read "shed fewest-in-flight partners first", but shedding a partner frees almost nothing, and member streams are what hold RAM. See [the cycle](../cycles/2026-09-19-relay-governor-cycle-1.md).* | the monitoring reservation (§9) |
 | a **simple monitor** on the owner's node: the activity and lever-position panels (§4) | `node:sqlite`, the index, lazy loading, the backup split |
 | | floors and ceilings of every lever cycle 1 does not move |
 | | decision records beyond the simple one |
@@ -2159,6 +2161,16 @@ none is mine to take.
 
 - **Version tolerance** (§7) — the cost of the evolution split, and the one
   thing that gets harder the longer it is left.
+- **The route hint has no place on the wire** (found 2026-09-19). The relay
+  can forward to a partner — `routePost` takes `atRelayKey` — but no route
+  carries it and the node's `peerPost` does not send it, so partner
+  forwarding runs only in-process. Deferred with acquisition; recorded so the
+  discrepancy does not dangle unwritten.
+- **MAX_TEXT through a partner is untested.** A forward wraps the whole post
+  in a JSON envelope that becomes the text of a new post; near 16 KB the
+  escaping and extra fields likely push it past the partner's
+  `MAX_ROUTED_TEXT`. No test sends a large post across a partnership.
+  Deferred with acquisition.
 - **"Capable of partnership" has nothing on the wire to check** (§5). The
   census the old handshake used is gone; the answer is probably the same
   thing §7 needs — a box saying what it speaks.

@@ -48,6 +48,10 @@ function createRouter(opts) {
   }
 
   function countFor(requester) {
+    // Expired posts leave first: a reply that never came back must stop
+    // counting as in flight (NODE-AND-RELAY §9b, "expiry must decrement
+    // too"). Idempotent, and bounded by the table's own cap.
+    sweep();
     return Object.keys(pending).filter(function (h) {
       return pending[h].requester === requester;
     }).length;
@@ -154,6 +158,9 @@ function createRouter(opts) {
     answer: answer,
     cancel: cancel,
     has: has,
+    // Posts in flight for one requester — the per-member count (cycle 1).
+    // The Governor reads it to spare a busy stream from eviction.
+    countFor: countFor,
     size: size,
     reset: reset,
     max: max,

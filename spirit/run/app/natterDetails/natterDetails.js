@@ -468,12 +468,55 @@ function ndReportHtml() {
   // there is no count to show. A relay stores nothing on anyone's behalf,
   // and a row reading "Messages 0" would suggest the question still
   // applies.
-  return ndPanel('relay', ndIcon.INFO, 'What this relay says', spirit.shell.factRow([
+  var facts = [
     ['Owner', report.owner || '(none)'],
     ['Mode', report.mode || '(unknown)'],
     ['Peers', report.peers == null ? '(unknown)' : report.peers],
     ['Connected', report.present == null ? '(unknown)' : report.present],
-  ]));
+  ];
+  return ndPanel('relay', ndIcon.INFO, 'What this relay says',
+    spirit.shell.factRow(facts.concat(ndGovernorFacts(report))));
+}
+
+// ── THE MONITOR'S TWO PANELS, AS ROWS (cycle 1) ─────────────────────
+//
+// design/principles/NODE-AND-RELAY.md §4: ACTIVITY (what is happening)
+// and LEVER POSITIONS (the limits it runs under right now, and why the
+// last one moved). The data was on the wire already — `meter`, `routes`,
+// `memory` — and cycle 1 adds `ramLimitMB`, `levers` and `decision`.
+//
+// Each row appears only when the relay sent its field, so a relay with no
+// Governor draws no lever row rather than a blank one (AGENT.md: no chrome
+// that is not useful in this state).
+function ndGovernorFacts(report) {
+  var rows = [];
+  var mem = report.memory || {};
+  var mb = function (b) { return (Math.round((b || 0) / 104857.6) / 10) + ' MB'; };
+  if (typeof mem.heapUsed === 'number') {
+    var heap = mb(mem.heapUsed);
+    if (typeof report.ramLimitMB === 'number') {
+      heap += ' of ' + report.ramLimitMB + ' MB (' +
+        Math.round(mem.heapUsed / (report.ramLimitMB * 1048576) * 100) + '%)';
+    }
+    rows.push(['Heap', heap]);
+    if (typeof mem.rss === 'number') rows.push(['RSS', mb(mem.rss)]);
+  }
+  if (typeof report.routes === 'number') rows.push(['In flight', report.routes]);
+  var m = report.meter;
+  if (m && typeof m.posts === 'number') {
+    rows.push(['Activity', m.posts + ' posts, ' + (m.bytesPerSec || 0) + ' B/s over ' + (m.seconds || 0) + ' s']);
+  }
+  var lever = report.levers && report.levers.connections;
+  if (lever) {
+    rows.push(['Connections', lever.position + ' — allowing ' + lever.allowed +
+      ' (floor ' + lever.floor + ', ceiling ' + lever.ceiling + ')']);
+  }
+  var d = report.decision;
+  if (d) {
+    rows.push(['Last move', d.from + ' → ' + d.to + ': ' + d.why +
+      (d.closed ? ', closed ' + d.closed : '') + (d.at ? ' at ' + String(d.at).slice(11, 19) : '')]);
+  }
+  return rows;
 }
 
 // Minting belongs to the mailbox it mints on, so it lives inside that
@@ -1941,6 +1984,9 @@ spirit.shell.activateApp({
         var about = (event && event.relay) || '';
         if (about && ndUrl && about !== ndUrl) return;
         if (!ndUrl) return;
+        // A report nudge (`kind: 'status'`, cycle 1) reloads like any other
+        // event. It is already paced — at most one a second per relay — by
+        // the node (presenceNode.js), so this screen keeps no timer.
         ndLoad();
       });
     }

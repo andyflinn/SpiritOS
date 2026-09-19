@@ -79,6 +79,13 @@ This directory contains the vision, principles, and architecture decisions for *
   is gone: it signed a *name* to prove a *key*, so `/api/relay/status`,
   `statusMessage` and `checkOwner` went with it — which answers decision 0010's
   last open question by removal.
+- [2026-09-19 — the first Governor](cycles/2026-09-19-relay-governor-cycle-1.md)
+  — **OPEN.** 7 requirements, 5 done. The relay's first configuration (a RAM
+  ceiling, bounded by the box), one lever (the connection allowance, owner as
+  its floor), one remedy (close the longest-idle streams), each move reported
+  with its reason on the existing owner report — no new word on the wire.
+  Proven on two relays with two owners confirming each other. Left: the live
+  run Andy watches, and the tooling to populate it.
 - `spirit/test/cycleRequirements.js` goes red if any requirement has neither a
   verification that exists nor a recorded deferral.
 

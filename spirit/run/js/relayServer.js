@@ -20,7 +20,10 @@
 'use strict';
 
 const http = require('http');
+const fs = require('fs');
+const os = require('os');
 const path = require('path');
+const relayConfig = require('./relayConfig');
 const spirit = require('./kernel');
 const createRelay = require('./relay');
 // For keyFromUrl only — translating a URL segment back to the stored key
@@ -40,6 +43,11 @@ const deviceRefusal = common.deviceRefusal;
 // --port and PORT still override it, and every deploy script passes one.
 const DEFAULT_RELAY_PORT = 65430;
 
+// How often the Governor looks. A few seconds is fast enough to catch a
+// rise in connections and slow enough to cost nothing; one step per tick
+// means a full swing takes a minute, which is readable on a monitor.
+const GOVERNOR_TICK_MS = 5000;
+
 const BUILD = buildStamp.resolve(spirit.core.node.const.ROOT_DIR);
 const STARTED_AT = new Date().toISOString();
 
@@ -47,23 +55,6 @@ const STARTED_AT = new Date().toISOString();
 // it holds to them. Built after the server is listening.
 let partnerRouter = null;
 let partnerLinks = null;
-
-// HOW THIS RELAY ASKS A PARTNER, injected rather than reached for.
-//
-// LATE-BOUND on purpose: createRelay runs at module load and partnerRouter
-// is built after the server is listening, so this closes over the variable
-// rather than the value. A relay still booting answers from its own
-// members and propagates nothing.
-//
-// `post` is peerPost's, so the hash, the proof the partner read it, and
-// the dispatch of the answer back to this exact question are all the
-// interface's and none of relay.js's (AGENT.md, Comms).
-const relay = createRelay.createRelay(undefined, {
-  askPartner: function (url, relayKey, text) {
-    if (!partnerRouter) return Promise.resolve(null);
-    return partnerRouter.post(url, relayKey, text);
-  },
-});
 
 // Checked before verifyStartupCwd, on purpose — --help should work
 // regardless of which directory this was launched from.
@@ -87,6 +78,42 @@ common.verifyStartupCwd('js/relayServer.js');
 
 const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
 const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || DEFAULT_RELAY_PORT;
+
+// ── THE OWNER'S BOUND, READ ONCE (cycle 1) ───────────────────────────
+//
+// relay-state/config.json, beside allow.json. Bounded by the box: a
+// ceiling larger than this machine refuses to start rather than being
+// honoured (relayConfig.js). Never re-read — the configuration is not a
+// real-time tool (NODE-AND-RELAY §5, scope).
+const CONFIG = (function () {
+  let text = null;
+  try { text = fs.readFileSync(path.join(ROOT_DIR, 'relay-state', 'config.json'), 'utf8'); }
+  catch (e) { text = null; }
+  const read = relayConfig.parse(text, os.totalmem() / (1024 * 1024));
+  if (!read.ok) {
+    console.error('Refusing to start: ' + read.error);
+    process.exit(1);
+  }
+  return read.config;
+}());
+
+// HOW THIS RELAY ASKS A PARTNER, injected rather than reached for.
+//
+// LATE-BOUND on purpose: createRelay runs at module load and partnerRouter
+// is built after the server is listening, so this closes over the variable
+// rather than the value. A relay still booting answers from its own
+// members and propagates nothing.
+//
+// `post` is peerPost's, so the hash, the proof the partner read it, and
+// the dispatch of the answer back to this exact question are all the
+// interface's and none of relay.js's (AGENT.md, Comms).
+const relay = createRelay.createRelay(undefined, {
+  askPartner: function (url, relayKey, text) {
+    if (!partnerRouter) return Promise.resolve(null);
+    return partnerRouter.post(url, relayKey, text);
+  },
+  config: CONFIG,
+});
 
 // A relay is a party to conversations, and `relay` is the caption it
 // answers to, not an identity. A node that keeps one file per peer cannot
@@ -387,6 +414,13 @@ const server = http.createServer((req, res) => {
         try { res.setHeader('Retry-After', String(Math.ceil(60 / relay.presence.perMin) + 5)); }
         catch (e) { /* headers already sent */ }
       }
+      // FULL (cycle 1): the Governor has the connection allowance below
+      // the number of streams wanting in. Come back after a few ticks,
+      // when the lever may have moved up again — not in a second.
+      if (opened && opened.status === 503) {
+        try { res.setHeader('Retry-After', String(Math.ceil(GOVERNOR_TICK_MS * 6 / 1000))); }
+        catch (e) { /* headers already sent */ }
+      }
       deviceRefusal(res, opened && opened.status);
       return;
     }
@@ -573,4 +607,15 @@ server.listen(port, BIND_HOST, () => {
   });
   const dialled = partnerLinks.start();
   if (dialled) console.log(`    holding ${dialled} partner stream(s)`);
+
+  // -- AND IT GOVERNS ITSELF (cycle 1) -------------------------------
+  //
+  // One tick every few seconds: read heap, move the one lever at most one
+  // twelfth, carry it out, tell the owner. Cheap by construction — it
+  // reads numbers the process already has.
+  console.log(`    RAM limit ${CONFIG.ramLimitMB} MB (${CONFIG.source}); governor ticking every ${GOVERNOR_TICK_MS / 1000}s`);
+  setInterval(function () {
+    try { relay.governorTick(); }
+    catch (e) { console.error('governor tick failed: ' + e.message); }
+  }, GOVERNOR_TICK_MS);
 });
