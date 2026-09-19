@@ -1,6 +1,6 @@
 # 2026-09-19 — the relay's data on disc, and the owner's token
 
-**Status: OPEN. Part A (disc) done, ten requirements. Part B (the owner's
+**Status: OPEN. Part A (disc) done, eleven requirements. Part B (the owner's
 first-claim token) not started; its requirements are written here when it
 is built, in its own commit.** Scaffolding cycle 3 of the build sequence
 ([NODE-AND-RELAY.md](../principles/NODE-AND-RELAY.md), *Build sequence*),
@@ -208,6 +208,36 @@ It belongs to the Governor cycle, where its numbers are measured.
 **Verify:** `spirit/test/liveFanOut.js` — the live partner is asked and the
 one that is down is not; a partner whose stream closes is no longer live;
 with none live, nobody is asked.
+
+**Status:** DONE
+
+### R11 — the shutdown is proven on the wire
+
+> **Andy (2026-09-19):** *"Did we implement clean-as-possible shutdown on
+> sseClient/server and test the effect of that?"* — then: *"shutdown test
+> first."*
+
+The pieces had been tested alone: `goingAway` on fake sinks, and sseClient
+reading `retry:` from a fake body. The effect had not: a real relay taking a
+real SIGTERM, with a real client and a real partner. It could not be tested
+on this workstation either, because `child.kill()` on Windows is
+TerminateProcess and the handler never runs. Andy chose WSL over adding a
+test-only trigger to `relayServer.js`.
+
+On Linux, the relay:
+- exits 0 and tells its streams to come back in 3 s;
+- ends the member's stream (`ended`, not a failure), and the client
+  schedules its reconnect at exactly 3000 ms, not its 100 ms floor;
+- closes its partner link, and the partner tells its members the relay has
+  gone (this depends on R10's `streamClose` fix);
+- leaves no rollback journal, and `relay.db` reopens with the whole roll;
+- when restarted at once, is re-joined by the client only after the 3 s.
+
+On Windows the suite checks only that both startup files register the
+handler. That guards against deletion; it is not proof.
+
+**Verify:** `spirit/test/shutdownWire.js` — 9 checks under Linux (WSL), 2
+on Windows.
 
 **Status:** DONE
 
