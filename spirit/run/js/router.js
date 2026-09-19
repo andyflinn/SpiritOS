@@ -61,7 +61,15 @@ function createRouter(opts) {
   // value decides whether the entry stays. A delivery that failed must
   // not leave a hash occupied: the requester would be told "already in
   // flight" on every retry of a request that never arrived.
-  function open(hash, requester, target, deliver) {
+  //
+  // `carry` is what the caller must hold until the answer comes — for a
+  // forward, the partner's answer and the route back. It lives IN the
+  // entry, so it expires with it: one table, one cap, one ttl, and nothing
+  // beside it that the sweep cannot see. (Cycle 3: a side map in relay.js
+  // outlived its entry for good when a member never answered.) The ttl is
+  // a Governor lever to come (NODE-AND-RELAY §10); this is what makes it
+  // bound everything a request holds.
+  function open(hash, requester, target, deliver, carry) {
     if (!hash || !requester || !target) {
       return { ok: false, status: 400, error: 'hash, requester and target required' };
     }
@@ -100,7 +108,7 @@ function createRouter(opts) {
       return { ok: false, status: 429, error: 'too many in flight' };
     }
 
-    pending[hash] = { requester: requester, target: target, at: nowFn() };
+    pending[hash] = { requester: requester, target: target, at: nowFn(), carry: carry || null };
 
     var delivered = false;
     try { delivered = deliver() !== false; }
@@ -124,7 +132,7 @@ function createRouter(opts) {
       return { ok: false, status: 403, error: 'not the target of that request' };
     }
     delete pending[hash];
-    return { ok: true, status: 200, requester: entry.requester, target: entry.target };
+    return { ok: true, status: 200, requester: entry.requester, target: entry.target, carry: entry.carry };
   }
 
   // For a caller that has to give up early — a target that went away

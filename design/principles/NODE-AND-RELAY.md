@@ -2060,9 +2060,25 @@ The levers this note names, and what is known of each:
 | meter slots | `METER_SLOTS_MIN 20` — *"smaller and slower" never becomes "blind"* | the monitoring reservation (§9) |
 | `MEMBER_PER_MIN`, `CLAIM_PER_MIN`, `DEVICE_PER_MIN` | **open** | **open** |
 | unsolicited partner proposals (§5) | **open** | **open** |
+| request timeout — the router's ttl, today `DEFAULT_TTL_MS` 20 s (Andy: *"timeout most certainly will be a lever for Governor"*) | the measured round trip of the path with a margin; below it, legitimate replies are cut. Measured: 365 ms for one relay through spirit-3; a partner tunnel has **not been measured** (estimate ~2×) | the asker's remaining wait: holding longer keeps state for somebody who has gone |
 
 The open cells are the work that has to be done before those levers are
 built, not after.
+
+**The request timeout, noted (2026-09-19).** It bounds everything a request
+holds. Cycle 3 made that true: a forward's partner answer and route back
+ride in the router entry and expire with it (`router.open`'s `carry`). Before
+that they sat in a side map that only a reply emptied, so it leaked. The
+waits are **inverted today**: the asker waits 8 s (`peerPost`), a held route
+15 s (`ROUTE_WAIT_MS`), the router 20 s. So relays keep state for up to 12 s
+after the asker has gone. **Open:**
+- whether waits nest (asker > first relay > far relay), and at what starting
+  value;
+- the measured tunnel round trip that sets the floor;
+- once each relay's Governor moves its own timeout, nesting cannot hold by
+  configuration. The asker's deadline would have to travel with the request,
+  signed beside it like the hints. That is a wire decision, not needed until
+  the lever moves.
 
 ---
 

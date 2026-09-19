@@ -1874,26 +1874,22 @@ function createRelay(rootDir, deps) {
   // enumerable by asking.
   // ── THE FORWARD'S HALF-FINISHED BUSINESS ─────────────────────────────
   //
-  // inner hash -> the function that answers the PARTNER who asked. A
-  // forward cannot be answered when it arrives: this relay has to ask one
-  // of its members and wait. So the partner's answer is parked here and
-  // fired by `routeReply` when the member speaks.
+  // A forward cannot be answered when it arrives: this relay has to ask
+  // one of its members and wait. What it must hold meanwhile — the
+  // function that answers the PARTNER who asked, and the originator and
+  // the partner that carried it, so the member who answers can be told the
+  // route back (cycle 3, NODE-AND-RELAY §9b) — rides IN the router's own
+  // entry as its `carry`, and expires with it (router.js `open`). In RAM,
+  // keyed by a hash nobody chose; not a route cache; never on disc.
   //
-  // In RAM and keyed by a hash nobody chose — it is derived from the
-  // bytes — so it is not a record of anything. It empties as replies
-  // arrive, and a request whose member never answers is swept with its
-  // route by the router's own ttl.
-  //
-  // inner hash -> { answer, from, at }: the partner's answer, and the
-  // originator and the partner that carried it — so the member who answers
-  // can be told the route back (cycle 3, NODE-AND-RELAY §9b, "The member
-  // who answers learns the route back"). Held only while the request is in
-  // flight; this is not a route cache, and nothing of it reaches disc.
-  var forwarding = Object.create(null);
+  // THERE WAS A `forwarding` MAP HERE until cycle 3. It was emptied only by
+  // a reply, so a forward whose member never answered stayed in RAM for
+  // good — while this comment said it was swept by the router's ttl.
 
   // inner hash -> { to, at } for a forward this relay sent to a partner.
   // Only so that a signed reply can name the route it proved. In RAM,
-  // keyed by a hash derived from bytes, emptied on reply.
+  // keyed by a hash derived from bytes, emptied on reply — or, when no reply
+  // comes, by relayErrorToAsker once askPartner settles (peerPost's wait).
   var carrying = Object.create(null);
 
   // WHAT A PARTNER'S FORWARD ACTUALLY DOES HERE.
@@ -1937,11 +1933,10 @@ function createRelay(rootDir, deps) {
       return presentNow.send(target.id, 'request', {
         from: from, to: to, text: body, sig: sig,
       });
-    });
+    }, { answer: answerPartner, from: from, at: String(viaKey || '') });
     if (!opened || !opened.ok) return opened;
 
     monitorEvent('post', from, target.id, { bytes: body.length, hash: innerHash, via: 'partner' });
-    forwarding[innerHash] = { answer: answerPartner, from: from, at: String(viaKey || '') };
     return null;
   }
 
@@ -2956,10 +2951,9 @@ function createRelay(rootDir, deps) {
     // the inner hash are passed through untouched, so N1 verifies N2's
     // receipt itself and neither relay can alter what was said without
     // breaking it.
-    if (forwarding[hash]) {
-      var carried = forwarding[hash];
+    if (matched.carry && typeof matched.carry.answer === 'function') {
+      var carried = matched.carry;
       var answerPartner = carried.answer;
-      delete forwarding[hash];
       // WILL IT FIT GOING BACK? (cycle 2) The reply is about to become
       // this relay's own answer to its partner, wrapped whole. One that
       // would not fit is refused HERE: the member learns its reply did not

@@ -154,9 +154,21 @@ answers learns the route back").
 Not in this requirement: `seen` and ordering hints by it (decided by Andy,
 §9b). They change the contacts schema, which Grok sees at the batch review.
 
+**Everything a request holds expires with it.** Andy's ruling: RAM
+conservation takes priority, and route caching goes to the route users.
+Tracing what R9 adds found a leak that predates this cycle. The `forwarding`
+map beside the router was emptied only by a reply, so a forward whose member
+never answered stayed in RAM for good, while its comment said the router's
+ttl swept it. The partner's answer and the route back now ride in the
+router's own entry (`router.open(…, carry)`) and expire with it. The map is
+gone. A's `carrying` was traced and does not leak: `askPartner` always
+settles within peerPost's wait, and both outcomes delete the entry.
+
 **Verify:** `spirit/test/hintWire.js` — over real sockets, bertrand on B
 hears `{ key: alice, at: A's relay key }` after answering, and bella on B
-hears nothing.
+hears nothing; `spirit/test/router.js` — the carry comes back with the
+answer, and an unanswered request's carry is freed at expiry, asked of the
+garbage collector.
 
 **Status:** DONE
 

@@ -209,7 +209,51 @@ function run() {
     }
   }
 
-  test.reportSuccessFailureCount();
+  test.subHeading('What a request holds expires with it');
+
+  // CYCLE 3. A forward's half-finished business — the partner's answer and
+  // the route back — lived in a map beside this table, emptied only by a
+  // reply. A member who never answered left it in RAM for good. It rides in
+  // the entry now, as `carry`, so one ttl bounds everything a request holds.
+  {
+    const time = clock();
+    const R = router.createRouter({ ttlMs: 5000, now: time.now });
+    const carry = { answer: function () {}, from: 'N1', at: 'A' };
+    R.open('h6', 'req', 'tgt', function () { return true; }, carry);
+    const got = R.answer('h6', 'tgt');
+    if (got.ok && got.carry === carry) {
+      test.check('the answer hands back what the request carried');
+    } else {
+      test.fail('carry: ' + JSON.stringify(got));
+    }
+
+    // Unanswered: the carry must be unreachable once the entry expires —
+    // asked of the garbage collector, not of the table's own opinion.
+    const v8 = require('v8');
+    const vm = require('vm');
+    v8.setFlagsFromString('--expose-gc');
+    const gc = vm.runInNewContext('gc');
+    let ref = null;
+    (function () {
+      const lost = { answer: function () {}, from: 'N1', at: 'A' };
+      ref = new WeakRef(lost);
+      R.open('h7', 'req', 'tgt', function () { return true; }, lost);
+    })();
+    time.advance(6000);
+    R.size();   // sweeps
+    // A WeakRef's target is kept alive to the end of the job that made it,
+    // so the question is asked on a later tick.
+    setTimeout(function () {
+      gc(); gc();
+      if (R.answer('h7', 'tgt').ok === false && ref.deref() === undefined) {
+        test.check('and an unanswered request\'s carry is freed when the entry expires');
+      } else {
+        test.fail('the carry outlived its entry');
+      }
+      test.reportSuccessFailureCount();
+    }, 0);
+    return;
+  }
 }
 
 try { run(); }
