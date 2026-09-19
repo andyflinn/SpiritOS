@@ -91,6 +91,34 @@ function add(rootDir, opts) {
   return row;
 }
 
+// ── THE OWNER INVITE (cycle 3, Part B) ───────────────────────────────
+//
+// The one invite an UNCLAIMED relay honours, and the only way a relay gets
+// an owner: minted by install.js over SSH (or in-process by a test
+// fixture), shown once, pasted into the node's claim screen (0003 amended:
+// first invited claim is owner).
+//
+// MARKED, so only it can make an owner. `invitedBy` is a value no spoken
+// label can take (labelRule's spoken form has no parentheses). Without the
+// mark, a relay whose allow.json was lost while ordinary invites were still
+// live could be claimed by any one of them.
+//
+// ONE AT A TIME: minting another withdraws the last, so an installer run
+// twice leaves one live token, not two.
+const OWNER_INVITE = '(installer)';
+
+function mintOwner(rootDir, label, days) {
+  const store = relayStore.open(rootDir);
+  store.invites.all().forEach(function (row) {
+    if (row.invitedBy === OWNER_INVITE) store.invites.remove(row.token);
+  });
+  return add(rootDir, { label: label, days: days, invitedBy: OWNER_INVITE });
+}
+
+function isOwnerInvite(row) {
+  return !!row && row.invitedBy === OWNER_INVITE;
+}
+
 function match(rootDir, token, label) {
   const t = String(token || '').trim();
   const n = String(label || '').trim();
@@ -176,4 +204,7 @@ module.exports = {
   newToken: newToken,
   normalizeDays: normalizeDays,
   normalizeToken: normalizeToken,
+  mintOwner: mintOwner,
+  isOwnerInvite: isOwnerInvite,
+  OWNER_INVITE: OWNER_INVITE,
 };

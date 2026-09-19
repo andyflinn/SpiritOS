@@ -27,6 +27,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const lab = require('./labMaster/ensureMaster.js');
+const { mintOwnerInvite } = require('./ownerClaim');
 
 const RELAY_PORT = 65419;
 const RELAY_NAME = 'persist-relay';
@@ -119,14 +120,17 @@ async function run() {
 
   test.subHeading('Somebody takes a row');
 
-  // FIRST CLAIM ON AN EMPTY BOX IS THE OWNER (decision 0003), and it is
-  // signed like every other claim — an empty allow.json means "anyone
-  // may be first", never "no signature required".
+  // FIRST INVITED CLAIM IS THE OWNER (decision 0003, amended in cycle 3):
+  // signed like every other claim, and presenting the owner invite, minted
+  // here into the relay's own relay.db as install.js would over SSH.
   const andy = auth.generateIdentity('andy');
+  const ownerInvite = mintOwnerInvite(relayHome, 'andy');
   const claimed = await post(ORIGIN + '/api/relay/claim', {
     name: 'andy',
     publicKey: andy.publicKey,
     sig: auth.sign(andy.privateKey, auth.claimMessage('andy')),
+    invite: ownerInvite.token,
+    inviteLabel: 'andy',
   });
   if (claimed.status === 201) {
     test.check('a signed claim takes the row, and the first one owns the box');

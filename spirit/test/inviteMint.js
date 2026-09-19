@@ -334,16 +334,17 @@ test.subHeading('A mailbox with no owner key cannot mint');
     test.fail('names mint: ' + JSON.stringify(r));
   }
 
-  // Worth stating plainly, because it is the shape cycle 4 closes: this
-  // names-mode box is exactly where an invite would be CONSUMED, and it
-  // is the one place that cannot mint one. A keys-mode box can mint, and
-  // ignores invites on claim. Neither half is broken; they just do not
-  // meet until keys-mode requires an invite.
+  // A HAND-WRITTEN INVITE NO LONGER GETS ANYBODY IN HERE. This asserted
+  // that it did ("as in cycle 1"): a names-mode allow.json read as open,
+  // and the first claim through it — any invite, or none — became the
+  // box's owner. Cycle 3 (Part B) closed that: a box with no owner key is
+  // UNCLAIMED, and the one claim it takes is the installer's owner invite
+  // (0003 amended; D6 eliminated).
   const token = invites.add(home, { label: 'saint', invitedBy: 'andy', days: 7 }).token;
   const saint = auth.generateIdentity('saint');
   const used = box.claim('saint', auth.sign(saint.privateKey, auth.claimMessage('saint')), saint.publicKey, '10.0.0.9', token, 'saint');
-  if (used.ok && used.status === 201) {
-    test.check('a hand-written row still gets saint in, as in cycle 1');
+  if (!used.ok && used.status === 403 && used.error === 'owner invite required') {
+    test.check('and an ordinary invite does not get saint in — an unclaimed box takes only the owner invite');
   } else {
     test.fail('names claim with invite: ' + JSON.stringify(used));
   }

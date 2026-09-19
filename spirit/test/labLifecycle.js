@@ -35,6 +35,7 @@ const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
 const lab = require('./labMaster/ensureMaster.js');
+const { mintOwnerInvite } = require('./ownerClaim');
 
 // Inside labMaster's own 65400-65429 range. Distinct from every other
 // lab suite's ports so the harness can run them in the same lane pass —
@@ -225,9 +226,15 @@ async function run() {
       JSON.stringify([{ label: 'ping', url: 'http://127.0.0.1:' + RELAY_PORT }], null, 2)
     );
 
-    // And claim, exactly as Natter does.
+    // And claim, exactly as Natter does — with the owner invite, since the
+    // relay is unclaimed (cycle 3, Part B). Minted into the relay's own
+    // relay.db, as install.js would; the node carries it as `invite` and
+    // `inviteLabel`, the fields its claim screen fills.
+    const ownerInvite = mintOwnerInvite(path.join(
+      os.tmpdir(), 'spiritos-relay-fakes', RELAY_NAME, 'spirit', 'run'), 'pingandy');
     const claimed = await hub(AVATAR_PORT, 'POST', '/api/spirit', {
       verb: 'relay.claim', url: 'http://127.0.0.1:' + RELAY_PORT, name: 'ping-andy',
+      invite: ownerInvite.token, inviteLabel: 'pingandy',
     });
     if (claimed.status >= 200 && claimed.status < 300) {
       test.check('it can take a seat on the fixture relay');

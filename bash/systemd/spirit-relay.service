@@ -10,6 +10,11 @@ WorkingDirectory=__RUN_DIR__
 ExecStart=/usr/bin/node js/server.js --relay --port __PORT__
 Restart=on-failure
 RestartSec=3
+# 78 is the relay REFUSING to start (relayServer.js STARTUP_REFUSED):
+# members but no owner, a store it cannot open, a config it cannot honour.
+# A retry cannot fix any of those, so systemd stops instead of retrying
+# every 3 s; bash/restart and bash/update print why (check_started).
+RestartPreventExitStatus=78
 Environment=PORT=__PORT__
 
 # Soft sandbox. The process still runs as root because this box has

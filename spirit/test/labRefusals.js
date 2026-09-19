@@ -34,6 +34,7 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const rule = require('../run/js/labelRule.js');
 const lab = require('./labMaster/ensureMaster.js');
+const { mintOwnerInvite } = require('./ownerClaim');
 
 const RELAY_PORT = 65415;
 const RELAY_NAME = 'abuse-relay';
@@ -131,11 +132,19 @@ async function run() {
   // THIS CLAIM IS ALSO THE SETUP for the section below: it is the first
   // claim this box has accepted, so `sender` now owns it and holds a
   // row. That matters, and it cost a red line to learn — see there.
+  //
+  // WITH THE OWNER INVITE since cycle 3 (Part B): the first claim an
+  // unclaimed relay takes. Its label is the spoken word `sender`; the
+  // caption claimed is the one under test (labels are not identities, R1).
   const sender = auth.generateIdentity('sender');
+  const ownerInvite = mintOwnerInvite(
+    require('path').join(require('os').tmpdir(), 'spiritos-relay-fakes', RELAY_NAME, 'spirit', 'run'), 'sender');
   const ordinary = await post('/api/relay/claim', {
     name: '../etc: Andy Flinn 🌱',
     publicKey: sender.publicKey,
     sig: auth.sign(sender.privateKey, auth.claimMessage('../etc: Andy Flinn 🌱')),
+    invite: ownerInvite.token,
+    inviteLabel: 'sender',
   });
   if (ordinary.status === 201) {
     test.check('while spaces, punctuation, emoji and even ../etc are a fine caption — addressing is by key');

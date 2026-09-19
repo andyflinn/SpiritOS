@@ -10,9 +10,10 @@
 // same document), so it no longer loads any of that.
 //
 // `node js/server.js --relay` still works: server.js hands off to this
-// file before it loads anything (the systemd unit, Procfile and
-// install-public-relay.js all start it that way). `node js/relayServer.js`
-// is the same process without the hand-off.
+// file before it loads anything (the systemd unit starts it that way).
+// `node js/relayServer.js` is the same process without the hand-off.
+// (The Procfile and install-public-relay.js used to as well; both went in
+// cycle 3 — a relay needs a persistent disc and SSH.)
 //
 // What a relay IS stays in relay.js. This file is only the HTTP in front
 // of it: the public surface, the bind, the partner streams and the
@@ -79,6 +80,23 @@ common.verifyStartupCwd('js/relayServer.js');
 const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
 const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || DEFAULT_RELAY_PORT;
 
+// ── ONE EXIT CODE FOR EVERY REFUSAL TO START (cycle 3, Part B) ───────
+//
+// 78 is EX_CONFIG (sysexits.h): "something was found in an unconfigured or
+// misconfigured state". Every refusal below — node:sqlite missing, a store
+// that cannot be opened, a config.json the box cannot honour, members with
+// no owner — is a state a restart cannot fix. bash/systemd/
+// spirit-relay.service names this code in RestartPreventExitStatus, so
+// systemd stops retrying it every three seconds, and bash/restart and
+// bash/update print the refusal from the journal (Andy: "forcing the owner
+// to ssh and investigate").
+const STARTUP_REFUSED = 78;
+
+function refuseToStart(why) {
+  console.error('Refusing to start: ' + why);
+  process.exit(STARTUP_REFUSED);
+}
+
 // ── THE RELAY'S DATA IS ON DISC, OR THERE IS NO RELAY (cycle 3) ──────
 //
 // Members, invites and the partner roll live in relay-state/relay.db
@@ -88,17 +106,30 @@ const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || D
 // first claim. The node never loads this module.
 const relayStore = require('./relayStore');
 if (!relayStore.available()) {
-  console.error('Refusing to start: node:sqlite is not available in Node ' +
+  refuseToStart('node:sqlite is not available in Node ' +
     process.version + ' — a relay needs 22.13 or later (relayStore.js)');
-  process.exit(1);
 }
 // Opened here, not on the first request, so a store that cannot be opened
 // — a pre-cycle-3 file that cannot be imported — stops the start instead
 // of the first member who knocks.
 try { relayStore.open(spirit.core.node.const.ROOT_DIR); }
 catch (e) {
-  console.error('Refusing to start: ' + e.message);
-  process.exit(1);
+  refuseToStart(e.message);
+}
+
+// ── MEMBERS BUT NO OWNER: REFUSE, AND LET SSH DECIDE (cycle 3, B4) ───
+//
+// Decided (Andy): a relay whose store holds members but whose allow.json
+// has no owner refuses to start — "forcing the owner to ssh and
+// investigate". The alternative is a relay that looks UNCLAIMED with
+// people on it, where whoever holds the next owner invite takes the box
+// and everyone in it. No members and no owner is simply UNCLAIMED, which
+// is the state install.js is for.
+if (require('./relayAuth').loadAllow(ROOT_DIR).mode !== 'keys' &&
+    relayStore.open(ROOT_DIR).members.count() > 0) {
+  refuseToStart('relay-state/relay.db holds ' + relayStore.open(ROOT_DIR).members.count() +
+    ' member(s) but relay-state/allow.json names no owner. Restore allow.json over SSH ' +
+    '({ "keys": [{ "name": "<owner>", "publicKey": "<key>" }] }); the wire cannot prove ownership.');
 }
 
 // ── THE OWNER'S BOUND, READ ONCE (cycle 1) ───────────────────────────
@@ -112,10 +143,7 @@ const CONFIG = (function () {
   try { text = fs.readFileSync(path.join(ROOT_DIR, 'relay-state', 'config.json'), 'utf8'); }
   catch (e) { text = null; }
   const read = relayConfig.parse(text, os.totalmem() / (1024 * 1024));
-  if (!read.ok) {
-    console.error('Refusing to start: ' + read.error);
-    process.exit(1);
-  }
+  if (!read.ok) refuseToStart(read.error);
   return read.config;
 }());
 
@@ -586,23 +614,17 @@ common.refuseListenError(server, port, 'js/relayServer.js');
 
 server.listen(port, BIND_HOST, () => {
   console.log(`Relay listening on ${BIND_HOST}:${port} — PUBLIC, no loopback or Host restriction`);
-  // relayAuth.loadAllow treats a missing or unreadable allow.json as
-  // mode 'open': any name claimable by anyone, any sender accepted, no
-  // signature required. That is the right default for a lab relay and
-  // the wrong one for a public box, and until now the two were
-  // indistinguishable from the console — an open relay looked exactly
-  // like a working one right up until someone else claimed your name.
-  // Say which one this is.
-  if (require('./relayAuth').loadAllow(ROOT_DIR).mode === 'open') {
+  // UNCLAIMED, SAID OUT LOUD (cycle 3, Part B). There is no `open` mode
+  // any more: a relay with no owner takes exactly one claim, the one
+  // presenting the owner invite install.js mints over SSH. Saying so at
+  // boot is what tells an operator why nobody else can get in. The TOKEN
+  // is never printed here: systemd's journal would keep it (NODE-AND-RELAY,
+  // "The first claim needs a token").
+  if (require('./relayAuth').loadAllow(ROOT_DIR).mode !== 'keys') {
     console.warn(
-      // WHAT AN OPEN RELAY ACTUALLY RISKS, which is one thing now and
-      // was three. "send as anyone, and read any relay" went with the
-      // ring (R8): there is nothing to read and no way to send. What is
-      // left is the one that matters — the first claim takes the box.
-      '    WARNING: no relay-state/allow.json — this relay is OPEN. Anyone who can reach it\n' +
-      '    may take the first claim, and the first claim is the OWNER (decision 0003).\n' +
-      '    Run install-public-relay.js to reserve a name, or create relay-state/allow.json\n' +
-      '    (a { "keys": [...] } list) by hand.'
+      '    UNCLAIMED — no owner in relay-state/allow.json. The only claim this relay\n' +
+      '    accepts is the owner invite: run `node install.js` over SSH, then claim with\n' +
+      '    the name and token it prints (decision 0003, amended: first invited claim is owner).'
     );
   }
 

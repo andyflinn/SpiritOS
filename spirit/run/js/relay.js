@@ -1020,31 +1020,39 @@ function createRelay(rootDir, deps) {
     // the existing limit caps the notices too. No second mechanism.
     seen.gate = true;
 
-    // pending-owner only means anything while the relay is empty: it
-    // names who may take the FIRST claim. If peers are already on the box
-    // there is no first claim left to reserve, so the file is stale — drop
-    // it rather than leaving a relay where no name but the pending one
-    // can ever be claimed again.
-    var pending = auth.loadPendingOwner(rootDir);
-    var empty = store.members.count() === 0;
-    if (pending && !empty) {
-      auth.clearPendingOwner(rootDir);
-      pending = null;
-    }
-    var firstOwner = empty && !!(pending || allow.mode === 'open');
-    if (pending && n !== pending) {
-      return { ok: false, status: 403, error: 'name not allowed' };
-    }
-
+    // ── UNCLAIMED: THE OWNER INVITE, AND NOTHING ELSE (cycle 3, Part B) ─
+    //
+    // 0003 amended: FIRST INVITED CLAIM IS OWNER. An unclaimed relay takes
+    // one thing — a signed claim presenting the owner invite install.js
+    // minted over SSH — and refuses every other claim. The pending-owner
+    // name reservation and `open` mode that stood here are gone: a name
+    // with no secret behind it let whoever guessed it take the box.
+    //
+    // MEMBERS BUT NO OWNER is not unclaimed, it is broken — allow.json
+    // lost or trashed. relayServer.js refuses to START on it; this refusal
+    // is the same rule for a relay built in process. Recovery is SSH,
+    // never the wire (Andy: "if allow.json is trashed, there is no way of
+    // proving ownership other than ssh, manually replace allow.json").
+    var firstOwner = allow.mode !== 'keys';
     if (firstOwner) {
+      if (store.members.count() > 0) {
+        return { ok: false, status: 503, error: 'relay has members but no owner — restore allow.json over SSH' };
+      }
       if (!publicKey || !sig) {
         return { ok: false, status: 400, error: 'first claim needs publicKey and sig' };
       }
       if (!auth.verify(publicKey, auth.claimMessage(asSent), sig)) {
         return { ok: false, status: 403, error: 'bad claim signature' };
       }
-      becomeOwner(n, publicKey);
-      auth.clearPendingOwner(rootDir);
+      if (!inviteToken || !onInvite) {
+        return { ok: false, status: 403, error: 'owner invite required' };
+      }
+      var ownerInvite = redeem(inviteToken, onInvite);
+      if (!ownerInvite.ok) return ownerInvite;
+      if (!invites.isOwnerInvite(ownerInvite.invite)) {
+        return { ok: false, status: 403, error: 'owner invite required' };
+      }
+      inviteRow = ownerInvite.invite;
     // A NAMES-MODE BRANCH STOOD HERE and went with the mode on
     // 2026-09-15 (see relayAuth.loadAllow for why the mode went). It was
     // the invite's original home: a guest list of bare labels, with a
@@ -1065,8 +1073,8 @@ function createRelay(rootDir, deps) {
       // This is the lock 0003 promised: after first-claim-is-owner, a new
       // key gets on the box only with a live invite the owner minted for
       // that exact label. It is NOT the first owner's path — firstOwner
-      // is handled above and needs no invite, because there is nobody to
-      // invite them yet.
+      // is handled above, on the installer's owner invite, because there
+      // is no owner yet to mint an ordinary one.
       //
       // Two johns is still two keys; it is now also two invites. The
       // label is not what is scarce, the token is.
@@ -1099,12 +1107,16 @@ function createRelay(rootDir, deps) {
         }
         var keysInvite = redeem(inviteToken, onInvite);
         if (!keysInvite.ok) return keysInvite;
+        // A leftover owner invite makes a member of nobody: the relay
+        // already has its owner, and the token was for that one claim.
+        if (invites.isOwnerInvite(keysInvite.invite)) {
+          return { ok: false, status: 403, error: 'this relay already has an owner' };
+        }
         inviteRow = keysInvite.invite;
       }
-    } else {
-      var gate = auth.checkClaim(allow, n, sig);
-      if (!gate.ok) return gate;
     }
+    // AN `else` STOOD HERE for `open` mode (auth.checkClaim). There are two
+    // states now, and both are handled above.
 
     // EVERY ROW HAS A KEY, and this is where that becomes true rather
     // than merely usual.
@@ -1143,6 +1155,9 @@ function createRelay(rootDir, deps) {
         return { ok: false, status: 403, error: 'invite already used' };
       }
     }
+    // The owner invite burned, so this claim IS the owner: allow.json is
+    // written and the relay is in keys mode from here on.
+    if (firstOwner) becomeOwner(n, publicKey);
 
     var peer = {
       // ONE LABEL. `name` stood here carrying the same string, and went

@@ -6,9 +6,10 @@
 // handed to js/relayServer.js BEFORE anything below is required — that is
 // the whole point, since a require here is a module the relay would carry.
 //
-// Kept, not removed, because spirit-3's systemd unit, the Procfile and
-// install-public-relay.js all start `node js/server.js --relay`. Changing
-// those is a deploy decision (Andy's), not part of the split.
+// Kept, not removed, because spirit-3's systemd unit starts
+// `node js/server.js --relay`. Changing that is a deploy decision (Andy's),
+// not part of the split. (The Procfile and install-public-relay.js did too,
+// until both went in cycle 3.)
 if (process.argv.slice(2).includes('--relay')) {
   require('./relayServer');
   return;

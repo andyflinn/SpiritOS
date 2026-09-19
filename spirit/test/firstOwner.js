@@ -2,7 +2,6 @@
 const rollOf = require('./rollOf');
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
@@ -15,7 +14,18 @@ const { createRelay } = require('../run/js/relay');
 const UNCLAIMED = require('./scenario').UNCLAIMED;
 const world = require('./world');
 
-test.startTest('First claim is owner; chat to reserved name relay');
+// ── FIRST INVITED CLAIM IS OWNER (cycle 3, Part B) ────────────────────
+//
+// 0003 amended. Until cycle 3 the first signed claim on an empty relay
+// became its owner — anybody's, and the startup warning said so — and
+// install-public-relay.js could reserve the first claim for a NAME
+// (pending-owner.json), which anybody who guessed the name could take.
+//
+// Now an unclaimed relay takes exactly one thing: a signed claim
+// presenting the owner invite. install.js mints it over SSH; a suite
+// mints it in process, as here.
+
+test.startTest('First invited claim is owner');
 
 {
   const made = world.build(UNCLAIMED);
@@ -24,9 +34,37 @@ test.startTest('First claim is owner; chat to reserved name relay');
   const id = auth.generateIdentity('andy');
   const sig = auth.sign(id.privateKey, auth.claimMessage('andy'));
 
-  const first = box.claim('andy', sig, id.publicKey);
+  test.subHeading('An unclaimed relay takes the owner invite and nothing else');
+
+  const bare = box.claim('andy', sig, id.publicKey);
+  if (!bare.ok && bare.status === 403 && bare.error === 'owner invite required') {
+    test.check('a signed first claim with no invite is refused — the box is not the first comer\'s');
+  } else {
+    test.fail('bare first claim: ' + JSON.stringify(bare));
+  }
+
+  // An ORDINARY invite cannot make an owner, even on an empty relay. This
+  // is the case the installer's mark exists for: allow.json lost while an
+  // owner-minted invite is still live.
+  const ordinary = invites.add(home, { label: 'andy', invitedBy: 'someone' });
+  const notOwner = box.claim('andy', sig, id.publicKey, '10.0.0.1', ordinary.token, 'andy');
+  if (!notOwner.ok && notOwner.error === 'owner invite required') {
+    test.check('an ordinary invite does not make an owner — only the installer\'s does');
+  } else {
+    test.fail('ordinary invite as owner: ' + JSON.stringify(notOwner));
+  }
+
+  const ownerInvite = invites.mintOwner(home, 'andy', 1);
+  const wrongLabel = box.claim('andy', sig, id.publicKey, '10.0.0.1', ownerInvite.token, 'eve');
+  if (!wrongLabel.ok && wrongLabel.status === 403) {
+    test.check('the owner token under the wrong name is refused — both halves are the proof');
+  } else {
+    test.fail('owner token, wrong label: ' + JSON.stringify(wrongLabel));
+  }
+
+  const first = box.claim('andy', sig, id.publicKey, '10.0.0.1', ownerInvite.token, 'andy');
   if (first.ok && first.status === 201 && first.owner === true) {
-    test.check('first signed claim becomes owner');
+    test.check('the claim presenting the owner invite becomes owner');
   } else {
     test.fail('first claim: ' + JSON.stringify(first));
   }
@@ -38,21 +76,20 @@ test.startTest('First claim is owner; chat to reserved name relay');
     test.fail('allow after first claim: ' + JSON.stringify(allow));
   }
 
+  if (!invites.load(home).some(function (r) { return r.token === ownerInvite.token; })) {
+    test.check('and the owner token is spent — it made one owner, once');
+  } else {
+    test.fail('the owner token survived its claim');
+  }
+
   // ── `relay` IS AN ORDINARY LABEL NOW (2026-09-15) ────────────────
   //
   //   Andy: "relay is just a public-key-type. node is another one, none
   //   other exist yet, but will."
   //
-  // This asserted `status === 400, name reserved`. The reservation is
-  // gone: it never guarded routing — postedToSelf compares against the
-  // relay's own KEY — so it only guarded what a list could display, and
-  // it could not even do that, since the match was exact and `Relay`
-  // was always claimable.
-  //
-  // What is asserted instead is the point of the removal: the label is
-  // refused for an ORDINARY reason. `sig` here signs `claim\nandy`, so
-  // a claim for a different label fails the signature check like any
-  // other mismatch would. Nothing about the word `relay` is special.
+  // The label is refused for an ORDINARY reason: `sig` signs
+  // `claim\nandy`, so a claim for a different label fails the signature
+  // check like any other mismatch would.
   const notSpecial = box.claim('relay', sig, id.publicKey);
   if (!notSpecial.ok && notSpecial.error !== 'name reserved') {
     test.check('"relay" is refused as an ordinary label, not as a reserved word');
@@ -60,9 +97,8 @@ test.startTest('First claim is owner; chat to reserved name relay');
     test.fail('claim of "relay": ' + JSON.stringify(notSpecial));
   }
 
-  // A second signed key is still how peer-by-key works, but since cycle 4
-  // it needs an invite the owner minted for that label. Signed but
-  // uninvited is refused.
+  test.subHeading('After the owner, every claim needs the owner\'s invite');
+
   const stranger = auth.generateIdentity('groq');
   const uninvited = box.claim(
     'groq',
@@ -75,66 +111,36 @@ test.startTest('First claim is owner; chat to reserved name relay');
     test.fail('uninvited claim: ' + JSON.stringify(uninvited));
   }
 
-  const groqInvite = box.mint(
-    'andy',
+  // A LEFTOVER OWNER INVITE MAKES A MEMBER OF NOBODY. install.js run again
+  // on a claimed relay refuses; this is the relay's own half of that rule.
+  const leftover = invites.mintOwner(home, 'groq', 1);
+  const sneak = box.claim(
     'groq',
-    7);
-  const bad = box.claim(
+    auth.sign(stranger.privateKey, auth.claimMessage('groq')),
+    stranger.publicKey, '10.0.0.7', leftover.token, 'groq'
+  );
+  if (!sneak.ok && sneak.error === 'this relay already has an owner') {
+    test.check('an owner invite on a claimed relay is refused, not turned into a membership');
+  } else {
+    test.fail('leftover owner invite: ' + JSON.stringify(sneak));
+  }
+
+  const groqInvite = box.mint('andy', 'groq', 7);
+  const invited = box.claim(
     'groq',
     auth.sign(stranger.privateKey, auth.claimMessage('groq')),
     stranger.publicKey,
     '10.0.0.7',
-    groqInvite.ok && groqInvite.invite.token
-  ,
+    groqInvite.ok && groqInvite.invite.token,
     'groq');
-  if (bad.ok && bad.status === 201) {
-    test.check('second signed key with an invite claims after owner (peer-by-key)');
+  if (invited.ok && invited.status === 201 && !invited.owner) {
+    test.check('second signed key with the owner\'s invite claims, and is not owner');
   } else {
-    test.fail('invited claim: ' + JSON.stringify({ mint: groqInvite, claim: bad }));
+    test.fail('invited claim: ' + JSON.stringify({ mint: groqInvite, claim: invited }));
   }
 
-  // THE RESERVED NAME ANSWERS NOTHING, and that is the whole of what
-  // is left to check here.
-  //
-  // Chatting to the relay was a console (CYCLE-RELAY-CONSOLE) until
-  // 2026-09-13. Three checks stood here: that the owner could send to
-  // `relay`, that the census came back on the send response, and that a
-  // non-owner got nothing. All three described a feature that is gone.
-  //
-  // They were replaced by one check — that a line to `relay` was REFUSED
-  // rather than quietly filed as a ring entry nobody could ever read
-  // back — and R8 has now deleted that too, along with `send` itself.
-  //
-  // NOTHING REPLACES IT, and that is the right outcome rather than a
-  // hole. The refusal existed to stop a junk sink that looked like a
-  // delivery; there is no sink, because there is no store. A post
-  // addressed to the relay's own key is a different thing entirely and
-  // has its own door (answerSelf), asserted in relayMonitor.js and
-  // inviteMint.js.
+  // The box, read again from disc by a fresh relay object.
   const box2 = createRelay(home);
-
-  // The name is still RESERVED, which is a different rule and outlived
-  // both the console and the ring: nobody may claim it.
-  const grab = box2.claim(
-    'relay',
-    auth.sign(stranger.privateKey, auth.claimMessage('relay')),
-    stranger.publicKey
-  );
-  if (!grab.ok) {
-    test.check('and the name itself is still unclaimable, which was never about the console');
-  } else {
-    test.fail('the reserved name was claimed: ' + JSON.stringify(grab));
-  }
-
-  // AN OWNER-ONLY STATUS REPORT STOOD HERE, pulled with a signature over
-  // a name, and beside it a check that an unsigned pull was refused. R3
-  // deleted the verb and its route on 2026-09-15.
-  //
-  // WHAT THE TWO CHECKS WERE REALLY ABOUT survives, and this file is
-  // where it belongs: after a first claim, the box knows who its owner
-  // is. Asserted off `snapshot()` directly — which is what the report was
-  // reading anyway — with no signature, because no question is being
-  // asked across a wire.
   const snap = box2.snapshot();
   if (snap.owner === 'andy' && snap.mode === 'keys') {
     test.check('after the first claim the box knows its owner, and is in keys mode');
@@ -142,62 +148,48 @@ test.startTest('First claim is owner; chat to reserved name relay');
     test.fail('snapshot: ' + JSON.stringify(snap));
   }
 
-  // AND THE PUBLIC CENSUS SAYS SO TOO, which is what the owner badge
-  // reads since R3. The flag on the row and the name in allow.json are
-  // written by the same claim and must agree — a badge read off a census
-  // that disagreed with `ownerName` would be a second authority.
   const ownerRow = rollOf(box2).filter(function (p) { return p.owner; });
   if (ownerRow.length === 1 && ownerRow[0].publicKey === id.publicKey) {
-    test.check('and the census marks that key as owner, with no credential asked');
+    test.check('and the roll marks that key as owner');
   } else {
-    test.fail('census owner rows: ' + JSON.stringify(ownerRow));
+    test.fail('roll owner rows: ' + JSON.stringify(ownerRow));
+  }
+
+  test.subHeading('Members but no owner is broken, not unclaimed');
+
+  // allow.json lost. relayServer.js refuses to START on this (exit 78);
+  // a relay built in process refuses the claim for the same reason, so
+  // the next owner invite cannot take a box with people on it. Recovery
+  // is SSH (Andy).
+  fs.unlinkSync(path.join(home, 'relay-state', 'allow.json'));
+  const box3 = createRelay(home);
+  const thief = auth.generateIdentity('thief');
+  const stolen = invites.mintOwner(home, 'thief', 1);
+  const grab = box3.claim('thief',
+    auth.sign(thief.privateKey, auth.claimMessage('thief')),
+    thief.publicKey, '10.0.0.9', stolen.token, 'thief');
+  if (!grab.ok && grab.status === 503 && /restore allow\.json/.test(grab.error)) {
+    test.check('a relay with members and no allow.json refuses even the owner invite: ' + grab.error);
+  } else {
+    test.fail('members-no-owner claim: ' + JSON.stringify(grab));
   }
 }
 
 {
   const made = world.build(UNCLAIMED);
-  const home = made.home;
   const box = made.box;
   const unsigned = box.claim('andy', null, null);
   if (!unsigned.ok && unsigned.status === 400) {
-    test.check('open mailbox rejects unsigned first claim');
+    test.check('an unclaimed relay rejects an unsigned first claim');
   } else {
     test.fail('unsigned first: ' + JSON.stringify(unsigned));
   }
 }
 
-{
-  const home = world.tmpHome();
-  auth.writePendingOwner(home, 'andy');
-  const box = createRelay(home);
-  const other = auth.generateIdentity('eve');
-  const eve = box.claim(
-    'eve',
-    auth.sign(other.privateKey, auth.claimMessage('eve')),
-    other.publicKey
-  );
-  if (!eve.ok && eve.status === 403) {
-    test.check('pending owner name blocks a stranger name');
-  } else {
-    test.fail('eve vs pending andy: ' + JSON.stringify(eve));
-  }
-  const id = auth.generateIdentity('andy');
-  const ok = box.claim(
-    'andy',
-    auth.sign(id.privateKey, auth.claimMessage('andy')),
-    id.publicKey
-  );
-  if (ok.ok && ok.owner) {
-    test.check('pending name andy + laptop key becomes owner');
-  } else {
-    test.fail('pending andy claim: ' + JSON.stringify(ok));
-  }
-  if (auth.loadPendingOwner(home) === null) {
-    test.check('pending-owner.json cleared after first claim');
-  } else {
-    test.fail('pending owner still on disk');
-  }
-}
+// THE PENDING-OWNER BLOCK STOOD HERE: install-public-relay.js's name
+// reservation, asserted to block a stranger's name and to clear after the
+// first claim. Both the reservation and the file went in cycle 3 (Part B):
+// a name with no secret behind it is not a lock. The owner invite above is
+// what replaced it.
 
 test.reportSuccessFailureCount();
-

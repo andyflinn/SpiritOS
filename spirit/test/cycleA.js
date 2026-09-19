@@ -24,6 +24,7 @@ const path = require('path');
 const { URL } = require('url');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
+const { claimOwner } = require('./ownerClaim');
 const invites = require('../run/js/invites');
 // Where this node holds a seat — its own record, written at claim.
 const relayKeys = require('../run/js/relayKeys');
@@ -51,7 +52,8 @@ function ownedBox(id, name) {
   // never needed one, because minting arrived through a route.
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   var box = createRelay(home);
-  box.claim(name, auth.sign(id.privateKey, auth.claimMessage(name)), id.publicKey, '10.0.0.1');
+  // The first claim takes the owner invite (cycle 3, Part B; ownerClaim.js).
+  claimOwner(box, id, name, '10.0.0.1');
   return { home: home, box: box };
 }
 

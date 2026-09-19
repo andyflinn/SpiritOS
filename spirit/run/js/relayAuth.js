@@ -239,33 +239,27 @@ function verify(publicKeyB64, message, sigB64) {
   }
 }
 
-function pendingOwnerPath(rootDir) {
-  return path.join(rootDir, 'relay-state', 'pending-owner.json');
-}
+// PENDING-OWNER STOOD HERE — loadPendingOwner, writePendingOwner,
+// clearPendingOwner and relay-state/pending-owner.json, written by
+// install-public-relay.js to reserve the first claim for a NAME. A name
+// with no secret behind it: anybody who guessed it took the box. Replaced
+// in cycle 3 (Part B) by the owner invite that install.js mints — a token,
+// shown once over SSH (NODE-AND-RELAY, "The first claim needs a token";
+// 0003 amended to "first invited claim is owner").
 
-function loadPendingOwner(rootDir) {
-  try {
-    const parsed = JSON.parse(fs.readFileSync(pendingOwnerPath(rootDir), 'utf8'));
-    if (parsed && typeof parsed.name === 'string' && parsed.name.trim()) {
-      return parsed.name.trim();
-    }
-  } catch (e) { /* none */ }
-  return null;
-}
-
-function clearPendingOwner(rootDir) {
-  try { fs.unlinkSync(pendingOwnerPath(rootDir)); } catch (e) { /* already gone */ }
-}
-
-function writePendingOwner(rootDir, name) {
-  const dir = path.join(rootDir, 'relay-state');
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(pendingOwnerPath(rootDir), JSON.stringify({
-    name: name,
-    createdAt: new Date().toISOString(),
-  }, null, 2));
-}
-
+// TWO STATES, NAMED BY WHAT IS TRUE (cycle 3, Andy: "upon first claim, a
+// relay is always key-mode, except for claims — this needs tighter
+// specification"):
+//
+//   keys       an owner in allow.json. Claims need an owner-minted invite;
+//              everything else is by key and signature.
+//   unclaimed  no owner in allow.json. The ONE thing accepted is a claim
+//              presenting the installer's owner invite (relay.js
+//              claimAttempt). If the roll holds members, the relay refuses
+//              to start instead (relayServer.js): recovery is SSH, never
+//              the wire (Andy).
+//
+// `open` — "anyone may take the first claim" — does not exist any more.
 function loadAllow(rootDir) {
   try {
     const raw = fs.readFileSync(path.join(rootDir, 'relay-state', 'allow.json'), 'utf8');
@@ -284,9 +278,11 @@ function loadAllow(rootDir) {
       });
       return { mode: 'keys', byName: byName };
     }
-    // DEPRECATED(D6, expires: alpha) — a names-mode allow.json falls
-    // through to open below.
-    // See design/DEPRECATIONS.md (decision 0014).
+    // D6 ELIMINATED (cycle 3, Part B; design/DEPRECATIONS.md). A
+    // names-mode allow.json fell through to `open`. There is no `open`
+    // now: any allow.json without an owner key is simply `unclaimed`, and
+    // a relay whose roll holds members refuses to start on it, so no code
+    // is left that is about names mode at all.
     // NAMES MODE STOOD HERE — `{ "names": [...] }`, a list of labels
     // allowed to claim with no key behind any of them. Deleted on
     // 2026-09-15.
@@ -300,12 +296,8 @@ function loadAllow(rootDir) {
     // same sitting, so what was left was a mode that could claim and do
     // nothing else.
     //
-    // A relay upgrading in place that somehow holds one falls through to
-    // `open` below. That is the honest reading rather than a silent
-    // demotion: a list of bare names with no keys IS an open box with a
-    // guest list, and open mode says so out loud at startup.
-  } catch (e) { /* missing = open */ }
-  return { mode: 'open' };
+  } catch (e) { /* missing = no owner */ }
+  return { mode: 'unclaimed' };
 }
 
 // A row is a name and a house key. It carried a devicePublicKey until
@@ -402,19 +394,11 @@ function ensureIdentity(rootDir, name) {
   return id;
 }
 
-function checkClaim(allow, name, sig) {
-  if (!name) return { ok: false, status: 400, error: 'name required' };
-  // Open is a real state and stays: it is what a relay looks like before
-  // its first claim, which is the moment decision 0003 turns on. A names
-  // branch stood beneath this and went with the mode (2026-09-15).
-  if (allow.mode === 'open') return { ok: true };
-  const pub = allow.byName[name];
-  if (!pub) return { ok: false, status: 403, error: 'name not allowed' };
-  if (!sig || !verify(pub, claimMessage(name), sig)) {
-    return { ok: false, status: 403, error: 'bad claim signature' };
-  }
-  return { ok: true };
-}
+// checkClaim STOOD HERE. Its one job left was `open` mode — "a relay
+// before its first claim takes any claim" — and its one caller was the
+// branch of relay.js claimAttempt that ran when a relay was neither keys
+// nor pending. Both went in cycle 3 (Part B): an unclaimed relay takes
+// only the installer's owner invite, and claimAttempt says so itself.
 
 // checkSend, checkInboxKey AND checkInbox STOOD HERE — 66 lines, the
 // three gates on the ring, deleted with it by R8 on 2026-09-15.
@@ -431,9 +415,9 @@ function checkClaim(allow, name, sig) {
 //   KEY ONLY, and a relay holds no device key at all now (deviceAuth.js).
 //
 //   A KEYLESS RELAY HAS NOTHING TO CHECK AGAINST. open and names mode
-//   had no per-peer key, so both gates waved reads through. That is
-//   why checkClaim above still branches on mode and these did not
-//   survive: a read is gone, a claim is not.
+//   had no per-peer key, so both gates waved reads through. (checkClaim
+//   outlived these because a claim outlived the reads; it went too, with
+//   open mode, in cycle 3.)
 
 // checkOwner STOOD HERE, and `statusMessage` above it. Both went with
 // `GET /api/relay/status` on 2026-09-15 (R3,
@@ -496,9 +480,5 @@ module.exports = {
   loadIdentity,
   saveIdentity,
   ensureIdentity,
-  checkClaim,
   ownerName,
-  loadPendingOwner,
-  writePendingOwner,
-  clearPendingOwner,
 };

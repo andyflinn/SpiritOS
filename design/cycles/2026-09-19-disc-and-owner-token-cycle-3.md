@@ -1,8 +1,7 @@
 # 2026-09-19 — the relay's data on disc, and the owner's token
 
-**Status: OPEN. Part A (disc) done, eleven requirements. Part B (the owner's
-first-claim token) not started; its requirements are written here when it
-is built, in its own commit.** Scaffolding cycle 3 of the build sequence
+**Status: CLOSED, 2026-09-19. Part A (disc), eleven requirements, and Part B
+(the owner's first-claim token), five — all done.** Scaffolding cycle 3 of the build sequence
 ([NODE-AND-RELAY.md](../principles/NODE-AND-RELAY.md), *Build sequence*),
 amended by Andy:
 
@@ -243,11 +242,106 @@ on Windows.
 
 ## Part B — the owner's first-claim token
 
-Planned: UNCLAIMED/CLAIMED replaces open mode and `pending-owner.json`
-(amending 0003 to *first invited claim is owner*); `install.js`; fixtures mint
-the owner invite in-process; B4, a relay with members and no `allow.json`
-refuses to start, with the exit code, the unit setting, and `bash/restart` /
-`bash/update` reporting it. Requirements are written here when it is built.
+> **Andy (2026-09-19):** *"Relay currently goes keys mode on first claim. I
+> think that first claim should be protected by a token as well."* — *"Upon
+> first claim, a relay is always key-mode, except for claims — this needs
+> tighter specification."* — *"If allow.json is trashed, there is no way of
+> proving ownership other than ssh."*
+
+### B1 — two states, named by what is true
+
+`relayAuth.loadAllow` answers `keys` (an owner in `allow.json`) or
+`unclaimed`; `open` is gone. An unclaimed relay takes exactly one claim: a
+signed claim presenting the **owner invite**. It becomes the owner and writes
+`allow.json`. A claim with no invite, or with an ordinary invite, is refused
+(`owner invite required`). On a claimed relay a leftover owner invite makes
+nobody a member (`this relay already has an owner`). `pending-owner.json`,
+its helpers and `checkClaim` are deleted, and 0003 is amended: *first invited
+claim is owner*. D6 is eliminated, since no code about names mode is left.
+
+The owner invite is marked `invitedBy: '(installer)'`, a value no spoken
+label can take, so only it can make an owner (decided within the spec,
+Andy agreed). Without the mark, a relay whose `allow.json` was lost could be
+claimed by any live ordinary invite.
+
+**Verify:** `spirit/test/firstOwner.js` — a bare claim, an ordinary invite
+and the owner token under the wrong name are all refused; the owner invite
+makes the owner and is spent; a leftover owner invite on a claimed relay is
+refused; members with no `allow.json` refuse even the owner invite (503).
+
+**Status:** DONE
+
+### B2 — install.js
+
+At the repo root, over SSH: it asks for the owner's name, or takes it as an
+argument. It mints one owner invite (32 hex characters, valid for a day) and
+prints the name and token once. Running it again replaces the token.
+It refuses, with exit 78, a relay that already has an owner (owners change
+over SSH, in `allow.json`), a relay with members and no owner, and a name
+that cannot be spoken. It replaces `install-public-relay.js`, which is
+deleted. The relay's boot line for an unclaimed relay says UNCLAIMED and
+names install.js; it never prints the token. Natter's first-run page tells
+the owner to claim with the name and token install.js printed.
+
+**Verify:** `spirit/test/ownerToken.js` — install.js run for real in a copied
+repo; `spirit/test/relayGates.js` — the boot announcement.
+
+**Status:** DONE
+
+### B3 — fixtures mint the owner invite in process
+
+Lab and test relays never run the installer (decided).
+`spirit/test/ownerClaim.js`: `claimOwner` for a relay in process, and
+`mintOwnerInvite` for a relay in another process, which writes into its
+`relay.db` and closes its own connection. world.js, labWorld and the suites
+that claimed a first owner the open-mode way now use it: hintWire,
+shutdownWire, governorTwoRelays, partnerWire, presenceWire, cycleA, invites,
+inviteLock, inviteRedeem, identityPerception, labelShape, labPersistence,
+labRefusals and labLifecycle.
+
+**Verify:** the harness — 101 suites green, every one of them building its
+relays through the owner invite.
+
+**Status:** DONE
+
+### B4 — a relay with members but no owner refuses to start
+
+Decided (Andy): a relay whose store holds members but whose `allow.json`
+names no owner refuses to start, *"forcing the owner to ssh and
+investigate"*. No members and no owner is simply unclaimed.
+
+- **One exit code for every startup refusal: 78** (EX_CONFIG). That covers
+  this case, `node:sqlite` missing, a store that cannot be opened, and a
+  `config.json` the box cannot honour (`relayServer.js` `refuseToStart`).
+- **`RestartPreventExitStatus=78`** in `bash/systemd/spirit-relay.service`,
+  so systemd stops retrying. It takes effect on spirit-3 when Andy re-runs
+  `bash/install-units`.
+- **`bash/restart` and `bash/update`** wait three seconds, ask
+  `systemctl is-active`, and if the relay is not running print its last 20
+  journal lines and fail with "relay refused to start — see above"
+  (`check_started` in `lib.sh`). Before this, both printed "restarted"
+  without looking.
+- AGENT.md's recovery line is replaced.
+
+**Verify:** `spirit/test/ownerToken.js` — a relay spawned on a store with two
+members and no `allow.json` exits 78 and says why. The bash half has no
+suite: it needs systemd. Its scripts parse under bash on Linux (WSL), and it
+runs for real on the next `bash/restart` on spirit-3.
+
+**Status:** DONE
+
+### B5 — no Procfile
+
+Andy agreed: the `Procfile` is deleted. A Heroku-style host has an ephemeral
+filesystem, so `relay.db`, `allow.json` and `identity.json` would be wiped
+on every restart. That path could never have kept a relay's members or its
+owner, and it has no SSH for install.js. NODE-AND-RELAY's open item is
+closed by removal.
+
+**Verify:** `spirit/test/ownerToken.js` (install.js is the only way to an
+owner) — and the file's absence, which `git ls-files Procfile` shows.
+
+**Status:** DONE
 
 ## Seams left (rule 6)
 

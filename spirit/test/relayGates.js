@@ -8,8 +8,10 @@
 //      with, and refused outright if the target is not there to take it;
 //   3. rate limiting is keyed on the CALLER, not on the name the caller
 //      supplies, so rotating the name does not buy a fresh budget;
-//   4. a relay whose allow.json is missing runs fully open — any name,
-//      any claimer — and says so at startup.
+//   4. a relay whose allow.json is missing says so at startup. It ran
+//      fully open until cycle 3 (any name, any claimer); since Part B it
+//      is UNCLAIMED, takes only the installer's owner invite, and the
+//      announcement names install.js (firstOwner.js asserts the refusal).
 //
 // All four were audit findings, fixed in 5c64b17/a1bbac6. 2 and 3 then
 // regressed when peers became key-addressed, and this file is the
@@ -314,7 +316,7 @@ function waitForBoot(port) {
 
 let child = null;
 
-resetState(null); // no allow.json — loadAllow falls through to mode 'open'
+resetState(null); // no allow.json — loadAllow answers mode 'unclaimed' (cycle 3)
 
 freePort()
   .then(function (port) {
@@ -327,13 +329,13 @@ freePort()
     child.stderr.on('data', function (c) { output += c; });
 
     return waitForBoot(port).then(function () {
-      // Prove it really is open before asking whether it admitted as much,
-      // so this can never pass by testing a relay that wasn't open at all.
+      // Prove it is really up before asking what it announced, so this can
+      // never pass by testing a relay that never booted.
       return get(port, '/api/relay/key').then(function () {
-        if (/open|unrestricted|no allow|anyone/i.test(output)) {
-          test.check('the relay announced open mode at startup');
+        if (/UNCLAIMED/.test(output) && /install.js/.test(output) && !/this relay is OPEN/.test(output)) {
+          test.check('the relay announced it is UNCLAIMED, and named install.js — not open mode');
         } else {
-          test.fail('the relay started fully open and said nothing about it. Startup output was: ' +
+          test.fail('the relay started without an owner and did not say UNCLAIMED / install.js. Startup output was: ' +
             JSON.stringify(output.trim()));
         }
       });

@@ -3,5 +3,7 @@ source "$(dirname "$0")/lib.sh"
 need_root
 have systemctl || die "systemctl required"
 systemctl restart "$UNIT_NAME"
-ok "restarted $UNIT_NAME"
+# Launched is not started: a relay that refuses to start (exit 78) is only
+# visible by asking afterwards. See check_started in lib.sh.
+check_started "$UNIT_NAME"
 systemctl --no-pager --full status "$UNIT_NAME" | sed -n '1,12p'

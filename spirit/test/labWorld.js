@@ -71,6 +71,7 @@ async function masterUp() {
 // In a harness run, runAll starts labMaster before any lane and stops it
 // after, so no suite owns it; a suite run alone starts and stops its own.
 const lab = require('./labMaster/ensureMaster.js');
+const { mintOwnerInvite } = require('./ownerClaim');
 
 async function ensureMaster() {
   return lab.ensure();
@@ -208,15 +209,20 @@ function createWorld(opts) {
       return { ok: false, error: 'lab relay did not answer on ' + relay.url };
     }
 
-    // The relay's owner is whoever claims first. Made here rather than
-    // borrowed from the work node: a suite must not need Andy's key, and
-    // must never write to his node's state.
+    // The relay's owner is the first claim presenting the owner invite
+    // (cycle 3, Part B). Made here rather than borrowed from the work node:
+    // a suite must not need Andy's key, and must never write to his node's
+    // state. The invite is minted into the lab relay's own relay.db, in
+    // process — lab relays never run install.js (NODE-AND-RELAY).
     owner = opts.owner || auth.generateIdentity('labowner');
     const ownerName = owner.name || 'labowner';
+    const ownerInvite = mintOwnerInvite(relay.home, ownerName);
     const claimed = await post(relay.url + '/api/relay/claim', {
       name: ownerName,
       publicKey: owner.publicKey,
       sig: auth.sign(owner.privateKey, auth.claimMessage(ownerName)),
+      invite: ownerInvite.token,
+      inviteLabel: ownerName,
     });
     if (!claimed.ok) {
       return { ok: false, error: 'lab owner could not claim: ' +

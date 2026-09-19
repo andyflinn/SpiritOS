@@ -6,6 +6,7 @@ const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
+const { claimOwner } = require('./ownerClaim');
 const contactBook = require('../run/js/contacts');
 const invites = require('../run/js/invites');
 const world = require('./world');
@@ -102,11 +103,8 @@ test.startTest('Identity vs perception (sticks and stones)');
   const home = made.home;
   const box = made.box;
   const annie = auth.generateIdentity('annie');
-  const first = box.claim(
-    'annie',
-    auth.sign(annie.privateKey, auth.claimMessage('annie')),
-    annie.publicKey
-  );
+  // The first claim takes the owner invite (cycle 3, Part B; ownerClaim.js).
+  const first = claimOwner(box, annie, 'annie');
   if (first.ok) test.check('lab mailbox accepts first signed annie');
   else test.fail('annie claim: ' + JSON.stringify(first));
 

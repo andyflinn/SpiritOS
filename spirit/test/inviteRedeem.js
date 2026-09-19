@@ -3,6 +3,7 @@ const rollOf = require('./rollOf');
 
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
+const { claimOwner } = require('./ownerClaim');
 const invites = require('../run/js/invites');
 // A relay nobody has claimed, which is the only world in which the act of
 // claiming can be watched happening. The claims themselves stay written
@@ -18,11 +19,8 @@ test.startTest('Invites cycle 3 — mint and redeem on one keys-mode box');
   const home = made.home;
   const box = made.box;
   const andy = auth.generateIdentity('andy');
-  const owner = box.claim(
-    'andy',
-    auth.sign(andy.privateKey, auth.claimMessage('andy')),
-    andy.publicKey
-  );
+  // The first claim takes the owner invite (cycle 3, Part B; ownerClaim.js).
+  const owner = claimOwner(box, andy, 'andy');
   if (!owner.ok) test.fail('owner: ' + JSON.stringify(owner));
   else test.check('owner claimed');
 

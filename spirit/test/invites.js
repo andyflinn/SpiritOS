@@ -6,6 +6,7 @@ const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
+const { claimOwner } = require('./ownerClaim');
 const invites = require('../run/js/invites');
 const { createRelay } = require('../run/js/relay');
 
@@ -41,11 +42,8 @@ test.startTest('Invites cycle 1 — consume on claim');
   // First claim is owner (decision 0003), and needs no invite because
   // there is nobody to invite them yet. This is what turns the box to
   // keys mode.
-  const owner = box.claim(
-    'andy',
-    auth.sign(andy.privateKey, auth.claimMessage('andy')),
-    andy.publicKey
-  );
+  // The first claim takes the owner invite (cycle 3, Part B; ownerClaim.js).
+  const owner = claimOwner(box, andy, 'andy');
   if (owner.ok && owner.owner) {
     test.check('first claim is owner, and the box is keys mode from here');
   } else {
@@ -152,7 +150,7 @@ test.subHeading('The invite proves; the claimer names themselves');
   const home = tmpHome();
   const box = createRelay(home);
   const andy = auth.generateIdentity('andy');
-  box.claim('andy', auth.sign(andy.privateKey, auth.claimMessage('andy')), andy.publicKey);
+  claimOwner(box, andy, 'andy');
 
   // An owner inviting somebody they know by phone number — Andy's own
   // example of what an invite label is for: "(phone/email etc)".
@@ -245,7 +243,7 @@ test.subHeading('The invite proves; the claimer names themselves');
   const home = tmpHome();
   const box = createRelay(home);
   const andy = auth.generateIdentity('andy');
-  box.claim('andy', auth.sign(andy.privateKey, auth.claimMessage('andy')), andy.publicKey);
+  claimOwner(box, andy, 'andy');   // the owner invite (cycle 3, Part B)
 
   invites.add(home, {
     label: 'late',
@@ -273,11 +271,7 @@ test.subHeading('The invite proves; the claimer names themselves');
   const home = tmpHome();
   const box = createRelay(home);
   const annie = auth.generateIdentity('annie');
-  const first = box.claim(
-    'annie',
-    auth.sign(annie.privateKey, auth.claimMessage('annie')),
-    annie.publicKey
-  );
+  const first = claimOwner(box, annie, 'annie');   // the owner invite (cycle 3, Part B)
   // This block used to assert the opposite — that cycle 1 left keys-mode
   // open. Cycle 4 closed it.
   //
@@ -318,7 +312,7 @@ test.subHeading('Dead invites do not accumulate on a box nobody administers');
   const home = tmpHome();
   const andy = auth.generateIdentity('andy');
   const box = createRelay(home);
-  box.claim('andy', auth.sign(andy.privateKey, auth.claimMessage('andy')), andy.publicKey);
+  claimOwner(box, andy, 'andy');   // the owner invite (cycle 3, Part B)
 
   function plantExpired(label, token) {
     // Written straight into the store: the mint verb never makes an
@@ -423,7 +417,7 @@ test.subHeading('A claim that is refused after the invite check does not spend i
   const andy = auth.generateIdentity('andy');
   const bella = auth.generateIdentity('bella');
 
-  box.claim('andy', auth.sign(andy.privateKey, auth.claimMessage('andy')), andy.publicKey);
+  claimOwner(box, andy, 'andy');   // the owner invite (cycle 3, Part B)
 
   // bella gets on the box legitimately, with her own invite.
   invites.add(home, { label: 'bella', invitedBy: 'andy', days: 7, token: 'tok-bella' });

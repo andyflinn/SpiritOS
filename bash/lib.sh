@@ -155,3 +155,27 @@ say() { echo "==> $*"; }
 ok() { echo "    ok  $*"; }
 
 warn() { echo "    !!  $*" >&2; }
+
+# ── DID IT ACTUALLY START? (cycle 3, Part B) ───────────────────────────
+#
+# `systemctl restart` returns as soon as the process is launched, so
+# restart and update used to print "restarted" without looking. A relay
+# that REFUSES to start — members but no owner in allow.json, a store it
+# cannot open, a config the box cannot honour — exits 78, which the unit
+# names in RestartPreventExitStatus, so systemd stops retrying it and the
+# unit sits failed. Andy: the bash utilities "should be able to identify
+# that problem", forcing the owner to ssh and investigate.
+#
+# So: give it a few seconds, ask systemd, and if it is not running, print
+# the refusal from the journal and fail.
+check_started() {
+  local unit="$1"
+  sleep 3
+  if systemctl is-active --quiet "$unit"; then
+    ok "$unit is running"
+    return 0
+  fi
+  warn "$unit is NOT running — its last words:"
+  journalctl -u "$unit" -n 20 --no-pager >&2 || true
+  die "relay refused to start — see above"
+}

@@ -101,13 +101,16 @@ This directory contains the vision, principles, and architecture decisions for *
   cannot survive the tunnel, in both directions; errors from the far side
   travel down the chain to the asker, signed by the relay.
 - [2026-09-19 — the relay's data on disc, and the owner's token](cycles/2026-09-19-disc-and-owner-token-cycle-3.md)
-  — **OPEN; Part A done**, 11 requirements. Members, invites and the partner
-  roll are in `relay.db` (node:sqlite), and RAM is its client: 10,000 members
-  cost about the heap of 10. Every operation is by key; no roster is served,
-  so the relay broadcasts and the node filters. A read-only SSH dump is
-  included, and a relay that cannot open its store refuses to start. A member
-  answering a request that a partner carried in now learns the route back.
-  Part B, the owner's first-claim token, is next.
+  — **CLOSED.** 16 requirements, all done. Part A: members, invites and the
+  partner roll are in `relay.db` (node:sqlite), and RAM is its client: 10,000
+  members cost about the heap of 10. Every operation is by key; no roster is
+  served, so the relay broadcasts and the node filters. Search does not block,
+  and goes to live partners only; a member answering a request a partner
+  carried in learns the route back; the shutdown is proven on the wire. Part B:
+  the first claim needs the owner invite that `install.js` mints over SSH (0003
+  amended), and a relay with members but no owner refuses to start (exit 78,
+  reported by `bash/restart` and `bash/update`). `open` mode, pending-owner and
+  the Procfile are gone.
 - `spirit/test/cycleRequirements.js` goes red if any requirement has neither a
   verification that exists nor a recorded deferral.
 

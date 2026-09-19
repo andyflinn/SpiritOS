@@ -21,6 +21,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
+const { claimOwner } = require('./ownerClaim');
 const invites = require('../run/js/invites');
 // The device page's URL spelling, from the module that defines it rather
 // than from a copy in this file — see theDevicePageIsServed.
@@ -61,7 +62,9 @@ function buildRelayHome() {
   const box = createRelay(home);
   const house = auth.generateIdentity('andy');
   auth.saveIdentity(home, house);
-  box.claim('andy', auth.sign(house.privateKey, auth.claimMessage('andy')), house.publicKey);
+  // The first claim takes the owner invite, minted in process (cycle 3,
+  // Part B; ownerClaim.js). allow.json is written by the claim itself.
+  claimOwner(box, house, 'andy');
   const bert = auth.generateIdentity('bert');
   const minted = box.mint('andy', 'bert', 7);
   box.claim('bert', auth.sign(bert.privateKey, auth.claimMessage('bert')),

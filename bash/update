@@ -144,7 +144,9 @@ source "$REPO_ROOT/bash/lib.sh"
 if unit_known "$UNIT_NAME"; then
   say "restart $UNIT_NAME"
   systemctl restart "$UNIT_NAME"
-  ok "restarted"
+  # An update that lands code the relay refuses to run on (exit 78) must
+  # say so, not "restarted". See check_started in lib.sh.
+  check_started "$UNIT_NAME"
 else
   warn "unit $UNIT_NAME not installed — code updated, process not restarted"
 fi

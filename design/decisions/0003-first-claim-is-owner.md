@@ -1,5 +1,30 @@
 # 0003 — First claim is owner; installer names the claimer
 
+> **Amended 2026-09-19 (cycle 3, Part B): first INVITED claim is owner.**
+> Decided by Andy (NODE-AND-RELAY, "The first claim needs a token").
+>
+> - **`node install.js`** at the repo root, run over SSH on the VPS, asks
+>   for the owner's name and mints an **owner invite**: a long random token,
+>   shown once in that session and never printed by the relay.
+> - An **UNCLAIMED** relay (no owner in `allow.json`) accepts exactly one
+>   claim: a signed claim presenting that invite. It becomes the owner and
+>   writes `allow.json`, as before. Every other claim is refused (`owner
+>   invite required`), including one with an ordinary invite. The owner
+>   invite is marked `invitedBy: '(installer)'`.
+> - `install-public-relay.js` and `pending-owner.json` are **gone**. They
+>   reserved a NAME with no secret behind it. `open` mode is gone too.
+> - A relay whose `relay.db` holds members but whose `allow.json` has no
+>   owner **refuses to start** (exit 78). Recovery is SSH, not the wire.
+> - Lab and test relays mint the owner invite in process
+>   (`invites.mintOwner`, `spirit/test/ownerClaim.js`); they never run the
+>   installer.
+>
+> The text below is the decision as first made. Steps 1, 3 and 4 describe
+> the name reservation this amendment replaced. The `Files` list is
+> superseded by: `install.js`, `spirit/run/js/invites.js` (`mintOwner`),
+> `relay.js` (`claimAttempt`), `relayServer.js` (the refusal),
+> `spirit/test/firstOwner.js`, `spirit/test/ownerToken.js`.
+
 ## The process you want
 
 1. Rent a VPS. On the clone:

@@ -477,8 +477,18 @@ It supersedes `install-public-relay.js`'s name reservation
 (`pending-owner.json`), which reserves a name with no secret behind it.
 Cycle 3, with the storage move — both touch claims and invites.
 
-**Open:** a relay deployed without SSH (the Procfile/Heroku path) has no way
-to run the installer.
+**Built: cycle 3, Part B.** `install.js` at the repo root; the owner invite
+is marked (`invitedBy: '(installer)'`) so that only it can make an owner;
+an unclaimed relay says so at boot; a relay with members but no owner
+refuses to start (exit 78, `RestartPreventExitStatus=78` in the unit), and
+`bash/restart` and `bash/update` report the refusal from the journal.
+
+~~**Open:** a relay deployed without SSH (the Procfile/Heroku path) has no way
+to run the installer.~~ *Closed by removal (Andy, 2026-09-19): the
+`Procfile` is deleted. That path's filesystem is ephemeral: `relay.db`,
+`allow.json` and `identity.json` would be wiped on every restart, so it
+could never have kept a relay's members or its owner. A relay needs a
+persistent disc and SSH.*
 
 ### Relays need a partner interface, defined for self-management
 
@@ -2470,9 +2480,10 @@ shape.
 | before separate shipping | — | version tolerance (§7) | |
 
 **Cycles 2–5 agreed "for now", cycle 2 locked in** (Andy, 2026-09-19).
-Cycle 2 closed the same day. Cycle 3 Part A (disc, RAM its client) is done;
-Part B (the owner's token) is next —
-[the cycle](../cycles/2026-09-19-disc-and-owner-token-cycle-3.md). Part A
+Cycle 2 closed the same day. **Cycle 3 closed the same day too**: Part A
+(disc, RAM its client) and Part B (the owner's token) —
+[the cycle](../cycles/2026-09-19-disc-and-owner-token-cycle-3.md). Next in
+the sequence is cycle 4, the owner's visual monitor. Part A
 also carries **the member who answers learns the route back** (§9b, R9),
 which completes cycle 2's route learning in the reverse direction. `seen`
 is decided and not yet built.

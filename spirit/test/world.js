@@ -21,6 +21,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const auth = require('../run/js/relayAuth');
+const { claimOwner } = require('./ownerClaim');
 const invites = require('../run/js/invites');
 const scenario = require('./scenario');
 const { createRelay } = require('../run/js/relay');
@@ -78,12 +79,9 @@ function assemble(s) {
       // Claimed, and NOT written into the relay's home — the owner's key
       // belongs in the owner's NODE home, which is what ownerHome()
       // below builds and what deviceTick and the hub read.
-      const claimed = boxes[name].claim(
-        s.owner,
-        auth.sign(owner.privateKey, auth.claimMessage(s.owner)),
-        owner.publicKey,
-        '10.0.0.1'
-      );
+      // With the owner invite, minted in process (cycle 3, Part B: an
+      // unclaimed relay takes no other first claim). See ownerClaim.js.
+      const claimed = claimOwner(boxes[name], owner, s.owner, '10.0.0.1');
       if (!claimed.ok) throw new Error('owner could not claim ' + name + ': ' + claimed.error);
     });
   }
