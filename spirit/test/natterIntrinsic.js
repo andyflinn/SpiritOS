@@ -2481,13 +2481,23 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
   const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
   const scripts = [NATTER_SCRIPT, 'app/relayChat/relayChat.js'];
 
-  // The seed is a check, not a write: a fresh clone already points at
-  // the one public mailbox, so nobody has to type a URL.
-  const seeded = JSON.parse(readRun('app/natter/relays.json'));
-  if (Array.isArray(seeded) && seeded.some(function (row) { return row.url === 'https://spirit.andyflinn.com'; })) {
-    test.check('the repo ships pointed at the public mailbox');
+  // A FRESH CLONE SHIPS NO RELAY. This asserted the opposite — "the repo
+  // ships pointed at the public mailbox" — by reading relays.json off
+  // disk, after .gitignore had already made the file local: "an unbound
+  // node showing Natter's add-a-relay row is what an unbound node is, and
+  // a list shipped in git was the box pretending to know somewhere it had
+  // never been." It passed only on a working copy that held one, and
+  // crashed on the first fresh checkout (WSL, 2026-09-19). What is true of
+  // every clone is that git does not carry it.
+  let tracked = '';
+  try {
+    tracked = require('child_process').execSync('git ls-files app/natter/relays.json',
+      { cwd: RUN_DIR, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  } catch (e) { tracked = 'git unavailable'; }
+  if (tracked === '') {
+    test.check('the repo ships no relay list — a fresh clone starts unbound');
   } else {
-    test.fail('relays.json: ' + JSON.stringify(seeded));
+    test.fail('relays.json is tracked again: ' + tracked);
   }
 
   const fresh = bootShell(prefs, scripts, false, '');

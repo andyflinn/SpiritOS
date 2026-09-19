@@ -131,7 +131,13 @@ expectNotWritable('app/natter/natter.json (manifest)', 'app/natter/natter.json')
 // to dial. It must stay both readable and writable — locking it in a
 // "protect everything the relay work added" sweep would break NATter and
 // leave /api/hub/* answering 503 with no relay url.
-expectLoads('app/natter/relays.json (app data)', 'app/natter/relays.json');
+//
+// SERVABLE, NOT LOADED: the gate is what this asserts, and it is a
+// question about the path. relays.json is gitignored (a fresh clone has
+// none — see .gitignore), so loading it passed only on a working copy
+// that happened to hold one, and went red on the first fresh checkout
+// (WSL, 2026-09-19).
+expectServable('app/natter/relays.json (app data)', 'app/natter/relays.json');
 expectWritable('app/natter/relays.json (app data)', 'app/natter/relays.json');
 
 // ---- process scripts: readable, never writable ----

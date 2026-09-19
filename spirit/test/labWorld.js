@@ -21,7 +21,6 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { spawn } = require('child_process');
 const auth = require('../run/js/relayAuth');
 // GAP 1 again: the node's own record of where it holds a seat.
 const relayKeys = require('../run/js/relayKeys');
@@ -63,17 +62,18 @@ async function masterUp() {
   } catch (e) { return false; }
 }
 
-let startedMaster = null;
+// ONE OWNER OF STARTING labMaster: ensureMaster.js. This file had its own
+// copy, and its destroy() killed what that copy started — and build()
+// calls destroy() to clear leftovers, so a world built with no labMaster
+// running started one and killed it a moment later. It passed only where
+// a labMaster was already up (always, on the Windows box it was written
+// on); on a fresh Linux box liveFrontDoor failed every time (2026-09-19).
+// In a harness run, runAll starts labMaster before any lane and stops it
+// after, so no suite owns it; a suite run alone starts and stops its own.
+const lab = require('./labMaster/ensureMaster.js');
 
 async function ensureMaster() {
-  if (await masterUp()) return { ok: true, started: false };
-  startedMaster = spawn(process.execPath, ['spirit/test/labMaster/labMaster.js'],
-    { cwd: REPO_ROOT, stdio: 'ignore' });
-  for (let n = 0; n < 20; n += 1) {
-    await sleep(250);
-    if (await masterUp()) return { ok: true, started: true };
-  }
-  return { ok: false, error: 'labMaster did not come up on 65420' };
+  return lab.ensure();
 }
 
 function homeOf(id) {
@@ -197,7 +197,9 @@ function createWorld(opts) {
     // run holds a port this one wants, and the failure that produces
     // names the wrong thing entirely — a recycle that 404s, when the real
     // trouble is a different node sitting on the port.
-    await destroy();
+    // clear(), not destroy(): leftovers go, the labMaster just ensured
+    // stays (see ensureMaster above).
+    await clear();
 
     relay = await ensureNode('relay', 'relay', RELAY_PORT);
     if (!relay.ok) return relay;
@@ -445,7 +447,8 @@ function createWorld(opts) {
   // The `lw-` prefix is what makes this possible, and it is the same
   // reasoning as `lab-` on the live relay: a disposable thing should be
   // identifiable as disposable without anybody having kept a list.
-  async function destroy() {
+  // Every lw-* node goes. labMaster stays.
+  async function clear() {
     const listed = await master('GET', '/api/nodes');
     const rows = (listed.body && listed.body.nodes) || [];
     for (const row of rows) {
@@ -453,10 +456,13 @@ function createWorld(opts) {
       await master('POST', '/api/nodes/' + row.id + '/delete');
     }
     peers.length = 0;
-    if (startedMaster) {
-      try { startedMaster.kill(); } catch (e) { /* gone */ }
-      startedMaster = null;
-    }
+  }
+
+  // The final teardown: the nodes, and labMaster too if THIS process
+  // started it (ensureMaster.stop is a no-op otherwise).
+  async function destroy() {
+    await clear();
+    lab.stop();
   }
 
   return {

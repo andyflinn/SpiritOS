@@ -149,7 +149,12 @@ test.subHeading('Legitimate paths still work in non-canonical spellings');
   ['./index.html', 'index.html'],
   ['x/../index.html', 'index.html'],
   ['js/./client/shell.js', 'js/client/shell.js'],
-  ['app/./natter/relays.json', 'app/natter/relays.json'],
+  // A TRACKED app file, because this check loads it. It was relays.json,
+  // which .gitignore keeps out of every clone on purpose — so it passed
+  // only on a working copy that happened to hold one, and went red on the
+  // first fresh checkout (WSL, 2026-09-19). relays.json's writability is
+  // asserted below, by path, which needs no file.
+  ['app/./natter/natter.json', 'app/natter/natter.json'],
 ].forEach(function (pair) {
   const variant = pair[0];
   const canonical = pair[1];

@@ -86,9 +86,11 @@ const NOT_A_SUITE = [
 // They are written to coexist: distinct relay/node ports per file
 // (65410-65419 and 65425-65428) and distinct labMaster row names, so
 // they run in the ordinary lanes rather than needing a lane of their
-// own. labMaster itself is started by whichever of them gets there
-// first (labMaster/ensureMaster.js) and left running if it was already
-// up, because somebody may be using theirs.
+// own. labMaster itself is started by THIS RUNNER before any lane, and
+// stopped after the last suite — left alone if it was already up,
+// because somebody may be using theirs. (This said "started by whichever
+// of them gets there first" until 2026-09-19: that suite then stopped it
+// on its way out while other lanes were still using it — see main().)
 
 // Last, always. It reads the other suites off disk to check that every
 // visual scenario still points at one that exists, so it should be
@@ -201,6 +203,25 @@ async function main() {
   const shared = body.filter(function (f) {
     return /setupRelayFakes/.test(fs.readFileSync(path.join(DIR, f), 'utf8'));
   });
+
+  // ONE labMaster FOR THE WHOLE RUN, owned by the runner. Suites that need
+  // one call ensureMaster, and a suite that STARTED it stopped it on its way
+  // out — while other lanes were still using it. On the Windows box a
+  // labMaster was nearly always already up, so no suite ever owned it; the
+  // first fresh Linux box (WSL, 2026-09-19) had none, and lab suites that
+  // pass alone went red together. Started here, every suite finds it up and
+  // owns nothing; stopped below, nothing is left running after the run.
+  // A labMaster somebody already had up is theirs: ensure() reports it and
+  // stop() leaves it alone. Detected from the source, like `shared`.
+  const needsLab = files.some(function (f) {
+    return /ensureMaster|labWorld|127.0.0.1:65420/.test(fs.readFileSync(path.join(DIR, f), 'utf8'));
+  });
+  const lab = require('./labMaster/ensureMaster.js');
+  if (needsLab) {
+    const up = await lab.ensure();
+    if (!up.ok) console.log('labMaster: ' + up.error + ' — the lab suites will say so themselves\n');
+  }
+
   for (const f of shared) results.push(await runOne(f));
 
   const lanes = [];
@@ -213,6 +234,7 @@ async function main() {
   }
   await Promise.all(lanes);
   for (const f of tail) results.push(await runOne(f));
+  lab.stop();   // only if this run started it
 
   // Reported in the order they were discovered, never the order they
   // happened to finish, or the same run reads differently twice.
