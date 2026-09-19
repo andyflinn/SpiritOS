@@ -2048,10 +2048,21 @@ function createRelay(rootDir, deps) {
           try { said = JSON.parse((answer && answer.text) || ''); }
           catch (e) { said = null; }
           var out = (said && said.body) || null;
-          if (!out || out.ok !== true || !out.forwarded) return;
-          deliverForwardedReply(innerHash, out.forwarded);
+          if (out && out.ok === true && out.forwarded) {
+            deliverForwardedReply(innerHash, out.forwarded);
+            return;
+          }
+          // THE ERROR TRAVELS DOWN THE CHAIN (Andy, 2026-09-19): the far
+          // relay refused — the target was not there, its reply was
+          // oversized — or said nothing at all. Either way the asking
+          // member hears it, rather than waiting out a silence.
+          relayErrorToAsker(innerHash, who.id,
+            (out && out.status) || (answer && answer.status) || 502,
+            (out && out.error) || (answer && answer.error) || 'the partner relay did not answer');
         })
-        .catch(function () { /* a partner that cannot help is not an error */ });
+        .catch(function () {
+          relayErrorToAsker(innerHash, who.id, 502, 'the partner relay did not answer');
+        });
       // It is on its way. Whether that partner holds the key is its
       // answer to give, and saying `false` here would cancel the route
       // the answer needs.
@@ -2103,6 +2114,35 @@ function createRelay(rootDir, deps) {
     delete carrying[innerHash];
     if (!carried || carried.to !== from) return;
     presentNow.broadcast('route', { key: from, at: carried.at });
+  }
+
+  // ── AN ERROR FROM THE FAR SIDE, TOLD TO THE ONE WHO ASKED ─────────────
+  //
+  //   Andy: "before post arrives at N2 and an error occurs, only N1 will be
+  //   informed. If N2's reply exceeds size limit, then B will notify N2 of
+  //   its misconduct and send an error down the reply chain."
+  //
+  // NO NEW WORD ON THE WIRE. It goes as an ordinary `reply` for the same
+  // hash — but signed by THIS RELAY, `from` its own key, never N2's. A
+  // relay cannot manufacture N2's receipt and does not try: the asker's
+  // node sees a reply signed by somebody other than the target and knows
+  // it is the relay speaking (peerPost.onReply marks it `relayed`).
+  // Registered in 0010.
+  //
+  // The route is closed first, so a late answer from the far side has
+  // nothing left to settle and cannot be delivered twice.
+  function relayErrorToAsker(innerHash, requester, status, error) {
+    delete carrying[innerHash];
+    if (!routes.cancel(innerHash, requester)) return false;
+    var mine = auth.loadIdentity(rootDir);
+    if (!mine || !mine.privateKey) return false;
+    monitorEvent('refused', requester, '', { why: String(error), hash: innerHash, via: 'partner' });
+    return !!presentNow.send(requester, 'reply', {
+      hash: innerHash,
+      from: mine.publicKey,
+      text: JSON.stringify({ v: 1, body: { ok: false, status: status, error: String(error), relayed: true } }),
+      sig: auth.sign(mine.privateKey, auth.receiptMessage(innerHash)),
+    });
   }
 
   function deliverForwardedReply(innerHash, reply) {
@@ -2940,12 +2980,13 @@ function createRelay(rootDir, deps) {
       // WILL IT FIT GOING BACK? (cycle 2) The reply is about to become
       // this relay's own answer to its partner, wrapped whole. One that
       // would not fit is refused HERE: the member learns its reply did not
-      // travel, and the partner RELAY is told why (limits.fitsWrappedReply).
-      // The partner's asking member is NOT told — carryToPartner acts only
-      // on a successful answer, and telling a member would need a new
-      // stream word (0010). Open in the cycle 2 document.
+      // travel, and the partner relay is told why (limits.fitsWrappedReply),
+      // which passes it down the chain to its asking member as a reply
+      // signed by the relay itself (relayErrorToAsker).
       if (!limits.fitsWrappedReply(typeof text === 'string' ? text : '', who.id, sig)) {
-        answerPartner({ ok: false, status: 413, error: 'reply too big to tunnel' });
+        // Two sentences, two audiences: the replier is told what it did,
+        // the asker down the chain is told what happened to its answer.
+        answerPartner({ ok: false, status: 413, error: 'reply was oversized' });
         return { ok: false, status: 413, error: 'reply too big to tunnel' };
       }
       answerPartner({

@@ -16,8 +16,12 @@
 //   4. A announces the proven route — and another member of A (amy) hears
 //      `{ key: bertrand, at: <B's relay key> }`, which is what her node
 //      would stash on her contact row (routeStash.js)
-//   5. a hint naming no partner of A: 409 "minting incomplete"
-//   6. a packet that would not survive the tunnel: 413 at A, never at B
+//   5. an error on the far side travels down the chain to alice, as a
+//      reply signed by A itself: bella not connected ("peer not
+//      reachable"), bertrand's reply too big for the return ("reply was
+//      oversized")
+//   6. a hint naming no partner of A: 409 "minting incomplete"
+//   7. a packet that would not survive the tunnel: 413 at A, never at B
 //
 // Through the interface only: hub.relayRequest and sseClient (oneDoor).
 
@@ -129,7 +133,9 @@ async function run() {
   test.subHeading('Two relays, partnered; alice and amy on A, bertrand on B');
 
   const A = buildRelay('a', ['alice', 'amy']);
-  const B = buildRelay('b', ['bertrand']);
+  // bella is a member of B who never connects — the case where B must
+  // refuse a forward after A has already accepted the post.
+  const B = buildRelay('b', ['bertrand', 'bella']);
   // The old model, as a fixture: each owner a member of the other's relay,
   // then promoted. Deprecated (NODE-AND-RELAY §6) and used here only
   // because acquisition is cycle 5.
@@ -167,13 +173,21 @@ async function run() {
     if (!verified) return;
     const hash = auth.requestHash(verified);
     hub.relayRequest(B.base, 'POST', '/api/relay/reply', {
-      from: bertrand.publicKey, hash: hash, text: JSON.stringify({ v: 1, body: { hello: 'alice' } }),
+      // Asked for something 'big', he answers with a reply that fits one
+      // hop and not the return tunnel (8,300 quotes, as the post case).
+      from: bertrand.publicKey, hash: hash,
+      text: /big/.test(d.text) ? '"'.repeat(8300) : JSON.stringify({ v: 1, body: { hello: 'alice' } }),
       sig: auth.sign(bertrand.privateKey, auth.receiptMessage(hash)),
     }).catch(function () {});
   });
 
   let aliceReply = null;
-  hold(A, alice, function (msg) { if (msg.event === 'reply') aliceReply = msg.data; });
+  const aliceReplies = [];
+  hold(A, alice, function (msg) {
+    if (msg.event !== 'reply') return;
+    aliceReply = msg.data;
+    aliceReplies.push(msg.data);
+  });
   let amyRoute = null;
   hold(A, amy, function (msg) { if (msg.event === 'route') amyRoute = msg.data; });
   await sleep(600);
@@ -200,6 +214,40 @@ async function run() {
     test.check('A announced the proven route; amy heard { key: bertrand, at: B’s relay key }');
   } else {
     test.fail('route announcement at amy: ' + JSON.stringify(amyRoute));
+  }
+
+  test.subHeading('An error on the far side travels down the chain to alice');
+
+  // Andy: "before post arrives at N2 and an error occurs, only N1 will be
+  // informed. If N2's reply exceeds size limit, then B will notify N2 of
+  // its misconduct and send an error down the reply chain."
+  const aKey = A.box.relayPublicKey();
+  function relayedError() {
+    const r = aliceReplies.filter(function (x) { return x.from === aKey; }).pop();
+    if (!r) return null;
+    try { return JSON.parse(r.text).body; } catch (e) { return null; }
+  }
+
+  aliceReplies.length = 0;
+  const toBella = await postWithHints(A, alice, B.members.bella.publicKey,
+    JSON.stringify({ v: 1, body: { describe: true } }), [bKey]);
+  await until(function () { return !!relayedError(); }, 6000);
+  const absent = relayedError();
+  if (toBella.status === 202 && absent && absent.ok === false && /not reachable/.test(absent.error) && absent.relayed) {
+    test.check('bella is not connected: A accepted, B refused, and alice was told "' + absent.error + '" — signed by A, not by bella');
+  } else {
+    test.fail('absent target: ' + toBella.status + ' ' + JSON.stringify(absent));
+  }
+
+  aliceReplies.length = 0;
+  await postWithHints(A, alice, bertrand.publicKey,
+    JSON.stringify({ v: 1, body: { ask: 'big' } }), [bKey]);
+  await until(function () { return !!relayedError(); }, 6000);
+  const oversized = relayedError();
+  if (oversized && oversized.ok === false && oversized.error === 'reply was oversized') {
+    test.check('bertrand’s reply was too big for the return: alice was told "reply was oversized"');
+  } else {
+    test.fail('oversized reply: ' + JSON.stringify(oversized) + ' / ' + JSON.stringify(aliceReplies));
   }
 
   test.subHeading('What A refuses at once');

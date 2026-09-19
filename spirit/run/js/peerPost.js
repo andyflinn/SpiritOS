@@ -666,6 +666,25 @@ function createPeerPost(opts) {
   function onReply(body) {
     if (!body || !body.hash || !body.from || !body.sig) return false;
     if (!auth.receiptSignatureOk(body.from, body.hash, body.sig)) return false;
+    // SIGNED BY SOMEBODY OTHER THAN THE TARGET: the relay speaking (cycle
+    // 2). A relay that could not deliver, or whose partner refused, tells
+    // the asker down the chain with a reply for the same hash signed by
+    // itself (relay.relayErrorToAsker). It is never the target's answer
+    // and must not read as one: settled as a failure, with the relay's
+    // reason, and marked `relayed` so an app can tell who said it.
+    var slot = waiting[body.hash];
+    if (slot && slot.toKey && body.from !== slot.toKey) {
+      var said = null;
+      try { said = JSON.parse(body.text || '').body; } catch (e) { said = null; }
+      return settle(body.hash, {
+        ok: false,
+        status: (said && said.status) || 502,
+        hash: body.hash,
+        error: (said && said.error) || 'the relay could not deliver',
+        from: body.from,
+        relayed: true,
+      });
+    }
     // The signature travels up to the caller as well as being checked
     // here. Not because anybody must check it twice, but because a
     // caller that CAN is a caller that does not have to take this

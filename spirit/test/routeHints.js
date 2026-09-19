@@ -316,7 +316,7 @@ function replyDirection(A, B) {
     try { return JSON.parse(m.data.text).body; } catch (e) { return null; }
   }).filter(Boolean).pop();
   if (told && told.ok === false && told.status === 413) {
-    test.check('and tells the partner relay why (its asking member is not told — open, needs a wire word)');
+    test.check('and tells the partner relay why, which passes it down the chain (hintWire.js proves the rest)');
   } else {
     test.fail('partner not told: ' + JSON.stringify(told));
   }
@@ -352,6 +352,42 @@ function replyDirection(A, B) {
       } else {
         test.fail('compose check on replies: with ' + JSON.stringify(withCheck && withCheck.text.length) +
           ', without ' + JSON.stringify(without && without.text.length));
+      }
+    });
+  }).then(function () {
+    // THE ASKING NODE, when the error comes down the chain: a reply for its
+    // hash signed by the RELAY, not by the target. Settled as a failure,
+    // marked `relayed`, never mistaken for the target's answer.
+    const askerHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-hints-asker-'));
+    auth.saveIdentity(askerHome, A.people.jazz);
+    const asked = [];
+    const asker = createPeerPost({
+      rootDir: askerHome,
+      waitMs: 2000,
+      request: function (url, method, p, body) {
+        asked.push(body);
+        return Promise.resolve({ status: 202, text: '{}' });
+      },
+    });
+    const to = B.people.sonny.publicKey;
+    const text = JSON.stringify({ v: 1, body: { ask: 1 } });
+    const waiting = asker.post('http://a.example', to, text);
+    return Promise.resolve().then(function () {
+      const b = asked[0];
+      const hash = auth.requestHash(auth.postSignatureFor(b.from, b.from, b.to, b.text, b.sig));
+      const relayId = auth.loadIdentity(A.home);
+      asker.onReply({
+        hash: hash,
+        from: relayId.publicKey,
+        text: JSON.stringify({ v: 1, body: { ok: false, status: 413, error: 'reply was oversized', relayed: true } }),
+        sig: auth.sign(relayId.privateKey, auth.receiptMessage(hash)),
+      });
+      return waiting;
+    }).then(function (r) {
+      if (r && r.ok === false && r.relayed && r.error === 'reply was oversized' && r.status === 413) {
+        test.check('the asking node settles it as a failure, marked relayed: "' + r.error + '"');
+      } else {
+        test.fail('asker settled: ' + JSON.stringify(r));
       }
     });
   });

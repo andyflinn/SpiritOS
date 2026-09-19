@@ -94,12 +94,12 @@ This directory contains the vision, principles, and architecture decisions for *
   panel Andy looks at (to cycle 4, the visual monitor) and the live run (to
   optimization).
 - [2026-09-19 — route hints end to end](cycles/2026-09-19-route-hints-cycle-2.md)
-  — **OPEN.** 6 requirements, 6 done. The first scaffolding cycle: signed
+  — **OPEN.** 7 requirements, 7 done. The first scaffolding cycle: signed
   route hints beside the packet, the relay choosing one partner (live, then
   minted, else "minting incomplete"), contacts keeping relay keys in
   `routes`, proven routes announced as keys, and nothing tunnelled that
-  cannot survive the tunnel, in both directions. Open: an asking member is
-  not told why a reply was refused (needs a wire word).
+  cannot survive the tunnel, in both directions; errors from the far side
+  travel down the chain to the asker, signed by the relay.
 - `spirit/test/cycleRequirements.js` goes red if any requirement has neither a
   verification that exists nor a recorded deferral.
 

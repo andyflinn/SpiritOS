@@ -111,13 +111,32 @@ with and without `checkTunnel`.
 
 **Status:** DONE
 
-## Open
+### R7 — an error on the far side travels down the chain
 
-- **The asking member is not told why a reply was refused.** The far relay
-  tells the partner relay (R6), but `carryToPartner` acts only on a
-  successful answer, so the member's node times out with its ordinary
-  "no answer yet". Telling it would need a new word on the stream — a 0010
-  decision, Andy's.
+> **Andy:** *"Before post arrives at N2 and an error occurs, only N1 will be
+> informed. If N2's reply exceeds size limit, then B will notify N2 of its
+> misconduct and send an error down the reply chain."* — *"Fix."*
+
+- **Before N2**, refused at A: N1 is told at once, as before. Refused at B
+  (the target not connected) after A accepted: B's refusal comes back to A,
+  which now passes it on.
+- **N2's reply oversized**: B tells N2 on the answer to its own reply
+  request (413), and tells A "reply was oversized", which A passes on.
+- **How A passes it on, with no new word on the wire:** an ordinary
+  `reply` for the same hash, signed by **A itself** (`from` = A's relay
+  key), body `{ ok: false, status, error, relayed: true }`. The route is
+  cancelled first, so nothing is delivered twice. N1's `peerPost.onReply`
+  settles a reply signed by anyone other than the target as a failure
+  marked `relayed` — never as N2's answer. Registered in 0010.
+
+**Verify:** `spirit/test/hintWire.js` — alice told "peer not reachable"
+(bella not connected) and "reply was oversized", both signed by A;
+`spirit/test/routeHints.js` — the asking node settles a relay-signed
+reply as a relayed failure.
+
+**Status:** DONE
+
+## Open
 - **`MATCH_BUDGET = PAYLOAD_MAX - 512`** left as it was: nothing measured in
   this cycle is evidence to move it (SURFACE.md §8 asks that it change only
   with evidence).

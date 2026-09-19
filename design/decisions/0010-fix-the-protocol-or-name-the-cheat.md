@@ -249,7 +249,7 @@ holds one this list does not.
 |---|---|
 | `POST /api/relay/post` · `postMessage` | a peer drops a packet on a peer |
 | `POST /api/relay/post` · `hintMessage` | the sender's route hints, signed beside the packet over its `sig` and dropped at the first relay — **added 2026-09-19, cycle 2, locked in by Andy** (design/relay/SURFACE.md §8; design/cycles/2026-09-19-route-hints-cycle-2.md). Same door, a second signed field |
-| `POST /api/relay/reply` · `receiptMessage` | the answer, by hash |
+| `POST /api/relay/reply` · `receiptMessage` | the answer, by hash. **Also, since 2026-09-19 (cycle 2, Andy):** a relay may send the asker a `reply` for the hash signed with its OWN key — an error from the far side of a partnership passed down the chain (`relay.relayErrorToAsker`). Never the target's receipt: a node settles a reply signed by anyone but the target as a failure marked `relayed`. A new meaning for an existing word, not a new word |
 | `GET /api/relay/stream` · `streamMessage` | the wire itself |
 
 ### What travels on the stream
