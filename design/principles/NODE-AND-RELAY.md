@@ -1683,6 +1683,73 @@ The divergence: the tree stores relay **URLs**; this decision says relay
 **IDs**. *Resolved by cycle 2: contact rows gain `routes`, relay keys only,
 and `learnRoute` writes there; `relays` (URLs) is left as it was.*
 
+### The member who answers learns the route back
+
+> **Andy (2026-09-19):** *"If N2 accepts the request and subsequently wants to
+> send a request back ... it wouldn't be able to supply appropriate hints."*
+> — *"Any 200 reply from an N2 may merit sending the route back to N2."* —
+> *"The timestamp is added by N2 upon receipt of the route through the
+> sseReader."* — *"The most recent timestamp should give a route priority to
+> a degree, and requests should supply the hints in priority order."*
+
+**The gap, as it stood at `c386344`.** Cycle 2 teaches routes in one direction
+only: A, the asker's relay, broadcasts `('route', { key: N2, at: B })` once N2's
+signed reply comes back. B hands N2 the forwarded request as
+`{ from, to, text, sig }` ([relay.js:1931](../../spirit/run/js/relay.js#L1931))
+and says nothing about A. So N2's own request back to N1 goes out without
+hints.
+
+**Decided (Andy, 2026-09-19):**
+
+- **B sends the route when it answers the reply.** When N2 posts a signed
+  reply to a request that arrived through a partner, B answers that post with
+  a 200. In the same step B sends **N2 alone** a `('route', { key: N1, at: A })`
+  event on N2's stream.
+  - The event and its shape are the ones cycle 2 already uses, so nothing new
+    goes on the wire.
+  - B does this on *any* signed reply. A reply has no status: every request
+    gets a receipt, and whether N2 took it in shows only in the reply's
+    `text`, which the relay never reads ([peerPost.js:621](../../spirit/run/js/peerPost.js#L621)).
+    Either way, the partnership carried the request both ways, so the route
+    is proven.
+- **B still keeps no route cache.** The partner's key for a request is held
+  in memory only while that request is in flight, like A's `carrying`, and it
+  is removed when the reply arrives. Nothing is written to disc. §9b's "the
+  relay keeps no route cache" stands.
+- **The node decides what to keep, and stamps when.** Routes arrive through
+  the existing path (presenceNode `onRoute`, then `learnRoute`).
+  - For a contact, the route becomes newest, and N2 stamps `seen` with its
+    own clock. The relay never supplies a time.
+  - For a stranger, the route is dropped, as before.
+  - Routes learned from A's broadcasts get the same stamp.
+- **Hints go in priority order.** The node sends a contact's routes as hints
+  sorted by `seen`, newest first, capped at `HINTS_PER_POST`, so the cap keeps
+  the freshest. The relay's tiers still decide first: live, then minted, then
+  non-minted. Within a tier, the node's order decides. That is the "to a
+  degree": a live older route beats a newer one that is not live.
+  `partnerFromHints` already takes hints in their given order within each
+  tier ([relay.js:2685](../../spirit/run/js/relay.js#L2685)).
+
+**Evidence, stated.** A's broadcast rests on a reply signed by the target,
+which nobody else could make. B's route rests on N1's signature, which B
+verifies, on a packet partner A carried. That shows A reaches N1, but no
+signature from N1 proves it is there. Accepted as enough for a hint, which the
+relay checks against its partner roll anyway.
+
+**For Grok's review:** `seen` changes the contacts schema, from
+`routes: ['key', …]` to `routes: [{ at, seen }, …]`. The rule in CLAUDE.md
+puts an address-book schema change in front of Andy and Grok. Andy has
+decided it; Grok should see it before it is built.
+
+**Open:**
+- Whether to also broadcast the route to B's other members, as A does. It
+  would reach anyone else on B who holds N1 as a contact. The cost is that it
+  tells B's members that N1 talked to someone on B.
+- Whether a route not seen for a long time should stop being sent as a hint.
+  No threshold is proposed; that is for measurement.
+
+**Scheduled** after cycle 3 Part B, as a small cycle of its own.
+
 ### A warm partner row carries an outstanding-post count
 
 > **Andy (2026-09-19):** *"Since multiple node-IDs can be reached through a
@@ -2287,7 +2354,9 @@ shape.
 **Cycles 2–5 agreed "for now", cycle 2 locked in** (Andy, 2026-09-19).
 Cycle 2 closed the same day. Cycle 3 Part A (disc, RAM its client) is done;
 Part B (the owner's token) is next —
-[the cycle](../cycles/2026-09-19-disc-and-owner-token-cycle-3.md).
+[the cycle](../cycles/2026-09-19-disc-and-owner-token-cycle-3.md). After it,
+a small cycle: **the member who answers learns the route back** (§9b), which
+completes cycle 2's route learning in the reverse direction.
 
 > **Andy (2026-09-19), on cycle 3:** *"Can we amend cycle 3 to demand that
 > storage is actually moved from RAM to DISC, and RAM must become a
