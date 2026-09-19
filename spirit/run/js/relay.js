@@ -2614,7 +2614,14 @@ function createRelay(rootDir, deps) {
 
     function finish() {
     if (pendingSearch) {
-      var partnerList = askPartner ? (partners() || []) : [];
+      // LIVE PARTNERS ONLY (cycle 3, NODE-AND-RELAY §10, decided by Andy).
+      // A partner is live when it holds its stream here now — the test
+      // hint routing uses. Asking one that is down held every search for
+      // the full timeout (the answer waits on all of them); leaving it out
+      // loses no more than search already gave up against a census.
+      var partnerList = askPartner
+        ? (partners() || []).filter(function (p) { return presentNow.isPresent(p.relayKey); })
+        : [];
       if (!partnerList.length) {
         sendAnswer(out);
         return;
@@ -3483,7 +3490,12 @@ function createRelay(rootDir, deps) {
   // actually the live one — a teardown arriving after the same identity
   // reconnected must not announce an absence that is not true.
   function streamClose(token, sink) {
-    var who_ = deviceIdentity(token);
+    // THE SAME IDENTITIES streamOpen ADMITS. This resolved members and the
+    // owner only, so a partner's stream, opened through partnerIdentity,
+    // could never be closed: when its socket died the partner stayed
+    // present for good. Found in cycle 3 when "live" started to decide
+    // which partners a search asks (and it already decided hint routing).
+    var who_ = deviceIdentity(token) || partnerIdentity(token);
     if (!who_) return false;
     if (!presentNow.disconnect(who_.id, sink)) return false;
     forgetActive(who_.id);

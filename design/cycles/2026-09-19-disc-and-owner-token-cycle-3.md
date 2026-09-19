@@ -1,6 +1,6 @@
 # 2026-09-19 — the relay's data on disc, and the owner's token
 
-**Status: OPEN. Part A (disc) done, nine requirements. Part B (the owner's
+**Status: OPEN. Part A (disc) done, ten requirements. Part B (the owner's
 first-claim token) not started; its requirements are written here when it
 is built, in its own commit.** Scaffolding cycle 3 of the build sequence
 ([NODE-AND-RELAY.md](../principles/NODE-AND-RELAY.md), *Build sequence*),
@@ -151,7 +151,8 @@ exit itself has no spawned test; it is three lines around that call.
 
 Added after Part A's first commit. When B carries a post from N1 in through
 partner A, it keeps N1 and A's relay key in memory while the request is in
-flight (`forwarding`). When N2's signed reply is taken and B answers it with
+flight, in the router entry's `carry` (below; this said the `forwarding` map
+until that map was removed). When N2's signed reply is taken and B answers it with
 a 200, B sends **N2 alone** `('route', { key: N1, at: A })`. It is the same
 event cycle 2 broadcasts from A. The node already applies it through
 `onRoute` → `learnRoute`, which keeps it only for a contact. There is no
@@ -179,6 +180,34 @@ hears `{ key: alice, at: A's relay key }` after answering, and bella on B
 hears nothing; `spirit/test/router.js` — the carry comes back with the
 answer, and an unanswered request's carry is freed at expiry, asked of the
 garbage collector.
+
+**Status:** DONE
+
+### R10 — a search goes to live partners only
+
+> **Andy (2026-09-19):** *"… peer acquisition for nodes requires liveness of
+> the partners; this would accelerate search significantly."* — *"Search
+> vs. census is already a loss in completeness."* — built in cycle 3 at his
+> word ("yes, c3").
+
+A member's search is propagated only to partners holding their stream here
+now (`presentNow.isPresent(relayKey)`, the test hint routing uses). Before
+this it asked every `partnered` row and waited on all of them, so one
+partner that was down held every search for the full timeout. With none
+live, the relay answers from its own members and asks nobody.
+
+**Found while building it, a bug from before this cycle:** `streamClose`
+resolved members and the owner only, while `streamOpen` also admits
+partners. So a partner whose socket died could never be closed and stayed
+present for good, and hint routing treated it as live. `streamClose` now
+resolves the same identities `streamOpen` admits.
+
+The fan-out's own budget tier (NODE-AND-RELAY §10) is decided but not built.
+It belongs to the Governor cycle, where its numbers are measured.
+
+**Verify:** `spirit/test/liveFanOut.js` — the live partner is asked and the
+one that is down is not; a partner whose stream closes is no longer live;
+with none live, nobody is asked.
 
 **Status:** DONE
 
