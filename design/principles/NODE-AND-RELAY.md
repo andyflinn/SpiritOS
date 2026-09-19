@@ -1,6 +1,15 @@
 # A node and a relay are two different things
 
 **Co-design, 2026-09-18. Verified against `e537880`. Nothing built.**
+**Amended 2026-09-19, tree claims re-checked at `c3cd6d0`:** the three levels of constraint, and every persisted
+dataset bounded by disc space or an allotment (§8); every lever declares
+its floor and ceiling with reasons (§10); the owner's only real-time tool
+is a signed grant (injecting a partner, minting an invite), and the
+Governor is programming alone; both owners sign a partnership, the relay
+verifies and may reject, revocation is silent, and every relationship is a
+row in one partner roll; a partner interface for self-management (§5).
+Routes are the node's, stored on contacts as relay IDs; the relay keeps no
+route cache (§9b). The owner does not duplicate member storage (§2).
 
 > **Andy:** *"The node is a digitisation of its owner's spirit — human
 > readable, the user-experience expression of the original SpiritOS
@@ -64,7 +73,13 @@ to do so is not a rule; it is a choice the Governor makes."*
 | on disk | plain JSON, editable in a text editor. **The files are the personality** | whatever is cheapest. Nobody is going to read them |
 | diagnosed by | opening the files | **a report it composes for its owner** — §3 |
 | evolves | with the person's experience of it | with load, cost and what it learns — §7 |
-| **remembers** | **accumulates** — the log is permanent, *"memory is the training set"* (0009) | **forgets** — every store is a recency window against a configured ceiling (§8b) |
+| **remembers** | **accumulates** — the log is permanent, *"memory is the training set"* (0009) | **forgets** — every store is a recency window against a configured ceiling (§8, *the databases are rolling windows*) |
+| **member storage** | **none** — not even the owner's node holds a copy of its relay's member roll or partner roll | the only copy. **DISC:** the full roll, flushed automatically longest-inactive first. **RAM:** only the currently active members |
+
+> **Andy (2026-09-19):** the owner will not duplicate member storage. The
+> owner's node receives the relay's report — counts, levers, decisions —
+> and never a member list, which 0012 (widened 2026-09-18) already refuses
+> to serve to anyone, the owner included.
 
 The rule underneath: **a relay owes its owner an account of itself, not an
 inspectable filesystem.** Those are different obligations and only the first
@@ -162,7 +177,8 @@ a Governor they are on the wire or they are nowhere.
 Which gives the Governor an acceptance test better than a claim about
 speed: **an owner can watch a lever move, read why, and disagree.** A
 Governor that cannot be disagreed with is not autonomous, it is
-unaccountable.
+unaccountable. *Disagreeing means changing the programming, offline — never
+moving the lever (§5, scope).*
 
 ### Active members, not enrolled
 
@@ -200,6 +216,28 @@ said about it.
 | RAM ceiling | when to drop one |
 | | shedding, ranking, label cache, route reach |
 
+### Scope: the owner's only real-time tool is the partner list
+
+> **Andy (2026-09-19):** *"This design does not include or consider the
+> owner's node moving levers remotely and/or interactively. The governor
+> will be a result of programming."* — *"The only real-time tool the owner
+> gets while node and relay are running: injecting foreign partners."*
+
+*Refined the same day: the real-time tools are **signed grants of
+admission** — injecting a partner, and minting an invite, which is the same
+kind of act (see above).*
+
+| while running | not while running |
+|---|---|
+| inject (and revoke) foreign partner URLs; mint invites | lever positions — the Governor's, from programming |
+| observe the report (§3, §4) | the configuration file — the box's bounds (§8) |
+| | the programming itself |
+
+So the Governor has **one input, its programming**, and the owner's node is
+an observer of it. Anything below that reads as the owner adjusting a lever,
+a bound or the configuration at runtime is outside this design and marked
+where it appears.
+
 **The allow-list is the vouching.** A partnership is a statement of trust —
 PARTNERS.md's *"mutual vouchery"* — so a relay choosing partners freely would
 be vouching on its owner's behalf for a box the owner never saw. An owner
@@ -223,6 +261,188 @@ is not "relays can call out" — it is "relays can call out *to a list*".
 notices: `allow.json` plus `reloadAllow()`
 ([relay.js:440-442](../../spirit/run/js/relay.js#L440-L442)), for members.
 Relay reaches out without `relay.js` learning how: `askPartner`, injected.
+
+### Injection is owner-only, and the relay may reject it
+
+> **Andy (2026-09-19):** *"The partners that can be injected by only the
+> owner, the relay must verify it's an actual relay and capable for
+> partnership; the relay may then reject the injected partner."*
+
+Injection admits a **candidate**, not a partner. Three steps, in order:
+
+| step | who | what |
+|---|---|---|
+| inject | the owner, and nobody else | a URL enters the candidate list |
+| verify | the relay | the URL answers as **an actual relay**, and is **capable of partnership** |
+| accept or reject | the relay | a candidate that fails either check is rejected |
+
+> **Andy (2026-09-19):** *"It delegates authority to the relay to partner
+> with the injected relay."*
+
+**An injection is a signed grant, and a delegation.** The owner signs it
+over the authenticated protocol, like any owner verb; what it grants is the
+relay's authority to partner with that one relay — propose, consent, keep,
+end — without asking again.
+
+That makes it the same kind of act as **minting an invite**: both are the
+owner signing an admission. An invite admits a person and is redeemed by
+them; an injection admits a candidate relay and is exercised by the owner's
+own relay. So the owner's real-time tools are one category — **signed
+grants of admission** — and minting is not an exception to the scope rule
+below; it is the other member of it.
+
+So the owner bounds the set and the relay still guards it: a URL the owner
+wrote down is necessary, never sufficient. This is §8's three levels applied
+to partners — the owner narrows who may be considered; the relay decides
+within that, including *no*.
+
+**What "verify" can stand on today, and what it cannot.** PARTNERS.md's
+handshake *"verified reciprocity against the far public census"* — and the
+census is gone (2026-09-18). `GET /api/relay/key` says who a box is and who
+runs it, which covers *"an actual relay"*. **Nothing on the wire says
+*"capable of partnership"*** — which is the same gap as §7: a box has no way
+to say what it speaks. One answer can serve both.
+
+**Decided (Andy, 2026-09-19, accepting the recommendation):** a rejection reaches the owner with its reason,
+down the owner's stream as `partner-added` / `partner-removed` already do
+(`ownerEvent`, [relay.js](../../spirit/run/js/relay.js)) — otherwise the
+owner's one real-time tool fails silently.
+
+### Both owners sign, and a proposal is answered by an injection
+
+> **Andy (2026-09-19):** *"It needs that owner's signature as well"* — and,
+> on the alternative of an owner-set acceptance policy, agreed that it is
+> out: *"the design must include the streaming of the partner-request to the
+> node for minting by the owner. The scope of this design does not include
+> node-side mechanisms for managing that request. Ideally the minting
+> request can be answered with a matching minting request."*
+
+**Decided:** a partnership needs **both owners' signed injections**. No
+acceptance policy — a policy would have the relay vouch for boxes its owner
+never saw, let other people's injections widen its world, and be a standing
+rule (configuration) rather than a grant, reopening the scope below.
+
+**Decided:** when a relay receives a proposal from a relay its owner has not
+injected, it **streams the request to its owner's node**. What the node does
+with it is outside this design.
+
+The flow, and the answer is an ordinary injection:
+
+```
+A's owner injects B        → A verifies B, proposes to B
+B: no injection for A      → B writes a `requested` row, streams it to its owner
+B's owner injects A        → the matching injection is the answer
+both sides hold a signature → the partnership forms
+```
+
+> **Andy (2026-09-19):** *"If a relay receives a minting request where its
+> own owner already minted the request, it will not be streamed to the
+> owner's node — ending the minting cycle."*
+
+**Decided:** a proposal from a relay the owner **has already injected** is
+not streamed; it is the other half of a partnership the owner already
+granted, and the relay consents on that delegation. This is what closes the
+loop: when B's owner answers by injecting A, B's consent reaches a relay
+whose owner injected B first, so nothing is streamed at A either. **An owner
+is asked at most once per partnership, and only the owner who had not yet
+signed.**
+
+**Recommended, not decided:**
+
+- **The request carries the proposal's hash as `cause`** (0011), and the
+  answering injection carries it back — so the injection is a *reply* to
+  that request rather than a coincidence of URLs.
+- **A rate gate on unsolicited proposals**, or any relay can flood an
+  owner's stream. It is a lever, so it needs its floor and ceiling (§10) —
+  **open**. The allotment below bounds what is held; the gate bounds how
+  fast it arrives.
+
+### The partner roll: one dataset, a status per row
+
+> **Andy (2026-09-19):** *"Can the minting request just be a status field on
+> the partner-roll, and get auto-flushed under the partner roll rules?"* —
+> agreed, with the condition below.
+
+*This supersedes a recommendation made earlier the same day, that B store no
+pending request and let an absent owner lose it. A pending request is a row,
+bounded like every other row.*
+
+**Decided:** every partner relationship — granted, asked or formed — is a row
+in one **partner roll**, with a status:
+
+| status | meaning | created by |
+|---|---|---|
+| `injected` | my owner signed; waiting for the far side | my owner |
+| `requested` | the far side proposed; streamed to my owner, waiting for them | a foreign relay |
+| `partnered` | both owners signed | both |
+
+The roll is a persisted dataset, so it is bounded by a disc allotment and
+flushed under the roll rules (§8): a rolling window, longest-idle first. An
+owner who is away no longer loses a request — the row waits, bounded.
+
+**Decided — the condition: `requested` rows get their own allotment.** They
+are the one status a stranger can create, just by proposing, so in a shared
+pool a flood of proposals would flush real partners. That is §8's *partition
+by life cycle; do not rank across life cycles* again: `requested` is
+short-cycle and foreign-made, `partnered` is long-cycle and made by both
+owners. A flood can only ever flush other `requested` rows.
+
+This is the store PARTNERS.md specified (`partners.json`, keyed by relay
+key, §6), with a status added.
+
+### Revocation is silent
+
+> **Andy (2026-09-19):** *"B will no longer successfully handshake with A
+> (not known), mark its record. Courtesy is not in the scope of this doc."*
+
+**Decided:** when A's owner revokes B, A's row for B goes, and **nothing is
+sent to B**. B learns at its next handshake, which fails because A no longer
+knows it, and B marks its own row. No notice to B's owner, no end message —
+the failed handshake *is* the signal.
+
+**Recommended:** B's mark returns the row to `injected`, because B's owner's
+grant still stands; if nothing answers it, it ages out under the roll rules
+like any idle row.
+
+The same holds for every ending: a relay that stops partnering stops
+answering, and the far side finds out by trying. Courtesy — telling anyone —
+is outside this design.
+
+### Relays need a partner interface, defined for self-management
+
+> **Andy (2026-09-19):** *"Relays need a partner interface. It must be
+> defined with the objective to enable relays to self-manage
+> partnerships."*
+
+The objective decides the contents: everything a relay must do to form,
+keep and end a partnership **without a human in the loop**, inside the
+candidate list its owner wrote. Today the partner vocabulary is two words,
+`search` and `forward` (0012) — **both are traffic; neither manages the
+partnership.** Formation is an owner verb on a peer row, and ending one is
+the same.
+
+What self-management needs, at minimum — **the list is recommended, the
+objective is decided:**
+
+- **describe** — what this box is and speaks (the verification above, and §7)
+- **propose / consent** — partnership is mutual (PARTNERS.md), so each side
+  must be able to ask and to answer
+- ~~**decline / end**~~ — *not a verb: ending is silent, and the far side
+  learns by a failed handshake (see "Revocation is silent" above).*
+- **terms** — the current cap, which PARTNERS.md already recommends carrying
+  on every reply rather than announcing
+
+**Constraints it inherits, already decided elsewhere:**
+
+- Signed posts between relays, on the one partner bus — *"a new thing
+  partners can do is a new key in a body; never a new event, a new route,
+  or a second channel"* (PARTNERS.md).
+- No verb that asks for a member list (0012).
+- A relay reaches only URLs its owner wrote down (above).
+
+**This amends 0012's "two words".** The member-list ban is untouched; the
+vocabulary grows by management verbs. Named here so it is decided, not
+drifted into.
 
 ---
 
@@ -252,6 +472,18 @@ peer-row storage is exactly what forces the membership requirement**,
 because a flag needs a row to sit on. The design and the code diverged, and
 this simplification is the design side winning, which is a better argument
 for it than convenience.
+
+### The old model is deprecated
+
+> **Andy (2026-09-19):** *"The old partner acquisition model is rejected,
+> deprecated and will be eliminated as soon as this design is proven, or
+> not."*
+
+**Rejected:** partnership as a flag on a member's peer row, promoted by an
+owner verb (`setPartner`, `partner` on `answerSelf`), with its membership
+requirement. It stays in the tree only until this design is proven, and
+then it goes. Do not extend it, build on it, or fix it forward in the
+meantime.
 
 ---
 
@@ -315,7 +547,31 @@ inside a bound a human set. It is also what makes a lever legible:
 64 you gave me"* explains itself, and is a **position** rather than a
 number (§4).
 
-**Configuration by verb, not by file — recommended, not decided.** A relay
+### Three levels of constraint, each bounded by the one above
+
+> **Andy (2026-09-19):** *"The physical box has RAM and DISC constraints. A
+> node's configuration (file) is bounded by the physical constraints. The
+> governor is bounded by the configured constraints."*
+
+| level | what it is | bounded by |
+|---|---|---|
+| **1. the box** | physical RAM and DISC — what the owner bought | nothing; it is the fact |
+| **2. the configuration** | the owner's ceilings and allotments, a file | the box |
+| **3. the Governor** | lever positions | the configuration |
+
+Every number in this note sits at exactly one level. A configured ceiling
+larger than the box is a misconfiguration, not a generous setting; a
+Governor position outside the configured bounds is a defect, not an
+optimisation. Each level may narrow the one above it and never widen it.
+
+> **Any persisted dataset is bounded by actual disc space or by a configured
+> disc allotment.** Those are the true constraints. Expiry, lifetime and
+> inactivity rules are *policy inside* that bound — they bound age, and age
+> is not space.
+
+**Configuration by verb, not by file — superseded 2026-09-19.** *The
+configuration is a file (the hierarchy above) and is not changed while the
+relay runs (§5, scope). Kept as the record of what was proposed:* A relay
 is already addressable by its owner: `relayLabel`, `removePeer` and
 `partner` are owner verbs on `answerSelf`. Setting the ceiling that way
 mirrors §3 exactly — **diagnosis by report, configuration by verb, neither
@@ -385,10 +641,16 @@ the disk does — route churn would otherwise evict connections.
 |---|---|---|
 | **1. fixed overhead** | executable, V8, process, **monitoring** (§9) | identity and allow — constant, tiny, no life cycle |
 | **2. member roll** | the **active** members: sinks and per-connection state | the roll itself, long cycle |
-| **3. cache history** | the route working set, label cache | verified routes, by `lastVerified` |
+| **3. cache history** | partner rows warmed by route hints, label cache | ~~verified routes, by `lastVerified`~~ — **withdrawn 2026-09-19**: routes are the node's (§9b) |
+
+*With the route cache withdrawn, the relay's growing disc datasets are the
+member roll, the partner roll (§5) and the invites — each with its own
+allotment. Where this section argues from the disc route cache below, that
+argument is superseded; it is kept as the record.*
 
 Parts 2 and 3 are rolling windows bounded by their allotment, in both. Part
-1 is not a window and has no lever: it is simply there.
+1 is not a window and has no lever: it is simply there, bounded by actual
+disc space like everything else persisted.
 
 **Invites need an allotment as well as a lifetime.**
 
@@ -401,15 +663,16 @@ quantity.** A thousand invites at fifteen days is still a thousand invites,
 so a relay whose owner mints freely accumulates **standing** invites — the
 unclaimed ones — until something stops it.
 
-By the rule already stated (*only what grows needs an allotment*), they
-grow, so they get one: a space allotment with **oldest-first eviction**.
+By the rule in §8 (*any persisted dataset is bounded by disc space or a
+disc allotment*), they get one: a space allotment with **oldest-first
+eviction**. The 15-day ceiling stays, as policy inside that bound.
 Which gives the general form the other windows were already obeying without
 it being said:
 
 > **A time bound is not a space bound. Every window needs both.**
 
-The cache had this right already — `lastVerified` bounds age, the allotment
-bounds quantity — and the roll has it too, with `N` slaved to its allotment.
+The roll has this — `N` bounds age, slaved to its allotment, which bounds
+quantity.
 
 **And it carries the same social edge as roll expiry.** Oldest-first means
 an invite minted for a particular person can vanish because its owner minted
@@ -445,12 +708,13 @@ seven days for this person, one for that one, because an invite is a
 deliberate act about a specific human — and what a relay would want under
 pressure is to bring the **ceiling** down from 15.
 
-Which is the monitor-side rule running the other way: *an adjustment narrows
-bounds, it does not set positions.*
+*(An earlier version tied this to a "monitor-side rule" for owner
+adjustments; owner adjustment at runtime is outside this design — §5,
+scope.)*
 
 | | bounds set by | position set by |
 |---|---|---|
-| **resource levers** — caches, rates, connections, roll expiry | owner | Governor |
+| **resource levers** — caches, rates, connections, roll expiry | owner, in the configuration file | Governor |
 | **act levers** — invite lifetime | Governor | owner |
 
 **An act is the owner's to make; its aggregate cost is the relay's to
@@ -469,8 +733,7 @@ they do different work.
 
 **"Prioritized by programming" makes the ordering the primary tuning
 surface.** Not the levers — the *sequence in which they are pulled*. That
-lands on input #1 of the two above: programming is what an owner can shape
-now, and lever adjustment comes later. So **the ladder order is what a
+lands on the Governor's one input, its programming (§5, scope). So **the ladder order is what a
 Governor is actually told**, and the decision record is what shows whether
 the order matches what the owner meant.
 
@@ -496,7 +759,9 @@ structure.
 | invites | a jiffie, at conversion | up to 15 days |
 | connections | the main cost | nothing written |
 | roll | the active subset | all of it, long cycle |
-| route cache | hot working set | full window |
+| partner roll | rows warmed by hints | all of it, own allotments per status (§5) |
+
+*(This row read "route cache"; withdrawn 2026-09-19, routes are the node's.)*
 
 Two of those four exist in only one resource. A disk ladder therefore wants
 an invite tier — shorten lifetimes, sweep harder — and a RAM ladder has no
@@ -554,6 +819,12 @@ N  =  roll allotment  /  (claim rate × row size)
 So nobody picks "six months"; it falls out of what the owner bought and what
 the relay is actually doing.
 
+**In the three levels of §8, the derived `N` is the lever's ceiling.** The
+configuration (the roll allotment) sets it; the Governor positions `N` at or
+below it, never above. That is the sense in which `N` is "a Governor's lever"
+(below) and "slave to the allotment" at once — *this reconciles two
+statements an earlier version of this note left side by side.*
+
 **And the emergent property deserves saying out loud, because it is not
 obvious: growth compresses tenure.** A popular relay forgets its dormant
 members faster than a quiet one does, at identical disk spend. That is the
@@ -594,21 +865,24 @@ identity. Both halves were wrong.
 
 > **Andy:** *"Identity is fairly constant and very small."*
 
-**Identity and `allow.json` leave the scheme entirely.** They do not grow, so
-they need no allotment, no lever and no policy — the disk equivalent of the
-executable, budgeted once and never thought about. And `invites.json` sits
-nearer them than the roll, because it **bounds itself**: tokens expire and
-`sweepExpired` removes them, so nothing has to hold it back.
+**Identity and `allow.json` need no allotment of their own.** They do not
+grow, so they need no lever and no policy — the disk equivalent of the
+executable, bounded by actual disc space and never thought about.
+
+*This corrects an earlier version, which also filed `invites.json` here as
+bounding itself by expiry. Expiry bounds age, not space; invites have their
+own allotment (above).*
 
 Which gives the rule that keeps the configuration small:
 
-> **Only what grows needs an allotment.**
+> **Every persisted dataset is bounded by disc space or a disc allotment.
+> Only what grows needs an allotment of its own.**
 
-The roll and the cache grow. Everything else on a relay's disk is either
-constant or self-bounding — and that is the whole of the disk
-configuration, which matters because §8 makes this the first configuration a
-relay has ever had and the precedent should stay as narrow as it honestly
-can.
+The roll, the invites and the partner roll (§5) grow. Identity and `allow.json` are
+constant, bounded by the disc they sit on — and that is the whole of the
+disk configuration, which matters because §8 makes this the first
+configuration a relay has ever had and the precedent should stay as narrow
+as it honestly can.
 
 So the split is **not incompressible versus compressible — it is two windows
 at different speeds**, each with its own allotment and its own lever:
@@ -616,14 +890,20 @@ at different speeds**, each with its own allotment and its own lever:
 | allotment | cycle | what pressure does |
 |---|---|---|
 | roll | months | shortens `N`, the inactivity drop |
-| cache | days | evicts oldest-`lastVerified` |
+| partner roll, `partnered` / `injected` | long | longest-idle first |
+| partner roll, `requested` | short | longest-idle first, within its own allotment |
+| invites | ≤ 15 days | oldest first |
+
+*(This table had a route-cache row; withdrawn 2026-09-19, routes are the
+node's. The argument below was first made with the route cache as the
+high-churn store; it now applies to `requested` partner rows.)*
 
 **And it has to be a split rather than one pool**, because of the failure a
 single pool produces: ranking by recency inside one budget means **the
-high-churn store always wins**. The route cache turns over constantly and
-the roll barely moves, so one busy week of routing would evict *members* —
-the slow-moving thing starved by the fast-moving one, which is exactly
-backwards.
+high-churn store always wins**. A high-churn store — now `requested` rows,
+which any stranger can create — turns over constantly while the roll barely
+moves, so one busy week would evict *members* — the slow-moving thing
+starved by the fast-moving one, which is exactly backwards.
 
 That is the same reason §9 **reserves** monitoring rather than ranking it:
 monitoring is low-churn, workload is high-churn, and one ranked pool sheds
@@ -634,12 +914,9 @@ the monitor first every time. So both resources obey one rule:
 Each partition gets one lever, bounded, and the two never bid against each
 other.
 
-The Governor operates on the second half of each. And the disk cache is
-**properly compressible in a way memory rarely is**: a verified route that
-is evicted is re-verified on next use, so dropping it costs a round trip
-rather than a capability. `lastVerified` supplies the eviction order —
-oldest-verified first, the cold end of the same index that gives the hot
-one.
+The Governor operates on the second half of each. *(A paragraph here argued
+the disk route cache was compressible; withdrawn with the cache,
+2026-09-19.)*
 
 **Disk belongs in 0013's ranking, and it is second.**
 
@@ -649,6 +926,11 @@ one.
 [0013](../decisions/0013-a-relay-is-fixed-cost-per-time-unit.md) ranks three
 resources — RAM expensive, CPU and bandwidth cheap — and **does not mention
 disk**. It should, and this is the fourth row.
+
+*Superseded 2026-09-19 from here to the recommendation below: the relay
+keeps no route cache (§9b, routes are the node's), so 0013's "broadcast
+rather than cache" needs no reinterpretation. Disk still belongs in 0013's
+ranking, second. Kept as the record:*
 
 It changes an argument made in this very note. 0013's trade table already
 carries *"routes broadcast rather than cached — spend bandwidth, save
@@ -672,9 +954,9 @@ the *"#1 its owner, #2 its members"* ordering, priced.
 "whatever the VPS has". It is the dial for how much of their money goes to
 their members' speed, and there is no correct default for that.
 
-**Recommended:** amend 0013's resource table to four rows, and note that
-"broadcast rather than cache" was decided against a RAM cache, not a bounded
-disk one.
+**Recommended:** amend 0013's resource table to four rows. *(The second half
+— "broadcast rather than cache was decided against a RAM cache" — is
+withdrawn with the route cache.)*
 
 **The ordering is an input this design does not own.**
 
@@ -707,8 +989,14 @@ working from three adjectives can only say *"less than the other thing."*
 **Backup is a premium on disk, not a multiplier of it.** An earlier draft
 said it doubled the cost of anything stored; Andy: *"backup is about 12% of
 the cost, and I bought it preventively."* So it is a modest line item,
-chosen as insurance rather than required — and the route cache's arithmetic
-is a little worse than §8b stated, not dramatically so.
+chosen as insurance rather than required.
+
+*Updated 2026-09-19: this section was written when the relay was to keep a
+disc route cache, its one large rebuildable store. With the cache withdrawn
+(§9b), what remains on disc is nearly all durable. The principle below
+stands — do not pay to preserve what rebuilds — but the two-store argument
+has lost its main case; whether `requested` partner rows justify a second
+store is open.*
 
 The sharper consequence is not that disk is dearer than said. It is that
 **a cache should never be backed up at all** — it is reconstructible by
@@ -721,7 +1009,7 @@ same axis as size:
 | | contents | backed up |
 |---|---|---|
 | **durable** | `identity.json`, `allow.json`, the roll, live invites | **yes** — losing these loses the relay's identity and its members |
-| **ephemeral** | verified-route cache, meter, decision buffer | **no** — every one of them rebuilds |
+| **ephemeral** | ~~verified-route cache~~ (withdrawn), meter, decision buffer | **no** — every one of them rebuilds |
 
 **This argues against one database file.** SQLite is backed up whole or not
 at all, so co-locating the cache with the roll means paying daily to
@@ -736,7 +1024,7 @@ kind of reasoning that survives the price changing.
 then tracks **membership only, never activity**. The durable half is bounded
 by who joined; everything that grows with traffic costs nothing to protect,
 because it is not protected. That is the same *cost tracks this, not that*
-discipline as §8b and §9, arriving at a fifth resource nobody had listed.
+discipline as §8 (*DISC_LIMIT*) and §9, arriving at a fifth resource nobody had listed.
 
 ### RAM binds first; disk is the backstop
 
@@ -788,7 +1076,9 @@ having.
 
 **And it closes the split.** A long-run ratio cannot be computed by
 something that forgets: the relay's window shows the *recent* ratio, and the
-trend needs the permanent record — which lives on the owner's node (§8b).
+trend needs the permanent record — which lives on the owner's node (§8, *the decision record is not a relay store*).
+That record holds **counts over time** (roll size, active members), never
+the members themselves: the owner does not duplicate member storage (§2).
 So the same log that is [0009](../decisions/0009-the-log-is-the-training-set.md)'s
 training set is also what produces the sizing forecast. One record, two
 jobs, and neither of them the relay's to keep.
@@ -803,8 +1093,8 @@ It was the last store that was not one, and it is what makes DISC_LIMIT
 bounded by *activity over a period* rather than by cumulative enrolment.
 
 `N` is the lever: short is a tight roll, long is a generous one, between
-hard bounds (never 0, which would evict everyone; never infinite, which is
-today's unbounded growth). And your framing keeps it out of the shedding
+hard bounds (never 0, which would evict everyone; never above what the roll
+allotment affords — the derived ceiling, above). And your framing keeps it out of the shedding
 ladder — it is **steady-state hygiene, not a pressure response**. Under
 pressure the Governor shortens `N`; it does not evict in a panic.
 
@@ -825,15 +1115,17 @@ Candidates, none decided: a grace re-entry for a key that *was* on the roll;
 an expiry warning down the member's own stream while they can still act; or
 expiry not applying in keys mode at all.
 
-It also reaches other relays — their verified-route caches will point at a
-peer that is no longer there. That one is already handled: they re-verify,
-fail, and drop the entry (§8b), which is what `lastVerified` is for.
+It also reaches other members' nodes — a contact's route (§9b) will point
+at a relay the peer is no longer enrolled at. The forward fails, and the
+node searches again. *(This read "other relays' verified-route caches";
+corrected 2026-09-19, routes are the node's.)*
 
-**The far consequence still holds: DISC_LIMIT is what finally makes
-membership finite.** The roll is incompressible — a member cannot be evicted to save
-space — so as it grows it squeezes the cache, and past some point the limit
-binds against enrolment itself. That puts a number behind the shedding
-ladder's *refuse new claims* rung
+**The roll allotment is what makes membership finite.** *This corrects an
+earlier version, which said the roll was incompressible and let it squeeze
+the cache.* The roll has its own allotment and never bids against the cache
+(§8, *partition by life cycle*); under pressure `N` shortens, and only past
+the hard floor does the allotment bind against enrolment itself. That puts a
+number behind the shedding ladder's *refuse new claims* rung
 ([CAPACITY.md](../relay/CAPACITY.md)), and it is the first principled answer
 this relay has to *"how many members can I take?"* — which is a question
 [0007](../decisions/0007-a-relay-survives-and-earns-its-keep.md) asks it to
@@ -986,16 +1278,20 @@ here already: `GET /api/hub/arrivals` was deleted because *"a page that was
 closed catches up on the SAME live channel … a second door asking a weaker
 version of an answered question."*
 
-### Two inputs to the Governor, and only one is for now
+### The Governor has one input: its programming
 
-> **Andy:** *"The Governor's behaviour has two potential inputs: programming
-> AND monitor-side lever adjustments, which are more tricky and for
-> later."*
+> **Andy (2026-09-19):** *"This design does not include or consider the
+> owner's node moving levers remotely and/or interactively. The governor
+> will be a result of programming."*
 
-| input | when |
-|---|---|
-| **programming** — the policy that decides how levers move | now |
-| **monitor-side lever adjustment** — the owner moving one by hand | later |
+*This supersedes an earlier framing of two inputs — programming now,
+monitor-side lever adjustment "later". Adjustment is not deferred inside
+this design; it is outside it. The reasoning below is kept as the record,
+for whoever opens that question as a separate design.*
+
+> **Andy (earlier):** *"The Governor's behaviour has two potential inputs:
+> programming AND monitor-side lever adjustments, which are more tricky and
+> for later."*
 
 **Half of the second may be less tricky than it looks.** If an adjustment
 **narrows bounds** rather than **setting a position**, §5's division holds
@@ -1016,7 +1312,8 @@ and to have been read, which is why it is second.
 **Open, and it deserves a deliberate answer.** §4's acceptance test is *"an
 owner can watch a lever move, read why, and disagree."* An owner whose node
 is away loses every decision past the buffer. That may be correct — a
-decision nobody witnessed is one nobody can disagree with, which is the same
+decision nobody witnessed is one nobody can disagree with (by changing the
+programming, offline), which is the same
 shape as presence being true only while a socket is open — but it means
 **the relay's account of itself is only as good as its owner's attention**,
 and that should be chosen rather than defaulted into.
@@ -1044,7 +1341,7 @@ only say *"I am at my limit"* has handed them a complaint.
 **This is what makes [0007](../decisions/0007-a-relay-survives-and-earns-its-keep.md)'s
 *earn its keep* operational** rather than rhetorical. Earning its keep is not
 only costing little; it is being able to say what more would cost and what
-it would buy — which needs the cost model (§8b) and the decision record (§4)
+it would buy — which needs the cost model (§8, *disk belongs in 0013's ranking*) and the decision record (§4)
 to exist, and is a third thing they are jointly for.
 
 It also gives the monitor a job beyond display: a lever pinned at its
@@ -1193,7 +1490,7 @@ membership requirement *and* the scan, one change and two results.
 > names which partner holds the target… while **the question of how a node
 > tells a relay that stays open** (0012 says the node has the answer; a post
 > has no field for it).
-> — [relay.js:2607-2617](../../spirit/run/js/relay.js#L2607-L2617)
+> — [relay.js:2629](../../spirit/run/js/relay.js#L2629)
 
 Three pieces designed separately turn out to be one mechanism:
 
@@ -1228,7 +1525,159 @@ It works in both directions, and one of them is the defence above:
 `fromToken` is an index lookup rather than three scans, so an unknown sender
 is refused in constant time.
 
-### Verified routes are worth persisting; referrers are not
+### Routes are the node's: a contact's relays, as location
+
+> **Andy (2026-09-19):** *"The 'routes' associated with a node's foreign
+> contacts (contacts that are not enrolled on the same relay) should be
+> listed in the contacts of a node as relays; they are always the ID of the
+> relay it is enrolled at."* — *"When a member sends its relay a
+> peerPost(), accompanied by route hints, the route hints are actually more
+> like an address-prefix, or 'location', like a domain in DNS."*
+
+**Decided.** A route is **the relay a contact is enrolled at**, stored on
+that contact's row in the node's own contacts, by the relay's **ID** (its
+key). It is location, not identity: the contact's key says who they are, the
+relay says where they are reached, and a contact who moves relays keeps
+their identity. A contact enrolled at several relays has several.
+
+On the wire it is the **route hint**: sent beside the `peerPost`, signed
+separately, consumed by the first hop (SURFACE.md §8) — envelope, not
+letter. The member's relay reads it as a partner key, loads that one
+partner-roll row, and forwards. That is the `atRelayKey` above, supplied at
+last.
+
+**So the relay keeps no route cache.** A relay storing *"peer K is at
+foreign relay B"* would be persisting a partner's members, which 0012 made
+structurally impossible. The node, which pays for its own disk, holds the
+routes — 0013's *growth lands on nodes*. The cost is 0012's already-accepted
+one: a post to a contact with no known route needs a search first.
+
+**A hint naming a relay that is not my partner starts a minting cycle.**
+
+> **Andy (2026-09-19):** *"Those hints will trigger a partner-minting cycle,
+> starting with the owner of this relay."*
+
+**Decided.** The member's relay treats the hint as a partnership request and
+streams it to **its own owner** first — the same cycle as §5, begun from the
+inside. If the owner injects, the relay proposes, and the far owner is asked
+in turn.
+
+The post is refused at once with **"minting incomplete"** — nothing holds
+it (0006) — and the cycle starts after (tiers, below: decided).
+
+**Recommended, not decided:** the row this writes is short-cycle and not yet
+owner-signed, so it takes the `requested` allotment; and the §5 rate gate
+covers it, or a member could flood the owner's stream.
+
+**Several hints: the relay uses open routes first.**
+
+> **Andy (2026-09-19):** *"When several hints, the RELAY uses open routes
+> first."*
+
+> **Andy (2026-09-19):** *"The relay tries the ones naming its current
+> OPEN/LIVE partners first."*
+
+> **Andy (2026-09-19):** *"1. live partners 2. minted partners
+> 3. non-minted, immediately returns error ('minting incomplete'), then
+> triggers minting cycle with its owner."*
+
+**Decided.** When a post carries hints, the **relay** tries them in this
+order:
+
+1. **live partners** — partnerships open right now; nothing more to pay
+2. **minted partners** — both owners have signed (`partnered`), but not live;
+   costs a connection
+3. **non-minted** — the post returns an error at once, **"minting
+   incomplete"**, and the relay then starts the minting cycle with its own
+   owner
+
+Tier 3 is reached only when no hint is live or minted. A row only this
+relay's owner has signed (`injected`) is tier 3 as well — the far side would
+fail the handshake — but by §5's closing rule it is **not** streamed to the
+owner again: the relay proposes to the far relay instead — it **attempts to
+complete the minting cycle** its owner already began. The relay decides the
+order because it is the party that knows which routes are live.
+
+*This corrects an earlier version of this note the same day, which gave the
+ordering to the node and had the relay follow it.*
+
+**Already half in the tree.** Contact rows carry `relays: [...]`, and
+`learnRoute` stashes a route a relay has proven onto an existing row and
+never creates one ([contacts.js:411](../../spirit/run/js/contacts.js#L411)).
+The divergence: the tree stores relay **URLs**; this decision says relay
+**IDs**.
+
+### A warm partner row carries an outstanding-post count
+
+> **Andy (2026-09-19):** *"Since multiple node-IDs can be reached through a
+> single relay (route), optimisation would demand that in-RAM routes have an
+> active-user count."* — *"A count. Yes."* — and then: *"There's a count of
+> outstanding posts (incremented at forwarding time and decremented when the
+> corresponding hash arrives back on the stream). The count by member is way
+> more complicated — on the relay side it would require an extra record for
+> every member currently using that partner. But an active post count for
+> the member alone can be kept cheaply."*
+
+*This supersedes an earlier version the same day, which counted distinct
+active members per partner and recommended an approximate sketch to do it
+without a list. Counting distinct members needs a record per member per
+partner; counting posts in flight needs none.*
+
+**Decided.** Two counts, both of posts in flight, never of people:
+
+| count | +1 | −1 |
+|---|---|---|
+| **per partner row** (warm in RAM) | forwarded through that partner | its hash comes back on the stream, **or it expires** |
+| **per member** | the member posts | the same |
+
+**Already in the tree.** [router.js](../../spirit/run/js/router.js) holds
+`pending[hash]` with its requester and time, expires it, and caps it —
+`countFor(requester)` is the per-member count, capped at
+`DEFAULT_PER_REQUESTER 16` within `DEFAULT_MAX 256`. The per-partner count
+is the same table grouped by partner: no new record, bounded by the cap.
+
+**Expiry must decrement too**, or a reply that never comes back inflates a
+count for ever.
+
+It serves two jobs:
+
+- **Unloading.** A warm row with nothing in flight may be dropped — no reply
+  can be lost. **Recommended:** after an idle grace *T*, or a partner in
+  steady use with fast replies touches zero between posts and thrashes.
+  *T* is a lever; its floor and ceiling are **open** (§10).
+- **Shedding.** Under RAM pressure, partners with the fewest posts in flight
+  go first.
+
+  > **Andy (2026-09-19):** *"A consideration in RAM-shedding: how many
+  > active routes will be lost? A high active-count on a route must be shed
+  > later than a lower count."*
+
+  So the **cost of a shed is measured in posts in flight lost**, and that is
+  the number a decision record reports for it.
+
+**A count, not a list,** because a list of which members use which partner
+is a correspondence graph — who talks to whom — even in RAM. It replaces the
+"shedding fan-out" list in the superseded section below.
+
+### A member at the ceiling is a shedding signal too
+
+> **Andy (2026-09-19):** *"A member constantly being at the ceiling for
+> open/pending requests may be cause for shedding just as much as having NO
+> open/pending posts. The details may have to be deferred: learned when
+> stress testing implementations."*
+
+**Decided in principle, details deferred.** The per-member count has two
+ends worth acting on: **zero** (idle — costs a connection and uses nothing)
+and **pinned at the per-member ceiling** (consuming a disproportionate
+share of the pool). Both are candidates for shedding. How long "constantly"
+is, and which end goes first, are **deferred to stress testing** — measured,
+not guessed.
+
+### ~~Verified routes are worth persisting; referrers are not~~
+
+*Superseded 2026-09-19 by "Routes are the node's", above: the relay keeps no
+route cache. Kept as the record, and because its privacy argument (store
+where, never who asked) still holds on the node side.*
 
 > **Andy:** *"The partner table in the relay's database may have a fan-out
 > for node-IDs that need them for routing."* — *"Caching verified route
@@ -1278,7 +1727,12 @@ direction, keeping route chatter out of a node's log because it *"would
 leave, on every member's disk, a lasting record of what a relay's members
 have been looking up"* ([server.js](../../spirit/run/js/server.js)).
 
-### This amends 0013's "never persisted"
+### ~~This amends 0013's "never persisted"~~
+
+*Withdrawn 2026-09-19: with routes on the node, there is nothing for a relay
+to persist, and 0012/0013's "never persisted" stands unamended. The
+reasoning is kept as the record; the Open item at its end — the roll's
+store — still stands.*
 
 [0012](../decisions/0012-a-relay-never-asks-for-a-member-list.md), amended
 by [0013](../decisions/0013-a-relay-is-fixed-cost-per-time-unit.md), permits
@@ -1372,7 +1826,59 @@ against a partner floor of 60 is a tenth, which is not a clean twelfth — so
 either the quantum or the numbers move. A question for whoever derives them
 from the ceiling (§8), not one to settle here.
 
+### Every lever declares its floor and its ceiling, with the reason
+
+> **Andy (2026-09-19):** *"The levers available to the governor must have
+> floors defined by considerations such as: for non-member identities, there
+> must be at least one route for partner-routing. Every proposed lever must
+> define floor and ceiling considerations."*
+
+A floor is not a number anyone picked. It is **what must still work at
+position 0**, and a ceiling is **what the configuration can afford at
+position 1** (§8's three levels). A lever proposed without both, each with
+its reason, is not ready to build.
+
+Andy's example is the partner lever's floor: at position 0 a non-member
+identity must still have at least one route through a partner. That is a
+stronger reason than the bootstrap deadlock above, and it gives the same
+answer — the floor is never zero.
+
+The levers this note names, and what is known of each:
+
+| lever | floor — what must still work | ceiling — what bounds it |
+|---|---|---|
+| partner allowance | at least one partner route for non-member identities; never zero (bootstrap). Today 60/min | the RAM workload allotment — **open** how it is derived |
+| roll `N` | never 0, which evicts everyone. **Open:** expiry must be recoverable first (see *the roll is a window too*) | derived from the roll allotment (§8) |
+| invite lifetime (act lever) | 1 day (`normalizeDays`) | 15 days; the Governor may lower it, never raise it |
+| ~~route cache~~ | *withdrawn 2026-09-19 — routes are the node's (§9b)* | |
+| partner roll, `requested` (§5) | **open** | its own allotment |
+| idle grace *T* before unloading a warm partner at zero in flight (§9b) | **open** | **open** |
+| "constantly at ceiling" for a member (§9b) | **deferred** — stress testing | **deferred** |
+| connections (`DEFAULT_MAX 256`) | **open** — candidate: the owner's own stream, which §9 reserves as overhead | the RAM member-roll allotment |
+| meter slots | `METER_SLOTS_MIN 20` — *"smaller and slower" never becomes "blind"* | the monitoring reservation (§9) |
+| `MEMBER_PER_MIN`, `CLAIM_PER_MIN`, `DEVICE_PER_MIN` | **open** | **open** |
+| unsolicited partner proposals (§5) | **open** | **open** |
+
+The open cells are the work that has to be done before those levers are
+built, not after.
+
 ---
+
+## Approach: cheap measurements first, then learn
+
+> **Andy (2026-09-19):** *"Our approach in principle: first we only measure
+> cheap measurements; that is enough to prove the overall design. The
+> Governor will be simple. The monitor on the owner's node as well. Then we
+> learn from the results."*
+
+**Decided.** The first build measures only what is **cheap** — counts the
+relay already keeps or can keep in a line (posts in flight, present, rss,
+the meter) — and nothing that needs a new record per member. That is enough
+to prove the design. The first **Governor is simple**, and so is the first
+**monitor** on the owner's node. What they should become is learned from
+what they show, not designed in advance — which is why details such as the
+member-at-ceiling rule (§9b) are *deferred to stress testing* rather than
+open.
 
 ## How this gets verified
 
@@ -1406,6 +1912,59 @@ per key and consuming it, with labels that collide the way real names do.
 So the pieces exist; what is not decided is which node owns the two relays,
 and how large each roll should be.
 
+### Cycle 1: two relays, two owners, and the harness is mandatory
+
+> **Andy (2026-09-19):** *"For both relays, I believe what I see on one. And
+> your end of the verification is a must. I'd prefer two relays, two owners,
+> confirming to each other what must be there."*
+
+*This supersedes the paragraph above on who owns the relays, and the
+single-owner constraint before it.*
+
+**Decided.**
+
+- **Two relays, two owners.** Owner A owns relay A, owner B owns relay B,
+  and the two relays are partnered (the old way, as a fixture — cycle 1
+  scope).
+- **Cross-confirmation.** Each side's report must show what the *other*
+  side did: posts B's members send through the partnership appear in A's
+  in-flight counts and meter, and the reverse. A panel that reads the wrong
+  relay, or a count that never moves, fails because the other side knows
+  what must be there.
+- **The harness is mandatory.** The agent's verification — an automated
+  test asserting the cross-confirmation — is required, not optional.
+- **Andy watches, hands-off.** By eye, in the browser, during the live run
+  below; the harness has already checked both relays, so what Andy sees on
+  one is taken to hold for both.
+
+**Proof of closing — accepted by Andy, 2026-09-19.** Cycle 1 closes when all
+four hold:
+
+1. **Harness test green.** One automated test drives both owners over
+   loopback and asserts: each relay reads its RAM ceiling from its
+   configuration file; each owner receives only its own relay's report, with
+   differing roll sizes; cross-confirmation — B's posts appear in A's
+   in-flight counts and meter, and the reverse; counts return to zero when
+   replies arrive **or expire**; under the small ceiling the Governor sheds
+   at least once and reports a lever position and a reason down the owner's
+   stream.
+2. **Live run, watched hands-off.** labMaster runs two relays and two owner
+   nodes on the workstation; the agent drives the traffic as both owners;
+   Andy watches both monitors in the browser and sees RAM and in-flight
+   counts rise, at least one shed with its reason, and RAM fall back under
+   the ceiling.
+3. **No regression.** `npm test` green; the `oneDoor` census does not rise.
+4. **Bookkeeping.** Every cycle requirement has a verification;
+   `cycleRequirements.js` green.
+
+It proves the design on loopback lab relays — not Caddy, TLS or spirit-3,
+which stay unproven as the live-surface cleanup note records.
+
+**Carried over, still required:** each relay's RAM ceiling small enough that
+the Governor sheds; live traffic through the partnership, not only populated
+rolls; different roll sizes on the two relays; labMaster and lab relays on
+the workstation, never on spirit-3.
+
 ## Decided
 
 **The two frames.** A node is a person and is readable because of it; a
@@ -1413,9 +1972,72 @@ relay is infrastructure and **owes its owner an account of itself, not an
 inspectable disk**. Readability is the node's constraint, scoped by
 STORAGE-PHILOSOPHY's own words.
 
+**Routes are the node's** (Andy, 2026-09-19). A route is the relay a contact
+is enrolled at, stored on the contact's row by relay ID — location, not
+identity, like a domain in DNS. It travels as a route hint beside the
+`peerPost`. The relay keeps no route cache (§9b). Each warm partner row and
+each member carries a count of **posts in flight** — +1 on forward, −1 when
+the hash returns or expires — never a list of people. A partner at zero
+unloads; under pressure, fewest-in-flight sheds first. A member pinned at
+its ceiling is a shedding candidate as much as an idle one; the details are
+deferred to stress testing (§9b). The relay
+tries hints in three tiers — live partners, then minted partners, then
+non-minted, which returns "minting incomplete" at once and starts the
+minting cycle with this relay's owner (§9b).
+
+**Cheap measurements first** (Andy, 2026-09-19). The first build measures
+only what is cheap, which is enough to prove the design; the first Governor
+and the first monitor are simple; the rest is learned from the results.
+
+**Cycle 1 scope** (Andy, 2026-09-19). Proven by the fixture in *How this
+gets verified*: two relays on local ports, **two owners** confirming each
+other's traffic in an automated harness test (mandatory), and Andy checking
+one relay on the monitor.
+
+| in | deferred — learned from cycle 1's results |
+|---|---|
+| a configuration file carrying a **RAM ceiling**, which the relay reads and stays under | DISC_LIMIT and every allotment — roll, invites, partner roll |
+| **cheap counts**: posts in flight per partner and per member (`router.js` `pending`), `present`, `rss`, the meter — all on the existing owner report | roll expiry `N`, and recoverable expiry |
+| a **simple Governor**: one rule — under RAM pressure, shed fewest-in-flight first — reporting each move as a lever position and a reason | the monitoring reservation (§9) |
+| a **simple monitor** on the owner's node: the activity and lever-position panels (§4) | `node:sqlite`, the index, lazy loading, the backup split |
+| | floors and ceilings of every lever cycle 1 does not move |
+| | decision records beyond the simple one |
+| | version tolerance (§7) — deferred knowingly: cycle 1 ships node and relay as one commit, so they cannot skew yet. *"Or not"* still holds: this is the one deferral whose cost grows with time, and it is due before the two ship separately |
+| | **partner acquisition** — injection, both-sign, the minting cycle, the partner roll, route hints as IDs. *"It has no direct bearing on load management."* |
+
+**Cycle 0 comes first: the startup split** (Andy, 2026-09-19). Node and
+relay become separate startup modules (Open, *one tree or two*) **before**
+cycle 1, as its own small cycle — so cycle 1's RAM ceiling and shedding are
+measured on a relay that no longer carries node code, and labMaster's
+`--relay` spawn changes once. Done when behaviour is unchanged, the relay
+loads fewer modules (measured by the dependency document's method), and the
+harness is green. It touches `server.js` structurally; **Andy decides** who
+writes it and how, before it is written — **decided 2026-09-19: Claude
+writes it**, in the checkout, harness green.
+
+With acquisition deferred, cycle 1's fixture forms partnerships the **old**
+way. That is use of the deprecated model as a test fixture only — it is not
+extended, and it still goes once §5 is proven.
+
+**Standing rule: a relay manages its most expensive resource, RAM, with
+utmost care** (Andy, 2026-09-19). Nothing is resident that current activity
+does not need.
+
+**The owner does not duplicate member storage** (Andy, 2026-09-19). A
+relay's member roll and partner roll exist only on the relay; the owner's
+node holds counts and decisions from the report, never the rows (§2). On
+the relay, **DISC holds the full roll**, flushed automatically
+longest-inactive first; **RAM holds only the currently active members**.
+*Not true of the tree today:* `routingTable.json` is read whole at boot and
+the roll is resident (§4, §9b).
+
 **The node accumulates; the relay forgets.** Every relay store is a rolling
 window. Its log already was — `trafficLog` writes nothing in relay mode —
 and the roll is the last one to become one.
+
+**Three levels of constraint** (Andy, 2026-09-19): the **box** (physical RAM
+and DISC) bounds the **configuration** (a file); the configuration bounds
+the **Governor**. Each level may narrow the one above, never widen it (§8).
 
 **Resources have one shape, applied twice:**
 
@@ -1423,19 +2045,26 @@ and the roll is the last one to become one.
 |---|---|---|
 | 1. fixed overhead | executable, V8, process, monitoring | identity, allow |
 | 2. member roll | active members | the roll, long cycle |
-| 3. cache history | route working set, labels | verified routes, short cycle |
+| 3. cache history | partner rows warmed by hints, labels | none — routes are the node's |
 
 - **Partition by life cycle; do not rank across life cycles** — or the
   high-churn store starves the low-churn one.
-- **Only what grows needs an allotment.** Identity is constant; invites
-  bound themselves by expiry.
+- **Every persisted dataset is bounded by disc space or a disc allotment**
+  (Andy, 2026-09-19). Only what grows gets an allotment of its own: the
+  roll, the cache, the invites, the partner roll. Identity and `allow.json` are constant and
+  bounded by the disc they sit on. Expiry and inactivity rules bound age,
+  not space, and run inside the allotment.
 - **Allotments bound what is held; rate gates bound what is done.**
 - **Monitoring is overhead, not workload** — reserved and bounded, so it can
   be neither shed to survive nor grown to see better.
 
 **Levers.** `0` is the hard floor, `1` the hard ceiling, the position
 between them is the Governor's, quantized in thirds or twelfths so the two
-nest. Bounds are configuration; positions are choices. Two families:
+nest. Bounds are configuration; positions are choices. The roll's `N` is
+one: its ceiling is derived from the roll allotment. **Every lever declares
+its floor and ceiling with the reason for each** (Andy, 2026-09-19) — the
+floor is what must still work at position 0; for the partner lever, at
+least one partner route for non-member identities (§10). Two families:
 **resource levers** (owner bounds, Governor positions) and **act levers**
 like invite lifetime (Governor bounds, owner positions).
 
@@ -1448,6 +2077,42 @@ tuning surface that exists now.
 permit and revoke; the relay chooses within it. Revocation is a boundary the
 Governor cannot argue with.
 
+**Injection is owner-only; the relay verifies and may reject** (Andy,
+2026-09-19). An injected URL is a candidate: the relay checks it is an
+actual relay and capable of partnership, and may refuse it; a rejection
+reaches the owner with its reason (§5). An injection is a signed grant
+that **delegates** to the relay the authority to partner with that relay;
+with minting, it makes up the owner's real-time tools — signed grants of
+admission.
+
+**Both owners sign a partnership; no acceptance policy.** A proposal from a
+relay the owner has not injected is streamed to the owner's node, and
+answered by a matching injection; a proposal from a relay the owner already
+injected is not streamed, which ends the cycle. Node-side handling is out
+of scope (§5).
+
+**The partner roll** holds every relationship as one row with a status —
+`injected`, `requested`, `partnered` — bounded by a disc allotment and
+flushed longest-idle first; `requested` rows have their own allotment so
+strangers cannot flush partners (§5).
+
+**Revocation is silent.** The revoking side forgets the far relay and sends
+nothing; the far side learns by a failed handshake and marks its row.
+Courtesy is out of scope (§5).
+
+**The old partner acquisition model is rejected and deprecated** (Andy,
+2026-09-19) — the peer-row flag and its promotion verb go once this design
+is proven (§6).
+
+**Relays get a partner interface whose objective is self-management**
+(Andy, 2026-09-19) — forming, keeping and ending partnerships without a
+human, inside the owner's candidate list (§5).
+
+**Scope** (Andy, 2026-09-19): the Governor is the result of programming. The
+owner's only real-time tool while node and relay run is injecting foreign
+partners; the owner's node observes, and never moves a lever, a bound or the
+configuration at runtime (§5).
+
 **The baseline is an entry-level VPS**, already assumed everywhere and never
 written down. RAM binds first; disk is the backstop.
 
@@ -1455,27 +2120,26 @@ written down. RAM binds first; disk is the backstop.
 
 ## Recommended, not decided
 
-**Build order.**
+**Build order.** *Superseded 2026-09-19 by the cycle 1 scope in Decided
+(RAM limit, cheap counts, simple Governor, simple monitor). Kept as the
+record:*
 
-1. **RAM limits** (§8) — the first configuration a relay has ever had, and
-   the precedent for every lever. Configure the bound, derive the rest, and
-   set it by an **owner verb** rather than a file so nothing needs a shell.
-2. **Reserve monitoring out of it** (§9).
-3. **DISC_LIMIT**, split by life cycle into roll and cache allotments.
-4. **Draw the two monitor panels** whose data already arrives — no relay
-   change at all.
+1. ~~**RAM limits** (§8)~~ — now cycle 1.
+2. ~~**Reserve monitoring out of it** (§9)~~ — deferred.
+3. ~~**DISC_LIMIT**~~ — deferred.
+4. ~~**Draw the two monitor panels**~~ — now cycle 1.
 
 **Amendments this sitting proposes to existing decisions**, and the reason
 they are listed separately: each changes a rule rather than adding one, and
 none is mine to take.
 
-- **0012 / 0013** — from *"never persisted"* to **"no fetched term, and no
-  stored referrer."** The boot-cost argument behind "never persisted" is
-  dissolved by a lazy index; the privacy half is answered by storing routes
-  rather than referrers.
-- **0013's resource table** — a fourth row. Disk sits second, and *"broadcast
-  rather than cache"* was decided against a RAM cache, not a bounded disk
-  one.
+- ~~**0012 / 0013** — from *"never persisted"* to "no fetched term, and no
+  stored referrer."~~ **Withdrawn 2026-09-19:** routes are the node's, so
+  the relay persists none and "never persisted" stands.
+- **0012's partner vocabulary** — from two words (`search`, `forward`) to
+  those plus management verbs (§5). The member-list ban is untouched.
+  **Approved by Andy 2026-09-19; recorded in 0012.**
+- **0013's resource table** — a fourth row. Disk sits second.
 - **0007** — *earn its keep* cannot be settled from a ranking. It needs the
   cost model, which is market research and lives elsewhere, dated.
 
@@ -1486,7 +2150,8 @@ none is mine to take.
   scan.
 - Inject the candidate reach the way `askPartner` is injected, so `relay.js`
   keeps its no-outbound property.
-- Two stores, not one: the backup covers the durable half only.
+- ~~Two stores, not one~~ — *its main case was the route cache, withdrawn
+  2026-09-19; see §8, backup.*
 - `node:sqlite` is a core module, so the index needs no foreign dependency —
   only an engines floor of 22.5, and it can be the relay's floor alone.
 
@@ -1494,6 +2159,13 @@ none is mine to take.
 
 - **Version tolerance** (§7) — the cost of the evolution split, and the one
   thing that gets harder the longer it is left.
+- **"Capable of partnership" has nothing on the wire to check** (§5). The
+  census the old handshake used is gone; the answer is probably the same
+  thing §7 needs — a box saying what it speaks.
+- **The partner interface's verbs** (§5) — the objective is decided; the
+  list is a recommendation.
+- **The rate gate on unsolicited partner proposals** (§5) — its floor and
+  ceiling.
 - **Expiry must be recoverable.** *Drop after N months* plus invite-only is
   permanent exclusion for somebody whose only offence was a quiet season.
   Answer before the lever is built.
@@ -1502,9 +2174,17 @@ none is mine to take.
   what remains is whether to throttle inflow or buy disk. *Growth compresses
   tenure* is the property to warn an owner about.
 - **An owner who is away** loses decisions past the buffer, and §4's
-  acceptance test is that an owner can watch a lever move and disagree.
+  acceptance test is that an owner can watch a lever move and disagree —
+  by changing the programming.
 - **One tree or two.** Divergent evolution in one repository is a
-  discipline; in two it is a fact.
+  discipline; in two it is a fact. **First step decided (Andy, 2026-09-19):
+  node and relay become separate startup modules** instead of one `server.js`
+  with `--relay` — narrower than a repo split, and in line with reducing the
+  relay's RAM and disc footprint: a relay stops loading node code at all. The
+  shared core measured at `c3cd6d0` is `relayAuth.js`, `deviceAuth.js`,
+  `labelRule.js`, plus constants (`kernel.js`, `buildStamp.js`, `limits.js`).
+  One repo holding both products is the recommendation until either side
+  gets its own release clock; repos are not decided.
 - **What a decision record looks like** — it cannot be designed before a
   lever moves.
 - **The Governor itself.** [CAPACITY.md](../relay/CAPACITY.md) holds that

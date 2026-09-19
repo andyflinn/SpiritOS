@@ -3,6 +3,18 @@
 **Shape agreed 2026-09-15. Nothing here is built.** Every claim about the
 tree below was checked at `02f4bd1`.
 
+> **Superseded in part, 2026-09-19 (Andy).** How partnerships are
+> **acquired** is now [NODE-AND-RELAY.md](../principles/NODE-AND-RELAY.md)
+> §5: the owner injects a relay URL as a signed grant, the relay verifies it
+> and may reject it, both owners must sign, and the relays manage the
+> partnership from there. The model described below — a partner flag on a
+> member's peer row, promoted by an owner verb, verified against the far
+> relay's public census — is **rejected and deprecated**, and goes once the
+> new design is proven. The census it verifies against was deleted on
+> 2026-09-18. Also superseded: *"either side may drop the other"* is now
+> silent — the far side learns by a failed handshake. The one-hop rule and
+> the vouching argument below still stand.
+
 > **Andy:** "if you can verify a peer, and we can verify each other, then
 > I can verify your peer."
 

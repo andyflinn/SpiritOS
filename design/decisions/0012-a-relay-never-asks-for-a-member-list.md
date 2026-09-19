@@ -1,6 +1,6 @@
 # 0012 — A relay never asks for a member list
 
-**Decided 2026-09-17. Against `86b6fe2`. Widened 2026-09-18 — see below.**
+**Decided 2026-09-17. Against `86b6fe2`. Widened 2026-09-18, amended 2026-09-19 — see below.**
 
 > The get-complete-member-list could be dropped altogether. That's the slimmest
 > initial load guaranteed at startup, with no instant explosive growth. (Andy)
@@ -10,6 +10,8 @@
 **There is no verb by which one relay can ask another for its members, and there
 will not be one.** Not refused, not bounded, not paginated, not owner-only —
 **absent**. The partner vocabulary is two words: `search` and `forward`.
+*(Amended 2026-09-19: the vocabulary grows by partnership-management verbs —
+see the end of this record. The ban on a member-list verb is unchanged.)*
 
 This supersedes Grok's ruling of the same day, *"refuse member roll"*. Refusing
 leaves the verb in the vocabulary, and **a refused verb is one somebody writes a
@@ -228,3 +230,16 @@ The distinction is what both decisions rest on:
   list, and the memory model these figures come from.
 - `relay/CAPACITY.md` — decided item 0 (demand), item 8 (declared budget),
   item 10 (this decision's working).
+
+## Amended 2026-09-19 — management verbs join the vocabulary
+
+**Decided (Andy, 2026-09-19).** Relays manage their own partnerships
+([NODE-AND-RELAY.md](../principles/NODE-AND-RELAY.md) §5), and two words of
+traffic cannot do that. The partner vocabulary grows by **management verbs** —
+*describe* (what this box is and speaks), *propose / consent* (both owners sign
+a partnership), and *terms* (the current cap, carried on replies). The exact
+list is still a recommendation there; the objective is decided.
+
+**Unchanged:** there is no verb that asks for a member list, and none that
+serves one. Every new verb is a key in a body on the one partner bus, never a
+new route or channel (PARTNERS.md).

@@ -234,7 +234,13 @@ available by tidying.
 - Does a personal node keep its relay identity and its `who` route (§5)?
 - Shared package, or vendored copies that may diverge (§5)?
 - Does `labelRule.js` belong on the node as well (§4)?
-- Is `server.js` split into two files, or one file with two entry points?
+- ~~Is `server.js` split into two files, or one file with two entry points?~~
+  **Decided 2026-09-19 (Andy):** separate startup modules for node and relay
+  — the first step of the separation. See
+  [NODE-AND-RELAY.md](../principles/NODE-AND-RELAY.md), Open, *one tree or
+  two*. *This document's counts are from `e647e60` and stale; a static
+  re-count at `c3cd6d0` puts `labelRule.js` in the shared core (via
+  `nodeCard.js`) and `peerSearch`, `gradedSearch`, `bucket` relay-only.*
 
 ---
 

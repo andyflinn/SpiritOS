@@ -7,12 +7,19 @@ This directory contains the vision, principles, and architecture decisions for *
 - [A node and a relay are two different things](principles/NODE-AND-RELAY.md)
   — **co-design, nothing built.** The node is a person, readable and
   inspectable; the relay is infrastructure that owes its owner *an account
-  of itself*, not a readable disk. Most of the split is already decided and
-  correctly scoped — STORAGE-PHILOSOPHY never mentioned a relay. The owner
-  governs partnerships by an allow-list of URLs and the relay chooses within
-  it, which also deletes the requirement that a partner's owner be a member.
-  The monitor's data is already on the wire and undrawn. Open: version
-  tolerance, which is what splitting the evolution actually costs.
+  of itself*, not a readable disk. **Amended 2026-09-19:** box bounds
+  configuration bounds Governor; every persisted dataset is bounded by disc;
+  every lever declares floor and ceiling. The Governor is programming alone —
+  the owner's only live tools are signed grants (inject a partner, mint an
+  invite). A partnership needs both owners' signatures, lives as a row in one
+  partner roll, and ends silently; the old peer-row model is deprecated.
+  Routes are the node's, on contacts, as relay IDs — the relay keeps no route
+  cache, and 0012's "never persisted" stands. The owner never duplicates
+  member storage. **Cycle 1 is scoped small:** a RAM ceiling in a config
+  file, cheap in-flight counts, a one-rule Governor and a simple monitor;
+  partner acquisition, DISC and allotments are deferred. Before it, cycle 0:
+  node and relay as separate startup modules. Open: version tolerance, what "capable of partnership" is
+  checked against, recoverable expiry, and the open lever bounds.
 - [The requester is responsible for the question](principles/THE-REQUESTER-IS-RESPONSIBLE.md)
   — *"the more specific my question, the more precise the answer."* A vague
   question earns a bounded answer or none, never everything. The reason
