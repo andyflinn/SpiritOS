@@ -151,8 +151,8 @@ moment it carried the post and dropped it
 ([NODE-AND-RELAY §9b](../principles/NODE-AND-RELAY.md), "The member who
 answers learns the route back").
 
-Not in this requirement: `seen` and ordering hints by it. They change the
-contacts schema and wait for Grok's review.
+Not in this requirement: `seen` and ordering hints by it (decided by Andy,
+§9b). They change the contacts schema, which Grok sees at the batch review.
 
 **Verify:** `spirit/test/hintWire.js` — over real sockets, bertrand on B
 hears `{ key: alice, at: A's relay key }` after answering, and bella on B

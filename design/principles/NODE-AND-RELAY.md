@@ -1745,10 +1745,13 @@ called B's evidence weaker than A's because no signature from N1 proved N1 was
 there. Both bars prove presence: at A a signature from the target, at B a
 fresh signature from the originator, carried by a minted partner.*
 
-**For Grok's review:** `seen` changes the contacts schema, from
-`routes: ['key', …]` to `routes: [{ at, seen }, …]`. The rule in CLAUDE.md
-puts an address-book schema change in front of Andy and Grok. Andy has
-decided it; Grok should see it before it is built.
+**For Grok's batch review:** `seen` changes the contacts schema, from
+`routes: ['key', …]` to `routes: [{ at, seen }, …]`. Andy has decided it, and
+that is enough to build it. Grok sees it in the batch review, which comes once
+all the design that started with Grok is built and passing. *(Andy,
+2026-09-19: requests to Grok cost money and copy-paste time, and this
+conversation finds discrepancies faster. This corrects an earlier note, the
+same day, that held `seen` until Grok had seen it.)*
 
 **Open:**
 - Whether to also broadcast the route to B's other members, as A does. It
@@ -1760,8 +1763,7 @@ decided it; Grok should see it before it is built.
 **Built, the relay half:** cycle 3 Part A, R9. Andy: *"Now, because it
 should've been in the Part A cycle."* B sends the route to the member who
 answers, and the node applies it through the existing `learnRoute`. **Still
-to build:** `seen` and ordering hints by it, after Grok's review of the
-schema change.
+to build:** `seen` and ordering hints by it (decided, not blocked).
 
 *This replaces "scheduled after cycle 3 Part B, as a small cycle of its
 own", written earlier the same day.*
@@ -2373,7 +2375,7 @@ Part B (the owner's token) is next —
 [the cycle](../cycles/2026-09-19-disc-and-owner-token-cycle-3.md). Part A
 also carries **the member who answers learns the route back** (§9b, R9),
 which completes cycle 2's route learning in the reverse direction. `seen`
-waits for Grok's review.
+is decided and not yet built.
 
 > **Andy (2026-09-19), on cycle 3:** *"Can we amend cycle 3 to demand that
 > storage is actually moved from RAM to DISC, and RAM must become a
