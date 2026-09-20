@@ -163,3 +163,29 @@ spirit/run/app/natter/relays.json.before-lab
 # refuses every lab build until it is deleted.
 spirit/run/app/natter/session.json.before-lab
 NEXT_PROMPT.md
+
+# Andy's own project, not a node feature and not a SpiritOS concept: a
+# private GitHub repo he keeps inside his personal spirit-FS — raw input
+# he writes, a wiki compiled from it — for his idea of training a future
+# robot-self. A user-app for the shell may grow out of it one day. Until
+# that day the product does not know this folder exists: no gate names it,
+# no schema describes it, no test asserts it, and nothing in js/ reads it.
+#
+# It is ignored for the plain reason that it is a SEPARATE REPO with its
+# own remote, so the outer tree must never descend into it — and for the
+# same hard reason as every name above: setupRelayFakes.js builds fake
+# nodes from `git ls-files`, and a fake node holding Andy's private notes
+# is the worst version of that mistake.
+#
+# Being inside ROOT_DIR means the shell can read it, and that is not an
+# oversight to fix. This is personal content in a personal filesystem,
+# exactly like media/ and published/ — one operator, loopback only, and
+# every app in the shell is Andy's. If a brains app is ever built it will
+# WANT that read. The day an untrusted app can run here, this folder is
+# one of several that need an answer, and it is not the special case.
+#
+# Anchored by its slashes on purpose, unlike relay-state/ above: that one
+# is unanchored to catch every node home's copy, and this one must NOT be
+# — the vault is singular and belongs to the person, so a lab home that
+# grew a `brains` folder would be a bug to see, not a path to hide.
+spirit/run/brains/
