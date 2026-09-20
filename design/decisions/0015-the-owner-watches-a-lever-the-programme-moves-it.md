@@ -2,6 +2,42 @@
 
 **Decided 2026-09-20 by Andy. Measured against `af74fcd`.**
 
+> ## Corrected 2026-09-20, hours after writing, and the correction is the point
+>
+> **This decision first recorded that cycle 4.1 built against a decided
+> scope. That is false, and the false version is kept above the true one
+> because the mistake is instructive.**
+>
+> `NODE-AND-RELAY.md:269` carries Andy's morning statement — *"this
+> design does not include or consider the owners node moving levers
+> remotely and or interactively"* — and `:2770` carries its **amendment,
+> marked in place the same day**: *"the owner's real-time tools are
+> signed grants and levers that declare themselves live-changeable —
+> through the lever configuration API, persisted to `levers.json`.
+> **Corrected the same day: this first said the owner never moves a
+> lever.**"*
+>
+> And `:315-319` specifies the verb 4.1 built: *"no new route. Refused
+> for a lever not declared live… **Its first job is a proof:** switch max
+> connections from `"dynamic"` to a fixed number while the relay runs,
+> and watch the Governor respect it. **Live settings persist to
+> `relay-state/levers.json`**, never to `config.json`."*
+>
+> **So 4.1 implemented the specification.** It did not overshoot it. The
+> `live` property it shipped is the specification's own word.
+>
+> The agent read `§Scope` at line 269, found the superseded statement,
+> and concluded from it — never reaching the amendment two thousand lines
+> below, written to the very standard this method requires. Having failed
+> once by not reading the document, it failed again by reading part of
+> it. **A long document with corrections marked in place must be grepped
+> across its whole subject, never read at its first hit.**
+>
+> What remains true, and is the decision below: on 2026-09-20 Andy
+> changed his mind. That supersedes the 2026-09-19 amendment, which
+> superseded the 2026-09-19 morning statement. Three positions, one
+> subject, each marked — which is the method working, not failing.
+
 > "this design does not include or consider the owners node moving levers
 > remotely and or interactively. The governor will be a result of
 > programming."
@@ -9,16 +45,19 @@
 > "the only real-time tool the owner gets while node and relay are
 > running: injecting foreign partners."
 
-— Andy, 2026-09-19, cycle 4 planning. Both already recorded in
-`design/principles/NODE-AND-RELAY.md` §*Scope: the owner's only real-time
-tool is the partner list*.
+— Andy, 2026-09-19 morning, cycle 4 planning; recorded at
+`NODE-AND-RELAY.md:269` §*Scope: the owner's only real-time tool is the
+partner list*. **Superseded the same day at `:2770`**, where live-declared
+levers became movable by an owner verb. Quoted here because this decision
+returns to their substance by a different route, not because they stood.
 
 > "The monitor should allow the owner to observe and see changes
 > happening, not cause changes. see and record changes, in fact. and from
 > the recording-analysis, teach the relay better effectiveness through
 > program changes."
 
-— Andy, 2026-09-20, on finding cycle 4.1 had built the opposite.
+— Andy, 2026-09-20, on looking at what 4.1 had built to spec and deciding
+he wanted something else.
 
 ## The decision
 
@@ -31,12 +70,16 @@ This is not new. It is 0009 pointed at the Governor: the record is the
 substrate, and an owner who can reach in and move a value is an owner
 writing into his own training set.
 
-## What was built instead, and what happens to it
+## What was built to spec, and what happens to it
 
 4.1 shipped an owner verb `{ lever: { name, set } }`, a shed remedy on
-the relay, and an input with an Apply button in the Relay Monitor. That
-contradicts the scope above, which was decided the day before and written
-into the principles document by the same agent that then ignored it.
+the relay, and an input with an Apply button in the Relay Monitor —
+**exactly what `NODE-AND-RELAY.md:315-319` specified**, down to the proof
+it names: switch max connections from `"dynamic"` to a fixed number while
+the relay runs and watch the Governor respect it.
+
+This decision does not correct a mistake in 4.1. It supersedes the
+specification 4.1 correctly implemented.
 
 **It is kept, dormant, rather than deleted** (Andy, 2026-09-20: *"i don't
 want you to reverse it just yet. I see things worth keeping"*). Cycle
@@ -46,8 +89,10 @@ the capability does not have to be rebuilt and re-argued from nothing.
 
 ## Two properties a lever declares
 
-**`settable`** — replaces `live`, because `live` reads as *is this lever
-running* and the question is *who may move it*.
+**`settable`** — renames `live`, which is the specification's word
+(`NODE-AND-RELAY.md:315`, *"Refused for a lever not declared live"*).
+Renamed because `live` reads as *is this lever running* and the question
+is *who may move it*. The mechanism is unchanged; only the name is.
 
 **Every lever in the tree ships `settable: false`.** The owner can move
 nothing, which satisfies the scope exactly — by closing the path, not by
@@ -113,18 +158,61 @@ says, next to the floor and ceiling it already declares with reasons.
   run-learn-capture-reprogram cycles. That is a programme moving a lever,
   not an owner, so it is not forbidden by this — but it is not designed.
 
-## How this was missed, recorded because the guard existed
+## Persistence, which was decided and is unchanged by this
 
-`NODE-AND-RELAY.md` carried the scope decision in four places, including
-a section heading containing the word **Scope**, written the previous day
-by the agent that then built the opposite. The failure was not a missing
-rule or a lost decision: the plan named a deliverable, and the plan was
-checked against the *code* rather than against the *principles*.
+`relay-state/levers.json`, specified at `NODE-AND-RELAY.md:318` — *"Live
+settings persist to `relay-state/levers.json`, **never** to
+`config.json` — the file holding the protections is only ever written by
+a person with a shell"* — and required by `0013` (*"persist levers, not
+statistics; levers are constant-sized, statistics grow"*) and
+`CAPACITY.md:663` (*"What survives a restart is the LEVERS, not the
+statistics"*).
 
-`AGENT.md` would also have caught it — *"a tweak that needs bones surgery
-is not a tweak… stop and call a team review"* — and a wire verb added to
-serve a button is exactly that case. A plan does not waive it: **a plan
-is an artifact the governing files govern, not a governing file.**
+Nothing persists today: `governor.js` starts every lever at the ceiling,
+so a relay throws away whatever it learned on every restart. The plan
+stages `levers.json` for **4.2**.
+
+Andy, 2026-09-20: *"lever positions, by design, are persisted on the
+relay… so that it can restart in a tuned state… that would include the
+held/locked state as well."* So a lock survives a restart and is released
+only by its owner, which is what "the owner would have to release that
+locked state" requires. It needs no new persist shape: `levers.json` is
+already specified, and it is not `relay.db`.
+
+## Three states, not two
+
+`settable` answers *may the owner move it*. It says nothing about the
+Governor, and the middle state has Andy's own name from the cycle 4
+sitting — *"programmed, final constant, in the learning cycle"*:
+
+| | the programme moves it | the owner may set it | how it ends |
+|---|---|---|---|
+| **moving** (`connections1`) | every tick | no | — |
+| **constant** | no, the learning cycle concluded | no | a reprogram |
+| **locked** | no, the owner holds it | it was set | the owner sends `dynamic` |
+
+A constant and a lock both sit still, and they are not the same thing:
+different authority, different duration. The meter should draw them
+differently — a constant is settled, a lock is *someone is holding this
+now*.
+
+**`constant` is not added as a property yet.** No lever in the tree is
+one, and a field with no instance invites filling the structure instead
+of thinking. The first concluded learning cycle is what will say what it
+needs to carry.
+
+## What was actually missed
+
+Not the scope — 4.1 met it. What was missed is that the principles
+document was never read before building, and then was read badly: its
+first hit on the subject was taken as its position, while the amendment
+marked below it was not reached.
+
+The lesson that survives, and the only one: **before building anything a
+plan names, grep the principles for the subject and read every hit.** A
+document that corrects itself in place — which this method requires —
+cannot be understood from one of its statements. The correction is
+somewhere else in the file by construction.
 
 ## The cost of waiting
 
