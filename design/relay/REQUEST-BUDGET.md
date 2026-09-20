@@ -939,12 +939,67 @@ genuine peer, and that number has not been measured. But the trade is now
 between two measurable things instead of one measurable thing and a
 guess.
 
-### The two timeouts already disagree, in this tree, today
+### The timeouts down the chain are inverted, and the chain is longer than two
+
+> **Andy:** *"the relay has no business waiting for 15 seconds, if it
+> doesn't have a reply or an error in 5 seconds it's wasted time. What you
+> are saying is: your concept of diminishing timeouts down the request
+> chain is not implemented."*
+
+**Corrected 2026-09-21: the number quoted below as "relay lets go" was the
+wrong constant, all day.** `ROUTE_WAIT_MS = 15000` governs the relay's own
+outbound posts (`relay.js:1589`, device offers). **A member's route lives
+in the router's table and expires on `DEFAULT_TTL_MS = 20000`**
+(`router.js:92`), which `relay.js` never overrides. So the orphan window
+described below as seven seconds is **twelve**.
+
+**The whole chain, which is four waits and not two:**
+
+| waiter | holds | where |
+|---|---|---|
+| node's post | **8 s** | `peerPost.js:43` `DEFAULT_WAIT_MS` |
+| **relay's note about that request** | **20 s** | `router.js:92` `DEFAULT_TTL_MS` |
+| relay -> partner hop | **8 s** | the same `DEFAULT_WAIT_MS`, via `partnerRouter` |
+| relay's own posts | 15 s | `relay.js:95` `ROUTE_WAIT_MS` |
+
+**Inverted, and flat in the middle.** The inner hop (20 s) outlives the
+outer waiter (8 s), which is what orphans a slot. And the relay's hop to a
+partner waits exactly as long as the node's hop to the relay, so the two
+can give up in the same instant and neither is guaranteed to hear a real
+answer from the other.
+
+### Diminishing inward is the rule that removes the problem
+
+**Every waiter must outlive the thing it is waiting on.** Then the
+innermost gives up first and the outcome travels outward as a definite
+answer, so no outer waiter ever abandons something an inner one still
+holds:
+
+```
+node             8 s
+  relay's note   5 s      <- Andy's number: no reply or error in 5 s is wasted time
+    partner hop  3 s
+      its note   2 s
+```
+
+**This makes `cancel` unnecessary rather than merely optional.** `cancel`
+exists to clean up after an outer waiter that gave up first, and with the
+ordering right that never happens. The `cancel` verb stays in `router.js`
+for the case it was written for — a caller giving up early by choice — and
+stops being a prerequisite for the ceiling.
+
+**And it is worth four times the throughput against dead peers.** A slot
+held 5 s instead of 20 s means a cold contact list drains four times
+faster: fifty unreachable contacts is about four minutes rather than
+seventeen.
+
+**Superseded by the above, kept because the reasoning below still holds
+for whatever pair of numbers is chosen:**
 
 | | value | file |
 |---|---|---|
 | node gives up | **8000 ms** | `peerPost.js:37`, `DEFAULT_WAIT_MS` |
-| relay lets go | **15000 ms** | `relay.js:95`, `ROUTE_WAIT_MS` |
+| relay lets go | ~~15000 ms~~ **20000 ms** | ~~`relay.js:95`~~ `router.js:92` |
 
 **The node abandons a request seven seconds before the relay releases the
 route.** At a cap of 16 this is invisible. At a cap of 1 it is the
