@@ -347,6 +347,42 @@ A relay that is fast for sixteen people is not the relay this project is
 for. `0013` already says a relay is fixed-cost per time unit; reach over
 speed is what that costs the person asking.
 
+## The relay-side budget stays separate, and gets up to 16x smaller
+
+> **Andy:** *"we always know that relay side request for relays must be
+> subject to a separate budget. thing is even that load can be reduced by
+> up to 16x if all relays have node-side limits of 1."*
+
+Both hold at once, and they are not in tension.
+
+**Separate, because it is a different population.** Forwarding and
+inbound partner traffic are not members, arrive under one identity
+(`mineKey()`, `relay.js:1969`), and answer to a different argument.
+`caps: { memberPerMin, partnerPerMin }` already splits on exactly this
+line.
+
+**And up to sixteen times smaller, because what a relay must forward is
+bounded by what its members were allowed to hold open.** At 16 per
+member the forwarding ceiling is sixteen times higher than at 1 — and
+the same is true of what arrives, since a partner's outbound is its own
+members' allowance. One number, both directions, mesh-wide.
+
+**The saving is in what must be PROVISIONED, not in what is typically
+used.** Most members are idle whatever their cap; the typical forwarding
+load barely moves. What moves is the **ceiling** — and a budget is sized
+for the ceiling, which is what makes this the difference between a relay
+that fits a 1 GB box and one that does not.
+
+That is `0013` from the inside: *a relay is fixed-cost per time unit*.
+The fixed cost is set by what the worst case demands, so lowering the
+worst case is how the fixed cost comes down.
+
+**Which makes the member cap a protocol property rather than a local
+setting.** The benefit only accrues while the mesh shares it: a relay
+that raises its own exports the pressure to everyone it partners with.
+That argues for 1 as the shipped default, with a raise being a
+configured, visible divergence — the same shape as `settable` in 0015.
+
 ## The experiment: what actually breaks at 1
 
 > **Andy:** *"so we have to make a plan to freeze (at least for now) the
