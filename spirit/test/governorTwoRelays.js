@@ -43,7 +43,9 @@ const sseClient = require('../run/js/sseClient');
 const { createRelay } = require('../run/js/relay');
 
 const REPO_RUN = path.join(__dirname, '..', 'run');
-const PORTS = [65471, 65472];
+// Below 49152, outside Windows' ephemeral range — see partnerWire.js and
+// presenceWire.js:41 for what a port inside it costs.
+const PORTS = [48751, 48752];
 
 let kids = [];
 let streams = [];
@@ -99,10 +101,14 @@ function plant(w, config) {
   w.runDir = runDir;
 }
 
+// stderr is kept, not ignored — see partnerWire.js for what discarding it
+// cost. The server names its own refusal; this hands that to the failure.
 async function startRelay(w, port) {
   const kid = spawn(process.execPath, ['js/server.js', '--port', String(port), '--relay'],
-    { cwd: w.runDir, stdio: 'ignore' });
+    { cwd: w.runDir, stdio: ['ignore', 'ignore', 'pipe'] });
   kids.push(kid);
+  w.why = '';
+  kid.stderr.on('data', function (b) { w.why += String(b); });
   const base = 'http://127.0.0.1:' + port;
   for (let n = 0; n < 40; n += 1) {
     await sleep(200);
@@ -179,7 +185,10 @@ async function run() {
   plant(B, null);
 
   if (!(await startRelay(A, PORTS[0])) || !(await startRelay(B, PORTS[1]))) {
-    test.fail('a relay did not come up on ' + PORTS.join(' / '));
+    test.fail('a relay did not come up on ' + PORTS.join(' / ') +
+      (String(A.why || B.why || '').trim()
+        ? ' — it said: ' + String(A.why || B.why).trim()
+        : ' — and said nothing on stderr'));
     cleanup();
     test.reportSuccessFailureCount();
     return;

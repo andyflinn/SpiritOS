@@ -49,7 +49,15 @@ const sseClient = require('../run/js/sseClient');
 const { createRelay } = require('../run/js/relay');
 
 const REPO_RUN = path.join(__dirname, '..', 'run');
-const PORTS = [65461, 65462];
+// BELOW 49152, AND THAT IS THE WHOLE REASON FOR THE NUMBER.
+// presenceWire.js:41 learned this first: 65461 is inside Windows'
+// ephemeral range (49152-65535), where any outbound socket this machine
+// makes — or Hyper-V reserving a block at boot — can hold it first. Then
+// `listen EACCES` is swallowed by `stdio: 'ignore'` and the suite can
+// only report "a relay did not come up", which is true and useless.
+// Observed 2026-09-20: netsh showed 65433-65532 reserved, and this suite,
+// governorTwoRelays and hintWire all went red together for it.
+const PORTS = [48741, 48742];
 
 let kids = [];
 function cleanup() {
@@ -102,10 +110,19 @@ function plant(w) {
   return w;
 }
 
+// KEEP stderr, AND THAT IS THE OTHER HALF OF THE PORT LESSON.
+// `stdio: 'ignore'` is how a refused port became "a relay did not come
+// up" and stayed that way for an afternoon (2026-09-20). The server says
+// exactly what is wrong — "Refusing to start: listen EACCES: permission
+// denied" — and nobody was listening. presenceWire.js:48 wrote down that
+// a test which fails for a reason it does not name is worse than no
+// test, and then discarded the reason anyway. This keeps it.
 async function startRelay(w, port) {
   const kid = spawn(process.execPath, ['js/server.js', '--port', String(port), '--relay'],
-    { cwd: w.runDir, stdio: 'ignore' });
+    { cwd: w.runDir, stdio: ['ignore', 'ignore', 'pipe'] });
   kids.push(kid);
+  w.why = '';
+  kid.stderr.on('data', function (b) { w.why += String(b); });
   const base = 'http://127.0.0.1:' + port;
   for (let n = 0; n < 30; n += 1) {
     await sleep(200);
@@ -165,7 +182,10 @@ async function run() {
   plant(B);
 
   if (!(await startRelay(A, PORTS[0])) || !(await startRelay(B, PORTS[1]))) {
-    test.fail('a relay did not come up on ' + PORTS.join(' / '));
+    test.fail('a relay did not come up on ' + PORTS.join(' / ') +
+      (String(A.why || B.why || '').trim()
+        ? ' — it said: ' + String(A.why || B.why).trim()
+        : ' — and said nothing on stderr'));
     test.reportSuccessFailureCount();
     return;
   }

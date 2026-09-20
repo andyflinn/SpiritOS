@@ -36,7 +36,11 @@ const relayStore = require('../run/js/relayStore');
 const { createRelay } = require('../run/js/relay');
 
 const REPO_RUN = path.join(__dirname, '..', 'run');
-const PORTS = [65485, 65486];
+// Below 49152, outside Windows' ephemeral range — see partnerWire.js and
+// presenceWire.js:41 for what a port inside it costs. This suite was
+// still green on 65485/65486 when the other three went red, which is
+// luck rather than a difference: the same reservation covers it.
+const PORTS = [48771, 48772];
 // What relayServer.js's goodbye asks for. The floor sseClient would use
 // without it is FLOOR_MS, so the two cannot be confused.
 const HINT_MS = 3000;
