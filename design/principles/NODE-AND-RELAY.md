@@ -2589,6 +2589,28 @@ for refusals a restart cannot fix):
 - one instance per person, findable by the browser — two copies dialling
   the same relays are one person making two seats' worth of noise.
 
+**What daemons are worth, on both sides** (Andy, 2026-09-20: *"demons will
+give relays a much more stable set of connected-nodes. And from the
+shell's point of view: green peers are listening and remembering."*):
+- **To a relay:** a connected set that holds still. Members arrive when a
+  machine boots rather than when somebody opens a tab, so presence churn
+  falls, the roll of connected rows in RAM stops thrashing, and the
+  connections lever becomes a question about steady-state RAM instead of
+  about churn — which is the shape cycle 4 tunes against.
+- **To the shell: green means listening AND remembering.** Not "somebody
+  is at the screen" — that never was what it meant, and with daemons it
+  cannot be mistaken for it. It means their node is up, will take the
+  packet, and will still have it when they next look.
+- **It is what makes "a relay stores nothing" affordable** (0006). A post
+  to an absent peer is refused instantly, 503 `peer not reachable`
+  (relay.js) — there is no store-and-forward on the box, by decision. The
+  forwarding lives at the RECEIVING NODE, which can only be true if that
+  node is up. Without daemons the rule costs real delivery failures; with
+  them it costs almost nothing.
+- **Small in-file work, when the daemon lands:** the contacts dot still
+  says "a relay you share is holding their connection". The truer words
+  are the ones above.
+
 **Where it sits: its own small cycle, before beta** — the standing rule
 that by beta Andy maintains his spirit dataset on the work node is only
 true once the node runs unattended. Not cycle 4, not 5.1. Its first
