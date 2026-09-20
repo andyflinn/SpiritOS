@@ -517,6 +517,56 @@ what a person will tolerate for an operation they asked for. Both require
 step 3 to exist first, which is why measurement precedes the freeze
 rather than following it.
 
+## The red line: a large relay overwhelming a small one
+
+> **Andy:** *"a large memory relay can overwhelm a small-RAM relay.... if
+> all is programmed well, that's one of the biggest red-line risks i
+> see."*
+
+The sharpest thing about it is the qualifier. This is not misconfiguration
+or an old release — **capacity asymmetry alone is enough**, with every box
+behaving correctly. A relay with more memory has more members generating
+more forwards, and they all arrive at a small partner under one identity
+(`mineKey()`, `relay.js:1969`).
+
+**Nothing paces per partner today.** No per-partner budget, no queue, no
+back-off: a relay offers forwards at whatever rate its members produce
+them.
+
+**Where the damage lands depends on whether the small relay has an
+inbound bound**, and the two cases are different problems:
+
+**Without one — which is today — the small relay is genuinely
+overwhelmed.** No defence exists. This is the immediate risk and it is
+why the third budget is not optional.
+
+**With one, the small relay survives and the harm moves.** Refusal is
+cheap for the refuser: B says 429 and is fine. The cost lands on **A's
+members**, who see failures when they talk to B's members. Small relays
+then look *unreliable* rather than being *broken* — and people migrate to
+the big ones. **That is the real red line: not a crash but a slow drift
+to centralisation**, which is the premise of this project failing quietly
+rather than loudly.
+
+**And the fix is Andy's own principle, one layer up.** If A *paces* to
+B's announced budget instead of offering blindly, A's members **wait**
+rather than fail. A small relay becomes slow to reach, not broken —
+**reach over speed**, applied relay to relay.
+
+**Which is why this needs no second mechanism.** `AGENT.md`: *"A relay is
+a client of the same interface… `createPeerPost` already takes `traffic`
+injected so a relay can omit it — it was built to be constructed on a
+relay."* A queue built in `peerPost` for the node serves the relay's
+forwarding unchanged. **Announce, queue, bound — the same three things,
+at both layers, from one implementation.**
+
+**One asymmetry to keep in view:** a member that is refused can pick
+another of its relays (relays x cap). A relay that is refused by its
+partner has no such choice — the partner is the only route to that
+partner's members. So pacing matters more between relays than between a
+node and its relay, which is the opposite of where the effort has gone
+so far.
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
