@@ -651,6 +651,53 @@ bottleneck for their correspondents. At human message rates and a 1-5 s
 timeout that is invisible. At today's 15 s it would not be — the timeout
 cut is a prerequisite here too.
 
+## The whole thing collapses to one configured number
+
+> **Andy:** *"for relay this means MAX_REQUESTS_IN_FLIGHT =
+> MAX_MEMBER_ROLL_SIZE.... all equations simplified. many ceilings
+> implicit constants."*
+
+Almost exactly, with a factor of two: **a route has two ends and both are
+capped.** A member may be a requester once and a target once, so the
+worst case is `2 x members` — reached only when every conversation
+crosses the relay boundary. Relay-local traffic shares a route (A to B is
+one entry serving A's outbound slot and B's inbound), so the typical
+figure is nearer `N`.
+
+```
+    10 members  ->     20 routes  =   0.3 MB
+   100 members  ->    200 routes  =   3.1 MB
+  1000 members  ->   2000 routes  =  31.3 MB
+ 10000 members  ->  20000 routes  = 312.5 MB
+
+today: DEFAULT_MAX 256 slots = 4.0 MB, exhausted by SIXTEEN members
+```
+
+**Andy's thousand friends cost 31 MB.** That is the ambition costed:
+
+> **Andy:** *"i might want a relay to provide 1000 friends with a fairly
+> private/verified connectivity."* — cycle 4 blurb, `L2298`
+
+**And the chain has one input.**
+
+```
+MAX_MEM  ->  member roll size  ->  routes in flight  ->  request RAM
+```
+
+Every ceiling below the first becomes derived rather than chosen.
+`DEFAULT_MAX = 256` stops being a number somebody picked and becomes an
+arithmetic consequence. The per-requester cap is the constant `1`, not a
+tunable. The per-target cap is the constant `1`. What was four
+independent numbers, none of them argued, becomes **one configured bound
+and three constants**.
+
+**One separation worth keeping straight:** the cap sets the **peak**, the
+timeout sets the **turnover**. Peak RAM is `2N x PAYLOAD_MAX` whatever
+`ROUTE_WAIT_MS` is — the timeout decides how fast a stuck slot frees and
+therefore throughput under contention, not how much memory is held at
+once. They are independent levers on the same resource and should not be
+argued as one.
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
