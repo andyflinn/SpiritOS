@@ -257,21 +257,42 @@ function createQueue(opts) {
     return !!it && it.until > nowFn();
   }
 
-  // When the earliest useful moment is, so a caller can sleep exactly
-  // that long instead of polling. null when nothing is waiting on time.
+  // When the earliest useful moment is, so a caller sleeps exactly that
+  // long instead of polling. **null when nothing is waiting on time at
+  // all**, and that null is the whole point of this function.
+  //
+  // ONLY TWO THINGS ARE WAITING ON A CLOCK: a target that is backed off
+  // until some moment, and an entry whose patience runs out at some
+  // moment. Everything else in this queue is waiting on an EVENT — a slot
+  // freeing — and every path that frees a slot pumps (settle, and the end
+  // of an attempt), so a timer for those is not merely unnecessary, it is
+  // a busy loop.
+  //
+  // IT WAS ONE. The first version returned 0 whenever anything was queued
+  // behind a busy relay, because a zero-patience entry has `until` in the
+  // past and that was read as "wake immediately". The caller then woke
+  // every millisecond, found nothing eligible, and slept for another
+  // millisecond, for as long as the in-flight attempt lasted — up to
+  // eight thousand wake-ups for the simple case of posting twice to one
+  // relay. Nothing failed and nothing was slow; a node just burned a core
+  // for eight seconds at a time.
   function nextWakeMs() {
     var now = nowFn();
     var soonest = null;
+    function consider(when) {
+      if (when <= now) return;
+      if (soonest === null || when < soonest) soonest = when;
+    }
     items.forEach(function (it) {
       if (it.sending) return;
-      var cand = backedOffUntil[pairKey(it.relayUrl, it.toKey)] || 0;
-      var when = Math.max(cand, 0);
-      if (when <= now) when = now;
-      if (soonest === null || when < soonest) soonest = when;
-      if (it.until < soonest) soonest = it.until;
+      consider(backedOffUntil[pairKey(it.relayUrl, it.toKey)] || 0);
+      // Patience only ever expires an entry that has been tried, and one
+      // already past its budget is swept synchronously rather than slept
+      // on — see expired().
+      if (it.attempts > 0) consider(it.until);
     });
     if (soonest === null) return null;
-    return Math.max(0, soonest - now);
+    return Math.max(1, soonest - now);
   }
 
   function size() { return items.length; }

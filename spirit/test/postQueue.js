@@ -290,4 +290,46 @@ test.subHeading('Patience bounds the whole intent, not one attempt');
   }
 }
 
+test.subHeading('Waiting on an event is not waiting on a clock');
+
+// THE DEFECT THIS PINS was shipped and found an hour later. A zero-patience
+// entry has `until` in the past, which the first nextWakeMs read as "wake
+// immediately" — so anything queued behind a busy relay made the caller
+// wake every millisecond, find nothing eligible, and sleep another
+// millisecond, for as long as the in-flight attempt lasted. Posting twice
+// to one relay burned a core for eight seconds. Nothing failed and nothing
+// was slow, which is exactly why a test says so now.
+{
+  const c = clock();
+  const q = pq.createQueue({ now: c.now });
+
+  const held = q.add({ relayUrl: 'R1', toKey: 'bella' });
+  q.add({ relayUrl: 'R1', toKey: 'carlos' });
+  q.started(held);
+
+  if (q.nextWakeMs() === null) {
+    test.check('an entry blocked only by a busy slot asks for no timer — the slot freeing pumps');
+  } else {
+    test.fail('busy-slot wake: ' + q.nextWakeMs() + ' — that is a spin loop, not a wait');
+  }
+
+  // A backed-off target IS waiting on a clock, and says exactly how long.
+  const off = q.add({ relayUrl: 'R2', toKey: 'dina', patienceMs: 50000 });
+  q.started(off);
+  q.silent(off);
+  if (q.nextWakeMs() === pq.BACKOFF_START_MS) {
+    test.check('and one waiting on a backoff asks for exactly that long');
+  } else {
+    test.fail('backoff wake: ' + q.nextWakeMs());
+  }
+
+  // Nothing queued at all is nothing to wake for.
+  const empty = pq.createQueue({ now: c.now });
+  if (empty.nextWakeMs() === null) {
+    test.check('and an empty queue keeps no timer alive at all');
+  } else {
+    test.fail('empty queue wanted a wake: ' + empty.nextWakeMs());
+  }
+}
+
 test.reportSuccessFailureCount();
