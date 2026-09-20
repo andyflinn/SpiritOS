@@ -340,6 +340,40 @@ by injecting the reach the same way, and the allow-list gives the rule:
 
 > **A relay may only ever reach a URL its owner wrote down.**
 
+> **BROKEN BY THE 2026-09-21 PARTNER DESIGN, and it is the security half
+> that breaks.** Ten members' contacts span **hundreds** of relays
+> ([REQUEST-BUDGET.md](../relay/REQUEST-BUDGET.md), *"How many partners
+> does it take to route ten members' contacts?"*), which no owner can
+> write down or keep current. So partner URLs now arrive from **members'
+> route hints**, and this rule cannot survive in that form.
+>
+> **What it was protecting is still real**, and `PARTNERS.md:463` named
+> it while arguing the other way: *"A relay that fetches a URL is a relay
+> with an SSRF surface, a timeout budget and a retry policy, on a box
+> whose whole design is to do less."*
+>
+> **What guards it today, and where the guard stops.** `assertRelayUrl`
+> (`relayRequest.js:42`) requires `https:` **except** that it allows
+> `http:` to loopback, for lab relays. Against owner-written URLs that is
+> ample. Against member-supplied ones it leaves two doors open:
+>
+> - **`http://127.0.0.1:<anything>`** — a route hint naming loopback makes
+>   the relay dial **its own box**, on any port, reaching whatever else
+>   that machine runs.
+> - **`https://<private address>`** — the protocol check passes, so an
+>   internal service on a LAN is reachable.
+>
+> Neither is exploitable now, because every partner URL is written by
+> `setPartner`, an owner verb. **Both go live the moment a URL can come
+> from a member**, so a replacement rule is a prerequisite for open
+> partnering rather than a follow-up to it.
+>
+> **The shape a replacement has to take:** the owner's allow-list is gone,
+> so the bound must be on the URL itself — public addresses only, no
+> loopback and no private ranges when the URL did not come from the
+> owner. That distinction (owner-written versus member-supplied) is
+> already the `partnered` / `requested` split this design uses elsewhere.
+
 Which is the containment `assertRelayUrl` already gives the node. The change
 is not "relays can call out" — it is "relays can call out *to a list*".
 
