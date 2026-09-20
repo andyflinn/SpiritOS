@@ -1199,6 +1199,80 @@ the answer depends on how much the measured cost varies, which is part of
 what measuring it tells you.
 
 
+## Live partners are bounded by members, outbound only
+
+> **Andy:** *"another fallout will be max-live-partners = max_members,
+> because there can only be one request in flight per member, that means
+> there's an exact limit to how many partners must be live at the time to
+> satisfy all flying requests from members."*
+
+**The derivation holds. Two corrections to its statement.**
+
+**It is `min(partner_roll, max_members)`, not `= max_members`.** A member
+with one request in flight needs at most one partner live to carry it, so
+the count of partners that must be live *at once* cannot exceed the count
+of members who are asking. But it also cannot exceed the number of
+partners there are: ten partners and five hundred members needs ten live,
+not five hundred. It is a ceiling on simultaneous need, not a headcount.
+
+**And it binds the OUTBOUND half only.** A partner dialling *us* is that
+partner's decision, bounded by our partner roll and by nothing we control
+— so the symmetric statement is false, and the gap is Andy's own red line:
+
+> *"a large memory relay can overwhelm a small-RAM relay.... if all is
+> programmed well, that's one of the biggest red-line risks i see"*
+
+The inbound half is bounded by the **partner requester class** instead
+(built 2026-09-20), which is a budget rather than a derivation. Two
+different mechanisms for two different halves, and this insight supplies
+only one of them.
+
+### What it changes, because today there is no bound at all
+
+`partnerLink.js:122`:
+
+```js
+start: function () {
+  const list = relay.partners() || [];
+  list.forEach(openTo);        // every partner, dialled, held
+}
+```
+
+**Live partners is the whole partner roll, permanently, regardless of
+members.** A partnership costs a relay two stream-equivalents — the one
+it holds outbound and the one it serves inbound (`partnerLink.js`: *"One
+each way... each carries the answers to the questions its holder asked"*)
+— so five hundred partners is a thousand streams before a single member
+connects. At the placeholder `STREAMS_PER_MB = 16` that is roughly 62 MB
+of partner links on an idle box, and that figure inherits the placeholder's
+uncertainty like every other one here.
+
+### It supersedes a recorded stance, which is Andy's to confirm
+
+`partnerLink.js:6` carries the opposite position, in his words:
+
+> *"partners are the most permanent presences in practice: they are
+> designed to run indefinitely, browsers are not."*
+
+That is an argument about what a partner IS — a box that stays up — and
+it is still true. What it was used for was holding every partner stream
+open all the time, and the bound above says that is unnecessary for the
+outbound half: a stream is needed when a member's request must cross, and
+`min(roll, members)` is how many can be needed at once.
+
+**The trade, stated so it is not decided by omission.** Dialling on
+demand costs latency on first use of a cold partner, and *reach over
+speed* has been read both ways here: keeping partners warm is reach, and
+so is the extra membership the saved memory buys. Which dominates is a
+question of how often a cold partner is the one a member wants —
+unmeasured, and cheap to measure once the roll has more than two rows in
+it.
+
+**Not decided:** whether partner streams become on-demand, and if so
+whether an idle one is dropped on a timer or kept until the memory is
+wanted.
+
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
