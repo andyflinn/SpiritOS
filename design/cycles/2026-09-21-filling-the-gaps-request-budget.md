@@ -37,7 +37,7 @@ inert.
 
 **Claude's, and startable now.** Nothing here touches a packet.
 
-### A1. A route becomes `{ via, at, seen }`
+### R1 — a route becomes `{ via, at, seen }`
 
 > **Andy:** *"a node can be a member of multiple relays, if it only
 > remembers B of the route, it won't know which relay to post a request
@@ -61,7 +61,9 @@ Shape change to a persisted file, so: existing bare-key rows stay valid as
 *"some relay of mine proved this once"* and are simply less useful than
 new ones — degrades rather than breaks.
 
-### A2. `background` marking, so the class split stops being decorative
+**Status:** OPEN — not built. Node-side and unblocked — the first thing to build.
+
+### R2 — `background` marking, so the class split stops being decorative
 
 The scheduler ranks deliberate above background and **nothing marks
 itself background**, so a fifty-card sweep still outranks a message a
@@ -71,27 +73,34 @@ open.
 Needs `{ kind }` threaded through `api.peerPost` so
 `contactsAskEveryone` can say what it is. Node-side API shape, not wire.
 
-### A3. Queue depth, and what is shed at the limit
+**Status:** OPEN — not built. Needs `{ kind }` threaded through `api.peerPost`; the scheduler half is done and proven in `spirit/test/postQueue.js`.
+
+### R3 — queue depth, and what is shed at the limit
 
 Unbounded today. Harmless at patience zero, a leak the moment patience is
 days. **Shed background before deliberate** — shedding oldest would
 invert Andy's ordering rule.
 
-### A4. Route expiry using `seen`
+**Status:** OPEN — not built, and harmless until patience is non-zero, which no caller sets.
+
+### R4 — route expiry using `seen`
 
 Falls out of A1: a route not proven in N days stops being sent as a hint.
 Distinct from eviction of the contact, which never happens for staleness.
+
+**Status:** OPEN — not built. Depends on R1, which supplies `seen`.
 
 **Stage A ends with:** the scheduler honest about priority and bounded in
 size, and a route that is a whole edge rather than half of one.
 
 ---
 
+
 ## Stage B — the ceiling drops to 1
 
 **One decision, no wire, and the decision is Andy's.**
 
-### B1. The blocker: two timeouts that disagree
+### R5 — the carried timeout budget, diminishing down the chain
 
 ```
 node gives up   8000 ms   peerPost.js:37   DEFAULT_WAIT_MS
@@ -117,7 +126,9 @@ the moment the ceiling drops**, which is this stage.
 
 **Andy's to rule.** Stage B cannot start until he does.
 
-### B2. `maxPerTarget` out of config, into code
+**Status:** OPEN — not built. A new envelope field, so it is a wire change and a team review — it replaces R10 rather than joining it.
+
+### R6 — `maxPerTarget` out of config, into code
 
 Put in `relay-state/config.json` on 2026-09-20 arguing *"only ever written
 by a person with a shell"* — the argument revoked hours later. **By the
@@ -126,7 +137,9 @@ because `targetBusy.js` spawns a real relay and has no other way to switch
 the cap on; when the constant lands at 1 that suite needs no
 configuration at all.
 
-### B3. Drop it and run the experiment
+**Status:** OPEN — not built. Blocked on R5 and R7: the config entry is the only way `spirit/test/targetBusy.js` can switch the cap on until the constant lands.
+
+### R7 — drop the ceiling to 1 and run the experiment
 
 Setting `DEFAULT_PER_TARGET = 1` on 2026-09-20 produced **10 red beyond
 the revocation**: `relayMeter` (4, including *"routePost is unlimited"*
@@ -134,10 +147,13 @@ which `0016` already marks for repeal), `routeHints` (3, the partner path
 genuinely needing the queue), `router.js` (3, fixtures assuming an
 uncapped target). That is the evidence for what B1–B2 have to fix first.
 
+**Status:** OPEN — not built. Blocked on R5. The 2026-09-20 experiment recorded 10 red as the checklist.
+
 **Stage B ends with:** the ceiling at 1, green, and the sequential
 guarantee real rather than argued.
 
 ---
+
 
 ## Stage C — the wire
 
@@ -145,7 +161,7 @@ guarantee real rather than argued.
 not a patch. Grok reviews in a batch once Andy-initiated design is green,
 so this is Andy's to route, not a gate on Stage A.
 
-### C1. `viaUrl` in a search answer — the gap under everything
+### R8 — `viaUrl` in a search answer, the gap under everything
 
 `relay.js:2728` builds a partner's answer as `{ via: p.relayKey, rows }`
 while `p.url` sits unused on the same object. So a foreign peer arrives
@@ -158,23 +174,29 @@ assume somebody can, and nobody can.
 It discloses nothing — a relay's URL is how anybody reaches it, and
 `/api/relay/who` is already public and unsigned.
 
-### C2. Hints carry `{ key, url }`
+**Status:** OPEN — not built. Wire, therefore a team review.
+
+### R9 — hints carry `{ key, url }`
 
 `HINTS_PER_POST` sends relay keys, so even holding a URL a node cannot
 **tell** its relay where an unknown relay is. Without this, C1 unblocks
 one end and leaves the other blocked.
 
-### C3. `cancel`, exposed to a member
+**Status:** OPEN — not built. Wire, therefore a team review. R8 without it unblocks one end and leaves the other blocked.
+
+### R10 — `cancel`, exposed to a member
 
 Resolves B1 in the direction that keeps the shorter node timeout.
 
 ---
 
+**Status:** OPEN — not built, and no longer a prerequisite — R5 makes the inversion it cleans up after structurally impossible. Kept for a caller giving up by choice.
+
 ## Stage D — the partner architecture
 
 **Needs C, and needs one rule Andy has not made.**
 
-### D1. The URL rule, which is a prerequisite and not a follow-up
+### R11 — the URL rule, a prerequisite and not a follow-up
 
 `NODE-AND-RELAY.md`'s *"a relay may only ever reach a URL its owner wrote
 down"* is broken by the sizing: hundreds of partnerships nobody can
@@ -186,21 +208,27 @@ Not exploitable today, because every partner URL comes from `setPartner`,
 an owner verb. **Live the moment a URL can come from a member**, which is
 what C2 enables.
 
-### D2. `last` on a partner row
+**Status:** OPEN — not decided, and it is Andy's to decide. A prerequisite for R14 rather than a follow-up, since R9 is what makes it exploitable.
+
+### R12 — `last` on a partner row
 
 `relayStore.js:103` has `since` — when the partnership began — and nothing
 about when it last worked. That column **orders searches** (replacing
 `presentNow.isPresent`, which goes with the streams) and is what makes
 D3 possible. It does **not** evict: the roll is the reach.
 
-### D3. No streams between partners
+**Status:** OPEN — not built. Depends on nothing; needed before R13 removes the liveness the streams supplied.
+
+### R13 — no streams between partners
 
 Removes the partner stream pool, the `presence.js:145` contention with
 members, most of `partnerLink.js`, and collapses relay↔relay to **one
 verb** — the response to a post *is* the reply, which the forward path
 already does in production.
 
-### D4. Open partnering, provisional rows, and a visible count
+**Status:** OPEN — not built. Bones and wire together, so a team review.
+
+### R14 — open partnering, provisional rows, and a visible count
 
 Self-formed partnerships land as `requested` (a status `relayStore.js:24`
 already reserves) — evictable freely, where owner-granted rows are not.
@@ -210,7 +238,13 @@ noticed rather than discovered.
 
 ---
 
-## Crossing all of it: the measurement
+**Status:** OPEN — not built and not decided. Needs R8, R9, R11 and R12.
+
+### R15 — the per-stream measurement
+
+**Status:** OPEN — not measured. Blocks no stage and is blocked by none; four conclusions rest on it.
+
+## Crossing all of it
 
 **`STREAMS_PER_MB = 16` is a placeholder `governor.js` marks as guessed in
 its own comment**, and four conclusions now rest on it:
