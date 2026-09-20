@@ -283,10 +283,31 @@ forwards this relay will have to spend on its members' behalf. By 0015's
 test — a lever earns its place by moving something the Governor can see —
 that makes `requestsInFlight1` a stronger lever than `connections1`.
 
-**It does not reach what arrives.** Inbound partner forwards open routes
-under `mineKey()` (`relay.js:1969`), so every partner's members share one
-requester identity on this relay's table. That is other relays' traffic
-and a member cap cannot touch it.
+**And it eases what arrives too, which this note first denied.**
+
+> **Andy:** *"the 1 request in flight eases the relay's burden from both
+> sides."*
+>
+> *Corrected in place. The paragraph here first read "it does not reach
+> what arrives", which analysed one relay in isolation and is only true
+> of a relay whose partners do not share the cap.*
+
+Inbound partner forwards do open routes under `mineKey()`
+(`relay.js:1969`), so every partner's members share one requester
+identity on this relay's table — that part stands. But **what arrives is
+what a partner's members were allowed to send.** The cap is
+`DEFAULT_PER_REQUESTER` in the shipped code, so it travels with releases:
+in a mesh running the same build, A forwards one per member instead of
+sixteen and B's inbound falls by the same factor without B doing
+anything. One number, both sides.
+
+**The inbound bound is therefore a defence against divergence, not the
+primary mechanism.** A partner on an older release, or one whose owner
+raised its own member cap, exports that pressure to everyone it partners
+with — and `mineKey()` means it arrives as a single identity that cannot
+be told apart from a well-behaved partner. That is what the third budget
+is for: not the ordinary case, which the default already handles, but the
+relay that does not share it.
 
 **Which names three budgets, not one**, and only the first is usefully
 strict:
@@ -295,7 +316,7 @@ strict:
 |---|---|---|
 | **member in-flight** | what each member may hold open here | strict — 1 is the proposal |
 | **forwarding** | what this relay spends asking partners on its members' behalf | falls with the member cap |
-| **inbound partner** | what this relay accepts from other relays | its own bound, its own argument |
+| **inbound partner** | what this relay accepts from other relays | a defence against a partner that does not share the default |
 
 The precedent is already in the tree: `caps: { memberPerMin,
 partnerPerMin }` keeps two pools because they are two populations. The
