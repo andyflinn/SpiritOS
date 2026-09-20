@@ -1943,13 +1943,56 @@ That field now does two jobs, and it is the answer to the open question
   but it degrades in the right direction, and *"successful search =
   presence"* means a successful ask refreshes it for free.
 
-**So the answer to "does liveness need a replacement" is: yes, and it is
-one column.** `last` beside `since`, written on every successful exchange,
-read by eviction and by search ordering.
+### Corrected the same day: do not evict for silence
 
-**Not decided:** the staleness ceiling in days, and whether a partner
-evicted for silence is forgotten entirely or demoted to a status cycle 5
-already reserves (`injected`, `requested` — `relayStore.js:24`).
+> **Andy:** *"but the partner roll is what supplies connectivity."*
+
+**This section proposed staleness eviction for partners, and that is
+wrong.** It trades reach for speed, which is the standing ordering
+backwards (`0007`: *survive > reach > speed*). The justification was
+search latency — a speed problem — and the remedy was to destroy reach.
+
+**Silent is not dead**, and the section ran the two together. A partner
+nobody has had occasion to ask in three months is not stale; it is
+*unused*. It still supplies a door to another relay's entire membership,
+and it costs a few hundred bytes to keep. **The roll IS the
+connectivity** — that is what a partnership is for — so shrinking it to
+make a query faster is spending the asset to reduce a cost of using it.
+
+**The right fix is to bound the QUERY, not the roll.** The problem was
+that a search asks every partner and waits on the dead ones. So ask
+fewer: order by `last` and ask the recently-successful first, with a
+bound on how many. The roll stays as large as disc allows; the search
+touches a working subset.
+
+**Which is already half-built.** A search fans out as this relay posting
+to partners — **relay-class requests** — so the number in flight is
+already bounded by the relay requester class (built 2026-09-20). The
+fan-out cannot be unbounded even if the roll is.
+
+### So the column stays; only its second job goes
+
+`last` beside `since` is still the answer to *"does partner liveness need
+a replacement"* — but it **orders** rather than **evicts**:
+
+- **Search ordering, replacing `isPresent`.** Recently-successful
+  partners first, long-silent ones last or not at all. Evidence about the
+  past rather than the present, but it degrades in the right direction,
+  and *"successful search = presence"* refreshes it for free.
+- **NOT staleness eviction.** A partner leaves when the owner removes it,
+  or under genuine disc pressure — the space bound, applied as a space
+  bound. Not for being quiet.
+
+**This is where partners and members differ**, and `0016`'s *"similar for
+partners"* does not carry over. A member roll holds people who expect to
+be served and whose seats are finite; an idle member occupies a seat
+somebody else wants. A partner roll holds **doors**, which cost disc and
+nothing else and which take nothing from anybody by existing. The age
+bound was argued for seats. Doors are not seats.
+
+**Not decided:** how many partners a search asks, and whether a partner
+that has failed for a very long time is ever forgotten or merely sorted
+last for ever.
 
 
 ## Decided
