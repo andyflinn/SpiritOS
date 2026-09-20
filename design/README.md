@@ -252,6 +252,16 @@ This directory contains the vision, principles, and architecture decisions for *
   lines — plus Andy's ruling that a relay vouches only for *"the fact
   that they are verified by a trusted partner"*, and that vouching is what
   a partnership consists of rather than an extra grant.
+- [A member's request budget — announced, and honoured](relay/REQUEST-BUDGET.md)
+  — a relay tells its members nothing about what they are allowed, so a
+  node learns its limits by being refused; and `peerPost` has no queue, so
+  a refusal is a failure rather than a wait. The bound that matters is not
+  even configurable: `DEFAULT_PER_REQUESTER = 16` with
+  `createRouter()` called with no options. Concurrency x bytes x duration
+  is the RAM a router costs — 4 MB at the table cap, reachable by sixteen
+  members — which makes requests-in-flight a lever beside `connections1`
+  and `requestTimeout1`, on the same axis and multiplying.
+
 - [A relay governs itself by what it can observe](relay/CAPACITY.md) —
   **first cut, nothing built.** Andy: *"a relay's capacity is primarily
   governed by its own RAM and by its network bandwidth."* If that is true a
