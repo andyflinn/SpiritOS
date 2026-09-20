@@ -359,16 +359,37 @@ Run 2026-09-20 before planning anything: `DEFAULT_PER_REQUESTER` set to
 
 | suite | red | what it means |
 |---|---|---|
-| `routeHints.js` | 4 | **the blocker** — forwarding uses `mineKey()`, so one relay-wide slot |
+| `routeHints.js` | 4 | a fixture that never answers — see the correction below |
 | `relayMeter.js` | 5 | asserts *"2000 posts and never a 429 — routePost is unlimited"* |
 | `devicePeers.js` | 2 | a pairing exchange; fixture artefact or real concurrency, not yet told apart |
 | `relayMonitor.js` | 1 | a peer reaching the monitor while something else was open |
 
-**`routeHints` confirms the prediction empirically.** A relay forwarding
-on its members' behalf is a requester under its own key, so a cap of 1
-serialises every forward the box makes, for everyone. **The requester
-split is not a follow-up; it is the prerequisite.** Shipping 1 without it
-stops the relay being a router.
+**`routeHints` does NOT confirm the prediction, and this note first said
+it did.**
+
+> **Andy:** *"My bet is: if the node can throttle, this goes away."*
+>
+> *Corrected in place. Checking that bet found the over-claim.*
+
+`routeHints`'s `askPartner` returns `new Promise(function () {})` —
+*"the answer is not under test here"* (`routeHints.js:61`). Every forward
+it makes stays open **forever**, so at cap 1 the first one takes the slot
+and nothing ever frees it. That is a fixture that never replies, not a
+relay that cannot forward.
+
+**The production concern is still real, but it is reached by inspection
+rather than by this suite.** Forwarding opens routes under `mineKey()`
+(`relay.js:1969`), so one *unanswered* forward holds the relay's only
+slot for the whole of `ROUTE_WAIT_MS`. At 15 s that stalls every forward
+the box makes. The split is still the prerequisite — but because of the
+timeout and the shared identity, not because a suite went red.
+
+**And Andy's bet is largely right.** Of the twelve, the ones caused by a
+node holding two requests open would be absorbed by a queue rather than
+refused: `relayMeter`'s 2000 posts become 2000 waits, `devicePeers` and
+`relayMonitor` serialise and complete. What a node queue **cannot**
+absorb is the relay's own forwarding, because that is the relay's
+accounting and no node is party to it.
 
 **`relayMeter` is a policy statement wearing a test.** *"routePost is
 unlimited"* was true and is exactly what this change repeals. That
