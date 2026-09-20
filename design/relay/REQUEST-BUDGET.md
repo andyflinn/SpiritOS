@@ -383,6 +383,52 @@ that raises its own exports the pressure to everyone it partners with.
 That argues for 1 as the shipped default, with a raise being a
 configured, visible divergence — the same shape as `settable` in 0015.
 
+## The cap is computable, not a magic number
+
+> **Andy:** *"it is computable though, based on configured MAX_MEM."*
+
+**And the constants already encode a memory budget without saying so.**
+`DEFAULT_MAX = 256` slots (`router.js:26`) times `PAYLOAD_MAX = 16384`
+(`limits.js`) is **exactly 4 MB**. Somebody sized that against memory and
+then wrote it as a slot count, so the reasoning vanished and the number
+survived. Deriving it puts the reasoning back.
+
+The shape it wants is the one `connections1` already has — a ceiling
+computed from `ramLimitMB` rather than declared:
+
+```
+request budget   =  a declared fraction of ramLimitMB
+table slots      =  request budget / PAYLOAD_MAX
+member cap       =  derived from the budget, floor 1
+```
+
+**So "freeze at 1" is really "freeze at the floor."** A small box computes
+1 and cannot compute less. A box with headroom may compute more, and has
+the memory to mean it. The floor is what the protocol guarantees; the
+computation is what a generous box is allowed to add.
+
+**And that resolves the divergence problem better than a uniform default
+would.** If every relay computes its budgets from its own `MAX_MEM` —
+member, forwarding **and inbound** — then a generous relay cannot hurt a
+small one, because the small one bounds what it accepts by its own
+memory rather than trusting its partners to be modest. Uniformity stops
+being required. What the protocol needs is not that everyone picks the
+same number, but that **everyone enforces their own**.
+
+**Nothing is computed today.** `createRouter()` is called with no options
+at all (`relay.js:410`), so the table size, the per-member cap and the
+4 MB assumption behind them are fixed at build time and reach no
+configuration. That is the same root gap as §Feasibility 3, seen from the
+other end: a number that cannot be computed cannot be declared, and a
+number nobody declares cannot be reasoned about.
+
+**One thing this needs that does not exist:** the fraction of
+`ramLimitMB` a relay should spend on held requests. `STREAMS_PER_MB = 16`
+is the precedent and is honest about itself — *"PLACEHOLDER. Guessed so
+the ceiling is finite… replaced by the per-stream cost cycle 1
+measures."* The request fraction deserves the same treatment: declared, a
+guess, and named as one until route lifetimes are recorded.
+
 ## The experiment: what actually breaks at 1
 
 > **Andy:** *"so we have to make a plan to freeze (at least for now) the
