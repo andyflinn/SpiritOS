@@ -2234,7 +2234,7 @@ The levers this note names, and what is known of each:
 | meter slots | `METER_SLOTS_MIN 20` — *"smaller and slower" never becomes "blind"* | the monitoring reservation (§9) |
 | `MEMBER_PER_MIN`, `CLAIM_PER_MIN`, `DEVICE_PER_MIN` | **open** | **open** |
 | unsolicited partner proposals (§5) | **open** | **open** |
-| request timeout — the router's ttl, today `DEFAULT_TTL_MS` 20 s (Andy: *"timeout most certainly will be a lever for Governor"*) | the measured round trip of the path with a margin; below it, legitimate replies are cut. Measured: 365 ms for one relay through spirit-3; a partner tunnel has **not been measured** (estimate ~2×) | the asker's remaining wait: holding longer keeps state for somebody who has gone |
+| request timeout — ~~a Governor lever~~ **superseded 2026-09-21: a 5 s code ceiling, and the effective value is carried per request** (Andy: *"the relay has no business waiting for 15 seconds"*, *"the willing to wait time in a request is informational"*). The row's own third column already argued it — *"the asker's remaining wait"* is exactly what now travels in the envelope. `requestTimeout1` is not a lever: `0016` first demoted it to a latency lever, and this removes it. The router's ttl, today `DEFAULT_TTL_MS` 20 s | the measured round trip of the path with a margin; below it, legitimate replies are cut. Measured: 365 ms for one relay through spirit-3; a partner tunnel has **not been measured** (estimate ~2×) | the asker's remaining wait: holding longer keeps state for somebody who has gone |
 
 The open cells are the work that has to be done before those levers are
 built, not after.

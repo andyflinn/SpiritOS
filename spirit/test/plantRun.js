@@ -70,7 +70,22 @@ function plantRunTree(runDir) {
     if (!fs.existsSync(source)) return;
     const dest = path.join(runDir, norm.slice(PREFIX.length));
     fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.copyFileSync(source, dest);
+    // AND THE SAME AGAIN, AS A CATCH, because existsSync is a CHECK and
+    // the copy is a USE, and the suites run six at a time. `--others`
+    // lists untracked files, so another suite's transient probe can be in
+    // the listing and gone by the time this reads it — `writableRoots.js`
+    // writes and deletes `app/__writableRootsProbe__.json`, and it took
+    // targetBusy down exactly once (2026-09-21).
+    //
+    // A file that vanished mid-copy was never part of this fixture, so
+    // skipping it is the whole repair. Only ENOENT: anything else is a
+    // real failure to copy a real file and must not be swallowed.
+    try {
+      fs.copyFileSync(source, dest);
+    } catch (e) {
+      if (e && e.code === 'ENOENT') return;
+      throw e;
+    }
     copied += 1;
   });
 

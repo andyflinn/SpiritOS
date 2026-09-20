@@ -87,8 +87,26 @@ function capsFrom(given) {
   return caps;
 }
 // How long a caller will wait, which is a UX number rather than a
-// protocol constant tuned against another machine's clock. Nothing is
-// held open, so this is the only timeout in the design.
+// protocol constant tuned against another machine's clock.
+//
+// ── TWO CLAIMS HERE ARE WRONG, MARKED 2026-09-21 ─────────────────────
+//
+// THIS SAID "the only timeout in the design". There are four, and they
+// are not in step: a node waits 8 s (`peerPost.js` DEFAULT_WAIT_MS), this
+// table holds 20 s, a relay's own post waits 15 s (`relay.js`
+// ROUTE_WAIT_MS), and a relay's hop to a partner waits 8 s again. The
+// inner hop outliving the outer waiter is what orphans a member's only
+// slot for twelve seconds once the ceiling is 1.
+//
+// AND THE NUMBER ITSELF IS SUPERSEDED. Andy, 2026-09-21: "the relay has
+// no business waiting for 15 seconds, if it doesn't have a reply or an
+// error in 5 seconds it's wasted time" — and "the willing to wait time in
+// a request is informational". So the ttl becomes PER ENTRY, granted as
+// min(what the requester asked, this box's 5 s ceiling), and this
+// constant becomes that ceiling rather than the answer.
+//
+// Not built. design/cycles/2026-09-21-filling-the-gaps-request-budget.md,
+// R5 — it is a wire change, so it is a team review rather than a patch.
 var DEFAULT_TTL_MS = 20000;
 
 function createRouter(opts) {

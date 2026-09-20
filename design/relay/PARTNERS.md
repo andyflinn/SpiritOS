@@ -189,6 +189,19 @@ No TTL, no invalidation, no staleness policy, no reconciliation. The list
 exists precisely while it could be used and not one second longer, and the
 mechanism that decides is one a relay already runs for every peer.
 
+> **SUPERSEDED 2026-09-21.** Every row of the table above is driven by a
+> partner's stream opening and closing, and there are no partner streams
+> any more (see the tier-two marker below). The boast is the part that
+> goes: *"no staleness policy"* was true only because a held socket was
+> doing that work for free, and with it gone a partner row needs a `last`
+> column — precisely a staleness signal — to order searches and to know
+> who is still there. R12 in
+> [the gap cycle](../cycles/2026-09-21-filling-the-gaps-request-budget.md).
+>
+> **It does not evict**, which is the one thing to keep from this
+> passage's instinct: the roll is the reach, so a quiet partner is kept
+> and merely sorted last.
+
 That also means the **memory ceiling is bounded by who is online**, not by
 how many partnerships an owner has accumulated — which is a far better
 bound than the row budget I proposed, and makes that budget a backstop
@@ -399,7 +412,15 @@ cull R     when  unique(R) is empty
 ```
 
 **A relay with no unique reach costs a claim, a binding, a pinned key and a
-held stream, and buys nothing.** That is the redundancy worth culling —
+held stream, and buys nothing.**
+
+> **The price is stale, 2026-09-21.** There is no held stream. A redundant
+> partner now costs a few hundred bytes of disc and nothing else, so the
+> case for culling it is far weaker than this arithmetic makes it look —
+> and culling spends reach, which the standing order (`0007`: *survive >
+> reach > speed*) ranks above the disc it saves.
+
+That is the redundancy worth culling —
 not "too many relays" by count, which would be the wrong measure for the
 same reason partner-count was.
 
