@@ -268,6 +268,39 @@ partner's table under its own key (`relay.js:1969`), where one requester
 identity still carries all of its members. The partner pool needs its own
 bound regardless of how well the node spreads.
 
+## The downstream bottleneck is the relay's, and a strict member cap helps it
+
+> **Andy:** *"the downstream bottleneck is the relay's problem, and that
+> makes the stricter limit even more sensible."*
+
+It does, and by the same factor. At 16 per member, sixteen members can
+put 256 requests in flight and every one needing a partner becomes an
+outbound forward. At 1 per member that ceiling is 16 — **sixteen times
+less pressure on the forwarding path**, from the same change.
+
+So the member cap moves **two** RAM pools: routes held locally, and
+forwards this relay will have to spend on its members' behalf. By 0015's
+test — a lever earns its place by moving something the Governor can see —
+that makes `requestsInFlight1` a stronger lever than `connections1`.
+
+**It does not reach what arrives.** Inbound partner forwards open routes
+under `mineKey()` (`relay.js:1969`), so every partner's members share one
+requester identity on this relay's table. That is other relays' traffic
+and a member cap cannot touch it.
+
+**Which names three budgets, not one**, and only the first is usefully
+strict:
+
+| | what it bounds | who it is for |
+|---|---|---|
+| **member in-flight** | what each member may hold open here | strict — 1 is the proposal |
+| **forwarding** | what this relay spends asking partners on its members' behalf | falls with the member cap |
+| **inbound partner** | what this relay accepts from other relays | its own bound, its own argument |
+
+The precedent is already in the tree: `caps: { memberPerMin,
+partnerPerMin }` keeps two pools because they are two populations. The
+in-flight bound needs the same split, and for the same reason.
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
