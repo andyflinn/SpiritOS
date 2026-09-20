@@ -2511,6 +2511,48 @@ being discoverable. *Stated, not yet built: seat expiry — nothing sheds a
 member row today (only `removePeer` deletes one), and no cycle piece
 carries it yet.*
 
+**The relay carries, the node stores, the shell understands** (Andy,
+2026-09-20). Three layers, and the payoff is that neither of the lower two
+has any idea what an app message means: *"there is such a large payoff
+from node and relay not having a clue what app messages mean. It is a
+successful boundary definition."* Verified at 5ac4fe4:
+- **The relay parses a body in one place**, `answerSelf` — packets
+  addressed to its OWN key. A packet addressed to a member is carried as
+  `{from,to,text,sig}` byte for byte, including across a partnership. It
+  reads what is spoken TO it, never what passes THROUGH it.
+- **The node decodes the envelope and nothing inside it** (`v:1`, `body`
+  — arrivals.js): it admits the sender, writes the traffic log, counts the
+  peer's numbers and hands the message on. Structure, never meaning.
+- **The shell and its apps supply the meaning** — a chat line, a caption,
+  a file per peer.
+
+**The jobs a hub would do are distributed to the members, each scoped by
+their own contact list** (Andy): addressing (the sender supplies route
+hints from its own row; the relay picks only among relays it already
+partners with), routing memory (a proven route lands on a row you already
+have — a relay may improve your book, never add to it), presence (the
+relay broadcasts, each node keeps the keys it knows and drops the rest),
+naming (`myLabel` never leaves the node), and who may speak to you (held,
+blocked, accepted — decided in the book, not on the box).
+
+**What it costs, and we pay it:** no content filtering, no spam
+heuristics, no search over messages, no unread count the relay could keep.
+Each would need the relay to understand app messages. The relay's only
+search is over the labels of connected members.
+
+**The test for any new verb:** a verb the relay understands must be about
+the RELAY — its levers, its invites, its partners, its own label. A verb
+about app content never qualifies, however convenient. (Cycle 4's levers
+add verbs, and all of them pass this.)
+
+**Open, and the daemon cycle inherits it:** arrivals.js holds a packet
+that arrives while no page is open — in the traffic log, until the first
+page collects it, then forgets it. Correct while a node only ran when
+somebody was using it; under the daemon rule below a node runs for days
+with no shell attached, which would make the traffic log a message store.
+The layering says where it belongs instead: the node keeps it as bytes
+for an app, under a bound, and the app reads it when it next runs.
+
 **The node pays attention; the browser only reads** (Andy, 2026-09-19):
 *"The nicest thing: Jazz doesn't have to open a browser for me to see her
 online. The personal node is chugging away, Jazz does whatever she wants,
