@@ -1650,7 +1650,42 @@ question rather than leaving it open:
   for a foreign peer. It would go stale without saying so, which is worse
   than white.
 
-**Not decided, and now a narrow product question:** whether a foreign
+### Decided: search is incomplete, and that is accepted
+
+> **Andy:** *"so we have incomplete info in search. we have to live with
+> it."*
+
+**What is incomplete, precisely:** a relay answers a search from its
+connected members only, so **an offline peer cannot be discovered at
+all**. Not ranked low — absent. Somebody asleep is, to a stranger
+searching for them, indistinguishable from somebody who does not exist.
+
+**Decided by Andy on 2026-09-21: this is accepted, not a defect.** It is
+recorded here with its bound so that a later session does not read it as
+a bug and "fix" it by holding a partner's roster — which
+`PARTNERS.md`'s hard rule forbids, and which is the thing this whole
+design is avoiding.
+
+**Three things bound the cost, and together they make it small:**
+
+- **It is discovery-time only.** Once acquired, a contact row carries the
+  key and the route hints and is permanent. You can never *lose* somebody
+  by their going offline; you can only fail to *meet* them.
+- **Search is one acquisition route of six.** `contacts.js:94` —
+  `['message', 'invite', 'handle', 'member']` are listening routes beside
+  `census` and `hold`, and **`handle` and `invite` do not need the peer
+  present at all**. The presence-dependent path is one of several, and
+  not the one a person uses when they already know who they are looking
+  for.
+- **It is retryable and costs nothing to retry.** Searching again later
+  is a post, and the peer being online is exactly the condition under
+  which finding them is useful.
+
+**So the honest statement of the limitation is narrow:** you cannot
+discover a stranger who is offline, by search, at that moment. Everything
+else about reaching them is unaffected.
+
+**Still not decided, and now the only open piece:** whether a foreign
 contact needs a live colour, or whether truth at the moment you reach for
 them is the promise. `PRESENCE.md` §4 made white mean *"named by no relay
 you are connected to"*, which is literally correct for a foreign peer —
