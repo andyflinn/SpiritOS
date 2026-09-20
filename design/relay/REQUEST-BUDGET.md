@@ -1772,6 +1772,87 @@ green **with an age on it**, which is a third state the model does not
 have.
 
 
+## The node's patience is the user's, and it may be days
+
+> **Andy:** *"the node will allow the user to configure timeout (max time
+> spent in request-scheduler before returning failure.... (could be days
+> for a text message...)"*
+
+**This reframes the queue.** A queued request stops being a transient
+waiting for a slot and becomes a **durable intent**: *deliver this to
+Bella, keep trying for three days.*
+
+### It does not contradict the revocation — it draws the line
+
+This morning the owner's grant over relay limits was revoked: *"a limit
+an owner can widen is not a limit, it is a default."* This hands a
+timeout to a user. The two are consistent, and the rule that makes them
+so is worth stating:
+
+> **The relay's limits are the design's. The node's patience is the
+> user's.**
+
+A relay limit holds the arithmetic together for everybody on the box and
+for its partners — widening it breaks a guarantee other people depend on.
+A node's willingness to keep trying **affects only the person who set
+it**: a longer patience spends that member's own slot and nobody else's,
+and it cannot raise what the relay will accept. Same argument, opposite
+answer, because the blast radius differs.
+
+### Two timeouts, and they are not the same number
+
+Naming this carefully, because `0016` already has one timeout discussion
+and this is a different one:
+
+| | what it bounds | whose |
+|---|---|---|
+| `ROUTE_WAIT_MS` (15 s, `relay.js:95`) | one **attempt** — how long a relay holds a route | the relay's |
+| node-local per-attempt wait (8 s, `peerPost.js:37`) | one **attempt**, from the node's side | must not be shorter than the relay's, or `cancel` is required |
+| **scheduler patience** (new, days) | the **whole intent**, across many attempts | the user's |
+
+So a three-day patience is not a three-day request. It is many attempts,
+each bounded by the relay, until one lands or the patience runs out.
+
+### What it answers
+
+- **The queue must survive a restart.** Left open above as *"node-local
+  state with no persistence designed for it"*. Days means restarts, so
+  the answer is yes and the queue needs a store. `relay-state/relay.db`
+  is the precedent for a node-side persist shape that a cycle opened
+  deliberately.
+- **Backoff must grow.** Also left open. Retrying every 15 s for three
+  days is 17,280 attempts at one peer — so patience measured in days
+  forces a growing interval rather than merely permitting one.
+
+### What it changes for the product
+
+**Absence stops being a failure and becomes a delay.** You do not need a
+peer present in order to send to them: the intent is queued and delivered
+when they appear. That closes the gap left by *"search is incomplete"*
+from the other side — you still cannot **discover** an absent stranger,
+but you can always **write** to somebody you already hold.
+
+**And it settles where mail lives.** R8 decided a relay keeps no mail —
+*"a packet exists only while somebody is connected to receive it"*. This
+says the **sender's node** holds it until delivered. Store and forward,
+at the edge, owned by the person who wrote the message rather than by a
+box in the middle. That is the same answer `0013` and *reach over speed*
+keep giving, and it is what makes a relay that stores nothing a complete
+design rather than a limitation.
+
+### What it opens
+
+**Queue depth now matters much more.** Entries that live for days
+accumulate, and the shed policy left open above ("unbounded is a memory
+leak with a contact list behind it") becomes a real question rather than
+a precaution. The class split proposed above helps — shed background
+before deliberate — but a bound is still needed.
+
+**And the failure, when patience does run out, is now a real event.**
+A request that has been trying for three days and gives up must tell
+somebody, and there is no UI for that today.
+
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
