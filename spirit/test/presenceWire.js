@@ -32,6 +32,7 @@ const hub = require('../run/js/hub');
 const presenceNode = require('../run/js/presenceNode');
 const { createPeerPost } = require('../run/js/peerPost');
 const buildStamp = require('../run/js/buildStamp');
+const plantRun = require('./plantRun');
 const { createRelay } = require('../run/js/relay');
 const rollOf = require('./rollOf');
 
@@ -49,7 +50,6 @@ const rollOf = require('./rollOf');
 // truth.
 let PORT = 0;
 let BASE = '';
-const REPO_RUN = path.join(__dirname, '..', 'run');
 const PORT_CANDIDATES = [48731, 48732, 48733, 48734, 48735];
 
 let child = null;
@@ -74,7 +74,7 @@ function buildRelayHome() {
   // its own with this mailbox in it. A copy rather than the repo tree:
   // a test must never start a server on the working directory.
   const runDir = path.join(home, 'spirit', 'run');
-  fs.cpSync(REPO_RUN, runDir, { recursive: true });
+  plantRun.plantRunTree(runDir);
   fs.rmSync(path.join(runDir, 'relay-state'), { recursive: true, force: true });
   fs.cpSync(path.join(home, 'relay-state'), path.join(runDir, 'relay-state'), { recursive: true });
 

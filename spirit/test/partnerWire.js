@@ -45,10 +45,10 @@ const auth = require('../run/js/relayAuth');
 const { claimOwner } = require('./ownerClaim');
 const hub = require('../run/js/hub');
 const buildStamp = require('../run/js/buildStamp');
+const plantRun = require('./plantRun');
 const sseClient = require('../run/js/sseClient');
 const { createRelay } = require('../run/js/relay');
 
-const REPO_RUN = path.join(__dirname, '..', 'run');
 // BELOW 49152, AND THAT IS THE WHOLE REASON FOR THE NUMBER.
 // presenceWire.js:41 learned this first: 65461 is inside Windows'
 // ephemeral range (49152-65535), where any outbound socket this machine
@@ -100,7 +100,7 @@ function buildRelay(tag, memberNames) {
 // it.
 function plant(w) {
   const runDir = path.join(w.home, 'spirit', 'run');
-  fs.cpSync(REPO_RUN, runDir, { recursive: true });
+  plantRun.plantRunTree(runDir);
   fs.rmSync(path.join(runDir, 'relay-state'), { recursive: true, force: true });
   fs.cpSync(path.join(w.home, 'relay-state'), path.join(runDir, 'relay-state'),
     { recursive: true });

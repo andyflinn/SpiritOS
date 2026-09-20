@@ -43,6 +43,11 @@ const NOT_A_SUITE = [
   // A helper, not a suite: the first claim with the owner invite (cycle 3,
   // Part B), in process.
   'ownerClaim.js',
+  // A helper, not a suite: copies the NON-IGNORED spirit/run into a
+  // fixture, for the suites that spawn a real server. Replaced a blind
+  // fs.cpSync that took the whole 143 MB tree — media, the brains vault
+  // and relay-state's private key with it (2026-09-20).
+  'plantRun.js',
   // Fails on purpose: it is the worked example of what a failing check
   // looks like, and it would be the one permanent red in every run.
   'testTemplate.js',

@@ -34,10 +34,10 @@ const auth = require('../run/js/relayAuth');
 const { claimOwner } = require('./ownerClaim');
 const hub = require('../run/js/hub');
 const buildStamp = require('../run/js/buildStamp');
+const plantRun = require('./plantRun');
 const sseClient = require('../run/js/sseClient');
 const { createRelay } = require('../run/js/relay');
 
-const REPO_RUN = path.join(__dirname, '..', 'run');
 // Below 49152, outside Windows' ephemeral range — see partnerWire.js and
 // presenceWire.js:41 for what a port inside it costs.
 const PORTS = [48761, 48762];
@@ -75,7 +75,7 @@ function buildRelay(tag, memberNames) {
 
 function plant(w) {
   const runDir = path.join(w.home, 'spirit', 'run');
-  fs.cpSync(REPO_RUN, runDir, { recursive: true });
+  plantRun.plantRunTree(runDir);
   fs.rmSync(path.join(runDir, 'relay-state'), { recursive: true, force: true });
   fs.cpSync(path.join(w.home, 'relay-state'), path.join(runDir, 'relay-state'), { recursive: true });
   const mine = buildStamp.fromGit(path.join(__dirname, '..', '..'));
