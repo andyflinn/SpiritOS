@@ -144,9 +144,26 @@ than hiding them in latency.
 > relays stream or broadcast confirmations, the UI can actually show
 > status updates on the operation."*
 
-`info.js:281` `infoPush` is the only node-side fan-out in the tree — a
-rename posted to every relay this node holds a seat on. It is already
-built the way a queue needs:
+`info.js:281` `infoPush` is **one** node-side fan-out — a rename posted
+to every relay this node holds a seat on. It is already built the way a
+queue needs:
+
+> *Corrected 2026-09-20: this first said "the only node-side fan-out in
+> the tree". **`contacts.js:595` `contactsAskEveryone` is the bigger
+> one** — it loops `contactsSeen` and fires a `peerPost({describe:true})`
+> per contact, all at once, so its width is the contact count rather than
+> the relay count. Missed because the call site was read and its caller
+> was not. It is the harder proof case and the more visible one:*
+>
+> **Andy:** *"visually verifying that natter and contacts still react as
+> lively as before..."*
+>
+> *And it is already built for a queue too. `contactsCards[key]` is
+> `'asking' | {name, description} | {why}` (`contacts.js:110`) and the
+> `'asking'` state is rendered (`:679`), so cards already fill in as
+> answers arrive. Under a cap of 1 that becomes visibly progressive
+> rather than broken — fifty local contacts at ~3 ms serialise in under
+> a fifth of a second; fifty remote ones at ~150 ms take seven, legibly.*
 
 > *"EVERY RELAY IS ASKED INDEPENDENTLY and one refusal costs the others
 > nothing. That is not politeness, it is the only workable rule: a relay
