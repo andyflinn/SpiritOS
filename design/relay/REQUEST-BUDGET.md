@@ -567,6 +567,68 @@ partner's members. So pacing matters more between relays than between a
 node and its relay, which is the opposite of where the effort has gone
 so far.
 
+## What actually bounds a small relay: the target, not the sender
+
+> **Andy:** *"if my node relay can have a max of 10 members, and each
+> member has 100 contacts, they cannot get more than a hundred messages at
+> the time, because they can only deal with one at a time.... in practice
+> the spam from a large-scale-relay would be proportional to members x
+> member-contacts."*
+> *"my relay can check if a request is in flight for the same
+> originator/target combination without wasting memory. those will be
+> rejected outright."*
+> *"cap the requests for a specific target at one, respond with (not
+> available); if this causes the calling node to keep the request queued,
+> nothing is lost."*
+
+**The addressable surface is the receiver's membership, not the sender's
+capacity.** A ten-thousand-member relay cannot address more than ten
+members, because those are the only targets that exist, and
+`forwardToMine` refuses an unknown target *before opening a route*. That
+inverts the intuition that made this a red line: inbound scales with the
+size of the relay being written to.
+
+**Two bounds follow, and the data for both is already stored.**
+`pending[hash] = { requester, target, at, carry }` (`router.js:111`), and
+`countFor` already filters that map — so each is the same scan with one
+more predicate. **No new state, no new memory.**
+
+**Per pair — one in flight per `(originator, target)`.** Today's `409
+already in flight` keys on the *hash*, so different content is a
+different route and one identity can hammer one target freely. Per-pair
+closes that. It matters most where per-requester is useless: inbound
+forwards all carry `mineKey()`, so every member of every partner counts
+as one requester, while the **pair stays distinct per conversation**.
+That is the bound that works where the requester bound cannot.
+
+**Per target — one in flight per member, from anyone.** This is the one
+that ends the argument: **inbound routes <= member count**, whatever the
+sender's size or intent. Ten members, ten routes. Per-pair defeats
+amplification by repetition; **per-target defeats amplification by
+identity count**, which per-pair does not — a Sybil farm produces
+distinct pairs but cannot produce distinct targets.
+
+So a small relay's inbound budget is a function of its own membership,
+which `MAX_MEM` already bounds. **Small and correct**, rather than small
+and overwhelmed.
+
+**The refusal must be distinguishable, and this is the part that is easy
+to get wrong.** *"Not available"* means *the target is here and busy —
+queue and retry*. `503 peer not reachable` means *gone — do not bother*.
+Same shape, opposite instruction, and a caller that confuses them either
+abandons a reachable peer or hammers an absent one. They need different
+errors and the node needs to act on the difference.
+
+**And nothing is lost, provided the caller queues** — which is the node
+queue this note already argues for, and Andy's own principle again: a
+busy member becomes **slow to reach, not unreachable**. Reach over speed,
+a third time, now between two members of the same mesh.
+
+**What it costs honest traffic:** a momentarily popular member becomes a
+bottleneck for their correspondents. At human message rates and a 1-5 s
+timeout that is invisible. At today's 15 s it would not be — the timeout
+cut is a prerequisite here too.
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
