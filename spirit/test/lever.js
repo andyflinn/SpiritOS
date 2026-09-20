@@ -93,7 +93,7 @@ test.subHeading('make refuses what it cannot report honestly');
 test.subHeading('set is the only mutator, and it records why');
 
 {
-  const l = lever.make('connections1', { floor: 2, ceiling: 12, value: 4 });
+  const l = lever.make('connections1', { floor: 2, ceiling: 12, value: 4, settable: true });
 
   if (l.value === 4) {
     test.check('it starts where it was built');
@@ -132,7 +132,7 @@ test.subHeading('set is the only mutator, and it records why');
 test.subHeading('canSet says why, and set never leaves the bounds');
 
 {
-  const l = lever.make('connections1', { floor: 2, ceiling: 12, value: 4 });
+  const l = lever.make('connections1', { floor: 2, ceiling: 12, value: 4, settable: true });
 
   [[1, 'floor'], [13, 'ceiling'], ['seven', 'whole number'], [2.5, 'whole number']].forEach(function (c) {
     const why = l.canSet(c[0]);
@@ -159,33 +159,33 @@ test.subHeading('canSet says why, and set never leaves the bounds');
   });
 
   if (l.canSet(lever.DYNAMIC) === '') {
-    test.check('`dynamic` is always settable on a live lever — it is how the owner hands it back');
+    test.check('`dynamic` is always allowed on a settable lever — it is how the owner hands it back');
   } else {
     test.fail('dynamic was refused');
   }
 }
 
-test.subHeading('A lever that is not live reports itself and takes nothing');
+test.subHeading('A lever that is not settable reports itself and takes nothing');
 
 {
-  const l = lever.make('watching1', { floor: 0, ceiling: 100, value: 7, live: false });
+  const l = lever.make('watching1', { floor: 0, ceiling: 100, value: 7, settable: false });
   const why = l.canSet(50);
   if (why && /takes no settings/.test(why)) {
     test.check('it refuses a setting, and says so rather than failing silently');
   } else {
     test.fail('a dead lever accepted a setting: ' + JSON.stringify(why));
   }
-  if (l.readOut().live === false) {
+  if (l.readOut().settable === false) {
     test.check('and it says so in the report, so an app draws no control it would refuse');
   } else {
-    test.fail('readOut did not carry live:false');
+    test.fail('readOut did not carry settable:false');
   }
 }
 
 test.subHeading('readOut → fromReport: an app can draw a lever it never heard of');
 
 {
-  const l = lever.make('inventedThing3', { floor: 5, ceiling: 50, value: 20 });
+  const l = lever.make('inventedThing3', { floor: 5, ceiling: 50, value: 20, settable: true });
   l.set(30, 'by the programme');
 
   // Across the wire: JSON is the only thing that crosses, so the round
@@ -194,7 +194,7 @@ test.subHeading('readOut → fromReport: an app can draw a lever it never heard 
   const view = lever.fromReport(wire);
 
   if (view && view.label === 'inventedThing3' && view.value === 30 &&
-      view.floor === 5 && view.ceiling === 50 && view.live === true) {
+      view.floor === 5 && view.ceiling === 50 && view.settable === true) {
     test.check('everything needed to draw it survives the wire, with no lever named in the app');
   } else {
     test.fail('round trip lost something: ' + JSON.stringify(view));

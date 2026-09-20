@@ -87,8 +87,27 @@ function createGovernor(opts) {
   // but the lever holds the VALUE, because that is what the owner sets
   // and what an app draws. One mutator, so every move has a why and a
   // mover attached.
+  // NOT settable, unless the CONFIGURATION says so. Decision 0015: the
+  // Governor is the result of programming, and no configuration in this
+  // tree declares a settable lever — spirit/test/settableCensus.js holds
+  // that at zero for a default build.
+  //
+  // The seam is the configuration rather than a test hook, because that
+  // is the designed path: NODE-AND-RELAY:318 — "the file holding the
+  // protections is only ever written by a person with a shell." A relay
+  // whose config names a lever settable has been told so by its owner at
+  // a terminal, which is the grant, out loud, that AGENT.md's census
+  // rule asks for.
+  var settableLevers = Array.isArray(opts.settable) ? opts.settable : [];
+  //
+  // worseAt is the FLOOR here: a high allowance means the Governor has
+  // opened up and the relay is comfortable; the floor is the squeeze.
+  // requestTimeout1 will be the other way round, which is exactly why a
+  // drawing app cannot assume a direction.
   var connections = lever.make('connections1', {
-    floor: FLOOR, ceiling: ceiling, value: allowedAt(STEPS)
+    floor: FLOOR, ceiling: ceiling, value: allowedAt(STEPS),
+    settable: settableLevers.indexOf('connections1') !== -1,
+    worseAt: 'floor'
   });
 
   function state() {
@@ -109,11 +128,11 @@ function createGovernor(opts) {
     var heapPct = limitBytes > 0 ? (r.heapUsed || 0) / limitBytes : 0;
     var from = position;
 
-    // THE OWNER'S SETTING WINS, AND SILENTLY — a held lever is not a
+    // THE OWNER'S SETTING WINS, AND SILENTLY — a locked lever is not a
     // failed tick, it is the owner driving. Andy: a value set by the
     // owner is a setting and the programme leaves it alone; `dynamic`
     // hands it back. Nothing is reported, because nothing moved.
-    if (connections.heldByOwner()) return null;
+    if (connections.lockedByOwner()) return null;
 
     if (heapPct > high && position > 0) {
       position -= 1;

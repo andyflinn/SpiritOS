@@ -61,7 +61,7 @@ test.subHeading('A lever this tree has never contained is drawn correctly');
     at: '2026-09-20T14:02:33.000Z',
     levers: {
       wormholes7: {
-        label: 'wormholes7', value: 12, floor: 3, ceiling: 40, live: true, held: false,
+        label: 'wormholes7', value: 12, floor: 3, ceiling: 40, settable: true, locked: false,
         lastMove: { from: 9, to: 12, why: 'heap 41%', by: 'programme', at: 1 }
       }
     }
@@ -101,7 +101,7 @@ test.subHeading('What the app refuses to draw');
   // NOT LIVE: a measurement to watch, not a control to offer. Drawing a
   // button here would be chrome whose every value is refused.
   const rows = monitor.leverRows({
-    levers: { watching2: { label: 'watching2', value: 7, floor: 0, ceiling: 9, live: false } }
+    levers: { watching2: { label: 'watching2', value: 7, floor: 0, ceiling: 9, settable: false } }
   });
   if (rows[0] && rows[0].settable === false) {
     test.check('a lever that is not live gets no control, rather than one that would be refused');
@@ -146,8 +146,12 @@ test.subHeading('What the app refuses to draw');
     test.fail('an old-shape lever was given a control');
   }
   const line = monitor.leverLine(r);
-  if (line.indexOf('4096') !== -1 && line.indexOf('does not take lever settings') !== -1) {
-    test.check('the line shows where it stands FIRST, then why it cannot be moved');
+  // Under 0015 NOTHING is settable, so saying so on every row would tell
+  // the owner nothing. The absence of a control is the message; the line
+  // carries where the lever stands and stops.
+  if (line.indexOf('4096') !== -1 && line.indexOf('floor 1') !== -1 &&
+      line.indexOf('does not take') === -1) {
+    test.check('the line shows where it stands, and does not repeat the normal state at him');
   } else {
     test.fail('line: ' + line);
   }
@@ -198,13 +202,13 @@ test.subHeading('Held by the owner is shown as such');
   const rows = monitor.leverRows({
     levers: {
       connections1: {
-        label: 'connections1', value: 6, floor: 1, ceiling: 20, live: true, held: true,
+        label: 'connections1', value: 6, floor: 1, ceiling: 20, settable: true, locked: true,
         lastMove: { from: 20, to: 6, why: 'set by owner', by: 'owner', at: 1 }
       }
     }
   });
   const line = monitor.leverLine(rows[0]);
-  if (rows[0].held === true && line.indexOf('set by owner') !== -1) {
+  if (rows[0].locked === true && line.indexOf('locked by owner') !== -1) {
     test.check('the owner can tell his own move from the programme’s, from a field rather than prose');
   } else {
     test.fail('held not shown: ' + line);
@@ -212,7 +216,7 @@ test.subHeading('Held by the owner is shown as such');
   // The relay stamps a constant `why` on every owner setting, so printing
   // it beside a line that already says "set by owner" said the same thing
   // three times. The programme's reason differs every move and is kept.
-  if (line.indexOf('(you)') !== -1 && line.split('set by owner').length === 2) {
+  if (line.indexOf('(you)') !== -1 && line.split('locked by owner').length === 2) {
     test.check('and it is said once — the owner’s own move needs no reason printed back at him');
   } else {
     test.fail('the owner move repeats itself: ' + line);

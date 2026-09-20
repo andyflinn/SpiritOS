@@ -37,7 +37,7 @@ function relayWith(tag, memberNames, ramLimitMB) {
   // relay-state/config.json and passes it in; in process a suite passes
   // it directly, which is also why every other in-process suite has no
   // Governor and behaves as it did before cycle 1.
-  const box = createRelay(home, { config: { ramLimitMB: ramLimitMB || 32 } });
+  const box = createRelay(home, { config: { ramLimitMB: ramLimitMB || 32, settable: ['connections1'] } });
   box.claim('owner' + tag, auth.sign(owner.privateKey, auth.claimMessage('owner' + tag)),
     owner.publicKey);
 
@@ -154,7 +154,7 @@ function run() {
   } else {
     test.fail('the move was not attributed: ' + JSON.stringify(lev && lev.lastMove));
   }
-  if (lev && lev.held === true) {
+  if (lev && lev.locked === true) {
     test.check('and the lever reads as held, so the monitor can say who is driving');
   } else {
     test.fail('held was not set on a lever the owner took');
@@ -176,7 +176,7 @@ function run() {
   } else {
     test.fail('dynamic answered ' + JSON.stringify(back));
   }
-  if (lev2 && lev2.held === false) {
+  if (lev2 && lev2.locked === false) {
     test.check('and the lever is no longer held — the programme has it again');
   } else {
     test.fail('dynamic did not release the lever: ' + JSON.stringify(lev2));

@@ -132,7 +132,9 @@ function run() {
   test.subHeading('A lever the owner has taken, and handed back');
 
   {
-    const g = governorLib.createGovernor({ ramLimitMB: 32 });
+    // The configuration declares it settable — the designed path, and
+    // the only one: a default build has none (settableCensus.js).
+    const g = governorLib.createGovernor({ ramLimitMB: 32, settable: ['connections1'] });
     const lev = g.lever('connections1');
 
     if (lev && lev.label === 'connections1') {
@@ -157,7 +159,7 @@ function run() {
     }
 
     const owned = lev.set(7, 'set by owner', 'owner');
-    if (owned.ok && lev.heldByOwner()) {
+    if (owned.ok && lev.lockedByOwner()) {
       test.check('the owner sets a number and the lever is held');
     } else {
       test.fail('the owner could not take the lever');
@@ -171,7 +173,7 @@ function run() {
     }
 
     lev.set('dynamic', 'handed back', 'owner');
-    if (!lev.heldByOwner()) {
+    if (!lev.lockedByOwner()) {
       test.check('`dynamic` hands it back');
     } else {
       test.fail('dynamic did not release the lever');

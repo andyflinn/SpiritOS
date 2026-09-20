@@ -43,10 +43,36 @@
 //   are running: injecting foreign partners." — and, from this cycle,
 //   moving a lever.
 //
-// `live: false` is a lever that reports itself but takes no setting —
-// a measurement the owner watches and cannot touch. An app must draw it
-// without a control rather than draw a control that will be refused,
-// which is the shell's standing rule about chrome that cannot be used.
+// ── settable DEFAULTS TO FALSE, AND THAT IS THE POINT ────────────────
+//
+// Decision 0015: the Governor is the result of programming; the owner
+// watches a lever move and the RECORD of those moves is what changes the
+// programme. Every lever in the tree therefore ships `settable: false`,
+// and a lever must DECLARE itself settable to be one.
+//
+// The default is a denial rather than a permission for the reason
+// AGENT.md gives about the one-door census: "There is no category
+// meaning unlimited, because the first version had one... and that is
+// precisely what got used."
+//
+// The path is kept and proven rather than deleted — NODE-AND-RELAY:315
+// specifies it and cycle 4.1 built it — so the day a lever should be
+// owner-controlled, the capability is not rebuilt and re-argued from
+// nothing. spirit/test/settableCensus.js holds the count at zero.
+//
+// An app draws a lever that is not settable without a control, rather
+// than a control that would be refused: the shell's standing rule about
+// chrome that cannot be used.
+//
+// ── worseAt ──────────────────────────────────────────────────────────
+//
+// Which END of the range is the bad one, because a meter's colour is a
+// claim the drawing app cannot make. On connections1 a high value means
+// the Governor has opened up and the relay is comfortable, so the floor
+// is the bad end. On requestTimeout1 a high value means requests held
+// longer in RAM, so the ceiling is. Same gradient, opposite meanings,
+// and an app that names no lever cannot know which — so the lever says,
+// beside the floor and ceiling it already declares with reasons.
 
 var LEVER_DYNAMIC = 'dynamic';
 
@@ -82,15 +108,31 @@ function make(label, opts) {
   }
 
   var value = isInteger(o.value) ? o.value : o.floor;
-  var live = o.live !== false;
+  // DECLARED, never defaulted on. A lever that says nothing is not
+  // settable.
+  var settable = o.settable === true;
+  // 'floor' or 'ceiling'. Absent means the lever makes no claim, and a
+  // meter draws it without a direction rather than guessing one.
+  var worseAt = o.worseAt === 'floor' || o.worseAt === 'ceiling' ? o.worseAt : null;
   var lastMove = null;
 
   // WHY, NOT WHETHER — the same choice labelRule.problem makes. "out of
   // bounds" and "this lever takes no settings" are different problems
   // for the person reading the refusal, and the app shows what the relay
   // said rather than inventing its own wording.
-  function canSet(v) {
-    if (!live) return 'lever ' + label + ' takes no settings';
+  // `by` DEFAULTS TO 'owner', which is the conservative reading: an app
+  // asking "may this be set" is asking on the owner's behalf.
+  //
+  // `settable` GATES THE OWNER ONLY. The programme must always be able to
+  // move a lever it owns — that is what a Governor is — and gating it
+  // here made a non-settable lever a lever nothing could move at all,
+  // which is a constant, not a programmed one. Decision 0015 draws
+  // exactly this line: settable answers *may the owner move it*, and says
+  // nothing about the Governor.
+  function canSet(v, by) {
+    if (by !== 'programme' && !settable) {
+      return 'lever ' + label + ' takes no settings';
+    }
     if (v === LEVER_DYNAMIC) return '';
     if (!isInteger(v)) return 'lever ' + label + ' takes a whole number or ' + LEVER_DYNAMIC;
     if (v < o.floor) return 'lever ' + label + ' floor is ' + o.floor;
@@ -110,19 +152,26 @@ function make(label, opts) {
   // It also makes the monitor honest: "set by owner" is drawn from a
   // field, not inferred from a sentence that could say anything.
   function set(v, why, by) {
-    var no = canSet(v);
-    if (no) return { ok: false, error: no };
     var mover = by === 'owner' ? 'owner' : 'programme';
+    var no = canSet(v, mover);
+    if (no) return { ok: false, error: no };
     var from = value;
     value = v;
     lastMove = { from: from, to: v, why: String(why || ''), by: mover, at: Date.now() };
     return { ok: true, from: from, to: v };
   }
 
-  // HELD means the owner has taken this lever and the programme leaves it
-  // alone. `dynamic` is how it is handed back, so a lever sitting at
-  // `dynamic` is never held however it got there.
-  function heldByOwner() {
+  // LOCKED means the owner has taken this lever and the programme leaves
+  // it alone (Andy, 2026-09-20: "as soon as the owner sets a lever it
+  // gets a locked state. the owner would have to release that locked
+  // state"). `dynamic` is the release, so a lever sitting at `dynamic` is
+  // never locked however it got there.
+  //
+  // A LOCK IS NOT A CONSTANT. Both sit still; the authority and the
+  // duration differ. A constant is the programme having finished with a
+  // lever — it ends at a reprogram. A lock ends when its owner releases
+  // it. See 0015.
+  function lockedByOwner() {
     return !!lastMove && lastMove.by === 'owner' && value !== LEVER_DYNAMIC;
   }
 
@@ -137,8 +186,9 @@ function make(label, opts) {
       value: value,
       floor: o.floor,
       ceiling: o.ceiling,
-      live: live,
-      held: heldByOwner(),
+      settable: settable,
+      worseAt: worseAt,
+      locked: lockedByOwner(),
       lastMove: lastMove ? {
         from: lastMove.from, to: lastMove.to, why: lastMove.why,
         by: lastMove.by, at: lastMove.at
@@ -149,12 +199,13 @@ function make(label, opts) {
   return {
     label: label,
     get value() { return value; },
-    get live() { return live; },
+    get settable() { return settable; },
+    get worseAt() { return worseAt; },
     floor: o.floor,
     ceiling: o.ceiling,
     set: set,
     canSet: canSet,
-    heldByOwner: heldByOwner,
+    lockedByOwner: lockedByOwner,
     readOut: readOut,
     lastMove: function () { return readOut().lastMove; }
   };
@@ -176,7 +227,8 @@ function fromReport(obj) {
   var view = make(obj.label, {
     floor: obj.floor,
     ceiling: obj.ceiling,
-    live: obj.live !== false,
+    settable: obj.settable === true,
+    worseAt: obj.worseAt,
     value: isInteger(obj.value) ? obj.value : obj.floor
   });
   return {
@@ -184,8 +236,9 @@ function fromReport(obj) {
     value: view.value,
     floor: view.floor,
     ceiling: view.ceiling,
-    live: view.live,
-    held: obj.held === true,
+    settable: view.settable,
+    worseAt: view.worseAt,
+    locked: obj.locked === true,
     lastMove: obj.lastMove || null,
     canSet: view.canSet
   };

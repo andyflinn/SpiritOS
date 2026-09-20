@@ -420,7 +420,16 @@ function createRelay(rootDir, deps) {
   // longest-idle streams. See governor.js for the rule and why heapUsed
   // governs, and design/cycles/2026-09-19-relay-governor-cycle-1.md.
   var config = deps.config || null;
-  var governor = config ? governorLib.createGovernor({ ramLimitMB: config.ramLimitMB }) : null;
+  // `settable` carries the configuration's list of levers the owner may
+  // move. Empty in this tree and in every shipped config — decision 0015,
+  // held at zero by spirit/test/settableCensus.js. It comes from the
+  // config file because that file "is only ever written by a person with
+  // a shell" (NODE-AND-RELAY:318), which makes naming a lever there the
+  // owner's grant rather than something an agent can arrange.
+  var governor = config ? governorLib.createGovernor({
+    ramLimitMB: config.ramLimitMB,
+    settable: config.settable
+  }) : null;
   if (governor) presentNow.setAllowed(governor.allowed());
 
   function reloadAllow() {
