@@ -126,6 +126,10 @@ function report(opts) {
     // same.
     ramLimitMB: typeof o.ramLimitMB === 'number' ? o.ramLimitMB : undefined,
     levers: o.levers || undefined,
+    // THE CAPTURE TIME, passed through rather than taken here: this file
+    // reads no clock it was not handed. It is what lets a monitor say
+    // "as of 14:02" instead of drawing a stale report as a live one.
+    at: o.at || undefined,
     decision: o.decision || undefined,
 
     // THE RING, and it is here so that its disappearance is visible.

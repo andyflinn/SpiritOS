@@ -318,6 +318,7 @@ eighth stream event was.
 | `relay-renamed` | the owner changed what the BOX calls itself — not a row on it | `was`, `label`, `cause` |
 | `partner-added` | a peer here was promoted to partner — they own the relay at `relayAt` | `key`, `label`, `relayAt`, `cause` |
 | `partner-removed` | that partnership was broken from this side | `key`, `label`, `relayAt`, `cause` |
+| `lever-set` | the owner moved a lever himself, and what it cost in streams | `lever`, `to`, `closed`, `cause` |
 
 **`invite` is a LABEL, never a token.** The word the owner wrote on the
 invite, normalised — `seen.invite = normalizeName(inviteLabel)`. A token
@@ -334,6 +335,16 @@ already carries the key.
 **`cause` is which post caused it**, absent on `claim` because a claim
 arrives on a route rather than as a post — see the `cause` note in
 `relay.ownerEvent`.
+
+**`lever-set` is the owner's own act, and `closed` is why it is written
+down** (cycle 4.1, 2026-09-20). Every other row here records something
+that happened *to* the relay; this one records the owner reaching in. It
+is kept for the same reason as the rest — 0009, the record is the
+substrate — and because lowering an allowance below the present count
+closes member streams, so the event is the only place that number
+survives. `to` is the value set, and it may be `dynamic`: handing the
+lever back to the programme is a move worth the same record as taking
+it.
 
 ### Bootstrap — cannot be a packet, by nature
 

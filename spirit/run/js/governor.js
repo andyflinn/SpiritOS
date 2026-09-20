@@ -166,6 +166,13 @@ function createGovernor(opts) {
     // Exposed by name rather than as a bag, so a second lever is an
     // addition here and not a shape change everywhere.
     lever: function (name) { return name === connections.label ? connections : null; },
+    // KEYED BY LABEL, so the report needs no ordering and the app names
+    // no lever. One entry today; a second one is an addition here.
+    levers: function () {
+      var out = {};
+      out[connections.label] = state();
+      return out;
+    },
     lastDecision: function () { return last; },
     allowed: function () { return allowedAt(position); },
     ramLimitMB: ramLimitMB,

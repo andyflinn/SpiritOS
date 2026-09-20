@@ -118,6 +118,7 @@ var DEVICE_PER_MIN = 10;
 // saves a hop; the ledger is written here, and every claim and rename
 // is checked here whatever any page believed.
 var labelRule = require('./labelRule');
+var lever = require('./lever');
 
 var CLAIM_PER_MIN = 10;
 
@@ -2533,6 +2534,28 @@ function createRelay(rootDir, deps) {
       out = clearPartner(who, String(body.unpartner.key || ''), hash);
     }
 
+    // ── MOVING A LEVER: THE OWNER'S ONE LIVE CONTROL ────────────────
+    //
+    //   Andy: "the only real-time tool the owner gets while node and
+    //   relay are running: injecting foreign partners." — and, from
+    //   cycle 4, moving a lever.
+    //
+    // OWNER-ONLY, and refused with `no such peer` like every other owner
+    // verb. A member asking to move this box's programme and a member
+    // asking for a verb nobody has heard of get the same answer, so what
+    // this relay will do for somebody else stays un-enumerable.
+    //
+    // NAMED, NOT INDEXED. The owner sends a lever's label and the
+    // Governor hands back that lever or nothing — so a second lever is
+    // an addition on the Governor and not a shape change here.
+    //
+    // THE ANSWER IS THE RELAY'S OWN WORDS. `canSet` says why, and that
+    // string is what the app shows. An app inventing its own wording for
+    // a refusal would drift from what the relay actually did.
+    if (body && body.lever && owner) {
+      out = setLever(String(body.lever.name || ''), body.lever.set, hash);
+    }
+
     if (body && body.revoke && owner) {
       var revokedLabel = String(body.revoke.label || '');
       var gone = invites.revokeInvite(rootDir, revokedLabel);
@@ -3342,6 +3365,67 @@ function createRelay(rootDir, deps) {
     return !!presentNow.send(ownerKey, 'relay-event', row);
   }
 
+  // WHAT THE OWNER'S LEVER VERB ACTUALLY DOES.
+  //
+  // Refuse before moving, move once, carry out the consequence, then
+  // report — in that order, because a value that took effect without the
+  // remedy would leave the relay above its own allowance.
+  function setLever(name, value, hash) {
+    if (!governor) return { ok: false, status: 404, error: 'no Governor' };
+    if (!labelRule.leverOk(name)) {
+      return { ok: false, status: 400, error: 'not a lever name' };
+    }
+    var lev = governor.lever(name);
+    if (!lev) return { ok: false, status: 404, error: 'no such lever' };
+
+    var why = lev.canSet(value);
+    if (why) return { ok: false, status: 400, error: why };
+
+    var moved = lev.set(value, 'set by owner', 'owner');
+    if (!moved.ok) return { ok: false, status: 400, error: moved.error };
+
+    // THE REMEDY, WHICH IS THE PROGRAMME'S AND NOT A SPECIAL CASE.
+    // Lowering the allowance below what is present means streams have to
+    // go, and they go by the same rule a Governor step uses: idlest
+    // first, the owner and anything with a post in flight spared.
+    //
+    //   Andy: "a setting below the present count closes streams... only
+    //   the owner and posts in flight are spared."
+    //
+    // The owner is told how many in the answer — 4.5's dialog does not
+    // exist yet, so the verb's reply is where "closed 3" has to appear.
+    var closed = [];
+    if (value !== lever.DYNAMIC) {
+      presentNow.setAllowed(value);
+      var over = presentNow.present().length - value;
+      if (over > 0) {
+        var ownerKey = currentOwnerKey();
+        closed = presentNow.evictIdlest(over,
+          function (id) { return id === ownerKey || routes.countFor(id) > 0; },
+          function (id) {
+            var hits = memberHits[id];
+            return hits && hits.length ? hits[hits.length - 1] : 0;
+          });
+        closed.forEach(function (id) {
+          forgetActive(id);
+          presentNow.broadcast('presence', { key: id, present: false });
+        });
+      }
+    }
+
+    // The owner's own act on the owner's own box (R2), logged like the
+    // rest of them.
+    ownerEvent('lever-set', { lever: name, to: value, closed: closed.length, cause: hash });
+
+    // AND THE REPORT, so the monitor redraws from the relay rather than
+    // from its own optimism. It goes only if the owner's stream is open;
+    // when it is not, the answer below is all the owner gets and the
+    // next report catches up.
+    statusToOwner();
+
+    return { ok: true, lever: name, to: value, closed: closed.length };
+  }
+
   function statusToOwner() {
     var ownerLabel = auth.ownerName(allow);
     var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
@@ -3372,7 +3456,16 @@ function createRelay(rootDir, deps) {
       // reason — §4's "watch a lever move, read why". Absent on a relay
       // with no configuration, so "no Governor" is not drawn as "idle".
       ramLimitMB: governor ? governor.ramLimitMB : undefined,
-      levers: governor ? { connections1: governor.state() } : undefined,
+      // EVERY LEVER, KEYED BY ITS OWN LABEL — never a list the app has to
+      // know the order of, and never one lever named in the app's code.
+      // A lever invented on this relay next month is drawn by a monitor
+      // that shipped this month.
+      levers: governor ? governor.levers() : undefined,
+      // WHEN THIS WAS TAKEN. Without it a stale view reads as a live one:
+      // a setting applied while the owner's stream was down is not seen
+      // until the next report, and "as of 14:02" is the difference
+      // between a monitor that is behind and a monitor that is wrong.
+      at: new Date().toISOString(),
       decision: governor ? (governor.lastDecision() || undefined) : undefined,
       // SWEPT BEFORE IT IS READ.
       //
