@@ -773,13 +773,37 @@ remains worth doing — progress is more legible than silence — but it is
 a nicety, not a prerequisite. `contacts.js` already renders its
 `'asking'` state per card and needs nothing at all.
 
-**One thing the test does need: a fatter world.** Three contacts on a
-loopback relay at ~3 ms serialise in ten milliseconds, which looks
-identical whether the scheduler works or not. Proving it requires enough
-contacts, and ideally enough latency, for the queue to be visible —
-which is the visual-scenario mechanism (`spirit/test/visual/*.visual.json`)
-doing the job Andy already described for governor worlds. Without it the
-verification is a test that cannot fail.
+**The test does need more load, and load is not more nodes.**
+
+> **Andy:** *"actually, the proof we're seeking right now doesn't require
+> more nodes, massive load through one node will test the scheduler
+> best."*
+
+**Corrected in place.** This section first proposed a fatter world —
+more peers, via `spirit/test/visual/*.visual.json`. That is the wrong
+axis. **The scheduler lives in the requesting node**, so what has to be
+overwhelmed is one node's queue, and adding peers adds relay work while
+leaving queue depth where it was. Twenty real peers answering on loopback
+in 3 ms would make the relay busier and the queue invisible — the
+expensive fixture that tests less.
+
+**What the fixture needs is depth, and targets that stall.** A peer that
+answers immediately never produces either hazard `0016` names: no
+head-of-line blocking, because nothing is ever at the head long enough;
+no requeue, because nothing is refused. Both appear only against a target
+that does not answer. So:
+
+- **one node**, `contactsAskEveryone` firing its full width at once;
+- **a long contact list** — rows, not processes, and therefore free;
+- **most targets unreachable**, so refusal and backoff are the common
+  case rather than the exception;
+- **a few that answer**, so it is visible that a stalled target does not
+  starve a reachable one. That is the head-of-line assertion, and it is
+  the one that fails if dispatch walks a plain FIFO.
+
+Three contacts against a live loopback relay — today's world — cannot
+fail this test. It is not a weak fixture; it is a fixture with no
+failing case at all.
 
 ## Decided
 
