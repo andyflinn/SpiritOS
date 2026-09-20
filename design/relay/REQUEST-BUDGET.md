@@ -909,6 +909,71 @@ preferring a requester it just refused (costs the relay per-target
 memory), or carrying the age on the wire so the relay can order by it
 (costs a wire field and trusts the requester's clock). **None is chosen.**
 
+### The timeout is the release, and that is what the ceiling argues from
+
+> **Andy:** *"and the thing that lets other requests through is the
+> timeout."*
+
+**So the timeout is not a latency parameter at a cap of 1. It is the
+queue's drain rate.** Nothing else frees a slot held by a target that
+never answers, which means throughput against unresponsive targets is
+exactly `1 / timeout`, and for a node facing N of them:
+
+```
+worst-case time to clear the queue  =  N x timeout
+50 contacts x 15 s                  =  12.5 minutes
+```
+
+**This replaces the justification `0016` retired.** That decision states
+plainly that the timeout ceiling has *"no evidence at all"* once the RAM
+argument was withdrawn. It has one now, and it is a throughput argument
+rather than a memory one: at a cap of 1, halving the timeout halves the
+time a cold contact list takes to resolve. Andy's earlier *"i'd even set
+a lower ceiling"* follows from this rather than from preference.
+
+**It is still not a free dial.** Too short and a slow-but-live peer is
+abandoned before it answers, converting a reachable contact into an
+unreachable one — *reach over speed* pushing back in the other
+direction. The ceiling is bounded below by real round-trip time to a
+genuine peer, and that number has not been measured. But the trade is now
+between two measurable things instead of one measurable thing and a
+guess.
+
+### The two timeouts already disagree, in this tree, today
+
+| | value | file |
+|---|---|---|
+| node gives up | **8000 ms** | `peerPost.js:37`, `DEFAULT_WAIT_MS` |
+| relay lets go | **15000 ms** | `relay.js:95`, `ROUTE_WAIT_MS` |
+
+**The node abandons a request seven seconds before the relay releases the
+route.** At a cap of 16 this is invisible. At a cap of 1 it is the
+member's only slot, and the consequence is specific:
+
+- the node's queue believes it drains at one per 8 s; it actually drains
+  at one per 15 s, because **the longer timeout governs**;
+- every request dispatched in the 7-second gap is refused — by the
+  member's *own* abandoned route;
+- those refusals are indistinguishable, at the node, from contention
+  with another requester, so they feed the wrong backoff.
+
+This is the hazard `0016` named as hypothetical. It is the current
+configuration.
+
+**Two repairs, and only one keeps the shorter node timeout:**
+
+1. **Expose `cancel` to the member** and fire it on node-local timeout.
+   `cancel` already exists in `router.js` and already enforces that only
+   the opener may call it; nothing exposes it. This keeps the node's
+   timeout meaningful and is the only option that lets the node drain
+   faster than the relay.
+2. **Make the node's timeout no shorter than the relay's.** Costs
+   nothing to build and throws away the shorter timeout's entire benefit
+   — the node would wait 15 s for a peer it gave up on at 8.
+
+**The rule underneath both:** *a node must not treat a slot as free
+before the relay does.* Recommended: (1).
+
 ### Also open in the scheduler
 
 - **What a backoff period is**, and whether it grows. A fixed period
