@@ -2511,6 +2511,47 @@ being discoverable. *Stated, not yet built: seat expiry — nothing sheds a
 member row today (only `removePeer` deletes one), and no cycle piece
 carries it yet.*
 
+**The node pays attention; the browser only reads** (Andy, 2026-09-19):
+*"The nicest thing: Jazz doesn't have to open a browser for me to see her
+online. The personal node is chugging away, Jazz does whatever she wants,
+yet her node pays attention."* A person's presence is their NODE holding
+its relay streams (`presenceNode`, dialled from server.js at boot and
+signed with the node's identity), never a page being open. Rules that
+follow, and none of them bends for a screen:
+- **Nothing a person relies on may require an open tab.** Presence,
+  routes, the contact book, receiving a post, answering a search: all of
+  it is the node's, and a page is a reader of what the node already knows.
+- **A feature that would need the browser running belongs in the node**,
+  or it does not exist. If a design cannot state who does the work with
+  every tab shut, it is not finished.
+- **Tests drive the node, not a page**, for anything in that list — a
+  suite that can only assert it through a rendered screen is asserting the
+  wrong half.
+
+**So the personal node has to become a daemon** (Andy, 2026-09-19: *"the
+personal node will have to become a daemon for it to be a viable
+platform"*). **Decided, not built.** Today only the relay has a unit
+(`bash/systemd/spirit-relay.service`); a node is started by hand and dies
+with its terminal, which quietly makes the rule above false for everybody
+but a machine somebody remembered to start. What it needs beyond what
+cycle 3 already gave the relay (SIGTERM with the streams closed, exit 78
+for refusals a restart cannot fix):
+- it starts at boot and survives logout — a user unit with lingering, or a
+  system unit;
+- **Windows is the harder half and is where the work node lives** — a
+  service or a boot task with no console attached, which nothing in the
+  tree does yet;
+- it holds the identity key and the person's own data, unlike a relay,
+  which holds neither: an unattended node makes "what is on this disc, and
+  how large may it get" a node-side question with a node-side bound;
+- one instance per person, findable by the browser — two copies dialling
+  the same relays are one person making two seats' worth of noise.
+
+**Where it sits: its own small cycle, before beta** — the standing rule
+that by beta Andy maintains his spirit dataset on the work node is only
+true once the node runs unattended. Not cycle 4, not 5.1. Its first
+question is Windows or Linux first, answered by where the node lives then.
+
 **Search answers live participants; the node concludes the rest** (Andy,
 2026-09-19): *"Search should respond with active/online members only. A
 node can reconcile with its contact list to conclude that a contact is
@@ -2729,6 +2770,10 @@ manageable pieces"), each its own commit:
 - **4.6 deprecation** — D9 (natterDetails' monitor rows), D10 (the old
   partner form), and deleting the dead partner picker (it read the census).
 - **Then cycle 5.1, the vouch** (§6), before alpha.
+- **And the node daemon, its own small cycle, before beta** — the personal
+  node runs unattended or the rules above are only true where somebody
+  remembered to start it (decided 2026-09-19, see "the node pays
+  attention" among the principles).
 
 ### Anticipated, and where it sits
 
@@ -2738,11 +2783,12 @@ network we can implement.**
 
 | stage | anticipated problem |
 |---|---|
-| cycle 4 | rolls passing the payload (answered: counts, bounded questions); network-wide triage without the relay selecting; hub.js still reading `census.roster` (traced before 4.1) |
+| cycle 4 | rolls passing the payload (answered: counts, bounded questions); network-wide triage without the relay selecting; hub.js still reading `census.roster` — *traced and answered 2026-09-19: the sweep it fed had pruned every member contact since the census went; deleted, with adoption moved onto the claim event* |
 | cycle 5 | partners chosen by relays inside the owner's admitted set; the minting cycle; the partner-to-partner API; the old promotion model and the dead picker going |
 | Governor / tuning | the timeout floor measured; waits nesting; a deadline travelling with the request; the fan-out's own budget tier; the ranking learned; refusal paths seen live (exit 78, `check_started`) |
 | learning cycles | a search index (mostly dissolved by searching live participants); last-active per member; the flush of longest-inactive; trends kept on the node |
 | protocol, unplaced | peerPut (a receipt that answers at once, the answer as its own post); broadcasting the route back to other members; the phone's direct grant |
+| node daemon, before beta | starting at boot and surviving logout; Windows with no console; one instance per person; a disc bound for what a node keeps unattended |
 | before separate shipping | version tolerance (§7) — already arriving through levers |
 | harness hygiene | suites leaving temporary folders; lab clones on old code |
 | decided, small, unplaced | `seen` on routes, hints ordered by it |
