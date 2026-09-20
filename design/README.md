@@ -204,6 +204,17 @@ This directory contains the vision, principles, and architecture decisions for *
   verb is kept dormant rather than deleted: a proven seam, not a
   temporary shape.
 
+- [0016 — A relay's capacity is its membership](decisions/0016-a-relays-capacity-is-its-membership.md)
+  — the request budget stops being chosen constants and becomes a
+  function of one configured bound: `MAX_MEM` → member roll size → routes
+  in flight → request RAM. Caps of 1 in both directions, requester
+  classes separated, a node that queues rather than fails, and rolls
+  bounded by age as well as space. Supersedes `DEFAULT_MAX = 256` and
+  `DEFAULT_PER_REQUESTER = 16` — whose product is exactly 4 MB, sized
+  against memory by somebody and then written as slot counts so the
+  reasoning vanished. Working note:
+  [REQUEST-BUDGET.md](relay/REQUEST-BUDGET.md).
+
 ## Andy's frames
 - [The POST API — route hierarchy](andy/spiritNodeAPI.md) — every POST route
   both servers dispatch and the function it lands in. Illustration only.
