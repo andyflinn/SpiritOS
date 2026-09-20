@@ -2156,6 +2156,83 @@ separate questions, which is the strongest argument for taking it that
 this note can make.
 
 
+## How many partners does it take to route ten members' contacts?
+
+> **Andy:** *"its about how many partners are required to route the
+> contacts of 10 members?"*
+
+**The number is large, and it is large BECAUSE of the micro-relay goal.**
+That is the part worth seeing: the sizing is not an accident of the
+contact graph, it follows from wanting many small relays.
+
+### The arithmetic
+
+Ten members, each holding `C` contacts. A contact is reachable only
+through the relay they are enrolled at, so **the partner roll must cover
+every distinct relay the contact set touches**.
+
+With a population `P` spread over relays of `M` members each, there are
+`P/M` relays, and `K = 10 x C` contacts land on
+
+```
+distinct relays  ~  (P/M) x (1 - (1 - M/P)^K)
+```
+
+which, while `K` is small against `P/M`, is **approximately `K`**. In
+words: **when relays are small, almost every contact is on a different
+one.**
+
+| relay size | 10 members x 100 contacts | distinct relays to partner with |
+|---|---|---|
+| 10 members (micro) | 1000 contacts | approaching 1000, less social clustering |
+| 100 members | 1000 contacts | a few hundred |
+| 10,000 members (a service) | 1000 contacts | a handful |
+
+Social clustering pulls all of these down — friends share relays, and
+members share contacts — which is why Andy's own figure was *"more than
+200 relays"* rather than a thousand. **Order of hundreds is the working
+number for ten members.**
+
+### Why that settles three things already argued separately
+
+**1. Partner streams could never have worked at this size.** Hundreds of
+partnerships at two stream-equivalents each is more stream cost than the
+members generate, on an idle box, forever. The roll needed to be in the
+hundreds and the streams made hundreds impossible — the design had a
+contradiction in it that only showed up when somebody asked for a number.
+
+**2. Disc is the only place this fits, and it fits easily.** Hundreds of
+rows at a few hundred bytes is tens of kilobytes. Even a thousand-fold
+larger roll is ~19 MB. **The roll is free at every size this question
+produces.**
+
+**3. Open partnering stops being a convenience and becomes necessary.**
+An owner cannot hand-curate two hundred partnerships, and would have to
+redo it as their members acquire contacts. At this scale the roll must be
+**self-assembling**: a member's route hint names a relay, and if there is
+no partnership with it, one is made. That is exactly *"let partners just
+connect on their own"*, arriving from the other direction — not *may we
+allow it* but *what else could possibly maintain a roll this size*.
+
+### The inversion worth stating plainly
+
+**The smaller relays get, the more partnerships each one needs.** A
+micro-relay serving ten people needs to reach hundreds of other relays to
+serve them; a service with a million members needs almost none, because
+everyone is already inside it.
+
+So a federation of small boxes pays for its smallness in **partner roll
+size** — which this design has just made nearly free — while a single
+large box pays in **centralisation**, which is the thing the project
+exists to avoid. That is a good trade and it is the first time this note
+can state it as arithmetic rather than as preference.
+
+**Not measured, and it would be cheap to:** the real clustering factor.
+Everything above turns on how much friends-of-friends share relays, and
+that is one query over a real contact graph — which does not exist yet,
+so the honest range stays *hundreds, for ten members*.
+
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
