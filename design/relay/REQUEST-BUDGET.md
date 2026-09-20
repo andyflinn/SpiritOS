@@ -993,6 +993,71 @@ held 5 s instead of 20 s means a cold contact list drains four times
 faster: fifty unreachable contacts is about four minutes rather than
 seventeen.
 
+### The budget is carried, not configured
+
+> **Andy:** *"N1 sets a limit on its patience, which gets reduced down the
+> chain by the formula you proposed."* — *"part of the request's
+> sidecar/envelope."*
+
+**Constants cannot do this job, and the reason is a decision already
+made.** Patience is the user's (*"could be days for a text message"*), so
+no fixed ladder of numbers is right for everybody — and a chain's length
+is not known at any hop. The budget has to **travel**.
+
+It rides the envelope beside the packet, where `hints` and `hintSig`
+already are:
+
+```
+N1 posts with   budget: 8000
+  A files its note for  8000 - A's overhead      (not a table constant)
+  A asks B with   budget: what is left
+    B files its note for that, minus B's overhead
+```
+
+**Three properties, each of which is a choice and not an accident:**
+
+**A remaining DURATION, never an absolute deadline.** A timestamp needs
+two boxes to agree about the clock. This tree already refuses to carry
+time for the same reason it refuses to carry the hash (`0011`) — a
+duration needs no agreement at all, because each hop subtracts only what
+it spent.
+
+**Unsigned, and that is correct rather than lax.** Every hop must rewrite
+it, so the originator cannot sign the value. The abuses it permits are a
+relay holding longer (which costs the relay) or giving up early (which it
+could do anyway by refusing). It is a hop-count, not a claim, and nothing
+downstream trusts it for anything but its own bookkeeping.
+
+**A floor, so a hop refuses instead of pretending.** A budget too small to
+attempt anything with earns an immediate error, not a note certain to
+expire. That is `0006`'s *"deliver or refuse, refuse instantly"* applied
+to time rather than to presence.
+
+### What it changes in the router
+
+**The route table's TTL stops being a constant.** `router.js` sweeps one
+table-wide `ttlMs` (`DEFAULT_TTL_MS = 20000`); under this each entry
+expires on what its own requester asked for. `sweep()` compares against
+the entry rather than against the table.
+
+**Which is also a memory result, not only a correctness one.** Today an
+8-second waiter reserves a 20-second note, so a relay holds slots for
+requests nobody is waiting on for more than twice as long as anybody
+wanted. Under carried budgets a slot is held for exactly as long as
+somebody is actually waiting — and `0016`'s whole claim is that a relay's
+memory is a function of what it is really doing.
+
+### And the separation to keep sharp
+
+**The envelope carries the PER-ATTEMPT budget. It never carries the
+days.** A patience of three days is the node's own, spent across many
+attempts, and is nobody else's business —
+[THE-REQUESTER-IS-RESPONSIBLE](../principles/THE-REQUESTER-IS-RESPONSIBLE.md).
+What goes on the wire is *"I will wait eight seconds for this try"*.
+
+Conflating them would put a three-day number in front of a relay, which
+is exactly the thing 0016 exists to prevent.
+
 **Superseded by the above, kept because the reasoning below still holds
 for whatever pair of numbers is chosen:**
 
