@@ -974,6 +974,68 @@ configuration.
 **The rule underneath both:** *a node must not treat a slot as free
 before the relay does.* Recommended: (1).
 
+### Replies are exempt by construction, and there is no lock
+
+> **Andy:** *"there is a lock condition i worry about: the node responds
+> to incoming (streamed) requests by posting the reply back..... are
+> replies exempt from the 1 request cap? and how does that affect the
+> memory math?"*
+
+**The worry is the right shape and the answer is that a reply is not a
+request**, so nothing has to be exempted:
+
+| | request | reply |
+|---|---|---|
+| route | `/api/relay/post` | `/api/relay/reply` (`relayServer.js:537`) |
+| effect on `pending` | **creates** a row | **deletes** one — `router.js:134`, `answer()` |
+| delivery | relay holds it and waits | pushed down the requester's existing stream, `presentNow.send` |
+
+**No deadlock.** The feared cycle is A posting to B while B is mid-post
+to C: if B's reply needed a slot, B could not answer until C answered,
+and at scale that closes into a ring. It does not arise. B's outbound
+request occupies B's **requester** budget; A's request to B occupies B's
+**target** budget; `0016` already separates them. B can always answer.
+
+**On memory the reply is better than neutral: it is what frees the
+row.** It is one of only two things that removes a `pending` entry, the
+other being the timeout sweep. The reply payload is forwarded and not
+stored, so it adds no row and no retained bytes.
+
+### Correction: the reply is the normal release; the timeout is the fallback
+
+The section above says *"the thing that lets other requests through is
+the timeout"*, and that is true only of **stalled** requests. A healthy
+request is released by its reply, in round-trip time. Stated as a drain
+rate that matters:
+
+```
+50 contacts, all dead     50 x 15 s             = 12.5 min    worst case
+50 contacts, 45 live      45 x 3 ms + 5 x 15 s  ~ 75 s        realistic
+```
+
+**Drain time is governed by the number of dead targets, not by the length
+of the list.** The 12.5-minute figure is the worst case and was stated
+above as though it were the case. The timeout ceiling argument survives —
+it is still the only release for a dead target, and dead targets still
+dominate — but the cost of a cold contact list is much smaller than that
+arithmetic implied.
+
+### The reply side inherits its bound from the per-target cap
+
+The second half of the question — what stops a node firing an unbounded
+number of outbound reply POSTs when many requests arrive at once — is
+answered by a decision already made, doing a job it was not argued for:
+
+**Per-target cap of 1 bounds arrivals, so it bounds replies.** A node can
+hold at most one inbound request per relay, so a node connected to R
+relays has at most R replies in flight. The reply side needs no cap of
+its own.
+
+Worth noting because it is load-bearing: **without the per-target cap,
+the reply side is genuinely unbounded** — nothing in `answerCard` limits
+concurrency, and it fires one outbound POST per arrival. The cap is what
+makes that safe, which is one more reason it is the piece to build first.
+
 ### Also open in the scheduler
 
 - **What a backoff period is**, and whether it grows. A fixed period
