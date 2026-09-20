@@ -1353,6 +1353,78 @@ because that is one number shared with the members it would be displacing.
   guideline exists for.
 
 
+## Could a partner connection's TTL be one request?
+
+> **Andy:** *"another thing to examine: could TTL for a partner connection
+> be 1 request...."*
+
+**Yes, and the prize is not the memory — it is that the idle rule
+disappears.** The section above leaves "timer or pressure" open and both
+need a number nobody can derive. A lifetime of one request needs neither:
+the connection lives exactly as long as the thing it exists for, and
+`min(roll, members)` stops being a ceiling and becomes the actual count at
+every instant.
+
+That is a real simplification of the same kind `0016` is made of — a
+tuned number replaced by a derived one.
+
+### It cannot be literally one request, for two reasons
+
+**The reply lands on that stream.** `partnerLink.js`: *"the stream A holds
+to B is where B's answers to A land, and B's answers can only land
+there."* So the lifetime is not "until sent" but **until answered or timed
+out** — dropping at send loses the answer.
+
+**And two members can cross the same partner at once.** The per-target cap
+does not prevent it: member A asking peer X on relay R and member B asking
+peer Y on R are different targets and both need R live. So the rule is a
+**refcount** — drop when the LAST outstanding request through that partner
+completes — which is still bounded by members and still needs no timer.
+
+### What it actually trades, which is not RAM for latency
+
+**It converts a RAM cost into a CPU and rate-limit cost**, and on a
+micro-relay those may be the scarcer ones:
+
+- **Each dial is a handshake.** Reached over TLS, which production is, that
+  is asymmetric crypto per connection — the expensive kind — where a held
+  stream pays it once. Unmeasured here, and it is the sort of thing a
+  small box notices before it notices 64 KB.
+- **Each dial is an admission at the partner**, counted against their
+  `partnerPerMin` (`relay.js:283`, reported in `caps`). Churn spends a
+  budget that already exists and was sized for requests, not for
+  connections. A relay that reconnects per request could rate-limit
+  itself out of a partner it is entitled to talk to.
+
+So the honest statement is that this does not simply save memory; it moves
+the cost to two places that are already metered and one that is not
+measured at all.
+
+### Whether it is a good trade turns on locality, and the evidence cuts both ways
+
+**Against warmth:** the contact-diversity number. Two hundred relays for
+ten members means a member's consecutive requests probably go to
+*different* partners, so a held stream is usually the wrong one held. That
+argues for the shortest possible life.
+
+**For warmth:** the bursts this cycle is built around. `contactsAskEveryone`
+fires a member's whole contact list at once, and at one request in flight
+those serialise — so the same handful of partners are wanted repeatedly
+over a few seconds, and then not at all. Instant drop pays a handshake per
+contact; a few seconds of grace pays one per partner per burst.
+
+**So the shape the evidence points at is refcount plus a short grace**,
+where the grace exists to catch a burst rather than to keep anything warm.
+It is a timer, which this idea was attractive for avoiding — but a small
+one bounded by burst length rather than a tuned idle period, and the
+refcount is what keeps the bound exact.
+
+**Not decided, and the measurement that would decide it:** the handshake
+cost against a real partner over TLS, beside the per-stream RAM cost.
+Those two numbers pick the answer, and the second is the measurement three
+other open questions already wait on.
+
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
