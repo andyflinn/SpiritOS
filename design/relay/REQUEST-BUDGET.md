@@ -1128,6 +1128,77 @@ refused for lack of room.
   no persistence designed for it.
 
 
+## If max_in_flight is a constant, connections may stop being a lever
+
+> **Andy:** *"hmmm, if max_in_flight = const 1, then connections might
+> become a computable constant, too."* — *"then connections will be
+> derived from ram_available."*
+
+**The derivation already exists.** `governor.js:69`:
+
+```js
+var ceiling = Math.max(FLOOR, Math.floor(ramLimitMB * perMB));
+```
+
+`connections1`'s **ceiling** is `ram_available x streams_per_mb` today.
+What the lever does is move *below* that ceiling, in twelfths, when
+`heapUsed` says the box is unhappy. So the computed constant is not a new
+idea to build — it is there, and the lever is the hedge against it being
+wrong.
+
+**Which makes the real question: why is it still a dial? Two reasons, and
+the ruling above retires one.**
+
+1. **Per-member cost was not bounded.** Without a fixed `max_in_flight` a
+   connected member could hold any number of routes at once, so no
+   arithmetic from `ram_available` could hold — the ceiling was a guess
+   about streams sitting on top of an unbounded term. A constant of 1
+   bounds it: a connected member costs one stream and at most one route
+   row.
+2. **`STREAMS_PER_MB = 16` is a placeholder**, and `governor.js` says so
+   itself: *"Guessed so the ceiling is finite and proportional to the
+   configured bound; replaced by the per-stream cost cycle 1 measures."*
+
+**So the lever now survives on the second reason alone.** That is a
+narrower justification than it had this morning, and it is one
+measurement away from none.
+
+### Three roads to the same number
+
+This is the third time in two days the same measurement has turned out to
+be the blocker, which is itself the argument for taking it:
+
+| asked | blocked on |
+|---|---|
+| what does a micro-relay cost to run? (`0016`) | per-stream cost |
+| is "1000 members" defensible to an audience? | per-stream cost |
+| must `connections` be governed, or computed? | per-stream cost |
+
+`0016` already names it *"the highest-value measurement in the project"*.
+Nothing since has weakened that and this strengthens it.
+
+### What would remain even with the number measured
+
+**An observer, probably — but governing something else.** A computed
+ceiling assumes the cost per member is *stable*, and heap is not: GC
+timing, payloads in transit, fragmentation and V8's own behaviour all
+move it. A derivation can be right on average and wrong at a moment.
+
+So the open question is not whether `connections` can be computed — it
+can — but **whether the Governor still governs or only watches**:
+
+- **Computed and governed**: `connections` is set from `ram_available` at
+  boot and the Governor still sheds when observed heap disagrees with the
+  arithmetic. The lever survives as a safety net, not as a policy.
+- **Computed and watched**: the Governor reports, and a box that runs out
+  of memory is a box that was configured wrong. Simpler, and it makes the
+  arithmetic load-bearing in production rather than advisory.
+
+**Not decided, and it should not be decided before the measurement** —
+the answer depends on how much the measured cost varies, which is part of
+what measuring it tells you.
+
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
