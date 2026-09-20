@@ -1036,6 +1036,81 @@ the reply side is genuinely unbounded** — nothing in `answerCard` limits
 concurrency, and it fires one outbound POST per arrival. The cap is what
 makes that safe, which is one more reason it is the piece to build first.
 
+### The memory math: 0016 costed the wrong thing
+
+> **Andy:** *"so the memcap might have to consider members + (3 *
+> request-size)?"*
+
+**Two separate terms is the right shape, and checking it found the
+decision's arithmetic to be wrong.** `0016` states peak RAM as
+`2N x PAYLOAD_MAX` and prices 1000 members at 31 MB. **The relay does not
+retain the payload.**
+
+On a plain member-to-member route (`relay.js:3016`) `routes.open` is
+called with **no `carry`**. The text lives in the `deliver` closure, is
+pushed down the target's stream immediately, and the closure is not
+stored in the entry — `pending[hash] = {requester, target, at, carry}`
+and nothing else (`router.js:111`). `carry` is non-null only for a
+partner forward, and there it holds a continuation and a key, never the
+payload.
+
+```
+0016's claim   2N x PAYLOAD_MAX (16 KB)   1000 members = 31 MB
+retained       2N x a few hundred bytes   1000 members = well under 1 MB
+```
+
+**The conclusion of `0016` survives; its arithmetic does not.** The thing
+to bound is still concurrency, and the cap still bounds it — but the
+route table is one or two orders of magnitude cheaper than the decision
+claims, which makes the micro-relay argument *stronger* than it was sold.
+
+**The payload cost is real and belongs to transit, not to lifetime.**
+Roughly: inbound body buffer, parsed string, outbound frame. That is
+where Andy's `3 x request-size` belongs, multiplied by *requests in
+transit at one instant* — microseconds each — and not by members.
+
+**Both threes are guesses and neither goes in a formula.** This tree
+already has one placeholder that got used as a number —
+`STREAMS_PER_MB = 16`, which `governor.js` marks as guessed in its own
+comment — and a second would be worse than none.
+
+**Both are cheaply measurable with apparatus that already exists.** The
+Governor reads `heapUsed` every tick. Filling the route table to a known
+depth and reading it back gives the retained row size directly; holding
+known payloads in transit gives the multiplier. It is the same
+measurement that would settle `STREAMS_PER_MB`, which `0016` already
+names as **the highest-value measurement in the project**. That
+assessment stands and this is a second reason for it.
+
+### A reply is never subject to the request cap, and must never become so
+
+> **Andy:** *"the request cap needs checking after the relay matches the
+> hash to see if it's a reply."*
+
+**Already true, by something stronger than ordering: they are different
+endpoints.**
+
+- `/api/relay/post` -> `routes.open()`, where `max` and `perRequester`
+  are tested (`router.js:105-110`)
+- `/api/relay/reply` -> `relay.routeReply()` -> `routes.answer()`
+  (`relayServer.js:537`, `router.js:127`), which has **no cap in it at
+  all**
+
+The partner case holds too: a member answering a packet forwarded by a
+partner returns through the `answerPartner` continuation carried in the
+entry (`relay.js:3081`), not through a fresh `routes.open`. **No reply
+path allocates a row or consults the cap.**
+
+**Why this is written down rather than left as an observation.** The
+property is currently an accident of having two routes. If those are ever
+collapsed — one endpoint discriminated by whether the hash matches a
+pending entry — then Andy's ordering becomes load-bearing and getting it
+backwards produces the deadlock he asked about: a reply refused for
+capacity, holding the slot it was about to free, on a table full of
+requests waiting for replies. **The cap must be tested only after the
+hash has failed to match.** A reply is a release, and a release is never
+refused for lack of room.
+
 ### Also open in the scheduler
 
 - **What a backoff period is**, and whether it grows. A fixed period
