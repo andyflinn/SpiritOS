@@ -750,6 +750,37 @@ peak. A shorter timeout frees stuck slots sooner, so less of the
 provisioned table is typically in use. That is an efficiency argument,
 not a safety one, and it does not change what must be provisioned.
 
+## The apps are the load generator, not the thing to fix
+
+> **Andy:** *"if you fire all at once, the queuing and scheduling will be
+> put to the test."*
+
+**So no app changes.** `contactsAskEveryone` keeps firing one
+`peerPost` per contact, all at once, and that is the fixture the
+scheduler has to survive. Making the apps polite would be the wrong
+repair twice over: every app would carry its own queue, each would do it
+differently, and the transport would never be tested against anything
+harder than well-behaved callers.
+
+This is the one-door rule paying off. `peerPost` owns comms, so it
+absorbs the burst and **no app needs to know a cap exists** — which is
+also what makes the earlier guideline true rather than aspirational: *one
+request at a time is what an app may assume*, and an app that assumes
+otherwise is simply slower, not broken.
+
+**The `infoDraw` repaint therefore drops out of the critical path.** It
+remains worth doing — progress is more legible than silence — but it is
+a nicety, not a prerequisite. `contacts.js` already renders its
+`'asking'` state per card and needs nothing at all.
+
+**One thing the test does need: a fatter world.** Three contacts on a
+loopback relay at ~3 ms serialise in ten milliseconds, which looks
+identical whether the scheduler works or not. Proving it requires enough
+contacts, and ideally enough latency, for the queue to be visible —
+which is the visual-scenario mechanism (`spirit/test/visual/*.visual.json`)
+doing the job Andy already described for governor worlds. Without it the
+verification is a test that cannot fail.
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
