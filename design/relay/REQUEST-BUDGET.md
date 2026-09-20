@@ -1995,6 +1995,80 @@ that has failed for a very long time is ever forgotten or merely sorted
 last for ever.
 
 
+## Could partners just connect on their own?
+
+> **Andy:** *"and all partners need is a key-exchange..... now that we
+> pretty much secured (in design) against malicious partners it might
+> [be] feasible to let partners just connect on their own...."*
+
+**Feasibility note, not a decision.** Cycle 5 plans partner acquisition as
+a ceremony — the owner injects a relay URL as a signed grant, both owners
+sign, the relays manage it from there (`NODE-AND-RELAY` §5). This asks
+whether the ceremony is still earning its place.
+
+### Resource-wise the answer is yes, and it is this cycle's doing
+
+Everything a hostile partner could spend is now bounded, and each bound
+was argued separately on its own evidence:
+
+| attack | what bounds it |
+|---|---|
+| spam this relay's members | partner **requester class** + **per-target cap** + `partnerPerMin` |
+| exhaust RAM with held connections | **no partner streams** — there is nothing to hold |
+| amplify through us to a third relay | **one hop** — a partner may only address this box (403) |
+| harvest the roster | `/api/relay/who` is **already public and unsigned**, so partnering discloses nothing new |
+
+**So an unvetted partner can do nothing a vetted one cannot**, and the
+ceremony is guarding a threat model the bounds already cover. A key
+exchange is genuinely all that is left: each side holds the other's
+`relayKey` and `url`, and every packet is signed.
+
+### The catch is disc, and this sitting created it
+
+An hour ago this note decided **not to evict partners for silence** —
+*"the roll is the reach"*, doors are not seats. That is right for a roll
+the **owner** filled.
+
+**It is not right for a roll strangers can fill.** Open partnering plus
+no eviction is an unbounded roll written by anybody, and disc is cheap
+rather than free. A Sybil farm cannot spend our RAM any more, but it can
+spend our disc and our search ordering.
+
+### Which the reserved statuses already resolve
+
+`relayStore.js:24`: *"Today's partnerships are `partnered`; cycle 5 adds
+`injected` and `requested`."* That distinction does exactly this job:
+
+- **self-connected partners are provisional** (`requested`) — evictable
+  freely, on disc pressure, on never having been useful, on anything.
+  Nobody promised them a seat.
+- **owner-granted partners are `partnered`** — doors the owner wants,
+  never evicted for being quiet, which is the rule this note already
+  settled.
+
+**So eviction policy follows from how the row got there**, and the two
+answers that looked contradictory an hour apart are both right for
+different rows. A provisional partner earns permanence by being useful,
+or by the owner saying so.
+
+### What it would buy, and it is the point of the whole design
+
+**Reach without an introduction.** A relay could be reached by any other
+relay without either owner doing anything, which is what makes a hundred
+small relays a network rather than a hundred islands — and `0016`'s
+commercial case (*"gain capital (audience) at low cost"*) is about
+exactly that.
+
+**Not decided, and cycle 5's to settle:**
+
+- whether `requested` is admitted automatically or queued for the owner
+  to see;
+- whether a provisional partner may be **searched** as well as search us,
+  or only answer — the asymmetry is free and halves the exposure;
+- the disc bound on provisional rows, which is the one number this needs
+  and does not have.
+
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
