@@ -1,0 +1,8 @@
+{
+  "name": "Relay Monitor",
+  "description": "Watches the relays this node owns, and lets the owner move a lever.",
+  "icon": "GRAPH",
+  "hidden": false,
+  "intrinsic": true,
+  "owner": "system"
+}

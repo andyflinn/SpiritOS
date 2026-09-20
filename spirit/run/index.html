@@ -21,6 +21,17 @@
          a round trip to another continent to be told about a space. One
          file so the two cannot drift. -->
     <script src="/js/labelRule.js"></script>
+    <!-- The isomorphic half of js/lever.js: what a lever is, what it may
+         be set to, and how it describes itself.
+
+         Here for the same reason as labelRule: the Relay Monitor checks a
+         value against the lever's own floor and ceiling before taxing the
+         wire, using the SAME canSet the relay will apply. The relay is
+         still the enforcer — it refuses whatever a browser believed.
+
+         `fromReport` deliberately has no `set`: nothing on the node may
+         move a relay's value except by asking the relay. -->
+    <script src="/js/lever.js"></script>
     <!-- One peer, one file, named by the peer's whole public key. Stays up
          in js/ because hub.js and peerStats.js name files with it too.
          js/client/chatLog.js reads it at load, so it comes first. -->
