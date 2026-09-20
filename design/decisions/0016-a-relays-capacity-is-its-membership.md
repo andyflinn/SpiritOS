@@ -10,6 +10,48 @@
 > the system itself doesn't suffer."*
 > *"let's at least commit to revising the design."*
 
+## Amended 2026-09-21 — capacity is TWO numbers, and they do not compete
+
+> **Andy:** *"the two most expensive resources are now divided: RAM
+> bounds MAX_MEMBERS and DISC bounds MAX_RELAYS, they don't compete for
+> either RAM nor DISC."*
+
+**The title of this decision is half the story.** It says a relay's
+capacity *is* its membership, which was true when reach cost RAM: more
+partners meant more held streams, so membership and reach came out of one
+pot and the pot was RAM.
+
+The 2026-09-21 partner design ([REQUEST-BUDGET.md](../relay/REQUEST-BUDGET.md))
+removes partner streams entirely, and the two separate:
+
+```
+RAM  -> MAX_MEMBERS   streams and in-flight routes: work being DONE
+DISC -> MAX_RELAYS    the partner roll: who can be REACHED
+```
+
+**They no longer take from each other.** A member costs RAM and no disc
+worth counting; a partner costs a few hundred bytes of disc and no RAM at
+all. So both numbers rise together instead of trading, which is what
+`0016`'s own commercial argument needed and could not have while
+partnerships were held connections — *audience* is a disc number and
+*cost* is a RAM number.
+
+**What this supersedes here:** the framing, not the arithmetic. Every
+bound below still holds for the membership side. What changes is that
+"capacity" was one question and is now two, and the partner half is
+bounded by something a box has a great deal of.
+
+**And it is why the relay is now unavoidably an HTTP client.** Ten
+members' contacts span hundreds of relays, so a relay must reach hundreds
+of addresses to serve ten people. `relay.js` still makes no outbound call
+itself — `askPartner` and `relayRequest` are injected, and the one-door
+census counts `relayServer.js` for it — but the BOX reaches out
+constantly and at scale, and once partner streams go it does so **only**
+over HTTP. Any document reading "a relay makes no outbound request" as a
+statement about the box rather than the file is stale;
+[NODE-AND-RELAY.md](../principles/NODE-AND-RELAY.md) carries the marked
+version.
+
 ## The decision
 
 **The design is revised in this direction.** Nothing here is built, and
