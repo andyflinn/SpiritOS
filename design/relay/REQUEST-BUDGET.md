@@ -1612,10 +1612,26 @@ consequence here had not been noticed.** `peerSearch.js:58`:
 > members only'), so every row offered is present and the signal told
 > nothing apart."*
 
-A relay answers a search **from its connected members only**. So every row
-that comes back across a partnership is, by construction, a present peer —
-and the `present` signal was **deleted from the ranking** because search
-had absorbed it. The discovery path already carries the presence that the
+> **Andy, scoping it:** *"B can only answer with present B-members"* —
+> *"in a search"*.
+
+**In a search, and that qualifier is load-bearing.** A relay answers a
+**search** from its connected members only, so every row in a search
+answer is, by construction, a present peer — and the `present` signal was
+**deleted from the ranking** because search had absorbed it.
+
+It does not generalise to partner traffic as such, and this first said it
+did. **What each partner exchange tells you about presence is different:**
+
+| exchange | what it asserts |
+|---|---|
+| **search** | an enumeration: *these members of mine are present now* |
+| **forward** | one peer, and only by refusal — an absent target is 503 *"peer not reachable"* (`relay.js:1968`) before the packet goes anywhere |
+| **acquisition** (cycle 5) | nothing about members at all |
+
+So a search **enumerates** present peers; a forward **tests** one. Both
+carry presence, and only the first discovers it. The discovery path is
+therefore the one that matters here, and it already carries what the
 partner stream was reserved to carry.
 
 **So foreign presence is not lost with the streams. It arrives with the
