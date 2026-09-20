@@ -849,6 +849,83 @@ refused. Whether the loser eventually gets through, or is beaten to the
 slot every time by a requester that retries harder, is a starvation
 question the backoff policy decides. Nothing in `0016` settles it.
 
+## The scheduler: what is settled and what is not
+
+> **Andy:** *"there's a lot to settle in the scheduler. the requeued
+> request should be sorted by request-time, ascending."*
+
+### Settled: a requeue keeps its original request time
+
+**This is the anti-starvation rule, and it works inside one node.** A
+refused request re-enters the queue with the time it was *first* asked,
+so it sorts ahead of everything that arrived while it was being refused.
+It ages toward the front rather than going to the back.
+
+The alternative fails plainly: if a requeue took a fresh timestamp, a
+node generating new work would starve its own retries indefinitely, and
+the more useful the node the worse the effect. Original-time ordering
+makes a refused request strictly more urgent over time, which is the
+property wanted.
+
+### It orders; it does not select
+
+`0016` names head-of-line blocking as a hazard and says dispatch must
+skip a backed-off target. **That is not in conflict with the sort — one
+is the order, the other is the filter.** Stated together:
+
+> **Oldest eligible first.** Walk the queue ascending by request time and
+> dispatch the first entry whose target is not backed off and whose slot
+> is free.
+
+A plain FIFO that *stalls* on its head is what fails. Ordering by age is
+correct; the fix for head-of-line is to keep walking, not to reorder.
+
+### Ties are not an edge case — a burst is all ties
+
+`contactsAskEveryone` fires N requests in one synchronous loop. **Every
+one of them takes the same millisecond**, so `Date.now()` supplies no
+order and the queue sorts nondeterministically — in whatever order the
+sort happens to be stable or unstable for. The fixture designed above
+produces this on its first run.
+
+**A monotonic sequence number assigned at first enqueue** is the fix, and
+it is the request time in the only sense the scheduler needs: it never
+collides, and it never goes backwards — wall-clock does both (NTP steps,
+DST, suspend/resume). A requeue carries its original sequence number
+unchanged, which is the rule above, exactly.
+
+### What this does NOT settle: starvation across nodes
+
+The rule is local. It orders one node's own queue and says nothing about
+two nodes contending for one target, because **neither node's ages are
+visible to the other or to the relay.** When a slot frees, the relay
+grants it to whoever asks next — so a requester that retries harder still
+wins more often, and the two-node fixture will show exactly that.
+
+Whether that matters is measurable rather than arguable, and the fixture
+is the measurement. Three responses exist if it does, and they are not
+equivalent: back-off jitter (cheapest, purely node-side), the relay
+preferring a requester it just refused (costs the relay per-target
+memory), or carrying the age on the wire so the relay can order by it
+(costs a wire field and trusts the requester's clock). **None is chosen.**
+
+### Also open in the scheduler
+
+- **What a backoff period is**, and whether it grows. A fixed period
+  synchronises retries across requesters; a growing one starves the
+  patient in favour of the fresh.
+- **Whether a timeout and a refusal back off the same way.** They should
+  not: a timeout is evidence about the *target*, a refusal is evidence
+  about *contention*. Treating a refusal as target trouble would poison a
+  perfectly healthy target's backoff — and at a cap of 1 that is the
+  member's only slot.
+- **Queue depth, and what happens when it is reached.** Unbounded is a
+  memory leak with a contact list behind it; bounded needs a policy for
+  what is shed, and shedding the oldest would invert the rule above.
+- **Whether the queue survives a restart.** It is node-local state with
+  no persistence designed for it.
+
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
