@@ -2312,12 +2312,66 @@ that case:
 
 **So: pair the route, and handshake only when the pair is empty.**
 
-**The gap that remains, and it is real:** a contact acquired *through* a
-partnership may never have given this node B's URL at all — `relays` is
-written at acquisition (`contacts.js:313`, `:451`) and a search result
-crossing a partnership carries `via`, not an address. Where the node has
-no URL, neither mechanism can start. **Unchecked**, and it decides
-whether the fallback is reachable in the case that needs it most.
+### The gap underneath both, which Andy saw first
+
+> **Andy:** *"that's the one i saw first."*
+
+**Checked, and it is structural.** `relay.js:2728`, building a search
+answer from a partner:
+
+```js
+return { via: p.relayKey, rows: rows };     // the KEY. p.url sits right there, unused.
+```
+
+`via` is the partner's relay **key**. A foreign peer found by search
+therefore arrives with a key and **no address**, so acquisition writes
+nothing to `relays` (`contacts.js:313`, `:451`) — there was no URL to
+write.
+
+**Which closes the loop badly:**
+
+- a foreign contact is reachable only through a partnership that
+  **already exists**;
+- and no partnership can ever be **formed**, because nobody holds the
+  address;
+- so the fallback handshake cannot start, and the self-assembling roll
+  cannot assemble.
+
+Every mechanism above — route pairs, on-demand handshake, provisional
+rows, a roll sized to the contact graph — assumes somebody can dial a
+relay they have not met. **Nothing in the tree can.**
+
+### The fix is one field the answering relay is already holding
+
+`p` is a partner row: `relayKey, url, ownerKey, status, since`
+(`relayStore.js:103`). The relay building that answer is reading
+`p.relayKey` off an object that carries `p.url` beside it.
+
+```js
+return { via: p.relayKey, viaUrl: p.url, rows: rows };
+```
+
+**It discloses nothing.** A relay's URL is how anybody reaches it, and
+`/api/relay/who` is already public and unsigned — *"what a node reads
+before it has anything"* (`0010`). A partner's address is not a secret
+held on its behalf; it is the one fact about a relay that must be
+public for the relay to work at all.
+
+**And it is the piece that makes the rest reachable:** with an address,
+acquisition can fill `relays`, the node can supply it when no route pair
+matches, and the relay can handshake with a stranger it was told about by
+its own member — the requester carrying the cost of its own question.
+
+**It is a wire change, so it is not mine.** The search answer shape is
+protocol (`ROUTER-PACKETS.md` is the reference), and `CLAUDE.md` says a
+change needing the wire is a team review rather than a patch. Recorded as
+the shape, not built.
+
+**Also unresolved by it:** the hint format. `HINTS_PER_POST` sends relay
+**keys** (`contacts.js:337`), so even holding a URL, a node has no way to
+*tell* its relay where an unknown relay is. Either hints become
+`{key, url}` pairs, or the handshake fallback is unreachable by a second
+route after being made reachable by the first.
 
 
 ## Decided
