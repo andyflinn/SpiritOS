@@ -1033,6 +1033,55 @@ attempt anything with earns an immediate error, not a note certain to
 expire. That is `0006`'s *"deliver or refuse, refuse instantly"* applied
 to time rather than to presence.
 
+### Five seconds at most, and the carried number may only ask for less
+
+> **Andy:** *"and we start with 5 seconds at the most. the willing to
+> wait time in a request is informational, and the next station down the
+> chain better hurry."*
+
+**Two rules, and the second is what makes the first safe.**
+
+**The relay's ceiling is a code constant: 5 s.** Not configurable, not
+extendable, and it replaces `DEFAULT_TTL_MS = 20000` — a number nobody
+argued, of exactly the kind `0016` retired the `256`/`16` pair for.
+
+**The carried budget is INFORMATIONAL.** A hop grants
+
+```
+min( what the envelope asked for , this box's own ceiling )
+```
+
+so a member asking for sixty seconds does not get sixty seconds. The
+envelope can only ever ask for **less**. That is Andy's own rule about
+limits, applied here: a hold time a member could widen would not be a
+limit, it would be a default — and a relay whose slots a member can
+lengthen is a relay whose memory is a function of its members' patience
+rather than of its membership.
+
+### Which makes the inversion structurally impossible
+
+Because every hop grants no more than it was asked for, **every hop
+finishes before the hop outside it gives up** — not by choosing matching
+numbers, but by construction. There is no ladder to tune and no pair of
+constants that can drift apart in a later commit.
+
+That is a stronger result than the correction above: the inversion is not
+fixed, it is **unexpressible**.
+
+### "Better hurry" is the instruction to the next station
+
+The number tells the far end **how long it has to be useful**, and the
+right response to too little is to say so at once rather than to spend
+it. A hop that cannot plausibly finish within what it was handed refuses
+immediately — `0006`'s *"deliver or refuse, refuse instantly"*, applied
+to time.
+
+**The alternative is the worst outcome available:** a hop that accepts a
+budget it cannot meet spends the whole of it and then reports failure, so
+the requester waits the full time to learn what could have been said in
+the first millisecond. That is the shape of failure this design keeps
+finding and removing.
+
 ### What it changes in the router
 
 **The route table's TTL stops being a constant.** `router.js` sweeps one
