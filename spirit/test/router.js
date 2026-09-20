@@ -150,6 +150,89 @@ function run() {
     }
   }
 
+  test.subHeading('Three budgets, because they are three populations');
+
+  // Decision 0016. A member is one person; this relay acts for ALL of its
+  // members at once; a partner is another box whose behaviour we do not
+  // control. Sharing one number between them is what makes a ceiling of 1
+  // unswitchable, because the relay posts under its OWN key every time it
+  // acts for somebody (a device offer, a partner forward) — so its second
+  // concurrent self-post is refused by the member cap.
+  //
+  // This is the check that says a member ceiling of 1 does not starve the
+  // relay's own work, which is the whole reason the split exists.
+  {
+    const R = router.createRouter({ max: 100, maxPerRequester: { member: 1, relay: 4, partner: 2 } });
+
+    const first = R.open('m1', 'alice', 'tgt', function () { return true; }, null, router.MEMBER);
+    const second = R.open('m2', 'alice', 'tgt2', function () { return true; }, null, router.MEMBER);
+    if (first.ok && second.ok === false && second.status === 429) {
+      test.check('a member gets one in flight and the second is refused');
+    } else {
+      test.fail('member: ' + JSON.stringify(first) + ' / ' + JSON.stringify(second));
+    }
+
+    // THE POINT. Same key, different class — the relay acting for a member
+    // is not that member spending their own slot.
+    const r1 = R.open('r1', 'alice', 'tgt3', function () { return true; }, null, router.RELAY);
+    const r2 = R.open('r2', 'alice', 'tgt4', function () { return true; }, null, router.RELAY);
+    if (r1.ok && r2.ok) {
+      test.check('and the relay still gets its own budget, on the same key, at a member cap of 1');
+    } else {
+      test.fail('relay class: ' + JSON.stringify(r1) + ' / ' + JSON.stringify(r2));
+    }
+
+    // And a partner cannot spend what the relay needs for its members.
+    R.open('p1', 'alice', 'tgt5', function () { return true; }, null, router.PARTNER);
+    R.open('p2', 'alice', 'tgt6', function () { return true; }, null, router.PARTNER);
+    const p3 = R.open('p3', 'alice', 'tgt7', function () { return true; }, null, router.PARTNER);
+    if (p3.ok === false && p3.status === 429 && p3.kind === router.PARTNER) {
+      test.check('a partner is capped in its own class, and the refusal names which');
+    } else {
+      test.fail('partner: ' + JSON.stringify(p3));
+    }
+  }
+
+  // countFor WITHOUT a class still counts everything, and that is not an
+  // accident of the default. Its other caller asks "is this identity
+  // busy?" to spare a live stream from eviction (relay.js) — a question
+  // about the peer, not about a budget.
+  {
+    const R = router.createRouter({ max: 100, maxPerRequester: 9 });
+    R.open('c1', 'bob', 't1', function () { return true; }, null, router.MEMBER);
+    R.open('c2', 'bob', 't2', function () { return true; }, null, router.RELAY);
+    if (R.countFor('bob') === 2 && R.countFor('bob', router.MEMBER) === 1) {
+      test.check('countFor sees every class; countFor with a class sees one');
+    } else {
+      test.fail('all: ' + R.countFor('bob') + ' member: ' + R.countFor('bob', router.MEMBER));
+    }
+  }
+
+  // A NUMBER STILL MEANS WHAT IT MEANT, so nothing that passed one has
+  // changed underneath it.
+  {
+    const R = router.createRouter({ max: 100, maxPerRequester: 2 });
+    if (R.caps.member === 2 && R.caps.relay === 2 && R.caps.partner === 2
+        && R.maxPerRequester === 2) {
+      test.check('a plain number sets every class, exactly as it did before');
+    } else {
+      test.fail('caps from a number: ' + JSON.stringify(R.caps));
+    }
+  }
+
+  // An unknown class is a programming error and says so, rather than
+  // quietly putting relay traffic on a member's budget with every suite
+  // green.
+  {
+    const R = router.createRouter({});
+    const bad = R.open('x1', 'who', 'tgt', function () { return true; }, null, 'memebr');
+    if (bad.ok === false && bad.status === 500 && /unknown requester class/.test(bad.error)) {
+      test.check('a misspelled class is refused, not defaulted');
+    } else {
+      test.fail('typo class: ' + JSON.stringify(bad));
+    }
+  }
+
   test.subHeading('Who may answer');
 
   {

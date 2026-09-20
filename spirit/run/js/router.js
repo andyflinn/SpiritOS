@@ -25,6 +25,46 @@
 
 var DEFAULT_MAX = 256;
 var DEFAULT_PER_REQUESTER = 16;
+
+// ── WHO THE CEILING COUNTS AGAINST ───────────────────────────────────
+//
+//   Andy: "we always know that relay side request for relays must be
+//   subject to a separate budget."
+//
+// Decision 0016: member traffic, this relay posting as itself, and
+// traffic forwarded in by a partner are THREE budgets, not one. They are
+// three populations and they answer to three arguments — a member is one
+// person, this relay acts for all of its members at once, and a partner
+// is another box whose behaviour we do not control.
+//
+// WHY THIS HAD TO COME FIRST. The count is kept per requester KEY, and
+// the relay uses its own key for every post it makes on somebody's
+// behalf — a device offer and a partner forward both open under
+// `mineKey()`. So at a ceiling of 1 the relay's second concurrent
+// self-post is refused by its own cap, and `devicePeers` (two
+// deviceOffer calls to two members) proves it rather than predicting it.
+// Lumping the classes makes the ceiling unswitchable; separating them is
+// what lets it be TRIED.
+//
+// The classes, and nothing else may be passed:
+var MEMBER = 'member';    // a member of this relay, posting for itself
+var RELAY = 'relay';      // this relay, acting for a member (device offers)
+var PARTNER = 'partner';  // forwarded in from a partner relay
+var KINDS = [MEMBER, RELAY, PARTNER];
+
+// A NUMBER STILL MEANS WHAT IT MEANT. `maxPerRequester: 2` sets every
+// class to 2, which is exactly the old behaviour, so nothing that passed
+// a number has changed underneath it. An object sets them apart.
+function capsFrom(given) {
+  var caps = {};
+  var flat = typeof given === 'number' ? given : null;
+  KINDS.forEach(function (k) {
+    var v = flat !== null ? flat
+      : (given && typeof given[k] === 'number' ? given[k] : DEFAULT_PER_REQUESTER);
+    caps[k] = v;
+  });
+  return caps;
+}
 // How long a caller will wait, which is a UX number rather than a
 // protocol constant tuned against another machine's clock. Nothing is
 // held open, so this is the only timeout in the design.
@@ -34,10 +74,12 @@ function createRouter(opts) {
   opts = opts || {};
   var nowFn = opts.now || Date.now;
   var max = opts.max || DEFAULT_MAX;
-  var perRequester = opts.maxPerRequester || DEFAULT_PER_REQUESTER;
+  var caps = capsFrom(opts.maxPerRequester);
+  // The member cap under its old name, for callers that read it back.
+  var perRequester = caps[MEMBER];
   var ttlMs = opts.ttlMs || DEFAULT_TTL_MS;
 
-  // hash -> { requester, target, at }
+  // hash -> { requester, target, at, carry, kind }
   var pending = Object.create(null);
 
   function sweep() {
@@ -47,13 +89,19 @@ function createRouter(opts) {
     });
   }
 
-  function countFor(requester) {
+  // WITH NO `kind`, THIS COUNTS EVERY CLASS, and that is deliberate
+  // rather than a default falling out. Its other caller asks "is this
+  // identity busy?" to spare a live stream from eviction
+  // (relay.js:3413) — a question about the peer, not about a budget. An
+  // identity busy on relay-class work is just as busy.
+  function countFor(requester, kind) {
     // Expired posts leave first: a reply that never came back must stop
     // counting as in flight (NODE-AND-RELAY §9b, "expiry must decrement
     // too"). Idempotent, and bounded by the table's own cap.
     sweep();
     return Object.keys(pending).filter(function (h) {
-      return pending[h].requester === requester;
+      if (pending[h].requester !== requester) return false;
+      return !kind || pending[h].kind === kind;
     }).length;
   }
 
@@ -69,9 +117,17 @@ function createRouter(opts) {
   // outlived its entry for good when a member never answered.) The ttl is
   // a Governor lever to come (NODE-AND-RELAY §10); this is what makes it
   // bound everything a request holds.
-  function open(hash, requester, target, deliver, carry) {
+  function open(hash, requester, target, deliver, carry, kind) {
     if (!hash || !requester || !target) {
       return { ok: false, status: 400, error: 'hash, requester and target required' };
+    }
+    // AN UNKNOWN CLASS IS A PROGRAMMING ERROR, NOT A DEFAULT. Silently
+    // treating a typo as `member` would put relay traffic on a member's
+    // budget, which is the exact confusion this split exists to end —
+    // and it would do it quietly, with every suite green.
+    var cls = kind === undefined ? MEMBER : kind;
+    if (KINDS.indexOf(cls) === -1) {
+      return { ok: false, status: 500, error: 'unknown requester class: ' + String(kind) };
     }
     if (typeof deliver !== 'function') {
       // The whole point of this signature. Refusing here rather than
@@ -104,11 +160,19 @@ function createRouter(opts) {
     }
     // And per requester, so one peer cannot spend the table on everyone
     // else's behalf — the same fairness B1 established for device slots.
-    if (countFor(requester) >= perRequester) {
-      return { ok: false, status: 429, error: 'too many in flight' };
+    //
+    // COUNTED WITHIN THE CLASS (0016). This relay's own posts do not
+    // spend a member's budget and a member's do not spend this relay's,
+    // because the two are not the same population: a member is one
+    // person, and this relay acts for all of them at once.
+    if (countFor(requester, cls) >= caps[cls]) {
+      return { ok: false, status: 429, error: 'too many in flight', kind: cls };
     }
 
-    pending[hash] = { requester: requester, target: target, at: nowFn(), carry: carry || null };
+    pending[hash] = {
+      requester: requester, target: target, at: nowFn(),
+      carry: carry || null, kind: cls,
+    };
 
     var delivered = false;
     try { delivered = deliver() !== false; }
@@ -172,7 +236,9 @@ function createRouter(opts) {
     size: size,
     reset: reset,
     max: max,
+    // The member cap under its old name. `caps` is the whole picture.
     maxPerRequester: perRequester,
+    caps: caps,
     ttlMs: ttlMs,
   };
 }
@@ -182,4 +248,8 @@ module.exports = {
   DEFAULT_MAX: DEFAULT_MAX,
   DEFAULT_PER_REQUESTER: DEFAULT_PER_REQUESTER,
   DEFAULT_TTL_MS: DEFAULT_TTL_MS,
+  MEMBER: MEMBER,
+  RELAY: RELAY,
+  PARTNER: PARTNER,
+  KINDS: KINDS,
 };

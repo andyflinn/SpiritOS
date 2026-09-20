@@ -1572,6 +1572,13 @@ function createRelay(rootDir, deps) {
       };
     });
 
+    // RELAY CLASS, AND THIS IS THE CALL THAT PROVED THE SPLIT NECESSARY.
+    // Every post this relay makes on a member's behalf opens under ONE
+    // key — its own — so on a shared budget the relay's second concurrent
+    // self-post is refused by its own cap. `devicePeers` makes two
+    // deviceOffer calls to two different members and would fail at a
+    // ceiling of 1. A member is one person; this relay acts for all of
+    // them at once, and the two cannot share a number (0016).
     var opened = routes.open(hash, mine.publicKey, toKey, function () {
       // NO HASH IS SENT, exactly as in routePost: the target derives it
       // from the bytes it holds, which is what makes it evidence rather
@@ -1582,7 +1589,7 @@ function createRelay(rootDir, deps) {
         text: text,
         sig: sig,
       });
-    });
+    }, null, routerTable.RELAY);
     if (!opened.ok) {
       settleHere(hash, {
         ok: false, status: opened.status || 503,
@@ -1970,7 +1977,12 @@ function createRelay(rootDir, deps) {
       return presentNow.send(target.id, 'request', {
         from: from, to: to, text: body, sig: sig,
       });
-    }, { answer: answerPartner, from: from, at: String(viaKey || '') });
+      // PARTNER CLASS. This opens under THIS relay's key like a device
+      // offer does, but the traffic is a partner's, and 0016 keeps the
+      // two apart: a partner is another box whose behaviour we do not
+      // control, so it must not be able to spend the budget this relay
+      // needs to serve its own members.
+    }, { answer: answerPartner, from: from, at: String(viaKey || '') }, routerTable.PARTNER);
     if (!opened || !opened.ok) return opened;
 
     monitorEvent('post', from, target.id, { bytes: body.length, hash: innerHash, via: 'partner' });
@@ -2924,7 +2936,13 @@ function createRelay(rootDir, deps) {
       // Registered before it is answered, exactly as a peer-to-peer post
       // is: nothing leaves until the thing that will match its answer
       // exists.
-      var opened = routes.open(selfHash, who.id, String(toToken), function () { return true; });
+      // THE SAME DISCRIMINATOR THE RATE LIMITER ALREADY USES. `who.partner`
+      // picks memberHits or partnerHits a few lines above; it picks the
+      // requester class here, so the two budgets cannot drift apart into
+      // disagreeing about who a sender is.
+      var opened = routes.open(selfHash, who.id, String(toToken),
+        function () { return true; },
+        null, fromPartner ? routerTable.PARTNER : routerTable.MEMBER);
       if (!opened || !opened.ok) return opened;
       // METERED LIKE ANY OTHER POST. A search a partner asks costs this
       // box real work and real bytes; leaving it out of the ring would
@@ -3020,7 +3038,7 @@ function createRelay(rootDir, deps) {
         text: text,
         sig: sig,
       });
-    }), hash);
+    }, null, fromPartner ? routerTable.PARTNER : routerTable.MEMBER), hash);
   }
 
   function withStatus(result, hash) {
