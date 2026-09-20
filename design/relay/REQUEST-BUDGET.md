@@ -2059,10 +2059,37 @@ small relays a network rather than a hundred islands — and `0016`'s
 commercial case (*"gain capital (audience) at low cost"*) is about
 exactly that.
 
+### Consent is already given by running the box
+
+> **Andy:** *"(and implicit grant of the owner owning a relay at all"*
+
+**So the ceremony was not protecting consent either.** Operating a public
+relay IS the grant — the same argument `0010` already makes for the
+census, which is public and unsigned because it is *"what a node reads
+before it has anything"*. An owner does not consent to each reader of
+`/api/relay/who`; they consented by running a box that publishes one.
+
+A relay that did not want to be reached by other relays would be a relay
+that did not want to exist. Partnering is what a relay is **for**.
+
+**That settles which questions remain, and they are not about
+permission.** With consent given by the act and resources bounded by this
+cycle, `requested` versus `partnered` stops being about who is allowed in
+and becomes about **disc budget and ranking**:
+
+- a provisional row is evictable because nobody promised it space, not
+  because it is suspect;
+- the owner's act is **promotion**, not admission — it moves a row from
+  *evictable* to *permanent*, which is a statement about what this owner
+  wants kept, not about who may connect.
+
+**So admission is automatic**, and what the owner does later is decide
+what survives disc pressure.
+
 **Not decided, and cycle 5's to settle:**
 
-- whether `requested` is admitted automatically or queued for the owner
-  to see;
+- how a provisional row is presented to the owner, if at all — promotion
+  needs a surface, and `SURFACE.md` has none for it;
 - whether a provisional partner may be **searched** as well as search us,
   or only answer — the asymmetry is free and halves the exposure;
 - the disc bound on provisional rows, which is the one number this needs
