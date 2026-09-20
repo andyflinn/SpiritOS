@@ -137,6 +137,80 @@ than hiding them in latency.
 **Per relay, not per peer.** The relay's cap counts by requester key
 (`router.js:50`, `countFor`), so the node's line is per relay.
 
+## The proof case already exists, and it is nearly free
+
+> **Andy:** *"with the current response times, there will lie the proof
+> that it's not going to kill the user, in practice.... in fact, if the
+> relays stream or broadcast confirmations, the UI can actually show
+> status updates on the operation."*
+
+`info.js:281` `infoPush` is the only node-side fan-out in the tree — a
+rename posted to every relay this node holds a seat on. It is already
+built the way a queue needs:
+
+> *"EVERY RELAY IS ASKED INDEPENDENTLY and one refusal costs the others
+> nothing. That is not politeness, it is the only workable rule: a relay
+> may be down for days, and an all-or-nothing save would mean nobody can
+> ever change their name while one box is offline."* — `info.js:277`
+
+And `infoPushed[row.url]` is written **the moment each relay answers**,
+with its own reason on failure (`info.js:290-305`), and is already drawn
+from at `info.js:220`. What is missing is a repaint inside each `.then`:
+today the screen says *"saved — telling 3 relay(s)…"* and then nothing
+until all three settle.
+
+**So per-relay progress is one `infoDraw()` call, not a feature.** Under
+a cap of 1 that turns a silence into rows ticking over one at a time,
+which reads as working rather than as frozen.
+
+**And the confirmations already stream.** No new broadcast is needed:
+*request by post, reply by stream* (`AGENT.md`, Comms) is peerPost's
+inbound half, and `settle(hash, answer)` already dispatches each reply to
+the caller that asked. The UI simply does not repaint on arrival.
+
+An operation built as a batch would not degrade into a queue gracefully.
+This one was built independently per relay, which is why it is the
+honest test.
+
+## What the timeout ceiling can and cannot be argued from
+
+> **Andy:** *"ROUTE_WAIT_MS i'd even set a lower ceiling, again, based on
+> response times i experience and RAM savings on the relay."*
+
+Measured 2026-09-20 from the work box:
+
+| | |
+|---|---|
+| work node, loopback | **~3 ms** (200, five samples) |
+| spirit-3, TLS | **130–167 ms** (200; connect 50–230 ms) |
+
+A peerPost round trip is four hops, not one — node→relay, relay→peer,
+peer→relay, relay→node — plus the peer's own processing. At spirit-3's
+latency that is roughly **0.6 s of transport** before the peer has done
+anything. So a **2 s ceiling is about three times the observed
+transport**, where 5 s is about eight and 15 s about twenty-five.
+
+**The RAM argument is linear and large.** Held bytes scale directly with
+how long a route stays open, so 15 s → 2 s is a **7.5x reduction** in the
+integral, with no change to either count.
+
+**The counterweight, which is real:** a timeout tight enough to fail a
+slow-but-working peer converts one held request into a retry — two
+attempts where there was one, and *more* relay RAM, not less. The
+ceiling's job is to bound the pathological case, not to discipline a
+peer having a slow second.
+
+**And the honest position is that nobody has measured the thing that
+matters.** These are transport latencies. A peerPost round trip is not
+recorded anywhere: `trafficLog` carries no duration, and `routes.open`
+already stamps `at` and the entry is deleted on reply — so the lifetime
+is computed and thrown away.
+
+**Recording route lifetime is cheap and would make this ceiling a
+measurement instead of an argument.** It is also exactly cycle 1's own
+method: *"first we only measure cheap measurements, that is enough to
+prove the overall design... then we learn from the results."*
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
@@ -150,6 +224,15 @@ rediscovered.
 - Announce on the existing broadcast bus rather than a new call.
 - Bound the queue from the first version, not later. A queue without a
   deadline is a hang.
+- **Cut `ROUTE_WAIT_MS` before setting the member cap to 1.** At 15 s a
+  single unanswered relay blocks the next request for fifteen seconds,
+  and the progress rows would sit still long enough to read as broken. We
+  would blame the cap for the timeout's cost and learn the wrong thing
+  from the experiment.
+- **Record route lifetime before arguing the ceiling further.** The
+  number is already in hand at close time and is discarded.
+- Add the repaint to `infoPush` — one call, and it is what makes
+  serialisation legible.
 
 ## Open
 
@@ -161,6 +244,9 @@ rediscovered.
   requests against an announced sixteen.
 - **Whether one member's queue should be visible to its owner.** It is
   latency the person is paying, and nothing reports it.
+- **How low the ceiling goes.** 2 s is three times observed transport and
+  a 7.5x RAM saving against today's 15 s. Lower is possible and is a
+  measurement nobody has taken.
 - **Andy's premise case — a cap of one.** Serialising to one makes every
   conversation strictly sequential. Whether that is *slow* or *unusable*
   is a measurement nobody has taken, and it is the honest test of the
