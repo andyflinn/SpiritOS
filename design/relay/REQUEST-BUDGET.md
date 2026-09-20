@@ -479,10 +479,30 @@ assertion has to be rewritten deliberately, by someone who means to
 repeal it — which is what makes it a decision rather than a red suite
 somebody adjusted.
 
-**`devicePeers` and `relayMonitor` are the interesting two**, because
-they are the only candidates for a *legitimate* node flow needing more
-than one request open. Until each is shown to be a fixture sharing one
-identity, they are the honest evidence about whether 1 is survivable.
+**`devicePeers` and `relayMonitor` were the only candidates for a
+legitimate flow needing more than one request open. Both were resolved
+2026-09-20, and they answered differently.**
+
+**`relayMonitor` is a fixture.** `post(w, w.bella, w.owner, …)` runs at
+lines 132, 147 and 172 and **nothing in the suite ever answers**, so
+every post leaves a route open. Same shape as `routeHints`. Not evidence.
+
+**`devicePeers` is real, and it is the relay-as-requester bottleneck.**
+Two `deviceOffer` calls to two different members, back to back
+(`devicePeers.js:134-135`). A device offer is the relay posting as
+itself, so it opens its route under `mine.publicKey` (`relay.js:1575`) —
+**two offers to two different people are two routes under one requester
+identity**, and at a cap of 1 the second is refused.
+
+That is not a test artefact and not a node holding two requests open. It
+is the relay unable to do two unrelated things at once because its own
+key is a single requester. **It confirms by production behaviour what
+`routeHints` was wrongly credited with confirming.**
+
+**So the node-side answer is: nothing in this tree needs more than one
+request in flight per member.** Every failure that looked like node
+concurrency was a fixture that never replies. The only genuine breakage
+is relay-side, and the requester split fixes it.
 
 ## The plan, in the order the evidence dictates
 
@@ -494,9 +514,11 @@ identity, they are the honest evidence about whether 1 is survivable.
    and 15 s would make the cap look broken when the timeout is at fault.
 3. **Record route lifetime.** The number is already in hand at close and
    discarded. Without it, every later argument about the cap is anecdote.
-4. **Resolve `devicePeers` and `relayMonitor`** — fixture or real. If
-   real, that is the first honest evidence against 1, found before
-   shipping rather than after.
+4. ~~**Resolve `devicePeers` and `relayMonitor`**~~ — **done
+   2026-09-20.** `relayMonitor` is a fixture that never answers.
+   `devicePeers` is real and is relay-side, not node-side: two device
+   offers are two routes under `mine.publicKey`. Nothing in the tree
+   needs more than one in flight *per member*.
 5. **Rewrite `relayMeter`'s claim** as the repeal it is.
 6. **Add the `infoDraw` repaint**, so serialisation reads as progress.
 7. **Then set the member cap to 1**, with a census asserting it, in the
