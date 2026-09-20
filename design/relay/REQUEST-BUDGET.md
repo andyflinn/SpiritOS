@@ -1882,6 +1882,76 @@ A request that has been trying for three days and gives up must tell
 somebody, and there is no UI for that today.
 
 
+## With no partner streams, the disc limit for partners is the only limit
+
+> **Andy:** *"so the disc-space limit for partners is real."*
+
+**Yes — and it inverts what `0016` worried about.** That decision noted a
+space bound *"fails to evict stale members if there's too much disc space
+available"*: disc is so cheap that a limit made of it barely binds.
+
+For partners that was fine, because disc was never the binding cost — two
+held streams were. **Remove the streams and disc is all that is left**, so
+the limit becomes real in the sense of being the *only* one, and loose in
+the sense of hardly constraining anything: a partner row is `relayKey,
+url, ownerKey, status, since` (`relayStore.js:103`), a few hundred bytes.
+A hundred thousand partnerships is around 19 MB.
+
+**A roll that large is the problem, not the prize.**
+
+### Because liveness went with the streams
+
+`relay.js:2698` records what a dead partner costs and how it was fixed:
+
+> *"LIVE PARTNERS ONLY. A partner is live when it holds its stream here
+> now — the test hint routing uses. **Asking one that is down held every
+> search for the full timeout** (the answer waits on all of them)."*
+
+`presentNow.isPresent(p.relayKey)` is that filter, and it is exactly what
+*"no streams between partners"* deletes. So:
+
+- **nothing prunes the roll** — a partner that died is never noticed,
+  because noticing was the stream closing;
+- **every search pays for it** — the roll grows, the dead fraction grows
+  with it, and each dead row is a full timeout on a question a member is
+  waiting for;
+- **and the disc bound does not help**, because it binds at a hundred
+  thousand rows and the search is unusable long before that.
+
+**So a space bound alone leaves the roll frozen and the searches slow** —
+which is the same failure `0016` named for the member roll, arriving by a
+different road.
+
+### The replacement is a timestamp Andy already asked for
+
+> **Andy, earlier:** *"partner rows must have a timestamp for
+> last-successful transmission."*
+
+**Not built.** The schema has `since` — when the partnership began — and
+nothing about when it last worked (`relayStore.js:107`).
+
+That field now does two jobs, and it is the answer to the open question
+*"does partner liveness need a replacement"*:
+
+- **Staleness eviction.** A partner that has not answered in N days is
+  evicted, which is the age bound `0016` requires beside the space bound.
+  The signal is a failed post, which costs nothing extra because the post
+  was being made anyway.
+- **Search ordering, replacing `isPresent`.** Ask the recently-successful
+  partners first, and a long-silent one last or not at all. Weaker than a
+  held stream — it is evidence about the past rather than the present —
+  but it degrades in the right direction, and *"successful search =
+  presence"* means a successful ask refreshes it for free.
+
+**So the answer to "does liveness need a replacement" is: yes, and it is
+one column.** `last` beside `since`, written on every successful exchange,
+read by eviction and by search ordering.
+
+**Not decided:** the staleness ceiling in days, and whether a partner
+evicted for silence is forgotten entirely or demoted to a status cycle 5
+already reserves (`injected`, `requested` — `relayStore.js:24`).
+
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
