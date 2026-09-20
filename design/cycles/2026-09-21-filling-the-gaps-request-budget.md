@@ -100,33 +100,59 @@ size, and a route that is a whole edge rather than half of one.
 
 **One decision, no wire, and the decision is Andy's.**
 
-### R5 — the carried timeout budget, diminishing down the chain
+### R5 — the timeout is a duration, carried, and diminishing inward
 
-```
-node gives up   8000 ms   peerPost.js:37   DEFAULT_WAIT_MS
-relay lets go  15000 ms   relay.js:95      ROUTE_WAIT_MS
-```
+> **Andy:** *"the relay has no business waiting for 15 seconds... your
+> concept of diminishing timeouts down the request chain is not
+> implemented."* — *"N1 sets a limit on its patience, which gets reduced
+> down the chain by the formula you proposed."* — *"part of the request's
+> sidecar/envelope."* — *"we start with 5 seconds at the most. the willing
+> to wait time in a request is informational, and the next station down
+> the chain better hurry."*
 
-**The scheduler made this worse, not better.** Before the queue the node
-simply stopped waiting. Now it releases its own slot at 8 s and dispatches
-the next request into a relay still holding the member's only route —
-seven seconds of guaranteed refusal, which at cap 1 looks like contention
-and feeds the wrong backoff.
+**Today the chain is inverted and flat in the middle**, and the numbers
+are four rather than two:
 
-Latent today (per-requester is 16, per-target is off). **It arms itself
-the moment the ceiling drops**, which is this stage.
+| waiter | holds | where |
+|---|---|---|
+| node's post | 8 s | `peerPost.js:43` `DEFAULT_WAIT_MS` |
+| **the relay's note about it** | **20 s** | `router.js:92` `DEFAULT_TTL_MS` |
+| relay -> partner hop | 8 s | the same constant, via `partnerRouter` |
+| relay's own posts | 15 s | `relay.js:95` `ROUTE_WAIT_MS` |
 
-**Two repairs and only one keeps the shorter node timeout:**
+The inner hop outlives the outer waiter, which orphans a slot for twelve
+seconds; and the partner hop waits exactly as long as the node's, so
+neither is guaranteed to hear a real answer from the other.
 
-1. **Expose `cancel`** — `router.js:140` has it and enforces that only the
-   opener may call it; nothing exposes it to a member. **Wire**, so
-   Stage C.
-2. **Make the node's wait no shorter than the relay's.** Costs nothing to
-   build, throws away the shorter timeout's whole benefit.
+**What is to be built, in five parts:**
 
-**Andy's to rule.** Stage B cannot start until he does.
+1. **A remaining DURATION in the envelope**, beside `hints`/`hintSig` —
+   never an absolute deadline, because a timestamp needs two boxes to
+   agree about the clock. Same rule as `0011`'s hash.
+2. **Each hop grants `min(asked, its own ceiling)`**, so the carried
+   number is **informational** and may only ever ask for *less*. A hold
+   time a member could lengthen would not be a limit, it would be a
+   default.
+3. **The ceiling is 5 s, a code constant**, replacing
+   `DEFAULT_TTL_MS = 20000` — an unargued number of the kind `0016`
+   retired the `256`/`16` pair for.
+4. **The router's TTL becomes per-entry.** `sweep()` compares against what
+   each entry's requester asked for, not one table-wide number, so a slot
+   is held exactly as long as somebody is waiting.
+5. **A floor: too little budget earns an immediate refusal**, not a note
+   certain to expire — `0006`'s *"deliver or refuse, refuse instantly"*
+   applied to time.
 
-**Status:** OPEN — not built. A new envelope field, so it is a wire change and a team review — it replaces R10 rather than joining it.
+**Why this supersedes the cancel-or-align choice this requirement first
+described.** Because every hop grants no more than it was asked for,
+**every hop finishes before the hop outside it gives up, by
+construction** — the inversion becomes unexpressible rather than fixed,
+there is no ladder of constants to keep in step, and `cancel` (R10) stops
+being a prerequisite for anything.
+
+**Status:** OPEN — not built, and nothing in the tree does any part of
+it. A new envelope field, so it is a wire change and a team review. It
+replaces R10 rather than joining it, and R6/R7 wait on it.
 
 ### R6 — `maxPerTarget` out of config, into code
 
@@ -261,6 +287,82 @@ Governor reads `heapUsed` every tick.
 
 ---
 
+### R16 — the queue survives a restart
+
+Patience *"could be days for a text message"* (Andy), and days means
+restarts. The queue is in memory: `postQueue.js` holds `items` in an
+array and nothing writes it down, so a node restarted mid-wait forgets
+every intent it was holding.
+
+A new persist shape, which `CLAUDE.md` makes a team review rather than a
+patch. `relay-state/relay.db` is the precedent for a node-side store a
+cycle opened deliberately.
+
+**Two things it must get right**, both of which fall out of R5's rule
+that durations are measured on a clock that cannot jump: a persisted
+deadline has to convert to wall-clock on the way out and be recomputed on
+the way in, and a restart must not reset a backoff a peer had earned.
+
+**Status:** OPEN — not built, and nothing needs it until a caller sets a
+patience. `peerPost` defaults to zero, so retrying is inert today.
+
+### R17 — suites clean up the homes they create
+
+Every suite that calls `fs.mkdtempSync` leaves the directory behind.
+**160,116 of them were found in `%TEMP%` on 2026-09-20**, and the disc
+contention made three consecutive harness runs progressively redder while
+each suite passed alone — which reads exactly like a regression and was
+not one.
+
+`plantRun.js` shrank each leaked directory from 143 MB to 3.8 MB
+(`17c6bc1`) but nothing stopped the leaking: a full run still leaves
+roughly two hundred.
+
+**Status:** OPEN — the once-off cleanup ran; the leak itself is untouched.
+
+### R18 — durations are measured on a clock that cannot jump
+
+The scheduler orders by sequence, never by wall-clock, because a burst
+shares a millisecond. It must also *measure* on a monotonic clock: an NTP
+correction, a suspend or a manual change fires a backoff early, strands
+one for the length of the jump, and expires patience on evidence that
+never happened.
+
+**Verify:** `spirit/test/postQueue.js` — the default clock is
+process-relative rather than epoch, checked by magnitude so a revert
+fails here rather than on somebody's laptop after a clock change; and a
+backoff measured on the real clock is the length it claims.
+
+**Status:** DONE
+
+### R19 — the load fixture, and seeing it stay lively
+
+The verification this whole cycle was scoped around, and the one thing
+from Andy's original framing that has not been done:
+
+> **Andy:** *"i see node request q-ing/scheduling, verification that
+> not-available errors causes re-scheduling of the request. and visually
+> verifying that natter and contacts still react as lively as before..."*
+> — *"if you fire all at once, the queing and scheduling will be put to
+> the test."*
+
+Two fixtures, and neither substitutes for the other:
+
+- **one node, wide fan-out, most targets stalling** — proves the node's
+  own queue: cap, backoff, head-of-line. Requests **time out**; nothing
+  refuses them.
+- **two nodes at one target** — proves the *not available* path, emitted
+  by the relay rather than simulated. `spirit/test/targetBusy.js` is this
+  one, in miniature and over a real socket.
+
+And then the part no suite can do: **looking at it.** Natter and Contacts
+reacting as lively as before, with the cards filling in progressively
+rather than hanging, which `contacts.js` already renders per card.
+
+**Status:** OPEN — `targetBusy.js` covers the second fixture. The
+wide-fan-out fixture does not exist, and nothing has been looked at: the
+lab has not been rebuilt since 2026-09-20.
+
 ## The order, and why
 
 ```
@@ -273,7 +375,7 @@ D  (partners)         needs C, and needs D1 ruled before it ships
 **A does not wait for anything.** B waits on one ruling. C is a review. D
 waits on C and on the URL rule.
 
-**What is deliberately not in this plan:** persistence for a patience
-measured in days. It is a new persist shape, which `CLAUDE.md` makes a
-team review, and nothing in A–D needs it — patience beyond a single
-attempt is opt-in and unused until somebody asks for it.
+**Nothing is deliberately left out any more.** Persistence was prose in
+the first draft of this plan and is now R16, because a gap described in a
+paragraph is a gap that can be forgotten and a requirement is a count the
+harness keeps asking about.
