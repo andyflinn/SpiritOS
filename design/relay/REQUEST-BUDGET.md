@@ -2481,11 +2481,36 @@ reason the stream does.
 
 **The hash loses a job and keeps the important one.** At the
 relay-to-relay hop, correlation becomes free — HTTP pairs the response to
-the request. The hash is still derived at each hop and never carried
-(`0011`), and the member's receipt is still signed over it, so the
-**proof** role is untouched; only the **matching** role at that one hop
-becomes redundant. That is exactly Andy's *"the hash verification and all
-stays the same."*
+the request — so only the **matching** role at that hop becomes
+redundant. The **proof** role is untouched.
+
+> **Andy, correcting an overstatement here:** *"the hash still needs
+> carrying back but in B's forwarding a reply via A, it needs no
+> inspection."*
+
+**This first said the hash is "derived at each hop and never carried",
+which is true of the REQUEST and false of the REPLY.** `0011` governs the
+request: nothing sends the hash, each hop derives it from the bytes it
+holds, which is what makes it evidence rather than an echo. A reply is the
+other way round — a member must **name** the request they are answering,
+so `routeReply(from, hash, text, sig)` carries it (`relayServer.js:537`).
+
+**Three hops, three different answers:**
+
+| hop | hash | why |
+|---|---|---|
+| request, anywhere | **not carried** | derived from the bytes; carrying it would make it an echo (`0011`) |
+| reply, member -> own relay | **carried** | the member must say which request this answers |
+| reply, B -> A | **not carried, not inspected** | already true: `forwardToMine` hands up `{from, text, sig}` and strips the hash. A matches against `innerHash`, which **A computed itself** |
+
+**So no intermediate relay inspects a hash from the wire on the way
+back**, and the signature travels whole so A's member verifies it
+end-to-end. B has already checked that the replier was the target
+(`routes.answer(hash, poster)`); A checks nothing about the hash and does
+not need to. That is what Andy's *"the hash verification and all stays the
+same"* means precisely: verification stays where it was, at the two ends
+and at the relay whose member answered — and the middle carries bytes it
+does not read.
 
 (`roster` appears in `PARTNERS.md`'s tier-two table but is not sent —
 `handleRoster` was deleted 2026-09-17. That table is stale.)
