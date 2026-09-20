@@ -84,7 +84,11 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
 
 - Kamatera cutover
 - Moving Stats/Processes/Jobs/Apps/Groups
-- **Relay Chat, at all.** Not a retrofit, not its receive path, not its tests. It is a **carcass kept as reference** for a chat app to be built later over node and shell infrastructure that does not exist yet — a global inbox and outbox, which is a shell mechanism for every app and not a chat feature. Receive is dark and that is the settled state, not a bug report.
+- **Relay Chat, at all.** Not a retrofit, not its receive path, not its tests. It is **temporarily orphaned**, waiting on node and shell infrastructure that does not exist yet — a global inbox and outbox, which is a shell mechanism for every app and not a chat feature. Receive is dark and that is the settled state, not a bug report.
+
+  > **Andy, 2026-09-20, correcting this line:** *"Relay chat will still be the first real spirit-app its just temporarily orphaned."*
+
+  That replaces *"a carcass kept as reference for a chat app to be built later"*, which read as a corpse to be looked at and eventually replaced. It is not. It is the app that gets **reconnected** when the inbox/outbox lands, which raises the stakes on the rule two paragraphs below rather than lowering them: an orphan must not be allowed to rot through tree-wide changes, because something is coming back for it. The operational guidance is unchanged — do not touch it — but the reason is now "keep it whole", not "leave the corpse alone".
 
   > **Andy:** *"i will burn less tokens leaving chat and rebuilding, adapting later. so many cycles burn tokens dealing with chat, when the basic browser side's fundamentals and intrinsic apps have such a long way to go."*
 
