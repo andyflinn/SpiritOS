@@ -363,6 +363,24 @@ rather than hanging, which `contacts.js` already renders per card.
 wide-fan-out fixture does not exist, and nothing has been looked at: the
 lab has not been rebuilt since 2026-09-20.
 
+### R20 — the Governor's remaining job
+
+> **Andy:** *"right now it looks like the governor will be unemployed, not
+> re-elected..."*
+
+`allowed()` is arithmetic and needs no Governor. `state()`, `levers()` and
+`lastDecision()` are reporting and stay. `lever(name)` serves an owner
+verb that `0015` stopped and the 2026-09-21 revocation sealed. **`tick()`
+is the only governing act left**, and it exists to correct a ceiling that
+is wrong only because `STREAMS_PER_MB = 16` is a guess.
+
+So the work is: measure the per-stream cost (R15), then decide whether
+what remains is a reporter or a reporter with a safety net — a computed
+ceiling assumes per-member cost is stable and heap is not.
+
+**Status:** OPEN — depends on R15. `0017` records the decision and what it
+supersedes.
+
 ## The order, and why
 
 ```
