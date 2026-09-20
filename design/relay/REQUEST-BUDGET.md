@@ -1711,9 +1711,55 @@ of 1 is *the member's only slot*. That makes the rule sharp:
   spent on colouring a screen nobody has acted on yet.
 
 `contactsAskEveryone` is exactly that sweep, and it is the load generator
-this cycle's scheduler is being written against. So the guidance falls
-out of the arithmetic rather than from taste: **ask about one peer when a
-person reaches for them; never about a list on the chance they might.**
+this cycle's scheduler is being written against.
+
+### The queue makes the sweep survivable — and exposes a gap
+
+> **Andy:** *"and since the node buffers/queues requests, it just might
+> take a little longer."*
+
+**Correct, and it weakens the guidance above rather than confirming it.**
+Nothing fails: the queue absorbs the burst, and `contacts.js` already
+renders each card's `'asking'` state (`contacts.js:110`, drawn at `:679`),
+so a sweep *fills in* rather than hanging. That is *reach over speed*
+working as intended — the sweep is slower, not lost.
+
+**But set that beside the ordering rule and a gap appears that neither
+rule has alone.**
+
+Requests sort by original request time, ascending — which is the
+anti-starvation rule and is right. Now:
+
+```
+T0    contactsAskEveryone enqueues 50 probes
+T1    the person types a message and sends it
+```
+
+At `T1 > T0`, their **deliberate act sorts behind all fifty**, because a
+background sweep started first. At a ceiling of 1 that is seven seconds
+of waiting to send a message, caused entirely by a screen decorating
+itself.
+
+**Age ordering is fair; it is not priority.** Fairness is the right answer
+*within* a class — it stops a refused request being starved by newer ones.
+It is the wrong answer *between* classes, because it ranks a cosmetic
+request above a person's intention purely on arrival order.
+
+**Three ways out, and they are not equivalent:**
+
+- **Don't sweep.** The guidance above. Cheapest, and it gives up
+  pre-filled cards.
+- **Two classes, deliberate and background**, each ordered by age within
+  itself and deliberate served first. Small, and it is the same
+  population argument that split the requester classes on the relay: a
+  person acting and a screen decorating are not one queue.
+- **Let a deliberate request displace a background one** already in
+  flight — needs `cancel`, which is already required for the timeout
+  hazard, so it may be nearly free.
+
+**Not decided.** But the second is the one that lets Andy's *"fire all at
+once"* and his *"oldest first"* both stay true without a person ever
+waiting on a decoration.
 
 **Still not decided, and now the only open piece:** whether a foreign
 contact needs a live colour, or whether truth at the moment you reach for
