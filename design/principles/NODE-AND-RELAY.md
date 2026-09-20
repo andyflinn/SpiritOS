@@ -2526,6 +2526,29 @@ successful boundary definition."* Verified at 5ac4fe4:
 - **The shell and its apps supply the meaning** — a chat line, a caption,
   a file per peer.
 
+**The worked example — chat's two check marks** (Andy, 2026-09-20, on the
+WhatsApp shape): *"one checkmark next to a sent message means 'delivered'
+and the second checkmark 'seen' is controlled by the remote node's
+shell."* Each tick is emitted by exactly the layer that can know it:
+- **one check, delivered** — the receiving NODE's bare receipt, given
+  without reading the message (answerRelay.js: *"everything else on this
+  wire is an app packet, and this node is not the one that reads those"*).
+  With daemons it is a statement about their machine, not about them;
+- **no check** — 503 `peer not reachable`. The relay holds nothing, so the
+  sender is told at once instead of being told "sent" by something that
+  dropped it;
+- **two checks, seen** — an app packet posted back by the remote SHELL,
+  signed by that peer like any other. The node cannot emit it (it does not
+  know what "seen" means) and the relay cannot infer it;
+- **therefore the "seen" control belongs to the remote person's shell.**
+  Not a relay setting, not a node setting, and never a sender's demand —
+  the layering hands us the right home for it.
+- *Open for whoever builds chat's ticks:* a HELD sender. Their packet
+  reaches a node that has a row for them and has not accepted them, and
+  the line does not arrive. It must not receipt as delivered — and must
+  not disclose the hold either, the same reasoning as the enrolment
+  refusal that says nothing on purpose.
+
 **The jobs a hub would do are distributed to the members, each scoped by
 their own contact list** (Andy): addressing (the sender supplies route
 hints from its own row; the relay picks only among relays it already
