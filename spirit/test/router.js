@@ -233,6 +233,70 @@ function run() {
     }
   }
 
+  test.subHeading('One target, many askers — a different kind of no');
+
+  // Andy: "cap the requests for a specific target at one, respond with
+  // (not available), if this causes the calling node to keep the request
+  // queued, nothing is lost."
+  //
+  // The cap that needs no cooperation: a Sybil farm defeats a per-requester
+  // cap by being many requesters, but it cannot be many TARGETS.
+  {
+    const R = router.createRouter({ max: 100, maxPerRequester: 99, maxPerTarget: 1 });
+
+    const mine = R.open('t1', 'alice', 'bob', function () { return true; });
+    const theirs = R.open('t2', 'carol', 'bob', function () { return true; });
+
+    if (mine.ok && theirs.ok === false && theirs.status === 503) {
+      test.check('one request reaches bob; a second from somebody else is refused');
+    } else {
+      test.fail('per target: ' + JSON.stringify(mine) + ' / ' + JSON.stringify(theirs));
+    }
+
+    // THE POINT OF THE WHOLE REFUSAL. "peer not reachable" is the same
+    // 503 and the opposite situation, so a scheduler that could only read
+    // the status would back off a perfectly healthy peer.
+    if (theirs.busy === true && typeof theirs.retryAfterMs === 'number' && theirs.retryAfterMs > 0) {
+      test.check('and it says busy, with when to come back — not merely 503');
+    } else {
+      test.fail('busy marker: ' + JSON.stringify(theirs));
+    }
+
+    // A DIFFERENT TARGET IS UNAFFECTED. The cap is the target's, so one
+    // popular member must not make the relay look full to everybody else.
+    const other = R.open('t3', 'carol', 'dave', function () { return true; });
+    if (other.ok) {
+      test.check('and carol reaches dave meanwhile — the cap is bob’s, not the table’s');
+    } else {
+      test.fail('other target refused: ' + JSON.stringify(other));
+    }
+
+    // The slot is the ANSWER's to free, exactly as with every other entry.
+    R.answer('t1', 'bob');
+    const after = R.open('t4', 'carol', 'bob', function () { return true; });
+    if (after.ok && R.countForTarget('bob') === 1) {
+      test.check('once bob answers, the next asker gets in');
+    } else {
+      test.fail('after answer: ' + JSON.stringify(after) + ' count=' + R.countForTarget('bob'));
+    }
+  }
+
+  // DEFAULTS TO NO TIGHTER THAN THE TABLE, because 0016 sequences the
+  // ceiling of 1 last — after a node can queue. A node that cannot queue
+  // meets a refusal with nothing to do about it.
+  {
+    const R = router.createRouter({ max: 100, maxPerRequester: 99 });
+    let all = true;
+    for (let n = 0; n < 20; n += 1) {
+      if (!R.open('d' + n, 'asker' + n, 'popular', function () { return true; }).ok) all = false;
+    }
+    if (all && R.maxPerTarget === router.DEFAULT_PER_TARGET) {
+      test.check('unconfigured, the per-target cap refuses nobody — the number lands later, deliberately');
+    } else {
+      test.fail('default per-target bit: maxPerTarget=' + R.maxPerTarget);
+    }
+  }
+
   test.subHeading('Who may answer');
 
   {

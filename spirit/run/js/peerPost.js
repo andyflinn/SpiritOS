@@ -324,10 +324,23 @@ function createPeerPost(opts) {
         if (res.status >= 200 && res.status < 300) return answered;
         // The relay refused, so nothing is coming. Stop waiting rather
         // than leaving the caller to time out for a reason already known.
+        // BUSY IS NOT THE SAME NO AS UNREACHABLE, and both arrive as 503.
+        // "peer not reachable" means do not expect an answer; "target is
+        // busy" means the peer is fine and somebody else is asking, so
+        // ask again in `retryAfterMs`. Carried through here so a
+        // scheduler can tell them apart without reading error strings —
+        // and so it does not back off a popular peer as though they were
+        // broken, which is contention being mistaken for a fault (0016).
+        //
+        // Nothing acts on this yet: the queue is the next piece. It is
+        // carried now because a refusal nobody can distinguish is a
+        // refusal that cannot be tested.
         settle(hash, {
           ok: false, status: res.status, hash: hash,
           error: (body && body.error) || 'refused',
           inFlight: !!(body && body.inFlight),
+          busy: !!(body && body.busy),
+          retryAfterMs: (body && typeof body.retryAfterMs === 'number') ? body.retryAfterMs : 0,
         });
         return answered;
       })

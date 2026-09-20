@@ -526,7 +526,26 @@ const server = http.createServer((req, res) => {
           body && body.from, body && body.to, body && body.text, body && body.sig, route
         );
         res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(result.ok ? result : { error: result.error, inFlight: !!result.inFlight }));
+        // A WHITELIST, AND IT STAYS ONE. What a refusal carries is part of
+        // the protocol, so it is named here rather than being whatever
+        // relay.js happened to put on the object — the alternative leaks
+        // internals to anybody who can provoke an error.
+        //
+        // The cost is that a new field is invisible until it is added
+        // here, which `busy` nearly paid: the router refuses with
+        // { busy, retryAfterMs } and this dropped both on the floor, so
+        // the wire would have said 503 "target is busy" and no scheduler
+        // could have told it from 503 "peer not reachable".
+        res.end(JSON.stringify(result.ok ? result : {
+          error: result.error,
+          inFlight: !!result.inFlight,
+          // THE TARGET IS FINE AND SIMPLY OCCUPIED (0016). Distinct from
+          // "peer not reachable", which is the same status and the
+          // opposite situation: that one says do not expect an answer,
+          // this one says ask again in `retryAfterMs`.
+          busy: !!result.busy,
+          retryAfterMs: typeof result.retryAfterMs === 'number' ? result.retryAfterMs : 0,
+        }));
       }).catch(function () {
         res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('Invalid JSON body');

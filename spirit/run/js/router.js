@@ -26,6 +26,27 @@
 var DEFAULT_MAX = 256;
 var DEFAULT_PER_REQUESTER = 16;
 
+// ── HOW MANY REQUESTS MAY BE AIMED AT ONE MEMBER ─────────────────────
+//
+//   Andy: "cap the requests for a specific target at one, respond with
+//   (not available), if this causes the calling node to keep the request
+//   queued, nothing is lost."
+//
+// The cap that needs no cooperation from anybody (0016). A per-requester
+// cap is spent by whoever is asking, so a Sybil farm defeats it by being
+// many requesters — but it cannot be many TARGETS, because the target is
+// the person being bothered and there is only one of them.
+//
+// DEFAULTS TO `max`, WHICH IS NO TIGHTER THAN THE TABLE ITSELF, and that
+// is deliberate rather than timid. 0016 sequences the ceiling of 1 LAST,
+// after a node can queue: a node that cannot queue meets a refusal with
+// nothing to do about it, so turning the number down before the
+// scheduler exists would break the product to prove a point it has
+// already conceded. The mechanism lands now; the number is one
+// deliberate commit later, and the suites set it to 1 to prove the
+// refusal works today.
+var DEFAULT_PER_TARGET = DEFAULT_MAX;
+
 // ── WHO THE CEILING COUNTS AGAINST ───────────────────────────────────
 //
 //   Andy: "we always know that relay side request for relays must be
@@ -77,6 +98,7 @@ function createRouter(opts) {
   var caps = capsFrom(opts.maxPerRequester);
   // The member cap under its old name, for callers that read it back.
   var perRequester = caps[MEMBER];
+  var perTarget = opts.maxPerTarget || DEFAULT_PER_TARGET;
   var ttlMs = opts.ttlMs || DEFAULT_TTL_MS;
 
   // hash -> { requester, target, at, carry, kind }
@@ -103,6 +125,31 @@ function createRouter(opts) {
       if (pending[h].requester !== requester) return false;
       return !kind || pending[h].kind === kind;
     }).length;
+  }
+
+  // How many requests are aimed at this member right now, whoever asked.
+  function countForTarget(target) {
+    sweep();
+    return Object.keys(pending).filter(function (h) {
+      return pending[h].target === target;
+    }).length;
+  }
+
+  // WHEN THE TARGET'S OLDEST SLOT FREES, IN MILLISECONDS. A refusal that
+  // says only "busy" makes a scheduler guess, and every guess is either a
+  // wasted retry or a needless wait. This is not a guess: the entry
+  // expires at `at + ttlMs` whatever happens, so the worst case is exact
+  // and an early reply only makes it sooner.
+  function msUntilFreeFor(target) {
+    sweep();
+    var oldest = null;
+    Object.keys(pending).forEach(function (h) {
+      if (pending[h].target !== target) return;
+      if (oldest === null || pending[h].at < oldest) oldest = pending[h].at;
+    });
+    if (oldest === null) return 0;
+    var left = ttlMs - (nowFn() - oldest);
+    return left > 0 ? left : 0;
   }
 
   // deliver() is called ONLY after the entry is filed, and its return
@@ -169,6 +216,32 @@ function createRouter(opts) {
       return { ok: false, status: 429, error: 'too many in flight', kind: cls };
     }
 
+    // ── AND PER TARGET, WHICH IS A DIFFERENT KIND OF NO ──────────────
+    //
+    // The three refusals above are all about the ASKER or about this box:
+    // you are asking too often, or there is no room here. This one is
+    // about neither. The target is present, willing and reachable — it
+    // is simply busy with somebody else's question, and it will not be
+    // in a moment.
+    //
+    // So it must be TOLD APART on the wire, and `busy: true` is what a
+    // scheduler keys on rather than an error string somebody will
+    // reword. It matters because the node's response is opposite: a
+    // timeout is evidence about the target and should back it off; this
+    // is evidence about CONTENTION and must not, or a popular member
+    // ends up looking broken to everybody who wanted them.
+    //
+    // `retryAfterMs` says when, so the queue neither spins nor sleeps
+    // too long. Ordered after the requester's own cap on purpose: when
+    // both are over, the caller's own fault is the more useful thing to
+    // hear first.
+    if (countForTarget(target) >= perTarget) {
+      return {
+        ok: false, status: 503, error: 'target is busy',
+        busy: true, retryAfterMs: msUntilFreeFor(target),
+      };
+    }
+
     pending[hash] = {
       requester: requester, target: target, at: nowFn(),
       carry: carry || null, kind: cls,
@@ -233,12 +306,16 @@ function createRouter(opts) {
     // Posts in flight for one requester — the per-member count (cycle 1).
     // The Governor reads it to spare a busy stream from eviction.
     countFor: countFor,
+    // How many are aimed at one member, and when the next slot frees.
+    countForTarget: countForTarget,
+    msUntilFreeFor: msUntilFreeFor,
     size: size,
     reset: reset,
     max: max,
     // The member cap under its old name. `caps` is the whole picture.
     maxPerRequester: perRequester,
     caps: caps,
+    maxPerTarget: perTarget,
     ttlMs: ttlMs,
   };
 }
@@ -247,6 +324,7 @@ module.exports = {
   createRouter: createRouter,
   DEFAULT_MAX: DEFAULT_MAX,
   DEFAULT_PER_REQUESTER: DEFAULT_PER_REQUESTER,
+  DEFAULT_PER_TARGET: DEFAULT_PER_TARGET,
   DEFAULT_TTL_MS: DEFAULT_TTL_MS,
   MEMBER: MEMBER,
   RELAY: RELAY,
