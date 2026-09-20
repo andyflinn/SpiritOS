@@ -2446,6 +2446,61 @@ count somewhere the owner can see — so a relay that has quietly acquired
 four hundred partners is a fact somebody noticed rather than discovered.
 
 
+## The shape it all lands in: rich streams to members, posts between relays
+
+> **Andy:** *"so the streams to members will be rich in message types and
+> the communication between relays has only posts."*
+
+**Exact, and countable:**
+
+```
+member stream     7 event types   presence · request · reply · route ·
+                                  relay-status · relay-event · owner-event
+relay <-> relay   2 posts         POST /api/relay/post   POST /api/relay/reply
+```
+
+(`roster` appears in `PARTNERS.md`'s tier-two table but is not sent —
+`handleRoster` was deleted 2026-09-17. That table is stale.)
+
+### The asymmetry is derived, not stylistic
+
+**Push where you cannot be reached; ask where you can.**
+
+A member is a browser or a box behind a router: no address, so anything
+the relay wants them to know has to travel down a connection they are
+holding. A relay is publicly addressable by definition — that is what
+makes it a relay — so nothing needs pushing to it. It can be asked.
+
+`partnerLink.js` had this right and drew the wrong conclusion from it:
+*"A node receives `request` down its stream only because a browser cannot
+be POSTed to."* Correct — and it follows that a relay needs no stream at
+all, which is where yesterday ended up.
+
+### What it means for how the two halves evolve
+
+**They have very different costs, and that will bias what gets built:**
+
+- **A new thing to tell members costs an event type.** Members already
+  hold the stream; adding `route` cost nothing but a name and a handler.
+  Cheap, and it stays cheap.
+- **A new thing between relays costs a protocol change.** Two verbs is
+  the whole surface, and widening it touches the wire, the hash rules and
+  every partner's implementation at once.
+
+**That pressure is probably correct.** It keeps the federated surface
+small and auditable — the part where strangers meet stays two verbs wide,
+while richness accumulates where both ends are the same owner's software.
+It is also what makes open partnering safe to contemplate: there is
+almost nothing to attack.
+
+**But it is a pressure, so it should be noticed rather than obeyed
+blindly.** A feature that genuinely belongs between relays will feel
+expensive and will be tempting to smuggle onto the member stream instead,
+which is how a node ends up doing work its relay should have done — the
+inverse of `THE-REQUESTER-IS-RESPONSIBLE`, and the one direction this
+design has not had to guard against yet.
+
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
