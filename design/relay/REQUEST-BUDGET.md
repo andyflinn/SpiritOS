@@ -211,6 +211,63 @@ measurement instead of an argument.** It is also exactly cycle 1's own
 method: *"first we only measure cheap measurements, that is enough to
 prove the overall design... then we learn from the results."*
 
+## A node's concurrency is relays x cap, by construction
+
+> **Andy:** *"if a node fans out a search to all relays it is connected
+> to and has more than one valid route for the request target, it can also
+> spread the load by routing concurrent requests via different relays. it
+> looks out for #1 as well."*
+> *"this won't matter to the node because it has two different relays it
+> is a member of, and even if those relays use the same route, it still
+> gives the node two concurrent accesses to that route."*
+
+**The cap counts inside the router table of the relay posted to**
+(`router.js:50`, `countFor`, keyed by requester). Two relays are two
+tables and two independent counts, so a member of two relays has two
+slots under a cap of 1 — and it holds even when both relays forward down
+the same onward route, because that hop is the relays' business and
+costs the node nothing.
+
+**No routing knowledge is required for this**, which matters because
+cycle 2 deliberately removed it:
+
+> *"The first connected relay, because which one partners with the hinted
+> relay is the relays' knowledge, not this node's… that relay knows which
+> of them it partners with and which are live, so it chooses — the node
+> does not guess."* — `hub.js:935`
+
+Spreading across **relays you are a member of** takes nothing back from
+that decision. The node is not choosing a route; it is choosing which of
+its own doors to knock on.
+
+**And a wrong door is cheap.** A relay that cannot reach the target
+refuses at once — *"it refuses an absent target at once (0006, 503 peer
+not reachable)"* (`hub.js:941`) — so a guess costs a fast refusal rather
+than a timeout, which is what makes spreading safe to attempt without
+knowing.
+
+**A mesh-wide search already costs one slot.** The fan-out is relay-side:
+the node posts one search and `relay.js:2703` has the relay ask its
+partners in parallel and merge. The most expensive-sounding operation a
+node can perform occupies a single slot however large the mesh — an
+argument for the cap rather than against it.
+
+**Three consequences worth carrying.**
+
+How many relays a node joins becomes a **capacity** decision as well as a
+resilience one. That is new, and it is a good property: a node that wants
+more concurrency joins another relay, which also spreads the RAM it costs
+across more boxes.
+
+**A single-relay node gets exactly one slot**, and that is the real test
+case for cap 1 — not Andy's three-row node.
+
+And the downstream bottleneck is unaffected: if both relays forward to
+the same partner, each forwarding relay spends its own slot on that
+partner's table under its own key (`relay.js:1969`), where one requester
+identity still carries all of its members. The partner pool needs its own
+bound regardless of how well the node spreads.
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
