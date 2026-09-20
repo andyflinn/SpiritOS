@@ -90,6 +90,14 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
 
   That replaces *"a carcass kept as reference for a chat app to be built later"*, which read as a corpse to be looked at and eventually replaced. It is not. It is the app that gets **reconnected** when the inbox/outbox lands, which raises the stakes on the rule two paragraphs below rather than lowering them: an orphan must not be allowed to rot through tree-wide changes, because something is coming back for it. The operational guidance is unchanged — do not touch it — but the reason is now "keep it whole", not "leave the corpse alone".
 
+  **And the orphaning is a design act, not a cost-saving one:**
+
+  > **Andy, 2026-09-20:** *"i orphaned it deliberatly in order to separate infrastructure concerns being polluted by individual apps."*
+
+  That is the load-bearing reason and it generalises past chat. While chat was connected, it was the only consumer of messaging, so every question about the inbox and outbox got answered by looking at what chat needed — and a shell mechanism shaped around one app is that app's feature wearing the shell's name. Cutting chat loose forces the global inbox and outbox to be designed **for every app**, which is exactly what the line above already says it is.
+
+  It is the same architecture as **Comms**, one layer up: `peerPost` owns the interface and no component reaches around it. An app does not get to shape a shell mechanism, and when one starts to, the app is what moves — not the mechanism. The token argument Andy makes below is real, but it is the second reason, not the first.
+
   > **Andy:** *"i will burn less tokens leaving chat and rebuilding, adapting later. so many cycles burn tokens dealing with chat, when the basic browser side's fundamentals and intrinsic apps have such a long way to go."*
 
   This line replaces *"Refactoring Relay Chat onto `api.hub`"*, which was narrower and kept being read as permission for everything adjacent to it. Touch `relayChat.js` only when a tree-wide rule forces it (it moved to `api.verb` with the other five apps on 2026-09-16), and then only that.
