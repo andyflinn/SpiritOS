@@ -1599,13 +1599,49 @@ the UI can promise rather than what it can do: a foreign contact has no
 colour until you reach for them, and then the answer is immediate and
 true.
 
-**Not decided, and it is a product question rather than a protocol one:**
-whether a foreign contact staying white is acceptable, or whether reach
-across a partnership is meant to look the same as reach on your own
-relay. `PRESENCE.md` §4 made white mean *"named by no relay you are
-connected to"*, which is literally correct for a foreign peer — the
-colour model already says this, and the partnership was going to make it
-lie.
+### And a fourth, which the tree already decided
+
+> **Andy:** *"hmmm successful search = presence."*
+
+**Exact, and it is not a new idea — it is a decision from 2026-09-19 whose
+consequence here had not been noticed.** `peerSearch.js:58`:
+
+> *"`present` STOOD HERE, a quarter of the match: 'is there anybody
+> there'. Moot since 2026-09-19 — a relay answers a search from its
+> connected members only (Andy: 'search should respond with active/online
+> members only'), so every row offered is present and the signal told
+> nothing apart."*
+
+A relay answers a search **from its connected members only**. So every row
+that comes back across a partnership is, by construction, a present peer —
+and the `present` signal was **deleted from the ranking** because search
+had absorbed it. The discovery path already carries the presence that the
+partner stream was reserved to carry.
+
+**So foreign presence is not lost with the streams. It arrives with the
+peer.** You learn of a foreign peer by finding them, and finding them is
+the evidence.
+
+**The qualifier, stated so the equation is not read as more than it is:**
+a search gives presence **at a point in time**; a stream would give
+**transitions**. The snapshot is true when it is taken and begins ageing
+immediately. That is the whole difference, and it decides the remaining
+question rather than leaving it open:
+
+- **"Can I reach this person now?"** — the snapshot at the moment of
+  asking is exactly right, and *learn by trying* makes it exact.
+- **"Show me who is online, continuously"** — a snapshot cannot do that
+  for a foreign peer. It would go stale without saying so, which is worse
+  than white.
+
+**Not decided, and now a narrow product question:** whether a foreign
+contact needs a live colour, or whether truth at the moment you reach for
+them is the promise. `PRESENCE.md` §4 made white mean *"named by no relay
+you are connected to"*, which is literally correct for a foreign peer —
+the colour model already says this, and the partner stream was going to
+make it lie. A search result could legitimately colour a foreign row
+green **with an age on it**, which is a third state the model does not
+have.
 
 
 ## Decided
