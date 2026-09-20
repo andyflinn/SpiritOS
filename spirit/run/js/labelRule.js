@@ -142,6 +142,60 @@ function spokenOk(word) {
   return !!word && SPOKEN_RE.test(word);
 }
 
+// ── THE FOURTH RULE: A LEVER'S NAME ──────────────────────────────────
+//
+//   Andy: "the naming convention for levers should include meaning001
+//   (meaning and iteration) which still should fit the label naming
+//   constraints."
+//   Andy: "the meaning is restricted no a-z or A-Z the iteration is a
+//   subgroup: the shortest 0-9 representation of an actual positive
+//   integer."
+//   Andy: "this rule can be layered on top of the invite label rule,
+//   because it's a compatible subset."
+//
+// So it is written as a LAYER, not as a second regex that happens to be
+// narrower: `spokenOk` first, then the lever shape. If the spoken rule
+// ever tightens, this follows it; if it loosens, this does not. That is
+// the whole reason this file exists — a rule copied is a rule that will
+// be changed in one place only.
+//
+// WHY THE ITERATION AND NOT A VERSION FIELD. A lever is a thing the
+// Governor learns to move, and what is learned about `connections1` does
+// not transfer to `connections2` — different floors, different ceilings,
+// different programme. The iteration is in the NAME so that two
+// generations of a lever can be reported side by side and never confused
+// for the same measurement.
+//
+//   Andy: "i wouldn't put constraints on the number of digits, i would
+//   insist that the numerical value has to be unique. better no leading
+//   zeros, for that matter."
+//
+// Hence `[1-9][0-9]*`: no leading zeros, and no `connections0`. One
+// integer, one spelling — `connections01` and `connections1` must not be
+// two names for one lever.
+//
+// A MEANING IS LETTERS ONLY, and the letters do the work a separator
+// would:
+//
+//   Andy, asked how `ipv4` could ever be a meaning: "it's the uppercase
+//   letters."
+//
+// So a meaning spells its parts in case rather than in punctuation —
+// `requestTimeout1`, `ipvFour1` — and the digits at the end are always
+// the iteration and never part of the meaning. `conn_1` is refused
+// because a separator would be a second way to say the same thing.
+//
+// `ipv41` is therefore NOT refused by this rule. It is legal and it
+// means `ipv` iteration 41, which is not what someone typing it intends.
+// The rule cannot catch that and does not try: a name that parses
+// differently than it reads is a naming mistake, and the answer is the
+// convention above rather than a regex that guesses at intent.
+var LEVER_RE = /^[A-Za-z]+[1-9][0-9]*$/;
+
+function leverOk(label) {
+  return spokenOk(label) && LEVER_RE.test(label);
+}
+
 // ── THE THIRD RULE: A SENTENCE ABOUT YOURSELF ────────────────────────
 //
 // 128 bytes, which is the cap relayAuth stores to and is repeated here
@@ -188,6 +242,7 @@ var RULE = {
   describeProblem: describeProblem,
   describeRemaining: describeRemaining,
   spokenOk: spokenOk,
+  leverOk: leverOk,
   graphemeCount: graphemeCount,
   byteLength: byteLength,
 };
