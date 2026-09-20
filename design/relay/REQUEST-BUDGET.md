@@ -322,6 +322,31 @@ The precedent is already in the tree: `caps: { memberPerMin,
 partnerPerMin }` keeps two pools because they are two populations. The
 in-flight bound needs the same split, and for the same reason.
 
+## Reach over speed
+
+> **Andy, 2026-09-20:** *"reach over speed."*
+
+That is the judgement the whole trade turns on, and it is worth stating
+plainly because it decides the next one too. A cap of 1 costs a node
+latency. It buys a relay **sixteen times the members on the same table**,
+and eases the mesh on both sides from a single default.
+
+It is also what makes Andy's own stated ambition arithmetic rather than
+aspiration:
+
+> **Andy:** *"i might want a relay to provide 1000 friends with a fairly
+> private/verified connectivity."* — cycle 4 blurb, `L2298`
+
+At sixteen in flight per member, **sixteen friends exhaust the table**
+and the seventeenth is refused for something they did not do. At one, the
+same 256 slots serve 256 concurrent askers — and a thousand members are
+overwhelmingly idle at any instant, so the table is sized for the askers
+rather than the membership.
+
+A relay that is fast for sixteen people is not the relay this project is
+for. `0013` already says a relay is fixed-cost per time unit; reach over
+speed is what that costs the person asking.
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
