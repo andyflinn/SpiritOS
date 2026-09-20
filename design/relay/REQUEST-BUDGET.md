@@ -2096,6 +2096,66 @@ what survives disc pressure.
   and does not have.
 
 
+## What the design ended up doing with each resource
+
+> **Andy:** *"and all of a sudden our design maximizes both RAM and disc
+> usage."*
+
+**One line: RAM buys concurrency, disc buys reach — and this cycle stopped
+paying for reach with RAM.**
+
+The two resources have opposite characters and the design had been
+spending them interchangeably:
+
+| | character | what it should buy |
+|---|---|---|
+| **RAM** | scarce, fast, fatal when exhausted | **work in flight** — and nothing that merely *might* be used |
+| **disc** | cheap, plentiful, slow, survivable | **who you can reach** — rolls, which are potential rather than activity |
+
+### Where each item moved
+
+| | was paid in | now paid in |
+|---|---|---|
+| route table | RAM at `PAYLOAD_MAX` per route | RAM at a few hundred bytes — the payload was never retained |
+| partner liveness | RAM, two streams per partnership, permanently | **nothing** — a `last` column on disc |
+| partner roll size | RAM-bound, because every row was a live pair | **disc**, which barely binds |
+| foreign presence | RAM, a reserved stream channel | **nothing** — it arrives in the search answer |
+| undelivered intent | would have been relay RAM or relay disc | **the node's disc**, for days if the user says so |
+| member concurrency | unbounded per member | RAM, **capped at one** |
+
+**Every row moves a cost off RAM.** Not one was argued that way at the
+time — each was argued from its own evidence, and they all landed the
+same way, which is usually the sign of a principle doing the work
+underneath (`0007`: *survive > reach > speed*; RAM is what a box dies
+of).
+
+### Why that maximises both rather than trading one for the other
+
+**They stopped competing.** Previously reach cost RAM — more partners
+meant more held streams, more members meant more unbounded route
+capacity — so the two dials fought and neither could be turned far.
+
+Now:
+
+- **RAM sets how many people can be DOING something at once**, and the
+  cost per person is bounded and small, so this number gets large.
+- **Disc sets how many people and relays can be REACHED**, and a row is a
+  few hundred bytes, so this number gets very large.
+
+**Both go up together, which is what `0016`'s commercial claim needed and
+did not have** — *"if alpha and beta go out with a micro-relay supporting
+a large number of members, then i can gain capital (audience) at low
+cost"*. Audience is a disc number. Cost is a RAM number. The claim was
+only ever plausible if those two were separable, and until this cycle
+they were not.
+
+**The caveat that has not moved all day:** the RAM side still rests on
+`STREAMS_PER_MB = 16`, a placeholder `governor.js` marks as guessed. Every
+figure above inherits it. That measurement is now the blocker on four
+separate questions, which is the strongest argument for taking it that
+this note can make.
+
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
