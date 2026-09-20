@@ -78,9 +78,36 @@ var DELIBERATE = 'deliberate';
 var BACKGROUND = 'background';
 var CLASS_RANK = { deliberate: 0, background: 1 };
 
+// A MONOTONIC CLOCK, NOT THE WALL CLOCK, and for the same reason the
+// order is a sequence rather than a timestamp.
+//
+// Everything this file measures is a DURATION — how long until a backoff
+// lapses, how much patience is left, how long to sleep. A duration
+// measured against `Date.now()` is measured against a number that moves:
+// an NTP correction, a suspend and resume, a manual clock change. Any of
+// those fires a backoff early, or strands one for the length of the jump,
+// and expires patience on evidence that never happened.
+//
+// `performance.now()` only ever goes forward and only ever at one rate,
+// which is all a duration needs. It counts from process start, so it is
+// useless for anything that must survive a restart — and nothing here
+// does. A persisted queue (a patience of days, Andy's case) would have to
+// convert on the way out and recompute on the way in; that is a note for
+// whoever builds it, not a reason to measure elapsed time with a clock
+// that jumps.
+//
+// It is the same rule as `0011`'s hash and as the sequence above: nothing
+// in this design depends on two boxes agreeing about the time, and
+// nothing depends on one box's clock standing still.
+function monotonicNow() {
+  return typeof performance !== 'undefined' && performance && typeof performance.now === 'function'
+    ? performance.now()
+    : Date.now();
+}
+
 function createQueue(opts) {
   opts = opts || {};
-  var nowFn = opts.now || Date.now;
+  var nowFn = opts.now || monotonicNow;
   var perRelay = opts.inFlightPerRelay || IN_FLIGHT_PER_RELAY;
   var backoffStart = opts.backoffStartMs || BACKOFF_START_MS;
   var backoffMax = opts.backoffMaxMs || BACKOFF_MAX_MS;

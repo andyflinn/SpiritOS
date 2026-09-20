@@ -332,4 +332,39 @@ test.subHeading('Waiting on an event is not waiting on a clock');
   }
 }
 
+test.subHeading('Durations are measured against a clock that cannot jump');
+
+{
+  // Every number this file keeps is a DURATION, and a duration measured
+  // against Date.now() is measured against something that moves: an NTP
+  // correction, a suspend and resume, a manual change. Any of those fires
+  // a backoff early or strands it for the length of the jump.
+  //
+  // Checked by magnitude, which is crude and exactly right: a
+  // process-relative clock reads in the thousands, epoch milliseconds in
+  // the trillions. Nothing else distinguishes them from outside, and a
+  // revert to Date.now() fails here rather than failing on somebody's
+  // laptop six months after a clock change.
+  const q = pq.createQueue({});
+  const seq = q.add({ relayUrl: 'R', toKey: 'x', patienceMs: 1000 });
+  const at = q.find(seq).at;
+
+  if (at < 1e10) {
+    test.check('the default clock is process-relative, not epoch — it cannot step');
+  } else {
+    test.fail('the queue is measuring durations against the wall clock (at=' + at + ')');
+  }
+
+  // And it still measures correctly against the real thing, not only
+  // against a clock a suite moves by hand.
+  q.started(seq);
+  q.silent(seq);
+  const waited = q.backoffFor('R', 'x');
+  if (waited > pq.BACKOFF_START_MS - 50 && waited <= pq.BACKOFF_START_MS) {
+    test.check('and a backoff measured on the real clock is the length it says');
+  } else {
+    test.fail('real-clock backoff was ' + waited + ', wanted about ' + pq.BACKOFF_START_MS);
+  }
+}
+
 test.reportSuccessFailureCount();
