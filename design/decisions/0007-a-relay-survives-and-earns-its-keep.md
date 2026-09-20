@@ -21,6 +21,46 @@ Everything else a relay might do is subordinate to those two. A feature
 that does not help it survive or help it pay for itself is not a feature
 a relay should have, however useful it would be somewhere else.
 
+## Amended 2026-09-21 — WHY survival is absolute, and it is not economic
+
+> **Andy:** *"The relay must survive at all cost. otherwise keyed mode p2p
+> fails."*
+
+**The reason above is economic: a box justifying its own running cost.**
+This is a second and stronger one, and it was not stated here.
+
+**In keys-mode there is no other path.** The relay is the only rendezvous
+— no invites yet, no direct addressing, nothing a node can fall back to.
+So a relay going down does not cost somebody money; it takes the reach of
+every member with it, at once, with no degraded mode underneath.
+
+That changes what "survive" outranks. Under the economic reading, a relay
+that cannot pay for itself *should* die. Under this one, survival is a
+precondition for the system existing at all, and it therefore beats every
+other property a relay could have — including doing the job well.
+
+**The ordering this produces**, composing it with Andy's other standing
+rule (*"reach over speed"*):
+
+> **survive  >  reach  >  speed**
+
+- **survive over reach**: refuse work rather than accept work that might
+  kill the box. Already the rule in `router.js` — *"CAPACITY IS A
+  REFUSAL, NEVER A DROP. A box under pressure that declines is alive and
+  truthful; one that accepts everything and loses the overflow is
+  lying."*
+- **reach over speed**: a request queued and slow beats a request refused.
+  That burden falls on the NODE
+  ([THE-REQUESTER-IS-RESPONSIBLE](../principles/THE-REQUESTER-IS-RESPONSIBLE.md)),
+  which is what lets the relay keep the first rule without costing anybody
+  their reach.
+
+**The two rules do not conflict because they apply to different boxes**,
+and that is the shape of the whole 2026-09-20/21 request-budget design
+([REQUEST-BUDGET.md](../relay/REQUEST-BUDGET.md)): every mechanism that
+would have made the relay patient on a member's behalf was moved to the
+member's own node instead.
+
 ## Amended 2026-09-12 — "survive" is every server's job
 
 Andy, after the first draft of this decision:
