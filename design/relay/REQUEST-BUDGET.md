@@ -2233,6 +2233,93 @@ that is one query over a real contact graph — which does not exist yet,
 so the honest range stays *hundreds, for ten members*.
 
 
+## A route remembers where, not how — a flaw in the contact row
+
+> **Andy:** *"a node can be a member of multiple relays, if it only
+> remembers B of the route, it won't know which relay to post a request
+> through...... on the other hand, that might be solved by a relay simply
+> handshaking/key-exchanging with a new, unknown relay.... (dirty), ...
+> thoughts?"*
+
+**Confirmed, and the missing half is discarded one line after it
+arrives.** `server.js:1109`:
+
+```js
+onRoute: function (url, body) {          // `url` IS the relay that announced it
+  if (!body || !body.key || !body.at) return;
+  try { contactBook.learnRoute(ROOT_DIR, body.key, body.at); }
+```
+
+`learnRoute(rootDir, publicKey, relayKey)` takes the **far** relay key and
+nothing else (`contacts.js:341`). A node on three relays that learns
+*"Bella is at B"* cannot tell which of A1/A2/A3 proved it — and **at one
+request in flight, guessing wrong spends the member's only slot.**
+
+A route is half an edge. It records a destination and drops the path.
+
+### The fix is the cheapest kind: stop throwing it away
+
+The near relay is **already in hand** at the moment of learning — it is
+the stream the announcement came down, and `presenceNode.js:276` passes
+it. So a route entry becomes a pair:
+
+```
+routes: [ { via: <this node's relay>, at: <the far relay key> }, … ]
+```
+
+No new wire field, no new trust, nothing asked of anybody: `HINTS_PER_POST`
+still sends `at` keys, and `via` never leaves the node because it is the
+node's own business which door it uses.
+
+**It also makes the post deterministic instead of a guess**, which is
+worth more under a ceiling of 1 than it was under 16.
+
+**A migration note, since `routes` is persisted:** existing rows are bare
+keys with no `via`. They stay valid as *"some relay of mine proved this
+once"* and are simply less useful than new ones — a shape change that
+degrades rather than breaks.
+
+### On the handshake option: it is the fallback, and that is what makes it clean
+
+Andy calls it dirty and the instinct is right **as a primary
+mechanism**, for three reasons:
+
+- **It does not actually solve this on its own.** A hint carries a relay
+  **key**, never an address (`contacts.js:337`), so a relay told to
+  handshake with an unknown partner has nothing to dial. The node holds
+  URLs in `relays`, a separate list that never goes on the wire.
+- **It is traffic-driven roll growth.** A member's post causes their
+  relay to form a relationship, which is the disc-pollution vector that
+  the provisional-row policy exists to bound.
+- **It is the relay doing the requester's work**, which
+  `THE-REQUESTER-IS-RESPONSIBLE` puts on the node.
+
+**But ordered second it is none of those things.** The pair fix covers
+the common case — the node knows which door, because it was told. The
+handshake covers only what is left: *no relay of mine knows B*. And in
+that case:
+
+- **the node supplies the address**, from its own `relays`, rather than
+  the relay discovering it — so it is the requester carrying the cost of
+  its own question, which is the principle rather than an exception to
+  it;
+- **it is rare by construction**, because the common case was handled
+  above, so traffic-driven growth is bounded by novelty rather than by
+  volume;
+- **and it is exactly the self-assembling roll** that the partner sizing
+  requires: hundreds of partnerships nobody can hand-curate, formed on
+  first need and evictable as provisional rows.
+
+**So: pair the route, and handshake only when the pair is empty.**
+
+**The gap that remains, and it is real:** a contact acquired *through* a
+partnership may never have given this node B's URL at all — `relays` is
+written at acquisition (`contacts.js:313`, `:451`) and a search result
+crossing a partnership carries `via`, not an address. Where the node has
+no URL, neither mechanism can start. **Unchecked**, and it decides
+whether the fallback is reachable in the case that needs it most.
+
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
