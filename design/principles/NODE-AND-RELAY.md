@@ -820,6 +820,67 @@ unclaimed ones — until something stops it.
 By the rule in §8 (*any persisted dataset is bounded by disc space or a
 disc allotment*), they get one: a space allotment with **oldest-first
 eviction**. The 15-day ceiling stays, as policy inside that bound.
+
+**And the rolls need the mirror of that, which they do not have
+(added 2026-09-20).**
+
+> **Andy:** *"the roll was defined as bounded by disc space, but that
+> fails to evict stale members if there's too much disc space
+> available."*
+> **Andy:** *"the disc space limit must be enforced out of principle, but
+> we need staleness eviction or the member roll stays frozen. similar for
+> partners."*
+
+**Out of principle** — the allotment stays whatever else is added; §8 is
+not weakened by giving age its own bound. And **frozen** is the exact
+failure: on a roomy disc nobody is ever flushed, so a full roll admits no
+one new and releases no one old. It stops turning over.
+
+The invite case above establishes that **expiry bounds age, not
+quantity**. This is the same argument run backwards: **quantity does not
+bound age.** The roll today has a space allotment and longest-inactive
+flushing (§ *member storage*), which is eviction *under pressure* — so on
+a roomy disc the pressure never arrives, nothing is ever flushed, and a
+member who vanished two years ago still holds their seat and their name.
+
+Invites got both bounds. The member roll got one. Two causes of eviction
+are needed and they are not two flavours of the same thing:
+
+| | evicts when | bounds |
+|---|---|---|
+| **allotment** | the space is wanted by someone else | quantity |
+| **staleness** | a seat has gone unused for long enough | age |
+
+Neither substitutes for the other, which is precisely what §8 already
+says about every other persisted dataset.
+
+**Open, and not decided here:** what the staleness ceiling is, and
+whether a newcomer may evict the stalest seat on demand or must wait for
+one to lapse. Those are different admission policies — *"be active or own
+your own relay"* points at the first, *"only accept new members when an
+old one expires"* at the second — and they give opposite answers to
+whether a popular relay can be joined today.
+
+**One constraint either way: eviction spares the owner.** Ownership is
+first claim and the roll no longer records who owns the relay, so a relay
+that flushed its owner's row would leave `allow.json` as the only proof —
+which is SSH recovery by hand (`AGENT.md`). The same exemption the
+Governor already makes when it sheds streams.
+
+**The partner roll has the same gap, and a stale partner costs more than
+a stale member.** Its rows are *"bounded by a disc allotment and flushed
+under the roll rules: a rolling window, longest-idle first"* — pressure
+again, so a roomy disc freezes it the same way. But a stale member is
+**passive**: it holds a seat and a name and is never asked for anything.
+A stale partner is **active** — it stays eligible for route hints and for
+forwarding, so the relay keeps *trying* it, and every attempt is a held
+route waiting out its timeout. Staleness there is paid in the request
+budget, not only in disc.
+
+The `requested` / `partnered` partition already established here applies
+unchanged: the two life cycles want different staleness ceilings, because
+a proposal nobody answered and a partnership that has gone quiet are
+different kinds of old.
 Which gives the general form the other windows were already obeying without
 it being said:
 
