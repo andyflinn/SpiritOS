@@ -1,6 +1,8 @@
-# DICTIONARY.md — words we use with Andy
+# DICTIONARY.md — how Andy says it
 
-Agents describe the system with these terms. If you mean something else, say so; do not reuse a word from this file.
+**This file answers "what does Andy mean by this word". It is an analysis of Andy's usage, not a glossary explaining experts to him** (`ANDYS_RULES_FOR_AGENTS.md`, preamble). It goes stale when his usage changes. Where his word and the industry's differ, his is the one this project uses; where he has not drawn a distinction an agent needs, the agent draws it out loud and asks rather than importing one silently.
+
+Agents describe the system with these terms and adapt to them, never the reverse. If you mean something else, say so; do not reuse a word from this file.
 
 Format: **term** — aliases — meaning.
 

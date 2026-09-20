@@ -2684,6 +2684,17 @@ automatic flush, longest-inactive first, is not built yet.
 window. Its log already was — `trafficLog` writes nothing in relay mode —
 and the roll is the last one to become one.
 
+> **Vision, not placed in any cycle** (Andy, 2026-09-20): *"later, when
+> Andy's node actually builds his spirit-vault, the media folder will become
+> the input for Karpathy's method."* What the node accumulates is not an
+> archive for its own sake — it is the material the collaboration is
+> conducted from, the same reasoning that makes the dictionary an analysis
+> of how Andy speaks rather than a glossary (`ANDYS_RULES_FOR_AGENTS.md`).
+> *"Memory is the training set"* (0009) pointed at this already. Nothing is
+> designed here and nothing is being built; recorded so the accumulation is
+> understood as feeding something, and so that whoever bounds the node's
+> disc knows what the person chose to keep is for.
+
 **Three levels of constraint** (Andy, 2026-09-19): the **box** (physical RAM
 and DISC) bounds the **configuration** (a file); the configuration bounds
 the **Governor**. Each level may narrow the one above, never widen it (§8).

@@ -1,6 +1,10 @@
 # AGENT.md — SpiritOS, every agent
 
-Read this before you touch the tree. Use words from `DICTIONARY.md`. `CLAUDE.md` and `GROK.md` only add how that agent delivers work. Product rules live here.
+Read this before you touch the tree.
+
+**This file answers "what is true here": the system, what is settled about it, and what is off limits. It goes stale when the code or the box changes, so a line that is wrong gets corrected in place, never quietly.** Product rules live here; the UI ones are in `RULES.md` and `UI_DESIGN_STYLE.md`.
+
+**Where a rule belongs — ask what makes it stale.** Code or the box changes → here. The method changes → `ANDYS_RULES_FOR_AGENTS.md` (how we work). Andy's usage changes → `DICTIONARY.md` (how Andy says it). That agent's role changes → `CLAUDE.md` / `GROK.md` (how *that* agent delivers, and nothing else). **Precedence:** words from `DICTIONARY.md`, product facts from here, method from Andy's rules; a per-agent file overrides none of them. A rule that moves leaves one line saying where it went.
 
 Public face: [andyflinn.com](https://andyflinn.com). Andy Flinn is the one operator.
 
@@ -74,7 +78,7 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
 - First paint must not depend on a failed fs-watcher leaving an empty shell. Decide eager manifest read vs snapshot before that move.
 - Natter is the reference *shape* (folder + manifest + `api.fs`). It still uses `spiritOwnerBadge` for the last-relay rule.
 - **A UI tweak that stays in the app and off the wire is in-file work.** Layout, copy, marks, CSS, what a filter shows, what a row says — patch the app, run the neighbours, hand it to Andy to look at.
-- **A tweak that needs bones surgery is not a tweak.** `relay.js` gates, invite consume, the whoBook schema, a hub URL switch, mailbox identity, a new persist shape — stop and call a team review (Andy + Grok) before writing any of it. The tell is that the UI change cannot be made without changing what crosses the wire or what is stored. **Do not patch `relay.js` so a dropdown works.**
+- **A tweak that needs bones surgery is not a tweak.** `relay.js` gates, invite consume, the whoBook schema, a hub URL switch, relay identity, a new persist shape — stop and call a team review (Andy + Grok) before writing any of it. The tell is that the UI change cannot be made without changing what crosses the wire or what is stored. **Do not patch `relay.js` so a dropdown works.**
 
 ## What you do not do unless asked
 
@@ -91,6 +95,8 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
 
 ## Split of labour
 
-- Claude: work-box checkout, review → verdict → patch → harness. No spirit-3.
-- Grok: cycle notes + failing tests. No whole-file replace of relay/server/hub/relayAuth.
-- Andy: Paste-to-Claude, commits, UI check, spirit-3.
+Positions, not agents — *how* each one works is in `ANDYS_RULES_FOR_AGENTS.md`; what one agent may do is in its own file.
+
+- **In studio** (today Claude): the work-box checkout — review → verdict → patch → harness. **Never spirit-3.**
+- **In review** (today Grok): cycle notes and failing tests, in batches at checkpoints. **No whole-file replace of `relay.js`, `server.js`, `hub.js`, `relayAuth.js`.**
+- **Andy:** decides, commits, checks the UI, and is the only one who touches spirit-3.

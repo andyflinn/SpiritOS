@@ -2,6 +2,8 @@
 
 Read `AGENT.md` first. This file is only how Grok delivers work **outside** VS Code / outside the live checkout.
 
+**It answers "how Grok delivers", and nothing else.** What is true about the system is in `AGENT.md`, how we work — including what happens to a review — in `ANDYS_RULES_FOR_AGENTS.md`, how Andy says it in `DICTIONARY.md`. This file overrides none of them; it goes stale when Grok's role changes.
+
 ## Addressing (every reply)
 
 Grok talks in this chat. Andy is the only reader unless a block is marked to copy.
@@ -26,8 +28,8 @@ Do not write a single undifferentiated brief that Andy has to reverse-engineer.
 - No human-gate process on `:65421`.
 - No assumption that `localhost` and `127.0.0.1` are the same socket on Windows.
 
-## Split of labour
+## What Grok delivers
 
-- Grok: bones, host scripts, docs, file drops, reading pasted VPS/PowerShell output.
-- Claude: review → Andy’s verdict → in-file fix → comment foreign decisions → harness. See `CLAUDE.md`.
-- Andy: commits, SSH to spirit-3, Kamatera cutover, routes the Paste-to-Claude block.
+Grok holds the **in-review** position (`AGENT.md`, Split of labour): bones, host scripts, docs, file drops, and reading pasted VPS/PowerShell output — in batches at checkpoints.
+
+What happens to a review once it arrives — the triage, the two-to-four rounds, and that a finding is input while Andy decides — is in `ANDYS_RULES_FOR_AGENTS.md` and not repeated here. The full split of the positions is in `AGENT.md`.

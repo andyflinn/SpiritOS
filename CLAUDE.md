@@ -2,50 +2,29 @@
 
 You are working in [andyflinn/SpiritOS](https://github.com/andyflinn/SpiritOS).
 
-**Read `ANDYS_RULES_FOR_AGENTS.md` first. Always.**
+**This file answers "how Claude delivers", and nothing else.** What is true about the system is in `AGENT.md`, how we work in `ANDYS_RULES_FOR_AGENTS.md`, how Andy says it in `DICTIONARY.md`. This file overrides none of them; it goes stale when Claude's role changes.
+
+**Read `ANDYS_RULES_FOR_AGENTS.md` first. Always.** The method is there — the four steps, what happens to a review, agreements becoming requirements. It is not repeated here.
 
 **Read `AGENT.md` first.** Do not keep a private memory that contradicts it.
 
-You work **in the checkout**. That is the point: in-file fixes, the test harness, regression. Grok delivers new bones as full files from outside. You receive them after Andy commits.
+You hold the **in-studio** position (`AGENT.md`, Split of labour): you work **in the checkout**. That is the point — in-file fixes, the test harness, regression. New bones arrive as full files from outside, and you receive them after Andy commits.
 
-## Cycle (do this, not a second product)
+## Delivering an implementation sitting
 
-1. **Review new code** that just landed (or a diff Andy points at). Findings first. Separate *regressions of closed gates* from *design that is not implemented yet* (invites, X-Forwarded-For, UI chrome).
-2. **Apply fixes** only after Andy (or Grok-as-Andy) answers. A short pasted verdict is the leash for the sitting. Do not expand the sitting. On **design**, suggestions are welcome and often used — implement them only when the verdict says so.
-3. **Comment the code** where behaviour is fixed by a decision that is not yours (ONE-OPERATOR, keys-mode stays open until invites, chat-to-relay census is owner-only, pending-owner, whoBook never uploads). Point at `AGENT.md` or the decision file. Do not rewrite the decision in a tone that invites the next session to undo it.
+1. **Findings first**, on the code that just landed or the diff Andy points at, triaged as the rules say.
+2. **Apply fixes only after Andy answers.** A short pasted verdict is the leash for the sitting. Do not expand the sitting. On **design**, suggestions are welcome and often used — implement them only when the verdict says so.
+3. **Comment the code where behaviour is fixed by a decision that is not yours** (ONE-OPERATOR, keys-mode stays open until invites, chat-to-relay census is owner-only, pending-owner, whoBook never uploads). Point at `AGENT.md` or the decision file. Do not rewrite the decision in a tone that invites the next session to undo it.
+4. **Run the harness. Paste the last lines. Green means stop.** Stage by name; never `git add -A`.
 
-Then run the harness. Paste the last lines. Green means stop.
+## Delivering a design sitting
 
-## Co-design (the other cycle — it produces a document, not a patch)
+It produces a document, not a patch. Andy often opens one with a **sketch in the repo root**, plain English, vision first. **That root file is scaffolding — Andy deletes it once the thinking has moved.** Do not link to it or depend on it surviving.
 
-Andy also opens work the other way round: a **sketch in the repo root**, plain
-English, vision first. "I call a secret a password" is the register, and it is
-deliberate — an intention with no mechanism attached can still be argued from
-what the code actually does. **That root file is scaffolding. Andy deletes it
-once the thinking has moved.** Do not link to it or depend on it surviving.
-
-1. **Check every premise against the tree before answering.** The value is not
-   opinion, it is that each claim carries a file and a line, and the document
-   says which commit it was verified at. "One row in `allow.json`,
-   `ownerName()` is `Object.keys(byName)[0]`" is costable; "the allow list is
-   small" is not.
-2. **Corrections run both ways.** Say plainly when a premise is wrong, and
-   accept it as plainly when yours is. When something is overturned, **mark the
-   supersession in place** — *"this corrects an earlier note"* — rather than
-   silently editing. A conclusion whose reasoning is invisible gets undone by
-   the next reader.
-3. **Do not build.** No patch, no test, no cycle. Feasibility and shape only,
-   until a packet says otherwise.
-4. **The durable result lands under `design/`** — `design/<area>/<NAME>.md`,
-   linked from `design/README.md`. Brief, no transcript of the back-and-forth:
-   vision, feasibility, proposed shape, **decided / recommended / open kept
-   apart**, so a third party can act without re-deriving it.
-5. **"Or not" is a real outcome.** Say what waiting costs. Usually nothing —
-   and Andy cancels features once the cost is visible, which is the process
-   working, not a wasted sitting.
-
-Attribution in these documents marks **authority, not authorship**: name a
-decision so a later session does not relitigate it, and nothing else.
+- **Check every premise against the tree before answering**, and carry a file and a line for each claim, with the commit it was verified at. "One row in `allow.json`, `ownerName()` is `Object.keys(byName)[0]`" is costable; "the allow list is small" is not.
+- **Do not build.** No patch, no test, no cycle. Feasibility and shape only, until a packet says otherwise.
+- **The durable result lands under `design/`** — `design/<area>/<NAME>.md`, linked from `design/README.md`. Brief, no transcript of the back-and-forth: vision, feasibility, proposed shape, **decided / recommended / open kept apart**, so a third party can act without re-deriving it.
+- **Attribution marks authority, not authorship**: name a decision so a later session does not relitigate it, and nothing else.
 
 ## You are faster at
 
@@ -60,5 +39,5 @@ decision so a later session does not relitigate it, and nothing else.
 - Re-propose `User=spirit` or `/opt`
 - Run labMaster against spirit-3
 - Treat 0003’s “later names need the owner” as a bug in current keys-mode
-- Reach into the bones to finish a UI tweak. Layout, copy, marks and CSS stay in the app and off the wire — that is in-file work. The moment a tweak needs `relay.js` gates, invite consume, the whoBook schema, a hub URL switch, mailbox identity or a new persist shape, **stop and call a team review (Andy + Grok)**. Do not patch `relay.js` so a dropdown works.
+- Reach into the bones to finish a UI tweak. Layout, copy, marks and CSS stay in the app and off the wire — that is in-file work. The moment a tweak needs `relay.js` gates, invite consume, the whoBook schema, a hub URL switch, relay identity or a new persist shape, **stop and call a team review (Andy + the reviewer)**. Do not patch `relay.js` so a dropdown works.
   (Cycle 3 opened one new persist shape by Andy's decision: `relay-state/relay.db`, owned by `relayStore.js`. That opening belonged to that cycle; the rule stands for the next one.)
