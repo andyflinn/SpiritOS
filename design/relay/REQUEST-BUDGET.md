@@ -1436,20 +1436,32 @@ other open questions already wait on.
 > **Andy:** *"ie. no streams between partners."* — *"lets face it: the
 > only thing streamed between partners are responses."*
 
-**Checked, and it is exactly true.** Every `'request'` a relay pushes down
-a stream targets a MEMBER:
+**Checked, and true — but this first rested it on the wrong fact, and
+Andy corrected that in the same sitting.**
 
-```
-relay.js:1604   post()            -> a member
-relay.js:1995   forwardToMine()   -> this relay's own member
-relay.js:3053   routePost()       -> a member target
-```
+> **Andy:** *"A partner is the target during the partnering cycle."* —
+> *"but same thing. only request/response."*
 
-and a partner can never BE a target, because `routePost` refuses it —
-*"A PARTNER MAY ONLY ADDRESS THIS BOX"*, 403, since routing to a
-partner's members would be the second hop PARTNERS.md forbids. So the
-`request` branch at `partnerLink.js:108` is unreachable for a partner
-link. **A partner stream carries replies and nothing else.**
+**The claim as first written:** every `'request'` a relay pushes down a
+stream targets a MEMBER (`relay.js:1604` `post()`, `1995`
+`forwardToMine()`, `3053` `routePost()`), and a partner can never BE a
+target, because `routePost` refuses it — *"A PARTNER MAY ONLY ADDRESS
+THIS BOX"*, 403.
+
+**That is true of this tree and it is the wrong thing to rest on**, because
+it is true only for as long as acquisition is unbuilt. Partner acquisition
+is cycle 5 (`relay.js:3003`, `relayStore.js:24`), and when it lands the
+partner IS the target — so the premise would have expired exactly when the
+design depending on it was being built.
+
+**The durable premise is Andy's: every partner exchange is
+request/response.** A forward, a search, and an acquisition handshake are
+all one question and one answer between two boxes that both have public
+addresses. That is a property of the protocol rather than of the schedule,
+it covers cycle 5 in advance, and it is what the conclusion actually needs.
+
+So: **a partner stream carries replies and nothing else** — and it need not
+carry those either, for the reason below.
 
 ### And the tree already answers a partner without one
 
