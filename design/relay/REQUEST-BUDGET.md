@@ -1529,6 +1529,85 @@ whether a failed post IS the liveness signal. That is the only question
 this raises that the tree does not already answer.
 
 
+## Foreign presence: what is actually lost
+
+> **Andy:** *"we loose presence for foreign peers."*
+
+**The sharpest cost named so far, and checking it turned up two things
+that were not expected.**
+
+### It does not work today
+
+`partnerLink.js:105` takes `request` and `reply` and drops everything
+else on the floor — *"A partner's roster is not this relay's to hold,
+even in RAM, even briefly."* Nothing consumes a `presence` or `roster`
+event arriving from a partner.
+
+So a foreign contact is **already permanently white** in `PRESENCE.md`'s
+colour model: known to you, named by no relay you are connected to.
+Never green, never red. The partner stream was the **reserved path** for
+foreign presence, not a working one — so what is lost is a capability
+that was planned, not one in use.
+
+**That matters for the decision.** Removing something unbuilt costs a
+future, and futures are cheaper to change than working code. It does not
+make the cost zero.
+
+### But the sending half is live, and it is a leak
+
+`presence.js:215`:
+
+```js
+function broadcast(event, data) {
+  Object.keys(sinks).forEach(function (id) { write(sinks[id], event, data); });
+}
+```
+
+**Unfiltered — every sink.** And partners ARE sinks, because
+`partnersNow` was never built and a partner's stream enters `presentNow`
+(`relay.js:406`, one registry). So this relay already announces **every
+member's arrival and departure to every partner relay**, continuously.
+
+Nothing asked for it and nothing needs it. It is discarded at the far end
+only because `partnerLink` chooses not to handle it — **the receiver's
+politeness, not the sender's design**, and a partner running different
+code keeps the lot. `PARTNERS.md`'s hard rule that a relay never persists
+a partner's members guards the wrong end: the bytes are handed over
+unasked.
+
+**So removing partner streams closes a leak as well as costing a
+capability**, and the leak is real today while the capability is not.
+
+### If foreign presence is wanted later, without streams
+
+Three shapes, and they are not equivalent:
+
+- **Learn by trying.** A post to a foreign peer already answers
+  *delivered* or *peer not reachable* — that IS presence, discovered at
+  the moment it matters and for the peer it matters about. `0006`'s
+  *"deliver or refuse, refuse instantly"* is already this. Costs nothing
+  extra and tells you about one peer, when asked.
+- **Ask on demand.** A presence query to the partner, request/response.
+  Precise, but at one request in flight it spends the member's only slot
+  on a question about somebody they have not written to yet.
+- **Poll a census.** Cheap to build and the thing `EVENT-STREAM.md`
+  exists to have killed — *"the node already calls the relay 30 times a
+  minute"*. Not seriously on the table.
+
+**The first is the one that fits the constraint**, and it changes what
+the UI can promise rather than what it can do: a foreign contact has no
+colour until you reach for them, and then the answer is immediate and
+true.
+
+**Not decided, and it is a product question rather than a protocol one:**
+whether a foreign contact staying white is acceptable, or whether reach
+across a partnership is meant to look the same as reach on your own
+relay. `PRESENCE.md` §4 made white mean *"named by no relay you are
+connected to"*, which is literally correct for a foreign peer — the
+colour model already says this, and the partnership was going to make it
+lie.
+
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
