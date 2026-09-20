@@ -71,7 +71,8 @@ numbers survived.
 **A ceiling reachable by sixteen people.** At 16 per member, sixteen
 members exhaust the table and the seventeenth is refused for something
 they did not do. That is what makes *"1000 friends"* arithmetic rather
-than aspiration: at a cap of 1 the same relay costs **31 MB**.
+than aspiration: at a cap of 1 the same relay costs **31 MB** —
+*corrected below: well under 1 MB, because the payload is not retained.*
 
 **And one of Andy's own earlier claims.**
 
@@ -79,8 +80,20 @@ than aspiration: at a cap of 1 the same relay costs **31 MB**.
 > — 2026-09-19
 
 True at a cap of 16, where occupancy and the table ceiling interact.
-**Superseded at a cap of 1:** peak RAM is `2N x PAYLOAD_MAX`, set by the
-caps and independent of `ROUTE_WAIT_MS`. The timeout becomes a **latency**
+**Superseded at a cap of 1:** peak RAM is set by the caps and
+independent of `ROUTE_WAIT_MS`.
+
+> **Corrected 2026-09-20, the same day.** This first said peak RAM is
+> `2N x PAYLOAD_MAX`. **The relay does not retain the payload.** A plain
+> route files `{requester, target, at, carry}` and nothing else
+> (`router.js:111`); the text lives in the `deliver` closure, goes down
+> the target's stream at once, and `carry` is null for every
+> member-to-member post (`relay.js:3016`). Retention is a few hundred
+> bytes per route, so **1000 members is well under 1 MB, not 31 MB**. The
+> payload cost is real but belongs to *transit*, not to the route's
+> lifetime. The conclusion is unaffected: concurrency is still the thing
+> to bound and the cap still bounds it. Only the price was wrong, and it
+> was wrong in the direction that understates the case. The timeout becomes a **latency**
 parameter, governing how long a *stuck* slot stays stuck — the waiting
 member's experience, not the relay's exposure. It must therefore be
 argued from human patience, on evidence this project does not yet have.
@@ -174,7 +187,9 @@ The arithmetic supports it, and it locates the constraint somewhere
 useful. On a 1 GB box with roughly 200 MB budgeted to relay work:
 
 ```
-request side   6400 concurrent actives   arithmetic, 2N x PAYLOAD_MAX
+request side   WRONG — see the correction above. The route table costs
+               a few hundred bytes per route, not PAYLOAD_MAX, so the
+               request side is far cheaper than any figure quoted here
 stream side    3200 streams              PLACEHOLDER, STREAMS_PER_MB = 16
 
 roll on disc   100,000 members = 19 MB
