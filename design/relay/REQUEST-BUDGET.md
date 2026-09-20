@@ -2374,6 +2374,78 @@ the shape, not built.
 route after being made reachable by the first.
 
 
+## Route pairs as the mechanism; auto-handshake as owner policy
+
+> **Andy:** *"if we lean toward route = {via,@} (cleaner) the relays
+> auto-handshaking could be policy chosen by the owner."*
+
+**That splits mechanism from policy along the line the day has been
+drawing all along, and it names the line.**
+
+- **The route pair is mechanism.** It is node-side, costs nothing, asks
+  nobody's permission and has no sensible "off" — discarding the near
+  relay was a bug, not a setting.
+- **Auto-handshake is policy.** Whether a relay forms partnerships on
+  demand shapes that box's roll and spends that box's disc. It is a
+  **switch, not a number**, and that is what makes it the owner's.
+
+### Three tiers, set by blast radius
+
+This morning the owner's grant over **limits** was revoked: *"a limit an
+owner can widen is not a limit, it is a default."* This hands the owner a
+**policy**. The two are consistent, and the rule that reconciles them is
+how far a wrong answer reaches:
+
+| | whose | why |
+|---|---|---|
+| **limits** — `max_in_flight`, `connections`, `maxPerTarget` | the **code's** | they hold the arithmetic together for this box's members AND its partners. Widening breaks a guarantee other people depend on |
+| **policy** — auto-handshake, and switches like it | the **owner's** | it spends this box's disc and shapes this box's roll. No other party's guarantee moves |
+| **patience** — the scheduler timeout, in days | the **user's** | it spends that member's own slot and cannot raise what any relay accepts |
+
+**A limit is a number that must hold for the design to be true. A policy
+is a choice that is nobody else's business.** `settable` failed that test
+because it governed numbers; this passes it because it governs a
+behaviour whose cost lands entirely on the box choosing it.
+
+### Which settles the `maxPerTarget` loose end
+
+`maxPerTarget` went into `relay-state/config.json` on 2026-09-20, argued
+as *"only ever written by a person with a shell"* — the same argument
+revoked hours later. **By the rule above it is a limit and belongs in
+code**, since it bounds what a partner can aim at a member and therefore
+protects parties other than the owner.
+
+It stays in config for now as **marked scaffolding**: the wire test
+`targetBusy.js` spawns a real relay and has no other way to turn the cap
+on, and when the ceiling lands at 1 as a constant that suite needs no
+configuration at all. **Due for deletion at that point**, and recorded
+here so it is not mistaken for a settled shape.
+
+### The default, and the argument for it
+
+**On**, with every self-formed partnership landing as a **provisional
+row** (`requested`, the status `relayStore.js:24` already reserves).
+
+The sizing says why: ten members need partnerships in the **hundreds**,
+nobody can hand-curate that, and it changes every time a member acquires
+a contact. **Default-off makes every fresh relay an island** until its
+owner does work they have no way to know is needed — which contradicts
+the conclusion that the roll must be self-assembling.
+
+**The counter, stated because this tree has been burned by it:**
+`AGENT.md` — *"There is no category meaning unlimited, because the first
+version had one... and that is precisely what got used."* Default-on
+partnering is not unlimited: provisional rows are evictable freely, the
+roll is bounded by disc, and every request a stranger can make is bounded
+by the partner requester class. **But it is default-on, and the
+discipline in this tree is that such things get a census rather than a
+comment.**
+
+**Recommended, not decided:** on by default, provisional rows, and a
+count somewhere the owner can see — so a relay that has quietly acquired
+four hundred partners is a fact somebody noticed rather than discovered.
+
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
