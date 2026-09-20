@@ -87,17 +87,40 @@ function createGovernor(opts) {
   // but the lever holds the VALUE, because that is what the owner sets
   // and what an app draws. One mutator, so every move has a why and a
   // mover attached.
-  // NOT settable, unless the CONFIGURATION says so. Decision 0015: the
-  // Governor is the result of programming, and no configuration in this
-  // tree declares a settable lever — spirit/test/settableCensus.js holds
-  // that at zero for a default build.
+  // ── WHAT IS SETTABLE IS A SOFTWARE DECISION ──────────────────────────
   //
-  // The seam is the configuration rather than a test hook, because that
-  // is the designed path: NODE-AND-RELAY:318 — "the file holding the
-  // protections is only ever written by a person with a shell." A relay
-  // whose config names a lever settable has been told so by its owner at
-  // a terminal, which is the grant, out loud, that AGENT.md's census
-  // rule asks for.
+  //   Andy: "lets revoke the owner's grant, because the code needs to
+  //   decide what is settable, some limits will be hardwired by design, a
+  //   software decision, not an owner's decision, i expect max_in_flight
+  //   to be one of them." (2026-09-20)
+  //
+  // THE OWNER'S GRANT STOOD HERE and is revoked. This read
+  // `opts.settable` — a list of lever names carried from
+  // relay-state/config.json — on the argument that the file is "only ever
+  // written by a person with a shell" (NODE-AND-RELAY:318), so naming a
+  // lever there was the owner's grant out loud.
+  //
+  // The argument was about WHO may change a number. Andy's ruling is that
+  // it is the wrong question for this class of number: some limits hold
+  // the design together, and one an owner can widen is not a limit, it is
+  // a default. `max_in_flight` is named as one of those — a relay whose
+  // memory is a function of its membership (0016) stops being that the
+  // moment somebody raises the ceiling on their own box.
+  //
+  // WHAT WAS CUT IS THE WIRE, NOT THE PARAMETER. `opts.settable` stays,
+  // because a caller passing it IS code deciding — it is a line in
+  // relay.js or in a suite, reviewable in a diff. What is gone is
+  // relay.js handing it `config.settable`, which made the answer come
+  // from a file on the box. A limit an owner can widen is not a limit; it
+  // is a default.
+  //
+  // So spirit/test/settableCensus.js now guards two things: that the
+  // Governor a relay builds declares none, and that no relay-side code
+  // reads a configuration's `settable` into it.
+  //
+  // This narrows 0015 rather than contradicting it — that decision put
+  // the owner's hand at reprogram rather than at runtime, and this says a
+  // config file was never reprogramming.
   var settableLevers = Array.isArray(opts.settable) ? opts.settable : [];
   //
   // worseAt is the FLOOR here: a high allowance means the Governor has

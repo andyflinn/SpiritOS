@@ -37,7 +37,18 @@ function relayWith(tag, memberNames, ramLimitMB) {
   // relay-state/config.json and passes it in; in process a suite passes
   // it directly, which is also why every other in-process suite has no
   // Governor and behaves as it did before cycle 1.
-  const box = createRelay(home, { config: { ramLimitMB: ramLimitMB || 32, settable: ['connections1'] } });
+  // `settable` IS A DEP NOW, NOT PART OF THE CONFIG (Andy, 2026-09-20:
+  // "lets revoke the owner's grant, because the code needs to decide what
+  // is settable... a software decision, not an owner's decision"). It
+  // moved out of `config` because that is a file on the box which its
+  // owner writes; `deps` is what the caller passes, and here the caller
+  // is this suite. relayServer.js passes none, which settableCensus.js
+  // checks — so these seventeen checks prove the owner verb works without
+  // any relay in the world having a lever to point it at.
+  const box = createRelay(home, {
+    config: { ramLimitMB: ramLimitMB || 32 },
+    settable: ['connections1'],
+  });
   box.claim('owner' + tag, auth.sign(owner.privateKey, auth.claimMessage('owner' + tag)),
     owner.publicKey);
 

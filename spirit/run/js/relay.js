@@ -430,15 +430,23 @@ function createRelay(rootDir, deps) {
   // longest-idle streams. See governor.js for the rule and why heapUsed
   // governs, and design/cycles/2026-09-19-relay-governor-cycle-1.md.
   var config = deps.config || null;
-  // `settable` carries the configuration's list of levers the owner may
-  // move. Empty in this tree and in every shipped config — decision 0015,
-  // held at zero by spirit/test/settableCensus.js. It comes from the
-  // config file because that file "is only ever written by a person with
-  // a shell" (NODE-AND-RELAY:318), which makes naming a lever there the
-  // owner's grant rather than something an agent can arrange.
+  // `settable: config.settable` STOOD HERE, and is gone with the owner's
+  // grant it carried (Andy, 2026-09-20: "the code needs to decide what is
+  // settable... a software decision, not an owner's decision"). See
+  // governor.js, where settability is now declared in code beside the
+  // lever. It never worked in any case: relayConfig.parse has always
+  // returned a whitelist that did not include `settable`, so this read
+  // undefined on every real relay — a mechanism that was documented,
+  // plumbed at both ends, and unreachable in the middle.
+  // `deps.settable` IS THE CODE SEAM THAT REPLACED IT, and the difference
+  // is the whole of the ruling: `deps` is what the CALLER passes — a line
+  // in relayServer.js or in a suite, visible in a diff and reviewable —
+  // while `config` was a file on the box that its owner writes. A relay
+  // in production gets this from nobody: relayServer.js does not pass it,
+  // and settableCensus.js fails if that changes.
   var governor = config ? governorLib.createGovernor({
     ramLimitMB: config.ramLimitMB,
-    settable: config.settable
+    settable: deps.settable,
   }) : null;
   if (governor) presentNow.setAllowed(governor.allowed());
 

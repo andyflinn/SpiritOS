@@ -60,6 +60,60 @@ test.subHeading('What the tree actually builds');
   }
 }
 
+test.subHeading('And no configuration can change that answer');
+
+{
+  // THE OWNER'S GRANT IS REVOKED (Andy, 2026-09-20): "the code needs to
+  // decide what is settable, some limits will be hardwired by design, a
+  // software decision, not an owner's decision, i expect max_in_flight to
+  // be one of them."
+  //
+  // The Governor used to read a list of lever names out of
+  // relay-state/config.json, on the argument that the file is written by
+  // a person with a shell and so naming a lever there was a grant. The
+  // ruling is that this is the wrong question for a limit that holds the
+  // design together: one an owner can widen is not a limit, it is a
+  // default.
+  //
+  // WHAT WAS CUT IS THE WIRE, NOT THE PARAMETER. createGovernor still
+  // takes `settable`, because a caller passing it is code deciding — a
+  // line in relay.js or in a suite, reviewable in a diff, which is what
+  // the ruling asks for. What is gone is relay.js reading it out of
+  // relay-state/config.json, so the answer can no longer come from a file
+  // on the box.
+  //
+  // This is therefore a SOURCE check and not a behaviour one: the only
+  // way the owner's grant comes back is somebody rejoining that wire.
+  const relaySrc = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'relay.js'), 'utf8');
+  const code = relaySrc.split('\n')
+    .filter(function (line) { return !/^\s*(\/\/|\*|\/\*)/.test(line); })
+    .join('\n');
+
+  if (!/config\s*\.\s*settable|settable\s*:\s*config\b/.test(code)) {
+    test.check('relay.js reads no `settable` out of the configuration — the owner’s grant stays revoked');
+  } else {
+    test.fail('relay.js is reading config.settable again. Andy revoked that 2026-09-20: ' +
+      '"the code needs to decide what is settable... a software decision, not an owner’s decision."');
+  }
+
+  // AND THE PRODUCTION CONSTRUCTOR PASSES NOTHING. `deps.settable` is the
+  // code seam that replaced the config wire, so a suite can still prove
+  // the owner verb works — but a relay anybody actually runs is built by
+  // relayServer.js, and it must hand over no such list. Without this the
+  // grant could come back by a shorter road than the one just closed.
+  const serverSrc = fs.readFileSync(
+    path.join(__dirname, '..', 'run', 'js', 'relayServer.js'), 'utf8');
+  const serverCode = serverSrc.split('\n')
+    .filter(function (line) { return !/^\s*(\/\/|\*|\/\*)/.test(line); })
+    .join('\n');
+
+  if (!/\bsettable\b/.test(serverCode)) {
+    test.check('and relayServer.js passes none either — the relay you run has no settable lever');
+  } else {
+    test.fail('relayServer.js mentions `settable`, so a real relay may now have one.');
+  }
+}
+
 test.subHeading('And what the source declares, so a second lever cannot slip in');
 
 {
