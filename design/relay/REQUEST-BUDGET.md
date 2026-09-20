@@ -347,6 +347,73 @@ A relay that is fast for sixteen people is not the relay this project is
 for. `0013` already says a relay is fixed-cost per time unit; reach over
 speed is what that costs the person asking.
 
+## The experiment: what actually breaks at 1
+
+> **Andy:** *"so we have to make a plan to freeze (at least for now) the
+> requests in flight/relay/member down to one, until it is proven that the
+> system breaks because of that limit."*
+
+Run 2026-09-20 before planning anything: `DEFAULT_PER_REQUESTER` set to
+`1`, full harness, then reverted. **105 suites, 2454 green, 12 red across
+4 suites.** Every failure was `429 too many in flight`.
+
+| suite | red | what it means |
+|---|---|---|
+| `routeHints.js` | 4 | **the blocker** — forwarding uses `mineKey()`, so one relay-wide slot |
+| `relayMeter.js` | 5 | asserts *"2000 posts and never a 429 — routePost is unlimited"* |
+| `devicePeers.js` | 2 | a pairing exchange; fixture artefact or real concurrency, not yet told apart |
+| `relayMonitor.js` | 1 | a peer reaching the monitor while something else was open |
+
+**`routeHints` confirms the prediction empirically.** A relay forwarding
+on its members' behalf is a requester under its own key, so a cap of 1
+serialises every forward the box makes, for everyone. **The requester
+split is not a follow-up; it is the prerequisite.** Shipping 1 without it
+stops the relay being a router.
+
+**`relayMeter` is a policy statement wearing a test.** *"routePost is
+unlimited"* was true and is exactly what this change repeals. That
+assertion has to be rewritten deliberately, by someone who means to
+repeal it — which is what makes it a decision rather than a red suite
+somebody adjusted.
+
+**`devicePeers` and `relayMonitor` are the interesting two**, because
+they are the only candidates for a *legitimate* node flow needing more
+than one request open. Until each is shown to be a fixture sharing one
+identity, they are the honest evidence about whether 1 is survivable.
+
+## The plan, in the order the evidence dictates
+
+1. **Split the requester classes.** Member, this relay forwarding, and
+   inbound partner — three counts, not one. `caps: { memberPerMin,
+   partnerPerMin }` is the precedent. Without this, nothing else can
+   proceed.
+2. **Cut `ROUTE_WAIT_MS`.** At cap 1 the timeout *is* the user's latency,
+   and 15 s would make the cap look broken when the timeout is at fault.
+3. **Record route lifetime.** The number is already in hand at close and
+   discarded. Without it, every later argument about the cap is anecdote.
+4. **Resolve `devicePeers` and `relayMonitor`** — fixture or real. If
+   real, that is the first honest evidence against 1, found before
+   shipping rather than after.
+5. **Rewrite `relayMeter`'s claim** as the repeal it is.
+6. **Add the `infoDraw` repaint**, so serialisation reads as progress.
+7. **Then set the member cap to 1**, with a census asserting it, in the
+   shape `settableCensus.js` already uses.
+
+## What "proven to break" has to mean
+
+The freeze is only a freeze if the burden of proof has a shape.
+Otherwise the first person who finds it slow raises the number, and the
+default was never a default.
+
+**Not proof:** it feels slow; a suite went red; one operation takes
+longer than it used to.
+
+**Proof:** a named flow that *cannot complete* at 1 and completes at 2 —
+or a measured queue wait, against recorded route lifetimes, that exceeds
+what a person will tolerate for an operation they asked for. Both require
+step 3 to exist first, which is why measurement precedes the freeze
+rather than following it.
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
