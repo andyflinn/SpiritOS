@@ -1355,6 +1355,12 @@ because that is one number shared with the members it would be displacing.
 
 ## Could a partner connection's TTL be one request?
 
+> **SUBSUMED the same day** by *"no streams between partners"* below. If
+> there is no partner connection to hold, there is no TTL to choose, no
+> refcount to keep and no grace period to tune. Kept because the reasoning
+> is what led to the better answer: asking how short a connection's life
+> could be is one question away from asking why it exists.
+
 > **Andy:** *"another thing to examine: could TTL for a partner connection
 > be 1 request...."*
 
@@ -1423,6 +1429,92 @@ refcount is what keeps the bound exact.
 cost against a real partner over TLS, beside the per-stream RAM cost.
 Those two numbers pick the answer, and the second is the measurement three
 other open questions already wait on.
+
+
+## No streams between partners
+
+> **Andy:** *"ie. no streams between partners."* — *"lets face it: the
+> only thing streamed between partners are responses."*
+
+**Checked, and it is exactly true.** Every `'request'` a relay pushes down
+a stream targets a MEMBER:
+
+```
+relay.js:1604   post()            -> a member
+relay.js:1995   forwardToMine()   -> this relay's own member
+relay.js:3053   routePost()       -> a member target
+```
+
+and a partner can never BE a target, because `routePost` refuses it —
+*"A PARTNER MAY ONLY ADDRESS THIS BOX"*, 403, since routing to a
+partner's members would be the second hop PARTNERS.md forbids. So the
+`request` branch at `partnerLink.js:108` is unreachable for a partner
+link. **A partner stream carries replies and nothing else.**
+
+### And the tree already answers a partner without one
+
+This is the part that makes it a simplification rather than a proposal.
+There are **two mechanisms doing one job** today:
+
+| a partner's question | how it is answered |
+|---|---|
+| a **forward** (`forwardToMine`) | the partner's own HTTP response, **held open** and resolved by the `answerPartner` continuation carried in the route entry |
+| a **search** (`routePost` -> `answerSelf`) | `presentNow.send(requester, 'reply', ...)`, down a stream |
+
+The first needs no stream and is already in production. The second is why
+`partnerLink` exists. Unifying on the first is what *"no streams between
+partners"* means, and it removes a mechanism rather than adding one.
+
+**The objection on the record is about implementation, not necessity.**
+`partnerLink.js` says: *"A relay has a public address, so it looks as
+though one socket would do. It would not, because of what the stream IS in
+this system — the INBOUND HALF of the one interface. A reply leaves a
+relay through `presentNow.send`, down a stream the asker holds."* That is
+true of a NODE, which has no address to be reached at. It is not true of a
+relay, and the reply-by-post path already exists: a node answering a card
+does exactly this, `POST /api/relay/reply` (`peerPost.answerCard`).
+
+### What it removes
+
+- **The whole partner stream pool.** The gap found above —
+  `presence.js:145` measuring partner streams against the same `allowed`
+  as members — closes by **deletion rather than by a budget**. Nothing to
+  size, nothing to reserve, nothing to argue.
+- **The red line's remaining path.** A large partner could still overwhelm
+  a small relay through the shared stream pool. With no partner streams
+  there is no pool to overwhelm; what is left is posts, which are already
+  rate-gated (`partnerPerMin`) and route-capped (partner requester class).
+- **`partnerLink.js` very largely** — dial-at-boot, backoff, the idle
+  watchdog, reconnect.
+- **Every open question in the two sections above**: the idle rule, timer
+  versus pressure, one-request TTL, refcounting, the grace period. None of
+  them exist if there is no connection to manage.
+- **`min(roll, members)` as a thing to enforce.** It stops being a bound
+  to implement and becomes a description of how many posts may be in
+  flight, which the per-member cap already bounds.
+
+### What it costs, stated so it is not decided by omission
+
+- **A held-open HTTP response is not free.** It is a socket for the
+  duration of the request, so this trades a socket-per-partnership for a
+  socket-per-in-flight-request. That is the right direction only because
+  in-flight requests are capped and partnerships are not — the roll is
+  sized by contact diversity (200+), the in-flight count by members (10).
+- **Liveness stops being known.** A held stream is how a relay knows a
+  partner is up; `partnerFromHints` picks among partners it believes live.
+  Without streams that becomes try-and-find-out, which costs a round trip
+  against a dead partner where today it costs nothing. `0006`'s *"deliver
+  or refuse, refuse instantly"* is a member rule and does not carry over
+  for free.
+- **Warmth moves to the transport, which is where it belongs.** Repeated
+  posts to the same partner reuse a socket through ordinary HTTP
+  keep-alive, so locality is had without a stream abstraction, an idle
+  rule or a refcount. That is the whole preceding analysis, obtained by
+  not writing it.
+
+**Not decided:** whether partner liveness needs any replacement at all, or
+whether a failed post IS the liveness signal. That is the only question
+this raises that the tree does not already answer.
 
 
 ## Decided
