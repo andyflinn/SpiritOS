@@ -1273,6 +1273,86 @@ whether an idle one is dropped on a timer or kept until the memory is
 wanted.
 
 
+## The roll is sized by contacts; the live set by members
+
+> **Andy:** *"our partner-requirements are not done yet. my statement was
+> for outgoing requests, there might be attempts of partners not currently
+> live (from the relay's POV), and we may have to examine dynamic partner
+> off-on management I'm not really sure. because the contact list of my 10
+> members may have peers from more than 200 relays..."*
+
+**That is the number that breaks the symmetry, and it is an order of
+magnitude out from the other one.** Ten members with a hundred contacts
+each can span two hundred relays or more, while the simultaneous outbound
+need stays at ten. The roll is driven by **contact diversity**; the live
+set by **member concurrency**; and nothing ties them together.
+
+**Two different costs, which is what makes the answer arithmetic rather
+than taste:**
+
+```
+partner roll row     disc, a few hundred bytes    200 rows is nothing
+live partner pair    RAM, two streams             200 pairs is the box
+```
+
+So **the roll stays large and the live set stays small**, and dynamic
+on/off management is not optional — holding two hundred partnerships open
+is four hundred streams to serve ten members' worth of concurrency. The
+question was never whether to do it, only what the idle rule is.
+
+**Dropping an idle OUTBOUND stream is safe, and `partnerLink.js` already
+contains the reason:**
+
+> *"the stream A holds to B is where B's answers to A land, and B's
+> answers can only land there."*
+
+So dropping our stream to B stops **us asking B**. It does not stop B
+asking us, because that rides B's own stream to us. The cost of an idle
+drop is latency on next use and nothing else — reachability inbound is
+untouched. That asymmetry is what makes on-demand affordable, and it is
+already designed in rather than needing to be added.
+
+### What is genuinely not done: partner streams share the member allowance
+
+`presence.js:145`, the admission rule for **every** stream:
+
+```js
+if (!old && !always && Object.keys(sinks).length >= allowed) {
+  return { ok: false, status: 503, full: true };
+}
+```
+
+**One allowance, one pool.** A partner dialling in is measured against the
+same `allowed` as a member connecting, so two hundred partners arriving
+can spend the room the members needed — and a relay with a large roll can
+lock its own members out without anybody intending it.
+
+**This is the requester-class split again, for a different resource.**
+Routes were split into member / relay / partner budgets this morning on
+the argument that they are three populations answering to three
+arguments. Streams are the same three populations and have not been
+split. The argument transfers exactly; the code does not, yet.
+
+**It is also where the red line actually bites.** A large partner cannot
+overwhelm a small relay through the route table any more — the partner
+requester class bounds that. It can still do it through the stream pool,
+because that is one number shared with the members it would be displacing.
+
+**Not decided:**
+
+- **The idle rule** for an outbound partner stream — dropped on a timer,
+  or held until the memory is wanted. A timer is predictable; pressure is
+  efficient. `0016` reasons that rolls need both an age bound and a space
+  bound for the same reason, and this is the same shape.
+- **How a partner stream pool is sized** against the member one. The
+  outbound bound is derived (`min(roll, members)`); an inbound reservation
+  is a budget and has to be argued, not computed.
+- **Whether a cold partner's first use is visible** to the member who
+  triggered it. At one request in flight, a dial plus a round trip is the
+  member's only slot, and silence for that long is the case the UI
+  guideline exists for.
+
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
