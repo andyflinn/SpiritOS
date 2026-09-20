@@ -194,6 +194,16 @@ This directory contains the vision, principles, and architecture decisions for *
   [DEPRECATIONS.md](DEPRECATIONS.md); `spirit/test/deprecations.js` keeps
   markers and rows in step, and `--release <name>` is the gate.
 
+- [0015 — The owner watches a lever; the programme moves it](decisions/0015-the-owner-watches-a-lever-the-programme-moves-it.md)
+  — the Governor is the result of programming, so the loop is observe →
+  record → analyse → reprogram and the owner's hand enters it between
+  cycles, not at runtime. A lever declares `settable` (every lever in the
+  tree ships `false`, guarded by a census the way `oneDoor.js` guards
+  reaches) and `worseAt`, because a green-to-red meter asserts a direction
+  of badness an app that names no lever cannot know. Cycle 4.1's owner
+  verb is kept dormant rather than deleted: a proven seam, not a
+  temporary shape.
+
 ## Andy's frames
 - [The POST API — route hierarchy](andy/spiritNodeAPI.md) — every POST route
   both servers dispatch and the function it lands in. Illustration only.

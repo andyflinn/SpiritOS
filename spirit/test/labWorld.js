@@ -89,7 +89,16 @@ function homeOf(id) {
 // because a node created under a name that had been used before booted
 // owned by the previous run's key and could not be claimed by the suite
 // that had just asked for it.
-async function ensureNode(name, type, port) {
+// `config` — a relay-state/config.json to give the node before it runs.
+// A relay has a Governor ONLY when it is handed one (relay.js:422), so
+// without this a lab relay reports no levers at all and cycle 4's own
+// verification step — "open the Relay Monitor, set a lever, watch the
+// relay take it" — cannot be carried out on the lab at all.
+//
+// Written after the home exists and followed by a restart, because
+// relayServer.js reads the file once at startup and both create and
+// recycle have already started the process by the time we get it back.
+async function ensureNode(name, type, port, config) {
   const id = PREFIX + name;
   // `kind: 'fixture'` — a copy of the WORKING TREE under %TEMP%, not a
   // clone of origin/master under repo/lab.
@@ -113,6 +122,7 @@ async function ensureNode(name, type, port) {
     if (cycled.status !== 200) {
       return { ok: false, error: 'recycle ' + id + ': ' + JSON.stringify(cycled) };
     }
+    await withConfig(id, config);
     return { ok: true, id: id, port: port, home: homeOf(id) };
   }
 
@@ -124,7 +134,16 @@ async function ensureNode(name, type, port) {
   if (started.status !== 200) {
     return { ok: false, error: 'start ' + id + ': ' + JSON.stringify(started) };
   }
+  await withConfig(id, config);
   return { ok: true, id: id, port: port, home: homeOf(id) };
+}
+
+async function withConfig(id, config) {
+  if (!config) return;
+  const dir = path.join(homeOf(id), 'relay-state');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify(config));
+  await master('POST', '/api/nodes/' + id + '/restart');
 }
 
 async function answering(url) {
@@ -202,7 +221,16 @@ function createWorld(opts) {
     // stays (see ensureMaster above).
     await clear();
 
-    relay = await ensureNode('relay', 'relay', RELAY_PORT);
+    // 128 MB is chosen so the Governor HOLDS rather than fights. Heap on
+    // a fresh relay is a fraction of it, which reads as "below LOW" and
+    // creeps the lever gently upward — nothing is shed, and the owner's
+    // own setting is the only thing that moves it sharply.
+    //
+    // A small number here is worse than none: at ramLimitMB 2 the heap is
+    // ~400% of the bound, the lever pins to the floor, and every member
+    // stream is closed on the first tick. That is the Governor working,
+    // and it makes the world useless to look at.
+    relay = await ensureNode('relay', 'relay', RELAY_PORT, { ramLimitMB: 128 });
     if (!relay.ok) return relay;
     relay.url = 'http://127.0.0.1:' + RELAY_PORT;
     if (!await answering(relay.url + '/api/relay/key')) {

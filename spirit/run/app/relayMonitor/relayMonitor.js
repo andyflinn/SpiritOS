@@ -61,30 +61,43 @@
     var levers = (report && report.levers) || null;
     if (!levers) return [];
     return Object.keys(levers).sort().map(function (label) {
-      var raw = levers[label];
+      var raw = levers[label] || {};
       var lib = leverLib();
-      // `fromReport` returns null for anything it cannot trust. A row is
-      // still drawn for it — the owner should see that the relay sent
-      // something this node could not read, rather than see nothing.
+      // `fromReport` refuses anything it could not SET — a label with no
+      // iteration, bounds that are not numbers. That is the right rule
+      // for a control and the wrong one for a picture, so it decides
+      // whether there is a control and nothing else.
       var view = lib ? lib.fromReport(raw) : null;
-      var last = (raw && raw.lastMove) || null;
+      var last = raw.lastMove || null;
+
+      // AN OLDER RELAY CARRIES ITS VALUE UNDER `allowed`. Cycle 1 reported
+      // { position, allowed, floor, ceiling }; the lever's own readOut
+      // calls it `value`. spirit-3 is on the older release, so reading
+      // only `value` drew "undefined" beside a perfectly good number.
+      var value = raw.value !== undefined ? raw.value
+        : (raw.allowed !== undefined ? raw.allowed : undefined);
+
+      var bounded = typeof raw.floor === 'number' && typeof raw.ceiling === 'number';
+
       return {
         label: label,
-        value: raw ? raw.value : undefined,
-        floor: raw ? raw.floor : undefined,
-        ceiling: raw ? raw.ceiling : undefined,
-        // A CONTROL ONLY WHERE ONE WOULD BE ACCEPTED, and the RAW field
-        // is what decides it. `lever.fromReport` reads a missing `live`
-        // as true, which is right for a relay building its own levers —
-        // there, live is the default. Here it is not: a report with no
-        // `live` came from a relay older than this field, and the honest
-        // reading of silence is "I do not know", which draws no control.
+        value: value,
+        floor: raw.floor,
+        ceiling: raw.ceiling,
+        // A CONTROL ONLY WHERE ONE WOULD BE ACCEPTED, and the RAW `live`
+        // is what decides it. `fromReport` reads a missing `live` as
+        // true, which is right for a relay building its own levers —
+        // there live is the default. Here it is not: silence came from a
+        // relay older than the field, and the honest reading of silence
+        // is "I do not know", which draws no control.
         //
-        // Offering a button whose every press would be refused is the
-        // chrome rule in AGENT.md: prefer not drawing it to hiding it.
-        settable: !!(view && raw && raw.live === true),
-        held: !!(raw && raw.held),
-        readable: !!view,
+        // AGENT.md's chrome rule: prefer not drawing it to hiding it.
+        settable: !!(view && raw.live === true),
+        held: raw.held === true,
+        // DRAWABLE IS NOT SETTABLE. An old-shape lever is perfectly
+        // readable — a number between two bounds — and the owner is
+        // entitled to watch it even though this app cannot move it.
+        drawable: bounded && value !== undefined,
         lastMove: last ? {
           from: last.from, to: last.to, why: last.why,
           by: last.by || 'programme', at: last.at
@@ -96,13 +109,69 @@
   // The one line a person reads. Kept beside the row builder so the
   // wording is asserted with the shape.
   function rmLeverLine(row) {
-    var where = row.label + ': ' + String(row.value) +
+    // Only a lever whose NUMBERS cannot be read gets nothing but a
+    // complaint. Everything else shows where it stands first, because
+    // that is what the owner came to see.
+    if (!row.drawable) return row.label + ': this node cannot read that lever';
+
+    var line = row.label + ': ' + String(row.value) +
       ' (floor ' + row.floor + ', ceiling ' + row.ceiling + ')';
-    if (!row.readable) return where + ' — this node cannot read that lever';
-    if (row.held) where += ' — set by owner';
-    if (!row.lastMove) return where;
-    return where + ' — last: ' + row.lastMove.from + ' → ' + row.lastMove.to +
-      ' (' + row.lastMove.by + ': ' + row.lastMove.why + ')';
+
+    if (row.held) {
+      line += ' — set by owner';
+    } else if (!row.settable) {
+      // The plan's own words for a relay older than the verb. Not an
+      // error: this relay is working exactly as it was built to.
+      line += ' — this relay does not take lever settings';
+    }
+
+    if (row.lastMove) {
+      line += ' — last: ' + row.lastMove.from + ' → ' + row.lastMove.to;
+      // THE OWNER'S OWN MOVE NEEDS NO EXPLANATION. Its `why` is the
+      // constant the relay stamps on every owner setting, so printing it
+      // beside a line that already says "set by owner" said the same
+      // thing three times. The programme's reason is the one worth
+      // reading, because it differs every move.
+      line += row.lastMove.by === 'owner'
+        ? ' (you)'
+        : ' (' + row.lastMove.by + ': ' + row.lastMove.why + ')';
+    }
+    return line;
+  }
+
+  // ── THE ENVELOPE IS NOT THE ANSWER ─────────────────────────────────
+  //
+  // `api.verb` answers { status, text, body } — the envelope — and not
+  // what the node said. natterDetails carries its own `ndAsk` that parses
+  // `text` for exactly this reason.
+  //
+  // This cost a live run: reading `data.rows` straight off the envelope
+  // finds undefined, and the app then said, truthfully and uselessly,
+  // that it could see no owned relay while the node was holding two. It
+  // lives out here rather than inside mount so the suite can reach it —
+  // the pure/DOM split made the DRAWING assertable and left the WIRING
+  // untested, and the wiring is what broke.
+  function rmAnswerOf(r) {
+    if (!r) return null;
+    if (r.body && typeof r.body === 'object') return r.body;
+    try { return JSON.parse(r.text); } catch (e) { return null; }
+  }
+
+  // ── WHERE A RELAY'S KEY ACTUALLY LIVES ─────────────────────────────
+  //
+  // Not on the row. `row.relayKey` is a field this app invented, and the
+  // invention cost a live run: Apply answered "this node does not hold
+  // that relay's key" about a relay the node owns.
+  //
+  // natterDetails' ndRelayKey has carried the real answer since cycle 3,
+  // and the ORDER matters there for a reason that does not apply here but
+  // is worth keeping anyway: `census.relayKey` comes off the public
+  // census every probe already fetches, so a plain MEMBER has it, while
+  // `report.key` is pushed to the owner alone. Reading the owner's copy
+  // first would work for exactly one person and look fine.
+  function rmRelayKey(row, report) {
+    return (row && row.census && row.census.relayKey) ||
+      (report && report.key) || '';
   }
 
   // "as of 14:02", or nothing. A missing capture time is drawn as missing:
@@ -118,11 +187,16 @@
     window.spiritRelayMonitor = {
       leverRows: rmLeverRows,
       leverLine: rmLeverLine,
-      asOf: rmAsOf
+      asOf: rmAsOf,
+      answerOf: rmAnswerOf,
+      relayKey: rmRelayKey
     };
   }
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { leverRows: rmLeverRows, leverLine: rmLeverLine, asOf: rmAsOf };
+    module.exports = {
+      leverRows: rmLeverRows, leverLine: rmLeverLine,
+      asOf: rmAsOf, answerOf: rmAnswerOf, relayKey: rmRelayKey
+    };
   }
 
   // ── THE SHELL HALF ─────────────────────────────────────────────────
@@ -216,11 +290,12 @@
         }
 
         var row = owned().filter(function (r) { return r.url === chosen; })[0];
-        if (!row || !row.relayKey) { saying = 'this node does not hold that relay’s key'; render(); return; }
+        var relayKey = rmRelayKey(row, report);
+        if (!relayKey) { saying = 'this node does not hold that relay’s key'; render(); return; }
 
         saying = 'asking…';
         render();
-        api.peerPost('relay', row.relayKey, { lever: { name: label, set: value } })
+        api.peerPost('relay', relayKey, { lever: { name: label, set: value } })
           .then(function (r) {
             var said = r && r.reply;
             if (r && r.ok && said && said.ok !== false) {
@@ -248,7 +323,8 @@
 
       function load() {
         return api.verb('relay.status', { name: '' })
-          .then(function (data) {
+          .then(function (r) {
+            var data = rmAnswerOf(r);
             rows = (data && data.rows) || [];
             reports = (data && data.relayStatus) || {};
             render();
