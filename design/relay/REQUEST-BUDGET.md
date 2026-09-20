@@ -1685,9 +1685,40 @@ design is avoiding.
 discover a stranger who is offline, by search, at that moment. Everything
 else about reaching them is unaffected.
 
+### A post confirms presence, and the probe already exists
+
+> **Andy:** *"A simple post from N1 to B could confirm presence...."*
+
+**Yes, and nothing needs building.** A post to a foreign peer answers
+*delivered* or 503 *"peer not reachable"* (`relay.js:1968`), so the
+attempt is the answer. `ROUTER-PACKETS.md` already names the shape — *"a
+ping is the whole mechanism with the payload taken out"* — and there is
+no separate verb because there need not be: `contacts.js` sends
+`peerPost('', key, { describe: true })`, a minimal post whose reply
+proves the peer is there and hands back their card as well.
+
+**So presence-on-demand is a solved problem** and the remaining question
+is only when it is worth spending.
+
+**The cost is one in-flight slot and one round trip**, which at a ceiling
+of 1 is *the member's only slot*. That makes the rule sharp:
+
+- **Probing ONE peer, at the moment it matters, is free in practice** —
+  the post you were going to send is the probe. Nothing is spent that was
+  not being spent.
+- **Sweeping a list is N round trips, serialised.** Fifty contacts at
+  ~150 ms remote is seven seconds of a member's entire outbound capacity
+  spent on colouring a screen nobody has acted on yet.
+
+`contactsAskEveryone` is exactly that sweep, and it is the load generator
+this cycle's scheduler is being written against. So the guidance falls
+out of the arithmetic rather than from taste: **ask about one peer when a
+person reaches for them; never about a list on the chance they might.**
+
 **Still not decided, and now the only open piece:** whether a foreign
 contact needs a live colour, or whether truth at the moment you reach for
-them is the promise. `PRESENCE.md` §4 made white mean *"named by no relay
+them is the promise. The probe above makes the second cheap and the first
+expensive, which is an argument but not a decision. `PRESENCE.md` §4 made white mean *"named by no relay
 you are connected to"*, which is literally correct for a foreign peer —
 the colour model already says this, and the partner stream was going to
 make it lie. A search result could legitimately colour a foreign row
