@@ -805,6 +805,50 @@ Three contacts against a live loopback relay — today's world — cannot
 fail this test. It is not a weak fixture; it is a fixture with no
 failing case at all.
 
+### Two fixtures, and neither substitutes for the other
+
+> **Andy:** *"two nodes overloading request to a third node will cover
+> rejections by the relay."*
+
+**One node cannot provoke the per-target cap at all.** With its own cap
+of 1 it has one request outstanding, so it can never be the second
+requester aimed at a target. Making the relay say *that target is busy*
+takes two distinct requesters and one target — which is a second fixture,
+not a bigger first one.
+
+| fixture | who refuses | what it proves |
+|---|---|---|
+| one node, wide fan-out, stalling targets | nobody — requests **time out** | the node's own queue: cap of 1, per-target backoff, head-of-line |
+| **two nodes -> one target** | **the relay**, per-target | the *not available* path, emitted rather than simulated |
+
+**A timeout and a refusal are different paths in the node**, and that is
+why the second fixture is load-bearing. One means *no answer ever came*;
+the other means *the relay said no, try later, the target is fine*. They
+want different responses: a timeout is evidence about the target, a
+refusal is evidence about contention and must not poison a target's
+backoff. Fixture one exercises only the first and would leave the second
+proven by unit test alone — which is exactly how `routeHints` came to
+assert against a fixture that never answers.
+
+**Both are buildable against today's lab with no new machinery.**
+`peer.post` is already a loopback verb (`server.js:1351` ->
+`hub.handlePost`), taking `{to, text, via}`; `via` names the relay, so
+the route is pinned rather than guessed. `labPopulate` already drives
+peers exactly this way — through each peer's own node, *"the same route a
+person uses"* — so the fixture is two un-awaited posts from two peers at
+a third peer's key:
+
+```js
+postTo(peerB, { verb: 'peer.post', to: A.publicKey, via: relay.url, text: '…' });
+postTo(peerC, { verb: 'peer.post', to: A.publicKey, via: relay.url, text: '…' });
+```
+
+**The fairness question falls out of this fixture and is not yet
+answered:** at a per-target cap of 1 one of the two wins and the other is
+refused. Whether the loser eventually gets through, or is beaten to the
+slot every time by a requester that retries harder, is a starvation
+question the backoff policy decides. Nothing in `0016` settles it.
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
