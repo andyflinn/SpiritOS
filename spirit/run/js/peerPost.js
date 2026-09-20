@@ -31,6 +31,12 @@ const limits = require('./limits.js');
 // stats call below, which came from the ring's countInbound.
 const contactBook = require('./contacts');
 const nodeCard = require('./nodeCard');
+// WHICH REQUEST GOES NEXT. A relay holds one route per member (0016), so
+// a node that fires freely is refused; one that queues turns a refusal
+// into latency, which is `reach over speed`. The rules live next door
+// because they are decidable without a socket and therefore testable
+// without one — see postQueue.js and spirit/test/postQueue.js.
+const postQueue = require('./postQueue');
 
 // A UX number, not a protocol constant tuned against another machine's
 // tick. It only decides how long a caller stares at a spinner.
@@ -113,8 +119,24 @@ function createPeerPost(opts) {
     try { traffic.note(entry); } catch (e) { /* a witness, never a participant */ }
   }
 
-  // hash -> { resolve, timer, relayUrl, at }
+  // hash -> { resolve, timer, relayUrl, at, seq }
   var waiting = Object.create(null);
+
+  // THE SCHEDULER. One request in flight per relay, so a node on three
+  // relays has three — its concurrency is relays x cap, by construction.
+  //
+  // DEFAULT PATIENCE IS ZERO, and that is what keeps this change additive:
+  // an entry gets one attempt and then whatever answer it got, which is
+  // exactly the behaviour every caller had before a queue existed.
+  // Retrying across attempts is opt-in per post, because a patience
+  // measured in days (Andy's case for a text message) needs a store this
+  // node does not have yet.
+  var queue = postQueue.createQueue({
+    inFlightPerRelay: opts.inFlightPerRelay,
+    backoffStartMs: opts.backoffStartMs,
+    backoffMaxMs: opts.backoffMaxMs,
+  });
+  var wakeTimer = null;
   // What arrived for us, in order, with an id an app can ask for again.
   // Called "mailbox" until 2026-09-15, after the ring R8 deleted. Andy:
   // "what is mailbox doing in this?!?"
@@ -235,14 +257,160 @@ function createPeerPost(opts) {
   //
   // `waiting` is keyed by a hash this node computed and never sent, which
   // is what makes correlation and proof the same number.
+  // ALSO THE SUCCESS PATH FROM THE STREAM, which is why the queue is
+  // released here rather than only where an attempt fails. `onReply`
+  // calls this when an answer lands, and that answer is the thing the
+  // scheduler was holding a slot open for — so the slot frees, the
+  // target's backoff is forgiven, and whatever was waiting behind it
+  // goes.
   function settle(hash, answer) {
     var slot = waiting[hash];
     if (!slot) return false;
     delete waiting[hash];
     if (slot.timer) clearT(slot.timer);
+    if (slot.seq) {
+      if (answer && answer.ok) queue.reached(slot.relayUrl, slot.toKey);
+      queue.done(slot.seq);
+    }
     noteOutcome(hash, slot, answer);
     slot.resolve(answer);
+    pump();
     return true;
+  }
+
+  // ── WHAT MAY BE TRIED AGAIN ──────────────────────────────────────────
+  //
+  // Three of these are about the world being busy and one is about this
+  // packet being wrong, and only the first three are worth repeating.
+  //
+  // `busy` is the relay saying the TARGET is occupied — the peer is fine
+  // and somebody else is asking. `stillOpen` is this node's own wait
+  // elapsing, which says nothing except that no answer came yet. Status 0
+  // is the transport failing. And 503 covers a peer that is not connected
+  // right now, which is precisely the case a patience of days exists for:
+  // Andy — "could be days for a text message".
+  //
+  // A 400, 413 or 403 is refused for what the packet IS, so it will be
+  // refused identically for ever. Retrying those would spend a member's
+  // only slot on an answer already known.
+  function retryable(answer) {
+    if (!answer) return false;
+    if (answer.busy) return true;
+    if (answer.stillOpen) return true;
+    if (answer.status === 0) return true;
+    if (answer.status === 503) return true;
+    if (answer.status === 409) return true;   // already in flight: a duplicate, so wait
+    return false;
+  }
+
+  // An attempt is over. Either the intent survives to be tried again, or
+  // this is the answer and the caller gets it.
+  function afterAttempt(seq, hash, answer) {
+    var slot = waiting[hash];
+    if (slot && slot.timer) { clearT(slot.timer); slot.timer = null; }
+
+    if (slot && retryable(answer) && queue.mayRetry(seq)) {
+      // BUSY AND SILENT ARE DIFFERENT EVIDENCE and back off differently:
+      // contention says nothing about the peer, so it honours the relay's
+      // own retryAfterMs; silence is about the peer, so it doubles.
+      if (answer.busy) queue.busy(seq, answer.retryAfterMs);
+      else queue.silent(seq);
+      pump();
+      return;
+    }
+    queue.done(seq);
+    settle(hash, answer);
+    pump();
+  }
+
+  // One attempt on the wire. The per-attempt timer starts HERE and not
+  // when the post was made: time spent queued is not time the far end had
+  // to answer in, and charging it would make a busy relay look like an
+  // unresponsive peer.
+  function sendAttempt(it) {
+    var hash = it.payload.hash;
+    var slot = waiting[hash];
+    if (!slot) { queue.done(it.seq); return; }
+
+    slot.timer = setT(function () {
+      slot.timer = null;
+      // Not a failure of the request — a failure to wait for it. The
+      // request may still be alive at the relay, and its answer will
+      // still arrive and still be matched; the caller simply stopped
+      // holding the line.
+      afterAttempt(it.seq, hash, {
+        ok: false, status: 504, hash: hash,
+        error: 'no answer yet', stillOpen: true,
+      });
+    }, waitMs);
+
+    Promise.resolve()
+      .then(function () {
+        return request(it.relayUrl, 'POST', '/api/relay/post', it.payload.body);
+      })
+      .then(function (res) {
+        var body = {};
+        try { body = JSON.parse(res.text); } catch (e) { body = {}; }
+        // ACCEPTED IS NOT ANSWERED. A 202 means the relay took it and the
+        // reply is coming down the stream, so the slot stays held and the
+        // timer keeps running — that wait is the whole reason a slot
+        // exists.
+        if (res.status >= 200 && res.status < 300) return;
+        afterAttempt(it.seq, hash, {
+          ok: false, status: res.status, hash: hash,
+          error: (body && body.error) || 'refused',
+          inFlight: !!(body && body.inFlight),
+          // BUSY IS NOT THE SAME NO AS UNREACHABLE, and both arrive as
+          // 503: one says do not expect an answer, the other says the
+          // peer is fine and somebody else is asking (0016).
+          busy: !!(body && body.busy),
+          retryAfterMs: (body && typeof body.retryAfterMs === 'number') ? body.retryAfterMs : 0,
+        });
+      })
+      .catch(function (e) {
+        afterAttempt(it.seq, hash, {
+          ok: false, status: 0, hash: hash,
+          error: String((e && e.message) || e),
+        });
+      });
+  }
+
+  // Dispatch everything that may go, then sleep exactly as long as the
+  // queue says is useful. Re-entrant by design: settle() pumps, and a
+  // pump that dispatched nothing is a cheap walk of a short list.
+  function pump() {
+    var it = queue.eligible();
+    while (it) {
+      queue.started(it.seq);
+      sendAttempt(it);
+      it = queue.eligible();
+    }
+    sweepSpent();
+    wake();
+  }
+
+  // Intents whose whole patience is gone. The first attempt is never
+  // expired — patience bounds retrying, not trying.
+  function sweepSpent() {
+    queue.expired().forEach(function (it) {
+      var hash = it.payload && it.payload.hash;
+      queue.done(it.seq);
+      if (!hash) return;
+      settle(hash, {
+        ok: false, status: 504, hash: hash,
+        error: 'gave up after ' + it.attempts + ' attempt(s)',
+        gaveUp: true,
+      });
+    });
+  }
+
+  function wake() {
+    if (wakeTimer) { clearT(wakeTimer); wakeTimer = null; }
+    var ms = queue.nextWakeMs();
+    if (ms === null) return;
+    wakeTimer = setT(function () { wakeTimer = null; pump(); }, Math.max(ms, 1));
+    // A node must not be held awake by its own retry timer.
+    if (wakeTimer && typeof wakeTimer.unref === 'function') wakeTimer.unref();
   }
 
   // REGISTER BEFORE YOU FORWARD. The same rule the relay's table enforces
@@ -255,7 +423,7 @@ function createPeerPost(opts) {
   // from the contact row — sent beside the packet and signed on their own
   // (relayAuth.hintMessage), so the first relay can act on them and drop
   // them. Absent for a recipient on a relay this node holds.
-  function post(relayUrl, toKey, text, hints) {
+  function post(relayUrl, toKey, text, hints, how) {
     var id = me();
     if (!id || !id.privateKey) {
       return Promise.resolve({ ok: false, status: 500, error: 'this node has no identity' });
@@ -280,6 +448,22 @@ function createPeerPost(opts) {
       ? hints.filter(function (k) { return typeof k === 'string' && k; }).slice(0, limits.HINTS_PER_POST)
       : [];
 
+    var body = { from: id.publicKey, to: toKey, text: text, sig: sig };
+    if (hintList.length) {
+      body.hints = hintList;
+      body.hintSig = auth.sign(id.privateKey, auth.hintMessage(sig, hintList));
+    }
+
+    // REGISTERED BEFORE IT IS QUEUED, let alone sent. A reply that arrives
+    // before the waiter does is a reply with nowhere to go, and the
+    // symptom is silence rather than an error — so the thing that matches
+    // the answer exists before anything can produce one.
+    //
+    // NO TIMER HERE ANY MORE. The per-attempt wait starts when the
+    // attempt does (sendAttempt), because time spent queued is not time
+    // the far end had to answer in. Charging it would make a busy relay
+    // look like an unresponsive peer, which is the one confusion this
+    // whole design is built to avoid.
     var answered = new Promise(function (resolve) {
       waiting[hash] = {
         resolve: resolve,
@@ -288,16 +472,8 @@ function createPeerPost(opts) {
         // with, and by then the caller's arguments are long gone.
         toKey: toKey,
         at: Date.now(),
-        timer: setT(function () {
-          // Not a failure of the request — a failure to wait for it. The
-          // request may still be alive at the relay, and its answer will
-          // still arrive and still be matched; the caller simply stopped
-          // holding the line.
-          settle(hash, {
-            ok: false, status: 504, hash: hash,
-            error: 'no answer yet', stillOpen: true,
-          });
-        }, waitMs),
+        timer: null,
+        seq: 0,
       };
     });
 
@@ -309,48 +485,25 @@ function createPeerPost(opts) {
       hash: hash, outcome: 'sent', payload: text,
     });
 
-    return Promise.resolve()
-      .then(function () {
-        var body = { from: id.publicKey, to: toKey, text: text, sig: sig };
-        if (hintList.length) {
-          body.hints = hintList;
-          body.hintSig = auth.sign(id.privateKey, auth.hintMessage(sig, hintList));
-        }
-        return request(relayUrl, 'POST', '/api/relay/post', body);
-      })
-      .then(function (res) {
-        var body = {};
-        try { body = JSON.parse(res.text); } catch (e) { body = {}; }
-        if (res.status >= 200 && res.status < 300) return answered;
-        // The relay refused, so nothing is coming. Stop waiting rather
-        // than leaving the caller to time out for a reason already known.
-        // BUSY IS NOT THE SAME NO AS UNREACHABLE, and both arrive as 503.
-        // "peer not reachable" means do not expect an answer; "target is
-        // busy" means the peer is fine and somebody else is asking, so
-        // ask again in `retryAfterMs`. Carried through here so a
-        // scheduler can tell them apart without reading error strings —
-        // and so it does not back off a popular peer as though they were
-        // broken, which is contention being mistaken for a fault (0016).
-        //
-        // Nothing acts on this yet: the queue is the next piece. It is
-        // carried now because a refusal nobody can distinguish is a
-        // refusal that cannot be tested.
-        settle(hash, {
-          ok: false, status: res.status, hash: hash,
-          error: (body && body.error) || 'refused',
-          inFlight: !!(body && body.inFlight),
-          busy: !!(body && body.busy),
-          retryAfterMs: (body && typeof body.retryAfterMs === 'number') ? body.retryAfterMs : 0,
-        });
-        return answered;
-      })
-      .catch(function (e) {
-        settle(hash, {
-          ok: false, status: 0, hash: hash,
-          error: String((e && e.message) || e),
-        });
-        return answered;
-      });
+    // `how` is the caller saying what KIND of request this is and how long
+    // it is worth trying for. Absent — which is every caller today — it is
+    // a deliberate request with one attempt, exactly as before.
+    //
+    //   { kind: 'background' }  a screen decorating itself; yields to a
+    //                           person's own action however much older it is
+    //   { patienceMs: n }       keep trying for n ms across attempts
+    waiting[hash].seq = queue.add({
+      relayUrl: relayUrl,
+      toKey: toKey,
+      kind: how && how.kind,
+      patienceMs: how && how.patienceMs,
+      payload: { hash: hash, body: body },
+    });
+
+    // Synchronous when a slot is free, which is the common case and makes
+    // this identical to the behaviour before a queue existed.
+    pump();
+    return answered;
   }
 
   // SOMEBODY ASKED US SOMETHING.

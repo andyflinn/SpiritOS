@@ -17,6 +17,31 @@ const peerPost = require('../run/js/peerPost');
 const trafficLog = require('../run/js/trafficLog');
 const routerTable = require('../run/js/router');
 
+// THE ANSWERER'S LOG IS ON ITS OWN TIMELINE.
+//
+// `await post(...)` resolves when the ANSWER ARRIVES. It does not mean the
+// far node has finished writing down what it said: answerCard logs its
+// outbound reply AFTER the reply POST resolves, which is the right order
+// (a reply that never left must not be recorded as sent) and is a
+// different node's business besides — in the real world, a different
+// machine.
+//
+// These two assertions used to pass on an accident: post() returned a
+// chained promise ending in `return answered`, so the asker woke one
+// microtask later than it does now that a queue returns `answered`
+// directly. That slack was never designed, and a test resting on
+// interleaving between two simulated nodes would have broken eventually
+// on a slower machine — presenceWire's lesson, applied here before it
+// cost an afternoon.
+async function settledRow(traffic, pick) {
+  for (let n = 0; n < 50; n += 1) {
+    const row = traffic.read().filter(pick)[0];
+    if (row) return row;
+    await new Promise(function (r) { setTimeout(r, 2); });
+  }
+  return null;
+}
+
 function tmpHome(name) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-peerpost-'));
   auth.saveIdentity(home, auth.generateIdentity(name));
@@ -279,9 +304,9 @@ async function aNodeCanAnswer() {
 
   // WHAT WENT OUT IS ON THE RECORD. An answer is bytes crossing the WAN
   // like any other, and the log keeps it whole.
-  const said = slow.traffic.read().filter(function (r) {
+  const said = await settledRow(slow.traffic, function (r) {
     return r.dir === 'out' && r.kind === 'reply';
-  })[0];
+  });
   if (said && said.payload === 'later') {
     test.check('and the answerer wrote down what it said');
   } else {
@@ -389,9 +414,11 @@ async function aCardIsAnsweredToAnybody() {
   // must be able to see that a stranger asked and what went back — and
   // the inbound row must carry no payload, because the floor that stops a
   // stranger writing bytes to this disk is the one guard this path jumps.
+  const reply = await settledRow(sonny.traffic, function (r) {
+    return r.dir === 'out' && r.kind === 'reply';
+  });
   const rows = sonny.traffic.read();
   const inbound = rows.filter(function (r) { return r.dir === 'in'; });
-  const reply = rows.filter(function (r) { return r.dir === 'out' && r.kind === 'reply'; })[0];
 
   if (inbound.length === 1 && inbound[0].outcome === 'answered' && !inbound[0].payload) {
     test.check('the log says a stranger asked, and keeps none of their bytes');
