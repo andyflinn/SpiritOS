@@ -298,4 +298,94 @@ test.subHeading('Where a relay’s key lives');
   }
 }
 
+test.subHeading('Redlining, and what cannot be assessed');
+
+// The threshold is the APP's on purpose: redlining is a drawing
+// judgement — where should a person look — and a relay should have no
+// opinion about that. Putting it in the relay would mean changing a
+// relay to change what a screen highlights.
+{
+  const near = { drawable: true, value: 5, floor: 1, ceiling: 101, worseAt: 'floor' };
+  const far = { drawable: true, value: 90, floor: 1, ceiling: 101, worseAt: 'floor' };
+  const highBad = { drawable: true, value: 99, floor: 1, ceiling: 101, worseAt: 'ceiling' };
+
+  if (monitor.redline(near) === 'red') {
+    test.check('a lever near the end it calls worse is redlining');
+  } else {
+    test.fail('near the floor was not red: ' + monitor.redline(near));
+  }
+  if (monitor.redline(far) === 'ok') {
+    test.check('and one far from it is not');
+  } else {
+    test.fail('far from the floor was red');
+  }
+  // THE SAME POSITION, THE OPPOSITE VERDICT. This is why the lever
+  // declares worseAt and the app never guesses: value 99 of 101 is
+  // comfortable on connections1 and critical on requestTimeout1.
+  if (monitor.redline(highBad) === 'red' &&
+      monitor.redline({ drawable: true, value: 99, floor: 1, ceiling: 101, worseAt: 'floor' }) === 'ok') {
+    test.check('the same value reads opposite ways on levers with opposite worse ends');
+  } else {
+    test.fail('worseAt did not reverse the verdict');
+  }
+
+  // UNKNOWN IS NOT OK.
+  if (monitor.redline({ drawable: true, value: 5, floor: 1, ceiling: 101 }) === 'unknown') {
+    test.check('a lever that declares no worse end cannot be assessed — and does not read as fine');
+  } else {
+    test.fail('a lever with no worseAt was assessed anyway');
+  }
+}
+
+test.subHeading('The All Relays summary ranks the worst first');
+
+{
+  const reports = {
+    lab: { levers: {
+      connections1: { label: 'connections1', value: 5, floor: 1, ceiling: 2048, worseAt: 'floor' },
+      timeout1: { label: 'timeout1', value: 100, floor: 1, ceiling: 101, worseAt: 'ceiling' }
+    } },
+    quiet: { levers: {
+      connections1: { label: 'connections1', value: 2000, floor: 1, ceiling: 2048, worseAt: 'floor' }
+    } },
+    // The previous release: no worseAt anywhere on it.
+    old: { levers: { connections: { position: '12/12', allowed: 4096, floor: 1, ceiling: 4096 } } }
+  };
+  const mine = [{ url: 'quiet' }, { url: 'lab' }, { url: 'old' }];
+  const sum = monitor.summary(mine, reports);
+
+  if (sum.levers === 2 && sum.relays === 1) {
+    test.check('two levers redlining, on one relay');
+  } else {
+    test.fail('summary: ' + JSON.stringify(sum));
+  }
+  if (sum.worst === 'lab' && sum.per[0].count === 2) {
+    test.check('and the worst relay is named, ranked by how many');
+  } else {
+    test.fail('ranking wrong: ' + JSON.stringify(sum.per));
+  }
+  if (sum.per.every(function (x) { return x.count > 0; })) {
+    test.check('a relay with nothing redlining is not in the list at all');
+  } else {
+    test.fail('a quiet relay was listed');
+  }
+
+  // THE OLDER RELAY IS COUNTED SEPARATELY, NOT AS HEALTHY. Version drift
+  // in an alarm: a relay that cannot be assessed would otherwise sit
+  // permanently fine in the one view whose job is to say where to look.
+  if (sum.blind.levers === 1 && sum.blind.relays === 1) {
+    test.check('and what cannot be assessed is counted apart, never folded into the healthy');
+  } else {
+    test.fail('blind count wrong: ' + JSON.stringify(sum.blind));
+  }
+}
+
+{
+  if (monitor.summary([], {}).levers === 0 && monitor.summary(null, null).relays === 0) {
+    test.check('no relays summarises to nothing, and does not throw');
+  } else {
+    test.fail('empty summary misbehaved');
+  }
+}
+
 test.reportSuccessFailureCount();

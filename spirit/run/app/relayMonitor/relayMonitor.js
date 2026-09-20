@@ -197,6 +197,64 @@
     };
   }
 
+  // ── REDLINING ────────────────────────────────────────────
+  //
+  // THE THRESHOLD IS THE APP'S, DELIBERATELY. A relay should have no
+  // opinion about when a human ought to look: redlining is a drawing
+  // judgement, not relay behaviour, and putting it in the relay would
+  // mean changing a relay to change what a screen highlights.
+  //
+  // So it is one stated constant here, and it is adjustable by editing
+  // this line rather than by a deploy anywhere else.
+  var REDLINE_BAND = 0.10;
+
+  // 'red', 'ok', or 'unknown'. UNKNOWN IS NOT OK — a lever whose relay
+  // declares no `worseAt` cannot be assessed at all, and counting it as
+  // fine would make an older relay permanently, silently healthy in a
+  // view whose whole job is to say where to look. spirit-3 is exactly
+  // that relay today.
+  function rmRedline(row) {
+    if (!row || !row.drawable) return 'unknown';
+    if (!row.worseAt) return 'unknown';
+    var span = row.ceiling - row.floor;
+    if (!(span > 0)) return 'ok';
+    var fromWorse = row.worseAt === 'floor'
+      ? (row.value - row.floor) / span
+      : (row.ceiling - row.value) / span;
+    return fromWorse <= REDLINE_BAND ? 'red' : 'ok';
+  }
+
+  // The All Relays answer: how many levers are redlining, on how many
+  // relays, ranked worst first — and, kept apart, how much could not be
+  // assessed at all.
+  //
+  //   Andy: "All: cumulative, showing trends and rankings of relays per
+  //   category... which relay is closest to critical etc...."
+  function rmSummary(ownedRows, reports) {
+    var per = [];
+    var blind = { levers: 0, relays: 0 };
+    (ownedRows || []).forEach(function (r) {
+      var rows = rmLeverRows((reports || {})[r.url] || null);
+      var red = 0;
+      var unknown = 0;
+      rows.forEach(function (row) {
+        var verdict = rmRedline(row);
+        if (verdict === 'red') red += 1;
+        else if (verdict === 'unknown') unknown += 1;
+      });
+      if (unknown) { blind.levers += unknown; blind.relays += 1; }
+      if (red) per.push({ url: r.url, count: red });
+    });
+    per.sort(function (a, b) { return b.count - a.count || a.url.localeCompare(b.url); });
+    return {
+      levers: per.reduce(function (n, x) { return n + x.count; }, 0),
+      relays: per.length,
+      worst: per.length ? per[0].url : '',
+      per: per,
+      blind: blind
+    };
+  }
+
   // ── THE ENVELOPE IS NOT THE ANSWER ─────────────────────────────────
   //
   // `api.verb` answers { status, text, body } — the envelope — and not
@@ -248,14 +306,16 @@
       asOf: rmAsOf,
       answerOf: rmAnswerOf,
       relayKey: rmRelayKey,
-      meter: rmMeter
+      meter: rmMeter,
+      redline: rmRedline,
+      summary: rmSummary
     };
   }
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
       leverRows: rmLeverRows, leverLine: rmLeverLine,
       asOf: rmAsOf, answerOf: rmAnswerOf, relayKey: rmRelayKey,
-      meter: rmMeter
+      meter: rmMeter, redline: rmRedline, summary: rmSummary
     };
   }
 
@@ -282,7 +342,10 @@
     mount: function (container, api) {
       var escapeHtml = api.escapeHtml;
       var rows = [];
-      var chosen = '';
+      // ALL RELAYS IS THE DEFAULT VIEW. A monitor opens on "where should
+      // I look", not on whichever relay happened to sort first.
+      var ALL = '✱ All Relays ✱';
+      var chosen = ALL;
       var reports = {};
 
       function owned() {
@@ -310,6 +373,48 @@
           '</div></td>';
       }
 
+      function picker(mine) {
+        return '<label>Relay <select id="rm-pick">' +
+          '<option value="' + escapeHtml(ALL) + '"' +
+          (chosen === ALL ? ' selected' : '') + '>' + escapeHtml(ALL) + '</option>' +
+          mine.map(function (r) {
+            return '<option value="' + escapeHtml(r.url) + '"' +
+              (r.url === chosen ? ' selected' : '') + '>' + escapeHtml(r.url) + '</option>';
+          }).join('') + '</select></label>';
+      }
+
+      // WHERE TO LOOK, BEFORE WHAT TO LOOK AT. One line: how many levers
+      // are redlining, on how many relays, with a picker ranked worst
+      // first and a button that goes there.
+      function allScreen(mine) {
+        var sum = rmSummary(mine, reports);
+        var html = picker(mine);
+
+        if (!sum.levers) {
+          html += '<p>red-lining levers: <b>0</b> on ' + mine.length +
+            ' relay' + (mine.length === 1 ? '' : 's') + '</p>';
+        } else {
+          html += '<p>red-lining levers: <b>' + sum.levers + '</b> on ' +
+            '<select id="rm-worst">' + sum.per.map(function (x) {
+              return '<option value="' + escapeHtml(x.url) + '">' +
+                escapeHtml(x.url) + ' (' + x.count + ')</option>';
+            }).join('') + '</select> ' +
+            '<button id="rm-go">Look</button></p>';
+        }
+
+        // KEPT APART, NOT FOLDED IN. A relay that declares no `worseAt`
+        // cannot be assessed, and counting it as fine would make an older
+        // relay permanently healthy in the one view whose job is to say
+        // where to look.
+        if (sum.blind.levers) {
+          html += '<p class="rm-note">' + sum.blind.levers + ' lever' +
+            (sum.blind.levers === 1 ? '' : 's') + ' on ' + sum.blind.relays +
+            ' relay' + (sum.blind.relays === 1 ? '' : 's') +
+            ' cannot be assessed — no lever there says which end is the bad one.</p>';
+        }
+        return html;
+      }
+
       function render() {
         var mine = owned();
         if (!mine.length) {
@@ -317,16 +422,17 @@
             'A relay you own appears here on its own.</p>';
           return;
         }
-        if (!chosen || !mine.some(function (r) { return r.url === chosen; })) {
-          chosen = mine[0].url;
+        if (chosen !== ALL && !mine.some(function (r) { return r.url === chosen; })) {
+          chosen = ALL;
+        }
+        if (chosen === ALL) {
+          container.innerHTML = allScreen(mine);
+          wire();
+          return;
         }
         var report = reports[chosen] || null;
 
-        var html = '<label>Relay <select id="rm-pick">' +
-          mine.map(function (r) {
-            return '<option value="' + escapeHtml(r.url) + '"' +
-              (r.url === chosen ? ' selected' : '') + '>' + escapeHtml(r.url) + '</option>';
-          }).join('') + '</select></label>';
+        var html = picker(mine);
 
         if (!report) {
           container.innerHTML = html + '<p>This relay has not reported yet.</p>';
@@ -356,6 +462,11 @@
       function wire() {
         var pick = container.querySelector('#rm-pick');
         if (pick) pick.onchange = function () { chosen = pick.value; render(); };
+        var go = container.querySelector('#rm-go');
+        var worst = container.querySelector('#rm-worst');
+        if (go && worst) {
+          go.onclick = function () { chosen = worst.value; render(); };
+        }
       }
 
       function load() {
