@@ -45,6 +45,8 @@
 // Pure: readings in, decision out. No clock, no process, no socket — the
 // caller ticks it and carries out what it says.
 
+var lever = require('./lever.js');
+
 var MB = 1024 * 1024;
 
 // PLACEHOLDER. Guessed so the ceiling is finite and proportional to the
@@ -73,13 +75,30 @@ function createGovernor(opts) {
     return FLOOR + Math.round((ceiling - FLOOR) * p / STEPS);
   }
 
+  // ── THE LEVER IS AN OBJECT NOW, NOT A FIELD ────────────────────────
+  //
+  // Named `connections1` because a lever carries its iteration in its
+  // name (labelRule.leverOk): what the Governor learns about this one
+  // does not transfer to `connections2`, which will have different
+  // bounds and a different programme, and two generations must never be
+  // read as one measurement.
+  //
+  // The programme still thinks in twelfths — `position` is unchanged —
+  // but the lever holds the VALUE, because that is what the owner sets
+  // and what an app draws. One mutator, so every move has a why and a
+  // mover attached.
+  var connections = lever.make('connections1', {
+    floor: FLOOR, ceiling: ceiling, value: allowedAt(STEPS)
+  });
+
   function state() {
-    return {
-      position: position + '/' + STEPS,
-      allowed: allowedAt(position),
-      floor: FLOOR,
-      ceiling: ceiling,
-    };
+    var out = connections.readOut();
+    // `position` and `allowed` are what cycle 1's consumers read, kept
+    // while 4.1 is in pieces. `value` is the same number as `allowed`;
+    // stage 3 moves the report onto readOut alone.
+    out.position = position + '/' + STEPS;
+    out.allowed = allowedAt(position);
+    return out;
   }
 
   // readings: { heapUsed, rss, present } in bytes / streams. Returns a
@@ -89,6 +108,12 @@ function createGovernor(opts) {
     var limitBytes = ramLimitMB * MB;
     var heapPct = limitBytes > 0 ? (r.heapUsed || 0) / limitBytes : 0;
     var from = position;
+
+    // THE OWNER'S SETTING WINS, AND SILENTLY — a held lever is not a
+    // failed tick, it is the owner driving. Andy: a value set by the
+    // owner is a setting and the programme leaves it alone; `dynamic`
+    // hands it back. Nothing is reported, because nothing moved.
+    if (connections.heldByOwner()) return null;
 
     if (heapPct > high && position > 0) {
       position -= 1;
@@ -103,12 +128,24 @@ function createGovernor(opts) {
       calm = 0;
     }
 
-    if (position === from) return null;
-
     var allowed = allowedAt(position);
+
+    // NOT `position === from`. After the owner hands the lever back with
+    // `dynamic`, the programme's position has not changed but the VALUE
+    // is no longer the programme's — so the test is whether the lever
+    // stands where the programme wants it, not whether the programme
+    // changed its mind. That restoring move is a real move with its own
+    // reason, which is what the plan says the owner should see rather
+    // than a setting appearing to fail.
+    if (position === from && connections.value === allowed) return null;
+
+    connections.set(allowed, position === from
+      ? 'returned to the programme'
+      : 'heap ' + Math.round(heapPct * 100) + '%', 'programme');
+
     last = {
       at: atIso || '',
-      lever: 'connections',
+      lever: 'connections1',
       from: from + '/' + STEPS,
       to: position + '/' + STEPS,
       allowed: allowed,
@@ -125,6 +162,10 @@ function createGovernor(opts) {
   return {
     tick: tick,
     state: state,
+    // relay.js reaches the lever to apply the owner's verb (stage 3).
+    // Exposed by name rather than as a bag, so a second lever is an
+    // addition here and not a shape change everywhere.
+    lever: function (name) { return name === connections.label ? connections : null; },
     lastDecision: function () { return last; },
     allowed: function () { return allowedAt(position); },
     ramLimitMB: ramLimitMB,

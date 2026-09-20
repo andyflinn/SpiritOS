@@ -506,7 +506,7 @@ function ndGovernorFacts(report) {
   if (m && typeof m.posts === 'number') {
     rows.push(['Activity', m.posts + ' posts, ' + (m.bytesPerSec || 0) + ' B/s over ' + (m.seconds || 0) + ' s']);
   }
-  var lever = report.levers && report.levers.connections;
+  var lever = report.levers && report.levers.connections1;
   if (lever) {
     rows.push(['Connections', lever.position + ' — allowing ' + lever.allowed +
       ' (floor ' + lever.floor + ', ceiling ' + lever.ceiling + ')']);

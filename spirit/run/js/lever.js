@@ -98,13 +98,32 @@ function make(label, opts) {
     return '';
   }
 
-  function set(v, why) {
+  // `by` IS NOT DECORATION. The Governor has to know whether it may move
+  // this lever, and "did the owner set it" cannot be answered by reading
+  // the `why` prose — that would make a programme decision depend on a
+  // string a human wrote. So the mover says who it is, and `heldByOwner`
+  // is a fact rather than a parse.
+  //
+  //   Andy: "a value set by the owner is a setting; `dynamic` hands it
+  //   back."
+  //
+  // It also makes the monitor honest: "set by owner" is drawn from a
+  // field, not inferred from a sentence that could say anything.
+  function set(v, why, by) {
     var no = canSet(v);
     if (no) return { ok: false, error: no };
+    var mover = by === 'owner' ? 'owner' : 'programme';
     var from = value;
     value = v;
-    lastMove = { from: from, to: v, why: String(why || ''), at: Date.now() };
+    lastMove = { from: from, to: v, why: String(why || ''), by: mover, at: Date.now() };
     return { ok: true, from: from, to: v };
+  }
+
+  // HELD means the owner has taken this lever and the programme leaves it
+  // alone. `dynamic` is how it is handed back, so a lever sitting at
+  // `dynamic` is never held however it got there.
+  function heldByOwner() {
+    return !!lastMove && lastMove.by === 'owner' && value !== LEVER_DYNAMIC;
   }
 
   // THE REPORT'S SELF-DESCRIPTION. Everything the monitor needs to draw
@@ -119,8 +138,10 @@ function make(label, opts) {
       floor: o.floor,
       ceiling: o.ceiling,
       live: live,
+      held: heldByOwner(),
       lastMove: lastMove ? {
-        from: lastMove.from, to: lastMove.to, why: lastMove.why, at: lastMove.at
+        from: lastMove.from, to: lastMove.to, why: lastMove.why,
+        by: lastMove.by, at: lastMove.at
       } : null
     };
   }
@@ -133,6 +154,7 @@ function make(label, opts) {
     ceiling: o.ceiling,
     set: set,
     canSet: canSet,
+    heldByOwner: heldByOwner,
     readOut: readOut,
     lastMove: function () { return readOut().lastMove; }
   };
@@ -163,6 +185,7 @@ function fromReport(obj) {
     floor: view.floor,
     ceiling: view.ceiling,
     live: view.live,
+    held: obj.held === true,
     lastMove: obj.lastMove || null,
     canSet: view.canSet
   };

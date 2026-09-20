@@ -278,13 +278,13 @@ async function run() {
 
   const moved = await until(function () {
     const r = ownerA.lastReport || {};
-    return r.decision && r.levers && r.levers.connections &&
-      r.levers.connections.position !== '12/12';
+    return r.decision && r.levers && r.levers.connections1 &&
+      r.levers.connections1.position !== '12/12';
   }, 15000);
   const rAfter = ownerA.lastReport || {};
   if (moved) {
     test.check('the Governor moved the lever: ' + rAfter.decision.from + ' → ' +
-      rAfter.decision.to + ', allowance ' + rAfter.levers.connections.allowed);
+      rAfter.decision.to + ', allowance ' + rAfter.levers.connections1.allowed);
   } else {
     test.fail('no lever move reported: ' + JSON.stringify(rAfter.levers) + ' ' + JSON.stringify(rAfter.decision));
   }
@@ -311,7 +311,7 @@ async function run() {
 
   test.subHeading('B, well under its bound, holds');
   const rBend = ownerB.lastReport || {};
-  if (rBend.levers && rBend.levers.connections.position === '12/12' && !rBend.decision) {
+  if (rBend.levers && rBend.levers.connections1.position === '12/12' && !rBend.decision) {
     test.check('B’s lever at 12/12 with no decision — nothing to shed');
   } else {
     test.fail('B: ' + JSON.stringify(rBend.levers) + ' ' + JSON.stringify(rBend.decision));

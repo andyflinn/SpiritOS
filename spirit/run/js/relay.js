@@ -3372,7 +3372,7 @@ function createRelay(rootDir, deps) {
       // reason — §4's "watch a lever move, read why". Absent on a relay
       // with no configuration, so "no Governor" is not drawn as "idle".
       ramLimitMB: governor ? governor.ramLimitMB : undefined,
-      levers: governor ? { connections: governor.state() } : undefined,
+      levers: governor ? { connections1: governor.state() } : undefined,
       decision: governor ? (governor.lastDecision() || undefined) : undefined,
       // SWEPT BEFORE IT IS READ.
       //

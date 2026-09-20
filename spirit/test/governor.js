@@ -120,6 +120,77 @@ function run() {
     test.fail('spared streams were touched');
   }
 
+  // ── THE OWNER'S SETTING, AND HANDING IT BACK ──────────────────────
+  //
+  //   Andy: "a value set by the owner is a setting; `dynamic` hands it
+  //   back."
+  //
+  // What is asserted is not that a flag flips. It is that the programme
+  // STOPS MOVING a lever the owner has taken, and starts again when he
+  // lets go — and that the restoring move is a real move with its own
+  // reason rather than the owner's setting appearing to fail.
+  test.subHeading('A lever the owner has taken, and handed back');
+
+  {
+    const g = governorLib.createGovernor({ ramLimitMB: 32 });
+    const lev = g.lever('connections1');
+
+    if (lev && lev.label === 'connections1') {
+      test.check('the Governor lever carries its iteration in its name');
+    } else {
+      test.fail('no connections1 lever on the Governor');
+    }
+    if (g.lever('connections') === null) {
+      test.check('and it is not reachable under the name it had before the rename');
+    } else {
+      test.fail('the old lever name still answers');
+    }
+
+    // Heap far above HIGH: the programme would step down every tick.
+    const hot = { heapUsed: 32 * 1024 * 1024 * 0.99, rss: 0, present: 0 };
+
+    const moved = g.tick(hot, '');
+    if (moved && g.state().value < g.state().ceiling) {
+      test.check('unheld, the programme moves it — and says why');
+    } else {
+      test.fail('the programme did not move an unheld lever');
+    }
+
+    const owned = lev.set(7, 'set by owner', 'owner');
+    if (owned.ok && lev.heldByOwner()) {
+      test.check('the owner sets a number and the lever is held');
+    } else {
+      test.fail('the owner could not take the lever');
+    }
+
+    const held = g.tick(hot, '');
+    if (held === null && g.state().value === 7) {
+      test.check('and the programme leaves it alone — a held lever is not a failed tick');
+    } else {
+      test.fail('the programme moved a held lever to ' + g.state().value);
+    }
+
+    lev.set('dynamic', 'handed back', 'owner');
+    if (!lev.heldByOwner()) {
+      test.check('`dynamic` hands it back');
+    } else {
+      test.fail('dynamic did not release the lever');
+    }
+
+    const back = g.tick(hot, '');
+    const st = g.state();
+    if (back && typeof st.value === 'number' && st.value === st.allowed) {
+      test.check('the programme takes it back and the value is the programme value again');
+    } else {
+      test.fail('after dynamic the lever stands at ' + JSON.stringify(st.value));
+    }
+    if (st.lastMove && st.lastMove.by === 'programme' && st.lastMove.why) {
+      test.check('shown as its own move with its own reason — not as the setting failing');
+    } else {
+      test.fail('the restoring move carried no attribution: ' + JSON.stringify(st.lastMove));
+    }
+  }
+
   test.reportSuccessFailureCount();
 }
 
