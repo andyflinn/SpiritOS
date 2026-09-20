@@ -2456,8 +2456,36 @@ four hundred partners is a fact somebody noticed rather than discovered.
 ```
 member stream     7 event types   presence · request · reply · route ·
                                   relay-status · relay-event · owner-event
-relay <-> relay   2 posts         POST /api/relay/post   POST /api/relay/reply
+relay <-> relay   ONE post        POST /api/relay/post — the response IS the reply
+member -> relay   two posts       /api/relay/post (ask)
+                                  /api/relay/reply (answer something pushed at me)
 ```
+
+> **Andy:** *"if there is only posts between relays, the replies are
+> auto-matched and don't need a separate interface."*
+
+**Correct, and half of it is already true.** `carryToPartner` does
+`askPartner(url, relayKey, wrapper).then(answer => …)` — A posts to B and
+**awaits the HTTP response**, which B's `answerPartner` continuation fills
+when its member replies. The forward path has never used
+`/api/relay/reply` between relays. Only the **search** path answers down a
+stream, so deleting the streams makes both the same thing and the
+relay-to-relay surface becomes **one verb**.
+
+**`/api/relay/reply` is an artifact of pushing.** A member cannot respond
+to a push: the relay sent `request` down a stream they are holding, and
+there is no HTTP response left to fill, so the answer has to travel back
+as a fresh post. Where nothing is pushed, nothing needs posting back — so
+the verb stays for members and disappears between relays, for the same
+reason the stream does.
+
+**The hash loses a job and keeps the important one.** At the
+relay-to-relay hop, correlation becomes free — HTTP pairs the response to
+the request. The hash is still derived at each hop and never carried
+(`0011`), and the member's receipt is still signed over it, so the
+**proof** role is untouched; only the **matching** role at that one hop
+becomes redundant. That is exactly Andy's *"the hash verification and all
+stays the same."*
 
 (`roster` appears in `PARTNERS.md`'s tier-two table but is not sent —
 `handleRoster` was deleted 2026-09-17. That table is stale.)
