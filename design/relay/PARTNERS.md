@@ -630,6 +630,61 @@ N1 ──post──▶ A ──forward (signed as A) ──▶ B ──deliver�
 
 ## Tier two — the partner stream (decided 2026-09-16)
 
+> **SUPERSEDED 2026-09-21 by Andy, who reversed his own position here.**
+>
+> > *"ie. no streams between partners."*
+> > *"lets face it: the only thing streamed between partners are
+> > responses."*
+> > *"i used to insist that sseClient MUST be the vehicle. i was wrong."*
+> > *"the A to B hop will be a request. the hash verification and all
+> > stays the same."*
+>
+> **What stands, and this section argued it correctly:** the request leg
+> is a POST in both directions, because two relays are both publicly
+> reachable and only a browser cannot be POSTed to.
+>
+> **What changes:** the return leg. A partner's answer travels as the
+> **response to that POST**, held open, rather than down a held stream.
+> There is then no partner stream at all, in either direction.
+>
+> **This is not a new mechanism.** The tree already answers a partner
+> both ways: a forward resolves the partner's own held-open response
+> through the `answerPartner` continuation carried in the route entry,
+> while a search answers down a stream. Two mechanisms for one job;
+> this keeps the one already in production.
+>
+> **The protocol is untouched, which is the point.** Same
+> `request`/`reply` vocabulary, same hash derived from the bytes at each
+> hop and never carried (0011), same receipt signature. Only the vehicle
+> for the answer changes — and as this section already says, *"the
+> direction is not the node's"*.
+>
+> **What it moots:**
+>
+> - **`partnersNow`, the second registry below.** Never built — `relay.js:406`
+>   has one `presence.createRegistry()` and partners enter it, so the
+>   "must never enter `presentNow`" rule below has been violated in the
+>   shipped design since it was written. With no partner streams there is
+>   nothing to register and nothing to separate.
+> - **The stream pool a partner shares with members.** `presence.js:145`
+>   measures every stream against one `allowed`, so a large roll could
+>   lock a relay's own members out. Closed by deletion rather than by a
+>   budget.
+> - **Most of `partnerLink.js`** — dial-at-boot, backoff, the idle
+>   watchdog, reconnect.
+>
+> **What it costs, and it is the one open question:** liveness stops
+> being known. `relay.js:2705` tests a partner with
+> `presentNow.isPresent(p.relayKey)` — "live = it holds its stream here
+> now" — and that is how a search picks partners and how hint routing
+> chooses. Without streams this becomes try-and-find-out, which costs a
+> round trip against a dead partner where today it costs nothing.
+> **Undecided:** whether liveness needs a replacement at all, or whether
+> a failed post is the signal.
+>
+> Reasoning and arithmetic: [REQUEST-BUDGET.md](REQUEST-BUDGET.md),
+> *"No streams between partners"*.
+
 **Partners hold streams to each other.** One each way.
 
 The case against was that a stream is a session, and this design has no
