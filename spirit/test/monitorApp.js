@@ -388,4 +388,39 @@ test.subHeading('The All Relays summary ranks the worst first');
   }
 }
 
+test.subHeading('The headline counts one thing, not two');
+
+// The first version of this sentence lied: with nothing redlining it
+// printed the size of the WHOLE FLEET as the relay count, while the
+// other branch printed relays that were actually redlining. Two
+// populations under one sentence, and a number that means something
+// different depending on which branch produced it.
+//
+//   Andy: "it should read: 0 on 0... I only want to direct attention to
+//   where it's needed."
+{
+  const quiet = monitor.summary(
+    [{ url: 'a' }, { url: 'b' }],
+    { a: { levers: {} }, b: { levers: {} } }
+  );
+  if (monitor.headline(quiet) === 'red-lining levers: 0 on 0 relays') {
+    test.check('nothing redlining reads 0 on 0 — never 0 on however many relays are fine');
+  } else {
+    test.fail('headline: ' + monitor.headline(quiet));
+  }
+
+  const one = { levers: 3, relays: 1 };
+  if (monitor.headline(one) === 'red-lining levers: 3 on 1 relay') {
+    test.check('and it counts relays that ARE redlining, singular where it should be');
+  } else {
+    test.fail('headline: ' + monitor.headline(one));
+  }
+
+  if (monitor.headline(null) === 'red-lining levers: 0 on 0 relays') {
+    test.check('no summary at all still reads as nothing, rather than throwing');
+  } else {
+    test.fail('headline(null): ' + monitor.headline(null));
+  }
+}
+
 test.reportSuccessFailureCount();

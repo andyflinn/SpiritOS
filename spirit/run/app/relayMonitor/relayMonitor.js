@@ -255,6 +255,24 @@
     };
   }
 
+  // THE SENTENCE, out here rather than inside render, because the first
+  // version of it lied: the zero case counted the WHOLE FLEET while the
+  // other counted relays that were actually redlining. Two populations
+  // under one sentence.
+  //
+  //   Andy: "it should read: 0 on 0... zero overall red-lining levers,
+  //   and 0 relays with red-lining levers... I only want to direct
+  //   attention to where it's needed."
+  //
+  // So both numbers count the same thing, always: what is redlining.
+  // How many relays are healthy is not what this line is for.
+  function rmHeadline(sum) {
+    var levers = (sum && sum.levers) || 0;
+    var relays = (sum && sum.relays) || 0;
+    return 'red-lining levers: ' + levers + ' on ' + relays +
+      ' relay' + (relays === 1 ? '' : 's');
+  }
+
   // ── THE ENVELOPE IS NOT THE ANSWER ─────────────────────────────────
   //
   // `api.verb` answers { status, text, body } — the envelope — and not
@@ -308,14 +326,16 @@
       relayKey: rmRelayKey,
       meter: rmMeter,
       redline: rmRedline,
-      summary: rmSummary
+      summary: rmSummary,
+      headline: rmHeadline
     };
   }
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
       leverRows: rmLeverRows, leverLine: rmLeverLine,
       asOf: rmAsOf, answerOf: rmAnswerOf, relayKey: rmRelayKey,
-      meter: rmMeter, redline: rmRedline, summary: rmSummary
+      meter: rmMeter, redline: rmRedline, summary: rmSummary,
+      headline: rmHeadline
     };
   }
 
@@ -391,9 +411,10 @@
         var html = picker(mine);
 
         if (!sum.levers) {
-          html += '<p>red-lining levers: <b>0</b> on ' + mine.length +
-            ' relay' + (mine.length === 1 ? '' : 's') + '</p>';
+          html += '<p>' + escapeHtml(rmHeadline(sum)) + '</p>';
         } else {
+          // The dropdown holds ONLY relays that are redlining, worst
+          // first — there is nothing to navigate to on a healthy one.
           html += '<p>red-lining levers: <b>' + sum.levers + '</b> on ' +
             '<select id="rm-worst">' + sum.per.map(function (x) {
               return '<option value="' + escapeHtml(x.url) + '">' +
