@@ -162,6 +162,47 @@ and they still are.
   already exists and already enforces that only the opener may call it,
   but nothing exposes it to a member.
 
+## What it pays back
+
+> **Andy:** *"the simplification for building a stable relay which is
+> RAM-constrained will pay back multiple times. if alpha and beta go out
+> with a micro-relay supporting a large number of members, then i can gain
+> capital (audience) at low cost, which impacts a lot of things in the
+> valuation of a product."*
+
+The arithmetic supports it, and it locates the constraint somewhere
+useful. On a 1 GB box with roughly 200 MB budgeted to relay work:
+
+```
+request side   6400 concurrent actives   arithmetic, 2N x PAYLOAD_MAX
+stream side    3200 streams              PLACEHOLDER, STREAMS_PER_MB = 16
+
+roll on disc   100,000 members = 19 MB
+```
+
+**Membership is nearly free; concurrency is the entire cost.** A hundred
+thousand rows is nineteen megabytes — the roll was never the constraint.
+What binds is how many members are connected and asking at once, and the
+cap is what makes that number predictable rather than discovered under
+load.
+
+**But the binding half is still a guess, and that matters for the
+claim.** The request side is now arithmetic that can be defended. The
+stream side rests on `STREAMS_PER_MB = 16`, which `governor.js` describes
+as a placeholder in its own comment — *"Guessed so the ceiling is finite
+and proportional to the configured bound; replaced by the per-stream cost
+cycle 1 measures."* Cycle 1 named that measurement and deferred it.
+
+**So the highest-value measurement in the project is the per-stream
+cost.** It converts *"a micro-relay supports a large number of members"*
+from a plausible claim into a number that can be put in front of somebody
+— and it is the one figure the valuation argument rests on that nobody
+has taken.
+
+That is `0013` read commercially: *a relay is fixed-cost per time unit*,
+and the lower and more **certain** that fixed cost, the more audience a
+given outlay buys.
+
 ## The cost of waiting
 
 > **Andy:** *"a priority because there will be permanent fallout and
