@@ -698,6 +698,41 @@ therefore throughput under contention, not how much memory is held at
 once. They are independent levers on the same resource and should not be
 argued as one.
 
+## Who the blockage falls on
+
+> **Andy:** *"the member suffers from hanging requests. the blockage lies
+> there. the system itself doesn't suffer."*
+
+**Cap 1 converts a shared failure mode into a private one.** Today a
+member holds up to sixteen of a 256-slot table that everyone shares, so
+sixteen busy members can starve the seventeenth for something they did
+not do. At a cap of 1 a member can only ever hurt **themselves**: a
+hanging request blocks its owner's one slot and reaches nobody else.
+
+That is isolation rather than fairness, and it is the stronger property.
+Fairness divides a contended resource; isolation removes the contention.
+
+**And it retires an assumption this note inherited.** Peak RAM is
+`2N x PAYLOAD_MAX`, set by the caps and **independent of
+`ROUTE_WAIT_MS`**. The timeout decides how long a *stuck* slot stays
+stuck — the waiting member's experience, not the relay's exposure.
+
+> **Andy:** *"timeout duration is a massive factor in the relay's memory
+> usage."* — cycle 4 blurb, `L5413`
+
+True at a cap of 16, where occupancy and the table ceiling interact.
+**Superseded at a cap of 1**, where the caps bound the peak and the
+timeout governs no memory they do not already bound. `ROUTE_WAIT_MS`
+becomes a **latency** parameter and should be argued from human patience
+rather than from RAM — which is a different argument, with different
+evidence, and a ceiling this note is no longer entitled to derive from
+the memory figures above.
+
+**What survives of the RAM case for cutting it:** average occupancy, not
+peak. A shorter timeout frees stuck slots sooner, so less of the
+provisioned table is typically in use. That is an efficiency argument,
+not a safety one, and it does not change what must be provisioned.
+
 ## Decided
 
 Nothing. This note exists so the gaps are recorded rather than
