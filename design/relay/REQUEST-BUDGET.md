@@ -1840,6 +1840,35 @@ box in the middle. That is the same answer `0013` and *reach over speed*
 keep giving, and it is what makes a relay that stores nothing a complete
 design rather than a limitation.
 
+### Whose problem it is, which is an existing principle
+
+> **Andy:** *"... node's problem."*
+
+**`THE-REQUESTER-IS-RESPONSIBLE.md` already decides this**, and it is a
+case that file does not name — it says so itself: *"it decides cases
+those do not name."*
+
+The principle is stated about **imprecision**: *"the burden of
+specificity sits on the party asking... a relay is not obliged to
+compensate for a poor question by spending more."* This extends it to
+**persistence**, unchanged in form:
+
+> **Whoever wants the thing delivered carries the cost of wanting it.**
+
+The relay owes one attempt and forgets — fifteen seconds, a route entry
+of four small fields, gone whether it succeeded or not. The node that
+wants Bella to receive the message carries it for three days: the queue,
+the store, the backoff, the retry, and the telling-somebody when it
+finally gives up. **None of that appears on the relay**, and that is the
+whole reason a relay's memory can be a function of its membership rather
+than of how patient its members are.
+
+**It also names what NOT to build.** Every mechanism this cycle has been
+tempted by — a relay remembering a failed delivery, holding mail, pacing
+retries on a member's behalf, knowing which partners are live — is the
+relay compensating for a requester's need. Each was rejected separately
+today on its own evidence; they were one rejection all along.
+
 ### What it opens
 
 **Queue depth now matters much more.** Entries that live for days
