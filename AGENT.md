@@ -89,6 +89,16 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
   > **Andy:** *"i will burn less tokens leaving chat and rebuilding, adapting later. so many cycles burn tokens dealing with chat, when the basic browser side's fundamentals and intrinsic apps have such a long way to go."*
 
   This line replaces *"Refactoring Relay Chat onto `api.hub`"*, which was narrower and kept being read as permission for everything adjacent to it. Touch `relayChat.js` only when a tree-wide rule forces it (it moved to `api.verb` with the other five apps on 2026-09-16), and then only that.
+- **`spirit/run/brains/` — Andy's vault.** A private repo of his own
+  (`VSCode-Brain`), gitignored, cloned into the checkout so the in-studio
+  agent can reach it without leaving the workspace. **Not a node feature
+  and not a SpiritOS concept:** no gate names it, no schema describes it,
+  no test asserts it, and nothing in `js/` reads it. It sits inside
+  `ROOT_DIR`, so the shell *can* read it — that is not an oversight to
+  fix, it is personal content in a personal filesystem like `media/` and
+  `published/`, one operator, loopback only. Do not add it to
+  `fileServable`'s deny list, do not write a test for it, and do not
+  design around a "brains app" until Andy opens that sitting.
 - Name/icon lock (until that sitting)
 - App Builder work (subject to scrap; do not design cleanup around it)
 - Treating `preferences.json` / `media/` in this clone as irreplaceable personal data

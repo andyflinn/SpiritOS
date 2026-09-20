@@ -26,6 +26,36 @@ It produces a document, not a patch. Andy often opens one with a **sketch in the
 - **The durable result lands under `design/`** — `design/<area>/<NAME>.md`, linked from `design/README.md`. Brief, no transcript of the back-and-forth: vision, feasibility, proposed shape, **decided / recommended / open kept apart**, so a third party can act without re-deriving it.
 - **Attribution marks authority, not authorship**: name a decision so a later session does not relitigate it, and nothing else.
 
+## Andy's vault — `spirit/run/brains/`
+
+Not part of this product (`AGENT.md`, *What you do not do unless asked*),
+but part of how Claude works, so it belongs here.
+
+It is Andy's private repo inside the checkout. `input/` is his and
+all-encompassing; **by default an agent cannot touch it.** Claude holds
+one granted exception: draft into `input/claude/proposed/` (gitignored,
+so nothing unapproved reaches the remote), and file a draft into
+`input/claude/` only once Andy has approved it explicitly, recording his
+approving words in the blurb. `claude/` is Claude's compile and Claude's
+to design.
+
+Three things worth knowing before touching it:
+
+- **`claude/working-together/INJECTION-POINTS.md` is the operational
+  page** — corrections named by the moment they fire, not the value they
+  express. Read it at the start of a sitting.
+- **`claude/FORMAT.md` is the citation spec.** A compiled claim about the
+  tree carries `path:line @ commit` **with the quoted text**, so drift is
+  detectable rather than merely possible.
+- **Andy's words are corrected for spelling only.** Lower-case `i`,
+  `andy-rule`, trailing `....`, comma splices and run-ons stay — *"sloppy
+  keyboardage is part of me"* (2026-09-20). A garbled phrase stays
+  garbled: repairing it means guessing his meaning and putting the guess
+  in his mouth.
+
+The full method is `spirit/run/brains/VAULT_RULES.md` and is not repeated
+here.
+
 ## You are faster at
 
 - Patches inside existing files
