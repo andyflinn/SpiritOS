@@ -107,6 +107,42 @@ eviction being necessary (reasoned, never observed), and the timeout
 ceiling (**no evidence at all** — the RAM argument was retired above and
 nothing replaced it).
 
+## It is also a reset in priorities
+
+> **Andy:** *"It's also a reset in priorities, as a decision."*
+
+This displaces the staging cycle 4 was planned around. The request budget
+appears nowhere in it and cuts across two of its pieces:
+
+| planned | under 0016 |
+|---|---|
+| **4.2** `levers.json`, clamping, `requestTimeout1`, generic test layer | the budget comes first; `requestTimeout1` survives but as a **latency** lever, its RAM justification retired above |
+| **4.3** counts and bounded roll questions | now partly decided — `NODE-AND-RELAY` §8 has the age bound; what remains is the numbers and the admission policy |
+| **4.4** `All` / ranking / cadence switch | the `All` view and ranking were built 2026-09-20 ahead of schedule; the cadence switch is untouched |
+
+**Why it goes first rather than fitting in.** The cap is a constraint on
+every app written after it, and an app written before it assumes
+concurrency it will not have:
+
+> **Andy:** *"I do think that this should take priority to prove. because
+> it will simplify the game later, give us UI guidelines etc."*
+
+Building a constraint before the things constrained by it is cheaper than
+retrofitting them. That is the whole argument for the reorder, and it is
+a sequencing argument rather than an importance one.
+
+**The smallest first step, named by the evidence rather than by
+preference:** the **requester split**, which `devicePeers` proves is
+needed, and **per-target**, which is one predicate over data already held
+in `pending`. Those two are what let a cap of 1 be *tried* rather than
+argued. Announcement, queues, pacing and staleness all depend on them.
+
+**What this does not erase.** Cycle 4.1 is built and green but its own
+verification is unfinished: the shed remedy and `dynamic` handing the
+lever back are tested and have never been *seen*, and `0015` made them
+dormant before they were. The plan treats those as two different things
+and they still are.
+
 ## What is NOT decided
 
 - **The numbers.** `MAX_MEM`'s split across pools, the staleness
