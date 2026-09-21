@@ -96,6 +96,23 @@ function open(rootDir) {
   db.exec('PRAGMA journal_mode = DELETE');
   db.exec('PRAGMA synchronous = FULL');
   db.exec('PRAGMA secure_delete = ON');
+  // ── THE FILE HAS TO SHRINK, OR A BYTE CAP CANNOT BE HONOURED ────
+  //
+  // SQLite keeps a deleted row's pages on a free list and the file stays
+  // the size it reached. A cap measured in bytes would then evict for
+  // ever after one busy week, because the number it reads never comes
+  // back down.
+  //
+  // INCREMENTAL rather than FULL: FULL vacuums at every commit, and this
+  // store is written on every presence broadcast. Incremental leaves the
+  // pages until somebody asks, and the only caller that asks is the
+  // eviction that just freed them.
+  //
+  // SET BEFORE THE FIRST TABLE, because that is the only moment SQLite
+  // accepts it on a new database. A file made before this line existed
+  // would need a VACUUM to change it; none exists outside this repo's own
+  // fixtures, so no migration is written for a case that cannot happen.
+  db.exec('PRAGMA auto_vacuum = INCREMENTAL');
 
   // ── THE SHADOW ─────────────────────────────────────────────────────
   //
@@ -140,6 +157,8 @@ function open(rootDir) {
     overflow: db.prepare(`DELETE FROM seen WHERE publicKey IN (
       SELECT publicKey FROM seen ORDER BY seen ASC LIMIT ?)`),
     clear: db.prepare('DELETE FROM seen'),
+    pages: db.prepare('PRAGMA page_count'),
+    pageSize: db.prepare('PRAGMA page_size'),
   };
 
   function row(r) {
@@ -168,13 +187,55 @@ function open(rootDir) {
       // Neither does the other's job (0016): a space bound alone leaves a
       // cache frozen while there is room, and an age bound alone leaves it
       // unbounded while there is not.
-      sweepOlderThan: function (cutoffMs) { return q.older.run(Number(cutoffMs)).changes; },
-      sweepToSize: function (maxEntries) {
-        const over = q.count.get().n - Number(maxEntries);
-        if (over <= 0) return 0;
-        return q.overflow.run(over).changes;
+      // ── PAGES GO BACK WHEN ROWS DO ─────────────────────────
+      //
+      // `auto_vacuum = INCREMENTAL` frees a deleted row's pages to a list
+      // and leaves the file the size it reached until somebody asks. So
+      // every bulk delete asks — but ONLY when it actually deleted
+      // something, because the age sweep runs on every note() and
+      // vacuuming a file nothing was removed from is pure cost.
+      sweepOlderThan: function (cutoffMs) {
+        const gone = q.older.run(Number(cutoffMs)).changes;
+        if (gone) db.exec('PRAGMA incremental_vacuum');
+        return gone;
       },
-      clear: function () { return q.clear.run().changes; },
+      // ── THE SPACE BOUND IS BYTES, BECAUSE THAT IS WHAT AN OWNER HAS ──
+      //
+      //   Andy: "why is the max for nodeStore not in Megabytes: it's say
+      //   20 MBytes = 10 jpeg images from a modern cell phone?"
+      //
+      // It was a row count, which is a unit nobody thinks in and which
+      // said nothing about the thing being spent. Measured at 225 bytes a
+      // row on a real file including its index, the old `MAX_ENTRIES =
+      // 500` was 110 KB — about a five-hundredth of what a person would
+      // consider reasonable, and unknowably so from the number itself.
+      //
+      // MEASURED, NOT ESTIMATED. `page_count × page_size` is the file, not
+      // an assumption about what a row costs — which matters because a
+      // label is free-form and a row is not a fixed size.
+      bytes: function () { return q.pages.get().page_count * q.pageSize.get().page_size; },
+      sweepToBytes: function (maxBytes) {
+        const cap = Number(maxBytes);
+        if (!(cap > 0) || store.seen.bytes() <= cap) return 0;
+        let gone = 0;
+        // A CHUNK AT A TIME, oldest first, re-measuring between. One row
+        // per pass would be one vacuum per row; all-at-once would need to
+        // know the answer in advance, which is the estimate this replaced.
+        // The guard is against a cap so small that nothing empties it —
+        // an empty store still has a page.
+        for (let pass = 0; pass < 64; pass += 1) {
+          const left = q.count.get().n;
+          if (!left || store.seen.bytes() <= cap) break;
+          gone += q.overflow.run(Math.max(1, Math.ceil(left / 8))).changes;
+          db.exec('PRAGMA incremental_vacuum');
+        }
+        return gone;
+      },
+      clear: function () {
+        const gone = q.clear.run().changes;
+        if (gone) db.exec('PRAGMA incremental_vacuum');
+        return gone;
+      },
     },
 
     transaction: function (fn) {

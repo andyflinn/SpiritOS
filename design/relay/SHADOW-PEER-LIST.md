@@ -303,24 +303,30 @@ cache's, and settles that there is no third state: a row is here or it is
 gone, and while it is here its route is offered. There is no row that lives
 with its route withheld.
 
-### The default, with the arithmetic
+### The default — estimated, then measured
 
-The tree's measured anchor is 0012's, taken off the live box: *"spirit-3
-answers 9 rows in 1390 bytes, so ~154 B/row as JSON."* That row is
-`key + label + present`. A shadow row adds `at`, `via`, `url` and `seen` —
-call it **~300 B as JSON, ~600 B on disc** once a primary key index is on
-it.
+~~*A shadow row: ~300 B as JSON, ~600 B on disc. Recommended default
+16 MB ≈ 28,000 peers.*~~ — **struck 2026-09-21. The estimate was 2.7×
+pessimistic, and was reasoning from 0012's measurement of a different
+row.**
+
+**Measured instead**, by writing 5,000 rows to a real `node.db` and
+reading the file: **225 bytes a row**, index included.
+
+> **Andy:** *"why is the max for nodeStore not in Megabytes: it's say 20
+> MBytes = 10 jpeg images from a modern cell phone?"* — *"we can easily
+> default to a small city...."* — *"it's still low cost"*
 
 | cap | peers it holds |
 |---|---|
-| 1 MB | ~1 700 |
-| 8 MB | ~14 000 |
-| **16 MB** | **~28 000** |
-| 64 MB | ~110 000 |
+| 110 KB | ~500 — *what `MAX_ENTRIES = 500` actually was* |
+| 1 MB | ~4 600 |
+| **20 MB** | **~93 000 — a small city** |
+| 64 MB | ~298 000 |
 
-**Recommended default: 16 MB.** It holds more peers than the combined
-membership of every relay a person is plausibly on, and it is small enough
-on any machine that runs a node that nobody will resent it.
+**Default: 20 MB**, his number and his unit. The old bound was not merely
+in the wrong unit — it was **a five-hundredth of a reasonable size**, and
+nothing about the number `500` said so.
 
 **And the honest part: no default binds a normal node.** The cap is not
 there to be hit. It is there so the failure mode is **chosen rather than

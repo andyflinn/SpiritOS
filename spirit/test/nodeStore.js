@@ -134,23 +134,62 @@ test.subHeading('Two evictions, and neither does the other\'s job (R4)');
     test.fail('swept ' + swept + ', A=' + JSON.stringify(s.seen.get(A)));
   }
 
-  // OLDEST FIRST WHEN THERE IS NO ROOM, because the newest answer is the
-  // one somebody is looking at.
-  ['c', 'd', 'e'].forEach(function (k, i) { s.seen.put(k, { at: 'R', seen: 6000 + i }); });
-  const shed = s.seen.sweepToSize(2);
-  if (shed === 2 && s.seen.size() === 2 && s.seen.get('e') && s.seen.get(B) === null) {
-    test.check('and the space bound sheds the oldest until it fits, whatever their age');
+  // ── AND THE SPACE BOUND IS BYTES ─────────────────────────────────
+  //
+  //   Andy: "why is the max for nodeStore not in Megabytes: it's say 20
+  //   MBytes = 10 jpeg images from a modern cell phone?"
+  //
+  // MEASURED, NOT ESTIMATED: `page_count × page_size` is the file itself,
+  // which matters because a label is free-form and a row is not a fixed
+  // size. Enough rows to pass a small cap, then the file is asked.
+  for (let n = 0; n < 400; n += 1) {
+    s.seen.put('K' + String(n).padStart(4, '0'),
+      { at: 'RELAY', url: 'https://relay.example', label: 'person-' + n, seen: 10000 + n });
+  }
+  const shed = s.seen.sweepToBytes(40 * 1024);
+  if (shed > 0 && s.seen.bytes() <= 40 * 1024 && s.seen.size() > 0) {
+    test.check('the space bound holds the FILE under its cap — ' +
+      s.seen.size() + ' rows in ' + Math.round(s.seen.bytes() / 1024) + ' KB');
   } else {
-    test.fail('shed ' + shed + ', size ' + s.seen.size());
+    test.fail('after sweep: shed ' + shed + ', ' + s.seen.bytes() + ' bytes');
   }
 
-  // A SWEEP WITH ROOM TO SPARE IS NOT A SWEEP. Worth asserting because
-  // the arithmetic is a subtraction that would happily delete a negative
-  // number of rows by passing it to a LIMIT.
-  if (s.seen.sweepToSize(500) === 0 && s.seen.size() === 2) {
+  // OLDEST FIRST, because the newest answer is the one somebody is
+  // looking at.
+  if (s.seen.get('K0000') === null && s.seen.get('K0399')) {
+    test.check('and it takes the oldest, not whatever the page order reached first');
+  } else {
+    test.fail('order: first=' + JSON.stringify(s.seen.get('K0000')));
+  }
+
+  // THE FILE ACTUALLY SHRANK. Without `auto_vacuum` SQLite keeps a deleted
+  // row's pages on a free list and the size never comes back down — so a
+  // byte cap would evict for ever after one busy week, reading a number
+  // that cannot fall.
+  const held = s.seen.bytes();
+  s.seen.clear();
+  if (s.seen.bytes() < held) {
+    test.check('and the file gives the pages back, or a byte cap could never be met twice');
+  } else {
+    test.fail('the file did not shrink: ' + held + ' -> ' + s.seen.bytes());
+  }
+
+  // A SWEEP WITH ROOM TO SPARE IS NOT A SWEEP.
+  s.seen.put(A, { at: 'R', seen: 1 });
+  if (s.seen.sweepToBytes(20 * 1024 * 1024) === 0 && s.seen.size() === 1) {
     test.check('while a store inside its bound is left entirely alone');
   } else {
     test.fail('a sweep with room to spare removed something');
+  }
+
+  // AND A CAP NOTHING CAN SATISFY EMPTIES RATHER THAN SPINS. An empty
+  // database still has a page, so "one byte" is a cap no store can meet;
+  // the guard is what stops that being a loop.
+  s.seen.sweepToBytes(1);
+  if (s.seen.size() === 0) {
+    test.check('and a cap no file could meet empties the store rather than spinning on it');
+  } else {
+    test.fail('an impossible cap left ' + s.seen.size() + ' rows');
   }
   s.close();
 }

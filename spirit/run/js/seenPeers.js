@@ -89,7 +89,32 @@
 // whoever asks. There is no reader here but the node's own acquisition
 // path, and that is a boundary rather than an omission.
 
-var MAX_ENTRIES = 500;
+// ── THE SPACE BOUND IS BYTES, BECAUSE THAT IS WHAT AN OWNER SPENDS ──
+//
+//   Andy: "why is the max for nodeStore not in Megabytes: it's say 20
+//   MBytes = 10 jpeg images from a modern cell phone?"
+//
+// It was `MAX_ENTRIES = 500`, a row count — a unit nobody thinks in, and
+// one that says nothing about the thing being spent. **Measured at 225
+// bytes a row** on a real file with its index, five hundred rows is
+// **110 KB**: about a five-hundredth of what a person would call
+// reasonable, and no way to tell that from the number.
+//
+// TWENTY MEGABYTES IS ANDY'S ANCHOR AND HIS UNIT: *"say 20 MBytes = 10
+// jpeg images from a modern cell phone"*. At the measured size that holds
+// roughly **93,000 people** — and his own frame for it is the one to keep:
+//
+//   Andy: "we can easily default to a small city...."
+//
+// Which is the honest way to read this bound. It is not meant to be
+// reached — it exists so the failure mode is chosen rather than
+// discovered (0016), and so an owner on a small box can make it smaller.
+// A node that has met a small city has other problems.
+//
+// STILL THE OWNER'S TO SET (cycle R31). This is the default and the
+// enforcement; the setting and the screen that shows it are the rest of
+// that requirement.
+var MAX_BYTES = 20 * 1024 * 1024;
 
 // ── AN HOUR WAS WHAT NO STORE COULD AFFORD; THIRTY DAYS IS A CHOICE ──
 //
@@ -129,7 +154,7 @@ var MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 function createSeenPeers(opts) {
   opts = opts || {};
   var nowFn = opts.now || Date.now;
-  var maxEntries = opts.maxEntries || MAX_ENTRIES;
+  var maxBytes = opts.maxBytes || MAX_BYTES;
   var maxAgeMs = opts.maxAgeMs || MAX_AGE_MS;
   var store = opts.store || (opts.rootDir ? require('./nodeStore').open(opts.rootDir) : null);
   if (!store) throw new Error('seenPeers needs a store: pass rootDir or store');
@@ -142,7 +167,7 @@ function createSeenPeers(opts) {
     rows.sweepOlderThan(nowFn() - maxAgeMs);
     // OLDEST FIRST WHEN THERE IS NO ROOM, because the newest answer is
     // the one somebody is looking at.
-    rows.sweepToSize(maxEntries);
+    rows.sweepToBytes(maxBytes);
   }
 
   // `at` is the far relay's KEY, which is what a route is made of. A row
@@ -220,13 +245,14 @@ function createSeenPeers(opts) {
     size: size,
     forget: forget,
     reset: reset,
-    maxEntries: maxEntries,
+    maxBytes: maxBytes,
     maxAgeMs: maxAgeMs,
+    bytes: function () { return rows.bytes(); },
   };
 }
 
 module.exports = {
   createSeenPeers: createSeenPeers,
-  MAX_ENTRIES: MAX_ENTRIES,
+  MAX_BYTES: MAX_BYTES,
   MAX_AGE_MS: MAX_AGE_MS,
 };

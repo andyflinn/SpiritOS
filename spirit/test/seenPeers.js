@@ -93,7 +93,7 @@ test.subHeading('Bounded by age and by space, because neither does the other’s
   // frozen while there is room, and an age bound leaves it unbounded
   // while there is not.
   const c = clock();
-  const S = shadow({ now: c.now, maxAgeMs: 1000, maxEntries: 100 });
+  const S = shadow({ now: c.now, maxAgeMs: 1000 });
 
   S.note('KEY-OLD', { at: 'R1' });
   c.tick(1100);
@@ -103,15 +103,35 @@ test.subHeading('Bounded by age and by space, because neither does the other’s
     test.fail('a stale row survived: ' + JSON.stringify(S.get('KEY-OLD')));
   }
 
-  const T = shadow({ now: c.now, maxEntries: 3, maxAgeMs: 99999 });
-  ['a', 'b', 'c'].forEach(function (k, i) { c.tick(10); T.note(k, { at: 'R' + i }); });
-  c.tick(10);
-  T.note('d', { at: 'R3' });
+  // THE SPACE BOUND IS BYTES NOW, so forcing it means writing enough to
+  // fill a file rather than counting to four.
+  //
+  //   Andy: "why is the max for nodeStore not in Megabytes... we can
+  //   easily default to a small city."
+  //
+  // A row measures 225 bytes on disc, so a 40 KB cap is a couple of
+  // hundred people — small enough to fill here, large enough to be past
+  // an empty file's own few pages.
+  const T = shadow({ now: c.now, maxBytes: 40 * 1024, maxAgeMs: 99999 });
+  for (let n = 0; n < 400; n += 1) {
+    c.tick(10);
+    T.note('K' + String(n).padStart(4, '0'), { at: 'R', url: 'https://relay.example', label: 'p' + n });
+  }
 
-  if (T.size() === 3 && T.get('a') === null && T.get('d')) {
-    test.check('and with no room the oldest goes — the newest answer is the one somebody is looking at');
+  if (T.bytes() <= 40 * 1024 && T.size() > 0) {
+    test.check('the store is held under its cap in BYTES, which is the unit the owner spends — ' +
+      T.size() + ' rows in ' + Math.round(T.bytes() / 1024) + ' KB');
   } else {
-    test.fail('after overflow: size ' + T.size() + ' a=' + JSON.stringify(T.get('a')));
+    test.fail('after 400 rows: ' + T.bytes() + ' bytes, ' + T.size() + ' rows');
+  }
+
+  // OLDEST FIRST, because the newest answer is the one somebody is
+  // looking at. The first key written must be gone and the last must not.
+  if (T.get('K0000') === null && T.get('K0399')) {
+    test.check('and what went was the oldest, not whatever the index reached first');
+  } else {
+    test.fail('eviction order: first=' + JSON.stringify(T.get('K0000')) +
+      ' last=' + JSON.stringify(T.get('K0399')));
   }
 }
 

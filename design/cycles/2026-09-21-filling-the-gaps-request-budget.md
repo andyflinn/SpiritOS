@@ -94,7 +94,7 @@ thought about. **Three rows now need a review, and nothing else does.**
 | **R28** | a label change reaches everybody, at every level | OPEN — **decided `0019`**; hop 1 already built, hops 2-3 **wire, team review** | **yes** | |
 | **R29** | the shadow row carries rank and provenance | OPEN | **yes** | R1, R26 |
 | **R30** | presence is last-known, and the shadow dates it | OPEN — **decided `0019`** | **yes** | R29 |
-| **R31** | the owner caps the cache in disc space, called “maximum cache size” | OPEN — **decided**; default 16 MB recommended | **yes** | R26 |
+| **R31** | the owner caps the cache in disc space, called “maximum cache size” | OPEN — **bound built, 20 MB**; owner's setting + screen left | **yes** | |
 
 **Done rows are greyed.** Markdown has no colour, so they are set small
 and italic and lose their bold — present, in number order where you would
@@ -1952,19 +1952,18 @@ it: the code cannot know how much there is or what else wants it, and the
 owner knows exactly. **A lever is legitimate when the owner knows something
 the code cannot.**
 
-**It replaces `MAX_ENTRIES = 500`** (`seenPeers.js:92`) — a declared,
-unmeasured row count in a unit nobody thinks in. **`MAX_AGE_MS` stays**:
+**It replaced `MAX_ENTRIES = 500`** — a declared, unmeasured row count in
+a unit nobody thinks in, and **measured at 110 KB**. **`MAX_AGE_MS` stays**:
 0016's *"a space bound leaves a cache frozen while there is room, and an
 age bound leaves it unbounded while there is not"* still holds, and this
 replaces one of the two.
 
-**Default: 16 MB**, off 0012's measured anchor (*"~154 B/row as JSON"* for
-`key + label + present`; a shadow row adds `at`, `via`, `url`, `seen` —
-~300 B JSON, ~600 B on disc). That is ~28 000 peers: more than the combined
-membership of every relay a person is plausibly on, small enough that
-nobody resents it, and still a number that can bind. **No default binds a
-normal node** — the cap exists so the failure mode is chosen rather than
-discovered.
+**Default: 20 MB — Andy's number and his unit**, *"10 jpeg images from a
+modern cell phone"*. Measured rather than estimated: 5,000 rows written to
+a real `node.db` came to **225 bytes a row**, so 20 MB is about **93,000
+people** — *"we can easily default to a small city."* The first estimate
+here said ~600 B on disc and 16 MB; it was 2.7× pessimistic and is struck
+in the design note.
 
 **The number is node config, and readable.** Not `identity.json`, which is
 the public card. 0018's test — *"did the owner acquire it, and would they
@@ -1976,8 +1975,33 @@ route cache. Draft copy is in the design note. `UI_DESIGN_STYLE` §1 gives
 the floor a real number rather than a refusal, and §6 is the general form
 of Andy's instruction.
 
-**Status:** OPEN — not built. Needs **R26** (a cache with no store has no
-disc footprint to cap). UI and node config; no packet.
+### Half built 2026-09-21, in cycle 2
+
+**The bound is bytes and the default is 20 MB**, enforced by
+`nodeStore.sweepToBytes`, which reads the FILE (`page_count × page_size`)
+rather than estimating from a row count — a label is free-form and a row
+is not a fixed size.
+
+**And the file had to be made able to shrink**, which only measuring
+showed: SQLite keeps a deleted row's pages on a free list and the size
+never falls, so a byte cap would evict for ever after one busy week,
+reading a number that cannot come down. `PRAGMA auto_vacuum = INCREMENTAL`
+at creation, and every bulk delete asks for the pages back — but only when
+it actually removed something, because the age sweep runs on every
+`note()`.
+
+**What is left is the OWNER's half**: where the number is stored so a
+person can change it, and the Info screen showing it as *"maximum cache
+size"*. The screen is UI, so it waits for a UI session by Andy's rule.
+
+**Verify:** `spirit/test/nodeStore.js` — the cap holds the file, the
+oldest go first, the file gives its pages back, a store inside its bound
+is untouched, and a cap no file could meet empties the store rather than
+spinning on it. `spirit/test/seenPeers.js` asserts the same through the
+shadow.
+
+**Status:** OPEN — the bound and its default are built; the owner's
+setting and its screen are not.
 
 ### R32 — working a long contact list: select, bulk remove, filter
 
