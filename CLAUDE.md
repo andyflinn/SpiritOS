@@ -41,12 +41,16 @@ to design.
 
 Four things worth knowing before touching it:
 
-- **`claude/COMPILED.md` is read at the start of every sitting.** It is
-  what the vault has learned about working with Andy, and a brain that is
-  written and never read tests nothing — Andy: *"in the course of the
-  SpiritOS project, i meant for this example to be tested."* It is
-  Claude's paraphrase, so it yields to `AGENT.md` and to Andy's own words
-  wherever they disagree; a disagreement found is a recompile to do.
+- **Run `claude/procedures/SITTING-OPENER.md` before the first
+  substantive answer of every sitting.** It loads what the compile has
+  learned about working with Andy — the injection points always, the
+  `facts/` page for the subject, `INDEX.md` when unsure — and a brain
+  that is written and never read tests nothing. Andy: *"in the course of
+  the SpiritOS project, i meant for this example to be tested."* The
+  compile is Claude's paraphrase, so it yields to `AGENT.md` and to
+  Andy's own words wherever they disagree; a disagreement found is a
+  recompile to do. (`claude/COMPILED.md` is the ledger of what each
+  compile consumed, not the compile itself.)
 - **`claude/procedures/INJECTION-POINTS.md` is the operational page** —
   corrections named by the moment they fire, not the value they express.
   Read it at the start of a sitting.
