@@ -1,0 +1,17 @@
+{
+  "measuredAt": "2026-09-21T16:09:02.733Z",
+  "commit": "cccb865",
+  "platform": "linux",
+  "release": "6.18.33.2-microsoft-standard-WSL2",
+  "node": "v24.21.0",
+  "seconds": 46,
+  "exitCode": 0,
+  "summary": {
+    "suites": 112,
+    "green": 2671,
+    "red": 0,
+    "unhappy": 0,
+    "notRun": 0
+  },
+  "summaryParsed": true
+}
