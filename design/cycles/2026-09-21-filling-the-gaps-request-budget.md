@@ -56,7 +56,7 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Fifteen open, one deferred, fifteen done. Ten of the eighteen are
+**Fourteen open, one deferred, one cancelled, fifteen done. Ten of the eighteen are
 blocked by nothing**, and nine are decided — waiting to be built, not to be
 thought about. **Three rows now need a review, and nothing else does.**
 
@@ -71,7 +71,7 @@ thought about. **Three rows now need a review, and nothing else does.**
 | <sub>R7</sub> | <sub>*drop the ceiling to 1 and run the experiment*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R8</sub> | <sub>*`viaUrl` in a search answer — was already built*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R9** | hints carry `{ key, url }` | OPEN — **wire, team review** | **yes** | |
-| **R10** | `cancel`, exposed to a member | OPEN — no longer a prerequisite | **yes** | |
+| <sub>R10</sub> | <sub>*`cancel`, exposed to a member*</sub> | <sub>*cancelled*</sub> | <sub>—</sub> | |
 | **R11** | the URL rule / SSRF — provenance, and only while a relay row is unkeyed | OPEN — **Andy's to decide**; scoped to the unkeyed window, three candidates | partial | |
 | <sub>R12</sub> | <sub>*`last` on a partner row*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R13** | no streams between partners | OPEN — **wire, team review** | **yes** | R12 |
@@ -692,11 +692,15 @@ one end and leaves the other blocked.
 
 ### R10 — `cancel`, exposed to a member
 
-Resolves B1 in the direction that keeps the shorter node timeout.
+> **Andy, 2026-09-21:** *"cancel is cancelled. My decision."*
 
----
+R5 removed the reason for it. The node now tells the relay how long it
+will wait and the relay cannot hold on longer, so the gap this closed
+cannot open.
 
-**Status:** OPEN — not built, and no longer a prerequisite — R5 makes the inversion it cleans up after structurally impossible. Kept for a caller giving up by choice.
+**Status:** DEFERRED: cancelled by Andy — R5 made it unnecessary, and a
+verb on the wire is not worth keeping for a caller who changes their mind
+early.
 
 ## Stage D — the partner architecture
 
