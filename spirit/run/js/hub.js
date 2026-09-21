@@ -1949,10 +1949,15 @@ function createHub(rootDir) {
     var strangers = [];
     var rows;
     try { rows = S.recall(); } catch (e) { return { rows: [], more: false }; }
+    // THE BOOK, READ ONCE. byPublicKey reads and parses the file on every
+    // call, and this asks about every chosen row and every row returned —
+    // thousands of reads a search for a large book.
+    var bookRows = Object.create(null);
+    contactBook.load(rootDir).forEach(function (b) { if (b && b.publicKey) bookRows[b.publicKey] = b; });
     rows.forEach(function (r) {
       if (!r.publicKey || r.publicKey === myKey || found[r.publicKey]) return;
       var book = (r.choice === 'added' || r.choice === 'held' || r.blocked)
-        ? contactBook.byPublicKey(rootDir, r.publicKey) : null;
+        ? (bookRows[r.publicKey] || null) : null;
       // The book's public label first: it is what the owner's list shows,
       // and a contact added by key may have a name only there.
       var candidate = {
@@ -1970,7 +1975,7 @@ function createHub(rootDir) {
 
     function shaped(c) {
       var best = S.get(c.publicKey) || {};
-      var row = contactBook.byPublicKey(rootDir, c.publicKey);
+      var row = bookRows[c.publicKey] || null;
       return {
         publicKey: c.publicKey,
         publicLabel: c.publicLabel,
