@@ -56,8 +56,8 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Open is eighteen. Eight of those are blocked by nothing, and three
-of the eighteen are decided and waiting only to be built.**
+**Open is nineteen. Eight of those are blocked by nothing, and four
+of the nineteen are decided and waiting only to be built.**
 
 | | what | status | blocked by |
 |---|---|---|---|
@@ -91,6 +91,7 @@ of the eighteen are decided and waiting only to be built.**
 | **R28** | a label change reaches everybody, at every level | OPEN — **decided `0019`**; hop 1 node-side, hops 2-3 **wire, team review** | |
 | **R29** | the shadow row carries rank and provenance | OPEN | R1, R26 |
 | **R30** | presence is last-known, and the shadow dates it | OPEN — **decided `0019`** | R29 |
+| **R31** | the owner caps the cache in disc space, called “maximum cache size” | OPEN — **decided**; default 16 MB recommended | R26 |
 
 **Startable today, nothing in the way:** R1 (the `via` half), R9\*, R12,
 R15, R17, R19, **R27**, R28\*. *\*R9 and R28 need a team review before they are built, not before
@@ -950,16 +951,17 @@ at all under R30, so there is no stranger broadcast to hang a label on.
 > changes a public label, it goes to all relays, a relay receives a
 > label-change-post, it is broadcast to members."*
 
-**Three hops, not two.** The missing one is at the top and is node-side:
+**Three hops, and the first one is already built.**
 
-1. **The node fans a rename to every relay it is a member of.** Today the
-   browser addresses ONE relay by key (`server.js:723`, `relay.js:2563`) —
-   so a person on three relays renames themselves on one of them and stays
-   stale on the other two. The verb already exists (`renameSelf`,
-   `relay.js:1710`); nothing new goes on the wire for this hop.
+1. ~~*The node fans a rename to every relay it is a member of.*~~ — **done
+   before this cycle.** `infoPush` (`info.js:281`) posts to every seat at
+   once, on Andy's own instruction in that file's header: *"i want this app
+   to distribute my label to ALL relays I'm a member of."* An earlier draft
+   of this requirement said the fan-out was missing, read from
+   `natterDetails`, which is what the Info app replaced.
 2. **The relay broadcasts `{key, label}` to its members**, instead of
    `ownerEvent` to one sink.
-3. **`claim` broadcasts too**, which 0012 decided in 2018-09-18 and the
+3. **`claim` broadcasts too**, which 0012 decided on 2026-09-18 and the
    code never did.
 
 **It stops at the partnership.** A stranger on a partner relay learns the
@@ -967,9 +969,8 @@ new name at their next search or exchange — correct, because a relay
 speaks for its own members and a partner passing a name on is second-hand
 by construction.
 
-**Status:** OPEN — **decided, not built.** Hop 1 is node-side and needs no
-packet. Hops 2 and 3 are new broadcasts on the wire, so a **team review**
-(`CLAUDE.md`).
+**Status:** OPEN — **decided, not built.** Hop 1 is already built. Hops 2
+and 3 are new broadcasts on the wire, so a **team review** (`CLAUDE.md`).
 
 ### R29 — the shadow row carries rank and provenance
 
@@ -1068,6 +1069,49 @@ leaves it.
 
 **Status:** OPEN — decided, not built. Node-side and UI; depends on R29 for
 the row shape.
+
+### R31 — the owner caps the cache in disc space, and it is called that
+
+> **Andy:** *"the node owner must be able to cap the shadow-roll by disc
+> space: default? the UI for this node-configuration item fits best into
+> the info-app right now, and should be presented as maximum cache size,
+> not a technical term."*
+
+Argued in [SHADOW-PEER-LIST.md](../relay/SHADOW-PEER-LIST.md).
+
+**A lever, three days after the owner's levers were revoked, and the test
+says it is the opposite case.** `settable` went because an owner cannot
+know what a stream costs in RAM. Disc on the owner's own machine inverts
+it: the code cannot know how much there is or what else wants it, and the
+owner knows exactly. **A lever is legitimate when the owner knows something
+the code cannot.**
+
+**It replaces `MAX_ENTRIES = 500`** (`seenPeers.js:92`) — a declared,
+unmeasured row count in a unit nobody thinks in. **`MAX_AGE_MS` stays**:
+0016's *"a space bound leaves a cache frozen while there is room, and an
+age bound leaves it unbounded while there is not"* still holds, and this
+replaces one of the two.
+
+**Default: 16 MB**, off 0012's measured anchor (*"~154 B/row as JSON"* for
+`key + label + present`; a shadow row adds `at`, `via`, `url`, `seen` —
+~300 B JSON, ~600 B on disc). That is ~28 000 peers: more than the combined
+membership of every relay a person is plausibly on, small enough that
+nobody resents it, and still a number that can bind. **No default binds a
+normal node** — the cap exists so the failure mode is chosen rather than
+discovered.
+
+**The number is node config, and readable.** Not `identity.json`, which is
+the public card. 0018's test — *"did the owner acquire it, and would they
+care?"* — says the cache is the machine's and exempt while **the cap is
+the owner's and is not**.
+
+**On screen: Info, called "Maximum cache size."** Not shadow roll, not
+route cache. Draft copy is in the design note. `UI_DESIGN_STYLE` §1 gives
+the floor a real number rather than a refusal, and §6 is the general form
+of Andy's instruction.
+
+**Status:** OPEN — not built. Needs **R26** (a cache with no store has no
+disc footprint to cap). UI and node config; no packet.
 
 ## The order, and why
 

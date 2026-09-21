@@ -267,6 +267,100 @@ opposite way from the current code.
 
 ---
 
+## The owner's cap, and what it is called on screen
+
+> **Andy:** *"the node owner must be able to cap the shadow-roll by disc
+> space: default? the UI for this node-configuration item fits best into
+> the info-app right now, and should be presented as maximum cache size,
+> not a technical term."*
+
+**This is a lever, three days after the owner's levers were taken away.
+It is the opposite case, and the test says so.** `settable` was revoked
+because *"the code needs to decide what is settable… I expect
+max_in_flight to be one of them"* — an owner cannot know how much RAM a
+stream costs, so a dial over it was a dial over a quantity nobody had
+measured. **Disc on the owner's own machine is the inverse:** the code
+cannot know how much of it there is or what else wants it, and the owner
+knows exactly. The rule that falls out, and it is worth writing down:
+
+> **A lever is legitimate when the owner knows something the code cannot.**
+
+### What it replaces
+
+`MAX_ENTRIES = 500` (`seenPeers.js:92`) — a row count, declared and never
+measured, in a unit no person thinks in.
+
+**`MAX_AGE_MS` stays**, and 0016's argument is why: *"a space bound leaves a
+cache frozen while there is room, and an age bound leaves it unbounded
+while there is not."* Two bounds, neither doing the other's job. The cap
+replaces one of them and is not a reason to drop the second.
+
+### The default, with the arithmetic
+
+The tree's measured anchor is 0012's, taken off the live box: *"spirit-3
+answers 9 rows in 1390 bytes, so ~154 B/row as JSON."* That row is
+`key + label + present`. A shadow row adds `at`, `via`, `url` and `seen` —
+call it **~300 B as JSON, ~600 B on disc** once a primary key index is on
+it.
+
+| cap | peers it holds |
+|---|---|
+| 1 MB | ~1 700 |
+| 8 MB | ~14 000 |
+| **16 MB** | **~28 000** |
+| 64 MB | ~110 000 |
+
+**Recommended default: 16 MB.** It holds more peers than the combined
+membership of every relay a person is plausibly on, and it is small enough
+on any machine that runs a node that nobody will resent it.
+
+**And the honest part: no default binds a normal node.** The cap is not
+there to be hit. It is there so the failure mode is **chosen rather than
+discovered** — 0016's argument about relay rolls, one layer down — and so
+an owner on a small box can make it smaller. A default that could never
+bind at any size would make the control decorative; 16 MB can bind, on a
+node that has met thirty thousand people.
+
+### Where the number lives
+
+**Not `identity.json`.** That file is the node's public card — the name and
+the sentence a stranger reads (`nodeCard.js`) — and a disc budget is not
+something this node says about itself.
+
+**A node settings file, and a readable one.** 0018's test is *"did the
+owner acquire it, and would they care?"* They typed it, so both. The cache
+it bounds is the machine's and exempt; **the cap is the owner's and is
+not** — which is the same line 0018 draws, landing on opposite sides in
+one feature.
+
+### On screen
+
+**Info, and the app's own header already says why**: *"'More to come' is
+why this is its own app and not two fields bolted onto another one."*
+Andy's *"right now"* is noted — this is placement, not a claim that a disc
+budget belongs with a public name for ever.
+
+**Called "Maximum cache size", and nothing else.** Not shadow roll, not
+route cache, not peer table. Draft copy, for the sitting that builds it:
+
+> **Maximum cache size**
+> What this node may keep about people it has met or been told about —
+> their names, and where to reach them. It fills in by itself and clears
+> the oldest first when it is full. This is not your contacts: emptying it
+> loses nothing you typed.
+
+Two style rules bear on it. **§1** — *"do not build a control whose every
+value would be refused"* — so the floor is a real number, not zero, and it
+is stated rather than discovered by being refused. **§6**, human-facing
+machine values, is the general form of Andy's instruction: the person sees
+a size, never the structure under it.
+
+### What it is not
+
+**It is not a promise about what fits.** A cap in bytes over a cache with
+an age bound and an eviction order tells the owner what it will not exceed,
+not what it will hold. The screen should not imply otherwise.
+
 ## Decided
 
 Nothing new. Two standing decisions cover this ground, and both are cited

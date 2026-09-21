@@ -29,15 +29,26 @@ already half-built:
 
 | hop | today @ `17db255` | under this decision |
 |---|---|---|
-| owner → their relays | `peer.post` with `{rename:{label}}`, **to one relay**, driven by the browser (`server.js:723`, `relay.js:2563`) | the node fans it to **all** relays it is a member of |
+| owner → their relays | **already built** — `infoPush` (`info.js:281`) posts `{rename:{label}}` to every seat at once | unchanged |
 | relay → its members | `ownerEvent('peer-renamed')` — **one sink** (`relay.js:1767`, `:3451`) | broadcast `{key, label}` to every member |
 | member node → its own state | `onRoute` already takes a label when one rides along (`server.js:1162`) | the same path, now fed by an event that exists for it |
 
-**The verb already exists and already works.** `renameSelf` (`relay.js:1710`)
-is a peer renaming its own caption, reached as an ordinary post. Nothing
-new goes on the wire at the first hop — what is missing is that the node
-sends it once instead of everywhere, and that the relay tells one listener
-instead of all of them.
+**Hop 1 was written before this decision and satisfies it.** An earlier
+draft of this record said the browser addresses one relay and the fan-out
+was missing. **That was wrong**, and read from `natterDetails`, which did
+work one relay at a time. The Info app replaced it:
+
+> `info.js:20` @ `4d8617b` — **Andy, in the file's own header:** *"when I'm
+> on the phone with a friend to connect, i have no idea which 'relay'
+> contains which 'label' of mine. i want this app to distribute my label to
+> ALL relays I'm a member of."*
+>
+> `info.js:275` — *"the same call natterDetails made one relay at a time…
+> What is new here is only that it is said to all of them at once."*
+
+**So what this ruling adds is hops 2 and 3 only**, and the verb at hop 1
+(`renameSelf`, `relay.js:1710`) has always been an ordinary post. What is
+missing is that **the relay tells one listener instead of all of them.**
 
 **Why this is the cheap broadcast.** From SHADOW-PEER-LIST's arithmetic: a
 broadcast costs `O(members) × event rate`, so the events that earn one are
