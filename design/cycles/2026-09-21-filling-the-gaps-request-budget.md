@@ -59,39 +59,73 @@ can start today.
 **Open is nineteen. Eight of those are blocked by nothing, and four
 of the nineteen are decided and waiting only to be built.**
 
-| | what | status | blocked by |
-|---|---|---|---|
-| **R1** | `via` on the shadow row; `routes` off the contact row | OPEN — half can start now | `routes` half: **R26** |
-| **R2** | the sweep that needed prioritising, deleted instead | **DONE** | |
-| **R3** | queue depth, and what is shed at the limit | **DONE** | |
-| **R4** | route expiry using `seen` | OPEN | R1 |
-| **R5** | the timeout is a duration, carried, diminishing inward | **DONE** | |
-| **R6** | `maxPerTarget` out of config, into code | **DONE** | |
-| **R7** | drop the ceiling to 1 and run the experiment | **DONE** | |
-| **R8** | `viaUrl` in a search answer | **DONE** — was already built | |
-| **R9** | hints carry `{ key, url }` | OPEN — **wire, team review** | |
-| **R10** | `cancel`, exposed to a member | OPEN — no longer a prerequisite | |
-| **R11** | the URL rule / SSRF | OPEN — **Andy's to decide** | |
-| **R12** | `last` on a partner row | OPEN | |
-| **R13** | no streams between partners | OPEN — **wire, team review** | R12 |
-| **R14** | open partnering, provisional rows, a visible count | OPEN — not decided | R8, R9, R11, R12 |
-| **R15** | the per-stream measurement | OPEN — **four conclusions rest on it** | |
-| **R16** | the queue survives a restart | OPEN | R26's store |
-| **R17** | suites clean up the homes they create | OPEN — leak untouched | |
-| **R18** | durations on a clock that cannot jump | **DONE** | |
-| **R19** | the load fixture, and *seeing* it stay lively | OPEN — half covered | |
-| **R20** | the Governor's remaining job | OPEN | R15 |
-| **R21** | labMaster blocks on netstat; Windows RSTs a full backlog | **DONE** | |
-| **R22** | censusNarrow reads a file another suite deletes | **DONE** | |
-| **R23** | a sibling is a route too, and both ends are told | **DONE** | |
-| **R24** | a search answer is kept until somebody acts on it | **DONE** | |
-| **R25** | a route is learned at every opportunity; policy does not gate it | **DONE** | |
-| **R26** | the shadow needs a store, and it is a persist shape | OPEN — **new persist shape, team review** | |
-| **R27** | a presence event about a stranger is discarded, and it is a route | OPEN | |
-| **R28** | a label change reaches everybody, at every level | OPEN — **decided `0019`**; hop 1 node-side, hops 2-3 **wire, team review** | |
-| **R29** | the shadow row carries rank and provenance | OPEN | R1, R26 |
-| **R30** | presence is last-known, and the shadow dates it | OPEN — **decided `0019`** | R29 |
-| **R31** | the owner caps the cache in disc space, called “maximum cache size” | OPEN — **decided**; default 16 MB recommended | R26 |
+| | what | status | solution? | blocked by |
+|---|---|---|---|---|
+| **R1** | `via` on the shadow row; `routes` off the contact row | OPEN — half can start now | **yes** | `routes` half: **R26** |
+| <sub>R2</sub> | <sub>*the sweep that needed prioritising, deleted instead*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| <sub>R3</sub> | <sub>*queue depth, and what is shed at the limit*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| **R4** | route expiry using `seen` | OPEN | partial | R1 |
+| <sub>R5</sub> | <sub>*the timeout is a duration, carried, diminishing inward*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| <sub>R6</sub> | <sub>*`maxPerTarget` out of config, into code*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| <sub>R7</sub> | <sub>*drop the ceiling to 1 and run the experiment*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| <sub>R8</sub> | <sub>*`viaUrl` in a search answer — was already built*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| **R9** | hints carry `{ key, url }` | OPEN — **wire, team review** | **yes** | |
+| **R10** | `cancel`, exposed to a member | OPEN — no longer a prerequisite | **yes** | |
+| **R11** | the URL rule / SSRF | OPEN — **Andy's to decide** | **no** | |
+| **R12** | `last` on a partner row | OPEN | **yes** | |
+| **R13** | no streams between partners | OPEN — **wire, team review** | **yes** | R12 |
+| **R14** | open partnering, provisional rows, a visible count | OPEN — not decided | **no** | R8, R9, R11, R12 |
+| **R15** | the per-stream measurement | OPEN — **four conclusions rest on it** | **no** | |
+| **R16** | the queue survives a restart | OPEN | partial | R26's store |
+| **R17** | suites clean up the homes they create | OPEN — leak untouched | **yes** | |
+| <sub>R18</sub> | <sub>*durations on a clock that cannot jump*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| **R19** | the load fixture, and *seeing* it stay lively | OPEN — half covered | **yes** | |
+| **R20** | the Governor's remaining job | OPEN | **no** | R15 |
+| <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| <sub>R23</sub> | <sub>*a sibling is a route too, and both ends are told*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| <sub>R24</sub> | <sub>*a search answer is kept until somebody acts on it*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| <sub>R25</sub> | <sub>*a route is learned at every opportunity; policy does not gate it*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| **R26** | the shadow needs a store, and it is a persist shape | OPEN — **new persist shape, team review** | partial | |
+| **R27** | a presence event about a stranger is discarded, and it is a route | OPEN | **yes** | |
+| **R28** | a label change reaches everybody, at every level | OPEN — **decided `0019`**; hop 1 already built, hops 2-3 **wire, team review** | **yes** | |
+| **R29** | the shadow row carries rank and provenance | OPEN | **yes** | R1, R26 |
+| **R30** | presence is last-known, and the shadow dates it | OPEN — **decided `0019`** | **yes** | R29 |
+| **R31** | the owner caps the cache in disc space, called “maximum cache size” | OPEN — **decided**; default 16 MB recommended | **yes** | R26 |
+
+**Done rows are greyed.** Markdown has no colour, so they are set small
+and italic and lose their bold — present, in number order where you would
+look for them, and visually out of the way. Say the word if you would
+rather they collapsed out of sight entirely.
+
+**What "solution?" means.** Not *is it decided* and not *is it started* —
+**is there a worked answer somebody could build from without re-deriving
+it.** A DONE row is a dash; it has been built, so the question is spent.
+
+### Which first step clears the most
+
+> **Andy:** *"so we can decide which first step contributes most to
+> clearing the R-list."*
+
+Reading the blocked-by column backwards gives what each row **unblocks**:
+
+| build this | frees, directly | and then |
+|---|---|---|
+| **R26** the store | R1's second half, R16, R29, R31 | R29 frees R30, R1 frees R4 — **six in total** |
+| **R12** `last` on a partner row | R13, and one of R14's four | |
+| **R1** `via` | R4, R29 | R29 frees R30 — three |
+| **R15** the measurement | R20 | plus four claims nobody can state until it exists |
+
+**R26 is the keystone, and it is blocked by nothing but a sentence from
+Andy.** Its one open question is the node floor: `node:sqlite` needs
+**22.13** and `package.json` says **18**. That is not research, it is a
+ruling — and until it is made, six rows cannot move.
+
+**R15 is the one this column just exposed.** Four conclusions rest on it,
+nothing blocks it, and **it has no body at all** — the requirement is a
+heading and a status line. It has been carried for a day as though it were
+understood, and what it actually needs is a method: what to measure, on
+what, against what baseline. That is a sitting of its own, not a task.
 
 **Startable today, nothing in the way:** R1 (the `via` half), R9\*, R12,
 R15, R17, R19, **R27**, R28\*. *\*R9 and R28 need a team review before they are built, not before
@@ -1021,8 +1055,23 @@ from relays this node holds a stream to, about this node's own contacts
 
 **A stranger's mark comes from three places:**
 
-1. **Returned in a search → green.** Already true and already delivered —
-   `hub.js:1868` drops the absent, `:1936` marks the rest present.
+1. **Returned in a search → green, for every row that came back.**
+
+   > **Andy:** *"the search carries implied presence, which should trigger
+   > updates, for all search results. strangers can only be found if they
+   > ARE present, this warrants a 'present' on the shadow-roll-row of every
+   > search result."*
+
+   Search is online-only, so **being found is the evidence** — nothing has
+   to be asserted, the answer's existence is the claim. `hub.js:1868` drops
+   anything marked absent and `:1936` marks the rest present, so it is true
+   by construction rather than by trust.
+
+   **The write is one field.** Every search row is already noted to the
+   shadow at `hub.js:1997`; `present: true` joins that object. *"For all
+   search results"* is the load-bearing phrase — not the rows somebody
+   clicked, every row that came back, which is R24's rule carrying a
+   second field.
 2. **Any reply to a post → green**, whatever the reply says. A refusal
    still proves reachability; the content is a separate matter.
 3. **`503 peer not reachable` → not green**, and this one is streamed.
@@ -1053,11 +1102,21 @@ a sibling stranger's presence is being delivered free and dropped at
 `presenceNode.js:181`.
 
 **The obligation, and it is the part that makes the rule honest.**
-Last-known is only true if the age is visible. A green dot with no age
-beside it is read as a live claim, and an hour-old green becomes exactly
-the false positive `contacts.js:271` was built to avoid. **Wherever a mark
-is shown, its age is available** — `contactsPresenceTitle`
-(`contacts.js:288`) already writes a sentence and is the place.
+
+> **Andy:** *"Why can green dots not have an informative tool tip, like the
+> non-green dots?"*
+
+**They can and they do** — checked: `contacts.js:346` and `:579` render a
+`title` on every row including green, from `contactsPresenceTitle` (`:288`)
+and `contactsSeenMarkTitle` (`:322`). *(A green dot showing nothing in the
+running app would be a defect, not a design gap.)*
+
+**The gap is that none of the four carries a time.** All are written in the
+present tense — *"is holding"*, *"says they are connected"* — which is the
+live claim this rule says presence is not. So: **wherever a mark is shown,
+its age is available**. Four strings, one field, no new control, and an
+hour-old green stops being the false positive `contacts.js:271` was built
+to avoid.
 
 **And `contacts.js:271` is amended when this is built, not before.** *"FALSE
 NEGATIVES ONLY"* still stands as written: this changes what makes a mark

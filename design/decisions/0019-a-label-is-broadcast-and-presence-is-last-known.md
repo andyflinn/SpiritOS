@@ -124,14 +124,45 @@ subscription to maintain, and therefore nothing from which a long-lived
 listener could assemble a roll. **A node derives a stranger's mark from its
 own traffic, which is what the shadow already is.**
 
-**Read as adopted, flagged for correction in one word.** *"streamed to
-requesters when the stranger is returned in a search"* is read here as
-**the search answer itself carrying presence** — which it does today —
-rather than as a standing per-requester subscription on the relay. That
-reading is what makes the ruling self-consistent: a subscription would be
-live presence, and the rule says last-known. If a subscription was meant,
-this section is wrong and the cost is a per-requester registry on the
-relay, which 0013 would have to be argued against.
+**The fork is closed, and in favour of the reading above.** *"Streamed to
+requesters when the stranger is returned in a search"* was read here as the
+search answer itself carrying presence, rather than a standing
+per-requester subscription on the relay. Andy confirmed it:
+
+> *"Yes the search carries implied presence, which should trigger updates,
+> for all search results. strangers can only be found if they ARE present,
+> this warrants a 'present' on the shadow-roll-row of every search
+> result."*
+
+**So no subscription, no registry on the relay, and no new packet.**
+
+### Being found IS the evidence
+
+The argument is airtight and it is his: **search is online-only**, so a
+stranger who can be found is a stranger who is present. Nothing has to be
+asserted separately, because the answer's existence is the claim.
+
+The two halves are already in the tree and already enforce it:
+
+- `hub.js:1868` @ `0fd5994` — a row marked absent is dropped before it
+  reaches the list.
+- `hub.js:1936` — every surviving row is marked `present: true`.
+
+**And the write costs one field.** Every search row is already noted to the
+shadow — `hub.js:1997`:
+
+```
+seenPeers.note(row.publicKey, { at: row.atKey, url: row.relay, label: row.publicLabel });
+```
+
+`present: true` joins that object. It is **true by construction** rather
+than by assertion, because the filter four hundred lines above has already
+removed anything it would be false for.
+
+**"For all search results" is the load-bearing phrase.** Not the rows
+somebody clicked, not the rows that became contacts — every row that came
+back. That is the same rule as R24 (*a search answer is kept until somebody
+acts on it*), now carrying a second field.
 
 **NOT-green is deliberately not spelled as a colour here.** The screen has
 three marks (`contacts.js:261`): green *present*, red *a relay you share
@@ -213,17 +244,28 @@ is the most responsive presence in the system.
 
 **Last-known is only true if the age is visible.**
 
-The rule holds in the data — the shadow carries `seen`, and *"present as of
-14:02"* is true for ever. It does **not** hold on the screen. A green dot
-with no age next to it is read as a live claim by everybody who looks at
-it, and an hour-old green would then be exactly the false positive the
-current model was built to avoid.
+> **Andy:** *"Why can green dots not have an informative tool tip, like the
+> non-green dots?"*
 
-So the timestamp is not an implementation detail of this decision, it is
-the part that makes it honest: **wherever a mark is shown, its age is
-available.** A tooltip is enough; `contactsPresenceTitle`
-(`contacts.js:288`) is already the place, and already writes a sentence
-rather than a word.
+**They can, and they already do.** Checked rather than assumed: all four
+marks carry a `title`, green included — `contacts.js:346` and `:579` render
+one on every row, from `contactsPresenceTitle` (`:288`) and
+`contactsSeenMarkTitle` (`:322`). Green's reads *"present — a relay you
+share is holding their connection"*, and a stranger's green reads *"the
+relay that found them says they are connected, but you share no relay with
+them"*, which is the more informative of the two.
+
+*(If a green dot shows nothing in the running app, that is a defect and not
+a design gap — worth chasing separately, because the code says it should.)*
+
+**So the gap is not the tooltip. It is that none of the four carries a
+time.** Every one of them is written in the present tense — *"is holding"*,
+*"says they are connected"* — which is exactly the live claim this decision
+says presence is not. The rule holds in the data and breaks on the screen.
+
+**Wherever a mark is shown, its age is available**, and the sentences are
+already there to carry it: *"present — a relay you share was holding their
+connection, as of 14:02"*. Four strings, one field, no new control.
 
 ---
 
