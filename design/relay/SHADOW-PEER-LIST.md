@@ -16,6 +16,13 @@ Companion to [WHAT-A-NODE-KNOWS.md](WHAT-A-NODE-KNOWS.md), which asks what
 a node does with what it is told. **This asks two narrower things: what
 shape the row is, and which events earn a broadcast.**
 
+> **Ruled on the same day by
+> [0019](../decisions/0019-a-label-is-broadcast-and-presence-is-last-known.md).**
+> Recommendations 1-4 below are **decided**, the row gains a timestamped
+> `present`, and the open item about a label on `presence` is **struck
+> with its premise**. Marked in place below rather than rewritten, so the
+> argument that produced the ruling stays readable.
+
 ---
 
 ## The rule this sitting extracts
@@ -155,9 +162,10 @@ of it. Three consequences, all live:
 
 ```
 key -> {
-  label:  { v, at, rank },                 // one value, with its provenance
-  routes: [ { at, url, via, rank, told } ], // capped, best-ranked first
-  seen,                                    // last sighting of any kind
+  label:   { v, at, rank },                 // one value, with its provenance
+  present: v,                               // LAST-KNOWN; dated by `seen` below (0019)
+  routes:  [ { at, url, via, rank, told } ],// capped, best-ranked first
+  seen,                                     // last sighting of any kind
 }
 ```
 
@@ -166,6 +174,15 @@ key -> {
   missing field; without it a route cannot be retried through the door
   that proved it.
 - **`rank`** — the authority of the source, below.
+- **`present`** — added by `0019`. Andy: *"shadow-roll track presence in a
+  time-stamped fashion"*, and *"the presence-time-stamp is implicit in the
+  last-updated timestamp of the shadow-roll-row."* **A value, not a
+  provenance triple**: sources disagree about a name, nothing disagrees
+  about whether the last evidence was positive, so `seen` dates it and
+  *"present, as of this row's last update"* is the whole statement. Fed by
+  a search row, by any reply to a post, and by `503 peer not reachable`
+  (`relay.js:1579`, `:1996`, `:3094`) — which is first-hand, already on
+  the wire, and today thrown away.
 - **`routes` is a short list, not a value.** Cap at 3. A peer on several
   relays is normal, a node on several relays is normal, and one slot
   loses information for no saving.
@@ -187,6 +204,31 @@ row decide instead of guess.
 This preserves the greedy rule (`seenPeers.js:122`, *"never blanking what
 it knows"*) and adds the one thing greed alone cannot do: refusing a
 **downgrade**. Greedy today means a worse answer that arrives later wins.
+
+---
+
+### A sibling is now detectable, and its presence is live
+
+> **Andy:** *"the fact that we log full routes for same-relay targets also
+> lets the node-machine know if a target is a sibling, and the presence bit
+> is more responsive."*
+
+Falling out of R23 rather than being the reason for it: a same-relay peer's
+`at` is a relay key **this node already holds**, comparable against its own
+(`relayKeys.pinned`, `presenceNode.relaysNaming`). The node could not tell
+before — *"because the node doesn't 'know' it is a sibling"* was the
+difficulty R23 was opened on.
+
+So the row has two presence regimes, and can distinguish them:
+
+| target | presence | refreshed by |
+|---|---|---|
+| **sibling** — `at` is one of my own relays | **live** | that relay's broadcasts, as they happen |
+| **foreign** | **last-known** | this node's own traffic |
+
+**Which is what makes recommendation 4 worth more than one line.** A
+sibling stranger is precisely what `presenceNode.js:181` drops: somebody on
+a relay this node is on, whose presence is being delivered free.
 
 ---
 
@@ -234,6 +276,12 @@ the machine, so its shape is the machine's to choose).
 
 ## Recommended, not decided
 
+> **1 to 4 are now DECIDED** by
+> [0019](../decisions/0019-a-label-is-broadcast-and-presence-is-last-known.md),
+> with one thing added that is not below: a label change **fans out to
+> every relay the person is a member of**, not just the one the browser
+> happened to address. 5 and 6 stand as written.
+
 1. **Broadcast `peer-renamed` as `{key, label}`.** Highest value, lowest
    rate, no other source. Members only, about that relay's own member.
 2. **Broadcast `claim` as `{key, label}`** — 0012 names it in Andy's own
@@ -252,16 +300,27 @@ the machine, so its shape is the machine's to choose).
 - **What a rename costs at scale.** `peer-renamed` is argued rare here and
   has never been measured. If labels churn, recommendation 1 is the cheap
   one only on paper.
-- **Whether `presence` may carry a label at all.** It is broadcast to
-  every member about every member, so adding the name lets a long-lived
-  listener assemble `{key, label}` for the whole roll over time. 0012 says
-  *"Membership is not secret from members"* (`:88`) — but it says it
-  while a full census is **already public** at `/api/relay/who`, and that
-  census is being eradicated (`SURFACE.md` §10). **The premise may not
-  survive its own cleanup. Andy's to decide, not mine.**
+- ~~**Whether `presence` may carry a label at all.**~~ **Struck by
+  [0019](../decisions/0019-a-label-is-broadcast-and-presence-is-last-known.md),
+  and struck at the premise rather than answered.** The worry was that
+  broadcasting labels about every member to every member lets a long-lived
+  listener assemble the roll — sound, but it assumed stranger presence had
+  to be pushed. Andy ruled that it is not pushed at all: a stranger's mark
+  comes from the searching node's **own traffic**, so there is no stranger
+  broadcast to attach a label to. The rename broadcast that remains is
+  about a relay's own members, which `0012:88` already covers.
+  *(The `SURFACE.md` §10 observation — that `0012`'s "membership is not
+  secret from members" rests on a census being eradicated — is still
+  true and still unaddressed. It is now somebody else's problem, not
+  this note's.)*
 - **Label-key tuplets on request and reply**, carried over from
   [WHAT-A-NODE-KNOWS.md](WHAT-A-NODE-KNOWS.md) and still undecided:
   `limits.js:74` @ `d83f05f` — `WIRE_OVERHEAD = 246`, measured.
+- **What colour NOT-green is.** `0019` rules that a stranger who cannot be
+  reached in a post stops being green, and deliberately does not say which
+  mark they get. The screen has three (`contacts.js:261`) and a failed post
+  fits none: more than white knows, less than red claims. The standing
+  tie-break holds until it is decided — the mark that promises less.
 - **Negative results.** Unchanged and still open from
   [ROUTE-DISCOVERY.md](ROUTE-DISCOVERY.md): nothing here gives the shadow
   a way to record that a peer is *not* somewhere.

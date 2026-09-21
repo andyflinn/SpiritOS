@@ -56,7 +56,8 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Open is seventeen. Eight of those are blocked by nothing.**
+**Open is eighteen. Eight of those are blocked by nothing, and three
+of the eighteen are decided and waiting only to be built.**
 
 | | what | status | blocked by |
 |---|---|---|---|
@@ -87,8 +88,9 @@ can start today.
 | **R25** | a route is learned at every opportunity; policy does not gate it | **DONE** | |
 | **R26** | the shadow needs a store, and it is a persist shape | OPEN — **new persist shape, team review** | |
 | **R27** | a presence event about a stranger is discarded, and it is a route | OPEN | |
-| **R28** | the events that already fire reach one listener | OPEN — **wire, team review**; label-on-presence is **Andy's** | |
+| **R28** | a label change reaches everybody, at every level | OPEN — **decided `0019`**; hop 1 node-side, hops 2-3 **wire, team review** | |
 | **R29** | the shadow row carries rank and provenance | OPEN | R1, R26 |
+| **R30** | presence is last-known, and the shadow dates it | OPEN — **decided `0019`** | R29 |
 
 **Startable today, nothing in the way:** R1 (the `via` half), R9\*, R12,
 R15, R17, R19, **R27**, R28\*. *\*R9 and R28 need a team review before they are built, not before
@@ -936,16 +938,38 @@ and unobtainable otherwise. `peer-renamed` and `claim` are all three and
 are not broadcast; `presence` is the high-rate one and is broadcast
 already. The current code has it backwards.
 
-**One part is not Claude's to decide.** Whether `presence` may also carry a
-label: it goes to every member about every member, so a long-lived listener
-assembles `{key, label}` for the whole roll over time. 0012 answers it
-(*"Membership is not secret from members"*, `:88`) while a full census is
-still public at `/api/relay/who` — and that census is being eradicated
-(`SURFACE.md` §10). **The premise may not survive its own cleanup.**
+~~**One part is not Claude's to decide.** Whether `presence` may also carry
+a label...~~ — **struck by
+[0019](../decisions/0019-a-label-is-broadcast-and-presence-is-last-known.md)**,
+at the premise rather than by answering it. Stranger presence is not pushed
+at all under R30, so there is no stranger broadcast to hang a label on.
 
-**Status:** OPEN — not built, and partly not decided. New broadcasts on the
-wire, so a **team review** (`CLAUDE.md`). The label-on-presence question is
-Andy's.
+**Decided 2026-09-21, and the scope grew a hop.**
+
+> **Andy:** *"add public Label change to broadcast, at all levels. A user
+> changes a public label, it goes to all relays, a relay receives a
+> label-change-post, it is broadcast to members."*
+
+**Three hops, not two.** The missing one is at the top and is node-side:
+
+1. **The node fans a rename to every relay it is a member of.** Today the
+   browser addresses ONE relay by key (`server.js:723`, `relay.js:2563`) —
+   so a person on three relays renames themselves on one of them and stays
+   stale on the other two. The verb already exists (`renameSelf`,
+   `relay.js:1710`); nothing new goes on the wire for this hop.
+2. **The relay broadcasts `{key, label}` to its members**, instead of
+   `ownerEvent` to one sink.
+3. **`claim` broadcasts too**, which 0012 decided in 2018-09-18 and the
+   code never did.
+
+**It stops at the partnership.** A stranger on a partner relay learns the
+new name at their next search or exchange — correct, because a relay
+speaks for its own members and a partner passing a name on is second-hand
+by construction.
+
+**Status:** OPEN — **decided, not built.** Hop 1 is node-side and needs no
+packet. Hops 2 and 3 are new broadcasts on the wire, so a **team review**
+(`CLAUDE.md`).
 
 ### R29 — the shadow row carries rank and provenance
 
@@ -967,6 +991,83 @@ means a worse answer that arrives later wins.
 **Status:** OPEN — not built. Needs R1 (`via`) and lands properly with R26
 (the store), since provenance per field is the shape an indexed store is
 for.
+
+### R30 — presence is last-known, and the shadow dates it
+
+> **Andy:** *"rule: presence is always last-known, and since the
+> shadow-roll has updated-time-stamps, the info is true."*
+>
+> *"shadow-roll track presence in a time-stamped fashion."*
+
+Decided by
+[0019](../decisions/0019-a-label-is-broadcast-and-presence-is-last-known.md).
+Presence stops being a claim about now and becomes dated evidence: *"present
+as of 14:02"* is true for ever.
+
+**The row gains `present`, and nothing else.**
+
+> **Andy:** *"the presence-time-stamp is implicit in the last-updated
+> timestamp of the shadow-roll-row."*
+
+So presence is a **value, not a provenance triple** — unlike `label`, which
+needs its own rank because sources disagree about a name. The row's own
+`seen` dates it, and *"present, as of this row's last update"* is the true
+statement the rule asks for. One timestamp for the row is the whole of it.
+
+Not the live presence picture, which stays what it is: the merge of rosters
+from relays this node holds a stream to, about this node's own contacts
+(`server.js:1062`).
+
+**A stranger's mark comes from three places:**
+
+1. **Returned in a search → green.** Already true and already delivered —
+   `hub.js:1868` drops the absent, `:1936` marks the rest present.
+2. **Any reply to a post → green**, whatever the reply says. A refusal
+   still proves reachability; the content is a separate matter.
+3. **`503 peer not reachable` → not green**, and this one is streamed.
+
+> **Andy:** *"requests that fail with 'not-available' also generate a
+> streamed update of the shadow-roll."*
+
+**The third is the one that was being wasted.** `relay.js:1579`, `:1996`
+and `:3094` already refuse a post with `503 peer not reachable` — the
+relay saying, about a peer it holds a row for, that nobody is on the other
+end. That is a first-hand presence fact arriving on a path the node already
+reads, and today it ends its life as a failed post.
+
+**It costs nothing new.** The refusal is already on the wire and already
+addressed to the one node that asked. What changes is that the node writes
+it down instead of only reporting it.
+
+**A sibling's presence is live, and the node can now tell.** R23 made
+siblings announce to both ends, so a same-relay peer's `at` is a relay key
+this node already holds — comparable against its own
+(`relayKeys.pinned`, `presenceNode.relaysNaming`). Andy: *"the fact that we
+log full routes for same-relay targets also lets the node-machine know if a
+target is a sibling, and the presence bit is more responsive."* It could not
+know this before; that was the difficulty R23 was opened on. So: a sibling
+is refreshed by the relay's own broadcasts as they happen, a foreign peer by
+this node's traffic. **This is what makes R27 worth more than one line** —
+a sibling stranger's presence is being delivered free and dropped at
+`presenceNode.js:181`.
+
+**The obligation, and it is the part that makes the rule honest.**
+Last-known is only true if the age is visible. A green dot with no age
+beside it is read as a live claim, and an hour-old green becomes exactly
+the false positive `contacts.js:271` was built to avoid. **Wherever a mark
+is shown, its age is available** — `contactsPresenceTitle`
+(`contacts.js:288`) already writes a sentence and is the place.
+
+**And `contacts.js:271` is amended when this is built, not before.** *"FALSE
+NEGATIVES ONLY"* still stands as written: this changes what makes a mark
+honest (an age), not the preference for promising less.
+
+**Open inside this requirement:** which mark NOT-green is. A failed post is
+more than white knows and less than red claims, and `0019` deliberately
+leaves it.
+
+**Status:** OPEN — decided, not built. Node-side and UI; depends on R29 for
+the row shape.
 
 ## The order, and why
 

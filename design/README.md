@@ -215,6 +215,31 @@ This directory contains the vision, principles, and architecture decisions for *
   reasoning vanished. Working note:
   [REQUEST-BUDGET.md](relay/REQUEST-BUDGET.md).
 
+- [0017 — The core design supersedes, and is healed before the periphery](decisions/0017-the-core-design-supersedes-and-is-healed-before-the-periphery.md)
+  — the relay design outranks earlier decisions **before it is built**,
+  because building against rules already known to be wrong then has to be
+  unbuilt. And a flaw found in the core from the periphery stops the
+  peripheral work: the core is fixed, documented and pushed reconciled
+  first. Amended the same day — a decision does not merely note beside a
+  rule it obsoleted, it **strikes** it, in place, saying what replaced it.
+- [0018 — The route cache belongs to the machine, not the human](decisions/0018-the-route-cache-belongs-to-the-machine.md)
+  — a node's readability rule covers what its owner acquired, not what
+  the network produced. The line is not the box, it is whose information
+  it is; `server.js` is the exemption that always existed and was never
+  named. So `routes` leaves the contact row (base64 relay keys nobody has
+  ever read) and the shadow may be stored in whatever shape serves the
+  machine.
+- [0019 — A public label is broadcast at every level, and presence is last-known](decisions/0019-a-label-is-broadcast-and-presence-is-last-known.md)
+  — two rulings. A rename fans out to **every** relay the person is a
+  member of and each relay broadcasts it to its members: the cheapest
+  broadcast there is, because a rename is rare, durable and unobtainable
+  any other way. And presence stops being a claim about now — *"present,
+  as of this row's last update"* is true for ever, so the shadow dates it
+  and a stranger's mark comes from the node's own traffic rather than any
+  new broadcast, including the `503 peer not reachable` that was being
+  thrown away. Obliges one thing: last-known is only honest if the age is
+  visible.
+
 ## Andy's frames
 - [The POST API — route hierarchy](andy/spiritNodeAPI.md) — every POST route
   both servers dispatch and the function it lands in. Illustration only.
