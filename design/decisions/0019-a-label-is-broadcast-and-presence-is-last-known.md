@@ -244,28 +244,19 @@ is the most responsive presence in the system.
 
 **Last-known is only true if the age is visible.**
 
-> **Andy:** *"Why can green dots not have an informative tool tip, like the
-> non-green dots?"*
+> **Andy:** *"the gap is that the tooltip doesn't include the time
+> stamp."*
 
-**They can, and they already do.** Checked rather than assumed: all four
-marks carry a `title`, green included — `contacts.js:346` and `:579` render
-one on every row, from `contactsPresenceTitle` (`:288`) and
-`contactsSeenMarkTitle` (`:322`). Green's reads *"present — a relay you
-share is holding their connection"*, and a stranger's green reads *"the
-relay that found them says they are connected, but you share no relay with
-them"*, which is the more informative of the two.
+**Every mark's tooltip carries when it was learned.** The sentences exist
+and are rendered on every row — `contacts.js:346` and `:579`, from
+`contactsPresenceTitle` (`:288`) and `contactsSeenMarkTitle` (`:322`) — and
+every one of them is written in the **present tense**: *"is holding"*,
+*"says they are connected"*. That is the live claim this decision says
+presence is not, so the rule holds in the data and breaks on the screen.
 
-*(If a green dot shows nothing in the running app, that is a defect and not
-a design gap — worth chasing separately, because the code says it should.)*
-
-**So the gap is not the tooltip. It is that none of the four carries a
-time.** Every one of them is written in the present tense — *"is holding"*,
-*"says they are connected"* — which is exactly the live claim this decision
-says presence is not. The rule holds in the data and breaks on the screen.
-
-**Wherever a mark is shown, its age is available**, and the sentences are
-already there to carry it: *"present — a relay you share was holding their
-connection, as of 14:02"*. Four strings, one field, no new control.
+*"Present — a relay you share was holding their connection, as of 14:02"*.
+**Four strings, one field, no new control**, and an hour-old green stops
+being the false positive the current model was built to avoid.
 
 ---
 

@@ -71,7 +71,7 @@ of the nineteen are decided and waiting only to be built.**
 | <sub>R8</sub> | <sub>*`viaUrl` in a search answer — was already built*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R9** | hints carry `{ key, url }` | OPEN — **wire, team review** | **yes** | |
 | **R10** | `cancel`, exposed to a member | OPEN — no longer a prerequisite | **yes** | |
-| **R11** | the URL rule / SSRF | OPEN — **Andy's to decide** | **no** | |
+| **R11** | the URL rule / SSRF — a provenance rule, not a URL rule | OPEN — **Andy's to decide**; three candidates written up | partial | |
 | **R12** | `last` on a partner row | OPEN | **yes** | |
 | **R13** | no streams between partners | OPEN — **wire, team review** | **yes** | R12 |
 | **R14** | open partnering, provisional rows, a visible count | OPEN — not decided | **no** | R8, R9, R11, R12 |
@@ -127,9 +127,30 @@ heading and a status line. It has been carried for a day as though it were
 understood, and what it actually needs is a method: what to measure, on
 what, against what baseline. That is a sitting of its own, not a task.
 
-**Startable today, nothing in the way:** R1 (the `via` half), R9\*, R12,
-R15, R17, R19, **R27**, R28\*. *\*R9 and R28 need a team review before they are built, not before
-they are decided. R27 needs neither — it is one line, node-side.*
+### A team review is a batch at the end, not a gate in the middle
+
+> **Andy:** *"team review receives consideration when all we can do is
+> done."*
+
+**So "wire, team review" is not a reason a row waits.** It is a note about
+which pile the row is in. There are two:
+
+- **Build it** — everything that changes no packet.
+- **Bring it to the review** — everything that does, convened **once**,
+  when the first pile is empty.
+
+**This does not loosen `CLAUDE.md`**, which says to stop rather than patch
+`relay.js` so a UI works. The two agree and answer different questions:
+that rule says *do not build it alone*, this one says *do not stop for it
+either* — keep going on what does not need it, and let the review
+consider the accumulated set.
+
+**Build now, nothing in the way:** **R27** (one line, node-side), R17, R12,
+R19, R15, R1's `via` half — and, once R26's floor is ruled, R29, R30, R31
+and R1's second half.
+
+**For the review, when that list is empty:** R9, R13, R28's hops 2 and 3,
+and R26's persist shape. Four rows, one sitting.
 
 **The three that gate the most:** **R15** (R20, and four claims nobody can
 make until it is measured), **R26** (R1's second half, R16, and `0018`
@@ -532,7 +553,68 @@ Not exploitable today, because every partner URL comes from `setPartner`,
 an owner verb. **Live the moment a URL can come from a member**, which is
 what C2 enables.
 
-**Status:** OPEN — not decided, and it is Andy's to decide. A prerequisite for R14 rather than a follow-up, since R9 is what makes it exploitable.
+### What the two holes actually are
+
+`assertRelayUrl` (`relayRequest.js:42`) is nine lines and permits:
+
+| | permitted | what that reaches |
+|---|---|---|
+| `https:` | **any host at all** | `https://10.0.0.5`, `https://192.168.1.1`, and any DNS name that **resolves** to one — anything inside the box's network that speaks TLS |
+| `http:` | loopback, **any port** | every plain-HTTP service on the relay's own machine: admin panels, local databases, another process's API |
+
+**Neither is a bug.** The function was sized for URLs an owner typed, and
+for owner-typed URLs it is right — the loopback exception is what the whole
+lab runs on (`http://127.0.0.1:<port>`, every suite).
+
+**SSRF is what it becomes when somebody else supplies the URL.** The relay
+stops being the thing making a request and becomes the thing *making a
+request on a stranger's behalf*, from inside the network, past whatever
+firewall exists. The classic prize is a cloud metadata endpoint; the
+ordinary one is everything else on the same box.
+
+### Why it is not live, and exactly what makes it live
+
+**Every URL dialled today was written by an owner.** `setPartner` is an
+owner verb; `hub.js:1423`'s `body.url` arrives from the node owner's own
+browser; the rest come from `relays.json`. Checked, not assumed.
+
+**Two things make it live, and they are both on this list:**
+
+- **R9** — hints carry `{ key, url }`, so a **peer** supplies a URL.
+- **R14** — open partnering, so a **stranger relay** supplies its own.
+
+That is why this is a prerequisite and not a follow-up: it must be settled
+**before** either lands, or they land with the hole in them.
+
+### The shape of the answer, which is not a URL rule
+
+**The function has no opinion about who is calling** — its own header says
+so: *"a free function over a URL and a path, with no state, no identity and
+no opinion about who is calling."* **That is the thing to change.** The same
+URL is fine from one source and not from another, so the rule is about
+**provenance**, not syntax:
+
+| source | rule |
+|---|---|
+| the owner wrote it | today's rule, unchanged — loopback stays, the lab keeps working |
+| a peer or a stranger relay sent it | **public only** |
+
+Three candidates for *"public only"*, for Andy to pick between:
+
+1. **Refuse private space.** Resolve the name first, refuse loopback,
+   link-local and RFC1918, and **connect to the resolved address** rather
+   than re-resolving — otherwise a name that answers twice defeats it.
+   Most correct, most moving parts.
+2. **Public DNS names only, no IP literals.** Simple to state and to read
+   in a refusal; beaten by a name that resolves inward, unless paired with
+   1.
+3. **Owner allow-list, still.** What `NODE-AND-RELAY.md` says today. The
+   sizing already killed it — hundreds of partnerships nobody can curate —
+   and it is listed so the decision records that it was considered.
+
+**Status:** OPEN — **not decided, and it is Andy's to decide.** The holes
+and the shape are written up here; what is missing is a ruling, not
+research. A prerequisite for R9 and R14 rather than a follow-up.
 
 ### R12 — `last` on a partner row
 
@@ -1140,18 +1222,14 @@ a sibling stranger's presence is being delivered free and dropped at
 
 **The obligation, and it is the part that makes the rule honest.**
 
-> **Andy:** *"Why can green dots not have an informative tool tip, like the
-> non-green dots?"*
+> **Andy:** *"the gap is that the tooltip doesn't include the time
+> stamp."*
 
-**They can and they do** — checked: `contacts.js:346` and `:579` render a
-`title` on every row including green, from `contactsPresenceTitle` (`:288`)
-and `contactsSeenMarkTitle` (`:322`). *(A green dot showing nothing in the
-running app would be a defect, not a design gap.)*
-
-**The gap is that none of the four carries a time.** All are written in the
-present tense — *"is holding"*, *"says they are connected"* — which is the
-live claim this rule says presence is not. So: **wherever a mark is shown,
-its age is available**. Four strings, one field, no new control, and an
+**Wherever a mark is shown, its age is available.** The sentences are
+rendered on every row already — `contacts.js:346` and `:579`, from
+`contactsPresenceTitle` (`:288`) and `contactsSeenMarkTitle` (`:322`) — and
+all four are in the present tense, which is the live claim this rule says
+presence is not. **Four strings, one field, no new control**, and an
 hour-old green stops being the false positive `contacts.js:271` was built
 to avoid.
 
