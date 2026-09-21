@@ -640,6 +640,6 @@ from the modules it now loads. Per-stream 58 → 63 KB is inside the
 57–63 KB spread every Windows run today has shown, and no code that holds
 a connection changed — noise, not drift.
 
-**Tagged `capacity-2026-09-21`** — the first tag on the repository, on
+**Tagged `capacity-2026-09-21`** — the first *capacity* tag (the repository already had fourteen others; an earlier draft of this line said "the first tag on the repository", which was not checked and was wrong), on
 Andy's *"tag the tree"*, after an assessment that this interval was real:
 cycles 3 and 4 reshaped the data a peer costs.
