@@ -39,11 +39,17 @@ so nothing unapproved reaches the remote), and file a draft into
 approving words in the blurb. `claude/` is Claude's compile and Claude's
 to design.
 
-Three things worth knowing before touching it:
+Four things worth knowing before touching it:
 
-- **`claude/working-together/INJECTION-POINTS.md` is the operational
-  page** — corrections named by the moment they fire, not the value they
-  express. Read it at the start of a sitting.
+- **`claude/COMPILED.md` is read at the start of every sitting.** It is
+  what the vault has learned about working with Andy, and a brain that is
+  written and never read tests nothing — Andy: *"in the course of the
+  SpiritOS project, i meant for this example to be tested."* It is
+  Claude's paraphrase, so it yields to `AGENT.md` and to Andy's own words
+  wherever they disagree; a disagreement found is a recompile to do.
+- **`claude/procedures/INJECTION-POINTS.md` is the operational page** —
+  corrections named by the moment they fire, not the value they express.
+  Read it at the start of a sitting.
 - **`claude/FORMAT.md` is the citation spec.** A compiled claim about the
   tree carries `path:line @ commit` **with the quoted text**, so drift is
   detectable rather than merely possible.
