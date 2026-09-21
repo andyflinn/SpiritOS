@@ -56,7 +56,7 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Fourteen open, one deferred, one cancelled, fifteen done. Ten of the eighteen are
+**Thirteen open, one deferred, one cancelled, sixteen done. Ten of the eighteen are
 blocked by nothing**, and nine are decided — waiting to be built, not to be
 thought about. **Three rows now need a review, and nothing else does.**
 
@@ -80,7 +80,7 @@ thought about. **Three rows now need a review, and nothing else does.**
 | **R16** | the queue survives a restart — and is a table, not a dump | OPEN | **yes** | R26's store |
 | <sub>R17</sub> | <sub>*suites clean up the homes they create*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R18</sub> | <sub>*durations on a clock that cannot jump*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R19** | the load fixture, and *seeing* it stay lively | OPEN — half covered | **yes** | |
+| <sub>R19</sub> | <sub>*the load fixture — the looking is Andy's*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R20</sub> | <sub>*the Governor's remaining job*</sub> | <sub>*deferred*</sub> | <sub>—</sub> | <sub>*revisit when the list is clear*</sub> |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -1273,9 +1273,44 @@ keeps patience as **node configuration**, an owner's bound like the cache
 cap. So this fixture sets patience the way the node will, and does not
 grow an app-facing parameter to test itself.
 
-**Status:** OPEN — `targetBusy.js` covers the second fixture. The
-wide-fan-out fixture does not exist, and nothing has been looked at: the
-lab has not been rebuilt since 2026-09-20.
+**Built 2026-09-21 — `spirit/test/queueUnderLoad.js`.** One node fires five
+posts at once at three targets that are present and silent, plus one that
+answers, through a relay in a real process on a real port.
+
+**Asserted from the far side, never from the queue.** 0020 keeps the
+scheduler opaque, so the claim is counted from what the TARGETS receive: a
+request sitting at a silent member is a slot still held, so two arrivals
+whose windows overlap would mean two in flight.
+
+**Falsified before it was trusted.** With `IN_FLIGHT_PER_RELAY` set to 3
+the first check goes red — *"two or more were in flight at once: 3"* — and
+green again at 1. A check that cannot fail is worse than none, and this
+tree has shipped one: the R21 loop's detector matched its own header and
+reported REPRODUCED with no failing suite.
+
+**Two things it found**, both of which a unit suite would have missed:
+
+- **The hash is derived, never received.** `relay.js:3123` — *"NO HASH IS
+  SENT. The target derives it from the bytes it holds, which is what makes
+  it evidence rather than an echo."* The first version replied with
+  `msg.data.hash` and the relay answered `400 hash required` five times
+  over. A fixture that took the hash off the wire would have been testing
+  an echo.
+- **A budget the node asks for is the budget it gets.** 900ms per attempt
+  end to end, so three stalling targets cost three seconds rather than
+  fifteen — R5 working, observed rather than argued.
+
+**What is still not done, and it is the half Andy named.** *"Visually
+verifying that natter and contacts still react as lively as before"* — no
+suite can do that, and the lab has not been rebuilt since 2026-09-20.
+
+**Verify:** `spirit/test/queueUnderLoad.js` — one in flight under a burst
+of five, a silent target releasing its slot on its own budget, every
+caller settled and none hanging, the cooperative target served though it
+was queued last, and a post after the burst going straight through.
+
+**Status:** DONE — the fixtures. The looking is Andy's and is not claimed
+here.
 
 ### R20 — the Governor's remaining job
 
