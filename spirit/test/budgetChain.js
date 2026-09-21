@@ -181,6 +181,71 @@ test.subHeading('A partner is handed less than this relay has');
   }
 }
 
+test.subHeading('A hop refuses before the wire when the far side could not use it');
+
+{
+  // ANDY'S QUESTION, ASKED OF THE CODE: "if the timeout is diminished to 0
+  // at any point in the request chain, an error is returned immediately?"
+  //
+  // It was not, at first. The floor in `routes.open` guards what a box
+  // GRANTS; it does not guard what the box is about to HAND ON, and those
+  // differ by HOP_MARGIN_MS. So a 600 ms budget passed the local floor,
+  // left 100 ms for the partner, and was refused at the far end — after a
+  // round trip spent learning something computable here.
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-bcf-'));
+  const asked = [];
+  const box = createRelay(home, {
+    askPartner: function (url, relayKey, text, budgetMs) {
+      asked.push(budgetMs);
+      return Promise.resolve(null);
+    },
+  });
+  auth.saveIdentity(home, auth.generateIdentity('relay'));
+  const owner = auth.generateIdentity('owner');
+  claimOwner(box, owner, 'owner', 'fx');
+  const alice = auth.generateIdentity('alice');
+  const m = box.mint('owner', 'alice', 7, '');
+  box.claim('alice', auth.sign(alice.privateKey, auth.claimMessage('alice')),
+    alice.publicKey, 'fx-a', m.invite.token, 'alice');
+  const far = auth.generateIdentity('far');
+  const fo = auth.generateIdentity('fo');
+  const fm = box.mint('owner', 'fo', 7, '');
+  box.claim('fo', auth.sign(fo.privateKey, auth.claimMessage('fo')),
+    fo.publicKey, 'fx-f', fm.invite.token, 'fo');
+  box.setPartner(owner, fo.publicKey, 'https://far.example', far.publicKey, 'h');
+
+  function forwardWith(budget) {
+    const bert = auth.generateIdentity('bert' + budget);
+    const text = JSON.stringify({ v: 1, body: { hello: budget } });
+    const sig = auth.sign(alice.privateKey, auth.postMessage(alice.publicKey, bert.publicKey, text));
+    return box.routePost(alice.publicKey, bert.publicKey, text, sig, {
+      hints: [far.publicKey],
+      hintSig: auth.sign(alice.privateKey, auth.hintMessage(sig, [far.publicKey])),
+    }, budget);
+  }
+
+  const thin = forwardWith(600);
+  if (thin && thin.ok === false && thin.tooLittleTime === true) {
+    test.check('600 ms is refused here, because 100 would be left and 100 is not enough');
+  } else {
+    test.fail('600 ms forward: ' + JSON.stringify(thin));
+  }
+  if (asked.length === 0) {
+    test.check('and nothing crossed the wire to find that out');
+  } else {
+    test.fail('a doomed forward was sent anyway, with ' + JSON.stringify(asked));
+  }
+
+  // AND IT IS A FLOOR, NOT A FEAR. Enough is enough: what remains has
+  // only to clear the far side's floor, not to be generous.
+  const ok = forwardWith(800);
+  if (ok && ok.status === 202 && asked.length === 1 && asked[0] === 300) {
+    test.check('while 800 goes, leaving 300 — above the floor is above the floor');
+  } else {
+    test.fail('800 ms forward: ' + JSON.stringify(ok) + ' asked ' + JSON.stringify(asked));
+  }
+}
+
 test.subHeading('And it crosses the wire, refusal and all');
 
 async function overTheWire() {

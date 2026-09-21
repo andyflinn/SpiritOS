@@ -2097,6 +2097,29 @@ function createRelay(rootDir, deps) {
       ? Math.max(0, budgetMs - HOP_MARGIN_MS)
       : undefined;
 
+    // AND REFUSE HERE IF THE FAR SIDE COULD NOT USE IT, which is the
+    // whole of "the next station down the chain better hurry" — applied
+    // one hop EARLIER than the station itself.
+    //
+    // The floor in `routes.open` guards what THIS box grants. It does not
+    // guard what this box is about to hand on, and those differ by
+    // HOP_MARGIN_MS: a 600 ms budget passes the local floor, leaves 100
+    // for the partner, and is refused at the far end — after a round trip
+    // spent learning something computable here. That is precisely the
+    // failure this design keeps removing, arriving in the one place it
+    // had not been looked for.
+    //
+    // So a forward that cannot leave the far side enough time is refused
+    // before anything crosses the wire. The asker hears the same answer
+    // either way; it just hears it now.
+    if (onward !== undefined && onward < routerTable.MIN_USEFUL_MS) {
+      return {
+        ok: false, status: 503,
+        error: 'not enough time to try',
+        tooLittleTime: true, wouldHave: onward,
+      };
+    }
+
     var opened = routes.open(innerHash, who.id, String(toToken), function () {
       var wrapper = JSON.stringify({
         v: 1,
