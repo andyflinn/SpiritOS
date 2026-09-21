@@ -177,6 +177,119 @@ R14, which needs R9, R12 and a ruling on R11.
 easiest to keep deferring, because nothing depends on it and it produces no
 code. It is also the only row that can tell us the cycle worked.
 
+### How many implementation cycles
+
+> **Andy:** *"how many implementation cycles?"*
+
+**Eight, for the list as it stands.** The build order above groups into
+sittings that can each be clamped, finished and pushed green:
+
+| # | rows | why it is one sitting |
+|---|---|---|
+| **1** | R27, R19, R17, R12, R10 | the small free ones, plus **the verification this cycle was scoped around**. Nothing here needs a decision |
+| **2** | **R26** | the store, alone. A new persist shape and a floor bump land on their own so a regression is attributable to them |
+| **3** | R29, R1 | the row shape, and `routes` leaving the contact book — the same edit from both ends |
+| **4** | R30, R4, R31 | what the owner sees and when it expires: presence on the row, ages in four tooltips, the two evictions, the cap and the Info screen |
+| **5** | R16 | the queue as a table. Alone, because R5's clock rules make a persisted deadline the easiest thing here to get quietly wrong |
+| **6** | R15 | a lab measurement producing one number, and R20 reopened against it |
+| **7** | R28, R9 | **after the review**, and they are the two small ones |
+| **8** | R13, R14 | the transport change and open partnering. R11's ruling is implemented here, not separately |
+
+**Plus one sitting that is not an implementation cycle:** the review, between
+6 and 7, covering R9, R13 and R28's hops 2 and 3.
+
+### What that number is worth
+
+**It is eight for thirty-one rows, and the list has grown every day it has
+existed.** Born at `25aaac1` with fourteen items (A1–D4), renumbered to
+twenty-two, and standing at thirty-one about twenty hours later. Nine of
+those rows were added by design sittings that produced **no code**.
+
+So the estimate is honest about the work that is written down and says
+nothing about the work that is not. **Cycles 1 and 2 are the ones to trust**
+— they are near, small and fully specified. Anything past 5 is an estimate
+of a list that is still moving.
+
+**The way to make the number mean something is cycle 1**, and specifically
+R19: it is the only row that tells us whether the last two days of design
+survived contact with a running system.
+
+### Reconciled against the standing rules, before building any of it
+
+> **Andy:** *"and we will encounter no blockage from the ten commandments
+> Moses received?"*
+
+Checked rather than asserted: four principles and fourteen decisions,
+against the eight cycles above. **Two real items, one hazard, and the rest
+clear.**
+
+#### 1. R31 against 0015 — clear, and there is a precedent
+
+[0015](../decisions/0015-the-owner-watches-a-lever-the-programme-moves-it.md)
+is the one that looks like a wall: *"A lever is moved by the programme. The
+owner watches it move… an owner who can reach in and move a value is an
+owner writing into his own training set."*
+
+**A cap is not that kind of lever, and the tree already holds the
+distinction.** `ramLimitMB` is *"the bound the owner configured"*
+(`relay.js:3650`) and 0015 leaves it entirely alone, because the programme
+governs **within** it and never moves it. R31 is that, for a node's disc.
+
+**The condition this puts on R31, and it is binding:** the programme must
+never adjust the cap at runtime. The moment anything auto-tunes it, it
+becomes a lever and 0015 bites. An owner's bound is read, respected and
+never written by the code that lives inside it.
+
+#### 2. R16 against A-CORRESPONDENT-NODE — a real item, with an answer
+
+**The queue holds the message.** `postQueue.js:203` — `payload:
+item.payload`. So persisting it puts **unsent correspondence** into a
+store, and 0018's own test says which side of the line that falls on: *did
+the owner acquire it, and would they care?* They wrote it. They would.
+
+> `A-CORRESPONDENT-NODE.md:118` — *"permanent, human-readable, portable,
+> owned by each party separately, held by no third party."*
+
+**The row has two halves and they are not the same thing.** Scheduling
+state — `seq`, `kind`, `attempts`, `until`, backoff, bytes — is the
+machine's, and 0018 exempts it. The payload is the owner's.
+
+**So R16 may not simply write the row into sqlite and call it done.**
+Either the payload stays on the readable side, or the requirement answers
+how an owner sees what is waiting to be sent. This is not a blockage; it is
+a clause R16 has to carry, and it was not in R16 before this check.
+
+#### 3. R27 against 0012 and THE-REQUESTER-IS-RESPONSIBLE — clear
+
+Feeding the shadow from every presence broadcast accumulates something
+roll-shaped on a node, which is worth naming rather than waving past. It
+does not engage either rule: **0012 forbids the bulk question at any door**,
+and the node is not asking — it is keeping what arrives unasked, which
+0012's own correction explicitly blesses. **THE-REQUESTER-IS-RESPONSIBLE**
+is about what a relay owes a question, and there is no question here.
+
+#### 4. R26's floor — clear
+
+*"A node can afford no dependencies outside native node.js"*
+(`NODE-AND-RELAY.md`). `node:sqlite` is native, so the premise holds. The
+floor moving 18 → 22.13 is a **product change**, not a rule breach, and it
+is recorded in 0018 where it can be vetoed.
+
+#### 5. R14 against 0013 — clear, by the eviction order
+
+*"Does this make a relay's cost a function of anything other than time?"*
+No: the roll's bounds fix its size, and request pressure changes **who is
+in it**, not how big it is. That is what keyed-outranks-unkeyed buys.
+
+#### The hazard: an R-number cited without its cycle
+
+`A-CORRESPONDENT-NODE.md:117` says *"once R16 lands"* — and means a
+**different cycle's** R16, not the queue one two sections above. **R-numbers
+are per-cycle and are being cited as though they were global.** Harmless
+today because somebody who knows both can tell; a trap for the session that
+does not. A citation to a requirement needs its cycle, the way a citation
+to a line needs its commit.
+
 **Build now, nothing in the way:** **R26** (the store, which nine other
 rows are shaped around), **R27** (one line, node-side), R17, R12, R19,
 **R15** (method written, four claims waiting), R10, R1 whole — and behind
@@ -1004,6 +1117,19 @@ table — real, and not a reason against.
 **And it makes R26 carry three, not two.** The shadow, this, and R31's cap
 all want node-side persistence, which is what puts R26 at the head of the
 list.
+
+### The clause this carries, found by reconciling rather than by building
+
+**The queue holds the message** — `postQueue.js:203`, `payload:
+item.payload`. So persisting it writes **unsent correspondence** into a
+store, and 0018's test puts that on the readable side: the owner wrote it,
+and would care.
+
+**Two halves, and only one is the machine's.** `seq`, `kind`, `attempts`,
+`until`, backoff and bytes are scheduling state and exempt. The payload is
+not. So this requirement may not simply write the row into sqlite: either
+the payload stays readable, or R16 answers **how an owner sees what is
+waiting to be sent**. Either is acceptable; silence is not.
 
 **Status:** OPEN — not built, and nothing needs it until a caller sets a
 patience. `peerPost` defaults to zero, so retrying is inert today.
