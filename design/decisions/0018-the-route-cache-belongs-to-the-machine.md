@@ -93,9 +93,35 @@ into node, so an indexed store does not breach it.
 `node >=18`; `relayServer.js` refuses to start below **22.13**, which is
 where `node:sqlite` arrived. An indexed store on the NODE raises every
 user's minimum to 22.13 — on a machine they own and install themselves.
-**Not decided here**, and it belongs with R16 (the scheduler queue
-surviving a restart), since two things now want node-side persistence and
-one store answers both.
+
+## Decided 2026-09-21 — the database is allowed, and it needs no review
+
+> **Andy:** *"we need no peer review for allowing a database to be used for
+> the shadow roll. That's a decision."*
+
+**The store is granted here, not deferred to a sitting.** `CLAUDE.md` makes
+a new persist shape a team review; this decision spends that review in
+advance for this one shape, because the argument for it is already in this
+record and a review would re-derive it.
+
+**And the floor moves with it**, because there is no second option: the
+founding premise allows *"no dependencies outside native node.js"*, so a
+database means `node:sqlite`, and `node:sqlite` means **22.13**. Recorded
+as following from the grant rather than as a separate ruling — said here so
+it can be vetoed in one word if it was not intended.
+
+**What it unblocks**, which is why this was the keystone: the shadow's
+store (cycle R26), `routes` leaving the contact row (R1's second half), the
+post queue surviving a restart and becoming a table (R16), the row's
+provenance (R29), presence dated on it (R30), and the owner's disc cap
+(R31). **Six rows, on one sentence.**
+
+**What it does not grant.** A store for the shadow, and the node-side
+things named above that share it. Not a licence for a database wherever one
+would be convenient, and not a change to what stays a readable file:
+`identity.json`, `allow.json` and `config.json` are *"constant, tiny, and
+the ones an owner may have to read or restore over SSH"*
+(`relayStore.js:27`).
 
 ## Retrofitted
 

@@ -56,8 +56,9 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Open is nineteen. Eight of those are blocked by nothing, and four
-of the nineteen are decided and waiting only to be built.**
+**Eighteen open, one deferred, twelve done. Ten of the eighteen are
+blocked by nothing**, and nine are decided — waiting to be built, not to be
+thought about. **Three rows now need a review, and nothing else does.**
 
 | | what | status | solution? | blocked by |
 |---|---|---|---|---|
@@ -74,19 +75,19 @@ of the nineteen are decided and waiting only to be built.**
 | **R11** | the URL rule / SSRF — provenance, and only while a relay row is unkeyed | OPEN — **Andy's to decide**; scoped to the unkeyed window, three candidates | partial | |
 | **R12** | `last` on a partner row | OPEN | **yes** | |
 | **R13** | no streams between partners | OPEN — **wire, team review** | **yes** | R12 |
-| **R14** | open partnering, provisional rows, a visible count | OPEN — not decided | **no** | R8, R9, R11, R12 |
-| **R15** | the per-stream measurement | OPEN — **four conclusions rest on it** | **no** | |
-| **R16** | the queue survives a restart | OPEN | partial | R26's store |
+| **R14** | open partnering — a row on send or receive, mutual activates | OPEN — **decided**; keyed outranks unkeyed on eviction, numbers open | **yes** | R9, R11, R12 |
+| **R15** | the per-stream measurement | OPEN — **four conclusions rest on it**; method written | **yes** | |
+| **R16** | the queue survives a restart — and is a table, not a dump | OPEN | **yes** | R26's store |
 | **R17** | suites clean up the homes they create | OPEN — leak untouched | **yes** | |
 | <sub>R18</sub> | <sub>*durations on a clock that cannot jump*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R19** | the load fixture, and *seeing* it stay lively | OPEN — half covered | **yes** | |
-| **R20** | the Governor's remaining job | OPEN | **no** | R15 |
+| <sub>R20</sub> | <sub>*the Governor's remaining job*</sub> | <sub>*deferred*</sub> | <sub>—</sub> | <sub>*revisit when the list is clear*</sub> |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R23</sub> | <sub>*a sibling is a route too, and both ends are told*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R24</sub> | <sub>*a search answer is kept until somebody acts on it*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R25</sub> | <sub>*a route is learned at every opportunity; policy does not gate it*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R26** | the shadow needs a store, and it is a persist shape | OPEN — **new persist shape, team review** | partial | |
+| **R26** | the shadow needs a store, and it is a persist shape | OPEN — **decided `0018`**, no review needed | **yes** | |
 | **R27** | a presence event about a stranger is discarded, and it is a route | OPEN | **yes** | |
 | **R28** | a label change reaches everybody, at every level | OPEN — **decided `0019`**; hop 1 already built, hops 2-3 **wire, team review** | **yes** | |
 | **R29** | the shadow row carries rank and provenance | OPEN | **yes** | R1, R26 |
@@ -111,15 +112,16 @@ Reading the blocked-by column backwards gives what each row **unblocks**:
 
 | build this | frees, directly | and then |
 |---|---|---|
-| **R26** the store | R1's second half, R16, R29, R31 | R29 frees R30, R1 frees R4 — **six in total** |
+| ~~**R26** the store~~ | — | **decided 2026-09-21**; the six it held are free |
 | **R12** `last` on a partner row | R13, and one of R14's four | |
 | **R1** `via` | R4, R29 | R29 frees R30 — three |
 | **R15** the measurement | R20 | plus four claims nobody can state until it exists |
 
-**R26 is the keystone, and it is blocked by nothing but a sentence from
-Andy.** Its one open question is the node floor: `node:sqlite` needs
-**22.13** and `package.json` says **18**. That is not research, it is a
-ruling — and until it is made, six rows cannot move.
+~~**R26 is the keystone, and it is blocked by nothing but a sentence from
+Andy.**~~ — **the sentence came** (2026-09-21, recorded in `0018`): a
+database is allowed for the shadow roll and needs no review, and the floor
+moves to 22.13 with it. **Six rows freed.** What is left of R26 is one
+number, `MAX_AGE_MS`.
 
 **R15 is the one this column just exposed.** Four conclusions rest on it,
 nothing blocks it, and **it has no body at all** — the requirement is a
@@ -145,12 +147,44 @@ that rule says *do not build it alone*, this one says *do not stop for it
 either* — keep going on what does not need it, and let the review
 consider the accumulated set.
 
-**Build now, nothing in the way:** **R27** (one line, node-side), R17, R12,
-R19, R15, R1's `via` half — and, once R26's floor is ruled, R29, R30, R31
-and R1's second half.
+### The build order
 
-**For the review, when that list is empty:** R9, R13, R28's hops 2 and 3,
-and R26's persist shape. Four rows, one sitting.
+> **Andy:** *"we implement first what solves most problems and has no other
+> dependencies."*
+
+Applying that to the two columns gives a sequence rather than a pile. Each
+step below depends only on the ones above it.
+
+| | | why here |
+|---|---|---|
+| **0** | **R27** | One line, depends on nothing, and it opens the largest free source of routes and presence there is. Do it before R19, because it changes what there is to look at |
+| **0′** | **R19** | The verification this cycle was scoped around, and the one thing from the original framing still not done. **It should not drift to the end** — it is how we find out whether any of this works |
+| **1** | **R26** | The store. Nine rows are shaped around it and six are blocked by it |
+| **2** | **R29 + R1** | One sitting: the row gains rank, provenance, `via` and `routes` as a list — and `routes` leaves the contact book, which is the same edit from the other end |
+| **3** | **R30 + R4** | Presence on the row, ages in the four tooltips, and the two evictions with their numbers chosen. Both are the row shape being used |
+| **4** | **R31** | The cap and the Info screen. Needs a store to have a footprint to cap |
+| **5** | **R16** | The queue as a table, in the store that now exists |
+
+**Independent of all of it, any time:** **R15** (nothing blocks it, four
+claims wait on it, and R20 cannot be reconsidered without it), **R17**
+(harness hygiene), **R12** (`last` on a partner row, which frees R13),
+**R10**.
+
+**Last, one sitting:** the review — R9, R13, R28's hops 2 and 3 — and then
+R14, which needs R9, R12 and a ruling on R11.
+
+**The one warning in this order.** R19 is the oldest open row and the
+easiest to keep deferring, because nothing depends on it and it produces no
+code. It is also the only row that can tell us the cycle worked.
+
+**Build now, nothing in the way:** **R26** (the store, which nine other
+rows are shaped around), **R27** (one line, node-side), R17, R12, R19,
+**R15** (method written, four claims waiting), R10, R1 whole — and behind
+R26, R16, R29, R30 and R31.
+
+**For the review, when that list is empty:** R9, R13, and R28's hops 2 and
+3. **Three rows** — R26's persist shape left this pile on 2026-09-21, and
+every one that remains is a packet on the wire.
 
 **The three that gate the most:** **R15** (R20, and four claims nobody can
 make until it is measured), **R26** (R1's second half, R16, and `0018`
@@ -642,6 +676,72 @@ failure — is reported to the party that chose the address. Narrowing *what*
 may be dialled without closing *what comes back* leaves the useful half of
 the attack intact.
 
+### One concept, two records — and the relay's is the evolved one
+
+> **Andy:** *"a partner record's URL is akin to the node's
+> relay-records."*
+
+They are the same thing written twice, and comparing them says which rule
+to keep:
+
+| | the node's | the relay's |
+|---|---|---|
+| file | `relay-state/relayKeys.json` | the `partners` roll (`relayStore.js`) |
+| keyed by | **the URL** | **the relay key** |
+| holds | pinned key, seat, first seen | url, owner key, `status`, `since` |
+| keyed status | **implicit** — `pinned()` returns `''` | **explicit** — a `status` field |
+
+**The relay's record is further along, and the node's is the one carrying
+residue.** Keyed by URL is right while the URL is the handle and wrong
+after; the partner roll already keys by the thing that survives the
+handshake. That is the migration members finished in cycle 3 (*"Every
+operation is by key now"*) and relays have half-finished.
+
+**So one rule covers both**, which is the practical value of the analogy:
+whatever R11 decides about dialling an unkeyed address, it is the same
+sentence for a node reaching a new relay and a relay reaching a new
+partner. Two implementations, one rule, rather than two rules that drift.
+
+### The URL is not a variable
+
+> **Andy:** *"the url is not a variable in the partner roll."*
+
+**Written once, with the key, and never moved by a later message.** This
+closes an attack the keyed-status framing would otherwise leave open: if a
+row's URL could be updated, then **reaching keyed state would be worth
+attacking for** — partner honestly, wait to be trusted, then re-point the
+row at an internal address and have a trusted relay dial it. Pinning the
+key while leaving the address mutable pins the wrong half.
+
+**So the row's immutable unit is the pair**, `{relayKey, url}`, and a
+message naming a different URL for a known key is **not an update**. It is
+a new row at best and a refusal at worst — never a move.
+
+**The owner may still remake one**, and does today: `setPartner`
+(`relay.js:790`) removes the owner's row and writes a fresh one, so a
+re-promotion to a new address is a new row with a new `since`. That is an
+owner verb and stays one. **The rule is that a PEER's message may never
+move a row**, which is precisely what R14's open partnering would
+otherwise introduce.
+
+**And the two records are symmetric in exactly this.** Each has one
+immutable pair and one half that is the index:
+
+| | index | the other half | if it changes |
+|---|---|---|---|
+| node → relay | the URL | the pinned key | **reported, never resolved** (`relayKeys.js:31`) |
+| relay → partner | the relay key | the URL | **not a variable** |
+
+Neither record lets a later message silently move either half. They arrive
+at it from opposite ends, which is why the pair is the thing to state
+rather than the field.
+
+**And `relayKeys.js` already wrote the caveat both of them need**
+(`relayKeys.js:25`): *"IT PROVES CONTINUITY, NOT INTEGRITY... a box that
+was crooked from its first boot pins perfectly."* With it, the handling
+rule (`:31`): **a changed key is reported, never resolved** — which a
+partner row must do too, rather than quietly re-pinning.
+
 ### Three candidates, now scoped to the unkeyed window only
 
 Each of these is a rule about **which URLs may enter the window**, not about
@@ -688,13 +788,164 @@ Recommended **on** by default, with a count the owner can see, so a relay
 that has quietly acquired four hundred partners is a fact somebody
 noticed rather than discovered.
 
----
+### The mechanics, decided 2026-09-21
 
-**Status:** OPEN — not built and not decided. Needs R8, R9, R11 and R12.
+> **Andy:** *"when a partner request is sent OR received, it enters the
+> partner-roll immediately, without being active. The moment a partner
+> request is mutual, partners are in keyed-mode on both sides, and
+> available mutually."*
+
+**Reciprocity replaces approval.** There is no accept verb, because
+answering in kind is the acceptance. A stranger cannot make you active
+with them; only your own side asking can.
+
+**And this is already the principle — what changes is the gate, not the
+rule.** `setPartner`'s own note (`relay.js:776`): *"No third party's
+consent is bypassed: partnering only creates routes between the two
+relays' own members, and **the other relay's owner must promote this one
+in turn**."* Today that mutual promotion is two humans doing it by hand.
+This automates it and keeps the requirement exactly.
+
+### A row exists from the first move in either direction
+
+One row per counterpart, created on **send or receive**, inert until both
+have happened. So the row has to record **which directions have occurred**,
+and the status is the answer rather than a fourth fact:
+
+| stored | |
+|---|---|
+| **we asked them** | this relay sent a request |
+| **they asked us** | a request arrived and verified |
+| `status` | **derived**: both → `partnered`, one → `requested` |
+
+**Derived rather than written**, because a status stored beside its own
+inputs is a thing that can disagree with them. `relayStore.js:24` reserves
+`requested` for exactly this state; what it cannot express on its own is
+*which side asked*, and that has to live somewhere whatever the status is
+called.
+
+### An inactive row is already inert, and that was checked
+
+Both consumers of the roll filter on the positive value today:
+
+- `partnerByRelayKey` (`relay.js:856`) — `p.status === 'partnered'`, so an
+  inactive row resolves to **no identity**: it cannot open a stream, and
+  cannot be authenticated as a partner.
+- `partners()` (`relay.js:881`) — the same filter, so an inactive row is
+  in no search fan-out and no forward.
+
+**So a second status value costs nothing at the gates.** The risk is a
+*third* consumer written later that reaches for `store.partners.all()` and
+forgets — which the store can close by offering `active()` and making
+`all()` the deliberate choice.
+
+### What "mutual" has to mean, or the mechanic is forgeable
+
+**Two verified arrivals, not two claims.** The roll is keyed by relay key,
+so activation must rest on a request that demonstrably came **from** that
+relay — not on a body that names it. A partner request is an ordinary
+signed post under the decided direction (*"the A to B hop will be a
+request"*), so the transport already supplies this; it is written down
+because the mechanic depends on it and nothing else in this section says
+so.
+
+### The tie to R11
+
+**The inactive row is the unkeyed window.** A row that has been asked for
+in one direction only is exactly the state where a URL is standing in for
+an identity, and *"an unkeyed URL may be dialled for its key and nothing
+else"* is the rule that covers it. Mutual is what closes the window: keyed
+on both sides, and the URL becomes an address again.
+
+### Keyed status is the eviction order, not a second roll
+
+> **Andy:** *"it's keyed status. If unkeyed, may cause faster eviction, and
+> achieving mutually-keyed status makes it harder to evict."*
+
+**One roll, bounded as 0016 says — age and space — and keyed status decides
+who goes first when it must shed.** Not a separate quota for pending rows,
+which would be a second number to choose and to get wrong.
+
+**This is the third appearance of one pattern**, and it is worth naming so
+the next case is recognised rather than re-derived: the post scheduler's
+*class outranks age*, the shadow's *rank first, recency second*, and now
+*keyed outranks unkeyed*. **A cheap claim never displaces a proven one.**
+
+**What it buys, stated as the property it is:** a flood of partner requests
+**cannot displace a working partnership.** Every row it creates is unkeyed,
+so it competes only with other unkeyed rows. The worst an attacker achieves
+is crowding out *other pending requests* — a denial of **forming new**
+partnerships, never of existing ones. That is a much smaller harm and it is
+bounded by the same two numbers the roll already needs.
+
+**And it makes the cost honest under 0013.** *"Does this make a relay's
+cost a function of anything other than time?"* No: the roll's size is
+whatever its bounds say, whoever is asking, and pressure changes **who is
+in it**, not how big it is.
+
+**The residual, said rather than left to be discovered.** A genuine inbound
+request can be evicted before its counterpart arrives, so partnering may
+need a second attempt under load. That is the right way round — a retry
+costs one packet, and the alternative is letting a stranger's request
+outlive a partner's row.
+
+**Status:** OPEN — **mechanics and eviction order decided; the two numbers
+are not chosen.** Needs R9, R11 and R12.
 
 ### R15 — the per-stream measurement
 
-**Status:** OPEN — not measured. Blocks no stage and is blocked by none; four conclusions rest on it.
+> **Andy:** *"it's on the relay? what's the problem?"*
+
+**Fair, and the honest answer is: not much.** This requirement was carried
+for a day as a heading with no body, which read as difficulty. It is a
+morning on the lab, and the instrument is already built.
+
+### The instrument exists and is already streamed
+
+`relayStatus.report` carries the relay's own memory on every owner
+report — `relay.js:3678`:
+
+```
+proc: { rss: mem.rss, heapUsed: ..., heapTotal: ..., uptime: ... }
+```
+
+So nothing has to be added to the relay to measure it. **Open N streams,
+read the relay's own report, take the slope.** `labMaster` already spawns
+relays and nodes; the fixture is stream-holders and a sampler.
+
+### What is actually being replaced
+
+`governor.js:54` — `STREAMS_PER_MB = 16`, which that file's own comment
+calls a guess. The ceiling is `ramLimitMB × STREAMS_PER_MB`, so the whole
+allowance rests on this one number.
+
+### The three things to get right, which is all the difficulty there is
+
+1. **RSS, not `heapUsed`.** A stream's cost is mostly **not on the V8
+   heap** — socket buffers are the kernel's. `heapUsed` will undercount
+   and give a flattering number; `rss` is what answers *"will this box run
+   out"*. Worth noting that `governor.tick` is fed `heapUsed`
+   (`relay.js:3774`), which is a separate question for R20.
+2. **A slope, not a delta.** GC timing makes any single before-and-after
+   reading meaningless. Sample at 0, 100, 200, 400 streams and fit a line;
+   the intercept is the relay's fixed cost and the gradient is the answer.
+3. **Idle and active are two numbers.** An idle held connection and one
+   with a payload in flight do not cost the same. The Governor's ceiling
+   needs the **idle** one — it is bounding how many may be *held* — and the
+   active figure belongs with the request budget, which already has its
+   own arithmetic.
+
+### Why it is worth doing before the things that wait on it
+
+Four claims cannot be made until it exists: what a micro-relay costs,
+whether *"1000 members"* can be said to anybody, whether `connections`
+stops being a lever, and how many members a box holds. **R20 — the
+Governor's last job — ends when this lands**, because `tick()` exists to
+correct a ceiling that is only wrong because the constant is a guess.
+
+**Status:** OPEN — not measured. **Method written; nothing blocks it.** The
+instrument is in the relay already and the lab already spawns what it
+needs.
 
 ## Crossing all of it
 
@@ -728,6 +979,31 @@ cycle opened deliberately.
 that durations are measured on a clock that cannot jump: a persisted
 deadline has to convert to wall-clock on the way out and be recomputed on
 the way in, and a restart must not reset a backoff a peer had earned.
+
+### Not merely persisted — a table
+
+> **Andy:** *"the queue might be data-basable."*
+
+**And the selection becomes a query.** `eligible()` (`postQueue.js:238`)
+copies the whole array and sorts it on **every pick**:
+
+```
+var ready = items.slice().sort(order);
+```
+
+`order` is *class first, then age* — which is `ORDER BY rank, seq` over an
+index, and the three eligibility tests are a `WHERE`. A queue that holds
+days of intent is exactly the one where an O(n log n) scan per pick stops
+being free.
+
+**One honest caveat.** Two of the tests are not per-entry: in-flight is per
+**relay** and backoff is per **relay+peer pair**. They are small side
+tables rather than columns, so the query joins rather than filtering one
+table — real, and not a reason against.
+
+**And it makes R26 carry three, not two.** The shadow, this, and R31's cap
+all want node-side persistence, which is what puts R26 at the head of the
+list.
 
 **Status:** OPEN — not built, and nothing needs it until a caller sets a
 patience. `peerPost` defaults to zero, so retrying is inert today.
@@ -804,8 +1080,26 @@ So the work is: measure the per-stream cost (R15), then decide whether
 what remains is a reporter or a reporter with a safety net — a computed
 ceiling assumes per-member cost is stable and heap is not.
 
-**Status:** OPEN — depends on R15. `0017` records the decision and what it
-supersedes.
+> **Andy:** *"R20 deferred until we know the basics. We already know the
+> governor is afraid of the job, but governor and monitor might look very
+> different after the rest of the R-list is cleared."*
+
+**Deferred, and the reason is not just R15.** Measuring the per-stream cost
+would tell us what `tick()` should do; it would not tell us **whether a
+governor and a monitor are still the right two things**. That answer moves
+with the rest of this list — R26 changes what a node persists, R14 changes
+what a relay accumulates, R31 hands a limit to an owner — and deciding the
+shape of the last governing act before those land would be deciding it
+against a box that no longer exists.
+
+*"Afraid of the job"* is the useful part: `governor.js` says in its own
+comment that its constant is a guess, so the one act it still performs is
+correcting a ceiling it does not trust. That is a symptom to keep, not a
+problem to solve now.
+
+**Status:** DEFERRED: the governor's remaining shape depends on R15 and on
+what the rest of the list does to the box it governs; revisit when the list
+is otherwise clear.
 
 ### R21 — labMaster blocks on netstat, and Windows answers a full backlog with RST
 
@@ -1085,9 +1379,27 @@ decided 2026-09-21:
   **22.13**, and an indexed store on the node raises every user's
   minimum.
 
-**Status:** OPEN — the store, its floor, and whether `MAX_AGE_MS` (an
-hour) survives at all once forgetting is a choice rather than a
-consequence of living in RAM.
+> **Andy:** *"we need no peer review for allowing a database to be used for
+> the shadow roll. That's a decision."*
+
+**Granted, and recorded in
+[0018](../decisions/0018-the-route-cache-belongs-to-the-machine.md)** —
+which had left exactly this open. `CLAUDE.md` makes a new persist shape a
+team review; this spends that review in advance for this one shape, because
+0018 already carries the argument a review would re-derive.
+
+**The floor follows rather than being a second ruling.** A node may take
+*"no dependencies outside native node.js"*, so a database is `node:sqlite`,
+and `node:sqlite` is **22.13**. Said plainly so it can be vetoed in a word
+if it was not intended.
+
+**This was the keystone and it is now off the critical path.** R1's second
+half, R16, R29, R30 and R31 all move.
+
+**Status:** OPEN — **decided, not built.** `MAX_AGE_MS` (an hour) is the
+one number still open, and it belongs here: an hour is what a cache can
+afford while it lives in RAM, and a store is what makes a longer one
+affordable.
 
 ### R27 — a presence event about a stranger is discarded, and it is a route
 

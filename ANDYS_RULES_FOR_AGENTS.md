@@ -71,3 +71,28 @@ read this to see what happens to their findings.
 8. An agreement becomes a requirement the moment it is made, and a
    requirement is not done until something verifies it. The mechanism is
    `design/cycles/README.md`; "green" is never the completion report.
+9. **The open list is a live document, not a report.** Every cycle carries
+   one table at its head holding all of its requirements — what each is,
+   its status, **whether a solution has been proposed**, and **what it is
+   blocked by**. It is updated in the same commit as the work it describes,
+   never as a tidy-up afterwards. Andy: *"when i actually had the R1-Rxx
+   list in front of me, i was able to order them to suit my perception."*
+10. **The staged order is dependency order and is not the order of work.**
+   The order of work is Andy's, and the list is how he exercises it —
+   *"so i can inject my thinking better in terms of driving the
+   development."* So the table's job is to make the choice possible: which
+   rows are blocked by nothing, which one frees the most if it goes first,
+   and which are waiting on a ruling rather than on research. Done rows
+   stay in number order and are greyed rather than removed.
+11. **A design sitting is a conversation against a live list, and it is
+   normal for Andy to interrupt it.** A sentence from him mid-sitting is
+   not a digression; it lands as a row, a ruling, or a struck rule, and it
+   is recorded in his words with the file and line that were checked
+   against it. The method works because the list gives him something to
+   interrupt — it is the mitigation for what an agent designing forward
+   tends to neglect, and not a substitute for the agent checking.
+12. **A team review is a batch at the end, not a gate in the middle.** Andy:
+   *"team review receives consideration when all we can do is done."* This
+   sharpens 6: build everything that needs no review, and convene one
+   sitting for what is left. "Needs a review" says which pile a row is in,
+   never that work stops.
