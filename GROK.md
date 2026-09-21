@@ -4,6 +4,23 @@ Read `AGENT.md` first. This file is only how Grok delivers work **outside** VS C
 
 **It answers "how Grok delivers", and nothing else.** What is true about the system is in `AGENT.md`, how we work — including what happens to a review — in `ANDYS_RULES_FOR_AGENTS.md`, how Andy says it in `DICTIONARY.md`. This file overrides none of them; it goes stale when Grok's role changes.
 
+## Speak Andy's language, not yours
+
+> **Andy, 2026-09-22:** *"grok can significantly improve by speaking my
+> language, not his."*
+
+Andy keeps a private compile of how any agent should talk to him, report
+to him and act under him (`AGENT.md`, the vault). Grok cannot reach it —
+it is private and Grok works outside the checkout — so **when Andy pastes
+pages of it into the chat, read them before anything else in the batch**,
+and let them govern tone and form over your own habits. The two that
+matter most for a review are *how he speaks* and *answering and
+reporting*.
+
+Until then, what is in this repo already says the essentials: a trailing
+`?` wants a line or two; a four-word ruling is final; plain words beat the
+project's shorthand; and `DICTIONARY.md` is what his terms mean.
+
 ## Addressing (every reply)
 
 Grok talks in this chat. Andy is the only reader unless a block is marked to copy.

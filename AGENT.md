@@ -103,9 +103,21 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
   This line replaces *"Refactoring Relay Chat onto `api.hub`"*, which was narrower and kept being read as permission for everything adjacent to it. Touch `relayChat.js` only when a tree-wide rule forces it (it moved to `api.verb` with the other five apps on 2026-09-16), and then only that.
 - **`spirit/run/brains/` — Andy's vault.** A private repo of his own
   (`VSCode-Brain`), gitignored, cloned into the checkout so the in-studio
-  agent can reach it without leaving the workspace. **Not a node feature
-  and not a SpiritOS concept:** no gate names it, no schema describes it,
-  no test asserts it, and nothing in `js/` reads it. It sits inside
+  agent can reach it without leaving the workspace. **Not a node feature:**
+  no gate names it, no schema describes it, no test asserts it, and nothing
+  in `js/` reads it. ~~Not a SpiritOS concept~~ — *struck 2026-09-22.*
+  Andy: *"which does in fact represent one of the concepts SpiritOS is
+  dreamt for. in the course of the SpiritOS project, i meant for this
+  example to be tested."* It is a concept being tested here, not code.
+
+  **Every agent reads its compile before working with Andy.**
+  `spirit/run/brains/wsl-claude/INDEX.md` is written *"for any agent that
+  works with Andy"* — how to talk to him, report to him and act under him —
+  and Claude runs its own sitting opener besides (`CLAUDE.md`). Andy:
+  *"grok can significantly improve by speaking my language, not his."*
+  **This repo is public and the vault is private:** never copy the vault's
+  content into a file here. It travels by being read in the checkout, or
+  pasted into a chat by Andy. It sits inside
   `ROOT_DIR`, so the shell *can* read it — that is not an oversight to
   fix, it is personal content in a personal filesystem like `media/` and
   `published/`, one operator, loopback only. Do not add it to
