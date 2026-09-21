@@ -250,6 +250,13 @@ This directory contains the vision, principles, and architecture decisions for *
   queue depth, the backoff timer, no. Settles that patience is an owner's
   node setting rather than a per-post argument from an app.
 
+- [0021 — Choosing is a mark on what the machine remembers](decisions/0021-choosing-is-a-mark-on-what-the-machine-remembers.md)
+  — the node remembers every peer it meets, and forgets only for space;
+  the list is a mark on that memory, and the mark is the protection. Shed
+  in order: unchosen, ignored and blocked, held — never added; a full
+  memory refuses the next add. Andy: *"ignoring means only: mark this row
+  as "ignored"."* Behind the verbs that exist; no new interface.
+
 ## Andy's frames
 - [The POST API — route hierarchy](andy/spiritNodeAPI.md) — every POST route
   both servers dispatch and the function it lands in. Illustration only.

@@ -56,10 +56,9 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Five open, five deferred, one cancelled, twenty-six done.** Of the five
-open, three need the team review (R9, R13, R28), one is Andy's to decide
-(R11), and R14 waits on those. **Nothing open can be built without a review
-or a ruling.**
+**Seven open, five deferred, one cancelled, twenty-six done.** Three need
+the team review (R9, R13, R28), one is Andy's to decide (R11), and R14
+waits on those. **R38 is decided and buildable now**; R39 follows it.
 
 | | what | status | solution? | blocked by |
 |---|---|---|---|---|
@@ -89,6 +88,8 @@ or a ruling.**
 | <sub>R35</sub> | <sub>*a member who has stopped reading is cut loose, and nobody is left waiting on them*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R36</sub> | <sub>*what an error means, in one place — relay emitting codes is for the review*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R37</sub> | <sub>*every presence mark shows its age*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
+| **R38** | ignore is a mark, not a forgetting — the list is a mark on the memory | OPEN — **decided `0021`**, not built | **yes** | |
+| **R39** | an offline search answers from memory | OPEN — shape named, not ruled | partial | R38 |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R23</sub> | <sub>*a sibling is a route too, and both ends are told*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -2488,6 +2489,38 @@ three values, so *"nobody has said"* can finally read differently from
 
 **Status:** DEFERRED: UI, and Andy takes UI in dedicated sessions on his own
 node. Nothing below the screen is missing.
+
+### R38 — ignore is a mark, not a forgetting
+
+> **Andy:** *"ignoring means only: mark this row as "ignored"."*
+
+**Decided in `0021`.** The node remembers every peer it meets; the list is
+a mark on that memory, and the mark is the protection. To build, behind
+the verbs that already exist (`peer.list`, `contact.*`):
+
+- the mark on the shadow row — none, `held`, `added`, `ignored`, blocked
+- the space sweep sheds in 0021's order — unchosen, ignored and blocked,
+  held — and never `added`; a full memory refuses the next add, with a
+  catalogued code
+- the age eviction goes (`MAX_AGE_MS`); last seen orders the sweep only
+- `frontDoor` reads the mark, and `contactBook`'s rows come from it
+
+The words on screen (*"Ignore — No row"*) are the UI session's.
+
+**Status:** OPEN — decided, not built. Blocked by nothing.
+
+### R39 — an offline search answers from memory
+
+> **Andy:** *"thing is. if the userbox is offline, search can revert to
+> memory....."*
+
+**What 0021's memory is for.** `peer.list` and `peer.find` are wire verbs
+and fail when the box is offline (`server.js:1490-1491`). Kept memory lets
+the node answer from what it has met instead, marked as from memory and
+dated — a value crossing, not the store (0020).
+
+**Status:** OPEN — shape named, not ruled: whether memory answers only when
+the wire fails, or always alongside it. Blocked by R38.
 
 ## The order, and why
 
