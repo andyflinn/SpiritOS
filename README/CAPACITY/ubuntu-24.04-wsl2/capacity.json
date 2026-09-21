@@ -1,0 +1,54 @@
+{
+  "measuredAt": "2026-09-21T15:16:24.420Z",
+  "commit": "4e94e2d",
+  "platform": "linux",
+  "release": "6.18.33.2-microsoft-standard-WSL2",
+  "version": "#1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026",
+  "node": "v24.21.0",
+  "cpus": 32,
+  "totalRamBytes": 67263705088,
+  "bareNodeRss": 44462080,
+  "relayAtRestRss": 66301952,
+  "nodeAtRestRss": 75714560,
+  "perStreamProcessBytes": 41472,
+  "perStreamKernelBytes": 1311,
+  "kernelCounter": "/proc/net/sockstat TCP mem",
+  "streamSteps": [
+    {
+      "n": 0,
+      "rss": 66301952,
+      "kernel": 2936832
+    },
+    {
+      "n": 100,
+      "rss": 80973824,
+      "kernel": 2936832
+    },
+    {
+      "n": 200,
+      "rss": 83673088,
+      "kernel": 2936832
+    },
+    {
+      "n": 400,
+      "rss": 88944640,
+      "kernel": 2936832
+    },
+    {
+      "n": 800,
+      "rss": 105533440,
+      "kernel": 3985408
+    }
+  ],
+  "perMemberRowBytes": 197,
+  "perPartnerRowBytes": 279,
+  "perShadowRowBytes": 157,
+  "perLogEntryBytesSynthetic": 253,
+  "installBytes": 3862826,
+  "installFiles": 110,
+  "caveats": [
+    "loopback: both socket endpoints are on this machine",
+    "idle streams only; an active stream costs more",
+    "the kernel counter is not per-process and carries the machine own noise"
+  ]
+}
