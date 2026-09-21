@@ -2623,6 +2623,18 @@ count against it, so an old friend is still found. Both reads are asserted
 to use their index; the chosen one only does while it repeats the partial
 index's condition. Reading the chosen with everybody else fails two checks.
 
+> **Andy:** *"the capped read is controlled by a lever the human user can
+> use. adjusting max-local search records or something. i'm not saying
+> "make a config UI for these things with floors and ceiling. I'm saying we
+> state that that is possible."*
+
+**Stated: the cap is the owner's, and it can be put in front of them.** It
+is an owner's bound in 0015's sense — the owner sets it, the node obeys it
+and never writes it — not a lever the programme moves. Today it is edited
+in `node.json`; an Info control with a floor and a ceiling, beside the
+cache cap (R34), is possible and **not built**. Whoever builds it inherits
+R31's open question: whether the node may write `node.json` at all.
+
 **Status:** DONE
 
 ## The order, and why

@@ -52,6 +52,11 @@ const MIN_CACHE_MAX_MB = 1;
 // the owner's own people are read apart and always compared (0021).
 // A count of rows, not bytes, because it bounds WORK — how many labels
 // one search scores — and a row is the unit of that work.
+//
+// THE OWNER'S TO SET, AND IT COULD BE SHOWN TO THEM. Andy: "the capped read
+// is controlled by a lever the human user can use ... I'm saying we state
+// that that is possible." An Info control with a floor and a ceiling is
+// possible and not built (R39); until then the owner edits this file.
 const DEFAULT_SEARCH_MEMORY_ROWS = 1000;
 
 function filePath(rootDir) {
