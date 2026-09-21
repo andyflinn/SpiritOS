@@ -38,6 +38,35 @@
 // times over, and nothing a person saw an hour ago is still worth acting
 // on without asking again.
 
+// ── WHAT THIS IS, SAID PLAINLY ───────────────────────────────────────
+//
+//   Andy: "key the global cache by peer ID (it becomes a
+//   shadow-contact-list)" — "and implicitly a duplicate of the relays
+//   member-roll" — "(time-lagged, of course)" — "it is simply not
+//   canonical."
+//
+// Keyed by peer, so a peer seen a thousand times is one row: growth is
+// bounded by distinct people, not by traffic.
+//
+// And it is a PARTIAL, LAGGED COPY OF RELAY MEMBERSHIP, assembled from
+// what this node happened to be told and never asked for. Saying so is
+// the point, because it decides what may be done with it:
+//
+//   it may GUESS   — a hint that is wrong costs one failed attempt
+//   it may not ASSERT — "is X on relay R" is the relay's answer, not this
+//
+// NOT CANONICAL, and nothing may treat it as though it were: not a
+// roster, not a count, not a membership check, not an answer to anybody.
+//
+// AND IT STAYS INSIDE THIS NODE. The rules against duplicating a roll
+// (0012, PARTNERS.md's "a relay NEVER persists a partner's members") are
+// about a RELAY holding another relay's people, which this is not — a
+// node keeping what it was told is a different party. But the distance
+// is one accessor wide: give this a verb, an app surface or a route and
+// it becomes a way to harvest membership sideways, from a box that was
+// never asked and cannot refuse. There is no reader here but the node's
+// own acquisition path, and that is a boundary rather than an omission.
+
 var MAX_ENTRIES = 500;
 var MAX_AGE_MS = 60 * 60 * 1000;
 

@@ -583,13 +583,32 @@ function remember(rootDir, from, verdict, relayUrl) {
   var road = String(relayUrl == null ? '' : relayUrl).trim();
   var row = { publicKey: key, publicLabel: '', relays: [] };
   if (road) row.relay = road;
+
+  // ── THE ROAD THEY CAME IN ON IS A ROUTE ──────────────────────────────
+  //
+  //   Andy: "the node must implicitly learn routes at EVERY opportunity."
+  //
+  // This had the road all along and kept only the URL: `row.relay` lands
+  // in `relays`, which holds addresses, while `routes` — which holds
+  // relay KEYS and is what a post sends as hints — got nothing. Somebody
+  // who wrote to you was auto-added with an address and no route.
+  //
+  // The key is one lookup away: this node pinned it when it accepted that
+  // relay. And if a search already said where they live, that answer is
+  // better than the road, because it is about the PERSON rather than
+  // about the packet — so the cache is asked first.
+  var seen = seenPeers.get(key);
+  var at = (seen && seen.at) || (road ? relayKeys.pinned(rootDir, road) : '') || '';
+
   try {
     if (verdict === 'admit') {
       contactBook.acquire(rootDir, row, 'message');
+      if (at) contactBook.learnRoute(rootDir, key, at);
       return true;
     }
     if (verdict === 'hold') {
       contactBook.hold(rootDir, row);
+      if (at) contactBook.learnRoute(rootDir, key, at);
       return true;
     }
   } catch (e) {
@@ -1485,9 +1504,20 @@ function createHub(rootDir) {
         // stops a relay writing into somebody's address book, and it
         // holds here too: no search result becomes a route until a person
         // has decided to keep the person.
+        //   Andy: "Any peer a node could possibly connect to, the route
+        //   to it can be known to the node."
+        //
+        // TWO SOURCES, IN THAT ORDER. What a search found is about the
+        // PERSON — where they live — and is preferred. Failing that, the
+        // caller named a relay to acquire from, and this node pinned that
+        // relay's key when it accepted it, so the route is one lookup
+        // away and was being thrown out. That is the invite and
+        // pasted-key path, which had no cache entry to fall back on and
+        // therefore produced a contact nobody could route to.
         var seen = seenPeers.get(publicKey);
-        if (seen && seen.at) {
-          try { contactBook.learnRoute(rootDir, publicKey, seen.at); }
+        var at = (seen && seen.at) || relayKeys.pinned(rootDir, url) || '';
+        if (at) {
+          try { contactBook.learnRoute(rootDir, publicKey, at); }
           catch (e) { /* a book that cannot be written is not a reason to refuse the contact */ }
         }
 
@@ -2192,6 +2222,11 @@ module.exports = {
   // a second answer to the same question.
   frontDoor: frontDoor,
   remember: remember,
+  // ONE CACHE, for the reason `remember` and `frontDoor` are here: a
+  // second instance would be a second answer to the same question, and
+  // the half that learned something would not be the half that is asked.
+  // server.js feeds it from route announcements.
+  seenPeers: seenPeers,
   // Listed ONCE. It was here twice — same key, same value, one shadowing
   // the other in the same object literal — which is what an export block
   // that grew by accretion does. Spotted while deleting the six ring

@@ -30,6 +30,9 @@ const nodeCard = require('./nodeCard');
 // touches the book goes through hub; this does not, because it is a
 // stream event with no request behind it and no response to build.
 const contactBook = require('./contacts');
+// The keys this node has accepted for the relays it uses. Turning the URL
+// a packet arrived on into the relay KEY a route is made of.
+const relayKeys = require('./relayKeys');
 // Where this node keeps its mail. Required here for one call at boot:
 // a node with no relays.json is given one.
 const ownerBadge = require('./ownerBadge');
@@ -1027,6 +1030,15 @@ common.refuseListenError(server, port, 'js/server.js');
     // And what to write down about a stranger who got through the floor.
     // Separate from the judgement on purpose: the verdict is decided
     // before the budget is checked, the row is written after.
+    // EVERY ARRIVAL IS A ROUTE, whatever the door decides about it. The
+    // URL is turned into a relay KEY here, because that is what a route
+    // is made of and this is the half that knows which keys this node has
+    // pinned.
+    noteSeen: function (from, relayUrl) {
+      var at = relayUrl ? relayKeys.pinned(ROOT_DIR, relayUrl) : '';
+      if (!at && !relayUrl) return;
+      require('./hub').seenPeers.note(from, { at: at || '', url: relayUrl || '' });
+    },
     remember: function (from, verdict, relayUrl) {
       return require('./hub').remember(ROOT_DIR, from, verdict, relayUrl);
     },
@@ -1108,6 +1120,27 @@ common.refuseListenError(server, port, 'js/server.js');
     // never add to them.
     onRoute: function (url, body) {
       if (!body || !body.key || !body.at) return;
+      // KEPT EVEN WHEN IT IS ABOUT A STRANGER.
+      //
+      //   Andy: "the node must implicitly learn routes at EVERY
+      //   opportunity."
+      //
+      // `learnRoute` never creates a contact row, which is right — a
+      // relay must not be able to write into somebody's address book. But
+      // that made a route about anybody not already held simply vanish,
+      // and a relay now announces to BOTH ends of an exchange
+      // (relay.js, 2026-09-21), so a node answering a stranger learned
+      // where they live and threw it away in the same breath.
+      //
+      // So it goes to the node's own cache as well, which is bounded and
+      // is not the book (seenPeers.js). It waits there until the moment
+      // somebody is added — by hand or by writing to this node — and is
+      // spent then.
+      // The MODULE's cache, not this hub instance's — one node, one
+      // answer to "where have I lately been told somebody lives", the
+      // same reason relayRequest is taken from the module below.
+      try { require('./hub').seenPeers.note(body.key, { at: body.at, url: url }); }
+      catch (e) { /* a cache that will not take a row is not a reason to stop listening */ }
       try { contactBook.learnRoute(ROOT_DIR, body.key, body.at); }
       catch (e) { /* a book that cannot be written is not a reason to stop listening */ }
     },

@@ -113,6 +113,12 @@ function createPeerPost(opts) {
   // worst thing in the system on a relay. A peerPost built without one
   // simply writes nothing, which is what every test that does not care
   // about the log gets.
+  // WHERE A PEER WAS LAST SEEN, told to the node's own cache. Injected
+  // like `admit` and `remember`, for the same reason: the answer needs
+  // the node's relay keys and none of that belongs in the file that moves
+  // packets. Given nothing, nothing is remembered — which is every suite
+  // that does not care.
+  var noteSeen = opts.noteSeen || null;
   var traffic = opts.traffic || null;
   function note(entry) {
     if (!traffic) return;
@@ -695,6 +701,25 @@ function createPeerPost(opts) {
     // the inbox did not need is one this door does.
     //
     // Andy: "no node, by protocol, should accept requests from unknown."
+    // ── LEARNED BEFORE IT IS JUDGED ──────────────────────────────────
+    //
+    //   Andy: "the node is informed of a new peer, and has a policy that
+    //   decides about acquisition. this should not govern the node's
+    //   global-cache-updates."
+    //
+    // The packet is verified by this point, so `body.from` really did
+    // send it and it really did arrive through `relayUrl`. That is a
+    // route, and it is true whatever this node decides about the person.
+    //
+    // It used to be learned only when somebody was ADDED — `remember` runs
+    // for admit and hold and not for drop — so a node that declined to
+    // talk to somebody also forgot where they were. Policy belongs to the
+    // address book; the cache is a record of what this node was told.
+    if (noteSeen) {
+      try { noteSeen(body.from, relayUrl); }
+      catch (e) { /* a cache that will not take a row changes nothing here */ }
+    }
+
     var verdict = judge(body.from);
 
     // THE FLOOR, and it binds before the preference is honoured. An

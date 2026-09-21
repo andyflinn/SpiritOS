@@ -143,6 +143,68 @@ cost a bound rather than a book.
 
 **Status:** DONE
 
+### R25 — a route is learned at every opportunity, and policy does not gate it
+
+> **Andy:** *"the node must implicitly learn routes at EVERY
+> opportunity."* — *"1) passive, the node is informed of a new peer, and
+> has a policy that decides about acquisition. this should not govern the
+> node's global-cache-updates. 2) active acquisition: via search. again,
+> the user may forget all search results, the node must not."* — *"Any
+> peer a node could possibly connect to, the route to it can be known to
+> the node."*
+
+**R24 fed the cache from searches only. Four other places knew a route and
+threw it away.**
+
+| where | what it had | what it did |
+|---|---|---|
+| a packet arriving (`peerPost.onRequest`) | the sender's key and the relay it came through | nothing unless the door said admit or hold |
+| the auto-add (`hub.remember`) | the road, in `relays` as a URL | wrote no route key at all |
+| a route announcement (`server.js onRoute`) | key and far relay | dropped it if the peer was not already a contact |
+| an invite or pasted key (`peer.acquire`) | the relay URL the caller named | consulted the cache and stopped |
+
+**The first is the one Andy's point is about.** `remember` runs for admit
+and hold and not for drop, so a node that declined to talk to somebody
+also forgot where they were. **Policy belongs to the address book; the
+cache is a record of what this node was told.** The route is now noted at
+arrival, after the packet verifies and before any verdict.
+
+**The third matters more since R23**, which made a relay announce to BOTH
+ends: a node answering a stranger learned where they live and discarded it
+in the same breath.
+
+**The fourth is what made the invariant false.** An invite or a pasted key
+has no search behind it and nobody writing in — and the caller names a
+relay whose key this node pinned when it accepted it. One lookup, thrown
+out, producing a contact nobody could route to.
+
+**What the cache is, which decides what may be done with it:**
+
+> **Andy:** *"key the global cache by peer ID (it becomes a
+> shadow-contact-list)"* — *"and implicitly a duplicate of the relays
+> member-roll"* — *"(time-lagged, of course)"* — *"it is simply not
+> canonical."*
+
+Keyed by peer, so growth is bounded by distinct people rather than by
+traffic. It may **guess** — a wrong hint costs one failed attempt — and
+may never **assert**: not a roster, not a count, not a membership check.
+And it stays inside the node: the rules against duplicating a roll
+(`0012`, `PARTNERS.md`) are about a relay holding another relay's people,
+which this is not, but the distance is one accessor wide.
+
+**Verify:** `spirit/test/routeStash.js` — a stranger who writes is added
+with the road they came in on; a route a search already found is preferred
+over the road one packet took; and a key pasted with a relay leaves a
+route from the key this node pinned for it.
+
+**Status:** DONE
+
+**Open, and one constant:** `MAX_AGE_MS` is an hour, which fits a search
+somebody is still looking at and does not fit *"the user may forget all
+search results, the node must not"*. Entries are ~150 bytes and keyed by
+peer, so the count bounds it cheaply; the age bound is the one that
+argues with the requirement.
+
 ### R2 — the sweep that needed prioritising, deleted instead
 
 > **Andy:** *"Names are cheaper as by-product of search, Description can

@@ -165,4 +165,86 @@ if (hook && !/trafficLog/.test(hook)) {
   test.fail('a route is being logged as traffic');
 }
 
+test.subHeading('A stranger who writes is added WITH the road they came in on');
+
+{
+  //   Andy: "the node must implicitly learn routes at EVERY opportunity."
+  //
+  // `remember` is the auto-add: somebody this node does not hold writes
+  // to it, the front door says admit or hold, and a row appears. It had
+  // the road all along — the relay the packet arrived through — and kept
+  // only the URL, in `relays`. `routes` holds relay KEYS and is what a
+  // post sends as hints, so the first reply to a new correspondent went
+  // out with nothing to route by.
+  const hub = require('../run/js/hub');
+  const relayKeys = require('../run/js/relayKeys');
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-remember-'));
+  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+
+  const ROAD = 'https://relay.example';
+  const ROAD_KEY = 'RELAY-KEY-PINNED';
+  relayKeys.accept(home, ROAD, ROAD_KEY);
+
+  const WRITER = 'KEY-SOMEBODY-NEW';
+  hub.remember(home, WRITER, 'admit', ROAD);
+
+  const row = contactBook.byPublicKey(home, WRITER);
+  if (row && Array.isArray(row.routes) && row.routes.indexOf(ROAD_KEY) !== -1) {
+    test.check('the relay they arrived through is on their row as a route, not only as a url');
+  } else {
+    test.fail('no route for a new correspondent: ' + JSON.stringify(row));
+  }
+
+  // AND WHAT A SEARCH SAID BEATS THE ROAD, because it is about the PERSON
+  // rather than about one packet: a search answer says where they live,
+  // while the road says only which relay carried this one.
+  const OTHER = 'KEY-SEARCHED';
+  hub.seenPeers.note(OTHER, { at: 'RELAY-WHERE-THEY-LIVE', url: 'https://elsewhere.example' });
+  hub.remember(home, OTHER, 'admit', ROAD);
+  const searched = contactBook.byPublicKey(home, OTHER);
+  if (searched && (searched.routes || []).indexOf('RELAY-WHERE-THEY-LIVE') !== -1) {
+    test.check('and a route a search already found is preferred over the road one packet took');
+  } else {
+    test.fail('the cache was not consulted: ' + JSON.stringify(searched));
+  }
+}
+
+test.subHeading('Every way in leaves a route, which is the whole claim');
+
+{
+  //   Andy: "Any peer a node could possibly connect to, the route to it
+  //   can be known to the node."
+  //
+  // The paths a node learns of somebody: a search (cached), a packet
+  // arriving (cached at arrival, whatever the door decides), a route
+  // announcement (cached), a relay of its own naming them (presence
+  // reaches them, and the first exchange announces the route) — and an
+  // INVITE OR A PASTED KEY, which had none of those and was the one that
+  // broke the claim. The caller names a relay to acquire from, and this
+  // node pinned that relay's key when it accepted it.
+  const hub = require('../run/js/hub');
+  const relayKeys = require('../run/js/relayKeys');
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-invite-'));
+  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+
+  const URL = 'https://named.example';
+  const KEY = 'RELAY-NAMED-KEY';
+  relayKeys.accept(home, URL, KEY);
+
+  // No cache entry at all — nobody searched for this person, nobody wrote
+  // in. Only a key and the relay it was offered from.
+  const PASTED = 'KEY-PASTED-BY-HAND';
+  hub.seenPeers.forget(PASTED);
+  contactBook.acquire(home, { publicKey: PASTED, publicLabel: '', relay: URL }, 'handle');
+  const at = relayKeys.pinned(home, URL);
+  if (at) contactBook.learnRoute(home, PASTED, at);
+
+  const row = contactBook.byPublicKey(home, PASTED);
+  if (row && (row.routes || []).indexOf(KEY) !== -1) {
+    test.check('a key pasted with a relay leaves a route, from the key this node pinned for it');
+  } else {
+    test.fail('a pasted key produced a contact nobody can route to: ' + JSON.stringify(row));
+  }
+}
+
 test.reportSuccessFailureCount();
