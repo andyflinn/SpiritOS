@@ -247,4 +247,57 @@ test.subHeading('Every way in leaves a route, which is the whole claim');
   }
 }
 
+test.subHeading('And deleting a contact does not reach into the shadow');
+
+{
+  //   Andy: "a shadow route must not be dropped when a contact is
+  //   deleted."
+  //
+  // contactBook.forget says the same about itself: it "forgets YOUR side
+  // of a relationship, and a relay's census is not yours to edit."
+  // Deleting a row is a statement about an address book, not about what
+  // this node was told — so re-adding somebody gets their route back
+  // without going looking for it again.
+  const hub = require('../run/js/hub');
+  const relayKeys = require('../run/js/relayKeys');
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-shadow-'));
+  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+
+  const URL = 'https://kept.example';
+  const KEY = 'RELAY-KEPT';
+  relayKeys.accept(home, URL, KEY);
+
+  const PEER = 'KEY-DELETED-THEN-READDED';
+  hub.seenPeers.note(PEER, { at: KEY, url: URL });
+  contactBook.acquire(home, { publicKey: PEER, publicLabel: '', relay: URL }, 'handle');
+  contactBook.learnRoute(home, PEER, KEY);
+
+  contactBook.forget(home, PEER);
+  if (contactBook.byPublicKey(home, PEER) === null || contactBook.byPublicKey(home, PEER) === undefined) {
+    test.check('the contact is gone from the book');
+  } else {
+    test.fail('forget left a row: ' + JSON.stringify(contactBook.byPublicKey(home, PEER)));
+  }
+
+  const shadow = hub.seenPeers.get(PEER);
+  if (shadow && shadow.at === KEY) {
+    test.check('and the shadow route survives it — the book was emptied, not the memory');
+  } else {
+    test.fail('the shadow went with the contact: ' + JSON.stringify(shadow));
+  }
+
+  // THE PAYOFF, which is why the rule is worth having.
+  contactBook.acquire(home, { publicKey: PEER, publicLabel: '', relay: URL }, 'handle');
+  const again = hub.seenPeers.get(PEER);
+  if (again && again.at === KEY) {
+    contactBook.learnRoute(home, PEER, again.at);
+  }
+  const row = contactBook.byPublicKey(home, PEER);
+  if (row && (row.routes || []).indexOf(KEY) !== -1) {
+    test.check('so re-adding them restores the route without asking anybody');
+  } else {
+    test.fail('re-added with no route: ' + JSON.stringify(row));
+  }
+}
+
 test.reportSuccessFailureCount();

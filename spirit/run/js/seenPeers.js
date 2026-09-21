@@ -48,24 +48,33 @@
 // Keyed by peer, so a peer seen a thousand times is one row: growth is
 // bounded by distinct people, not by traffic.
 //
-// And it is a PARTIAL, LAGGED COPY OF RELAY MEMBERSHIP, assembled from
-// what this node happened to be told and never asked for. Saying so is
-// the point, because it decides what may be done with it:
+// NOT A DUPLICATE OF ANYTHING, and the distinction is the whole licence
+// for it to exist:
 //
-//   it may GUESS   — a hint that is wrong costs one failed attempt
-//   it may not ASSERT — "is X on relay R" is the relay's answer, not this
+//   Andy: "it's not duplication, it's like a browser's cache. it's just a
+//   shadow and by definition not a duplicate, because it tracks the
+//   node's traffic with the contacts IT knows."
 //
-// NOT CANONICAL, and nothing may treat it as though it were: not a
-// roster, not a count, not a membership check, not an answer to anybody.
+// (He first called it "implicitly a duplicate of the relay's member-roll,
+// time-lagged" and then sharpened it, which is the framing that holds. A
+// duplicate is derived FROM the roll and aims at completeness. This is
+// derived from this node's OWN TRAFFIC: it can only ever hold people this
+// node searched for, was written to by, or exchanged with. Any overlap
+// with a membership list is incidental, the way a browser's cache
+// overlaps with a website without being a copy of it.)
 //
-// AND IT STAYS INSIDE THIS NODE. The rules against duplicating a roll
-// (0012, PARTNERS.md's "a relay NEVER persists a partner's members") are
-// about a RELAY holding another relay's people, which this is not — a
-// node keeping what it was told is a different party. But the distance
-// is one accessor wide: give this a verb, an app surface or a route and
-// it becomes a way to harvest membership sideways, from a box that was
-// never asked and cannot refuse. There is no reader here but the node's
-// own acquisition path, and that is a boundary rather than an omission.
+// IT MAY GUESS AND MAY NEVER ASSERT. A wrong hint costs one failed
+// attempt; "is X on relay R" is the relay's answer and not this one. Not
+// canonical, not a roster, not a count, not a membership check.
+//
+// AND IT STAYS INSIDE THIS NODE — for a better reason than the roll
+// rules give. 0012 and PARTNERS.md's "a relay NEVER persists a partner's
+// members" are about a RELAY holding another relay's people, which this
+// is not. What exposing this would leak is not a relay's membership: it
+// is WHOSE BUSINESS THIS NODE HAS BEEN DOING. Give it a verb, an app
+// surface or a route and the node's own dealings become readable by
+// whoever asks. There is no reader here but the node's own acquisition
+// path, and that is a boundary rather than an omission.
 
 var MAX_ENTRIES = 500;
 var MAX_AGE_MS = 60 * 60 * 1000;
@@ -123,6 +132,26 @@ function createSeenPeers(opts) {
   }
 
   function size() { sweep(); return Object.keys(rows).length; }
+
+  // ── DELETING A CONTACT MUST NOT REACH IN HERE ────────────────────────
+  //
+  //   Andy: "a shadow route must not be dropped when a contact is
+  //   deleted."
+  //
+  // `contactBook.forget` says the same thing about itself: it "forgets
+  // YOUR side of a relationship, and a relay's census is not yours to
+  // edit". Deleting a row is a statement about an address book, not about
+  // what this node was told — so the shadow survives, and re-adding
+  // somebody gets their route back without a search.
+  //
+  // THE OBJECTION, and why it does not land: it can look as though delete
+  // should mean erase. It cannot mean that here, because the traffic log
+  // already keeps more than this does and keeps it for good ("the log
+  // should be permanent. period." — Andy). A cache that expires on its
+  // own schedule holds strictly less than the record beside it.
+  //
+  // `forget` exists for a caller that has finished with a row, not for
+  // the contact book. Nothing in run/ calls it.
   function forget(publicKey) { delete rows[String(publicKey || '').trim()]; }
   function reset() { rows = Object.create(null); }
 

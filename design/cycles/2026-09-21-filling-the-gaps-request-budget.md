@@ -205,6 +205,45 @@ search results, the node must not"*. Entries are ~150 bytes and keyed by
 peer, so the count bounds it cheaply; the age bound is the one that
 argues with the requirement.
 
+### R26 — the shadow needs a store, and it is a persist shape
+
+> **Andy:** *"a shadow route must not be dropped when a contact is
+> deleted."* — *"and it must be kept up-to-date, and because it is a
+> shadow may have to be stored in an indexed database."*
+
+**Two halves. The first is built; the second is not mine to build.**
+
+**Kept up to date** — `note()` overwrites, and the cache is now fed from
+every source a route can arrive by, so the newest answer wins. One honest
+gap: **a hint that fails does not un-learn.** A peer who moves relays
+leaves a stale row until something newer overwrites it or it ages out. A
+wrong hint costs one attempt, so this is cheap to live with, but "up to
+date" is best-effort rather than guaranteed.
+
+**Survives a deleted contact** — nothing in `run/` clears it, and
+`contactBook.forget` already says why in its own words: it *"forgets YOUR
+side of a relationship, and a relay's census is not yours to edit."*
+Re-adding somebody restores their route without asking anybody.
+
+**The store is the open half.** In memory today, so a restart forgets
+everything — which argues with *"the user may forget all search results,
+the node must not"*. A node's contacts are a JSON file rewritten whole; a
+shadow list keyed by peer would outgrow that shape, which is what
+"indexed" is about.
+
+**It is a new persist shape, and `CLAUDE.md` makes that a team review
+rather than a patch.** The last time that line moved it was Andy's
+decision in cycle 3 (`relay-state/relay.db`, owned by `relayStore.js`).
+
+**Worth deciding with R16, not separately.** Two things now want node-side
+persistence — this, and the scheduler queue surviving a restart, which a
+patience measured in days requires. One store answers both, and
+`node:sqlite` is already a dependency on the relay side.
+
+**Status:** OPEN — the store, and with it whether `MAX_AGE_MS` (an hour)
+survives at all once forgetting is a choice rather than a consequence of
+living in RAM.
+
 ### R2 — the sweep that needed prioritising, deleted instead
 
 > **Andy:** *"Names are cheaper as by-product of search, Description can
