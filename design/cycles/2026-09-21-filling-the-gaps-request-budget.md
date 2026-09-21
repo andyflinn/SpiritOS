@@ -56,7 +56,7 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Ten open, four deferred, one cancelled, twenty done. Ten of the eighteen are
+**Ten open, four deferred, one cancelled, twenty-one done. Ten of the eighteen are
 blocked by nothing**, and nine are decided — waiting to be built, not to be
 thought about. **Three rows now need a review, and nothing else does.**
 
@@ -86,6 +86,7 @@ thought about. **Three rows now need a review, and nothing else does.**
 | <sub>R33</sub> | <sub>*"mailbox" retired, still in 57 UI comments*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R34</sub> | <sub>*Info shows this node's own disc, cache and RAM*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | <sub>*pairs with R31*</sub> |
 | **R35** | a member who has stopped reading is the unbounded case | OPEN — shape found, number not trusted | partial | |
+| <sub>R36</sub> | <sub>*what an error means, in one place — relay emitting codes is for the review*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R23</sub> | <sub>*a sibling is a route too, and both ends are told*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -2232,6 +2233,53 @@ non-reading members side by side, on both platforms.
 **Status:** OPEN — not measured properly, not decided. Blocks nothing and
 blocks on nothing; it is an input to R20, which is deferred until the
 Governor's shape is reconsidered.
+
+### R36 — what an error means, in one place
+
+> **Andy:** *"now that we know most of failure states, wouldn't it be time
+> to centralize the meaning of errors of status codes, maybe number-text
+> pairs. looks like we have a missing fundamental...."*
+
+**Found from the periphery, healed in the core first (0017).** Deciding
+what a failed post should do to a presence dot turned out to depend on
+WHICH failure — and the tree had no way to say which. About seventy error
+sentences across eleven statuses; **503 carried seven meanings**, and the
+only thing separating *busy* from *unreachable* was free text.
+
+**`spiritErrors.js`** — one module for relay and node. 48 codes, each
+carrying what a caller needs: **presence** (true / false / none), **retry**
+(no / yes / after) and **fault** (caller / target / relay / node). A busy
+refusal says PRESENT; *peer not reachable* says ABSENT; running out of
+time says nothing. A single rule for "failed" would have been wrong two
+times out of three.
+
+**The key is a string, not a second number.** HTTP already is the number
+and is exactly the ambiguous part; `peer-unreachable` reads on its own in
+the permanent traffic log.
+
+**The suite reads the tree.** Every `status: N, error: '...'` and
+`fail(res, N, '...')` must be catalogued with a status the catalogue
+agrees with, or the harness goes red. **It found three on its first run
+that the hand inventory had missed** — each written across two lines,
+where a line-based search could not see it.
+
+**One inconsistency recorded rather than fixed:** *"no such peer"* is 404
+in seven places and 403 in two. Kept as `alsoStatus`, with a check that
+tells whoever reconciles it to remove the exception.
+
+**The rule above the others:** an uncatalogued error claims nothing about
+presence, so a sentence added next month cannot paint somebody red.
+
+**Phase B is the review pile:** the relay emitting `code` directly touches
+its refusal whitelist. Until then `classify` maps what arrives today —
+marker first, then the sentence, then a prefix.
+
+**Verify:** `spirit/test/spiritErrors.js` — every error site in the tree
+catalogued with an agreeing status, presence per failure, markers
+outranking text, prefixes for runtime sentences, the 403/404 exception
+kept honest, and no sentence claimed by two codes.
+
+**Status:** DONE — Phase A. The relay emitting codes is for the review.
 
 ## The order, and why
 
