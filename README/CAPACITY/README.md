@@ -217,3 +217,26 @@ find it with a glob rather than hard-coding it:
 
 *(Found by the WSL session, on its second pass. The first run hard-coded
 the name and it had already changed.)*
+
+### The icons are emoji, and a fresh Linux has no emoji font
+
+**Found on 2026-09-21**, the first time a node's shell was opened in Chrome
+on WSL. Functionally everything worked — two nodes on two operating
+systems added each other through spirit-3, instantly — but the icons did
+not render.
+
+**All 162 of them are Unicode emoji** (`kernel.js`, `ICON`): `🟢`, `✅`,
+`⚠️`. Windows and macOS ship a colour emoji font; a fresh Ubuntu, and
+most minimal Linux installs, do not.
+
+```
+sudo apt install fonts-noto-color-emoji
+fc-cache -f
+```
+
+and restart the browser completely.
+
+**It is a requirement of the machine running the BROWSER, not the node** —
+a node on a headless server is unaffected, and the shell viewed from a
+Windows or Mac browser renders correctly whatever the node runs on. Worth
+knowing before anybody reads blank squares as a broken UI.
