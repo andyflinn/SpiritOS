@@ -90,7 +90,7 @@ substitute for a number you cannot get.
   is **197 bytes**, and a gigabyte holds 5.5 million of them. **A relay
   can know five million people and hold a thousand conversations**, and
   the gap between those two numbers is the design.
-- **A peer you can reach costs 577 bytes** on a node — 157 for the name,
+- **A peer you can reach costs 579 bytes** on a node — 159 for the name,
   420 for the route. Both platforms agree to the byte, because that is the
   schema speaking rather than the operating system.
 - **A node is bounded by nothing you would notice.** The program is 2 MB,

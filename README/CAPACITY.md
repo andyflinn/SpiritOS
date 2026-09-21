@@ -105,7 +105,7 @@ node settles at 72 MB. A node's floor is the runtime's floor.
 
 | | |
 |---|---|
-| reachable peers, at 577 B each | **~18,000** in 10 MB |
+| reachable peers, at 579 B each | **~18,000** in 10 MB |
 | an empty `node.db` | 56 KB — 20 KB before the post queue moved in (R16), 52 KB before the chosen index (R38) |
 | contacts, identity, relay pins | kilobytes |
 | the traffic log | grows with what you actually send, and is permanent by decision |
@@ -198,8 +198,8 @@ you.
 
 `node.db` holds what this node has been told about people: where they
 live, what they call themselves, when it last had evidence. **It is
-capped**, it evicts oldest-first, and at 577 bytes a reachable peer —
-157 for the name, 420 for the route — the 20 MB default is about 36,000
+capped**, it evicts oldest-first, and at 579 bytes a reachable peer —
+159 for the name, 420 for the route — the 20 MB default is about 36,000
 people. Andy called it *"a small city"*; measured properly it is a large
 town, and the correction is in *What the second platform caught*. Nothing you do makes
 it grow; nothing you lose by clearing it was yours.
@@ -288,9 +288,9 @@ Written to real databases, index included, and the file differenced.
 |---|---|
 | relay: a member | **197** |
 | relay: a partner | **279** |
-| node: a remembered peer, no route | **157** |
+| node: a remembered peer, no route | **159** — 157 until R38's mark |
 | node: one route for that peer | **420** |
-| **node: a peer you can reach** | **577** |
+| **node: a peer you can reach** | **579** |
 | node: one logged exchange | **438** |
 | an empty `relay.db` / `node.db` | 40 KB / 56 KB |
 
@@ -320,8 +320,20 @@ tool rather than typed. Each carries its own `capacity.md` to read and a
 
 | platform | measured | tree | node | harness | per stream, process | a reachable peer |
 |---|---|---|---|---|---|---|
-| **[`ubuntu-24.04-wsl2`](CAPACITY/ubuntu-24.04-wsl2/capacity.md)** | 2026-09-21 | `4e94e2d` | v24.21.0 | — *(not run)* | **40 KB** | — *(pre-fix)* |
-| **[`windows-10.0`](CAPACITY/windows-10.0/platform.md)** | 2026-09-21 | `f06d7e9` | v24.20.0 | **2665 green, 0 red** | **57 KB** | 577 B |
+| **[`ubuntu-24.04-wsl2`](CAPACITY/ubuntu-24.04-wsl2/platform.md)** | 2026-09-22 | `27374ee` | v24.21.0 | **119 suites, 2756 green, 0 red** | **39–51 KB** over five runs | 579 B |
+| **[`windows-10.0`](CAPACITY/windows-10.0/platform.md)** | 2026-09-22 | `00181a8` | v24.20.0 | **119 suites, 2749 green, 0 red** | **57–63 KB** over five runs | 579 B |
+
+**Measured again before the team review** (Andy: *"before a team review,
+latest measurements from here and wsl."*). The rows are byte-identical on
+both boxes, as they have been every time: the schema speaks, not the
+platform. A reachable peer is 2 B dearer than at `f06d7e9` — R38's mark
+on the row (`choice`, `blocked`).
+
+**One new finding, open.** A personal node at rest on Linux rose from
+75.7 MB to **88.6 MB** (85 MB on a rerun), while a relay at rest and bare
+`node` did not move. On Windows the same figure did **not** move
+(76.53 → 76.57 MB) across the same changes — so the cause is not simply
+what R38/R39 load at startup, which both platforms run. Not investigated.
 
 **There is no kernel column here, and that is the finding.** See *What the
 second platform caught*, below: on Windows it swings 2.3× between runs, on
