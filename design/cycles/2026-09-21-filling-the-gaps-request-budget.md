@@ -58,9 +58,9 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Two open, ten deferred, one cancelled, twenty-eight done.** Both open
+**Two open, nine deferred, two cancelled, twenty-eight done.** Both open
 rows are for the team review — R13 and R28's hops 2–3 — with R36's phase B
-beside them. **Nothing else stands between this cycle and the review**:
+and **retiring the Governor** (R20) beside them. **Nothing else stands between this cycle and the review**:
 R11 and R14 left the core by Andy's ruling of 2026-09-22, and R9 with them.
 
 | | what | status | solution? | blocked by |
@@ -84,7 +84,7 @@ R11 and R14 left the core by Andy's ruling of 2026-09-22, and R9 with them.
 | <sub>R17</sub> | <sub>*suites clean up the homes they create*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R18</sub> | <sub>*durations on a clock that cannot jump*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R19</sub> | <sub>*the load fixture, and seeing it stay lively*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| <sub>R20</sub> | <sub>*the Governor's remaining job*</sub> | <sub>*deferred — its trigger has arrived; Andy's call*</sub> | <sub>—</sub> | |
+| <sub>R20</sub> | <sub>*the Governor's remaining job — none; its removal goes to the review*</sub> | <sub>*cancelled*</sub> | <sub>—</sub> | |
 | <sub>R32</sub> | <sub>*working a long contact list: select, bulk remove, filter*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | <sub>*the verb already exists*</sub> |
 | <sub>R33</sub> | <sub>*"mailbox" retired, still in 57 UI comments*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R34</sub> | <sub>*Info shows this node's own disc, cache and RAM*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | <sub>*pairs with R31*</sub> |
@@ -1596,13 +1596,32 @@ comment that its constant is a guess, so the one act it still performs is
 correcting a ceiling it does not trust. That is a symptom to keep, not a
 problem to solve now.
 
-**Status:** DEFERRED: the governor's remaining shape depends on R15 and on
+**Status:** DEFERRED: cancelled by Andy, 2026-09-22 — no remaining job; the
+Governor's removal is for the team review. Before this: the governor's remaining shape depends on R15 and on
 what the rest of the list does to the box it governs; revisit when the list
 is otherwise clear. **That moment has come** (2026-09-21): R15 is measured,
 and R35 — the one hazard that might still have justified an observer — is
 closed by the stream cut, which says so itself. What is left for the
 Governor is Andy's to say. Andy earlier: *"the govenor is at least
 deferred, if not eliminated"*.
+
+### Cancelled 2026-09-22 — and its removal goes to the review
+
+> **Andy, 2026-09-22,** on Claude's suggestion to cancel R20 and bring the
+> Governor's removal to the review: *"agreed."*
+
+**Nothing is left for it to govern.** The owner's configured RAM is a
+constant, as Andy ruled — *"a ceiling like available-ram, taken from the
+startup-configuration, MUST be a constant to the governor"* — and a
+ceiling derived from a constant needs no runtime adjuster. R15 measured
+the per-stream cost the ceiling is derived from; R35 cut the one runtime
+hazard, the stalled reader, at a fixed bound.
+
+**But it still runs**, so this is not a deletion Claude makes alone. The
+relay prints *"governor ticking every 5s"* at boot; `governor.js` moves the
+connection allowance, and it has a lever verb and a place in the owner's
+`relay-status` report. Retiring it touches `relay.js`, `relayServer.js`
+and a report on the wire — the team review's pile, beside R13 and R28.
 
 ### R21 — labMaster blocks on netstat, and Windows answers a full backlog with RST
 
