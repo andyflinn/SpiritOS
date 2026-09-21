@@ -1,53 +1,53 @@
 {
-  "measuredAt": "2026-09-21T16:13:16.908Z",
-  "commit": "cccb865",
+  "measuredAt": "2026-09-21T23:08:53.824Z",
+  "commit": "27374ee",
   "platform": "linux",
   "release": "6.18.33.2-microsoft-standard-WSL2",
   "version": "#1 SMP PREEMPT_DYNAMIC Thu Jun 18 21:54:43 UTC 2026",
   "node": "v24.21.0",
   "cpus": 32,
   "totalRamBytes": 67263705088,
-  "bareNodeRss": 44457984,
-  "relayAtRestRss": 66260992,
-  "nodeAtRestRss": 75657216,
-  "perStreamProcessBytes": 43469,
-  "perStreamKernelBytes": 2621,
+  "bareNodeRss": 44462080,
+  "relayAtRestRss": 66420736,
+  "nodeAtRestRss": 88559616,
+  "perStreamProcessBytes": 52091,
+  "perStreamKernelBytes": null,
   "kernelCounter": "/proc/net/sockstat TCP mem",
   "streamSteps": [
     {
       "n": 0,
-      "rss": 66260992,
-      "kernel": 2293760
+      "rss": 66420736,
+      "kernel": null
     },
     {
       "n": 100,
-      "rss": 81055744,
-      "kernel": 3342336
+      "rss": 82255872,
+      "kernel": null
     },
     {
       "n": 200,
-      "rss": 83668992,
-      "kernel": 3342336
+      "rss": 84029440,
+      "kernel": null
     },
     {
       "n": 400,
-      "rss": 88236032,
-      "kernel": 4390912
+      "rss": 88653824,
+      "kernel": null
     },
     {
       "n": 800,
-      "rss": 105623552,
-      "kernel": 4390912
+      "rss": 109490176,
+      "kernel": 1015808
     }
   ],
   "perMemberRowBytes": 197,
   "perPartnerRowBytes": 279,
-  "perShadowRowBytes": 157,
+  "perShadowRowBytes": 159,
   "perRouteRowBytes": 420,
-  "perReachablePeerBytes": 577,
+  "perReachablePeerBytes": 579,
   "perLogEntryBytesSynthetic": 253,
-  "installBytes": 3864321,
-  "installFiles": 110,
+  "installBytes": 3927411,
+  "installFiles": 113,
   "caveats": [
     "loopback: both socket endpoints are on this machine",
     "idle streams only; an active stream costs more",
