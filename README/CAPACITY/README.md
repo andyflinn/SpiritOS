@@ -30,13 +30,16 @@ markdown is what a person reads.
 **Comparable across platforms:** the disc figures. A row in SQLite is a
 row in SQLite, and 197 bytes for a member is a fact about the schema.
 
-**Comparable with care:** process RSS and the per-stream slope. Both are
-resident memory, but Windows' `WorkingSet64` and Linux's `ps rss` do not
-count shared pages identically, and Node's own footprint differs between
-platforms. A 20% gap between two boxes may be the platform and may be the
-measurement.
+**Comparable, and they differ — corrected 2026-09-21.** This said *"a 20%
+gap between two boxes may be the platform and may be the measurement"*.
+The first two boxes came in at **60 KB and 40.5 KB** a stream, a third
+apart, stable across runs. The gap is the platform. Compare these, expect
+them to differ, and do not average them into a constant.
 
-**Not comparable at all: the kernel column.** Windows reports non-paged
+**Not comparable at all, and on Linux barely a measurement: the kernel
+column.** `/proc/net/sockstat` reports in pages and moved once across 800
+streams, so a small per-stream figure there means *below what the counter
+can see* rather than *small*. Windows reports non-paged
 pool, which is *every driver on the machine*. Linux reports
 `/proc/net/sockstat` TCP `mem`, which is *the TCP stack alone*. These are
 different quantities with the same name, and averaging them or putting

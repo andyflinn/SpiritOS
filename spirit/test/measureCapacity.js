@@ -210,15 +210,39 @@ function discPerRow() {
   const nstore = nodeStore.open(nh);
   const nfile = path.join(nh, 'relay-state', 'node.db');
   out.emptyNodeDb = fs.statSync(nfile).size;
+  // ── TWO ROWS, BECAUSE THERE ARE TWO STATES ───────────────────
+  //
+  // A peer with NO route is a real thing — a name a search returned,
+  // waiting to become useful. A peer you can actually reach costs that
+  // plus a row in `seen_routes`.
+  //
+  // THIS MEASURED THE FIRST AND REPORTED IT AS THE SECOND until
+  // 2026-09-21. Cycle 3 moved `at` and `url` out of the peer row into the
+  // routes table, and this loop kept passing them to `seen.put`, which
+  // now IGNORES them. Nothing failed: the figure simply fell from 222 to
+  // 157 bytes and every "N peers in X MB" claim on the page got quietly
+  // better. Found when Ubuntu and Windows agreed to the byte, which was
+  // the right answer to the wrong question.
   const S = 5000;
   for (let i = 0; i < S; i += 1) {
     nstore.seen.put(K + String(i).padStart(27, '0') + '=', {
-      at: K + String(900000 + (i % 50)).padStart(27, '0') + '=',
-      url: 'https://relay-' + (i % 50) + '.example.com',
       label: 'person-' + i, seen: Date.now(),
     });
   }
   out.perShadowRow = Math.round((fs.statSync(nfile).size - out.emptyNodeDb) / S);
+
+  const afterPeers = fs.statSync(nfile).size;
+  for (let i = 0; i < S; i += 1) {
+    nstore.seen.putRoute(K + String(i).padStart(27, '0') + '=', {
+      via: K + String(800000 + (i % 3)).padStart(27, '0') + '=',
+      at: K + String(900000 + (i % 50)).padStart(27, '0') + '=',
+      url: 'https://relay-' + (i % 50) + '.example.com',
+      rank: 2, told: Date.now(),
+    });
+  }
+  out.perRouteRow = Math.round((fs.statSync(nfile).size - afterPeers) / S);
+  // The unit the capacity claims should use: somebody you can reach.
+  out.perReachablePeer = out.perShadowRow + out.perRouteRow;
   nstore.close();
 
   // ── AND THE ONE FILE THAT ONLY GROWS ────────────────────────
@@ -387,7 +411,9 @@ async function main() {
   const streamsAt100 = headroom > 0 ? Math.floor(headroom / perStream) : 0;
   const membersOnGb = Math.floor(1024 * 1024 * 1024 / disc.perMember);
   const partnersOnGb = Math.floor(1024 * 1024 * 1024 / disc.perPartner);
-  const peersOn10Mb = Math.floor(10 * 1024 * 1024 / disc.perShadowRow);
+  // REACHABLE peers, not merely remembered ones — a row with no route
+  // cannot answer the question the cache exists for.
+  const peersOn10Mb = Math.floor(10 * 1024 * 1024 / disc.perReachablePeer);
 
   const out = [];
   const say = function (line) { out.push(line); };
@@ -446,7 +472,9 @@ async function main() {
   say('|---|---|');
   say('| relay: a member | **' + disc.perMember + '** |');
   say('| relay: a partner | **' + disc.perPartner + '** |');
-  say('| node: a remembered peer | **' + disc.perShadowRow + '** |');
+  say('| node: a remembered peer, no route | **' + disc.perShadowRow + '** |');
+  say('| node: one route for that peer | **' + disc.perRouteRow + '** |');
+  say('| **node: a peer you can reach** | **' + disc.perReachablePeer + '** |');
   say('| node: one logged exchange | **' + disc.perLogEntry +
     '** synthetic — a real one averages **438**, see below |');
   say('| an empty `relay.db` / `node.db` | ' + Math.round(disc.emptyRelayDb / 1024) + ' KB / ' +
@@ -500,6 +528,8 @@ async function main() {
       perMemberRowBytes: disc.perMember,
       perPartnerRowBytes: disc.perPartner,
       perShadowRowBytes: disc.perShadowRow,
+      perRouteRowBytes: disc.perRouteRow,
+      perReachablePeerBytes: disc.perReachablePeer,
       perLogEntryBytesSynthetic: disc.perLogEntry,
       installBytes: shipped.bytes,
       installFiles: shipped.files,
@@ -572,7 +602,7 @@ async function main() {
       mb(bare) + ' MB',
       mb(relayFixed) + ' MB',
       mb(nodeRss) + ' MB',
-      disc.perMember + ' / ' + disc.perShadowRow + ' B',
+      disc.perMember + ' / ' + disc.perReachablePeer + ' B',
       Math.round(shipped.bytes / 1024) + ' KB',
     ].join(' | ') + ' |');
   } else {

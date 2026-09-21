@@ -102,15 +102,21 @@
 // reasonable, and no way to tell that from the number.
 //
 // TWENTY MEGABYTES IS ANDY'S ANCHOR AND HIS UNIT: *"say 20 MBytes = 10
-// jpeg images from a modern cell phone"*. At the measured size that holds
-// roughly **93,000 people** — and his own frame for it is the one to keep:
+// jpeg images from a modern cell phone"*.
 //
 //   Andy: "we can easily default to a small city...."
 //
-// Which is the honest way to read this bound. It is not meant to be
-// reached — it exists so the failure mode is chosen rather than
-// discovered (0016), and so an owner on a small box can make it smaller.
-// A node that has met a small city has other problems.
+// **A LARGE TOWN, corrected 2026-09-21.** The first figure said 93,000
+// people, from 222 bytes a row. That was a peer with NO ROUTE: cycle 3
+// moved `at` and `url` into `seen_routes`, so the row shrank to 157 bytes
+// and the measurement kept reporting it as though it were the whole
+// thing. Somebody you can actually reach costs 157 + 420 = **577 bytes**,
+// so 20 MB is about **36,000 people**.
+//
+// The bound does not move, because it was never meant to be reached: it
+// exists so the failure mode is chosen rather than discovered (0016), and
+// so an owner on a small box can make it smaller. 36,000 is still more
+// people than anyone meets.
 //
 // STILL THE OWNER'S TO SET (cycle R31). This is the default and the
 // enforcement; the setting and the screen that shows it are the rest of

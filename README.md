@@ -48,7 +48,7 @@ re-measure are in [README/CAPACITY.md](README/CAPACITY.md).
 | **RAM** | **128 MB** | **128 MB** |
 | **Disc** | **1 GB** | **1 GB** |
 | **at rest** | 60 MB resident | 72 MB resident |
-| **holds at once** | **~1,200** members connected | its own relay connections |
+| **holds at once** | **~930** connected on Windows, **~1,500** on Linux | its own relay connections |
 | **holds on disc** | **5.5 million** members enrolled, or 3.8 million partners | **2.4 million** exchanges logged for ever |
 | **the rest of the disc** | — | **98% is yours** — media, writing, apps |
 
@@ -57,16 +57,27 @@ Bare `node` with nothing loaded is **49 MB** resident, before a line of
 SpiritOS runs — so the floor is the runtime's and not ours. What is
 actually ours is small: **~11 MB on a relay, ~23 MB on a node.**
 
-**A relay scales from there in a straight line**, at ~58 KB a held
-connection:
+**A relay scales from there in a straight line — but the slope is not the
+same on every platform**, which two boxes had to be measured to find out:
 
-| RAM | members connected at once |
-|---|---|
-| 64 MB | 70 — **too tight to mean anything** |
-| 100 MB | ~700 |
-| **128 MB** | **~1,200** |
-| 256 MB | ~3,500 |
-| 512 MB | ~8,000 |
+| a held connection costs | Windows 11 | Ubuntu 24.04 (WSL2) |
+|---|---|---|
+| in the relay process | **60 KB** | **40.5 KB** |
+| in the kernel | ~14 KB | below what the counter can see |
+
+| RAM | connected at once, Windows | … Ubuntu |
+|---|---|---|
+| 64 MB | 70 | ~100 |
+| 100 MB | ~700 | ~950 |
+| **128 MB** | **~930** | **~1,500** |
+| 256 MB | ~2,700 | ~4,300 |
+| 512 MB | ~6,200 | ~9,900 |
+
+**A third fewer bytes a connection on Linux than on Windows** — far past
+anything measurement noise explains, and confirmed by a second run. The
+relays that matter run on Linux, so the generous column is the real one;
+the point is that **there is no single number**, and the relay's own
+ceiling constant has to come from the platform it is on.
 
 ### What decides each number
 
@@ -74,6 +85,9 @@ connection:
   is **197 bytes**, and a gigabyte holds 5.5 million of them. **A relay
   can know five million people and hold a thousand conversations**, and
   the gap between those two numbers is the design.
+- **A peer you can reach costs 577 bytes** on a node — 157 for the name,
+  420 for the route. Both platforms agree to the byte, because that is the
+  schema speaking rather than the operating system.
 - **A node is bounded by nothing you would notice.** The program is 2 MB,
   its bookkeeping ~40 KB, and its peer cache is capped at **20 MB by
   default — 2% of a gigabyte**. What grows is your traffic log (438 bytes

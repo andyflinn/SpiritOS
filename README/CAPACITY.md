@@ -100,15 +100,15 @@ node settles at 72 MB. A node's floor is the runtime's floor.
 
 | | |
 |---|---|
-| remembered peers, at 222 B each | **~47,000** in 10 MB |
+| reachable peers, at 577 B each | **~18,000** in 10 MB |
 | an empty `node.db` | 20 KB |
 | contacts, identity, relay pins | kilobytes |
 | the traffic log | grows with what you actually send, and is permanent by decision |
 
 **But the shipped peer-cache default is 20 MB, which does not fit.** That
 is not a flaw in the example — it is the case the owner's cap exists for.
-A node on a 10 MB disc sets its cache to 2 MB and remembers 9,000 people,
-which is still more than anyone meets.
+A node on a 10 MB disc sets its cache to 2 MB and holds 3,600 reachable
+people, which is still more than anyone meets.
 
 **On a small disc the traffic log is the thing to watch**, because it is
 the one file here that only grows. It holds what you sent, not what the
@@ -128,7 +128,7 @@ it** — and the shipped defaults say so:
 |---|---|---|
 | the program | ~2 MB | 0.2% |
 | the node's bookkeeping | ~40 KB | — |
-| **the peer cache, at its 20 MB default** | 20 MB ≈ 93,000 people | **2%** |
+| **the peer cache, at its 20 MB default** | 20 MB ≈ 36,000 people | **2%** |
 | **everything left for you** | **~1,002 MB** | **98%** |
 
 > **Andy:** *"...with the nodeStore defaulting to max of 20 Megabytes."*
@@ -281,9 +281,17 @@ Written to real databases, index included, and the file differenced.
 |---|---|
 | relay: a member | **197** |
 | relay: a partner | **279** |
-| node: a remembered peer | **222** |
+| node: a remembered peer, no route | **157** |
+| node: one route for that peer | **420** |
+| **node: a peer you can reach** | **577** |
 | node: one logged exchange | **438** |
 | an empty `relay.db` / `node.db` | 40 KB / 20 KB |
+
+**A peer with no route is a real state** — a name a search returned,
+waiting to become useful — but it is not what "remembered peers" was ever
+claiming. The figure to quote is the one for somebody you can actually
+reach, and it is **2.6× larger**. See *What the second platform caught*,
+below.
 
 **The log entry is the one number here taken from a real file rather than
 a generated one.** 695 actual entries on a working node average 438 bytes;
@@ -330,7 +338,7 @@ that is more honest** — `ubuntu-24.05` says more than `linux-6.6`.
 | | across platforms |
 |---|---|
 | disc, bytes per row | **comparable** — a row in SQLite is a fact about the schema |
-| process RSS, per-stream slope | **comparable with care** — `WorkingSet64` and `ps rss` do not count shared pages alike |
+| process RSS, per-stream slope | **comparable, and they differ** — 60 KB against 40.5 KB a stream, which is the platform and not the measurement |
 | **the kernel column** | **not comparable at all** — Windows reports every driver on the box, Linux reports the TCP stack alone |
 
 **The last row is why the table has a column per platform and not an
@@ -402,6 +410,71 @@ matters for a relay whose first duty is to survive.
 
 **Logged as its own hazard** rather than folded into the Governor's
 brief: it is a different problem from the one the Governor was built for.
+
+## What the second platform caught
+
+**Two boxes found two things, and only one of them was the thing we went
+looking for.**
+
+### 1. The per-stream cost does not travel
+
+| a held connection costs | Windows 11 | Ubuntu 24.04 (WSL2) |
+|---|---|---|
+| in the relay process | **60.0 KB** | **40.5 KB** |
+| bare `node` RSS | 51.2 MB | 44.5 MB |
+| relay at rest | 61.9 MB | 66.3 MB |
+
+**A third fewer bytes a connection**, confirmed by a second run at 43 KB —
+stable to a couple of KB, so the gap is real and not noise. It is also
+past the *"a 20% gap may be the platform and may be the measurement"*
+allowance this page used to make, which is corrected below.
+
+**`STREAMS_PER_MB = 16` implies 64 KB a stream.** Close to the Windows
+figure and about **50% pessimistic on Linux** — so a relay on the platform
+that actually matters would refuse connections it could comfortably hold.
+**One constant for both platforms is wrong**, and that is a design finding
+rather than a measurement detail: if `ramLimitMB × STREAMS_PER_MB` is to
+become the whole governor, the constant has to come from the platform the
+relay is on.
+
+### 2. The Linux kernel column is below measurement resolution
+
+`/proc/net/sockstat` TCP `mem` reports in **pages**. Across 800 streams it
+moved **once** — flat for 0, 100, 200 and 400, then a single step at 800.
+A second run reported zero.
+
+**So "~1 KB per stream" on Linux is a quantisation floor, not a figure.**
+Read it as *below what this counter can see*. The Windows number (~14 KB
+of non-paged pool) has no Linux counterpart to be compared with, which is
+a stronger statement than the one this page made before.
+
+### 3. And the agreement caught a defect in the tool
+
+**The disc rows matched to the byte** — member 197, partner 279, peer row
+157, log entry 253 — which is the schema speaking on both boxes. That
+agreement is what exposed the problem: **157 bytes was the wrong number to
+be agreeing about.**
+
+Cycle 3 moved `at` and `url` out of the peer row into `seen_routes`, and
+the measurement kept passing them to `seen.put`, **which now ignores
+them**. Nothing failed. The figure simply fell from 222 to 157 bytes and
+every *"N peers in X MB"* claim on this page quietly improved.
+
+**A peer you can actually reach costs 157 + 420 = 577 bytes.** So the peer
+figures here were **2.6× optimistic** and are corrected throughout: 10 MB
+holds ~18,000 reachable peers rather than ~47,000, and the 20 MB default
+is a large town rather than a small city.
+
+*The two-platform run did not find this by disagreeing. It found it by
+agreeing about something that should have moved.*
+
+### Still to come
+
+The Ubuntu figures above are **quoted from a run whose files are not yet
+in this repository** — the WSL box has no push credentials, and the commit
+is sitting on its local `master`. When it lands, the table at the top of
+this page picks it up on its own, because that table is generated from the
+directories that exist rather than typed.
 
 ## What is still not measured
 
