@@ -108,7 +108,11 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
   in `js/` reads it. ~~Not a SpiritOS concept~~ — *struck 2026-09-22.*
   Andy: *"which does in fact represent one of the concepts SpiritOS is
   dreamt for. in the course of the SpiritOS project, i meant for this
-  example to be tested."* It is a concept being tested here, not code.
+  example to be tested."* It is a concept being tested here, not code —
+  and inside the concept, with a stricter fence: *"brains is clearly within
+  the spiritOS concept, but because it's MY data, it has a stricter privacy
+  fence..."* (Andy, 2026-09-22). Personal data is its owner's first; being
+  part of the design does not open it.
 
   **Every agent reads its compile before working with Andy.**
   `spirit/run/brains/wsl-claude/INDEX.md` is written *"for any agent that
