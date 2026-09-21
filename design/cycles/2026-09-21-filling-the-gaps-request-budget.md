@@ -434,88 +434,60 @@ ceiling assumes per-member cost is stable and heap is not.
 **Status:** OPEN — depends on R15. `0017` records the decision and what it
 supersedes.
 
-### R21 — labLifecycle flakes when labMaster is busy
+### R21 — labMaster blocks on netstat, and Windows answers a full backlog with RST
 
-**The first diagnosis here was wrong and is corrected rather than
-deleted.** It said the lab suites collide on ports, listing overlaps
-between `labLifecycle`, `labPersistence`, `labRefusals` and
-`labServableStatic`. They do not. Those numbers came from a grep that
-matched a COMMENT — `labLifecycle.js:40-42` documents who owns what and
-then binds two ports:
+**Cause, measured 2026-09-21 after three wrong diagnoses.**
 
-```js
-// Inside labMaster's own 65400-65429 range. Distinct from every other
-// ... labPersistence takes 65419, labRefusals 65415, labWorld 65425-65428.
-const RELAY_PORT = 65410;
-const AVATAR_PORT = 65411;
-```
+`publicNode()` builds each node's row with `pidsOnPort()` for the pid and
+`portHasListener()` for `running` — and `portHasListener` calls
+`pidsOnPort` again. Each of those runs a **synchronous** `netstat -ano`,
+measured at **66-100 ms idle on Windows**. Two subprocesses per node,
+inside a response: six nodes is twelve, and the better part of a second
+with labMaster's event loop stopped dead.
 
-`runAll.js:94` states the scheme the tree already follows — distinct
-ports per file, and **one labMaster started by the runner** before any
-lane, which is why two suites naming 65420 are clients of one service and
-not rivals for a port. Reading a pattern match instead of its context is
-the error this cycle has caught three times in other people's code and
-once, here, in its own.
+While it is blocked labMaster accepts nothing, its listen backlog fills,
+and **Windows answers a connection on a full backlog with RST where Linux
+queues it.** So `labLifecycle` failed as
+`start relay: 0 fetch failed (ECONNRESET)`.
 
-**What the evidence actually shows.** The failure is
-`start relay: 0 fetch failed` — status **0**, a transport error, not a
-slow answer and not a bind. `ensureMaster.js:84` is the shared client for
-every lab suite and made one attempt; labMaster spawns and stops real
-processes, so it has moments where it is not accepting connections, and a
-single refused connect failed a whole suite.
+Every observation fits, including the ones that defeated the earlier
+guesses: Windows-only (WSL queues rather than resets), load-dependent
+(netstat is slower and labMaster busier under the full harness), and
+**never reproducible on the lab suites alone** — twenty consecutive runs
+of just those eight suites stayed green, because five clients do not load
+the box the way a hundred and nine do.
 
-**Fixed, narrowly.** `api()` retries **only `ECONNREFUSED`**, twice, with
-a short backoff. That restraint is the safety: these calls are not
-idempotent — `POST /api/nodes` creates a node — so a request that may have
-ARRIVED must never be sent twice, and a refused connect is the one failure
-that proves nothing was accepted. A reset or a hang-up mid-response is
-reported as before, and an HTTP status is an answer that is never retried.
+**Three wrong diagnoses before it, each recorded here as it was made:**
 
-**Verify:** `spirit/test/harnessRetry.js` — the predicate the fix rests
-on, which is the half where a mistake is expensive. ECONNREFUSED is
-retryable whether the code sits on the error or its cause; a reset,
-hang-up, timeout or unknown error is not, because the request may have
-been read and `POST /api/nodes` creates a node.
+1. **A port collision** — read out of a COMMENT that documents port
+   ownership. `labLifecycle` binds two ports and nothing else.
+2. **labMaster contention** — falsified by those twenty narrow runs.
+3. **ECONNREFUSED** — a guess from an error reported as node's generic
+   `fetch failed`, which named no code. A fix was aimed at a cause the
+   evidence never established, and R21 was marked DONE on it.
 
-**The race itself is not verified and cannot be.** A race cannot be
-provoked on demand, and a suite claiming otherwise would be asserting
-against a fixture. What stands in its place is measurement:
+**What actually moved it forward was making the failure name itself.**
+One line adding the cause code to the message; the next reproduction said
+`ECONNRESET` and the guessing stopped.
 
-| | before | after |
-|---|---|---|
-| Windows | 1 red in 3 full runs | **5 clean, 5 of 5** |
-| WSL | 1 unhappy in 3 (that was R22) | **5 clean, 5 of 5** |
+**Fixed:** `portScanText()`, a 400 ms cache of the raw scan. One
+subprocess per burst instead of two per node, identical answers, and far
+too short to hold a stale one across a person's click. The retry in
+`ensureMaster.js` stays for what it genuinely is — a refused connect while
+labMaster restarts is safe to retry — with its comment corrected to say
+it was never the cause of this.
 
-**And the two platforms are not equal evidence.** `labLifecycle` takes
-**30–36 s on Windows and 1.0–1.3 s on WSL** — process creation, which
-Windows makes expensive. So it sits in the contended window for half a
-minute here and barely a second there, and Windows runs count for far
-more. Under the measured 1-in-3 rate, five clean Windows runs is about a
-13% coincidence; together with a fix aimed at the cause the error named
-(status 0, a transport failure, not a bind and not a slow answer), that
-is as close to settled as a race gets.
+**Verify:** `spirit/test/harnessRetry.js` pins the retry predicate, which
+is the safety-critical half (`POST /api/nodes` is not idempotent, so a
+request that may have ARRIVED must never be sent twice).
 
-**REOPENED 2026-09-21, same day.** It failed again on the full harness
-after ten clean runs: `labLifecycle`, `start relay: 0 fetch failed`,
-identical symptom. **The fix did not hold, and the reason it was chosen
-cannot be checked** — `api()` retries only `ECONNREFUSED`, and the error
-was reported as node's generic `fetch failed`, which names no code. A fix
-was aimed at a cause the evidence never established.
+**The race itself is measured, not tested:** reproduced at iteration **3**
+of a full-harness loop before the fix; **10 consecutive clean full runs**
+after it, on Windows, the platform that fails. At the observed rate that
+is about a 1.7% coincidence — and unlike the previous close, the mechanism
+is named and measured rather than inferred.
 
-The restraint is still right: these calls are not idempotent, so a
-request that may have ARRIVED must never be sent twice, and widening the
-retry to "any transport error" would trade a flaky suite for a duplicated
-node. What was missing is the evidence to aim with.
-
-**So the first change is diagnostic, not a fix.** `api()` now reports the
-cause code beside the message, so the next occurrence says whether it was
-a refused connect, a reset, a hang-up or something else — and whether the
-retry should have fired at all.
-
-**Status:** OPEN — ten clean runs then a failure is a reminder that a
-one-in-three flake is not disproved by not seeing it. It closes when the
-cause is named by a log rather than inferred from a message that omits
-it.
+**Status:** DONE
 
 ### R22 — censusNarrow reads a file another suite deletes
 

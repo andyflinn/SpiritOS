@@ -183,11 +183,51 @@ function findNode(id) {
   return nodes.find(function (n) { return n.id === id; });
 }
 
+// ── ONE netstat PER BURST, NOT TWO PER NODE ──────────────────────────
+//
+// `netstat -ano` is a subprocess and it is SYNCHRONOUS, so while it runs
+// this process accepts nothing. Measured idle on Windows: 66-100 ms.
+//
+// publicNode() called pidsOnPort() for the pid AND portHasListener() for
+// running — and portHasListener calls pidsOnPort again. Two full netstats
+// per node, inside a response. Six nodes is twelve subprocesses and the
+// better part of a second with the event loop stopped dead, and under the
+// full harness it is far worse.
+//
+// WHAT THAT COST, found 2026-09-21 after three wrong diagnoses. While
+// labMaster is blocked it cannot accept, its listen backlog fills, and
+// Windows answers a connection on a full backlog with RST where Linux
+// queues it. So labLifecycle failed as `start relay: 0 fetch failed
+// (ECONNRESET)` — Windows-only, load-dependent, and never reproducible on
+// the lab suites alone because they do not load the box enough.
+//
+// The cache is deliberately short: long enough to serve one response from
+// one subprocess, far too short to hold a stale answer across a person's
+// click. The file already carries this lesson one comment further down,
+// about a `git rev-parse` per node per poll being "a subprocess storm for
+// a string that only changes when a button is pressed". Same storm, two
+// calls earlier.
+const PORT_SCAN_TTL_MS = 400;
+let portScan = { at: 0, text: '' };
+
+function portScanText() {
+  const now = Date.now();
+  if (portScan.text && now - portScan.at < PORT_SCAN_TTL_MS) return portScan.text;
+  let out = '';
+  try {
+    out = process.platform === 'win32'
+      ? execSync('netstat -ano', { encoding: 'utf8' })
+      : execSync('ss -tlnp', { encoding: 'utf8' });
+  } catch (e) { out = ''; }
+  portScan = { at: now, text: out };
+  return out;
+}
+
 function pidsOnPort(port) {
   const pids = {};
   try {
     if (process.platform === 'win32') {
-      const out = execSync('netstat -ano', { encoding: 'utf8' });
+      const out = portScanText();
       // ONE column between the port and the state, not two. Windows
       // netstat prints `TCP  <local>  <foreign>  LISTENING  <pid>`, so
       // after the port there is exactly one non-space token before
@@ -198,7 +238,7 @@ function pidsOnPort(port) {
       let m;
       while ((m = re.exec(out))) pids[m[1]] = true;
     } else {
-      const out = execSync('ss -tlnp', { encoding: 'utf8' });
+      const out = portScanText();
       const re = new RegExp(':' + port + '\\b.*pid=(\\d+)', 'gi');
       let m;
       while ((m = re.exec(out))) pids[m[1]] = true;

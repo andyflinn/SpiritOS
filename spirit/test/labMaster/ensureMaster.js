@@ -85,11 +85,22 @@ function stop() {
 //
 // The runner starts labMaster once and every lab suite is a client of it,
 // six suites at a time. It spawns and stops real node processes, so it
-// has moments where it is not accepting connections — and a single
-// refused connect used to fail a suite outright: labLifecycle went red as
-// "start relay: 0 fetch failed", losing checks to a service that was
-// merely busy. Seen on Windows (one red in three runs) and independently
-// in the WSL checkout (2026-09-21).
+// has moments where it is not accepting connections, and a refused
+// connect would fail a suite outright over a service that was merely
+// busy.
+//
+// THIS DID NOT FIX THE FLAKE IT WAS WRITTEN FOR, and the comment used to
+// say it did. labLifecycle's `start relay: 0 fetch failed` turned out to
+// be ECONNRESET, not ECONNREFUSED — labMaster blocked on two synchronous
+// `netstat` subprocesses per node, its listen backlog filled, and Windows
+// answers a connection on a full backlog with RST. The cause and its
+// repair are in labMaster.js (portScanText); this retry never fired for
+// it and could not have.
+//
+// It stays because it is still true on its own terms: a refused connect
+// can happen while labMaster is restarting, and it is the one failure
+// that is safe to retry. Kept as what it is, not as what it was hoped to
+// be.
 //
 // ONLY ECONNREFUSED IS RETRIED, and that restraint is the whole safety of
 // it. These calls are not idempotent — POST /api/nodes creates a node —
