@@ -128,4 +128,11 @@ async function api(method, pathname, body) {
   }
 }
 
-module.exports = { ensure: ensure, stop: stop, api: api, MASTER: MASTER, up: up };
+// `refusedConnect` is exported for one reason: it decides whether a
+// non-idempotent POST may be sent twice, and that decision is worth
+// pinning where it can be read. The race it exists for cannot be
+// provoked on demand; this predicate can.
+module.exports = {
+  ensure: ensure, stop: stop, api: api, MASTER: MASTER, up: up,
+  refusedConnect: refusedConnect,
+};

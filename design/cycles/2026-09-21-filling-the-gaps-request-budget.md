@@ -426,16 +426,31 @@ ARRIVED must never be sent twice, and a refused connect is the one failure
 that proves nothing was accepted. A reset or a hang-up mid-response is
 reported as before, and an HTTP status is an answer that is never retried.
 
-**Verify:** none. A retry that fires on a race cannot be provoked on
-demand, and a suite that claimed to prove it would be asserting against a
-fixture rather than against the race. What can be said is what was
-measured: one red in three full runs on Windows, one in three
-independently in the WSL checkout, and green since.
+**Verify:** `spirit/test/harnessRetry.js` — the predicate the fix rests
+on, which is the half where a mistake is expensive. ECONNREFUSED is
+retryable whether the code sits on the error or its cause; a reset,
+hang-up, timeout or unknown error is not, because the request may have
+been read and `POST /api/nodes` creates a node.
 
-**Status:** OPEN — the fix is in and the flake is by nature unproven. It
-closes when several full runs on both checkouts stay green; three on
-Windows and three on WSL is the standing evidence, and the original rate
-was one in three.
+**The race itself is not verified and cannot be.** A race cannot be
+provoked on demand, and a suite claiming otherwise would be asserting
+against a fixture. What stands in its place is measurement:
+
+| | before | after |
+|---|---|---|
+| Windows | 1 red in 3 full runs | **5 clean, 5 of 5** |
+| WSL | 1 unhappy in 3 (that was R22) | **5 clean, 5 of 5** |
+
+**And the two platforms are not equal evidence.** `labLifecycle` takes
+**30–36 s on Windows and 1.0–1.3 s on WSL** — process creation, which
+Windows makes expensive. So it sits in the contended window for half a
+minute here and barely a second there, and Windows runs count for far
+more. Under the measured 1-in-3 rate, five clean Windows runs is about a
+13% coincidence; together with a fix aimed at the cause the error named
+(status 0, a transport failure, not a bind and not a slow answer), that
+is as close to settled as a race gets.
+
+**Status:** DONE
 
 ### R22 — censusNarrow reads a file another suite deletes
 
