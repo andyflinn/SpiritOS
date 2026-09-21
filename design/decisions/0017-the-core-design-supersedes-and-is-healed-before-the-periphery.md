@@ -61,6 +61,35 @@ repeatedly and will take longer, because in bottom-up development the
 periphery is where core flaws become visible. That is the trade: the rash
 is healed where it is, rather than covered by the next layer.
 
+## Amended 2026-09-21 — a decision removes the roadblocks it creates
+
+> **Andy:** *"design decisions of this nature always must remove
+> roadblocks in form of stale rules."*
+
+Rule 2 above says the core is *"reconciled against every rule it
+contradicts"*, which is weaker than what is meant and was read that way
+in practice: a note added beside the old rule, leaving it standing.
+
+**A rule that a decision has obsoleted is a roadblock.** The next session
+reads it, believes it, and either builds against it or stops. So the
+decision is not finished when the new rule is written — it is finished
+when the **stale ones are struck**, in place, saying what replaced them.
+
+**Worked example, the same day.** `0018` decided a route cache belongs to
+the machine. Left alone, four rules would have blocked it:
+
+- `seenPeers.js` called itself *"what a search learned"*, describing one
+  of the four sources it now has and hiding the rule.
+- Its own comment argued *"nothing a person saw an hour ago is still
+  worth acting on"* — which contradicts *"the user may forget all search
+  results, the node must not"*.
+- A check asserted a label with no route was refused, on reasoning the
+  greedy rule reversed.
+- `contacts.js` held `ROUTES_KEPT = 8` with no hint it is due to go.
+
+None of those was wrong when written. All four would have been read as
+current.
+
 ## What this immediately supersedes
 
 **The Governor's job, or most of it.**

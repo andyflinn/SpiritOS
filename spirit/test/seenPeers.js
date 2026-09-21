@@ -1,7 +1,11 @@
 'use strict';
 
 // spirit/test/seenPeers.js
-// WHAT A SEARCH LEARNED, KEPT UNTIL SOMEBODY ACTS ON IT.
+// WHERE THIS NODE HAS BEEN TOLD PEOPLE LIVE.
+//
+// (It was "what a search learned" until 2026-09-21. It is fed from four
+// places now — a search, a packet arriving, a route announcement, and a
+// relay named at acquisition — and the narrower name hid the rule.)
 //
 //   Andy: "in a search request, it is the node who already knows the via
 //   field at request time." — "so all search returns could be cached
@@ -48,11 +52,16 @@ test.subHeading('It keeps where somebody lives, and hands it back');
     test.fail('a miss returned: ' + JSON.stringify(S.get('KEY-NOBODY')));
   }
 
-  // A ROW THAT TEACHES NOTHING IS NOT KEPT. An entry with neither key nor
-  // address cannot answer the question it exists for, so storing it only
-  // means being consulted and found wanting.
-  if (!S.note('KEY-EMPTY', { label: 'just a name' }) && S.get('KEY-EMPTY') === null) {
-    test.check('a row with no relay key and no url is refused rather than stored');
+  // A ROW THAT TEACHES NOTHING IS NOT KEPT — and what counts as nothing
+  // narrowed when the rule became greedy (2026-09-21). This asserted that
+  // a label with no route was refused, on the reasoning that it could not
+  // answer the question the cache exists for. Andy: "the (updated) public
+  // labels must be part of it" — a name is something this node was told,
+  // and may be all it ever gets about somebody.
+  //
+  // So nothing means nothing: no route, no address, no name.
+  if (!S.note('KEY-EMPTY', {}) && S.get('KEY-EMPTY') === null) {
+    test.check('a row carrying no route, no address and no name is refused rather than stored');
   } else {
     test.fail('an empty row was kept');
   }
@@ -114,6 +123,62 @@ test.subHeading('It is not the contact book, and must not become one');
     test.check('and one can be forgotten once it has been spent');
   } else {
     test.fail('forget left ' + S.size());
+  }
+}
+
+test.subHeading('Greedy means never blanking what it already knows');
+
+{
+  //   Andy: "the node MUST be greedy about route acquisition and updates,
+  //   the (updated) public labels must be part of it."
+  //
+  // The callers do not all know the same things. A search knows the
+  // label; an arriving packet knows only the road it came in on. Writing
+  // every field on every call meant a label learned from a search was
+  // destroyed the moment that person sent anything — greedy about
+  // forgetting, which is the opposite of the rule.
+  const c = clock();
+  const S = seen.createSeenPeers({ now: c.now });
+
+  S.note('KEY-BELLA', { at: 'RELAY-B', url: 'https://b.example', label: 'bella' });
+  c.tick(10);
+  S.note('KEY-BELLA', { at: 'RELAY-B', url: 'https://b.example' });   // an arrival
+
+  const kept = S.get('KEY-BELLA');
+  if (kept && kept.label === 'bella') {
+    test.check('a packet arriving does not blank the label a search taught');
+  } else {
+    test.fail('the label was lost on arrival: ' + JSON.stringify(kept));
+  }
+
+  // AND AN UPDATE IS AN UPDATE. A label somebody changed replaces the old
+  // one — the rule is "do not blank", not "do not change".
+  c.tick(10);
+  S.note('KEY-BELLA', { label: 'bella, renamed' });
+  const renamed = S.get('KEY-BELLA');
+  if (renamed && renamed.label === 'bella, renamed' && renamed.at === 'RELAY-B') {
+    test.check('while a new label replaces the old, and the route it knew is untouched');
+  } else {
+    test.fail('after a rename: ' + JSON.stringify(renamed));
+  }
+
+  // A LABEL ALONE IS WORTH KEEPING, since a name with no route is still
+  // something this node was told and may be all it gets.
+  if (S.note('KEY-NAMED-ONLY', { label: 'somebody' }) && S.get('KEY-NAMED-ONLY')) {
+    test.check('and a name with no route at all is still worth writing down');
+  } else {
+    test.fail('a label-only row was refused');
+  }
+
+  // `seen` is refreshed by every call, because the entry WAS seen — the
+  // one thing every caller knows by virtue of calling.
+  const before = S.get('KEY-BELLA').seen;
+  c.tick(50);
+  S.note('KEY-BELLA', { at: 'RELAY-B' });
+  if (S.get('KEY-BELLA').seen > before) {
+    test.check('and every sighting refreshes when it was seen, whatever else it carried');
+  } else {
+    test.fail('seen did not move');
   }
 }
 

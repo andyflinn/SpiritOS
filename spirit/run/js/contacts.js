@@ -206,6 +206,24 @@ function save(rootDir, rows) {
 // A contact's routes: relay keys, newest first, no duplicates, and a
 // bounded few — a route is only worth keeping while it might be the one a
 // post needs, and the relay reads at most HINTS_PER_POST of them anyway.
+//
+// ── DUE FOR REMOVAL (0018, decided 2026-09-21) ───────────────────────
+//
+//   Andy: "the hints are removed from the users contacts. (let's admit
+//   it: they [are] not human-readable, in reality)"
+//
+// These are base64 Ed25519 relay keys and nobody has ever read one:
+// machine data in the one file that is meant to be the digitisation of a
+// person's spirit, claiming a rule it never satisfied. They are also a
+// second copy — seenPeers.js holds every route a row here could hold,
+// plus the ones for people who are not contacts, so the two can disagree
+// and this is the one that goes stale.
+//
+// IT LANDS WITH THE STORE AND NOT BEFORE (gap cycle R26). hub.handlePost
+// reads these for hints whenever no relay of this node names the target,
+// which is the foreign-peer case, and the shadow lives in RAM — so
+// removing them today would leave a foreign contact unreachable after
+// every restart until something re-taught the route.
 var ROUTES_KEPT = 8;
 function normalizeRoutes(list) {
   if (!Array.isArray(list)) return [];

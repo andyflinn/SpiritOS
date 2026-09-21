@@ -3277,9 +3277,46 @@ function createRelay(rootDir, deps) {
     // Safe to send to anybody, because the NODE decides what to keep:
     // `learnRoute` matches an existing contact row and never creates one
     // (server.js), so a route about a stranger is one lookup and gone.
+    // ── AND THE LABEL RIDES WITH THE ROUTE ───────────────────────────
+    //
+    //   Andy: "streamed route updates should need to be accompanied by
+    //   updated labels."
+    //
+    // This box holds it — `deviceIdentity` hands the label back beside
+    // the key — and was sending the key alone. The same shape as
+    // everything else found discarded this cycle: known at the moment of
+    // throwing away, and expensive to go back for.
+    //
+    // ONLY FOR ITS OWN MEMBERS. The partner branches above announce a
+    // FOREIGN peer, whose label is a partner's to know and not this
+    // relay's, so they carry none and must not invent one. A relay is the
+    // authority on who is on IT.
+    //
+    // ── WHY NOT ON THE REQUEST AND THE REPLY, WHICH WOULD BE FREE ────
+    //
+    //   Andy: "we may want to (free-of-charge) stream update labels with
+    //   peerPost responses" — "which would impact post-overhead
+    //   calculations" — "not decided yet, but we are trending toward
+    //   label-key-tuplets."
+    //
+    // Tried and backed out the same day. Those packets are already
+    // travelling, so carrying the pair on them costs no EVENT — but it
+    // costs BYTES on every request and every reply, and
+    // `limits.WIRE_OVERHEAD` is 246 and measured. Adding two fields to
+    // the hot path would invalidate a measured constant, on a wire change
+    // that is not decided.
+    //
+    // A route announcement is the narrow place: it fires once per
+    // exchange between siblings, not on every packet, and the node is
+    // its only reader.
     if (landed) {
-      presentNow.send(matched.requester, 'route', { key: who.id, at: mineKey() });
-      presentNow.send(who.id, 'route', { key: matched.requester, at: mineKey() });
+      var asker = deviceIdentity(matched.requester);
+      presentNow.send(matched.requester, 'route', {
+        key: who.id, at: mineKey(), label: who.label || '',
+      });
+      presentNow.send(who.id, 'route', {
+        key: matched.requester, at: mineKey(), label: (asker && asker.label) || '',
+      });
     }
     return { ok: true, status: 200, delivered: !!landed };
   }

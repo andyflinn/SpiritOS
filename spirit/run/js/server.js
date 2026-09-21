@@ -1139,10 +1139,34 @@ common.refuseListenError(server, port, 'js/server.js');
       // The MODULE's cache, not this hub instance's — one node, one
       // answer to "where have I lately been told somebody lives", the
       // same reason relayRequest is taken from the module below.
-      try { require('./hub').seenPeers.note(body.key, { at: body.at, url: url }); }
-      catch (e) { /* a cache that will not take a row is not a reason to stop listening */ }
+      try {
+        require('./hub').seenPeers.note(body.key, {
+          at: body.at, url: url, label: body.label || '',
+        });
+      } catch (e) { /* a cache that will not take a row is not a reason to stop listening */ }
       try { contactBook.learnRoute(ROOT_DIR, body.key, body.at); }
       catch (e) { /* a book that cannot be written is not a reason to stop listening */ }
+
+      // AND THE LABEL, ON A ROW THAT ALREADY EXISTS.
+      //
+      //   Andy: "the (updated) public labels must be part of it."
+      //
+      // `publicLabel` is what that person calls themselves in public, so
+      // a relay saying it has changed is a relay improving what this node
+      // knows — which is exactly what it may do. What it may NOT do is
+      // create the row, so this asks first and writes nothing if the
+      // person is a stranger; the cache above already kept it for them.
+      //
+      // `myLabel` is untouched: a name the owner typed is the owner's and
+      // no relay's business.
+      if (body.label) {
+        try {
+          var known = contactBook.byPublicKey(ROOT_DIR, body.key);
+          if (known && known.publicLabel !== body.label) {
+            contactBook.upsert(ROOT_DIR, { publicKey: body.key, publicLabel: body.label });
+          }
+        } catch (e) { /* the route landed; the name can wait */ }
+      }
     },
 
     onOwnerEvent: function (ev) {

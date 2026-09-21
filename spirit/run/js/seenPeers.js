@@ -1,18 +1,24 @@
 'use strict';
 
 // spirit/run/js/seenPeers.js
-// WHAT A SEARCH LEARNED, KEPT UNTIL IT BECOMES USEFUL.
+// WHERE THIS NODE HAS BEEN TOLD PEOPLE LIVE.
 //
-//   Andy: "in a search request, it is the node who already knows the via
-//   field at request time." — "so all search returns could be cached
-//   outside of contacts, and wait until they become applicable."
+//   Andy: "the node MUST be greedy about route acquisition and updates,
+//   the (updated) public labels must be part of it."
+//   "Any peer a node could possibly connect to, the route to it can be
+//   known to the node."
 //
-// A search answer says where each person lives: the row carries `via`
-// when it came from a partner, and otherwise the peer is a member of the
-// relay that answered, whose key this node has pinned. Both halves are in
-// hand at the moment of the answer — and both were thrown away. A contact
-// acquired from a search arrived with an address in `relays` and NOTHING
-// in `routes`.
+// IT STARTED AS "what a search learned", which is what the title said
+// until 2026-09-21, and it is fed from four places now: a search answer,
+// a packet arriving (whatever the door then decides about the sender), a
+// relay's route announcement, and a relay named at acquisition. The
+// narrower name described the first of those and hid the rule.
+//
+// Each of those held a route and threw it away. A search knew where every
+// row lived and kept only a URL; an arrival knew the road it came in on;
+// an announcement about a stranger was dropped; an invite named a relay
+// whose key this node had pinned. A contact could arrive with an address
+// in `relays` and NOTHING in `routes`.
 //
 // ── WHY NOT IN THE CONTACT BOOK ──────────────────────────────────────
 //
@@ -34,9 +40,16 @@
 // bounds on a relay's rolls.
 //
 // DECLARED, NOT MEASURED, and marked so nobody reads them as evidence.
-// What has to be true of them: a search's worth of rows fits several
-// times over, and nothing a person saw an hour ago is still worth acting
-// on without asking again.
+//
+// AND THE AGE IS UNDER DISPUTE BY THE RULE ABOVE. This said "nothing a
+// person saw an hour ago is still worth acting on without asking again",
+// which fits a search somebody is still looking at and contradicts
+// Andy's "the user may forget all search results, the node must not". An
+// hour is what the cache can afford while it lives in RAM and loses
+// everything at a restart anyway; it is not what the rule wants. The
+// number is open with the store (gap cycle R26) and should be read as a
+// consequence of having no store rather than as a decision about
+// forgetting.
 
 // ── WHAT THIS IS, SAID PLAINLY ───────────────────────────────────────
 //
@@ -106,15 +119,32 @@ function createSeenPeers(opts) {
   // with neither key nor url teaches nothing and is not kept: an entry
   // that cannot answer the question it exists for is a row that will be
   // consulted and found wanting.
+  // ── GREEDY, WHICH MEANS NEVER BLANKING WHAT IT KNOWS ─────────────────
+  //
+  //   Andy: "the node MUST be greedy about route acquisition and updates,
+  //   the (updated) public labels must be part of it."
+  //
+  // A field is updated when the caller HAS one and left alone when it does
+  // not. This wrote every field on every call, and the callers do not all
+  // know the same things: a search knows the label, an arriving packet
+  // knows only the road it came in on. So a label learned from a search
+  // was destroyed the moment that person sent anything — greedy about
+  // forgetting, which is the opposite of the rule.
+  //
+  // `seen` is always refreshed, because the entry WAS seen. That is the
+  // one field every caller knows by virtue of calling.
   function note(publicKey, what) {
     var key = String(publicKey || '').trim();
     var at = String((what && what.at) || '').trim();
     var url = String((what && what.url) || '').trim();
-    if (!key || (!at && !url)) return false;
+    var label = String((what && what.label) || '');
+    if (!key || (!at && !url && !label)) return false;
+
+    var had = rows[key] || { at: '', url: '', label: '' };
     rows[key] = {
-      at: at,
-      url: url,
-      label: String((what && what.label) || ''),
+      at: at || had.at,
+      url: url || had.url,
+      label: label || had.label,
       seen: nowFn(),
     };
     sweep();
