@@ -71,7 +71,7 @@ of the nineteen are decided and waiting only to be built.**
 | <sub>R8</sub> | <sub>*`viaUrl` in a search answer — was already built*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R9** | hints carry `{ key, url }` | OPEN — **wire, team review** | **yes** | |
 | **R10** | `cancel`, exposed to a member | OPEN — no longer a prerequisite | **yes** | |
-| **R11** | the URL rule / SSRF — a provenance rule, not a URL rule | OPEN — **Andy's to decide**; three candidates written up | partial | |
+| **R11** | the URL rule / SSRF — provenance, and only while a relay row is unkeyed | OPEN — **Andy's to decide**; scoped to the unkeyed window, three candidates | partial | |
 | **R12** | `last` on a partner row | OPEN | **yes** | |
 | **R13** | no streams between partners | OPEN — **wire, team review** | **yes** | R12 |
 | **R14** | open partnering, provisional rows, a visible count | OPEN — not decided | **no** | R8, R9, R11, R12 |
@@ -599,7 +599,53 @@ URL is fine from one source and not from another, so the rule is about
 | the owner wrote it | today's rule, unchanged — loopback stays, the lab keeps working |
 | a peer or a stranger relay sent it | **public only** |
 
-Three candidates for *"public only"*, for Andy to pick between:
+### A relay row is keyed or it is not, and that bounds the whole problem
+
+> **Andy:** *"a relay row has a keyed-status, implicitly. Until
+> keyed-status is achieved, the url ALSO serves a similar purpose to the
+> handle in an enrollment invite for members."*
+
+**The status is already in the tree, unnamed.** `relayKeys.pinned(rootDir,
+url)` returns `''` when nothing is on record (`relayKeys.js:81`), so every
+relay row is in one of two states:
+
+| | what identifies the relay | what a wrong URL costs |
+|---|---|---|
+| **unkeyed** | **the URL** — `relayKeys.js:52`: *"A URL is the identity of a relay as far as this node is concerned"* | everything. There is nothing to check the answer against |
+| **keyed** | the pinned key, accepted by a deliberate act | **an unverifiable answer, not a compromise.** The signature fails |
+
+**And the parallel is exact: members already made this migration.** An
+enrolment invite hands out a *handle* — temporary, owner-minted,
+single-purpose — and the moment the seat is claimed the key becomes the
+identity and the handle is display only (`relay.js:1424`: *"Every operation
+is by key now; labels serve search and display only"*). **Relays have the
+handle phase and have not had the migration** — `relayKeys.json` is still
+indexed by URL, which is right for the handle phase and is residue after
+it.
+
+**What this does to R11: the exposure is a window, not a policy.** A strict
+rule is needed while a row is unkeyed, and after that the key does the work
+the rule was standing in for. So the rule can be as narrow as an invite is,
+because it covers as little.
+
+**And the window has exactly one legitimate purpose.** The only thing worth
+dialling an unkeyed URL for is its key — `GET /api/relay/key`
+(`hub.js:2080`). That gives a rule that is checkable rather than
+judgemental:
+
+> **An unkeyed URL may be dialled for its key and for nothing else.**
+
+**Plus the clause that is the actual SSRF defence:** the answer from an
+unkeyed dial **never flows back to whoever supplied the URL**. A permitted
+dial is still an oracle if its result — or its timing, or the shape of its
+failure — is reported to the party that chose the address. Narrowing *what*
+may be dialled without closing *what comes back* leaves the useful half of
+the attack intact.
+
+### Three candidates, now scoped to the unkeyed window only
+
+Each of these is a rule about **which URLs may enter the window**, not about
+every dial this node ever makes:
 
 1. **Refuse private space.** Resolve the name first, refuse loopback,
    link-local and RFC1918, and **connect to the resolved address** rather
