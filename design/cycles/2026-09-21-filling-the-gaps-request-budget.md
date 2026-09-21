@@ -2612,6 +2612,17 @@ including one last seen absent; a remembered row keeps its date; a silent
 relay and a missing connection are both answered from memory. Ranking the
 chosen as strangers, or keeping the absent, fails four of its checks.
 
+> **Andy:** *"we'll run those searches down a newest-first key and cap at
+> 1000 rows compared. (or a tunable value with default)"*
+
+**Capped, newest first, and the chosen read apart.** Strangers are read
+`ORDER BY seen DESC LIMIT n` on `seen_when`, `n` being `searchMemoryRows`
+in `relay-state/node.json` (default 1000; 0 means no strangers from
+memory). The owner's own people are read through `seen_chosen` and never
+count against it, so an old friend is still found. Both reads are asserted
+to use their index; the chosen one only does while it repeats the partial
+index's condition. Reading the chosen with everybody else fails two checks.
+
 **Status:** DONE
 
 ## The order, and why

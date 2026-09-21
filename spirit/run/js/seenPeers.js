@@ -288,9 +288,10 @@ function createSeenPeers(opts) {
   function mark(publicKey, choice, blocked) { return rows.mark(publicKey, choice, blocked); }
   function markBook(marks) { rows.markBook(marks); sweep(); }
   function chosen() { return rows.chosen(); }
-  // Everybody a search of memory could find (R39). Rows, not routes: the
-  // caller ranks first and asks `get` for the few that made the cut.
-  function recall() { return rows.recall(); }
+  // Who a search of memory compares (R39): every chosen row, and the
+  // newest `strangerRows` of everybody else. Rows, not routes: the caller
+  // ranks first and asks `get` for the few that made the cut.
+  function recall(strangerRows) { return rows.recall(strangerRows); }
 
   //   Andy: "once the memory is full with 'added' statuses no more can be
   //   chosen/added until eviction by blocking or ignoring...." — "it's

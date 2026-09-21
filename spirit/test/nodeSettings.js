@@ -111,4 +111,31 @@ test.subHeading('Read once — a constant to the programme');
   }
 }
 
+
+test.subHeading('How many remembered strangers one search reads (R39)');
+
+{
+  //   Andy: "cap at 1000 rows compared. (or a tunable value with default)"
+  if (settings.searchMemoryRows(home()) === 1000 && settings.DEFAULT_SEARCH_MEMORY_ROWS === 1000) {
+    test.check('an unconfigured node compares the newest 1000 remembered strangers');
+  } else {
+    test.fail('default: ' + settings.searchMemoryRows(home()));
+  }
+  const tuned = home({ searchMemoryRows: 250 });
+  const off = home({ searchMemoryRows: 0 });
+  if (settings.searchMemoryRows(tuned) === 250 && settings.searchMemoryRows(off) === 0) {
+    test.check("the owner's number is obeyed, and 0 is a real answer — no strangers from memory");
+  } else {
+    test.fail('tuned: ' + settings.searchMemoryRows(tuned) + ', off: ' + settings.searchMemoryRows(off));
+  }
+  const bad = home({ searchMemoryRows: 'lots' });
+  const half = home({ searchMemoryRows: 2.5 });
+  if (settings.searchMemoryRows(bad) === 1000 && settings.load(bad).problems.length === 1 &&
+      settings.searchMemoryRows(half) === 1000) {
+    test.check('anything but a whole count falls back to 1000, and says so');
+  } else {
+    test.fail('bad: ' + JSON.stringify(settings.load(bad)) + ', half: ' + settings.searchMemoryRows(half));
+  }
+}
+
 test.reportSuccessFailureCount();

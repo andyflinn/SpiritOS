@@ -1948,7 +1948,7 @@ function createHub(rootDir) {
     var chosen = [];
     var strangers = [];
     var rows;
-    try { rows = S.recall(); } catch (e) { return { rows: [], more: false }; }
+    try { rows = S.recall(require('./nodeSettings').searchMemoryRows(rootDir)); } catch (e) { return { rows: [], more: false }; }
     // THE BOOK, READ ONCE. byPublicKey reads and parses the file on every
     // call, and this asks about every chosen row and every row returned —
     // thousands of reads a search for a large book.

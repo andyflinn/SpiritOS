@@ -173,6 +173,52 @@ async function run() {
     test.fail('offline: ' + off.status + ' ' + JSON.stringify(off.body));
   }
 
+  test.subHeading('Newest first, and capped — the chosen are read apart');
+
+  {
+    //   Andy: "we'll run those searches down a newest-first key and cap at
+    //   1000 rows compared. (or a tunable value with default)"
+    const C = makeHome();
+    fs.writeFileSync(path.join(C, 'relay-state', 'node.json'), JSON.stringify({ searchMemoryRows: 5 }));
+    // The friend is the OLDEST row here: a cap that read the chosen with
+    // everybody else would lose them first.
+    contactBook.acquire(C, { publicKey: 'K-OLD-FRIEND', publicLabel: 'carl friend' }, 'handle');
+    const T = hubModule.shadow(C);
+    T.note('K-OLD-FRIEND', { at: 'RK-B', label: 'carl friend' });
+    for (let n = 0; n < 10; n += 1) T.note('K-CARL-' + n, { at: 'RK-B', label: 'carl ' + n });
+    // seen is a millisecond clock; make the order unambiguous.
+    const st = require('../run/js/nodeStore').open(C);
+    st.seen.put('K-OLD-FRIEND', { seen: 1 });
+    for (let n = 0; n < 10; n += 1) st.seen.put('K-CARL-' + n, { seen: 100 + n });
+
+    const got = await search(C, 'carl', null);
+    const keys = (got.body.matches || []).map(function (r) { return r.publicKey; });
+    const carls = keys.filter(function (k) { return /^K-CARL-/.test(k); }).sort();
+    if (carls.join(',') === 'K-CARL-5,K-CARL-6,K-CARL-7,K-CARL-8,K-CARL-9') {
+      test.check('with the cap at 5, the five newest strangers are compared and the five oldest are not');
+    } else {
+      test.fail('compared: ' + carls.join(','));
+    }
+    if (keys.indexOf('K-OLD-FRIEND') !== -1) {
+      test.check("and the owner's friend, the oldest row of all, is still found");
+    } else {
+      test.fail('the old friend was capped away: ' + keys.join(','));
+    }
+
+    // BOTH HALVES ON AN INDEX, asserted rather than assumed: the chosen
+    // read only uses the partial index while it repeats its condition.
+    const db = new (require('node:sqlite').DatabaseSync)(path.join(C, 'relay-state', 'node.db'));
+    const plan = function (sql) { return db.prepare('EXPLAIN QUERY PLAN ' + sql).all().map(function (r) { return r.detail; }).join(' | '); };
+    const recent = plan("SELECT publicKey FROM seen WHERE label <> '' AND choice NOT IN ('held', 'added') AND blocked = 0 ORDER BY seen DESC LIMIT 1000");
+    const chosenPlan = plan("SELECT publicKey FROM seen WHERE (choice <> '' OR blocked = 1) AND (choice IN ('held', 'added') OR blocked = 1)");
+    db.close();
+    if (/seen_when/.test(recent) && /seen_chosen/.test(chosenPlan)) {
+      test.check('newest-first walks seen_when and the chosen read walks seen_chosen — neither scans the table');
+    } else {
+      test.fail('plans: ' + recent + ' / ' + chosenPlan);
+    }
+  }
+
   test.reportSuccessFailureCount();
 }
 

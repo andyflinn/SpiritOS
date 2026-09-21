@@ -390,12 +390,24 @@ function open(rootDir, opts) {
       WHERE choice IN ('held', 'added') OR blocked = 1`),
     chosen: db.prepare(`SELECT publicKey, choice, blocked FROM seen
       WHERE choice <> '' OR blocked = 1`),
-    // EVERYBODY A SEARCH COULD FIND HERE (R39): a row with a name, or a
-    // row the owner chose — whose name may live only in the book. A row
-    // with neither cannot match anything a person types (peerSearch
-    // matches the label and nothing else), so it is not read at all.
-    recall: db.prepare(`SELECT publicKey, label, present, seen, choice, blocked FROM seen
-      WHERE label <> '' OR choice IN ('held', 'added') OR blocked = 1`),
+    // WHO A SEARCH OF MEMORY READS (R39), in two halves.
+    //
+    // The chosen, all of them, through the partial index: the owner's own
+    // people are always compared ("chosen ones should always be
+    // included"), and their name may live only in the book.
+    //
+    // Everybody else, NEWEST FIRST AND CAPPED — Andy: "we'll run those
+    // searches down a newest-first key and cap at 1000 rows compared".
+    // `seen_when` is that key; a row with no name cannot match what a
+    // person types and is not read.
+    // The first clause is the partial index's own condition, repeated
+    // word for word: SQLite uses a partial index only when the query
+    // states its WHERE, and without it this scanned every row.
+    recallChosen: db.prepare(`SELECT publicKey, label, present, seen, choice, blocked FROM seen
+      WHERE (choice <> '' OR blocked = 1) AND (choice IN ('held', 'added') OR blocked = 1)`),
+    recallRecent: db.prepare(`SELECT publicKey, label, present, seen, choice, blocked FROM seen
+      WHERE label <> '' AND choice NOT IN ('held', 'added') AND blocked = 0
+      ORDER BY seen DESC LIMIT ?`),
     clear: db.prepare('DELETE FROM seen'),
     pages: db.prepare('PRAGMA page_count'),
     pageSize: db.prepare('PRAGMA page_size'),
@@ -498,8 +510,11 @@ function open(rootDir, opts) {
           return { publicKey: r.publicKey, choice: r.choice, blocked: !!r.blocked };
         });
       },
-      recall: function () {
-        return q.recall.all().map(function (r) {
+      recall: function (strangerRows) {
+        const limit = Math.max(0, Math.floor(Number(strangerRows)));
+        const rows = q.recallChosen.all().concat(
+          isFinite(limit) ? q.recallRecent.all(limit) : []);
+        return rows.map(function (r) {
           return {
             publicKey: r.publicKey, label: r.label,
             present: r.present < 0 ? null : !!r.present, seen: r.seen,

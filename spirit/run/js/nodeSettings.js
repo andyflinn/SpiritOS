@@ -24,7 +24,7 @@
 // is the owner's and is not. So it is JSON a person can open and edit,
 // in megabytes, which is the unit Andy asked for.
 //
-//   { "cacheMaxMB": 20 }
+//   { "cacheMaxMB": 20, "searchMemoryRows": 1000 }
 //
 // Absent, the defaults apply and nothing is written: a node that has
 // never been configured should not grow a file saying so.
@@ -43,6 +43,17 @@ const DEFAULT_CACHE_MAX_MB = 20;
 // reachable people — small, and still a cache.
 const MIN_CACHE_MAX_MB = 1;
 
+// ── HOW MANY REMEMBERED STRANGERS ONE SEARCH READS (R39) ────────────
+//
+//   Andy: "we'll run those searches down a newest-first key and cap at
+//   1000 rows compared. (or a tunable value with default)"
+//
+// Newest first, so the cap costs the oldest strangers and nobody else:
+// the owner's own people are read apart and always compared (0021).
+// A count of rows, not bytes, because it bounds WORK — how many labels
+// one search scores — and a row is the unit of that work.
+const DEFAULT_SEARCH_MEMORY_ROWS = 1000;
+
 function filePath(rootDir) {
   return path.join(rootDir, 'relay-state', 'node.json');
 }
@@ -55,17 +66,23 @@ function load(rootDir) {
   const key = path.resolve(rootDir);
   if (read_.has(key)) return read_.get(key);
 
-  const settings = { cacheMaxMB: DEFAULT_CACHE_MAX_MB, problems: [] };
+  const settings = {
+    cacheMaxMB: DEFAULT_CACHE_MAX_MB,
+    searchMemoryRows: DEFAULT_SEARCH_MEMORY_ROWS,
+    problems: [],
+  };
   let raw = null;
   try { raw = fs.readFileSync(filePath(rootDir), 'utf8'); }
   catch (e) { /* no file is the ordinary case: defaults */ }
 
+  let parsed_ = null;
   if (raw !== null) {
     let parsed = null;
     try { parsed = JSON.parse(raw); }
     catch (e) {
       settings.problems.push('node.json is not valid JSON; using the defaults');
     }
+    parsed_ = parsed;
     if (parsed && parsed.cacheMaxMB !== undefined) {
       const n = Number(parsed.cacheMaxMB);
       if (!isFinite(n) || n <= 0) {
@@ -83,8 +100,24 @@ function load(rootDir) {
     }
   }
 
+  if (parsed_ && parsed_.searchMemoryRows !== undefined) {
+    const r = Number(parsed_.searchMemoryRows);
+    // Zero is a real answer — "never search memory for strangers" — and
+    // the chosen are still read. Anything else not a whole count is a typo.
+    if (!isFinite(r) || r < 0 || Math.floor(r) !== r) {
+      settings.problems.push('searchMemoryRows must be a whole number of rows; using ' +
+        DEFAULT_SEARCH_MEMORY_ROWS);
+    } else {
+      settings.searchMemoryRows = r;
+    }
+  }
+
   read_.set(key, settings);
   return settings;
+}
+
+function searchMemoryRows(rootDir) {
+  return load(rootDir).searchMemoryRows;
 }
 
 function cacheMaxBytes(rootDir) {
@@ -94,7 +127,9 @@ function cacheMaxBytes(rootDir) {
 module.exports = {
   load: load,
   cacheMaxBytes: cacheMaxBytes,
+  searchMemoryRows: searchMemoryRows,
   filePath: filePath,
   DEFAULT_CACHE_MAX_MB: DEFAULT_CACHE_MAX_MB,
   MIN_CACHE_MAX_MB: MIN_CACHE_MAX_MB,
+  DEFAULT_SEARCH_MEMORY_ROWS: DEFAULT_SEARCH_MEMORY_ROWS,
 };
