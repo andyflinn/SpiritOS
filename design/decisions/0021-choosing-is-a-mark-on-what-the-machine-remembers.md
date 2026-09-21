@@ -88,6 +88,13 @@ memory kept, it knows everyone it has met, with a label and a last-seen
 age. The answer says it came from memory and how old it is — a value
 crossing, not the store (0020).
 
+> *"in fact if search fans out to all bound relays first, why not to the
+> memory also?"*
+
+**So memory is one more source in the fan-out, always** — not a fallback.
+Offline it is the only one that answers; online, a relay's live row wins
+over the remembered one for the same key.
+
 ## What it supersedes, marked
 
 - **R4, its age half.** "Two evictions: cache-limit and last seen" becomes

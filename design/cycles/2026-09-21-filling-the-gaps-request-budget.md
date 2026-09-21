@@ -89,7 +89,7 @@ waits on those. **R38 is decided and buildable now**; R39 follows it.
 | <sub>R36</sub> | <sub>*what an error means, in one place — relay emitting codes is for the review*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R37</sub> | <sub>*every presence mark shows its age*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | **R38** | ignore is a mark, not a forgetting — the list is a mark on the memory | OPEN — **decided `0021`**, not built | **yes** | |
-| **R39** | an offline search answers from memory | OPEN — shape named, not ruled | partial | R38 |
+| **R39** | search fans out to memory too, beside every bound relay | OPEN — ruled, not built | **yes** | R38 |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R23</sub> | <sub>*a sibling is a route too, and both ends are told*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -2519,8 +2519,16 @@ and fail when the box is offline (`server.js:1490-1491`). Kept memory lets
 the node answer from what it has met instead, marked as from memory and
 dated — a value crossing, not the store (0020).
 
-**Status:** OPEN — shape named, not ruled: whether memory answers only when
-the wire fails, or always alongside it. Blocked by R38.
+> **Andy:** *"in fact if search fans out to all bound relays first, why not
+> to the memory also?"*
+
+**Ruled: always alongside.** Memory is one more source in the fan-out
+search already does (`Promise.all` over every bound relay, merged by key,
+`hub.js` ~1946). Offline it is the only one that answers; online, a relay's
+live row wins over the remembered one for the same key, and a remembered
+row keeps its age.
+
+**Status:** OPEN — ruled, not built. Blocked by R38.
 
 ## The order, and why
 
