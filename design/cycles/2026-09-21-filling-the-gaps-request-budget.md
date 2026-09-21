@@ -2,8 +2,10 @@
 
 **Plan, 2026-09-21. Measured against `bfd5df0`.**
 
-~~*Nothing here is built.*~~ — struck 2026-09-21. Twelve of the twenty-six
-are DONE; the status on each requirement is the current answer.
+~~*Nothing here is built.*~~ — struck 2026-09-21. ~~Twelve of the twenty-six
+are DONE~~ — **twenty-eight of forty-one, late 2026-09-21**, after cycles
+1–6 and three rows built outside the plan (R35, R38, R39). The status on each
+requirement is the current answer.
 
 **The argument behind R23–R26 is not here.** It is
 [WHAT-A-NODE-KNOWS.md](../relay/WHAT-A-NODE-KNOWS.md) — one rule, what was
@@ -20,8 +22,8 @@ five product files of code and a great deal that is argued and unwritten.
 This says what is left, in the order the dependencies allow, and marks
 which parts are Claude's to build and which are not.
 
-**The harness stands at 110 suites, 2610 green, 0 red** (`7806b3d`; it was
-107 / 2534 when this was written). Every stage below ends there or it does
+**The harness stands at 119 suites, 2747 green, 0 red** (`11e6c34`; it was
+107 / 2534 when this was written, 110 / 2610 at `7806b3d`). Every stage below ends there or it does
 not end.
 
 ---
@@ -56,32 +58,33 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Five open, five deferred, one cancelled, twenty-eight done.** Three need
-the team review (R9, R13, R28), one is Andy's to decide (R11), and R14
-waits on those. **Nothing open can be built without a review or a ruling.**
+**Seven open, six deferred, one cancelled, twenty-eight done.** Four need
+the team review (R9, R13, R28, and R36's phase B), one is Andy's to decide
+(R11), and R14 waits on those. **One is buildable now: R40**, found by the
+due diligence of 2026-09-21 — decided in `0020` and never given a row.
 
 | | what | status | solution? | blocked by |
 |---|---|---|---|---|
 | <sub>R1</sub> | <sub>*`via` on the shadow row; `routes` off the contact row*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R2</sub> | <sub>*the sweep that needed prioritising, deleted instead*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R3</sub> | <sub>*queue depth, and what is shed at the limit*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| <sub>R4</sub> | <sub>*route expiry — two evictions: cache-limit and last seen*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| <sub>R4</sub> | <sub>*route expiry — ~~two evictions~~ one since `0021`: space, ordered by last seen*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R5</sub> | <sub>*the timeout is a duration, carried, diminishing inward*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R6</sub> | <sub>*`maxPerTarget` out of config, into code*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R7</sub> | <sub>*drop the ceiling to 1 and run the experiment*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R8</sub> | <sub>*`viaUrl` in a search answer — was already built*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R9** | hints carry `{ key, url }` | OPEN — **wire, team review** | **yes** | |
 | <sub>R10</sub> | <sub>*`cancel`, exposed to a member*</sub> | <sub>*cancelled*</sub> | <sub>—</sub> | |
-| **R11** | the URL rule / SSRF — provenance, and only while a relay row is unkeyed | OPEN — **Andy's to decide**; scoped to the unkeyed window, three candidates | partial | |
+| **R11** | the URL rule / SSRF — provenance, and only while a relay row is unkeyed | OPEN — **Andy's to decide**; narrowed 2026-09-21 to one moment, a stranger relay's first dial under R14 | **yes** | |
 | <sub>R12</sub> | <sub>*`last` on a partner row*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R13** | no streams between partners | OPEN — **wire, team review** | **yes** | R12 |
-| **R14** | open partnering — a row on send or receive, mutual activates | OPEN — **decided**; keyed outranks unkeyed on eviction, numbers open | **yes** | R9, R11, R12 |
-| <sub>R15</sub> | <sub>*the per-stream measurement*</sub> | <sub>*done — ~58 KB*</sub> | <sub>—</sub> | |
+| **R13** | no streams between partners | OPEN — **wire, team review** | **yes** | |
+| **R14** | open partnering — a row on send or receive, mutual activates | OPEN — **decided**; keyed outranks unkeyed on eviction, numbers open | **yes** | R9, R11 |
+| <sub>R15</sub> | <sub>*the per-stream measurement*</sub> | <sub>*done — a platform constant: ~57–63 KB Windows, ~42 KB Linux*</sub> | <sub>—</sub> | |
 | <sub>R16</sub> | <sub>*the queue survives a restart — and is a table, not a dump*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R17</sub> | <sub>*suites clean up the homes they create*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R18</sub> | <sub>*durations on a clock that cannot jump*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R19</sub> | <sub>*the load fixture, and seeing it stay lively*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| <sub>R20</sub> | <sub>*the Governor's remaining job*</sub> | <sub>*deferred*</sub> | <sub>—</sub> | <sub>*revisit when the list is clear*</sub> |
+| <sub>R20</sub> | <sub>*the Governor's remaining job*</sub> | <sub>*deferred — its trigger has arrived; Andy's call*</sub> | <sub>—</sub> | |
 | <sub>R32</sub> | <sub>*working a long contact list: select, bulk remove, filter*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | <sub>*the verb already exists*</sub> |
 | <sub>R33</sub> | <sub>*"mailbox" retired, still in 57 UI comments*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R34</sub> | <sub>*Info shows this node's own disc, cache and RAM*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | <sub>*pairs with R31*</sub> |
@@ -90,6 +93,8 @@ waits on those. **Nothing open can be built without a review or a ruling.**
 | <sub>R37</sub> | <sub>*every presence mark shows its age*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R38</sub> | <sub>*ignore is a mark, not a forgetting — the list is a mark on the memory*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R39</sub> | <sub>*search fans out to memory too, beside every bound relay*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| **R40** | patience is an owner setting, so a message is retried at all | OPEN — **decided `0020`**, not built; node-side, no wire | **yes** | |
+| <sub>R41</sub> | <sub>*what R35–R39 left on screen*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R23</sub> | <sub>*a sibling is a route too, and both ends are told*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -128,8 +133,8 @@ Reading the blocked-by column backwards gives what each row **unblocks**:
 ~~**R26 is the keystone, and it is blocked by nothing but a sentence from
 Andy.**~~ — **the sentence came** (2026-09-21, recorded in `0018`): a
 database is allowed for the shadow roll and needs no review, and the floor
-moves to 22.13 with it. **Six rows freed.** What is left of R26 is one
-number, `MAX_AGE_MS`.
+moves to 22.13 with it. **Six rows freed.** ~~What is left of R26 is one
+number, `MAX_AGE_MS`.~~ — gone entirely, `0021`.
 
 **R15 is the one this column just exposed.** Four conclusions rest on it,
 nothing blocks it, and **it has no body at all** — the requirement is a
@@ -181,6 +186,10 @@ claims wait on it, and R20 cannot be reconsidered without it), **R17**
 **Last, one sitting:** the review — R9, R13, R28's hops 2 and 3 — and then
 R14, which needs R9, R12 and a ruling on R11.
 
+**Where this order stands, late 2026-09-21:** steps 0–5 and every
+"independent" row are built. What is left of it is the last line: the
+review, then R14.
+
 **The one warning in this order.** R19 is the oldest open row and the
 easiest to keep deferring, because nothing depends on it and it produces no
 code. It is also the only row that can tell us the cycle worked.
@@ -205,6 +214,11 @@ sittings that can each be clamped, finished and pushed green:
 
 **Plus one sitting that is not an implementation cycle:** the review, between
 6 and 7, covering R9, R13 and R28's hops 2 and 3.
+
+**Where the eight stand, late 2026-09-21:** cycles 1–6 are done. Three rows
+were built outside them (R35, R38, R39), and one decided row was found with
+no cycle at all (R40, node-side, fits before the review). Left: **the
+review, then 7 and 8** — and gate 3 below, at the end of 8.
 
 ### What that number is worth
 
@@ -311,6 +325,9 @@ are per-cycle and are being cited as though they were global.** Harmless
 today because somebody who knows both can tell; a trap for the session that
 does not. A citation to a requirement needs its cycle, the way a citation
 to a line needs its commit.
+
+*Superseded by the build — every row in the next paragraph is done; kept as
+the reasoning of the day.*
 
 **Build now, nothing in the way:** **R26** (the store, which nine other
 rows are shaped around), **R27** (one line, node-side), R17, R12, R19,
@@ -944,9 +961,36 @@ every dial this node ever makes:
    sizing already killed it — hundreds of partnerships nobody can curate —
    and it is listed so the decision records that it was considered.
 
-**Status:** OPEN — **not decided, and it is Andy's to decide.** The holes
-and the shape are written up here; what is missing is a ruling, not
-research. A prerequisite for R9 and R14 rather than a follow-up.
+### Narrowed 2026-09-21 — the consent chain covers the hints
+
+> **Andy:** *"since the shadow-roll is controlled by the machine, owned by
+> the owner, who accepted (at least implicitly) route providers (partners).
+> since only the owners can inject partner-URLs to their relay(s), the
+> hints in the shadow-roll are implicitly approved by the owner of the
+> node. they consent to be a member of a relay, and all hints are
+> pre-approved by the owner of that relay."*
+
+**Checked against the tree, and it holds for everything built.** A node
+dials only relays in its owner's `relays.json`; a relay dials only partners
+on its roll, which only its owner writes (`setPartner`, an owner verb); and
+a hint names a relay **key**, which the relay looks up on that roll —
+naming a key that is not a partner is refused (`minting incomplete`),
+never dialled.
+
+**So R9 is covered by one clause:** a URL arriving in a hint is never
+dialled; the receiving relay uses the URL its owner put on the roll for
+that key.
+
+**What the chain does not cover is R14.** Open partnering writes a partner
+row — and its URL — from a **stranger's** message. Until that row is keyed
+and mutual, no owner approved the address, and the relay must dial it once
+to learn the key. **R11 is now that one moment**, and candidate 1 applies
+to it alone: resolve the name, refuse anything inside the box's own network,
+connect to the address that was resolved.
+
+**Status:** OPEN — **narrowed, not ruled; the ruling is Andy's.** Claude's
+recommendation is the paragraph above. A prerequisite for R14 rather than a
+follow-up; R9 needs only the never-dial clause.
 
 ### R12 — `last` on a partner row
 
@@ -1506,7 +1550,11 @@ problem to solve now.
 
 **Status:** DEFERRED: the governor's remaining shape depends on R15 and on
 what the rest of the list does to the box it governs; revisit when the list
-is otherwise clear.
+is otherwise clear. **That moment has come** (2026-09-21): R15 is measured,
+and R35 — the one hazard that might still have justified an observer — is
+closed by the stream cut, which says so itself. What is left for the
+Governor is Andy's to say. Andy earlier: *"the govenor is at least
+deferred, if not eliminated"*.
 
 ### R21 — labMaster blocks on netstat, and Windows answers a full backlog with RST
 
@@ -2538,6 +2586,15 @@ decides from the book, not from the `ignored` mark. The mark records what
 the door did under the policy of the day; letting it gate would mean that
 switching from *Ignore* to *List them* never lists anybody ignored before.
 
+**Known costs, chosen while building, not flaws in the rule:**
+
+- **Every book save rewrites every mark** — `markBook` clears and re-marks
+  the whole book. Cheap at 33 contacts, a real cost at 36,000 on every
+  accept or block. The fix is to mark only the rows a save changed.
+- **Two places still have to agree** — the book and the marks, reconciled
+  on save and at boot. A hand edit to `contacts.json` while the node runs
+  is not marked until the next save.
+
 **Verify:** `spirit/test/chosenMarks.js` — the sweep sheds in order under
 fourteen squeezes and never reaches the 60 added, though they are the
 oldest; a spent cap refuses the next add and blocking makes room; the book
@@ -2548,7 +2605,7 @@ removed, it fails.
 
 **Status:** DONE
 
-### R39 — an offline search answers from memory
+### R39 — search fans out to memory too, beside every bound relay
 
 > **Andy:** *"thing is. if the userbox is offline, search can revert to
 > memory....."*
@@ -2635,7 +2692,46 @@ in `node.json`; an Info control with a floor and a ceiling, beside the
 cache cap (R34), is possible and **not built**. Whoever builds it inherits
 R31's open question: whether the node may write `node.json` at all.
 
+**Known limits, stated:** a stranger older than the newest
+`searchMemoryRows` is never compared, and the answer's `more` cannot say
+so; and the chosen are read whole on every search, by ruling, so a book of
+tens of thousands is compared whole. Search time with both is not measured.
+
 **Status:** DONE
+
+### R40 — patience is an owner setting, so a message is retried at all
+
+> **0020, decided 2026-09-21:** *"Patience is node configuration, not a
+> per-post argument."* — Andy earlier: *"the node will allow the user to
+> configure timeout — max time spent in request-scheduler before returning
+> failure… could be days for a text message."*
+
+**Found by the due diligence of 2026-09-21, not by a sitting.** 0020
+decided it and no row ever built it. `hub.js` passes no patience to
+`peerPost` — checked: no `patienceMs` anywhere in it — so every real
+message gets one attempt, and the queue R3, R5, R16 and R19 built and
+proved is unreachable in a running node. *"Retrying is built and inert"*,
+as the head of this file has said since it was written.
+
+**The shape is R31's:** a number in `relay-state/node.json`, read once at
+boot, never written by the node, with a default and a floor. It carries
+R16's open nuance with it: the traffic log says "sent" at enqueue, which is
+harmless at one attempt and misleading once a message can wait days.
+
+**Status:** OPEN — decided, not built. Node-side, no wire, blocked by
+nothing.
+
+### R41 — what R35–R39 left on screen
+
+Collected so the UI session has them in one place: the `507 memory is full
+of the people you added` refusal, which Contacts does not know yet; the
+words *"Ignore — No row"*, never true of the machine (`0021`); a way to see
+who was ignored; and the two owner's bounds in Info — the cache cap (R34)
+and `searchMemoryRows` — with R31's question of whether the node may write
+`node.json`.
+
+**Status:** DEFERRED: UI, and Andy takes UI in dedicated sessions on his own
+node.
 
 ## The order, and why
 
@@ -2648,6 +2744,9 @@ D  (partners)         needs C, and needs D1 ruled before it ships
 
 **A does not wait for anything.** B waits on one ruling. C is a review. D
 waits on C and on the URL rule.
+
+**Late 2026-09-21: A and B are done.** What is left is C, the review, and
+D behind it — plus R40, which is A-shaped and was simply never listed.
 
 **Nothing is deliberately left out any more.** Persistence was prose in
 the first draft of this plan and is now R16, because a gap described in a
