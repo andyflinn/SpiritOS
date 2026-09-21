@@ -240,6 +240,16 @@ This directory contains the vision, principles, and architecture decisions for *
   thrown away. Obliges one thing: last-known is only honest if the age is
   visible.
 
+- [0020 — The node's machinery is not a client surface](decisions/0020-the-machinery-is-not-a-client-surface.md)
+  — the shadow roll and the request scheduler stay opaque: no verb, no
+  route, no app surface. Andy: *"if the harness can assert the proper
+  functioning of the machine, I want shadow-roll and request-scheduling to
+  remain invisible to the client... or else we propagate more complexity
+  into shell and its harness."* The line it draws: **a value may cross, a
+  structure may not** — a presence dot and its age, yes; the row, the
+  queue depth, the backoff timer, no. Settles that patience is an owner's
+  node setting rather than a per-post argument from an app.
+
 ## Andy's frames
 - [The POST API — route hierarchy](andy/spiritNodeAPI.md) — every POST route
   both servers dispatch and the function it lands in. Illustration only.

@@ -1249,6 +1249,30 @@ And then the part no suite can do: **looking at it.** Natter and Contacts
 reacting as lively as before, with the cards filling in progressively
 rather than hanging, which `contacts.js` already renders per card.
 
+### What it needs, checked before starting
+
+**Nothing is missing in the way of machinery.** `targetBusy.js` already
+runs a real relay in a real process on a real port, and carries the hard
+part: `hold()` — *"a member who is present and says nothing, which is the
+whole fixture."* `createPeerPost` takes its request function as an
+argument, so a node's real post path can be pointed at a real relay. The
+first fixture is assembly.
+
+**What `postQueue.js` already proves in memory**, so this does not rebuild
+it: ordering, ties, class before age, per-pair backoff, patience,
+head-of-line, the monotonic clock and refusal at the door. What no unit
+suite can do is all of it over a socket, under load, against a relay that
+is really holding routes.
+
+**And one thing that was missing, now answered by
+[0020](../decisions/0020-the-machinery-is-not-a-client-surface.md).**
+`hub.js:1784` posts with no options, so nothing in a running node ever
+asks the queue to wait — the retry path is built and unreachable. The
+obvious repair was a per-post argument from the app; 0020 refuses it and
+keeps patience as **node configuration**, an owner's bound like the cache
+cap. So this fixture sets patience the way the node will, and does not
+grow an app-facing parameter to test itself.
+
 **Status:** OPEN — `targetBusy.js` covers the second fixture. The
 wide-fan-out fixture does not exist, and nothing has been looked at: the
 lab has not been rebuilt since 2026-09-20.
