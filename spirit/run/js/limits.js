@@ -115,6 +115,29 @@ var HINTS_MAX = 512;
 
 var BODY_MAX = PAYLOAD_MAX + WIRE_HEADROOM + HINTS_MAX;
 
+// ── WHAT ONE PACKET COSTS ON A STREAM, AND HOW MANY MAY WAIT (R35) ─────
+//
+//   Andy: "if the output buffer goes past 2x MAX_FULL_PACKET, shouldn't
+//   the relay just send a disconnect, then cut the connection loose?"
+//
+// PAYLOAD_MAX counts UTF-16 units before the relay writes the packet into
+// an event, and the event is JSON again: a text of control characters
+// comes out as `\u0001`, six BYTES per unit, and nothing refuses such a
+// text (the relay checks its length, not its alphabet). So the largest
+// thing one packet can put in a socket's buffer is six times the payload,
+// plus the scaffolding. Measured against a built worst case in
+// test/stalledReader.js, so the six is checked rather than believed.
+var STREAM_EVENT_MAX = 6 * PAYLOAD_MAX + WIRE_HEADROOM;
+
+// TWO OF THEM, and the two are not arbitrary: one full packet may sit in
+// the buffer while an honest, slow reader drains it, and the second is
+// room for the heartbeats and presence events around it. Past that the
+// reader is not slow, it has stopped. Counted in what NODE holds for the
+// socket (`writableLength`), which fills only once the kernel's own send
+// buffer is full — so an honest reader is cut only after it has fallen
+// behind by the kernel's buffer AND two worst-case packets.
+var STREAM_BACKLOG_MAX = 2 * STREAM_EVENT_MAX;
+
 // ── WILL IT STILL FIT IF IT IS TUNNELLED? (cycle 2) ──────────────────
 //
 // A post forwarded to a partner is re-wrapped whole — `{from,to,text,sig}`
@@ -155,6 +178,8 @@ var limitsApi = {
   HINTS_PER_POST: HINTS_PER_POST,
   HINTS_MAX: HINTS_MAX,
   BODY_MAX: BODY_MAX,
+  STREAM_EVENT_MAX: STREAM_EVENT_MAX,
+  STREAM_BACKLOG_MAX: STREAM_BACKLOG_MAX,
   fitsWrapped: fitsWrapped,
   fitsWrappedReply: fitsWrappedReply,
 };

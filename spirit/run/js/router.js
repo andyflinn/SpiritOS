@@ -381,6 +381,35 @@ function createRouter(opts) {
     return true;
   }
 
+  // EVERY ROUTE NAMING ONE IDENTITY, taken out of the table and handed
+  // back (R35). For a stream cut because its reader stopped: the routes
+  // it was the TARGET of can no longer be answered — the request sat in
+  // the bytes that were destroyed — and the routes it was the REQUESTER
+  // of have nowhere left to deliver to.
+  //
+  //   Andy: "checking if a pending foreign request is still pending, so
+  //   that one can be returned with an error" — "and vice versa".
+  //
+  // Each comes back with `as`, which side the identity was on, because
+  // the two need opposite handling: an asker still waiting must be told,
+  // and an asker who is gone needs nobody told. Expired entries are swept
+  // first, so nothing is answered that has already timed out on its own.
+  function release(id) {
+    sweep();
+    var out = [];
+    Object.keys(pending).forEach(function (h) {
+      var e = pending[h];
+      if (e.target !== id && e.requester !== id) return;
+      delete pending[h];
+      out.push({
+        hash: h, requester: e.requester, target: e.target,
+        carry: e.carry, kind: e.kind,
+        as: e.target === id ? 'target' : 'requester',
+      });
+    });
+    return out;
+  }
+
   // AGE-CHECKED, because the alternative is two answers to one question.
   // `size()` and `open()` both sweep, so an entry past its ttl is already
   // gone to them — a `has` that still said yes would have this table
@@ -402,6 +431,7 @@ function createRouter(opts) {
     open: open,
     answer: answer,
     cancel: cancel,
+    release: release,
     has: has,
     // Posts in flight for one requester — the per-member count (cycle 1).
     // The Governor reads it to spare a busy stream from eviction.

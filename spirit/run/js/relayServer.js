@@ -35,6 +35,7 @@ const deviceAuth = require('./deviceAuth');
 // this is meant to catch.
 const buildStamp = require('./buildStamp');
 const common = require('./serveCommon');
+const streamSink = require('./streamSink');
 const readJsonBody = common.readJsonBody;
 const deviceRefusal = common.deviceRefusal;
 
@@ -424,34 +425,19 @@ const server = http.createServer((req, res) => {
     const token = url.searchParams.get('key') || '';
 
     // A sink, not a response: relay.js and presence.js hold this and
-    // neither knows what http is.
+    // neither knows what http is. Why its head is written lazily, and
+    // why it cuts a reader that has stopped reading (R35), is in
+    // streamSink.js.
     //
-    // THE HEAD IS WRITTEN LAZILY, on the first write, and that is not a
-    // micro-optimisation. It shipped the other way — head first, so the
-    // roster had somewhere to go — and a refusal then had to travel as
-    // an event inside a 200, because the status line was already spent.
-    // A client cannot see a status the server has committed to, so every
-    // refusal looked to it like a connection that opened and closed, it
-    // reset its backoff on that, and a stale credential became a
-    // one-per-second hammer against a relay that was refusing it.
-    //
-    // Written this way the gate answers first and a refusal is a 403 that
-    // says so.
-    let headed = false;
-    const sink = {
-      write: function (chunk) {
-        if (!headed) {
-          headed = true;
-          res.writeHead(200, {
-            'Content-Type': 'text/event-stream',
-            'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
-          });
-        }
-        res.write(chunk);
-      },
-      close: function () { try { res.end(); } catch (e) { /* gone */ } },
-    };
+    // Declared before the sink, because the sink can call teardown: a
+    // stream cut for not reading is torn down by the cut, not left to
+    // whether the socket's own close event comes.
+    let torndown = false;
+    let heartbeat = null;
+    let live = false;
+    const sink = streamSink.createStreamSink(res, {
+      onStall: function () { if (live) teardown(); },
+    });
 
     const opened = relay.streamOpen(token, from.sig, sink);
     if (!opened || !opened.ok) {
@@ -478,8 +464,12 @@ const server = http.createServer((req, res) => {
       return;
     }
 
-    const heartbeat = setInterval(() => {
-      try { res.write(':\n\n'); } catch (e) { /* teardown will follow */ }
+    live = true;
+
+    // Through the sink, so a heartbeat counts toward the backlog like
+    // any other byte a stopped reader is not taking.
+    heartbeat = setInterval(() => {
+      try { sink.write(':\n\n'); } catch (e) { /* teardown will follow */ }
     }, 20000);
 
     // Bound to 'error' as well as 'close', and once-guarded. The bug
@@ -487,12 +477,15 @@ const server = http.createServer((req, res) => {
     // dies without a clean close would leave a peer reading as PRESENT
     // forever, which is the relay lying — and lying is the one thing this
     // design cannot afford.
-    let torndown = false;
+    //
+    // WHICH CLOSE IT WAS is asked of the sink, not of which event came
+    // first: the cut destroys the socket, so 'close' may well beat the
+    // sink's own call, and the stalled path must run either way.
     function teardown() {
       if (torndown) return;
       torndown = true;
       clearInterval(heartbeat);
-      relay.streamClose(token, sink);
+      relay.streamClose(token, sink, sink.stalled() ? 'stalled' : undefined);
     }
     req.on('close', teardown);
     req.on('error', teardown);

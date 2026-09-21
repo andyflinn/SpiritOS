@@ -56,9 +56,10 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Six open, five deferred, one cancelled, twenty-five done. Ten of the eighteen are
-blocked by nothing**, and nine are decided — waiting to be built, not to be
-thought about. **Three rows now need a review, and nothing else does.**
+**Five open, five deferred, one cancelled, twenty-six done.** Of the five
+open, three need the team review (R9, R13, R28), one is Andy's to decide
+(R11), and R14 waits on those. **Nothing open can be built without a review
+or a ruling.**
 
 | | what | status | solution? | blocked by |
 |---|---|---|---|---|
@@ -85,7 +86,7 @@ thought about. **Three rows now need a review, and nothing else does.**
 | <sub>R32</sub> | <sub>*working a long contact list: select, bulk remove, filter*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | <sub>*the verb already exists*</sub> |
 | <sub>R33</sub> | <sub>*"mailbox" retired, still in 57 UI comments*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R34</sub> | <sub>*Info shows this node's own disc, cache and RAM*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | <sub>*pairs with R31*</sub> |
-| **R35** | a member who has stopped reading is the unbounded case | OPEN — shape found, number not trusted | partial | |
+| <sub>R35</sub> | <sub>*a member who has stopped reading is cut loose, and nobody is left waiting on them*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R36</sub> | <sub>*what an error means, in one place — relay emitting codes is for the review*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R37</sub> | <sub>*every presence mark shows its age*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -2362,9 +2363,66 @@ is system-wide, loopback puts both endpoints on one box, and the sample
 was one run. **What to measure:** the same steps with reading and
 non-reading members side by side, on both platforms.
 
-**Status:** OPEN — not measured properly, not decided. Blocks nothing and
-blocks on nothing; it is an input to R20, which is deferred until the
-Governor's shape is reconsidered.
+**The kernel was the smaller half.** Reading the code for the measurement
+found the real exposure: the relay's stream sink called `res.write` and
+ignored its answer, and nothing in the tree read `writableLength`. Once the
+kernel's buffer is full, Node keeps every further write *in the process* —
+each packet aimed at the member, each heartbeat, each presence event —
+until the TCP connection dies, which a live peer that simply does not read
+never lets happen. Proved on a real socket: with the cut removed, **50 MB**
+sat in the process for one reader.
+
+**Decided.**
+
+> **Andy:** *"if the output buffer goes past 2x MAX_FULL_PACKET, shouldn't
+> the relay just send a disconnect, then cut the connection loose?"* —
+> *"this needs only documenting, and checking if a pending foreign request
+> is still pending, so that one can be returned with an error...."* —
+> *"and vice versa"*
+
+- **The cut, and no goodbye.** A reader that has stopped will not read a
+  disconnect either; the socket closing is the only signal that reaches it.
+- **`STREAM_EVENT_MAX` = 6 × `PAYLOAD_MAX` + `WIRE_HEADROOM` = 98,816 B.**
+  "A full packet" measured in the bytes it costs on a stream: a text of
+  control characters is written by JSON as six bytes a unit, and the relay
+  checks a text's length, not its alphabet. The built worst case is 98,573 B.
+- **`STREAM_BACKLOG_MAX` = 2 × that ≈ 193 KB**, counted in what Node holds
+  (`writableLength`), which fills only after the kernel's buffer — so an
+  honest reader is cut only once it is behind by the kernel's buffer *and*
+  two worst-case packets.
+- **Asked of them:** every route the cut member was the target of is
+  answered now, `503 peer not reachable`, the way its asker waits — a
+  relay-signed reply down a stream, this relay's own post settled here, a
+  partner's through the tunnel answer. The reason (`stopped reading`) goes
+  to the owner's monitor, not onto the wire.
+- **Asked by them:** their routes are dropped, so a late answer meets
+  `404 no such request` rather than `200 delivered: false`, which is what it
+  got before.
+- **Only for the cut.** An ordinary close settles nothing: `/reply` needs no
+  stream, so a member whose stream dropped may still answer what it read.
+
+**Built.**
+
+`streamSink.js` (the sink, moved out of `relayServer.js` so a real socket
+can test it), `limits.js`, `router.release`, `relay.failRoutesOf`. Suite
+`test/stalledReader.js`, 12 checks; with the cut and the settlement removed,
+7 fail.
+
+**Not closed by this, and said plainly:** a *healthy* reader can be cut if
+enough large events land on it in one tick — the check runs after each
+write, before anything drains. In practice one target takes one request at
+a time (`DEFAULT_PER_TARGET = 1`), so the case needs sixteen large replies
+to its own requests arriving at once. Watch for it; do not build for it.
+
+What remains for R20 is only whether anything else justifies an observer —
+this no longer does.
+
+**Verify:** `spirit/test/stalledReader.js` — the bound holds for the built
+worst case; a reader that stops is cut on a real socket and one that is
+only slow is not; the asker is told, the late answer is refused, and an
+ordinary close settles nothing.
+
+**Status:** DONE
 
 ### R36 — what an error means, in one place
 

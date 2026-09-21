@@ -462,6 +462,15 @@ matters for a relay whose first duty is to survive.
 **Logged as its own hazard** rather than folded into the Governor's
 brief: it is a different problem from the one the Governor was built for.
 
+**And the kernel was the smaller half (R35, closed).** Past the kernel's
+buffer, Node kept every further write in the relay's own process, with no
+limit: 50 MB for one reader on a real socket, before the fix. A stream now
+holds at most **2 × 98,816 B ≈ 193 KB** in the process (`limits.js`,
+`STREAM_BACKLOG_MAX`) and is cut past it. So the worst a member who has
+stopped reading can cost the relay is the kernel's share above plus that,
+and it is bounded again. The per-stream figures on this page are for
+readers that read.
+
 ## What the second platform caught
 
 **Two boxes found two things, and only one of them was the thing we went

@@ -2238,9 +2238,17 @@ function createRelay(rootDir, deps) {
   function relayErrorToAsker(innerHash, requester, status, error) {
     delete carrying[innerHash];
     if (!routes.cancel(innerHash, requester)) return false;
+    monitorEvent('refused', requester, '', { why: String(error), hash: innerHash, via: 'partner' });
+    return replyAsRelay(innerHash, requester, status, error);
+  }
+
+  // The reply itself, for a route already closed by the caller. Shared by
+  // the partner error above and the stalled-reader cut (R35), which is
+  // the same situation seen from the other end: this relay knows the
+  // answer will not come, and says so for the hash the asker is holding.
+  function replyAsRelay(innerHash, requester, status, error) {
     var mine = auth.loadIdentity(rootDir);
     if (!mine || !mine.privateKey) return false;
-    monitorEvent('refused', requester, '', { why: String(error), hash: innerHash, via: 'partner' });
     return !!presentNow.send(requester, 'reply', {
       hash: innerHash,
       from: mine.publicKey,
@@ -3826,11 +3834,64 @@ function createRelay(rootDir, deps) {
     return decision;
   }
 
+  // ── A READER THAT STOPPED READING, AND THE ROUTES IT LEAVES (R35) ────
+  //
+  //   Andy: "this needs only documenting, and checking if a pending
+  //   foreign request is still pending, so that one can be returned with
+  //   an error" — "and vice versa".
+  //
+  // ONLY FOR THE CUT, NOT FOR EVERY CLOSE. A member whose stream simply
+  // dropped may still hold a request it read, and answer it by POST —
+  // /reply needs no stream — so failing its routes on close would beat a
+  // real answer with a false error. A member cut for not reading never
+  // read what was sent: those bytes died in the buffer that was
+  // destroyed, and no answer can come.
+  //
+  // WHERE IT WAS ASKED, the asker is told now rather than at its
+  // deadline, in whichever way that asker waits: a partner through the
+  // tunnel's own answer, this relay's own post by settling it here, and a
+  // member or partner holding a stream by a reply signed by this relay.
+  // `peer not reachable` is the word, and it is literally true from this
+  // moment — they are absent. The REASON goes to the owner's monitor and
+  // not onto the wire: the asker can do nothing different about a peer
+  // who stopped reading than about one who left.
+  //
+  // WHERE IT ASKED, the route is simply gone. Nobody is waiting on this
+  // side any more, so a late answer from its target now meets `no such
+  // request` rather than being pushed into a stream that is not there.
+  function failRoutesOf(id) {
+    var why = 'stopped reading';
+    routes.release(id).forEach(function (r) {
+      if (r.as === 'requester') {
+        delete carrying[r.hash];
+        monitorEvent('refused', id, r.target, { why: why, hash: r.hash, as: 'requester' });
+        return;
+      }
+      // Asking yourself leaves nobody to tell.
+      if (r.requester === id) return;
+      monitorEvent('refused', r.requester, id, { why: why, hash: r.hash });
+      var refusal = { ok: false, status: 503, error: 'peer not reachable' };
+      if (r.carry && typeof r.carry.answer === 'function') {
+        r.carry.answer(refusal);
+      } else if (awaitingReply[r.hash]) {
+        settleHere(r.hash, {
+          ok: false, status: 503, hash: r.hash, error: 'peer not reachable',
+        });
+      } else {
+        replyAsRelay(r.hash, r.requester, 503, 'peer not reachable');
+      }
+    });
+  }
+
   // Idempotent, because both `close` and `error` fire on a dying socket
   // and both call this. The broadcast happens only if this sink was
   // actually the live one — a teardown arriving after the same identity
   // reconnected must not announce an absence that is not true.
-  function streamClose(token, sink) {
+  //
+  // `why` is 'stalled' when the stream was cut because its reader had
+  // stopped reading (R35, streamSink.js), and absent for every other
+  // close. Only the cut settles the routes: see failRoutesOf.
+  function streamClose(token, sink, why) {
     // THE SAME IDENTITIES streamOpen ADMITS. This resolved members and the
     // owner only, so a partner's stream, opened through partnerIdentity,
     // could never be closed: when its socket died the partner stayed
@@ -3840,6 +3901,7 @@ function createRelay(rootDir, deps) {
     if (!who_) return false;
     if (!presentNow.disconnect(who_.id, sink)) return false;
     forgetActive(who_.id);
+    if (why === 'stalled') failRoutesOf(who_.id);
 
     // A MONITOR DIES WITH THE STREAM IT WAS WATCHING ON. A browser that
     // crashed must not leave this relay pushing into nothing, and a timer
