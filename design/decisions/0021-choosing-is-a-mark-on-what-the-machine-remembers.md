@@ -95,6 +95,10 @@ crossing, not the store (0020).
 Offline it is the only one that answers; online, a relay's live row wins
 over the remembered one for the same key.
 
+> *"the relays result will take precedence until timeout()"*
+
+The relays lead; when the wait ends, memory fills in what no relay said.
+
 ## What it supersedes, marked
 
 - **R4, its age half.** "Two evictions: cache-limit and last seen" becomes

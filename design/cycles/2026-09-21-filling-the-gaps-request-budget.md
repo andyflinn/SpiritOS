@@ -2528,6 +2528,13 @@ search already does (`Promise.all` over every bound relay, merged by key,
 live row wins over the remembered one for the same key, and a remembered
 row keeps its age.
 
+> **Andy:** *"the relays result will take precedence until timeout()"*
+
+**The relays lead; memory is what is left at the timeout.** The search waits
+on its relays as it does today, and a relay's row wins wherever one comes
+back. When the wait ends, memory fills in what no relay said — so memory
+never delays a search and never overrides a live answer.
+
 **Status:** OPEN — ruled, not built. Blocked by R38.
 
 ## The order, and why
