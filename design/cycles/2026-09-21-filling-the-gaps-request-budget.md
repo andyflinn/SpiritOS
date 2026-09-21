@@ -1019,6 +1019,15 @@ dial — resolve the name, refuse anything inside the box's own network,
 connect to the address that was resolved. The grant is the owner's
 consent to partner; it is not consent to have the relay dial inward.
 
+**What the grant is for, when it comes.**
+
+> **Andy, 2026-09-22:** *"the auto-partnering grant from the owner will be a
+> marketing issue, targeting rapid growth of a network."*
+
+A product decision about growth, then, not a gap in the core: an owner
+who wants their network to grow fast turns it on, and this rule is what
+turning it on must bring with it.
+
 **Status:** DEFERRED: with R14. Nothing in the core dials a URL an owner did
 not write (Andy, 2026-09-22).
 
