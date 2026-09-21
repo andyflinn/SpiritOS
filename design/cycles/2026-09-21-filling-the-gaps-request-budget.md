@@ -1,6 +1,15 @@
 # Filling the gaps — what the request-budget design left unbuilt
 
-**Plan, 2026-09-21. Nothing here is built. Measured against `bfd5df0`.**
+**Plan, 2026-09-21. Measured against `bfd5df0`.**
+
+~~*Nothing here is built.*~~ — struck 2026-09-21. Twelve of the twenty-six
+are DONE; the status on each requirement is the current answer.
+
+**The argument behind R23–R26 is not here.** It is
+[WHAT-A-NODE-KNOWS.md](../relay/WHAT-A-NODE-KNOWS.md) — one rule, what was
+being discarded, and what is decided, recommended and open — the way
+[REQUEST-BUDGET.md](../relay/REQUEST-BUDGET.md) holds the argument behind
+R1–R22. This file holds the work.
 
 > **Andy:** *"i want a plan to fill the gaps."*
 
@@ -11,8 +20,9 @@ five product files of code and a great deal that is argued and unwritten.
 This says what is left, in the order the dependencies allow, and marks
 which parts are Claude's to build and which are not.
 
-**The harness stands at 107 suites, 2534 green, 0 red.** Every stage below
-ends there or it does not end.
+**The harness stands at 110 suites, 2610 green, 0 red** (`7806b3d`; it was
+107 / 2534 when this was written). Every stage below ends there or it does
+not end.
 
 ---
 
@@ -30,6 +40,65 @@ request in flight per relay, on by default, across 107 suites, nothing
 broken. The **queue behind it is largely unexercised**, because patience
 defaults to zero — one attempt, exactly as before. Retrying is built and
 inert.
+
+---
+
+## The running list
+
+> **Andy:** *"when i actually had the R1-Rxx list in front of me, i was
+> able to order them to suit my perception. I knew: 'I'm not gonna run to
+> papa grok until the job (cleaning up core design, and proving it) is
+> done.' so a running R-list is very valuable to me."*
+
+**This table is the list, and it is maintained, not written once.** The
+stages below are the dependency order; **the order of work is Andy's**, and
+the two are not the same thing. What a stage can tell you is only what a
+requirement is *blocked by* — the last column. Anything with a blank there
+can start today.
+
+**Open is fourteen. Six of those are blocked by nothing.**
+
+| | what | status | blocked by |
+|---|---|---|---|
+| **R1** | `via` on the shadow row; `routes` off the contact row | OPEN — half can start now | `routes` half: **R26** |
+| **R2** | the sweep that needed prioritising, deleted instead | **DONE** | |
+| **R3** | queue depth, and what is shed at the limit | **DONE** | |
+| **R4** | route expiry using `seen` | OPEN | R1 |
+| **R5** | the timeout is a duration, carried, diminishing inward | **DONE** | |
+| **R6** | `maxPerTarget` out of config, into code | **DONE** | |
+| **R7** | drop the ceiling to 1 and run the experiment | **DONE** | |
+| **R8** | `viaUrl` in a search answer | **DONE** — was already built | |
+| **R9** | hints carry `{ key, url }` | OPEN — **wire, team review** | |
+| **R10** | `cancel`, exposed to a member | OPEN — no longer a prerequisite | |
+| **R11** | the URL rule / SSRF | OPEN — **Andy's to decide** | |
+| **R12** | `last` on a partner row | OPEN | |
+| **R13** | no streams between partners | OPEN — **wire, team review** | R12 |
+| **R14** | open partnering, provisional rows, a visible count | OPEN — not decided | R8, R9, R11, R12 |
+| **R15** | the per-stream measurement | OPEN — **four conclusions rest on it** | |
+| **R16** | the queue survives a restart | OPEN | R26's store |
+| **R17** | suites clean up the homes they create | OPEN — leak untouched | |
+| **R18** | durations on a clock that cannot jump | **DONE** | |
+| **R19** | the load fixture, and *seeing* it stay lively | OPEN — half covered | |
+| **R20** | the Governor's remaining job | OPEN | R15 |
+| **R21** | labMaster blocks on netstat; Windows RSTs a full backlog | **DONE** | |
+| **R22** | censusNarrow reads a file another suite deletes | **DONE** | |
+| **R23** | a sibling is a route too, and both ends are told | **DONE** | |
+| **R24** | a search answer is kept until somebody acts on it | **DONE** | |
+| **R25** | a route is learned at every opportunity; policy does not gate it | **DONE** | |
+| **R26** | the shadow needs a store, and it is a persist shape | OPEN — **new persist shape, team review** | |
+
+**Startable today, nothing in the way:** R1 (the `via` half), R9\*, R12,
+R15, R17, R19. *\*R9 needs a team review before it is built, not before it
+is decided.*
+
+**The three that gate the most:** **R15** (R20, and four claims nobody can
+make until it is measured), **R26** (R1's second half, R16, and `0018`
+finishing), **R11** (R14).
+
+**This is the cycle, not the project.** Nothing goes to Grok on account of
+a row here; the cycle is accepted when the list is closed, which is
+`0017`'s rule and Andy's *"I'm not gonna run to papa grok until the job is
+done."*
 
 ---
 

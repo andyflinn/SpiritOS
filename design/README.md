@@ -297,6 +297,22 @@ This directory contains the vision, principles, and architecture decisions for *
   partner that lies about holding a key can harvest one packet per lie, and
   negative results need a lifetime or every post to an unroutable contact is a
   fan-out for ever.
+- [What a node knows about a peer, and where it keeps it](relay/WHAT-A-NODE-KNOWS.md)
+  — **planning, and most of it built at `7806b3d`.** One rule: *"a node
+  learns a route at every opportunity, and policy never gates the
+  learning."* Andy: *"Any peer a node could possibly connect to, the route
+  to it can be known to the node."* Seven places were holding the answer
+  and discarding it — a search kept the URL and dropped the key, an
+  arriving packet learned nothing, siblings on one relay announced
+  nothing to either end. It lands in a **shadow** keyed by peer
+  (`seenPeers.js`): not the contact book, not a duplicate of a member
+  roll, *"like a browser's cache… it tracks the node's traffic with the
+  contacts IT knows"* — it may guess, may never assert, and has no reader
+  outside the node. Carries `0018` (the route cache belongs to the
+  machine, so `routes` leaves the contact row with the store), and keeps
+  open: label-key tuplets on the wire, cache-first search, and
+  `MAX_AGE_MS`. **Read before ROUTE-DISCOVERY.md below**, which it
+  reorders rather than contradicts.
 - [One object, three densities](shell/OBJECT-PRESENTATION.md) — the UI half of
   the same sitting. Dropdown, selector surface and tooltip as three densities
   of one object; label is what it calls itself, description is what you say

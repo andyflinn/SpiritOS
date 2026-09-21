@@ -421,6 +421,19 @@ relay learned from partners it pinned itself.
   broadcast-and-forget — the stream already delivers that. The useful direction
   is node → relay.
 
+> **Read alongside [WHAT-A-NODE-KNOWS.md](WHAT-A-NODE-KNOWS.md)
+> (2026-09-21).** That note asks what a node does with routes it is
+> **already being told**; this one asks how a relay FINDS a route nobody
+> has. They do not conflict, but the order between them changed: a node
+> that keeps what it is handed asks far less, so some of what this
+> document exists to make cheap may simply happen less often.
+>
+> Three of the open items below are answered there — *"which route to
+> try"* (the shadow is that state), *"a streamed route is not
+> correspondence"* (now `0018`: the route cache belongs to the machine),
+> and where node-side route state lives at all. **The harvest problem
+> below is untouched by any of it**, and remains the load-bearing one.
+
 ## Open, and some of it is load-bearing
 
 **A partner that claims keys it does not hold can harvest forwards.** If B
