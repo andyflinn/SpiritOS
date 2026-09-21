@@ -51,17 +51,22 @@ failure of the question.
 runtime, not to this system — what is actually SpiritOS is ~11 MB on a
 relay and ~23 MB on a node.
 
-| RAM | a relay holds, connected at once |
-|---|---|
-| 64 MB | 70 — **too tight to mean anything**, 60 MB is gone at rest |
-| 100 MB | ~700 |
-| **128 MB** | **~1,200** |
-| 256 MB | ~3,500 |
-| 512 MB | ~8,000 |
+| RAM | connected at once, Windows | … Ubuntu |
+|---|---|---|
+| 64 MB | 70 — **too tight to mean anything** | ~100 |
+| 100 MB | ~700 | ~950 |
+| **128 MB** | **~930** | **~1,500** |
+| 256 MB | ~2,700 | ~4,300 |
+| 512 MB | ~6,200 | ~9,900 |
 
-**It is a straight line above the floor**, because a held connection costs
-~58 KB and nothing else about a relay grows with use. Below ~64 MB there
-is no line at all: the fixed cost has eaten the box.
+**It is a straight line above the floor, and the slope is the platform's**:
+a held connection costs ~61 KB of the relay process on Windows and ~42 KB
+on Linux, and nothing else about a relay grows with use. Below ~64 MB
+there is no line at all: the fixed cost has eaten the box.
+
+**These are the process only.** The kernel's share per connection is real
+and could not be measured on either platform (see *What the kernel costs*,
+below) — which is why an owner should give a relay at most half the box.
 
 **A node does not have this table**, because a node does not hold
 hundreds of connections — it holds one per relay it is a member of. Its
@@ -71,12 +76,12 @@ concurrency.
 ### A relay with 100 MB RAM and 1 GB disc
 
 ```
-100 MB   total
+100 MB   total                       (Windows figures, process only)
 - 49 MB  Node.js itself
 - 11 MB  the relay
 = 41 MB  left for connections
 / 58 KB  per held stream
-= ~700 members connected at once
+= ~700 members connected at once     (~950 on Linux, at ~42 KB)
 ```
 
 **And 1 GB of disc holds 5.5 million of them enrolled** — or 3.8 million
@@ -193,8 +198,10 @@ you.
 
 `node.db` holds what this node has been told about people: where they
 live, what they call themselves, when it last had evidence. **It is
-capped**, it evicts oldest-first, and at 222 bytes a peer the 20 MB
-default is about 93,000 people — *"a small city"*. Nothing you do makes
+capped**, it evicts oldest-first, and at 577 bytes a reachable peer —
+157 for the name, 420 for the route — the 20 MB default is about 36,000
+people. Andy called it *"a small city"*; measured properly it is a large
+town, and the correction is in *What the second platform caught*. Nothing you do makes
 it grow; nothing you lose by clearing it was yours.
 
 ### What your space looks like
