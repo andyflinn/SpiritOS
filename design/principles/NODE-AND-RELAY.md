@@ -118,6 +118,36 @@ holding a person's decisions.
 
 ---
 
+> **Amended 2026-09-21 — what "human readable" covers, and what it does
+> not.**
+>
+> > **Andy:** *"since it could grow as large as the relay's member roll,
+> > it may have to optimize access, and since it's NOT directly for the
+> > user, it is exempt from human readability."*
+>
+> The premise reads a node's readability as covering everything on its
+> disk. It covers what the sentence actually names: **the digitisation of
+> its owner's spirit** — their contacts, their writing, their record of
+> what crossed the wire. A person can open those and recognise their own
+> life in them.
+>
+> It does not cover machine working state that exists only so the node can
+> do its job. `seenPeers` is the first of those: a shadow of this node's
+> own traffic, keyed by peer, which can grow as large as a relay's member
+> roll and which no person will ever read. Holding it in a file rewritten
+> whole, in a shape chosen for a reader who does not exist, would cost
+> what readability is meant to buy and return nothing.
+>
+> **The dependency clause survives intact**, and that is worth checking
+> rather than assuming: `node:sqlite` is built into node, so "no
+> dependencies outside native node.js" still holds.
+>
+> **What it costs is the floor.** `package.json` says `node >=18`;
+> `relayServer.js` refuses to start below **22.13**, which is where
+> `node:sqlite` arrived. An indexed store on the NODE moves every user's
+> minimum to 22.13 — a real price for something people install on their
+> own machine, and the one thing this amendment does not decide.
+
 ## 3. Readability moves from the disk to the wire
 
 The premise contains a tension, and naming it gives the answer: a relay
