@@ -29,9 +29,50 @@ const shadows = new Map();
 function shadow(rootDir) {
   const key = require('path').resolve(rootDir);
   if (!shadows.has(key)) {
-    shadows.set(key, require('./seenPeers').createSeenPeers({ rootDir: rootDir }));
+    // THE OWNER'S CAP, read once (R31). relay-state/node.json when the
+    // owner has written one, the 20 MB default when not — and never
+    // written by this code, because an owner's bound is obeyed rather
+    // than moved (0015).
+    shadows.set(key, require('./seenPeers').createSeenPeers({
+      rootDir: rootDir,
+      maxBytes: require('./nodeSettings').cacheMaxBytes(rootDir),
+    }));
   }
   return shadows.get(key);
+}
+
+// ── WHAT A POST'S OUTCOME SAYS ABOUT WHETHER SOMEBODY IS THERE (R30) ──
+//
+//   Andy: "when a request to stranger gets a reply from stranger, no
+//   matter what reply stranger goes green; as soon as stranger cannot be
+//   reached in a post stranger goes NOT-green." — "rule: presence is
+//   always last-known."
+//
+// ANY REPLY IS PRESENCE, whatever it says: a refusal from the person
+// still proves they were there to refuse.
+//
+// A FAILURE SAYS WHAT spiritErrors SAYS IT SAYS, and that is the reason
+// the catalogue exists. A busy refusal is PRESENT (they are there, and
+// occupied); "peer not reachable" is ABSENT (the relay speaking about its
+// own member); running out of time, a partner leg failing or this node's
+// own patience ending say NOTHING and write nothing (R36). A single rule
+// for "failed" would have been wrong two times out of three.
+//
+// NOT FOR THE NODE'S OWN "not reachable right now". That fail() comes
+// from this node reading its own presence picture and finding nobody —
+// writing it back into the shadow would be the node repeating itself as
+// though it were evidence. Only an answer that crossed the wire teaches.
+function learnPresence(rootDir, toKey, answer) {
+  var present;
+  if (answer && answer.ok) {
+    present = true;
+  } else {
+    var meant = require('./spiritErrors').classifyAnswer(answer);
+    present = meant ? meant.presence : null;
+  }
+  if (present !== true && present !== false) return;
+  try { shadow(rootDir).note(toKey, { present: present }); }
+  catch (e) { /* a cache that will not take a row is not a reason to fail the post */ }
 }
 const peerFile = require('./peerFile');
 const peerStats = require('./peerStats');
@@ -1019,6 +1060,7 @@ function createHub(rootDir) {
         var connected = Object.keys((presence.detail && presence.detail()) || {});
         if (connected.length) {
           return sendPacket(router, connected[0], to, text, hints.length ? hints : undefined).then(function (answer) {
+            learnPresence(rootDir, to, answer);
             res.writeHead(answer.ok ? 200 : (answer.status || 502),
               { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify(answer));
@@ -1034,6 +1076,7 @@ function createHub(rootDir) {
         return;
       }
       return sendPacket(router, where[0], to, text).then(function (answer) {
+        learnPresence(rootDir, to, answer);
         res.writeHead(answer.ok ? 200 : (answer.status || 502),
           { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify(answer));
@@ -2047,9 +2090,28 @@ function createHub(rootDir) {
         // question was sent. Nothing is written to the contact book —
         // this is what the node has lately been told about, and it waits
         // until somebody acts on it.
+        //
+        // ── AND EVERY ROW IS PRESENT, BECAUSE BEING FOUND IS THE EVIDENCE ──
+        //
+        //   Andy: "strangers can only be found if they ARE present, this
+        //   warrants a 'present' on the shadow-roll-row of every search
+        //   result."
+        //
+        // Search is online-only (the `present === false` drop above), so
+        // `present: true` is true by construction rather than by trust —
+        // and for EVERY row that came back, not only the ones somebody
+        // clicks.
+        //
+        // RANK BY WHO SAID IT (R29, retrofitted here). A row from the relay
+        // this node asked is that relay speaking about its own member:
+        // HOST. A row a partner carried is second-hand: HEARSAY, and any
+        // better-sourced name or route outranks it when one arrives.
+        var ranks = require('./seenPeers');
         list.forEach(function (row) {
           shadow(rootDir).note(row.publicKey, {
             at: row.atKey, url: row.relay, label: row.publicLabel,
+            present: true,
+            rank: row.viaPartner ? ranks.HEARSAY : ranks.HOST,
           });
         });
         list.sort(function (a, b) {
@@ -2281,6 +2343,7 @@ module.exports = {
   // the half that learned something would not be the half that is asked.
   // server.js feeds it from route announcements.
   shadow: shadow,
+  learnPresence: learnPresence,
   // Listed ONCE. It was here twice — same key, same value, one shadowing
   // the other in the same object literal — which is what an export block
   // that grew by accretion does. Spotted while deleting the six ring

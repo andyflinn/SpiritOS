@@ -56,7 +56,7 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Ten open, four deferred, one cancelled, twenty-one done. Ten of the eighteen are
+**Seven open, five deferred, one cancelled, twenty-four done. Ten of the eighteen are
 blocked by nothing**, and nine are decided — waiting to be built, not to be
 thought about. **Three rows now need a review, and nothing else does.**
 
@@ -65,7 +65,7 @@ thought about. **Three rows now need a review, and nothing else does.**
 | <sub>R1</sub> | <sub>*`via` on the shadow row; `routes` off the contact row*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R2</sub> | <sub>*the sweep that needed prioritising, deleted instead*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R3</sub> | <sub>*queue depth, and what is shed at the limit*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R4** | route expiry — two evictions: cache-limit and last seen | OPEN — mechanism decided, number open | **yes** | R1; number with R26 |
+| <sub>R4</sub> | <sub>*route expiry — two evictions: cache-limit and last seen*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R5</sub> | <sub>*the timeout is a duration, carried, diminishing inward*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R6</sub> | <sub>*`maxPerTarget` out of config, into code*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R7</sub> | <sub>*drop the ceiling to 1 and run the experiment*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -87,6 +87,7 @@ thought about. **Three rows now need a review, and nothing else does.**
 | <sub>R34</sub> | <sub>*Info shows this node's own disc, cache and RAM*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | <sub>*pairs with R31*</sub> |
 | **R35** | a member who has stopped reading is the unbounded case | OPEN — shape found, number not trusted | partial | |
 | <sub>R36</sub> | <sub>*what an error means, in one place — relay emitting codes is for the review*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| <sub>R37</sub> | <sub>*every presence mark shows its age*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R23</sub> | <sub>*a sibling is a route too, and both ends are told*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -96,8 +97,8 @@ thought about. **Three rows now need a review, and nothing else does.**
 | <sub>R27</sub> | <sub>*a presence event about a stranger is discarded, and it is a route*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R28** | a label change reaches everybody, at every level | OPEN — **decided `0019`**; hop 1 already built, hops 2-3 **wire, team review** | **yes** | |
 | <sub>R29</sub> | <sub>*the shadow row carries rank and provenance*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R30** | presence is last-known, and the shadow dates it | OPEN — **decided `0019`** | **yes** | R29 |
-| **R31** | the owner caps the cache in disc space, called “maximum cache size” | OPEN — **bound built, 20 MB**; owner's setting + screen left | **yes** | |
+| <sub>R30</sub> | <sub>*presence is last-known, and the shadow dates it — the screen is R37*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| <sub>R31</sub> | <sub>*the owner caps the cache — the screen is R34*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 
 **Done rows are greyed.** Markdown has no colour, so they are set small
 and italic and lose their bold — present, in number order where you would
@@ -534,8 +535,20 @@ That is right — a name with no route is cheap but not free, and unbounded
 label-only rows would be a third lifetime to reason about. The cost is one
 search to learn the name again.
 
-**Status:** OPEN — mechanism decided, number open. Depends on R1 (which
-supplies `via`/`seen` on the row) and shares its space half with R31.
+### Closed 2026-09-21, cycle 4 — it had been built in pieces
+
+**Both evictions exist as queries**, and neither was built under this
+row's name: the age bound is `sweepOlderThan` at **30 days** (cycle 2,
+R26), and the space bound is `sweepToBytes` against the owner's cap
+(cycle 3, then R31). Every sweep takes the swept peers' routes with it.
+What was left of R4 was noticing it was done.
+
+**Verify:** `spirit/test/nodeStore.js` — the age bound takes what is older
+than the cutoff and nothing else; the space bound holds the file under its
+cap, oldest first, and the file gives its pages back.
+`spirit/test/seenPeers.js` carries the same claims through the shadow.
+
+**Status:** DONE
 
 **Stage A ends with:** the scheduler honest about priority and bounded in
 size, and a route that is a whole edge rather than half of one.
@@ -2020,8 +2033,40 @@ honest (an age), not the preference for promising less.
 more than white knows and less than red claims, and `0019` deliberately
 leaves it.
 
-**Status:** OPEN — decided, not built. Node-side and UI; depends on R29 for
-the row shape.
+### Built 2026-09-21, cycle 4 — the node half
+
+**Every source now writes what it knows**, and only that:
+
+| source | writes |
+|---|---|
+| a search result | **present** — search is online-only, so being found is the evidence; for every row, not only the clicked ones |
+| any reply to a post | **present**, whatever the reply says |
+| a refusal | **whatever `spiritErrors` says it means** — busy is present, *peer not reachable* is absent, the rest write nothing |
+
+**The refusal row is R36's reason for existing.** The first version of
+this requirement said *"unreachable in a post → not green"*; the catalogue
+showed that a busy refusal proves the person is THERE, and that running
+out of time says nothing about anybody. One rule would have been wrong two
+times out of three.
+
+**Not from the node's own *"not reachable right now"*.** That comes from the
+node reading its own presence picture; writing it back would be the node
+repeating itself as though it were evidence.
+
+**Search rows are ranked while being written** (R29, retrofitted): HOST
+when the relay asked is speaking about its own member, HEARSAY when a
+partner carried it.
+
+**The screen half — every mark showing its age — is UI**, and moves to R37
+for a UI session.
+
+**Verify:** `spirit/test/presenceLearned.js` — a reply is present; busy is
+present; unreachable is absent, carried directly or relayed; five failures
+about the waiting leave presence standing; an uncatalogued error changes
+nothing; a stranger refused as unreachable gains no invented name or
+route.
+
+**Status:** DONE — the node half. The age on screen is R37.
 
 ### R31 — the owner caps the cache in disc space, and it is called that
 
@@ -2087,8 +2132,34 @@ is untouched, and a cap no file could meet empties the store rather than
 spinning on it. `spirit/test/seenPeers.js` asserts the same through the
 shadow.
 
-**Status:** OPEN — the bound and its default are built; the owner's
-setting and its screen are not.
+### The setting built 2026-09-21, cycle 4
+
+**`relay-state/node.json`** — Andy: *"your suggestion fits now."* One field,
+in megabytes, the unit he asked for:
+
+```
+{ "cacheMaxMB": 20 }
+```
+
+**Read once at startup and never written by the node.** That is his rule
+for any owner-configured bound — *"MUST be a constant to the governor"* —
+and it is also what keeps this on the right side of 0015: the programme
+obeys the owner's bound and never moves it.
+
+**A number that cannot work is said, not swallowed.** Below the 1 MB
+floor it is raised and reported; not a number, or not JSON, it boots on
+the default and reports it. A setting the node quietly ignored would be
+worse than none.
+
+**The screen is R34** — the Info app showing what is spent beside the bound
+that governs it, in a UI session.
+
+**Verify:** `spirit/test/nodeSettings.js` — defaults with no file and no
+file created; the owner's number reaching the shadow in bytes; the floor
+raised and said; nonsense and broken JSON falling back and saying so; a
+change mid-run waiting for the next start.
+
+**Status:** DONE — the bound and the setting. The screen is R34.
 
 ### R32 — working a long contact list: select, bulk remove, filter
 
@@ -2280,6 +2351,24 @@ outranking text, prefixes for runtime sentences, the 403/404 exception
 kept honest, and no sentence claimed by two codes.
 
 **Status:** DONE — Phase A. The relay emitting codes is for the review.
+
+### R37 — every presence mark shows its age
+
+> **Andy:** *"the gap is that the tooltip doesn't include the time stamp."*
+
+**The half of R30 that is UI.** Presence is last-known now (0019), and the
+shadow dates it — but all four tooltips are still written in the present
+tense (*"is holding"*, *"says they are connected"*), which is the live claim
+the rule says presence is not. Four strings, one field, no new control:
+`contactsPresenceTitle` (`contacts.js:288`) and `contactsSeenMarkTitle`
+(`:322`).
+
+**And the null state is waiting for it.** The shadow stores presence as
+three values, so *"nobody has said"* can finally read differently from
+*"said absent"* — the white mark `contacts.js` has always kept distinct.
+
+**Status:** DEFERRED: UI, and Andy takes UI in dedicated sessions on his own
+node. Nothing below the screen is missing.
 
 ## The order, and why
 

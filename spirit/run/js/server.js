@@ -927,6 +927,16 @@ catch (e) {
   process.exit(1);
 }
 
+// THE OWNER'S SETTINGS, read once at startup and said out loud when they
+// were not usable (R31). A number the owner typed that the node quietly
+// ignored would be worse than no setting at all — so a bad value boots
+// on the default and SAYS so, rather than refusing to start over a cache
+// size.
+(function () {
+  const settings = require('./nodeSettings').load(ROOT_DIR);
+  settings.problems.forEach(function (why) { console.warn('relay-state/node.json: ' + why); });
+}());
+
 // ── THE ROUTES A CONTACT ROW STILL HOLDS, MOVED ONCE (cycle R1) ──────
 //
 //   Andy: "the hints are removed from the users contacts."
