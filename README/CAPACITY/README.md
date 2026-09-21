@@ -14,13 +14,30 @@ a second box gets a voice.
 ## Contributing a platform
 
 ```
-node spirit/test/measureCapacity.js --save
+node spirit/test/measurePlatform.js
 ```
 
-It writes `README/CAPACITY/<platform>/capacity.json` and `capacity.md` —
-beside the document they are for. The directory is named from
-`os.release()`, so **rename it to the distribution if that is more
-honest**: `ubuntu-24.05` says more than `linux-6.6`.
+**One command for the whole story.** It runs the harness, then the
+capacity measurement, and writes four files into
+`README/CAPACITY/<platform>/`:
+
+| | |
+|---|---|
+| `platform.md` | the page a person reads — both halves, one date, one commit |
+| `harness.json` | the counts, machine-readable |
+| `harness.txt` | **the whole harness output**, because a red suite on a new box is the most useful thing here |
+| `capacity.json` / `capacity.md` | what the box holds, and how it was measured |
+
+*(`measureCapacity.js --save` does the capacity half alone, if that is all
+you want.)*
+
+**They are run in sequence on purpose.** Taken an hour apart, a green
+harness and a cost figure can describe two different trees while looking
+like one report.
+
+The directory is named from `os.release()`, so **rename it to the
+distribution if that is more honest**: `ubuntu-24.05` says more than
+`linux-6.6`, and add `-wsl2` if that is what it is.
 
 **Commit both files.** The JSON is what a comparison is built from; the
 markdown is what a person reads.

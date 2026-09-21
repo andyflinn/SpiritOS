@@ -311,10 +311,10 @@ before it runs out of room to write people down.
 tool rather than typed. Each carries its own `capacity.md` to read and a
 `capacity.json` to compare against.
 
-| platform | measured | tree | node | bare node | relay at rest | per stream, process | a reachable peer |
-|---|---|---|---|---|---|---|---|
-| **[`ubuntu-24.04-wsl2`](CAPACITY/ubuntu-24.04-wsl2/capacity.md)** | 2026-09-21 | `4e94e2d` | v24.21.0 | 42 MB | 63 MB | **40 KB** | — *(pre-fix run)* |
-| **[`windows-10.0`](CAPACITY/windows-10.0/capacity.md)** | 2026-09-21 | `4e94e2d` | v24.20.0 | 49 MB | 59 MB | **61 KB** | 577 B |
+| platform | measured | tree | node | harness | per stream, process | a reachable peer |
+|---|---|---|---|---|---|---|
+| **[`ubuntu-24.04-wsl2`](CAPACITY/ubuntu-24.04-wsl2/capacity.md)** | 2026-09-21 | `4e94e2d` | v24.21.0 | — *(not run)* | **40 KB** | — *(pre-fix)* |
+| **[`windows-10.0`](CAPACITY/windows-10.0/platform.md)** | 2026-09-21 | `f06d7e9` | v24.20.0 | **2665 green, 0 red** | **57 KB** | 577 B |
 
 **There is no kernel column here, and that is the finding.** See *What the
 second platform caught*, below: on Windows it swings 2.3× between runs, on
@@ -333,11 +333,24 @@ says which machine and which tree.
 > the differences."*
 
 ```
-node spirit/test/measureCapacity.js --save
+node spirit/test/measurePlatform.js
 ```
 
-writes a new row's worth. **Rename the directory to the distribution if
-that is more honest** — `ubuntu-24.05` says more than `linux-6.6`.
+**One command, both halves.** It runs the harness, then the capacity
+measurement, and writes them into `README/CAPACITY/<platform>/` under one
+date and one commit — so a green run and a cost figure cannot end up
+describing two different trees while looking like one report.
+
+*(`measureCapacity.js --save` still does the capacity half alone, if that
+is all you want.)*
+
+**Rename the directory to the distribution if that is more honest** —
+`ubuntu-24.05` says more than `linux-6.6`, and add `-wsl2` if that is what
+it is.
+
+**A red suite on a new platform is the most valuable thing this produces**,
+which is why the whole harness output is kept in `harness.txt` rather than
+just its count.
 
 ### What may be set side by side, and what may not
 

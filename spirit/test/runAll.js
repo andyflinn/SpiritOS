@@ -55,6 +55,10 @@ const NOT_A_SUITE = [
   // (README/CAPACITY.md). The same split labPopulate has, for the same
   // reason. Run it when the platform or the code moves.
   'measureCapacity.js',
+  // The orchestrator for the two above — runs the harness and the capacity
+  // tool in sequence so one box contributes its whole story under one date
+  // and one commit. A harness that ran itself would be a loop.
+  'measurePlatform.js',
   // Fails on purpose: it is the worked example of what a failing check
   // looks like, and it would be the one permanent red in every run.
   'testTemplate.js',
