@@ -97,33 +97,40 @@ test.subHeading('The table grants, and may only ever grant less');
   }
 }
 
-test.subHeading('Too little time earns an answer now, not a note certain to expire');
+test.subHeading('A target this box can reach is simply asked');
 
 {
+  //   Andy: "the actual target may as well just answer the request. since
+  //   a packet has to travel all the way back, it may as well carry good
+  //   information. it is the request-originator who has to mark the
+  //   incoming reply as too-late."
+  //
+  // The reply travels either way, so a refusal costs what an answer costs
+  // and carries less. Refusing only pays when it saves a trip that has
+  // not been made — which is the FORWARD decision, checked further down,
+  // and not this one.
   const R = router.createRouter({ ttlMs: 5000 });
   let delivered = false;
   const thin = R.open('d', 'me', 'you', function () { delivered = true; return true; },
-    null, { ttlMs: 10 });
+    null, { ttlMs: 200 });
 
-  if (thin.ok === false && thin.status === 503 && thin.tooLittleTime === true) {
-    test.check('a budget below the floor is refused, and says which kind of no it is');
+  if (thin.ok === true && delivered) {
+    test.check('a 200 ms budget is delivered, not refused — the member may well answer inside it');
   } else {
-    test.fail('thin budget: ' + JSON.stringify(thin));
-  }
-  if (!delivered) {
-    test.check('and nothing was forwarded — the refusal came before the work');
-  } else {
-    test.fail('a doomed request was delivered anyway');
+    test.fail('a short budget was refused on the target’s behalf: ' + JSON.stringify(thin));
   }
 
-  // ZERO IS A DECLARATION, NOT AN ABSENCE. A chain that has run out says
-  // so; reading it as "no opinion" would restart it at the ceiling at
-  // every hop, which is the opposite of diminishing.
-  const spent = R.open('e', 'me', 'you', function () { return true; }, null, { ttlMs: 0 });
-  if (spent.ok === false && spent.tooLittleTime === true) {
-    test.check('and an exhausted budget of zero is refused rather than renewed');
+  // NO TIME AT ALL IS NOT A SHORT DEADLINE, IT IS AN EXPIRED ONE. And
+  // zero is a declaration rather than an absence: reading it as "no
+  // opinion" would hand it the ceiling and restart the chain at every
+  // hop, which is the opposite of diminishing.
+  let ran = false;
+  const spent = R.open('e', 'me', 'you', function () { ran = true; return true; },
+    null, { ttlMs: 0 });
+  if (spent.ok === false && spent.tooLittleTime === true && !ran) {
+    test.check('while an exhausted budget of zero is refused, and nothing is delivered');
   } else {
-    test.fail('zero was read as absent: ' + JSON.stringify(spent));
+    test.fail('zero was read as absent: ' + JSON.stringify(spent) + ' ran=' + ran);
   }
 }
 
@@ -303,13 +310,13 @@ async function overTheWire() {
   const text = JSON.stringify({ v: 1, body: { search: { q: 'nobody-here' } } });
   const sig = auth.sign(alice.privateKey, auth.postMessage(alice.publicKey, relayKey, text));
   const res = await hub.relayRequest(base, 'POST', '/api/relay/post', {
-    from: alice.publicKey, to: relayKey, text: text, sig: sig, budgetMs: 5,
+    from: alice.publicKey, to: relayKey, text: text, sig: sig, budgetMs: 0,
   });
   let body = {};
   try { body = JSON.parse(res.text); } catch (e) { body = {}; }
 
   if (res.status === 503) {
-    test.check('a 5 ms budget is refused over the wire');
+    test.check('an exhausted budget of 0 is refused over the wire');
   } else {
     test.fail('thin budget on the wire: ' + res.status + ' ' + res.text);
   }

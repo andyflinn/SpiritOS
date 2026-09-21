@@ -298,6 +298,16 @@ function createPeerPost(opts) {
     if (answer.busy) return true;
     if (answer.stillOpen) return true;
     if (answer.status === 0) return true;
+    // NOT ENOUGH TIME IS A FACT ABOUT THE REQUEST, NOT ABOUT THE WORLD,
+    // and it arrives as a 503 like the two retryable ones. Waiting
+    // changes a busy target and may change an absent one; it does not
+    // change a budget, because the budget is declared by this node on
+    // every attempt and is the same number each time. Retrying it is a
+    // loop that cannot succeed — it would spend a member's only slot,
+    // repeatedly, on an answer already known.
+    //
+    // So it belongs with 400 and 413: refused for what the request IS.
+    if (answer.tooLittleTime) return false;
     if (answer.status === 503) return true;
     if (answer.status === 409) return true;   // already in flight: a duplicate, so wait
     return false;
@@ -365,6 +375,10 @@ function createPeerPost(opts) {
           // peer is fine and somebody else is asking (0016).
           busy: !!(body && body.busy),
           retryAfterMs: (body && typeof body.retryAfterMs === 'number') ? body.retryAfterMs : 0,
+          // Carried for the same reason `busy` is: a refusal nobody can
+          // tell apart is a refusal that cannot be acted on. This one
+          // means stop, where the others mean wait.
+          tooLittleTime: !!(body && body.tooLittleTime),
         });
       })
       .catch(function (e) {

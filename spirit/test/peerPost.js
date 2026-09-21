@@ -617,6 +617,96 @@ async function run() {
   await aCardIsAnsweredToAnybody();
   await whatCrossedIsWrittenDown();
 
+  // ── A REFUSAL RETRYING CANNOT FIX ───────────────────────────────────
+//
+//   Andy: "if a request relayer (who is required to shorten the budget)
+//   shortens the budget by defined formula and it reaches below a
+//   threshold, it returns an error without consulting relayers down the
+//   chain, or the target of the request — is this correct?"
+//
+// It is, and asking it precisely found a bug one hop further on. "Not
+// enough time to try" arrives as a 503, like "peer not reachable" and
+// like "target is busy" — and those two ARE worth retrying, because
+// waiting changes a busy target and may change an absent one.
+//
+// A budget is not like that. This node declares the same number on every
+// attempt, so a retry is identical to the attempt that just failed: a
+// loop that cannot succeed, spending a member's only slot on an answer
+// already known. It belongs with 400 and 413 — refused for what the
+// request IS.
+async function tooLittleTimeIsNotWorthRepeating() {
+  test.subHeading('A budget refusal stops; a busy one waits');
+
+  const relay = fakeRelay();
+  const home = tmpHome('budget-retry');
+  const id = auth.generateIdentity('me');
+  auth.saveIdentity(home, id);
+
+  let attempts = 0;
+  const P = peerPost.createPeerPost({
+    rootDir: home,
+    request: function (url, method, pathname, body) {
+      attempts += 1;
+      return Promise.resolve({
+        status: 503,
+        text: JSON.stringify({ error: 'not enough time to try', tooLittleTime: true }),
+      });
+    },
+  });
+
+  const target = auth.generateIdentity('them');
+  // PATIENCE OF SECONDS, so anything retryable would be retried several
+  // times before this returns. One attempt is the whole assertion.
+  const said = await P.post('http://relay', target.publicKey, '{"ping":1}',
+    null, { patienceMs: 3000 });
+
+  if (attempts === 1) {
+    test.check('a "not enough time" refusal is attempted once and not repeated');
+  } else {
+    test.fail('it was attempted ' + attempts + ' times — retrying cannot change a budget');
+  }
+  if (said && said.ok === false && said.tooLittleTime === true) {
+    test.check('and the caller is told which refusal it was, not a bare 503');
+  } else {
+    test.fail('what the caller got: ' + JSON.stringify(said));
+  }
+
+  // THE CONTRAST, so this is a distinction and not a blanket rule: a busy
+  // refusal IS retried, because waiting changes it.
+  //
+  // HELD AWAKE BY HAND, because the scheduler's retry timer is `unref`ed
+  // on purpose — a node must not be kept running by its own backoff. In
+  // a server the loop is alive anyway; in a suite with nothing else
+  // pending, node exits mid-wait and the run ends with no report at all.
+  // That is the timer behaving correctly and the test having to say so.
+  const awake = setInterval(function () {}, 20);
+  let busyTries = 0;
+  const Q = peerPost.createPeerPost({
+    rootDir: home,
+    request: function () {
+      busyTries += 1;
+      return Promise.resolve({
+        status: 503,
+        text: JSON.stringify({ error: 'target is busy', busy: true, retryAfterMs: 20 }),
+      });
+    },
+  });
+  await Q.post('http://relay', target.publicKey, '{"ping":1}', null, { patienceMs: 300 });
+  await new Promise(function (r) { setTimeout(r, 400); });
+
+  clearInterval(awake);
+
+  if (busyTries > 1) {
+    test.check('while a "busy" refusal is tried again — ' + busyTries + ' times before the patience ran out');
+  } else {
+    test.fail('a busy refusal was not retried (' + busyTries + ' attempt)');
+  }
+
+  relay.hangUp(target.publicKey);
+}
+
+  await tooLittleTimeIsNotWorthRepeating();
+
   test.reportSuccessFailureCount();
 }
 

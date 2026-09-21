@@ -1028,10 +1028,35 @@ relay holding longer (which costs the relay) or giving up early (which it
 could do anyway by refusing). It is a hop-count, not a claim, and nothing
 downstream trusts it for anything but its own bookkeeping.
 
-**A floor, so a hop refuses instead of pretending.** A budget too small to
-attempt anything with earns an immediate error, not a note certain to
-expire. That is `0006`'s *"deliver or refuse, refuse instantly"* applied
-to time rather than to presence.
+**A floor, but only where refusing SAVES something.**
+
+> **Andy, correcting this:** *"the actual target may as well just answer
+> the request. since a packet has to travel all the way back, it may as
+> well carry good information, it is the request-originator who has to
+> mark the incoming reply as too-late."*
+
+This first said a budget too small to attempt anything with earns an
+immediate error, wherever the target was. **That is wrong once the packet
+has arrived.** The reply travels back either way, so a refusal costs
+exactly what an answer costs and carries less — and a member asked over a
+socket already open may answer in single-digit milliseconds. Refusing on
+their behalf is pessimism, not protection.
+
+**Refusing pays only when it saves a trip that has not been made.** So
+the floor lives at the decision to **forward**: a hop that cannot leave
+the far side enough time to complete a network round trip refuses before
+anything crosses (`relay.js`, `carryToPartner`), and that saves the whole
+hop. A delivery this box can make itself is simply made.
+
+**What survives in the table is the degenerate case:** no time at all is
+not a short deadline, it is an expired one. A positive budget, however
+small, is delivered.
+
+**And lateness is the originator's to judge**, because only the
+originator knows what it is still waiting for. A reply arriving after its
+asker stopped waiting is not an error at any hop in between; it is
+information that arrived late, and the node that asked is the only party
+that can say so.
 
 ### Five seconds at most, and the carried number may only ask for less
 

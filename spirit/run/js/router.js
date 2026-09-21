@@ -127,11 +127,28 @@ function capsFrom(given) {
 // state for somebody who has gone.
 var DEFAULT_TTL_MS = 5000;
 
-// A budget too small to attempt anything with earns an immediate refusal
-// rather than a note certain to expire — 0006's "deliver or refuse,
-// refuse instantly", applied to time. The worst available outcome is a
-// hop that accepts a budget it cannot meet, spends all of it, and then
-// reports the failure it could have reported in the first millisecond.
+// ENOUGH TIME TO BE WORTH A NETWORK HOP, and that is all this now means.
+//
+//   Andy: "the actual target may as well just answer the request. since a
+//   packet has to travel all the way back, it may as well carry good
+//   information. it is the request-originator who has to mark the
+//   incoming reply as too-late."
+//
+// CORRECTED 2026-09-21. This first refused any request whose granted time
+// was below it, wherever the target was — and that is wrong for a target
+// on this relay's own roll. The reply travels back either way, so a
+// refusal costs exactly what an answer costs and carries less; a member
+// asked over a socket already open may well answer in single-digit
+// milliseconds, and refusing on their behalf is pessimism, not
+// protection.
+//
+// Refusing only pays when it SAVES something, and the only thing it can
+// save is a trip that has not been made yet. So the floor lives at the
+// decision to FORWARD (relay.js, carryToPartner), and a delivery this box
+// can make itself is simply made.
+//
+// What survives here is the degenerate case: no time at all is not a
+// short deadline, it is an expired one.
 var MIN_USEFUL_MS = 250;
 
 function createRouter(opts) {
@@ -309,9 +326,14 @@ function createRouter(opts) {
     // whole of "informational": the number travels, and no hop is bound
     // by what an outer hop wished for.
     var live = wantTtl === null ? ttlMs : Math.min(wantTtl, ttlMs);
-    if (live < MIN_USEFUL_MS) {
+    // NOTHING LEFT IS NOT A SHORT DEADLINE, IT IS AN EXPIRED ONE. A
+    // positive budget, however small, is delivered: the target may answer
+    // inside it, and if it does not, the note costs exactly that long.
+    // Only the originator knows when a reply became too late, because only
+    // the originator knows what it is still waiting for.
+    if (live <= 0) {
       return {
-        ok: false, status: 503, error: 'not enough time to try',
+        ok: false, status: 503, error: 'no time left',
         tooLittleTime: true, wouldHave: live,
       };
     }
