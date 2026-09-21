@@ -14,6 +14,7 @@
 //   node spirit/test/measureCapacity.js            print the tables
 //   node spirit/test/measureCapacity.js --row       one line, for the history table
 //   node spirit/test/measureCapacity.js --save      write README/CAPACITY/<platform>/
+//   node spirit/test/measureCapacity.js --save --as ubuntu-24.04-wsl2
 //
 // ── A SECOND PLATFORM IS THE POINT, NOT A NICETY ─────────────────
 //
@@ -339,6 +340,11 @@ async function plantedRelay(memberCount) {
 
 async function main() {
   const rowOnly = process.argv.slice(2).includes('--row');
+  function argAfter(flag) {
+    const a = process.argv.slice(2);
+    const i = a.indexOf(flag);
+    return (i !== -1 && a[i + 1] && a[i + 1].charAt(0) !== '-') ? a[i + 1] : '';
+  }
   const save = process.argv.slice(2).includes('--save');
   const commit = (function () {
     try { return String(execSync('git rev-parse --short HEAD', { cwd: REPO, encoding: 'utf8' })).trim(); }
@@ -501,8 +507,15 @@ async function main() {
     // Named for the OS rather than the runner, because that is what the
     // numbers are about. `os.version()` carries the distribution on Linux
     // and the build on Windows.
-    const slug = (process.platform === 'win32' ? 'windows' : 'linux') + '-' +
-      String(os.release()).replace(/[^0-9.]/g, '').split('.').slice(0, 2).join('.');
+    // ── --as NAMES THE DIRECTORY, BECAUSE os.release() CANNOT ───────
+    //
+    // The automatic name is the kernel: `linux-6.18`. What a reader needs
+    // is the distribution and whether it is WSL — `ubuntu-24.04-wsl2` —
+    // and renaming by hand after every run is a step that will eventually
+    // be skipped, leaving a second directory for one machine.
+    const named = argAfter('--as');
+    const slug = named || ((process.platform === 'win32' ? 'windows' : 'linux') + '-' +
+      String(os.release()).replace(/[^0-9.]/g, '').split('.').slice(0, 2).join('.'));
     const dir = path.join(REPO, 'README', 'CAPACITY', slug);
     fs.mkdirSync(dir, { recursive: true });
     const facts = {

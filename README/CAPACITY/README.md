@@ -35,9 +35,16 @@ you want.)*
 harness and a cost figure can describe two different trees while looking
 like one report.
 
-The directory is named from `os.release()`, so **rename it to the
-distribution if that is more honest**: `ubuntu-24.05` says more than
-`linux-6.6`, and add `-wsl2` if that is what it is.
+**Name the directory yourself** — the automatic name is the kernel
+(`linux-6.18`), and what a reader needs is the distribution and whether it
+is WSL:
+
+```
+node spirit/test/measurePlatform.js --as ubuntu-24.04-wsl2
+```
+
+Renaming by hand after a run works too, and is a step that eventually gets
+skipped — leaving one machine with two directories and one of them stale.
 
 **Commit both files.** The JSON is what a comparison is built from; the
 markdown is what a person reads.

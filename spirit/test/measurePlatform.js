@@ -14,6 +14,7 @@
 // nobody has run on before.
 //
 //   node spirit/test/measurePlatform.js
+//   node spirit/test/measurePlatform.js --as ubuntu-24.04-wsl2
 //
 // Runs the harness, then the capacity measurement, and writes both into
 // README/CAPACITY/<platform>/ under ONE date and ONE commit.
@@ -48,9 +49,21 @@ const REPO = path.join(__dirname, '..', '..');
 // rather than shared through a module for two lines — and asserted
 // below, so if they ever drift this fails loudly instead of writing a
 // report into a directory nobody reads.
+//
+// `--as ubuntu-24.04-wsl2` when the kernel version is not what a reader
+// needs. Passed straight through to the capacity tool so both halves land
+// in one directory — the alternative was renaming by hand after every run,
+// which is a step that eventually gets skipped and leaves one machine with
+// two directories.
+function namedAs() {
+  const a = process.argv.slice(2);
+  const i = a.indexOf('--as');
+  return (i !== -1 && a[i + 1] && a[i + 1].charAt(0) !== '-') ? a[i + 1] : '';
+}
+
 function platformSlug() {
-  return (process.platform === 'win32' ? 'windows' : 'linux') + '-' +
-    String(os.release()).replace(/[^0-9.]/g, '').split('.').slice(0, 2).join('.');
+  return namedAs() || ((process.platform === 'win32' ? 'windows' : 'linux') + '-' +
+    String(os.release()).replace(/[^0-9.]/g, '').split('.').slice(0, 2).join('.'));
 }
 
 function gitCommit() {
@@ -106,7 +119,8 @@ function main() {
 
   console.log('');
   console.log('2/2  capacity');
-  const capRun = run('measureCapacity.js', ['--save']);
+  const capRun = run('measureCapacity.js',
+    namedAs() ? ['--save', '--as', namedAs()] : ['--save']);
   if (capRun.code !== 0) {
     console.log('     the capacity tool failed:');
     console.log(capRun.out.split(/\r?\n/).slice(-8).join('\n'));
