@@ -104,10 +104,30 @@ function open(rootDir) {
       url      TEXT NOT NULL,
       ownerKey TEXT NOT NULL DEFAULT '',
       status   TEXT NOT NULL,
-      since    TEXT NOT NULL DEFAULT ''
+      since    TEXT NOT NULL DEFAULT '',
+      last     TEXT NOT NULL DEFAULT ''
     );
     CREATE INDEX IF NOT EXISTS partners_owner ON partners (ownerKey);
   `);
+
+  // ── `last` ON A RELAY THAT ALREADY HAS A partners TABLE (cycle R12) ──
+  //
+  // `CREATE TABLE IF NOT EXISTS` does nothing to a table that exists, so a
+  // relay that ran before this column was added would never get it — and
+  // would fail on the first write rather than the first read, which is the
+  // worse end to find out.
+  //
+  // ADD COLUMN is the one schema change SQLite does cheaply and without
+  // rewriting the table. Guarded by asking what is there rather than by
+  // catching the error: an exception swallowed here would hide the next
+  // migration too.
+  try {
+    const cols = db.prepare('PRAGMA table_info(partners)').all()
+      .map(function (c) { return c.name; });
+    if (cols.indexOf('last') === -1) {
+      db.exec("ALTER TABLE partners ADD COLUMN last TEXT NOT NULL DEFAULT ''");
+    }
+  } catch (e) { /* a brand-new database already has it, from the CREATE above */ }
 
   // ── A ROW DOES NOT KNOW WHO OWNS THE RELAY (2026-09-19) ──────────────
   //
@@ -156,10 +176,16 @@ function build(rootDir, db, key) {
     partnerAll: db.prepare('SELECT * FROM partners ORDER BY since'),
     partnerGet: db.prepare('SELECT * FROM partners WHERE relayKey = ?'),
     partnerByOwner: db.prepare('SELECT * FROM partners WHERE ownerKey = ?'),
-    partnerPut: db.prepare(`INSERT INTO partners (relayKey, url, ownerKey, status, since)
-      VALUES (?, ?, ?, ?, ?)
+    partnerPut: db.prepare(`INSERT INTO partners (relayKey, url, ownerKey, status, since, last)
+      VALUES (?, ?, ?, ?, ?, ?)
       ON CONFLICT(relayKey) DO UPDATE SET url = excluded.url, ownerKey = excluded.ownerKey,
-        status = excluded.status, since = excluded.since`),
+        status = excluded.status, since = excluded.since, last = excluded.last`),
+    // WHEN A PARTNERSHIP LAST WORKED, written on its own (cycle R12).
+    // Separate from `put` because the two are different events with
+    // different authors: `put` is somebody deciding a partnership exists,
+    // this is the wire saying it still does. Touching one must not rewrite
+    // the other's fields.
+    partnerTouch: db.prepare('UPDATE partners SET last = ? WHERE relayKey = ?'),
     partnerDel: db.prepare('DELETE FROM partners WHERE relayKey = ?'),
     partnerDelOwner: db.prepare('DELETE FROM partners WHERE ownerKey = ?'),
   };
@@ -180,7 +206,13 @@ function build(rootDir, db, key) {
 
   function partner(row) {
     if (!row) return null;
-    return { relayKey: row.relayKey, url: row.url, ownerKey: row.ownerKey, status: row.status, since: row.since };
+    return {
+      relayKey: row.relayKey, url: row.url, ownerKey: row.ownerKey,
+      status: row.status, since: row.since,
+      // '' rather than null for a partnership that has never answered, so
+      // a caller ordering by it sorts rather than throws.
+      last: row.last || '',
+    };
   }
 
   const store = {
@@ -242,8 +274,28 @@ function build(rootDir, db, key) {
       byOwner: function (ownerKey) { return q.partnerByOwner.all(String(ownerKey || '')).map(partner); },
       put: function (row) {
         q.partnerPut.run(String(row.relayKey), String(row.url || ''), String(row.ownerKey || ''),
-          String(row.status || 'partnered'), String(row.since || ''));
+          String(row.status || 'partnered'), String(row.since || ''), String(row.last || ''));
         return partner(q.partnerGet.get(String(row.relayKey)));
+      },
+      // ── THE PARTNERSHIP ANSWERED (cycle R12) ──────────────────
+      //
+      // `since` says when a partnership began and nothing said when it
+      // last worked — so the only liveness a relay had was the partner
+      // STREAM, which R13 removes. This is what replaces it: the column
+      // that orders a search, so the partners most likely to answer are
+      // asked first.
+      //
+      // IT DOES NOT EVICT. Andy: the roll is the reach. A partner silent
+      // for a month is still the only route to its members, and a row
+      // dropped for quietness is connectivity thrown away to tidy a
+      // column.
+      //
+      // False when the row is not there, rather than creating one: a
+      // partnership is made deliberately, never by having answered.
+      touch: function (relayKey, atIso) {
+        return q.partnerTouch.run(
+          String(atIso || new Date().toISOString()), String(relayKey || '')
+        ).changes > 0;
       },
       remove: function (relayKey) { return q.partnerDel.run(String(relayKey || '')).changes > 0; },
       removeOwner: function (ownerKey) { return q.partnerDelOwner.run(String(ownerKey || '')).changes; },

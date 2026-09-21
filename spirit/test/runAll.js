@@ -25,6 +25,7 @@
 // nothing needed changing to allow it.
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 
@@ -146,10 +147,55 @@ function discover() {
   return found;
 }
 
+// ── THE SWEEP THE CHILDREN CANNOT DO THEMSELVES (cycle R17) ──────────
+//
+// 160,116 directories were found in %TEMP% on 2026-09-20, and the disc
+// contention made three consecutive runs progressively redder while each
+// suite passed alone — a bug that lies about where it lives.
+//
+// Most of it is closed inside each suite (testSupport). What is left is the
+// worlds that start a real relay: SQLite is still open when the child's own
+// exit handler runs, and a locked file on Windows defeats `rmSync` —
+// `force` suppresses "not found", not "in use". Those paths are appended
+// here and removed below, once every child is gone.
+//
+// A FILE RATHER THAN A PIPE, because the writer is a dying process with one
+// synchronous moment left, and `appendFileSync` is what reliably works in
+// it.
+const TMP_LOG = path.join(os.tmpdir(), 'spirit-tmp-log-' + process.pid + '.txt');
+
+function sweepReportedHomes() {
+  let listed = [];
+  try { listed = fs.readFileSync(TMP_LOG, 'utf8').split(/\r?\n/); }
+  catch (e) { return 0; }
+  let gone = 0;
+  listed.forEach(function (line) {
+    const dir = line.trim();
+    // ONLY WHAT A CHILD ACTUALLY REPORTED, and only under the temp
+    // directory. This never walks %TEMP% looking for things that match a
+    // pattern: a harness that deletes by shape eventually deletes somebody
+    // else's work.
+    if (!dir || dir.indexOf(os.tmpdir()) !== 0) return;
+    try {
+      fs.rmSync(dir, { recursive: true, force: true });
+      if (!fs.existsSync(dir)) gone += 1;
+    } catch (e) { /* still held, or already gone; neither is worth a word */ }
+  });
+  try { fs.rmSync(TMP_LOG, { force: true }); } catch (e) { /* as above */ }
+  return gone;
+}
+
 function runOne(file) {
   return new Promise(function (done) {
     const started = Date.now();
-    const child = spawn(process.execPath, [path.join(DIR, file)], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(process.execPath, [path.join(DIR, file)], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      // WHERE A CHILD REPORTS WHAT IT COULD NOT REMOVE (cycle R17). See
+      // testSupport's reclaimTempHomes: a suite that started a real relay
+      // still holds the SQLite handle at its own exit, so the removal has
+      // to happen out here, after it is dead.
+      env: Object.assign({}, process.env, { SPIRIT_TMP_LOG: TMP_LOG }),
+    });
     let out = '';
     child.stdout.on('data', function (d) { out += d; });
     child.stderr.on('data', function (d) { out += d; });
@@ -283,6 +329,11 @@ async function main() {
     skipped.forEach(function (f) { console.log('    ' + f); });
     console.log('    (add test.startTest(...), or list it in NOT_A_SUITE with a reason)');
   }
+
+    // Every child is dead by here, so every handle that blocked a removal has
+  // gone with it. Silent when there was nothing to do.
+  const reclaimed = sweepReportedHomes();
+  if (reclaimed) console.log('\n--- reclaimed ' + reclaimed + ' temp homes a suite could not remove itself');
 
   console.log('\n' + files.length + ' suites, ' + green + ' green, ' + red + ' red, ' +
     unhappy.length + ' unhappy' +

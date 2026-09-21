@@ -1060,6 +1060,11 @@ common.refuseListenError(server, port, 'js/server.js');
     // The node filters what the relay broadcasts (cycle 3): only its own
     // contacts are kept on its presence picture.
     knows: function (key) { return !!contactBook.byPublicKey(ROOT_DIR, key); },
+    // AND WHAT THE FILTER ABOVE USED TO DESTROY (cycle R27). The module's
+    // cache, not this hub instance's — one node, one answer to "where have
+    // I lately been told somebody lives", the same reason onRoute below
+    // takes it from the module.
+    noteSeen: function (key, what) { require('./hub').seenPeers.note(key, what); },
     rootDir: ROOT_DIR,
     jobs: jobs,
     router: peerRouter,

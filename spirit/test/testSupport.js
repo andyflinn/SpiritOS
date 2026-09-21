@@ -10,6 +10,74 @@ const ICON = spirit.core.const.ICON;
 let PAD_STARS = ''; for (let i = 0; i < INDENT_LENGTH; i++) { PAD_STARS += '*'; }
 let PAD_SPACES = ''; for (let i = 0; i < INDENT_LENGTH; i++) { PAD_SPACES += ' '; }
 
+// ── SUITES CLEAN UP THE HOMES THEY CREATE (cycle R17) ────────────────
+//
+// **160,116 leaked directories were found in %TEMP% on 2026-09-20.** The
+// disc contention made three consecutive harness runs progressively redder
+// while every suite passed alone — which reads exactly like a regression
+// and was not one. That is the expensive kind of bug: it lies about where
+// it lives.
+//
+// THIRTY-EIGHT SUITES CALL `fs.mkdtempSync` AND NONE REMOVES ANYTHING.
+// Fixing each one is thirty-eight edits and a rule the thirty-ninth suite
+// has to remember, and this tree has an opinion about that shape: "a rule
+// that cannot be broken needs nobody to police it" (0012, on the one-hop
+// rule). So the creation itself is wrapped, once, here — every suite
+// already requires this file, and a suite written next month is covered
+// without being told.
+//
+// WHAT IS REMOVED IS ONLY WHAT THIS PROCESS MADE. Not a sweep of %TEMP% by
+// pattern, which would be this harness deleting whatever else happened to
+// match: the list is the actual return values of the actual calls.
+//
+// AND A SUITE CANNOT ALWAYS FINISH THE JOB ITSELF, which is the part that
+// had to be measured rather than assumed. The first version of this hook
+// worked — proved on a probe — and a full run still left about a hundred
+// and twenty behind. Every survivor held the same file:
+//
+//     spirit-world-lab-XXXXXX/relay-state/relay.db
+//
+// A world that starts a real relay opens SQLite, and at `process.on('exit')`
+// that handle is still open: on Windows a locked file defeats `rmSync`, and
+// `force` does not help — it suppresses "not found", not "in use".
+//
+// SO THE PARENT FINISHES WHAT THE CHILD COULD NOT. Each suite appends the
+// homes it made to the file named by SPIRIT_TMP_LOG, and `runAll.js` sweeps
+// that list when every child is dead and every handle with them. Exact, not
+// a pattern sweep of %TEMP%: the list is the real return values of the real
+// calls, so this harness never deletes something it did not create.
+//
+// A suite run on its own has no SPIRIT_TMP_LOG and simply does what it can,
+// which is nearly all of it. A suite killed outright leaves its home
+// behind, and nothing at exit can change that.
+(function reclaimTempHomes() {
+  const fs = require('fs');
+  const os = require('os');
+  const made = [];
+  const real = fs.mkdtempSync;
+  fs.mkdtempSync = function (prefix, options) {
+    const dir = real.call(fs, prefix, options);
+    try {
+      if (typeof dir === 'string' && dir.indexOf(os.tmpdir()) === 0) made.push(dir);
+    } catch (e) { /* tracking is the bonus, not the job */ }
+    return dir;
+  };
+  process.on('exit', function () {
+    const left = [];
+    for (let i = 0; i < made.length; i += 1) {
+      try {
+        fs.rmSync(made[i], { recursive: true, force: true });
+        if (fs.existsSync(made[i])) left.push(made[i]);
+      } catch (e) { left.push(made[i]); }
+    }
+    // Handed up, never retried here: the handle that blocked it belongs to
+    // this process and will not be released until after this line.
+    if (!left.length || !process.env.SPIRIT_TMP_LOG) return;
+    try { fs.appendFileSync(process.env.SPIRIT_TMP_LOG, left.join('\n') + '\n'); }
+    catch (e) { /* the sweep is a courtesy; failing it must not fail a suite */ }
+  });
+}());
+
 const test = {
     ICON: ICON,
     STARS: STARS,

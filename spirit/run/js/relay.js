@@ -847,6 +847,26 @@ function createRelay(rootDir, deps) {
   // Nothing here trusts a URL, a label, or anything the caller says about
   // itself: the signature verifies against the pinned key or the caller is
   // a stranger.
+  // ── THE PARTNERSHIP ANSWERED (cycle R12) ─────────────────────
+  //
+  // `since` said when a partnership began and nothing said when it last
+  // worked, so the only liveness this relay had was the partner STREAM —
+  // which R13 takes away. This is the column that replaces it.
+  //
+  // ANY ANSWER COUNTS, and that is deliberate. A partner replying "no
+  // matches" has demonstrably worked; a partner refusing has worked. What
+  // this records is that the partnership carried a packet there and back,
+  // never that the answer was liked. Only a promise that rejects — no
+  // answer at all — leaves the column where it was.
+  //
+  // Never an eviction: the roll is the reach (Andy). A partner silent for
+  // a month is still the only route to its members.
+  function partnerAnswered(relayKey) {
+    if (!relayKey) return;
+    try { store.partners.touch(relayKey); }
+    catch (e) { /* a column that will not take a stamp is not worth a dropped reply */ }
+  }
+
   function partnerByRelayKey(key) {
     var k = String(key == null ? '' : key).trim();
     if (!k) return null;
@@ -887,6 +907,9 @@ function createRelay(rootDir, deps) {
           url: p.url,
           relayKey: p.relayKey,
           since: p.since,
+          // When this partnership last carried a packet (cycle R12). ''
+          // for one that never has.
+          last: p.last || '',
         };
       });
   }
@@ -2124,6 +2147,7 @@ function createRelay(rootDir, deps) {
       var p = list[0];
       askPartner(p.url, p.relayKey, wrapper, onward)
         .then(function (answer) {
+          partnerAnswered(p.relayKey);
           var said = null;
           try { said = JSON.parse((answer && answer.text) || ''); }
           catch (e) { said = null; }
@@ -2753,6 +2777,7 @@ function createRelay(rootDir, deps) {
         var text = JSON.stringify({ v: 1, body: { search: { q: pendingSearch.q } } });
         return askPartner(p.url, p.relayKey, text)
           .then(function (answer) {
+            partnerAnswered(p.relayKey);
             var said = null;
             try { said = JSON.parse((answer && answer.text) || ''); }
             catch (e) { said = null; }

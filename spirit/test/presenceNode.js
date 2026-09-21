@@ -912,6 +912,115 @@ async function run() {
     test.fail('detail: ' + JSON.stringify(detail));
   }
 
+  test.subHeading('A broadcast about a stranger is learned from, then filtered (R27)');
+
+  {
+    // THE EIGHTH DISCARD, and by volume the largest. A relay saying a key
+    // is present is that relay saying WHERE ITS OWN MEMBER LIVES — the
+    // highest-authority route statement there is, arriving free, for every
+    // member of every relay this node is on. `knows` dropped it whole, and
+    // the url with it, for anybody not already in the book.
+    //
+    // The filter is right about the PICTURE. It was never about what this
+    // node may LEARN, and the two are separate now.
+    const home27 = tmpHome();
+    auth.saveIdentity(home27, auth.generateIdentity('learner'));
+    fs.mkdirSync(path.join(home27, 'app', 'natter'), { recursive: true });
+    fs.writeFileSync(
+      path.join(home27, 'app', 'natter', 'relays.json'),
+      JSON.stringify([{ label: 'r', url: 'http://relay-r' }])
+    );
+
+    const noted = [];
+    const streams = {};
+    const L = presenceNode.createPresence({
+      rootDir: home27,
+      jobs: fakeJobs(),
+      router: fakeRouter(),
+      // NOBODY IS A CONTACT. The strictest version of the filter, so a row
+      // reaching the shadow cannot be an accident of a lenient `knows`.
+      knows: function () { return false; },
+      noteSeen: function (key, what) { noted.push({ key: key, what: what }); },
+      connectImpl: function (o) { streams[o.url.split('/api/')[0]] = o; return { close: function () {} }; },
+    });
+    seatEveryRelay(home27, 'learner');
+    await L.start(keyDoor);
+
+    function rSays(data) {
+      const o = streams['http://relay-r'];
+      if (!o) { test.fail('no stream opened to relay-r'); return; }
+      o.onEvent({ event: 'presence', data: data });
+    }
+
+    rSays({ key: 'STRANGER-1', present: true });
+
+    const got = noted.filter(function (n) { return n.key === 'STRANGER-1'; })[0];
+    if (got && got.what && got.what.url === 'http://relay-r') {
+      test.check('a stranger arriving on a relay teaches this node where they live');
+    } else {
+      test.fail('nothing was learned: ' + JSON.stringify(noted));
+    }
+
+    // AND THE PICTURE IS UNCHANGED, which is the half that must not move.
+    // Learning is not displaying: a search result is not a contact, and a
+    // relay must not be able to fill somebody's screen with strangers.
+    if (!('STRANGER-1' in L.table())) {
+      test.check('and the presence picture still shows only contacts — learning is not displaying');
+    } else {
+      test.fail('a stranger reached the picture: ' + JSON.stringify(L.table()));
+    }
+
+    // ABSENT STILL TEACHES. "Not connected" is a statement ABOUT A MEMBER,
+    // so the relay is still saying this person has a row there — which is
+    // the route, whatever the dot would be.
+    rSays({ key: 'STRANGER-2', present: false });
+    if (noted.some(function (n) { return n.key === 'STRANGER-2'; })) {
+      test.check('a stranger who is merely away teaches the same route');
+    } else {
+      test.fail('absent taught nothing: ' + JSON.stringify(noted));
+    }
+
+    // GONE TEACHES NOTHING. The relay has said it no longer holds a row
+    // for this key, so it is in no position to say where they live — and
+    // writing it down would record an address on the word of the one party
+    // that just disclaimed it.
+    const before = noted.length;
+    rSays({ key: 'STRANGER-3', present: false, gone: true });
+    if (noted.length === before) {
+      test.check('while a relay that has FORGOTTEN somebody teaches nothing about them');
+    } else {
+      test.fail('gone was written down: ' + JSON.stringify(noted[noted.length - 1]));
+    }
+
+    // AND A CACHE THAT THROWS DOES NOT STOP THE STREAM. The picture is the
+    // job; the shadow is the bonus.
+    const angryStreams = {};
+    const angryHome = tmpHome();
+    auth.saveIdentity(angryHome, auth.generateIdentity('angry'));
+    fs.mkdirSync(path.join(angryHome, 'app', 'natter'), { recursive: true });
+    fs.writeFileSync(
+      path.join(angryHome, 'app', 'natter', 'relays.json'),
+      JSON.stringify([{ label: 'r', url: 'http://relay-angry' }])
+    );
+    const A = presenceNode.createPresence({
+      rootDir: angryHome,
+      jobs: fakeJobs(),
+      router: fakeRouter(),
+      noteSeen: function () { throw new Error('the store is on fire'); },
+      connectImpl: function (o) { angryStreams[o.url.split('/api/')[0]] = o; return { close: function () {} }; },
+    });
+    seatEveryRelay(angryHome, 'angry');
+    await A.start(keyDoor);
+    angryStreams['http://relay-angry'].onEvent({
+      event: 'presence', data: { key: 'ANYONE', present: true },
+    });
+    if (A.table().ANYONE === true) {
+      test.check('and a shadow that refuses a row does not cost this node its presence picture');
+    } else {
+      test.fail('a throwing cache broke the picture: ' + JSON.stringify(A.table()));
+    }
+  }
+
   const published = JSON.stringify(jobs.job.data);
   if (published.indexOf('http://a') === -1 && published.indexOf('http://b') === -1) {
     test.check('and none of it reaches the shell — the payload is keys and verdicts');

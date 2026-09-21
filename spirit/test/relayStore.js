@@ -95,6 +95,90 @@ if (p && p.status === 'partnered' && s.partners.byOwner('K3').length === 1) {
   test.fail('partner: ' + JSON.stringify(p));
 }
 
+test.subHeading('When a partnership last worked (R12)');
+
+{
+  // `since` says when a partnership BEGAN. Nothing said when it last
+  // carried anything, so the only liveness a relay had was the partner
+  // STREAM — which R13 removes. This is the column that replaces it, and
+  // what orders a search fan-out once it does.
+  if (p && p.last === '') {
+    test.check('a partnership that has never answered reads as empty, not null');
+  } else {
+    test.fail('a fresh partner row: ' + JSON.stringify(p));
+  }
+
+  const when = '2026-09-21T12:00:00.000Z';
+  s.partners.touch('R1', when);
+  const touched = s.partners.get('R1');
+
+  // AND IT TOUCHES NOTHING ELSE. `put` is somebody deciding a partnership
+  // exists; this is the wire saying it still does. Two events, two
+  // authors, and a stamp that rewrote `since` or `url` would let the
+  // second quietly undo the first.
+  if (touched.last === when && touched.since === 'x' && touched.url === 'http://r1') {
+    test.check('a partnership that answered is stamped, and nothing else on the row moves');
+  } else {
+    test.fail('after touch: ' + JSON.stringify(touched));
+  }
+
+  // NEVER CREATES A ROW. A partnership is made deliberately; having
+  // answered is not how one comes into being — and a relay that could be
+  // written into its own partner roll by anything that replied would have
+  // no partner roll at all.
+  if (s.partners.touch('NO-SUCH-RELAY') === false && s.partners.get('NO-SUCH-RELAY') === null) {
+    test.check('while a stamp for a relay that is not a partner creates nothing');
+  } else {
+    test.fail('touch created a row: ' + JSON.stringify(s.partners.get('NO-SUCH-RELAY')));
+  }
+}
+
+test.subHeading('A relay that ran before the column existed (R12)');
+
+{
+  // `CREATE TABLE IF NOT EXISTS` does nothing to a table that already
+  // exists, so a live relay would never get the new column — and would
+  // fail on the first WRITE rather than the first read, which is the worse
+  // end to find out.
+  //
+  // Built by hand rather than by mocking: the old schema, exactly as it
+  // shipped, then opened by today's code.
+  const oldHome = home();
+  fs.mkdirSync(path.join(oldHome, 'relay-state'), { recursive: true });
+  const { DatabaseSync } = require('node:sqlite');
+  const raw = new DatabaseSync(path.join(oldHome, 'relay-state', 'relay.db'));
+  raw.exec(`
+    CREATE TABLE partners (
+      relayKey TEXT PRIMARY KEY,
+      url      TEXT NOT NULL,
+      ownerKey TEXT NOT NULL DEFAULT '',
+      status   TEXT NOT NULL,
+      since    TEXT NOT NULL DEFAULT ''
+    );
+  `);
+  raw.exec("INSERT INTO partners (relayKey, url, ownerKey, status, since) " +
+    "VALUES ('OLD-R', 'http://old', 'OLD-K', 'partnered', 'then')");
+  raw.close();
+
+  const migrated = relayStore.open(oldHome);
+  const row = migrated.partners.get('OLD-R');
+  if (row && row.since === 'then' && row.last === '') {
+    test.check('an existing partner roll gains the column without losing a row');
+  } else {
+    test.fail('after opening an old database: ' + JSON.stringify(row));
+  }
+
+  // And the write that would have failed now works, which is the half a
+  // read-only check would have missed.
+  migrated.partners.touch('OLD-R', '2026-09-21T13:00:00.000Z');
+  if (migrated.partners.get('OLD-R').last === '2026-09-21T13:00:00.000Z') {
+    test.check('and the write that had nowhere to go now has somewhere');
+  } else {
+    test.fail('touch after migration: ' + JSON.stringify(migrated.partners.get('OLD-R')));
+  }
+  migrated.close();
+}
+
 test.subHeading('All or nothing');
 
 try {

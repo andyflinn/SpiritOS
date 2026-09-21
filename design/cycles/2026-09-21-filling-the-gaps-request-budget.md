@@ -56,7 +56,7 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Eighteen open, one deferred, twelve done. Ten of the eighteen are
+**Fifteen open, one deferred, fifteen done. Ten of the eighteen are
 blocked by nothing**, and nine are decided — waiting to be built, not to be
 thought about. **Three rows now need a review, and nothing else does.**
 
@@ -73,12 +73,12 @@ thought about. **Three rows now need a review, and nothing else does.**
 | **R9** | hints carry `{ key, url }` | OPEN — **wire, team review** | **yes** | |
 | **R10** | `cancel`, exposed to a member | OPEN — no longer a prerequisite | **yes** | |
 | **R11** | the URL rule / SSRF — provenance, and only while a relay row is unkeyed | OPEN — **Andy's to decide**; scoped to the unkeyed window, three candidates | partial | |
-| **R12** | `last` on a partner row | OPEN | **yes** | |
+| <sub>R12</sub> | <sub>*`last` on a partner row*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R13** | no streams between partners | OPEN — **wire, team review** | **yes** | R12 |
 | **R14** | open partnering — a row on send or receive, mutual activates | OPEN — **decided**; keyed outranks unkeyed on eviction, numbers open | **yes** | R9, R11, R12 |
 | **R15** | the per-stream measurement | OPEN — **four conclusions rest on it**; method written | **yes** | |
 | **R16** | the queue survives a restart — and is a table, not a dump | OPEN | **yes** | R26's store |
-| **R17** | suites clean up the homes they create | OPEN — leak untouched | **yes** | |
+| <sub>R17</sub> | <sub>*suites clean up the homes they create*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R18</sub> | <sub>*durations on a clock that cannot jump*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R19** | the load fixture, and *seeing* it stay lively | OPEN — half covered | **yes** | |
 | <sub>R20</sub> | <sub>*the Governor's remaining job*</sub> | <sub>*deferred*</sub> | <sub>—</sub> | <sub>*revisit when the list is clear*</sub> |
@@ -88,7 +88,7 @@ thought about. **Three rows now need a review, and nothing else does.**
 | <sub>R24</sub> | <sub>*a search answer is kept until somebody acts on it*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R25</sub> | <sub>*a route is learned at every opportunity; policy does not gate it*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R26** | the shadow needs a store, and it is a persist shape | OPEN — **decided `0018`**, no review needed | **yes** | |
-| **R27** | a presence event about a stranger is discarded, and it is a route | OPEN | **yes** | |
+| <sub>R27</sub> | <sub>*a presence event about a stranger is discarded, and it is a route*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R28** | a label change reaches everybody, at every level | OPEN — **decided `0019`**; hop 1 already built, hops 2-3 **wire, team review** | **yes** | |
 | **R29** | the shadow row carries rank and provenance | OPEN | **yes** | R1, R26 |
 | **R30** | presence is last-known, and the shadow dates it | OPEN — **decided `0019`** | **yes** | R29 |
@@ -222,6 +222,20 @@ survived contact with a running system.
 Checked rather than asserted: four principles and fourteen decisions,
 against the eight cycles above. **Two real items, one hazard, and the rest
 clear.**
+
+> **Andy, 2026-09-21:** *"revisit the R31 against 0015 issue before cycle
+> 4. And R16 before cycle 5. The [citation hazard] should be at the end of
+> cycle 8."*
+>
+> **Three gates, and they are part of the cycle they gate.** Each finding
+> below is reasoned but not ruled, so it is re-opened at the moment it
+> would bite rather than treated as settled by having been written down.
+>
+> | finding | revisited |
+> |---|---|
+> | R31 against `0015` | **before cycle 4** |
+> | R16 against A-CORRESPONDENT-NODE | **before cycle 5** |
+> | R-numbers cited without their cycle | **end of cycle 8** |
 
 #### 1. R31 against 0015 — clear, and there is a precedent
 
@@ -882,7 +896,30 @@ about when it last worked. That column **orders searches** (replacing
 `presentNow.isPresent`, which goes with the streams) and is what makes
 D3 possible. It does **not** evict: the roll is the reach.
 
-**Status:** OPEN — not built. Depends on nothing; needed before R13 removes the liveness the streams supplied.
+**Built 2026-09-21.** The column, its migration, and the one thing that
+writes it.
+
+**`touch` is separate from `put`**, because they are different events with
+different authors: `put` is somebody deciding a partnership exists, `touch`
+is the wire saying it still does. A stamp that rewrote `since` or `url`
+would let the second quietly undo the first.
+
+**Any answer counts.** A partner replying *"no matches"* has worked; a
+partner refusing has worked. Only a promise that rejects — no answer at
+all — leaves the column where it was. **It never evicts:** the roll is the
+reach, and a partner silent for a month is still the only route to its
+members.
+
+**The migration was the part that could have shipped broken.**
+`CREATE TABLE IF NOT EXISTS` does nothing to a table that exists, so a live
+relay would have failed on the first WRITE rather than the first read.
+
+**Verify:** `spirit/test/relayStore.js` — the empty default, a stamp that
+moves nothing else, a stamp for a non-partner that creates nothing, and a
+database built with the OLD schema by hand that gains the column, keeps its
+rows and takes the write.
+
+**Status:** DONE
 
 ### R13 — no streams between partners
 
@@ -1146,7 +1183,28 @@ not one.
 (`17c6bc1`) but nothing stopped the leaking: a full run still leaves
 roughly two hundred.
 
-**Status:** OPEN — the once-off cleanup ran; the leak itself is untouched.
+**Built 2026-09-21, and measured rather than argued.**
+
+**Closed structurally, not by thirty-eight edits.** `fs.mkdtempSync` is
+wrapped once in `testSupport.js`, so a suite written next month is covered
+without being told — the tree's own preference (*"a rule that cannot be
+broken needs nobody to police it"*, 0012).
+
+**And the first version was not enough, which had to be found by
+measuring.** It worked on a probe and a full run still left ~120 behind.
+Every survivor held `relay-state/relay.db`: a world that starts a real
+relay has SQLite open when its own exit handler runs, and a locked file on
+Windows defeats `rmSync` — `force` suppresses *"not found"*, not *"in
+use"*. So each child now reports what it could not remove and `runAll.js`
+sweeps the list once every child is dead. **Exact, never a pattern sweep of
+`%TEMP%`:** the list is the real return values of the real calls.
+
+**Verify:** `spirit/test/runAll.js` is the verification and the fix at
+once — it prints what it reclaimed, and the measurement is the count in
+`%TEMP%`: **32,584 before, 0 after, and a full run now leaves 0** where it
+left +120.
+
+**Status:** DONE
 
 ### R18 — durations are measured on a clock that cannot jump
 
@@ -1553,7 +1611,18 @@ the filter returns before anything else gets a look.
 uses — `noteSeen` is called on every verified arrival **before** the door
 decides (2026-09-21). One line moved, no packet changed.
 
-**Status:** OPEN — not built. Node-side, in-file, depends on nothing.
+**Built 2026-09-21.** `presenceNode.js` — the shadow is fed before the
+filter, and the filter is unchanged. Absent teaches the same route as
+present (*"not connected"* is still a statement about a member); `gone`
+teaches nothing, because the relay has just disclaimed the row it would be
+speaking from. No `present` field yet — that is R30.
+
+**Verify:** `spirit/test/presenceNode.js` — the route is learned, the
+picture stays contacts-only, absent teaches the same as present, gone
+teaches nothing, and a shadow that throws does not cost the node its
+presence picture.
+
+**Status:** DONE
 
 ### R28 — the events that already fire reach one listener
 

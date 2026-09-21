@@ -42,6 +42,11 @@ function createPresence(opts) {
   // picture grows with its book, not with the relay's roll. Absent, it
   // keeps everything (the in-process suites).
   const knows = typeof opts.knows === 'function' ? opts.knows : null;
+  // WHERE A DISCARDED BROADCAST GOES INSTEAD (cycle R27). The filter above
+  // decides what this node DISPLAYS; it was also deciding what this node
+  // LEARNS, which is a different question and was never meant to be the
+  // same one. Injected, like every other outward reach in this file.
+  const noteSeen = typeof opts.noteSeen === 'function' ? opts.noteSeen : null;
   // Given rather than made here, because a node has ONE of these and the
   // hub needs the same instance to post from — an outbound request and
   // the answer that matches it must meet in the same table.
@@ -176,6 +181,38 @@ function createPresence(opts) {
   function onChange(url, body) {
     if (!body || !body.key) return;
     if (!byRelay[url]) byRelay[url] = Object.create(null);
+
+    // ── FED BEFORE THE FILTER, WHICH IS THE WHOLE OF R27 ──────────────
+    //
+    //   Andy: "the node MUST be greedy about route acquisition" — "any
+    //   peer a node could possibly connect to, the route to it can be
+    //   known to the node."
+    //
+    // A relay saying a key is present is that relay saying, about its own
+    // member, WHERE THAT MEMBER LIVES. It is the highest-authority route
+    // statement in the system, it costs nobody anything, and it arrives
+    // for every member of every relay this node is on — the only route
+    // source that needs no one to act.
+    //
+    // The filter below dropped it whole, and the url with it, for anybody
+    // not already in the book. That filter is right about the PICTURE and
+    // was never about what this node may learn, so the two are separated
+    // here: learn first, then decide what to draw.
+    //
+    // `gone` teaches nothing and is not noted: the relay has said it no
+    // longer holds a row for this key, so it is in no position to say
+    // where they live. A row already in the shadow is left alone — it may
+    // hold a route from another relay, and it ages out on its own terms
+    // (cycle R4).
+    //
+    // NO `present` FIELD YET. The shadow gains one in R30; this writes
+    // the route only, which is what `note` can hold today.
+    if (noteSeen && !body.gone) {
+      try {
+        noteSeen(body.key, { at: relayKeys.pinned(rootDir, url) || '', url: url });
+      } catch (e) { /* a cache that will not take a row is not a reason to stop listening */ }
+    }
+
     // Not somebody this node knows, and not already on its picture: not
     // this node's business (the relay broadcasts, the node filters).
     if (knows && !knows(body.key) && byRelay[url][body.key] === undefined) return;
