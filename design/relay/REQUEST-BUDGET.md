@@ -2510,6 +2510,25 @@ that case:
 
 > **Andy:** *"that's the one i saw first."*
 
+> **WRONG, AND CORRECTED 2026-09-21.** Everything below is reasoned from
+> `relay.js:2728` alone and never checked what the CALLER does with that
+> answer. `hub.handleSearch` resolves it: a row carrying `via` makes the
+> node ask the answering relay `{ partners: true }`, which is answered
+> with `{ url, relayKey, since }` (`relay.js:2500`), and `row.relay` is
+> rewritten to the partner's URL. The Add button carries it,
+> `peer.acquire` takes it, `contacts.js:451` keeps it. **A foreign contact
+> acquired by search does hold the address of the relay it lives on.**
+>
+> So *"nothing in the tree can dial a relay it has not met"* is false, and
+> R8 in the gap cycle is DONE rather than blocking. What remains is R9:
+> the node HOLDS the URL and still cannot tell its relay where an unknown
+> relay is, because hints carry keys.
+>
+> Kept rather than deleted because the reasoning below is sound about the
+> one function it read, and wrong about the system — which is the third
+> time this cycle that a claim was made from a call site without reading
+> its caller.
+
 **Checked, and it is structural.** `relay.js:2728`, building a search
 answer from a partner:
 

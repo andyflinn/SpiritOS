@@ -281,20 +281,55 @@ guarantee real rather than argued.
 not a patch. Grok reviews in a batch once Andy-initiated design is green,
 so this is Andy's to route, not a gate on Stage A.
 
-### R8 — `viaUrl` in a search answer, the gap under everything
+### R8 — `viaUrl` in a search answer: already built
 
-`relay.js:2728` builds a partner's answer as `{ via: p.relayKey, rows }`
-while `p.url` sits unused on the same object. So a foreign peer arrives
-with **a key and no address**, and acquisition writes nothing to `relays`.
+> **Andy:** *"i want to address those who are 'input' to the cached routes
+> in contacts. meaning, we complete the acquisition of cached routes
+> before we complain that they are lacking."*
 
-**Nothing in the tree can dial a relay it has not met.** Route pairs, the
-on-demand handshake, provisional rows and a self-assembling roll all
-assume somebody can, and nobody can.
+**Checking that instinct found this requirement was never needed. It is
+already done, and the claim it rested on was false.**
 
-It discloses nothing — a relay's URL is how anybody reaches it, and
-`/api/relay/who` is already public and unsigned.
+This said a foreign peer arrives from a search with a relay **key** and no
+address, so acquisition could write nothing usable — and concluded
+*"nothing in the tree can dial a relay it has not met"*, which was then
+carried into `REQUEST-BUDGET.md` and used to block R9, R11 and R14.
 
-**Status:** OPEN — not built. Wire, therefore a team review.
+`hub.handleSearch` already resolves it:
+
+```js
+var needsRoute = Object.keys(found).some(function (k) { return found[k].via; });
+…  sendPacket(router, url, relayKey, systemPayload({ partners: true }))
+…  if (p && p.relayKey && p.url) byKey[p.relayKey] = p.url;
+…  if (at) { row.relay = at; row.relayLabel = labels[at] || ''; }
+```
+
+A row that came from a partner carries `via`, the partner's key. The node
+then asks the **answering relay** who it partners with — a member-legal
+verb the relay answers with `{ url, relayKey, since }` (`relay.js:2500`) —
+and rewrites `row.relay` to the partner's URL. The Add button carries that
+URL, `peer.acquire` takes it, and `contacts.js:451` appends it to the
+contact's `relays`.
+
+**So a foreign contact acquired by search does hold the address of the
+relay it lives on**, and has since the row-carries-its-own-label work.
+
+**What the error cost, since it is the second of its kind this cycle.** It
+was reasoned from one function — `relay.js:2728` builds a partner's search
+answer with `via: p.relayKey` and no URL, which is true — without reading
+what the **caller** does with it. The same shape as reading a port list
+out of a comment, and as `contactsAskEveryone` being credited to a caller
+nobody checked.
+
+**What remains is R9, and it is now the real gap**: the node HOLDS the
+URL and still cannot tell its relay where an unknown relay is, because
+`HINTS_PER_POST` sends keys. R11's URL rule therefore becomes live with
+R9 rather than with this.
+
+**Verify:** `spirit/test/contacts.js` — a row marked `viaPartner` carries
+the partner's URL, and acquiring it keeps that URL as a route.
+
+**Status:** DONE
 
 ### R9 — hints carry `{ key, url }`
 
