@@ -58,10 +58,10 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Seven open, six deferred, one cancelled, twenty-eight done.** Four need
+**Six open, seven deferred, one cancelled, twenty-eight done.** Four need
 the team review (R9, R13, R28, and R36's phase B), one is Andy's to decide
-(R11), and R14 waits on those. **One is buildable now: R40**, found by the
-due diligence of 2026-09-21 — decided in `0020` and never given a row.
+(R11), and R14 waits on those. **Nothing open can be built without a review
+or a ruling.**
 
 | | what | status | solution? | blocked by |
 |---|---|---|---|---|
@@ -93,7 +93,7 @@ due diligence of 2026-09-21 — decided in `0020` and never given a row.
 | <sub>R37</sub> | <sub>*every presence mark shows its age*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R38</sub> | <sub>*ignore is a mark, not a forgetting — the list is a mark on the memory*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R39</sub> | <sub>*search fans out to memory too, beside every bound relay*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R40** | patience is an owner setting, so a message is retried at all | OPEN — **decided `0020`**, not built; node-side, no wire | **yes** | |
+| <sub>R40</sub> | <sub>*patience is an owner setting, so a message is retried at all*</sub> | <sub>*deferred — possible, outside the core's scope*</sub> | <sub>**yes**</sub> | |
 | <sub>R41</sub> | <sub>*what R35–R39 left on screen*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -217,7 +217,7 @@ sittings that can each be clamped, finished and pushed green:
 
 **Where the eight stand, late 2026-09-21:** cycles 1–6 are done. Three rows
 were built outside them (R35, R38, R39), and one decided row was found with
-no cycle at all (R40, node-side, fits before the review). Left: **the
+no cycle at all (R40) and ruled out of this cycle's scope. Left: **the
 review, then 7 and 8** — and gate 3 below, at the end of 8.
 
 ### What that number is worth
@@ -2718,8 +2718,16 @@ boot, never written by the node, with a default and a floor. It carries
 R16's open nuance with it: the traffic log says "sent" at enqueue, which is
 harmless at one attempt and misleading once a message can wait days.
 
-**Status:** OPEN — decided, not built. Node-side, no wire, blocked by
-nothing.
+> **Andy, 2026-09-22:** *"Patience as an owner setting is possible, and not
+> in the scope of making the core system work fast, reliably, and to spec."*
+
+**So it is stated, not scheduled** — the same standing as the Info
+controls for the owner's bounds (R39): the shape is known and nothing in
+the core waits on it. Until it is built, a real message gets one attempt,
+and that is the core working to spec, not a defect.
+
+**Status:** DEFERRED: possible, and outside the scope of making the core
+system work fast, reliably and to spec (Andy, 2026-09-22).
 
 ### R41 — what R35–R39 left on screen
 
@@ -2746,7 +2754,7 @@ D  (partners)         needs C, and needs D1 ruled before it ships
 waits on C and on the URL rule.
 
 **Late 2026-09-21: A and B are done.** What is left is C, the review, and
-D behind it — plus R40, which is A-shaped and was simply never listed.
+D behind it.
 
 **Nothing is deliberately left out any more.** Persistence was prose in
 the first draft of this plan and is now R16, because a gap described in a
