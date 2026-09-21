@@ -124,10 +124,14 @@ function run() {
   {
     const R = router.createRouter({ max: 3, maxPerRequester: 99 });
     let sent = 0;
+    // DISTINCT TARGETS, because one member may be asked one thing at a
+    // time (0016) and this check is about the TABLE's ceiling, not the
+    // target's. Aimed at one peer it would be refused per-target long
+    // before the table filled, and would pass while proving nothing.
     for (let n = 0; n < 3; n += 1) {
-      R.open('f' + n, 'req', 'tgt', function () { sent += 1; return true; });
+      R.open('f' + n, 'req', 'tgt' + n, function () { sent += 1; return true; });
     }
-    const full = R.open('f9', 'req', 'tgt', function () { sent += 1; return true; });
+    const full = R.open('f9', 'req', 'tgt9', function () { sent += 1; return true; });
     if (full.ok === false && full.status === 503 && sent === 3) {
       test.check('a full table refuses at once, and nothing is forwarded into the dark');
     } else {
@@ -139,10 +143,12 @@ function run() {
   // else's behalf — the fairness B1 established for device slots.
   {
     const R = router.createRouter({ max: 100, maxPerRequester: 2 });
-    R.open('a1', 'greedy', 'tgt', function () { return true; });
-    R.open('a2', 'greedy', 'tgt', function () { return true; });
-    const third = R.open('a3', 'greedy', 'tgt', function () { return true; });
-    const other = R.open('b1', 'quiet', 'tgt', function () { return true; });
+    // One target each, for the same reason: this is about what ONE
+    // REQUESTER may hold, and a shared target would refuse first.
+    R.open('a1', 'greedy', 'tgtA', function () { return true; });
+    R.open('a2', 'greedy', 'tgtB', function () { return true; });
+    const third = R.open('a3', 'greedy', 'tgtC', function () { return true; });
+    const other = R.open('b1', 'quiet', 'tgtD', function () { return true; });
     if (third.ok === false && third.status === 429 && other.ok) {
       test.check("and one peer's flood does not spend another peer's room");
     } else {
@@ -281,19 +287,28 @@ function run() {
     }
   }
 
-  // DEFAULTS TO NO TIGHTER THAN THE TABLE, because 0016 sequences the
-  // ceiling of 1 last — after a node can queue. A node that cannot queue
-  // meets a refusal with nothing to do about it.
+  // THE DEFAULT IS ONE (0016, landed 2026-09-21). It was "no tighter than
+  // the table" while a node could not queue; the node can queue now
+  // (postQueue.js), so the cap that needs no cooperation from anybody is
+  // on by default.
+  //
+  //   Andy: "cap the requests for a specific target at one, respond with
+  //   (not available), if this causes the calling node to keep the
+  //   request queued, nothing is lost."
   {
     const R = router.createRouter({ max: 100, maxPerRequester: 99 });
-    let all = true;
-    for (let n = 0; n < 20; n += 1) {
-      if (!R.open('d' + n, 'asker' + n, 'popular', function () { return true; }).ok) all = false;
-    }
-    if (all && R.maxPerTarget === router.DEFAULT_PER_TARGET) {
-      test.check('unconfigured, the per-target cap refuses nobody — the number lands later, deliberately');
+    const first = R.open('d1', 'asker1', 'popular', function () { return true; });
+    const second = R.open('d2', 'asker2', 'popular', function () { return true; });
+
+    if (R.maxPerTarget === 1 && router.DEFAULT_PER_TARGET === 1) {
+      test.check('unconfigured, a member may be asked one thing at a time');
     } else {
-      test.fail('default per-target bit: maxPerTarget=' + R.maxPerTarget);
+      test.fail('default per-target is ' + R.maxPerTarget);
+    }
+    if (first.ok && second.ok === false && second.busy === true) {
+      test.check('so a second asker is told busy, by default and with no configuration at all');
+    } else {
+      test.fail('second asker: ' + JSON.stringify(second));
     }
   }
 

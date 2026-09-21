@@ -45,7 +45,7 @@ var DEFAULT_PER_REQUESTER = 16;
 // already conceded. The mechanism lands now; the number is one
 // deliberate commit later, and the suites set it to 1 to prove the
 // refusal works today.
-var DEFAULT_PER_TARGET = DEFAULT_MAX;
+var DEFAULT_PER_TARGET = 1;
 
 // ── WHO THE CEILING COUNTS AGAINST ───────────────────────────────────
 //

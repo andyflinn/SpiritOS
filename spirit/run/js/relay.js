@@ -422,16 +422,12 @@ function createRelay(rootDir, deps) {
   // disk. `open()` performs the delivery itself, so nothing here can
   // forward a request it could not match the reply to (ROUTER.md §4b).
   //
-  // `maxPerTarget` COMES FROM THE CONFIG FILE and from nowhere else,
-  // for the reason `settable` does (NODE-AND-RELAY:318): that file "is
-  // only ever written by a person with a shell", so tightening how many
-  // requests may be aimed at one member is the owner's act rather than
-  // something an agent can arrange. Absent, the router leaves it no
-  // tighter than the table — 0016 lands the ceiling of 1 after a node
-  // can queue, not before.
-  var routes = routerTable.createRouter({
-    maxPerTarget: (deps.config && deps.config.maxPerTarget) || undefined,
-  });
+  // ONE REQUEST MAY BE AIMED AT A MEMBER AT A TIME, and that number is
+  // router.js's, not this file's and not the owner's. It was briefly read
+  // from relay-state/config.json; a limit an owner can widen is not a
+  // limit (2026-09-21), and it bounds what a PARTNER may aim at a member,
+  // so it protects parties other than the owner.
+  var routes = routerTable.createRouter();
 
   // ── THE GOVERNOR (cycle 1) ───────────────────────────────────────────
   //

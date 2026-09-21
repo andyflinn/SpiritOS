@@ -113,6 +113,17 @@ if (first.ok && first.status === 202) {
   test.fail('the first post was refused: ' + JSON.stringify(first));
 }
 
+// AND IT IS ANSWERED, which this used to leave undone. Harmless while a
+// member could hold sixteen routes at once; fatal at one (0016, landed
+// 2026-09-21), because the open route to bob refused the very first post
+// of the flood below and the suite then reported the rate limit missing.
+// A conversation that is never answered is not the fixture this file
+// wants — every other post here answers, and so does this one now.
+if (first.ok) {
+  R.box.routeReply(R.people.bob.publicKey, first.hash, 'ok',
+    auth.sign(R.people.bob.privateKey, auth.receiptMessage(first.hash)));
+}
+
 // ── A FLOOD THAT IS NOT ALSO A PILE-UP ───────────────────────────────
 //
 // THE STOCK LIMIT FIRES FIRST IF YOU LET IT, and finding that out is what

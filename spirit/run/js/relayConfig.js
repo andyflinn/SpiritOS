@@ -50,17 +50,18 @@ function parse(text, boxMB) {
     return { ok: false, error: 'relay-state/config.json must be an object, e.g. { "ramLimitMB": 256 }' };
   }
   var mb = raw.ramLimitMB === undefined ? DEFAULT_RAM_LIMIT_MB : raw.ramLimitMB;
+  // `maxPerTarget` STOOD HERE and is gone (2026-09-21). It was put in this
+  // file on 2026-09-20 arguing that the file "is only ever written by a
+  // person with a shell" — the same argument Andy revoked hours later for
+  // `settable`. By the rule that replaced it, a LIMIT is the code's and a
+  // POLICY is the owner's, and this is a limit: it bounds what a partner
+  // may aim at a member, so it protects parties other than the owner. A
+  // limit an owner can widen is not a limit, it is a default.
+  //
+  // It is now a constant in router.js, at 1, which is where 0016 always
+  // said it would land once a node could queue.
   return check({
     ramLimitMB: mb,
-    // HOW MANY REQUESTS MAY BE AIMED AT ONE MEMBER AT ONCE (0016).
-    // Absent means the router leaves it no tighter than its own table —
-    // the ceiling of 1 lands after a node can queue, not before.
-    //
-    // In the config file and nowhere else, for the reason the whole file
-    // exists: it "is only ever written by a person with a shell"
-    // (NODE-AND-RELAY:318), so tightening what may be aimed at a member
-    // is the owner's act and there is deliberately no verb for it.
-    maxPerTarget: raw.maxPerTarget,
     source: 'file',
   }, boxMB);
 }
@@ -77,29 +78,12 @@ function check(config, boxMB) {
         ' MB). The configuration is bounded by the box; lower it.',
     };
   }
-  // REFUSED RATHER THAN ROUNDED. A per-target cap of 0 admits nobody and
-  // a fractional one is a typo; both would be a relay that quietly serves
-  // nothing, which is the failure this file exists to make impossible —
-  // "a ceiling larger than this machine refuses to start rather than
-  // being honoured".
-  var per = config.maxPerTarget;
-  if (per !== undefined
-      && (typeof per !== 'number' || !isFinite(per) || per < 1 || Math.floor(per) !== per)) {
-    return {
-      ok: false,
-      error: 'maxPerTarget must be a whole number of requests, 1 or more, got ' +
-        JSON.stringify(per),
-    };
-  }
-
   // THIS RETURN IS A WHITELIST, and that is worth knowing before adding a
   // field above without adding it here. `maxPerTarget` nearly shipped
   // without this line: the config file carried it, relay.js read
   // `config.maxPerTarget`, and this dropped it in between — so the cap
   // was configurable, plumbed, tested in memory, and inert on a real box.
-  var out = { ramLimitMB: mb, source: config.source };
-  if (per !== undefined) out.maxPerTarget = per;
-  return { ok: true, config: out };
+  return { ok: true, config: { ramLimitMB: mb, source: config.source } };
 }
 
 module.exports = {

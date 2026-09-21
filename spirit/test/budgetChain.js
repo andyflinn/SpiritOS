@@ -124,8 +124,12 @@ test.subHeading('A target this box can reach is simply asked');
   // zero is a declaration rather than an absence: reading it as "no
   // opinion" would hand it the ceiling and restart the chain at every
   // hop, which is the opposite of diminishing.
+  // A DIFFERENT TARGET, because 'you' is now occupied by the entry above
+  // and one member may be asked one thing at a time (0016). Aimed at the
+  // same peer this would be refused `busy` before the budget was looked
+  // at, and would pass for the wrong reason.
   let ran = false;
-  const spent = R.open('e', 'me', 'you', function () { ran = true; return true; },
+  const spent = R.open('e', 'me', 'somebody-else', function () { ran = true; return true; },
     null, { ttlMs: 0 });
   if (spent.ok === false && spent.tooLittleTime === true && !ran) {
     test.check('while an exhausted budget of zero is refused, and nothing is delivered');

@@ -58,7 +58,21 @@ function askPartner(fromHome) {
     if (!target) return Promise.resolve(null);
     const sig = auth.sign(me.privateKey, auth.postMessage(me.publicKey, relayKey, text));
     target.routePost(me.publicKey, relayKey, text, sig);
-    return new Promise(function () {});   // the answer is not under test here
+    // ANSWERS, RATHER THAN HANGING FOR EVER.
+    //
+    // This was `new Promise(function () {})` — "the answer is not under
+    // test here" — which left the forwarding route on A open until its
+    // ttl. Invisible while a member could be asked sixteen things at
+    // once; at one (0016) the next case in this file was refused `target
+    // is busy`, and the suite reported a ROUTING failure that was really
+    // a fixture holding its own slot.
+    //
+    // `null` is a shape this function already returns when it does not
+    // know the partner, and the relay handles it: relayErrorToAsker tells
+    // jazz the partner did not answer, and the route closes. What this
+    // file checks — which partner a hint selects, and that sonny received
+    // it — is untouched, because it is checked before the answer.
+    return Promise.resolve(null);
   };
 }
 
@@ -123,9 +137,49 @@ function post(box, from, toKey, bodyObj, hints, opts) {
 
 function requests(bag) { return bag.filter(function (m) { return m.event === 'request'; }).length; }
 
+// LET THE PREVIOUS FORWARD FINISH BEFORE ASKING THE SAME PEER AGAIN.
+//
+// A forward is handed to `askPartner`, which answers a PROMISE, while
+// `routePost` returns synchronously — so the route to sonny is still open
+// when the next case runs on the same tick. Harmless while a member could
+// be asked sixteen things at once; at one (0016) the second case is
+// refused `target is busy` and the suite reports a routing failure that
+// is really a fixture racing itself.
+//
+// A macrotask rather than a microtask, so the whole settle chain drains
+// and not just its first link.
+function settled() { return new Promise(function (r) { setTimeout(r, 0); }); }
+
+// SOMEBODY HAS TO ANSWER, or the far relay's slot for that member stays
+// taken and the next case is refused there instead of here.
+//
+// These cases forward jazz -> A -> B -> sonny, and sonny never replied:
+// the check was only ever that the request ARRIVED. At sixteen routes per
+// member nothing noticed; at one (0016) the second forward to sonny is
+// refused on B, and the failure reads as a routing bug on A.
+//
+// So sonny answers, which is what a member does. The hash is derived from
+// the bytes that arrived — never taken from the wire (0011) — exactly as
+// a real node derives it.
+const answered = new WeakMap();
+function answerPending(box, id, inbox) {
+  const from = answered.get(inbox) || 0;
+  for (let i = from; i < inbox.length; i += 1) {
+    const m = inbox[i];
+    if (!m || m.event !== 'request' || !m.data) continue;
+    const d = m.data;
+    const verified = auth.postSignatureFor(d.from, d.from, d.to, d.text, d.sig);
+    if (!verified) continue;
+    const hash = auth.requestHash(verified);
+    box.routeReply(id.publicKey, hash, 'ok',
+      auth.sign(id.privateKey, auth.receiptMessage(hash)));
+  }
+  answered.set(inbox, inbox.length);
+}
+
 test.startTest('Route hints — signed beside the packet, chosen by the relay');
 
-function run() {
+async function run() {
   // A holds jazz and kim. B and D both hold sonny. B is a LIVE partner of
   // A (it holds a stream on A); D is a partner of A that is not live. C is
   // nobody's partner.
@@ -148,6 +202,8 @@ function run() {
     test.fail('unsigned hints accepted: ' + JSON.stringify(unsigned));
   }
 
+  await settled();
+  answerPending(B.box, B.people.sonny, B.inboxes.sonny);
   const lifted = post(A.box, A.people.jazz, sonny, { describe: true }, [B.key],
     { signOver: 'a-signature-from-some-other-packet' });
   if (!lifted.ok && lifted.status === 403) {
@@ -156,6 +212,8 @@ function run() {
     test.fail('lifted hints accepted: ' + JSON.stringify(lifted));
   }
 
+  await settled();
+  answerPending(B.box, B.people.sonny, B.inboxes.sonny);
   const tooMany = post(A.box, A.people.jazz, sonny, { describe: true },
     [B.key, D.key, C.key, 'k4', 'k5'].slice(0, limits.HINTS_PER_POST + 1));
   if (!tooMany.ok && tooMany.status === 400) {
@@ -166,6 +224,8 @@ function run() {
 
   test.subHeading('No hinted relay is a partner of mine: "minting incomplete"');
 
+  await settled();
+  answerPending(B.box, B.people.sonny, B.inboxes.sonny);
   const notMine = post(A.box, A.people.jazz, sonny, { describe: true }, [C.key]);
   if (!notMine.ok && notMine.status === 409 && notMine.error === 'minting incomplete') {
     test.check('hint naming only C: 409 "minting incomplete", at once');
@@ -176,6 +236,8 @@ function run() {
   test.subHeading('Live partner before minted, and only one');
 
   carriedTo.length = 0;
+  await settled();
+  answerPending(B.box, B.people.sonny, B.inboxes.sonny);
   const both = post(A.box, A.people.jazz, sonny, { describe: true }, [D.key, B.key]);
   if (both.ok && carriedTo.length === 1 && carriedTo[0] === B.key) {
     test.check('hints [D, B]: carried to B alone — B is live, D is only minted');
@@ -189,6 +251,8 @@ function run() {
   }
 
   carriedTo.length = 0;
+  await settled();
+  answerPending(B.box, B.people.sonny, B.inboxes.sonny);
   const mintedOnly = post(A.box, A.people.jazz, sonny, { describe: 'again' }, [D.key]);
   if (mintedOnly.ok && carriedTo[0] === D.key) {
     test.check('hints [D] only: carried to D — a minted partner, when none is live');
@@ -220,6 +284,8 @@ function run() {
   }
 
   carriedTo.length = 0;
+  await settled();
+  answerPending(B.box, B.people.sonny, B.inboxes.sonny);
   const big = post(A.box, A.people.jazz, sonny, null, [B.key], { text: stuffed });
   if (!big.ok && big.status === 413 && carriedTo.length === 0) {
     test.check('the relay refuses it before carrying: 413 "' + big.error + '"');
@@ -276,7 +342,7 @@ function run() {
 // to its partner, so it can fail on the return exactly as a post can on
 // the way out. Covered at both places it can be caught: the far relay, and
 // the replying node at compose.
-function replyDirection(A, B) {
+async function replyDirection(A, B) {
   test.subHeading('A reply that would not survive the return tunnel');
 
   const plain = 'a'.repeat(16000);
@@ -295,6 +361,11 @@ function replyDirection(A, B) {
   B.box.streamOpen(guest.publicKey,
     auth.sign(guest.privateKey, auth.streamMessage(guest.publicKey)), sinkFor(toA));
 
+  // One member may be asked one thing at a time (0016), and the cases
+  // above have been asking sonny. Let the last of them close before this
+  // one asks again.
+  await settled();
+  answerPending(B.box, B.people.sonny, B.inboxes.sonny);
   const before = B.inboxes.sonny.length;
   const sent = post(A.box, A.people.jazz, B.people.sonny.publicKey, { ask: 'big' }, [B.key]);
   const req = B.inboxes.sonny.slice(before).filter(function (m) { return m.event === 'request'; })[0];

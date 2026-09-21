@@ -31,7 +31,8 @@
 // marker SURVIVES THE TRIP. Every byte crosses a loopback socket.
 //
 // What a green run proves:
-//   1. a relay honours `maxPerTarget` from relay-state/config.json
+//   1. a relay a person would actually run — no configuration at all —
+//      allows one request per member at a time
 //   2. one request reaches the target and a second, from somebody else,
 //      is refused 503
 //   3. the refusal is marked `busy` and carries `retryAfterMs` — so a
@@ -93,9 +94,6 @@ function plant(w, config) {
   fs.rmSync(path.join(runDir, 'relay-state'), { recursive: true, force: true });
   fs.cpSync(path.join(w.home, 'relay-state'), path.join(runDir, 'relay-state'),
     { recursive: true });
-  // THE CAP ARRIVES THE WAY AN OWNER WOULD SET IT: in the config file,
-  // which "is only ever written by a person with a shell"
-  // (NODE-AND-RELAY:318). There is deliberately no verb for it.
   if (config) {
     fs.writeFileSync(path.join(runDir, 'relay-state', 'config.json'), JSON.stringify(config));
   }
@@ -179,7 +177,11 @@ async function run() {
   test.subHeading('A relay that allows one request per member at a time');
 
   const W = buildRelay(['alice', 'carol', 'bob', 'dave']);
-  plant(W, { maxPerTarget: 1 });
+  // NO CONFIGURATION. The cap of 1 is a constant in router.js as of
+  // 2026-09-21 (R6/R7), so this suite no longer has to arrange the thing
+  // it is testing — which is the better state for it to be in: it now
+  // observes the relay a person would actually run.
+  plant(W, null);
   if (!(await startRelay(W, PORT))) {
     test.fail('the relay did not come up on ' + PORT +
       (String(W.why || '').trim()

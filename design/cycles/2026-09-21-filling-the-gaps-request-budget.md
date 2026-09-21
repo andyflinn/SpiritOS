@@ -192,7 +192,13 @@ because `targetBusy.js` spawns a real relay and has no other way to switch
 the cap on; when the constant lands at 1 that suite needs no
 configuration at all.
 
-**Status:** OPEN — not built. Blocked on R5 and R7: the config entry is the only way `spirit/test/targetBusy.js` can switch the cap on until the constant lands.
+**Verify:** `spirit/test/relayConfig.js` — the parser no longer carries
+it; and `spirit/test/targetBusy.js`, which now plants **no configuration
+at all** and observes the relay a person would actually run.
+
+**Status:** DONE — `maxPerTarget` is out of `relay-state/config.json` and
+is a constant in `router.js`. By the three-tier rule it is a *limit*, and
+a limit an owner can widen is not a limit.
 
 ### R7 — drop the ceiling to 1 and run the experiment
 
@@ -202,7 +208,25 @@ which `0016` already marks for repeal), `routeHints` (3, the partner path
 genuinely needing the queue), `router.js` (3, fixtures assuming an
 uncapped target). That is the evidence for what B1–B2 have to fix first.
 
-**Status:** OPEN — not built. Blocked on R5. The 2026-09-20 experiment recorded 10 red as the checklist.
+**Done 2026-09-21, and the 10 red became 11, all of them fixtures.** None
+was a product failure:
+
+| suite | what it was |
+|---|---|
+| `router.js` (3) | its own fixtures aiming several requests at one target to test the TABLE's ceiling and the PER-REQUESTER cap — distinct targets now, which is what they always meant |
+| `relayMeter.js` (4) | one post at `:109` was never answered while every other post in its flood was. Harmless at sixteen slots; at one it blocked the flood's first post, and the suite then reported *"routePost is unlimited"* — a true statement about a flood that never started |
+| `routeHints.js` (3) | `askPartner` returned `new Promise(function () {})` — *"the answer is not under test here"* — so the forwarding route stayed open for its whole ttl. The same line that had this suite wrongly credited as proof of the partner path (corrected in REQUEST-BUDGET on 2026-09-20). It answers now, and sonny answers on the far relay, which is what a member does |
+| `budgetChain.js` (1) | mine, two openings at one target |
+
+**The pattern is worth keeping:** every one of them was a fixture asking
+the relay for something a NODE would never ask, because a node queues
+(R3). They were testing below the layer that absorbs this in production.
+
+**Verify:** `spirit/test/router.js` — unconfigured, a member may be asked
+one thing at a time and a second asker is told `busy`; and
+`spirit/test/targetBusy.js` over a real socket, with no configuration.
+
+**Status:** DONE
 
 **Stage B ends with:** the ceiling at 1, green, and the sequential
 guarantee real rather than argued.
