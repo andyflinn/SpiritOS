@@ -13,6 +13,21 @@
 //
 //   node spirit/test/measureCapacity.js            print the tables
 //   node spirit/test/measureCapacity.js --row       one line, for the history table
+//   node spirit/test/measureCapacity.js --save      write README/CAPACITY/<platform>/
+//
+// ── A SECOND PLATFORM IS THE POINT, NOT A NICETY ─────────────────
+//
+//   Andy: "our buddy on WSL should repeat all our measurements for his
+//   tagged os, and be permitted to contribute it to
+//   ./measurements/ubuntu-24.05/ so that our CAPACITY.md can illustrate
+//   the differences." — "or under README/CAPACITY/"
+//
+// Every figure here is the machine it was taken on. The relays that
+// matter run on Linux and the numbers in README/CAPACITY.md were taken on
+// Windows — so the document is honest about one box and silent about the
+// one people will deploy. `--save` writes a machine-readable drop beside
+// that document, named for the platform, so two boxes can be set next to
+// each other instead of one being assumed to speak for both.
 //
 // ── WHY THIS IS A TOOL AND NOT A SUITE ───────────────────────────────
 //
@@ -80,6 +95,37 @@ function mb(bytes) { return Math.round(bytes / 1024 / 1024); }
 // Resident pages, asked of the operating system rather than of the
 // process itself — a process cannot see the kernel's share of its own
 // sockets.
+// ── WHAT THE KERNEL SPENDS, WHICH IS NOT IN A PROCESS'S RSS ───────
+//
+//   Andy: "for every possible live member, we must leave space for the
+//   OS's socket usage etc, which i estimate will be proportional to
+//   max-live-streams."
+//
+// He was right and RSS could not see it: a socket's buffers belong to the
+// kernel, not to the process holding the handle. Windows keeps them in
+// non-paged pool; Linux accounts TCP memory in pages at
+// /proc/net/sockstat. Neither is a per-process figure, so both are read
+// as a delta across the same steps and both carry the machine's own noise.
+//
+// THE TWO ARE NOT THE SAME MEASUREMENT and must not be averaged. Windows'
+// counter is every driver on the box; Linux's is the TCP stack alone,
+// which is narrower and cleaner. That is one of the things a second
+// platform is FOR.
+function kernelSocketBytes() {
+  try {
+    if (process.platform === 'win32') {
+      return parseInt(String(execSync(
+        'powershell -NoProfile -Command "(Get-CimInstance Win32_PerfRawData_PerfOS_Memory).PoolNonpagedBytes"',
+        { encoding: 'utf8' })).trim(), 10);
+    }
+    // "TCP: inuse N orphan N tw N alloc N mem N" — `mem` is in pages.
+    const line = String(fs.readFileSync('/proc/net/sockstat', 'utf8'))
+      .split(/\r?\n/).find(function (l) { return l.indexOf('TCP:') === 0; }) || '';
+    const m = /mem (\d+)/.exec(line);
+    return m ? Number(m[1]) * 4096 : 0;
+  } catch (e) { return 0; }
+}
+
 function rssOf(pid) {
   try {
     if (process.platform === 'win32') {
@@ -269,6 +315,7 @@ async function plantedRelay(memberCount) {
 
 async function main() {
   const rowOnly = process.argv.slice(2).includes('--row');
+  const save = process.argv.slice(2).includes('--save');
   const commit = (function () {
     try { return String(execSync('git rev-parse --short HEAD', { cwd: REPO, encoding: 'utf8' })).trim(); }
     catch (e) { return 'unknown'; }
@@ -320,7 +367,11 @@ async function main() {
       if (opened % 50 === 0) await sleep(120);
     }
     await sleep(1500);   // sockets accepted
-    points.push({ n: opened, rss: await settledRss(kid.pid) });
+    points.push({
+      n: opened,
+      rss: await settledRss(kid.pid),
+      kernel: kernelSocketBytes(),
+    });
   }
 
   const first = points[0];
@@ -371,8 +422,23 @@ async function main() {
   // The two outer segments, so the spread is visible rather than hidden
   // behind one confident figure.
   const early = Math.round((points[2].rss - points[1].rss) / (points[2].n - points[1].n));
-  say('**~' + Math.round(perStream / 1024) + ' KB per held stream**, from the slope of the last segment' +
-    ' (the 100→200 segment reads ' + Math.round(early / 1024) + ' KB, which is the spread to expect).');
+  say('**~' + Math.round(perStream / 1024) + ' KB per held stream in the process**, from the slope of' +
+    ' the last segment (the 100→200 segment reads ' + Math.round(early / 1024) +
+    ' KB, which is the spread to expect).');
+  if (b.kernel && first.kernel) {
+    const perKernel = Math.round((b.kernel - first.kernel) / b.n);
+    say('');
+    say('**And ~' + Math.round(perKernel / 1024) + ' KB more in the kernel**, which no RSS figure' +
+      ' can see — ' + (process.platform === 'win32'
+        ? 'non-paged pool, system-wide, so every driver on the box is in it'
+        : '/proc/net/sockstat TCP `mem`, the TCP stack alone') +
+      '. **On loopback both endpoints are local**, so a real relay holding one end per' +
+      ' member spends nearer half of it.');
+    say('');
+    say('So the figure a ceiling should be derived from is the **total**, ~' +
+      Math.round((perStream + perKernel) / 1024) + ' KB — not the process cost alone,' +
+      ' or an owner\'s `ramLimitMB` quietly means something other than what they set.');
+  }
   say('`STREAMS_PER_MB = 16` implies ' + Math.round(65536 / 1024) + ' KB, so the guess is ' +
     Math.round((65536 - perStream) / 655.36) + '% ' + (perStream < 65536 ? 'pessimistic' : 'optimistic') + '.');
   say('');
@@ -403,7 +469,88 @@ async function main() {
     Math.round(20 * 1024 * 1024 / (1024 * 1024 * 1024) * 100) + '% of it |');
   say('');
 
-  if (rowOnly) {
+  if (save) {
+    // Named for the OS rather than the runner, because that is what the
+    // numbers are about. `os.version()` carries the distribution on Linux
+    // and the build on Windows.
+    const slug = (process.platform === 'win32' ? 'windows' : 'linux') + '-' +
+      String(os.release()).replace(/[^0-9.]/g, '').split('.').slice(0, 2).join('.');
+    const dir = path.join(REPO, 'README', 'CAPACITY', slug);
+    fs.mkdirSync(dir, { recursive: true });
+    const facts = {
+      measuredAt: new Date().toISOString(),
+      commit: commit,
+      platform: process.platform,
+      release: os.release(),
+      version: (function () { try { return os.version(); } catch (e) { return ''; } }()),
+      node: process.version,
+      cpus: os.cpus().length,
+      totalRamBytes: os.totalmem(),
+      bareNodeRss: bare,
+      relayAtRestRss: relayFixed,
+      nodeAtRestRss: nodeRss,
+      perStreamProcessBytes: perStream,
+      perStreamKernelBytes: (b.kernel && first.kernel)
+        ? Math.round((b.kernel - first.kernel) / b.n) : null,
+      kernelCounter: process.platform === 'win32'
+        ? 'PoolNonpagedBytes (system-wide)' : '/proc/net/sockstat TCP mem',
+      streamSteps: points.map(function (pt) {
+        return { n: pt.n, rss: pt.rss, kernel: pt.kernel || null };
+      }),
+      perMemberRowBytes: disc.perMember,
+      perPartnerRowBytes: disc.perPartner,
+      perShadowRowBytes: disc.perShadowRow,
+      perLogEntryBytesSynthetic: disc.perLogEntry,
+      installBytes: shipped.bytes,
+      installFiles: shipped.files,
+      // SAID IN THE FILE, not only in the README: a figure taken on
+      // loopback has both endpoints on one box, so the kernel share is an
+      // upper bound for a relay that holds one end per member.
+      caveats: [
+        'loopback: both socket endpoints are on this machine',
+        'idle streams only; an active stream costs more',
+        'the kernel counter is not per-process and carries the machine own noise',
+      ],
+    };
+    fs.writeFileSync(path.join(dir, 'capacity.json'), JSON.stringify(facts, null, 2) + '\n');
+    // ── A PAGE THAT STANDS ALONE ─────────────────────────────────────
+    //
+    //   Andy: "the measurement pages per platform must associate date and
+    //   commit-level."
+    //
+    // A file that will be read on its own, months later, beside another
+    // platform's, has to say WHAT MACHINE and WHICH TREE without anybody
+    // having to work it out. The commit is the load-bearing half: numbers
+    // measured three cycles ago are a different claim from today's, and
+    // nothing else on the page would show it.
+    const head = [
+      '# Capacity on `' + slug + '`',
+      '',
+      '**Measured ' + facts.measuredAt.slice(0, 10) + ', against `' + commit + '`.**',
+      '',
+      '| | |',
+      '|---|---|',
+      '| platform | ' + process.platform + ' ' + os.release() + ' |',
+      '| version | ' + (facts.version || '—') + ' |',
+      '| node | ' + process.version + ' |',
+      '| cpus / ram | ' + os.cpus().length + ' / ' + mb(os.totalmem()) + ' MB |',
+      '| measured at | ' + facts.measuredAt + ' |',
+      '| tree | `' + commit + '` |',
+      '',
+      '*Read [the conventions](../README.md) before comparing this with',
+      'another platform — the kernel column in particular is not the same',
+      'quantity on two operating systems.*',
+      '',
+      '---',
+      '',
+    ];
+    fs.writeFileSync(path.join(dir, 'capacity.md'),
+      head.concat(out).join('\n') + '\n');
+    console.log('written: README/CAPACITY/' + slug + '/capacity.json');
+    console.log('         README/CAPACITY/' + slug + '/capacity.md');
+    console.log('');
+    console.log(out.join(String.fromCharCode(10)));
+  } else if (rowOnly) {
     // ── "TAG THE TREE" ─────────────────────────────────────────────
     //
     //   Andy: "that looks very impressive. lets keep track of this every

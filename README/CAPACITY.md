@@ -297,6 +297,112 @@ before it runs out of room to write people down.
 
 ---
 
+## Every platform measured so far
+
+**One directory per box, in [README/CAPACITY/](CAPACITY/)**, written by the
+tool rather than typed. Each carries its own `capacity.md` to read and a
+`capacity.json` to compare against.
+
+| platform | measured | tree | node | bare node | relay at rest | per stream, process | per stream, kernel |
+|---|---|---|---|---|---|---|---|
+| **[`windows-10.0`](CAPACITY/windows-10.0/capacity.md)** | 2026-09-21 | `c995478` | v24.20.0 | 49 MB | 59 MB | 60 KB | 21 KB |
+
+**The date and the commit are on every row for a reason**: a platform
+measured three cycles ago is making a different claim from one measured
+today, and nothing else in the table would show it. Each platform's own
+page carries the same pair at its head, so a file read on its own still
+says which machine and which tree.
+
+> **Andy:** *"our buddy on WSL should repeat all our measurements for his
+> tagged os, and be permitted to contribute it to
+> `./measurements/ubuntu-24.05/` so that our CAPACITY.md can illustrate
+> the differences."*
+
+```
+node spirit/test/measureCapacity.js --save
+```
+
+writes a new row's worth. **Rename the directory to the distribution if
+that is more honest** — `ubuntu-24.05` says more than `linux-6.6`.
+
+### What may be set side by side, and what may not
+
+| | across platforms |
+|---|---|
+| disc, bytes per row | **comparable** — a row in SQLite is a fact about the schema |
+| process RSS, per-stream slope | **comparable with care** — `WorkingSet64` and `ps rss` do not count shared pages alike |
+| **the kernel column** | **not comparable at all** — Windows reports every driver on the box, Linux reports the TCP stack alone |
+
+**The last row is why the table has a column per platform and not an
+average.** Two different quantities wearing one name is the worst thing
+this page could do, and putting them in one cell would do it.
+
+**And the reason none of this is housekeeping:** if
+`ramLimitMB × STREAMS_PER_MB` is the whole governor, that constant had
+better be the one for the platform the relay is on. One box cannot say
+whether it travels. Two can say whether it is close.
+
+[The conventions, and the caveats that travel with every row.](CAPACITY/README.md)
+
+## What the kernel costs, which no RSS figure shows
+
+> **Andy:** *"for every possible live member, we must leave space for the
+> OS's socket usage etc, which i estimate will be proportional to
+> max-live-streams."*
+
+**Correct, and the earlier numbers on this page could not see it.** A
+socket's buffers belong to the kernel, not to the process holding the
+handle — so `WorkingSet64` measures Node's per-socket structures and
+nothing of the OS's.
+
+Measured the same way, across the same steps:
+
+| | per held stream |
+|---|---|
+| the relay process | **~58–60 KB** |
+| the kernel (non-paged pool, loopback) | **~14 KB** |
+| **total, upper bound** | **~75 KB** |
+
+**On loopback both endpoints are on the measuring machine**, so a real
+relay holding one end per member spends nearer **7 KB** of kernel — call
+the honest total **67–75 KB**.
+
+**Which makes the connection figures on this page about 25% optimistic**:
+~930 rather than ~1,200 at 128 MB. They are left as measured and corrected
+here rather than quietly restated, because the process figure is still the
+right one to quote for the process.
+
+**The consequence for the design is the real point.** If every hard
+ceiling is derived from `ramLimitMB`, the per-stream constant must be the
+**total**, not the process cost — otherwise an owner sets 128 MB, the
+arithmetic promises 1,200, the box carries 930, and the owner's number
+quietly meant something other than what they set. So `STREAMS_PER_MB` is
+**~14**, not the 16 that was guessed or the 18 the process cost alone
+would suggest.
+
+## A message in flight, and the thing that turned up instead
+
+Andy asked whether the kernel must also hold a spirit-message per socket.
+**It cannot be made to, and the relay is why:** sending a full
+`PAYLOAD_MAX` message to each of 400 members got **16 through**.
+`DEFAULT_PER_REQUESTER = 16` (`router.js:27`) refused the other 384 before
+they reached a socket. The relay's own arithmetic already bounds in-flight
+bytes from that direction.
+
+**But forcing the send buffers to fill surfaced something else.** The
+fixture used raw sockets that never read — and the *idle* kernel cost per
+stream went from ~14 KB to **~194 KB**.
+
+**A member who has stopped reading is up to an order of magnitude more
+expensive than one who has not**, and nothing caps it, because it is not a
+request. It is a socket doing nothing, slowly. That figure is an upper
+bound on a noisy system-wide counter with both endpoints local, so the
+shape is right and the number is not — but the shape is the part that
+matters for a relay whose first duty is to survive.
+
+**Logged as its own hazard** rather than folded into the Governor's
+brief: it is a different problem from the one the Governor was built for.
+
 ## What is still not measured
 
 - **An active stream**, as opposed to a held one. Everything here is idle

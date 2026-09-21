@@ -56,7 +56,7 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Nine open, four deferred, one cancelled, twenty done. Ten of the eighteen are
+**Ten open, four deferred, one cancelled, twenty done. Ten of the eighteen are
 blocked by nothing**, and nine are decided — waiting to be built, not to be
 thought about. **Three rows now need a review, and nothing else does.**
 
@@ -85,6 +85,7 @@ thought about. **Three rows now need a review, and nothing else does.**
 | <sub>R32</sub> | <sub>*working a long contact list: select, bulk remove, filter*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | <sub>*the verb already exists*</sub> |
 | <sub>R33</sub> | <sub>*"mailbox" retired, still in 57 UI comments*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R34</sub> | <sub>*Info shows this node's own disc, cache and RAM*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | <sub>*pairs with R31*</sub> |
+| **R35** | a member who has stopped reading is the unbounded case | OPEN — shape found, number not trusted | partial | |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R23</sub> | <sub>*a sibling is a route too, and both ends are told*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -2196,6 +2197,41 @@ panel, not two.
 **Status:** DEFERRED: it is UI, and Andy takes UI in dedicated sessions on
 his own node. Nothing below the screen is missing — `nodeStore` already
 answers `bytes()` and `size()`, and the rest is `fs.statSync`.
+
+### R35 — a member who has stopped reading is the unbounded case
+
+> **Andy:** *"the kernel might also have to reserve buffer space
+> equivalent to spirit-messages + overhead...."*
+
+**The question he asked is already answered by the relay.** Sending a full
+`PAYLOAD_MAX` message to each of 400 members got **16 through**:
+`DEFAULT_PER_REQUESTER = 16` (`router.js:27`) refused the other 384 before
+they reached a socket. In-flight bytes are bounded by the requester cap,
+not by buffer arithmetic.
+
+**The fixture surfaced a different hazard, and this is the row for it.**
+To force the send buffers to fill it used raw sockets that never read —
+and the *idle* kernel cost per stream went from **~14 KB to ~194 KB**.
+
+**A member who has stopped reading is up to an order of magnitude more
+expensive than one who has not, and nothing caps it**, because it is not a
+request. It is a socket doing nothing, slowly. Every cap in the system
+counts requests; this costs memory without making one.
+
+**Why it matters more than it looks.** If `ramLimitMB × STREAMS_PER_MB`
+becomes the whole governor, that arithmetic assumes every stream costs the
+same. A stalled reader breaks the assumption the ceiling rests on — so
+this is the one thing that might still justify an observer, and it is a
+narrower job than the Governor ever had.
+
+**The number is not to be trusted yet** and the shape is: non-paged pool
+is system-wide, loopback puts both endpoints on one box, and the sample
+was one run. **What to measure:** the same steps with reading and
+non-reading members side by side, on both platforms.
+
+**Status:** OPEN — not measured properly, not decided. Blocks nothing and
+blocks on nothing; it is an input to R20, which is deferred until the
+Governor's shape is reconsidered.
 
 ## The order, and why
 
