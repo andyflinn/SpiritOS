@@ -390,6 +390,12 @@ function open(rootDir, opts) {
       WHERE choice IN ('held', 'added') OR blocked = 1`),
     chosen: db.prepare(`SELECT publicKey, choice, blocked FROM seen
       WHERE choice <> '' OR blocked = 1`),
+    // EVERYBODY A SEARCH COULD FIND HERE (R39): a row with a name, or a
+    // row the owner chose — whose name may live only in the book. A row
+    // with neither cannot match anything a person types (peerSearch
+    // matches the label and nothing else), so it is not read at all.
+    recall: db.prepare(`SELECT publicKey, label, present, seen, choice, blocked FROM seen
+      WHERE label <> '' OR choice IN ('held', 'added') OR blocked = 1`),
     clear: db.prepare('DELETE FROM seen'),
     pages: db.prepare('PRAGMA page_count'),
     pageSize: db.prepare('PRAGMA page_size'),
@@ -490,6 +496,15 @@ function open(rootDir, opts) {
       chosen: function () {
         return q.chosen.all().map(function (r) {
           return { publicKey: r.publicKey, choice: r.choice, blocked: !!r.blocked };
+        });
+      },
+      recall: function () {
+        return q.recall.all().map(function (r) {
+          return {
+            publicKey: r.publicKey, label: r.label,
+            present: r.present < 0 ? null : !!r.present, seen: r.seen,
+            choice: r.choice || '', blocked: !!r.blocked,
+          };
         });
       },
       // Rows the sweep may still take. Zero, with the cache over its cap,

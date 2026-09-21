@@ -350,6 +350,8 @@ function buildPeople(rootDir) {
 // it changes every tail anybody has already written down, which is a
 // one-time cost worth taking deliberately rather than inside a commit
 // about something else.
+var peerSearch = require('./peerSearch');
+
 function keyTail(publicKey) {
   return String(publicKey || '').slice(-6);
 }
@@ -1918,6 +1920,79 @@ function createHub(rootDir) {
     return router.post(relayUrl, toKey, text, hints);
   }
 
+  // ── MEMORY IS ONE MORE SOURCE IN THE FAN-OUT (R39, 0021) ─────────────
+  //
+  //   Andy: "in fact if search fans out to all bound relays first, why not
+  //   to the memory also?" — "the relays result will take precedence until
+  //   timeout()" — "When the wait times out, memory fills in the people no
+  //   relay answered for, filtered exactly and prioritized exactly like
+  //   search results." — "chosen ones should always be included. it kind
+  //   of would look dumb if contacts couldn't list-search it's chosen
+  //   ones..."
+  //
+  // Called after the relays: a key any relay answered for is skipped, so a
+  // live row always wins and memory only fills in.
+  //
+  // THE SAME RANKING, NOT A SECOND ONE. Strangers go through peerSearch —
+  // the graded match every relay runs, with its slot count — and the same
+  // absent drop the relay rows get above (`present === false`). "Exactly"
+  // was ruled with its cost in view: "everything could hide someone your
+  // looking for...."
+  //
+  // THE CHOSEN ARE NOT RATIONED. Anybody the book holds — added, held or
+  // blocked — who matches is returned whatever the slots and whatever
+  // their last-known presence, because they are the owner's own people.
+  // They are matched by the same function with room for all of them.
+  function fromMemory(q, found, myKey, labels) {
+    var S = shadow(rootDir);
+    var chosen = [];
+    var strangers = [];
+    var rows;
+    try { rows = S.recall(); } catch (e) { return { rows: [], more: false }; }
+    rows.forEach(function (r) {
+      if (!r.publicKey || r.publicKey === myKey || found[r.publicKey]) return;
+      var book = (r.choice === 'added' || r.choice === 'held' || r.blocked)
+        ? contactBook.byPublicKey(rootDir, r.publicKey) : null;
+      // The book's public label first: it is what the owner's list shows,
+      // and a contact added by key may have a name only there.
+      var candidate = {
+        publicKey: r.publicKey,
+        publicLabel: (book && book.publicLabel) || r.label || '',
+        present: r.present, seen: r.seen,
+        via: null,
+      };
+      if (book) chosen.push(candidate);
+      else if (r.present !== false) strangers.push(candidate);
+    });
+
+    var mine = chosen.length ? peerSearch.search(chosen, q, chosen.length).matches : [];
+    var theirs = peerSearch.search(strangers, q, peerSearch.SLOTS);
+
+    function shaped(c) {
+      var best = S.get(c.publicKey) || {};
+      var row = contactBook.byPublicKey(rootDir, c.publicKey);
+      return {
+        publicKey: c.publicKey,
+        publicLabel: c.publicLabel,
+        tail: keyTail(c.publicKey),
+        atKey: best.at || '',
+        relay: best.url || '',
+        relayLabel: (best.url && labels[best.url]) || '',
+        // LAST-KNOWN, and said to be: null when nobody has said (0019).
+        present: c.present,
+        via: null,
+        viaPartner: false,
+        acquiredVia: row ? contactBook.acquiredVia(row) : null,
+        fromMemory: true,
+        seenAt: c.seen ? new Date(c.seen).toISOString() : null,
+      };
+    }
+    return {
+      rows: mine.map(shaped).concat(theirs.matches.map(shaped)),
+      more: theirs.more,
+    };
+  }
+
   // ── ASK EACH RELAY, DO NOT DOWNLOAD EACH RELAY ───────────────────────
   //
   //   Andy: "This approach will not be sustainable if there's even just a
@@ -1941,9 +2016,11 @@ function createHub(rootDir) {
       // No floor: see relay.js. A short query is a real question with a
       // ranked, capped answer, and refusing it here would put the crutch
       // back one layer out.
-      if (!router) { fail(res, 503, 'this node is not connected to a relay'); return; }
-
-      var urls = ownerBadge.configuredUrls(rootDir);
+      // NOT CONNECTED IS NOT NOBODY (R39). This refused outright with 503;
+      // now every relay counts as silent and memory answers alone —
+      // Andy: "if the userbox is offline, search can revert to memory".
+      var configured = ownerBadge.configuredUrls(rootDir);
+      var urls = router ? configured : [];
       var me = auth.loadIdentity(rootDir);
       var myKey = (me && me.publicKey) || '';
       var found = Object.create(null);
@@ -1958,7 +2035,7 @@ function createHub(rootDir) {
       //
       // Seen immediately: spirit.andyflinn.com is pinned to a tag and
       // returned nothing for a name that is plainly on it.
-      var silent = [];
+      var silent = router ? [] : configured.slice();
 
       // ── THE NODE ALREADY KNOWS THE KEY ─────────────────────────────
       //
@@ -2121,6 +2198,11 @@ function createHub(rootDir) {
         });
       }).then(function () {
         var list = Object.keys(found).map(function (k) { return found[k]; });
+        // What memory adds, taken now — after every relay has answered or
+        // timed out — and kept apart from `list` until the notes below
+        // are written, because a remembered row is not news.
+        var remembered = fromMemory(q, found, myKey, labels);
+        if (remembered.more) truncated = true;
 
         // NOTED HERE, AFTER THE PARTNER URLS ARE RESOLVED, so what is
         // kept is where the peer actually is rather than where the
@@ -2151,6 +2233,10 @@ function createHub(rootDir) {
             rank: row.viaPartner ? ranks.HEARSAY : ranks.HOST,
           });
         });
+        // NOT NOTED: a row memory supplied is what the node already had,
+        // and writing it back would stamp it seen today and present — the
+        // one thing it is not evidence of.
+        list = list.concat(remembered.rows);
         list.sort(function (a, b) {
           return String(a.publicLabel).localeCompare(String(b.publicLabel));
         });
@@ -2158,6 +2244,10 @@ function createHub(rootDir) {
         res.end(JSON.stringify({
           q: q, matches: list, more: truncated,
           asked: urls.length,
+          // How many came from memory rather than a relay. A count, not
+          // the store: each row says so itself (`fromMemory`) and how old
+          // it is (`seenAt`), which is the value crossing (0020).
+          remembered: remembered.rows.length,
           // Named, not counted: 'one relay could not answer' is useless
           // without saying which, and the owner of that relay is often
           // the person reading this.

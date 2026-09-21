@@ -56,9 +56,9 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Six open, five deferred, one cancelled, twenty-seven done.** Three need
+**Five open, five deferred, one cancelled, twenty-eight done.** Three need
 the team review (R9, R13, R28), one is Andy's to decide (R11), and R14
-waits on those. **R39 is ruled and buildable now.**
+waits on those. **Nothing open can be built without a review or a ruling.**
 
 | | what | status | solution? | blocked by |
 |---|---|---|---|---|
@@ -89,7 +89,7 @@ waits on those. **R39 is ruled and buildable now.**
 | <sub>R36</sub> | <sub>*what an error means, in one place — relay emitting codes is for the review*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R37</sub> | <sub>*every presence mark shows its age*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R38</sub> | <sub>*ignore is a mark, not a forgetting — the list is a mark on the memory*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R39** | search fans out to memory too, beside every bound relay | OPEN — ruled, not built | **yes** | R38 |
+| <sub>R39</sub> | <sub>*search fans out to memory too, beside every bound relay*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R23</sub> | <sub>*a sibling is a route too, and both ends are told*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -2591,7 +2591,28 @@ node-side filter and order (`hub.js:1965` drops `present === false`;
 `hub.js:2117` sorts). Exactly means the drop applies too: a peer
 remembered as *absent* is left out, one whose presence is unknown is not.
 
-**Status:** OPEN — ruled, not built. Blocked by R38.
+**Built.** `hub.fromMemory`, called once every relay has answered or timed
+out, from `handleSearch`:
+
+- a key any relay answered for is skipped, so the live row always wins;
+- strangers go through `peerSearch.search` with the relays' slot count,
+  after the same `present === false` drop;
+- anybody the book holds — added, held or blocked — who matches is
+  returned whatever the slots and their last-known presence;
+- each remembered row says `fromMemory`, carries `seenAt` and its
+  last-known `present`, and is **not** noted back into the shadow — a
+  memory is not news;
+- a node with no connection answers from memory, `asked: 0` and every
+  relay named silent, where it answered `503` before.
+
+**Verify:** `spirit/test/searchMemory.js` — the relay's row wins; memory
+fills in, dated and routed; an absent stranger is dropped; strangers get
+the slots and `more` says so; all 37 chosen come back past 32 slots,
+including one last seen absent; a remembered row keeps its date; a silent
+relay and a missing connection are both answered from memory. Ranking the
+chosen as strangers, or keeping the absent, fails four of its checks.
+
+**Status:** DONE
 
 ## The order, and why
 

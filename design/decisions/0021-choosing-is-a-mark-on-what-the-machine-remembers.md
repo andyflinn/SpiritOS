@@ -136,3 +136,4 @@ the same code as the relays' rows.
 
 **Built as R38** — `frontDoor` still decides from the book and not from the
 `ignored` mark, so a change of policy reaches people ignored before; see R38.
+Search from memory built as R39.
