@@ -304,13 +304,23 @@ async function clearLive(me, known) {
   return { removed: removed };
 }
 
-// GAP — NOTHING MAKES A NODE FORGET A PERSON.
+// ~~GAP — NOTHING MAKES A NODE FORGET A PERSON.~~ — STRUCK 2026-09-21.
 //
-// contactBook offers block, unblock, accept and label. None of them removes a
-// row, and there is no route that does — so a contact, once acquired, is
-// in your address book for good.
+// It said: "contactBook offers block, unblock, accept and label. None of
+// them removes a row, and there is no route that does — so a contact,
+// once acquired, is in your address book for good."
 //
-// That is why this reaches into relay-state/who.json directly, which is
+// **All three clauses are now false.** `contactBook.forget` exists
+// (contacts.js:442), `hub.handlePeer` answers the `forget` action
+// (hub.js:1354), and it is a verb a client calls — `contact.forget`
+// (server.js:1379), which contactsDetails already uses.
+//
+// SO THE CHEAT BELOW IS NO LONGER NECESSARY and should become the one
+// call this note predicted. It is left standing only because a teardown
+// runs with the work node STOPPED, and the verb needs it running — which
+// is an ordering problem, not a missing feature.
+//
+// That is why this reaches into the contact book directly, which is
 // exactly the kind of cheat labWorld's GAPS list exists to record. It
 // matters more than it looks: every build mints NEW KEYS for the same
 // names, so without this a third run leaves you with three lab-bellas,
@@ -319,8 +329,25 @@ async function clearLive(me, known) {
 //
 // The verb this wants is the sibling of remove-peer: owner-signed, by
 // key, on your own node. Once it exists, this function becomes one call.
+//
+// ── IT READ who.json UNTIL 2026-09-21, AND SO REMOVED NOTHING ────────
+//
+// The store was renamed on Andy's own instruction — "who.json should be
+// contacts.json" (contacts.js:146) — and this was not moved with it. The
+// read threw ENOENT, the catch answered 0, and every teardown since has
+// reported a count it never earned. A cheat that reaches past the API is
+// exactly the code that a rename cannot reach, which is the cost this
+// GAP note was already describing and the reason the verb is wanted.
+//
+// WHAT IT STILL CANNOT DO, said plainly rather than left to be
+// rediscovered: it matches on the `lab-` prefix, and a row that arrived
+// with NO LABEL AT ALL cannot be matched by a rule about labels. Those
+// are the rows that read as a key tail on screen — 19 of 33 on the work
+// node when this was found. Clearing them means matching on the lab
+// relay's address instead, which is deleting rows by inference from an
+// address book, and nobody has asked for that.
 function forgetLabContacts() {
-  const file = path.join(WORK_RUN, 'relay-state', 'who.json');
+  const file = path.join(WORK_RUN, 'relay-state', 'contacts.json');
   let rows;
   try { rows = JSON.parse(fs.readFileSync(file, 'utf8')); }
   catch (e) { return 0; }

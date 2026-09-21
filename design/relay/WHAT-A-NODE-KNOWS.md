@@ -80,6 +80,41 @@ been doing.
 - **Survives a deleted contact.** Deleting a row is a statement about an
   address book, not about what this node was told.
 
+## What it does to "contact"
+
+> **Andy:** *"a lot of 'contacts' will change because there is a 'memory'
+> now in the shadow-roll."*
+
+**The contact list stops being the node's memory and becomes a choice.**
+It used to be both, and that is what made it awkward: the only place a
+route could live was a row somebody had deliberately kept, so keeping
+somebody and knowing about them were the same act.
+
+They are separate now, and several things follow that were previously
+false:
+
+| | before | now |
+|---|---|---|
+| deleting a row | loses the route and the name with it | loses your side of a relationship only — the shadow survives (Andy: *"a shadow route must not be dropped when a contact is deleted"*) |
+| re-adding somebody | a fresh search | spent from the shadow, no question asked of anybody |
+| a row's routes | the only copy | a second copy, and the stale one (`0018`) |
+| the list's length | the cost of remembering | the cost of **choosing**, which is a person's to manage |
+
+**So pruning stops being destructive**, which is the load-bearing change
+and the reason cycle R32 is now reasonable to build: bulk remove used to
+mean throwing away knowledge, and now means tidying a list. A person can
+be ruthless with rows because the node is not.
+
+**And it is what the nameless rows were about.** A row acquired with no
+label had nowhere to get one later. The shadow is that somewhere — fed by
+a search, an arrival, a route announcement and now every presence
+broadcast (R27) — so a name learned at any moment can reach a row that
+already exists.
+
+**Not decided here:** whether `contact` needs redefining in
+`DICTIONARY.md`. The word is Andy's and the file is his; this only
+records that the thing underneath it moved.
+
 ## Decided
 
 - **`0018`** — the route cache belongs to the machine, not the human. A

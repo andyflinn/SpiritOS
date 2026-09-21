@@ -56,7 +56,7 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Thirteen open, one deferred, one cancelled, sixteen done. Ten of the eighteen are
+**Thirteen open, three deferred, one cancelled, sixteen done. Ten of the eighteen are
 blocked by nothing**, and nine are decided — waiting to be built, not to be
 thought about. **Three rows now need a review, and nothing else does.**
 
@@ -80,8 +80,10 @@ thought about. **Three rows now need a review, and nothing else does.**
 | **R16** | the queue survives a restart — and is a table, not a dump | OPEN | **yes** | R26's store |
 | <sub>R17</sub> | <sub>*suites clean up the homes they create*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R18</sub> | <sub>*durations on a clock that cannot jump*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| <sub>R19</sub> | <sub>*the load fixture — the looking is Andy's*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| <sub>R19</sub> | <sub>*the load fixture, and seeing it stay lively*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R20</sub> | <sub>*the Governor's remaining job*</sub> | <sub>*deferred*</sub> | <sub>—</sub> | <sub>*revisit when the list is clear*</sub> |
+| <sub>R32</sub> | <sub>*working a long contact list: select, bulk remove, filter*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | <sub>*the verb already exists*</sub> |
+| <sub>R33</sub> | <sub>*"mailbox" retired, still in 57 UI comments*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R23</sub> | <sub>*a sibling is a route too, and both ends are told*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -1300,17 +1302,31 @@ reported REPRODUCED with no failing suite.
   end to end, so three stalling targets cost three seconds rather than
   fifteen — R5 working, observed rather than argued.
 
-**What is still not done, and it is the half Andy named.** *"Visually
-verifying that natter and contacts still react as lively as before"* — no
-suite can do that, and the lab has not been rebuilt since 2026-09-20.
+**And the half no suite can do is done too, 2026-09-21.** The lab world was
+rebuilt (`labPopulate.js`, the buddy network: a lab relay, three peers,
+all running) and looked at.
+
+> **Andy:** *"a whole bunch of UI issues, deferred. **Response times are
+> unchanged.**"*
+
+**That is the claim R19 existed to make.** The cap of one in flight, the
+queue behind it, and everything R27 added to the presence path cost
+nothing a person can feel. It is not a measurement and does not pretend to
+be one — it is the only test for *"reacts as lively as before"*, and it was
+the instruction.
+
+**The UI issues are not listed here and are not this cycle's.** Andy:
+*"UI changes i prefer done in UI-only sessions using MY node."* They are
+deferred as a batch rather than enumerated, because a list written from
+somebody else's glance is a list of my guesses.
 
 **Verify:** `spirit/test/queueUnderLoad.js` — one in flight under a burst
 of five, a silent target releasing its slot on its own budget, every
 caller settled and none hanging, the cooperative target served though it
 was queued last, and a post after the burst going straight through.
 
-**Status:** DONE — the fixtures. The looking is Andy's and is not claimed
-here.
+**Status:** DONE — both halves. The fixtures, and the looking, which Andy
+did on 2026-09-21 and reported as unchanged.
 
 ### R20 — the Governor's remaining job
 
@@ -1902,6 +1918,79 @@ of Andy's instruction.
 
 **Status:** OPEN — not built. Needs **R26** (a cache with no store has no
 disc footprint to cap). UI and node config; no packet.
+
+### R32 — working a long contact list: select, bulk remove, filter
+
+> **Andy:** *"makes me desire the old style web feature... a
+> select-box-column and a bulk-remove contact feature (doesn't go on the
+> wire)."* — *"a list-only-present and search filters on the list
+> itself etc..."* — *"all for later."*
+
+**Four wants, one screen**, and they are the same want: a list long enough
+to need working rather than reading.
+
+- a select-box column
+- bulk remove
+- **list only present**
+- search filters applied to the list itself
+
+**And pruning is no longer destructive**, which is what makes this
+reasonable rather than risky. Andy: *"a lot of 'contacts' will change
+because there is a 'memory' now in the shadow-roll."* A removed row used
+to take the route and the name with it; the shadow keeps both and survives
+a delete by rule. **Bulk remove used to mean throwing away knowledge and
+now means tidying a list.** Argued in
+[WHAT-A-NODE-KNOWS.md](../relay/WHAT-A-NODE-KNOWS.md).
+
+**None of it goes on the wire.** Removing is local; filtering and
+selecting never leave the browser. *"List only present"* is a filter over
+the presence the screen already draws — `contactsPresenceMark` has the
+three marks today — and is not a question asked of anybody.
+
+**Raised by looking.** A work node carried 33 contact rows, 19 of them
+with no label at all — so they read as key tails, and a world built to be
+looked at was unreadable. Andy: *"these worlds are unfamiliar and badly
+labeled with end-of-key label texts."* Removing them one row at a time is
+the reason the feature is wanted.
+
+**It needs nothing new below the screen, which was checked rather than
+assumed.** The verb exists and is already used:
+
+| | |
+|---|---|
+| `contactBook.forget` | `contacts.js:442` |
+| the `forget` action | `hub.js:1354` |
+| the verb a client calls | `contact.forget`, `server.js:1379` |
+| an existing caller | `contactsDetails.js:382` |
+
+So bulk remove is **N calls to a verb that works**, and Andy is right that
+none of it goes on the wire: forgetting your own contact is local to your
+node. *(`contactBook.forget` keeps a blocked row and only downgrades it —
+deleting one would readmit the person the moment they wrote. Bulk remove
+inherits that and must not special-case it.)*
+
+**Status:** DEFERRED: it is UI, and Andy takes UI in dedicated sessions on
+his own node — *"UI changes i prefer done in UI-only sessions using MY
+node."* Nothing below the screen is missing, so it waits on a session
+rather than on work.
+
+### R33 — a retired word is still teaching the next reader
+
+> **Andy:** *"this host is only a relay/router (not a mailbox!)."*
+
+`DICTIONARY.md:27` retired *mailbox* on 2026-09-15 and allows it to
+survive *"in comments about history, which is where a retired word
+belongs."* **57 occurrences are not history.** They are present tense, in
+five UI files — `relayChat.js` (25), `natterDetails.js` (19),
+`natter.js` (10), `contacts.js` (2), `info.js` (1): *"which mailbox this
+screen is"*, *"the mailbox's peers"*, *"one row per mailbox"*.
+
+**None of it reaches a screen** — checked; every one is a comment. What it
+reaches is the next session to open those files, which is worse in a tree
+where comments carry the reasoning.
+
+**Status:** DEFERRED: UI files, so it belongs to a UI session by the same
+rule as R32.
 
 ## The order, and why
 
