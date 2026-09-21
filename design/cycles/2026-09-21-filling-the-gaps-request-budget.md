@@ -150,9 +150,17 @@ construction** — the inversion becomes unexpressible rather than fixed,
 there is no ladder of constants to keep in step, and `cancel` (R10) stops
 being a prerequisite for anything.
 
-**Status:** OPEN — not built, and nothing in the tree does any part of
-it. A new envelope field, so it is a wire change and a team review. It
-replaces R10 rather than joining it, and R6/R7 wait on it.
+**Verify:** `spirit/test/budgetChain.js` — the table grants
+`min(asked, ceiling)` and expires per entry; a budget below the floor is
+refused with `tooLittleTime` and nothing is forwarded; zero is a
+declaration and not an absence; a partner is handed 3500 ms of the 4000
+this relay was asked for; and the refusal crosses a real socket with its
+marker intact.
+
+**Status:** DONE — `DEFAULT_TTL_MS` is 5000 and is now a ceiling rather
+than an answer; `budgetMs` rides the post envelope; `relay.js` grants and
+passes on `budgetMs - HOP_MARGIN_MS`. R10 (`cancel`) is no longer a
+prerequisite for anything, and R7 is unblocked.
 
 ### R6 — `maxPerTarget` out of config, into code
 

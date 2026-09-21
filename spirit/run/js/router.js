@@ -105,9 +105,34 @@ function capsFrom(given) {
 // min(what the requester asked, this box's 5 s ceiling), and this
 // constant becomes that ceiling rather than the answer.
 //
-// Not built. design/cycles/2026-09-21-filling-the-gaps-request-budget.md,
-// R5 — it is a wire change, so it is a team review rather than a patch.
-var DEFAULT_TTL_MS = 20000;
+// ── SETTLED 2026-09-21: A CEILING, NOT AN ANSWER ────────────────────
+//
+//   Andy: "the relay has no business waiting for 15 seconds, if it
+//   doesn't have a reply or an error in 5 seconds it's wasted time."
+//   "the willing to wait time in a request is informational, and the next
+//   station down the chain better hurry."
+//
+// So this is no longer how long a route lives. It is the LONGEST a route
+// may live on this box, and each entry lives for
+//
+//     min( what its requester asked for , this ceiling )
+//
+// which is what makes the chain diminish inward: a hop can only ever ask
+// for less than the hop before it had, so every waiter outlives the thing
+// it waits on. The inversion that orphaned a member's only slot is not
+// fixed by choosing matching numbers — it becomes unexpressible.
+//
+// FIVE SECONDS, and it replaced 20000, which nobody had argued. A relay
+// holding a note for four times longer than anybody is waiting is holding
+// state for somebody who has gone.
+var DEFAULT_TTL_MS = 5000;
+
+// A budget too small to attempt anything with earns an immediate refusal
+// rather than a note certain to expire — 0006's "deliver or refuse,
+// refuse instantly", applied to time. The worst available outcome is a
+// hop that accepts a budget it cannot meet, spends all of it, and then
+// reports the failure it could have reported in the first millisecond.
+var MIN_USEFUL_MS = 250;
 
 function createRouter(opts) {
   opts = opts || {};
@@ -122,10 +147,14 @@ function createRouter(opts) {
   // hash -> { requester, target, at, carry, kind }
   var pending = Object.create(null);
 
+  // EACH ENTRY BY ITS OWN CLOCK. The table no longer has one lifetime;
+  // it has a ceiling, and every entry carries what it was granted.
+  function ageOut(entry) { return entry.ttlMs || ttlMs; }
+
   function sweep() {
     var t = nowFn();
     Object.keys(pending).forEach(function (h) {
-      if (t - pending[h].at >= ttlMs) delete pending[h];
+      if (t - pending[h].at >= ageOut(pending[h])) delete pending[h];
     });
   }
 
@@ -163,10 +192,10 @@ function createRouter(opts) {
     var oldest = null;
     Object.keys(pending).forEach(function (h) {
       if (pending[h].target !== target) return;
-      if (oldest === null || pending[h].at < oldest) oldest = pending[h].at;
+      if (oldest === null || pending[h].at < oldest.at) oldest = pending[h];
     });
     if (oldest === null) return 0;
-    var left = ttlMs - (nowFn() - oldest);
+    var left = ageOut(oldest) - (nowFn() - oldest.at);
     return left > 0 ? left : 0;
   }
 
@@ -186,6 +215,21 @@ function createRouter(opts) {
     if (!hash || !requester || !target) {
       return { ok: false, status: 400, error: 'hash, requester and target required' };
     }
+    // `kind` IS A CLASS NAME OR { kind, ttlMs }, and both are accepted so
+    // that adding a per-entry lifetime did not become a signature change
+    // at every call site. A bare string is the class with this box's
+    // default lifetime.
+    var wantTtl = null;
+    if (kind && typeof kind === 'object') {
+      // NULL IS ABSENT AND 0 IS A DECLARATION. A caller that names no
+      // budget is asking for this box's default; one that names zero has
+      // run out, and must be refused rather than quietly restarted at the
+      // ceiling. Conflating them would let an exhausted chain renew
+      // itself at every hop, which is the opposite of diminishing.
+      wantTtl = (typeof kind.ttlMs === 'number' && isFinite(kind.ttlMs)) ? kind.ttlMs : null;
+      kind = kind.kind;
+    }
+
     // AN UNKNOWN CLASS IS A PROGRAMMING ERROR, NOT A DEFAULT. Silently
     // treating a typo as `member` would put relay traffic on a member's
     // budget, which is the exact confusion this split exists to end —
@@ -260,9 +304,21 @@ function createRouter(opts) {
       };
     }
 
+    // GRANTED, NOT TAKEN. A requester may ask for less than this box's
+    // ceiling and get it; asking for more gets the ceiling. That is the
+    // whole of "informational": the number travels, and no hop is bound
+    // by what an outer hop wished for.
+    var live = wantTtl === null ? ttlMs : Math.min(wantTtl, ttlMs);
+    if (live < MIN_USEFUL_MS) {
+      return {
+        ok: false, status: 503, error: 'not enough time to try',
+        tooLittleTime: true, wouldHave: live,
+      };
+    }
+
     pending[hash] = {
       requester: requester, target: target, at: nowFn(),
-      carry: carry || null, kind: cls,
+      carry: carry || null, kind: cls, ttlMs: live,
     };
 
     var delivered = false;
@@ -307,7 +363,7 @@ function createRouter(opts) {
   function has(hash) {
     var entry = pending[hash];
     if (!entry) return false;
-    if (nowFn() - entry.at >= ttlMs) {
+    if (nowFn() - entry.at >= ageOut(entry)) {
       delete pending[hash];
       return false;
     }
@@ -344,6 +400,7 @@ module.exports = {
   DEFAULT_PER_REQUESTER: DEFAULT_PER_REQUESTER,
   DEFAULT_PER_TARGET: DEFAULT_PER_TARGET,
   DEFAULT_TTL_MS: DEFAULT_TTL_MS,
+  MIN_USEFUL_MS: MIN_USEFUL_MS,
   MEMBER: MEMBER,
   RELAY: RELAY,
   PARTNER: PARTNER,

@@ -158,9 +158,12 @@ const CONFIG = (function () {
 // the dispatch of the answer back to this exact question are all the
 // interface's and none of relay.js's (AGENT.md, Comms).
 const relay = createRelay.createRelay(undefined, {
-  askPartner: function (url, relayKey, text) {
+  askPartner: function (url, relayKey, text, budgetMs) {
     if (!partnerRouter) return Promise.resolve(null);
-    return partnerRouter.post(url, relayKey, text);
+    // The partner is given LESS than this relay has (relay.js,
+    // HOP_MARGIN_MS), so it finishes first and this relay still has time
+    // to carry its answer back to the member waiting.
+    return partnerRouter.post(url, relayKey, text, null, { budgetMs: budgetMs });
   },
   config: CONFIG,
 });
@@ -522,8 +525,20 @@ const server = http.createServer((req, res) => {
         const route = body && Array.isArray(body.hints) && body.hints.length
           ? { hints: body.hints, hintSig: body.hintSig }
           : undefined;
+        // `budgetMs` — how long the ASKER is still willing to wait, a
+        // remaining duration and never a deadline. Informational: the
+        // relay grants min(asked, its own ceiling), so a number from the
+        // wire can only ever buy less than this box already allows
+        // (0017, and the gap cycle's R5).
+        // A number is a DECLARATION, including zero — a chain that has
+        // run out of time says so, and is refused rather than being
+        // handed this box's default and starting again.
+        const budgetMs = (body && typeof body.budgetMs === 'number' && isFinite(body.budgetMs))
+          ? Math.max(0, body.budgetMs)
+          : undefined;
         const result = relay.routePost(
-          body && body.from, body && body.to, body && body.text, body && body.sig, route
+          body && body.from, body && body.to, body && body.text, body && body.sig,
+          route, budgetMs
         );
         res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
         // A WHITELIST, AND IT STAYS ONE. What a refusal carries is part of
@@ -545,6 +560,12 @@ const server = http.createServer((req, res) => {
           // this one says ask again in `retryAfterMs`.
           busy: !!result.busy,
           retryAfterMs: typeof result.retryAfterMs === 'number' ? result.retryAfterMs : 0,
+          // NOT ENOUGH TIME TO TRY, which is a third kind of no: the peer
+          // is fine and this box is fine, and what was offered was too
+          // little to attempt anything with. Named here for the reason
+          // `busy` is — a whitelist means a new field is invisible until
+          // somebody adds it, and that has cost this file twice.
+          tooLittleTime: !!result.tooLittleTime,
         }));
       }).catch(function () {
         res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });

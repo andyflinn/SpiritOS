@@ -449,6 +449,29 @@ function createPeerPost(opts) {
       : [];
 
     var body = { from: id.publicKey, to: toKey, text: text, sig: sig };
+
+    // ── HOW LONG THIS ASKER WILL WAIT, SAID OUT LOUD ────────────────
+    //
+    //   Andy: "N1 sets a limit on its patience, which gets reduced down
+    //   the chain" — "part of the request's sidecar/envelope."
+    //
+    // A remaining DURATION, never a deadline: a timestamp would need this
+    // node and the relay to agree about the clock, and nothing in this
+    // design depends on two boxes agreeing about the time.
+    //
+    // Defaults to this node's own per-attempt wait, which is the honest
+    // number — it is exactly how long the caller will be held. The relay
+    // grants min(this, its own ceiling), so declaring 8 s where a relay
+    // allows 5 s buys 5 s and a guarantee: the relay gives up first, and
+    // this node never abandons a route the relay still holds.
+    //
+    // A relay forwarding to a partner passes what is LEFT (relay.js,
+    // HOP_MARGIN_MS), which is what makes the chain tighten inward.
+    var budget = (how && typeof how.budgetMs === 'number' && isFinite(how.budgetMs))
+      ? Math.max(0, how.budgetMs)
+      : waitMs;
+    body.budgetMs = budget;
+
     if (hintList.length) {
       body.hints = hintList;
       body.hintSig = auth.sign(id.privateKey, auth.hintMessage(sig, hintList));

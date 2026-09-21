@@ -212,7 +212,21 @@ var RATE_KEY_SWEEP_AT = 1000;
 // same discipline holds: data on somebody's box is renamed and kept, never
 // deleted by a boot.
 
-// `deps.askPartner(url, relayKey, text)` answers a promise of the partner's
+// A HOP'S SHARE OF THE BUDGET, spent before the next hop sees it.
+//
+// What this relay hands a partner is what it was given, less enough to
+// carry the partner's answer back to the member still waiting. Declared,
+// not measured — like `HINTS_PER_POST`, and marked so nobody reads it as
+// evidence. What must be true of it is only that it is greater than one
+// return trip and small against the ceiling; 500 ms against 5 s is both.
+//
+// The consequence is the point: a partner is always given LESS than this
+// relay has, so it finishes first, and this relay still has time to pass
+// its answer on. Every hop inward is tighter, and no hop needs to know
+// how deep it is.
+var HOP_MARGIN_MS = 500;
+
+// `deps.askPartner(url, relayKey, text, budgetMs)` answers a promise of the partner's
 // reply text, or null. INJECTED, never reached for: it is this relay's own
 // peerPost over relayRequest, wired in server.js, which is the one
 // interface everything speaks through (AGENT.md, Comms). A relay built
@@ -2047,7 +2061,7 @@ function createRelay(rootDir, deps) {
   // Returns an answer to give the member now, or null when there is
   // nothing to try — in which case the caller falls through to its own
   // `no such peer`.
-  function carryToPartner(who, toToken, text, sig, atRelayKey) {
+  function carryToPartner(who, toToken, text, sig, atRelayKey, budgetMs) {
     if (!askPartner || !atRelayKey) return null;
     var list = (partners() || []).filter(function (p) {
       return p.relayKey === atRelayKey;
@@ -2076,13 +2090,20 @@ function createRelay(rootDir, deps) {
     // route's target is the far member, so when the reply comes back up
     // the tunnel `routes.answer` checks it against the key the member
     // actually replied with.
+    // WHAT IS LEFT FOR THE FAR SIDE. Undefined stays undefined: a caller
+    // that declared no budget is asking this box for its default, and has
+    // no opinion to pass on.
+    var onward = typeof budgetMs === 'number' && budgetMs > 0
+      ? Math.max(0, budgetMs - HOP_MARGIN_MS)
+      : undefined;
+
     var opened = routes.open(innerHash, who.id, String(toToken), function () {
       var wrapper = JSON.stringify({
         v: 1,
         body: { forward: { from: who.id, to: String(toToken), text: text, sig: sig } },
       });
       var p = list[0];
-      askPartner(p.url, p.relayKey, wrapper)
+      askPartner(p.url, p.relayKey, wrapper, onward)
         .then(function (answer) {
           var said = null;
           try { said = JSON.parse((answer && answer.text) || ''); }
@@ -2106,7 +2127,7 @@ function createRelay(rootDir, deps) {
       // It is on its way. Whether that partner holds the key is its
       // answer to give, and saying `false` here would cancel the route
       // the answer needs.
-    });
+    }, null, { kind: routerTable.MEMBER, ttlMs: budgetMs });
     if (!opened || !opened.ok) return opened;
 
     monitorEvent('post', who.id, String(toToken), {
@@ -2858,7 +2879,23 @@ function createRelay(rootDir, deps) {
   // Until cycle 2 nothing on the wire supplied either, and forwarding was
   // inert from outside. The hints are consumed here and never forwarded:
   // the far hop receives `{from,to,text,sig}` byte for byte (SURFACE.md §8).
-  function routePost(fromToken, toToken, text, sig, route) {
+  // ── THE ORIGINATOR'S BUDGET, TIGHTENING INWARD ───────────────────────
+  //
+  //   Andy: "N1 sets a limit on its patience, which gets reduced down the
+  //   chain by the formula you proposed." — "part of the request's
+  //   sidecar/envelope." — "the willing to wait time in a request is
+  //   informational, and the next station down the chain better hurry."
+  //
+  // `budgetMs` is how long the ASKER is still willing to wait, as a
+  // remaining DURATION and never a deadline — a timestamp would need this
+  // box and the asker to agree about the clock, which is the same reason
+  // the hash is computed and never carried (0011).
+  //
+  // It is informational: this relay grants min(asked, its own ceiling), so
+  // the number can only ever buy LESS than the box already allows. A hold
+  // time a member could lengthen would not be a limit, it would be a
+  // default.
+  function routePost(fromToken, toToken, text, sig, route, budgetMs) {
     var atRelayKey = typeof route === 'string' ? route : null;
     var hints = route && typeof route === 'object' && Array.isArray(route.hints) ? route.hints : null;
     // A MEMBER, OR A PARTNER RELAY. In that order, because a member is the
@@ -2960,7 +2997,10 @@ function createRelay(rootDir, deps) {
       // disagreeing about who a sender is.
       var opened = routes.open(selfHash, who.id, String(toToken),
         function () { return true; },
-        null, fromPartner ? routerTable.PARTNER : routerTable.MEMBER);
+        null, {
+          kind: fromPartner ? routerTable.PARTNER : routerTable.MEMBER,
+          ttlMs: budgetMs,
+        });
       if (!opened || !opened.ok) return opened;
       // METERED LIKE ANY OTHER POST. A search a partner asks costs this
       // box real work and real bytes; leaving it out of the ring would
@@ -3007,7 +3047,7 @@ function createRelay(rootDir, deps) {
           return { ok: false, status: 409, error: 'minting incomplete' };
         }
       }
-      var carried = carryToPartner(who, toToken, text, sig, atRelayKey);
+      var carried = carryToPartner(who, toToken, text, sig, atRelayKey, budgetMs);
       if (carried) return carried;
     }
 
@@ -3056,7 +3096,10 @@ function createRelay(rootDir, deps) {
         text: text,
         sig: sig,
       });
-    }, null, fromPartner ? routerTable.PARTNER : routerTable.MEMBER), hash);
+    }, null, {
+      kind: fromPartner ? routerTable.PARTNER : routerTable.MEMBER,
+      ttlMs: budgetMs,
+    }), hash);
   }
 
   function withStatus(result, hash) {
