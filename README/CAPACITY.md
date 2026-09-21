@@ -333,3 +333,45 @@ there.
 
 **What git ships, not the working tree.** The install size counts tracked
 files; a working tree also holds media, lab nodes and state.
+
+---
+
+## Tracked over time — "tag the tree"
+
+> **Andy:** *"that looks very impressive. lets keep track of this every
+> time i say 'tag the tree'."* — *"with an are-you-sure feedback"*
+
+**These numbers are only worth anything if drift is visible.** A measured
+figure written once is a figure that goes quietly wrong when the platform
+moves, the runtime is upgraded, or the code grows a cost nobody costed.
+
+### What the command does
+
+On **"tag the tree"**, and not otherwise:
+
+1. **Ask first.** The measurement takes about a minute of the machine, and
+   the tag is a public mark on a public repository. Andy confirms before
+   anything runs.
+2. `node spirit/test/measureCapacity.js --row` — one line.
+3. Append it to the table below and commit it.
+4. Cut an annotated git tag, `capacity-YYYY-MM-DD`, so the row and the
+   tree it describes are the same point.
+
+**The confirmation is the point of step 1**, not politeness: a tag is
+pushed, other people see it, and deleting one is a worse act than never
+making it.
+
+### The history
+
+Read the columns across, not down: a row is one machine on one day, and
+**the RSS figures are not portable**. A row from Linux and a row from
+Windows are two measurements of two different things, which is why the
+platform travels with each.
+
+| date | commit | platform / node | per stream | bare node | relay at rest | node at rest | member / peer row | install |
+|---|---|---|---|---|---|---|---|---|
+| 2026-09-21 | `e96c904` | win32 / v24.20.0 | 58 KB | 49 MB | 59 MB | 72 MB | 197 / 222 B | 3756 KB |
+
+**The first row is the baseline**, taken the day the measurement was
+built. Nothing is being compared yet — which is the honest state of a
+history with one entry in it.

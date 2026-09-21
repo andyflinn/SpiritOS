@@ -11,8 +11,8 @@
 //   include minimum requirements" — "and something automated to calculate
 //   these numbers."
 //
-//   node spirit/test/measureCapacity.js            print the table
-//   node spirit/test/measureCapacity.js --markdown print it as README/CAPACITY.md's tables
+//   node spirit/test/measureCapacity.js            print the tables
+//   node spirit/test/measureCapacity.js --row       one line, for the history table
 //
 // ── WHY THIS IS A TOOL AND NOT A SUITE ───────────────────────────────
 //
@@ -268,7 +268,7 @@ async function plantedRelay(memberCount) {
 }
 
 async function main() {
-  const asMarkdown = process.argv.slice(2).includes('--markdown');
+  const rowOnly = process.argv.slice(2).includes('--row');
   const commit = (function () {
     try { return String(execSync('git rev-parse --short HEAD', { cwd: REPO, encoding: 'utf8' })).trim(); }
     catch (e) { return 'unknown'; }
@@ -403,9 +403,33 @@ async function main() {
     Math.round(20 * 1024 * 1024 / (1024 * 1024 * 1024) * 100) + '% of it |');
   say('');
 
-  console.log(out.join('\n'));
-  if (!asMarkdown) {
-    console.log('(--markdown prints the same thing; it is already markdown)');
+  if (rowOnly) {
+    // ── "TAG THE TREE" ─────────────────────────────────────────────
+    //
+    //   Andy: "that looks very impressive. lets keep track of this every
+    //   time i say 'tag the tree'."
+    //
+    // One line, in the order the history table's columns run, so drift
+    // between two points in the tree is a line to read rather than two
+    // documents to compare.
+    //
+    // The platform and Node's version travel with every row, because
+    // these are not portable numbers: the RSS figures are Windows
+    // WorkingSet64, and the floor under all of them is whatever that
+    // runtime costs.
+    console.log('| ' + [
+      new Date().toISOString().slice(0, 10),
+      '`' + commit + '`',
+      process.platform + ' / ' + process.version,
+      Math.round(perStream / 1024) + ' KB',
+      mb(bare) + ' MB',
+      mb(relayFixed) + ' MB',
+      mb(nodeRss) + ' MB',
+      disc.perMember + ' / ' + disc.perShadowRow + ' B',
+      Math.round(shipped.bytes / 1024) + ' KB',
+    ].join(' | ') + ' |');
+  } else {
+    console.log(out.join('\n'));
   }
 
   cleanup();
