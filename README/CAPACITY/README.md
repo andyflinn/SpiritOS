@@ -174,3 +174,46 @@ documented platform limit worth knowing about, one was a test that did
 work without reporting it. Neither was a bug in the product, and both were
 only visible because two boxes ran the same suites and wrote the numbers
 down.
+
+---
+
+## Notes from running this on a second box
+
+**Two things cost time to work out once. They are here so they cost
+nobody time twice.**
+
+### The capacity half got slower, and the harness was not why
+
+The WSL run reported the capacity half taking **209 s**, against about a
+minute for the standalone tool the same box had run earlier, and
+reasonably wondered whether it was waiting for the harness's processes to
+wind down.
+
+**It was not.** Two measurement loops were added to the tool between those
+two runs: **5,000 route-row writes** — each one followed by a trim query
+that re-ranks the peer's routes — and **2,000 traffic-log entries**.
+
+**The control is Windows**, which took 159 s both standalone and
+orchestrated. Same tool, same additions, no change when run after the
+harness. So the extra time is work the tool now does, not contention with
+what ran before it.
+
+*Worth knowing rather than fixing: the trim query runs once per route
+written, which is the slowest thing in the measurement and is fine for a
+tool nobody runs in a loop.*
+
+### Pushing from WSL
+
+The push worked through **VS Code's own git askpass socket**, which was
+already live and signed in — no token or key was stored on the box.
+
+**Two consequences.** A push from a plain WSL shell, outside VS Code, will
+still fail. And **the socket name changes whenever VS Code restarts**, so
+find it with a glob rather than hard-coding it:
+
+```
+/run/user/1000/vscode-git-*.sock
+```
+
+*(Found by the WSL session, on its second pass. The first run hard-coded
+the name and it had already changed.)*
