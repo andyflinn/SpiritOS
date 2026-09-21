@@ -90,29 +90,59 @@
 // path, and that is a boundary rather than an omission.
 
 var MAX_ENTRIES = 500;
-var MAX_AGE_MS = 60 * 60 * 1000;
 
+// ── AN HOUR WAS WHAT NO STORE COULD AFFORD; THIRTY DAYS IS A CHOICE ──
+//
+// This was 60 * 60 * 1000, and the comment above already said that was a
+// consequence rather than a decision: an hour is what a cache can afford
+// while it lives in RAM and loses everything at a restart anyway.
+//
+//   Andy: "the user may forget all search results, the node must not."
+//
+// With a store (0018, cycle R26) a long memory costs disc rather than
+// nothing, so the number becomes answerable. Thirty days is proposed on
+// three grounds and none of them is measurement:
+//
+//   1. It outlives the thing it exists for. "Any peer a node could
+//      possibly connect to" is not a question about this week.
+//   2. It is not the bound that does the work. R4 has TWO evictions and
+//      the SPACE one is the real limit — the owner's cap (R31). Age is
+//      the backstop for a row nothing has touched, not the ceiling.
+//   3. A route nobody has reconfirmed in a month is worth one failed
+//      attempt, which is all a wrong hint ever costs (seenPeers may guess
+//      and may never assert).
+//
+// DECLARED, NOT MEASURED, and marked so nobody reads it as evidence.
+var MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
+// ── THE ROWS LIVE ON DISC NOW (cycle R26) ────────────────────
+//
+// This file keeps the RULES — what is worth writing down, what greedy
+// means, when a row goes — and `nodeStore.js` keeps the rows, the way
+// relay.js keeps the rules and relayStore.js keeps the roll.
+//
+// A CALLER WITH NO STORE GETS NO MEMORY, and that is deliberate rather
+// than a fallback: a second in-memory implementation would be a code path
+// the product never runs and every suite would silently test instead. The
+// suites open a store in a temp home, which is the same path the node
+// takes.
 function createSeenPeers(opts) {
   opts = opts || {};
   var nowFn = opts.now || Date.now;
   var maxEntries = opts.maxEntries || MAX_ENTRIES;
   var maxAgeMs = opts.maxAgeMs || MAX_AGE_MS;
+  var store = opts.store || (opts.rootDir ? require('./nodeStore').open(opts.rootDir) : null);
+  if (!store) throw new Error('seenPeers needs a store: pass rootDir or store');
+  var rows = store.seen;
 
-  // publicKey -> { at, url, label, seen }
-  var rows = Object.create(null);
-
+  // BOTH EVICTIONS, AS QUERIES. They were two passes over every key in
+  // memory; they are an index seek and an ordered delete now, which is
+  // what 0018 licensed a store to make possible.
   function sweep() {
-    var now = nowFn();
-    var keys = Object.keys(rows);
-    keys.forEach(function (k) {
-      if (now - rows[k].seen >= maxAgeMs) delete rows[k];
-    });
+    rows.sweepOlderThan(nowFn() - maxAgeMs);
     // OLDEST FIRST WHEN THERE IS NO ROOM, because the newest answer is
     // the one somebody is looking at.
-    keys = Object.keys(rows);
-    if (keys.length <= maxEntries) return;
-    keys.sort(function (a, b) { return rows[a].seen - rows[b].seen; });
-    keys.slice(0, keys.length - maxEntries).forEach(function (k) { delete rows[k]; });
+    rows.sweepToSize(maxEntries);
   }
 
   // `at` is the far relay's KEY, which is what a route is made of. A row
@@ -140,13 +170,12 @@ function createSeenPeers(opts) {
     var label = String((what && what.label) || '');
     if (!key || (!at && !url && !label)) return false;
 
-    var had = rows[key] || { at: '', url: '', label: '' };
-    rows[key] = {
-      at: at || had.at,
-      url: url || had.url,
-      label: label || had.label,
-      seen: nowFn(),
-    };
+    // The merge moved into the statement (nodeStore's `put`): a blank
+    // field leaves what is there, and `seen` is always written. Doing it
+    // in SQL rather than by reading first keeps it one round trip and
+    // makes "never blank what you know" a property of the write instead
+    // of a discipline the caller has to remember.
+    rows.put(key, { at: at, url: url, label: label, seen: nowFn() });
     sweep();
     return true;
   }
@@ -155,13 +184,13 @@ function createSeenPeers(opts) {
   // accident.
   function get(publicKey) {
     var key = String(publicKey || '').trim();
-    var row = rows[key];
+    var row = rows.get(key);
     if (!row) return null;
-    if (nowFn() - row.seen >= maxAgeMs) { delete rows[key]; return null; }
+    if (nowFn() - row.seen >= maxAgeMs) { rows.forget(key); return null; }
     return { at: row.at, url: row.url, label: row.label, seen: row.seen };
   }
 
-  function size() { sweep(); return Object.keys(rows).length; }
+  function size() { sweep(); return rows.size(); }
 
   // ── DELETING A CONTACT MUST NOT REACH IN HERE ────────────────────────
   //
@@ -182,8 +211,8 @@ function createSeenPeers(opts) {
   //
   // `forget` exists for a caller that has finished with a row, not for
   // the contact book. Nothing in run/ calls it.
-  function forget(publicKey) { delete rows[String(publicKey || '').trim()]; }
-  function reset() { rows = Object.create(null); }
+  function forget(publicKey) { rows.forget(String(publicKey || '').trim()); }
+  function reset() { rows.clear(); }
 
   return {
     note: note,

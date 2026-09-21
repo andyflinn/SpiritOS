@@ -19,21 +19,40 @@
 // arrived with an address in `relays` and nothing in `routes`, and the
 // first post to them carried no hint.
 
+const os = require('os');
+const fs = require('fs');
+const path = require('path');
 const test = require('./testSupport.js');
 const seen = require('../run/js/seenPeers');
+
+// ── EVERY SHADOW GETS ITS OWN HOME (cycle R26) ───────────────────────
+//
+// The rows are on disc now (0018, nodeStore.js), so a shadow needs a
+// place to be. A fresh home per instance, because several of the checks
+// below run two of them at once with different bounds and a shared file
+// would make each one's evictions the other's business.
+//
+// AND THERE IS NO IN-MEMORY MODE TO TEST INSTEAD. That is the point: a
+// second implementation would be a path the product never runs, so the
+// suite takes the same one the node does.
+function shadow(opts) {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-shadow-'));
+  const o = Object.assign({ rootDir: home }, opts || {});
+  return seen.createSeenPeers(o);
+}
 
 function clock(start) {
   let t = start || 1000;
   return { now: function () { return t; }, tick: function (ms) { t += ms; } };
 }
 
-test.startTest('Seen peers — what a search learned, until it is wanted');
+test.startTest('Seen peers — where this node has been told people live');
 
 test.subHeading('It keeps where somebody lives, and hands it back');
 
 {
   const c = clock();
-  const S = seen.createSeenPeers({ now: c.now });
+  const S = shadow({ now: c.now });
 
   S.note('KEY-BELLA', { at: 'RELAY-B', url: 'https://b.example', label: 'bella' });
   const got = S.get('KEY-BELLA');
@@ -74,7 +93,7 @@ test.subHeading('Bounded by age and by space, because neither does the other’s
   // frozen while there is room, and an age bound leaves it unbounded
   // while there is not.
   const c = clock();
-  const S = seen.createSeenPeers({ now: c.now, maxAgeMs: 1000, maxEntries: 100 });
+  const S = shadow({ now: c.now, maxAgeMs: 1000, maxEntries: 100 });
 
   S.note('KEY-OLD', { at: 'R1' });
   c.tick(1100);
@@ -84,7 +103,7 @@ test.subHeading('Bounded by age and by space, because neither does the other’s
     test.fail('a stale row survived: ' + JSON.stringify(S.get('KEY-OLD')));
   }
 
-  const T = seen.createSeenPeers({ now: c.now, maxEntries: 3, maxAgeMs: 99999 });
+  const T = shadow({ now: c.now, maxEntries: 3, maxAgeMs: 99999 });
   ['a', 'b', 'c'].forEach(function (k, i) { c.tick(10); T.note(k, { at: 'R' + i }); });
   c.tick(10);
   T.note('d', { at: 'R3' });
@@ -107,7 +126,7 @@ test.subHeading('It is not the contact book, and must not become one');
   //
   // So this holds them instead, and forgets on its own schedule.
   const c = clock();
-  const S = seen.createSeenPeers({ now: c.now });
+  const S = shadow({ now: c.now });
   for (let n = 0; n < 40; n += 1) S.note('STRANGER-' + n, { at: 'R' + n });
 
   if (S.size() === 40) {
@@ -138,7 +157,7 @@ test.subHeading('Greedy means never blanking what it already knows');
   // destroyed the moment that person sent anything — greedy about
   // forgetting, which is the opposite of the rule.
   const c = clock();
-  const S = seen.createSeenPeers({ now: c.now });
+  const S = shadow({ now: c.now });
 
   S.note('KEY-BELLA', { at: 'RELAY-B', url: 'https://b.example', label: 'bella' });
   c.tick(10);
@@ -179,6 +198,51 @@ test.subHeading('Greedy means never blanking what it already knows');
     test.check('and every sighting refreshes when it was seen, whatever else it carried');
   } else {
     test.fail('seen did not move');
+  }
+}
+
+test.subHeading('It survives the process, which is what the store bought (R26)');
+
+{
+  // THE CLAIM THE WHOLE REQUIREMENT EXISTS FOR, made at the level that
+  // matters rather than only at the store's.
+  //
+  // Before this cycle the shadow was an object in memory, and its own
+  // comment said the age bound was a consequence of that: an hour is
+  // "what a cache can afford while it lives in RAM and loses everything
+  // at a restart anyway".
+  //
+  //   Andy: "the user may forget all search results, the node must not."
+  //
+  // A node that forgot everything on every restart could not keep that
+  // promise however long the number was.
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-shadow-'));
+  const c = clock();
+
+  const first = seen.createSeenPeers({ rootDir: home, now: c.now });
+  first.note('KEY-PERSISTS', { at: 'RELAY-P', url: 'https://p.example', label: 'percy' });
+
+  // A SECOND INSTANCE OVER THE SAME HOME. Not the same object, and not
+  // the same connection once the first is closed — what answers can only
+  // have come off the disc.
+  require('../run/js/nodeStore').open(home).close();
+  const second = seen.createSeenPeers({ rootDir: home, now: c.now });
+  const kept = second.get('KEY-PERSISTS');
+
+  if (kept && kept.at === 'RELAY-P' && kept.label === 'percy') {
+    test.check('a route learned before a restart is still there after one');
+  } else {
+    test.fail('the shadow did not survive: ' + JSON.stringify(kept));
+  }
+
+  // AND THE AGE BOUND IS NOW A CHOICE RATHER THAN A CONSEQUENCE. Thirty
+  // days is declared, not measured, and is marked as such in the module —
+  // what this asserts is only that it is no longer an hour, because an
+  // hour was the number a cache with no disc could afford.
+  if (seen.MAX_AGE_MS > 24 * 60 * 60 * 1000) {
+    test.check('and the age bound outlives a day, which a memory-only cache could not justify');
+  } else {
+    test.fail('MAX_AGE_MS is still ' + seen.MAX_AGE_MS);
   }
 }
 

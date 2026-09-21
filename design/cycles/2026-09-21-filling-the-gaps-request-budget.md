@@ -56,7 +56,7 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Thirteen open, three deferred, one cancelled, sixteen done. Ten of the eighteen are
+**Twelve open, three deferred, one cancelled, seventeen done. Ten of the eighteen are
 blocked by nothing**, and nine are decided — waiting to be built, not to be
 thought about. **Three rows now need a review, and nothing else does.**
 
@@ -89,7 +89,7 @@ thought about. **Three rows now need a review, and nothing else does.**
 | <sub>R23</sub> | <sub>*a sibling is a route too, and both ends are told*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R24</sub> | <sub>*a search answer is kept until somebody acts on it*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R25</sub> | <sub>*a route is learned at every opportunity; policy does not gate it*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R26** | the shadow needs a store, and it is a persist shape | OPEN — **decided `0018`**, no review needed | **yes** | |
+| <sub>R26</sub> | <sub>*the shadow needs a store, and it is a persist shape*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R27</sub> | <sub>*a presence event about a stranger is discarded, and it is a route*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R28** | a label change reaches everybody, at every level | OPEN — **decided `0019`**; hop 1 already built, hops 2-3 **wire, team review** | **yes** | |
 | **R29** | the shadow row carries rank and provenance | OPEN | **yes** | R1, R26 |
@@ -1659,10 +1659,70 @@ if it was not intended.
 **This was the keystone and it is now off the critical path.** R1's second
 half, R16, R29, R30 and R31 all move.
 
-**Status:** OPEN — **decided, not built.** `MAX_AGE_MS` (an hour) is the
-one number still open, and it belongs here: an hour is what a cache can
-afford while it lives in RAM, and a store is what makes a longer one
-affordable.
+### Built 2026-09-21 — cycle 2
+
+**`nodeStore.js`**, the node's own `relay-state/node.db`, with the same
+durability choices `relayStore` makes and the same reasons: rollback
+journal rather than WAL (one process, and a file copy cannot catch it
+half-written), `synchronous = FULL`, and **`secure_delete = ON`** — which
+matters more here than it looks, because what this file holds is not a
+membership list but *whose business this node has been doing*. A row swept
+for age has to leave the disc, not only the index.
+
+**`seenPeers.js` keeps the rules and hands over the rows**, the way
+`relay.js` keeps the rules and `relayStore.js` keeps the roll.
+
+**No in-memory fallback, deliberately.** A second implementation would be
+a path the product never runs and every suite would silently test instead.
+The suites open a store in a temp home, which is the path the node takes.
+
+**The greedy merge moved into the statement.** `ON CONFLICT ... DO UPDATE`
+with a `CASE` per field, so *"never blank what you know"* is a property of
+the write rather than a discipline each caller has to remember — and one
+round trip rather than a read followed by a write.
+
+**Both evictions became queries** (R4): an index seek for the age bound
+and an ordered delete for the space bound, instead of two passes over every
+key in memory. That is what 0018 licensed a store to make possible.
+
+**The wiring changed shape.** The shadow was a module-level singleton built
+at require time with nothing — fine in RAM, impossible on disc. It is now
+`hub.shadow(rootDir)`, cached per resolved home, so nothing depends on
+which caller arrives first and a suite can hold two nodes at once.
+
+### The floor, and the one number
+
+**`package.json` now says `node >=22.13`**, and `server.js` refuses to
+start below it with a sentence rather than a stack trace — the way
+`relayServer.js` already refused. Until now only a RELAY needed 22.13.
+**This makes it every user's minimum**, on a machine they own and install
+themselves, and it follows from Andy's grant rather than being a second
+ruling (`0018`).
+
+**`MAX_AGE_MS` is now thirty days**, up from one hour. The hour was never
+a decision — `seenPeers.js` said so itself: it is *"what a cache can
+afford while it lives in RAM and loses everything at a restart anyway."*
+Three grounds, none of them measurement:
+
+1. It outlives the thing it exists for. *"Any peer a node could possibly
+   connect to"* is not a question about this week.
+2. **It is not the bound that does the work.** R4 has two evictions and the
+   SPACE one is the real limit — the owner's cap (R31). Age is the backstop
+   for a row nothing has touched.
+3. A route nobody has reconfirmed in a month costs one failed attempt,
+   which is all a wrong hint ever costs.
+
+**Declared, not measured, and marked as such in the file.**
+
+**Verify:** `spirit/test/nodeStore.js` — a row written before the store
+closes is there when it opens again; it is `node.db` and no `relay.db`
+appears beside it; the merge keeps a field a blank write omits and moves
+`seen` anyway; both evictions take what they should and a store inside its
+bound is left alone; one home is one store and two homes are two.
+`spirit/test/seenPeers.js` carries the same claim at the shadow's level —
+a route learned before a restart is there after one.
+
+**Status:** DONE
 
 ### R27 — a presence event about a stranger is discarded, and it is a route
 

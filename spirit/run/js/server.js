@@ -897,6 +897,36 @@ common.refuseListenError(server, port, 'js/server.js');
 // asking a relay to have kept something, and a relay keeps nothing
 // (decision 0006).
 
+// ── THE NODE'S MACHINE STATE IS ON DISC, OR THERE IS NO NODE (R26) ──
+//
+//   Andy: "we need no peer review for allowing a database to be used for
+//   the shadow roll. That's a decision."
+//
+// The shadow roll lives in relay-state/node.db through node:sqlite
+// (nodeStore.js), and there is no in-memory copy to fall back on — a
+// second implementation would be a code path the product never runs and
+// every suite would silently test instead.
+//
+// SO THE FLOOR MOVES, AND IT IS SAID HERE RATHER THAN DISCOVERED. Until
+// now only a RELAY needed 22.13; this makes it every user's minimum, on a
+// machine they own and install themselves. That follows from the grant
+// above rather than being a second ruling (0018), and package.json says
+// the same number.
+//
+// Refused at boot, the way relayServer.js refuses, so a node too old says
+// so now instead of on the first search.
+const nodeStore = require('./nodeStore');
+if (!nodeStore.available()) {
+  console.error('node:sqlite is not available in Node ' + process.version +
+    ' — a node needs 22.13 or later (nodeStore.js)');
+  process.exit(1);
+}
+try { nodeStore.open(ROOT_DIR); }
+catch (e) {
+  console.error('the node store could not be opened: ' + String(e && e.message || e));
+  process.exit(1);
+}
+
 // THE PERSONAL NODE'S BOOT. It read `if (!relayMode)` until cycle 0; a
 // relay is booted by relayServer.js now, so this block always runs.
 {
@@ -1037,7 +1067,7 @@ common.refuseListenError(server, port, 'js/server.js');
     noteSeen: function (from, relayUrl) {
       var at = relayUrl ? relayKeys.pinned(ROOT_DIR, relayUrl) : '';
       if (!at && !relayUrl) return;
-      require('./hub').seenPeers.note(from, { at: at || '', url: relayUrl || '' });
+      require('./hub').shadow(ROOT_DIR).note(from, { at: at || '', url: relayUrl || '' });
     },
     remember: function (from, verdict, relayUrl) {
       return require('./hub').remember(ROOT_DIR, from, verdict, relayUrl);
@@ -1064,7 +1094,7 @@ common.refuseListenError(server, port, 'js/server.js');
     // cache, not this hub instance's — one node, one answer to "where have
     // I lately been told somebody lives", the same reason onRoute below
     // takes it from the module.
-    noteSeen: function (key, what) { require('./hub').seenPeers.note(key, what); },
+    noteSeen: function (key, what) { require('./hub').shadow(ROOT_DIR).note(key, what); },
     rootDir: ROOT_DIR,
     jobs: jobs,
     router: peerRouter,
@@ -1145,7 +1175,7 @@ common.refuseListenError(server, port, 'js/server.js');
       // answer to "where have I lately been told somebody lives", the
       // same reason relayRequest is taken from the module below.
       try {
-        require('./hub').seenPeers.note(body.key, {
+        require('./hub').shadow(ROOT_DIR).note(body.key, {
           at: body.at, url: url, label: body.label || '',
         });
       } catch (e) { /* a cache that will not take a row is not a reason to stop listening */ }

@@ -13,7 +13,26 @@ const relayKeys = require('./relayKeys');
 // says where each person lives, and that was thrown away — see
 // seenPeers.js. Not the contact book: a search result is not a contact,
 // and the book never invents rows.
-const seenPeers = require('./seenPeers').createSeenPeers();
+//
+// ── ONE PER NODE HOME, OPENED ON FIRST USE (cycle R26) ────────────
+//
+// This was a module-level singleton built at require time with nothing,
+// which was fine while the rows lived in RAM and impossible once they live
+// on disc: a store needs a home, and this file learns one only when a
+// caller hands it `rootDir`.
+//
+// Keyed by the resolved root rather than remembered from the first call,
+// so nothing depends on which caller happened to arrive first — the same
+// rule relayStore and nodeStore already follow, and the reason a suite can
+// hold two homes at once without them bleeding into each other.
+const shadows = new Map();
+function shadow(rootDir) {
+  const key = require('path').resolve(rootDir);
+  if (!shadows.has(key)) {
+    shadows.set(key, require('./seenPeers').createSeenPeers({ rootDir: rootDir }));
+  }
+  return shadows.get(key);
+}
 const peerFile = require('./peerFile');
 const peerStats = require('./peerStats');
 const deviceAuth = require('./deviceAuth');
@@ -597,7 +616,7 @@ function remember(rootDir, from, verdict, relayUrl) {
   // relay. And if a search already said where they live, that answer is
   // better than the road, because it is about the PERSON rather than
   // about the packet — so the cache is asked first.
-  var seen = seenPeers.get(key);
+  var seen = shadow(rootDir).get(key);
   var at = (seen && seen.at) || (road ? relayKeys.pinned(rootDir, road) : '') || '';
 
   try {
@@ -1514,7 +1533,7 @@ function createHub(rootDir) {
         // away and was being thrown out. That is the invite and
         // pasted-key path, which had no cache entry to fall back on and
         // therefore produced a contact nobody could route to.
-        var seen = seenPeers.get(publicKey);
+        var seen = shadow(rootDir).get(publicKey);
         var at = (seen && seen.at) || relayKeys.pinned(rootDir, url) || '';
         if (at) {
           try { contactBook.learnRoute(rootDir, publicKey, at); }
@@ -1994,7 +2013,7 @@ function createHub(rootDir) {
         // this is what the node has lately been told about, and it waits
         // until somebody acts on it.
         list.forEach(function (row) {
-          seenPeers.note(row.publicKey, {
+          shadow(rootDir).note(row.publicKey, {
             at: row.atKey, url: row.relay, label: row.publicLabel,
           });
         });
@@ -2226,7 +2245,7 @@ module.exports = {
   // second instance would be a second answer to the same question, and
   // the half that learned something would not be the half that is asked.
   // server.js feeds it from route announcements.
-  seenPeers: seenPeers,
+  shadow: shadow,
   // Listed ONCE. It was here twice — same key, same value, one shadowing
   // the other in the same object literal — which is what an export block
   // that grew by accretion does. Spotted while deleting the six ring

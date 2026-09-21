@@ -199,7 +199,7 @@ test.subHeading('A stranger who writes is added WITH the road they came in on');
   // rather than about one packet: a search answer says where they live,
   // while the road says only which relay carried this one.
   const OTHER = 'KEY-SEARCHED';
-  hub.seenPeers.note(OTHER, { at: 'RELAY-WHERE-THEY-LIVE', url: 'https://elsewhere.example' });
+  hub.shadow(home).note(OTHER, { at: 'RELAY-WHERE-THEY-LIVE', url: 'https://elsewhere.example' });
   hub.remember(home, OTHER, 'admit', ROAD);
   const searched = contactBook.byPublicKey(home, OTHER);
   if (searched && (searched.routes || []).indexOf('RELAY-WHERE-THEY-LIVE') !== -1) {
@@ -234,7 +234,7 @@ test.subHeading('Every way in leaves a route, which is the whole claim');
   // No cache entry at all — nobody searched for this person, nobody wrote
   // in. Only a key and the relay it was offered from.
   const PASTED = 'KEY-PASTED-BY-HAND';
-  hub.seenPeers.forget(PASTED);
+  hub.shadow(home).forget(PASTED);
   contactBook.acquire(home, { publicKey: PASTED, publicLabel: '', relay: URL }, 'handle');
   const at = relayKeys.pinned(home, URL);
   if (at) contactBook.learnRoute(home, PASTED, at);
@@ -268,7 +268,7 @@ test.subHeading('And deleting a contact does not reach into the shadow');
   relayKeys.accept(home, URL, KEY);
 
   const PEER = 'KEY-DELETED-THEN-READDED';
-  hub.seenPeers.note(PEER, { at: KEY, url: URL });
+  hub.shadow(home).note(PEER, { at: KEY, url: URL });
   contactBook.acquire(home, { publicKey: PEER, publicLabel: '', relay: URL }, 'handle');
   contactBook.learnRoute(home, PEER, KEY);
 
@@ -279,16 +279,16 @@ test.subHeading('And deleting a contact does not reach into the shadow');
     test.fail('forget left a row: ' + JSON.stringify(contactBook.byPublicKey(home, PEER)));
   }
 
-  const shadow = hub.seenPeers.get(PEER);
-  if (shadow && shadow.at === KEY) {
+  const kept = hub.shadow(home).get(PEER);
+  if (kept && kept.at === KEY) {
     test.check('and the shadow route survives it — the book was emptied, not the memory');
   } else {
-    test.fail('the shadow went with the contact: ' + JSON.stringify(shadow));
+    test.fail('the shadow went with the contact: ' + JSON.stringify(kept));
   }
 
   // THE PAYOFF, which is why the rule is worth having.
   contactBook.acquire(home, { publicKey: PEER, publicLabel: '', relay: URL }, 'handle');
-  const again = hub.seenPeers.get(PEER);
+  const again = hub.shadow(home).get(PEER);
   if (again && again.at === KEY) {
     contactBook.learnRoute(home, PEER, again.at);
   }

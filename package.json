@@ -8,6 +8,6 @@
     "test": "node spirit/test/runAll.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22.13"
   }
 }
