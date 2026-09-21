@@ -365,7 +365,30 @@ function createPeerPost(opts) {
         // reply is coming down the stream, so the slot stays held and the
         // timer keeps running — that wait is the whole reason a slot
         // exists.
-        if (res.status >= 200 && res.status < 300) return;
+        //
+        // BUT IT KEEPS RUNNING FOR AS LONG AS THE RELAY GRANTED, not for
+        // as long as this node asked. The relay answers with `grantedMs`
+        // = min(what we asked, its own ceiling), so asking 8 s of a relay
+        // that allows 5 s means the route is gone at 5 s and the reply can
+        // no longer arrive. Waiting the remaining three seconds holds this
+        // member's only slot for nothing — the asker blocking itself,
+        // which looks exactly like the relay blocking it.
+        if (res.status >= 200 && res.status < 300) {
+          var granted = body && typeof body.grantedMs === 'number' ? body.grantedMs : 0;
+          var slotNow = waiting[hash];
+          if (granted > 0 && granted < waitMs && slotNow && slotNow.timer) {
+            clearT(slotNow.timer);
+            slotNow.timer = setT(function () {
+              slotNow.timer = null;
+              afterAttempt(it.seq, hash, {
+                ok: false, status: 504, hash: hash,
+                error: 'no answer within the ' + granted + 'ms the relay granted',
+                stillOpen: true, grantedMs: granted,
+              });
+            }, granted);
+          }
+          return;
+        }
         afterAttempt(it.seq, hash, {
           ok: false, status: res.status, hash: hash,
           error: (body && body.error) || 'refused',
@@ -875,6 +898,35 @@ function createPeerPost(opts) {
     // itself (relay.relayErrorToAsker). It is never the target's answer
     // and must not read as one: settled as a failure, with the relay's
     // reason, and marked `relayed` so an app can tell who said it.
+    // ── AN ANSWER THAT CAME BACK AFTER WE STOPPED WAITING ───────────
+    //
+    //   Andy: "if a 200 or error arrives late, and the pending label has
+    //   vanished, it simply disposes of this reply packet, regardless of
+    //   200 or error" — "it needs logging, because in all likelihood relay
+    //   A still would block subsequent request."
+    //
+    // Disposed of, yes. But silently disposed of is how this tree learns
+    // nothing: a reply arriving after the wait expired is direct evidence
+    // that the budget was too tight, or that a relay is still holding a
+    // route this node has given up on and is therefore refusing its next
+    // request. That is the one thing the ordering built above cannot
+    // prove about itself — only the wire can say whether it holds.
+    //
+    // SAFE TO LOG because the receipt signature was verified above,
+    // before this lookup. A stranger cannot write a row here.
+    //
+    // HOW LATE IS NOT RECORDED and does not need to be: the outbound row
+    // for this hash is already in the log with its own timestamp, so the
+    // interval is a subtraction rather than a second clock.
+    if (!waiting[body.hash]) {
+      note({
+        dir: 'in', kind: 'reply', peer: body.from, relay: '',
+        hash: body.hash, outcome: 'too-late',
+        payload: typeof body.text === 'string' ? body.text : undefined,
+      });
+      return false;
+    }
+
     var slot = waiting[body.hash];
     if (slot && slot.toKey && body.from !== slot.toKey) {
       var said = null;

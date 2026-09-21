@@ -253,6 +253,32 @@ test.subHeading('A hop refuses before the wire when the far side could not use i
   }
 }
 
+test.subHeading('The asker is told what it was granted, and stops when the relay does');
+
+{
+  const R = router.createRouter({ ttlMs: 5000 });
+
+  const asked = R.open('g1', 'me', 'you', function () { return true; }, null, { ttlMs: 8000 });
+  if (asked.ok && asked.grantedMs === 5000) {
+    test.check('asking for 8 s is accepted and answered with the 5 s actually granted');
+  } else {
+    test.fail('grant not reported: ' + JSON.stringify(asked));
+  }
+
+  const modest = R.open('g2', 'me', 'other', function () { return true; }, null, { ttlMs: 1200 });
+  if (modest.ok && modest.grantedMs === 1200) {
+    test.check('and asking for less is granted in full, and said so');
+  } else {
+    test.fail('modest grant: ' + JSON.stringify(modest));
+  }
+
+  // WHY IT MATTERS, and it is not tidiness. Without the grant the asker
+  // knows only what it ASKED for, so it waits out the difference — its own
+  // slot, held after the relay let go. Andy: "in all likelihood relay A
+  // still would block subsequent request." The asker blocking itself looks
+  // identical from the outside.
+}
+
 test.subHeading('And it crosses the wire, refusal and all');
 
 async function overTheWire() {

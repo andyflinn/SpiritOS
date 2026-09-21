@@ -351,7 +351,11 @@ function createRouter(opts) {
       delete pending[hash];
       return { ok: false, status: 502, error: 'target could not be reached' };
     }
-    return { ok: true, status: 202, hash: hash };
+    // WHAT WAS ACTUALLY GRANTED, told to the asker. Without it the asker
+    // knows only what it ASKED for, and goes on holding its own slot long
+    // after this box let go — which is the asker blocking itself, and
+    // indistinguishable from the relay blocking it.
+    return { ok: true, status: 202, hash: hash, grantedMs: live };
   }
 
   // Who may answer. The hash finds the request; being its target is the

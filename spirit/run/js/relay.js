@@ -3127,7 +3127,12 @@ function createRelay(rootDir, deps) {
 
   function withStatus(result, hash) {
     if (!result || !result.ok) return result;
-    return { ok: true, status: 202, hash: hash };
+    return {
+      ok: true, status: 202, hash: hash,
+      // Passed on rather than dropped: this is the number that lets the
+      // asker give up exactly when this relay does.
+      grantedMs: result.grantedMs,
+    };
   }
 
   // The answer, coming back. The hash finds the request; being its
