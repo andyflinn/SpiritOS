@@ -81,7 +81,28 @@ Unbounded today. Harmless at patience zero, a leak the moment patience is
 days. **Shed background before deliberate** — shedding oldest would
 invert Andy's ordering rule.
 
-**Status:** OPEN — not built, and harmless until patience is non-zero, which no caller sets.
+> **Andy settled the shape:** *"the node wants to avoid accumulating a
+> backlog in the post-scheduler, at this point it has at least the option
+> of refusing requests outright until the block is resolved."*
+>
+> **Refused at the door, never shed from the middle** — dropping from the
+> middle would evict work that had already earned its place, which is the
+> anti-starvation rule upside down. It is the rule the relay already
+> follows on the other box (`router.js`: *"capacity is a refusal, never a
+> drop"*).
+>
+> **Bounded in bytes rather than rows**, because an entry is not what
+> costs: a queued request holds its payload until sent, so a row count
+> bounds a number nobody cares about. Background yields at a quarter of
+> the room rather than at the brim — the class split doing for space what
+> it already does for turn.
+
+**Verify:** `spirit/test/postQueue.js` — room is measured in bytes; a
+background sweep is refused long before a person's message would be; what
+is queued is counted; and the room returns when it goes, so a refusal is
+a moment rather than a state.
+
+**Status:** DONE
 
 ### R4 — route expiry using `seen`
 
