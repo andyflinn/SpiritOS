@@ -311,9 +311,15 @@ before it runs out of room to write people down.
 tool rather than typed. Each carries its own `capacity.md` to read and a
 `capacity.json` to compare against.
 
-| platform | measured | tree | node | bare node | relay at rest | per stream, process | per stream, kernel |
+| platform | measured | tree | node | bare node | relay at rest | per stream, process | a reachable peer |
 |---|---|---|---|---|---|---|---|
-| **[`windows-10.0`](CAPACITY/windows-10.0/capacity.md)** | 2026-09-21 | `c995478` | v24.20.0 | 49 MB | 59 MB | 60 KB | 21 KB |
+| **[`ubuntu-24.04-wsl2`](CAPACITY/ubuntu-24.04-wsl2/capacity.md)** | 2026-09-21 | `4e94e2d` | v24.21.0 | 42 MB | 63 MB | **40 KB** | — *(pre-fix run)* |
+| **[`windows-10.0`](CAPACITY/windows-10.0/capacity.md)** | 2026-09-21 | `4e94e2d` | v24.20.0 | 49 MB | 59 MB | **61 KB** | 577 B |
+
+**There is no kernel column here, and that is the finding.** See *What the
+second platform caught*, below: on Windows it swings 2.3× between runs, on
+Linux it is below what the counter can resolve. A column nobody should
+compare does not belong in the comparison.
 
 **The date and the commit are on every row for a reason**: a platform
 measured three cycles ago is making a different claim from one measured
@@ -352,41 +358,66 @@ whether it travels. Two can say whether it is close.
 
 [The conventions, and the caveats that travel with every row.](CAPACITY/README.md)
 
-## What the kernel costs, which no RSS figure shows
+## What the kernel costs — and why that question has no answer yet
 
 > **Andy:** *"for every possible live member, we must leave space for the
 > OS's socket usage etc, which i estimate will be proportional to
 > max-live-streams."*
 
-**Correct, and the earlier numbers on this page could not see it.** A
-socket's buffers belong to the kernel, not to the process holding the
-handle — so `WorkingSet64` measures Node's per-socket structures and
-nothing of the OS's.
+**The instinct is right. The number is not available**, and this section
+used to claim otherwise.
 
-Measured the same way, across the same steps:
+**What it said:** ~14 KB of kernel per stream on Windows, so a total of
+~75 KB, so `STREAMS_PER_MB` should be ~14.
 
-| | per held stream |
+**What two runs on the same box at the same commit actually gave:**
+
+| | run 1 | run 2 |
+|---|---|---|
+| per stream, process | 61,450 B | 62,628 B — **2% apart** |
+| per stream, kernel | 21,002 B | **48,184 B — 2.3× apart** |
+
+**The process figure is a measurement. The kernel figure is not.** It is
+system-wide non-paged pool, so it moves with whatever else the machine is
+doing — and a quantity that swings by more than itself between two
+identical runs cannot carry a conclusion.
+
+**And Linux fails the same question from the opposite end.**
+`/proc/net/sockstat` reports in pages; across 800 streams it moved once,
+and a second run reported zero. Too coarse there, too noisy here.
+
+**So the honest position is:**
+
+| | |
 |---|---|
-| the relay process | **~58–60 KB** |
-| the kernel (non-paged pool, loopback) | **~14 KB** |
-| **total, upper bound** | **~75 KB** |
+| what a stream costs the **process** | **measured** — 61–63 KB Windows, 40–43 KB Linux, stable across runs |
+| what a stream costs the **kernel** | **not measurable with these counters**, on either platform |
+| therefore the **total** | **unknown**, and no figure on this page should claim one |
 
-**On loopback both endpoints are on the measuring machine**, so a real
-relay holding one end per member spends nearer **7 KB** of kernel — call
-the honest total **67–75 KB**.
+### Which is the real argument for Andy's safety factor
 
-**Which makes the connection figures on this page about 25% optimistic**:
-~930 rather than ~1,200 at 128 MB. They are left as measured and corrected
-here rather than quietly restated, because the process figure is still the
-right one to quote for the process.
+> **Andy:** *"we should recommend that on a box of spirit-size only half
+> of ram should be allocated for relay."*
 
-**The consequence for the design is the real point.** If every hard
-ceiling is derived from `ramLimitMB`, the per-stream constant must be the
-**total**, not the process cost — otherwise an owner sets 128 MB, the
-arithmetic promises 1,200, the box carries 930, and the owner's number
-quietly meant something other than what they set. So `STREAMS_PER_MB` is
-**~14**, not the 16 that was guessed or the 18 the process cost alone
-would suggest.
+**He proposed that before any of this was measured, and the measurements
+have made the case for it better rather than weaker.** Not *"the kernel
+costs ~14 KB so leave room for it"* — that was a number that dissolved on
+a second look — but:
+
+> **The kernel's share is real, proportional to live streams, and cannot
+> be measured with the instruments available. A margin is the honest
+> substitute for a number you cannot get.**
+
+So a ceiling should be derived from the **process** cost, which is
+measurable, and the owner's `ramLimitMB` should be **at most half the
+box**. The margin then covers the kernel's share, the operating system,
+and everything else still unmeasured — active streams, fragmentation,
+payloads in transit — without pretending any of them has been counted.
+
+**And `STREAMS_PER_MB` is still not one number**, for the reason the second
+platform found: 62 KB a stream on Windows against 41 KB on Linux is
+~16/MB against ~25/MB, before any margin. That is a platform constant, not
+a constant.
 
 ## A message in flight, and the thing that turned up instead
 

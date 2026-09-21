@@ -36,10 +36,21 @@ The first two boxes came in at **60 KB and 40.5 KB** a stream, a third
 apart, stable across runs. The gap is the platform. Compare these, expect
 them to differ, and do not average them into a constant.
 
-**Not comparable at all, and on Linux barely a measurement: the kernel
-column.** `/proc/net/sockstat` reports in pages and moved once across 800
-streams, so a small per-stream figure there means *below what the counter
-can see* rather than *small*. Windows reports non-paged
+**Do not use the kernel column at all.** It is in the JSON because the
+tool reads it, and it is in no table on this page because neither platform
+can measure it:
+
+- **Windows** — system-wide non-paged pool. Two runs on one box at one
+  commit gave 21,002 and 48,184 bytes a stream. It moves with whatever
+  else the machine is doing.
+- **Linux** — `/proc/net/sockstat` in pages. It moved once across 800
+  streams and a second run reported zero, so a small figure there means
+  *below what the counter can see* rather than *small*.
+
+**A margin is the honest substitute.** The kernel's share is real and
+proportional to live streams; it simply cannot be counted with these
+instruments, so a ceiling is derived from the process cost and the owner
+gives a relay at most half the box. Windows reports non-paged
 pool, which is *every driver on the machine*. Linux reports
 `/proc/net/sockstat` TCP `mem`, which is *the TCP stack alone*. These are
 different quantities with the same name, and averaging them or putting

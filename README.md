@@ -62,8 +62,8 @@ same on every platform**, which two boxes had to be measured to find out:
 
 | a held connection costs | Windows 11 | Ubuntu 24.04 (WSL2) |
 |---|---|---|
-| in the relay process | **60 KB** | **40.5 KB** |
-| in the kernel | ~14 KB | below what the counter can see |
+| in the relay process | **61–63 KB** | **40–43 KB** |
+| in the kernel | *not measurable* — the counter swings 2.3× between runs | *not measurable* — below the counter's resolution |
 
 | RAM | connected at once, Windows | … Ubuntu |
 |---|---|---|
@@ -74,10 +74,15 @@ same on every platform**, which two boxes had to be measured to find out:
 | 512 MB | ~6,200 | ~9,900 |
 
 **A third fewer bytes a connection on Linux than on Windows** — far past
-anything measurement noise explains, and confirmed by a second run. The
-relays that matter run on Linux, so the generous column is the real one;
-the point is that **there is no single number**, and the relay's own
-ceiling constant has to come from the platform it is on.
+anything measurement noise explains, and confirmed on both boxes by a
+second run. The relays that matter run on Linux, so the generous column is
+the real one; the point is that **there is no single number**, and the
+relay's own ceiling constant has to come from the platform it is on.
+
+**The kernel's share is real and cannot be measured** with the counters
+either platform offers — so the tables above are the process only, and an
+owner should give a relay **at most half the box**. A margin is the honest
+substitute for a number you cannot get.
 
 ### What decides each number
 
