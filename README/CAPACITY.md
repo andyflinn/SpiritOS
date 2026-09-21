@@ -106,7 +106,7 @@ node settles at 72 MB. A node's floor is the runtime's floor.
 | | |
 |---|---|
 | reachable peers, at 577 B each | **~18,000** in 10 MB |
-| an empty `node.db` | 20 KB |
+| an empty `node.db` | 52 KB — 20 KB before the post queue moved in (R16) |
 | contacts, identity, relay pins | kilobytes |
 | the traffic log | grows with what you actually send, and is permanent by decision |
 
@@ -175,7 +175,7 @@ is yours to worry about. Measured on a working node, 2026-09-21:
 |---|---|---|
 | **the program** | `spirit/run/js` + `app` | **~2 MB** — fixed, arrives with the clone |
 | **the node's own bookkeeping** | `relay-state/` | **~340 KB**, and 90% of it is one file |
-| **the auto-memory** | `relay-state/node.db` | **20 KB** here, **capped at 20 MB** by default |
+| **the auto-memory** | `relay-state/node.db` | **tens of KB** empty, the cache **capped at 20 MB** by default |
 | **your space** | `media/`, `published/`, `app/` | **92 MB** on this node, and unbounded by design |
 
 ### What the node needs
@@ -292,7 +292,7 @@ Written to real databases, index included, and the file differenced.
 | node: one route for that peer | **420** |
 | **node: a peer you can reach** | **577** |
 | node: one logged exchange | **438** |
-| an empty `relay.db` / `node.db` | 40 KB / 20 KB |
+| an empty `relay.db` / `node.db` | 40 KB / 52 KB |
 
 **A peer with no route is a real state** — a name a search returned,
 waiting to become useful — but it is not what "remembered peers" was ever
@@ -643,3 +643,16 @@ a connection changed — noise, not drift.
 **Tagged `capacity-2026-09-21`** — the first *capacity* tag (the repository already had fourteen others; an earlier draft of this line said "the first tag on the repository", which was not checked and was wrong), on
 Andy's *"tag the tree"*, after an assessment that this interval was real:
 cycles 3 and 4 reshaped the data a peer costs.
+
+### The post queue moved into `node.db` (cycle R16)
+
+**An empty `node.db` is now 52 KB, up from 20**, because it holds two more
+tables and their indexes. A fixed cost of 32 KB, paid once.
+
+**And the cache cap stopped measuring the file.** It measured
+`page_count × page_size` — the whole of `node.db` — which was right while
+the file held only the cache. With the queue beside it, a backed-up queue
+would have evicted peers to make room for itself, and at the 1 MB floor
+could have emptied the cache entirely. The cap now reads the cache's own
+tables from SQLite's `dbstat`, so *"maximum cache size"* means the cache
+and nothing else. The file's own size is still kept honest by the vacuum.

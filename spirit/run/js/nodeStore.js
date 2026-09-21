@@ -174,6 +174,48 @@ function open(rootDir, opts) {
     CREATE INDEX IF NOT EXISTS seen_routes_peer ON seen_routes (publicKey, rank, told DESC);
   `);
 
+  // ── THE POST QUEUE, SO AN INTENT OUTLIVES THE PROCESS (cycle R16) ───
+  //
+  //   Andy: patience "could be days for a text message".
+  //
+  // One row per message this node has promised to send and not yet
+  // settled, keyed by its hash. `body` is the signed wire body, text and
+  // all — and that was the gate this cycle had to clear first: it is
+  // correspondence, and correspondence belongs on the readable side
+  // (A-CORRESPONDENT-NODE).
+  //
+  // IT IS ALREADY THERE. peerPost writes the outgoing message, payload
+  // included, to the traffic log BEFORE it is queued ("written before the
+  // transport is touched"). The readable, permanent copy exists first;
+  // this is the working duplicate the machine needs in order to send it,
+  // and `secure_delete` takes it off the disc when it settles.
+  //
+  // TIMES ARE WALL-CLOCK HERE AND MONOTONIC IN THE QUEUE. A monotonic
+  // reading means nothing to the next process, so peerPost converts on
+  // the way out and back again on the way in.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS queue (
+      hash      TEXT    PRIMARY KEY,
+      seq       INTEGER NOT NULL,
+      relayUrl  TEXT    NOT NULL DEFAULT '',
+      toKey     TEXT    NOT NULL DEFAULT '',
+      kind      TEXT    NOT NULL DEFAULT '',
+      body      TEXT    NOT NULL,
+      bytes     INTEGER NOT NULL DEFAULT 0,
+      attempts  INTEGER NOT NULL DEFAULT 0,
+      atWall    INTEGER NOT NULL DEFAULT 0,
+      untilWall INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS queue_order ON queue (seq);
+    CREATE TABLE IF NOT EXISTS queue_backoff (
+      relayUrl  TEXT    NOT NULL,
+      toKey     TEXT    NOT NULL,
+      untilWall INTEGER NOT NULL DEFAULT 0,
+      lastWait  INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (relayUrl, toKey)
+    );
+  `);
+
   // ── THE MIGRATION FROM THE MORNING'S SHAPE ───────────────────
   //
   // `node.db` shipped a few hours before this with `at` and `url` on the
@@ -237,6 +279,23 @@ function open(rootDir, opts) {
     orphanRoutes: db.prepare(
       'DELETE FROM seen_routes WHERE publicKey NOT IN (SELECT publicKey FROM seen)'),
     clearRoutes: db.prepare('DELETE FROM seen_routes'),
+    qPut: db.prepare(`INSERT INTO queue
+      (hash, seq, relayUrl, toKey, kind, body, bytes, attempts, atWall, untilWall)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(hash) DO UPDATE SET attempts = excluded.attempts,
+        untilWall = excluded.untilWall`),
+    qAttempts: db.prepare('UPDATE queue SET attempts = ? WHERE hash = ?'),
+    qDel: db.prepare('DELETE FROM queue WHERE hash = ?'),
+    qAll: db.prepare('SELECT * FROM queue ORDER BY seq ASC'),
+    qMaxSeq: db.prepare('SELECT COALESCE(MAX(seq), 0) AS n FROM queue'),
+    bPut: db.prepare(`INSERT INTO queue_backoff (relayUrl, toKey, untilWall, lastWait)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(relayUrl, toKey) DO UPDATE SET untilWall = excluded.untilWall,
+        lastWait = excluded.lastWait`),
+    bDel: db.prepare('DELETE FROM queue_backoff WHERE relayUrl = ? AND toKey = ?'),
+    bAll: db.prepare('SELECT * FROM queue_backoff'),
+    // A backoff that has run out is not worth carrying into a new process.
+    bExpired: db.prepare('DELETE FROM queue_backoff WHERE untilWall <= ?'),
     // GREEDY, IN ONE STATEMENT. A field is written when the caller has one
     // and left alone when it does not — the callers do not all know the
     // same things, and a search that taught a label must not have it
@@ -284,6 +343,14 @@ function open(rootDir, opts) {
     clear: db.prepare('DELETE FROM seen'),
     pages: db.prepare('PRAGMA page_count'),
     pageSize: db.prepare('PRAGMA page_size'),
+    // THE CACHE'S OWN PAGES, AND ONLY THOSE (cycle R16). This file holds
+    // the post queue too now, and the owner's cap is on "maximum cache
+    // size" — not on messages waiting to be sent. Measuring the whole file
+    // would let a backed-up queue evict the shadow to make room for
+    // itself, and at the 1 MB floor could empty it entirely. `dbstat`
+    // counts the b-tree pages of the named tables and their indexes.
+    cacheBytes: db.prepare(`SELECT COALESCE(SUM(pgsize), 0) AS n FROM dbstat
+      WHERE name IN (SELECT name FROM sqlite_schema WHERE tbl_name IN ('seen', 'seen_routes'))`),
   };
 
   function row(r) {
@@ -378,10 +445,15 @@ function open(rootDir, opts) {
       // 500` was 110 KB — about a five-hundredth of what a person would
       // consider reasonable, and unknowably so from the number itself.
       //
-      // MEASURED, NOT ESTIMATED. `page_count × page_size` is the file, not
-      // an assumption about what a row costs — which matters because a
-      // label is free-form and a row is not a fixed size.
-      bytes: function () { return q.pages.get().page_count * q.pageSize.get().page_size; },
+      // MEASURED, NOT ESTIMATED. The cache's own pages, read from `dbstat`,
+      // not an assumption about what a row costs — which matters because a
+      // label is free-form and a row is not a fixed size. (This read the
+      // whole file until the queue moved in beside it; see `cacheBytes`.)
+      // What the CACHE occupies, not the file: see `cacheBytes` above. The
+      // file's own size is still what `fileBytes` answers, and what the
+      // vacuum below keeps honest.
+      bytes: function () { return q.cacheBytes.get().n; },
+      fileBytes: function () { return q.pages.get().page_count * q.pageSize.get().page_size; },
       sweepToBytes: function (maxBytes) {
         const cap = Number(maxBytes);
         if (!(cap > 0) || store.seen.bytes() <= cap) return 0;
@@ -405,6 +477,35 @@ function open(rootDir, opts) {
         const gone = q.clear.run().changes;
         if (gone) db.exec('PRAGMA incremental_vacuum');
         return gone;
+      },
+    },
+
+    // ── THE QUEUE, AS ROWS ────────────────────────────────────────
+    //
+    // Written through by peerPost as entries change, read once when a node
+    // starts. `seq` here is only an ORDER — the queue hands out its own
+    // numbers in a new process — so it is assigned from the table rather
+    // than trusted from a queue that may have restarted from 1.
+    queue: {
+      put: function (row) {
+        const seq = row.seq || (q.qMaxSeq.get().n + 1);
+        q.qPut.run(String(row.hash), seq, String(row.relayUrl || ''), String(row.toKey || ''),
+          String(row.kind || ''), String(row.body || ''), Number(row.bytes) || 0,
+          Number(row.attempts) || 0, Number(row.atWall) || 0, Number(row.untilWall) || 0);
+        return seq;
+      },
+      attempts: function (hash, n) { q.qAttempts.run(Number(n) || 0, String(hash)); },
+      del: function (hash) { return q.qDel.run(String(hash)).changes > 0; },
+      all: function () { return q.qAll.all(); },
+    },
+    backoff: {
+      put: function (relayUrl, toKey, untilWall, lastWait) {
+        q.bPut.run(String(relayUrl), String(toKey), Number(untilWall) || 0, Number(lastWait) || 0);
+      },
+      del: function (relayUrl, toKey) { q.bDel.run(String(relayUrl), String(toKey)); },
+      all: function (nowWall) {
+        if (nowWall) q.bExpired.run(Number(nowWall));
+        return q.bAll.all();
       },
     },
 

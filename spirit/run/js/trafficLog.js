@@ -334,6 +334,11 @@ function createTrafficLog(opts) {
     // front door already made.
     if (entry.admitted) row.admitted = true;
     if (entry.status != null) row.status = Number(entry.status) || 0;
+    // WHAT A FAILURE MEANT, as a spiritErrors code (R36). Optional and
+    // additive: rows written before it existed simply lack it, and a
+    // reader that does not know it ignores it. A status alone could not
+    // say which of seven things a 503 was.
+    if (entry.code) row.code = String(entry.code);
     if (entry.ms != null) row.ms = Number(entry.ms) || 0;
 
     // The payload, whole and untouched. `bytes` is measured off the

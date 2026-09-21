@@ -153,7 +153,7 @@ test.subHeading('Two evictions, and neither does the other\'s job (R4)');
   }
   const shed = s.seen.sweepToBytes(40 * 1024);
   if (shed > 0 && s.seen.bytes() <= 40 * 1024 && s.seen.size() > 0) {
-    test.check('the space bound holds the FILE under its cap — ' +
+    test.check('the space bound holds the CACHE under its cap — ' +
       s.seen.size() + ' rows in ' + Math.round(s.seen.bytes() / 1024) + ' KB');
   } else {
     test.fail('after sweep: shed ' + shed + ', ' + s.seen.bytes() + ' bytes');
@@ -171,12 +171,17 @@ test.subHeading('Two evictions, and neither does the other\'s job (R4)');
   // row's pages on a free list and the size never comes back down — so a
   // byte cap would evict for ever after one busy week, reading a number
   // that cannot fall.
-  const held = s.seen.bytes();
+  // THE FILE, NOT THE CACHE. `bytes()` now measures the cache's own
+  // tables (R16), which fall on any delete whether or not the file gives
+  // its pages back — so asserting on it here would pass with the vacuum
+  // removed, which is a check that cannot fail. `fileBytes()` is what the
+  // disc actually holds.
+  const held = s.seen.fileBytes();
   s.seen.clear();
-  if (s.seen.bytes() < held) {
+  if (s.seen.fileBytes() < held) {
     test.check('and the file gives the pages back, or a byte cap could never be met twice');
   } else {
-    test.fail('the file did not shrink: ' + held + ' -> ' + s.seen.bytes());
+    test.fail('the file did not shrink: ' + held + ' -> ' + s.seen.fileBytes());
   }
 
   // A SWEEP WITH ROOM TO SPARE IS NOT A SWEEP.

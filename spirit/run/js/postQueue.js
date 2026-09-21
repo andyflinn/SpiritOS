@@ -206,6 +206,57 @@ function createQueue(opts) {
     return seq;
   }
 
+  // ── TAKING AN ENTRY BACK AFTER A RESTART (cycle R16) ─────────────
+  //
+  //   Andy: patience "could be days for a text message" — and days means
+  //   restarts.
+  //
+  // THIS FILE STILL DOES NO I/O. It hands back what it would need and
+  // takes it back again; where that lives is peerPost's business and the
+  // store's. `at` and `until` arrive already in THIS queue's clock — the
+  // caller converts from wall time, because only the caller knows how long
+  // the process was down.
+  //
+  // A NEW SEQUENCE, IN THE ORDER GIVEN. The old numbers mean nothing to a
+  // new process; the ORDER is what the anti-starvation rule depends on,
+  // and the caller supplies entries oldest first.
+  //
+  // NOT SENDING, whatever it was. An attempt that was on the wire when the
+  // process died is not on the wire now. Its `attempts` count stands, so
+  // an entry that already had its one try is judged on that.
+  function restoreItem(item) {
+    var seq = nextSeq;
+    nextSeq += 1;
+    items.push({
+      seq: seq,
+      relayUrl: String(item.relayUrl || ''),
+      toKey: String(item.toKey || ''),
+      kind: CLASS_RANK[item.kind] === undefined ? DELIBERATE : item.kind,
+      at: Number(item.at),
+      until: Number(item.until),
+      attempts: Number(item.attempts) || 0,
+      sending: false,
+      bytes: item.bytes || 0,
+      payload: item.payload,
+    });
+    bytesHeld += item.bytes || 0;
+    return seq;
+  }
+
+  // A backoff a peer had earned survives the restart too — otherwise a
+  // node that crashed would hammer every target it had been told to leave
+  // alone, which is the opposite of what the backoff was for.
+  function restorePair(relayUrl, toKey, until, wait) {
+    var k = pairKey(relayUrl, toKey);
+    if (until) backedOffUntil[k] = Number(until);
+    if (wait) lastWait[k] = Number(wait);
+  }
+
+  function pairState(relayUrl, toKey) {
+    var k = pairKey(relayUrl, toKey);
+    return { until: backedOffUntil[k] || 0, lastWait: lastWait[k] || 0 };
+  }
+
   function find(seq) {
     for (var i = 0; i < items.length; i += 1) if (items[i].seq === seq) return items[i];
     return null;
@@ -386,6 +437,12 @@ function createQueue(opts) {
 
   return {
     add: add,
+    restoreItem: restoreItem,
+    restorePair: restorePair,
+    pairState: pairState,
+    // The queue's own clock, so a caller converting to and from wall time
+    // uses the same one the queue measures with.
+    now: function () { return nowFn(); },
     eligible: eligible,
     started: started,
     stopped: stopped,

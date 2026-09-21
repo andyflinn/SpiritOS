@@ -56,7 +56,7 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Seven open, five deferred, one cancelled, twenty-four done. Ten of the eighteen are
+**Six open, five deferred, one cancelled, twenty-five done. Ten of the eighteen are
 blocked by nothing**, and nine are decided — waiting to be built, not to be
 thought about. **Three rows now need a review, and nothing else does.**
 
@@ -77,7 +77,7 @@ thought about. **Three rows now need a review, and nothing else does.**
 | **R13** | no streams between partners | OPEN — **wire, team review** | **yes** | R12 |
 | **R14** | open partnering — a row on send or receive, mutual activates | OPEN — **decided**; keyed outranks unkeyed on eviction, numbers open | **yes** | R9, R11, R12 |
 | <sub>R15</sub> | <sub>*the per-stream measurement*</sub> | <sub>*done — ~58 KB*</sub> | <sub>—</sub> | |
-| **R16** | the queue survives a restart — and is a table, not a dump | OPEN | **yes** | R26's store |
+| <sub>R16</sub> | <sub>*the queue survives a restart — and is a table, not a dump*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R17</sub> | <sub>*suites clean up the homes they create*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R18</sub> | <sub>*durations on a clock that cannot jump*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R19</sub> | <sub>*the load fixture, and seeing it stay lively*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -1249,8 +1249,69 @@ not. So this requirement may not simply write the row into sqlite: either
 the payload stays readable, or R16 answers **how an owner sees what is
 waiting to be sent**. Either is acceptable; silence is not.
 
-**Status:** OPEN — not built, and nothing needs it until a caller sets a
-patience. `peerPost` defaults to zero, so retrying is inert today.
+### The gate, cleared 2026-09-21
+
+> **Andy:** *"revisit … R16 before cycle 5."*
+
+The concern: the queue holds the message text, so persisting it would put
+unsent correspondence into `node.db`, which is not the readable side
+(A-CORRESPONDENT-NODE). **It does not.** `peerPost` writes the outgoing
+message — payload included — to the traffic log BEFORE it is queued
+(*"written before the transport is touched"*). The readable, permanent copy
+exists first; the queue's is the working duplicate the machine needs in
+order to send it, and `secure_delete` takes it off the disc when it
+settles. Andy chose, on the recommendation, to store the text rather than
+re-read it from the log at every boot.
+
+**One nuance recorded, not fixed:** that first log entry says
+`outcome: 'sent'` at the moment of queueing. Harmless while every message
+gets one attempt; once patience has an owner setting, a message can sit
+queued for days under a log line that already says "sent".
+
+### Built 2026-09-21 — cycle 5
+
+**Written through, read back.** Every entry goes to a `queue` table the
+moment it is queued, its attempt count as each attempt starts, and it
+leaves the disc when it settles. A backoff a peer had earned goes to
+`queue_backoff`, so a node that crashed does not hammer a target it had
+been told to leave alone. `postQueue` still does no I/O; it gained pure
+restore functions and `peerPost` does the writing.
+
+**Clocks convert at the edge.** The queue measures on `performance.now()`,
+which means nothing to the next process, so deadlines go to disc as wall
+time and come back monotonic — the time the node spent down counted
+against them.
+
+**Nobody is waiting on a restored message**, so it gets a waiter that goes
+nowhere and its outcome still lands where it always did: the traffic log.
+**That closes a gap that had no name** — a node that died mid-send used to
+leave a "sent" entry with no ending, for ever.
+
+**Only the node gets a store.** The relay's own `peerPost` is built without
+one, because a relay has no `node.db` and keeps nobody's intentions.
+
+### Three things the suite found, all fixed
+
+- **An expired message was sent one last time.** `pump()` dispatched
+  first and swept the spent entries after. Not only a restart's problem:
+  a busy target whose `retryAfterMs` outlasted the remaining patience did
+  the same. Expire first, then send.
+- **The cache cap would have evicted the cache for the queue.** It
+  measured the whole file, and the file holds the queue now; at the 1 MB
+  floor a backed-up queue could have emptied the cache. It reads the
+  cache's own tables from `dbstat` now.
+- **The log said a message failed, never why.** It kept `refused, 504`.
+  Rows now carry the catalogue's `code` — `gave-up`, `peer-unreachable` —
+  the same meaning the presence write uses (R36, retrofitted).
+
+**Verify:** `spirit/test/queueRestart.js` — the message and its backoff on
+disc; a restored message waiting out the backoff it earned; resent once it
+passes, as the same signed message; a message whose patience ran out while
+the node was down not sent, logged as `gave-up`, and its row gone; no
+store, no `node.db`. `spirit/test/nodeStore.js` carries the cap's new
+measure and the file's shrink, falsified with the vacuum removed.
+
+**Status:** DONE
 
 ### R17 — suites clean up the homes they create
 

@@ -1082,6 +1082,10 @@ try {
   peerRouter = require('./peerPost').createPeerPost({
     rootDir: ROOT_DIR,
     request: require('./hub').relayRequest,
+    // THE QUEUE OUTLIVES THE PROCESS (cycle R16). Only here: the relay's
+    // own peerPost (relayServer.js) is built without a store, because a
+    // relay has no node.db and keeps nobody's intentions.
+    store: nodeStore.open(ROOT_DIR),
     // A node cannot know whether a packet will be tunnelled, so it refuses
     // at compose one that would not fit once wrapped (cycle 2, SURFACE §8).
     checkTunnel: true,

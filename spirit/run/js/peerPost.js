@@ -37,6 +37,7 @@ const nodeCard = require('./nodeCard');
 // because they are decidable without a socket and therefore testable
 // without one — see postQueue.js and spirit/test/postQueue.js.
 const postQueue = require('./postQueue');
+const spiritErrors = require('./spiritErrors');
 
 // A UX number, not a protocol constant tuned against another machine's
 // tick. It only decides how long a caller stares at a spinner.
@@ -142,6 +143,38 @@ function createPeerPost(opts) {
     backoffStartMs: opts.backoffStartMs,
     backoffMaxMs: opts.backoffMaxMs,
   });
+
+  // ── A QUEUE THAT OUTLIVES THE PROCESS, WHEN THERE IS SOMEWHERE TO KEEP IT ──
+  //
+  //   Andy: patience "could be days for a text message" — and days means
+  //   restarts (cycle R16).
+  //
+  // Given a store, every entry is written through as it changes and read
+  // back when the node starts. Given none — a RELAY's own peerPost, which
+  // has no node.db, and every suite that does not care — it behaves
+  // exactly as before. That is not a second implementation: it is the
+  // same queue with or without a place to write it down.
+  var store = opts.store || null;
+
+  // THE QUEUE MEASURES ON A CLOCK THAT CANNOT JUMP (R18), AND THAT CLOCK
+  // MEANS NOTHING TO THE NEXT PROCESS — performance.now() starts again
+  // near zero. So a deadline goes to disc as wall time and comes back as
+  // monotonic, and the time the node spent down is counted against it.
+  function toWall(mono) { return Date.now() + (mono - queue.now()); }
+  function toMono(wall) { return queue.now() + (wall - Date.now()); }
+
+  function persistOut(hash) {
+    if (!store) return;
+    try { store.queue.del(hash); } catch (e) { /* the send settled; the row is a detail */ }
+  }
+  function persistPair(relayUrl, toKey) {
+    if (!store) return;
+    try {
+      var st = queue.pairState(relayUrl, toKey);
+      if (st.until) store.backoff.put(relayUrl, toKey, toWall(st.until), st.lastWait);
+      else store.backoff.del(relayUrl, toKey);
+    } catch (e) { /* a backoff that was not written costs one early retry */ }
+  }
   var wakeTimer = null;
   // What arrived for us, in order, with an id an app can ask for again.
   // Called "mailbox" until 2026-09-15, after the ring R8 deleted. Andy:
@@ -245,6 +278,12 @@ function createPeerPost(opts) {
       outcome: arrived ? 'receipted'
         : (answer && answer.stillOpen) ? 'no-answer' : 'refused',
       status: answer && answer.status,
+      // WHY, and not only that it failed (R36, retrofitted here). The log
+      // is permanent and is read by a person; "refused, 504" tells them
+      // nothing, "gave-up" or "peer-unreachable" tells them what happened.
+      // The same catalogue the presence write uses, so the log and the
+      // screen can never disagree about what an error meant.
+      code: arrived ? undefined : ((spiritErrors.classifyAnswer(answer) || {}).code),
       ms: Date.now() - slot.at,
       // A receipt usually carries nothing, but an app that answers with
       // something has sent bytes across the WAN and they are logged like
@@ -275,9 +314,13 @@ function createPeerPost(opts) {
     delete waiting[hash];
     if (slot.timer) clearT(slot.timer);
     if (slot.seq) {
-      if (answer && answer.ok) queue.reached(slot.relayUrl, slot.toKey);
+      if (answer && answer.ok) {
+        queue.reached(slot.relayUrl, slot.toKey);
+        persistPair(slot.relayUrl, slot.toKey);
+      }
       queue.done(slot.seq);
     }
+    persistOut(hash);
     noteOutcome(hash, slot, answer);
     slot.resolve(answer);
     pump();
@@ -331,6 +374,8 @@ function createPeerPost(opts) {
       // own retryAfterMs; silence is about the peer, so it doubles.
       if (answer.busy) queue.busy(seq, answer.retryAfterMs);
       else queue.silent(seq);
+      var backed = queue.find(seq);
+      if (backed) persistPair(backed.relayUrl, backed.toKey);
       pump();
       return;
     }
@@ -346,7 +391,7 @@ function createPeerPost(opts) {
   function sendAttempt(it) {
     var hash = it.payload.hash;
     var slot = waiting[hash];
-    if (!slot) { queue.done(it.seq); return; }
+    if (!slot) { queue.done(it.seq); persistOut(hash); return; }
 
     slot.timer = setT(function () {
       slot.timer = null;
@@ -422,13 +467,31 @@ function createPeerPost(opts) {
   // queue says is useful. Re-entrant by design: settle() pumps, and a
   // pump that dispatched nothing is a cheap walk of a short list.
   function pump() {
+    // ── EXPIRE FIRST, THEN SEND (found by R16's suite) ───────────────
+    //
+    // This dispatched everything eligible and swept the spent entries
+    // AFTER — so an entry past its patience, but not blocked, went out one
+    // last time before anything noticed. `eligible()` asks about slots and
+    // backoff, never about the deadline; `expired()` is the only thing
+    // that does.
+    //
+    // NOT ONLY A RESTART'S PROBLEM, which is how it was found. A busy
+    // target whose `retryAfterMs` outlasts the remaining patience produced
+    // the same thing: when the backoff lifted the entry was eligible AND
+    // spent, and was sent anyway. Patience bounds retrying (the first
+    // attempt is never expired), and an attempt after the bound is a
+    // retry the owner did not grant.
+    sweepSpent();
     var it = queue.eligible();
     while (it) {
       queue.started(it.seq);
+      if (store && it.payload && it.payload.hash) {
+        try { store.queue.attempts(it.payload.hash, it.attempts); }
+        catch (e) { /* an attempt count not written costs one extra try after a restart */ }
+      }
       sendAttempt(it);
       it = queue.eligible();
     }
-    sweepSpent();
     wake();
   }
 
@@ -592,6 +655,21 @@ function createPeerPost(opts) {
       bytes: text.length,
       payload: { hash: hash, body: body },
     });
+
+    // WRITTEN DOWN BEFORE IT IS TRIED, for the same reason the waiter is
+    // registered first: a process that dies between queueing and sending
+    // must not lose the one thing it had promised to do.
+    if (store) {
+      var queued = queue.find(waiting[hash].seq);
+      try {
+        store.queue.put({
+          hash: hash, relayUrl: relayUrl, toKey: toKey,
+          kind: queued ? queued.kind : '', body: JSON.stringify(body),
+          bytes: text.length, attempts: 0, atWall: Date.now(),
+          untilWall: queued ? toWall(queued.until) : Date.now(),
+        });
+      } catch (e) { /* a message that could not be written down is still sent now */ }
+    }
 
     // Synchronous when a slot is free, which is the common case and makes
     // this identical to the behaviour before a queue existed.
@@ -1004,6 +1082,54 @@ function createPeerPost(opts) {
       sig: body.sig,
       receipt: true,
     });
+  }
+
+  // ── WHAT THIS NODE HAD PROMISED BEFORE IT STOPPED (cycle R16) ────────
+  //
+  // Every entry comes back in its old order, its deadline shifted by the
+  // time the node spent down, its attempt count intact. A backoff a peer
+  // had earned comes back too.
+  //
+  // NOBODY IS WAITING ON THEM. The caller that made each post was a
+  // request that died with the old process, so each restored entry gets a
+  // waiter that goes nowhere — and its outcome still lands where it always
+  // did: in the traffic log, which is where a person reads what happened.
+  //
+  // AND THAT CLOSES A GAP THAT HAD NO NAME. Before this, a node that died
+  // mid-send left a "sent" entry in the permanent log with no outcome, for
+  // ever. Now every message the log says was sent eventually says how it
+  // ended — answered, refused, or "gave up after 1 attempt(s)" when its
+  // patience had already run out.
+  if (store) {
+    try {
+      var now = Date.now();
+      store.backoff.all(now).forEach(function (b) {
+        queue.restorePair(b.relayUrl, b.toKey, toMono(b.untilWall), b.lastWait);
+      });
+      store.queue.all().forEach(function (row) {
+        var body = null;
+        try { body = JSON.parse(row.body); } catch (e) { body = null; }
+        if (!body) { store.queue.del(row.hash); return; }
+        var seq = queue.restoreItem({
+          relayUrl: row.relayUrl, toKey: row.toKey, kind: row.kind || undefined,
+          at: toMono(row.atWall), until: toMono(row.untilWall),
+          attempts: row.attempts, bytes: row.bytes,
+          payload: { hash: row.hash, body: body },
+        });
+        waiting[row.hash] = {
+          resolve: function () { /* the caller died with the old process */ },
+          relayUrl: row.relayUrl,
+          toKey: row.toKey,
+          at: row.atWall,
+          timer: null,
+          seq: seq,
+          restored: true,
+        };
+      });
+    } catch (e) { /* a queue that cannot be read back starts empty, as it always did */ }
+    // After the factory has returned, so whoever built this has wired it
+    // up (a stream to receive the replies on) before the first send.
+    setT(function () { pump(); }, 0);
   }
 
   return {
