@@ -81,19 +81,50 @@ function stop() {
 
 // The ordinary call to labMaster, so the suites here stop each carrying
 // their own copy of it.
+// ── ONE labMaster, UP TO SIX CALLERS ─────────────────────────────────
+//
+// The runner starts labMaster once and every lab suite is a client of it,
+// six suites at a time. It spawns and stops real node processes, so it
+// has moments where it is not accepting connections — and a single
+// refused connect used to fail a suite outright: labLifecycle went red as
+// "start relay: 0 fetch failed", losing checks to a service that was
+// merely busy. Seen on Windows (one red in three runs) and independently
+// in the WSL checkout (2026-09-21).
+//
+// ONLY ECONNREFUSED IS RETRIED, and that restraint is the whole safety of
+// it. These calls are not idempotent — POST /api/nodes creates a node —
+// so a request that may have ARRIVED must never be sent twice. A refused
+// connect is the one failure that says nothing was accepted: no socket,
+// no read, nothing at the far end to have acted on it. A reset or a
+// hang-up mid-response could mean the opposite, and is reported as it
+// always was.
+function refusedConnect(e) {
+  const code = (e && e.cause && e.cause.code) || (e && e.code) || '';
+  return code === 'ECONNREFUSED';
+}
+
 async function api(method, pathname, body) {
-  try {
-    const res = await fetch(MASTER + pathname, {
-      method: method,
-      headers: body ? { 'Content-Type': 'application/json' } : {},
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    const text = await res.text();
-    let parsed = null;
-    try { parsed = JSON.parse(text); } catch (e) { parsed = null; }
-    return { status: res.status, json: parsed, text: text };
-  } catch (e) {
-    return { status: 0, json: null, text: String((e && e.message) || e) };
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      const res = await fetch(MASTER + pathname, {
+        method: method,
+        headers: body ? { 'Content-Type': 'application/json' } : {},
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const text = await res.text();
+      let parsed = null;
+      try { parsed = JSON.parse(text); } catch (e) { parsed = null; }
+      // AN HTTP STATUS IS AN ANSWER and is never retried. A 500 from
+      // labMaster is a fact about what it did, and asking again would
+      // hide it.
+      return { status: res.status, json: parsed, text: text };
+    } catch (e) {
+      if (attempt < 2 && refusedConnect(e)) {
+        await new Promise(function (r) { setTimeout(r, 150 * (attempt + 1)); });
+        continue;
+      }
+      return { status: 0, json: null, text: String((e && e.message) || e) };
+    }
   }
 }
 

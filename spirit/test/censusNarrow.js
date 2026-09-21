@@ -43,8 +43,29 @@ const RUN = path.join(__dirname, '..', 'run');
 // Comments are stripped before matching. Several files carry a tombstone
 // NAMING the route they no longer call — that is the record working, and a
 // check that cannot tell prose from code would read it as a relapse.
+// A FILE THAT VANISHED BETWEEN THE WALK AND THE READ IS SKIPPED, not
+// fatal. The suites run six at a time over ONE working tree, and
+// buildStamp.js writes `spirit/run/zz-copy-probe.js`, checks that it is
+// named as uncopied, and unlinks it in a finally (buildStamp.js:118-130).
+// Land the walk before that write and the read after that unlink, and
+// this threw ENOENT and took the whole suite with it — eight checks lost
+// to a file that was never anybody's code.
+//
+// Skipping cannot hide an offender: a file that no longer exists is not
+// calling anything. (Reported from the WSL checkout, 2026-09-21, where it
+// showed up once in three runs.)
+//
+// THIRD TIME THIS SHAPE HAS APPEARED IN ONE CYCLE — labMaster's
+// copyTrackedSpirit reads an index that lists deleted files, plantRun.js
+// copies a listing that can go stale mid-copy, and now this. Anything
+// that walks and then reads has to tolerate the walk being out of date.
 function codeOf(file) {
-  return fs.readFileSync(path.join(RUN, file), 'utf8').replace(/\/\/.*/g, '');
+  try {
+    return fs.readFileSync(path.join(RUN, file), 'utf8').replace(/\/\/.*/g, '');
+  } catch (e) {
+    if (e && e.code === 'ENOENT') return '';
+    throw e;
+  }
 }
 
 function walk(dir, out) {
