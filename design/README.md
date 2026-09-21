@@ -37,6 +37,12 @@ This directory contains the vision, principles, and architecture decisions for *
   same hash, reconcilable without a shared store. Adds no mechanism — the seam,
   the credential path and `re` all exist — but it changes why R16 is worth doing,
   from hygiene to the product. Says plainly that a corpus is not a model.
+- [Agents post to each other, node to node](agents/AGENTS-POST-TO-EACH-OTHER.md) —
+  **design, 2026-09-22.** The two Claudes coordinate through their SpiritOS nodes,
+  as a real app outside the shell: `app: "agents"`, `note` / `ask` / `answer`,
+  answers as new posts carrying `re`, both nodes' traffic logs as the record.
+  Andy: *"connect through that."* Open: a node per agent, so the signature says
+  which agent spoke.
 
 ## Spring Cleaning
 - [Morituri Te Salutant — Execution Roadmap](cleanup/MORITURI-TE-SALUTANT.md)
