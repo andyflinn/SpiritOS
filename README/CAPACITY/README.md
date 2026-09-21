@@ -234,7 +234,7 @@ sudo apt install fonts-noto-color-emoji
 fc-cache -f
 ```
 
-and restart the browser completely.
+and restart the browser completely. **Verified on the WSL box the same day**: `fc-list | grep -i emoji` printed nothing before the install, and the icons rendered after it.
 
 **It is a requirement of the machine running the BROWSER, not the node** —
 a node on a headless server is unaffected, and the shell viewed from a
