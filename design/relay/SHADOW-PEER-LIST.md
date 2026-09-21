@@ -295,6 +295,14 @@ cache frozen while there is room, and an age bound leaves it unbounded
 while there is not."* Two bounds, neither doing the other's job. The cap
 replaces one of them and is not a reason to drop the second.
 
+> **Andy:** *"route expiry has two evictions: cache-limit, and last
+> seen."*
+
+**Which names the pair from the route's side** (cycle R4) rather than the
+cache's, and settles that there is no third state: a row is here or it is
+gone, and while it is here its route is offered. There is no row that lives
+with its route withheld.
+
 ### The default, with the arithmetic
 
 The tree's measured anchor is 0012's, taken off the live box: *"spirit-3

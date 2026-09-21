@@ -64,7 +64,7 @@ of the nineteen are decided and waiting only to be built.**
 | **R1** | `via` on the shadow row; `routes` off the contact row | OPEN — half can start now | **yes** | `routes` half: **R26** |
 | <sub>R2</sub> | <sub>*the sweep that needed prioritising, deleted instead*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R3</sub> | <sub>*queue depth, and what is shed at the limit*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R4** | route expiry using `seen` | OPEN | partial | R1 |
+| **R4** | route expiry — two evictions: cache-limit and last seen | OPEN — mechanism decided, number open | **yes** | R1; number with R26 |
 | <sub>R5</sub> | <sub>*the timeout is a duration, carried, diminishing inward*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R6</sub> | <sub>*`maxPerTarget` out of config, into code*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R7</sub> | <sub>*drop the ceiling to 1 and run the experiment*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -279,10 +279,47 @@ a moment rather than a state.
 
 ### R4 — route expiry using `seen`
 
-Falls out of A1: a route not proven in N days stops being sent as a hint.
-Distinct from eviction of the contact, which never happens for staleness.
+> **Andy:** *"route expiry has two evictions: cache-limit, and last
+> seen."*
 
-**Status:** OPEN — not built. Depends on R1, which supplies `seen`.
+**Two evictions, and they are the two this design already has.** R4 is not
+a third bound — it is the age half of the pair, named from the route's side
+instead of the cache's:
+
+| eviction | the bound | where it is decided |
+|---|---|---|
+| **cache-limit** | space | **R31** — the owner's disc cap, replacing `MAX_ENTRIES = 500` |
+| **last seen** | age | here, using the row's `seen` |
+
+That is 0016's argument arriving for the third time: *"a space bound leaves
+a cache frozen while there is room, and an age bound leaves it unbounded
+while there is not."* Neither does the other's job, and naming them
+together is what stops a later session adding a third.
+
+~~*Falls out of A1: a route not proven in N days stops being sent as a hint.
+Distinct from eviction of the contact, which never happens for
+staleness.*~~ — **struck.** It described a **third** state, a row that
+lives but whose route is withheld, which under the two-eviction rule does
+not exist: a row is here or it is gone, and while it is here its route is
+offered. Simpler, and one fewer thing to get wrong. The contact half of
+that sentence is right and unaffected — a contact is never evicted for
+staleness, and 0018 moves its routes out entirely.
+
+**What is left open is the number, not the mechanism.** `MAX_AGE_MS` is an
+hour (`seenPeers.js:93`), and `seenPeers.js:44` already says why that is
+not a decision: it is what the cache can afford while it lives in RAM and
+loses everything at restart. Against *"the user may forget all search
+results, the node must not"*, an hour is short. **The number belongs with
+R26**, because a store is what makes a long one affordable.
+
+**One consequence, stated rather than argued.** An eviction on age takes
+the whole row, so the label and the last-known presence go with the route.
+That is right — a name with no route is cheap but not free, and unbounded
+label-only rows would be a third lifetime to reason about. The cost is one
+search to learn the name again.
+
+**Status:** OPEN — mechanism decided, number open. Depends on R1 (which
+supplies `via`/`seen` on the row) and shares its space half with R31.
 
 **Stage A ends with:** the scheduler honest about priority and bounded in
 size, and a route that is a whole edge rather than half of one.
