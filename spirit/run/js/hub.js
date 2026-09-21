@@ -675,11 +675,29 @@ function remember(rootDir, from, verdict, relayUrl) {
       } catch (e) { /* a cache that will not take a row is not a reason to refuse somebody */ }
     }
     if (verdict === 'admit') {
+      // A FULL MEMORY ADDS NOBODY, and a stranger least of all (0021):
+      // "once the memory is full with 'added' statuses no more can be
+      // chosen/added". The packet is still heard — the verdict stands —
+      // they simply are not added; the owner makes room, or does not.
+      if (!shadow(rootDir).roomToAdd(key)) return false;
       contactBook.acquire(rootDir, row, 'message');
       return true;
     }
     if (verdict === 'hold') {
       contactBook.hold(rootDir, row);
+      return true;
+    }
+    // ── IGNORED IS A MARK, NOT A FORGETTING (0021) ────────────────────
+    //
+    //   Andy: "ignoring means only: mark this row as "ignored"."
+    //
+    // The row was already remembered (noteSeen, before the floor); this
+    // only says what the door did with it. Never over somebody the book
+    // has marked: a held or blocked person also gets 'drop' from the
+    // door, and what the owner decided outranks what the door did.
+    if (verdict === 'drop') {
+      var was = shadow(rootDir).get(key);
+      if (!was || (!was.choice && !was.blocked)) shadow(rootDir).mark(key, 'ignored', false);
       return true;
     }
   } catch (e) {
@@ -1460,6 +1478,17 @@ function createHub(rootDir) {
         return;
       }
 
+      // A FULL MEMORY TAKES NOBODY NEW (0021). Accepting is adding, and so
+      // is unblocking somebody who had been added: both put a row back
+      // under protection. Blocking never needs room — it gives some back.
+      var before = contactBook.byPublicKey(rootDir, publicKey);
+      var adds = action === 'accept' ||
+        (action === 'unblock' && before && contactBook.markOf(before).choice === 'added');
+      if (adds && !shadow(rootDir).roomToAdd(publicKey)) {
+        fail(res, 507, 'memory is full of the people you added');
+        return;
+      }
+
       var row;
       if (action === 'block') row = contactBook.setBlocked(rootDir, publicKey, true);
       else if (action === 'unblock') row = contactBook.setBlocked(rootDir, publicKey, false);
@@ -1567,6 +1596,11 @@ function createHub(rootDir) {
         // asking nicely.
         var wanted = String((body && body.via) || 'handle');
         var via = (wanted === 'invite') ? 'invite' : 'handle';
+        // The same refusal as accept (0021): adding needs room.
+        if (!shadow(rootDir).roomToAdd(publicKey)) {
+          fail(res, 507, 'memory is full of the people you added');
+          return;
+        }
         var row = contactBook.acquire(rootDir, {
           publicKey: publicKey,
           // Empty is a real answer: a pasted key has no label until its
@@ -1701,6 +1735,9 @@ function createHub(rootDir) {
     var me = auth.loadIdentity(rootDir);
     if (me && me.publicKey === String(ev.key)) return null;
     try {
+      // Not added when there is no room (0021) — the claim still happened,
+      // and the memory still has them as a stranger.
+      if (!shadow(rootDir).roomToAdd(String(ev.key))) return null;
       return contactBook.acquire(rootDir, {
         publicKey: String(ev.key), publicLabel: String(ev.label || ''), relay: ev.relay || '',
       }, contactBook.MEMBER);

@@ -106,7 +106,7 @@ node settles at 72 MB. A node's floor is the runtime's floor.
 | | |
 |---|---|
 | reachable peers, at 577 B each | **~18,000** in 10 MB |
-| an empty `node.db` | 52 KB — 20 KB before the post queue moved in (R16) |
+| an empty `node.db` | 56 KB — 20 KB before the post queue moved in (R16), 52 KB before the chosen index (R38) |
 | contacts, identity, relay pins | kilobytes |
 | the traffic log | grows with what you actually send, and is permanent by decision |
 
@@ -292,7 +292,7 @@ Written to real databases, index included, and the file differenced.
 | node: one route for that peer | **420** |
 | **node: a peer you can reach** | **577** |
 | node: one logged exchange | **438** |
-| an empty `relay.db` / `node.db` | 40 KB / 52 KB |
+| an empty `relay.db` / `node.db` | 40 KB / 56 KB |
 
 **A peer with no route is a real state** — a name a search returned,
 waiting to become useful — but it is not what "remembered peers" was ever
@@ -656,7 +656,8 @@ cycles 3 and 4 reshaped the data a peer costs.
 ### The post queue moved into `node.db` (cycle R16)
 
 **An empty `node.db` is now 52 KB, up from 20**, because it holds two more
-tables and their indexes. A fixed cost of 32 KB, paid once.
+tables and their indexes. A fixed cost of 32 KB, paid once. (56 KB since
+R38 added the partial index on chosen rows: one more page.)
 
 **And the cache cap stopped measuring the file.** It measured
 `page_count × page_size` — the whole of `node.db` — which was right while

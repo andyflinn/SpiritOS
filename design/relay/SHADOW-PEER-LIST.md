@@ -295,6 +295,11 @@ cache frozen while there is room, and an age bound leaves it unbounded
 while there is not."* Two bounds, neither doing the other's job. The cap
 replaces one of them and is not a reason to drop the second.
 
+**Superseded 2026-09-21 by `0021`: `MAX_AGE_MS` is gone.** Andy: *"I don't
+see why the node should throw away memories when the 20 Megabyte cap is not
+exhausted yet."* Space is the only eviction, and the mark decides who is in
+line for it.
+
 > **Andy:** *"route expiry has two evictions: cache-limit, and last
 > seen."*
 

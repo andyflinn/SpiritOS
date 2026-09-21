@@ -171,6 +171,13 @@ define('node-queue-full', {
   texts: ['this node has too much waiting to send'],
   note: 'Refused at this node\'s own door, before anything was signed.',
 });
+define('memory-full', {
+  status: 507, presence: NONE, retry: 'no', fault: 'node',
+  texts: ['memory is full of the people you added'],
+  note: 'The owner\'s cache cap is spent on added people alone (0021). Not ' +
+    'a retry: nothing changes until the owner raises the cap or lets ' +
+    'somebody go — "it\'s just reality".',
+});
 define('too-big', {
   status: 413, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['too big'],

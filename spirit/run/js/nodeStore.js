@@ -48,7 +48,7 @@
 // `secure_delete` is ON, and it matters more here than it looks. A deleted
 // row's bytes would otherwise sit in a free page until something reused
 // them — and what this file holds is not a membership list: it is WHOSE
-// BUSINESS THIS NODE HAS BEEN DOING (seenPeers.js). A row swept for age
+// BUSINESS THIS NODE HAS BEEN DOING (seenPeers.js). A row swept for space
 // has to leave the disc, not just the index.
 //
 // ── THE FLOOR THIS MOVES ─────────────────────────────────────────────
@@ -75,6 +75,10 @@ function driver() {
 // the shadow today, the queue and the settings later. Keyed by the
 // resolved path, exactly as relayStore does it.
 const open_ = new Map();
+
+// What a row may be marked (0021). Empty is "nobody chose": the default,
+// and the first in line when space runs out.
+const CHOICES = ['', 'ignored', 'held', 'added'];
 
 function dbPath(rootDir) {
   return path.join(rootDir, 'relay-state', 'node.db');
@@ -127,9 +131,8 @@ function open(rootDir, opts) {
   //
   // `seen` IS AN INTEGER, unlike relay.db's ISO strings. Those are read by
   // a person over SSH; this one is compared and ordered on the eviction
-  // path, and a millisecond count is what that path wants. It is also what
-  // R4's two evictions both read — the age bound directly, and the space
-  // bound through "oldest first".
+  // path, and a millisecond count is what that path wants: the one
+  // eviction orders by it within each tier of the mark (0021).
   db.exec(`
     CREATE TABLE IF NOT EXISTS seen (
       publicKey TEXT PRIMARY KEY,
@@ -137,7 +140,9 @@ function open(rootDir, opts) {
       labelRank INTEGER NOT NULL DEFAULT 4,
       labelAt   INTEGER NOT NULL DEFAULT 0,
       present   INTEGER NOT NULL DEFAULT 0,
-      seen      INTEGER NOT NULL DEFAULT 0
+      seen      INTEGER NOT NULL DEFAULT 0,
+      choice    TEXT    NOT NULL DEFAULT '',
+      blocked   INTEGER NOT NULL DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS seen_when ON seen (seen);
   `);
@@ -234,6 +239,11 @@ function open(rootDir, opts) {
     if (cols.indexOf('labelRank') === -1) db.exec("ALTER TABLE seen ADD COLUMN labelRank INTEGER NOT NULL DEFAULT 4");
     if (cols.indexOf('labelAt') === -1) db.exec("ALTER TABLE seen ADD COLUMN labelAt INTEGER NOT NULL DEFAULT 0");
     if (cols.indexOf('present') === -1) db.exec("ALTER TABLE seen ADD COLUMN present INTEGER NOT NULL DEFAULT -1");
+    // THE MARK (0021, R38). Nothing to copy: a row that predates it was
+    // chosen by nobody, which is what the defaults say. The book writes
+    // its marks on its next save, and the node saves it at boot.
+    if (cols.indexOf('choice') === -1) db.exec("ALTER TABLE seen ADD COLUMN choice TEXT NOT NULL DEFAULT ''");
+    if (cols.indexOf('blocked') === -1) db.exec("ALTER TABLE seen ADD COLUMN blocked INTEGER NOT NULL DEFAULT 0");
 
     // THE OLD SINGLE ROUTE BECOMES A ROW IN THE NEW TABLE, at rank 4 and
     // with no `via`: nothing recorded which door proved it, and claiming
@@ -247,6 +257,16 @@ function open(rootDir, opts) {
     }
     if (cols.indexOf('url') !== -1) db.exec('ALTER TABLE seen DROP COLUMN url');
   }());
+
+  // ── THE CHOSEN, BY INDEX (0021) ──────────────────────────────────────
+  //
+  //   Andy: "so there might be a index in the shadow row, that only
+  //   return the "chosen" ones...."
+  //
+  // Partial, so a node that remembers thirty thousand strangers and
+  // chose forty people keeps an index of forty. Created after the
+  // migration because it names columns an old file gains only there.
+  db.exec("CREATE INDEX IF NOT EXISTS seen_chosen ON seen (choice) WHERE choice <> '' OR blocked = 1");
 
   const q = {
     get: db.prepare('SELECT * FROM seen WHERE publicKey = ?'),
@@ -335,11 +355,41 @@ function open(rootDir, opts) {
         seen      = excluded.seen`),
     del: db.prepare('DELETE FROM seen WHERE publicKey = ?'),
     count: db.prepare('SELECT COUNT(*) AS n FROM seen'),
-    // Both evictions, as queries rather than as a scan of every row into
-    // memory — which is the whole reason 0018 licensed a store.
-    older: db.prepare('DELETE FROM seen WHERE seen < ?'),
+    // ── ONE EVICTION, AND THE MARK DECIDES WHO IS IN LINE (0021) ─────
+    //
+    //   Andy: "it's the chosen-mark that gives protection from eviction,
+    //   if the memory overflows. the shedded rows will first be ignored,
+    //   then held, once the memory is full with 'added' statuses no more
+    //   can be chosen/added until eviction by blocking or ignoring...."
+    //
+    // Unchosen first, then ignored and blocked, then held; last seen
+    // orders each tier. An added, unblocked row is not in the queue at all
+    // — that is the protection, and it is a WHERE, not a weight, so no
+    // amount of pressure reaches it. Blocking someone puts them back in
+    // line: "what's the point of storing ignored rows when all the space
+    // is used by chosen ones?"
+    //
+    // THE AGE EVICTION STOOD BESIDE THIS, and is gone (0021): "I don't see
+    // why the node should throw away memories when the 20 Megabyte cap is
+    // not exhausted yet." Age still orders the line; it no longer starts it.
+    shedCount: db.prepare(`SELECT COUNT(*) AS n FROM seen WHERE NOT (choice = 'added' AND blocked = 0)`),
     overflow: db.prepare(`DELETE FROM seen WHERE publicKey IN (
-      SELECT publicKey FROM seen ORDER BY seen ASC LIMIT ?)`),
+      SELECT publicKey FROM seen WHERE NOT (choice = 'added' AND blocked = 0)
+      ORDER BY CASE WHEN choice = 'held' AND blocked = 0 THEN 2
+                    WHEN choice = 'ignored' OR blocked = 1 THEN 1
+                    ELSE 0 END ASC,
+               seen ASC
+      LIMIT ?)`),
+    // The mark alone. A row the mark creates has never been SEEN — a
+    // contact added by pasting a key — so its date is 0 and its presence
+    // unknown, which is the truth rather than a guess.
+    mark: db.prepare(`INSERT INTO seen (publicKey, present, seen, choice, blocked)
+      VALUES (?, -1, 0, ?, ?)
+      ON CONFLICT(publicKey) DO UPDATE SET choice = excluded.choice, blocked = excluded.blocked`),
+    unmarkBook: db.prepare(`UPDATE seen SET choice = '', blocked = 0
+      WHERE choice IN ('held', 'added') OR blocked = 1`),
+    chosen: db.prepare(`SELECT publicKey, choice, blocked FROM seen
+      WHERE choice <> '' OR blocked = 1`),
     clear: db.prepare('DELETE FROM seen'),
     pages: db.prepare('PRAGMA page_count'),
     pageSize: db.prepare('PRAGMA page_size'),
@@ -361,6 +411,8 @@ function open(rootDir, opts) {
       // paint somebody red on the strength of never having heard.
       present: r.present < 0 ? null : !!r.present,
       seen: r.seen,
+      choice: r.choice || '',
+      blocked: !!r.blocked,
     };
   }
   function routeRow(r) {
@@ -411,29 +463,38 @@ function open(rootDir, opts) {
         return q.del.run(String(publicKey || '')).changes > 0;
       },
       size: function () { return q.count.get().n; },
-      // ── R4'S TWO EVICTIONS ───────────────────────────────────────
+      // ── THE MARK (0021) ──────────────────────────────────────────
       //
-      //   Andy: "route expiry has two evictions: cache-limit, and last
-      //   seen."
-      //
-      // Neither does the other's job (0016): a space bound alone leaves a
-      // cache frozen while there is room, and an age bound alone leaves it
-      // unbounded while there is not.
-      // ── PAGES GO BACK WHEN ROWS DO ─────────────────────────
-      //
-      // `auto_vacuum = INCREMENTAL` frees a deleted row's pages to a list
-      // and leaves the file the size it reached until somebody asks. So
-      // every bulk delete asks — but ONLY when it actually deleted
-      // something, because the age sweep runs on every note() and
-      // vacuuming a file nothing was removed from is pure cost.
-      sweepOlderThan: function (cutoffMs) {
-        const gone = q.older.run(Number(cutoffMs)).changes;
-        // EVERY EVICTION TAKES THE ROUTES WITH IT. Swept by what is left
-        // rather than by what went, so an eviction that happens any other
-        // way cannot leave orphans behind either.
-        if (gone) { q.orphanRoutes.run(); db.exec('PRAGMA incremental_vacuum'); }
-        return gone;
+      // One of '', 'ignored', 'held', 'added', with blocked beside it
+      // rather than in it — the same shape contacts.js keeps, where a
+      // block must not erase how somebody arrived.
+      mark: function (publicKey, choice, blocked) {
+        const key = String(publicKey || '').trim();
+        const c = CHOICES.indexOf(choice) === -1 ? '' : choice;
+        if (!key) return false;
+        q.mark.run(key, c, blocked ? 1 : 0);
+        return true;
       },
+      // THE BOOK'S MARKS, WHOLE. Everything the book said last time is
+      // taken off and what it says now is put on, in one transaction, so
+      // a key that left the book loses its protection in the same instant.
+      // 'ignored' is not the book's to clear: the door wrote it.
+      markBook: function (marks) {
+        store.transaction(function () {
+          q.unmarkBook.run();
+          (marks || []).forEach(function (m) {
+            if (m && m.publicKey) q.mark.run(String(m.publicKey), CHOICES.indexOf(m.choice) === -1 ? '' : m.choice, m.blocked ? 1 : 0);
+          });
+        });
+      },
+      chosen: function () {
+        return q.chosen.all().map(function (r) {
+          return { publicKey: r.publicKey, choice: r.choice, blocked: !!r.blocked };
+        });
+      },
+      // Rows the sweep may still take. Zero, with the cache over its cap,
+      // is what "full" means: only added people are left.
+      sheddable: function () { return q.shedCount.get().n; },
       // ── THE SPACE BOUND IS BYTES, BECAUSE THAT IS WHAT AN OWNER HAS ──
       //
       //   Andy: "why is the max for nodeStore not in Megabytes: it's say
@@ -464,7 +525,7 @@ function open(rootDir, opts) {
         // The guard is against a cap so small that nothing empties it —
         // an empty store still has a page.
         for (let pass = 0; pass < 64; pass += 1) {
-          const left = q.count.get().n;
+          const left = q.shedCount.get().n;
           if (!left || store.seen.bytes() <= cap) break;
           gone += q.overflow.run(Math.max(1, Math.ceil(left / 8))).changes;
           q.orphanRoutes.run();
@@ -528,6 +589,7 @@ function open(rootDir, opts) {
 module.exports = {
   open: open,
   MAX_ROUTES: MAX_ROUTES,
+  CHOICES: CHOICES,
   available: available,
   dbPath: dbPath,
 };

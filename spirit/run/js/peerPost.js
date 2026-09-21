@@ -832,7 +832,10 @@ function createPeerPost(opts) {
       // already knew the road; it is on the traffic-log row three lines
       // up. It simply was not passing it on, which nothing caught while
       // both transports were acquiring in parallel.
-      if (remember && verdict !== 'drop') {
+      // AND FOR A DROP TOO (0021): "ignoring means only: mark this row as
+      // ignored". A stranger turned away under Ignore is remembered as
+      // turned away — within budget only, like every other mark.
+      if (remember) {
         try { remember(body.from, verdict, relayUrl); }
         catch (e) { /* the verdict stands */ }
       }

@@ -132,7 +132,9 @@ function aClaimAdopts() {
     test.fail('rank fell: ' + JSON.stringify(contactBook.byPublicKey(home, 'K-CRUELLA')));
   }
 
-  fs.rmSync(home, { recursive: true, force: true });
+  // Tolerant: node.db may still be open (0021 marks the memory on every
+  // book write), and testSupport reclaims whatever is left at exit.
+  try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* reclaimed at exit */ }
 }
 
 // ── 2. FORGET DOES NOT ASK ABOUT SEATS ───────────────────────────────
@@ -160,7 +162,9 @@ async function forgetDoesNotAsk() {
     test.fail('forget answered ' + res.status + ': ' + res.text);
   }
 
-  fs.rmSync(home, { recursive: true, force: true });
+  // Tolerant: node.db may still be open (0021 marks the memory on every
+  // book write), and testSupport reclaims whatever is left at exit.
+  try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* reclaimed at exit */ }
 }
 
 // ── 3. THE OLD FIELDS FALL AWAY ──────────────────────────────────────
@@ -186,7 +190,9 @@ function staleFieldsFallAway() {
     test.fail('still carried: ' + JSON.stringify(after));
   }
 
-  fs.rmSync(home, { recursive: true, force: true });
+  // Tolerant: node.db may still be open (0021 marks the memory on every
+  // book write), and testSupport reclaims whatever is left at exit.
+  try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* reclaimed at exit */ }
 }
 
 // ── 4. AND THE SWEEP IS GONE, NOT DORMANT ────────────────────────────

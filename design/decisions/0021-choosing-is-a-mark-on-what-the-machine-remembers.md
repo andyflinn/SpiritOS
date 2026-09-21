@@ -134,4 +134,5 @@ the same code as the relays' rows.
   which R31 said it never does. UI session; the rule above does not depend
   on it.
 
-**Built as R38.**
+**Built as R38** — `frontDoor` still decides from the book and not from the
+`ignored` mark, so a change of policy reaches people ignored before; see R38.

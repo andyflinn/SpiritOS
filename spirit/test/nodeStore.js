@@ -120,23 +120,22 @@ test.subHeading('Greedy is a property of the write, not a discipline of the call
   s.close();
 }
 
-test.subHeading('Two evictions, and neither does the other\'s job (R4)');
+test.subHeading('One eviction, and it is space (0021, superseding R4\'s age half)');
 
 {
-  //   Andy: "route expiry has two evictions: cache-limit, and last seen."
+  //   Andy: "I don't see why the node should throw away memories when the
+  //   20 Megabyte cap is not exhausted yet....."
   //
-  // 0016's argument, one layer down: a space bound alone leaves a cache
-  // frozen while there is room, and an age bound alone leaves it
-  // unbounded while there is not.
+  // R4 had two evictions, age and space. The age one forgot while there
+  // was room, and is gone: no store function sweeps by age any more.
   const s = nodeStore.open(home());
   s.seen.put(A, { label: 'a', seen: 1000 });
   s.seen.put(B, { label: 'b', seen: 5000 });
 
-  const swept = s.seen.sweepOlderThan(2000);
-  if (swept === 1 && s.seen.get(A) === null && s.seen.get(B)) {
-    test.check('the age bound takes what is older than the cutoff and nothing else');
+  if (typeof s.seen.sweepOlderThan === 'undefined' && s.seen.get(A) && s.seen.get(B)) {
+    test.check('there is no age sweep, and a row seen long ago is still remembered');
   } else {
-    test.fail('swept ' + swept + ', A=' + JSON.stringify(s.seen.get(A)));
+    test.fail('an age sweep survived, or A went: ' + JSON.stringify(s.seen.get(A)));
   }
 
   // ── AND THE SPACE BOUND IS BYTES ─────────────────────────────────

@@ -201,6 +201,39 @@ function save(rootDir, rows) {
   // So a save that lands before any read still leaves one file, not two.
   migrateOldName(rootDir);
   fs.writeFileSync(bookPath(rootDir), JSON.stringify(rows, null, 2));
+  syncMarks(rootDir, rows);
+}
+
+// ── THE BOOK IS A MARK ON WHAT THE MACHINE REMEMBERS (0021) ───────────
+//
+//   Andy: "it's the chosen-mark that gives protection from eviction, if
+//   the memory overflows."
+//
+// Every save hands the node's memory the whole book as marks, so no
+// writer of this file can forget to: somebody added is protected, somebody
+// held or blocked is in line after the strangers, and somebody who left
+// the book is unprotected in the same instant. Written HERE, at the one
+// place the book is written, rather than by each caller.
+//
+// Where the marks live is the node's business and no app's (0021, rule 4):
+// apps reach the book through `peer.list` and `contact.*`, as before.
+function markOf(row) {
+  var via = acquiredVia(row);
+  var choice = ACQUIRED_LISTENING.indexOf(via) !== -1 ? 'added'
+    : (via === ACQUIRED_HOLD ? 'held' : '');
+  return { publicKey: row.publicKey, choice: choice, blocked: isBlocked(row) };
+}
+
+// A memory that will not take the marks is not a reason to lose the book:
+// the file is written first, and the next save tries again. The node
+// refuses to start without its store (server.js), so this is a suite's
+// temp home or a disc error, not a mode.
+function syncMarks(rootDir, rows) {
+  try {
+    require('./nodeStore').open(rootDir).seen.markBook(
+      (rows || load(rootDir)).filter(function (r) { return r && r.publicKey; }).map(markOf));
+    return true;
+  } catch (e) { return false; }
 }
 
 // A contact's routes: relay keys, newest first, no duplicates, and a
@@ -483,6 +516,8 @@ function addRoute(rootDir, publicKey, relayUrl) {
 }
 
 module.exports = {
+  syncMarks: syncMarks,
+  markOf: markOf,
   forget: forget,
   CENSUS: ACQUIRED_CENSUS,
   HOLD: ACQUIRED_HOLD,

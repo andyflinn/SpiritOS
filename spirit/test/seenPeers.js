@@ -86,21 +86,22 @@ test.subHeading('It keeps where somebody lives, and hands it back');
   }
 }
 
-test.subHeading('Bounded by age and by space, because neither does the other’s job');
+test.subHeading('Bounded by space alone (0021)');
 
 {
-  // 0016's argument, in a smaller place: a space bound leaves a cache
-  // frozen while there is room, and an age bound leaves it unbounded
-  // while there is not.
+  //   Andy: "I don't see why the node should throw away memories when the
+  //   20 Megabyte cap is not exhausted yet..... It would be a mistake we're
+  //   trying to rectify." (0021)
   const c = clock();
-  const S = shadow({ now: c.now, maxAgeMs: 1000 });
+  const S = shadow({ now: c.now });
 
   S.note('KEY-OLD', { at: 'R1' });
-  c.tick(1100);
-  if (S.get('KEY-OLD') === null) {
-    test.check('what was learned an age ago is not offered as though it were fresh');
+  c.tick(400 * 24 * 60 * 60 * 1000);
+  const old = S.get('KEY-OLD');
+  if (old && old.at === 'R1') {
+    test.check('what was learned more than a year ago is still offered while there is room');
   } else {
-    test.fail('a stale row survived: ' + JSON.stringify(S.get('KEY-OLD')));
+    test.fail('an old row was forgotten with room to spare: ' + JSON.stringify(old));
   }
 
   // THE SPACE BOUND IS BYTES NOW, so forcing it means writing enough to
@@ -112,7 +113,7 @@ test.subHeading('Bounded by age and by space, because neither does the other’s
   // A row measures 225 bytes on disc, so a 40 KB cap is a couple of
   // hundred people — small enough to fill here, large enough to be past
   // an empty file's own few pages.
-  const T = shadow({ now: c.now, maxBytes: 40 * 1024, maxAgeMs: 99999 });
+  const T = shadow({ now: c.now, maxBytes: 40 * 1024 });
   for (let n = 0; n < 400; n += 1) {
     c.tick(10);
     T.note('K' + String(n).padStart(4, '0'), { at: 'R', url: 'https://relay.example', label: 'p' + n });
@@ -255,12 +256,11 @@ test.subHeading('It survives the process, which is what the store bought (R26)')
     test.fail('the shadow did not survive: ' + JSON.stringify(kept));
   }
 
-  // AND THE AGE BOUND IS NOW A CHOICE RATHER THAN A CONSEQUENCE. Thirty
-  // days is declared, not measured, and is marked as such in the module —
-  // what this asserts is only that it is no longer an hour, because an
-  // hour was the number a cache with no disc could afford.
-  if (seen.MAX_AGE_MS > 24 * 60 * 60 * 1000) {
-    test.check('and the age bound outlives a day, which a memory-only cache could not justify');
+  // AND THERE IS NO AGE BOUND AT ALL (0021). It was an hour, then thirty
+  // days "declared, not measured"; now space is the only thing that
+  // forgets.
+  if (seen.MAX_AGE_MS === undefined) {
+    test.check('and there is no age bound left — space is the only eviction');
   } else {
     test.fail('MAX_AGE_MS is still ' + seen.MAX_AGE_MS);
   }

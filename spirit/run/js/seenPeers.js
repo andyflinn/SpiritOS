@@ -131,29 +131,16 @@ var PROVED = 2;    // a signature this node checked
 var ARRIVED = 3;   // a packet came from there
 var HEARSAY = 4;   // carried by a partner, or unstated
 
-// ── AN HOUR WAS WHAT NO STORE COULD AFFORD; THIRTY DAYS IS A CHOICE ──
+// ── NO AGE LIMIT (0021) ─────────────────────────────────────────────
 //
-// This was 60 * 60 * 1000, and the comment above already said that was a
-// consequence rather than a decision: an hour is what a cache can afford
-// while it lives in RAM and loses everything at a restart anyway.
+//   Andy: "I don't see why the node should throw away memories when the
+//   20 Megabyte cap is not exhausted yet..... It would be a mistake we're
+//   trying to rectify."
 //
-//   Andy: "the user may forget all search results, the node must not."
-//
-// With a store (0018, cycle R26) a long memory costs disc rather than
-// nothing, so the number becomes answerable. Thirty days is proposed on
-// three grounds and none of them is measurement:
-//
-//   1. It outlives the thing it exists for. "Any peer a node could
-//      possibly connect to" is not a question about this week.
-//   2. It is not the bound that does the work. R4 has TWO evictions and
-//      the SPACE one is the real limit — the owner's cap (R31). Age is
-//      the backstop for a row nothing has touched, not the ceiling.
-//   3. A route nobody has reconfirmed in a month is worth one failed
-//      attempt, which is all a wrong hint ever costs (seenPeers may guess
-//      and may never assert).
-//
-// DECLARED, NOT MEASURED, and marked so nobody reads it as evidence.
-var MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+// MAX_AGE_MS stood here: thirty days, "declared, not measured", and the
+// comment said itself that age was "the backstop, not the ceiling". It was
+// a second way to forget, and it forgot while there was room. Space is the
+// only eviction now; age still orders who goes first.
 
 // ── THE ROWS LIVE ON DISC NOW (cycle R26) ────────────────────
 //
@@ -170,18 +157,14 @@ function createSeenPeers(opts) {
   opts = opts || {};
   var nowFn = opts.now || Date.now;
   var maxBytes = opts.maxBytes || MAX_BYTES;
-  var maxAgeMs = opts.maxAgeMs || MAX_AGE_MS;
   var store = opts.store || (opts.rootDir ? require('./nodeStore').open(opts.rootDir) : null);
   if (!store) throw new Error('seenPeers needs a store: pass rootDir or store');
   var rows = store.seen;
 
-  // BOTH EVICTIONS, AS QUERIES. They were two passes over every key in
-  // memory; they are an index seek and an ordered delete now, which is
-  // what 0018 licensed a store to make possible.
+  // THE ONE EVICTION, AS A QUERY. Unchosen first, then ignored and
+  // blocked, then held, oldest first within each; never an added row
+  // (0021). The order lives in nodeStore, beside the index that serves it.
   function sweep() {
-    rows.sweepOlderThan(nowFn() - maxAgeMs);
-    // OLDEST FIRST WHEN THERE IS NO ROOM, because the newest answer is
-    // the one somebody is looking at.
     rows.sweepToBytes(maxBytes);
   }
 
@@ -258,7 +241,6 @@ function createSeenPeers(opts) {
     var key = String(publicKey || '').trim();
     var row = rows.get(key);
     if (!row) return null;
-    if (nowFn() - row.seen >= maxAgeMs) { rows.forget(key); return null; }
     var best = rows.routes(key)[0] || null;
     return {
       at: (best && best.at) || '',
@@ -267,6 +249,8 @@ function createSeenPeers(opts) {
       label: row.label,
       present: row.present,
       seen: row.seen,
+      choice: row.choice,
+      blocked: row.blocked,
     };
   }
 
@@ -295,6 +279,29 @@ function createSeenPeers(opts) {
   // `forget` exists for a caller that has finished with a row, not for
   // the contact book. Nothing in run/ calls it.
   function forget(publicKey) { rows.forget(String(publicKey || '').trim()); }
+
+  // ── THE MARK, AND THE ROOM IT NEEDS (0021) ───────────────────────────
+  //
+  // The book writes its marks through markBook on every save (contacts.js),
+  // and the door writes 'ignored' through mark. Neither is an interface:
+  // both are the node talking to its own memory.
+  function mark(publicKey, choice, blocked) { return rows.mark(publicKey, choice, blocked); }
+  function markBook(marks) { rows.markBook(marks); sweep(); }
+  function chosen() { return rows.chosen(); }
+
+  //   Andy: "once the memory is full with 'added' statuses no more can be
+  //   chosen/added until eviction by blocking or ignoring...." — "it's
+  //   just reality."
+  //
+  // Room for one more added person: somebody already added needs none,
+  // and otherwise the sweep runs first, so "full" means the cap is spent
+  // on added rows alone and nothing else is left to shed.
+  function roomToAdd(publicKey) {
+    var row = rows.get(String(publicKey || '').trim());
+    if (row && row.choice === 'added') return true;
+    sweep();
+    return rows.bytes() <= maxBytes;
+  }
   function reset() { rows.clear(); }
 
   return {
@@ -304,8 +311,11 @@ function createSeenPeers(opts) {
     size: size,
     forget: forget,
     reset: reset,
+    mark: mark,
+    markBook: markBook,
+    chosen: chosen,
+    roomToAdd: roomToAdd,
     maxBytes: maxBytes,
-    maxAgeMs: maxAgeMs,
     bytes: function () { return rows.bytes(); },
   };
 }
@@ -317,5 +327,4 @@ module.exports = {
   ARRIVED: ARRIVED,
   HEARSAY: HEARSAY,
   MAX_BYTES: MAX_BYTES,
-  MAX_AGE_MS: MAX_AGE_MS,
 };

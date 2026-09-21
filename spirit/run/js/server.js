@@ -966,6 +966,13 @@ try {
   }
 } catch (e) { /* a book that cannot be read is not a reason to refuse to boot */ }
 
+// ── THE BOOK'S MARKS, ONCE AT BOOT (0021) ─────────────────────────────
+//
+// Every save marks the memory, but a book written before marks existed —
+// or edited by hand while the node was down — has not been saved since.
+// One pass, so a node's added people are protected from its first sweep.
+contactBook.syncMarks(ROOT_DIR);
+
 // THE PERSONAL NODE'S BOOT. It read `if (!relayMode)` until cycle 0; a
 // relay is booted by relayServer.js now, so this block always runs.
 {

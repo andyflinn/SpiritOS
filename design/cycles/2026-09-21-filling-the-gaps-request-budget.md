@@ -56,9 +56,9 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Seven open, five deferred, one cancelled, twenty-six done.** Three need
+**Six open, five deferred, one cancelled, twenty-seven done.** Three need
 the team review (R9, R13, R28), one is Andy's to decide (R11), and R14
-waits on those. **R38 is decided and buildable now**; R39 follows it.
+waits on those. **R39 is ruled and buildable now.**
 
 | | what | status | solution? | blocked by |
 |---|---|---|---|---|
@@ -88,7 +88,7 @@ waits on those. **R38 is decided and buildable now**; R39 follows it.
 | <sub>R35</sub> | <sub>*a member who has stopped reading is cut loose, and nobody is left waiting on them*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R36</sub> | <sub>*what an error means, in one place — relay emitting codes is for the review*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R37</sub> | <sub>*every presence mark shows its age*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
-| **R38** | ignore is a mark, not a forgetting — the list is a mark on the memory | OPEN — **decided `0021`**, not built | **yes** | |
+| <sub>R38</sub> | <sub>*ignore is a mark, not a forgetting — the list is a mark on the memory*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R39** | search fans out to memory too, beside every bound relay | OPEN — ruled, not built | **yes** | R38 |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -545,9 +545,15 @@ R26), and the space bound is `sweepToBytes` against the owner's cap
 (cycle 3, then R31). Every sweep takes the swept peers' routes with it.
 What was left of R4 was noticing it was done.
 
-**Verify:** `spirit/test/nodeStore.js` — the age bound takes what is older
-than the cutoff and nothing else; the space bound holds the file under its
-cap, oldest first, and the file gives its pages back.
+**Superseded in part, the same day, by `0021`.** The age half is gone —
+Andy: *"I don't see why the node should throw away memories when the 20
+Megabyte cap is not exhausted yet..... It would be a mistake we're trying to
+rectify."* Space is the only eviction; last seen orders it within each tier
+of the mark (R38).
+
+**Verify:** `spirit/test/nodeStore.js` — there is no age sweep and an old
+row survives; the space bound holds the file under its cap, oldest first,
+and the file gives its pages back.
 `spirit/test/seenPeers.js` carries the same claims through the shadow.
 
 **Status:** DONE
@@ -2507,7 +2513,40 @@ the verbs that already exist (`peer.list`, `contact.*`):
 
 The words on screen (*"Ignore — No row"*) are the UI session's.
 
-**Status:** OPEN — decided, not built. Blocked by nothing.
+**Built.**
+
+- **The mark** is two columns on the shadow row, `choice` and `blocked`,
+  with a partial index on the chosen ones (`nodeStore.js`). Old files gain
+  them by migration.
+- **One eviction.** `sweepToBytes` sheds unchosen, then ignored and blocked,
+  then held, oldest first within each, and its query cannot select an
+  added, unblocked row. `MAX_AGE_MS` and `sweepOlderThan` are deleted.
+- **The book marks the memory on every save** (`contacts.save` →
+  `syncMarks`), and once at boot (`server.js`), so no caller can forget
+  to. Leaving the book takes the mark off; the memory stays.
+- **A full memory refuses the next add**: `507 memory is full of the people
+  you added` (`memory-full`, catalogued) at `contact.accept`, at unblocking
+  somebody who had been added, and at adding by key. Under *Acquire* a
+  stranger who writes when it is full is heard and not added; so is a claim
+  on an owned relay.
+- **The door marks `ignored`** — a stranger dropped under *Ignore*, within
+  the floor's budget — and never over a held or blocked row: what the owner
+  decided outranks what the door did.
+
+**One line drawn while building, for Andy to overrule:** `frontDoor` still
+decides from the book, not from the `ignored` mark. The mark records what
+the door did under the policy of the day; letting it gate would mean that
+switching from *Ignore* to *List them* never lists anybody ignored before.
+
+**Verify:** `spirit/test/chosenMarks.js` — the sweep sheds in order under
+fourteen squeezes and never reaches the 60 added, though they are the
+oldest; a spent cap refuses the next add and blocking makes room; the book
+marks added, held and blocked, and forgetting unmarks; the door marks a
+stranger and leaves a held person held; under Acquire a full memory adds
+nobody. With the protection, the order, the book sync or the door mark
+removed, it fails.
+
+**Status:** DONE
 
 ### R39 — an offline search answers from memory
 
@@ -2534,6 +2573,13 @@ row keeps its age.
 on its relays as it does today, and a relay's row wins wherever one comes
 back. When the wait ends, memory fills in what no relay said — so memory
 never delays a search and never overrides a live answer.
+
+> **Andy:** *"hmmm, chosen ones should always be included. it kind of would
+> look dumb if contacts couldn't list-search it's chosen ones..."*
+
+**Chosen people who match are always in the answer.** The slot cap and the
+absent drop thin out strangers; a person the owner chose, and who matches,
+is never cut by either.
 
 > **Andy:** *"When the wait times out, memory fills in the people no relay
 > answered for, filtered exactly and prioritized exactly like search
