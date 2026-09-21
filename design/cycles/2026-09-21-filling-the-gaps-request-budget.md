@@ -58,10 +58,11 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Two open, nine deferred, two cancelled, twenty-eight done.** Both open
+**Two open, eight deferred, three cancelled, twenty-eight done.** Both open
 rows are for the team review — R13 and R28's hops 2–3 — with R36's phase B
 and **retiring the Governor** (R20) beside them. **Nothing else stands between this cycle and the review**:
-R11 and R14 left the core by Andy's ruling of 2026-09-22, and R9 with them.
+R11 and R14 left the core by Andy's ruling of 2026-09-22, and R9 is
+cancelled — hints carry keys, never URLs.
 
 | | what | status | solution? | blocked by |
 |---|---|---|---|---|
@@ -73,7 +74,7 @@ R11 and R14 left the core by Andy's ruling of 2026-09-22, and R9 with them.
 | <sub>R6</sub> | <sub>*`maxPerTarget` out of config, into code*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R7</sub> | <sub>*drop the ceiling to 1 and run the experiment*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R8</sub> | <sub>*`viaUrl` in a search answer — was already built*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| <sub>R9</sub> | <sub>*hints carry `{ key, url }`*</sub> | <sub>*deferred — serves only autonomous partnering (2026-09-22)*</sub> | <sub>**yes**</sub> | |
+| <sub>R9</sub> | <sub>*hints carry `{ key, url }` — no: keys only, by design*</sub> | <sub>*cancelled*</sub> | <sub>—</sub> | |
 | <sub>R10</sub> | <sub>*`cancel`, exposed to a member*</sub> | <sub>*cancelled*</sub> | <sub>—</sub> | |
 | <sub>R11</sub> | <sub>*the URL rule / SSRF — only a stranger relay's first dial, which only R14 makes*</sub> | <sub>*deferred with R14 — the core dials only owner-written URLs*</sub> | <sub>**yes**</sub> | |
 | <sub>R12</sub> | <sub>*`last` on a partner row*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -773,9 +774,22 @@ wrote down, and a hint's URL is never dialled (R11); so the URL would
 travel and be ignored. It has a use only once a relay may reach an unknown
 relay, which is R14.
 
-**Status:** DEFERRED: serves only autonomous partnering, which Andy ruled a
-grant from the owner and outside the scope of proving the core system
-(2026-09-22).
+### Cancelled 2026-09-22 — a hint names a relay; it never says where
+
+> **Andy, 2026-09-22:** *"no URL's it would bypass the need for the relay to
+> fetch (still) owner-approved partner records to do the relaying job."*
+
+**The inference above was half right and is superseded.** R9 is not
+waiting for the grant; it is refused on its own terms. A hint carries a
+relay **key**, and the relay turns that key into an address from its own
+partner records, which its owner approved. A URL in the hint would let the
+sender supply the address instead, and so bypass the one record the
+relaying job must go through. That holds with or without auto-partnering:
+even a granted partnership is a row on the roll, found by key.
+
+**Status:** DEFERRED: cancelled by Andy, 2026-09-22 — hints carry keys only;
+a URL in a hint would bypass the owner-approved partner records the
+relaying job depends on.
 
 ### R10 — `cancel`, exposed to a member
 
