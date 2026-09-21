@@ -41,7 +41,8 @@ test.subHeading('A row survives the process, which is the whole point');
 {
   const H = home();
   const s = nodeStore.open(H);
-  s.seen.put(A, { at: 'RELAY-1', url: 'https://one.example', label: 'ann', seen: 1000 });
+  s.seen.put(A, { label: 'ann', labelRank: 1, seen: 1000 });
+  s.seen.putRoute(A, { via: 'MINE', at: 'RELAY-1', url: 'https://one.example', rank: 1, told: 1000 });
   s.close();
 
   // A SECOND OPEN IS A SECOND PROCESS, as far as this claim goes: the
@@ -49,10 +50,12 @@ test.subHeading('A row survives the process, which is the whole point');
   // only have come off the disc.
   const again = nodeStore.open(H);
   const got = again.seen.get(A);
-  if (got && got.at === 'RELAY-1' && got.label === 'ann' && got.seen === 1000) {
+  const route = again.seen.routes(A)[0];
+  if (got && got.label === 'ann' && got.seen === 1000 &&
+      route && route.at === 'RELAY-1' && route.via === 'MINE') {
     test.check('what was written before the store closed is there when it opens again');
   } else {
-    test.fail('after reopen: ' + JSON.stringify(got));
+    test.fail('after reopen: ' + JSON.stringify(got) + ' route ' + JSON.stringify(route));
   }
 
   if (fs.existsSync(path.join(H, 'relay-state', 'node.db'))) {
@@ -87,8 +90,9 @@ test.subHeading('Greedy is a property of the write, not a discipline of the call
   //
   // It is done in the statement now rather than by reading first, so it
   // is one round trip and cannot be forgotten by a new caller.
-  s.seen.put(A, { at: 'RELAY-1', url: 'https://one.example', label: 'ann', seen: 1000 });
-  s.seen.put(A, { at: 'RELAY-1', url: 'https://one.example', label: '', seen: 2000 });
+  s.seen.put(A, { label: 'ann', labelRank: 1, seen: 1000 });
+  s.seen.putRoute(A, { via: 'MINE', at: 'RELAY-1', rank: 1, told: 1000 });
+  s.seen.put(A, { label: '', seen: 2000 });
 
   const kept = s.seen.get(A);
   if (kept && kept.label === 'ann' && kept.seen === 2000) {
@@ -98,11 +102,12 @@ test.subHeading('Greedy is a property of the write, not a discipline of the call
   }
 
   // AND AN UPDATE IS AN UPDATE. The rule is "do not blank", never "do not
-  // change" — a person who renames themselves has renamed themselves.
-  s.seen.put(A, { at: '', url: '', label: 'ann, renamed', seen: 3000 });
+  // change" — a person who renames themselves has renamed themselves, and
+  // the relay they are on is entitled to say so.
+  s.seen.put(A, { label: 'ann, renamed', labelRank: 1, seen: 3000 });
   const renamed = s.seen.get(A);
-  if (renamed && renamed.label === 'ann, renamed' && renamed.at === 'RELAY-1') {
-    test.check('while a value that is there replaces the old one, and the rest is untouched');
+  if (renamed && renamed.label === 'ann, renamed' && s.seen.routes(A)[0].at === 'RELAY-1') {
+    test.check('while a value that is there replaces the old one, and the route is untouched');
   } else {
     test.fail('after a rename: ' + JSON.stringify(renamed));
   }
@@ -124,8 +129,8 @@ test.subHeading('Two evictions, and neither does the other\'s job (R4)');
   // frozen while there is room, and an age bound alone leaves it
   // unbounded while there is not.
   const s = nodeStore.open(home());
-  s.seen.put(A, { at: 'R', seen: 1000 });
-  s.seen.put(B, { at: 'R', seen: 5000 });
+  s.seen.put(A, { label: 'a', seen: 1000 });
+  s.seen.put(B, { label: 'b', seen: 5000 });
 
   const swept = s.seen.sweepOlderThan(2000);
   if (swept === 1 && s.seen.get(A) === null && s.seen.get(B)) {
@@ -144,7 +149,7 @@ test.subHeading('Two evictions, and neither does the other\'s job (R4)');
   // size. Enough rows to pass a small cap, then the file is asked.
   for (let n = 0; n < 400; n += 1) {
     s.seen.put('K' + String(n).padStart(4, '0'),
-      { at: 'RELAY', url: 'https://relay.example', label: 'person-' + n, seen: 10000 + n });
+      { label: 'person-' + n, seen: 10000 + n });
   }
   const shed = s.seen.sweepToBytes(40 * 1024);
   if (shed > 0 && s.seen.bytes() <= 40 * 1024 && s.seen.size() > 0) {
@@ -175,7 +180,7 @@ test.subHeading('Two evictions, and neither does the other\'s job (R4)');
   }
 
   // A SWEEP WITH ROOM TO SPARE IS NOT A SWEEP.
-  s.seen.put(A, { at: 'R', seen: 1 });
+  s.seen.put(A, { label: 'a', seen: 1 });
   if (s.seen.sweepToBytes(20 * 1024 * 1024) === 0 && s.seen.size() === 1) {
     test.check('while a store inside its bound is left entirely alone');
   } else {
@@ -209,7 +214,7 @@ test.subHeading('One store per home, so two callers cannot disagree');
     test.fail('two stores for one home');
   }
 
-  one.seen.put(A, { at: 'R', seen: 1 });
+  one.seen.put(A, { label: 'a', seen: 1 });
   if (two.seen.size() === 1) {
     test.check('and a write through one is a read through the other');
   } else {
@@ -233,7 +238,7 @@ test.subHeading('Forgetting, and emptying');
 
 {
   const s = nodeStore.open(home());
-  s.seen.put(A, { at: 'R', seen: 1 });
+  s.seen.put(A, { label: 'a', seen: 1 });
 
   if (s.seen.forget(A) === true && s.seen.get(A) === null) {
     test.check('a row forgotten is gone, and says it went');
@@ -249,14 +254,198 @@ test.subHeading('Forgetting, and emptying');
     test.fail('forgetting a stranger claimed to remove something');
   }
 
-  s.seen.put(A, { at: 'R', seen: 1 });
-  s.seen.put(B, { at: 'R', seen: 2 });
+  s.seen.put(A, { label: 'a', seen: 1 });
+  s.seen.put(B, { label: 'b', seen: 2 });
   if (s.seen.clear() === 2 && s.seen.size() === 0) {
     test.check('and clearing empties it and says how much it took');
   } else {
     test.fail('clear left ' + s.seen.size());
   }
   s.close();
+}
+
+test.subHeading('Rank first, recency second — a cheap claim cannot displace a proven one (R29)');
+
+{
+  const s = nodeStore.open(home());
+
+  // THE THING GREED ALONE COULD NOT DO: refuse a downgrade. Before this,
+  // a second-hand name carried by a partner overwrote a rename from the
+  // relay the person is actually on, simply by arriving later.
+  s.seen.put(A, { label: 'hearsay', labelRank: 4, seen: 100 });
+  s.seen.put(A, { label: 'the host says', labelRank: 1, seen: 200 });
+  s.seen.put(A, { label: 'a partner says', labelRank: 4, seen: 300 });
+
+  const held = s.seen.get(A);
+  if (held.label === 'the host says' && held.labelRank === 1 && held.seen === 300) {
+    test.check('a worse-sourced name cannot overwrite a better one, however late it arrives');
+  } else {
+    test.fail('after a downgrade attempt: ' + JSON.stringify(held));
+  }
+
+  // AND RECENCY STILL DECIDES INSIDE A RANK. "Rank first" is not "rank
+  // only": two callers equally entitled to be believed are separated by
+  // which of them spoke last.
+  s.seen.put(A, { label: 'the host, again', labelRank: 1, seen: 400 });
+  if (s.seen.get(A).label === 'the host, again') {
+    test.check('while an equally entitled source that spoke later does win');
+  } else {
+    test.fail('equal rank did not update: ' + JSON.stringify(s.seen.get(A)));
+  }
+  s.close();
+}
+
+test.subHeading('A route is a pair of doors, not an address (R1)');
+
+{
+  //   Andy: "peer-key / A-key / B-key — that the key?"
+  //
+  // A route is not "this peer lives at B". It is through MY relay A to
+  // THEIR relay B — and if this node is a member of A and C, where A
+  // partners with B and C does not, then one of those routes works and
+  // the other does not. Keyed by destination alone they would be one row.
+  const s = nodeStore.open(home());
+  s.seen.put(A, { label: 'bella', seen: 1 });
+  s.seen.putRoute(A, { via: 'MY-RELAY-A', at: 'THEIR-RELAY-B', rank: 2, told: 10 });
+  s.seen.putRoute(A, { via: 'MY-RELAY-C', at: 'THEIR-RELAY-B', rank: 4, told: 20 });
+
+  const both = s.seen.routes(A);
+  if (both.length === 2 && both[0].via === 'MY-RELAY-A' && both[1].via === 'MY-RELAY-C') {
+    test.check('two of my doors to one of theirs are two routes, best-ranked first');
+  } else {
+    test.fail('routes: ' + JSON.stringify(both));
+  }
+
+  // AND THE BEST ONE LEADS, however old it is — rank before recency here
+  // as everywhere else.
+  s.seen.putRoute(A, { via: '', at: 'THEIR-RELAY-D', rank: 1, told: 5 });
+  if (s.seen.routes(A)[0].at === 'THEIR-RELAY-D') {
+    test.check('and a better-ranked route goes to the head, however old it is');
+  } else {
+    test.fail('head: ' + JSON.stringify(s.seen.routes(A)[0]));
+  }
+
+  // A ROUTE WITH NO DESTINATION TEACHES NOTHING.
+  if (s.seen.putRoute(A, { via: 'MINE', at: '' }) === false) {
+    test.check('while a route naming no relay is refused rather than stored');
+  } else {
+    test.fail('a route with no destination was kept');
+  }
+
+  // CAPPED, WORST FIRST — the opposite order from the peer table, and
+  // deliberately: rows there are bounded by how many people exist, rows
+  // here by how many ways there are to reach ONE person, and the fourth
+  // best way has never been the one that worked.
+  for (let n = 0; n < 6; n += 1) {
+    s.seen.putRoute(A, { via: 'V' + n, at: 'FAR-' + n, rank: 4, told: 100 + n });
+  }
+  const capped = s.seen.routes(A);
+  if (capped.length === nodeStore.MAX_ROUTES && capped[0].rank === 1) {
+    test.check('and the list is capped at ' + nodeStore.MAX_ROUTES +
+      ', shedding the worst rather than the oldest');
+  } else {
+    test.fail('after overflow: ' + JSON.stringify(capped.map(function (r) { return r.rank; })));
+  }
+
+  // FORGETTING SOMEBODY TAKES THEIR ROUTES: a route row for a peer with
+  // no peer row is unreachable by every reader here.
+  s.seen.forget(A);
+  if (s.seen.routes(A).length === 0) {
+    test.check('and forgetting a peer takes every way of reaching them with it');
+  } else {
+    test.fail('routes outlived the peer: ' + JSON.stringify(s.seen.routes(A)));
+  }
+  s.close();
+}
+
+test.subHeading('Presence is three states, because "unseen" is not "away"');
+
+{
+  // contacts.js has had three marks all along — "WHITE is NOT a dimmer
+  // red. A contact we share no relay with is not offline, they are
+  // UNSEEN" — and a two-state column could not hold it. Found by a bug:
+  // a "no opinion" sentinel survived a first INSERT and read as true, so
+  // a node that had merely been told where somebody lives reported them
+  // present.
+  const s = nodeStore.open(home());
+  s.seen.put(A, { label: 'x', seen: 1 });
+  if (s.seen.get(A).present === null) {
+    test.check('somebody nobody has spoken about is null — not absent');
+  } else {
+    test.fail('unseen read as ' + JSON.stringify(s.seen.get(A).present));
+  }
+
+  s.seen.put(A, { present: true, seen: 2 });
+  s.seen.put(A, { label: 'y', labelRank: 1, seen: 3 });
+  if (s.seen.get(A).present === true) {
+    test.check('and a caller with nothing to say about presence does not erase it');
+  } else {
+    test.fail('a silent caller changed presence');
+  }
+
+  s.seen.put(A, { present: false, seen: 4 });
+  if (s.seen.get(A).present === false) {
+    test.check('while a caller that says absent is believed');
+  } else {
+    test.fail('absent was not recorded');
+  }
+  s.close();
+}
+
+test.subHeading('A node.db from this morning still opens (R29 migration)');
+
+{
+  // The schema shipped a few hours before this one, with `at` and `url`
+  // on the peer row: one route, no via, no rank. Any node that has run
+  // since has one, so this is a real migration and not a hypothetical.
+  const oldHome = home();
+  fs.mkdirSync(path.join(oldHome, 'relay-state'), { recursive: true });
+  const { DatabaseSync } = require('node:sqlite');
+  const raw = new DatabaseSync(path.join(oldHome, 'relay-state', 'node.db'));
+  raw.exec('CREATE TABLE seen (' +
+    'publicKey TEXT PRIMARY KEY,' +
+    "at TEXT NOT NULL DEFAULT ''," +
+    "url TEXT NOT NULL DEFAULT ''," +
+    "label TEXT NOT NULL DEFAULT ''," +
+    'seen INTEGER NOT NULL DEFAULT 0)');
+  raw.exec("INSERT INTO seen VALUES ('OLD-PEER','OLD-RELAY','https://old.example','ollie',777)");
+  raw.exec("INSERT INTO seen VALUES ('NO-ROUTE','','','nora',888)");
+  raw.close();
+
+  const migrated = nodeStore.open(oldHome);
+  const peer = migrated.seen.get('OLD-PEER');
+  const moved = migrated.seen.routes('OLD-PEER')[0];
+
+  if (peer && peer.label === 'ollie' && peer.seen === 777) {
+    test.check('the peer row survives, with its name and its date');
+  } else {
+    test.fail('peer after migration: ' + JSON.stringify(peer));
+  }
+
+  // THE OLD ROUTE BECOMES A ROW AT RANK 4 WITH NO `via`, because nothing
+  // recorded which door proved it and claiming otherwise would be
+  // inventing provenance.
+  if (moved && moved.at === 'OLD-RELAY' && moved.url === 'https://old.example' &&
+      moved.via === '' && moved.rank === 4 && moved.told === 777) {
+    test.check('and its one route moves across, unranked and with no door claimed');
+  } else {
+    test.fail('migrated route: ' + JSON.stringify(moved));
+  }
+
+  if (migrated.seen.get('NO-ROUTE') && migrated.seen.routes('NO-ROUTE').length === 0) {
+    test.check('while a row that never had a route gains no invented one');
+  } else {
+    test.fail('a routeless row grew a route');
+  }
+
+  // AND THE OLD COLUMNS ARE GONE, so nothing can read the stale copy —
+  // which is the whole complaint 0018 made about the contact row.
+  if (!('at' in peer) && !('url' in peer)) {
+    test.check('and the old columns are dropped — no second copy to disagree with the first');
+  } else {
+    test.fail('old columns survived: ' + JSON.stringify(peer));
+  }
+  migrated.close();
 }
 
 test.reportSuccessFailureCount();

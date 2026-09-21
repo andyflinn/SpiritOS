@@ -620,14 +620,25 @@ function remember(rootDir, from, verdict, relayUrl) {
   var at = (seen && seen.at) || (road ? relayKeys.pinned(rootDir, road) : '') || '';
 
   try {
+    // THE ROUTE GOES TO THE SHADOW, NOT THE BOOK (0018, cycle R1). It
+    // used to be written to both; the book's copy was the one that went
+    // stale, and it was machine data in the one file that is meant to be
+    // readable. RANK ARRIVED: a packet demonstrably came from there.
+    if (at) {
+      try {
+        shadow(rootDir).note(key, {
+          at: at, url: road || '',
+          via: road ? (relayKeys.pinned(rootDir, road) || '') : '',
+          rank: require('./seenPeers').ARRIVED,
+        });
+      } catch (e) { /* a cache that will not take a row is not a reason to refuse somebody */ }
+    }
     if (verdict === 'admit') {
       contactBook.acquire(rootDir, row, 'message');
-      if (at) contactBook.learnRoute(rootDir, key, at);
       return true;
     }
     if (verdict === 'hold') {
       contactBook.hold(rootDir, row);
-      if (at) contactBook.learnRoute(rootDir, key, at);
       return true;
     }
   } catch (e) {
@@ -987,8 +998,24 @@ function createHub(rootDir) {
       // there". It posts through its relay and lets the relay say: it
       // refuses an absent target at once (0006, 503 peer not reachable).
       if (!where.length && !wanted) {
-        var row = contactBook.byPublicKey(rootDir, to);
-        var hints = (row && Array.isArray(row.routes)) ? row.routes : [];
+        // ── THE HINTS COME FROM THE SHADOW NOW (0018, cycle R1) ─────
+        //
+        //   Andy: "the hints are removed from the users contacts. (let's
+        //   admit it: they [are] not human-readable, in reality)"
+        //
+        // This read `row.routes` — base64 relay keys on a contact row,
+        // eight of them, which nobody has ever read. They were machine
+        // data in a human-readable file, claiming a rule they never
+        // satisfied, AND a second copy: the shadow holds every route a
+        // contact row could hold plus the ones for people who are not
+        // contacts, so the two could disagree and the book was the one
+        // that went stale.
+        //
+        // Best-ranked first, which the book could not do: its list was
+        // newest-first and had no idea who had said what.
+        var hints = shadow(rootDir).routes(to)
+          .map(function (r) { return r.at; })
+          .filter(function (at, i, all) { return at && all.indexOf(at) === i; });
         var connected = Object.keys((presence.detail && presence.detail()) || {});
         if (connected.length) {
           return sendPacket(router, connected[0], to, text, hints.length ? hints : undefined).then(function (answer) {
@@ -1518,7 +1545,7 @@ function createHub(rootDir) {
         // nothing in `routes`, so the first post to them had no hint to
         // send and the relay had to find them with none.
         //
-        // AFTER `acquire`, NEVER BEFORE, because `learnRoute` matches an
+        // AFTER `acquire`, NEVER BEFORE, because the book matched an
         // existing row and never creates one — which is the rule that
         // stops a relay writing into somebody's address book, and it
         // holds here too: no search result becomes a route until a person
@@ -1535,9 +1562,17 @@ function createHub(rootDir) {
         // therefore produced a contact nobody could route to.
         var seen = shadow(rootDir).get(publicKey);
         var at = (seen && seen.at) || relayKeys.pinned(rootDir, url) || '';
+        // HEARSAY: the caller named this relay — an invite, a pasted key —
+        // and nobody has proved anything yet. Kept anyway, because it is
+        // the only thing anybody knows about where this person lives, and
+        // a better-sourced route will outrank it the moment one arrives.
         if (at) {
-          try { contactBook.learnRoute(rootDir, publicKey, at); }
-          catch (e) { /* a book that cannot be written is not a reason to refuse the contact */ }
+          try {
+            shadow(rootDir).note(publicKey, {
+              at: at, url: url || '', via: relayKeys.pinned(rootDir, url) || '',
+              rank: require('./seenPeers').HEARSAY,
+            });
+          } catch (e) { /* a cache that will not take a row is not a reason to refuse the contact */ }
         }
 
         res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });

@@ -927,6 +927,35 @@ catch (e) {
   process.exit(1);
 }
 
+// ── THE ROUTES A CONTACT ROW STILL HOLDS, MOVED ONCE (cycle R1) ──────
+//
+//   Andy: "the hints are removed from the users contacts."
+//
+// `routes` left the contact row with 0018, and a node that ran before
+// today has them sitting in contacts.json. Dropping them silently would
+// throw away the only routes such a node has for its foreign contacts —
+// exactly what 0018 said to wait for the store to avoid.
+//
+// AT HEARSAY, because nothing in the book recorded who said them. Any
+// better-sourced route outranks them the moment one arrives, which is the
+// honest standing for a claim with no provenance.
+//
+// IDEMPOTENT, so it needs no "have I done this" flag: a note is a merge,
+// and once `upsert` stops carrying `routes` the rows fall away on their
+// own. Silent, because a node with none — every node made from today —
+// should not be told about a migration that did nothing.
+try {
+  const held = contactBook.everyRouteHeld(ROOT_DIR);
+  if (held.length) {
+    const shadow = require('./hub').shadow(ROOT_DIR);
+    const seenPeersRanks = require('./seenPeers');
+    held.forEach(function (r) {
+      try { shadow.note(r.publicKey, { at: r.at, rank: seenPeersRanks.HEARSAY }); }
+      catch (e) { /* one row that will not take is not a reason to stop */ }
+    });
+  }
+} catch (e) { /* a book that cannot be read is not a reason to refuse to boot */ }
+
 // THE PERSONAL NODE'S BOOT. It read `if (!relayMode)` until cycle 0; a
 // relay is booted by relayServer.js now, so this block always runs.
 {
@@ -1067,7 +1096,13 @@ catch (e) {
     noteSeen: function (from, relayUrl) {
       var at = relayUrl ? relayKeys.pinned(ROOT_DIR, relayUrl) : '';
       if (!at && !relayUrl) return;
-      require('./hub').shadow(ROOT_DIR).note(from, { at: at || '', url: relayUrl || '' });
+      // RANK ARRIVED: a packet demonstrably came from there, which proves
+      // the road and says nothing about the name.
+      require('./hub').shadow(ROOT_DIR).note(from, {
+        at: at || '', url: relayUrl || '',
+        via: relayKeys.pinned(ROOT_DIR, relayUrl || '') || '',
+        rank: require('./seenPeers').ARRIVED,
+      });
     },
     remember: function (from, verdict, relayUrl) {
       return require('./hub').remember(ROOT_DIR, from, verdict, relayUrl);
@@ -1094,7 +1129,15 @@ catch (e) {
     // cache, not this hub instance's — one node, one answer to "where have
     // I lately been told somebody lives", the same reason onRoute below
     // takes it from the module.
-    noteSeen: function (key, what) { require('./hub').shadow(ROOT_DIR).note(key, what); },
+    // RANK HOST, and presence with it. A relay saying a key is present is
+    // that relay speaking about ITS OWN MEMBER — the highest standing
+    // there is, for the name and for the route both (cycle R29).
+    noteSeen: function (key, what) {
+      require('./hub').shadow(ROOT_DIR).note(key, Object.assign({
+        via: relayKeys.pinned(ROOT_DIR, (what && what.url) || '') || '',
+        rank: require('./seenPeers').HOST,
+      }, what || {}));
+    },
     rootDir: ROOT_DIR,
     jobs: jobs,
     router: peerRouter,
@@ -1150,9 +1193,10 @@ catch (e) {
     // nobody will read — and would leave, on every member's disk, a lasting
     // record of what a relay's members have been looking up.
     //
-    // `learnRoute` matches an EXISTING row and never creates one: a relay
-    // may improve what this node knows about its own contacts and may
-    // never add to them.
+    // A RELAY MAY IMPROVE WHAT THIS NODE KNOWS ABOUT ITS OWN CONTACTS
+    // AND MAY NEVER ADD TO THEM. `learnRoute` enforced that until
+    // 2026-09-21; routes left the book with 0018, so the route half is
+    // structural now and only the label below still needs the rule.
     onRoute: function (url, body) {
       if (!body || !body.key || !body.at) return;
       // KEPT EVEN WHEN IT IS ABOUT A STRANGER.
@@ -1160,7 +1204,7 @@ catch (e) {
       //   Andy: "the node must implicitly learn routes at EVERY
       //   opportunity."
       //
-      // `learnRoute` never creates a contact row, which is right — a
+      // The book never gained a row from a relay, which is right — a
       // relay must not be able to write into somebody's address book. But
       // that made a route about anybody not already held simply vanish,
       // and a relay now announces to BOTH ends of an exchange
@@ -1174,13 +1218,27 @@ catch (e) {
       // The MODULE's cache, not this hub instance's — one node, one
       // answer to "where have I lately been told somebody lives", the
       // same reason relayRequest is taken from the module below.
+      //
+      // ── AND `via`, WHICH THIS DOOR KNEW ALL ALONG (cycle R1) ─────
+      //
+      // `onRoute(url, body)` has always been handed the relay the
+      // announcement CAME IN ON, and passed it no further. So a node on
+      // three relays could not tell which of its own doors proved a
+      // route — and a route is through MY door to THEIR relay, not an
+      // address.
+      //
+      // RANK PROVED, because this is the announcement a relay makes only
+      // after a reply signed by the target key came back through it
+      // (relay.js: "a false route cannot be verified... the bar is the
+      // signed reply"). It outranks a packet merely arriving and is
+      // outranked by the relay that holds the person.
       try {
         require('./hub').shadow(ROOT_DIR).note(body.key, {
           at: body.at, url: url, label: body.label || '',
+          via: relayKeys.pinned(ROOT_DIR, url) || '',
+          rank: require('./seenPeers').PROVED,
         });
       } catch (e) { /* a cache that will not take a row is not a reason to stop listening */ }
-      try { contactBook.learnRoute(ROOT_DIR, body.key, body.at); }
-      catch (e) { /* a book that cannot be written is not a reason to stop listening */ }
 
       // AND THE LABEL, ON A ROW THAT ALREADY EXISTS.
       //

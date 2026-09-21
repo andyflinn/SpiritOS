@@ -23,9 +23,10 @@
 // ── WHY NOT IN THE CONTACT BOOK ──────────────────────────────────────
 //
 // Because a search result is not a contact, and the book says so in the
-// one rule that keeps it honest: `learnRoute` matches an existing row and
-// never creates one — "a relay may improve what this node knows about its
-// own contacts and may never add to them" (server.js). Writing forty
+// one rule that keeps it honest: a relay may improve what this node knows
+// about its own contacts and may never add to them. (`learnRoute` enforced
+// that until 2026-09-21; routes left the book entirely with 0018, so it is
+// structural now — there is nowhere in a row for a route to go.) Writing forty
 // strangers into the book because somebody typed three letters would make
 // a search a way to fill another person's address book.
 //
@@ -116,6 +117,14 @@
 // that requirement.
 var MAX_BYTES = 20 * 1024 * 1024;
 
+// How entitled a source is to be believed. Lower wins, and the names are
+// what the callers pass rather than numbers nobody can read at the call
+// site.
+var HOST = 1;      // the relay that holds them said so
+var PROVED = 2;    // a signature this node checked
+var ARRIVED = 3;   // a packet came from there
+var HEARSAY = 4;   // carried by a partner, or unstated
+
 // ── AN HOUR WAS WHAT NO STORE COULD AFFORD; THIRTY DAYS IS A CHOICE ──
 //
 // This was 60 * 60 * 1000, and the comment above already said that was a
@@ -188,32 +197,75 @@ function createSeenPeers(opts) {
   //
   // `seen` is always refreshed, because the entry WAS seen. That is the
   // one field every caller knows by virtue of calling.
+  //
+  // ── RANK FIRST, RECENCY SECOND (cycle R29) ───────────────────
+  //
+  // Every caller now says how entitled it is to be believed. Greed alone
+  // could not refuse a DOWNGRADE: a second-hand name carried by a partner
+  // would overwrite a rename from the relay the person is actually on,
+  // simply by arriving later.
+  //
+  //   HOST     1  the relay that holds them said so — label and route
+  //   PROVED   2  a signature this node checked      — route
+  //   ARRIVED  3  a packet came from there           — route
+  //   HEARSAY  4  carried by a partner               — both, weakly
+  //
+  // The default is HEARSAY, which is the safe end: a caller that forgets
+  // to say loses an argument it might have won, rather than winning one
+  // it should have lost.
   function note(publicKey, what) {
     var key = String(publicKey || '').trim();
     var at = String((what && what.at) || '').trim();
     var url = String((what && what.url) || '').trim();
     var label = String((what && what.label) || '');
-    if (!key || (!at && !url && !label)) return false;
+    var rank = (what && what.rank) || HEARSAY;
+    var via = String((what && what.via) || '').trim();
+    var present = (what && what.present);
+    var hasPresence = present === true || present === false;
+    if (!key || (!at && !url && !label && !hasPresence)) return false;
 
-    // The merge moved into the statement (nodeStore's `put`): a blank
-    // field leaves what is there, and `seen` is always written. Doing it
-    // in SQL rather than by reading first keeps it one round trip and
-    // makes "never blank what you know" a property of the write instead
-    // of a discipline the caller has to remember.
-    rows.put(key, { at: at, url: url, label: label, seen: nowFn() });
+    // The merge lives in the statement (nodeStore's `put`): a blank field
+    // leaves what is there, a worse-ranked one is refused, and `seen` is
+    // always written. Doing it in SQL rather than by reading first keeps
+    // it one round trip and makes both rules properties of the write
+    // instead of disciplines each caller has to remember.
+    var now = nowFn();
+    rows.put(key, {
+      label: label, labelRank: rank, labelAt: now,
+      present: hasPresence ? present : undefined, seen: now,
+    });
+    // A ROUTE IS A SEPARATE ROW, because it is a separate thing: through
+    // MY door `via`, to THEIR relay `at`. A caller with a url and no `at`
+    // has told us an address and not a route, and the peer row above has
+    // already taken what that was worth.
+    if (at) rows.putRoute(key, { via: via, at: at, url: url, rank: rank, told: now });
     sweep();
     return true;
   }
 
   // Null rather than an empty shape, so a caller cannot act on a miss by
   // accident.
+  // The row, with its BEST route flattened onto it. Every caller wanted
+  // one route and the shape said so; the list is there for the caller
+  // that wants to try a second door, through `routes()`.
   function get(publicKey) {
     var key = String(publicKey || '').trim();
     var row = rows.get(key);
     if (!row) return null;
     if (nowFn() - row.seen >= maxAgeMs) { rows.forget(key); return null; }
-    return { at: row.at, url: row.url, label: row.label, seen: row.seen };
+    var best = rows.routes(key)[0] || null;
+    return {
+      at: (best && best.at) || '',
+      url: (best && best.url) || '',
+      via: (best && best.via) || '',
+      label: row.label,
+      present: row.present,
+      seen: row.seen,
+    };
   }
+
+  // Every way this node knows to reach somebody, best-ranked first.
+  function routes(publicKey) { return rows.routes(String(publicKey || '').trim()); }
 
   function size() { sweep(); return rows.size(); }
 
@@ -242,6 +294,7 @@ function createSeenPeers(opts) {
   return {
     note: note,
     get: get,
+    routes: routes,
     size: size,
     forget: forget,
     reset: reset,
@@ -253,6 +306,10 @@ function createSeenPeers(opts) {
 
 module.exports = {
   createSeenPeers: createSeenPeers,
+  HOST: HOST,
+  PROVED: PROVED,
+  ARRIVED: ARRIVED,
+  HEARSAY: HEARSAY,
   MAX_BYTES: MAX_BYTES,
   MAX_AGE_MS: MAX_AGE_MS,
 };

@@ -224,6 +224,19 @@ function save(rootDir, rows) {
 // which is the foreign-peer case, and the shadow lives in RAM — so
 // removing them today would leave a foreign contact unreachable after
 // every restart until something re-taught the route.
+// ── REMOVED 2026-09-21, cycle R1 ──────────────────────────
+//
+// R26 built the store, so the condition above is met: the shadow survives
+// a restart and a foreign contact stays reachable. `routes` is gone from
+// the row, `learnRoute` with it, and `hub.handlePost` takes its hints from
+// `shadow(rootDir).routes(key)` — best-ranked first, which this list could
+// never do, because it was newest-first and had no idea who had said what.
+//
+// WHAT A NODE THAT ALREADY HAS THEM DOES: server.js imports them into the
+// shadow once at boot, at HEARSAY, because nothing here recorded who said
+// them. Then they stop being written and fall away on the next upsert.
+//
+// `normalizeRoutes` stays for that import and for reading an old file.
 var ROUTES_KEPT = 8;
 function normalizeRoutes(list) {
   if (!Array.isArray(list)) return [];
@@ -275,7 +288,6 @@ function upsert(rootDir, row) {
     // is enrolled at." Sent as route hints when they are not on a relay
     // this node holds. Relay KEYS only; `relays` above holds URLs and is
     // left as it was.
-    routes: normalizeRoutes(row.routes != null ? row.routes : prev.routes),
     // `memberOf` and `missingSince` were carried here, both written by the
     // roster sweep that went on 2026-09-19. Not carried any more, so a row
     // written by older code loses them on its next write.
@@ -351,26 +363,25 @@ function acquire(rootDir, peer, via) {
 // Returns the row it updated, or null when there was nothing to update --
 // so a caller can tell "stashed" from "ignored" without asking twice.
 //
-// THE ROUTE IS A RELAY KEY (cycle 2). The relay announces `at` as the
-// partner's relay key, and it lands in `routes`, which holds keys only.
-// It used to be pushed into `relays`, which otherwise holds URLs — two
-// kinds of thing in one list, so nothing could use either reliably.
-// Newest first: a route just proven is the likeliest to work next.
-function learnRoute(rootDir, publicKey, relayKey) {
+// ~~THE ROUTE IS A RELAY KEY (cycle 2).~~ — **`learnRoute` was deleted on
+// 2026-09-21 (cycle R1, decision 0018).** A route is the machine's, not
+// the owner's, and it lives in the shadow now. `routesOf` is what is left:
+// a reader for an old file, so the one-time import can find them.
+function routesOf(rootDir, publicKey) {
   var key = String(publicKey == null ? '' : publicKey).trim();
-  var at = String(relayKey == null ? '' : relayKey).trim();
-  if (!key || !at) return null;
+  if (!key) return [];
+  var row = load(rootDir).find(function (r) { return r.publicKey === key; });
+  return row ? normalizeRoutes(row.routes || []) : [];
+}
 
-  var rows = load(rootDir);
-  var row = rows.find(function (r) { return r.publicKey === key; });
-  if (!row) return null;          // not a contact: not this node's business
-
-  var have = normalizeRoutes(row.routes || []);
-  if (have[0] === at) return row;   // already the newest, nothing to write
-
-  row.routes = normalizeRoutes([at].concat(have));
-  save(rootDir, rows);
-  return row;
+function everyRouteHeld(rootDir) {
+  var out = [];
+  load(rootDir).forEach(function (r) {
+    normalizeRoutes(r.routes || []).forEach(function (at) {
+      out.push({ publicKey: r.publicKey, at: at });
+    });
+  });
+  return out;
 }
 
 // Somebody wrote and this node is holding them: a row so a human can
@@ -490,7 +501,8 @@ module.exports = {
   setMyLabel: setMyLabel,
   byMyLabel: byMyLabel,
   byPublicKey: byPublicKey,
-  learnRoute: learnRoute,
+  routesOf: routesOf,
+  everyRouteHeld: everyRouteHeld,
   labelForKey: labelForKey,
   addRoute: addRoute,
 };

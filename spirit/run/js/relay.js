@@ -3235,7 +3235,7 @@ function createRelay(rootDir, deps) {
       // minted partner, is the proof. Sent with this 200 on ANY signed
       // reply — a reply has no status, and whether the member took the
       // request in is in its text, which this relay never reads. The node
-      // keeps it only for a contact (learnRoute). Not broadcast to the
+      // keeps it in its shadow (0018, R1). Not broadcast to the
       // other members: that is open in §9b.
       if (carried.at && carried.from) {
         presentNow.send(who.id, 'route', { key: carried.from, at: carried.at });
@@ -3300,7 +3300,7 @@ function createRelay(rootDir, deps) {
     // and the target never chose anything — a request simply arrived.
     //
     // Safe to send to anybody, because the NODE decides what to keep:
-    // `learnRoute` matches an existing contact row and never creates one
+    // The node keeps this in its shadow and never in the address book
     // (server.js), so a route about a stranger is one lookup and gone.
     // ── AND THE LABEL RIDES WITH THE ROUTE ───────────────────────────
     //

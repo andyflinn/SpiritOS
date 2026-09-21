@@ -56,13 +56,13 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Eleven open, four deferred, one cancelled, eighteen done. Ten of the eighteen are
+**Nine open, four deferred, one cancelled, twenty done. Ten of the eighteen are
 blocked by nothing**, and nine are decided — waiting to be built, not to be
 thought about. **Three rows now need a review, and nothing else does.**
 
 | | what | status | solution? | blocked by |
 |---|---|---|---|---|
-| **R1** | `via` on the shadow row; `routes` off the contact row | OPEN — half can start now | **yes** | `routes` half: **R26** |
+| <sub>R1</sub> | <sub>*`via` on the shadow row; `routes` off the contact row*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R2</sub> | <sub>*the sweep that needed prioritising, deleted instead*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R3</sub> | <sub>*queue depth, and what is shed at the limit*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R4** | route expiry — two evictions: cache-limit and last seen | OPEN — mechanism decided, number open | **yes** | R1; number with R26 |
@@ -93,7 +93,7 @@ thought about. **Three rows now need a review, and nothing else does.**
 | <sub>R26</sub> | <sub>*the shadow needs a store, and it is a persist shape*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R27</sub> | <sub>*a presence event about a stranger is discarded, and it is a route*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R28** | a label change reaches everybody, at every level | OPEN — **decided `0019`**; hop 1 already built, hops 2-3 **wire, team review** | **yes** | |
-| **R29** | the shadow row carries rank and provenance | OPEN | **yes** | R1, R26 |
+| <sub>R29</sub> | <sub>*the shadow row carries rank and provenance*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R30** | presence is last-known, and the shadow dates it | OPEN — **decided `0019`** | **yes** | R29 |
 | **R31** | the owner caps the cache in disc space, called “maximum cache size” | OPEN — **bound built, 20 MB**; owner's setting + screen left | **yes** | |
 
@@ -351,7 +351,7 @@ unblocked, small.
 
 **Two — the contact row stops holding routes at all.** DECIDED
 ([0018](../decisions/0018-the-route-cache-belongs-to-the-machine.md)),
-and it lands with R26.
+and **built 2026-09-21 in cycle 3.**
 
 > **Andy:** *"the hints are removed from the users contacts. (let's admit
 > it: they [are] not human-readable, in reality)"*
@@ -377,8 +377,37 @@ is in RAM. Removing `routes` from the book today would mean every route
 dies at restart — exactly the direction this whole thread is running
 against.
 
-**Status:** OPEN — `via` on the shadow row can be done now; the
-elimination waits on the store.
+### Built 2026-09-21 — cycle 3
+
+**`via` is carried at every door.** `onRoute(url, body)` always knew which
+relay the announcement came in on and passed it no further; it is now half
+the route's key, with the rank each door is entitled to — PROVED for a
+signed announcement, ARRIVED for a packet, HOST for a relay speaking about
+its own member, HEARSAY for a pasted key.
+
+**`routes` left the contact book, and `learnRoute` with it.** One reader
+(`hub.handlePost`'s hints) now asks the shadow, best-ranked first — which
+the book could never do, being newest-first with no idea who had said
+what.
+
+**The old safety became structural.** *"A relay may improve a contact row
+and never create one"* was enforced by `learnRoute`; there is now nowhere
+in a row for a route to go, which is the same shift 0012 gave the one-hop
+rule.
+
+**And a node that already has them keeps them.** `server.js` moves any
+`routes` still in `contacts.json` into the shadow once at boot, at
+HEARSAY, because nothing in the book recorded who said them. Idempotent,
+silent when there are none, and the field falls away on the next upsert —
+no flag, nothing to remember.
+
+**Verify:** `spirit/test/routeStash.js` — rewritten, because its premise
+changed: the verb is gone, a fresh row has no `routes`, a STRANGER's route
+is kept now where it used to be dropped, the book still gains nobody,
+deleting a contact leaves the memory, and an old book's routes can be read
+back out for the import.
+
+**Status:** DONE
 
 ### R2 — the sweep that needed prioritising, deleted instead
 
@@ -1865,9 +1894,34 @@ second-hand search row.
 This is what greed alone cannot do: **refuse a downgrade.** Greedy today
 means a worse answer that arrives later wins.
 
-**Status:** OPEN — not built. Needs R1 (`via`) and lands properly with R26
-(the store), since provenance per field is the shape an indexed store is
-for.
+### Built 2026-09-21 — cycle 3
+
+**Rank first, recency second**, as a property of the write:
+`ON CONFLICT ... DO UPDATE` refuses a label from a worse-ranked source and
+takes one from an equal source that spoke later. Four ranks — HOST,
+PROVED, ARRIVED, HEARSAY — and the default is HEARSAY, so a caller that
+forgets to say loses an argument it might have won rather than winning one
+it should have lost.
+
+**A route is a pair of doors**, `(peer, via, at)`, in its own table. Andy:
+*"peer-key / A-key / B-key — that the key?"* Keyed by destination alone,
+a working door and a useless one would have been the same row.
+
+**Presence turned out to be three states, and a bug said so.** The column
+was two-valued with a −1 "no opinion" sentinel the merge would swallow —
+which did not survive a first INSERT, so the sentinel landed in the column
+and read as **present**. Clamping it broke the other half. The model was
+wrong: `contacts.js:264` has had three marks all along — *"WHITE is NOT a
+dimmer red… they are UNSEEN"* — and 0019 rests on the same distinction.
+It is `null` / `false` / `true` now.
+
+**Verify:** `spirit/test/nodeStore.js` — the downgrade refusal, equal rank
+deciding by recency, two of my doors to one of theirs as two routes, the
+cap shedding worst-first, forgetting a peer taking its routes, presence's
+three states, and a `node.db` in the morning's shape migrating with its
+one route moved across unranked.
+
+**Status:** DONE
 
 ### R30 — presence is last-known, and the shadow dates it
 
