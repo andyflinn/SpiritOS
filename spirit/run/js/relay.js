@@ -3228,15 +3228,59 @@ function createRelay(rootDir, deps) {
       return { ok: true, status: 200, delivered: true };
     }
 
-    // The request is over either way. If the requester has gone, the
-    // answer is dropped — 0006, unchanged — but the TARGET is told, so
-    // it knows its work did not land rather than assuming it did.
+    // ── A SIBLING IS A ROUTE TOO ─────────────────────────────────────
+    //
+    //   Andy: "when a request is made via relay to a node that is a
+    //   sibling on the same relay, the route must be streamed back to the
+    //   node as well, then stashed in contacts exactly the same as if the
+    //   post target was on a foreign node." — "because the node doesn't
+    //   KNOW it is a sibling."
+    //
+    // THAT LAST CLAUSE IS THE WHOLE ARGUMENT, and it defeats the obvious
+    // objection. It looks as though a node already knows which relay
+    // carried a local post, since it chose one. It does not: when no
+    // relay of its own names that key, `hub.handlePost` posts through
+    // whichever relay it is connected to and sends the contact's hints,
+    // and THIS BOX decides where the packet goes. Delivered to a member
+    // here, or forwarded to a partner — and until now only the second was
+    // announced, so a node could learn where a peer lives only by
+    // inference from a silence.
+    //
+    // So the local delivery says so, in the same event and the same shape
+    // the partner path already uses (`announceRoute`, and the tunnel
+    // branch above). `at` is THIS relay's key, which is exactly what it
+    // means: the peer was reached here.
+    //
+    // NOT BROADCAST — to the member who asked and nobody else, which is
+    // the rule the partner branch states: a route is the asker's to keep,
+    // and everyone else's business is their own (NODE-AND-RELAY §9b).
     var landed = presentNow.send(matched.requester, 'reply', {
       hash: hash,
       from: who.id,
       text: typeof text === 'string' ? text : '',
       sig: sig,
     });
+    // BOTH ENDS, because both learned something and neither can infer it.
+    //
+    //   Andy: "this must be done for requestor and replier."
+    //
+    // The asker learns where the target lives; the target learns where
+    // the asker lives, which is what it needs to reach back without a
+    // search. The partner path already tells the replier (the tunnel
+    // branch above sends `{ key: carried.from }` to `who.id`), so this is
+    // the local half of a rule that was only ever half applied.
+    //
+    // Neither can be inferred by the node itself: the asker did not
+    // choose this relay for this peer when it had no route to choose by,
+    // and the target never chose anything — a request simply arrived.
+    //
+    // Safe to send to anybody, because the NODE decides what to keep:
+    // `learnRoute` matches an existing contact row and never creates one
+    // (server.js), so a route about a stranger is one lookup and gone.
+    if (landed) {
+      presentNow.send(matched.requester, 'route', { key: who.id, at: mineKey() });
+      presentNow.send(who.id, 'route', { key: matched.requester, at: mineKey() });
+    }
     return { ok: true, status: 200, delivered: !!landed };
   }
 

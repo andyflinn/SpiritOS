@@ -147,6 +147,36 @@ function run() {
     test.fail('reply: ' + JSON.stringify(back));
   }
 
+  // ── A SIBLING IS A ROUTE TOO ──────────────────────────────────────
+  //
+  //   Andy: "when a request is made via relay to a node that is a sibling
+  //   on the same relay, the route must be streamed back to the node as
+  //   well, then stashed in contacts exactly the same as if the post
+  //   target was on a foreign node." — "because the node doesn't KNOW it
+  //   is a sibling." — "this must be done for requestor and replier."
+  //
+  // IT LOOKS AS THOUGH THE NODE ALREADY KNOWS, and that is the trap. A
+  // node picks a relay when one of its own names the key; when none does,
+  // hub.handlePost posts through whichever relay it holds and sends the
+  // contact's hints, and THE RELAY decides. Delivered to a member here or
+  // forwarded to a partner — and only the second was announced, so where
+  // a peer lives could be learned only by inferring from a silence.
+  const bertRoute = bertSink.last('route');
+  if (bertRoute && bertRoute.key === john.publicKey && bertRoute.at === L.box.relayPublicKey()) {
+    test.check('the asker is told where the target lives — this relay, by key');
+  } else {
+    test.fail('no route to the asker: ' + JSON.stringify(bertRoute));
+  }
+
+  // BOTH ENDS, because both learned something and neither can infer it.
+  // The target never chose anything at all: a request simply arrived.
+  const johnRoute = johnSink.last('route');
+  if (johnRoute && johnRoute.key === bert.publicKey && johnRoute.at === L.box.relayPublicKey()) {
+    test.check('and so is the target, about the asker — which is how it reaches back without a search');
+  } else {
+    test.fail('no route to the replier: ' + JSON.stringify(johnRoute));
+  }
+
   // What makes it worth having: the requester can prove WHO answered,
   // without trusting the relay that carried it.
   if (back && auth.receiptSignatureOk(john.publicKey, back.hash, back.sig)) {

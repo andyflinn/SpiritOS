@@ -63,6 +63,44 @@ new ones — degrades rather than breaks.
 
 **Status:** OPEN — not built. Node-side and unblocked — the first thing to build.
 
+### R23 — a sibling is a route too, and both ends are told
+
+> **Andy:** *"when a request is made via relay to a node that is a sibling
+> on the same relay, the route must be streamed back to the node as well,
+> then stashed in contacts exactly the same as if the post target was on a
+> foreign node."* — *"because the node doesn't KNOW it is a sibling."* —
+> *"this must be done for requestor and replier."*
+
+Route announcements fired **only** on the partner path (`relay.js`,
+`announceRoute` and the tunnel branch of `routeReply`, both inside
+`carried`). A post delivered to a member of the same relay announced
+nothing, so a contact on your own relay got no route stashed at all.
+
+**The objection that looks right and is not.** It appears a node already
+knows which relay carried a local post, since it chose one. It does not:
+when no relay of its own names that key, `hub.handlePost` posts through
+whichever relay it is connected to and sends the contact's hints, and the
+RELAY decides where the packet goes — delivered here, or forwarded to a
+partner. Only the second was announced, so where a peer lives could be
+learned only by **inferring from a silence**.
+
+**Both ends, for the same reason and a stronger one.** The asker learns
+where the target lives; the target learns where the asker lives, which is
+what it needs to reach back without a search. The target never chose
+anything at all — a request simply arrived. The partner path already told
+the replier (`{ key: carried.from }`), so this is the local half of a rule
+that was only ever half applied.
+
+**Safe to send to anybody**, because the node decides what to keep:
+`learnRoute` matches an existing contact row and never creates one, so a
+route about a stranger costs one lookup and is gone.
+
+**Verify:** `spirit/test/routerPost.js` — after a local ping and ack, the
+asker is told the target is at this relay's key, and the target is told
+the same about the asker.
+
+**Status:** DONE
+
 ### R2 — the sweep that needed prioritising, deleted instead
 
 > **Andy:** *"Names are cheaper as by-product of search, Description can
