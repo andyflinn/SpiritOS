@@ -9,6 +9,11 @@ const auth = require('./relayAuth');
 const ownerBadge = require('./ownerBadge');
 const contactBook = require('./contacts');
 const relayKeys = require('./relayKeys');
+// WHAT A SEARCH LEARNED, kept until it becomes useful. A search answer
+// says where each person lives, and that was thrown away — see
+// seenPeers.js. Not the contact book: a search result is not a contact,
+// and the book never invents rows.
+const seenPeers = require('./seenPeers').createSeenPeers();
 const peerFile = require('./peerFile');
 const peerStats = require('./peerStats');
 const deviceAuth = require('./deviceAuth');
@@ -1462,6 +1467,30 @@ function createHub(rootDir) {
           publicLabel: String((body && body.publicLabel) || ''),
           relay: url,
         }, via);
+
+        // ── THE ROUTE THE SEARCH ALREADY KNEW ────────────────────────
+        //
+        //   Andy: "in a search request, it is the node who already knows
+        //   the via field at request time." — "so all search returns
+        //   could be cached outside of contacts, and wait until they
+        //   become applicable."
+        //
+        // This is the moment it becomes applicable. Until now a contact
+        // acquired from a search arrived with an address in `relays` and
+        // nothing in `routes`, so the first post to them had no hint to
+        // send and the relay had to find them with none.
+        //
+        // AFTER `acquire`, NEVER BEFORE, because `learnRoute` matches an
+        // existing row and never creates one — which is the rule that
+        // stops a relay writing into somebody's address book, and it
+        // holds here too: no search result becomes a route until a person
+        // has decided to keep the person.
+        var seen = seenPeers.get(publicKey);
+        if (seen && seen.at) {
+          try { contactBook.learnRoute(rootDir, publicKey, seen.at); }
+          catch (e) { /* a book that cannot be written is not a reason to refuse the contact */ }
+        }
+
         res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
           publicKey: row.publicKey,
@@ -1812,6 +1841,24 @@ function createHub(rootDir) {
               publicKey: p.publicKey,
               publicLabel: p.publicLabel || '',
               tail: keyTail(p.publicKey),
+              // WHICH RELAY THIS PEER LIVES AT, as a key, which is what a
+              // route is made of.
+              //
+              //   Andy: "in a search request, it is the node who already
+              //   knows the via field at request time."
+              //
+              // The node asked a relay it has pinned, and the answer says
+              // whether the row came from that relay or from a partner of
+              // it. Both halves are here and the key half was thrown away:
+              // `via` was used to look a URL up and then dropped, so a
+              // contact acquired from a search arrived with an address in
+              // `relays` and NOTHING in `routes`.
+              //
+              // `relayKeys.pinned` is this node's own record of the key it
+              // accepted for that URL, so a row with no `via` is a member
+              // of the relay that answered — and that relay's key is the
+              // route.
+              atKey: p.via || relayKeys.pinned(rootDir, url) || '',
               // WHICH RELAY THIS ROW CAN BE ACQUIRED FROM, which is not
               // always the one that answered. A row carrying `via` came
               // from a PARTNER of this relay, and confirming a key means
@@ -1910,6 +1957,17 @@ function createHub(rootDir) {
         });
       }).then(function () {
         var list = Object.keys(found).map(function (k) { return found[k]; });
+
+        // NOTED HERE, AFTER THE PARTNER URLS ARE RESOLVED, so what is
+        // kept is where the peer actually is rather than where the
+        // question was sent. Nothing is written to the contact book —
+        // this is what the node has lately been told about, and it waits
+        // until somebody acts on it.
+        list.forEach(function (row) {
+          seenPeers.note(row.publicKey, {
+            at: row.atKey, url: row.relay, label: row.publicLabel,
+          });
+        });
         list.sort(function (a, b) {
           return String(a.publicLabel).localeCompare(String(b.publicLabel));
         });

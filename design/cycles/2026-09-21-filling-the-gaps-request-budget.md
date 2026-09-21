@@ -101,6 +101,48 @@ the same about the asker.
 
 **Status:** DONE
 
+### R24 — a search answer is kept until somebody acts on it
+
+> **Andy:** *"in a search request, it is the node who already knows the
+> via field at request time."* — *"so all search returns could be cached
+> outside of contacts, and wait until they become applicable."* — *"I'm
+> trying to go diligently through all instances where knowledge is thrown
+> away blindly, and it costs the relay nothing."*
+
+**A search answer says where every person in it lives, and the node threw
+that away.** `hub.handleSearch` built `byKey[p.relayKey] = p.url` to
+resolve a partner's address, kept the URL and **dropped the key** — so a
+contact acquired from a search arrived with an address in `relays` and
+**nothing in `routes`**, and the first post to them carried no hint.
+
+Both halves were in hand at the moment of the answer: the node knows
+which relay it asked (and has its key pinned), and the row says whether it
+came from that relay or from a partner of it.
+
+**Kept outside the contact book, deliberately.** A search result is not a
+contact, and the book's one rule says so: `learnRoute` matches an existing
+row and never creates one — *"a relay may improve what this node knows
+about its own contacts and may never add to them"*. Writing forty
+strangers into it because somebody typed three letters would make a search
+a way to fill another person's address book.
+
+So `seenPeers.js` holds them instead: bounded by **age and by space**,
+because neither does the other's job (`0016`'s argument in a smaller
+place). It becomes applicable at `peer.acquire`, **after** the row exists
+— no search result becomes a route until a person has decided to keep the
+person.
+
+**What it removes from the plan:** threading a key through the Add button
+and back. The node caches what it learned itself, so the app is not on the
+path at all.
+
+**Verify:** `spirit/test/seenPeers.js` — a row noted is a row returned; a
+miss is null rather than an empty shape; a row that teaches nothing is
+refused; stale and overflowing rows go, oldest first; and forty strangers
+cost a bound rather than a book.
+
+**Status:** DONE
+
 ### R2 — the sweep that needed prioritising, deleted instead
 
 > **Andy:** *"Names are cheaper as by-product of search, Description can
