@@ -622,7 +622,24 @@ platform travels with each.
 | date | commit | platform / node | per stream | bare node | relay at rest | node at rest | member / peer row | install |
 |---|---|---|---|---|---|---|---|---|
 | 2026-09-21 | `e96c904` | win32 / v24.20.0 | 58 KB | 49 MB | 59 MB | 72 MB | 197 / 222 B | 3756 KB |
+| 2026-09-21 | `dc21575` | win32 / v24.20.0 | 63 KB | 49 MB | 60 MB | 73 MB | 197 / **577** B¹ | 3797 KB |
 
 **The first row is the baseline**, taken the day the measurement was
-built. Nothing is being compared yet — which is the honest state of a
-history with one entry in it.
+built.
+
+**¹ The second row's peer figure changed meaning, not cost.** At `e96c904`
+a peer was one row with its route inline, 222 bytes. Cycle 3 (R29) moved
+routes into their own table, keyed by peer, my relay and their relay; the
+figure since is a name **plus** one route — 577 bytes — and it is the first
+time the measurement counted a reachable peer properly. Read the jump as
+a better question being asked, not a cost that went up 2.6×.
+
+**What else moved between the two:** install +41 KB (`nodeStore`,
+`spiritErrors`, `nodeSettings` and a longer README); node at rest +1 MB
+from the modules it now loads. Per-stream 58 → 63 KB is inside the
+57–63 KB spread every Windows run today has shown, and no code that holds
+a connection changed — noise, not drift.
+
+**Tagged `capacity-2026-09-21`** — the first tag on the repository, on
+Andy's *"tag the tree"*, after an assessment that this interval was real:
+cycles 3 and 4 reshaped the data a peer costs.
