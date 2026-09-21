@@ -56,7 +56,7 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Twelve open, three deferred, one cancelled, seventeen done. Ten of the eighteen are
+**Eleven open, four deferred, one cancelled, eighteen done. Ten of the eighteen are
 blocked by nothing**, and nine are decided — waiting to be built, not to be
 thought about. **Three rows now need a review, and nothing else does.**
 
@@ -76,7 +76,7 @@ thought about. **Three rows now need a review, and nothing else does.**
 | <sub>R12</sub> | <sub>*`last` on a partner row*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R13** | no streams between partners | OPEN — **wire, team review** | **yes** | R12 |
 | **R14** | open partnering — a row on send or receive, mutual activates | OPEN — **decided**; keyed outranks unkeyed on eviction, numbers open | **yes** | R9, R11, R12 |
-| **R15** | the per-stream measurement | OPEN — **four conclusions rest on it**; method written | **yes** | |
+| <sub>R15</sub> | <sub>*the per-stream measurement*</sub> | <sub>*done — ~58 KB*</sub> | <sub>—</sub> | |
 | **R16** | the queue survives a restart — and is a table, not a dump | OPEN | **yes** | R26's store |
 | <sub>R17</sub> | <sub>*suites clean up the homes they create*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R18</sub> | <sub>*durations on a clock that cannot jump*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -84,6 +84,7 @@ thought about. **Three rows now need a review, and nothing else does.**
 | <sub>R20</sub> | <sub>*the Governor's remaining job*</sub> | <sub>*deferred*</sub> | <sub>—</sub> | <sub>*revisit when the list is clear*</sub> |
 | <sub>R32</sub> | <sub>*working a long contact list: select, bulk remove, filter*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | <sub>*the verb already exists*</sub> |
 | <sub>R33</sub> | <sub>*"mailbox" retired, still in 57 UI comments*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
+| <sub>R34</sub> | <sub>*Info shows this node's own disc, cache and RAM*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | <sub>*pairs with R31*</sub> |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R23</sub> | <sub>*a sibling is a route too, and both ends are told*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -1099,9 +1100,39 @@ stops being a lever, and how many members a box holds. **R20 — the
 Governor's last job — ends when this lands**, because `tick()` exists to
 correct a ceiling that is only wrong because the constant is a guess.
 
-**Status:** OPEN — not measured. **Method written; nothing blocks it.** The
-instrument is in the relay already and the lab already spawns what it
-needs.
+### Measured 2026-09-21
+
+**~58 KB per held stream**, from the slope of the last segment, with a
+median of three samples at each step.
+
+**`STREAMS_PER_MB = 16` implies 64 KB, so the guess was ~10% pessimistic**
+— good, and wrong in the safe direction. The Governor's ceiling sits
+slightly below what a box would actually carry; nothing was ever in
+danger.
+
+**And the method earned itself twice.** The first version took one sample
+per step and two runs disagreed by 15%, with one step reading LOWER than
+the one before it. The early rows still read 7 KB and 33 KB per stream,
+because the first hundred connections fit in memory the process had
+already reserved — a single before-and-after reading would have produced
+any number between 7 KB and 58 KB depending on where it landed.
+
+**Four claims can now be made.** What a micro-relay costs, how many
+members a box holds (~700 on 100 MB), whether `connections` stops being a
+lever, and R20.
+
+**It is a tool, not a suite** — `spirit/test/measureCapacity.js`, listed in
+`runAll.js`'s `NOT_A_SUITE` with its reason. It spawns two servers, holds
+800 sockets and writes 11,000 rows: a minute of wall clock, and no
+pass/fail claim to make.
+
+**Verify:** `spirit/test/measureCapacity.js` — and it is the unusual kind,
+worth saying rather than glossing. It makes **no pass/fail claim**: it
+measures and prints, and what it protects against is not a regression but
+a number going quietly stale. `README/CAPACITY.md` carries its output, its
+method and the command to run it again.
+
+**Status:** DONE — measured, written up, and re-runnable.
 
 ## Crossing all of it
 
@@ -2075,6 +2106,42 @@ where comments carry the reasoning.
 
 **Status:** DEFERRED: UI files, so it belongs to a UI session by the same
 rule as R32.
+
+### R34 — the Info app shows what this node is actually using
+
+> **Andy:** *"this is also a sexy thing for the info app"* — *"disc usage,
+> current capacity for peer-memory etc..."*
+
+**Two different things wear the word capacity, and only one belongs on a
+screen.**
+
+| | where |
+|---|---|
+| **the benchmark** — what a box of a given size holds | `README/CAPACITY.md`, produced by a tool that spawns servers |
+| **the live reading** — what THIS node is using right now | the Info app |
+
+A node cannot run the benchmark; it can report itself. What the screen
+wants is the second:
+
+- **disc usage, split the way Andy split it**: the program, the node's own
+  bookkeeping, the auto-memory, and your space
+- **the peer cache**: how much of its cap is spent, and how many people
+  that is
+- **the traffic log**, because it is the only file that grows on its own
+- **RAM at rest**, which answers *"is this thing heavy"* — it is not
+
+**It is allowed, and the rule says why.** `0020` keeps the machinery
+opaque to the CLIENT; the owner is not a client (`0019`), and these are
+values the node has already decided rather than the structure underneath
+them. A size, a fraction, a count — not the rows.
+
+**It pairs with R31's other half**, which puts the cache *setting* on the
+same screen. Showing what is spent beside the bound that governs it is one
+panel, not two.
+
+**Status:** DEFERRED: it is UI, and Andy takes UI in dedicated sessions on
+his own node. Nothing below the screen is missing — `nodeStore` already
+answers `bytes()` and `size()`, and the rest is `fs.statSync`.
 
 ## The order, and why
 

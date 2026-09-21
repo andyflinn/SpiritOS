@@ -36,6 +36,43 @@ This repository comes with a suite of test scripts that verify the promises made
 
 Lab relays and lab peers belong here too. They are harness tools, not product code — loopback stand-ins for the real thing, used to build a world you can look at. The commands for running any of this by hand are in [README/HARNESS/HUMAN_TOOLS.md](README/HARNESS/HUMAN_TOOLS.md).
 
+## What a box holds
+
+Measured, not estimated. The derivations, the method and the command to
+re-measure are in [README/CAPACITY.md](README/CAPACITY.md).
+
+### Minimum to run
+
+| | |
+|---|---|
+| **Node.js** | **22.13 or later** — no other dependency, and no `npm install` |
+| **Install** | **3.7 MB**, 110 files |
+| **RAM** | **72 MB** for a personal node, **60 MB** for a relay, at rest |
+
+Node.js itself is 49 MB of that.
+
+### And then
+
+| | |
+|---|---|
+| **A relay with 100 MB RAM and 1 GB disc** | **~700 members connected at once**, out of a roll that could hold **5.5 million** |
+| **Partners on the same relay** | **~3.8 million** rows on disc; RAM is spent only while one is connected |
+| **A node with 1 MB RAM** | **not possible** — bare Node.js is 49 MB |
+| **A node with 10 MB disc** | **~47,000** remembered peers |
+
+- **A held connection costs ~58 KB.** That is what turns 41 MB of
+  headroom into ~700 people.
+- **A row on disc costs about 200 bytes** — a member, a partner or a
+  remembered peer. Disc is not what runs out.
+- **A node's disc is yours, not the system's.** On a working node the
+  program is ~2 MB, the node's own bookkeeping ~340 KB, the peer cache
+  capped at 20 MB — and the media folder 91 MB.
+- **The browser is not a cost.** The shell is one tab in a browser you
+  already have open, and a node uses about what that tab does.
+
+**So a relay can know a million people and hold seven hundred
+conversations, and the gap between those two numbers is the design.**
+
 ## how to get started.
 ```
 git clone https://github.com/andyflinn/SpiritOS.git
