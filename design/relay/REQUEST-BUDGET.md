@@ -2408,6 +2408,13 @@ no partnership with it, one is made. That is exactly *"let partners just
 connect on their own"*, arriving from the other direction — not *may we
 allow it* but *what else could possibly maintain a roll this size*.
 
+> *Placed, 2026-09-22.* **Andy:** *"my relay partnering autonomously with
+> strangers will have to be a grant from the owner.  outside of the scope of
+> proving the core system"* — so the argument above stands as the case for
+> that grant, not as core work: an owner turns self-assembly on, and until
+> one does, every partnership is one an owner wrote down. See the gap
+> cycle, R14 and R11.
+
 ### The inversion worth stating plainly
 
 **The smaller relays get, the more partnerships each one needs.** A

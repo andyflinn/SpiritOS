@@ -58,10 +58,10 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Six open, seven deferred, one cancelled, twenty-eight done.** Four need
-the team review (R9, R13, R28, and R36's phase B), one is Andy's to decide
-(R11), and R14 waits on those. **Nothing open can be built without a review
-or a ruling.**
+**Two open, ten deferred, one cancelled, twenty-eight done.** Both open
+rows are for the team review — R13 and R28's hops 2–3 — with R36's phase B
+beside them. **Nothing else stands between this cycle and the review**:
+R11 and R14 left the core by Andy's ruling of 2026-09-22, and R9 with them.
 
 | | what | status | solution? | blocked by |
 |---|---|---|---|---|
@@ -73,12 +73,12 @@ or a ruling.**
 | <sub>R6</sub> | <sub>*`maxPerTarget` out of config, into code*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R7</sub> | <sub>*drop the ceiling to 1 and run the experiment*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R8</sub> | <sub>*`viaUrl` in a search answer — was already built*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R9** | hints carry `{ key, url }` | OPEN — **wire, team review** | **yes** | |
+| <sub>R9</sub> | <sub>*hints carry `{ key, url }`*</sub> | <sub>*deferred — serves only autonomous partnering (2026-09-22)*</sub> | <sub>**yes**</sub> | |
 | <sub>R10</sub> | <sub>*`cancel`, exposed to a member*</sub> | <sub>*cancelled*</sub> | <sub>—</sub> | |
-| **R11** | the URL rule / SSRF — provenance, and only while a relay row is unkeyed | OPEN — **Andy's to decide**; narrowed 2026-09-21 to one moment, a stranger relay's first dial under R14 | **yes** | |
+| <sub>R11</sub> | <sub>*the URL rule / SSRF — only a stranger relay's first dial, which only R14 makes*</sub> | <sub>*deferred with R14 — the core dials only owner-written URLs*</sub> | <sub>**yes**</sub> | |
 | <sub>R12</sub> | <sub>*`last` on a partner row*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | **R13** | no streams between partners | OPEN — **wire, team review** | **yes** | |
-| **R14** | open partnering — a row on send or receive, mutual activates | OPEN — **decided**; keyed outranks unkeyed on eviction, numbers open | **yes** | R9, R11 |
+| <sub>R14</sub> | <sub>*open partnering — a row on send or receive, mutual activates*</sub> | <sub>*deferred — an owner's grant, outside the core (2026-09-22)*</sub> | <sub>**yes**</sub> | |
 | <sub>R15</sub> | <sub>*the per-stream measurement*</sub> | <sub>*done — a platform constant: ~57–63 KB Windows, ~42 KB Linux*</sub> | <sub>—</sub> | |
 | <sub>R16</sub> | <sub>*the queue survives a restart — and is a table, not a dump*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R17</sub> | <sub>*suites clean up the homes they create*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -215,7 +215,9 @@ sittings that can each be clamped, finished and pushed green:
 **Plus one sitting that is not an implementation cycle:** the review, between
 6 and 7, covering R9, R13 and R28's hops 2 and 3.
 
-**Where the eight stand, late 2026-09-21:** cycles 1–6 are done. Three rows
+**Where the eight stand, 2026-09-22:** cycles 1–6 are done. Cycle 7 is R28
+alone and cycle 8 is R13 alone: R9 and R14 left the core with Andy's ruling
+on autonomous partnering. Before that ruling: cycles 1–6 are done. Three rows
 were built outside them (R35, R38, R39), and one decided row was found with
 no cycle at all (R40) and ruled out of this cycle's scope. Left: **the
 review, then 7 and 8** — and gate 3 below, at the end of 8.
@@ -760,7 +762,20 @@ the partner's URL, and acquiring it keeps that URL as a route.
 **tell** its relay where an unknown relay is. Without this, C1 unblocks
 one end and leaves the other blocked.
 
-**Status:** OPEN — not built. Wire, therefore a team review. R8 without it unblocks one end and leaves the other blocked.
+> **Andy, 2026-09-22:** *"my relay partnering autonomously with strangers
+> will have to be a grant from the owner.  outside of the scope of proving
+> the core system"*
+
+**Why R9 goes with it — Claude's inference from that ruling, for Andy to
+overrule.** A hint's URL exists so a node can tell its relay where a relay
+it does not know is. In the core, a relay dials only partners its owner
+wrote down, and a hint's URL is never dialled (R11); so the URL would
+travel and be ignored. It has a use only once a relay may reach an unknown
+relay, which is R14.
+
+**Status:** DEFERRED: serves only autonomous partnering, which Andy ruled a
+grant from the owner and outside the scope of proving the core system
+(2026-09-22).
 
 ### R10 — `cancel`, exposed to a member
 
@@ -988,9 +1003,24 @@ to learn the key. **R11 is now that one moment**, and candidate 1 applies
 to it alone: resolve the name, refuse anything inside the box's own network,
 connect to the address that was resolved.
 
-**Status:** OPEN — **narrowed, not ruled; the ruling is Andy's.** Claude's
-recommendation is the paragraph above. A prerequisite for R14 rather than a
-follow-up; R9 needs only the never-dial clause.
+### Ruled 2026-09-22 — the stranger's dial leaves the core
+
+> **Andy, 2026-09-22:** *"my relay partnering autonomously with strangers
+> will have to be a grant from the owner.  outside of the scope of proving
+> the core system"*
+
+**So in the core, every URL a relay or a node dials was written by an
+owner**, and the consent chain above covers all of it. The one unguarded
+dial — a stranger relay's address, fetched for its key — happens only under
+autonomous partnering, which is now an owner's grant and not core work.
+
+**Kept for whoever builds that grant:** candidate 1, scoped to that one
+dial — resolve the name, refuse anything inside the box's own network,
+connect to the address that was resolved. The grant is the owner's
+consent to partner; it is not consent to have the relay dial inward.
+
+**Status:** DEFERRED: with R14. Nothing in the core dials a URL an owner did
+not write (Andy, 2026-09-22).
 
 ### R12 — `last` on a partner row
 
@@ -1142,7 +1172,16 @@ need a second attempt under load. That is the right way round — a retry
 costs one packet, and the alternative is letting a stranger's request
 outlive a partner's row.
 
-**Status:** OPEN — **mechanics and eviction order decided; the two numbers
+> **Andy, 2026-09-22:** *"my relay partnering autonomously with strangers
+> will have to be a grant from the owner.  outside of the scope of proving
+> the core system"*
+
+**The mechanics above stand as the design of that grant**, not as core
+work: rows on send or receive, reciprocity as acceptance, keyed outranking
+unkeyed on eviction.
+
+**Status:** DEFERRED: an owner's grant, outside the scope of proving the core
+system (Andy, 2026-09-22). Before this: OPEN — **mechanics and eviction order decided; the two numbers
 are not chosen.** Needs R9, R11 and R12.
 
 ### R15 — the per-stream measurement
@@ -2754,7 +2793,9 @@ D  (partners)         needs C, and needs D1 ruled before it ships
 waits on C and on the URL rule.
 
 **Late 2026-09-21: A and B are done.** What is left is C, the review, and
-D behind it.
+D behind it. **2026-09-22:** D's autonomous half (R11, R14) and the hint URL
+(R9) left the core by Andy's ruling; what is left of C and D is R28's hops
+2–3 and R13 — both the review's.
 
 **Nothing is deliberately left out any more.** Persistence was prose in
 the first draft of this plan and is now R16, because a gap described in a
