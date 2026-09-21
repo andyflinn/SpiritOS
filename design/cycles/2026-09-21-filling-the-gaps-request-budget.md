@@ -63,17 +63,58 @@ new ones — degrades rather than breaks.
 
 **Status:** OPEN — not built. Node-side and unblocked — the first thing to build.
 
-### R2 — `background` marking, so the class split stops being decorative
+### R2 — the sweep that needed prioritising, deleted instead
 
-The scheduler ranks deliberate above background and **nothing marks
-itself background**, so a fifty-card sweep still outranks a message a
-person just typed. That is the gap the class split was built for, still
-open.
+> **Andy:** *"Names are cheaper as by-product of search, Description can
+> be deliberate (contact-app-retrofit). when a result-row is clicked a
+> description bubble opens below it. ....... My diagnosis: We found a UI
+> that spawns an accumulation in the queue, we fix there..... correct? we
+> don't run and muddle with the core where it's unnecessary."*
 
-Needs `{ kind }` threaded through `api.peerPost` so
-`contactsAskEveryone` can say what it is. Node-side API shape, not wire.
+**This requirement asked for `{ kind: 'background' }` to be threaded
+through `api.peerPost` so `contactsAskEveryone` could mark itself and
+yield to a person's own actions.** It had one caller, and the caller
+should not exist.
 
-**Status:** OPEN — not built. Needs `{ kind }` threaded through `api.peerPost`; the scheduler half is done and proven in `spirit/test/postQueue.js`.
+`contactsAskEveryone` asked every row of a search result for its card —
+one request each, on every search, cache cleared first so the same people
+were asked again. What it fetched was a **name the row already carried**
+(`publicLabel` travels with the search answer) and a **description
+almost nobody reads**.
+
+**The app already argued this, for the label, on 2026-09-18**, three lines
+below the sweep: *"the relay already said it, right here, when it answered
+the search. Asking again is the node spending its own request budget on
+something it was told."*
+
+**And the design it reverses had its own reason, which the budget
+overturned.** The row was a control until the sweep replaced it —
+*"THE ROW IS NOT A CONTROL ANY MORE... every row answers for itself now,
+so there is nothing to press"*. True, and it cost a packet per row per
+search to be true. At one request in flight per member (`0016`) a
+screenful of speculative packets is a screenful of somebody's own turns,
+spent before they have asked for anything.
+
+**Why the description is worth fetching at all, which is also why it can
+wait:**
+
+> **Andy:** *"the description only gets relevant when the user doesn't
+> know if it's 'Tom Smith' he looks for, or 'Tom A. Smith'."*
+
+Disambiguation — and the row already detects it (`alike`, marking a name
+worn by more than one answer). The moment a person needs it is the moment
+they press.
+
+**So R2 closes by deletion rather than by plumbing.** The scheduler keeps
+its class distinction, proven in `spirit/test/postQueue.js` and **now with
+no caller**, which is a better resting place than wired through the app
+boundary to manage traffic that should not exist.
+
+**Verify:** `spirit/test/contacts.js` — a search asks nobody; a press asks
+that person and nobody else; a second press on the same row spends no
+second request; what they said appears under their name once pressed.
+
+**Status:** DONE
 
 ### R3 — queue depth, and what is shed at the limit
 

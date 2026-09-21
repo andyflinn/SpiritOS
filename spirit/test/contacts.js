@@ -1011,9 +1011,54 @@ function aFoundPersonCanBeAsked() {
     el(app, 'contacts-seen-go').fire('click');
 
     return settle().then(settle).then(function () {
+      // A SEARCH ASKS NOBODY (2026-09-21). It used to ask every row it
+      // found, one request each, on every search — for a description most
+      // rows never had read.
+      //
+      //   Andy: "Names are cheaper as by-product of search, Description
+      //   can be deliberate... when a result-row is clicked a description
+      //   bubble opens below it."
+      //
+      // The name is already on the row: `publicLabel` travels with the
+      // search answer. What cost a packet was the description, and at one
+      // request in flight per member (0016) a screenful of them is a
+      // screenful of somebody's own turns, spent before they asked.
+      if (app.posts.length === 0) {
+        test.check('a search asks nobody — the names it needs came with the answer');
+      } else {
+        test.fail('a search still posted: ' + JSON.stringify(app.posts));
+      }
+
+      // AND A PRESS ASKS ONE PERSON. The row is a control again, which it
+      // was until the sweep replaced it.
+      function press(key) {
+        el(app, 'contacts-seen-list').fire('click', {
+          target: target('data-key', key, {
+            className: 'contacts-seen-row',
+            dataset: { key: key },
+          }),
+        });
+      }
+      press('KEY-SONNY');
+      if (app.posts.length === 1 && app.posts[0].to === 'KEY-SONNY') {
+        test.check('and pressing one row asks that person, and nobody else');
+      } else {
+        test.fail('after one press: ' + JSON.stringify(app.posts));
+      }
+
+      // PRESSED AGAIN IS NOT ASKED AGAIN, because the answer is already
+      // on screen and a second turn would buy nothing.
+      press('KEY-SONNY');
+      if (app.posts.length === 1) {
+        test.check('and pressing it again spends no second request');
+      } else {
+        test.fail('a second press posted again: ' + JSON.stringify(app.posts));
+      }
+
+      press('KEY-GHOST');
       const to = app.posts.map(function (p) { return p.to; }).sort();
       if (to.length === 2 && to[0] === 'KEY-GHOST' && to[1] === 'KEY-SONNY') {
-        test.check('a search asks every person it found, once each');
+        test.check('and each row asked is asked once');
       } else {
         test.fail('posts: ' + JSON.stringify(app.posts));
       }
@@ -1030,11 +1075,14 @@ function aFoundPersonCanBeAsked() {
         test.fail('wrong packet: ' + JSON.stringify(one));
       }
 
+      return null;
+    }).then(settle).then(settle).then(function () {
       const out = el(app, 'contacts-seen-list').innerHTML;
 
-      // NO CLICK ANYWHERE IN THIS TEST, which is the whole change.
+      // WHAT THEY SAID IS UNDER THEIR NAME, once they have been asked.
+      // This read "with nothing pressed" while the sweep existed.
       if (/jazz, and a synth in the corner/.test(out)) {
-        test.check('and what they said is under their name, with nothing pressed');
+        test.check('and what they said is under their name, once that row was pressed');
       } else {
         test.fail('no bubble: ' + out);
       }
@@ -1066,7 +1114,11 @@ function aFoundPersonCanBeAsked() {
       // Two people, two rows. A row expansion stood here and made it four,
       // which put the widest thing on the page inside the narrowest box
       // and changed the page height under whoever was reading it.
-      const bodyRows = (out.split('<tbody>')[1] || '').split('<tr>').length - 1;
+      // COUNTED BY `<tr`, not by `<tr>`. The row carries a class and a
+      // data-key since it became a control again (2026-09-21), so a
+      // counter looking for the bare tag found none and reported that two
+      // people had produced no rows at all.
+      const bodyRows = (out.split('<tbody>')[1] || '').split('<tr').length - 1;
       if (bodyRows === 2) {
         test.check('two people, two rows — what they said shares the line with their name');
       } else {
@@ -1253,7 +1305,12 @@ function addsByHandle() {
     el(app, 'contacts-seen-go').fire('click');
     return settle().then(function () {
       const out = el(app, 'contacts-seen-list').innerHTML;
-      const adds = out.split('data-key=').length - 1;
+      // COUNTED BY THE BUTTON'S OWN CLASS. This counted `data-key=`,
+      // which was unique to the Add button until the row became a control
+      // again and took one as well (2026-09-21) — so two people read as
+      // four. A count of a proxy is a count of whatever else starts
+      // wearing it.
+      const adds = out.split('contacts-seen-add').length - 1;
       if (adds === 2 && /mjowM=/.test(out) && /Zv0gX0=/.test(out)) {
         test.check('every key behind the word is listed, by its ending');
       } else {
@@ -1290,8 +1347,12 @@ function addsByHandle() {
       // bubbles stopped needing to be opened; the sentence follows the
       // gesture, or it is a set of instructions for a screen that no
       // longer exists.
-      if (/asked who it is/.test(out) && /ends with/.test(out) && /fine print/.test(out)) {
-        test.check('and the instruction names what the page already did, with the ending as the fallback');
+      // THE INSTRUCTION NAMES WHAT TO DO, where it used to name what the
+      // page had already done for you. Copy that describes a thing the
+      // code stopped doing is worse than none: it sends somebody looking
+      // for an answer that is not coming.
+      if (/Press a row/.test(out) && /ends with/.test(out) && /fine print/.test(out)) {
+        test.check('and the instruction says to press a row, with the key ending as the fallback');
       } else {
         test.fail('instruction: ' + out);
       }

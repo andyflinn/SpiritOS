@@ -440,11 +440,10 @@ function contactsSearchSeen() {
       contactsSeen = (data && data.matches) || [];
       contactsSeenMore = !!(data && data.more);
       contactsSeenSilent = (data && data.silent) || [];
+      // THE LIST, AND NOBODY ASKED. Names ride the search answer, so the
+      // list is complete as it is painted; a description is fetched when
+      // somebody presses a row and not before (see the row markup).
       contactsPaintSeen();
-      // THE LIST FIRST, THE PEOPLE SECOND. Painted before anybody is
-      // asked, so the names are on screen while the packets are still
-      // out — and each bubble fills itself in as its answer lands.
-      contactsAskEveryone();
     })
     .catch(function () {
       contactsSeen = [];
@@ -489,10 +488,15 @@ function contactsPaintSeen() {
 
   box.innerHTML =
     (ambiguous
-      ? '<div class="job-manifest-note">More than one answer. Each node has been ' +
-        'asked who it is and says so below its name — or ask them what their key ' +
-        'ends with, which they can read in fine print at the foot of their own ' +
-        'screen.</div>'
+      // THE SENTENCE FOLLOWS THE BEHAVIOUR (2026-09-21). It said each node
+      // "has been asked who it is and says so below its name", which was
+      // true while every row was asked on every search and is not any
+      // more. Copy that describes a thing the code stopped doing is worse
+      // than no copy: it tells somebody to look for an answer that is not
+      // coming.
+      ? '<div class="job-manifest-note">More than one answer. Press a row to ask ' +
+        'that node who it is — or ask them what their key ends with, which they ' +
+        'can read in fine print at the foot of their own screen.</div>'
       : '') +
     // NO "WHERE" COLUMN. Andy: "The user shouldn't worry about relays."
     // The relay is still on the row, as `data-url`, because the confirm is
@@ -545,11 +549,33 @@ function contactsPaintSeen() {
       // the answer depend on your book — which is how somebody ends up
       // typing a name, seeing nothing, and concluding they are gone.
       const known = c.acquiredVia && c.acquiredVia !== 'census';
-      // THE ROW IS NOT A CONTROL ANY MORE. It was, while the bubble had
-      // to be opened; every row answers for itself now, so there is
-      // nothing to press and no chevron promising there is.
+      // THE ROW IS A CONTROL AGAIN (2026-09-21), and this is a reversal
+      // rather than a repair.
+      //
+      // It said: "THE ROW IS NOT A CONTROL ANY MORE. It was, while the
+      // bubble had to be opened; every row answers for itself now, so
+      // there is nothing to press." True, and it cost a packet per row
+      // per search to be true.
+      //
+      //   Andy: "Names are cheaper as by-product of search, Description
+      //   can be deliberate... when a result-row is clicked a description
+      //   bubble opens below it." — "the description only gets relevant
+      //   when the user doesn't know if it's 'Tom Smith' he looks for, or
+      //   'Tom A. Smith'."
+      //
+      // The name is already here: `publicLabel` travels with the row, as
+      // the Add button below has said since 2026-09-18 — "asking again is
+      // the node spending its own request budget on something it was
+      // told". The description was not, and was fetched for every row on
+      // every search, mostly to be never read.
+      //
+      // What changed underneath is the budget: one request in flight per
+      // member (0016), so a screenful of speculative packets is a
+      // screenful of a person's own turns spent before they have asked
+      // for anything.
       const alike = (contactsSeenCollide[String(c.publicLabel || '')] || 0) > 1;
-      return '<tr>' +
+      return '<tr class="contacts-seen-row" data-key="' +
+          contactsEscapeHtml(c.publicKey) + '">' +
         '<td title="' + contactsEscapeHtml(contactsSeenMarkTitle(c)) + '">' +
           contactsSeenMark(c) + '</td>' +
         '<td>' + contactsEscapeHtml(c.publicLabel || '(no label)') +
@@ -592,9 +618,16 @@ function contactsPaintSeen() {
 // asking before adding somebody (js/nodeCard.js).
 // Everybody in the current answer, in parallel. Asked once each — a key
 // already in `contactsCards` is one this search has already spoken to.
-function contactsAskEveryone() {
-  contactsSeen.forEach(function (c) { contactsAskCard(c.publicKey); });
-}
+// contactsAskEveryone STOOD HERE and is deleted (2026-09-21). It asked
+// every row in a search result for its card — one request each, on every
+// search, for a description most rows never had read. Andy: "we found a
+// UI that spawns an accumulation in the queue, we fix there... we don't
+// run and muddle with the core where it's unnecessary."
+//
+// It was also the one caller that would have needed the scheduler's
+// `background` class. That class stays in postQueue.js, proven and
+// unused, rather than being wired through the app boundary to manage
+// traffic that should not exist.
 
 function contactsAskCard(key) {
   if (!key || contactsCards[key]) return;
@@ -700,9 +733,13 @@ function contactsSaidCell(c) {
       '</span></td>';
   }
 
-  // Nobody has been asked — which happens for a row painted before the
-  // packets go out, and for the moment between the two.
-  return '<td class="seen-said"></td>';
+  // NOBODY HAS BEEN ASKED, which is now the ordinary state of a row
+  // rather than a moment between two others. It carries the invitation,
+  // because a row that can be opened and says so nowhere is a row nobody
+  // opens — the chevron the old comment refused was refused when there
+  // was genuinely nothing to press.
+  return '<td class="seen-said"><span class="said-bubble muted">' +
+    'ask them…</span></td>';
 }
 
 function contactsSeenAdd(button) {
@@ -1022,6 +1059,24 @@ spirit.shell.activateApp({
       // Add is the only thing on a result row that does anything now.
       const btn = target.closest('.contacts-seen-add');
       if (btn) { contactsSeenAdd(btn); return; }
+
+      // THE ROW ITSELF ASKS FOR A DESCRIPTION (2026-09-21). One request,
+      // for one person, because somebody wanted to know about them — and
+      // never fifty on the chance they might.
+      //
+      // Add is still tested first: it sits inside the row, and the press
+      // that writes a contact must not also spend a request.
+      const row = target.closest('.contacts-seen-row');
+      if (!row) return;
+      const key = row.getAttribute('data-key') || '';
+      // Already asked, already answered, or asking — pressing again would
+      // spend a turn on something already on screen.
+      if (!key || contactsCards[key]) return;
+      contactsAskCard(key);
+      // Painted now so the bubble says `asking them…` on the press rather
+      // than a round trip later; contactsAskCard paints again when the
+      // answer lands.
+      contactsPaintSeen();
     });
 
     // Confirming is what writes the contact. Delegated, because the rows
