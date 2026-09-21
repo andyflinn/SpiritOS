@@ -55,8 +55,16 @@ three relays still cannot tell which of its own doors proved a route. The
 shadow row is where it belongs now, beside `at` and `seen`. Node-side,
 unblocked, small.
 
-**Two — the contact row should stop holding routes at all**, and that
-waits on R26.
+**Two — the contact row stops holding routes at all.** DECIDED
+([0018](../decisions/0018-the-route-cache-belongs-to-the-machine.md)),
+and it lands with R26.
+
+> **Andy:** *"the hints are removed from the users contacts. (let's admit
+> it: they [are] not human-readable, in reality)"*
+
+A contact row's `routes` are base64 relay keys, eight of them. Nobody has
+ever read one — machine data in a readable file, claiming a rule it never
+satisfied.
 
 The shadow is a **superset**: every route a contact row could hold, plus
 the ones for people who are not contacts. So `routes` on a contact row is
@@ -607,6 +615,205 @@ being out of date.**
 the suite survives a file appearing and vanishing beneath it.
 
 **Status:** DONE
+
+### R23 — a sibling is a route too, and both ends are told
+
+> **Andy:** *"when a request is made via relay to a node that is a sibling
+> on the same relay, the route must be streamed back to the node as well,
+> then stashed in contacts exactly the same as if the post target was on a
+> foreign node."* — *"because the node doesn't KNOW it is a sibling."* —
+> *"this must be done for requestor and replier."*
+
+Route announcements fired **only** on the partner path (`relay.js`,
+`announceRoute` and the tunnel branch of `routeReply`, both inside
+`carried`). A post delivered to a member of the same relay announced
+nothing, so a contact on your own relay got no route stashed at all.
+
+**The objection that looks right and is not.** It appears a node already
+knows which relay carried a local post, since it chose one. It does not:
+when no relay of its own names that key, `hub.handlePost` posts through
+whichever relay it is connected to and sends the contact's hints, and the
+RELAY decides where the packet goes — delivered here, or forwarded to a
+partner. Only the second was announced, so where a peer lives could be
+learned only by **inferring from a silence**.
+
+**Both ends, for the same reason and a stronger one.** The asker learns
+where the target lives; the target learns where the asker lives, which is
+what it needs to reach back without a search. The target never chose
+anything at all — a request simply arrived. The partner path already told
+the replier (`{ key: carried.from }`), so this is the local half of a rule
+that was only ever half applied.
+
+**Safe to send to anybody**, because the node decides what to keep:
+`learnRoute` matches an existing contact row and never creates one, so a
+route about a stranger costs one lookup and is gone.
+
+**Verify:** `spirit/test/routerPost.js` — after a local ping and ack, the
+asker is told the target is at this relay's key, and the target is told
+the same about the asker.
+
+**Status:** DONE
+
+### R24 — a search answer is kept until somebody acts on it
+
+> **Andy:** *"in a search request, it is the node who already knows the
+> via field at request time."* — *"so all search returns could be cached
+> outside of contacts, and wait until they become applicable."* — *"I'm
+> trying to go diligently through all instances where knowledge is thrown
+> away blindly, and it costs the relay nothing."*
+
+**A search answer says where every person in it lives, and the node threw
+that away.** `hub.handleSearch` built `byKey[p.relayKey] = p.url` to
+resolve a partner's address, kept the URL and **dropped the key** — so a
+contact acquired from a search arrived with an address in `relays` and
+**nothing in `routes`**, and the first post to them carried no hint.
+
+Both halves were in hand at the moment of the answer: the node knows
+which relay it asked (and has its key pinned), and the row says whether it
+came from that relay or from a partner of it.
+
+**Kept outside the contact book, deliberately.** A search result is not a
+contact, and the book's one rule says so: `learnRoute` matches an existing
+row and never creates one — *"a relay may improve what this node knows
+about its own contacts and may never add to them"*. Writing forty
+strangers into it because somebody typed three letters would make a search
+a way to fill another person's address book.
+
+So `seenPeers.js` holds them instead: bounded by **age and by space**,
+because neither does the other's job (`0016`'s argument in a smaller
+place). It becomes applicable at `peer.acquire`, **after** the row exists
+— no search result becomes a route until a person has decided to keep the
+person.
+
+**What it removes from the plan:** threading a key through the Add button
+and back. The node caches what it learned itself, so the app is not on the
+path at all.
+
+**Verify:** `spirit/test/seenPeers.js` — a row noted is a row returned; a
+miss is null rather than an empty shape; a row that teaches nothing is
+refused; stale and overflowing rows go, oldest first; and forty strangers
+cost a bound rather than a book.
+
+**Status:** DONE
+
+### R25 — a route is learned at every opportunity, and policy does not gate it
+
+> **Andy:** *"the node must implicitly learn routes at EVERY
+> opportunity."* — *"1) passive, the node is informed of a new peer, and
+> has a policy that decides about acquisition. this should not govern the
+> node's global-cache-updates. 2) active acquisition: via search. again,
+> the user may forget all search results, the node must not."* — *"Any
+> peer a node could possibly connect to, the route to it can be known to
+> the node."*
+
+**R24 fed the cache from searches only. Four other places knew a route and
+threw it away.**
+
+| where | what it had | what it did |
+|---|---|---|
+| a packet arriving (`peerPost.onRequest`) | the sender's key and the relay it came through | nothing unless the door said admit or hold |
+| the auto-add (`hub.remember`) | the road, in `relays` as a URL | wrote no route key at all |
+| a route announcement (`server.js onRoute`) | key and far relay | dropped it if the peer was not already a contact |
+| an invite or pasted key (`peer.acquire`) | the relay URL the caller named | consulted the cache and stopped |
+
+**The first is the one Andy's point is about.** `remember` runs for admit
+and hold and not for drop, so a node that declined to talk to somebody
+also forgot where they were. **Policy belongs to the address book; the
+cache is a record of what this node was told.** The route is now noted at
+arrival, after the packet verifies and before any verdict.
+
+**The third matters more since R23**, which made a relay announce to BOTH
+ends: a node answering a stranger learned where they live and discarded it
+in the same breath.
+
+**The fourth is what made the invariant false.** An invite or a pasted key
+has no search behind it and nobody writing in — and the caller names a
+relay whose key this node pinned when it accepted it. One lookup, thrown
+out, producing a contact nobody could route to.
+
+**What the cache is, which decides what may be done with it:**
+
+> **Andy:** *"key the global cache by peer ID (it becomes a
+> shadow-contact-list)"* — *"and implicitly a duplicate of the relays
+> member-roll"* — *"(time-lagged, of course)"* — *"it is simply not
+> canonical."*
+
+Keyed by peer, so growth is bounded by distinct people rather than by
+traffic. It may **guess** — a wrong hint costs one failed attempt — and
+may never **assert**: not a roster, not a count, not a membership check.
+And it stays inside the node: the rules against duplicating a roll
+(`0012`, `PARTNERS.md`) are about a relay holding another relay's people,
+which this is not, but the distance is one accessor wide.
+
+**Verify:** `spirit/test/routeStash.js` — a stranger who writes is added
+with the road they came in on; a route a search already found is preferred
+over the road one packet took; and a key pasted with a relay leaves a
+route from the key this node pinned for it.
+
+**Status:** DONE
+
+**Open, and one constant:** `MAX_AGE_MS` is an hour, which fits a search
+somebody is still looking at and does not fit *"the user may forget all
+search results, the node must not"*. Entries are ~150 bytes and keyed by
+peer, so the count bounds it cheaply; the age bound is the one that
+argues with the requirement.
+
+### R26 — the shadow needs a store, and it is a persist shape
+
+> **Andy:** *"a shadow route must not be dropped when a contact is
+> deleted."* — *"and it must be kept up-to-date, and because it is a
+> shadow may have to be stored in an indexed database."*
+
+**Two halves. The first is built; the second is not mine to build.**
+
+**Kept up to date** — `note()` overwrites, and the cache is now fed from
+every source a route can arrive by, so the newest answer wins. One honest
+gap: **a hint that fails does not un-learn.** A peer who moves relays
+leaves a stale row until something newer overwrites it or it ages out. A
+wrong hint costs one attempt, so this is cheap to live with, but "up to
+date" is best-effort rather than guaranteed.
+
+**Survives a deleted contact** — nothing in `run/` clears it, and
+`contactBook.forget` already says why in its own words: it *"forgets YOUR
+side of a relationship, and a relay's census is not yours to edit."*
+Re-adding somebody restores their route without asking anybody.
+
+**The store is the open half.** In memory today, so a restart forgets
+everything — which argues with *"the user may forget all search results,
+the node must not"*. A node's contacts are a JSON file rewritten whole; a
+shadow list keyed by peer would outgrow that shape, which is what
+"indexed" is about.
+
+**It is a new persist shape, and `CLAUDE.md` makes that a team review
+rather than a patch.** The last time that line moved it was Andy's
+decision in cycle 3 (`relay-state/relay.db`, owned by `relayStore.js`).
+
+**Worth deciding with R16, not separately.** Two things now want node-side
+persistence — this, and the scheduler queue surviving a restart, which a
+patience measured in days requires. One store answers both, and
+`node:sqlite` is already a dependency on the relay side.
+
+**What the shape may be, and why it is allowed to be that** —
+[0018](../decisions/0018-the-route-cache-belongs-to-the-machine.md),
+decided 2026-09-21:
+
+- **It can reach roll size**, a hundred thousand rows. A node's contacts
+  are a JSON file rewritten whole, and that shape does not survive four
+  more orders of magnitude — which is what "indexed" is about.
+- **The route cache belongs to the machine, not the human**, so the
+  node's readability rule does not reach it. The test is whose
+  information it is, and `server.js` is the exemption that was always
+  there without being named.
+- **`node:sqlite` keeps the dependency clause intact**, being built into
+  node — *"no dependencies outside native node.js"* still holds.
+- **And it moves the floor**, which is the cost this requirement cannot
+  decide alone: `package.json` says `node >=18`, `node:sqlite` arrived in
+  **22.13**, and an indexed store on the node raises every user's
+  minimum.
+
+**Status:** OPEN — the store, its floor, and whether `MAX_AGE_MS` (an
+hour) survives at all once forgetting is a choice rather than a
+consequence of living in RAM.
 
 ## The order, and why
 

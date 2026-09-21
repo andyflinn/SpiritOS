@@ -119,24 +119,38 @@ holding a person's decisions.
 ---
 
 > **Amended 2026-09-21 — what "human readable" covers, and what it does
-> not.**
+> not.** Decided as
+> [0018](../decisions/0018-the-route-cache-belongs-to-the-machine.md):
+> *"the route cache belongs to the machine, not the human."*
 >
 > > **Andy:** *"since it could grow as large as the relay's member roll,
 > > it may have to optimize access, and since it's NOT directly for the
 > > user, it is exempt from human readability."*
 >
-> The premise reads a node's readability as covering everything on its
-> disk. It covers what the sentence actually names: **the digitisation of
-> its owner's spirit** — their contacts, their writing, their record of
-> what crossed the wire. A person can open those and recognise their own
-> life in them.
+> > **Andy:** *"the routing cache is information that belongs to the
+> > network, it isn't information that the user acquires or cares about:
+> > The executable server.js is conceptually not readable by a human."*
 >
-> It does not cover machine working state that exists only so the node can
-> do its job. `seenPeers` is the first of those: a shadow of this node's
-> own traffic, keyed by peer, which can grow as large as a relay's member
-> roll and which no person will ever read. Holding it in a file rewritten
-> whole, in a shape chosen for a reader who does not exist, would cost
-> what readability is meant to buy and return nothing.
+> **The line is WHOSE INFORMATION IT IS**, not what shape it happens to
+> take. The premise reads a node's readability as covering everything on
+> its disk; it covers what the sentence names — **the digitisation of its
+> owner's spirit**. Contacts, writing, the record of what crossed the
+> wire: things the owner ACQUIRED, and can open and recognise their own
+> life in.
+>
+> A routing cache is none of that. It belongs to the network: it exists
+> because relays and nodes spoke to each other, and the owner neither
+> acquired it nor has any reason to care what is in it.
+>
+> **And the rule has always had this exemption without naming it.**
+> `server.js` sits on the node's disk and is text, and nobody has ever
+> argued that readability obliges it to be prose. It is the machine's,
+> not the person's. `seenPeers` is the same kind of thing — a shadow of
+> this node's own traffic, keyed by peer, which can reach a relay's roll
+> in size and which no person will ever open.
+>
+> So the question to ask of anything on a node's disk is not "can a human
+> read this" but **"did the owner acquire it, and would they care?"**
 >
 > **The dependency clause survives intact**, and that is worth checking
 > rather than assuming: `node:sqlite` is built into node, so "no
