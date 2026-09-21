@@ -86,7 +86,19 @@ if (preferencesBackup !== null) {
   // Nothing existed before the probe — deleteFile is idempotent, so this
   // just removes the probe value rather than leaving a file the real app
   // never created.
+  //
+  // ── AND IT REPORTS, SO THE COUNT DOES NOT MOVE ────────────────
+  //
+  // This branch was silent until 2026-09-21, so a box where the node has
+  // never run gave 12 checks and one where it has gave 13. Found by
+  // comparing a Windows run against an Ubuntu one: `preferences.json` is
+  // untracked, so a fresh clone simply does not have it.
+  //
+  // The suite was right and the COUNT was misleading — which matters now
+  // that two machines compare their harness output, because a silent
+  // difference reads as a platform difference and this one is not.
   spirit.core.fs.deleteFile('preferences.json');
+  test.check('preferences.json did not exist before the probe, and the probe was removed');
 }
 
 // ---- everything else at root level, and process/, are NOT writable ----

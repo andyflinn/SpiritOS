@@ -134,3 +134,43 @@ chose; the second is the record.
 `<topic>/<machine>/`, each machine owns its directory, the parent document
 fans out to them, and the history is whatever git already keeps. Nothing
 here is specific to capacity except the numbers.
+
+---
+
+## What comparing two harness runs found
+
+**The counts differed — 2,665 on Windows against 2,671 on Ubuntu — and
+both explanations were worth having.**
+
+### `shutdownWire.js`: 2 on Windows, 9 on Ubuntu
+
+**Deliberate, and the suite says so.** Windows' `child.kill()` is
+`TerminateProcess`, so a SIGTERM handler never runs; the suite skips the
+wire half and falls back to reading the two startup files for the
+handler's registration — *"a guard against it being deleted, not proof
+that it works."*
+
+**So the Ubuntu run is the first time those seven checks have ever
+executed.** The relay's goodbye-on-shutdown had been written, guarded and
+never once proven on a wire, because this project had only ever run on
+Windows.
+
+### `writableRoots.js`: 13 on Windows, 12 on Ubuntu
+
+**Not a platform difference at all.** `preferences.json` is untracked, so
+a box where the node has run has one and a fresh clone does not — and the
+branch that handles its absence was **silent**, so the count moved without
+saying why.
+
+Fixed by making that branch report like every other. **The suite was right
+and the count was misleading**, which matters more now that two machines
+compare their output: a silent difference reads as a platform difference,
+and this one was a fact about the checkout.
+
+### The moral, for whoever compares the next pair
+
+**A count that differs is a question, not a fault.** One of these was a
+documented platform limit worth knowing about, one was a test that did
+work without reporting it. Neither was a bug in the product, and both were
+only visible because two boxes ran the same suites and wrote the numbers
+down.
