@@ -349,17 +349,38 @@ moves, the runtime is upgraded, or the code grows a cost nobody costed.
 
 On **"tag the tree"**, and not otherwise:
 
-1. **Ask first.** The measurement takes about a minute of the machine, and
-   the tag is a public mark on a public repository. Andy confirms before
-   anything runs.
+1. **Ask first, and say what it would mean today.** Not a prompt — a
+   judgement, made at that moment, about this tag.
 2. `node spirit/test/measureCapacity.js --row` — one line.
 3. Append it to the table below and commit it.
 4. Cut an annotated git tag, `capacity-YYYY-MM-DD`, so the row and the
    tree it describes are the same point.
 
-**The confirmation is the point of step 1**, not politeness: a tag is
-pushed, other people see it, and deleting one is a worse act than never
-making it.
+### What step 1 has to carry
+
+> **Andy:** *"your are-you-sure should be commented with an honest
+> assessment of the consequences at the time.... also not taken
+> lightly."*
+
+**A confirmation that is always the same question trains the answer.**
+Asked identically every time, "are you sure?" becomes a keystroke, and
+then it is worse than no gate at all — it costs a turn and stops nothing.
+
+So the ask states, **for that occasion**:
+
+- **what has actually changed** since the last row, and whether it is the
+  kind of change that would move a number
+- **what the row would show** — drift, or measurement noise wearing the
+  costume of drift
+- **what the tag costs**: it is pushed, other people see it, and deleting
+  one is a worse act than never making it
+- **a recommendation, including "not yet"** — the assessment is only
+  worth reading if it is sometimes negative
+
+**Two rows taken minutes apart do not show drift.** They show noise, and
+a history that carries noise as though it were signal is worse than a
+history with one honest entry. That is the first thing to check and
+usually the answer.
 
 ### The history
 
