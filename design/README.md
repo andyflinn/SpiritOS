@@ -283,6 +283,20 @@ This directory contains the vision, principles, and architecture decisions for *
   streamed and in force until superseded. Records the measurement that
   prompted it: **`routePost` has no rate limit at all** — `rateOk` has two
   call sites, and neither is posting.
+- [The shadow peer list — its structure, and what feeds it](relay/SHADOW-PEER-LIST.md)
+  — **designed, nothing built.** The companion to WHAT-A-NODE-KNOWS: what
+  shape the row is, and which relay events earn a broadcast. Extracts
+  **rank first, recency second** — the shadow keeps the last thing said
+  rather than the best-sourced thing, so a second-hand search answer
+  overwrites a rename from the peer's own relay. Finds the eighth discard,
+  the largest by volume: `presenceNode.js:181` drops a presence event about
+  a stranger and the URL it arrived on with it — the highest-authority
+  route in the system, arriving free, for every member of every relay this
+  node is on. And finds that `peer-renamed` and `claim` already fire and go
+  to the **owner alone**, though 0012 as corrected licensed them for every
+  member in Andy's own words. Carries the arithmetic that bounds the
+  instinct: a broadcast is O(members) per event, so the events that earn one
+  are the rare, durable ones — which is the set currently not broadcast.
 - [Collaborative route discovery, on demand](relay/ROUTE-DISCOVERY.md) —
   **designed, nothing built.** Andy: *"as fundamental as proper tunnelling, with
   a higher cost impact"* — the tunnel decides whether a packet crosses; this

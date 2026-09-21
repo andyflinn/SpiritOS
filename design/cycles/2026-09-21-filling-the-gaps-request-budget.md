@@ -56,7 +56,7 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Open is fourteen. Six of those are blocked by nothing.**
+**Open is seventeen. Eight of those are blocked by nothing.**
 
 | | what | status | blocked by |
 |---|---|---|---|
@@ -86,10 +86,13 @@ can start today.
 | **R24** | a search answer is kept until somebody acts on it | **DONE** | |
 | **R25** | a route is learned at every opportunity; policy does not gate it | **DONE** | |
 | **R26** | the shadow needs a store, and it is a persist shape | OPEN — **new persist shape, team review** | |
+| **R27** | a presence event about a stranger is discarded, and it is a route | OPEN | |
+| **R28** | the events that already fire reach one listener | OPEN — **wire, team review**; label-on-presence is **Andy's** | |
+| **R29** | the shadow row carries rank and provenance | OPEN | R1, R26 |
 
 **Startable today, nothing in the way:** R1 (the `via` half), R9\*, R12,
-R15, R17, R19. *\*R9 needs a team review before it is built, not before it
-is decided.*
+R15, R17, R19, **R27**, R28\*. *\*R9 and R28 need a team review before they are built, not before
+they are decided. R27 needs neither — it is one line, node-side.*
 
 **The three that gate the most:** **R15** (R20, and four claims nobody can
 make until it is measured), **R26** (R1's second half, R16, and `0018`
@@ -883,6 +886,87 @@ decided 2026-09-21:
 **Status:** OPEN — the store, its floor, and whether `MAX_AGE_MS` (an
 hour) survives at all once forgetting is a choice rather than a
 consequence of living in RAM.
+
+### R27 — a presence event about a stranger is discarded, and it is a route
+
+> **Andy:** *"we then feed it at every opportunity via relay stream."*
+
+The eighth place knowledge is thrown away, and by volume the largest.
+Argued in [SHADOW-PEER-LIST.md](../relay/SHADOW-PEER-LIST.md).
+
+A relay broadcasts `presence {key, present}` to every member on every
+arrival and departure (`relay.js:3741`, `:3797`, `:3827`, `:1845`). The
+node drops the ones about people it does not already hold:
+
+> `presenceNode.js:181` — `if (knows && !knows(body.key) && byRelay[url][body.key] === undefined) return;`
+
+and with the event goes **the URL it arrived on** — which is the relay
+saying, about its own member, where that member lives. Highest authority
+there is, free, and arriving for every member of every relay this node is
+on. It is also the only route source that requires nobody to act.
+
+**The filter is right and stays.** The presence *picture* is about this
+node's contacts and must not fill with strangers. What is wrong is that
+the filter returns before anything else gets a look.
+
+**Feed `seenPeers` first, then filter.** The same shape `peerPost` already
+uses — `noteSeen` is called on every verified arrival **before** the door
+decides (2026-09-21). One line moved, no packet changed.
+
+**Status:** OPEN — not built. Node-side, in-file, depends on nothing.
+
+### R28 — the events that already fire reach one listener
+
+> **Andy, in 0012 as corrected (2026-09-18):** *"A route is established and
+> verified — that's a broadcast. **A member is added — broadcast it.**"*
+
+Four events fire today and go to the owner alone: `claim` (`relay.js:1254`),
+`peer-renamed` (`:1767`), `peer-removed` (`:1855`) and `partner-added`
+(`:803`). `ownerEvent` addresses one sink by construction (`relay.js:3451`).
+
+**`peer-renamed` is the one that matters.** It is the only moment a relay
+knows a label changed, it carries exactly the `{key, label}` pair Andy
+wants kept fresh, and no member hears it. A node learns a new name only by
+running a search later, or by a route announcement that happens to carry
+one.
+
+**The arithmetic says these are the cheap ones.** A broadcast costs
+`O(members) × event rate`, so the events that earn one are rare, durable,
+and unobtainable otherwise. `peer-renamed` and `claim` are all three and
+are not broadcast; `presence` is the high-rate one and is broadcast
+already. The current code has it backwards.
+
+**One part is not Claude's to decide.** Whether `presence` may also carry a
+label: it goes to every member about every member, so a long-lived listener
+assembles `{key, label}` for the whole roll over time. 0012 answers it
+(*"Membership is not secret from members"*, `:88`) while a full census is
+still public at `/api/relay/who` — and that census is being eradicated
+(`SURFACE.md` §10). **The premise may not survive its own cleanup.**
+
+**Status:** OPEN — not built, and partly not decided. New broadcasts on the
+wire, so a **team review** (`CLAUDE.md`). The label-on-presence question is
+Andy's.
+
+### R29 — the shadow row carries rank and provenance
+
+**Rank first, recency second.** The row is
+`{ at, url, label, seen }` (`seenPeers.js:101`): one timestamp for
+everything, one route, and no record of who said any of it. So a
+second-hand search answer relayed by a partner overwrites a rename from the
+peer's own relay, and a peer on two relays cannot be held at all.
+
+Proposed in [SHADOW-PEER-LIST.md](../relay/SHADOW-PEER-LIST.md): `label`
+with its provenance, `routes` as a capped list carrying `via`, and a rank
+ladder — the host that holds the row outranks a signature-proved
+announcement, which outranks an arriving packet, which outranks a
+second-hand search row.
+
+This is what greed alone cannot do: **refuse a downgrade.** Greedy today
+means a worse answer that arrives later wins.
+
+**Status:** OPEN — not built. Needs R1 (`via`) and lands properly with R26
+(the store), since provenance per field is the shape an indexed store is
+for.
 
 ## The order, and why
 
