@@ -470,6 +470,30 @@ function createPeerPost(opts) {
       return Promise.resolve({ ok: false, status: 400, error: 'text required' });
     }
 
+    // ── IS THERE ROOM TO PROMISE THIS? ──────────────────────────────
+    //
+    //   Andy: "the node wants to avoid accumulating a backlog in the
+    //   post-scheduler, at this point it has at least the option of
+    //   refusing requests outright until the block is resolved."
+    //
+    // ASKED FIRST, before signing and before the log, so a refusal costs
+    // nothing but the answer — and so the traffic log does not fill with
+    // attempts that never happened.
+    //
+    // Refusing at the door is the only shed that keeps the order: dropping
+    // from the middle would evict work that had already earned its place,
+    // which is the anti-starvation rule upside down. And a background
+    // sweep is refused at a quarter of the room, so a screen decorating
+    // itself cannot fill the queue a person's own actions need.
+    var wantKind = (how && how.kind) || postQueue.DELIBERATE;
+    if (!queue.accepts(wantKind, text.length)) {
+      return Promise.resolve({
+        ok: false, status: 503,
+        error: 'this node has too much waiting to send',
+        queueFull: true, kind: wantKind,
+      });
+    }
+
     var message = auth.postMessage(id.publicKey, toKey, text);
     var sig = auth.sign(id.privateKey, message);
     var hash = auth.requestHash(message);
@@ -557,6 +581,9 @@ function createPeerPost(opts) {
       toKey: toKey,
       kind: how && how.kind,
       patienceMs: how && how.patienceMs,
+      // What this entry costs while it waits: its payload, which is the
+      // whole reason the queue is bounded in bytes rather than in rows.
+      bytes: text.length,
       payload: { hash: hash, body: body },
     });
 

@@ -389,6 +389,40 @@ ceiling assumes per-member cost is stable and heap is not.
 **Status:** OPEN — depends on R15. `0017` records the decision and what it
 supersedes.
 
+### R21 — the lab suites collide on ports
+
+Found while closing R5, and it is a harness defect rather than a product
+one. The suites run **six at a time** and the lab suites reach for
+overlapping ports:
+
+```
+labLifecycle      65400 65410 65411 65415 65419 65425 65428 65429 65432
+labPersistence                        65419        <- collides
+labRefusals                 65415                  <- collides
+labRelaySurface     65418 65420
+labServableStatic         65420 65421              <- collides
+```
+
+Measured 2026-09-21: **one red in three full runs**, always in
+`labLifecycle`, always as a fixture that would not start
+(`fetch failed`, `the relay never answered /api/relay/key on 65410`), and
+**consistently green when run alone** — three times.
+
+The overlap is in the source and predates the request-budget work. What
+that work may have done is change the timing enough to land in the window
+more often; that cannot be separated from the evidence to hand, and is
+recorded as unknown rather than guessed.
+
+**The fix is the one the wire suites already took** (`2d901b1`): move
+below 49152, out of Windows' ephemeral range, where there is room to give
+every suite its own ports. It also removes a dependency on the
+`65400-65432` administered exclusion, which exists on this machine and
+may not on another.
+
+**Status:** OPEN — diagnosed, not fixed. A flaky suite is a suite nobody
+can read, and this one goes red for a reason that has nothing to do with
+what it tests.
+
 ## The order, and why
 
 ```

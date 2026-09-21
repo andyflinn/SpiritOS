@@ -367,4 +367,53 @@ test.subHeading('Durations are measured against a clock that cannot jump');
   }
 }
 
+test.subHeading('A backlog is refused at the door, never shed from the middle');
+
+{
+  //   Andy: "the node wants to avoid accumulating a backlog in the
+  //   post-scheduler, at this point it has at least the option of refusing
+  //   requests outright until the block is resolved."
+  //
+  // Refusing what has not been accepted is the only shed that keeps the
+  // order: dropping from the middle would evict work that had already
+  // earned its place, which is the anti-starvation rule upside down.
+  const c = clock();
+  const q = pq.createQueue({ now: c.now, maxBytes: 1000 });
+
+  if (q.accepts(pq.DELIBERATE, 900) && !q.accepts(pq.DELIBERATE, 1100)) {
+    test.check('room is measured in bytes — what an entry costs while it waits, not that it exists');
+  } else {
+    test.fail('byte accounting: 900=' + q.accepts(pq.DELIBERATE, 900) +
+      ' 1100=' + q.accepts(pq.DELIBERATE, 1100));
+  }
+
+  // BACKGROUND YIELDS FIRST, at a quarter rather than at the brim, so a
+  // screen decorating itself cannot fill the room a person's own actions
+  // need. The class split doing the same job for space that it does for
+  // turn.
+  if (!q.accepts(pq.BACKGROUND, 900) && q.accepts(pq.BACKGROUND, 200)) {
+    test.check('and a background sweep is refused long before a person’s message would be');
+  } else {
+    test.fail('background share: 900=' + q.accepts(pq.BACKGROUND, 900) +
+      ' 200=' + q.accepts(pq.BACKGROUND, 200));
+  }
+
+  const a = q.add({ relayUrl: 'R', toKey: 'x', bytes: 800 });
+  if (q.bytes() === 800 && !q.accepts(pq.DELIBERATE, 300)) {
+    test.check('what is queued is counted, and fills the room it occupies');
+  } else {
+    test.fail('held ' + q.bytes() + ', accepts 300 = ' + q.accepts(pq.DELIBERATE, 300));
+  }
+
+  // AND THE ROOM COMES BACK. "Until the block is resolved" is the whole
+  // shape of it: a refusal is a moment, not a state.
+  q.started(a);
+  q.done(a);
+  if (q.bytes() === 0 && q.accepts(pq.DELIBERATE, 900)) {
+    test.check('and when it goes, the room returns — a refusal is a moment, not a state');
+  } else {
+    test.fail('after done: held ' + q.bytes());
+  }
+}
+
 test.reportSuccessFailureCount();

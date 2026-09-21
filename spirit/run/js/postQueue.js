@@ -74,6 +74,43 @@ var IN_FLIGHT_PER_RELAY = 1;
 var BACKOFF_START_MS = 2000;
 var BACKOFF_MAX_MS = 300000;
 
+// ── HOW MUCH WORK MAY BE WAITING ─────────────────────────────────────
+//
+//   Andy: "the node wants to avoid accumulating a backlog in the
+//   post-scheduler, at this point it has at least the option of refusing
+//   requests outright until the block is resolved."
+//
+// REFUSING AT THE DOOR IS THE ONLY SHED THAT KEEPS THE ORDER. Dropping
+// from the middle would evict work that had already earned its place,
+// which is the anti-starvation rule turned upside down. Refusing what has
+// not been accepted yet leaves the queue exactly as it was, and tells the
+// caller now rather than promising something that will quietly rot.
+//
+// It is also the rule the relay already follows, on the other box —
+// router.js: "CAPACITY IS A REFUSAL, NEVER A DROP. A box under pressure
+// that declines is alive and truthful; one that accepts everything and
+// loses the overflow is lying."
+//
+// BOUNDED IN BYTES, NOT IN ENTRIES, because an entry is not what costs. A
+// queued request holds its payload until it is sent, up to
+// limits.PAYLOAD_MAX each, so a count of entries bounds a number nobody
+// cares about while the bytes behind it vary by three orders of
+// magnitude. 4 MB is 256 full-sized packets or a great many small ones,
+// and the queue does not have to care which.
+//
+// DECLARED, NOT MEASURED — like HINTS_PER_POST, and marked so nobody
+// reads it as evidence. What must be true of it is that a legitimate
+// burst fits (a contact list is tens of small posts, not thousands of
+// full ones) and that a stuck node cannot grow without limit.
+var QUEUE_BYTES_MAX = 4 * 1024 * 1024;
+
+// BACKGROUND YIELDS FIRST, and at a quarter rather than at the brim. A
+// screen decorating itself must not be able to fill the queue a person's
+// own actions need — the same population argument that orders the two
+// classes, applied to space instead of to turn. One argued number, two
+// thresholds derived from it.
+var BACKGROUND_SHARE = 0.25;
+
 var DELIBERATE = 'deliberate';
 var BACKGROUND = 'background';
 var CLASS_RANK = { deliberate: 0, background: 1 };
@@ -110,12 +147,14 @@ function createQueue(opts) {
   var nowFn = opts.now || monotonicNow;
   var perRelay = opts.inFlightPerRelay || IN_FLIGHT_PER_RELAY;
   var backoffStart = opts.backoffStartMs || BACKOFF_START_MS;
+  var bytesMax = opts.maxBytes || QUEUE_BYTES_MAX;
   var backoffMax = opts.backoffMaxMs || BACKOFF_MAX_MS;
 
   // seq -> entry. Insertion order is sequence order, so a plain object
   // would do; an array is kept because the walk is ordered and small.
   var items = [];
   var nextSeq = 1;
+  var bytesHeld = 0;
 
   // relayUrl -> how many this node has in flight there.
   var inFlight = Object.create(null);
@@ -135,6 +174,15 @@ function createQueue(opts) {
   // Andy: "max time spent in request-scheduler before returning failure
   // (could be days for a text message)". Distinct from the per-attempt
   // wait, which is bounded by what the relay will hold.
+  // WOULD THIS BE TAKEN? Asked before anything is signed or logged, so a
+  // refusal costs the caller nothing but the answer.
+  function accepts(kind, bytes) {
+    var room = (CLASS_RANK[kind] === CLASS_RANK[BACKGROUND])
+      ? bytesMax * BACKGROUND_SHARE
+      : bytesMax;
+    return (bytesHeld + (bytes || 0)) <= room;
+  }
+
   function add(item) {
     var seq = nextSeq;
     nextSeq += 1;
@@ -151,8 +199,10 @@ function createQueue(opts) {
       until: item.patienceMs > 0 ? at + item.patienceMs : at,
       attempts: 0,
       sending: false,
+      bytes: item.bytes || 0,
       payload: item.payload,
     });
+    bytesHeld += item.bytes || 0;
     return seq;
   }
 
@@ -163,7 +213,12 @@ function createQueue(opts) {
 
   function drop(seq) {
     for (var i = 0; i < items.length; i += 1) {
-      if (items[i].seq === seq) { items.splice(i, 1); return true; }
+      if (items[i].seq === seq) {
+        bytesHeld -= items[i].bytes || 0;
+        if (bytesHeld < 0) bytesHeld = 0;
+        items.splice(i, 1);
+        return true;
+      }
     }
     return false;
   }
@@ -323,6 +378,7 @@ function createQueue(opts) {
   }
 
   function size() { return items.length; }
+  function bytes() { return bytesHeld; }
   function inFlightFor(relayUrl) { return inFlight[relayUrl] || 0; }
   function backoffFor(relayUrl, toKey) {
     return Math.max(0, (backedOffUntil[pairKey(relayUrl, toKey)] || 0) - nowFn());
@@ -340,7 +396,9 @@ function createQueue(opts) {
     expired: expired,
     mayRetry: mayRetry,
     nextWakeMs: nextWakeMs,
+    accepts: accepts,
     size: size,
+    bytes: bytes,
     inFlightFor: inFlightFor,
     backoffFor: backoffFor,
     find: find,
@@ -355,4 +413,6 @@ module.exports = {
   BACKOFF_MAX_MS: BACKOFF_MAX_MS,
   DELIBERATE: DELIBERATE,
   BACKGROUND: BACKGROUND,
+  QUEUE_BYTES_MAX: QUEUE_BYTES_MAX,
+  BACKGROUND_SHARE: BACKGROUND_SHARE,
 };
