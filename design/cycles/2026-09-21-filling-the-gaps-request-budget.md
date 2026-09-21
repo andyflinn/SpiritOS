@@ -495,7 +495,27 @@ more. Under the measured 1-in-3 rate, five clean Windows runs is about a
 (status 0, a transport failure, not a bind and not a slow answer), that
 is as close to settled as a race gets.
 
-**Status:** DONE
+**REOPENED 2026-09-21, same day.** It failed again on the full harness
+after ten clean runs: `labLifecycle`, `start relay: 0 fetch failed`,
+identical symptom. **The fix did not hold, and the reason it was chosen
+cannot be checked** — `api()` retries only `ECONNREFUSED`, and the error
+was reported as node's generic `fetch failed`, which names no code. A fix
+was aimed at a cause the evidence never established.
+
+The restraint is still right: these calls are not idempotent, so a
+request that may have ARRIVED must never be sent twice, and widening the
+retry to "any transport error" would trade a flaky suite for a duplicated
+node. What was missing is the evidence to aim with.
+
+**So the first change is diagnostic, not a fix.** `api()` now reports the
+cause code beside the message, so the next occurrence says whether it was
+a refused connect, a reset, a hang-up or something else — and whether the
+retry should have fired at all.
+
+**Status:** OPEN — ten clean runs then a failure is a reminder that a
+one-in-three flake is not disproved by not seeing it. It closes when the
+cause is named by a log rather than inferred from a message that omits
+it.
 
 ### R22 — censusNarrow reads a file another suite deletes
 

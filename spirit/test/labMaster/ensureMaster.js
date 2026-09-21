@@ -123,7 +123,17 @@ async function api(method, pathname, body) {
         await new Promise(function (r) { setTimeout(r, 150 * (attempt + 1)); });
         continue;
       }
-      return { status: 0, json: null, text: String((e && e.message) || e) };
+      // NAME THE CAUSE. `fetch failed` is node's generic wrapper and says
+      // nothing about why — and the retry above turns on exactly that
+      // distinction, so a report without it cannot say whether the retry
+      // should have fired. It cost one run already (2026-09-21): the
+      // fix was aimed at ECONNREFUSED on the strength of a message that
+      // never named a code.
+      const code = (e && e.cause && e.cause.code) || (e && e.code) || '';
+      return {
+        status: 0, json: null, code: code,
+        text: String((e && e.message) || e) + (code ? ' (' + code + ')' : ' (no code)'),
+      };
     }
   }
 }
