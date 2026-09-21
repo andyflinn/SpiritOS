@@ -2535,6 +2535,16 @@ on its relays as it does today, and a relay's row wins wherever one comes
 back. When the wait ends, memory fills in what no relay said — so memory
 never delays a search and never overrides a live answer.
 
+> **Andy:** *"When the wait times out, memory fills in the people no relay
+> answered for, filtered exactly and prioritized exactly like search
+> results."*
+
+**One ranking, not two.** Remembered rows go through the same graded match
+the relays use (`peerSearch.search`, `gradedSearch`, `SLOTS`) and the same
+node-side filter and order (`hub.js:1965` drops `present === false`;
+`hub.js:2117` sorts). Exactly means the drop applies too: a peer
+remembered as *absent* is left out, one whose presence is unknown is not.
+
 **Status:** OPEN — ruled, not built. Blocked by R38.
 
 ## The order, and why

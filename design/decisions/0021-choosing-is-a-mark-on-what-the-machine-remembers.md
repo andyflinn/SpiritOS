@@ -99,6 +99,11 @@ over the remembered one for the same key.
 
 The relays lead; when the wait ends, memory fills in what no relay said.
 
+> *"filtered exactly and prioritized exactly like search results."*
+
+One ranking, not two: remembered rows are matched, filtered and ordered by
+the same code as the relays' rows.
+
 ## What it supersedes, marked
 
 - **R4, its age half.** "Two evictions: cache-limit and last seen" becomes
