@@ -36,7 +36,37 @@ writes 11,000 rows — about a minute. It prints this page's tables.
 
 ---
 
-## The two boxes in the question
+## The two boxes
+
+**These are the two the README presents**, and they are the two Andy
+named: a relay on 100 MB of RAM and a node on 10 MB, both with a gigabyte
+of disc. The node's RAM figure is the one that does not survive contact
+with the runtime, and that is the honest half of the answer rather than a
+failure of the question.
+
+### The smallest box that is honest
+
+**128 MB, for either role**, and the reason is the same for both: bare
+`node` with nothing loaded is **49 MB** resident. The floor belongs to the
+runtime, not to this system — what is actually SpiritOS is ~11 MB on a
+relay and ~23 MB on a node.
+
+| RAM | a relay holds, connected at once |
+|---|---|
+| 64 MB | 70 — **too tight to mean anything**, 60 MB is gone at rest |
+| 100 MB | ~700 |
+| **128 MB** | **~1,200** |
+| 256 MB | ~3,500 |
+| 512 MB | ~8,000 |
+
+**It is a straight line above the floor**, because a held connection costs
+~58 KB and nothing else about a relay grows with use. Below ~64 MB there
+is no line at all: the fixed cost has eaten the box.
+
+**A node does not have this table**, because a node does not hold
+hundreds of connections — it holds one per relay it is a member of. Its
+128 MB buys headroom for the shell, the apps and the job system, not
+concurrency.
 
 ### A relay with 100 MB RAM and 1 GB disc
 
@@ -60,7 +90,7 @@ the connection is not.
 starts and the arithmetic leaves nothing for the operating system. Treat
 ~700 as the ceiling of a machine doing nothing else.
 
-### A node with 1 MB RAM and 10 MB disc
+### And the smaller node, for contrast: 1 MB RAM and 10 MB disc
 
 **1 MB is not possible**, and no arrangement of this code makes it so.
 Bare Node.js is 49 MB resident before a line of SpiritOS runs; a personal

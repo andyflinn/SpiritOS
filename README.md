@@ -38,41 +38,48 @@ Lab relays and lab peers belong here too. They are harness tools, not product co
 
 ## What a box holds
 
-Measured, not estimated. The derivations, the method and the command to
+Measured, not estimated. The method, the derivations and the command to
 re-measure are in [README/CAPACITY.md](README/CAPACITY.md).
 
-### Minimum to run
+### Two boxes, at the smallest size that is honest
 
-| | |
+|  | **a relay** | **a personal node** |
+|---|---|---|
+| **RAM** | **128 MB** | **128 MB** |
+| **Disc** | **1 GB** | **1 GB** |
+| **at rest** | 60 MB resident | 72 MB resident |
+| **holds at once** | **~1,200** members connected | its own relay connections |
+| **holds on disc** | **5.5 million** members enrolled, or 3.8 million partners | **2.4 million** exchanges logged for ever |
+| **the rest of the disc** | — | **98% is yours** — media, writing, apps |
+
+**128 MB because that is where the arithmetic stops being a fiction.**
+Bare `node` with nothing loaded is **49 MB** resident, before a line of
+SpiritOS runs — so the floor is the runtime's and not ours. What is
+actually ours is small: **~11 MB on a relay, ~23 MB on a node.**
+
+**A relay scales from there in a straight line**, at ~58 KB a held
+connection:
+
+| RAM | members connected at once |
 |---|---|
-| **Node.js** | **22.13 or later** — no other dependency, and no `npm install` |
-| **Install** | **3.7 MB**, 110 files |
-| **RAM** | **72 MB** for a personal node, **60 MB** for a relay, at rest |
+| 64 MB | 70 — **too tight to mean anything** |
+| 100 MB | ~700 |
+| **128 MB** | **~1,200** |
+| 256 MB | ~3,500 |
+| 512 MB | ~8,000 |
 
-Node.js itself is 49 MB of that.
+### What decides each number
 
-### And then
-
-| | |
-|---|---|
-| **A relay with 100 MB RAM and 1 GB disc** | **~700 members connected at once**, out of a roll that could hold **5.5 million** |
-| **Partners on the same relay** | **~3.8 million** rows on disc; RAM is spent only while one is connected |
-| **A node with 1 MB or 10 MB RAM** | **not possible** — bare Node.js is 49 MB, so the smallest honest box is 128 MB |
-| **A node with 10 MB disc** | **~47,000** remembered peers |
-| **A node with 1 GB disc** | **~2.4 million exchanges** logged for ever — and the 20 MB peer cache is 2% of the drive |
-
-- **A held connection costs ~58 KB.** That is what turns 41 MB of
-  headroom into ~700 people.
-- **A row on disc costs about 200 bytes** — a member, a partner or a
-  remembered peer. Disc is not what runs out.
-- **A node's disc is yours, not the system's.** On a working node the
-  program is ~2 MB, the node's own bookkeeping ~340 KB, the peer cache
-  capped at 20 MB — and the media folder 91 MB.
+- **A relay is bounded by RAM.** Its roll is not the limit: a member row
+  is **197 bytes**, and a gigabyte holds 5.5 million of them. **A relay
+  can know five million people and hold a thousand conversations**, and
+  the gap between those two numbers is the design.
+- **A node is bounded by nothing you would notice.** The program is 2 MB,
+  its bookkeeping ~40 KB, and its peer cache is capped at **20 MB by
+  default — 2% of a gigabyte**. What grows is your traffic log (438 bytes
+  an exchange, permanent by decision) and your media.
 - **The browser is not a cost.** The shell is one tab in a browser you
-  already have open, and a node uses about what that tab does.
-
-**So a relay can know a million people and hold seven hundred
-conversations, and the gap between those two numbers is the design.**
+  already have open, and the node uses about what that tab does.
 
 ## how to get started.
 ```
