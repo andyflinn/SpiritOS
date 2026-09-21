@@ -175,6 +175,38 @@ function discPerRow() {
   out.perShadowRow = Math.round((fs.statSync(nfile).size - out.emptyNodeDb) / S);
   nstore.close();
 
+  // ── AND THE ONE FILE THAT ONLY GROWS ────────────────────────
+  //
+  // Everything else a node keeps is bounded — the cache by its cap, the
+  // rest by how many people there are. The traffic log is permanent by
+  // decision ("the log should be permanent. period." — Andy), so on any
+  // disc large enough to matter it is the only number that decides when
+  // the disc fills.
+  //
+  // Written through the real logger rather than by composing a line here,
+  // so the measurement includes whatever the logger actually writes.
+  const th = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-cap-log-'));
+  fs.mkdirSync(path.join(th, 'relay-state'), { recursive: true });
+  const traffic = require('../run/js/trafficLog').createTrafficLog({ rootDir: th });
+  // A FLOOR, NOT THE FIGURE. These entries are composed here, so they
+  // carry a short relay URL and no label; a working node's log measured
+  // 438 bytes an entry across 695 real ones. The synthetic number is kept
+  // because it moves when the logger's shape moves, which is what this
+  // tool is for — but the claims in README/CAPACITY.md use the real one.
+  const E = 2000;
+  for (let i = 0; i < E; i += 1) {
+    traffic.note({
+      dir: i % 2 ? 'in' : 'out', kind: i % 2 ? 'reply' : 'request',
+      peer: K + String(i % 40).padStart(27, '0') + '=',
+      relay: 'https://spirit.example.com',
+      hash: 'a'.repeat(64), bytes: 240, status: 200,
+    });
+  }
+  const logFile = path.join(th, 'relay-state', 'traffic.jsonl');
+  out.perLogEntry = fs.existsSync(logFile)
+    ? Math.round(fs.statSync(logFile).size / E) : 0;
+  try { fs.rmSync(th, { recursive: true, force: true }); } catch (e) { /* held */ }
+
   try { fs.rmSync(rh, { recursive: true, force: true }); } catch (e) { /* held */ }
   try { fs.rmSync(nh, { recursive: true, force: true }); } catch (e) { /* held */ }
   return out;
@@ -349,6 +381,8 @@ async function main() {
   say('| relay: a member | **' + disc.perMember + '** |');
   say('| relay: a partner | **' + disc.perPartner + '** |');
   say('| node: a remembered peer | **' + disc.perShadowRow + '** |');
+  say('| node: one logged exchange | **' + disc.perLogEntry +
+    '** synthetic — a real one averages **438**, see below |');
   say('| an empty `relay.db` / `node.db` | ' + Math.round(disc.emptyRelayDb / 1024) + ' KB / ' +
     Math.round(disc.emptyNodeDb / 1024) + ' KB |');
   say('');
@@ -360,6 +394,13 @@ async function main() {
     (partnersOnGb / 1000000).toFixed(1) + 'M partner rows |');
   say('| node, 1 MB RAM | **not possible** — bare Node.js is ' + mb(bare) + ' MB |');
   say('| node, 10 MB disc | **~' + peersOn10Mb.toLocaleString('en-GB') + ' remembered peers** |');
+  // 438 B is the measured cost of a REAL entry (695 of them on a working
+  // node), not the synthetic one above.
+  const REAL_LOG_ENTRY = 438;
+  const exchangesOnGb = Math.floor(1024 * 1024 * 1024 / REAL_LOG_ENTRY);
+  say('| node, 1 GB disc | **~' + (exchangesOnGb / 1000000).toFixed(1) +
+    'M logged exchanges** kept for ever — the cache cap (20 MB) is ' +
+    Math.round(20 * 1024 * 1024 / (1024 * 1024 * 1024) * 100) + '% of it |');
   say('');
 
   console.log(out.join('\n'));

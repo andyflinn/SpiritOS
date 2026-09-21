@@ -84,6 +84,47 @@ which is still more than anyone meets.
 the one file here that only grows. It holds what you sent, not what the
 network told you.
 
+### A node with 10 MB RAM and 1 GB disc
+
+**10 MB of RAM is still not possible**, and for the same reason 1 MB was
+not: the floor is Node.js's, and Node.js is 49 MB before SpiritOS loads.
+A personal node settles at **72 MB**, so the smallest honest box is
+**128 MB** — which leaves room for the operating system as well.
+
+**1 GB of disc, though, is more than a node can find things to put in
+it** — and the shipped defaults say so:
+
+| | | share of 1 GB |
+|---|---|---|
+| the program | ~2 MB | 0.2% |
+| the node's bookkeeping | ~40 KB | — |
+| **the peer cache, at its 20 MB default** | 20 MB ≈ 93,000 people | **2%** |
+| **everything left for you** | **~1,002 MB** | **98%** |
+
+> **Andy:** *"...with the nodeStore defaulting to max of 20 Megabytes."*
+
+**So the cache is 2% of the disc and never the constraint.** On this box
+the default could be raised to hold every person the node will ever hear
+of and still not be the thing that fills the drive.
+
+**What actually fills 1 GB is the two things that only grow:**
+
+| | |
+|---|---|
+| **the traffic log** | **~2.4 million exchanges**, at 438 bytes each, kept for ever |
+| **media** | ~500 photographs from a phone, at 2 MB each |
+
+**2.4 million exchanges is the number worth sitting with.** At a hundred
+messages a day that is sixty-five years; at a thousand a day, six and a
+half. The log is permanent by decision — it is your side of every
+exchange — and on a gigabyte it outlasts the hardware.
+
+**The shape of a node on 1 GB: it runs out of people to remember long
+before it runs out of room to remember them.** The only real question is
+how much of it you want to be media.
+
+---
+
 ---
 
 ## Disc, split three ways
@@ -211,7 +252,14 @@ Written to real databases, index included, and the file differenced.
 | relay: a member | **197** |
 | relay: a partner | **279** |
 | node: a remembered peer | **222** |
+| node: one logged exchange | **438** |
 | an empty `relay.db` / `node.db` | 40 KB / 20 KB |
+
+**The log entry is the one number here taken from a real file rather than
+a generated one.** 695 actual entries on a working node average 438 bytes;
+the tool's own synthetic entries come to 253, because they carry a short
+relay URL and no label. The tool reports both and this page uses the real
+one — a measurement of traffic nobody sent is a floor, not a figure.
 
 **Disc is not what bounds a relay.** A gigabyte is 5.5 million members. A
 relay runs out of RAM, of bandwidth, or of its owner's patience long
