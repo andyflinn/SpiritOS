@@ -163,6 +163,11 @@ out on one machine..."*
 1. **Join spirit.andyflinn.com** — the one real gap: today an invite Andy
    mints. Self-serve joining is a policy for his relay and touches invite
    rules already decided in the tree, so it is his call when the time comes.
+   **Andy's answer to it:** *"a little website, separate, get an invite for
+   your email adress"*. What that would need: a **limited delegation** to mint
+   invites (say N a day, expiring in days) rather than the owner's key itself;
+   a mail sender; limits per address and per day against bots; and care with
+   the addresses — personal data, kept only until the invite is used.
 2. **Find their friends** — search already does it, by name, across the relay
    and its partners.
 3. **A trivial script that talks** — the agents program
