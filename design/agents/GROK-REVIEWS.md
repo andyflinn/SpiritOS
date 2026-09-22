@@ -23,7 +23,7 @@ two chat windows goes away.
    that aspect of the SpiritOS"*. The script asks its node's loopback door
    (`net.fetch`) and names the key as `${ENV:GROK_API_KEY}`; the node fills it
    in from its own environment, and only for `api.x.ai`
-   (`server.js`, `PROXY_ENV_SUBSTITUTION_ALLOWLIST`). The script never holds
+   (`js/envSecrets.js`, by name, host and method). The script never holds
    the key; `oneDoor.js` counts it as a granted exception, like `agents.js`.
 3. **Grok remembers the thread; the record is ours.** The Responses API keeps
    a conversation for 30 days and continues it from the last reply's id, so a
@@ -52,15 +52,19 @@ two chat windows goes away.
 
 - **An intrinsic app maintains the allowlist.** Andy: *"a instrinisc app will
   maintain the allow list associated with that part of SpiritOS services."*
-  The list — a secret's name and the hosts it may reach — is a constant in
-  `server.js` until then, marked as a seam. It needs a new persist shape and
+  The list — a secret's name, the hosts it may reach, and for a key that can
+  write, the methods — is a constant in `js/envSecrets.js` until then, marked
+  as a seam. It needs a new persist shape and
   an owner screen: a UI session, and a review.
 
 ## How it is used
 
 ```
 node spirit/run/process/js/grokReview/grokReview.js models
-node …/grokReview.js start  <thread> --cap N --grant "<Andy's words>" --goal "<goal>" [--model m]
+node …/grokReview.js balance
+node …/grokReview.js start  <thread> --cap N --grant "<Andy's words>" --goal "<goal>"
+                            --commit <pushed hash> [--since <hash>] [--pieces a,b,c] [--model m] [--reasoning high]
+node …/grokReview.js send   <thread>          (first: OPENING.md, filled)
 node …/grokReview.js send   <thread> <file.md | "text"> [--attach path ...]
 node …/grokReview.js grant  <thread> --cap N --grant "<Andy's words>"
 node …/grokReview.js status [thread]
@@ -93,8 +97,10 @@ host but `api.x.ai`; falsified by widening its hosts).
   (`GET /v1/api-key` — active, not blocked, all models and endpoints), the
   price list (`GET /v1/language-models`), and exact token counts
   (`POST /v1/tokenize-text`), so a message's cost is known before it is
-  sent. Not free to see with this key: the remaining balance, which needs a
-  separate management key from the console.
+  sent. The remaining balance needs a management key: Andy made one
+  read-only at xAI and pinned to his address (`GROK_MANAGMENT_KEY`, spelled
+  as he set it), and the node sends it GET-only to `management-api.x.ai`.
+  `balance` read $5.00 on 2026-09-22.
 - Which model a review uses. Default `grok-4.7`, the newest `models` listed on
   2026-09-22 (the first live call, free, through the node); `--model` overrides
   it per thread.
