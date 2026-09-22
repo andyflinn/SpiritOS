@@ -17,6 +17,13 @@
 //   4. net.fetch substitutes ${ENV:ANTHROPIC_API_KEY} into headers for
 //      ANY destination the caller names — the allow-list gates which env
 //      var, never which host receives it.
+//   5. ANY WEB PAGE could make the node act (2026-09-22, found by
+//      wsl-claude, confirmed on both agents' nodes). A POST with
+//      Content-Type text/plain is a CORS "simple" request: a browser sends
+//      it from any site with no preflight and only hides the ANSWER — the
+//      verb runs. So a page Andy visited could spend his keys through
+//      net.fetch, write files, start jobs, or post to peers as him. The
+//      Host check stops DNS rebinding, not this.
 //
 // EXPECTED TO FAIL until those are fixed. Cases 1-3 are confirmed live
 // against this tree; case 4 is confirmed by reading substituteEnvPlaceholders.
@@ -57,18 +64,22 @@ function freePort() {
 // Deliberately low-level: `path` is sent verbatim, so an encoded traversal
 // stays encoded on the wire instead of being normalized by a URL object
 // the way a fetch() would.
-function request(port, method, rawPath, bodyObj) {
+// `as`, when given, sends a RAW body with the caller's own headers — the
+// shape a browser on another site would send (case 5). One reach for both,
+// so oneDoor's census for this file does not grow.
+function request(port, method, rawPath, bodyObj, as) {
   return new Promise(function (resolve, reject) {
-    const payload = bodyObj == null ? '' : JSON.stringify(bodyObj);
+    const payload = as ? String(as.raw == null ? '' : as.raw) : (bodyObj == null ? '' : JSON.stringify(bodyObj));
     const req = http.request({
       hostname: '127.0.0.1',
       port: port,
       path: rawPath,
       method: method,
-      headers: bodyObj == null ? {} : {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(payload),
-      },
+      headers: as ? Object.assign({ 'Content-Length': Buffer.byteLength(payload) }, as.headers || {})
+        : (bodyObj == null ? {} : {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload),
+        }),
     }, function (res) {
       let chunks = '';
       res.on('data', function (c) { chunks += c; });
@@ -78,6 +89,15 @@ function request(port, method, rawPath, bodyObj) {
     req.setTimeout(8000, function () { req.destroy(new Error('timeout')); });
     req.end(payload);
   });
+}
+
+// The verb used is node.card, which a key-less test node answers 409 —
+// so "refused at the door" is told apart by the door's own words, not by
+// the status alone.
+// A request shaped the way a BROWSER on another site would send it: raw
+// body, any Content-Type, and the headers the browser adds.
+function requestAs(port, method, rawPath, bodyText, headers) {
+  return request(port, method, rawPath, null, { raw: bodyText, headers: headers });
 }
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -337,6 +357,53 @@ freePort()
           return port;
         });
       });
+    });
+  })
+
+  // ---- 5. a web page on another site cannot make the node act ----------
+  .then(function (port) {
+    test.subHeading('A page on another site cannot make the node act');
+    const verb = JSON.stringify({ verb: 'node.card' });
+    const own = 'http://127.0.0.1:' + port;
+    return requestAs(port, 'POST', '/api/spirit', verb, {
+      'Content-Type': 'text/plain', Origin: 'https://evil.example', 'Sec-Fetch-Site': 'cross-site',
+    }).then(function (r) {
+      if (r.status === 403 && /another site/.test(r.text)) {
+        test.check('a text/plain POST from another site — the kind a browser sends unasked — is refused 403');
+      } else {
+        test.fail('a cross-site POST ran: HTTP ' + r.status + ' ' + r.text.slice(0, 120));
+      }
+      return requestAs(port, 'POST', '/api/spirit', verb, { 'Content-Type': 'text/plain', Origin: 'null' });
+    }).then(function (r) {
+      if (r.status === 403 && /another site/.test(r.text)) {
+        test.check('and so is one from a sandboxed frame or a file, which says Origin: null');
+      } else {
+        test.fail('an Origin: null POST ran: HTTP ' + r.status);
+      }
+      return requestAs(port, 'POST', '/api/spirit', verb, { 'Content-Type': 'text/plain', 'Sec-Fetch-Site': 'cross-site' });
+    }).then(function (r) {
+      if (r.status === 403 && /another site/.test(r.text)) {
+        test.check('and one that says only Sec-Fetch-Site: cross-site');
+      } else {
+        test.fail('a cross-site POST without Origin ran: HTTP ' + r.status);
+      }
+      return requestAs(port, 'POST', '/api/spirit', verb, {
+        'Content-Type': 'application/json', Origin: own, 'Sec-Fetch-Site': 'same-origin',
+      });
+    }).then(function (r) {
+      if (!/another site/.test(r.text) && r.status !== 0) {
+        test.check('the node\'s own shell, same origin, still reaches the verb (HTTP ' + r.status + ')');
+      } else {
+        test.fail('the shell\'s own call was refused: HTTP ' + r.status + ' ' + r.text.slice(0, 120));
+      }
+      return requestAs(port, 'POST', '/api/spirit', verb, { 'Content-Type': 'application/json' });
+    }).then(function (r) {
+      if (!/another site/.test(r.text) && r.status !== 0) {
+        test.check('and a script on this box, which sends no Origin, is unaffected (HTTP ' + r.status + ')');
+      } else {
+        test.fail('a local script was refused: HTTP ' + r.status);
+      }
+      return port;
     });
   })
 

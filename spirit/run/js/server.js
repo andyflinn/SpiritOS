@@ -552,6 +552,33 @@ function isValidHost(hostHeader) {
   return !!hostHeader && VALID_HOSTS.indexOf(hostHeader.toLowerCase()) !== -1;
 }
 
+// ── A PAGE ON ANOTHER SITE CANNOT MAKE THIS NODE ACT (2026-09-22) ─────
+//
+// THIS CORRECTS THE NOTE ABOVE. It says the browser's CORS preflight
+// blocks a cross-origin fetch "before the real request is ever sent". That
+// holds only for requests that NEED a preflight. A POST with Content-Type
+// text/plain is a "simple" request: a browser sends it from any site, with
+// no preflight, and only hides the ANSWER from the page — the verb RUNS.
+// Found by wsl-claude and confirmed on both agents' nodes: a page Andy
+// visited could have spent his keys through net.fetch, written files,
+// started jobs, or posted to peers as him, blind. Andy: "go".
+//
+// A browser always says where a request came from, and a page cannot forge
+// it: `Origin` on a POST, and `Sec-Fetch-Site` on everything it sends. So
+// a request that names ANOTHER origin — or `null`, which is a sandboxed
+// frame or a file — is refused, and so is one the browser marks
+// cross-site. The node's own shell is same-origin and passes; a script on
+// this box (the agents program, grokReview) sends neither header and
+// passes. Nothing here names an app: it is where a request came from, which
+// the core can know.
+const OWN_ORIGINS = VALID_HOSTS.map(function (h) { return 'http://' + h; });
+function fromAnotherSite(req) {
+  const origin = req.headers.origin;
+  if (origin !== undefined && OWN_ORIGINS.indexOf(String(origin).toLowerCase()) === -1) return true;
+  const site = req.headers['sec-fetch-site'];
+  return site === 'cross-site' || site === 'same-site';
+}
+
 const server = http.createServer((req, res) => {
   // Both halves of this gate are what make this a PERSONAL node: the
   // connection must come from this machine, and name it. A relay has no
@@ -559,6 +586,13 @@ const server = http.createServer((req, res) => {
   if (!isLoopbackAddress(req.socket.remoteAddress) || !isValidHost(req.headers.host)) {
     res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Forbidden: this server only accepts connections from localhost');
+    return;
+  }
+
+  // And not on behalf of a page on another site (fromAnotherSite, above).
+  if (fromAnotherSite(req)) {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Forbidden: a request from another site is refused');
     return;
   }
 
