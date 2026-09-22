@@ -121,7 +121,8 @@ test.subHeading('An empty ask READS — what is set, what is running, what the b
   } else {
     test.fail('the ceiling cannot be reproduced from what was reported: ' + JSON.stringify(out.room));
   }
-  if (out.room.wouldDefaultTo.ramLimitMB === 512 && out.room.discTotalMB === 20480) {
+  // 256, not half of the 1 GB box: "We never default to more than 256 MB."
+  if (out.room.wouldDefaultTo.ramLimitMB === 256 && out.room.discTotalMB === 20480) {
     test.check('…and it says what "back to standard" would mean on this box today');
   } else {
     test.fail('the defaults were not reported: ' + JSON.stringify(out.room));
@@ -161,6 +162,21 @@ test.subHeading('A signed owner grant writes the file and says what applies');
     test.check('the answer says what the allowance will be: 16 streams a megabyte');
   } else {
     test.fail('the allowance after was ' + out.after.allowance);
+  }
+}
+
+test.subHeading('The 256 MB cap is on the DEFAULT — an owner may set more');
+
+{
+  // Andy: "We never default to more than 256 MB." — "We allow adjustment
+  // upward from there." So the cap never appears in this path: the only
+  // bound on a figure the owner types is what the box can give.
+  const R = relayWith({ ramLimitMB: 256, discLimitMB: 256, source: 'file' });
+  const out = ask(R, { config: { ramLimitMB: 800, discLimitMB: 5000 } });
+  if (out && out.ok && out.after.ramLimitMB === 800 && out.after.discLimitMB === 5000) {
+    test.check('800 MB on a box with 875 to give is accepted — well past the default cap');
+  } else {
+    test.fail('an upward adjustment was refused: ' + JSON.stringify(out));
   }
 }
 

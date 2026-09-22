@@ -61,6 +61,30 @@ var RAM_MARGIN_MB = 25;
 var DISC_MARGIN_MB = 1024;
 var DISC_MARGIN_SHARE = 0.05;
 
+// ── A DEFAULT IS NEVER MORE THAN 256 MB ──────────────────────────────
+//
+//   Andy, 2026-09-22: "We never default to more than 256 MB."
+//
+// Half the box is the rule for the machine a relay was PUT on; it is the
+// wrong answer for the machine a relay merely happens to be on. A
+// workstation with 128 GB would default to tens of gigabytes and an
+// allowance near a million streams, for a box whose owner was running a
+// lab fixture beside his editor and his models.
+//
+// So the cycle-1 figure survives, in the role it should always have had:
+// not a fixed default, but the CEILING ON A DEFAULT. Half the box below
+// it, 256 MB above it, and anything larger is a figure an owner types on
+// purpose — which is the only way a relay should ever be big.
+//
+//   Andy, 2026-09-22: "when mom says: you're allowed to eat cake, she
+//   doesn't mean the whole cake."
+//
+// The same sentence governs the margins above. Permission to take from a
+// shared thing is not permission to take all of it, so the disc margin
+// never exceeds half of what is free either: a margin that leaves nothing
+// protects nothing.
+var DEFAULT_MAX_MB = 256;
+
 // A cgroup v1 file says "no limit" with a number so large it is a
 // sentinel rather than a bound (LONG_MAX rounded down to a page). v2 says
 // it in words. Both must read as "no cap" or a container would be told it
@@ -97,6 +121,45 @@ function parseMemAvailable(text) {
 // inside the cgroup is the limit minus what the cgroup is already using —
 // the same question MemAvailable answers for the host.
 //
+// ── WHERE A PROCESS'S OWN CAP ACTUALLY LIVES ─────────────────────────
+//
+// Found by wsl-claude, 2026-09-22, reviewing cycle 9 on Linux: "the
+// cgroup cap is read at the root, not at the process's own cgroup…
+// under systemd a unit's limit is not there: it is at
+// /sys/fs/cgroup/<path from /proc/self/cgroup>/memory.max… the root file
+// reads 'max'."
+//
+// Which is the exact case the branch exists for, and now our own case:
+// `bash/systemd/spirit-relay.service` sets MemoryMax, so every relay on a
+// real host runs under a cap the root file does not show.
+//
+// `/proc/self/cgroup` gives the path — v2 as `0::/system.slice/x.service`,
+// v1 as `N:memory:/system.slice/x.service`. A limit may be set at any
+// level above the leaf too (a slice caps its services), so this answers
+// every directory from the leaf up to the root and the caller takes the
+// smallest cap it finds.
+function cgroupDirs(cgroupText, v1) {
+  var lines = String(cgroupText || '').split('\n');
+  var rel = null;
+  for (var i = 0; i < lines.length; i += 1) {
+    var parts = lines[i].split(':');
+    if (parts.length < 3) continue;
+    var controllers = parts[1];
+    var isV2 = controllers === '';
+    if (v1 ? /(^|,)memory(,|$)/.test(controllers) : isV2) { rel = parts.slice(2).join(':'); break; }
+  }
+  if (rel === null) return [];
+  var base = v1 ? '/sys/fs/cgroup/memory' : '/sys/fs/cgroup';
+  var segments = rel.split('/').filter(Boolean);
+  var out = [];
+  while (segments.length) {
+    out.push(base + '/' + segments.join('/'));
+    segments.pop();
+  }
+  out.push(base);
+  return out;
+}
+
 // Returns megabytes available INSIDE the cgroup, or null when there is no
 // cap. Never negative: a cgroup already over its limit has nothing left.
 function parseCgroupAvailable(limitText, usageText) {
@@ -125,7 +188,13 @@ function ceilings(measured) {
     out.ramMaxMB = Math.max(1, Math.floor(availableMB - RAM_MARGIN_MB));
   }
   if (isFinite(discFreeMB) && discFreeMB > 0) {
-    var margin = Math.max(DISC_MARGIN_MB, discFreeMB * DISC_MARGIN_SHARE);
+    // NEVER MORE THAN HALF OF WHAT IS FREE. A gigabyte is the right
+    // margin on a 25 GB VPS and absurd on a 400 MB volume, where it
+    // would leave the floor of 1 MB and a relay that refuses its second
+    // member. Found by the suite, cycle 9: the margin protects the box
+    // from the relay, and a margin that takes everything protects
+    // nothing.
+    var margin = Math.min(discFreeMB / 2, Math.max(DISC_MARGIN_MB, discFreeMB * DISC_MARGIN_SHARE));
     out.discMaxMB = Math.max(1, Math.floor(discFreeMB - margin));
   }
   return out;
@@ -147,13 +216,17 @@ function defaults(measured) {
 
   var totalMB = Number(m.totalMB);
   if (isFinite(totalMB) && totalMB > 0) {
-    out.ramLimitMB = Math.max(1, Math.floor(totalMB / 2));
+    out.ramLimitMB = Math.max(1, Math.min(Math.floor(totalMB / 2), DEFAULT_MAX_MB));
     if (isFinite(caps.ramMaxMB)) out.ramLimitMB = Math.min(out.ramLimitMB, caps.ramMaxMB);
   }
 
   var discTotalMB = Number(m.discTotalMB);
   if (isFinite(discTotalMB) && discTotalMB > 0) {
-    out.discLimitMB = Math.max(1, Math.floor(discTotalMB / 2));
+    // THE SAME CEILING ON THE DISC DEFAULT, for the same reason: at about
+    // a kilobyte a member, 256 MB is a quarter of a million of them, so
+    // no relay is short of room by default and none of them reserves a
+    // slice of somebody's workstation it will never use.
+    out.discLimitMB = Math.max(1, Math.min(Math.floor(discTotalMB / 2), DEFAULT_MAX_MB));
     if (isFinite(caps.discMaxMB)) out.discLimitMB = Math.min(out.discLimitMB, caps.discMaxMB);
   }
   return out;
@@ -197,18 +270,25 @@ function measure(rootDir, deps) {
   // is reclaimed." Nothing here can fix that — it is why the caller
   // re-measures rather than trusting a figure taken at boot for ever.
   if (platform === 'linux') {
+    // THE LEAF FIRST, THEN EVERY SLICE ABOVE IT, and the smallest wins: a
+    // service may be capped by its own unit, by the slice holding it, or
+    // by both. The root is tried last so a box with no cgroup path still
+    // reads whatever is there.
+    var self = tryRead(readFile, '/proc/self/cgroup');
+    var dirs = cgroupDirs(self, false).concat(cgroupDirs(self, true));
+    if (!dirs.length) dirs = ['/sys/fs/cgroup', '/sys/fs/cgroup/memory'];
     var capped = null;
-    try {
-      capped = parseCgroupAvailable(readFile('/sys/fs/cgroup/memory.max'), tryRead(readFile, '/sys/fs/cgroup/memory.current'));
-    } catch (e) { capped = null; }
-    if (capped == null) {
-      try {
-        capped = parseCgroupAvailable(
-          readFile('/sys/fs/cgroup/memory/memory.limit_in_bytes'),
-          tryRead(readFile, '/sys/fs/cgroup/memory/memory.usage_in_bytes')
-        );
-      } catch (e) { capped = null; }
-    }
+    dirs.forEach(function (dir) {
+      var found = null;
+      var v2 = tryRead(readFile, dir + '/memory.max');
+      if (v2 != null) {
+        found = parseCgroupAvailable(v2, tryRead(readFile, dir + '/memory.current'));
+      } else {
+        var v1 = tryRead(readFile, dir + '/memory.limit_in_bytes');
+        if (v1 != null) found = parseCgroupAvailable(v1, tryRead(readFile, dir + '/memory.usage_in_bytes'));
+      }
+      if (found != null) capped = capped === null ? found : Math.min(capped, found);
+    });
     if (capped != null) out.availableMB = Math.min(out.availableMB, capped);
   }
 
@@ -241,10 +321,12 @@ function tryRead(readFile, p) {
 
 module.exports = {
   RAM_MARGIN_MB: RAM_MARGIN_MB,
+  DEFAULT_MAX_MB: DEFAULT_MAX_MB,
   DISC_MARGIN_MB: DISC_MARGIN_MB,
   DISC_MARGIN_SHARE: DISC_MARGIN_SHARE,
   parseMemAvailable: parseMemAvailable,
   parseCgroupAvailable: parseCgroupAvailable,
+  cgroupDirs: cgroupDirs,
   ceilings: ceilings,
   defaults: defaults,
   measure: measure,

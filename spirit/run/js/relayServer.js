@@ -170,6 +170,7 @@ const CONFIG = (function () {
   // first start, they do not override an owner's written choice. A figure
   // on the command line of an already-configured relay would be a limit
   // that changes on a restart nobody remembers typing.
+  let fromArgs = false;
   if (text == null) {
     const ramAsked = argMB('--ram');
     const discAsked = argMB('--disc');
@@ -179,6 +180,7 @@ const CONFIG = (function () {
         ramLimitMB: ramAsked === null ? proposed.ramLimitMB : ramAsked,
         discLimitMB: discAsked === null ? proposed.discLimitMB : discAsked,
       });
+      fromArgs = true;
     }
   }
 
@@ -189,7 +191,18 @@ const CONFIG = (function () {
   const read = relayConfig.parse(text, MEASURED, { atBoot: true });
   if (!read.ok) refuseToStart(read.error);
 
-  if (text == null || read.config.source === 'default') {
+  // `--ram` / `--disc` CONFIGURE A FIRST START; they do not haunt it.
+  //
+  // Found by wsl-claude on Linux, 2026-09-22: figures given as arguments
+  // were honoured for that run and never written, so the next start —
+  // from systemd, from a script, from anywhere without the flags —
+  // silently went back to the measured defaults. A limit that evaporates
+  // when somebody restarts the box is not a limit. They are written like
+  // any other first start, and the source says where they came from
+  // rather than claiming a file that did not exist.
+  if (fromArgs) read.config.source = 'argument';
+
+  if (text == null || fromArgs || read.config.source === 'default') {
     // Written before the relay serves anything, so a box that dies in its
     // first minute still says what it had decided. A failure here is not
     // fatal: a relay that cannot write its own config can still run on
@@ -199,7 +212,7 @@ const CONFIG = (function () {
       // What was ASKED for, never a boot-time clamp: a busy afternoon
       // must not shrink a relay's configuration permanently.
       fs.writeFileSync(file, relayConfig.fileText(relayConfig.asked(read.config)));
-      console.log('    wrote relay-state/config.json (measured: ' +
+      console.log('    wrote relay-state/config.json (' + (fromArgs ? 'from --ram/--disc' : 'measured') + ': ' +
         read.config.ramLimitMB + ' MB RAM, ' + read.config.discLimitMB + ' MB disc)');
     } catch (e) {
       console.error('    could not write relay-state/config.json: ' + e.message);

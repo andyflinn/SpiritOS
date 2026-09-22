@@ -46,10 +46,13 @@ function run() {
     test.fail('the share did not take over: ' + JSON.stringify(big));
   }
 
-  test.subHeading('A box too small for its own margin is left 1 MB, never a negative');
+  test.subHeading('A box too small for its own margin is left something, never a negative');
+  // RAM: 10 available, and a fixed 25 MB margin is more than all of it,
+  // so the floor of 1 MB answers. DISC: the margin never takes more than
+  // half of what is free, so 20 MB free leaves 10.
   const tiny = limits.ceilings({ availableMB: 10, discFreeMB: 20 });
-  if (tiny.ramMaxMB === 1 && tiny.discMaxMB === 1) {
-    test.check('10 MB available and 20 MB free → 1 MB each, the floor in relay.js');
+  if (tiny.ramMaxMB === 1 && tiny.discMaxMB === 10) {
+    test.check('10 MB available → the 1 MB floor; 20 MB free → 10 MB, half kept back');
   } else {
     test.fail('a tiny box gave ' + JSON.stringify(tiny));
   }
@@ -62,30 +65,50 @@ function run() {
     test.fail('an unmeasured box was given a ceiling: ' + JSON.stringify(nothing));
   }
 
-  test.subHeading('The default is half the box');
-  // A half-empty 20 GB disc shows both halves of the rule at once: RAM
-  // takes half of total because availability allows it, while half the
-  // disc's TOTAL is more than its free space can give, so the ceiling
-  // takes it down to 10240 − 1024.
+  test.subHeading('The default is half the box, and never more than 256 MB');
+  // Andy: "We never default to more than 256 MB." Half of a 1 GB box is
+  // 512, so the cap is what answers here — and 256 is well under both
+  // ceilings, so nothing else touches it.
   const d = limits.defaults({ totalMB: 1024, availableMB: 900, discTotalMB: 20480, discFreeMB: 10240 });
-  if (d.ramLimitMB === 512 && d.discLimitMB === 9216) {
-    test.check('1 GB of RAM → 512 MB; half a 20 GB disc, clamped to the free space, → 9 GB');
+  if (d.ramLimitMB === 256 && d.discLimitMB === 256) {
+    test.check('a 1 GB box defaults to 256 MB of RAM and 256 MB of disc, not to half of each');
   } else {
     test.fail('defaults gave ' + JSON.stringify(d));
   }
-  const roomy = limits.defaults({ totalMB: 1024, availableMB: 900, discTotalMB: 20480, discFreeMB: 20000 });
-  if (roomy.discLimitMB === 10240) {
-    test.check('on an empty disc half of total stands, unclamped');
+
+  test.subHeading('…and half the box when half the box is the smaller number');
+  // RAM: half of 256 is 128, under the cap. DISC: half of 400 is 200,
+  // but 380 free with the margin held to half leaves 190, so the ceiling
+  // is the smallest of the three and answers.
+  const small = limits.defaults({ totalMB: 256, availableMB: 240, discTotalMB: 400, discFreeMB: 380 });
+  if (small.ramLimitMB === 128 && small.discLimitMB === 190) {
+    test.check('a 256 MB box takes 128 MB — the cap is a ceiling on the default, not the default');
   } else {
-    test.fail('an empty disc was clamped anyway: ' + JSON.stringify(roomy));
+    test.fail('a small box was given more than half of itself: ' + JSON.stringify(small));
+  }
+
+  test.subHeading('A workstation is not sized as though the relay owned it');
+  // The case that prompted the rule: this machine measured 127.7 GB with
+  // 58.5 GB available, and would have defaulted to an allowance near a
+  // million streams for a lab fixture running beside an editor.
+  const workstation = limits.defaults({ totalMB: 130767, availableMB: 59900, discTotalMB: 4769272, discFreeMB: 4442670 });
+  if (workstation.ramLimitMB === 256 && workstation.discLimitMB === 256) {
+    test.check('128 GB of RAM still defaults to 256 MB — an owner raises it on purpose or not at all');
+  } else {
+    test.fail('a workstation claimed itself: ' + JSON.stringify(workstation));
   }
 
   test.subHeading('…and is clamped to the ceiling, never the other way about');
-  const busy = limits.defaults({ totalMB: 1024, availableMB: 300, discTotalMB: 20480, discFreeMB: 2048 });
-  // RAM: half is 512, availability allows 275. Disc: half is 10240, free
-  // is 2048 and the margin is the 1 GB floor, so 1024 stands.
-  if (busy.ramLimitMB === 275 && busy.discLimitMB === 1024) {
-    test.check('a busy box takes the smaller number in both resources');
+  // A box with almost nothing to give: 200 available leaves 175 after the
+  // margin, which is less than the 256 cap, so availability decides. The
+  // disc is nearly full — 1200 free, the 1 GB margin leaves 176.
+  // RAM: 200 available leaves 175 after the margin, under both half
+  // (512) and the cap (256), so availability decides. DISC: 1200 free,
+  // margin held to 600, ceiling 600 — so the 256 cap is still the
+  // smallest and answers.
+  const busy = limits.defaults({ totalMB: 1024, availableMB: 200, discTotalMB: 20480, discFreeMB: 1200 });
+  if (busy.ramLimitMB === 175 && busy.discLimitMB === 256) {
+    test.check('a busy box takes the smallest of the three: half, the cap, and what is available');
   } else {
     test.fail('the clamp did not bite: ' + JSON.stringify(busy));
   }
@@ -125,6 +148,80 @@ function run() {
     test.check('a cgroup already over its limit has nothing left, never a negative');
   } else {
     test.fail('an over-limit cgroup gave a negative');
+  }
+
+  test.subHeading('A unit\'s cap is at its OWN cgroup, not at the root');
+
+  // wsl-claude, reviewing cycle 9 on Linux: "under systemd a unit's limit
+  // is not there: it is at /sys/fs/cgroup/<path from /proc/self/cgroup>/
+  // memory.max… the root file reads 'max'." Which is our own case, since
+  // spirit-relay.service now sets MemoryMax.
+  const v2dirs = limits.cgroupDirs('0::/system.slice/spirit-relay.service\n', false);
+  if (v2dirs[0] === '/sys/fs/cgroup/system.slice/spirit-relay.service' &&
+      v2dirs[1] === '/sys/fs/cgroup/system.slice' &&
+      v2dirs[2] === '/sys/fs/cgroup') {
+    test.check('the leaf first, then the slice, then the root — a cap may sit at any of them');
+  } else {
+    test.fail('the cgroup path was not walked: ' + JSON.stringify(v2dirs));
+  }
+  const v1dirs = limits.cgroupDirs('9:memory:/system.slice/spirit-relay.service\n4:cpu:/\n', true);
+  if (v1dirs[0] === '/sys/fs/cgroup/memory/system.slice/spirit-relay.service') {
+    test.check('and v1 reads the memory controller\'s own line, not whichever came first');
+  } else {
+    test.fail('the v1 path was wrong: ' + JSON.stringify(v1dirs));
+  }
+  if (limits.cgroupDirs('0::/init.scope\n', true).length === 0) {
+    test.check('a box with no memory controller line answers nothing to walk');
+  } else {
+    test.fail('a v1 path was invented where there is none');
+  }
+
+  test.subHeading('…and the probe finds the cap there, where the root says "max"');
+
+  const underUnit = limits.measure('/srv/spirit', {
+    platform: 'linux',
+    totalmem: function () { return 64000 * MB; },
+    freemem: function () { return 60000 * MB; },
+    readFileSync: function (p) {
+      if (p === '/proc/self/cgroup') return '0::/system.slice/spirit-relay.service\n';
+      if (p === '/proc/meminfo') return 'MemAvailable:     61000000 kB\n';
+      // The root says no cap at all — the shape that hid the unit's cap.
+      if (p === '/sys/fs/cgroup/memory.max') return 'max';
+      if (p === '/sys/fs/cgroup/system.slice/memory.max') return 'max';
+      if (p === '/sys/fs/cgroup/system.slice/spirit-relay.service/memory.max') return String(384 * MB);
+      if (p === '/sys/fs/cgroup/system.slice/spirit-relay.service/memory.current') return String(100 * MB);
+      throw new Error('ENOENT ' + p);
+    },
+    statfsSync: function () { return { bsize: 4096, blocks: 5 * 1024 * 1024, bavail: 2 * 1024 * 1024 }; },
+  });
+  if (Math.round(underUnit.availableMB) === 284) {
+    test.check('a relay under MemoryMax=384M with 100 MB used sees 284 MB, not the 60 GB box');
+  } else {
+    test.fail('the unit\'s own cap was missed: ' + JSON.stringify(underUnit));
+  }
+
+  test.subHeading('…and the tightest cap wins when a slice caps its services');
+
+  const undertSlice = limits.measure('/srv/spirit', {
+    platform: 'linux',
+    totalmem: function () { return 64000 * MB; },
+    freemem: function () { return 60000 * MB; },
+    readFileSync: function (p) {
+      if (p === '/proc/self/cgroup') return '0::/system.slice/spirit-relay.service\n';
+      if (p === '/proc/meminfo') return 'MemAvailable:     61000000 kB\n';
+      if (p === '/sys/fs/cgroup/memory.max') return 'max';
+      if (p === '/sys/fs/cgroup/system.slice/memory.max') return String(200 * MB);
+      if (p === '/sys/fs/cgroup/system.slice/memory.current') return String(50 * MB);
+      if (p === '/sys/fs/cgroup/system.slice/spirit-relay.service/memory.max') return String(384 * MB);
+      if (p === '/sys/fs/cgroup/system.slice/spirit-relay.service/memory.current') return String(100 * MB);
+      throw new Error('ENOENT ' + p);
+    },
+    statfsSync: function () { return { bsize: 4096, blocks: 5 * 1024 * 1024, bavail: 2 * 1024 * 1024 }; },
+  });
+  if (Math.round(undertSlice.availableMB) === 150) {
+    test.check('the slice\'s 150 MB left beats the unit\'s 284 — the smallest cap decides');
+  } else {
+    test.fail('the slice cap was ignored: ' + JSON.stringify(undertSlice));
   }
 
   test.subHeading('The probe on a Linux box reads /proc/meminfo and the partition');

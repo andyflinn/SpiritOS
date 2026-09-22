@@ -31,17 +31,19 @@ function run() {
     test.fail('missing file gave ' + JSON.stringify(none) + ', wanted ' + JSON.stringify(want));
   }
 
-  test.subHeading('Half the box, clamped to what the box can give');
-  // 1024/2 = 512, and 900 − 25 = 875 leaves room, so half stands.
-  if (none.ok && none.config.ramLimitMB === 512) {
-    test.check('512 MB of a 1 GB box — half, because availability allows it');
+  test.subHeading('Half the box, never more than 256 MB, clamped to what the box can give');
+  // Half of 1 GB is 512, and Andy's cap is 256 — "We never default to
+  // more than 256 MB" — so the cap answers here.
+  if (none.ok && none.config.ramLimitMB === 256) {
+    test.check('a 1 GB box defaults to 256 MB, the ceiling on a default');
   } else {
     test.fail('half-the-box gave ' + JSON.stringify(none.config));
   }
-  // A busy box: half of total is more than is available, so the ceiling wins.
-  const busy = relayConfig.parse(null, { totalMB: 1024, availableMB: 300, discTotalMB: 20480, discFreeMB: 10240 });
-  if (busy.ok && busy.config.ramLimitMB === 275) {
-    test.check('on a busy box the default is clamped to availability (300 − 25 = 275)');
+  // A box with little to give: 200 available leaves 175 after the 25 MB
+  // margin, which is under the cap, so availability decides.
+  const busy = relayConfig.parse(null, { totalMB: 1024, availableMB: 200, discTotalMB: 20480, discFreeMB: 10240 });
+  if (busy.ok && busy.config.ramLimitMB === 175) {
+    test.check('on a busy box the default is clamped to availability (200 − 25 = 175)');
   } else {
     test.fail('the clamp did not bite: ' + JSON.stringify(busy));
   }

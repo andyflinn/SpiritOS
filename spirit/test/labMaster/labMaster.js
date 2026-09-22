@@ -588,7 +588,31 @@ function startNode(node) {
     return { ok: false, status: 400, error: 'no js/server.js under home' };
   }
   const args = [serverJs, '--port', String(node.port)];
-  if (node.type === 'relay') args.push('--relay');
+  if (node.type === 'relay') {
+    args.push('--relay');
+    // ── A LAB RELAY TAKES THE MINIMUM, ALWAYS (cycle 9) ─────────────
+    //
+    //   Andy, 2026-09-22: "labMaster, by default must configure its
+    //   local relays to the minimum. We never default to more than
+    //   256 MB." — "We allow adjustment upward from there."
+    //
+    // A relay left to measure for itself would size against ANDY'S
+    // WORKSTATION, which is not the machine it is a fixture on — it is
+    // the machine his editor, his models and this harness are on. The
+    // smallest honest figure is also the useful one here: 16 streams and
+    // a roll of about a thousand is the only place a full relay can be
+    // watched refusing people before a stranger meets one.
+    //
+    // Written only when the home has no config.json, so a figure someone
+    // set by hand — or over the wire — is never overwritten by a start.
+    try {
+      const cfg = path.join(home, 'relay-state', 'config.json');
+      if (!fs.existsSync(cfg)) {
+        fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+        fs.writeFileSync(cfg, JSON.stringify({ ramLimitMB: 1, discLimitMB: 1 }, null, 2) + '\n');
+      }
+    } catch (e) { /* a relay that cannot be given one measures for itself */ }
+  }
 
   const child = spawn(process.execPath, args, {
     cwd: home,
