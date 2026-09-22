@@ -77,6 +77,17 @@ host but `api.x.ai`; falsified by widening its hosts).
   outbound proxy for apps and now carries a second secret; what it should be
   — who may ask it, for which hosts, how the intrinsic app keeps the
   allowlist, what a call costs and who sees that — is that sitting's.
+  **Found for it, 2026-09-22:** the node's door refuses any body over
+  17,408 bytes (`refuseTooBig`), and `net.fetch` is behind that door, so one
+  proxied call carries at most ~17 KB. This review's code diff is 98 KB
+  (27,190 tokens) — nine pieces. Either the proxy gets its own bound, or a
+  review sends summaries and the changed functions, not whole diffs.
+- **What is free** (asked through the node, 2026-09-22): the key's own status
+  (`GET /v1/api-key` — active, not blocked, all models and endpoints), the
+  price list (`GET /v1/language-models`), and exact token counts
+  (`POST /v1/tokenize-text`), so a message's cost is known before it is
+  sent. Not free to see with this key: the remaining balance, which needs a
+  separate management key from the console.
 - Which model a review uses. Default `grok-4.7`, the newest `models` listed on
   2026-09-22 (the first live call, free, through the node); `--model` overrides
   it per thread.
