@@ -40,9 +40,11 @@
 //
 // ── ONE DOOR ─────────────────────────────────────────────────────────
 //
-// This file serves a page, so it reaches for `http` once, counted in
-// spirit/test/oneDoor.js with Andy's words (AGENT.md, Comms). It talks to
-// no node and no peer.
+// This file serves a page, so it reaches twice — require('http') for its own
+// server, and the page's fetch back to it — counted at 2 in spirit/test/oneDoor.js with
+// Andy's words (AGENT.md, Comms). It talks to no node and no peer. Linux
+// paths are built with path.posix: this only ever runs in WSL, and a suite
+// that loads it on Windows must still see Linux paths.
 
 const http = require('http');
 const fs = require('fs');
@@ -57,9 +59,9 @@ const DEFAULT_PORT = 45480;
 function applicationDirs(env) {
   const e = env || process.env;
   const home = e.HOME || os.homedir();
-  const dataHome = e.XDG_DATA_HOME || path.join(home, '.local', 'share');
+  const dataHome = e.XDG_DATA_HOME || path.posix.join(home, '.local', 'share');
   const dataDirs = (e.XDG_DATA_DIRS || '/usr/local/share:/usr/share').split(':').filter(Boolean);
-  const dirs = [dataHome].concat(dataDirs).map(function (d) { return path.join(d, 'applications'); });
+  const dirs = [dataHome].concat(dataDirs).map(function (d) { return path.posix.join(d, 'applications'); });
   dirs.push('/var/lib/snapd/desktop/applications');
   return dirs.filter(function (d, i) { return dirs.indexOf(d) === i; });
 }
@@ -139,7 +141,7 @@ function toApp(fileName, fields) {
 
 function listPath(env) {
   const e = env || process.env;
-  return path.join(e.XDG_CONFIG_HOME || path.join(e.HOME || os.homedir(), '.config'), 'wsl-desktop', 'apps.json');
+  return path.posix.join(e.XDG_CONFIG_HOME || path.posix.join(e.HOME || os.homedir(), '.config'), 'wsl-desktop', 'apps.json');
 }
 
 // A missing or unreadable list is an empty one: the page then says how to
