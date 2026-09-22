@@ -12,8 +12,9 @@
 The node is where Andy's secrets live. Anything on the box that needs an
 outside service — an app, a spawned script, an agent's review — asks the
 node, names the key it needs, and never holds it. The node decides whether
-that asker may use that key, for that host, in that way, and says what it
-cost. Andy keeps the rules in an app, not in code.
+that key may go to that host, in that way, and says what it cost — knowing
+keys, never apps (*"on the core-layer apps are unknown"*). Andy keeps the
+rules in an app, not in code.
 
 ## What the tree does today — verified at `a83f219`
 
@@ -46,13 +47,21 @@ cost. Andy keeps the rules in an app, not in code.
 
 Each with a recommendation; none decided.
 
-1. **Who may use which key?** *Recommended:* a key is granted to an asker —
+1. **Who may use which key?** ~~*Recommended:* a key is granted to an asker —
    an app by name, or a script by its folder — and the node refuses a key
-   the asker was not granted. `aiChat` → Anthropic; `grokReview` → both xAI
-   keys. The grants live beside the allowlist.
+   the asker was not granted.~~ **Corrected the same day by Andy:** *"on the
+   core-layer apps are unknown."* The node cannot grant a key to "aiChat":
+   it knows keys, hosts and methods, and nothing at its loopback door says
+   who is asking (`server.js:559` checks only that the caller is on this
+   box). The rule is standing — `relay.js` records it as *"nothing in node
+   and relay should know about apps"*. **So the question becomes:** is
+   scoping a key by host and method enough at the core, with *who* may ask
+   left to the layer that knows apps (the shell, and the intrinsic app) —
+   or does the core need an asker it CAN know, such as a credential the
+   owner hands out, which names no app?
 2. **Where do the rules live?** *Decided in principle (Andy):* an intrinsic
    app keeps the allowlist. *Recommended:* the same app keeps the grants
-   (question 1) and shows the spend (question 5), stored in `node.db`, which
+   (question 1, in whatever form it takes) and shows the spend (question 5), stored in `node.db`, which
    the node already owns (0021). A new persist shape — so this is the
    review's, not a patch's.
 3. **How long may a call wait?** *Recommended:* the asker says, up to a
@@ -63,8 +72,9 @@ Each with a recommendation; none decided.
    separate from peer packets — out and back — so a review is not held to a
    packet's size and a runaway answer cannot fill the node's memory.
 5. **What does Andy see of the cost?** *Recommended:* where a service
-   reports a call's cost, the node records it against the key and the
-   asker; the app shows it. Where a service does not, the node counts calls
+   reports a call's cost, the node records it against the key (and against
+   an asker only if question 1 gives the core one it can know); the app
+   shows it. Where a service does not, the node counts calls
    and says the cost is unknown — never guesses.
 
 ## Decided already, and not reopened here
