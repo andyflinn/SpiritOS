@@ -106,7 +106,9 @@ Each with a recommendation; none decided.
     read and maintain it. Nothing more.
   - **Shell:** the proxy manager — an app says which outside APIs and keys
     it needs, and the owner grants access. That protocol, and the app, are
-    shell scope.
+    shell scope. **Deferred** — Andy: *"the shell side is deferred. the api
+    will first be usefull to agents."* The core file and verbs are built
+    for agents first (a review, a script); the shell comes to them later.
 - **Where the file lives: `relay-state/`**, which answers Andy's question
   yes — verified at `a83f219`: `fileServable()` refuses all of it
   (`spirit/run/js/kernel.js:291`), the `fs.*` verbs cannot write it (writable
