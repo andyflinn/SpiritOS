@@ -75,7 +75,7 @@ scans the tree for any error sentence the catalogue does not know.
 
 **Phase B:** the relay sends the code itself, beside the sentence, so no node
 has to recognise text. That changes the refusal whitelist in
-`relayServer.js` — the post answer at `:547-561`, the reply answer at `:578`,
+`relayServer.js` — the post answer at `:547-561`, the reply answer at `:576`,
 and `deviceRefusal`'s bare `"not now"` (`serveCommon.js:204`).
 
 **Question:** a `code` field on every refusal — anything against that shape?
@@ -83,14 +83,15 @@ and `deviceRefusal`'s bare `"not now"` (`serveCommon.js:204`).
 ## 4. Retiring the Governor (R20, cancelled)
 
 **Andy ruled** that the owner's configured RAM is a constant, *"and the
-owner's only useful input is ram and disc configuration"*. The measured
+owner's only useful input is ram and disc configuration"*
+(`spirit/run/js/nodeSettings.js:12-14`). The measured
 per-stream cost (R15) makes the connection ceiling arithmetic on that
 constant; the one runtime hazard left (a member that stops reading) is now cut
 at a fixed bound (R35, below). **Nothing is left for the Governor to govern.**
 
 **What it would remove:** `governor.js` (232 lines), required at
-`relay.js:22` with 32 references there and 3 in `relayServer.js` (the tick
-every 5 s), the lever verb, its fields in the owner's `relay-status` report,
+`relay.js:22` and used on 13 code lines there; the 5-second tick in
+`relayServer.js` (`GOVERNOR_TICK_MS`); the lever verb, its fields in the owner's `relay-status` report,
 and five suites (`governor`, `governorTwoRelays`, `lever`, `leverVerb`,
 `settableCensus`). The allowance becomes fixed at boot from the owner's RAM.
 
@@ -107,7 +108,9 @@ and five suites (`governor`, `governorTwoRelays`, `lever`, `leverVerb`,
   and the requests it leaves are answered at once: its askers get
   `503 peer not reachable`, its own pending requests are dropped.
   `spirit/run/js/streamSink.js`, `relay.failRoutesOf`, `router.release`. Andy
-  ruled it in-file work: *"agreed. this needs only documenting…"*.
+  ruled it in-file work: *"this needs only documenting, and checking if a
+  pending foreign request is still pending, so that one can be returned with
+  an error"* (the gap cycle, R35).
 - **R16 — the node's outgoing queue is persisted in `node.db`.** A new storage
   shape, which the cycle file says is a team review; Andy's earlier waiver
   named the shadow roll only. Asked, he ruled it himself, 2026-09-22: *"make
