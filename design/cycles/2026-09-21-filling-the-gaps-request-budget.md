@@ -1642,6 +1642,16 @@ closed by the stream cut, which says so itself. What is left for the
 Governor is Andy's to say. Andy earlier: *"the govenor is at least
 deferred, if not eliminated"*.
 
+### Decided 2026-09-22 — delete it
+
+> **Grok (review):** *"delete the whole thing … Levers kept 'for later' grow
+> a governor back."* — **Andy:** *"grok confirms my prediction. delete it
+> is."*
+
+`governor.js`, the lever verb, the tick, its fields in `relay-status` and
+its suites go. The allowance is fixed at boot from the owner's RAM. Decided,
+not built: it is half of cycle 8.
+
 ### Cancelled 2026-09-22 — and its removal goes to the review
 
 > **Andy, 2026-09-22,** on Claude's suggestion to cancel R20 and bring the
