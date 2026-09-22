@@ -100,14 +100,33 @@ function halted(cfg) {
   try { return JSON.parse(fs.readFileSync(haltPath(cfg), 'utf8')); } catch (e) { return null; }
 }
 
-function obeyControl(cfg, fromKey, env, nowIso) {
+// ── ONLY THE NEWEST CONTROL MESSAGE COUNTS ──────────────────────────────
+//
+// The node holds a packet that arrived while nobody listened and hands it
+// to the next listener (arrivals.js) — the catch-up is right, a message
+// sent while a listener was down must not be lost. But a halt or resume
+// handed over late is OLD news, and obeying it as new would let a restart
+// re-halt on a halt Andy already lifted. Found by wsl-claude over this
+// channel, 2026-09-22. So the time of the last one applied is kept, and a
+// control message no newer than it is reported 'stale' and not obeyed.
+function controlPath(cfg) { return path.join(cfg.root, 'relay-state', 'agents-control.json'); }
+
+function lastControlAt(cfg) {
+  try { return String(JSON.parse(fs.readFileSync(controlPath(cfg), 'utf8')).at || ''); } catch (e) { return ''; }
+}
+
+function obeyControl(cfg, fromKey, env, atIso) {
   if (!env || env.app !== APP || !env.body) return null;
   const kind = env.body.kind;
   if (kind !== 'halt' && kind !== 'resume') return null;
   if (!cfg.control || fromKey !== cfg.control) return 'ignored';
+  const at = atIso || new Date().toISOString();
+  const last = lastControlAt(cfg);
+  if (last && at <= last) return 'stale';
+  fs.mkdirSync(path.dirname(controlPath(cfg)), { recursive: true });
+  fs.writeFileSync(controlPath(cfg), JSON.stringify({ at: at, kind: kind }));
   if (kind === 'halt') {
-    fs.mkdirSync(path.dirname(haltPath(cfg)), { recursive: true });
-    fs.writeFileSync(haltPath(cfg), JSON.stringify({ at: nowIso || new Date().toISOString(), text: env.body.text || '' }));
+    fs.writeFileSync(haltPath(cfg), JSON.stringify({ at: at, text: env.body.text || '' }));
     return 'halted';
   }
   try { fs.unlinkSync(haltPath(cfg)); } catch (e) { /* not halted */ }
@@ -256,7 +275,10 @@ function conversation(lines, peerKey) {
       if (!entry) { entry = byHash[row.hash] = { hash: row.hash }; order.push(entry); }
       entry.at = row.at; entry.dir = row.dir; entry.peer = row.peer; entry.env = env;
     }
-    if (entry) entry.outcome = row.outcome;
+    // Only a row that HAS an outcome may set one: the node also writes a
+    // 'taken' mark under the same hash when a listener collects a held
+    // packet, and that row carries none.
+    if (entry && row.outcome) entry.outcome = row.outcome;
   });
   return order;
 }
@@ -295,7 +317,9 @@ function listen(cfg, onLine, fetchFn) {
           let msg; try { msg = JSON.parse(da[1]); } catch (e) { continue; }
           let env = null; try { env = JSON.parse(msg.text); } catch (e) { continue; }
           if (!env || env.app !== APP) continue;
-          const control = obeyControl(cfg, msg.from, env);
+          // `at` is when this node received it — a replayed packet keeps
+          // its own time, which is what lets a stale halt be told apart.
+          const control = obeyControl(cfg, msg.from, env, msg.sentAt || msg.at);
           const b = env.body || {};
           onLine('AGENTS ' + (b.from || '?') + ' ' + (b.kind || '?') +
             (env.re ? ' re ' + String(env.re).slice(0, 12) : '') +

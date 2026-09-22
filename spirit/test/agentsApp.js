@@ -160,6 +160,30 @@ async function run() {
     }
   }
 
+  test.subHeading('A halt handed over late is not obeyed as new');
+
+  {
+    // The node holds packets that arrived while nobody listened and hands
+    // them to the next listener. A halt Andy already lifted, replayed on a
+    // restart, must not stop the agent again. Found by wsl-claude.
+    const H = home();
+    const cfg = cfgFor(H);
+    agents.obeyControl(cfg, CONTROL, agents.makeEnvelope('andy', 'halt', ''), '2026-09-22T01:00:00.000Z');
+    agents.obeyControl(cfg, CONTROL, agents.makeEnvelope('andy', 'resume', ''), '2026-09-22T01:05:00.000Z');
+    const replayed = agents.obeyControl(cfg, CONTROL, agents.makeEnvelope('andy', 'halt', ''), '2026-09-22T01:00:00.000Z');
+    if (replayed === 'stale' && !agents.halted(cfg)) {
+      test.check('a halt older than the resume already applied is reported stale, and the agent keeps running');
+    } else {
+      test.fail('replayed halt: ' + replayed + ', halted: ' + JSON.stringify(agents.halted(cfg)));
+    }
+    const fresh = agents.obeyControl(cfg, CONTROL, agents.makeEnvelope('andy', 'halt', ''), '2026-09-22T01:10:00.000Z');
+    if (fresh === 'halted' && agents.halted(cfg)) {
+      test.check('and a halt newer than it is obeyed as usual');
+    } else {
+      test.fail('fresh halt: ' + fresh);
+    }
+  }
+
   test.subHeading('A report that cannot land is kept, and sent when it can');
 
   {
@@ -189,8 +213,13 @@ async function run() {
       JSON.stringify({ at: 't2', dir: 'out', kind: 'request', peer: PEER, hash: 'HA', outcome: 'refused' }),
       JSON.stringify({ at: 't3', dir: 'out', kind: 'request', peer: PEER, hash: 'HB', outcome: 'sent', payload: env }),
       JSON.stringify({ at: 't4', dir: 'in', kind: 'reply', peer: PEER, hash: 'HB', outcome: 'receipted' }),
+      // The mark the node writes when a listener collects a held packet:
+      // same hash, no outcome, and no peer. It must not blank the outcome.
+      JSON.stringify({ at: 't5', mark: 'taken', hash: 'HB' }),
     ];
-    const conv = agents.conversation(lines, PEER);
+    // Read UNFILTERED, as `read` does with no peer named — which is how the
+    // 'taken' mark blanked a real outcome to "undefined".
+    const conv = agents.conversation(lines, '');
     if (conv.length === 2 && conv[0].outcome === 'refused' && conv[1].outcome === 'receipted') {
       test.check('a post the relay refused reads "refused", not "sent" — the second row is not skipped');
     } else {
