@@ -122,6 +122,39 @@ nothing leaves, even by a mistake in the owner's settings.
 **Encryption (3) matters less there**, because the relay's operator is the
 company itself; it still protects against whoever administers the box.
 
+## 5. Early adopters: people who self-host — and a two-step front door
+
+> **Andy, 2026-09-22:** *"if the core is out-of-the-box attractive to nerds, we
+> might find early adoption there."* — *"if the readme was, 1) clone SpiritOS
+> 2) node install (and this is a console-interactive utility that sets up
+> anything, a relay, a node, etc.... and ends with there the url to play with
+> it and with its DOCS, and the URL for nodes 127.0.0.1:65432 ......"*
+
+**What already appeals to them:** no dependencies — plain Node, all of it
+readable; identity generated on your own machine, not an account; a relay
+that runs on a small server, with its capacity measured and published; the
+reasons written beside the code; 125 suites green on Windows and Linux.
+
+**Where they would give up today:** there is no five-minute path. The README
+is not written for a stranger, and claiming and inviting are manual.
+
+**The front door Andy describes:**
+
+```
+git clone https://github.com/andyflinn/SpiritOS
+cd SpiritOS
+node install
+```
+
+`install.js` already exists at the root and is interactive — but it does one
+narrow job: mint a public relay's owner invite over SSH. It would grow into
+the one guided setup: *what are you setting up — a node, a relay, or both?*;
+check the Node version; for a node, make its identity, start it, and
+optionally join a relay by invite; for a relay, the RAM limit, the port and
+the owner invite, as today. It ends by printing **the node's address,
+http://127.0.0.1:65432**, and **where the docs are**. The README becomes those
+three lines and a picture of what you get.
+
 ## Open
 
 - Whether any of this becomes a product, and when — Andy's.
