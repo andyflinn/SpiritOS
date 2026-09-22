@@ -70,7 +70,7 @@ door — has **the proxy as its whole internet**. Then:
 
 ## The questions, for Andy — all five ruled 2026-09-22 (below)
 
-Each with a recommendation; none decided.
+Each as first written, with its recommendation; the rulings are in the sections that follow, and a struck line stays visible.
 
 1. **Who may use which key?** ~~*Recommended:* a key is granted to an asker —
    an app by name, or a script by its folder — and the node refuses a key
