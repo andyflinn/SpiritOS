@@ -171,8 +171,10 @@ const fsPath = spirit.core.node.util.fsPath;
 // choose. A body that will not parse is not a verb — the handler that
 // would have been chosen is the one that reports that, so this answers
 // empty and lets the dispatch below say "no such verb".
+// Read with NO bound, so the verb is known before the body is judged;
+// the door then holds every verb but net.fetch to BODY_MAX (below).
 function peekVerb(req) {
-  return readJsonBody(req)
+  return readJsonBody(req, { max: Infinity })
     .then(function (body) { return String((body && body.verb) || ''); })
     .catch(function () { return ''; });
 }
@@ -664,7 +666,13 @@ const server = http.createServer((req, res) => {
   }
 
   // Too big is answered once, before any route — see serveCommon.js.
-  if (common.refuseTooBig(req, res)) return;
+  // THE PROXY CARRIES WHAT IT IS GIVEN (2026-09-22). Andy: "no limit on
+  // size for proxy request, yes" — the 17 KB bound is the peer packet's,
+  // and net.fetch inherited it only by sharing this door, which held a
+  // review to four thousand tokens a message. So /api/spirit is read
+  // unbounded and judged once its verb is known (below); every other path
+  // is refused here, before routing, as it always was.
+  if (String(req.url || '').split('?')[0] !== '/api/spirit' && common.refuseTooBig(req, res)) return;
 
   requestCounters.total++;
   requestCounters.byMethod[req.method] = (requestCounters.byMethod[req.method] || 0) + 1;
@@ -895,6 +903,12 @@ const server = http.createServer((req, res) => {
       // still reads the body it was written to read, so a handler moving
       // under this door needs no change of its own.
       peekVerb(req).then(function (verb) {
+        // Every verb but the proxy keeps the packet's bound.
+        if (verb !== 'net.fetch' && common.bodyBytes(req) > require('./limits').BODY_MAX) {
+          res.writeHead(413, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('Body too large: ' + common.bodyBytes(req) + ' of ' + require('./limits').BODY_MAX);
+          return;
+        }
         const run = loopbackVerbs.handlerFor(verb);
         if (!run) {
           res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });

@@ -174,9 +174,14 @@ Each as first written, with its recommendation; the rulings are in the sections 
   imposes without anyone choosing it.
 - **Question 4: the proxy gets no size limits.** Proxied traffic is not
   SpiritOS routing, and a limit shaped for packets would break GETs and
-  downloads. **Whether the door's 17 KB body cap should keep applying to a
-  `net.fetch` request is a separate question, open** — it is the peer
-  packet's bound, inherited because the proxy shares the door (fact 4).
+  downloads. ~~Whether the door's 17 KB body cap should keep applying to a
+  `net.fetch` request is a separate question, open~~ — **decided and built
+  the same day.** Andy: *"no limit on size for proxy request, yes."* The door
+  reads `/api/spirit` unbounded, then holds every verb but `net.fetch` to
+  `BODY_MAX` (`server.js`, `peekVerb`; `serveCommon.js`, `readJsonBody`
+  `opts.max`). **Verify:** `spirit/test/serverSurface.js` — a 100 KB proxy
+  request reaches the far end whole, a 100 KB `fs.save` is still 413;
+  falsified by capping the proxy again.
 
 ### A website not on the list — decided 2026-09-22
 

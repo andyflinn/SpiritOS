@@ -106,6 +106,7 @@ function sendFile(res, filePath) {
 // Memoised on `req` rather than in a table, because the lifetime is
 // exactly the request's and nothing has to remember to clean up.
 const BODY_PROMISE = Symbol('spiritJsonBody');
+const BODY_BYTES = Symbol('bodyBytes');
 
 // ── THE CAP THAT WAS MISSING, AND IT IS THE ONE THAT MATTERS ─────────
 //
@@ -136,8 +137,14 @@ const BODY_PROMISE = Symbol('spiritJsonBody');
 // The socket is DESTROYED rather than left to finish: a request refused
 // for size must not go on arriving, or the refusal costs what it was
 // refusing.
-function readJsonBody(req) {
+// `opts.max` lifts the bound for ONE caller that has decided it may: the
+// node's own door, which reads before it knows the verb and then applies
+// BODY_MAX to every verb but net.fetch (server.js, 2026-09-22). Everybody
+// else reads under BODY_MAX exactly as before. The bytes seen are kept on
+// the request, so the door can judge the body it has already read.
+function readJsonBody(req, opts) {
   if (req[BODY_PROMISE]) return req[BODY_PROMISE];
+  const max = opts && typeof opts.max === 'number' ? opts.max : limits.BODY_MAX;
   const reading = new Promise((resolve, reject) => {
     const tooBig = () => {
       const err = new Error('body too large');
@@ -147,7 +154,7 @@ function readJsonBody(req) {
     };
 
     const declared = Number(req.headers['content-length']);
-    if (Number.isFinite(declared) && declared > limits.BODY_MAX) {
+    if (Number.isFinite(declared) && declared > max) {
       tooBig();
       return;
     }
@@ -158,7 +165,8 @@ function readJsonBody(req) {
       // Bytes, not characters — Content-Length is bytes, and a multi-byte
       // body would otherwise be measured smaller than it arrives.
       seen += Buffer.byteLength(chunk);
-      if (seen > limits.BODY_MAX) {
+      req[BODY_BYTES] = seen;
+      if (seen > max) {
         tooBig();
         return;
       }
@@ -180,6 +188,9 @@ function readJsonBody(req) {
   req[BODY_PROMISE] = reading;
   return reading;
 }
+
+// How many bytes of this request's body were read (0 before any).
+function bodyBytes(req) { return req[BODY_BYTES] || 0; }
 
 // The connection's own address, used only as a rate-limiting bucket key —
 // never as authority for anything. Rate limits used to key on the name in
@@ -298,6 +309,7 @@ function refuseListenError(server, port, entry) {
 }
 
 module.exports = {
+  bodyBytes: bodyBytes,
   verifyStartupCwd: verifyStartupCwd,
   portFromArgs: portFromArgs,
   sendFile: sendFile,

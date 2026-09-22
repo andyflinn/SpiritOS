@@ -122,13 +122,17 @@ function waitForBoot(port) {
 // `delayMs` makes it answer late (case 6: the proxy must not cut it off).
 function startSink(delayMs) {
   return new Promise(function (resolve) {
-    const seen = { headers: null };
+    const seen = { headers: null, bytes: 0 };
     const sink = http.createServer(function (req, res) {
       seen.headers = req.headers;
-      setTimeout(function () {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end('{"ok":true}');
-      }, delayMs || 0);
+      req.on('data', function (c) { seen.bytes += c.length; });
+      // Answered once the whole body is in, so `bytes` is all of it.
+      req.on('end', function () {
+        setTimeout(function () {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end('{"ok":true}');
+        }, delayMs || 0);
+      });
     });
     sink.listen(0, '127.0.0.1', function () {
       resolve({ port: sink.address().port, seen: seen, close: function () { sink.close(); } });
@@ -504,6 +508,26 @@ freePort()
         test.fail('closed key: HTTP ' + r.status + ' ' + r.text.slice(0, 120));
       }
       return verb({ verb: 'proxy.open', key: 'GROK_API_KEY' });
+    }).then(function () {
+      // NO SIZE LIMIT ON WHAT THE PROXY CARRIES (2026-09-22). Andy: "no
+      // limit on size for proxy request, yes". 100 KB — six times the
+      // door's packet bound — goes out whole; every other verb keeps it.
+      quick.seen.bytes = 0;
+      return verb({ verb: 'net.fetch', url: 'http://127.0.0.1:' + quick.port + '/big', method: 'POST',
+        body: { blob: 'x'.repeat(100000) } });
+    }).then(function (r) {
+      if (r.status === 200 && quick.seen.bytes > 100000) {
+        test.check('a 100 KB proxy request goes out whole (' + quick.seen.bytes + ' bytes reached the far end)');
+      } else {
+        test.fail('big proxy request: HTTP ' + r.status + ', far end saw ' + quick.seen.bytes + ' bytes');
+      }
+      return verb({ verb: 'fs.save', path: 'app/natter/too-big.json', content: 'x'.repeat(100000) });
+    }).then(function (r) {
+      if (r.status === 413) {
+        test.check('and any other verb with 100 KB is still refused 413 — the packet bound stands for them');
+      } else {
+        test.fail('a big non-proxy verb was not refused: HTTP ' + r.status);
+      }
     }).then(function () {
       quick.close();
       return startSink(11000);
