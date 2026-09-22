@@ -56,6 +56,35 @@ what `re` was built for.
 
 **`from` is asserted, not proven** — see open item 1.
 
+### What a travelling lead would change here (open, v2)
+
+Andy, 2026-09-23, on the laptop case: *"this might affect the protocol of
+your private agent-spirit-app."* It does, in three places — none of them
+built, all of them small:
+
+1. **Control is one key today.** `AGENTS_CONTROL` in
+   `process/js/agents/agents.js` is a single public key, and *"halt"* /
+   *"resume"* are obeyed because they carry it. A second control identity
+   means a **set** of keys, any of which may stop the network — and a
+   decision about whether a resume from one may undo a halt from another.
+   My reading: yes, they are the same authority wearing two coats, and
+   treating them otherwise builds a way for Andy to lock himself out.
+2. **A lead may need to be named on the wire.** Today the role is
+   whoever Andy is talking to, and nothing carries it. If an agent must
+   *know* it is the lead — to route a digest, or to refuse to act as one
+   — that is a control message like `halt`, signed by a control key, plus
+   the question the halt does not have: **what happens to the previous
+   lead.** Designation that does not supersede leaves two collators.
+3. **Where a digest goes.** `AGENT.md` says it comes to his window,
+   which today means the in-studio Claude's chat. With a lead elsewhere,
+   the digest goes **to the lead**, and the lead answers Andy. That is
+   addressing rather than protocol — unless (2) is built, in which case
+   they arrive together.
+
+**Not proposed as work.** Written down because the laptop case will
+arrive as a Tuesday, not as a project, and these are the three things
+that will be in the way.
+
 ## The app — a process, not a page
 
 One small script under `process/js/agents/`, run by the agent from its
@@ -123,6 +152,35 @@ role is for:
 today. If it ever needs to be a fact on the wire — an agent knowing it is
 the lead, or that it no longer is — that is a protocol question and this
 paragraph is where it starts.
+
+### The travelling lead, which is the case the role is generic for
+
+> **Andy, 2026-09-23:** *"i would want to open my laptops vs-code and
+> designate him lead for the current session. while you two sit at my
+> always-on big-box and are ready to collaborate."*
+>
+> *"the default idle state = listening on your personal node."*
+
+**Most of this works with what exists.** Agents talk node to node through
+the relay, so a laptop agent with its own node and a seat asks the two on
+the big box and collates their answers; nothing needs to know who the
+lead is, because whoever asks receives the replies. The big-box agents
+are reachable because **idle means listening** (`AGENT.md`, *Idle is not
+off*) — that rule is what makes a lead elsewhere possible at all.
+
+**What it needs, both small:** a seat on the relay for the laptop's
+agent node, and each side marking the other as a peer it accepts.
+
+**The open question is the control identity.** *"halt"* and *"resume"* are
+obeyed because they carry **Andy's node key**, which lives on the big box
+(`process/js/agents/agents.js`, `AGENTS_CONTROL`). From a laptop, either
+that identity travels, or the laptop's node is enrolled as a **second
+control identity** the agents also obey, or the stop stays on the big box
+and the travelling lead cannot issue one.
+
+**Recommended, not decided:** a second control identity, enrolled
+deliberately. A key that travels is a key that is lost with a laptop, and
+the stop is the one mechanism whose whole value is that it is his alone.
 
 **The plan for step 1**, agreed by both agents in twenty messages and handed
 to Andy word for word, waited on three rulings of his, all given

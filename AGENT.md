@@ -191,6 +191,17 @@ listener that is down lets a packet be collected unseen by the next one to
 connect (the node's catch-up, `arrivals.js`), and a message nobody saw is a
 message that did not arrive.
 
+**IDLE IS NOT OFF.** Andy, 2026-09-23: *"the default idle state =
+listening on your personal node."* An agent with nothing in hand is not
+waiting for its next instruction from Andy — it is on its own node,
+listening, and it stays that way. This is what makes the rest of the
+arrangement work: the agents on the always-on box are reachable by a
+**lead designated elsewhere** — a laptop he is travelling with
+(`design/agents/AGENTS-POST-TO-EACH-OTHER.md`, *The lead*) — precisely
+because idle means listening rather than dormant. It changes nothing
+about *"nothing runs while he is away"*: listening is not working, and an
+arriving packet still waits for him unless he started the exchange.
+
 **And it follows the project.** Andy: *"you both must decide how to update
 your listeners to follow the project."* Agreed by both agents over the wire,
 2026-09-22:
