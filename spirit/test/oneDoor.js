@@ -147,7 +147,9 @@ const CENSUS = {
   // never calls Grok: it asks its OWN node's door (`net.fetch`), which
   // holds the key and fills it in for api.x.ai only. So it is a client of
   // the loopback door like agents.js, walked and counted, not skipped.
-  'process/js/grokReview/grokReview.js': 1,
+  // 2 since 2026-09-22: require('http') and its one call — Node's fetch cut
+  // the script off from its own node at 300 s while Grok was still thinking.
+  'process/js/grokReview/grokReview.js': 2,
 };
 
 // Not code this project ships or runs in a node: spawned scripts talking

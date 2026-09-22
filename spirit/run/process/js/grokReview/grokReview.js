@@ -95,9 +95,29 @@ const BRIEF = [
 // agents program posts through `peer.post`. The node calls Grok. Counted
 // in oneDoor.js as a granted exception, like agents.js. A suite passes
 // its own function; everything else goes through this line.
+//
+// NOT Node's fetch: its 300-second headers limit cut this script off from
+// its own node while the node was still waiting on Grok at high reasoning
+// (2026-09-22, the second try of the first review). http.request imposes no
+// wait; the node, and Grok, decide how long an answer takes. Answers the
+// part of a fetch Response this file reads: ok, status, text().
 function nodeFetch(node, init, fetchFn) {
   if (typeof fetchFn === 'function') return fetchFn(node + '/api/spirit', init);
-  return fetch(node + '/api/spirit', init);
+  const http = require('http');
+  return new Promise(function (resolve, reject) {
+    const req = http.request(node + '/api/spirit', { method: init.method, headers: init.headers }, function (res) {
+      const chunks = [];
+      res.on('data', function (c) { chunks.push(c); });
+      res.on('end', function () {
+        const text = Buffer.concat(chunks).toString('utf8');
+        resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode,
+          text: function () { return Promise.resolve(text); } });
+      });
+      res.on('error', reject);
+    });
+    req.on('error', reject);
+    req.end(init.body);
+  });
 }
 
 // One call to Grok, made by the node. Answers { ok, status, text } — the
