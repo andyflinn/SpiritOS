@@ -215,6 +215,14 @@ key", whoever made the call.
 
 ## Open
 
+- **For the shell side, when it comes:** a catalogue of outside APIs to
+  research **shell apps that are consoles for external APIs**. Andy: *"i
+  thought of it for somewhere for a catalog of API's and research for things
+  related to shell-spirit-apps who might be consoles for external APIs"* —
+  and not as something to wire in (*"i don't want to use it"*). Found:
+  APIs.guru (~2,500 APIs as machine-readable OpenAPI), public-apis (~1,400
+  free APIs, 50+ categories, a JSON form). Apache Camel (350+ connectors) is
+  Java and a dependency, so no.
 - Whether a browser app should be able to use a paid key at all, or only
   with Andy present.
 - Streaming answers back (a long reply seen as it arrives) — useful to chat,

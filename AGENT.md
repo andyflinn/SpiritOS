@@ -218,3 +218,10 @@ your listeners to follow the project."* Agreed by both agents over the wire,
    checks it before and after the way rule 5 checks its own. It never pulls
    into Andy's checkout for him; a checkout behind `master` is reported, not
    updated. **spirit-3 is not a personal node** and stays Andy's alone.
+   **Narrowed the same day by Andy:** *"the only times the agent should
+   auto-restart my personal node is during critical migrations.... also my
+   real personal node sits here, on windows right now and wsl's is only a
+   test bed for me"*. So: **only for a critical migration** — a fix that
+   closes a hole, like `deb5978` — not after every push; his real personal
+   node is the **Windows** one (labMaster's permanent `work` node, 65432);
+   the WSL node is his test bed, and is left to him.
