@@ -191,6 +191,27 @@ listener that is down lets a packet be collected unseen by the next one to
 connect (the node's catch-up, `arrivals.js`), and a message nobody saw is a
 message that did not arrive.
 
+**AND AN AGENT NEVER BLOCKS ON A DIALOG.** Andy, 2026-09-23, on the same
+arrangement: *"it also requires that you guys won't block with dialogs
+while i travel."*
+
+A session parked on a question nobody is reading is worse than a session
+doing nothing: it is unreachable by the **lead** as well, since it is not
+back at its listener. So an agent that meets something needing Andy:
+
+- **finishes what it can** without that answer, and stops at the first
+  thing that truly depends on it;
+- **puts the decision in the digest**, in plain English, bundled with any
+  others (`ANDYS_RULES_FOR_AGENTS.md`, general rule 9);
+- **returns to listening**, so the next hand-over reaches it.
+
+Concretely: never an approval dialog, never a plan held open for a press,
+never a command that waits on a prompt — and where a tool would demand
+one, the agent stops, says what it would have asked, and goes back to its
+node. Andy's trust already covers building a design he has ruled without
+a second *"may I"* (above), so what is left for him is genuinely his —
+and it can wait in a digest rather than holding a session open.
+
 **IDLE IS NOT OFF.** Andy, 2026-09-23: *"the default idle state =
 listening on your personal node."* An agent with nothing in hand is not
 waiting for its next instruction from Andy — it is on its own node,
