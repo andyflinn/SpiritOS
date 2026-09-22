@@ -16,7 +16,7 @@
 // ── "UNAVAILABLE AS OF", NEVER "DEAD" ────────────────────────────────
 //
 // The word goes stale after QUIET_MS, the same fifteen minutes the relay
-// benches a partner for (R13). After that a node sends as usual, and that
+// benches a partner for (gap R13). After that a node sends as usual, and that
 // send IS the relay's next try: a word that stopped members trying would
 // starve the only thing that ever retries. So it never removes a hint. It
 // only moves a partner said to be unavailable, recently, to the back.

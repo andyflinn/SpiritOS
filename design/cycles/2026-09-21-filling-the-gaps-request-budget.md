@@ -281,7 +281,7 @@ clear.**
 > |---|---|
 > | R31 against `0015` | **before cycle 4** |
 > | R16 against A-CORRESPONDENT-NODE | **before cycle 5** |
-> | R-numbers cited without their cycle | **end of cycle 8** |
+> | R-numbers cited without their cycle | **end of cycle 8** — *decided 2026-09-22, below* |
 
 #### 1. R31 against 0015 — clear, and there is a precedent
 
@@ -349,6 +349,16 @@ are per-cycle and are being cited as though they were global.** Harmless
 today because somebody who knows both can tell; a trap for the session that
 does not. A citation to a requirement needs its cycle, the way a citation
 to a line needs its commit.
+
+**Decided 2026-09-22, at the gate.** Measured first: 18 R-numbers are
+defined by more than one cycle, and 290 citations of them in 84 files name
+no cycle. Andy: *"so you want to institue a reference system for agents,
+and bundle related decision-request to me in english?"* — *"yes."* Two
+rules came of it, both in `ANDYS_RULES_FOR_AGENTS.md`: **general rule 9**
+(Andy gets the decisions, bundled, in plain English, and nothing else) and
+**cycle rule 13** (a requirement is cited with its cycle — `gap R13`).
+`spirit/test/cycleCitations.js` holds the census: a file's count may fall
+and never rise, and the old ones are fixed when their code is touched.
 
 *Superseded by the build — every row in the next paragraph is done; kept as
 the reasoning of the day.*

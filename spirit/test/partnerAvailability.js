@@ -9,7 +9,7 @@
 //   mechanism accepted, as just discussed." (2026-09-22, gap cycle)
 //
 // The relay half, in process with an injected clock:
-//   - a partner benched by R13's rule is announced unavailable, once
+//   - a partner benched by gap R13's rule is announced unavailable, once
 //   - a request FROM that partner revives it and is announced, once
 //   - a stranger cannot revive anything
 // The node half, partnerAvailability.js:

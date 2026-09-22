@@ -35,6 +35,7 @@ A project governed this way carries four kinds of file. Names in brackets are th
 6. Each cycle complies with the decided spec wherever it touches code, even where later cycles haven't built what it depends on. It leaves a marked seam for them instead of a temporary shape. Later cycles fill seams; they retrofit an earlier cycle only when Andy agrees that cycle failed in the design, and the retrofit is recorded as a supersession in that cycle's document. Where the spec is undecided, ask, don't guess.
 7. The agent never asks for approval of a plan while an issue that changes what gets built is unresolved. Before asking, it lists those issues or states there are none; an issue deferred with a recorded reason is not open. If Andy says "not done yet", the agent keeps working the plan and does not ask again until Andy says it's ready or the list is empty.
 8. The agent is allowed to comment on flaws in these general rules.
+9. **Andy gets the decisions, bundled, in plain English — and nothing else.** What only agents need (reference systems, test mechanics, how agents coordinate) is settled between the agents and does not reach Andy as a question. What needs him arrives as one bundle of decisions, each a plain yes/no or a choice between named options, with what it costs and what happens if he says nothing. Andy, 2026-09-22, on a proposal about requirement citations: *"so you want to institue a reference system for agents, and bundle related decision-request to me in english?"* — *"yes."*
 
 ## Andys preferences for  Planning and implementation cycles
 
@@ -96,3 +97,12 @@ read this to see what happens to their findings.
    sharpens 6: build everything that needs no review, and convene one
    sitting for what is left. "Needs a review" says which pile a row is in,
    never that work stops.
+13. **A requirement is cited with its cycle.** Every cycle numbers from R1,
+   so "R16" names a different requirement in different cycles. Write the
+   cycle beside the number — `gap R13`, `governor R2`, or "cycle 3's R5" —
+   the way a line is cited with its commit. This is for agents, not for
+   Andy (general rule 9). `spirit/test/cycleCitations.js` holds a census
+   of the bare ones left from before this rule: a file's count may fall
+   and never rise, and a file not in the census must have none. The old
+   ones are fixed when that code is touched anyway. Decided by Andy
+   2026-09-22, at the end-of-cycle-8 gate the gap cycle set for it.
