@@ -69,6 +69,48 @@ function sealDisc(R) {
 }
 
 function run() {
+  // ── THE CASE chmod CANNOT STAGE, AND THE ONE THAT MATTERS ────────
+  //
+  // wsl-claude, 2026-09-22, having filled a real 1 MB tmpfs in an
+  // unprivileged user namespace: a genuinely full disc says **"database
+  // or disk is full"**, errcode 13 (SQLITE_FULL) — and the first guard,
+  // which matched on the message, missed it. `SQLITE_FULL` and `ENOSPC`
+  // are the NAME of the code, never the text. So the relay still died on
+  // exactly the case Andy asked about.
+  //
+  // A read-only file (below) only ever produces errcode 8, so that half
+  // of this suite proves the half that already worked. This section is
+  // the other half, driven by the codes themselves — which is also what
+  // the guard now reads, so a Node or SQLite upgrade that rewords a
+  // message cannot quietly reopen the hole.
+  test.subHeading('The failures a full disc really produces are recognised by their CODE');
+  [
+    [13, 'database or disk is full', 'SQLITE_FULL — a genuinely full filesystem'],
+    [8, 'attempt to write a readonly database', 'SQLITE_READONLY — the file'],
+    [1544, 'attempt to write a readonly database', 'READONLY_DIRECTORY — no room for the journal'],
+    [10, 'disk I/O error', 'SQLITE_IOERR — the write failed underneath'],
+    [3850, 'disk I/O error', 'an extended IOERR, read as its low byte'],
+    [14, 'unable to open database file', 'SQLITE_CANTOPEN — no handle at all'],
+  ].forEach(function (c) {
+    const e = new Error(c[1]);
+    e.errcode = c[0];
+    if (relayStore.isDiscFailure(e)) {
+      test.check(c[2]);
+    } else {
+      test.fail('errcode ' + c[0] + ' (' + c[1] + ') was not read as a disc failure');
+    }
+  });
+
+  test.subHeading('…and a bug is still a bug');
+  const bug = new TypeError('cannot read properties of undefined');
+  const sqlBug = new Error('no such column: publicKeyy');
+  sqlBug.errcode = 1;
+  if (!relayStore.isDiscFailure(bug) && !relayStore.isDiscFailure(sqlBug)) {
+    test.check('a type error and a bad query are re-thrown — a bug that becomes a polite refusal is never found');
+  } else {
+    test.fail('a bug was swallowed as a disc failure');
+  }
+
   const R = build();
   const bob = member(R, 'bob');
 

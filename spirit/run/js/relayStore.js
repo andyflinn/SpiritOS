@@ -70,6 +70,39 @@ function openReadOnly(rootDir) {
   return build(rootDir, db, null);
 }
 
+// ── WAS THAT THE DISC, OR A BUG? (cycle 9) ──────────────────────────
+//
+// The store owns this question, because the answer is SQLite's and
+// nobody else should be reading its English.
+//
+// FOUND THE HARD WAY. The first guard matched on the message, and
+// wsl-claude then staged a GENUINELY full filesystem — an unprivileged
+// user namespace with a 1 MB tmpfs — and watched it miss: SQLite's
+// sentence for a full disc is **"database or disk is full"**, which
+// contains none of `SQLITE_FULL`, `ENOSPC` or `no space`. Those are the
+// NAME of the code, not the text of the message. So the relay still died
+// on the one case Andy asked about.
+//
+// SO: THE CODE, NOT THE SENTENCE. `node:sqlite` puts `errcode` on the
+// error, and the low byte is the primary result code, with the extended
+// codes above it — which is why a read-only DIRECTORY reports 1544
+// (`READONLY_DIRECTORY`) and must be read as 8.
+//
+//   13  SQLITE_FULL     the disc is full
+//    8  SQLITE_READONLY the file, or the directory the journal needs
+//   10  SQLITE_IOERR    the write failed underneath us
+//   14  SQLITE_CANTOPEN no handle, which a full disc also produces
+//
+// The message test stays as a second line, for a driver that one day
+// reports no code — but it is no longer what this rests on. A match on
+// English drifts with an upgrade; a match on a code does not.
+function isDiscFailure(e) {
+  const code = e && typeof e.errcode === 'number' ? (e.errcode & 0xff) : null;
+  if (code === 13 || code === 8 || code === 10 || code === 14) return true;
+  const said = String((e && e.message) || e);
+  return /database or disk is full|readonly database|attempt to write|disk I\/O|unable to open database|no space|ENOSPC|EROFS|EACCES|EPERM/i.test(said);
+}
+
 // ── COMPACTING, AT A RESTART AND NOWHERE ELSE (cycle 9) ─────────────
 //
 //   Andy, 2026-09-22: "since disc space is such a cheap resource compared
@@ -495,6 +528,7 @@ function closeAll() {
 module.exports = {
   open: open,
   compact: compact,
+  isDiscFailure: isDiscFailure,
   openReadOnly: openReadOnly,
   available: available,
   closeAll: closeAll,

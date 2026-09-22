@@ -83,6 +83,25 @@ This is where i originate the soft-stop."* The standing defaults — ten
 messages an exchange, *"halt"* / *"resume"*, nothing while he is away, a
 plain-words digest — are in `AGENT.md`, *Agents on the network*.
 
+**The lead, named 2026-09-23.** Andy: *"there's the 'lead' agent in your
+agent app, he is responsible for dispatch and parallelization."*
+
+The role had existed in practice since the first exchange — the agent in
+Andy's window takes the work, hands out what belongs elsewhere, and
+brings back one digest — but it was written down nowhere, which is how it
+came to be noticed: closing cycle 9, the lead ran its own brains update
+and only then told the other agent to run his, serialising two
+independent half-hours. Andy: *"it could have been done in
+near-parallel."*
+
+**So, as a role rather than a habit:** the lead is whichever agent holds
+Andy's window. It owns **dispatch** — deciding what the other agents do —
+and **parallelism** — starting that work before, not after, its own. A
+step that applies to both agents goes out first and is done in both trees
+at once; the digest waits for both. It owns nothing else: it is not an
+authority over another agent's tree, it does not approve their work, and
+it cannot spend anything they own.
+
 **The plan for step 1**, agreed by both agents in twenty messages and handed
 to Andy word for word, waited on three rulings of his, all given
 2026-09-22: the one-door exception — *"exception granted"*; step 1 open

@@ -1665,12 +1665,18 @@ function createRelay(rootDir, deps) {
   // NARROW ON PURPOSE. Only the failures a full or read-only disc
   // actually produces are converted; anything else is re-thrown, because
   // a bug that becomes a polite refusal is a bug nobody ever finds.
+  //
+  // WHICH FAILURES THOSE ARE IS THE STORE'S TO SAY (relayStore
+  // isDiscFailure), and it reads SQLite's error CODE rather than its
+  // English — the first version of this guard matched on the message and
+  // missed a real full disc, whose sentence is "database or disk is
+  // full". Found by wsl-claude on a 1 MB tmpfs.
   function guardWrite(what, fn) {
     try {
       return fn();
     } catch (e) {
       var said = String((e && e.message) || e);
-      if (/readonly database|attempt to write|disk I\/O|SQLITE_FULL|SQLITE_IOERR|no space|ENOSPC|EROFS|EACCES|EPERM/i.test(said)) {
+      if (relayStore.isDiscFailure(e)) {
         try { console.error('relay: cannot write its own state (' + what + '): ' + said); } catch (e2) { /* nowhere to say it */ }
         return {
           ok: false,

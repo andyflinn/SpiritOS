@@ -343,10 +343,19 @@ const relay = createRelay.createRelay(undefined, {
     // and a box that will not answer is treated as "will not come back".
     const policy = restartPolicy();
     if (policy !== 'always' && policy !== 'on-success') {
+      // TWO DIFFERENT TRUTHS, AND THEY READ DIFFERENTLY AT 3AM. A policy
+      // that was read says what it said; a miss means no unit answered at
+      // all, and claiming "Restart=unknown" there would put words in
+      // systemd's mouth. wsl-claude, staging the miss by moving a running
+      // relay into a cgroup nothing had loaded: the old sentence "is the
+      // one sentence in that answer that is not true".
       return {
         will: false,
-        why: 'the unit says Restart=' + (policy || 'unknown') + ', which does not bring back a clean ' +
-          'exit — the figures are written; run ./bash/install-units and ./bash/restart to apply them',
+        why: policy
+          ? 'the unit says Restart=' + policy + ', which does not bring back a clean exit — ' +
+            'the figures are written; run ./bash/install-units and ./bash/restart to apply them'
+          : 'no unit by that name is loaded, so nothing is known to bring this relay back — ' +
+            'the figures are written and apply the next time it starts',
       };
     }
     // After the answer has been written to the wire, not before: an owner
