@@ -70,6 +70,32 @@ That is correct and is not a gap: a relay speaks for its own members
 partner relaying a name it was told is second-hand by construction —
 **rank 4** on SHADOW-PEER-LIST's ladder.
 
+### Widened 2026-09-22 — the relay broadcasts all new information
+
+> **Andy:** *"Yes. we let relay broadcast all new info all the time. it
+> fit's our new approach."* — after ruling that a rename rides `route` with
+> the full row: *"They may not know yet that that member even exists. …
+> we don't throw info away (on the node side) just because we don't know
+> what it's good for yet."*
+
+**The relay's half of the node's rule.** A node keeps everything it is told
+(`0021`, and the greedy shadow merge); the relay tells its members
+everything new, as it happens, carried whole on the `route` event — key,
+label, the relay's key and address, present, when. What a node already
+knew costs it nothing to receive twice; what it did not know it could
+not have asked for.
+
+**Two limits it keeps, both already decided:** it stops at the
+partnership (above), and it is **public** information only — never a
+payload (`0006`), never a member list answered on request (`0012`). A
+broadcast of each event as it happens is what `0012` asked for in place of
+the list.
+
+**Cost:** each broadcast is `O(members)`, so the rule holds because the
+events are rare — a claim, a rename, a route proved. The high-rate event,
+presence, was already broadcast. If a frequent event ever joins this list,
+`0013` (a relay's cost per time unit is fixed) is the check to run first.
+
 ---
 
 ## Ruling 2 — presence is last-known, and a stranger's mark comes from traffic
