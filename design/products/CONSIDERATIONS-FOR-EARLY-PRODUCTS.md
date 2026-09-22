@@ -91,6 +91,17 @@ read, and old nodes that still send plain text.
 owner, without anyone taking the operator's word for it. That is what makes a
 shared relay (2) fit for strangers.
 
+**Standard for desktop nodes; the phone is the problem.** Andy: *"this could
+be standard for desktop nodes, the phone-device would be a problem"*. Not the
+maths — a phone browser has X25519 and AES-GCM too — but **where the phone's
+code comes from**: its page is served by the relay. A dishonest relay would not
+need to break the encryption; it could serve the phone a changed page that
+sends the text in the clear. A desktop node's code runs from its own machine,
+so this does not arise there. Ways round it, for later: an installed app on
+the phone, whose code the relay does not serve; or the phone's page served by
+the owner's own node rather than the relay, which works only while the phone
+can reach that node.
+
 ## Open
 
 - Whether any of this becomes a product, and when — Andy's.
