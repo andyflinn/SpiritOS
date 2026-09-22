@@ -50,6 +50,10 @@ This directory contains the vision, principles, and architecture decisions for *
 - [The proxy — `net.fetch`, and the keys it carries](proxy/THE-PROXY.md) —
   **design sitting, opened 2026-09-22.** Who may use which key, where the rules live
   (an intrinsic app, Andy), how long and how big a call may be, and what it cost.
+- [Considerations for early products](products/CONSIDERATIONS-FOR-EARLY-PRODUCTS.md) —
+  **ideas, not plans (2026-09-22).** A VS Code plugin for developers far apart; developers
+  joining spirit.andyflinn.com instead of running a relay; and end-to-end encryption
+  between nodes as the precondition — the relay would carry only sealed text.
 
 ## Spring Cleaning
 - [Morituri Te Salutant — Execution Roadmap](cleanup/MORITURI-TE-SALUTANT.md)
