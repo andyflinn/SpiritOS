@@ -22,7 +22,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 
-const MASTER = 'http://127.0.0.1:65420';
+const MASTER = require('./labMaster/labPaths').MASTER;
 const ANDY_PORT = 65421;
 const ANDY_NAME = 'static-andy';
 const ORIGIN = 'http://127.0.0.1:' + ANDY_PORT;
@@ -139,7 +139,7 @@ Promise.resolve()
   .then(function () { return masterUp(); })
   .then(function (up) {
     if (up) {
-      test.comment('labMaster already on 65420');
+      test.comment('labMaster already on ' + require('./labMaster/labPaths').PORT);
       return;
     }
     test.comment('starting labMaster');

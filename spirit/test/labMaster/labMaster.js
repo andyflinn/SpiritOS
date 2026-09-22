@@ -16,7 +16,12 @@ const path = require('path');
 const os = require('os');
 const { spawn, execSync } = require('child_process');
 
-const MASTER_PORT = 65420;
+// Which labMaster this is, and where its things live: labPaths.js. On the
+// default port it is Andy's; on any other (LAB_MASTER_PORT) it is a
+// HARNESS labMaster — no work row, no live world, its own folders.
+const labPaths = require('./labPaths');
+const MASTER_PORT = labPaths.PORT;
+const HARNESS = labPaths.HARNESS;
 const WORK_PORT = 65432;
 const WORK_ID = 'work';
 const LAB_PORT_MIN = 65400;
@@ -43,7 +48,7 @@ const WORK_HOME = path.join(REPO_ROOT, 'spirit', 'run');
 // between runs, and it must test the WORKING TREE rather than what is
 // published. These two roots answer different questions and sharing one
 // was what made a hand-kept node as disposable as a fixture.
-const LAB_ROOT = path.join(REPO_ROOT, '..', 'lab');
+const LAB_ROOT = labPaths.LAB_ROOT;
 
 // ── AND THE FIXTURE ROOT, WHICH DID NOT MOVE ─────────────────────────
 //
@@ -71,7 +76,7 @@ const LAB_ROOT = path.join(REPO_ROOT, '..', 'lab');
 // written and wants a tree it can throw away; a node somebody keeps
 // should run what is published and never be thrown away at all. Sharing
 // one root is what made the second as disposable as the first.
-const FIXTURE_ROOT = path.join(os.tmpdir(), 'spiritos-relay-fakes');
+const FIXTURE_ROOT = labPaths.FIXTURE_ROOT;
 
 const LAB_KIND = 'lab';
 const FIXTURE_KIND = 'fixture';
@@ -83,7 +88,7 @@ function kindOf(node) {
 function rootFor(kind) {
   return kind === FIXTURE_KIND ? FIXTURE_ROOT : LAB_ROOT;
 }
-const STATE_DIR = path.join(os.tmpdir(), 'spiritos-lab-master');
+const STATE_DIR = labPaths.STATE_DIR;
 const STATE_FILE = path.join(STATE_DIR, 'nodes.json');
 const PANEL_FILE = path.join(__dirname, 'labMastPanel.html');
 
@@ -119,7 +124,10 @@ function loadDesired() {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length) return parsed;
   } catch (e) { /* first run */ }
-  return [workRow()];
+  // A HARNESS labMaster holds no work row: every work row points at 65432,
+  // and stopping one kills whatever holds that port — Andy's own node,
+  // from an agent's code (wsl-claude, 2026-09-22).
+  return HARNESS ? [] : [workRow()];
 }
 
 // Noted on the row and persisted, so a restart of labMaster does not
@@ -151,13 +159,15 @@ function saveDesired(nodes) {
       commit: n.commit || '',
     };
   });
-  if (!desired.some(function (n) { return n.id === WORK_ID; })) {
+  if (!HARNESS && !desired.some(function (n) { return n.id === WORK_ID; })) {
     desired.unshift(workRow());
   }
   fs.writeFileSync(STATE_FILE, JSON.stringify(desired, null, 2));
 }
 
-let nodes = loadDesired().map(function (n) {
+let nodes = loadDesired().filter(function (n) {
+  return !(HARNESS && n.id === WORK_ID);
+}).map(function (n) {
   if (n.id === WORK_ID) {
     return Object.assign(workRow(), { name: n.name || 'work' });
   }
@@ -1291,6 +1301,20 @@ const server = http.createServer(function (req, res) {
 
   if (req.method === 'GET' && pathname === '/api/nodes') {
     sendJson(res, 200, { nodes: nodes.map(publicNode) });
+    return;
+  }
+
+  // WHICH CHECKOUT THIS labMaster COPIES FROM — asked by ensureMaster
+  // before a harness reuses it, so a suite never tests another tree.
+  if (req.method === 'GET' && pathname === '/api/root') {
+    sendJson(res, 200, { root: path.resolve(REPO_ROOT).replace(/\\/g, '/'), port: MASTER_PORT, harness: HARNESS });
+    return;
+  }
+
+  // NO LIVE WORLD FROM A HARNESS labMaster. It reaches spirit-3, and
+  // CLAUDE.md is plain: no labMaster against spirit-3 from an agent.
+  if (HARNESS && pathname === '/api/live-world') {
+    sendJson(res, 403, { error: 'a harness labMaster (port ' + MASTER_PORT + ') has no live world' });
     return;
   }
 

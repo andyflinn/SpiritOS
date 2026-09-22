@@ -26,8 +26,8 @@ const auth = require('../run/js/relayAuth');
 const relayKeys = require('../run/js/relayKeys');
 const buildStamp = require('../run/js/buildStamp');
 
-const MASTER = 'http://127.0.0.1:65420';
-const FAKES_ROOT = path.join(os.tmpdir(), 'spiritos-relay-fakes');
+const MASTER = require('./labMaster/labPaths').MASTER;
+const FAKES_ROOT = require('./labMaster/labPaths').FIXTURE_ROOT;
 const REPO_ROOT = path.join(__dirname, '..', '..');
 
 // Prefixed so they can never be mistaken for — or delete — the nodes Andy

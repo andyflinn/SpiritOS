@@ -44,7 +44,7 @@ const labWorld = require('./labWorld');
 const WORK_RUN = path.join(__dirname, '..', 'run');
 const WORK_PORT = 65432;
 const WORK_URL = 'http://127.0.0.1:' + WORK_PORT;
-const MASTER = 'http://127.0.0.1:65420';
+const MASTER = require('./labMaster/labPaths').MASTER;
 const RELAYS = path.join(WORK_RUN, 'app', 'natter', 'relays.json');
 const BACKUP = path.join(WORK_RUN, 'app', 'natter', 'relays.json.before-lab');
 

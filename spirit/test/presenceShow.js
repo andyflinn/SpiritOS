@@ -40,7 +40,7 @@ const scenarioGrammar = require('./scenario');
 // spirit.andyflinn.com. This file signs with it and never writes it.
 const auth = require('../run/js/relayAuth');
 
-const MASTER = 'http://127.0.0.1:65420';
+const MASTER = require('./labMaster/labPaths').MASTER;
 const WORK_URL = 'http://127.0.0.1:65432';
 const SCENARIOS = path.join(__dirname, 'visual');
 const NAME_PREFIX = 'lab-';
@@ -296,7 +296,7 @@ async function preflight(s) {
 
   const table = await nodes();
   if (!table.length) {
-    console.log('  labMaster is not answering on 65420.');
+    console.log('  labMaster is not answering on ' + require('./labMaster/labPaths').PORT + '.');
     console.log('  Start it:   node spirit/test/labMaster/labMaster.js');
     return false;
   }

@@ -218,7 +218,7 @@ async function run() {
     //
     // No restart needed: ownerBadge.loadRelays reads the file per call.
     const avatarHome = path.join(
-      os.tmpdir(), 'spiritos-relay-fakes', AVATAR_NAME, 'spirit', 'run'
+      require('./labMaster/labPaths').FIXTURE_ROOT, AVATAR_NAME, 'spirit', 'run'
     );
     fs.mkdirSync(path.join(avatarHome, 'app', 'natter'), { recursive: true });
     fs.writeFileSync(
@@ -231,7 +231,7 @@ async function run() {
     // relay.db, as install.js would; the node carries it as `invite` and
     // `inviteLabel`, the fields its claim screen fills.
     const ownerInvite = mintOwnerInvite(path.join(
-      os.tmpdir(), 'spiritos-relay-fakes', RELAY_NAME, 'spirit', 'run'), 'pingandy');
+      require('./labMaster/labPaths').FIXTURE_ROOT, RELAY_NAME, 'spirit', 'run'), 'pingandy');
     const claimed = await hub(AVATAR_PORT, 'POST', '/api/spirit', {
       verb: 'relay.claim', url: 'http://127.0.0.1:' + RELAY_PORT, name: 'ping-andy',
       invite: ownerInvite.token, inviteLabel: 'pingandy',

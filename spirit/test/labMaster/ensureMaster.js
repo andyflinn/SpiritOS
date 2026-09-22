@@ -33,8 +33,11 @@
 const path = require('path');
 const { spawn } = require('child_process');
 
-const MASTER = 'http://127.0.0.1:65420';
-const REPO_ROOT = path.join(__dirname, '..', '..', '..');
+// Which labMaster, and its port: labPaths.js (LAB_MASTER_PORT, default
+// 65420). A clone that must not reuse Andy's sets it, e.g. 45420.
+const labPaths = require('./labPaths');
+const MASTER = labPaths.MASTER;
+const REPO_ROOT = labPaths.REPO_ROOT;
 const SCRIPT = 'spirit/test/labMaster/labMaster.js';
 
 // Long enough for a cold node process on a laptop that is also running
@@ -56,8 +59,44 @@ async function up() {
 
 let spawned = null;
 
+// ── REUSE ONLY A labMaster THAT SERVES THIS CHECKOUT (2026-09-22) ────
+//
+// A fixture is a copy of labMaster's OWN working tree, so a labMaster
+// started from another checkout makes every lab suite test THAT tree —
+// and pass. Found by wsl-claude, whose clone's harness reused Andy's
+// labMaster on WSL. So a running labMaster is asked which checkout it
+// copies from before it is reused: /api/root, or — for a labMaster from
+// before that route — the home of its work row. Anything else fails
+// loudly, naming both, and says how to run a labMaster of one's own.
+function norm(p) { return path.resolve(String(p || '')).replace(/\\/g, '/').toLowerCase(); }
+
+// Through api(), below — one reach for every call this file makes, so
+// oneDoor's census for it does not grow.
+async function servesThisCheckout() {
+  const mine = norm(REPO_ROOT);
+  const root = await api('GET', '/api/root');
+  if (root.status === 200 && root.json && root.json.root) {
+    return { same: norm(root.json.root) === mine, theirs: root.json.root };
+  }
+  const listed = await api('GET', '/api/nodes');
+  const work = ((listed.json && listed.json.nodes) || []).filter(function (n) { return n.id === 'work'; })[0];
+  const theirs = work && work.home ? norm(work.home).replace(/\/spirit\/run$/, '') : '';
+  return { same: !!theirs && theirs === mine, theirs: theirs || '(it will not say which checkout)' };
+}
+
 async function ensure() {
-  if (await up()) return { ok: true, started: false };
+  if (await up()) {
+    const check = await servesThisCheckout();
+    if (!check.same) {
+      return {
+        ok: false,
+        error: 'the labMaster on ' + labPaths.PORT + ' copies from ' + check.theirs +
+          ', not from this checkout (' + norm(REPO_ROOT) + '), so a lab suite here would test the ' +
+          'wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429).',
+      };
+    }
+    return { ok: true, started: false };
+  }
 
   spawned = spawn(process.execPath, [SCRIPT], { cwd: REPO_ROOT, stdio: 'ignore' });
   for (let n = 0; n < TRIES; n += 1) {
@@ -67,7 +106,7 @@ async function ensure() {
   }
   return {
     ok: false,
-    error: 'labMaster did not come up on 65420 after ' +
+    error: 'labMaster did not come up on ' + labPaths.PORT + ' after ' +
       ((TRIES * WAIT_MS) / 1000) + 's',
   };
 }

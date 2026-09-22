@@ -14,7 +14,7 @@ const os = require('os');
 const { execSync } = require('child_process');
 
 const REPO_ROOT = path.join(__dirname, '..', '..');
-const FAKES_ROOT = path.join(os.tmpdir(), 'spiritos-relay-fakes');
+const FAKES_ROOT = require('./labMaster/labPaths').FIXTURE_ROOT;
 const NODE_NAMES = ['relay', 'andy', 'bert'];
 
 function setupRelayFakes() {

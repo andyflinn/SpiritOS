@@ -138,7 +138,7 @@ async function run() {
   // caption claimed is the one under test (labels are not identities, R1).
   const sender = auth.generateIdentity('sender');
   const ownerInvite = mintOwnerInvite(
-    require('path').join(require('os').tmpdir(), 'spiritos-relay-fakes', RELAY_NAME, 'spirit', 'run'), 'sender');
+    require('path').join(require('./labMaster/labPaths').FIXTURE_ROOT, RELAY_NAME, 'spirit', 'run'), 'sender');
   const ordinary = await post('/api/relay/claim', {
     name: '../etc: Andy Flinn 🌱',
     publicKey: sender.publicKey,

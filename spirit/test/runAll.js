@@ -278,7 +278,7 @@ async function main() {
   // A labMaster somebody already had up is theirs: ensure() reports it and
   // stop() leaves it alone. Detected from the source, like `shared`.
   const needsLab = files.some(function (f) {
-    return /ensureMaster|labWorld|127.0.0.1:65420/.test(fs.readFileSync(path.join(DIR, f), 'utf8'));
+    return /ensureMaster|labWorld|labPaths|127.0.0.1:65420/.test(fs.readFileSync(path.join(DIR, f), 'utf8'));
   });
   const lab = require('./labMaster/ensureMaster.js');
   if (needsLab) {

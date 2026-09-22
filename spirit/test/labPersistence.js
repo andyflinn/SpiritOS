@@ -36,7 +36,7 @@ const ORIGIN = 'http://127.0.0.1:' + RELAY_PORT;
 // Where labMaster puts the copies it makes. Read directly, because the
 // point of this suite is what is ON DISK — an answer from the running
 // process would prove memory, not persistence.
-const FAKES_ROOT = path.join(os.tmpdir(), 'spiritos-relay-fakes');
+const FAKES_ROOT = require('./labMaster/labPaths').FIXTURE_ROOT;
 const relayHome = path.join(FAKES_ROOT, RELAY_NAME, 'spirit', 'run');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
