@@ -483,7 +483,20 @@ function handleFsAnnotate(req, res) {
 // secret is scoped by name AND by recipient or it isn't scoped.
 const PROXY_ENV_SUBSTITUTION_ALLOWLIST = [
   { name: 'ANTHROPIC_API_KEY', hosts: ['api.anthropic.com'] },
+  // Andy's Grok key, for agent reviews on a budget he grants
+  // (process/js/grokReview). Andy, 2026-09-22: "this is where the
+  // env-variable proxy-call in node should come in" — "may as well
+  // excercise that aspect of the SpiritOS". The script never holds the
+  // key; this node fills it in, and only for xAI's API.
+  { name: 'GROK_API_KEY', hosts: ['api.x.ai'] },
 ];
+// A SEAM, NOT THE SHAPE. Andy, 2026-09-22: "a instrinisc app will
+// maintain the allow list associated with that part of SpiritOS
+// services." This list is code until that app exists; when it does, the
+// owner keeps the pairs (a secret's name, the hosts it may reach) through
+// it, and this constant goes. Decided, not built — a new persist shape and
+// an owner screen, so a UI session and a review (design/agents/
+// GROK-REVIEWS.md).
 
 function substituteEnvPlaceholders(value, targetHost) {
   if (typeof value !== 'string') return value;

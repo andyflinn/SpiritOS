@@ -43,6 +43,10 @@ This directory contains the vision, principles, and architecture decisions for *
   answers as new posts carrying `re`, both nodes' traffic logs as the record.
   Andy: *"connect through that."* Open: a node per agent, so the signature says
   which agent spoke.
+- [Grok reviews — through the node, on a budget Andy grants](agents/GROK-REVIEWS.md) —
+  **decided and built, 2026-09-22.** A review is agent work; Andy gets decisions.
+  A thread per review with a message cap in his words; the node holds the key
+  and fills it in for `api.x.ai` only; exact cost recorded per message.
 
 ## Spring Cleaning
 - [Morituri Te Salutant — Execution Roadmap](cleanup/MORITURI-TE-SALUTANT.md)

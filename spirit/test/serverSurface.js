@@ -37,6 +37,8 @@ const { setupRelayFakes } = require('./setupRelayFakes');
 
 const KEY_SENTINEL = 'SENTINEL-PRIVATE-KEY-must-never-be-served';
 const ENV_KEY_SENTINEL = 'SENTINEL-API-KEY-must-never-leave-the-box';
+// Andy's Grok key, allowlisted for api.x.ai only (grokReview, 2026-09-22).
+const GROK_KEY_SENTINEL = 'SENTINEL-GROK-KEY-must-never-leave-the-box';
 const BOOT_TIMEOUT_MS = 10000;
 
 test.startTest('Server request surface (server.js over real HTTP)');
@@ -180,7 +182,7 @@ freePort()
   .then(function (port) {
     child = spawn(process.execPath, ['js/server.js', '--port', String(port)], {
       cwd: nodeRoot,
-      env: Object.assign({}, process.env, { ANTHROPIC_API_KEY: ENV_KEY_SENTINEL }),
+      env: Object.assign({}, process.env, { ANTHROPIC_API_KEY: ENV_KEY_SENTINEL, GROK_API_KEY: GROK_KEY_SENTINEL }),
       stdio: ['ignore', 'ignore', 'pipe'],
     });
     child.stderr.on('data', function (chunk) {
@@ -312,7 +314,28 @@ freePort()
         } else {
           test.check('and did not send the real key (sent ' + JSON.stringify(received) + ')');
         }
-        return port;
+
+        // THE GROK KEY, THE SAME WAY (2026-09-22). A second name on the
+        // allowlist is a second secret that must not reach a host it is
+        // not paired with; the sink here is not api.x.ai.
+        s.seen.headers = null;
+        return request(port, 'POST', '/api/spirit', {
+          verb: 'net.fetch',
+          url: 'http://127.0.0.1:' + s.port + '/v1/responses',
+          method: 'POST',
+          headers: { Authorization: 'Bearer ${ENV:GROK_API_KEY}' },
+          body: { hello: 'world' },
+        }).then(function () {
+          const auth = (s.seen.headers && s.seen.headers.authorization) || '';
+          if (!s.seen.headers) {
+            test.fail('net.fetch never reached the sink for the Grok case, so it proves nothing' + lastWords());
+          } else if (auth.indexOf(GROK_KEY_SENTINEL) !== -1) {
+            test.fail('net.fetch sent the real GROK_API_KEY to a host that is not api.x.ai');
+          } else {
+            test.check('and withheld the Grok key from a host that is not api.x.ai (sent ' + JSON.stringify(auth) + ')');
+          }
+          return port;
+        });
       });
     });
   })

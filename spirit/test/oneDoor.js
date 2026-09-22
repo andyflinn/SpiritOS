@@ -137,6 +137,17 @@ const CENSUS = {
   // the skip would have made the skip the category meaning unlimited. So
   // its folder is walked, and its one reach is counted like any other.
   'process/js/agents/agents.js': 1,
+
+  // ── THE GROK REVIEW PROGRAM — THE SAME KIND OF EXCEPTION ──────────────
+  //
+  //   Andy, 2026-09-22: "this is where the env-variable proxy-call in node
+  //   should come in" — "may as well excercise that aspect of the SpiritOS"
+  //
+  // It looks like a third-party script — it reviews with Grok — but it
+  // never calls Grok: it asks its OWN node's door (`net.fetch`), which
+  // holds the key and fills it in for api.x.ai only. So it is a client of
+  // the loopback door like agents.js, walked and counted, not skipped.
+  'process/js/grokReview/grokReview.js': 1,
 };
 
 // Not code this project ships or runs in a node: spawned scripts talking
@@ -173,8 +184,9 @@ test.startTest('One door — every file, always');
 const files = walk(path.join(SPIRIT, 'run', 'js'), 'js/', [])
   .concat(walk(path.join(SPIRIT, 'run', 'app'), 'app/', []))
   .concat(walk(path.join(SPIRIT, 'test'), 'test/', []))
-  // The one folder of process/ that is walked: the granted exception above.
-  .concat(walk(path.join(SPIRIT, 'run', 'process', 'js', 'agents'), 'process/js/agents/', []));
+  // The folders of process/ that are walked: the granted exceptions above.
+  .concat(walk(path.join(SPIRIT, 'run', 'process', 'js', 'agents'), 'process/js/agents/', []))
+  .concat(walk(path.join(SPIRIT, 'run', 'process', 'js', 'grokReview'), 'process/js/grokReview/', []));
 
 // ── 1. NOBODY OUTSIDE THE CENSUS TOUCHES THE WIRE ──────────────────────
 test.subHeading('A file not in the census reaches for nothing');
