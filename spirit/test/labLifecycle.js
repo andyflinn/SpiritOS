@@ -156,6 +156,46 @@ async function run() {
     test.fail('the relay never answered /api/relay/key on ' + RELAY_PORT);
   }
 
+  // ── A LAB RELAY TAKES THE MINIMUM (cycle 9, R12) ───────────────────
+  //
+  //   Andy, 2026-09-22: "labMaster, by default must configure its local
+  //   relays to the minimum. We never default to more than 256 MB."
+  //
+  // Left to measure for itself, a fixture would size against the machine
+  // somebody's editor, models and this harness are on. labMaster writes
+  // the smallest honest figure instead, and — the half that matters —
+  // never writes over one that is already there.
+  {
+    const fs2 = require('fs');
+    const path2 = require('path');
+    const cfgPath = path2.join(require('./labMaster/labPaths').FIXTURE_ROOT, RELAY_NAME,
+      'spirit', 'run', 'relay-state', 'config.json');
+    let cfg = null;
+    try { cfg = JSON.parse(fs2.readFileSync(cfgPath, 'utf8')); } catch (e) { cfg = null; }
+    if (cfg && cfg.ramLimitMB === 1 && cfg.discLimitMB === 1) {
+      test.check('and it was planted at 1 MB / 1 MB — a fixture does not size itself against this box');
+    } else {
+      test.fail('a planted relay carried: ' + JSON.stringify(cfg));
+    }
+
+    // An owner's own figure survives a restart through labMaster.
+    fs2.writeFileSync(cfgPath, JSON.stringify({ ramLimitMB: 7, discLimitMB: 7 }, null, 2) + '\n');
+    await lab.api('POST', '/api/nodes/' + RELAY_NAME + '/stop', {});
+    await lab.api('POST', '/api/nodes/' + RELAY_NAME + '/start', {});
+    let kept = null;
+    try { kept = JSON.parse(fs2.readFileSync(cfgPath, 'utf8')); } catch (e) { kept = null; }
+    if (kept && kept.ramLimitMB === 7) {
+      test.check('and a figure somebody set by hand is not overwritten by a start');
+    } else {
+      test.fail('labMaster overwrote a configured relay: ' + JSON.stringify(kept));
+    }
+    // Waited out before anything below asks about this relay: a start is
+    // an answer from labMaster, not a listening socket, which is the
+    // distinction this suite exists to keep.
+    try { await waitUntil(function () { return serving(RELAY_PORT); }, 10000, 'relay back on ' + RELAY_PORT); }
+    catch (e) { test.fail('the relay did not come back after the restart: ' + e.message); }
+  }
+
   // ── A NODE THAT CLAIMS AFTER BOOT MUST CONNECT ─────────────────────
   //
   //   Andy: "now i have a new 'Jazzy Alexandra' and she's bound to

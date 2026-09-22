@@ -24,6 +24,26 @@
 //     by port, so two labMasters never write each other's files.
 //   - ensureMaster checks a running labMaster serves THIS checkout before
 //     reusing it, and fails loudly, naming both, when it does not.
+//
+// ── AND A RUNNING labMaster CARRIES THE CODE IT STARTED WITH ────────
+//
+// Found in cycle 9: the default labMaster is long-lived — Andy's start
+// script brings it up when a session opens and it stays up for days — so
+// it holds whatever `labMaster.js` said at the moment it launched. Change
+// how a lab node is PLANTED and the suites will still see the old
+// behaviour, because the process doing the planting never re-read its own
+// file.
+//
+// The checkout guard above does not catch this: it asks WHICH checkout,
+// not WHICH VERSION of it, and the answer is the right checkout either
+// way. It cost a red that looked like a broken feature and was a stale
+// process.
+//
+// So: after changing labMaster itself, run the lab suites with
+// LAB_MASTER_PORT set. A harness labMaster is spawned fresh and dies with
+// the run, which is exactly the property that makes it trustworthy here —
+// and it leaves Andy's own labMaster, and the work node it holds,
+// untouched.
 
 const path = require('path');
 const os = require('os');

@@ -133,6 +133,16 @@ This directory contains the vision, principles, and architecture decisions for *
   amended), and a relay with members but no owner refuses to start (exit 78,
   reported by `bash/restart` and `bash/update`). `open` mode, pending-owner and
   the Procfile are gone.
+- [2026-09-22 — a relay bounded by its disc, and set over the wire](cycles/2026-09-22-relay-bounds-cycle-9.md)
+  — **BUILT.** No relay runs on an implicit figure: the default is half the
+  box capped at 256 MB, the ceiling is what the box can *give* at startup
+  minus a margin, and a first start writes the file it measured.
+  `discLimitMB` bounds the roll; a claim past it is refused and nobody is
+  evicted. The owner reads and sets both figures from his own node — a
+  signed packet, no new door — and may ask for the restart that applies
+  them, which checks systemd's actual policy before promising. Verified on
+  Linux against real cgroup caps. Left open: applying it to the two live
+  relays, lab first, since they share a box.
 - `spirit/test/cycleRequirements.js` goes red if any requirement has neither a
   verification that exists nor a recorded deferral.
 
