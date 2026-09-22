@@ -168,27 +168,44 @@ async function run() {
     }
   }
 
-  test.subHeading('A halt handed over late is not obeyed as new');
+  test.subHeading('A halt handed over again is not obeyed again — and the clock decides nothing');
 
   {
     // The node holds packets that arrived while nobody listened and hands
     // them to the next listener. A halt Andy already lifted, replayed on a
-    // restart, must not stop the agent again. Found by wsl-claude.
+    // restart, must not stop the agent again. Found by wsl-claude — who
+    // then found that telling a replay by its TIME breaks the stop itself
+    // when a clock steps back, so a replay is now known by its id.
     const H = home();
     const cfg = cfgFor(H);
-    agents.obeyControl(cfg, CONTROL, agents.makeEnvelope('andy', 'halt', ''), '2026-09-22T01:00:00.000Z');
+    const halt = agents.makeEnvelope('andy', 'halt', '');
+    agents.obeyControl(cfg, CONTROL, halt, '2026-09-22T01:00:00.000Z');
     agents.obeyControl(cfg, CONTROL, agents.makeEnvelope('andy', 'resume', ''), '2026-09-22T01:05:00.000Z');
-    const replayed = agents.obeyControl(cfg, CONTROL, agents.makeEnvelope('andy', 'halt', ''), '2026-09-22T01:00:00.000Z');
+    const replayed = agents.obeyControl(cfg, CONTROL, halt, '2026-09-22T01:00:00.000Z');
     if (replayed === 'stale' && !agents.halted(cfg)) {
-      test.check('a halt older than the resume already applied is reported stale, and the agent keeps running');
+      test.check('the same halt handed over again after a resume is reported stale, and the agent keeps running');
     } else {
       test.fail('replayed halt: ' + replayed + ', halted: ' + JSON.stringify(agents.halted(cfg)));
     }
-    const fresh = agents.obeyControl(cfg, CONTROL, agents.makeEnvelope('andy', 'halt', ''), '2026-09-22T01:10:00.000Z');
-    if (fresh === 'halted' && agents.halted(cfg)) {
-      test.check('and a halt newer than it is obeyed as usual');
+
+    // THE CLOCK STEPPED BACK: a new halt carrying an EARLIER time than the
+    // resume. Under the old rule it was "stale" and the agent ran on after
+    // Andy stopped it. It is a new message, so it is obeyed.
+    const behind = agents.obeyControl(cfg, CONTROL, agents.makeEnvelope('andy', 'halt', ''), '2026-09-22T00:30:00.000Z');
+    if (behind === 'halted' && agents.halted(cfg)) {
+      test.check('a new halt whose clock reads EARLIER than the last resume still stops the agent');
     } else {
-      test.fail('fresh halt: ' + fresh);
+      test.fail('a new halt with an earlier time was not obeyed: ' + behind);
+    }
+
+    // SAME MILLISECOND: the flake wsl-claude saw on Linux.
+    const same = '2026-09-22T02:00:00.000Z';
+    agents.obeyControl(cfg, CONTROL, agents.makeEnvelope('andy', 'halt', ''), same);
+    const resumed = agents.obeyControl(cfg, CONTROL, agents.makeEnvelope('andy', 'resume', ''), same);
+    if (resumed === 'resumed' && !agents.halted(cfg)) {
+      test.check('a halt and a resume in the same millisecond are both obeyed, in the order they arrive');
+    } else {
+      test.fail('same-millisecond resume: ' + resumed);
     }
   }
 

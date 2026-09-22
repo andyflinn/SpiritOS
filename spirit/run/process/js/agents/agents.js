@@ -100,19 +100,33 @@ function halted(cfg) {
   try { return JSON.parse(fs.readFileSync(haltPath(cfg), 'utf8')); } catch (e) { return null; }
 }
 
-// ── ONLY THE NEWEST CONTROL MESSAGE COUNTS ──────────────────────────────
+// ── A CONTROL MESSAGE IS OBEYED ONCE, AND A REPLAY IS KNOWN BY ITS ID ───
 //
 // The node holds a packet that arrived while nobody listened and hands it
 // to the next listener (arrivals.js) — the catch-up is right, a message
 // sent while a listener was down must not be lost. But a halt or resume
-// handed over late is OLD news, and obeying it as new would let a restart
+// handed over AGAIN is old news, and obeying it as new would let a restart
 // re-halt on a halt Andy already lifted. Found by wsl-claude over this
-// channel, 2026-09-22. So the time of the last one applied is kept, and a
-// control message no newer than it is reported 'stale' and not obeyed.
+// channel, 2026-09-22.
+//
+// NOT BY THE CLOCK. This compared the message's time with the last one
+// applied, and wsl-claude found the flaw the same day: two messages in one
+// millisecond made a resume "stale", and a clock that steps BACK (NTP, a
+// WSL resume) would make a LATER halt look older and be ignored — the
+// agent running on after Andy stopped it. Andy's stop must not depend on
+// two clocks agreeing. So the envelope's own id is the test: the ids of
+// the control messages applied are kept (the newest CONTROL_MEMORY), a
+// seen id is a replay and reported 'stale', and every new one is obeyed
+// in the order it arrives.
+var CONTROL_MEMORY = 256;
+
 function controlPath(cfg) { return path.join(cfg.root, 'relay-state', 'agents-control.json'); }
 
-function lastControlAt(cfg) {
-  try { return String(JSON.parse(fs.readFileSync(controlPath(cfg), 'utf8')).at || ''); } catch (e) { return ''; }
+function appliedControlIds(cfg) {
+  try {
+    var ids = JSON.parse(fs.readFileSync(controlPath(cfg), 'utf8')).ids;
+    return Array.isArray(ids) ? ids : [];
+  } catch (e) { return []; }
 }
 
 function obeyControl(cfg, fromKey, env, atIso) {
@@ -121,10 +135,14 @@ function obeyControl(cfg, fromKey, env, atIso) {
   if (kind !== 'halt' && kind !== 'resume') return null;
   if (!cfg.control || fromKey !== cfg.control) return 'ignored';
   const at = atIso || new Date().toISOString();
-  const last = lastControlAt(cfg);
-  if (last && at <= last) return 'stale';
+  const id = typeof env.id === 'string' ? env.id : '';
+  const ids = appliedControlIds(cfg);
+  if (id && ids.indexOf(id) !== -1) return 'stale';
+  if (id) ids.push(id);
   fs.mkdirSync(path.dirname(controlPath(cfg)), { recursive: true });
-  fs.writeFileSync(controlPath(cfg), JSON.stringify({ at: at, kind: kind }));
+  fs.writeFileSync(controlPath(cfg), JSON.stringify({
+    at: at, kind: kind, ids: ids.slice(-CONTROL_MEMORY),
+  }));
   if (kind === 'halt') {
     fs.writeFileSync(haltPath(cfg), JSON.stringify({ at: at, text: env.body.text || '' }));
     return 'halted';
