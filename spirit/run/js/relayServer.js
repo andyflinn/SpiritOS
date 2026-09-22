@@ -833,13 +833,42 @@ common.refuseListenError(server, port, 'js/relayServer.js');
 function restartPolicy() {
   try {
     const cgroup = fs.readFileSync('/proc/self/cgroup', 'utf8');
-    const unit = /([A-Za-z0-9@_.\\-]+\.service)/.exec(cgroup);
-    if (!unit) return null;
-    const out = require('child_process').execFileSync(
-      'systemctl', ['show', '-p', 'Restart', '--value', unit[1]],
-      { encoding: 'utf8', timeout: 2000 }
-    );
-    return String(out || '').trim() || null;
+    // THE LEAF, not the first thing that looks like a unit. A user unit's
+    // path holds two — `user@1000.service` and the unit itself — and the
+    // one that owns this process is the last.
+    const units = String(cgroup).match(/[A-Za-z0-9@_.\\-]+\.service/g);
+    if (!units || !units.length) return null;
+    const unit = units[units.length - 1];
+
+    // ── WHICH MANAGER, AND WHY IT IS NOT ALWAYS THE SYSTEM ONE ──────
+    //
+    // Found by wsl-claude, 2026-09-22, rehearsing the restart on a real
+    // transient unit: the unit was `Restart=always` and this read `no`,
+    // because it asked the SYSTEM manager about a unit only the USER
+    // manager knows. A relay under a user unit could therefore never
+    // restart itself.
+    //
+    // The cgroup path says which: anything under `/user@<uid>.service/`
+    // belongs to that user's manager.
+    const user = /\/user@\d+\.service\//.test(cgroup);
+    const args = (user ? ['--user'] : []).concat(['show', '-p', 'LoadState', '-p', 'Restart', unit]);
+    const out = String(require('child_process').execFileSync('systemctl', args,
+      { encoding: 'utf8', timeout: 2000 }) || '');
+
+    // ── A MISS ANSWERS "no", CONFIDENTLY, AND EXITS 0 ───────────────
+    //
+    // The same finding's second half: `systemctl show -p Restart` for a
+    // unit the manager has never heard of prints `Restart=no` and
+    // succeeds. So a name that misses did not read as "unknown", it read
+    // as "this will not come back" — right by luck — and, worse, a
+    // DIFFERENT unit of that name would have been answered for.
+    //
+    // LoadState is what tells the two apart: only `loaded` means the
+    // manager is talking about this unit.
+    const loaded = /^LoadState=(.*)$/m.exec(out);
+    if (!loaded || loaded[1].trim() !== 'loaded') return null;
+    const restart = /^Restart=(.*)$/m.exec(out);
+    return restart ? restart[1].trim() || null : null;
   } catch (e) {
     return null;
   }

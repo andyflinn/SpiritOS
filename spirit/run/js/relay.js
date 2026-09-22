@@ -1644,9 +1644,50 @@ function createRelay(rootDir, deps) {
   // threading a notification through each one is eleven chances to miss
   // the twelfth somebody adds later. One place, one rule: if the attempt
   // got past the rate gate, the owner hears how it ended.
+  // ── A DISC THAT WILL NOT TAKE A WRITE MUST NOT KILL THE RELAY ──────
+  //
+  //   Andy, 2026-09-22, reading the cycle record: "does the harness test
+  //   disc overflow?"
+  //
+  // It tested a relay over its CONFIGURED figure and not a disc that has
+  // actually run out. Measured the same hour: `node:sqlite` throws
+  // "attempt to write a readonly database" straight out of `mint`, and
+  // the claim route calls into here inside a `.then()`, where a throw is
+  // an unhandled rejection — which on this Node takes the PROCESS down.
+  // So a full disc did not refuse a member, it ended the relay, and
+  // every connected member with it.
+  //
+  // WRITES REFUSE; READS AND ROUTING CARRY ON. A relay that cannot write
+  // can still forward posts, answer searches and hold streams — none of
+  // that touches the store — so the box stays useful while its owner is
+  // told what is wrong, in a sentence naming the disc.
+  //
+  // NARROW ON PURPOSE. Only the failures a full or read-only disc
+  // actually produces are converted; anything else is re-thrown, because
+  // a bug that becomes a polite refusal is a bug nobody ever finds.
+  function guardWrite(what, fn) {
+    try {
+      return fn();
+    } catch (e) {
+      var said = String((e && e.message) || e);
+      if (/readonly database|attempt to write|disk I\/O|SQLITE_FULL|SQLITE_IOERR|no space|ENOSPC|EROFS|EACCES|EPERM/i.test(said)) {
+        try { console.error('relay: cannot write its own state (' + what + '): ' + said); } catch (e2) { /* nowhere to say it */ }
+        return {
+          ok: false,
+          status: 507,
+          error: 'this relay cannot write its own state — its disc may be full or read-only. ' +
+            'It is still forwarding, but it can take nobody new until its owner frees space.',
+        };
+      }
+      throw e;
+    }
+  }
+
   function claim(name, sig, publicKey, clientKey, inviteToken, inviteLabel) {
     var seen = { gate: false, label: '', invite: '' };
-    var out = claimAttempt(name, sig, publicKey, clientKey, inviteToken, inviteLabel, seen);
+    var out = guardWrite('claim', function () {
+      return claimAttempt(name, sig, publicKey, clientKey, inviteToken, inviteLabel, seen);
+    });
     if (seen.gate) {
       ownerEvent(out && out.ok ? 'claim' : 'claim-refused', {
         label: seen.label,
@@ -1749,12 +1790,19 @@ function createRelay(rootDir, deps) {
     if (!owner || !allow.byName[owner]) {
       return { ok: false, status: 403, error: 'not the owner' };
     }
-    var row = invites.add(rootDir, {
-      label: lbl,
-      days: days,
-      token: tok,
-      invitedBy: owner,
+    // THE WRITE, and the one place in this function that can meet a full
+    // disc (guardWrite). A refusal comes back as an answer, not as a
+    // throw through the route that called it.
+    var written = guardWrite('mint', function () {
+      return invites.add(rootDir, {
+        label: lbl,
+        days: days,
+        token: tok,
+        invitedBy: owner,
+      });
     });
+    if (written && written.ok === false) return written;
+    var row = written;
     // A SEAT WAS RESERVED (R2). The first half of the pair a claim notice
     // completes: an owner reading their log should see a reservation made
     // and later spent, and by whom.
@@ -2744,7 +2792,17 @@ function createRelay(rootDir, deps) {
   // ranker does the rest. Same rule as "the ranking is not this file's".
   var MATCH_BUDGET = limits.PAYLOAD_MAX - 512;
 
+  // Every owner verb that writes — minting, renaming, forgetting,
+  // partnering, reconfiguring — goes through here, so the disc guard sits
+  // on the outside once rather than on each of them. A relay whose disc
+  // is full still answers its owner, and the answer says why.
   function answerSelf(hash, text, who) {
+    return guardWrite('owner verb', function () {
+      return answerSelfInner(hash, text, who);
+    });
+  }
+
+  function answerSelfInner(hash, text, who) {
     var asked = null;
     try { asked = JSON.parse(text); }
     catch (e) { asked = null; }

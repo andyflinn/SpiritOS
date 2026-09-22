@@ -205,6 +205,17 @@ define('config-not-written', {
     'that is full or read-only. The running relay is unchanged; this is an ' +
     'SSH problem.',
 });
+define('relay-cannot-write', {
+  status: 507, presence: NONE, retry: 'no', fault: 'target',
+  prefixes: ['this relay cannot write its own state'],
+  note: 'The disc is full or the store is read-only. Measured in cycle 9: ' +
+    'node:sqlite throws out of mint, and the claim route calls in from a ' +
+    'promise, so this used to end the PROCESS. It is now a refusal — the ' +
+    'relay keeps forwarding, holding streams and answering searches, none ' +
+    'of which touch the store, and takes nobody new until its owner frees ' +
+    'space. The sibling of relay-full: that one is the owner\'s configured ' +
+    'figure, this one is the disc itself.',
+});
 define('relay-full', {
   status: 507, presence: NONE, retry: 'no', fault: 'target',
   prefixes: ['this relay is full'],
