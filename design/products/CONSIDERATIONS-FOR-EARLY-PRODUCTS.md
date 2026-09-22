@@ -52,7 +52,9 @@ one — relays partner.
   count, how many are connected, and the fixed allowance from RAM (gap cycle
   8). Missing is only an **early warning** — say when connections pass 70% of
   the allowance — so RAM is added before anyone is turned away. Paying for
-  it: GitHub Sponsors suits this crowd.
+  it: GitHub Sponsors suits this crowd — and when growth outruns that, Andy:
+  *"that's angel-investor-time"*. The member count and its curve, from the
+  relay's own reports, are then the evidence to show.
 
 ## 3. End-to-end encryption between nodes — the precondition for 2
 
