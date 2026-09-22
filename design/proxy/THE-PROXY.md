@@ -22,8 +22,11 @@ rules in an app, not in code.
 > agents, but node-access is."* — *"if i see outragous spending by agents,
 > i then could close the node-gate."*
 
-An agent sandboxed to its node — no web calls of its own, only the loopback
-door — has **the proxy as its whole internet**. Then:
+**A picture of other environments, not this box.** Andy: *"I'm not saying
+that my agents here should ot do their own internet calls, that would slow
+us down unneccessarily"* — here, agents keep their own internet. An agent
+sandboxed to its node — no web calls of its own, only the loopback door —
+would have **the proxy as its whole internet**. There:
 
 - **The list is of websites, with a key only where one is needed** —
   reading GitHub or documentation needs none.
@@ -160,6 +163,14 @@ Each as first written, with its recommendation; the rulings are in the sections 
   downloads. **Whether the door's 17 KB body cap should keep applying to a
   `net.fetch` request is a separate question, open** — it is the peer
   packet's bound, inherited because the proxy shares the door (fact 4).
+
+### A website not on the list — decided 2026-09-22
+
+**Allowed, as today.** Because agents here keep their own internet (above),
+the proxy is not their only way out, so the list governs **keys** — which
+key may go to which website, with which methods — and the owner's **gate**;
+it does not fence websites that need no key. A sandboxed environment would
+want the opposite; that is its own decision when there is one.
 
 ## What bounds the spending, honestly
 
