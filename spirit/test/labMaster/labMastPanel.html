@@ -26,7 +26,7 @@
 </head>
 <body>
   <h1>labMaster</h1>
-  <p>Fixed bookmark: <code>http://localhost:65420</code>. Work node is port 65432 and cannot be deleted.</p>
+  <p>Fixed bookmark: <code>http://127.0.0.1:65420</code>. Work node is port 65432 and cannot be deleted.</p>
   <div>
     <label>Name <input id="new-name" placeholder="andy"></label>
     <label>Type
@@ -229,7 +229,7 @@
             var label = n.name + (n.permanent ? ' <small>permanent</small>' : '') +
               (n.lastError ? ' <small class="row-error">' + n.lastError + '</small>' : '');
             var nameCell = n.running
-            ? '<a href="http://localhost:' + n.port + '" target="_blank" rel="noopener">' + label + '</a>'
+            ? '<a href="http://127.0.0.1:' + n.port + '" target="_blank" rel="noopener">' + label + '</a>'
             : label;
         // Seven cells for seven headings. Count them against the <th>
         // row above before adding one: an earlier version drew `label`

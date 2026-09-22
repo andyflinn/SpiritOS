@@ -140,8 +140,10 @@ if (rock.indexOf('restart') !== -1 && rock.length === 3) {
 // Running column and the toggle gone, the name carries it: a running node
 // links to itself, a stopped one is plain text. Lose that and the table
 // says nothing about which nodes are alive.
-if (/<a href="http:\/\/localhost:65400"[^>]*>jazz/.test(drawn) &&
-    !/<a href="http:\/\/localhost:65405"/.test(drawn)) {
+// 127.0.0.1, not localhost (2026-09-22): the node's own origin, so a click
+// from the panel is not a request from another site.
+if (/<a href="http:\/\/127\.0\.0\.1:65400"[^>]*>jazz/.test(drawn) &&
+    !/<a href="http:\/\/127\.0\.0\.1:65405"/.test(drawn)) {
   test.check('and a running node is a link to itself, which is how you can tell');
 } else {
   test.fail('running is no longer visible on the row');

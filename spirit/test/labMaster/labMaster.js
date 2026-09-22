@@ -1423,7 +1423,7 @@ server.on('error', function (err) {
 });
 
 server.listen(MASTER_PORT, '127.0.0.1', function () {
-  console.log('labMaster http://localhost:' + MASTER_PORT);
+  console.log('labMaster http://127.0.0.1:' + MASTER_PORT);
 });
 
 process.on('exit', function () {

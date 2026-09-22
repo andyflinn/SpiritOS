@@ -411,6 +411,26 @@ freePort()
       } else {
         test.fail('a local script was refused: HTTP ' + r.status);
       }
+      // A LINK CLICKED IN labMaster (127.0.0.1:65420) — same-site, another
+      // port. Opening the node in a tab is not an act (2026-09-22, Andy).
+      return requestAs(port, 'GET', '/', null, {
+        'Sec-Fetch-Site': 'same-site', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Dest': 'document',
+      });
+    }).then(function (r) {
+      if (r.status === 200) {
+        test.check('a link clicked in labMaster’s panel opens the node — a navigation carries no body and reaches no verb');
+      } else {
+        test.fail('a link-click navigation was refused: HTTP ' + r.status);
+      }
+      return requestAs(port, 'POST', '/api/spirit', verb, {
+        'Content-Type': 'text/plain', 'Sec-Fetch-Site': 'same-site', 'Sec-Fetch-Mode': 'navigate',
+      });
+    }).then(function (r) {
+      if (r.status === 403 && /another site/.test(r.text)) {
+        test.check('but a POST that calls itself a navigation is still refused — only GET and HEAD open a tab');
+      } else {
+        test.fail('a POST dressed as navigation ran: HTTP ' + r.status);
+      }
       return port;
     });
   })

@@ -626,7 +626,20 @@ function isValidHost(hostHeader) {
 // passes. Nothing here names an app: it is where a request came from, which
 // the core can know.
 const OWN_ORIGINS = VALID_HOSTS.map(function (h) { return 'http://' + h; });
+// OPENING THE NODE IN A TAB IS NOT AN ACT (2026-09-22). A link clicked in
+// labMaster's panel (127.0.0.1:65420) is "same-site" to this node — ports
+// do not make a site — and was refused along with the attacks. Andy:
+// "labMaster still links to localhost for my nodes, it now must be
+// 127.0.0.1". A top-level navigation (GET, Sec-Fetch-Mode: navigate,
+// which a page cannot forge) carries no body and reaches no verb: the
+// node's GET routes serve its own pages and read-only streams. So it is
+// let through from anywhere, and every other request from another site is
+// still refused.
+function isNavigation(req) {
+  return (req.method === 'GET' || req.method === 'HEAD') && req.headers['sec-fetch-mode'] === 'navigate';
+}
 function fromAnotherSite(req) {
+  if (isNavigation(req)) return false;
   const origin = req.headers.origin;
   if (origin !== undefined && OWN_ORIGINS.indexOf(String(origin).toLowerCase()) === -1) return true;
   const site = req.headers['sec-fetch-site'];
