@@ -1320,7 +1320,9 @@ array and nothing writes it down, so a node restarted mid-wait forgets
 every intent it was holding.
 
 A new persist shape, which `CLAUDE.md` makes a team review rather than a
-patch. `relay-state/relay.db` is the precedent for a node-side store a
+patch. **Ruled by Andy instead, 2026-09-22:** *"make the queue a database"* —
+asked because his earlier waiver named the shadow roll only (found by
+wsl-claude while preparing the review). Out of the review pile. `relay-state/relay.db` is the precedent for a node-side store a
 cycle opened deliberately.
 
 **Two things it must get right**, both of which fall out of R5's rule

@@ -109,9 +109,9 @@ and five suites (`governor`, `governorTwoRelays`, `lever`, `leverVerb`,
   `spirit/run/js/streamSink.js`, `relay.failRoutesOf`, `router.release`. Andy
   ruled it in-file work: *"agreed. this needs only documenting…"*.
 - **R16 — the node's outgoing queue is persisted in `node.db`.** A new storage
-  shape; the cycle file itself says such a thing is a team review, and Andy's
-  recorded waiver names the shadow roll, not the queue. **Andy is asked
-  separately whether his waiver covers it**; if not, it is a fifth item here.
+  shape, which the cycle file says is a team review; Andy's earlier waiver
+  named the shadow roll only. Asked, he ruled it himself, 2026-09-22: *"make
+  the queue a database"*. So it is his decision, shown here, not a question.
 
 ## Not in this round, and why
 
