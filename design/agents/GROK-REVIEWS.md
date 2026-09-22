@@ -33,19 +33,26 @@ two chat windows goes away.
    grants in his words, and the **exact** cost of each message
    (`usage.cost_in_usd_ticks`).
 4. **Pay per use.** API billing is prepaid credits, separate from any Grok
-   subscription; prepaid (not invoiced) is a hard ceiling. Andy started with
-   a $5 budget.
-5. **Never Andy's vault.** A file under `spirit/run/brains/` is refused by
+   subscription. Andy started with a $5 budget. ~~Prepaid (not invoiced) is a
+   hard ceiling.~~ **Corrected 2026-09-22:** it was not — the account had
+   **auto top-up** on, and the first review bought $5 twice (14:15 and 14:22).
+   Andy turned it off the same afternoon, so now the prepaid balance IS the
+   ceiling: what is left is the most that can be lost.
+5. **The first review cost ~25x its estimate.** $6.92 for one message: the web
+   tool re-read the growing context on every step, 4.49M input tokens
+   (`design/reviews/grok/gap-cycle-8/thread.json`). An estimate that prices
+   the reading list once is wrong for an agentic tool loop.
+6. **Never Andy's vault.** A file under `spirit/run/brains/` is refused by
    path before it is read. His brain is his data, behind a stricter fence
    (`AGENT.md`).
-6. **How it reads and thinks.** Andy: *"we do need high reasoning for a good
+7. **How it reads and thinks.** Andy: *"we do need high reasoning for a good
    review, and a good prompt"* — *"we go with the model you suggested"*:
    `grok-4.7`, reasoning `high`. Grok reads the tree itself from GitHub at a
    **pinned, pushed commit**, in the order `OPENING.md` gives (beside the
    script), and its web tool is fenced to `github.com` and
    `raw.githubusercontent.com`. That also takes a review past the node's
    17 KB body limit. The opening says Grok answers **Claude, not Andy**.
-7. **Never a button, never a timer.** There is no launcher manifest beside the
+8. **Never a button, never a timer.** There is no launcher manifest beside the
    script: a paid call is an agent's act on Andy's grant.
 
 ## Decided, not built
