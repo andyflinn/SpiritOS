@@ -57,7 +57,9 @@ one — relays partner.
   relay's own reports, are then the evidence to show. **Where it lives:** Andy —
   *"part of the owner-monitor"*: the monitor already draws the allowance gauge;
   it shows connections against it, warns near 70%, and keeps the member count
-  over time. Screen work, so it joins the UI session's batch.
+  over time. Screen work, so it joins the UI session's batch. **The curve is
+  node-side** — Andy: *"node-side app issue"*: the owner's monitor app keeps
+  the reports it receives and draws from them; the relay stores no history.
 
 ## 3. End-to-end encryption between nodes — the precondition for 2
 
