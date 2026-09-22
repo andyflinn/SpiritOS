@@ -125,6 +125,18 @@ const CENSUS = {
   // and "every file I happened to list".
   'test/labMaster/ensureMaster.js': 2,
   'test/labMaster/labMaster.js': 7,
+
+  // ── THE AGENTS PROGRAM — A GRANTED EXCEPTION ──────────────────────────
+  //
+  //   Andy, 2026-09-22: "exception granted"
+  //
+  // A client of its OWN node's loopback door, as the shell is, so agents
+  // can post to each other node to node (design/agents/). It lives under
+  // process/, which the walk skips as "spawned scripts talking to third
+  // parties" — and this one talks to no third party, so leaving it inside
+  // the skip would have made the skip the category meaning unlimited. So
+  // its folder is walked, and its one reach is counted like any other.
+  'process/js/agents/agents.js': 1,
 };
 
 // Not code this project ships or runs in a node: spawned scripts talking
@@ -160,7 +172,9 @@ test.startTest('One door — every file, always');
 
 const files = walk(path.join(SPIRIT, 'run', 'js'), 'js/', [])
   .concat(walk(path.join(SPIRIT, 'run', 'app'), 'app/', []))
-  .concat(walk(path.join(SPIRIT, 'test'), 'test/', []));
+  .concat(walk(path.join(SPIRIT, 'test'), 'test/', []))
+  // The one folder of process/ that is walked: the granted exception above.
+  .concat(walk(path.join(SPIRIT, 'run', 'process', 'js', 'agents'), 'process/js/agents/', []));
 
 // ── 1. NOBODY OUTSIDE THE CENSUS TOUCHES THE WIRE ──────────────────────
 test.subHeading('A file not in the census reaches for nothing');
