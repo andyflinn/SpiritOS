@@ -94,13 +94,35 @@ and only then told the other agent to run his, serialising two
 independent half-hours. Andy: *"it could have been done in
 near-parallel."*
 
-**So, as a role rather than a habit:** the lead is whichever agent holds
-Andy's window. It owns **dispatch** — deciding what the other agents do —
-and **parallelism** — starting that work before, not after, its own. A
-step that applies to both agents goes out first and is done in both trees
-at once; the digest waits for both. It owns nothing else: it is not an
-authority over another agent's tree, it does not approve their work, and
-it cannot spend anything they own.
+**So, as a role rather than a habit.** Andy, the same day, on what the
+role is for:
+
+> *"one agent talk to me, the others are visible to me, but i prefer the
+> minutia of desipatch and collating responses to my dialog partner the
+> 'lead' agent as i'd call him, this is expressed generically, bucause i
+> might designate the lead to a laptop i'm traveling with"*
+
+- **One agent is his dialogue partner.** He speaks to the lead; the lead
+  answers. The others are **visible** — he can watch them, read them,
+  stop them — but they do not queue for his attention.
+- **The lead owns the minutiae**: dispatch (what the others do), and
+  **collation** (their answers arrive as one digest, not as a stream of
+  reports he has to assemble).
+- **And therefore parallelism**: a step that applies to several agents
+  goes out before the lead does its own half, not after. The serialised
+  half-hours above are what this clause is made of.
+- **The lead is DESIGNATED, not positional.** It is not "whichever agent
+  holds the window" — Andy may name a lead on a laptop he is travelling
+  with, and everything else follows it there. So nothing about the role
+  may assume a particular machine, checkout, operating system or seat:
+  it is a designation he makes and can move.
+- **It owns nothing else.** Not an authority over another agent's tree,
+  not an approver of their work, and it cannot spend anything they own.
+
+**Not built.** The designation lives in how Andy addresses his agents
+today. If it ever needs to be a fact on the wire — an agent knowing it is
+the lead, or that it no longer is — that is a protocol question and this
+paragraph is where it starts.
 
 **The plan for step 1**, agreed by both agents in twenty messages and handed
 to Andy word for word, waited on three rulings of his, all given
