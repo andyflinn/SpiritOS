@@ -222,7 +222,11 @@ function send(cfg, to, kind, text, re, opts) {
   const isControlVerb = kind === 'halt' || kind === 'resume';
 
   const h = halted(cfg);
-  if (h && !isControlVerb) {
+  // HALTED MEANS SILENT — halt and resume included, unless this IS the node
+  // Andy keeps. The exemption was for his node only; as first written it let
+  // a halted agent still post control kinds (harmless, since nobody obeys
+  // them from an agent's key, but not "stops posting"). Found by wsl-claude.
+  if (h && !(isControlVerb && cfg.control && ownKey(cfg) === cfg.control)) {
     return Promise.resolve({ ok: false, halted: true, error: 'halted by Andy at ' + h.at + ' — nothing is sent until he resumes' });
   }
   if (!toKey) return Promise.resolve({ ok: false, error: 'no key for ' + to });

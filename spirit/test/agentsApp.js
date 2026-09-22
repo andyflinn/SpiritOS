@@ -150,6 +150,14 @@ async function run() {
       test.fail('sent while halted: ' + JSON.stringify(r) + ', ' + d.posts.length + ' posts');
     }
 
+    const d2 = door(function () { return null; });
+    const r2 = await agents.send(cfg, 'wsl-claude', 'halt', 'you too', '', { fetch: d2 });
+    if (!r2.ok && r2.halted && d2.posts.length === 0) {
+      test.check('a halted agent cannot send a halt or resume either — silent means silent');
+    } else {
+      test.fail('a halted agent posted a control kind: ' + JSON.stringify(r2));
+    }
+
     agents.obeyControl(cfg, PEER, agents.makeEnvelope('wsl-claude', 'resume', ''));
     const stillHalted = !!agents.halted(cfg);
     agents.obeyControl(cfg, CONTROL, agents.makeEnvelope('andy', 'resume', ''));
