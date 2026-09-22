@@ -271,7 +271,15 @@ async function balance(deps) {
   return JSON.parse(res.text);
 }
 
-module.exports = { balance: balance, start: start, send: send, grant: grant, load: load, statusLine: statusLine,
+// The API counts the prepaid balance in CENTS, and a credit is NEGATIVE:
+// a $5 purchase reads {"total":{"val":"-500"}} (seen live, 2026-09-22).
+function balanceLine(b) {
+  const cents = -Number(b && b.total && b.total.val);
+  if (!isFinite(cents)) return 'balance: unreadable ' + JSON.stringify(b && b.total);
+  return 'prepaid balance left: $' + (cents / 100).toFixed(2);
+}
+
+module.exports = { balance: balance, balanceLine: balanceLine, start: start, send: send, grant: grant, load: load, statusLine: statusLine,
   models: models, refuseVault: refuseVault, TICKS_PER_USD: TICKS_PER_USD, THREADS: THREADS,
   KEY_PLACEHOLDER: KEY_PLACEHOLDER };
 
@@ -292,7 +300,7 @@ if (require.main === module) {
   const name = f._[1];
   (async function () {
     if (cmd === 'models') { (await models()).forEach(function (m) { console.log(m); }); return; }
-    if (cmd === 'balance') { console.log(JSON.stringify(await balance(), null, 2)); return; }
+    if (cmd === 'balance') { console.log(balanceLine(await balance())); return; }
     if (cmd === 'start') { console.log(statusLine(start(THREADS, name, f))); return; }
     if (cmd === 'grant') { console.log(statusLine(grant(THREADS, name, f))); return; }
     if (cmd === 'status') {
@@ -308,6 +316,8 @@ if (require.main === module) {
       const text = arg && fs.existsSync(arg) ? (refuseVault(arg), fs.readFileSync(arg, 'utf8')) : arg;
       const r = await send(THREADS, name, text, f.attach);
       console.log(statusLine(r.thread) + '  (this message: $' + r.costUsd.toFixed(4) + ')');
+      // Best effort: a balance that cannot be read does not undo a reply.
+      try { console.log(balanceLine(await balance())); } catch (e) { console.log('balance not read: ' + e.message); }
       console.log('reply: ' + path.join('design', 'reviews', 'grok', name,
         String(r.thread.rounds.length).padStart(2, '0') + '-grok.md'));
       return;
