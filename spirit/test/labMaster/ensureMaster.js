@@ -194,5 +194,8 @@ async function api(method, pathname, body) {
 // provoked on demand; this predicate can.
 module.exports = {
   ensure: ensure, stop: stop, api: api, MASTER: MASTER, up: up,
+  // For a suite with its own start-up code: is the labMaster that answers
+  // one of THIS checkout's? { same, theirs }.
+  checkout: servesThisCheckout,
   refusedConnect: refusedConnect,
 };

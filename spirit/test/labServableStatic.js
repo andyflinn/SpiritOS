@@ -140,7 +140,11 @@ Promise.resolve()
   .then(function (up) {
     if (up) {
       test.comment('labMaster already on ' + require('./labMaster/labPaths').PORT);
-      return;
+      // NEVER ANOTHER CHECKOUT'S labMaster (2026-09-22): its fixtures are its
+      // own tree, so this suite would test that tree and pass.
+      return require('./labMaster/ensureMaster').checkout().then(function (c) {
+        if (!c.same) throw new Error('the labMaster on ' + require('./labMaster/labPaths').PORT + ' copies from ' + c.theirs + ', not this checkout — run your own: LAB_MASTER_PORT=45420');
+      });
     }
     test.comment('starting labMaster');
     masterChild = spawnMaster();
