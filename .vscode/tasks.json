@@ -3,15 +3,31 @@
   // and personal node for me should occur in one fell swoop when SpiritOS
   // sessions start." Runs when this folder opens (VS Code asks once to allow
   // automatic tasks), and from the Command Palette: "Tasks: Run Task".
+  // One file for both of Andy's checkouts: on Windows it runs the Windows
+  // start script (which also starts the WSL side); opened in WSL, the WSL one.
   "version": "2.0.0",
   "tasks": [
     {
       "label": "SpiritOS: start everything",
       "type": "shell",
-      "command": "powershell",
-      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\platform\\windows\\start-spirit.ps1"],
+      "windows": {
+        "command": "powershell",
+        "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\platform\\windows\\start-spirit.ps1"]
+      },
+      "linux": {
+        "command": "bash",
+        "args": ["${workspaceFolder}/platform/wsl/start-spirit.sh"]
+      },
       "runOptions": { "runOn": "folderOpen" },
       "presentation": { "reveal": "silent", "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      // Andy's own, from his WSL checkout (2026-09-21): Chrome, on the Linux
+      // side, to see the shell there.
+      "label": "chrome",
+      "type": "shell",
+      "command": "google-chrome",
       "problemMatcher": []
     }
   ]
