@@ -58,11 +58,9 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**Two open, eight deferred, three cancelled, twenty-eight done.** Both open
-rows — R13 and R28's hops 2–3 — **have been through the team review**
-(2026-09-22, below), with R36's phase B and **retiring the Governor** beside
-them. **All four came back with a verdict and wait on Andy opening the
-sitting.** **Nothing else stands between this cycle and the review**:
+**One open, eight deferred, three cancelled, twenty-nine done.** Cycle 7 built
+R28 and R36's phase B (2026-09-22). **Left: cycle 8** — R13, and deleting
+the Governor in the shape agreed below; both reviewed, both decided. **Nothing else stands between this cycle and the review**:
 R11 and R14 left the core by Andy's ruling of 2026-09-22, and R9 is
 cancelled — hints carry keys, never URLs.
 
@@ -92,7 +90,7 @@ cancelled — hints carry keys, never URLs.
 | <sub>R33</sub> | <sub>*"mailbox" retired, still in 57 UI comments*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R34</sub> | <sub>*Info shows this node's own disc, cache and RAM*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | <sub>*pairs with R31*</sub> |
 | <sub>R35</sub> | <sub>*a member who has stopped reading is cut loose, and nobody is left waiting on them*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| <sub>R36</sub> | <sub>*what an error means, in one place — relay emitting codes is for the review*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| <sub>R36</sub> | <sub>*what an error means, in one place — and the relay sends the code itself*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R37</sub> | <sub>*every presence mark shows its age*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R38</sub> | <sub>*ignore is a mark, not a forgetting — the list is a mark on the memory*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R39</sub> | <sub>*search fans out to memory too, beside every bound relay*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -105,7 +103,7 @@ cancelled — hints carry keys, never URLs.
 | <sub>R25</sub> | <sub>*a route is learned at every opportunity; policy does not gate it*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R26</sub> | <sub>*the shadow needs a store, and it is a persist shape*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R27</sub> | <sub>*a presence event about a stranger is discarded, and it is a route*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R28** | a label change reaches everybody, at every level | OPEN — **decided 2026-09-22: ride `route` with the full row**, to every member, on rename and claim; not built | **yes** | |
+| <sub>R28</sub> | <sub>*a label change reaches everybody, at every level — ridden on `route`, whole*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R29</sub> | <sub>*the shadow row carries rank and provenance*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R30</sub> | <sub>*presence is last-known, and the shadow dates it — the screen is R37*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R31</sub> | <sub>*the owner caps the cache — the screen is R34*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -2091,7 +2089,7 @@ presence picture.
 
 **Status:** DONE
 
-### R28 — the events that already fire reach one listener
+### R28 — every member hears what is new, whole, on route
 
 > **Andy, in 0012 as corrected (2026-09-18):** *"A route is established and
 > verified — that's a broadcast. **A member is added — broadcast it.**"*
@@ -2176,7 +2174,22 @@ takes it. Grok's verdict is overruled, by Andy, with his reasons — and
 Grok's actual worry, a reconnect, is answered by the code: `onRoute` only
 merges.
 
-**Status:** OPEN — decided, not built.
+**Built, cycle 7.** `relay.announceMember` broadcasts the row on `route` —
+key, label, this relay's key, `present` only when the member is connected,
+and when — from `renameSelf` and from `claim`; `presence.broadcast` takes a
+filter, so partners' streams and the member themself are skipped. The node's
+`onRoute` takes `present` when it is sent. `boundedByTime` counts the new
+per-member cost apart from presence, as its own entry argued from this
+ruling, and fails if any uncounted event grows with membership.
+
+**Verify:** `spirit/test/memberBroadcast.js` — a rename reaches every member
+whole; not the member themself; not a partner, whose stream is proved to be
+open; a claim is announced, and not as present before its stream opens.
+Removing the partner filter or the present guard fails three checks.
+and `spirit/test/boundedByTime.js` — the claim broadcast is one event per
+member, counted as `memberAnnounce`, and nothing uncounted grows.
+
+**Status:** DONE
 
 ### R29 — the shadow row carries rank and provenance
 
@@ -2723,7 +2736,21 @@ catalogued with an agreeing status, presence per failure, markers
 outranking text, prefixes for runtime sentences, the 403/404 exception
 kept honest, and no sentence claimed by two codes.
 
-**Status:** DONE — Phase A. The relay emitting codes is for the review.
+**Phase B, built in cycle 7 after the review** (Grok: *"{ status, error, code
+}. Catalogue is the code. Old nodes still read error. … Do not drop "not now"
+to a code-only body."*). The relay's post and reply refusals carry `code`
+beside `error` (`relayServer.js`), and `deviceRefusal` keeps "not now" with
+`device-not-now` beside it. The node carries the code into its answer
+(`peerPost`), and `classify` takes a code it knows first — one it does not
+know falls through to the sentence, so a newer relay can never make an older
+node misread a refusal.
+
+and `spirit/test/refusalCodes.js` — on a real relay over HTTP, a refused post
+and a refused reply each carry their sentence and their catalogued code; the
+node keeps both; "not now" survives. Removing the code at either end, or the
+code-first rule, fails four checks.
+
+**Status:** DONE — both phases.
 
 ### R37 — every presence mark shows its age
 

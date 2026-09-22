@@ -212,9 +212,13 @@ function createRegistry(opts) {
   // dropped here rather than left to a teardown that may never come —
   // the alternative is a peer reading as present forever, which is the
   // relay lying and the one thing it must not do.
-  function broadcast(event, data) {
+  // `keep(id)`, when given, chooses who hears it — a broadcast that must
+  // stop at the partnership passes one (R28). Without it, everybody does,
+  // as before.
+  function broadcast(event, data, keep) {
     var sent = 0;
     Object.keys(sinks).forEach(function (id) {
+      if (typeof keep === 'function' && !keep(id)) return;
       if (write(sinks[id], event, data)) sent += 1;
       else { delete sinks[id]; delete openedAt[id]; }
     });

@@ -36,6 +36,8 @@ const deviceAuth = require('./deviceAuth');
 const buildStamp = require('./buildStamp');
 const common = require('./serveCommon');
 const streamSink = require('./streamSink');
+// R36 phase B: a refusal carries the catalogue's code beside its sentence.
+const spiritErrors = require('./spiritErrors');
 const readJsonBody = common.readJsonBody;
 const deviceRefusal = common.deviceRefusal;
 
@@ -559,6 +561,11 @@ const server = http.createServer((req, res) => {
           // `busy` is — a whitelist means a new field is invisible until
           // somebody adds it, and that has cost this file twice.
           tooLittleTime: !!result.tooLittleTime,
+          // WHAT IT MEANS, by the catalogue (R36 phase B), BESIDE the
+          // sentence and never instead of it: an older node still reads
+          // `error`. Grok's review: "{ status, error, code } … Keep the
+          // sentence."
+          code: spiritErrors.classify(result.status, result.error, result).code,
         }));
       }).catch(function () {
         res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -573,7 +580,10 @@ const server = http.createServer((req, res) => {
           body && body.from, body && body.hash, body && body.text, body && body.sig
         );
         res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(result.ok ? result : { error: result.error }));
+        res.end(JSON.stringify(result.ok ? result : {
+          error: result.error,
+          code: spiritErrors.classify(result.status, result.error, result).code,
+        }));
       }).catch(function () {
         res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
         res.end('Invalid JSON body');

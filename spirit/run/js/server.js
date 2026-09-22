@@ -1258,6 +1258,10 @@ contactBook.syncMarks(ROOT_DIR);
           at: body.at, url: url, label: body.label || '',
           via: relayKeys.pinned(ROOT_DIR, url) || '',
           rank: require('./seenPeers').PROVED,
+          // THE WHOLE ROW (R28): a relay announcing a claim or a rename says
+          // whether the member is connected right now, and only says so
+          // when it is. Silence leaves what the node knew alone.
+          present: body.present === true ? true : undefined,
         });
       } catch (e) { /* a cache that will not take a row is not a reason to stop listening */ }
 

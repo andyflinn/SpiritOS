@@ -47,14 +47,14 @@
 // which is permanent and meant for a person. The status stays, as
 // transport; the code is what means something.
 //
-// ── WHAT THIS DOES NOT DO YET ────────────────────────────────────────
+// ── THE RELAY SENDS THE CODE NOW (R36 phase B, cycle 7) ──────────────
 //
-// The relay does not SEND codes. It still sends a status and a sentence,
-// so `classify` maps what arrives today back to a code — by marker where
-// one exists, by exact text, by prefix for the few sentences built at
-// runtime. Having the relay emit `code` directly touches its refusal
-// whitelist (relayServer.js), which is a wire change and therefore the
-// review pile, not this file.
+// ~~The relay does not SEND codes.~~ — since cycle 7 it does: every refusal
+// in relayServer.js's whitelist, and deviceRefusal, carries `code` beside
+// `error` (Grok's review: "{ status, error, code } … Keep the sentence").
+// `classify` takes a code it knows as meant, first; a code it does not
+// know — a newer relay's — falls through to the sentence, and so does an
+// older relay that sends none: by marker, by exact text, by prefix.
 //
 // ── THE ONE RULE classify KEEPS ABOVE ALL THE OTHERS ─────────────────
 //
@@ -336,6 +336,11 @@ var UNKNOWN = {
 // prefix, for the few built at runtime. Then nothing.
 function classify(status, text, body) {
   var b = body || {};
+  // THE RELAY'S OWN WORD FIRST (R36 phase B). A code this catalogue knows
+  // is taken as meant; one it does not know falls through to the sentence,
+  // so a newer relay can never make an older node read a refusal as
+  // something it is not.
+  if (typeof b.code === 'string' && BY_CODE[b.code]) return BY_CODE[b.code];
   if (b.busy) return BY_CODE['target-busy'];
   if (b.tooLittleTime) return BY_CODE['no-time-left'];
   if (b.gaveUp) return BY_CODE['gave-up'];

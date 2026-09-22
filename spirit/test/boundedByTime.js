@@ -55,6 +55,13 @@ const ALLOWANCE = {
   // roll doesn't know who the owner is") — the ratchet asked for this.
   census: 136,
   presence: 1,
+  // A NEW ENTRY, ARGUED FOR RATHER THAN DISCOVERED (R28, cycle 7). A claim
+  // is announced to every member on `route`, whole — "a member is added,
+  // broadcast it" (0012, 2026-09-18), built in R28 on Andy's ruling: "we
+  // ride route with the full row" and "we let relay broadcast all new info
+  // all the time" (0019, widened 2026-09-22). One event per member, per
+  // claim: rare by nature, which is the condition 0019 put on the rule.
+  memberAnnounce: 1,
 };
 
 // What each entry is for, printed beside the number so a reader does not
@@ -62,6 +69,7 @@ const ALLOWANCE = {
 const WHAT = {
   census: 'the census — eight callers, all gone. GET /api/relay/who deleted 2026-09-18',
   presence: 'events per presence change — one per member, per change',
+  memberAnnounce: 'route events per claim — one per member, per new member (R28, 0019)',
 };
 
 function sink(bag) {
@@ -148,15 +156,30 @@ function measure(n) {
     return bag;
   });
   const before = bags.reduce(function (t, b) { return t + b.length; }, 0);
+  const presenceBefore = bags.reduce(function (t, b) { return t + b.filter(function (m) { return m.event === 'presence'; }).length; }, 0);
+  const announceBefore = bags.reduce(function (t, b) { return t + b.filter(function (m) { return m.event === 'route'; }).length; }, 0);
   const extra = auth.generateIdentity('late');
   const minted = R.box.mint('owner', 'late', 7, '');
   R.box.claim('late', auth.sign(extra.privateKey, auth.claimMessage('late')),
     extra.publicKey, null, minted.invite.token, 'late');
   R.box.streamOpen(extra.publicKey,
     auth.sign(extra.privateKey, auth.streamMessage(extra.publicKey)), sink([]));
+  // COUNTED APART, because they are two interfaces with two reasons: the
+  // presence broadcast, and the claim announced on route (R28). Lumped, a
+  // new per-member cost could hide inside an old one's number.
+  function count(event) {
+    return bags.reduce(function (t, b) { return t + b.filter(function (m) { return m.event === event; }).length; }, 0);
+  }
   const after = bags.reduce(function (t, b) { return t + b.length; }, 0);
+  const presenceAfter = count('presence');
+  const announceAfter = count('route');
 
-  return { census: census, narrowed: one, presence: after - before };
+  return {
+    census: census, narrowed: one,
+    presence: presenceAfter - presenceBefore,
+    memberAnnounce: announceAfter - announceBefore,
+    other: (after - before) - (presenceAfter - presenceBefore) - (announceAfter - announceBefore),
+  };
 }
 
 test.startTest('A relay is fixed-cost per time-unit (0013), measured');
@@ -173,13 +196,27 @@ Object.keys(ALLOWANCE).forEach(function (k) {
   slope[k] = Math.round(((large[k] - small[k]) / span) * 100) / 100;
 });
 
+// ── 0. NOTHING GROWS THAT HAS NO ENTRY ────────────────────────────────
+//
+// Events of any kind not counted above land in `other`. If THAT grows with
+// membership, a new per-member cost has arrived without an entry — the one
+// thing this suite exists to refuse.
+{
+  const otherSlope = Math.round(((large.other - small.other) / span) * 100) / 100;
+  if (otherSlope <= 0) {
+    test.check('no event outside the allowance grows with membership (other: ' + otherSlope + ' per member)');
+  } else {
+    test.fail('an uncounted event grows with membership: ' + otherSlope + ' per member — give it an entry, argued for');
+  }
+}
+
 // ── 1. THE STANDING REMINDER ─────────────────────────────────────────
 
 test.subHeading('What each interface costs per additional member');
 
 Object.keys(ALLOWANCE).forEach(function (k) {
-  const unit = k === 'presence' ? ' events' : ' bytes';
-  test.check(k.padEnd(9) + slope[k] + unit + ' per member — ' + WHAT[k]);
+  const unit = (k === 'presence' || k === 'memberAnnounce') ? ' events' : ' bytes';
+  test.check(k.padEnd(15) + slope[k] + unit + ' per member — ' + WHAT[k]);
 });
 
 // A relay of a thousand, in the units an owner would actually feel.

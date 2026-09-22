@@ -1282,7 +1282,44 @@ function createRelay(rootDir, deps) {
         why: (out && out.ok) ? '' : String((out && out.error) || ''),
       });
     }
+    // A MEMBER IS ADDED — BROADCAST IT (0012, 2026-09-18; built in R28).
+    if (out && out.ok && out.peer && out.peer.publicKey) {
+      announceMember(out.peer.publicKey, seen.label || out.peer.publicLabel || '');
+    }
     return out;
+  }
+
+  // ── EVERY MEMBER HEARS WHAT IS NEW, AND HEARS ALL OF IT (R28, 0019) ────
+  //
+  //   Andy: "we ride route with the full row." — "They may not know yet
+  //   that that member even exists. … we don't throw info away (on the node
+  //   side) just because we don't know what it's good for yet. And: what
+  //   use is a special message: name updated, when the nodes shadow roll
+  //   has no route yet." — and: "if a sent a note, i may as well put a
+  //   hundred-dollar-bill in the enveloppe, too"
+  //
+  // So a rename or a claim goes out on the `route` event every node already
+  // merges (server.js, onRoute): the member's key, their label, THIS relay's
+  // key as the place they are reached, whether they are connected right
+  // now, and when. A node that never heard of them learns all of it at
+  // once; one that did merges what is new, and the rest costs nothing.
+  //
+  // Grok's review asked for a new event instead, fearing a route would read
+  // as a reconnect; Andy ruled route, and onRoute only merges (2026-09-22).
+  //
+  // IT STOPS AT THE PARTNERSHIP (0019): partners' streams are skipped, and
+  // so is the member themself.
+  function announceMember(key, label) {
+    var k = String(key || '').trim();
+    if (!k) return 0;
+    var row = { key: k, at: mineKey(), label: String(label || ''), seen: new Date().toISOString() };
+    // Present only when it is true. A claim lands before its stream opens,
+    // and a relay that said "present" of somebody it cannot see would be
+    // the one lie this design cannot afford.
+    if (presentNow.isPresent(k)) row.present = true;
+    return presentNow.broadcast('route', row, function (id) {
+      return id !== k && !partnerIdentity(id);
+    });
   }
 
   // Minting is not checkOwner(): that verifies auth.statusMessage(name),
@@ -1788,6 +1825,8 @@ function createRelay(rootDir, deps) {
     // in the census with no record of how it got there is exactly the
     // gap that category exists to close.
     ownerEvent('peer-renamed', { key: who.publicKey, was: was, label: next, cause: cause });
+    // AND EVERY MEMBER HEARS IT (R28), whole — see announceMember.
+    announceMember(who.publicKey, next);
 
     return { ok: true, status: 200, label: next, was: was };
   }

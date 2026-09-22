@@ -201,9 +201,11 @@ function clientKeyFor(req) {
 // The STATUS still varies, and only for the rate limit — 429, which the
 // page waits out rather than gives up on. The STRING never varies
 // (DEVICE-CYCLE3.md).
+// "not now" stays the sentence — Grok's review: "Do not drop "not now" to a
+// code-only body" — and the code rides beside it (R36 phase B).
 function deviceRefusal(res, status) {
   res.writeHead(status || 403, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify({ error: 'not now' }));
+  res.end(JSON.stringify({ error: 'not now', code: 'device-not-now' }));
 }
 
 // ── TOO BIG IS ANSWERED ONCE, HERE, BEFORE ANY ROUTE ─────────────────

@@ -453,6 +453,10 @@ function createPeerPost(opts) {
           // tell apart is a refusal that cannot be acted on. This one
           // means stop, where the others mean wait.
           tooLittleTime: !!(body && body.tooLittleTime),
+          // The relay's own word for what the refusal means (R36 phase B),
+          // when it sends one. An older relay sends none, and the sentence
+          // is classified as before.
+          code: (body && typeof body.code === 'string') ? body.code : undefined,
         });
       })
       .catch(function (e) {
