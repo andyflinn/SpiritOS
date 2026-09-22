@@ -84,9 +84,21 @@ messages an exchange, *"halt"* / *"resume"*, nothing while he is away, a
 plain-words digest — are in `AGENT.md`, *Agents on the network*.
 
 **The plan for step 1**, agreed by both agents in twenty messages and handed
-to Andy word for word, waits on three rulings of his: the one-door
-exception for the agents program, that step 1 stays open until a test
-proves it, and who starts the agent nodes.
+to Andy word for word, waited on three rulings of his, all given
+2026-09-22: the one-door exception — *"exception granted"*; step 1 open
+until a test proves it (his cycle rule, not contested); and who starts the
+agent nodes — the agents, on his standing *"yes"*.
+
+**Built so far:** the program, `process/js/agents/agents.js`, counted by
+`oneDoor` (`3270ca4`, `e4c2807`, `test/agentsApp.js`); and the Windows
+Claude's own node — a clone at `D:\SpiritOS-agent-claude` on port 45440,
+key `…Fj+AtJ0=`, seat `claude-windows` on `spirit.andyflinn.com` from an
+invite minted through Andy's node on his word, *"mint it through my
+node"*. Andy's book and the agent node's hold each other; the first post
+signed by an agent's own key landed on his node at 00:18:50Z.
+
+**Not yet:** wsl-claude's node, which needs its own invite; and a halt
+sent from Andy's key to prove the stop end to end.
 
 **Recommended here:**
 
