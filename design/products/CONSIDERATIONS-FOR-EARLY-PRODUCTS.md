@@ -155,6 +155,24 @@ the owner invite, as today. It ends by printing **the node's address,
 http://127.0.0.1:65432**, and **where the docs are**. The README becomes those
 three lines and a picture of what you get.
 
+**The first hour, after install.** Andy: *"the issue is onboarding to
+spirit.andyflinn.com and then seeking their nerd-buddies and going, i trivial
+sample script for using peerPost and bingo. or install two nodes and check it
+out on one machine..."*
+
+1. **Join spirit.andyflinn.com** — the one real gap: today an invite Andy
+   mints. Self-serve joining is a policy for his relay and touches invite
+   rules already decided in the tree, so it is his call when the time comes.
+2. **Find their friends** — search already does it, by name, across the relay
+   and its partners.
+3. **A trivial script that talks** — the agents program
+   (`spirit/run/process/js/agents/agents.js`) is exactly that: it posts through
+   its own node with `peer.post` and listens for replies. Trimmed, it is the
+   hello-world.
+4. **Or alone: two nodes on one machine** — labMaster already runs several
+   side by side; the installer could offer a "demo" that starts two nodes on
+   two ports and has them greet each other.
+
 ## Open
 
 - Whether any of this becomes a product, and when — Andy's.
