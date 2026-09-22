@@ -347,6 +347,14 @@ This directory contains the vision, principles, and architecture decisions for *
   members — which makes requests-in-flight a lever beside `connections1`
   and `requestTimeout1`, on the same axis and multiplying.
 
+- [The Relay Monitor](relay/RELAY-MONITOR.md) — **for approval, screen work
+  only.** What an owner watches and what he may not touch: the two bounds
+  with `binding` saying which is nearer and the 70% warning against that
+  one; the member curve from the node's own record; a live traffic console
+  filtered at the relay, in the shape of the jobs app's log panel; the
+  configuration readable but not settable. Supersedes §4 of NODE-AND-RELAY,
+  which cycles 8 and 9 made false in four places — recorded there rather
+  than deleted.
 - [A relay governs itself by what it can observe](relay/CAPACITY.md) —
   **first cut, nothing built.** Andy: *"a relay's capacity is primarily
   governed by its own RAM and by its network bandwidth."* If that is true a
