@@ -176,3 +176,23 @@ listener is armed — re-armed the moment it expires, never left down. A
 listener that is down lets a packet be collected unseen by the next one to
 connect (the node's catch-up, `arrivals.js`), and a message nobody saw is a
 message that did not arrive.
+
+**And it follows the project.** Andy: *"you both must decide how to update
+your listeners to follow the project."* Agreed by both agents over the wire,
+2026-09-22:
+
+1. **Every re-arm is an update point.** Before re-arming, the agent runs
+   `git pull --ff-only` in its own clone; if HEAD moved, it restarts its
+   node. Re-arms come every 30 minutes, so no agent node is ever more than
+   half an hour behind `master`.
+2. **A push that touches `spirit/run/js` or `process/js/agents`** is announced
+   to the other agent in a note with the commit, and the other updates at
+   once rather than at its next re-arm.
+3. **Reports carry each node's commit,** so a stale node shows itself in
+   Andy's log.
+4. **Fast-forward only.** An agent's clone never carries local changes; a pull
+   that cannot fast-forward is a finding to report, never a merge.
+5. **A restart is checked before the re-arm** (wsl-claude's amendment). The
+   agent asks its own node for its card; if it does not answer, the agent does
+   not re-arm on a dead door — it stays on the last good commit and tells Andy
+   which commit broke startup. A pull can break a node as easily as fix it.
