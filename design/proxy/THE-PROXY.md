@@ -86,6 +86,36 @@ Each with a recommendation; none decided.
    shows it. Where a service does not, the node counts calls
    and says the cost is unknown — never guesses.
 
+## Decided 2026-09-22 — the shape
+
+> **Andy:** *"since spending may require completely different logic for
+> every external api, that's out of scope for now. immediately concerning
+> to me: a protocol where apps require specific api's/keys outside of
+> SpiritOS or my box. so the proxy manager must allow the node-owner to
+> simply grant access to the proxy api.... this is shell-scope, actually,
+> and on the core-side it's primarily about having a configuration file for
+> allowed key/website combinations and a client api (loopback) that allows
+> that internal list to be maintained. that node-file will be
+> !fileServable() ?"*
+
+- **Question 5 is out of scope.** Each outside API reports (or does not
+  report) cost its own way; no generic cost logic in the core.
+- **Question 2, reshaped by the split:**
+  - **Core:** the allowlist leaves code for a **node file** of allowed
+    key-name / website (/ method) combinations, and **loopback verbs** to
+    read and maintain it. Nothing more.
+  - **Shell:** the proxy manager — an app says which outside APIs and keys
+    it needs, and the owner grants access. That protocol, and the app, are
+    shell scope.
+- **Where the file lives: `relay-state/`**, which answers Andy's question
+  yes — verified at `a83f219`: `fileServable()` refuses all of it
+  (`spirit/run/js/kernel.js:291`), the `fs.*` verbs cannot write it (writable
+  roots are `app/`, `media/`, `published/` and `preferences.json`,
+  `kernel.js:176`, `184`), and git ignores it (`.gitignore:66`). So only the
+  new verbs change it, and an app cannot quietly add "send my key to this
+  site" through the file door. It holds names, websites and methods — the
+  secrets stay in the environment.
+
 ## What bounds the spending, honestly
 
 > **Andy, 2026-09-22:** *"here, in our multi (platform, vscode-instance)
