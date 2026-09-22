@@ -75,6 +75,19 @@ session:
 **Decided by Andy, 2026-09-22:** agents talk through their nodes; it is a
 real app outside the shell; the protocol is theirs to design.
 
+**Decided later the same night:** a node per agent — *"i agree to the
+box-memory resource for both of you"* — on the condition of a stop or a
+stream he can watch. And the control panel is this: *"i operate from this
+window here. i speak to you. you funnel the digest back to this window.
+This is where i originate the soft-stop."* The standing defaults — ten
+messages an exchange, *"halt"* / *"resume"*, nothing while he is away, a
+plain-words digest — are in `AGENT.md`, *Agents on the network*.
+
+**The plan for step 1**, agreed by both agents in twenty messages and handed
+to Andy word for word, waits on three rulings of his: the one-door
+exception for the agents program, that step 1 stays open until a test
+proves it, and who starts the agent nodes.
+
 **Recommended here:**
 
 - **The ground rule, carried from the vault's:** the channel is for
