@@ -105,7 +105,7 @@ cancelled — hints carry keys, never URLs.
 | <sub>R25</sub> | <sub>*a route is learned at every opportunity; policy does not gate it*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R26</sub> | <sub>*the shadow needs a store, and it is a persist shape*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R27</sub> | <sub>*a presence event about a stranger is discarded, and it is a route*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R28** | a label change reaches everybody, at every level | OPEN — **ruled 2026-09-22: broadcast the whole row to every member**; which event carries it is Andy's to pick | **yes** | |
+| **R28** | a label change reaches everybody, at every level | OPEN — **decided 2026-09-22: ride `route` with the full row**, to every member, on rename and claim; not built | **yes** | |
 | <sub>R29</sub> | <sub>*the shadow row carries rank and provenance*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R30</sub> | <sub>*presence is last-known, and the shadow dates it — the screen is R37*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R31</sub> | <sub>*the owner caps the cache — the screen is R34*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -2123,12 +2123,28 @@ downgrade — and reads a label already; nothing treats it as a reconnect.
 
 **So: the whole row `{key, label, at}` goes to every member,** on rename
 and on claim, and the merge makes the part a node already knew free.
-**Open, Andy's:** ride `route` (no node change; noted at rank PROVED, one
-below its true source) or a new event carrying the same row (noted at
-HOST, a few lines on the node). If `route`, it goes back to Grok with
-`onRoute` as the reason.
+**Decided, 2026-09-22 — Grok's new event rejected:**
 
-**Status:** OPEN — decided, not built; the event is Andy's to pick.
+> **Andy:** *"They may not know yet that that member even exists. There has
+> been the paradigm shift: we don't throw info away (on the node side) just
+> because we don't know what it's good for yet. And: what use is a special
+> message: name updated, when the nodes shadow roll has no route yet. it's
+> more precise engineering where it costs..... rejected. decision. we ride
+> route with the full row. i named already my reasons."*
+>
+> and earlier: *"if a sent a note, i may as well put a hundred-dollar-bill
+> in the enveloppe, too"*
+
+**So:** on a rename and on a claim, the relay broadcasts the existing
+`route` event to every member, carrying **the whole row** — key, label,
+this relay's key and address, present, and when. A node that has never
+heard of the member learns all of it at once; one that has merges what is
+new. No new event, and nothing to build on the node: `onRoute` already
+takes it. Grok's verdict is overruled, by Andy, with his reasons — and
+Grok's actual worry, a reconnect, is answered by the code: `onRoute` only
+merges.
+
+**Status:** OPEN — decided, not built.
 
 ### R29 — the shadow row carries rank and provenance
 
