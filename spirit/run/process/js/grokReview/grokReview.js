@@ -58,7 +58,8 @@ const KEY_PLACEHOLDER = '${ENV:GROK_API_KEY}';
 const REPO = path.join(__dirname, '..', '..', '..', '..', '..');
 const THREADS = path.join(REPO, 'design', 'reviews', 'grok');
 const TICKS_PER_USD = 1e10;
-const DEFAULT_MODEL = process.env.GROK_MODEL || 'grok-4';
+// The newest listed on 2026-09-22 (`models`); a thread records its own.
+const DEFAULT_MODEL = process.env.GROK_MODEL || 'grok-4.7';
 // A reasoning model can think for minutes on a large review.
 const CALL_TIMEOUT_MS = 10 * 60 * 1000;
 

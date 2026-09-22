@@ -77,5 +77,6 @@ host but `api.x.ai`; falsified by widening its hosts).
   outbound proxy for apps and now carries a second secret; what it should be
   — who may ask it, for which hosts, how the intrinsic app keeps the
   allowlist, what a call costs and who sees that — is that sitting's.
-- Which model a review uses by default (`grok-4` until `models` says
-  otherwise).
+- Which model a review uses. Default `grok-4.7`, the newest `models` listed on
+  2026-09-22 (the first live call, free, through the node); `--model` overrides
+  it per thread.
