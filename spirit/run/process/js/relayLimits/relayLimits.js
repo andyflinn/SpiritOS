@@ -13,7 +13,11 @@
 //
 //   node process/js/relayLimits/relayLimits.js list
 //   node process/js/relayLimits/relayLimits.js read  [spirit|lab|<url>]
-//   node process/js/relayLimits/relayLimits.js set   [<relay>] --ram 256 --disc 64 [--restart]
+//   node process/js/relayLimits/relayLimits.js set   [<relay>] --ram 256 --disc 64 [--no-restart]
+//
+// `set` RESTARTS THE RELAY, because the figures are read once at boot and
+// because the restart is what returns the process's working set to the
+// box. `--no-restart` writes them and leaves the outage for later.
 //
 // ── WHY A PROGRAM AND NOT A VERB ────────────────────────────────────
 //
@@ -179,15 +183,23 @@ function showSet(relay, a) {
   console.log('  now   ' + mb(a.after.ramLimitMB) + ' RAM, ' + mb(a.after.discLimitMB) + ' disc   (' +
     a.after.allowance.toLocaleString() + ' streams)');
   console.log('');
-  console.log(a.applies === 'next start' ? '  applies at the relay\'s next start' : '  applies: ' + a.applies);
-  if (a.restarting === true) console.log('  restarting now — members were told to come back in 3s');
-  if (a.restarting === false) console.log('  NOT restarting: ' + a.restartRefused);
+  if (a.restarting === true) {
+    console.log('  restarting now — members were told to come back in 3s, and the process');
+    console.log('  hands its working set back to the box on the way out');
+  } else if (a.restarting === false) {
+    console.log('  NOT RESTARTING: ' + a.restartRefused);
+    console.log('  the figures above are written and apply whenever it next starts');
+  } else {
+    console.log('  NOT RESTARTING (--no-restart): nothing changes until it does.');
+    console.log('  the figures above are written and apply whenever it next starts');
+  }
 }
 
 function flags(argv) {
   const out = { _: [] };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === '--restart') { out.restart = true; continue; }
+    if (argv[i] === '--no-restart') { out['no-restart'] = true; continue; }
     if (argv[i].startsWith('--')) { out[argv[i].slice(2)] = argv[i + 1]; i += 1; continue; }
     out._.push(argv[i]);
   }
@@ -230,13 +242,28 @@ async function main() {
     if (ask.ramLimitMB === undefined && ask.discLimitMB === undefined) {
       throw new Error('set what? --ram <MB> and/or --disc <MB>');
     }
-    if (f.restart) ask.restart = true;
+    // ── SETTING RESTARTS, UNLESS TOLD NOT TO ────────────────────────
+    //
+    //   Andy, 2026-09-22: "the reducing configuration should restart the
+    //   relay, exactly to free up that RAM, that's why we do it after
+    //   all, and the restart will have to happen sooner than later."
+    //
+    // The figures apply at the next start (relayConfig reads once at
+    // boot), so a set without one is a change that has not happened yet —
+    // and the restart is also what hands the process's working set back
+    // to the box, which is the point of shrinking a relay at all.
+    //
+    // `--no-restart` is for the case where the owner wants the file
+    // changed now and the outage at a moment of his choosing; the relay
+    // verb itself stays explicit either way, so nothing restarts a box
+    // because a program forgot to say.
+    ask.restart = f['no-restart'] !== true;
     const a = await askRelay(relay, { config: ask });
     if (!a.ok) throw new Error(a.error || JSON.stringify(a));
     return showSet(relay, a);
   }
 
-  console.log('usage: relayLimits.js list | read [<relay>] | set [<relay>] --ram <MB> --disc <MB> [--restart]');
+  console.log('usage: relayLimits.js list | read [<relay>] | set [<relay>] --ram <MB> --disc <MB> [--no-restart]');
   process.exitCode = 1;
 }
 

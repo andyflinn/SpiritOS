@@ -134,6 +134,15 @@ function run() {
       } else {
         test.fail('flags parsed as ' + JSON.stringify(f));
       }
+      // Andy: "the reducing configuration should restart the relay,
+      // exactly to free up that RAM." So a bare `set` asks for one, and
+      // only --no-restart holds it back.
+      const off = tool.flags(['lab', '--ram', '1', '--no-restart']);
+      if (off['no-restart'] === true && off.ram === '1') {
+        test.check('--no-restart is a flag of its own, not a figure');
+      } else {
+        test.fail('--no-restart parsed as ' + JSON.stringify(off));
+      }
       let bad = '';
       try { tool.number('ram', 'lots'); } catch (e) { bad = e.message; }
       if (/positive number of megabytes/.test(bad)) {
