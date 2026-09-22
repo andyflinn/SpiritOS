@@ -44,7 +44,10 @@ const TAGS = ['gap', 'governor', 'hints', 'disc', 'labels', 'transport', 'defenc
 // read as their own cycle's context.
 const ROOTS = ['spirit/run/js', 'spirit/run/app', 'spirit/run/process', 'spirit/test', 'design', 'README'];
 const FILES = ['AGENT.md', 'CLAUDE.md', 'ANDYS_RULES_FOR_AGENTS.md', 'DICTIONARY.md'];
-const SKIP_DIRS = ['node_modules', 'cycles', 'brains', 'relay-state', 'visual'];
+// `grok`: design/reviews/grok/ holds Grok's replies VERBATIM — an outside
+// voice's words are quoted, never corrected, so its citations are not ours
+// to fix (2026-09-22, the first API review).
+const SKIP_DIRS = ['node_modules', 'cycles', 'brains', 'relay-state', 'visual', 'grok'];
 
 // ── THE CENSUS, AS FOUND ON 2026-09-22 ───────────────────────────────
 // file -> bare citations allowed. May only go down.

@@ -331,12 +331,33 @@ async function balance(deps) {
   return JSON.parse(res.text);
 }
 
-// The API counts the prepaid balance in CENTS, and a credit is NEGATIVE:
-// a $5 purchase reads {"total":{"val":"-500"}} (seen live, 2026-09-22).
-function balanceLine(b) {
+// WHAT THE PREPAID ENDPOINT SAYS, AND WHAT IT DOES NOT (corrected
+// 2026-09-22). It lists PURCHASES — in cents, a credit negative: $5 reads
+// {"total":{"val":"-500"}} — and not what was spent. This printed that
+// total as "balance left", which was wrong the moment anything was spent:
+// after the first review it read "$10.00 left" when an auto top-up had
+// bought $5 more and $6.92 was gone. So it says what it knows: what was
+// bought, what THIS program spent (the API's own figure, summed from the
+// thread records), and the most that can be left.
+function spentTicks(root) {
+  let total = 0;
+  try {
+    fs.readdirSync(root).forEach(function (n) {
+      try { total += Number(load(root, n).costTicks) || 0; } catch (e) { /* not a thread */ }
+    });
+  } catch (e) { /* no threads yet */ }
+  return total;
+}
+
+function balanceLine(b, spent) {
   const cents = -Number(b && b.total && b.total.val);
   if (!isFinite(cents)) return 'balance: unreadable ' + JSON.stringify(b && b.total);
-  return 'prepaid balance left: $' + (cents / 100).toFixed(2);
+  const buys = ((b && b.changes) || []).filter(function (c) { return /PURCHASE/.test(String(c.changeOrigin)); }).length;
+  const bought = cents / 100;
+  const used = (Number(spent) || 0) / TICKS_PER_USD;
+  return 'bought $' + bought.toFixed(2) + (buys ? ' (' + buys + ' purchase' + (buys === 1 ? '' : 's') + ')' : '') +
+    '; spent through grokReview $' + used.toFixed(2) +
+    '; at most $' + Math.max(0, bought - used).toFixed(2) + ' left';
 }
 
 module.exports = { balance: balance, balanceLine: balanceLine, start: start, send: send, grant: grant, load: load, statusLine: statusLine,
@@ -360,7 +381,7 @@ if (require.main === module) {
   const name = f._[1];
   (async function () {
     if (cmd === 'models') { (await models()).forEach(function (m) { console.log(m); }); return; }
-    if (cmd === 'balance') { console.log(balanceLine(await balance())); return; }
+    if (cmd === 'balance') { console.log(balanceLine(await balance(), spentTicks(THREADS))); return; }
     if (cmd === 'start') { console.log(statusLine(start(THREADS, name, f))); return; }
     if (cmd === 'grant') { console.log(statusLine(grant(THREADS, name, f))); return; }
     if (cmd === 'status') {
@@ -377,7 +398,7 @@ if (require.main === module) {
       const r = await send(THREADS, name, text, f.attach);
       console.log(statusLine(r.thread) + '  (this message: $' + r.costUsd.toFixed(4) + ')');
       // Best effort: a balance that cannot be read does not undo a reply.
-      try { console.log(balanceLine(await balance())); } catch (e) { console.log('balance not read: ' + e.message); }
+      try { console.log(balanceLine(await balance(), spentTicks(THREADS))); } catch (e) { console.log('balance not read: ' + e.message); }
       console.log('reply: ' + path.join('design', 'reviews', 'grok', name,
         String(r.thread.rounds.length).padStart(2, '0') + '-grok.md'));
       return;

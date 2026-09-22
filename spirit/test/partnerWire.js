@@ -194,6 +194,25 @@ async function run() {
   }
   test.check('both are answering, already partnered from the state on disk');
 
+  // AN OLDER RELAY THAT STILL DIALS IS TOLD WHY, AND TOLD TO STOP. Found by
+  // Grok's review of the gap cycle (2026-09-22): the refusal went out as
+  // the device door's "not now", whose code says retry — so a pre-gap-R13
+  // relay would dial its partner for ever.
+  {
+    const aId = auth.loadIdentity(A.home);
+    const refused = await hub.relayRequest(B.base, 'GET',
+      '/api/relay/stream?key=' + encodeURIComponent(aId.publicKey), null,
+      { 'X-Spirit-Sig': auth.sign(aId.privateKey, auth.streamMessage(aId.publicKey)) });
+    let said = null;
+    try { said = JSON.parse(refused.text); } catch (e) { said = null; }
+    if (refused.status === 403 && said && said.error === 'a partner holds no stream here' &&
+        said.code === 'partner-no-stream') {
+      test.check('a partner that dials hears "a partner holds no stream here", code partner-no-stream — not "not now"');
+    } else {
+      test.fail('partner stream refusal on the wire: HTTP ' + refused.status + ' ' + String(refused.text).slice(0, 160));
+    }
+  }
+
   // NO WAIT FOR A DIAL (R13). There used to be a pause here while each
   // relay opened its partner stream at boot. There is nothing to open:
   // the partnership is usable the moment both are answering.

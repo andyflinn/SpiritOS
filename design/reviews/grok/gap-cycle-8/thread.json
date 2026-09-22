@@ -1,0 +1,49 @@
+{
+  "name": "gap-cycle-8",
+  "goal": "Check the gap cycle's built form since the last review: R28 (every member hears a rename or claim, whole, on route), R36 phase B (a refusal carries a catalogue code beside its sentence), the Governor's deletion (a fixed allowance from the owner's RAM, read-only gauges, a full status report on every owner event), R13 (no streams between partners; the answer is the response to the post; liveness is the last answer, 15 minutes, then one try), and two things no reviewer has seen: R42 (a partner's availability broadcast when it changes, revived by either side) and the agents program's halt, now recognised as a replay by its id rather than by the clock.",
+  "model": "grok-4.7",
+  "reasoning": "high",
+  "domains": [
+    "github.com",
+    "raw.githubusercontent.com"
+  ],
+  "commit": "a83f219d4767df40c07338c0128f61d6a6c25e1d",
+  "since": "566fa4c",
+  "pieces": [
+    "https://github.com/andyflinn/SpiritOS/compare/566fa4c...a83f219d4767df40c07338c0128f61d6a6c25e1d.diff (the whole change — read this first)",
+    "spirit/run/js/partnerAvailability.js",
+    "spirit/run/process/js/agents/agents.js",
+    "spirit/run/js/relay.js (only the functions the diff touches)"
+  ],
+  "cap": 4,
+  "grants": [
+    {
+      "cap": 4,
+      "words": "review, 4 messages",
+      "at": "2026-09-22T11:03:50.283Z"
+    }
+  ],
+  "used": 1,
+  "costTicks": 69154840000,
+  "lastResponseId": "597e012b-d34f-94fd-ae2f-6ba69ea5d020",
+  "rounds": [
+    {
+      "n": 1,
+      "at": "2026-09-22T11:08:59.614Z",
+      "ok": false,
+      "status": 502,
+      "costTicks": 0,
+      "error": "proxy target unreachable"
+    },
+    {
+      "n": 2,
+      "at": "2026-09-22T12:22:10.852Z",
+      "ok": true,
+      "responseId": "597e012b-d34f-94fd-ae2f-6ba69ea5d020",
+      "inputTokens": 4486052,
+      "outputTokens": 31895,
+      "cachedTokens": 3935488,
+      "costTicks": 69154840000
+    }
+  ]
+}

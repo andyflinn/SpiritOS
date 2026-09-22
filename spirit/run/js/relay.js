@@ -921,13 +921,20 @@ function createRelay(rootDir, deps) {
 
   function partnerMissed(relayKey) {
     if (!relayKey) return;
-    partnerMissedAt[relayKey] = clock();
-    // UNAVAILABLE, AND SAID SO (R42) — at the moment it is benched: it was
-    // quiet past PARTNER_QUIET_MS and its one try just failed. A failure
-    // inside the window is not a change and says nothing.
-    if (partnerSaidDown[relayKey]) return;
     var row = null;
     try { row = store.partners.get(relayKey); } catch (e) { row = null; }
+    // A MISS WHILE IT IS STILL LIVE IS NOT RECORDED (found by Grok's
+    // review of the gap cycle, 2026-09-22). It was stamped regardless, so
+    // the moment the last answer aged past PARTNER_QUIET_MS that old miss
+    // benched the partner — with no post-quiet try, which gap R13 promises,
+    // and no "unavailable" broadcast, because it was live when it failed.
+    // Only a failure AFTER the quiet window is the one try that benches.
+    var last = row && row.last ? Date.parse(row.last) : NaN;
+    if (isFinite(last) && clock() - last < PARTNER_QUIET_MS) return;
+    partnerMissedAt[relayKey] = clock();
+    // UNAVAILABLE, AND SAID SO (R42) — at the moment it is benched: it was
+    // quiet past PARTNER_QUIET_MS and its one try just failed.
+    if (partnerSaidDown[relayKey]) return;
     if (!row || row.status !== 'partnered') return;
     if (partnerLive({ relayKey: relayKey, last: row.last })) return;
     partnerSaidDown[relayKey] = true;

@@ -99,12 +99,13 @@ async function run() {
   store.partners.put({ relayKey: quiet.publicKey, url: 'http://quiet.example', ownerKey: 'o2', status: 'partnered', since: 'x', last: iso(now - 20 * MIN) });
 
   let quietIsUp = false;
+  let flakyDown = false;
   const asked = [];
   const box = createRelay(home, {
     now: function () { return now; },
     askPartner: function (url) {
       asked.push(url);
-      if (url === 'http://quiet.example' && !quietIsUp) {
+      if ((url === 'http://quiet.example' && !quietIsUp) || (url === 'http://flaky.example' && flakyDown)) {
         // What peerPost settles with when nobody answered: our own wait ran out.
         return Promise.resolve({ ok: false, status: 504, error: 'no answer yet', stillOpen: true });
       }
@@ -192,6 +193,29 @@ async function run() {
     test.check('ten minutes after both answered, both are asked');
   } else {
     test.fail('at +10 after answers, asked: ' + JSON.stringify(got));
+  }
+
+  test.subHeading('A failure while still live does not spend the post-quiet try');
+
+  // Found by Grok's review of the gap cycle (2026-09-22): a miss was
+  // recorded even while the partner's last answer was fresh, and when that
+  // answer aged out the old miss benched it — no try after the quiet
+  // window, and no "unavailable" said.
+  const flaky = auth.generateIdentity('relay-flaky');
+  store.partners.put({ relayKey: flaky.publicKey, url: 'http://flaky.example', ownerKey: 'o3', status: 'partnered', since: 'x', last: iso(now - 10 * MIN) });
+  flakyDown = true;
+  got = await search();
+  if (got.indexOf('http://flaky.example') !== -1) {
+    test.check('answered ten minutes ago, it is asked — and this time it fails');
+  } else {
+    test.fail('flaky not asked while live: ' + JSON.stringify(got));
+  }
+  now += 6 * MIN;
+  got = await search();
+  if (got.indexOf('http://flaky.example') !== -1) {
+    test.check('six minutes on, its last answer is sixteen minutes old: it still gets its one try — the earlier failure did not bench it');
+  } else {
+    test.fail('a failure while live benched it without its post-quiet try: ' + JSON.stringify(got));
   }
 
   relayStore.closeAll();

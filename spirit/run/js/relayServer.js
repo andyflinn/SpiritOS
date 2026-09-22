@@ -461,6 +461,18 @@ const server = http.createServer((req, res) => {
         try { res.setHeader('Retry-After', String(FULL_RETRY_S)); }
         catch (e) { /* headers already sent */ }
       }
+      // A PARTNER IS TOLD WHY (gap R13; found by Grok's review of the gap
+      // cycle, 2026-09-22). deviceRefusal says only "not now" — right for a
+      // member or a stranger, whose refusal must not say which gate held —
+      // but its code's retry is "after", so an older relay that still dials
+      // its partners at boot was told to try again for ever. A partner's key
+      // is already known to be a partner, so the sentence tells nobody
+      // anything, and "retry: no" is what stops the dialling.
+      if (opened && opened.status === 403 && opened.error === 'a partner holds no stream here') {
+        res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ error: opened.error, code: spiritErrors.classify(403, opened.error).code }));
+        return;
+      }
       deviceRefusal(res, opened && opened.status);
       return;
     }
