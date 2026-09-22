@@ -59,6 +59,15 @@ Each with a recommendation; none decided.
    left to the layer that knows apps (the shell, and the intrinsic app) —
    or does the core need an asker it CAN know, such as a credential the
    owner hands out, which names no app?
+
+   **Decided 2026-09-22 — no pass.** Andy: *"my authoriy extends over the
+   whole machine. it's implicit."* Whatever runs on the box runs with his
+   authority, so a local asker needs nothing more to use a key. The only
+   outsider at the door was a web page on another site, and that is closed
+   (`deb5978`: a request naming another origin, or marked cross-site, is
+   refused before any route — found by wsl-claude, verified on every team
+   node). The core scopes a key by name, host and method, and knows no
+   asker.
 2. **Where do the rules live?** *Decided in principle (Andy):* an intrinsic
    app keeps the allowlist. *Recommended:* the same app keeps the grants
    (question 1, in whatever form it takes) and shows the spend (question 5), stored in `node.db`, which
