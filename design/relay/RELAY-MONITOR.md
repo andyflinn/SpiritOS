@@ -129,6 +129,87 @@ paste one agent's key, and see only that agent's traffic, both directions,
 with times — across every owned relay when `All` is selected. If a
 sealed-payload build still shows that, the feature holds.
 
+#### And a batch, so there is something to watch
+
+> **Andy:** *"you two running batches of packets through
+> spirit.andyflinn.com so i can see faster, more entertaining action."*
+
+`agents.js chatter <to> [n] [--every ms]` — 30 posts, 300 ms apart by
+default, through the real relay. **Both agents run it at each other**,
+because nothing in that program answers a packet by itself: a message is
+information, never an instruction (`AGENT.md`), and an echo mode would be
+the program acting because something arrived.
+
+Bounded on purpose: 200 posts a minute against the relay's 600 per member
+(`relay.js`, `MEMBER_PER_MIN`), so it fills the pane without going near a
+cap. Every post is recorded in both nodes' **permanent** traffic logs,
+which is why the texts are short and the default is small.
+
+#### How the filter is PROVEN, rather than demonstrated
+
+> **Andy:** *"a series of batch test that you can run without me over
+> spirit 3, where i can optionally set filters, and tell you run it again!
+> watching with different filters"* — *"test batches of packets sent
+> crosswise in one test batch so i can test filters over the same set of
+> packets, while also being able to see packet counts per id etc...."* —
+> *"do you get the idea of how i want to be convinced?"*
+
+**The same packet set, watched through different lenses, checked by
+counting.** `process/js/monitorDrill/monitorDrill.js` sends one
+interleaved batch to every peer with a **different count each** — twelve
+here, seven there, four to a key nobody holds — and prints the tally
+before he looks at the screen. Filter by one identity: the pane shows that
+number or the filter is wrong. There is no third outcome and nothing to
+interpret.
+
+- **Interleaved, not blocked.** Sent in runs, a broken filter could pass
+  by showing a contiguous stretch; mixed in time, only a filter that reads
+  each packet's identity reproduces the count.
+- **Deterministic.** The same order every run, so *"again"* means the same
+  traffic through a different lens rather than a new experiment.
+- **Runnable without him**, which is what makes *"run it again"* cheap.
+
+**And the app must count what it shows.** A pane he has to tally by eye
+proves nothing at the sizes that matter, so the console carries a count
+per identity for what is in it — which is also the cheapest possible
+version of *counts by type* (above), arriving as a by-product of the
+filter rather than as a new field on the wire.
+
+#### Four identities, so a filter has something to choose between
+
+> **Andy:** *"i want to be able to filter by either one of you or any of
+> your local persitent nodes, that i have a choice of ID's to filter by,
+> so two more permanent nodes to add to the test environment (one more for
+> each of you)."*
+
+Each agent runs a **second permanent node** with its own identity and its
+own seat: `claude-windows` (45440) and `claude-windows-2` (45442) on the
+Windows box, and wsl-claude's pair on the Linux side — all started by the
+platform scripts, so they are there without anyone remembering them. With
+one node each, a filter has nothing to discriminate between; with two, the
+count tells him which lens he is looking through.
+
+#### Everything through spirit-3, not only traffic
+
+> **Andy:** *"name changes, et all all to spirit-3 will test the monitor."*
+
+The console is one pane of the app, and the rest of it is fed by the
+**membership** stream, which is a different channel with a different
+retention (the labels cycle's R2: traffic is forgotten, membership is
+kept). So the test drives both, on the live relay:
+
+| what is done on spirit-3 | what the monitor must show |
+|---|---|
+| an agent **renames** itself | the label changing where it is drawn, and the event in the owner's log |
+| an invite **minted**, then **claimed** | members and connections moving, the invite leaving the live list |
+| a member **removed** or **revoked** | the roll falling, and the figures with it |
+| the two agents' **chatter** | the console filling, filtered by key |
+| a relay **restarted** (cycle 9's verb) | the gap recorded as a gap, and the figures it came back on |
+
+**Real actions on the real relay**, because that is the only place all of
+it is true at once — and because the events are his own, so nothing here
+needs a fixture that pretends to be somebody.
+
 ### 4. The configuration, readable
 
 Cycle 9 lets an owner read and set a relay's figures over the wire. The

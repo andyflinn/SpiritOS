@@ -17,6 +17,9 @@
 #   2. Andy's work node 127.0.0.1:65432   (through labMaster, its permanent row)
 #   3. claude-windows   127.0.0.1:45440   (D:\SpiritOS-agent-claude — the
 #                                           Windows agent's own node, AGENT.md)
+#  3b. claude-windows-2 127.0.0.1:45442   (D:\SpiritOS-agent-claude-2 — a
+#                                           second identity, so the monitor's
+#                                           filter has a choice)
 #   4. the WSL side     platform/wsl/start-spirit.sh in wsl-claude's clone,
 #                       if it exists (wsl-claude's to keep)
 #
@@ -26,6 +29,7 @@
 $ErrorActionPreference = 'Continue'
 $repo  = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $agent = 'D:\SpiritOS-agent-claude'
+$agent2 = 'D:\SpiritOS-agent-claude-2'
 $node  = (Get-Command node -ErrorAction SilentlyContinue).Source
 if (-not $node) { Write-Output 'node is not on PATH; nothing started'; exit 1 }
 
@@ -69,6 +73,24 @@ elseif (Test-Path "$agent\spirit\run\js\server.js") {
     -RedirectStandardOutput "$agent\node.log" -RedirectStandardError "$agent\node.err" | Out-Null
   Write-Output ('claude-windows node: ' + $(if (WaitFor 45440 20) { 'started' } else { 'DID NOT COME UP' }))
 } else { Write-Output "claude-windows node: no clone at $agent" }
+
+# 3b. The Windows agent's SECOND node, so the monitor's filter has more
+#     than one identity of ours to choose between.
+#
+#   Andy, 2026-09-23: "i want to be able to filter by either one of you or
+#   any of your local persitent nodes, that i have a choice of ID's to
+#   filter by, so two more permanent nodes to add to the test environment
+#   (one more for each of you)."
+#
+# Its own clone, its own identity, its own seat on spirit.andyflinn.com —
+# claude-windows-2, key ...RJo9BXQ=. 45441 belongs to wsl-claude's node,
+# which WSL proxies onto this box's loopback, so this one is 45442.
+if (Listening 45442) { Write-Output 'claude-windows-2 node: already running' }
+elseif (Test-Path "$agent2\spirit\run\js\server.js") {
+  Start-Process -FilePath $node -ArgumentList 'js/server.js', '--port', '45442' -WorkingDirectory "$agent2\spirit\run" -WindowStyle Hidden `
+    -RedirectStandardOutput "$agent2\node.log" -RedirectStandardError "$agent2\node.err" | Out-Null
+  Write-Output ('claude-windows-2 node: ' + $(if (WaitFor 45442 20) { 'started' } else { 'DID NOT COME UP' }))
+} else { Write-Output "claude-windows-2 node: no clone at $agent2" }
 
 # 4. The WSL side, if wsl-claude has given it a start script.
 $wsl = Get-Command wsl.exe -ErrorAction SilentlyContinue

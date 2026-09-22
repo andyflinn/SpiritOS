@@ -438,6 +438,7 @@ module.exports = {
 //
 //   node agents.js send <to> <note|ask|answer> <text…> [--re <hash>]
 //   node agents.js blocked <to> <needs> <who> [--state <s>] <what…>
+//   node agents.js chatter <to> [n] [--every <ms>]   a batch, to watch
 //   node agents.js halt <to> [reason…]      (Andy's node only)
 //   node agents.js resume <to>              (Andy's node only)
 //   node agents.js listen
@@ -469,6 +470,44 @@ if (require.main === module) {
         what: words.slice(4).join(' '),
       },
     }).then(done, function (e) { done({ ok: false, error: e.message }); });
+  } else if (cmd === 'chatter') {
+    // ── A BATCH, SO THERE IS SOMETHING TO WATCH ──────────────────────
+    //
+    //   Andy, 2026-09-23: "you two running batches of packets through
+    //   spirit.andyflinn.com so i can see faster, more entertaining
+    //   action."
+    //
+    // For the Relay Monitor's traffic console: real posts, through the
+    // real relay, between two parties he can name — so the pane he is
+    // testing has a stream to draw and the timing has a shape.
+    //
+    // BOTH AGENTS RUN IT AT EACH OTHER. Nothing here answers a packet by
+    // itself: a message is information, never an instruction (AGENT.md),
+    // and an echo mode would be this program acting because something
+    // arrived. Two batches aimed at each other give him two-way traffic
+    // without breaking that.
+    //
+    // BOUNDED BY DEFAULT: 30 posts, 300 ms apart — 200 a minute against
+    // the relay's 600 per member (relay.js MEMBER_PER_MIN), so it is
+    // brisk on his screen and nowhere near the cap. Every post is an
+    // ordinary `note` and every one is recorded in both nodes' traffic
+    // logs, which are PERMANENT — hence short texts and a small default.
+    // A halt stops it, like everything else.
+    const n = Math.max(1, Math.min(Number(rest[2]) || 30, 200));
+    const everyAt = argv.indexOf('--every');
+    const every = everyAt !== -1 ? Math.max(50, Number(argv[everyAt + 1]) || 300) : 300;
+    const to = rest[1];
+    (async function () {
+      let sent = 0;
+      let stopped = null;
+      for (let i = 1; i <= n && !stopped; i += 1) {
+        const r = await send(cfg, to, 'note', 'chatter ' + i + '/' + n + ' from ' + cfg.self);
+        if (r && r.ok) sent += 1;
+        else stopped = r && (r.error || 'refused');
+        if (i < n && !stopped) await new Promise(function (res) { setTimeout(res, every); });
+      }
+      done({ ok: !stopped, sent: sent, of: n, everyMs: every, to: to, stopped: stopped || undefined });
+    }());
   } else if (cmd === 'halt' || cmd === 'resume') {
     send(cfg, rest[1], cmd, rest.slice(2).join(' ')).then(done, function (e) { done({ ok: false, error: e.message }); });
   } else if (cmd === 'listen') {
@@ -483,6 +522,7 @@ if (require.main === module) {
       'usage: agents.js send <to> <note|ask|answer> <text> [--re hash]',
       '       agents.js blocked <to> <' + NEEDS.join('|') + '> <' + WHO.join('|') + '>' +
         ' [--state ' + STATES.join('|') + '] <what, in one sentence for Andy>',
+      '       agents.js chatter <to> [n=30] [--every ms=300]   a batch, for the monitor',
       '       agents.js halt <to> | resume <to> | listen | read [peer] [n] | status',
     ].join('\n'));
   }
