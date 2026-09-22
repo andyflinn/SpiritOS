@@ -38,7 +38,14 @@ two chat windows goes away.
 5. **Never Andy's vault.** A file under `spirit/run/brains/` is refused by
    path before it is read. His brain is his data, behind a stricter fence
    (`AGENT.md`).
-6. **Never a button, never a timer.** There is no launcher manifest beside the
+6. **How it reads and thinks.** Andy: *"we do need high reasoning for a good
+   review, and a good prompt"* — *"we go with the model you suggested"*:
+   `grok-4.7`, reasoning `high`. Grok reads the tree itself from GitHub at a
+   **pinned, pushed commit**, in the order `OPENING.md` gives (beside the
+   script), and its web tool is fenced to `github.com` and
+   `raw.githubusercontent.com`. That also takes a review past the node's
+   17 KB body limit. The opening says Grok answers **Claude, not Andy**.
+7. **Never a button, never a timer.** There is no launcher manifest beside the
    script: a paid call is an agent's act on Andy's grant.
 
 ## Decided, not built

@@ -44,7 +44,9 @@
 //
 //   node grokReview.js models
 //   node grokReview.js balance
-//   node grokReview.js start  <thread> --cap N --grant "<Andy's words>" --goal "<goal>" [--model m]
+//   node grokReview.js start  <thread> --cap N --grant "<Andy's words>" --goal "<goal>"
+//                             --commit <hash> [--since <hash>] [--pieces a,b,c] [--model m] [--reasoning high]
+//   node grokReview.js send   <thread>          (the first send, with no text, is OPENING.md filled)
 //   node grokReview.js send   <thread> <file.md | "text"> [--attach path ...]
 //   node grokReview.js grant  <thread> --cap N --grant "<Andy's words>"
 //   node grokReview.js status [thread]
@@ -67,6 +69,17 @@ const TICKS_PER_USD = 1e10;
 const DEFAULT_MODEL = process.env.GROK_MODEL || 'grok-4.7';
 // A reasoning model can think for minutes on a large review.
 const CALL_TIMEOUT_MS = 10 * 60 * 1000;
+
+// ── HOW HARD IT THINKS, AND WHERE IT MAY LOOK (2026-09-22) ─────────────
+// Andy: "we do need high reasoning for a good review" — and, of the
+// model, "we go with the model you suggested". Reasoning is billed as
+// output, so 'high' is the start and each message's real cost is kept.
+// Grok reads the tree itself, from GitHub at the pinned commit — which is
+// also what gets a review past the node's 17 KB body limit — and its web
+// tool is fenced to GitHub, so it neither wanders nor buys searches.
+const DEFAULT_REASONING = 'high';
+const READ_DOMAINS = ['github.com', 'raw.githubusercontent.com'];
+const OPENING = path.join(__dirname, 'OPENING.md');
 
 // The standing brief, sent once, at the head of a thread.
 const BRIEF = [
@@ -145,9 +158,15 @@ function start(root, name, opts) {
   if (!(cap > 0) || Math.floor(cap) !== cap) throw new Error('--cap N: how many messages Andy granted');
   if (!opts.grant) throw new Error('--grant "<Andy\'s words>": a cap is his, quoted');
   if (!opts.goal) throw new Error('--goal "<goal>": a review has one');
+  if (!/^[0-9a-f]{7,40}$/.test(String(opts.commit || ''))) {
+    throw new Error('--commit <hash>: the pushed commit Grok reads, so what it reads is what is reviewed');
+  }
   if (fs.existsSync(path.join(threadDir(root, name), 'thread.json'))) throw new Error('thread ' + name + ' exists');
   const t = {
     name: name, goal: String(opts.goal), model: opts.model || DEFAULT_MODEL,
+    reasoning: opts.reasoning || DEFAULT_REASONING, domains: READ_DOMAINS.slice(),
+    commit: String(opts.commit), since: String(opts.since || ''),
+    pieces: String(opts.pieces || '').split(',').map(function (p) { return p.trim(); }).filter(Boolean),
     cap: cap, grants: [{ cap: cap, words: String(opts.grant), at: new Date().toISOString() }],
     used: 0, costTicks: 0, lastResponseId: null, rounds: [],
   };
@@ -164,6 +183,20 @@ function grant(root, name, opts) {
   t.grants.push({ cap: cap, words: String(opts.grant), at: new Date().toISOString() });
   save(root, t);
   return t;
+}
+
+// THE OPENING, FILLED. Sent once, first, when no text is given; every
+// later message relies on Grok remembering it.
+function opening(t, templatePath) {
+  const src = fs.readFileSync(templatePath || OPENING, 'utf8')
+    .replace(/^<!--[\s\S]*?-->\s*/m, '');
+  const list = t.pieces.length
+    ? '\n' + t.pieces.map(function (p, i) { return '   ' + String.fromCharCode(97 + i) + '. `' + p + '`'; }).join('\n')
+    : '(none named — read what the goal needs)';
+  return src
+    .replace(/\{commit\}/g, t.commit).replace(/\{since\}/g, t.since || '(the last review)')
+    .replace(/\{goal\}/g, t.goal).replace(/\{cap\}/g, String(t.cap))
+    .replace(/\{pieces\}/g, list);
 }
 
 function composeText(text, attachments) {
@@ -191,13 +224,20 @@ async function send(root, name, text, attachments, deps) {
   if (t.used >= t.cap) {
     throw new Error('cap reached: ' + t.used + ' of ' + t.cap + ' messages used — raising it is Andy\'s word');
   }
-  const composed = composeText(text, attachments);
+  const first = !t.lastResponseId;
+  const composed = (first && !text && (!attachments || !attachments.length))
+    ? opening(t, d.opening)
+    : composeText(text, attachments);
   const input = [];
   if (!t.lastResponseId) {
     input.push({ role: 'system', content: BRIEF + '\n\nGoal of this review: ' + t.goal });
   }
   input.push({ role: 'user', content: composed });
-  const body = { model: t.model, input: input, store: true };
+  const body = {
+    model: t.model, input: input, store: true,
+    reasoning: { effort: t.reasoning || DEFAULT_REASONING },
+    tools: [{ type: 'web_search', filters: { allowed_domains: (t.domains || READ_DOMAINS).slice(0, 5) } }],
+  };
   if (t.lastResponseId) body.previous_response_id = t.lastResponseId;
 
   const n = t.rounds.length + 1;
@@ -280,7 +320,7 @@ function balanceLine(b) {
 }
 
 module.exports = { balance: balance, balanceLine: balanceLine, start: start, send: send, grant: grant, load: load, statusLine: statusLine,
-  models: models, refuseVault: refuseVault, TICKS_PER_USD: TICKS_PER_USD, THREADS: THREADS,
+  models: models, refuseVault: refuseVault, opening: opening, TICKS_PER_USD: TICKS_PER_USD, THREADS: THREADS,
   KEY_PLACEHOLDER: KEY_PLACEHOLDER };
 
 function flags(argv) {

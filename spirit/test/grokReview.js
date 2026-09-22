@@ -65,7 +65,7 @@ async function run() {
   } else {
     test.fail('started without a grant: ' + threw);
   }
-  const t = grok.start(root, 'r1', { cap: 2, goal: 'check the checkpoint', grant: 'review, 2 messages', model: 'grok-test' });
+  const t = grok.start(root, 'r1', { cap: 2, goal: 'check the checkpoint', grant: 'review, 2 messages', model: 'grok-test', commit: 'abc1234' });
   if (t.cap === 2 && t.grants[0].words === 'review, 2 messages' && t.used === 0) {
     test.check('started with cap 2 and his words beside it');
   } else {
@@ -76,13 +76,27 @@ async function run() {
 
   const log = [];
   const deps = { node: NODE, fetch: fakeGrok(log) };
-  const first = await grok.send(root, 'r1', 'here is the checkpoint', [], deps);
+  const first = await grok.send(root, 'r1', '', [], deps);
   const second = await grok.send(root, 'r1', 'round two', [], deps);
   if (log[0].body.input[0].role === 'system' && !log[0].body.previous_response_id &&
       log[1].body.previous_response_id === 'resp_1' && log[1].body.input.length === 1 && log[1].body.store === true) {
     test.check('the brief goes once, first; round two continues from the first reply\'s id');
   } else {
     test.fail('chaining: ' + JSON.stringify(log.map(function (l) { return l.body; })));
+  }
+  const opened = log[0].body.input[1].content;
+  if (/abc1234/.test(opened) && /check the checkpoint/.test(opened) && /\*\*2 messages\*\*/.test(opened) &&
+      !/\{(commit|goal|cap|since|pieces)\}/.test(opened) && !/<!--/.test(opened)) {
+    test.check('the first message, sent with no text, is OPENING.md filled: commit, goal and cap, no placeholder left');
+  } else {
+    test.fail('opening: ' + opened.slice(0, 400));
+  }
+  const b = log[1].body;
+  if (b.reasoning && b.reasoning.effort === 'high' && b.tools && b.tools[0].type === 'web_search' &&
+      JSON.stringify(b.tools[0].filters.allowed_domains) === JSON.stringify(['github.com', 'raw.githubusercontent.com'])) {
+    test.check('every message asks for high reasoning, and fences the web tool to GitHub');
+  } else {
+    test.fail('body: ' + JSON.stringify({ reasoning: b.reasoning, tools: b.tools }));
   }
   const after = grok.load(root, 'r1');
   if (after.used === 2 && after.costTicks === 75000000 && Math.abs(second.costUsd - 0.005) < 1e-9 &&
@@ -118,7 +132,7 @@ async function run() {
 
   test.subHeading('A refused call is not a message');
 
-  grok.start(root, 'r2', { cap: 1, goal: 'g', grant: 'one' });
+  grok.start(root, 'r2', { cap: 1, goal: 'g', grant: 'one', commit: 'abc1234' });
   threw = '';
   try { await grok.send(root, 'r2', 'x', [], { node: NODE, fetch: fakeGrok([], { status: 400 }) }); } catch (e) { threw = e.message; }
   const r2 = grok.load(root, 'r2');
@@ -131,7 +145,7 @@ async function run() {
   test.subHeading('Andy\'s vault never goes, and the script never holds the key');
 
   const vaultFile = path.join(__dirname, '..', 'run', 'brains', 'input', 'anything.md');
-  grok.start(root, 'r3', { cap: 1, goal: 'g', grant: 'one' });
+  grok.start(root, 'r3', { cap: 1, goal: 'g', grant: 'one', commit: 'abc1234' });
   const vlog = [];
   threw = '';
   try { await grok.send(root, 'r3', 'x', [vaultFile], { node: NODE, fetch: fakeGrok(vlog) }); } catch (e) { threw = e.message; }
@@ -155,7 +169,7 @@ async function run() {
     test.fail('grokReview.js reads GROK_API_KEY itself');
   }
 
-  grok.start(root, 'r4', { cap: 1, goal: 'g', grant: 'one' });
+  grok.start(root, 'r4', { cap: 1, goal: 'g', grant: 'one', commit: 'abc1234' });
   threw = '';
   try { await grok.send(root, 'r4', 'x', [], { node: NODE, fetch: fakeGrok([], { status: 401 }) }); } catch (e) { threw = e.message; }
   if (/GROK_API_KEY set in the environment of the node/.test(threw) && grok.load(root, 'r4').used === 0) {

@@ -21,7 +21,14 @@ Until then, what is in this repo already says the essentials: a trailing
 `?` wants a line or two; a four-word ruling is final; plain words beat the
 project's shorthand; and `DICTIONARY.md` is what his terms mean.
 
-## Addressing (every reply)
+## Through the API, you answer Claude
+
+A review run through `process/js/grokReview` (design/agents/GROK-REVIEWS.md)
+is a thread Andy pays for and does not read. There you write for Claude, the
+in-studio agent: file, line, commit, the two piles — and the addressing below
+does not apply. The thread's first message says so.
+
+## Addressing (every reply in Andy's chat)
 
 Grok talks in this chat. Andy is the only reader unless a block is marked to copy.
 
