@@ -16,6 +16,31 @@ that key may go to that host, in that way, and says what it cost — knowing
 keys, never apps (*"on the core-layer apps are unknown"*). Andy keeps the
 rules in an app, not in code.
 
+### The environment it is for
+
+> **Andy, 2026-09-22:** *"picture an environment where hppt is disallowd for
+> agents, but node-access is."* — *"if i see outragous spending by agents,
+> i then could close the node-gate."*
+
+An agent sandboxed to its node — no web calls of its own, only the loopback
+door — has **the proxy as its whole internet**. Then:
+
+- **The list is of websites, with a key only where one is needed** —
+  reading GitHub or documentation needs none.
+- **Trust becomes enforcement.** What bounds an agent's spending today is
+  trust (below); behind the node it is the owner's list, because the agent
+  has no other way out.
+- **The owner holds the gate.** Closing it — the whole proxy, one key, or
+  one website — stops every agent at once, on its next call, with a refusal
+  that says the owner closed it, so an agent stops and reports instead of
+  retrying.
+- **Waiting and size matter** (questions 3 and 4): an agent doing real work
+  through the node needs long waits and large answers.
+- The sandbox itself is the agent host's, not SpiritOS's — the node cannot
+  stop a process that has its own network. *(Recommended, unverified: an
+  agent host that allows only loopback; to be checked before it is
+  promised.)*
+
 ## What the tree does today — verified at `a83f219`
 
 1. **One verb, for everyone on the loopback door.** `net.fetch` is
