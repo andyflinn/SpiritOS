@@ -150,6 +150,19 @@ const CENSUS = {
   // 2 since 2026-09-22: require('http') and its one call — Node's fetch cut
   // the script off from its own node at 300 s while Grok was still thinking.
   'process/js/grokReview/grokReview.js': 2,
+
+  // ── THE WSL DESKTOP — A PLATFORM TOOL, THE SAME KIND OF EXCEPTION ────
+  //
+  //   Andy, 2026-09-22: "wsl may proceed with the desktop project" —
+  //   relayed by the Windows Claude on the agent wire (post 64593916…),
+  //   after the count below had been put to him.
+  //
+  // Not a node component: platform/ is tools for Andy's machines, and this
+  // one talks to no node and no peer. But it serves a page, so it reaches
+  // twice — require('http') for its own server, and the page's fetch back
+  // to that same server — and every file is counted, so platform/ is
+  // walked and it is counted here rather than living outside the census.
+  'platform/wsl/desktop/desktop.js': 2,
 };
 
 // Not code this project ships or runs in a node: spawned scripts talking
@@ -188,7 +201,9 @@ const files = walk(path.join(SPIRIT, 'run', 'js'), 'js/', [])
   .concat(walk(path.join(SPIRIT, 'test'), 'test/', []))
   // The folders of process/ that are walked: the granted exceptions above.
   .concat(walk(path.join(SPIRIT, 'run', 'process', 'js', 'agents'), 'process/js/agents/', []))
-  .concat(walk(path.join(SPIRIT, 'run', 'process', 'js', 'grokReview'), 'process/js/grokReview/', []));
+  .concat(walk(path.join(SPIRIT, 'run', 'process', 'js', 'grokReview'), 'process/js/grokReview/', []))
+  // platform/ — tools for Andy's machines, beside spirit/ (platform/README.md).
+  .concat(walk(path.join(SPIRIT, '..', 'platform'), 'platform/', []));
 
 // ── 1. NOBODY OUTSIDE THE CENSUS TOUCHES THE WIRE ──────────────────────
 test.subHeading('A file not in the census reaches for nothing');
@@ -217,7 +232,10 @@ test.subHeading('Every counted file is at or below its number');
   const fell = [];
   const gone = [];
   Object.keys(CENSUS).forEach(function (rel) {
-    const full = path.join(SPIRIT, rel.indexOf('test/') === 0 ? '' : 'run', rel);
+    // Three roots: test/ is spirit/test, platform/ sits beside spirit/, and
+    // every other entry is under spirit/run.
+    const full = rel.indexOf('platform/') === 0 ? path.join(SPIRIT, '..', rel)
+      : path.join(SPIRIT, rel.indexOf('test/') === 0 ? '' : 'run', rel);
     if (!fs.existsSync(full)) { gone.push(rel); return; }
     const n = reachesIn(full);
     if (n > CENSUS[rel]) grown.push(rel + ': ' + CENSUS[rel] + ' -> ' + n);
