@@ -184,8 +184,10 @@ claims wait on it, and R20 cannot be reconsidered without it), **R17**
 (harness hygiene), **R12** (`last` on a partner row, which frees R13),
 **R10**.
 
-**Last, one sitting:** the review — R9, R13, R28's hops 2 and 3 — and then
-R14, which needs R9, R12 and a ruling on R11.
+**Last, one sitting:** the review — ~~R9,~~ R13, R28's hops 2 and 3 — and then
+~~R14, which needs R9, R12 and a ruling on R11~~. *Superseded 2026-09-22: R9 is
+cancelled, R11 and R14 are outside the core; the review adds R36's phase B
+and retiring the Governor.*
 
 **Where this order stands, late 2026-09-21:** steps 0–5 and every
 "independent" row are built. What is left of it is the last line: the
@@ -337,8 +339,9 @@ rows are shaped around), **R27** (one line, node-side), R17, R12, R19,
 **R15** (method written, four claims waiting), R10, R1 whole — and behind
 R26, R16, R29, R30 and R31.
 
-**For the review, when that list is empty:** R9, R13, and R28's hops 2 and
-3. **Three rows** — R26's persist shape left this pile on 2026-09-21, and
+**For the review, when that list is empty:** ~~R9,~~ R13, and R28's hops 2 and
+3 *(R9 cancelled 2026-09-22; see the head of the list for the pile as it
+stands)*. **Three rows** — R26's persist shape left this pile on 2026-09-21, and
 every one that remains is a packet on the wire.
 
 **The three that gate the most:** **R15** (R20, and four claims nobody can
