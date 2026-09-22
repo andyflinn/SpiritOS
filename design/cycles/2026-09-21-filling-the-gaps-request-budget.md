@@ -1652,6 +1652,28 @@ deferred, if not eliminated"*.
 its suites go. The allowance is fixed at boot from the owner's RAM. Decided,
 not built: it is half of cycle 8.
 
+**Its shape, agreed with Andy the same night:**
+
+- **The relay self-manages within fixed limits.** Andy: *"relay will
+  self-manage within fixed/constant limits. i agree."*
+- **Levers stay as read-only gauges.** Andy: *"as design pattern
+  relay-internally, they still make sense to me"*, with the lever-control
+  APIs scrapped. A gauge is described once at boot — label, floor,
+  ceiling, and where its value came from — and only ever read after;
+  the one mutator goes or runs at boot only, which a suite can hold. The
+  owner's monitor keeps drawing them generically, as metering. Grok's
+  *"levers kept 'for later' grow a governor back"* is answered by there
+  being nothing left that moves one.
+- **The owner gets the full status report on every event** — claim,
+  rename, route, partner change — as well as on arrivals and departures,
+  which it already did. **No coalescing:** Andy — *"if the relay can
+  handle 500 near-simultaneous connects, AND broadcast them … the owner
+  certainly can handle the incoming updates."* A report carries counts,
+  not lists (`relayStatus.js:85`), about a kilobyte.
+- **The monitor UI stays in scope, in its new shape** — the fields change
+  on the wire in this cycle; how the screen draws them is the UI
+  session's.
+
 ### Cancelled 2026-09-22 — and its removal goes to the review
 
 > **Andy, 2026-09-22,** on Claude's suggestion to cancel R20 and bring the
@@ -2623,6 +2645,36 @@ this no longer does.
 worst case; a reader that stops is cut on a real socket and one that is
 only slow is not; the asker is told, the late answer is refused, and an
 ordinary close settles nothing.
+
+### The restart storm — recorded 2026-09-22, nothing to build
+
+When a relay restarts, every member reconnects, and each arrival is
+announced to everyone already connected. **The work grows with an exponent
+of 2** — Andy: *"quadratic is exponential with a fixed exponent of 2"* —
+about N²⁄2 presence messages for N members: ~125,000 at 500, ~2,000,000 at
+2,000. Connects grow with N. Per unit a connect costs more (TLS, a
+signature, a lookup) and a broadcast write less, so the square term only
+dominates somewhere past a thousand members — Claude's estimate, not a
+measurement.
+
+**It is self-limiting, and that is the design.** Each member receives about
+one presence event per other member, so at ~1,600 members a slow reader
+passes this row's cut during a storm. Andy: *"slow reader will be detached
+immediately, must retry later, workload spreads out in function of time, a
+trail of retries is expected."* The members' side is negligible (decided).
+
+**The softening is already in place.** A node's reconnect is jittered —
+the wait is its interval × a random 0.5–1.0, doubling from 1 s to 8 s
+(`sseClient.js`, `scheduleRetry`) — and a relay shutting down tells members
+`retry: 3000` (`relayServer.js`), so they return 1.5–3 s later. Andy:
+*"the best softness-range for the jitter will be measured and learned when
+it happens and becomes necessary."* A wider window (3 s + random 0–2 s)
+was raised and left to that measurement.
+
+**If the total ever matters,** jitter will not reduce it — it spreads the
+peak, not the sum. Batching would: one presence event per second listing
+everyone who arrived in it. Not needed at today's sizes; written here so
+it is not re-derived.
 
 **Status:** DONE
 

@@ -474,6 +474,14 @@ matters for a relay whose first duty is to survive.
 **Logged as its own hazard** rather than folded into the Governor's
 brief: it is a different problem from the one the Governor was built for.
 
+**A restart storm grows with an exponent of 2.** Every member reconnects,
+and each arrival is announced to everyone already connected: about N²⁄2
+presence messages, ~125,000 at 500 members. Reconnects are jittered on the
+node (1.5–3 s after a relay's shutdown), which spreads the peak but not the
+total; past ~1,600 members a slow reader is cut mid-storm by the limit
+below and retries later, by design. Not measured yet — a storm run in
+`measureCapacity` is how it would be. Details in the gap cycle, R35.
+
 **And the kernel was the smaller half (R35, closed).** Past the kernel's
 buffer, Node kept every further write in the relay's own process, with no
 limit: 50 MB for one reader on a real socket, before the fix. A stream now
