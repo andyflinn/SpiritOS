@@ -1,8 +1,12 @@
 # The Relay Monitor — what an owner watches, and what he may not touch
 
-**For approval, 2026-09-23.** Andy: *"of monitor was already designed, it
-is stale now."* — and, after the amendment: *"if yes let's all approve the
-monitor design and move on."*
+**APPROVED by Andy, 2026-09-23**, including both open items — *"Open for
+Andy: 1 + 2, yes."* He opened it with *"of monitor was already designed, it
+is stale now."* and closed it with *"if yes let's all approve the monitor
+design and move on."*
+
+**Nothing here is built.** It is screen work for the UI session, and this
+page is what that session builds against.
 
 The design existed in `design/principles/NODE-AND-RELAY.md` §4, written at
 cycle-4 planning on 2026-09-19. Cycles 8 and 9 made four parts of it false,
@@ -118,14 +122,30 @@ be there, at least in the core, not neccessarily in UI."*
 | one bound, `ramLimitMB` | two, with `binding` saying which is nearer |
 | *"the relay is a sensor, the node the recorder"* — a metaphor | a store: `node.db`, owner-only (cycle 9) |
 
-## Open — for Andy
+## Decided by Andy, 2026-09-23
 
-1. **The record's retention.** Proposed: one row a minute for 90 days, then
-   one row a day kept for good. The daily curve is what an investor is
-   shown; the minute rows are what an incident is read from.
-2. **The first screen**: the `All` triage list, or the single relay he
-   opened. The original design said `All` and ranked it; the ranking's
-   terms have changed, so the choice is worth making again.
+> *"hmmm. that's a key purpose of the monitor, yes: draw attention to what
+> needs it. Open for Andy: 1 + 2, yes."*
+
+1. **Retention, as proposed.** One row a minute for 90 days, then **one row
+   a day kept for good**. The minute rows are what an incident is read
+   from; the daily curve is what an investor is shown, and it is the half
+   that must never be swept.
+2. **The first screen is the `All` triage list**, ranked by need — because
+   drawing attention to what needs it is *"a key purpose of the monitor"*.
+   A single relay is what opening a row gets you, not what the app opens
+   on.
+
+   **What it ranks by, now that levers do not move:** connections against
+   the allowance, and the roll against the disc figure — worst first, each
+   row saying which of the two put it there (`binding`), each row opening
+   its relay. The ranking stays a module on the node that a later cycle can
+   replace, as the original design had it: the order is learned, so it is
+   not in the screen.
+
+   **And a relay with nothing wrong says so in one line.** A triage list
+   that lists everything is a status board, which this is not: *"i only
+   want to direct attention to where it's needed"*.
 
 ## What it costs
 

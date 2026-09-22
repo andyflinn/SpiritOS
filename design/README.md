@@ -347,8 +347,8 @@ This directory contains the vision, principles, and architecture decisions for *
   members — which makes requests-in-flight a lever beside `connections1`
   and `requestTimeout1`, on the same axis and multiplying.
 
-- [The Relay Monitor](relay/RELAY-MONITOR.md) — **for approval, screen work
-  only.** What an owner watches and what he may not touch: the two bounds
+- [The Relay Monitor](relay/RELAY-MONITOR.md) — **APPROVED 2026-09-23,
+  screen work only, nothing built.** What an owner watches and what he may not touch: the two bounds
   with `binding` saying which is nearer and the 70% warning against that
   one; the member curve from the node's own record; a live traffic console
   filtered at the relay, in the shape of the jobs app's log panel; the
