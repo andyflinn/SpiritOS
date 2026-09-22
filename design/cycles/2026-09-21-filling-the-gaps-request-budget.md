@@ -58,7 +58,7 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**One open, eight deferred, three cancelled, thirty done.** Cycle 7 built
+**None open, eight deferred, three cancelled, thirty-one done.** Cycle 7 built
 R28 and R36's phase B (2026-09-22). **Cycle 8 is built** (2026-09-22): the
 Governor is deleted in the shape agreed below, and R13 — no streams
 between partners. **Left: the end-of-cycle-8 citation check, then the
@@ -98,7 +98,7 @@ cancelled — hints carry keys, never URLs.
 | <sub>R39</sub> | <sub>*search fans out to memory too, beside every bound relay*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R40</sub> | <sub>*patience is an owner setting, so a message is retried at all*</sub> | <sub>*deferred — possible, outside the core's scope*</sub> | <sub>**yes**</sub> | |
 | <sub>R41</sub> | <sub>*what R35–R39 left on screen*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
-| **R42** | a partner's availability, broadcast when it changes; a request from a partner revives it | OPEN — **decided by Andy** 2026-09-22 | **yes** | |
+| <sub>R42</sub> | <sub>*a partner's availability, broadcast when it changes; a request from a partner revives it*</sub> | <sub>*done — built in cycle 8, after R13*</sub> | <sub>—</sub> | |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R23</sub> | <sub>*a sibling is a route too, and both ends are told*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -3060,10 +3060,33 @@ down.
    partnership nobody uses costs nothing.
 
 **Its own event**, not `presence`: presence is about members, and a node
-filters it by its contacts, which a relay key is not. Shape to settle at
-build: `{ relayKey, live, at }`.
+filters it by its contacts, which a relay key is not. Shape: `{ relayKey,
+live, at }`, registered in 0010.
 
-**Status:** OPEN — decided, not built.
+**Built 2026-09-22, in cycle 8 on Andy's *"now"*.**
+
+- **The relay** (`relay.js`): `partnerMissed` announces *unavailable* when
+  a try fails and the partner is no longer live by R13's rule, once;
+  `partnerAnswered` announces *back* on the first answer after that, once.
+  A verified post **from** a partner calls `partnerAnswered` — so either
+  side's traffic revives it. Which partners were announced down is RAM.
+- **The fifteen minutes live in one place**, `partnerAvailability.js`
+  `QUIET_MS`, read by the relay's bench and a node's belief alike.
+- **The node** (`presenceNode.js` → `partnerAvailability.js`): keeps the
+  latest word per relay and partner, in RAM; an older word never
+  overwrites a newer one; stale after fifteen minutes. `hub.js` reorders
+  the hints it sends through that relay — unavailable partners last,
+  **never dropped**.
+
+**Verify:** `spirit/test/partnerAvailability.js` — benched and said once,
+failing again says nothing, a stranger revives nothing, the partner's own
+post revives it and says so once, answering after that says nothing; on
+the node, per-relay words, reordered never shortened, crossed words,
+stale at fifteen minutes, *back* clears. Falsified four ways (no inbound
+revive, every failure announced, never stale, unavailable dropped) — each
+caught.
+
+**Status:** DONE
 
 ## The order, and why
 

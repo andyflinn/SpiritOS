@@ -250,7 +250,9 @@ var HOP_MARGIN_MS = 500;
 // and a partner quiet for longer is still asked once — only a partner that
 // has been quiet this long AND failed its one try since is skipped, and
 // only until this long again has passed.
-var PARTNER_QUIET_MS = 15 * 60 * 1000;
+// Read from partnerAvailability.js, where the node reads it too (R42), so
+// the relay's bench and a node's belief cannot drift apart.
+var PARTNER_QUIET_MS = require('./partnerAvailability').QUIET_MS;
 
 // `deps.askPartner(url, relayKey, text, budgetMs)` answers a promise of the partner's
 // reply text, or null. INJECTED, never reached for: it is this relay's own
@@ -893,6 +895,12 @@ function createRelay(rootDir, deps) {
   function partnerAnswered(relayKey) {
     if (!relayKey) return;
     delete partnerMissedAt[relayKey];
+    // BACK, AND SAID SO (R42) — once, on the first answer after it was
+    // announced unavailable, never on every answer.
+    if (partnerSaidDown[relayKey]) {
+      delete partnerSaidDown[relayKey];
+      announcePartner(relayKey, true);
+    }
     try { store.partners.touch(relayKey, new Date(clock()).toISOString()); }
     catch (e) { /* a column that will not take a stamp is not worth a dropped reply */ }
   }
@@ -912,7 +920,45 @@ function createRelay(rootDir, deps) {
   var partnerMissedAt = Object.create(null);
 
   function partnerMissed(relayKey) {
-    if (relayKey) partnerMissedAt[relayKey] = clock();
+    if (!relayKey) return;
+    partnerMissedAt[relayKey] = clock();
+    // UNAVAILABLE, AND SAID SO (R42) — at the moment it is benched: it was
+    // quiet past PARTNER_QUIET_MS and its one try just failed. A failure
+    // inside the window is not a change and says nothing.
+    if (partnerSaidDown[relayKey]) return;
+    var row = null;
+    try { row = store.partners.get(relayKey); } catch (e) { row = null; }
+    if (!row || row.status !== 'partnered') return;
+    if (partnerLive({ relayKey: relayKey, last: row.last })) return;
+    partnerSaidDown[relayKey] = true;
+    announcePartner(relayKey, false);
+  }
+
+  // ── A PARTNER'S AVAILABILITY, TOLD TO EVERY MEMBER (R42) ─────────────
+  //
+  //   Andy: "why put the answer in search when it could be broadcast?" —
+  //   "the broadcast says "unavailable" (right now) it doesn't say
+  //   "dead"" — "mechanism accepted, as just discussed." (2026-09-22)
+  //
+  // ON A CHANGE ONLY: benched, and back. With R13's fifteen-minute bench
+  // that is at most two per partner per fifteen minutes, whatever the
+  // traffic. `at` is what makes it "unavailable AS OF" — a node lets it go
+  // stale after the same fifteen minutes and sends as usual, and that send
+  // is this relay's next try (partnerAvailability.js).
+  //
+  // Its own event, not `presence`: presence is about members, and a node
+  // filters it by its contacts, which a relay key never is. No partner
+  // holds a stream (R13), so a broadcast reaches members only.
+  //
+  // RAM: which partners this process has announced as down, so each
+  // change is said once. A restart forgets it, and the worst that costs is
+  // one "back" never said for a partner nobody was told was gone.
+  var partnerSaidDown = Object.create(null);
+
+  function announcePartner(relayKey, live) {
+    presentNow.broadcast('partner', {
+      relayKey: relayKey, live: !!live, at: new Date(clock()).toISOString(),
+    });
   }
 
   function partnerLive(p) {
@@ -3179,6 +3225,12 @@ function createRelay(rootDir, deps) {
         return { ok: false, status: 413, error: 'too big' };
       }
       var selfHash = auth.requestHash(selfSigned);
+      // A PARTNER THAT ASKS IS A PARTNER THAT IS UP (R42). Stamped as an
+      // answer is — R12's `last`, the bench cleared, and "back" said if it
+      // had been said gone — so a partnership revives the moment EITHER
+      // side speaks. Andy: "the partnership lies dormant without remedy ?"
+      // Only after the signature verified: a stranger cannot revive a row.
+      if (fromPartner) partnerAnswered(who.id);
       // Registered before it is answered, exactly as a peer-to-peer post
       // is: nothing leaves until the thing that will match its answer
       // exists.

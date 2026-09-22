@@ -1079,6 +1079,10 @@ function createHub(rootDir) {
           .filter(function (at, i, all) { return at && all.indexOf(at) === i; });
         var connected = Object.keys((presence.detail && presence.detail()) || {});
         if (connected.length) {
+          // A PARTNER THIS RELAY RECENTLY CALLED UNAVAILABLE GOES LAST
+          // (R42). Reordered, never dropped: the word is "as of", and a
+          // send after it goes stale is the relay's next try.
+          hints = require('./partnerAvailability').shared().order(connected[0], hints);
           return sendPacket(router, connected[0], to, text, hints.length ? hints : undefined).then(function (answer) {
             learnPresence(rootDir, to, answer);
             res.writeHead(answer.ok ? 200 : (answer.status || 502),

@@ -273,15 +273,19 @@ A door is a way of speaking. So is a word said through it.
 |---|---|
 | `presence` | one member arrived or left — broadcast |
 | `route` | a route this relay **proved** — it carried a packet to that key through that partner and a reply came back signed by it. Broadcast, and forgotten here: the members that care write it down (0013) |
+| `partner` | one of this relay's partners became unavailable, or came back — `{ relayKey, live, at }`, broadcast on the **change** only. *"Unavailable as of `at`"*, never *dead*: a node lets it go stale after fifteen minutes. **Added 2026-09-22, gap cycle R42, decided by Andy** — *"mechanism accepted, as just discussed."* |
 | `request` | a packet being delivered to the peer it is addressed to |
 | `reply` | the answer to one, carried back on the asker's own stream |
 | `relay-status` | what this box looks like, to the owner only, on membership change and on a stream opening or closing — never on a timer (0006) |
 | `relay-event` | one routed thing happened. Opt-in (`monitor`), owner only, live only, never stored |
 | `owner-event` | what this relay did about who belongs on it. Always on, owner only, and **kept** — see 0009 and the R2 note |
 
-`presence` and `route` are the two broadcasts, and both say something
-about a **peer** rather than about this relay — which is why neither is
-correspondence and neither reaches a node's traffic log. A route is only
+`presence` and `route` are the two broadcasts about a **peer**; `partner`
+(R42) is the third broadcast, and it is about a partner **relay** — its
+own event for that reason, since a node filters `presence` by its
+contacts. All three say something
+about somebody other than the member hearing it — which is why none is
+correspondence and none reaches a node's traffic log. A route is only
 announced once it has been **proven**, because a false route cannot be
 proven: verification is what lets a member's claimed route be shared
 without trusting the member who claimed it.
