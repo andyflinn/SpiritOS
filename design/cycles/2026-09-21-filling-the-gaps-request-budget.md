@@ -58,7 +58,7 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**None open, eight deferred, three cancelled, thirty done.** Cycle 7 built
+**One open, eight deferred, three cancelled, thirty done.** Cycle 7 built
 R28 and R36's phase B (2026-09-22). **Cycle 8 is built** (2026-09-22): the
 Governor is deleted in the shape agreed below, and R13 — no streams
 between partners. **Left: the end-of-cycle-8 citation check, then the
@@ -98,6 +98,7 @@ cancelled — hints carry keys, never URLs.
 | <sub>R39</sub> | <sub>*search fans out to memory too, beside every bound relay*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R40</sub> | <sub>*patience is an owner setting, so a message is retried at all*</sub> | <sub>*deferred — possible, outside the core's scope*</sub> | <sub>**yes**</sub> | |
 | <sub>R41</sub> | <sub>*what R35–R39 left on screen*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
+| **R42** | a partner's availability, broadcast when it changes; a request from a partner revives it | OPEN — **decided by Andy** 2026-09-22 | **yes** | |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R23</sub> | <sub>*a sibling is a route too, and both ends are told*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -3022,6 +3023,47 @@ and `searchMemoryRows` — with R31's question of whether the node may write
 
 **Status:** DEFERRED: UI, and Andy takes UI in dedicated sessions on his own
 node.
+
+### R42 — a partner's availability, broadcast; revived by either side
+
+Found after R13 was built, on what a member learns when a partner relay is
+down.
+
+> **Andy:** *"failure to connect to a partner should return an error to
+> the requestor. not available, not-presence broadcast ?"* — *"why put the
+> answer in search when it could be broadcast?"* — *"when partner comes
+> back how does relay know. partner will become visible upon first request
+> from partner member. the partnership lies dormant without remedy ?"* —
+> *"what if the member thinks partner is not available? ahh the broadcast
+> says "unavailable" (right now) it doesn't say "dead" ?"* — **"understood.
+> mechanism accepted, as just discussed."**
+
+**Decided:**
+
+1. **The asker still gets its error.** A forward whose partner does not
+   answer already returns one (`relay.js`, `carryToPartner` →
+   `relayErrorToAsker`, 502 *"the partner relay did not answer"*). Unchanged.
+2. **Every member hears a partner's availability when it CHANGES**, not on
+   each failure: once when its one try fails and it is benched (R13's
+   `partnerLive`), once on its first answer after that. At most two
+   broadcasts per partner per fifteen minutes. It fits the R28 rule — *"we
+   let relay broadcast all new info all the time."*
+3. **It says "unavailable as of `at`", never "dead".** A node keeps it
+   beside the routes it records for that relay and lets it go stale: after
+   fifteen minutes it sends as usual, and that request IS the relay's next
+   try. A broadcast that stopped members trying would starve the only thing
+   that retries.
+4. **A request arriving FROM a partner revives it.** A signed post from a
+   partner proves it is up: it stamps R12's `last` and clears the bench,
+   exactly as an answer does. So a partnership comes back the moment
+   either side speaks — there is no timer and no background check, and a
+   partnership nobody uses costs nothing.
+
+**Its own event**, not `presence`: presence is about members, and a node
+filters it by its contacts, which a relay key is not. Shape to settle at
+build: `{ relayKey, live, at }`.
+
+**Status:** OPEN — decided, not built.
 
 ## The order, and why
 
