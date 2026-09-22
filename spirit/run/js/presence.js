@@ -34,7 +34,7 @@ var DEFAULT_PER_MIN = 6;
 //
 // `retry:` is SSE's own field for when to reconnect. The browser's
 // EventSource honours it with no code of ours at all, and sseClient
-// honours it for a node or a partner relay — so one write serves every
+// honours it for a node — so one write serves every
 // listener this system has.
 //
 // Bounded the same way the parser bounds what it will accept, because the

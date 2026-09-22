@@ -47,7 +47,9 @@ const relayKey = box.relayPublicKey();
 const bert = L.peer('bert');
 const john = L.peer('john');
 
-// A partner holding a stream here, as partners do today (R13 would end it).
+// A partner on the roll. It used to hold a stream here, and the broadcast
+// had to skip it; since R13 (cycle 8) a partner holds none, so "it stops at
+// the partnership" is true by construction — checked below as a refusal.
 const partner = auth.generateIdentity('relay-partner');
 relayStore.open(L.home).partners.put({
   relayKey: partner.publicKey, url: 'http://partner.example', ownerKey: 'o', status: 'partnered', since: 'x',
@@ -62,10 +64,10 @@ const partnerOpen = open(box, partner, partnerBag);
 
 test.subHeading('A rename reaches every member, whole');
 
-if (partnerOpen && partnerOpen.ok !== false) {
-  test.check('the partner really holds a stream here, so the next checks are not passing for free');
+if (partnerOpen && partnerOpen.ok === false && partnerOpen.status === 403) {
+  test.check('the partner cannot hold a stream here (R13), so no broadcast has a way to reach it');
 } else {
-  test.fail('the partner stream did not open: ' + JSON.stringify(partnerOpen));
+  test.fail('a partner stream was admitted: ' + JSON.stringify(partnerOpen));
 }
 
 {
@@ -85,7 +87,7 @@ if (partnerOpen && partnerOpen.ok !== false) {
     test.fail('john was told his own rename');
   }
   if (routesAbout(partnerBag, john.publicKey).length === 0) {
-    test.check('and it stops at the partnership — the partner\'s stream hears nothing');
+    test.check('and it stops at the partnership — nothing reached the partner');
   } else {
     test.fail('a partner heard a member\'s rename');
   }

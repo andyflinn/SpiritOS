@@ -3,9 +3,12 @@
 // spirit/test/partnerWire.js
 // TWO RELAY PROCESSES, TWO SOCKETS, AND A SEARCH THAT CROSSES BETWEEN THEM.
 //
-//   Andy: "Both partners must have the mutual sseClients alive in this
-//   pass."
 //   Andy: "no escaping from the rules for prototyping."
+//
+//   (Andy, earlier: "Both partners must have the mutual sseClients alive
+//   in this pass." Superseded 2026-09-22 by R13, cycle 8: Grok's review,
+//   "A held stream is a second bus", agreed by Andy. Partners hold no
+//   streams; a partner's answer is the reply to the post that asked.)
 //
 // ── WHY THIS FILE EXISTS AND partnerGate.js IS NOT ENOUGH ────────────
 //
@@ -24,13 +27,13 @@
 //
 // ── WHAT A GREEN RUN HERE PROVES ────────────────────────────────────
 //
-//   1. A dialled B and B dialled A — both sseClients alive, one each way.
+//   1. Nobody dialled anybody: neither relay holds a stream to the other.
 //   2. B admitted a signer that is not a member, on a PINNED key.
 //   3. A member of A asked for a peer that exists only on B.
 //   4. A asked B through peerPost over relayRequest: signed, hashed, and
 //      dispatched back to that exact question.
-//   5. The answer arrived on the stream A holds — the only place it could
-//      have arrived, and so proof the stream is live.
+//   5. The answer arrived as B's reply to A's own post, held open until B
+//      had it — the only place it can arrive now there is no stream.
 //   6. A merged it and told its member which partner supplied the row.
 //
 // No stub can fake it, because there is none: every byte crosses a
@@ -191,9 +194,9 @@ async function run() {
   }
   test.check('both are answering, already partnered from the state on disk');
 
-  // Time for each to dial the other. Nobody tells them to: a relay opens
-  // its partner streams at boot, which is the thing under test.
-  await sleep(1500);
+  // NO WAIT FOR A DIAL (R13). There used to be a pause here while each
+  // relay opened its partner stream at boot. There is nothing to open:
+  // the partnership is usable the moment both are answering.
 
   test.subHeading('A member of A finds somebody who only exists on B');
 

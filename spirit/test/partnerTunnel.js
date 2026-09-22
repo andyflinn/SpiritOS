@@ -66,31 +66,18 @@ function sinkFor(bag) {
 }
 
 const boxes = {};          // relay public key -> the relay object
-const waiting = {};        // outer hash -> resolve, for a partner's answer
-const early = {};          // replies that arrived before anybody waited
-
-// ── AN ANSWER CAN ARRIVE BEFORE THE QUESTION RETURNS ─────────────────
+// ── THE WIRE BETWEEN TWO RELAYS: THE ANSWER IS THE REPLY TO THE POST ──
 //
-// Only in one process, and only because of it. A partner answering a
-// SEARCH does so inside `routePost` — it has nothing to wait for — so the
-// reply lands on the stream before `askPartner` has been handed a hash to
-// register a waiter against. A FORWARD does not do this: B parks it until
-// its own member speaks, so the reply is always later.
+// R13 (cycle 8). This fixture used to model a partner's answer arriving on
+// a stream A held to B — a waiter table, a buffer for replies that beat
+// their waiter, and a sink per stream — because that was the product's
+// path: `partnerLink.onEvent -> router.onReply`. Grok's review: "A held
+// stream is a second bus." Andy agreed, and the product now keeps the
+// partner's post open until B answers it (relay.js, holdForPartner).
 //
-// Over a socket every reply is later, so this buffer models nothing real.
-// It exists so the fixture does not lose a reply that beat its own
-// bookkeeping, which is a property of the test harness and not of the
-// protocol.
-
-// ── THE WIRE BETWEEN TWO RELAYS, AND THE WAITING IS THE POINT ─────────
-//
-// A post out, the answer on the held stream — so the answer CANNOT be
-// returned here. B parks a forward until its own member speaks, which may
-// be much later, and the reply then arrives as an event on the stream A
-// holds to B. That is `partnerLink.onEvent -> router.onReply` in the real
-// system, and this models it rather than short-circuiting it: had the
-// fixture returned the answer inline, it would have proven a path the
-// product does not have.
+// So the fixture does exactly that: routePost from a partner hands back
+// `held`, and its settling IS the answer. B still parks a forward until its
+// own member speaks, so the wait is real — it is simply on the post.
 function askPartner(fromHome) {
   return function (url, relayKey, text) {
     const me = auth.loadIdentity(fromHome);
@@ -99,35 +86,10 @@ function askPartner(fromHome) {
     const sig = auth.sign(me.privateKey, auth.postMessage(me.publicKey, relayKey, text));
     const posted = target.routePost(me.publicKey, relayKey, text, sig);
     if (!posted || !posted.ok) return Promise.resolve(null);
-    if (early[posted.hash] !== undefined) {
-      const had = early[posted.hash];
-      delete early[posted.hash];
-      return Promise.resolve({ text: had });
-    }
-    return new Promise(function (resolve) { waiting[posted.hash] = resolve; });
-  };
-}
-
-// A stream one relay holds to another. Replies on it settle the promise
-// `askPartner` handed back — which is the whole of how a partner answers.
-function partnerSink() {
-  return {
-    write: function (chunk) {
-      const ev = /event: ([^\n]+)/.exec(chunk);
-      const da = /data: ([^\n]+)/.exec(chunk);
-      if (!ev || ev[1] !== 'reply') return true;
-      let parsed = null;
-      try { parsed = da ? JSON.parse(da[1]) : null; } catch (e) { parsed = null; }
-      if (parsed && waiting[parsed.hash]) {
-        const resolve = waiting[parsed.hash];
-        delete waiting[parsed.hash];
-        resolve({ text: parsed.text });
-      } else if (parsed && parsed.hash) {
-        early[parsed.hash] = parsed.text;
-      }
-      return true;
-    },
-    close: function () {},
+    if (!posted.held) return Promise.resolve(null);
+    return posted.held.then(function (answer) {
+      return answer && answer.ok ? { text: answer.text, status: 200 } : answer;
+    });
   };
 }
 
@@ -203,32 +165,16 @@ if (!okA.ok || !okB.ok) {
   test.fail('the fixture did not partner them: ' + JSON.stringify(okA) + ' / ' + JSON.stringify(okB));
 }
 
-// ── AND ONLY NOW DO THEY DIAL ────────────────────────────────────────
+// ── AND NOBODY DIALS (R13) ───────────────────────────────────────────
 //
-// AFTER the promotion, never before — and getting this wrong is what
-// cost an hour: `streamOpen` resolves a caller as a member or as a PINNED
-// partner, so a relay dialling before it has been promoted is simply
-// nobody and is refused. The stream then does not exist, and a forward's
-// answer has nowhere to go — which looks exactly like a broken tunnel
-// and is a fixture that never plugged the cable in.
-//
-// partnerLink has the same ordering for the same reason: it opens streams
-// at boot and again on promotion, never speculatively.
-function dial(host, guestHome, what) {
-  const guest = auth.loadIdentity(guestHome);
-  const opened = host.box.streamOpen(guest.publicKey,
-    auth.sign(guest.privateKey, auth.streamMessage(guest.publicKey)), partnerSink());
-  if (!opened || !opened.ok) test.fail(what + ' could not hold a stream: ' + JSON.stringify(opened));
-  return opened;
-}
+// This block opened a stream each way between every pair of partners,
+// AFTER promotion, because a partner's answer could only land on one.
+// There is no partner stream now: a partner's answer is the reply to its
+// own post, so the partnership is live the moment both sides have promoted.
 enrol(D, 'd', A.owner, 'ownera');
 enrol(A, 'a', D.owner, 'ownerd');
 A.box.setPartner(A.owner, D.owner.publicKey, 'http://d.example', D.key, 'h5');
 D.box.setPartner(D.owner, A.owner.publicKey, 'http://a.example', A.key, 'h6');
-dial(D, A.home, 'A on D');
-dial(A, D.home, 'D on A');
-dial(B, A.home, 'A on B');
-dial(A, B.home, 'B on A');
 
 // ── 1. THE PACKET ARRIVES ────────────────────────────────────────────
 

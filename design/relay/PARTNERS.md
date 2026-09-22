@@ -705,6 +705,16 @@ N1 ──post──▶ A ──forward (signed as A) ──▶ B ──deliver�
 >
 > Reasoning and arithmetic: [REQUEST-BUDGET.md](REQUEST-BUDGET.md),
 > *"No streams between partners"*.
+>
+> **Built 2026-09-22 (R13, gap cycle, cycle 8).** `partnerLink.js` is
+> deleted and nothing dials at boot; a partner's post is held open until
+> the relay answers it, and the answer is the response (`relay.js`,
+> `holdForPartner`; `peerPost.js` settles an answer found in the body).
+> A partner that tries to open a stream is refused. **The open question
+> above was answered by the review** (Grok, agreed by Andy): liveness is
+> the last answer — live if it answered within **15 minutes**; quieter
+> than that it is still asked **once**, and only a failed try benches it,
+> for another 15 minutes (`relay.js`, `partnerLive`).
 
 **Partners hold streams to each other.** One each way.
 

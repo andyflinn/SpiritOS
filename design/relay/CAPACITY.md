@@ -1043,7 +1043,8 @@ true.
   that grows without bound turns every send into refuse-then-retry, which
   costs more than the announcement it saved.
 - **Partner streams carry "request and reply, and nothing else"**
-  ([partnerLink.js:106](../../spirit/run/js/partnerLink.js#L106)),
+  (`partnerLink.js:106` — *the file and partner streams were deleted
+  2026-09-22, R13; a partner's answer is the response to its post*),
   deliberately. A limits event widens that. Defensible — it is the relay's
   own state, not anything about its members, so the roster rule is untouched
   — but it should be a written decision rather than a side effect.

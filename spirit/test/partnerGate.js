@@ -83,6 +83,19 @@ function postAsRelay(box, fromKey, fromPrivate, toKey, bodyObj) {
     auth.sign(fromPrivate, auth.postMessage(fromKey, toKey, text)));
 }
 
+// A PARTNER'S ANSWER IS THE REPLY TO ITS OWN POST (R13, cycle 8). It used
+// to arrive on a stream the partner held here; routePost from a partner now
+// hands back `held`, and its settling is the answer. Returns the answer's
+// body, as lastReply does for a stream.
+async function askAsRelay(box, fromKey, fromPrivate, toKey, bodyObj) {
+  const sent = postAsRelay(box, fromKey, fromPrivate, toKey, bodyObj);
+  if (!sent || !sent.ok || !sent.held) return { sent: sent, answer: null };
+  const packet = await sent.held;
+  let answer = null;
+  try { answer = JSON.parse(packet.text).body || null; } catch (e) { answer = null; }
+  return { sent: sent, answer: answer, packet: packet };
+}
+
 function lastReply(bag) {
   const replies = bag.filter(function (m) { return m.event === 'reply'; });
   if (!replies.length) return null;
@@ -123,6 +136,7 @@ if (!promotedA.ok || !promotedB.ok) {
     JSON.stringify(promotedA) + ' / ' + JSON.stringify(promotedB));
 }
 
+async function main() {
 test.subHeading('A partner is admitted, and is not a member');
 
 {
@@ -138,16 +152,15 @@ test.subHeading('A partner is admitted, and is not a member');
     test.fail('partner appeared as a member: ' + JSON.stringify(asRow));
   }
 
-  // But it may hold a stream, because a reply leaves by one.
-  const heardByA = [];
+  // And it holds NO stream (R13). It used to, because a reply left by one;
+  // now its answer is the reply to its own post.
   const opened = B.box.streamOpen(A.key,
-    auth.sign(aIdentity.privateKey, auth.streamMessage(A.key)), sinkFor(heardByA));
-  if (opened && opened.ok !== false) {
-    test.check('and may still hold a stream on B — request by post, reply by stream');
+    auth.sign(aIdentity.privateKey, auth.streamMessage(A.key)), sinkFor([]));
+  if (opened && opened.ok === false && opened.status === 403) {
+    test.check('and holds no stream on B — its question and its answer are one post (R13)');
   } else {
-    test.fail('partner refused a stream: ' + JSON.stringify(opened));
+    test.fail('partner was admitted to a stream: ' + JSON.stringify(opened));
   }
-  A.heard = heardByA;
 }
 
 // ---------------------------------------------------------------------
@@ -180,8 +193,7 @@ test.subHeading('A partner may search, and gets B members');
   // ONLINE ONLY (Andy, 2026-09-19: "search should respond with
   // active/online members only"). Asked before anybody on B is connected,
   // the answer is nobody; the same question once they are, names them.
-  postAsRelay(B.box, A.key, aIdentity.privateKey, B.key, { search: { q: 'be' } });
-  const before = lastReply(A.heard);
+  const before = (await askAsRelay(B.box, A.key, aIdentity.privateKey, B.key, { search: { q: 'be' } })).answer;
   if (before && before.ok && (before.matches || []).length === 0) {
     test.check('nobody offline is found — bella and bertrand are not connected yet');
   } else {
@@ -192,15 +204,17 @@ test.subHeading('A partner may search, and gets B members');
     B.box.streamOpen(id.publicKey, auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), sinkFor([]));
   });
 
-  const sent = postAsRelay(B.box, A.key, aIdentity.privateKey, B.key,
+  const asked = await askAsRelay(B.box, A.key, aIdentity.privateKey, B.key,
     { search: { q: 'be' } });
-  if (sent.ok) {
-    test.check('the post is admitted and routed to B itself');
+  const sent = asked.sent;
+  if (sent.ok && sent.status === 200 && asked.packet && asked.packet.from === B.key &&
+      auth.receiptSignatureOk(B.key, asked.packet.hash, asked.packet.sig)) {
+    test.check('the post is admitted, and answered on itself — signed by B, the receipt verifies');
   } else {
-    test.fail('refused: ' + JSON.stringify(sent));
+    test.fail('refused: ' + JSON.stringify(sent) + ' / ' + JSON.stringify(asked.packet));
   }
 
-  const answer = lastReply(A.heard);
+  const answer = asked.answer;
   const labels = ((answer && answer.matches) || []).map(function (m) { return m.publicLabel; });
   if (answer && answer.ok && labels.indexOf('bella') !== -1 && labels.indexOf('bertrand') !== -1) {
     test.check('and the answer names B own members: ' + labels.join(', '));
@@ -213,22 +227,19 @@ test.subHeading('A partner may search, and gets B members');
 test.subHeading('And may ask for nothing else');
 
 {
-  const before = A.heard.length;
-  postAsRelay(B.box, A.key, aIdentity.privateKey, B.key, { partners: true });
-  const answer = lastReply(A.heard);
+  const answer = (await askAsRelay(B.box, A.key, aIdentity.privateKey, B.key, { partners: true })).answer;
 
   // `{partners:true}` is a verb ANY MEMBER may ask. A partner is not a
   // member, and gets the same `no such peer` a stranger would — so the
   // set of things this box will do for a partner is not enumerable by
   // asking.
-  if (A.heard.length > before && answer && answer.ok !== true) {
+  if (answer && answer.ok !== true) {
     test.check('a verb every member may ask is refused to a partner: ' + answer.error);
   } else {
     test.fail('partner got partners: ' + JSON.stringify(answer));
   }
 
-  postAsRelay(B.box, A.key, aIdentity.privateKey, B.key, { monitor: { on: true } });
-  const mon = lastReply(A.heard);
+  const mon = (await askAsRelay(B.box, A.key, aIdentity.privateKey, B.key, { monitor: { on: true } })).answer;
   if (mon && mon.ok !== true) {
     test.check('and so is an owner verb, with the same words: ' + mon.error);
   } else {
@@ -281,5 +292,8 @@ test.subHeading('A member is unaffected, and still gets its own relay');
     test.fail('member lost partners: ' + JSON.stringify(mine));
   }
 }
+}
 
-test.reportSuccessFailureCount();
+main()
+  .catch(function (e) { test.fail(String(e && e.stack ? e.stack : e)); })
+  .then(function () { test.reportSuccessFailureCount(); });

@@ -239,6 +239,19 @@ var RATE_KEY_SWEEP_AT = 1000;
 // how deep it is.
 var HOP_MARGIN_MS = 500;
 
+// ── HOW LONG A PARTNER MAY BE QUIET AND STILL COUNT AS LIVE (R13) ────────
+//
+//   Grok (review): "N = 15 minutes. Quiet is normal. After 15 min still try
+//   one post before you skip that partner for hints. Do not treat 'no
+//   traffic' as dead at 2 minutes." Andy agreed (2026-09-22, cycle 8).
+//
+// Liveness used to be the partner's held stream. There is none now: a
+// partner is live when it last ANSWERED within this window (R12's `last`),
+// and a partner quiet for longer is still asked once — only a partner that
+// has been quiet this long AND failed its one try since is skipped, and
+// only until this long again has passed.
+var PARTNER_QUIET_MS = 15 * 60 * 1000;
+
 // `deps.askPartner(url, relayKey, text, budgetMs)` answers a promise of the partner's
 // reply text, or null. INJECTED, never reached for: it is this relay's own
 // peerPost over relayRequest, wired in server.js, which is the one
@@ -248,6 +261,9 @@ var HOP_MARGIN_MS = 500;
 function createRelay(rootDir, deps) {
   deps = deps || {};
   var askPartner = typeof deps.askPartner === 'function' ? deps.askPartner : null;
+  // The clock partner liveness reads (R13), injectable so a suite can pass
+  // fifteen minutes without waiting them.
+  var clock = typeof deps.now === 'function' ? deps.now : Date.now;
   rootDir = rootDir || path.join(__dirname, '..');
   // THE ROLL, THE INVITES AND THE PARTNER ROLL — on disc, asked by query
   // (cycle 3, relayStore.js). Nothing of them is resident here.
@@ -876,8 +892,53 @@ function createRelay(rootDir, deps) {
   // a month is still the only route to its members.
   function partnerAnswered(relayKey) {
     if (!relayKey) return;
-    try { store.partners.touch(relayKey); }
+    delete partnerMissedAt[relayKey];
+    try { store.partners.touch(relayKey, new Date(clock()).toISOString()); }
     catch (e) { /* a column that will not take a stamp is not worth a dropped reply */ }
+  }
+
+  // ── IS A PARTNER LIVE? (R13) ─────────────────────────────────────────
+  //
+  // The held stream that answered this is gone (Andy + Grok, cycle 8). A
+  // partner is live when it answered within PARTNER_QUIET_MS. Quieter than
+  // that it is STILL asked, once: only a failed try since its last answer
+  // benches it, and only for another PARTNER_QUIET_MS. So a quiet partner
+  // costs at most one wasted post every fifteen minutes, and a partner that
+  // comes back is found by the next of those.
+  //
+  // The miss is kept in RAM, keyed by relay key: it is a fact about this
+  // process's last attempt, not about the partnership, and a restart that
+  // forgets it merely gives every partner its one try again.
+  var partnerMissedAt = Object.create(null);
+
+  function partnerMissed(relayKey) {
+    if (relayKey) partnerMissedAt[relayKey] = clock();
+  }
+
+  function partnerLive(p) {
+    if (!p || !p.relayKey) return false;
+    var now = clock();
+    var last = p.last ? Date.parse(p.last) : NaN;
+    if (isFinite(last) && now - last < PARTNER_QUIET_MS) return true;
+    var missed = partnerMissedAt[p.relayKey];
+    return !(missed && now - missed < PARTNER_QUIET_MS);
+  }
+
+  // DID THE PARTNER ANSWER AT ALL? What askPartner settles with is
+  // peerPost's result, which resolves on silence too. A refusal from the
+  // partner is an answer (R12: "a partner refusing has worked"); our own
+  // wait running out, a connection that failed, or our own queue saying no
+  // are not — the partner said nothing.
+  function partnerSaidSomething(answer) {
+    if (!answer) return false;
+    if (answer.stillOpen || answer.queueFull) return false;
+    if (typeof answer.text === 'string') return true;
+    return answer.status !== 0 && answer.status !== undefined;
+  }
+
+  function heardFrom(relayKey, answer) {
+    if (partnerSaidSomething(answer)) partnerAnswered(relayKey);
+    else partnerMissed(relayKey);
   }
 
   function partnerByRelayKey(key) {
@@ -1707,6 +1768,37 @@ function createRelay(rootDir, deps) {
   // for a relay is never a socket.
   var awaitingReply = Object.create(null);
 
+  // A PARTNER'S POST, HELD OPEN FOR ITS ANSWER (R13). By hash, like
+  // awaitingReply, and for the same reason: what waits at this end is a
+  // connection, not a socket. Settles with the reply packet a stream would
+  // have carried — {hash, from, text, sig}, signed by this relay — or, when
+  // the time this relay granted runs out, with the refusal the partner
+  // would otherwise have learnt from its own timer.
+  var heldForPartner = Object.create(null);
+
+  function holdForPartner(hash, grantedMs) {
+    return new Promise(function (resolve) {
+      var slot = { resolve: resolve, timer: null };
+      heldForPartner[hash] = slot;
+      var wait = typeof grantedMs === 'number' && grantedMs > 0 ? grantedMs : routerTable.DEFAULT_TTL_MS;
+      slot.timer = setTimeout(function () {
+        if (heldForPartner[hash] !== slot) return;
+        delete heldForPartner[hash];
+        resolve({ ok: false, status: 504, hash: hash, error: 'no answer yet' });
+      }, wait);
+      if (slot.timer && typeof slot.timer.unref === 'function') slot.timer.unref();
+    });
+  }
+
+  function settleForPartner(hash, packet) {
+    var slot = heldForPartner[hash];
+    if (!slot) return false;
+    delete heldForPartner[hash];
+    if (slot.timer) clearTimeout(slot.timer);
+    slot.resolve(Object.assign({ ok: true, status: 200 }, packet));
+    return true;
+  }
+
   function settleHere(hash, answer) {
     var slot = awaitingReply[hash];
     if (!slot) return false;
@@ -2199,7 +2291,7 @@ function createRelay(rootDir, deps) {
       var p = list[0];
       askPartner(p.url, p.relayKey, wrapper, onward)
         .then(function (answer) {
-          partnerAnswered(p.relayKey);
+          heardFrom(p.relayKey, answer);
           var said = null;
           try { said = JSON.parse((answer && answer.text) || ''); }
           catch (e) { said = null; }
@@ -2217,6 +2309,7 @@ function createRelay(rootDir, deps) {
             (out && out.error) || (answer && answer.error) || 'the partner relay did not answer');
         })
         .catch(function () {
+          partnerMissed(p.relayKey);
           relayErrorToAsker(innerHash, who.id, 502, 'the partner relay did not answer');
         });
       // It is on its way. Whether that partner holds the key is its
@@ -2731,7 +2824,7 @@ function createRelay(rootDir, deps) {
     //
     // Everything answerSelf does is immediate except one thing: a search
     // asked BY A MEMBER is also asked of this relay's partners, and their
-    // replies come back on held streams whenever they come back. So the
+    // replies come back as the replies to its posts, whenever they come (R13). So the
     // reply is sent by calling this rather than by falling off the end.
     //
     // Every other verb calls it at once and behaves exactly as before.
@@ -2759,12 +2852,16 @@ function createRelay(rootDir, deps) {
     // process.
       var matched = routes.answer(hash, mine.publicKey);
       if (!matched.ok) return;
-      presentNow.send(matched.requester, 'reply', {
+      var packet = {
         hash: hash,
         from: mine.publicKey,
         text: reply,
         sig: auth.sign(mine.privateKey, auth.receiptMessage(hash)),
-      });
+      };
+      // A PARTNER HOLDS NO STREAM (R13): its answer goes back as the reply
+      // to the post it asked with, which is still open, waiting.
+      if (settleForPartner(hash, packet)) return;
+      presentNow.send(matched.requester, 'reply', packet);
     }
 
     // ── ASK THE PARTNERS, AND MERGE WHAT COMES BACK ──────────────────
@@ -2802,12 +2899,14 @@ function createRelay(rootDir, deps) {
     function finish() {
     if (pendingSearch) {
       // LIVE PARTNERS ONLY (cycle 3, NODE-AND-RELAY §10, decided by Andy).
-      // A partner is live when it holds its stream here now — the test
-      // hint routing uses. Asking one that is down held every search for
-      // the full timeout (the answer waits on all of them); leaving it out
-      // loses no more than search already gave up against a census.
+      // Live was "holds its stream here now" until R13 took the streams
+      // away; it is now "answered within fifteen minutes, or has not failed
+      // its one try since" (partnerLive). Asking one that is down held
+      // every search for the full timeout (the answer waits on all of
+      // them); leaving it out loses no more than search already gave up
+      // against a census.
       var partnerList = askPartner
-        ? (partners() || []).filter(function (p) { return presentNow.isPresent(p.relayKey); })
+        ? (partners() || []).filter(partnerLive)
         : [];
       if (!partnerList.length) {
         sendAnswer(out);
@@ -2818,7 +2917,7 @@ function createRelay(rootDir, deps) {
         var text = JSON.stringify({ v: 1, body: { search: { q: pendingSearch.q } } });
         return askPartner(p.url, p.relayKey, text)
           .then(function (answer) {
-            partnerAnswered(p.relayKey);
+            heardFrom(p.relayKey, answer);
             var said = null;
             try { said = JSON.parse((answer && answer.text) || ''); }
             catch (e) { said = null; }
@@ -2833,7 +2932,7 @@ function createRelay(rootDir, deps) {
               .filter(function (r) { return r && r.present !== false; });
             return { via: p.relayKey, rows: rows };
           })
-          .catch(function () { return null; });
+          .catch(function () { partnerMissed(p.relayKey); return null; });
       });
 
       Promise.all(asked).then(function (answers) {
@@ -2944,12 +3043,19 @@ function createRelay(rootDir, deps) {
   // does not fall back to a second on failure: a refused forward is the
   // sender's news, not a reason to disclose the packet to another relay.
   //
-  // Live = the partner holds its own stream to this relay right now, which
-  // is what makes a reply deliverable without a dial.
+  // Live = answered within fifteen minutes, or not yet failed its one try
+  // since (partnerLive, R13). It was "holds its own stream to this relay"
+  // until the streams went. Either way a partner that is not live is still
+  // chosen when it is the only one named: the order is a preference, never
+  // a refusal.
   function partnerFromHints(hints) {
-    var mine = (partners() || []).map(function (p) { return p.relayKey; });
-    var named = hints.filter(function (k) { return mine.indexOf(k) !== -1; });
-    var live = named.filter(function (k) { return presentNow.isPresent(k); });
+    var mine = (partners() || []);
+    var named = hints.filter(function (k) {
+      return mine.some(function (p) { return p.relayKey === k; });
+    });
+    var live = named.filter(function (k) {
+      return partnerLive(mine.filter(function (p) { return p.relayKey === k; })[0]);
+    });
     return live[0] || named[0] || null;
   }
 
@@ -3091,6 +3197,25 @@ function createRelay(rootDir, deps) {
       // box real work and real bytes; leaving it out of the ring would
       // make the governor blind to exactly the traffic partnering adds.
       meterNote(text.length, fromPartner);
+
+      // ── A PARTNER'S QUESTION IS ANSWERED ON ITS OWN POST (R13) ─────
+      //
+      //   Grok (review): "The forward path is already request-in /
+      //   reply-out. A held stream is a second bus." — "If a verb cannot
+      //   answer on the same post, it is not a partner verb yet." Andy
+      //   agreed (cycle 8).
+      //
+      // So the post stays open until answerSelf answers — at once for
+      // most verbs, when this relay's member replies for a forward, when
+      // the fan-out settles for a search — or until the time this relay
+      // granted runs out, and the reply to the post IS the answer. The
+      // waiter exists before answerSelf runs, because most verbs answer
+      // before it returns.
+      if (fromPartner) {
+        var heldAnswer = holdForPartner(selfHash, opened.grantedMs);
+        answerSelf(selfHash, text, who);
+        return { ok: true, status: 200, hash: selfHash, held: heldAnswer };
+      }
       answerSelf(selfHash, text, who);
       return withStatus(opened, selfHash);
     }
@@ -3713,14 +3838,17 @@ function createRelay(rootDir, deps) {
     // 1. Unknown identity first, before any bucket and before any crypto.
     //    B1's rule: a registry keyed by caller-chosen input grows when a
     //    stranger reaches it, so a stranger must not reach it.
-    //    A PARTNER RELAY MAY HOLD ONE TOO, and must: a reply leaves this
-    //    box through `presentNow.send`, so a partner with no stream can be
-    //    asked a question it is unable to answer into. That is tier two's
-    //    "request by post, reply by stream, in both directions" — the
-    //    partner is structurally in the position of a node here, and every
-    //    line below treats it as one because it resolves to an identity
-    //    with a key and a signature like any other.
-    var who_ = deviceIdentity(token) || partnerIdentity(token);
+    //    A PARTNER RELAY HOLDS NONE (R13, cycle 8). It used to, because a
+    //    reply left this box only through `presentNow.send`; now a
+    //    partner's answer is the reply to its own post (holdForPartner),
+    //    so a partner stream would only take a place in the allowance
+    //    members need. Refused by name, so an older relay that still dials
+    //    learns why rather than retrying a bare 403.
+    //    Grok (review): "A held stream is a second bus."
+    if (partnerIdentity(token)) {
+      return { ok: false, status: 403, error: 'a partner holds no stream here' };
+    }
+    var who_ = deviceIdentity(token);
     if (!who_) return { ok: false, status: 403, error: 'no such identity' };
 
     // 2. The signature, against THAT identity's own row key. Never the
@@ -3826,12 +3954,10 @@ function createRelay(rootDir, deps) {
   // stopped reading (R35, streamSink.js), and absent for every other
   // close. Only the cut settles the routes: see failRoutesOf.
   function streamClose(token, sink, why) {
-    // THE SAME IDENTITIES streamOpen ADMITS. This resolved members and the
-    // owner only, so a partner's stream, opened through partnerIdentity,
-    // could never be closed: when its socket died the partner stayed
-    // present for good. Found in cycle 3 when "live" started to decide
-    // which partners a search asks (and it already decided hint routing).
-    var who_ = deviceIdentity(token) || partnerIdentity(token);
+    // THE SAME IDENTITIES streamOpen ADMITS — members and the owner. A
+    // partner was admitted too until R13, and cycle 3 found this had to
+    // close what it opened; with no partner stream there is none to close.
+    var who_ = deviceIdentity(token);
     if (!who_) return false;
     if (!presentNow.disconnect(who_.id, sink)) return false;
     forgetActive(who_.id);

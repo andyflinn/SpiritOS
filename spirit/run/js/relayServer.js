@@ -16,7 +16,7 @@
 // cycle 3 — a relay needs a persistent disc and SSH.)
 //
 // What a relay IS stays in relay.js. This file is only the HTTP in front
-// of it: the public surface, the bind, the partner streams and the
+// of it: the public surface, the bind, the partner router and the
 // goodbye.
 'use strict';
 
@@ -55,10 +55,10 @@ const FULL_RETRY_S = 30;
 const BUILD = buildStamp.resolve(spirit.core.node.const.ROOT_DIR);
 const STARTED_AT = new Date().toISOString();
 
-// A relay's half: the peerPost it posts to partners from, and the streams
-// it holds to them. Built after the server is listening.
+// A relay's half: the peerPost it posts to partners from. Built after the
+// server is listening. (The streams it held to them, partnerLinks, went in
+// R13: a partner's answer is now the reply to the post that asked.)
 let partnerRouter = null;
-let partnerLinks = null;
 
 // Checked before verifyStartupCwd, on purpose — --help should work
 // regardless of which directory this was launched from.
@@ -530,10 +530,28 @@ const server = http.createServer((req, res) => {
         const budgetMs = (body && typeof body.budgetMs === 'number' && isFinite(body.budgetMs))
           ? Math.max(0, body.budgetMs)
           : undefined;
-        const result = relay.routePost(
+        const posted = relay.routePost(
           body && body.from, body && body.to, body && body.text, body && body.sig,
           route, budgetMs
         );
+        // A PARTNER'S POST IS ANSWERED ON ITSELF (R13): relay.js hands back
+        // `held`, a promise of the answer, and this request stays open
+        // until it settles — with the reply packet, or with the refusal
+        // when the time this relay granted runs out. Every other post is
+        // answered at once, exactly as before.
+        // It never rejects: holdForPartner settles with the answer or, when
+        // the time runs out, with 504 "no answer yet".
+        if (posted && posted.held && typeof posted.held.then === 'function') {
+          posted.held.then(writePosted);
+          return;
+        }
+        writePosted(posted);
+      }).catch(function () {
+        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Invalid JSON body');
+      });
+
+      function writePosted(result) {
         res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
         // A WHITELIST, AND IT STAYS ONE. What a refusal carries is part of
         // the protocol, so it is named here rather than being whatever
@@ -566,10 +584,7 @@ const server = http.createServer((req, res) => {
           // sentence."
           code: spiritErrors.classify(result.status, result.error, result).code,
         }));
-      }).catch(function () {
-        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('Invalid JSON body');
-      });
+      }
       return;
     }
 
@@ -637,12 +652,6 @@ common.refuseListenError(server, port, 'js/relayServer.js');
     let told = 0;
     try { told += relay.presence.goingAway(3000); }
     catch (e) { /* nothing to tell, or already gone */ }
-    // The streams this relay HOLDS, as opposed to the ones it serves.
-    // Closed rather than left to the process exiting, so a partner sees
-    // a clean end and reconnects on its own clock instead of waiting out
-    // the idle watchdog.
-    try { if (partnerLinks) partnerLinks.stop(); }
-    catch (e) { /* already gone */ }
     console.log(`${signal} — told ${told} stream(s) to come back in 3s`);
     try { server.close(); } catch (e) { /* not listening */ }
     // Every commit is already on disc (synchronous=FULL); closing is so
@@ -676,20 +685,19 @@ server.listen(port, BIND_HOST, () => {
   // by hash on their own stream. A relay nobody is watching now does
   // exactly nothing about being watched.
 
-  // -- AND IT DIALS ITS PARTNERS ------------------------------------
+  // -- AND IT ASKS ITS PARTNERS ------------------------------------
   //
-  //   Andy: "Both partners must have the mutual sseClients alive in
-  //   this pass."
-  //
-  // ONE STREAM EACH WAY, because the stream is the INBOUND half of the
-  // interface: B's answers to A land on the stream A holds, so if only
-  // one end dialled, the other could ask nothing. Both ends run this,
-  // so both ends can ask.
+  // THROUGH ITS OWN POSTS, AND NOTHING HELD (R13, cycle 8). This dialled a
+  // stream to every partner at boot — "Both partners must have the mutual
+  // sseClients alive in this pass" (Andy, then) — because a partner's
+  // answer could only arrive on a stream. Grok's review: "The forward path
+  // is already request-in / reply-out. A held stream is a second bus."
+  // Andy agreed. The answer now comes back as the reply to the post, so
+  // there is nothing to dial and nothing to hold, and partnerLink.js is
+  // gone.
   //
   // Its own peerPost, signing as this relay's identity, with
-  // relayRequest injected — the same interface a node uses, which is why
-  // this needed no new transport and inherits the backoff, jitter, idle
-  // watchdog and `retry:` handling without a line of its own.
+  // relayRequest injected — the same interface a node uses.
   partnerRouter = require('./peerPost').createPeerPost({
     rootDir: ROOT_DIR,
     request: require('./relayRequest').relayRequest,
@@ -697,13 +705,6 @@ server.listen(port, BIND_HOST, () => {
     // can omit it: that file is correct on a personal node and is "the
     // worst thing in the system on a relay" (peerPost.js).
   });
-  partnerLinks = require('./partnerLink').createPartnerLinks({
-    rootDir: ROOT_DIR,
-    relay: relay,
-    router: partnerRouter,
-  });
-  const dialled = partnerLinks.start();
-  if (dialled) console.log(`    holding ${dialled} partner stream(s)`);
 
   // THE GOVERNOR'S TICK STOOD HERE (cycle 1), every five seconds. Deleted in
   // cycle 8: the relay manages itself within a fixed allowance, set once at

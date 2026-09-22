@@ -252,6 +252,13 @@ define('no-such-identity', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['no such identity'],
 });
+define('partner-no-stream', {
+  status: 403, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['a partner holds no stream here'],
+  note: 'A partner relay tried to open a stream (R13, cycle 8). Partners ' +
+    'hold none: a partner\'s answer is the reply to its own post. Only an ' +
+    'older relay that still dials at boot sees this.',
+});
 define('no-such-peer', {
   status: 404, alsoStatus: [403], presence: NONE, retry: 'no', fault: 'caller',
   texts: ['no such peer'],

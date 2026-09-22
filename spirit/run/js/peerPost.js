@@ -425,6 +425,16 @@ function createPeerPost(opts) {
         // member's only slot for nothing — the asker blocking itself,
         // which looks exactly like the relay blocking it.
         if (res.status >= 200 && res.status < 300) {
+          // ANSWERED ON THE POST ITSELF (R13). A relay posting to a partner
+          // holds no stream there any more, so the partner keeps the post
+          // open and its reply IS the answer — the same signed packet a
+          // stream would have carried. It settles through onReply, so the
+          // receipt is verified exactly as a streamed one is; nothing about
+          // what counts as an answer changes, only which door it came in by.
+          if (body && body.hash && body.from && body.sig && typeof body.text === 'string') {
+            onReply({ hash: body.hash, from: body.from, text: body.text, sig: body.sig });
+            return;
+          }
           var granted = body && typeof body.grantedMs === 'number' ? body.grantedMs : 0;
           var slotNow = waiting[hash];
           if (granted > 0 && granted < waitMs && slotNow && slotNow.timer) {

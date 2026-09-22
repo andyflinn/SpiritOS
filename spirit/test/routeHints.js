@@ -31,6 +31,7 @@ const auth = require('../run/js/relayAuth');
 const limits = require('../run/js/limits.js');
 const { createRelay } = require('../run/js/relay');
 const { createPeerPost } = require('../run/js/peerPost');
+const relayStore = require('../run/js/relayStore');
 
 function sinkFor(bag) {
   return {
@@ -49,6 +50,9 @@ function sinkFor(bag) {
 
 const boxes = {};
 const carriedTo = [];   // which relay each forward was handed to
+// What each partner said back, as the reply to the post that asked (R13):
+// the promise routePost hands a partner, kept so a case can read it.
+const heldAnswers = [];
 
 function askPartner(fromHome) {
   return function (url, relayKey, text) {
@@ -57,7 +61,8 @@ function askPartner(fromHome) {
     const target = boxes[relayKey];
     if (!target) return Promise.resolve(null);
     const sig = auth.sign(me.privateKey, auth.postMessage(me.publicKey, relayKey, text));
-    target.routePost(me.publicKey, relayKey, text, sig);
+    const posted = target.routePost(me.publicKey, relayKey, text, sig);
+    if (posted && posted.held) heldAnswers.push(posted.held);
     // ANSWERS, RATHER THAN HANGING FOR EVER.
     //
     // This was `new Promise(function () {})` — "the answer is not under
@@ -114,11 +119,12 @@ function partner(X, Y) {
   Y.box.setPartner(Y.owner, X.owner.publicKey, 'http://' + X.tag + '.example', X.key, 'p' + Y.tag + X.tag);
 }
 
-// Y holds a stream on X — which is what "live" means from X's side.
-function dial(X, Y) {
-  const guest = auth.loadIdentity(Y.home);
-  return X.box.streamOpen(guest.publicKey,
-    auth.sign(guest.privateKey, auth.streamMessage(guest.publicKey)), sinkFor([]));
+// WHAT "LIVE" MEANS FROM X'S SIDE (R13). It was "Y holds a stream on X";
+// partners hold none now. Live is "answered within fifteen minutes, or has
+// not failed its one try since" (relay.js, partnerLive) — so Y is made live
+// by stamping its last answer on X's roll, which is what a real answer does.
+function answeredJustNow(X, Y) {
+  return relayStore.open(X.home).partners.touch(Y.key);
 }
 
 // A signed post with a signed hint block — what peerPost puts on the wire.
@@ -181,8 +187,8 @@ test.startTest('Route hints — signed beside the packet, chosen by the relay');
 
 async function run() {
   // A holds jazz and kim. B and D both hold sonny. B is a LIVE partner of
-  // A (it holds a stream on A); D is a partner of A that is not live. C is
-  // nobody's partner.
+  // A (it answered a moment ago); D is a partner of A that is not live (it
+  // has never answered, and failed its one try). C is nobody's partner.
   const A = relayWith('a', ['jazz', 'kim']);
   const B = relayWith('b', ['sonny']);
   const D = relayWith('d', []);
@@ -190,8 +196,14 @@ async function run() {
   const C = relayWith('c', []);
   partner(A, B);
   partner(A, D);
-  if (!dial(A, B).ok) test.fail('fixture: B could not hold a stream on A');
+  if (!answeredJustNow(A, B)) test.fail('fixture: could not stamp B as answered on A');
   const sonny = B.people.sonny.publicKey;
+  // D's one try, spent and failed: a member of A searches, A asks both
+  // partners (neither has failed yet), and this fixture's partners say
+  // nothing. B stays live on its fresh answer; D is benched.
+  post(A.box, A.people.kim, A.key, { search: { q: 'anyone' } });
+  await settled();
+  await settled();
 
   test.subHeading('A hint block the relay must not act on');
 
@@ -355,11 +367,8 @@ async function replyDirection(A, B) {
     test.fail('fitsWrappedReply is wrong on the two cases');
   }
 
-  // A holds a stream on B, so B's answer to A lands somewhere we can read.
-  const toA = [];
-  const guest = auth.loadIdentity(A.home);
-  B.box.streamOpen(guest.publicKey,
-    auth.sign(guest.privateKey, auth.streamMessage(guest.publicKey)), sinkFor(toA));
+  // B's answer to A is the reply to A's own post (R13): the fixture keeps
+  // each one, so the case below reads the one this forward gets.
 
   // One member may be asked one thing at a time (0016), and the cases
   // above have been asking sonny. Let the last of them close before this
@@ -367,6 +376,7 @@ async function replyDirection(A, B) {
   await settled();
   answerPending(B.box, B.people.sonny, B.inboxes.sonny);
   const before = B.inboxes.sonny.length;
+  const heldBefore = heldAnswers.length;
   const sent = post(A.box, A.people.jazz, B.people.sonny.publicKey, { ask: 'big' }, [B.key]);
   const req = B.inboxes.sonny.slice(before).filter(function (m) { return m.event === 'request'; })[0];
   if (!sent.ok || !req) {
@@ -383,9 +393,9 @@ async function replyDirection(A, B) {
   } else {
     test.fail('oversize reply accepted: ' + JSON.stringify(replied));
   }
-  const told = toA.filter(function (m) { return m.event === 'reply'; }).map(function (m) {
-    try { return JSON.parse(m.data.text).body; } catch (e) { return null; }
-  }).filter(Boolean).pop();
+  const packet = heldAnswers.length > heldBefore ? await heldAnswers[heldAnswers.length - 1] : null;
+  let told = null;
+  try { told = JSON.parse(packet.text).body; } catch (e) { told = null; }
   if (told && told.ok === false && told.status === 413) {
     test.check('and tells the partner relay why, which passes it down the chain (hintWire.js proves the rest)');
   } else {

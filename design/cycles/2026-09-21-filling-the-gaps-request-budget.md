@@ -58,10 +58,11 @@ the two are not the same thing. What a stage can tell you is only what a
 requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
-**One open, eight deferred, three cancelled, twenty-nine done.** Cycle 7 built
-R28 and R36's phase B (2026-09-22). **Cycle 8 is half built:** the
-Governor is deleted in the shape agreed below (2026-09-22). **Left: R13**,
-reviewed and decided. **Nothing else stands between this cycle and the review**:
+**None open, eight deferred, three cancelled, thirty done.** Cycle 7 built
+R28 and R36's phase B (2026-09-22). **Cycle 8 is built** (2026-09-22): the
+Governor is deleted in the shape agreed below, and R13 — no streams
+between partners. **Left: the end-of-cycle-8 citation check, then the
+review.** Nothing else stands between this cycle and the review:
 R11 and R14 left the core by Andy's ruling of 2026-09-22, and R9 is
 cancelled — hints carry keys, never URLs.
 
@@ -79,7 +80,7 @@ cancelled — hints carry keys, never URLs.
 | <sub>R10</sub> | <sub>*`cancel`, exposed to a member*</sub> | <sub>*cancelled*</sub> | <sub>—</sub> | |
 | <sub>R11</sub> | <sub>*the URL rule / SSRF — only a stranger relay's first dial, which only R14 makes*</sub> | <sub>*deferred with R14 — the core dials only owner-written URLs*</sub> | <sub>**yes**</sub> | |
 | <sub>R12</sub> | <sub>*`last` on a partner row*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R13** | no streams between partners | OPEN — **reviewed: agree**, 15-minute liveness; Andy opens the sitting | **yes** | |
+| <sub>R13</sub> | <sub>*no streams between partners*</sub> | <sub>*done — the answer is the response to the post; live = answered within 15 min, then one try*</sub> | <sub>—</sub> | |
 | <sub>R14</sub> | <sub>*open partnering — a row on send or receive, mutual activates*</sub> | <sub>*deferred — an owner's grant, outside the core (2026-09-22)*</sub> | <sub>**yes**</sub> | |
 | <sub>R15</sub> | <sub>*the per-stream measurement*</sub> | <sub>*done — a platform constant: ~57–63 KB Windows, ~42 KB Linux*</sub> | <sub>—</sub> | |
 | <sub>R16</sub> | <sub>*the queue survives a restart — and is a table, not a dump*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -1104,7 +1105,49 @@ members, most of `partnerLink.js`, and collapses relay↔relay to **one
 verb** — the response to a post *is* the reply, which the forward path
 already does in production.
 
-**Status:** OPEN — not built. Bones and wire together, so a team review.
+**Reviewed and decided 2026-09-22.** Grok: *"Remove partnerLink
+dial-at-boot. Liveness is last answered, not a socket. N = 15 minutes.
+Quiet is normal. After 15 min still try one post before you skip that
+partner for hints."* — Andy agreed, and opened it as cycle 8 (*"8"*).
+
+**Built 2026-09-22.**
+
+- **The answer is the response to the post.** A partner's post to a relay
+  is held open (`relay.js`, `holdForPartner`) until the relay answers it —
+  at once for most verbs, when its member replies for a forward, when the
+  fan-out settles for a search — or until the time it granted runs out
+  (504 *"no answer yet"*). `sendAnswer` settles the held post instead of
+  writing to a stream; `relayServer.js` waits on it; `peerPost.js`
+  settles an answer found in the response body through `onReply`, so the
+  receipt is verified exactly as a streamed one.
+- **No partner stream.** `partnerLink.js` is deleted and nothing dials at
+  boot. A partner that tries to open a stream is refused, 403 *"a partner
+  holds no stream here"* (catalogued, `partner-no-stream`), so an older
+  relay learns why.
+- **Liveness is the last answer** (`partnerLive`): answered within
+  `PARTNER_QUIET_MS` (15 min) → live; quieter → asked once; a failed try
+  benches it for another 15 minutes, kept in RAM. Search fan-out and hint
+  choice both use it. **R12's column is now stamped only on an answer:**
+  our own wait running out, a failed connection or our own full queue
+  are not the partner answering, where before any settled promise touched
+  `last`.
+- **A flag day for partners.** A new relay posting to an old one gets a
+  202 and waits for a stream it no longer holds; an old relay's dial is
+  refused by a new one. **Both relays of a partnership must run this
+  release.** In the core today partnerships are owner-made by hand, so this
+  is a note for whoever makes the next one.
+
+**Verify:** `spirit/test/liveFanOut.js`, `spirit/test/partnerGate.js`, `spirit/test/partnerTunnel.js`, `spirit/test/routeHints.js`, `spirit/test/memberBroadcast.js`, `spirit/test/partnerWire.js`.
+`liveFanOut.js` (rewritten: the ladder above, with an injected
+clock), `partnerGate.js` (the answer on the post, B's receipt verifies; a
+partner stream refused), `partnerTunnel.js` and `routeHints.js`
+(fixtures now take the answer from the post), `memberBroadcast.js`,
+`partnerWire.js` (two processes over loopback — the answer arrives on
+the post, nothing dials). Falsified: the answer withheld from the post, the
+asker ignoring a body answer, every partner always live — each caught.
+Harness: 119 suites, 2705 green, 0 red.
+
+**Status:** DONE
 
 ### R14 — open partnering, provisional rows, and a visible count
 
