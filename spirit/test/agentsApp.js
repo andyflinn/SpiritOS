@@ -285,6 +285,85 @@ async function run() {
     }
   }
 
+  // ── `blocked` — WHAT STOPPED, SO THE LEAD CAN COLLATE IT ──────────
+  //
+  //   Andy, 2026-09-23, answering the bundle: "3 decisions above: 1. yes.
+  //   2. yes. 3. yes." — the first being this.
+  //
+  // The fields are wsl-claude's, agreed over the wire and taken verbatim.
+  // What this suite holds is the part that would rot quietly: that a bad
+  // value is refused AT THE SENDER rather than sorted into the wrong pile
+  // of Andy's digest, and that a block prints as one line and nothing
+  // more, which is what makes the digest assembly rather than reading.
+  test.subHeading('A block carries who can clear it, and is refused if it cannot say');
+
+  {
+    const env = agents.makeEnvelope('wsl-claude', 'blocked', '', 'abc123def456', function () { return 'id1'; }, {
+      what: 'The vault gate asks you to approve wsl-claude writing his own compile.',
+      needs: 'permission',
+      who: 'andy',
+    });
+    const b = env.body.block;
+    if (b.who === 'andy' && b.needs === 'permission' && b.state === 'parked' &&
+        /^\d{4}-\d{2}-\d{2}T/.test(b.since) && env.re === 'abc123def456') {
+      test.check('what, needs, who, a default state of parked, a timestamp — and `re`, so it lands on the task');
+    } else {
+      test.fail('the block was shaped wrongly: ' + JSON.stringify(env));
+    }
+
+    if (agents.blockLine(env) === 'andy | permission | The vault gate asks you to approve wsl-claude writing his own compile.') {
+      test.check('and it prints as `who | needs | what`, nothing more');
+    } else {
+      test.fail('the one-line form drifted: ' + agents.blockLine(env));
+    }
+  }
+
+  {
+    const bad = [
+      ['an unknown needs', { what: 'x', needs: 'vibes', who: 'andy' }],
+      ['an unknown who', { what: 'x', needs: 'decision', who: 'the-relay' }],
+      ['an unknown state', { what: 'x', needs: 'decision', who: 'andy', state: 'later' }],
+      ['no sentence at all', { needs: 'decision', who: 'andy' }],
+    ];
+    const refused = bad.filter(function (c) {
+      try {
+        agents.makeEnvelope('x', 'blocked', '', null, function () { return 'i'; }, c[1]);
+        return false;
+      } catch (e) { return true; }
+    });
+    if (refused.length === bad.length) {
+      test.check('a block nobody could sort is refused where it is written, not where it is read');
+    } else {
+      test.fail('these were accepted: ' + bad.filter(function (c) { return refused.indexOf(c) === -1; })
+        .map(function (c) { return c[0]; }).join(', '));
+    }
+  }
+
+  {
+    // `worked-around` is a report, not an apology: the hour was still
+    // spent, and the hour is the finding.
+    const env = agents.makeEnvelope('claude-windows', 'blocked', '', null, function () { return 'id2'; }, {
+      what: 'Every compound command asked Andy to approve it, for two days.',
+      needs: 'permission', who: 'either', state: 'worked-around',
+    });
+    if (env.body.block.state === 'worked-around' && agents.STATES.indexOf('worked-around') !== -1) {
+      test.check('a block that was got past can still be reported — the cost is the finding');
+    } else {
+      test.fail('worked-around did not survive: ' + JSON.stringify(env.body.block));
+    }
+  }
+
+  {
+    // Nothing else changed shape: the conversational kinds still carry
+    // text and no block.
+    const note = agents.makeEnvelope('claude-windows', 'note', 'the harness is green', null, function () { return 'id3'; });
+    if (note.body.text === 'the harness is green' && note.body.block === undefined) {
+      test.check('and a note is untouched by any of this');
+    } else {
+      test.fail('an ordinary note grew a block: ' + JSON.stringify(note));
+    }
+  }
+
   test.reportSuccessFailureCount();
 }
 

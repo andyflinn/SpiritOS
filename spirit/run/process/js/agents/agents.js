@@ -34,7 +34,39 @@ const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 
 const APP = 'agents';
-const KINDS = ['note', 'ask', 'answer', 'report', 'halt', 'resume'];
+const KINDS = ['note', 'ask', 'answer', 'report', 'halt', 'resume', 'blocked'];
+
+// ── `blocked` — WHAT STOPPED, IN A SHAPE THE LEAD CAN COLLATE ─────────
+//
+//   Andy, 2026-09-23, answering the bundle: *"3 decisions above: 1. yes.
+//   2. yes. 3. yes."* — the first being this.
+//
+// AGENT.md already forbids waiting: an agent that meets something needing
+// Andy finishes what it can, puts the decision in the digest, and returns
+// to its node. What it had no way to say was WHAT it is parked on, in a
+// form anything could sort — so blocks arrived as prose in a report, and
+// Andy got two agents' obstacles unsorted in his window.
+//
+// The fields are wsl-claude's, taken verbatim rather than improved:
+//
+//   what   one plain sentence, written FOR ANDY — never the command
+//   needs  decision | credential | permission | access | information
+//   who    who can clear it: andy | lead | either
+//   state  parked | abandoned | worked-around
+//   since  when it started, ISO
+//
+// plus `re` from the envelope, so a block lands on the TASK that caused
+// it rather than on the agent that hit it.
+//
+// `who` is the one that decides whether this is worth having. A digest
+// that mixes "only Andy can clear this" with "the lead could have" hands
+// him other people's work; a `who: lead` block never reaches him at all.
+//
+// `worked-around` is a real report, not an apology: an agent that got
+// past a block still spent the hour, and the hour is the finding.
+const NEEDS = ['decision', 'credential', 'permission', 'access', 'information'];
+const WHO = ['andy', 'lead', 'either'];
+const STATES = ['parked', 'abandoned', 'worked-around'];
 
 // ── CONFIGURATION, FROM THE ENVIRONMENT ────────────────────────────────
 //
@@ -76,7 +108,7 @@ function resolvePeer(cfg, to) {
 }
 
 // ── THE ENVELOPE — protocol v1 ─────────────────────────────────────────
-function makeEnvelope(from, kind, text, re, idFn) {
+function makeEnvelope(from, kind, text, re, idFn, block) {
   if (KINDS.indexOf(kind) === -1) throw new Error('unknown kind: ' + kind);
   const env = {
     app: APP, v: 1,
@@ -84,7 +116,41 @@ function makeEnvelope(from, kind, text, re, idFn) {
     body: { from: String(from), kind: kind, text: String(text || '') },
   };
   if (re) env.re = String(re);
+  if (kind === 'blocked') {
+    // REFUSED AT THE SENDER, not tidied there. A block with a `needs` or a
+    // `who` nobody can read would be sorted into the wrong pile of Andy's
+    // digest, or silently into none — worse than not sending it, because
+    // the agent believes it has reported.
+    const b = block || {};
+    const one = function (name, value, allowed) {
+      const v = String(value || '').trim().toLowerCase();
+      if (allowed.indexOf(v) === -1) {
+        throw new Error('blocked needs ' + name + ' to be one of ' + allowed.join(' | ') + ', got ' + JSON.stringify(value));
+      }
+      return v;
+    };
+    if (!String(b.what || '').trim()) throw new Error('blocked needs `what`: one plain sentence, written for Andy');
+    env.body.block = {
+      what: String(b.what).trim(),
+      needs: one('needs', b.needs, NEEDS),
+      who: one('who', b.who, WHO),
+      state: one('state', b.state || 'parked', STATES),
+      since: b.since || new Date().toISOString(),
+    };
+  }
   return env;
+}
+
+// ── ONE LINE, AND NOTHING MORE ───────────────────────────────────────
+//
+// wsl-claude, agreeing the split: "when you build it, print a block as
+// `<who> | <needs> | <what>` and nothing more — if the one-line form is
+// right, my digest is assembly, and if it is wrong no digest can rescue
+// it." So the listener prints exactly that, and the digest page under
+// design/agents/ says what the lead does with a set of them.
+function blockLine(env) {
+  const b = (env && env.body && env.body.block) || {};
+  return [b.who, b.needs, b.what].join(' | ');
 }
 
 // ── THE STOP — soft half; the hard half is Andy's relay ─────────────────
@@ -249,7 +315,7 @@ function send(cfg, to, kind, text, re, opts) {
   }
   if (!toKey) return Promise.resolve({ ok: false, error: 'no key for ' + to });
 
-  const env = makeEnvelope(cfg.self, kind, text, re);
+  const env = makeEnvelope(cfg.self, kind, text, re, null, o.block);
   const deadline = now() + cfg.retryMs;
   let wait = 5000;
 
@@ -343,9 +409,15 @@ function listen(cfg, onLine, fetchFn) {
           // its own time, which is what lets a stale halt be told apart.
           const control = obeyControl(cfg, msg.from, env, msg.sentAt || msg.at);
           const b = env.body || {};
+          // A BLOCK PRINTS AS ONE LINE AND NOTHING MORE. The form is
+          // wsl-claude's: `<who> | <needs> | <what>`, so a lead watching
+          // its listener can lift blocks straight into Andy's digest
+          // without reading prose for them. Everything else keeps the
+          // conversational shape it has always had.
           onLine('AGENTS ' + (b.from || '?') + ' ' + (b.kind || '?') +
             (env.re ? ' re ' + String(env.re).slice(0, 12) : '') +
-            (control ? ' [' + control + ']' : '') + ': ' + String(b.text || '').replace(/\s+/g, ' '));
+            (control ? ' [' + control + ']' : '') + ': ' +
+            (b.kind === 'blocked' ? blockLine(env) : String(b.text || '').replace(/\s+/g, ' ')));
         }
         return pump();
       });
@@ -359,12 +431,13 @@ module.exports = {
   makeEnvelope: makeEnvelope, halted: halted, obeyControl: obeyControl,
   send: send, conversation: conversation, read: read, formatEntry: formatEntry,
   reportLine: reportLine, flushReports: flushReports, listen: listen,
-  KINDS: KINDS,
+  KINDS: KINDS, NEEDS: NEEDS, WHO: WHO, STATES: STATES, blockLine: blockLine,
 };
 
 // ── THE COMMAND LINE ────────────────────────────────────────────────────
 //
 //   node agents.js send <to> <note|ask|answer> <text…> [--re <hash>]
+//   node agents.js blocked <to> <needs> <who> [--state <s>] <what…>
 //   node agents.js halt <to> [reason…]      (Andy's node only)
 //   node agents.js resume <to>              (Andy's node only)
 //   node agents.js listen
@@ -380,6 +453,22 @@ if (require.main === module) {
   const done = function (r) { console.log(JSON.stringify(r)); process.exit(r && r.ok ? 0 : 1); };
   if (cmd === 'send') {
     send(cfg, rest[1], rest[2], rest.slice(3).join(' '), re).then(done, function (e) { done({ ok: false, error: e.message }); });
+  } else if (cmd === 'blocked') {
+    // node agents.js blocked <to> <needs> <who> [--state s] <what…>
+    //
+    // The order is the digest's order — who can clear it and what kind of
+    // thing it is come before the sentence, because that is how the lead
+    // sorts them and how the agent should be thinking about it.
+    const stateAt = rest.indexOf('--state');
+    const words = stateAt !== -1 ? rest.slice(0, stateAt).concat(rest.slice(stateAt + 2)) : rest;
+    send(cfg, words[1], 'blocked', '', re, {
+      block: {
+        needs: words[2],
+        who: words[3],
+        state: stateAt !== -1 ? rest[stateAt + 1] : 'parked',
+        what: words.slice(4).join(' '),
+      },
+    }).then(done, function (e) { done({ ok: false, error: e.message }); });
   } else if (cmd === 'halt' || cmd === 'resume') {
     send(cfg, rest[1], cmd, rest.slice(2).join(' ')).then(done, function (e) { done({ ok: false, error: e.message }); });
   } else if (cmd === 'listen') {
@@ -390,6 +479,11 @@ if (require.main === module) {
     const h = halted(cfg);
     console.log(h ? 'HALTED since ' + h.at + (h.text ? ' — ' + h.text : '') : 'running');
   } else {
-    console.log('usage: agents.js send <to> <note|ask|answer> <text> [--re hash] | halt <to> | resume <to> | listen | read [peer] [n] | status');
+    console.log([
+      'usage: agents.js send <to> <note|ask|answer> <text> [--re hash]',
+      '       agents.js blocked <to> <' + NEEDS.join('|') + '> <' + WHO.join('|') + '>' +
+        ' [--state ' + STATES.join('|') + '] <what, in one sentence for Andy>',
+      '       agents.js halt <to> | resume <to> | listen | read [peer] [n] | status',
+    ].join('\n'));
   }
 }
