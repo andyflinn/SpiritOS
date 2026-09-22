@@ -289,7 +289,20 @@ async function run() {
   // uses, on 65432, and a suite that swept it would cost him his own
   // box. Checked every run, because "it cleans up after itself" and "it
   // cleans up after everybody" look identical until the day they don't.
-  if (ids.indexOf('work') !== -1) {
+  //
+  // AND ON A HARNESS labMaster THERE IS NO WORK ROW AT ALL (2026-09-22,
+  // labPaths.js): an agent's labMaster on another port must hold nothing
+  // that points at Andy's node, and must have no live world. So the check
+  // turns round there — which makes it the test of that rule.
+  const harness = require('./labMaster/labPaths').HARNESS;
+  if (harness) {
+    const live = await lab.api('GET', '/api/live-world');
+    if (ids.indexOf('work') === -1 && live.status === 403) {
+      test.check('a harness labMaster holds no work row and has no live world — nothing in it points at Andy’s node');
+    } else {
+      test.fail('harness labMaster: rows ' + ids.join(',') + ', live world HTTP ' + live.status);
+    }
+  } else if (ids.indexOf('work') !== -1) {
     test.check('and the work row is untouched — a suite sweeps only what it made');
   } else {
     test.fail('the work row is missing from the table: ' + ids.join(','));

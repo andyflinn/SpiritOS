@@ -68,7 +68,12 @@ let spawned = null;
 // copies from before it is reused: /api/root, or — for a labMaster from
 // before that route — the home of its work row. Anything else fails
 // loudly, naming both, and says how to run a labMaster of one's own.
-function norm(p) { return path.resolve(String(p || '')).replace(/\\/g, '/').toLowerCase(); }
+// Case folds only on Windows, where the file system does too. On Linux two
+// folders differing only in case are two checkouts (wsl-claude, 2026-09-22).
+function norm(p) {
+  const s = path.resolve(String(p || '')).replace(/\\/g, '/');
+  return process.platform === 'win32' ? s.toLowerCase() : s;
+}
 
 // Through api(), below — one reach for every call this file makes, so
 // oneDoor's census for it does not grow.
