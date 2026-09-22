@@ -47,6 +47,12 @@ one — relays partner.
   8). A handful of teams fits; many need a bigger box or another relay.
 - **Trust in the operator** — see 3; it is the precondition.
 - **Andy's cost and responsibility** for carrying other people's traffic.
+  Andy: *"we monitor user-count and find a way to afford more RAM before it's
+  needed."* The relay's status report to its owner already carries the member
+  count, how many are connected, and the fixed allowance from RAM (gap cycle
+  8). Missing is only an **early warning** — say when connections pass 70% of
+  the allowance — so RAM is added before anyone is turned away. Paying for
+  it: GitHub Sponsors suits this crowd.
 
 ## 3. End-to-end encryption between nodes — the precondition for 2
 
