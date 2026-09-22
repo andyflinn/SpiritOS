@@ -47,10 +47,10 @@ const deviceRefusal = common.deviceRefusal;
 // --port and PORT still override it, and every deploy script passes one.
 const DEFAULT_RELAY_PORT = 65430;
 
-// How often the Governor looks. A few seconds is fast enough to catch a
-// rise in connections and slow enough to cost nothing; one step per tick
-// means a full swing takes a minute, which is readable on a monitor.
-const GOVERNOR_TICK_MS = 5000;
+// How long a stream refused for being FULL is told to wait. The allowance
+// is fixed at boot now (cycle 8), so it frees only when somebody leaves:
+// half a minute is a guess at that, not a Governor's tick any more.
+const FULL_RETRY_S = 30;
 
 const BUILD = buildStamp.resolve(spirit.core.node.const.ROOT_DIR);
 const STARTED_AT = new Date().toISOString();
@@ -455,11 +455,10 @@ const server = http.createServer((req, res) => {
         try { res.setHeader('Retry-After', String(Math.ceil(60 / relay.presence.perMin) + 5)); }
         catch (e) { /* headers already sent */ }
       }
-      // FULL (cycle 1): the Governor has the connection allowance below
-      // the number of streams wanting in. Come back after a few ticks,
-      // when the lever may have moved up again — not in a second.
+      // FULL: the fixed allowance (cycle 8) is taken. Come back when
+      // somebody may have left — not in a second.
       if (opened && opened.status === 503) {
-        try { res.setHeader('Retry-After', String(Math.ceil(GOVERNOR_TICK_MS * 6 / 1000))); }
+        try { res.setHeader('Retry-After', String(FULL_RETRY_S)); }
         catch (e) { /* headers already sent */ }
       }
       deviceRefusal(res, opened && opened.status);
@@ -706,14 +705,8 @@ server.listen(port, BIND_HOST, () => {
   const dialled = partnerLinks.start();
   if (dialled) console.log(`    holding ${dialled} partner stream(s)`);
 
-  // -- AND IT GOVERNS ITSELF (cycle 1) -------------------------------
-  //
-  // One tick every few seconds: read heap, move the one lever at most one
-  // twelfth, carry it out, tell the owner. Cheap by construction — it
-  // reads numbers the process already has.
-  console.log(`    RAM limit ${CONFIG.ramLimitMB} MB (${CONFIG.source}); governor ticking every ${GOVERNOR_TICK_MS / 1000}s`);
-  setInterval(function () {
-    try { relay.governorTick(); }
-    catch (e) { console.error('governor tick failed: ' + e.message); }
-  }, GOVERNOR_TICK_MS);
+  // THE GOVERNOR'S TICK STOOD HERE (cycle 1), every five seconds. Deleted in
+  // cycle 8: the relay manages itself within a fixed allowance, set once at
+  // boot from the owner's RAM, and tells the owner on every event instead.
+  console.log(`    RAM limit ${CONFIG.ramLimitMB} MB (${CONFIG.source}); ${relay.allowance()} streams allowed, fixed`);
 });

@@ -63,7 +63,7 @@ it, reconnect, idle order, spared streams; and
 `spirit/test/governorTwoRelays.js` — five members refused with 503 over a real
 socket.
 
-**Status:** DONE
+**Status:** DEFERRED: superseded 2026-09-22 — the Governor was deleted in the gap cycle's cycle 8 (Grok's review: "delete the whole thing"; Andy: "delete it is"), and with it what this requirement built. The allowance is now fixed at boot from the owner's RAM (`relay.js`, `allowanceFor`); its suites are gone with it. Before: DONE.
 
 ### R3 — the Governor, one rule, in twelfths
 
@@ -79,7 +79,7 @@ decrement too*.
 reason, one step per tick, hold in the band, recover after calm, stop at the
 floor.
 
-**Status:** DONE
+**Status:** DEFERRED: superseded 2026-09-22 — the Governor was deleted in the gap cycle's cycle 8 (Grok's review: "delete the whole thing"; Andy: "delete it is"), and with it what this requirement built. The allowance is now fixed at boot from the owner's RAM (`relay.js`, `allowanceFor`); its suites are gone with it. Before: DONE.
 
 ### R4 — the report carries it
 
@@ -91,7 +91,7 @@ relay with no configuration. `protocolSurface` unchanged.
 (`heap N% of 1 MB (above 85%)`) and the closed count arrive on the owner's
 stream; B, under its bound, reports 12/12 and no decision.
 
-**Status:** DONE
+**Status:** DEFERRED: superseded 2026-09-22 — the Governor was deleted in the gap cycle's cycle 8 (Grok's review: "delete the whole thing"; Andy: "delete it is"), and with it what this requirement built. The allowance is now fixed at boot from the owner's RAM (`relay.js`, `allowanceFor`); its suites are gone with it. Before: DONE.
 
 ### R5 — the monitor
 
@@ -121,7 +121,7 @@ owner stays connected.
 
 **Verify:** `spirit/test/governorTwoRelays.js` — 16 checks.
 
-**Status:** DONE
+**Status:** DEFERRED: superseded 2026-09-22 — the Governor was deleted in the gap cycle's cycle 8 (Grok's review: "delete the whole thing"; Andy: "delete it is"), and with it what this requirement built. The allowance is now fixed at boot from the owner's RAM (`relay.js`, `allowanceFor`); its suites are gone with it. Before: DONE.
 
 ### R7 — the live run, watched hands-off
 

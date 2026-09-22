@@ -268,8 +268,10 @@ and takes a median of three samples at each step.
 
 ### What this says about the Governor
 
-`governor.js` computes its ceiling as `ramLimitMB × STREAMS_PER_MB`, with
-`STREAMS_PER_MB = 16` — a number that file's own comment calls a guess.
+`governor.js` computed its ceiling as `ramLimitMB × STREAMS_PER_MB`, with
+`STREAMS_PER_MB = 16` — a number that file's own comment called a guess.
+*(Since 2026-09-22 the Governor is deleted, and the same product is the
+relay's fixed allowance, set once at boot: `allowanceFor` in `relay.js`.)*
 
 > 16 per MB implies **64 KB** a stream. Measured: **~58 KB**.
 

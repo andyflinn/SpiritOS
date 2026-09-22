@@ -18,8 +18,6 @@ const routerTable = require('./router');
 const relayStatus = require('./relayStatus');
 // The relay's data on disc (cycle 3): members, invites, partners.
 const relayStore = require('./relayStore');
-// Cycle 1: the one-lever Governor. Pure; ticked by relayServer.js.
-const governorLib = require('./governor');
 // Once, at load, for the same reason server.js does it: the answer must
 // describe the code that is running, not the code on disk.
 const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
@@ -119,6 +117,21 @@ var DEVICE_PER_MIN = 10;
 // is checked here whatever any page believed.
 var labelRule = require('./labelRule');
 var lever = require('./lever');
+
+// ── HOW MANY STREAMS THE OWNER'S RAM ALLOWS (cycle 8) ────────────────────
+//
+// The Governor's ceiling, kept as the whole rule now that nothing moves it:
+// streams per megabyte of the RAM the owner configured. 16 was declared as
+// a placeholder in cycle 1; R15 then measured ~58-63 KB a stream on Windows
+// and ~42 KB on Linux in the process alone, i.e. 16-24 a megabyte — so 16
+// holds, on the careful side, and README/CAPACITY.md is where it is argued.
+var STREAMS_PER_MB = 16;
+
+function allowanceFor(ramLimitMB) {
+  var mb = Number(ramLimitMB);
+  if (!(mb > 0)) return null;
+  return Math.max(1, Math.floor(mb * STREAMS_PER_MB));
+}
 
 var CLAIM_PER_MIN = 10;
 
@@ -429,36 +442,36 @@ function createRelay(rootDir, deps) {
   // so it protects parties other than the owner.
   var routes = routerTable.createRouter();
 
-  // ── THE GOVERNOR (cycle 1) ───────────────────────────────────────────
+  // ── A FIXED ALLOWANCE, AND A GAUGE THAT READS IT (cycle 8) ──────────
+  //
+  //   Andy: "relay will self-manage within fixed/constant limits. i agree."
+  //   Grok (review): "delete the whole thing … Levers kept 'for later' grow
+  //   a governor back." — Andy: "grok confirms my prediction. delete it is."
+  //
+  // THE GOVERNOR STOOD HERE: it moved the connection allowance every five
+  // seconds by heap readings, inside a ceiling derived from the owner's
+  // configured RAM. Nothing is left for it to govern — the owner's RAM is a
+  // constant (0015), R15 measured what a stream costs, and R35 cuts the one
+  // runtime hazard, a member that stops reading, at a fixed bound. So the
+  // ceiling IS the allowance, fixed at boot, and nothing moves it after.
+  //
+  // THE LEVER STAYS AS A PATTERN, READ-ONLY. Andy: "as design pattern
+  // relay-internally, they still make sense to me." A gauge is described
+  // once — label, floor, ceiling, value — and the owner's monitor draws it
+  // generically, as metering. It has no setter (lever.js), so no governor
+  // can grow back from it.
   //
   // Present only when the startup module handed this relay a
-  // configuration (relayServer.js reads relay-state/config.json). A relay
-  // built without one — every in-process suite — has no allowance and
-  // behaves exactly as it did before cycle 1.
-  //
-  // The lever is the connection allowance; the remedy is closing the
-  // longest-idle streams. See governor.js for the rule and why heapUsed
-  // governs, and design/cycles/2026-09-19-relay-governor-cycle-1.md.
+  // configuration (relayServer.js reads relay-state/config.json); a relay
+  // built without one — every in-process suite — has no allowance.
   var config = deps.config || null;
-  // `settable: config.settable` STOOD HERE, and is gone with the owner's
-  // grant it carried (Andy, 2026-09-20: "the code needs to decide what is
-  // settable... a software decision, not an owner's decision"). See
-  // governor.js, where settability is now declared in code beside the
-  // lever. It never worked in any case: relayConfig.parse has always
-  // returned a whitelist that did not include `settable`, so this read
-  // undefined on every real relay — a mechanism that was documented,
-  // plumbed at both ends, and unreachable in the middle.
-  // `deps.settable` IS THE CODE SEAM THAT REPLACED IT, and the difference
-  // is the whole of the ruling: `deps` is what the CALLER passes — a line
-  // in relayServer.js or in a suite, visible in a diff and reviewable —
-  // while `config` was a file on the box that its owner writes. A relay
-  // in production gets this from nobody: relayServer.js does not pass it,
-  // and settableCensus.js fails if that changes.
-  var governor = config ? governorLib.createGovernor({
-    ramLimitMB: config.ramLimitMB,
-    settable: deps.settable,
-  }) : null;
-  if (governor) presentNow.setAllowed(governor.allowed());
+  var allowance = config ? allowanceFor(config.ramLimitMB) : null;
+  var gauges = allowance ? {
+    connections1: lever.make('connections1', {
+      floor: 1, ceiling: allowance, value: allowance, worseAt: 'floor',
+    }),
+  } : null;
+  if (allowance) presentNow.setAllowed(allowance);
 
   function reloadAllow() {
     allow = auth.loadAllow(rootDir);
@@ -2684,27 +2697,8 @@ function createRelay(rootDir, deps) {
       out = clearPartner(who, String(body.unpartner.key || ''), hash);
     }
 
-    // ── MOVING A LEVER: THE OWNER'S ONE LIVE CONTROL ────────────────
-    //
-    //   Andy: "the only real-time tool the owner gets while node and
-    //   relay are running: injecting foreign partners." — and, from
-    //   cycle 4, moving a lever.
-    //
-    // OWNER-ONLY, and refused with `no such peer` like every other owner
-    // verb. A member asking to move this box's programme and a member
-    // asking for a verb nobody has heard of get the same answer, so what
-    // this relay will do for somebody else stays un-enumerable.
-    //
-    // NAMED, NOT INDEXED. The owner sends a lever's label and the
-    // Governor hands back that lever or nothing — so a second lever is
-    // an addition on the Governor and not a shape change here.
-    //
-    // THE ANSWER IS THE RELAY'S OWN WORDS. `canSet` says why, and that
-    // string is what the app shows. An app inventing its own wording for
-    // a refusal would drift from what the relay actually did.
-    if (body && body.lever && owner) {
-      out = setLever(String(body.lever.name || ''), body.lever.set, hash);
-    }
+    // `body.lever` — the owner's lever verb — STOOD HERE, deleted with the
+    // Governor (cycle 8). Nothing is left to move; a lever is a gauge now.
 
     if (body && body.revoke && owner) {
       var revokedLabel = String(body.revoke.label || '');
@@ -3627,68 +3621,14 @@ function createRelay(rootDir, deps) {
       to: to || '',
     };
     if (extra) Object.keys(extra).forEach(function (k) { row[k] = extra[k]; });
-    return !!presentNow.send(ownerKey, 'relay-event', row);
-  }
-
-  // WHAT THE OWNER'S LEVER VERB ACTUALLY DOES.
-  //
-  // Refuse before moving, move once, carry out the consequence, then
-  // report — in that order, because a value that took effect without the
-  // remedy would leave the relay above its own allowance.
-  function setLever(name, value, hash) {
-    if (!governor) return { ok: false, status: 404, error: 'no Governor' };
-    if (!labelRule.leverOk(name)) {
-      return { ok: false, status: 400, error: 'not a lever name' };
-    }
-    var lev = governor.lever(name);
-    if (!lev) return { ok: false, status: 404, error: 'no such lever' };
-
-    var why = lev.canSet(value);
-    if (why) return { ok: false, status: 400, error: why };
-
-    var moved = lev.set(value, 'set by owner', 'owner');
-    if (!moved.ok) return { ok: false, status: 400, error: moved.error };
-
-    // THE REMEDY, WHICH IS THE PROGRAMME'S AND NOT A SPECIAL CASE.
-    // Lowering the allowance below what is present means streams have to
-    // go, and they go by the same rule a Governor step uses: idlest
-    // first, the owner and anything with a post in flight spared.
-    //
-    //   Andy: "a setting below the present count closes streams... only
-    //   the owner and posts in flight are spared."
-    //
-    // The owner is told how many in the answer — 4.5's dialog does not
-    // exist yet, so the verb's reply is where "closed 3" has to appear.
-    var closed = [];
-    if (value !== lever.DYNAMIC) {
-      presentNow.setAllowed(value);
-      var over = presentNow.present().length - value;
-      if (over > 0) {
-        var ownerKey = currentOwnerKey();
-        closed = presentNow.evictIdlest(over,
-          function (id) { return id === ownerKey || routes.countFor(id) > 0; },
-          function (id) {
-            var hits = memberHits[id];
-            return hits && hits.length ? hits[hits.length - 1] : 0;
-          });
-        closed.forEach(function (id) {
-          forgetActive(id);
-          presentNow.broadcast('presence', { key: id, present: false });
-        });
-      }
-    }
-
-    // The owner's own act on the owner's own box (R2), logged like the
-    // rest of them.
-    ownerEvent('lever-set', { lever: name, to: value, closed: closed.length, cause: hash });
-
-    // AND THE REPORT, so the monitor redraws from the relay rather than
-    // from its own optimism. It goes only if the owner's stream is open;
-    // when it is not, the answer below is all the owner gets and the
-    // next report catches up.
+    // THE FULL REPORT, EVERY TIME SOMETHING HAPPENS (cycle 8). Andy: the
+    // owner "receives also the full stat package whenever events occur" —
+    // and no coalescing: "if the relay can handle 500 near-simultaneous
+    // connects, AND broadcast them … the owner certainly can handle the
+    // incoming updates." A report is counts, not lists, about a kilobyte.
+    var sent = !!presentNow.send(ownerKey, 'relay-event', row);
     statusToOwner();
-
-    return { ok: true, lever: name, to: value, closed: closed.length };
+    return sent;
   }
 
   function statusToOwner() {
@@ -3716,22 +3656,19 @@ function createRelay(rootDir, deps) {
       // not built. Partners are told on the reply, per the one-bus rule,
       // and so need no announcement at all.
       caps: { memberPerMin: MEMBER_PER_MIN, partnerPerMin: partnerPerMin() },
-      // THE GOVERNOR'S HALF (cycle 1): the bound the owner configured,
-      // where the one lever sits inside it, and the last move with its
-      // reason — §4's "watch a lever move, read why". Absent on a relay
-      // with no configuration, so "no Governor" is not drawn as "idle".
-      ramLimitMB: governor ? governor.ramLimitMB : undefined,
-      // EVERY LEVER, KEYED BY ITS OWN LABEL — never a list the app has to
-      // know the order of, and never one lever named in the app's code.
-      // A lever invented on this relay next month is drawn by a monitor
-      // that shipped this month.
-      levers: governor ? governor.levers() : undefined,
+      // THE BOUND THE OWNER CONFIGURED, and the gauges fixed inside it at
+      // boot (cycle 8 — the Governor that moved them is gone). Absent on a
+      // relay with no configuration.
+      ramLimitMB: config ? config.ramLimitMB : undefined,
+      // EVERY GAUGE, KEYED BY ITS OWN LABEL — never a list the app has to
+      // know the order of, and never one named in the app's code. Sent
+      // under `levers`, the name the owner's monitor already draws.
+      levers: gauges ? Object.keys(gauges).reduce(function (o, k) { o[k] = gauges[k].readOut(); return o; }, {}) : undefined,
       // WHEN THIS WAS TAKEN. Without it a stale view reads as a live one:
       // a setting applied while the owner's stream was down is not seen
       // until the next report, and "as of 14:02" is the difference
       // between a monitor that is behind and a monitor that is wrong.
       at: new Date().toISOString(),
-      decision: governor ? (governor.lastDecision() || undefined) : undefined,
       // SWEPT BEFORE IT IS READ.
       //
       //   Andy: "anytime the UI askes for a list of pending invites, the
@@ -3826,52 +3763,10 @@ function createRelay(rootDir, deps) {
     return (ownerLabel && allow.byName && allow.byName[ownerLabel]) || '';
   }
 
-  // ── ONE GOVERNOR TICK (cycle 1) ──────────────────────────────────────
-  //
-  // Read the cheap numbers, let the Governor decide, carry out what it
-  // said, and tell the owner — the whole loop, and nothing it does is
-  // new to the wire: the allowance refuses with a status, the evicted
-  // streams close, their absence goes out as the ordinary `presence`
-  // event, and the decision rides the ordinary `relay-status` report.
-  //
-  // Returns the decision when the lever moved, null when it held. A relay
-  // with no configuration has no Governor, and this does nothing.
-  function governorTick(readings) {
-    if (!governor) return null;
-    var mem = readings;
-    if (!mem) {
-      try { mem = process.memoryUsage(); } catch (e) { mem = {}; }
-    }
-    var decision = governor.tick({
-      heapUsed: mem.heapUsed,
-      rss: mem.rss,
-      present: presentNow.present().length,
-    }, new Date().toISOString());
-    if (!decision) return null;
-
-    presentNow.setAllowed(decision.allowed);
-    var ownerKey = currentOwnerKey();
-    var closed = decision.close > 0
-      ? presentNow.evictIdlest(
-          decision.close,
-          // Spared: the owner (the floor), and any stream with a post in
-          // flight — closing it would lose a reply mid-air.
-          function (id) { return id === ownerKey || routes.countFor(id) > 0; },
-          // Last active = the member's most recent post, from the rate
-          // bucket this relay already keeps. No new record per member.
-          function (id) {
-            var hits = memberHits[id];
-            return hits && hits.length ? hits[hits.length - 1] : 0;
-          })
-      : [];
-    closed.forEach(function (id) {
-      forgetActive(id);
-      presentNow.broadcast('presence', { key: id, present: false });
-    });
-    decision.closed = closed.length;
-    statusToOwner();
-    return decision;
-  }
+  // `governorTick` STOOD HERE (cycle 1): read the heap, let the Governor
+  // move the allowance, close the idlest streams, tell the owner. Deleted
+  // in cycle 8 — the allowance is fixed at boot, and the owner hears on
+  // every event instead of on a timer (ownerEvent, below).
 
   // ── A READER THAT STOPPED READING, AND THE ROUTES IT LEAVES (R35) ────
   //
@@ -3992,10 +3887,9 @@ function createRelay(rootDir, deps) {
     // nothing else does — and a monitor that only updates when a peer
     // connects would look frozen on a quiet relay.
     statusToOwner: statusToOwner,
-    // Cycle 1. relayServer.js ticks it on a timer; a suite may tick it with
-    // readings of its own, so the rule is testable without exhausting RAM.
-    governorTick: governorTick,
-    governor: function () { return governor; },
+    // The fixed connection allowance (cycle 8), for the suites that check
+    // it was set from the owner's RAM and nothing else.
+    allowance: function () { return allowance; },
     // Watching, on demand — asked for as a packet (answerSelf), never as
     // a verb of its own. Read-only from out here, and it dies with the
     // owner's stream.

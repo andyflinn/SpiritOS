@@ -90,140 +90,58 @@ test.subHeading('make refuses what it cannot report honestly');
   }
 });
 
-test.subHeading('set is the only mutator, and it records why');
+test.subHeading('A gauge cannot move — cycle 8, the Governor deleted');
 
 {
-  const l = lever.make('connections1', { floor: 2, ceiling: 12, value: 4, settable: true });
-
-  if (l.value === 4) {
-    test.check('it starts where it was built');
+  //   Andy: "relay will self-manage within fixed/constant limits." — and
+  //   Grok: "Levers kept 'for later' grow a governor back." So there is no
+  //   setter to grow one from.
+  const g = lever.make('connections1', { floor: 1, ceiling: 256, value: 256, worseAt: 'floor' });
+  if (typeof g.set === 'undefined' && typeof g.canSet === 'undefined') {
+    test.check('a gauge has no set and no canSet — nothing can move it after boot');
   } else {
-    test.fail('started at ' + l.value);
+    test.fail('a gauge still has a mutator');
   }
-
-  const r = l.set(9, 'set by owner');
-  const m = l.lastMove();
-  if (r.ok && l.value === 9 && m && m.from === 4 && m.to === 9 && m.why === 'set by owner') {
-    test.check('a move carries from, to and why — which is how the owner tells his move from the Governor\'s');
+  let changed = false;
+  try { g.value = 3; } catch (e) { /* frozen, in strict mode */ }
+  changed = g.value !== 256;
+  if (!changed && Object.isFrozen(g)) {
+    test.check('and it is frozen: assigning to its value changes nothing');
   } else {
-    test.fail('move not recorded: ' + JSON.stringify(m));
+    test.fail('the gauge value moved to ' + g.value);
   }
-
-  if (m && typeof m.at === 'number' && m.at > 0) {
-    test.check('and when it happened');
-  } else {
-    test.fail('no capture time on the move');
-  }
-
-  // The value is a getter with no setter behind it, so in strict mode a
-  // write THROWS rather than being quietly dropped. That is the stronger
-  // of the two: a second write path is a move that happens with no `why`
-  // attached, and one that fails silently is a move the owner cannot see
-  // did not happen.
   let threw = false;
-  try { l.value = 999; } catch (e) { threw = true; }
-  if (threw && l.value === 9) {
-    test.check('writing the value around `set` throws, and the value stands');
+  try { lever.make('connections1', { floor: 1, ceiling: 10, value: 11 }); } catch (e) { threw = true; }
+  if (threw) {
+    test.check('a value outside its own floor and ceiling is refused at construction');
   } else {
-    test.fail('the value was written directly: ' + l.value + ' (threw: ' + threw + ')');
+    test.fail('built a gauge reading above its ceiling');
+  }
+  if (lever.DYNAMIC === undefined) {
+    test.check('and "dynamic" — the owner handing a lever back to the Governor — is gone with it');
+  } else {
+    test.fail('lever.DYNAMIC survived');
   }
 }
 
-test.subHeading('canSet says why, and set never leaves the bounds');
+test.subHeading('readOut → fromReport: the monitor draws a gauge it never heard of');
 
 {
-  const l = lever.make('connections1', { floor: 2, ceiling: 12, value: 4, settable: true });
-
-  [[1, 'floor'], [13, 'ceiling'], ['seven', 'whole number'], [2.5, 'whole number']].forEach(function (c) {
-    const why = l.canSet(c[0]);
-    if (why && why.indexOf(c[1]) !== -1) {
-      test.check('refused with a reason a person can act on: ' + JSON.stringify(c[0]) + ' → ' + why);
-    } else {
-      test.fail('canSet(' + JSON.stringify(c[0]) + ') said ' + JSON.stringify(why));
-    }
-    const before = l.value;
-    const res = l.set(c[0], 'should not apply');
-    if (!res.ok && l.value === before) {
-      test.check('and the value did not move');
-    } else {
-      test.fail('a refused set moved the value to ' + l.value);
-    }
-  });
-
-  [2, 12].forEach(function (v) {
-    if (l.canSet(v) === '') {
-      test.check('the bounds themselves are allowed: ' + v);
-    } else {
-      test.fail('the bound ' + v + ' was refused');
-    }
-  });
-
-  if (l.canSet(lever.DYNAMIC) === '') {
-    test.check('`dynamic` is always allowed on a settable lever — it is how the owner hands it back');
+  const g = lever.make('connections1', { floor: 1, ceiling: 256, value: 256, worseAt: 'floor' });
+  const out = g.readOut();
+  if (out.label === 'connections1' && out.value === 256 && out.floor === 1 && out.ceiling === 256 &&
+      out.worseAt === 'floor' && out.settable === false && out.locked === false && out.lastMove === null) {
+    test.check("the report keeps the lever's field names, settable false, locked false, no last move — so the monitor needed no change");
   } else {
-    test.fail('dynamic was refused');
+    test.fail('readOut: ' + JSON.stringify(out));
   }
-}
-
-test.subHeading('A lever that is not settable reports itself and takes nothing');
-
-{
-  const l = lever.make('watching1', { floor: 0, ceiling: 100, value: 7, settable: false });
-  const why = l.canSet(50);
-  if (why && /takes no settings/.test(why)) {
-    test.check('it refuses a setting, and says so rather than failing silently');
+  const view = lever.fromReport(JSON.parse(JSON.stringify(out)));
+  if (view && view.value === 256 && view.ceiling === 256 && view.settable === false && typeof view.canSet === 'undefined') {
+    test.check('and the monitor rebuilds it from the wire as a view it can draw and never move');
   } else {
-    test.fail('a dead lever accepted a setting: ' + JSON.stringify(why));
+    test.fail('fromReport: ' + JSON.stringify(view));
   }
-  if (l.readOut().settable === false) {
-    test.check('and it says so in the report, so an app draws no control it would refuse');
-  } else {
-    test.fail('readOut did not carry settable:false');
-  }
-}
-
-test.subHeading('readOut → fromReport: an app can draw a lever it never heard of');
-
-{
-  const l = lever.make('inventedThing3', { floor: 5, ceiling: 50, value: 20, settable: true });
-  l.set(30, 'by the programme');
-
-  // Across the wire: JSON is the only thing that crosses, so the round
-  // trip is asserted through it rather than through the object.
-  const wire = JSON.parse(JSON.stringify(l.readOut()));
-  const view = lever.fromReport(wire);
-
-  if (view && view.label === 'inventedThing3' && view.value === 30 &&
-      view.floor === 5 && view.ceiling === 50 && view.settable === true) {
-    test.check('everything needed to draw it survives the wire, with no lever named in the app');
-  } else {
-    test.fail('round trip lost something: ' + JSON.stringify(view));
-  }
-
-  if (view && view.lastMove && view.lastMove.why === 'by the programme') {
-    test.check('including who moved it last and why');
-  } else {
-    test.fail('the last move did not survive');
-  }
-
-  if (view && view.canSet(4) && view.canSet(20) === '') {
-    test.check('and the node checks the same bounds the relay will — before taxing the wire');
-  } else {
-    test.fail('the node view does not enforce the relay bounds');
-  }
-
-  // The node view is deliberately NOT a lever: nothing on the node may
-  // move a relay's value except by asking the relay.
-  if (typeof view.set === 'undefined') {
-    test.check('the node view has no `set` — a local move would draw a value the relay never took');
-  } else {
-    test.fail('fromReport handed back a mutator');
-  }
-}
-
-{
-  [null, undefined, {}, { label: 'conn_1', floor: 1, ceiling: 2 },
-   { label: 'connections1', floor: 'x', ceiling: 2 }].forEach(function (bad) {
+  [null, {}, { label: 'x', floor: 1, ceiling: 2 }, { label: 'connections1', floor: 5, ceiling: 1 }].forEach(function (bad) {
     if (lever.fromReport(bad) === null) {
       test.check('a report it cannot trust reads as nothing: ' + JSON.stringify(bad));
     } else {

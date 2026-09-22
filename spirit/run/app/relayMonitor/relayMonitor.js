@@ -31,11 +31,12 @@
 //
 // ── WHAT IT DOES NOT DRAW ────────────────────────────────────────────
 //
-// Nothing gets a control. Decision 0015: the Governor is the result of
-// programming, the owner watches, and the record of what he watched is
-// what changes the programme. No lever in the tree declares itself
-// settable — spirit/test/settableCensus.js holds that at zero — so the
-// meter IS the policy rather than a control that has been disabled.
+// Nothing gets a control. Decision 0015: the relay's limits are the
+// result of programming, the owner watches, and the record of what he
+// watched is what changes the programme. Since cycle 8 there is nothing
+// that could be set: the Governor is deleted and a lever is a read-only
+// gauge with no setter (lever.js) — so the meter IS the policy rather
+// than a control that has been disabled.
 //
 // A report with no `at` is drawn without a capture time rather than with
 // an invented one. A relay that has said nothing yet says so: "said

@@ -59,8 +59,9 @@ requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
 **One open, eight deferred, three cancelled, twenty-nine done.** Cycle 7 built
-R28 and R36's phase B (2026-09-22). **Left: cycle 8** — R13, and deleting
-the Governor in the shape agreed below; both reviewed, both decided. **Nothing else stands between this cycle and the review**:
+R28 and R36's phase B (2026-09-22). **Cycle 8 is half built:** the
+Governor is deleted in the shape agreed below (2026-09-22). **Left: R13**,
+reviewed and decided. **Nothing else stands between this cycle and the review**:
 R11 and R14 left the core by Andy's ruling of 2026-09-22, and R9 is
 cancelled — hints carry keys, never URLs.
 
@@ -1647,8 +1648,20 @@ deferred, if not eliminated"*.
 > is."*
 
 `governor.js`, the lever verb, the tick, its fields in `relay-status` and
-its suites go. The allowance is fixed at boot from the owner's RAM. Decided,
-not built: it is half of cycle 8.
+its suites go. The allowance is fixed at boot from the owner's RAM.
+
+**Built 2026-09-22, cycle 8's first half.** `governor.js` and its four
+suites (`governor`, `governorTwoRelays`, `leverVerb`, `settableCensus`)
+are deleted; `relay.js` computes `allowanceFor(ramLimitMB)` once — 16
+streams a megabyte, R15's measured careful side — and `relayServer.js`
+has no tick (a full relay still answers 503 with `Retry-After: 30`).
+`lever.js` is a frozen gauge with no setter. 0010's `lever-set` row and
+the first Governor cycle's R2/R3/R4/R6 are marked superseded.
+`test/fixedAllowance.js` holds it — the allowance from RAM, the third
+member refused and the owner admitted over it, the read-only gauge in
+the report, a fresh report with each owner event — and was falsified
+both ways (the per-event report removed; the rate halved). Harness: 119
+suites, 2702 green, 0 red.
 
 **Its shape, agreed with Andy the same night:**
 

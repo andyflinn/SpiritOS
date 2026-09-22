@@ -318,7 +318,7 @@ eighth stream event was.
 | `relay-renamed` | the owner changed what the BOX calls itself — not a row on it | `was`, `label`, `cause` |
 | `partner-added` | a peer here was promoted to partner — they own the relay at `relayAt` | `key`, `label`, `relayAt`, `cause` |
 | `partner-removed` | that partnership was broken from this side | `key`, `label`, `relayAt`, `cause` |
-| `lever-set` | the owner moved a lever himself, and what it cost in streams | `lever`, `to`, `closed`, `cause` |
+| ~~lever-set~~ — *deleted 2026-09-22 with the Governor (gap cycle, cycle 8); no lever can move, so none is reported moving* | — | — |
 
 **`invite` is a LABEL, never a token.** The word the owner wrote on the
 invite, normalised — `seen.invite = normalizeName(inviteLabel)`. A token
