@@ -102,6 +102,26 @@ the phone, whose code the relay does not serve; or the phone's page served by
 the owner's own node rather than the relay, which works only while the phone
 can reach that node.
 
+## 4. An enterprise edition: a members-only relay
+
+> **Andy, 2026-09-22:** *"also looking into the future: a company's internal
+> spirit system (enterprise edition) might be exclusive to members and, by
+> default not permit relaying to the ousdie.... "node js/relayServer.js
+> --membersonly""*
+
+**Close to what a relay already is.** A relay reaches outside only through
+**partners**, and partnerships are made by its owner by hand (`setPartner`,
+owner-only). A relay with no partners is already members-only in practice.
+
+**What the flag adds is a guarantee instead of a habit** — enforced at start,
+readable from the command line: the relay refuses to be partnered at all,
+refuses posts from any partner relay, and never forwards a member's post or
+search outward (`carryToPartner`, the search fan-out). A company can know
+nothing leaves, even by a mistake in the owner's settings.
+
+**Encryption (3) matters less there**, because the relay's operator is the
+company itself; it still protects against whoever administers the box.
+
 ## Open
 
 - Whether any of this becomes a product, and when — Andy's.
