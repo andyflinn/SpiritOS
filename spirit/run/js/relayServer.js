@@ -121,6 +121,28 @@ catch (e) {
   refuseToStart(e.message);
 }
 
+// ── COMPACTED BEFORE IT SERVES ANYTHING (cycle 9) ───────────────────
+//
+//   Andy, 2026-09-22: "compacting at restart sound like a good
+//   stop-gap-measure."
+//
+// A deleted row frees a page and does not shorten the file, and cycle 9
+// bounds the roll by the file's size — so without this, an owner who
+// removes members to make room would be refused the shrink he just made
+// room for. Here, before `server.listen`, because `node:sqlite` is
+// synchronous and a VACUUM while serving is dead air for every member.
+// It refuses itself when the disc cannot afford the copy, and says so.
+{
+  const room = relayLimits.measure(ROOT_DIR);
+  const squeezed = relayStore.compact(ROOT_DIR, room.discFreeMB);
+  if (squeezed.ok && squeezed.after < squeezed.before) {
+    console.log('    compacted relay.db: ' + (squeezed.before / 1048576).toFixed(2) + ' MB → ' +
+      (squeezed.after / 1048576).toFixed(2) + ' MB in ' + squeezed.ms + ' ms');
+  } else if (!squeezed.ok && squeezed.why && !/no database yet/.test(squeezed.why)) {
+    console.log('    relay.db NOT compacted: ' + squeezed.why);
+  }
+}
+
 // ── MEMBERS BUT NO OWNER: REFUSE, AND LET SSH DECIDE (cycle 3, B4) ───
 //
 // Decided (Andy): a relay whose store holds members but whose allow.json

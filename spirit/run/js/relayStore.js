@@ -70,6 +70,66 @@ function openReadOnly(rootDir) {
   return build(rootDir, db, null);
 }
 
+// ── COMPACTING, AT A RESTART AND NOWHERE ELSE (cycle 9) ─────────────
+//
+//   Andy, 2026-09-22: "since disc space is such a cheap resource compared
+//   to the expected needs, compacting at restart sound like a good
+//   stop-gap-measure."
+//
+// WHY IT IS NEEDED AT ALL. A deleted row frees a page and does not
+// shorten the file, so a relay whose owner removes members keeps
+// reporting the size it had. Cycle 9 bounds the roll by `bytes()`, so
+// that stale figure would refuse the very shrink the owner just made room
+// for — the rule "evict before shrinkage" defeated at the moment somebody
+// follows it. Measured: 20,000 members is 3.5 MB; removing 15,000 leaves
+// the file at 3.5 MB; a VACUUM takes 20 ms and leaves 0.9 MB.
+//
+// WHY AT A RESTART. `node:sqlite` is synchronous and a relay is one
+// process: a VACUUM while serving is dead air for everybody, not merely
+// slow writes. At startup the socket is not listening yet, so the pause
+// costs nobody anything.
+//
+// WHY IT MAY REFUSE. A VACUUM writes a fresh copy before it frees
+// anything, so it needs about twice the file in free space — which is to
+// say it cannot run on the disc that is actually full, the day you most
+// want it. It checks first and says so rather than failing.
+//
+// STOP-GAP, in Andy's word. What it does not do is keep the file honest
+// BETWEEN restarts; that wants `auto_vacuum = INCREMENTAL` (set only at
+// creation) and bounded `incremental_vacuum` steps after removals. Both
+// are cheap and neither is built, because disc is the resource we are
+// least short of and a restart is not rare.
+function compact(rootDir, freeMB) {
+  const file = dbPath(rootDir);
+  let before = 0;
+  try { before = fs.statSync(file).size; } catch (e) { return { ok: false, why: 'no database yet' }; }
+
+  const needMB = (before * 2) / (1024 * 1024);
+  if (typeof freeMB === 'number' && isFinite(freeMB) && freeMB < needMB) {
+    return {
+      ok: false,
+      before: before,
+      why: 'a VACUUM needs about twice the file (' + needMB.toFixed(1) + ' MB) and ' +
+        Math.floor(freeMB) + ' MB is free — freeing space is the owner\'s to do',
+    };
+  }
+
+  // Through a connection of its own, closed straight after: VACUUM cannot
+  // run inside a transaction, and the cached handle is shared with
+  // everything that holds the store.
+  const started = Date.now();
+  try {
+    closeAll();
+    const db = new (driver().DatabaseSync)(file);
+    try { db.exec('VACUUM'); } finally { db.close(); }
+  } catch (e) {
+    return { ok: false, before: before, why: String((e && e.message) || e) };
+  }
+  let after = before;
+  try { after = fs.statSync(file).size; } catch (e) { after = before; }
+  return { ok: true, before: before, after: after, ms: Date.now() - started };
+}
+
 function open(rootDir) {
   const key = path.resolve(rootDir);
   if (open_.has(key)) return open_.get(key);
@@ -434,6 +494,7 @@ function closeAll() {
 
 module.exports = {
   open: open,
+  compact: compact,
   openReadOnly: openReadOnly,
   available: available,
   closeAll: closeAll,
