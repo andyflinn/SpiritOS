@@ -59,8 +59,10 @@ requirement is *blocked by* — the last column. Anything with a blank there
 can start today.
 
 **Two open, eight deferred, three cancelled, twenty-eight done.** Both open
-rows are for the team review — R13 and R28's hops 2–3 — with R36's phase B
-and **retiring the Governor** (R20) beside them. **Nothing else stands between this cycle and the review**:
+rows — R13 and R28's hops 2–3 — **have been through the team review**
+(2026-09-22, below), with R36's phase B and **retiring the Governor** beside
+them. **All four came back with a verdict and wait on Andy opening the
+sitting.** **Nothing else stands between this cycle and the review**:
 R11 and R14 left the core by Andy's ruling of 2026-09-22, and R9 is
 cancelled — hints carry keys, never URLs.
 
@@ -78,7 +80,7 @@ cancelled — hints carry keys, never URLs.
 | <sub>R10</sub> | <sub>*`cancel`, exposed to a member*</sub> | <sub>*cancelled*</sub> | <sub>—</sub> | |
 | <sub>R11</sub> | <sub>*the URL rule / SSRF — only a stranger relay's first dial, which only R14 makes*</sub> | <sub>*deferred with R14 — the core dials only owner-written URLs*</sub> | <sub>**yes**</sub> | |
 | <sub>R12</sub> | <sub>*`last` on a partner row*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R13** | no streams between partners | OPEN — **wire, team review** | **yes** | |
+| **R13** | no streams between partners | OPEN — **reviewed: agree**, 15-minute liveness; Andy opens the sitting | **yes** | |
 | <sub>R14</sub> | <sub>*open partnering — a row on send or receive, mutual activates*</sub> | <sub>*deferred — an owner's grant, outside the core (2026-09-22)*</sub> | <sub>**yes**</sub> | |
 | <sub>R15</sub> | <sub>*the per-stream measurement*</sub> | <sub>*done — a platform constant: ~57–63 KB Windows, ~42 KB Linux*</sub> | <sub>—</sub> | |
 | <sub>R16</sub> | <sub>*the queue survives a restart — and is a table, not a dump*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -103,7 +105,7 @@ cancelled — hints carry keys, never URLs.
 | <sub>R25</sub> | <sub>*a route is learned at every opportunity; policy does not gate it*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R26</sub> | <sub>*the shadow needs a store, and it is a persist shape*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R27</sub> | <sub>*a presence event about a stranger is discarded, and it is a route*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R28** | a label change reaches everybody, at every level | OPEN — **decided `0019`**; hop 1 already built, hops 2-3 **wire, team review** | **yes** | |
+| **R28** | a label change reaches everybody, at every level | OPEN — **decided `0019`**; hop 1 built; hops 2-3 **reviewed: a new event, not `route`**; Andy opens the sitting | **yes** | |
 | <sub>R29</sub> | <sub>*the shadow row carries rank and provenance*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R30</sub> | <sub>*presence is last-known, and the shadow dates it — the screen is R37*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R31</sub> | <sub>*the owner caps the cache — the screen is R34*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -116,6 +118,22 @@ rather they collapsed out of sight entirely.
 **What "solution?" means.** Not *is it decided* and not *is it started* —
 **is there a worked answer somebody could build from without re-deriving
 it.** A DONE row is a dash; it has been built, so the question is spent.
+
+### The team review, 2026-09-22 — Grok's verdicts
+
+The pile went to Grok as `PASTE_TO_GROK.md` at `198827c`, drafted by the
+Windows Claude and checked line by line by wsl-claude (Linux harness 120
+suites, 2771 green). **A review is input; Andy decides** — and Grok closed
+with *"Stop. Andy opens the sitting."* So these are findings, recorded
+where each row will find them, and nothing is built on them yet.
+
+| item | Grok |
+|---|---|
+| **R28** hops 2–3 | broadcast `{key, label}` to every member on a **new event** (e.g. `peer`), the same for rename and claim; **not** `route` — *"A rename is not a path. Riding it will look like a reconnect."* Stop at the partnership. |
+| **R13** | **agree** — drop partner streams and `partnerLink`'s dial at boot. Liveness is the last answer: **15 minutes**, then one more post before a partner is skipped for hints — *"Quiet is normal."* A verb that cannot answer on the same post *"is not a partner verb yet"*. |
+| **R36** phase B | `{ status, error, code }` — the code beside the sentence; **keep the sentence**, old nodes read it; do not reduce `not now` to a code-only body. |
+| **Governor** | **delete the whole thing** — *"Levers kept 'for later' grow a governor back."* Allowance fixed at boot from the owner's RAM; the suites and the 5 s tick go with the file. |
+| R35, R16 | **no objection.** *"R35 is the missing write-backpressure."* *"a persisted outbound queue is intent, not a second mail store."* |
 
 ### Which first step clears the most
 
