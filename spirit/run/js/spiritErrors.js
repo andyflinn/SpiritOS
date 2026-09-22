@@ -252,6 +252,30 @@ define('no-such-identity', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['no such identity'],
 });
+// ── THE PROXY, UNDER THE OWNER'S LIST (2026-09-22, THE-PROXY.md) ──────
+define('proxy-closed', {
+  status: 403, presence: NONE, retry: 'no', fault: 'node',
+  texts: ['the proxy is closed by the owner'],
+  note: 'The owner closed the gate — all of it, one key, or one website ' +
+    '("<key> is closed by the owner", "<host> is closed by the owner"). ' +
+    'An agent stops and reports; retrying cannot help.',
+});
+define('proxy-list-broken', {
+  status: 503, presence: NONE, retry: 'no', fault: 'node',
+  prefixes: ['the proxy is closed:'],
+  note: 'relay-state/proxy.json cannot be read, so the gate is closed ' +
+    'rather than open. The owner repairs the file.',
+});
+define('proxy-no-entry', {
+  status: 404, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['no such entry'], prefixes: ['no entry names', 'nothing closed for'],
+  note: 'A proxy verb named an entry, key or website the list does not have.',
+});
+define('proxy-bad-entry', {
+  status: 400, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['key: an environment variable name'],
+  note: 'A proxy verb was given a malformed key name, website or method.',
+});
 define('partner-no-stream', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['a partner holds no stream here'],

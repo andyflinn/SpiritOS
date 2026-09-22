@@ -1,6 +1,20 @@
 # The proxy — `net.fetch`, and the keys it carries
 
-**Design sitting, opened 2026-09-22.** No patch until Andy rules.
+**Design sitting, opened 2026-09-22; the core half built the same day** on
+Andy's *"come on! ... that's the same trust i mentionned before."* The shell
+half is deferred.
+
+**Built:** `spirit/run/js/proxyList.js` — the owner's list in
+`relay-state/proxy.json`, written from the old code list on first use, read
+on every call, and a broken file closes the gate. `proxy.list`, `proxy.allow`,
+`proxy.remove`, `proxy.close`, `proxy.open` (server.js) are the only way to
+change it. `net.fetch` asks the gate first, fills keys only from open
+entries, and calls out with `http`/`https.request`, which imposes no wait
+— the caller's `timeoutMs` if given, otherwise none. **Verify:**
+`spirit/test/proxyList.js` (defaults, allow/remove, the gate three ways, a
+broken file) and `spirit/test/serverSurface.js` case 6 (on a real node: not
+served, not writable through fs, close and open, a closed key, and an 11 s
+far end answered). Falsified: gate removed, 10 s default put back.
 
 > **Andy, 2026-09-22:** *"and please note that a design session for the
 > proxy system must come soon."* — *"on our side lets get the the proxy api

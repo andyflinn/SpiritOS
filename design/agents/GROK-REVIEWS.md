@@ -98,8 +98,8 @@ host but `api.x.ai`; falsified by widening its hosts).
   price list (`GET /v1/language-models`), and exact token counts
   (`POST /v1/tokenize-text`), so a message's cost is known before it is
   sent. The remaining balance needs a management key: Andy made one
-  read-only at xAI and pinned to his address (`GROK_MANAGMENT_KEY`, spelled
-  as he set it), and the node sends it GET-only to `management-api.x.ai`.
+  read-only at xAI and pinned to his address (`GROK_MANAGEMENT_KEY`), and the
+  node sends it GET-only to `management-api.x.ai`.
   `balance` read $5.00 on 2026-09-22.
 - Which model a review uses. Default `grok-4.7`, the newest `models` listed on
   2026-09-22 (the first live call, free, through the node); `--model` overrides

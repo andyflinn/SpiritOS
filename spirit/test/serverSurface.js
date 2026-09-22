@@ -24,6 +24,11 @@
 //      verb runs. So a page Andy visited could spend his keys through
 //      net.fetch, write files, start jobs, or post to peers as him. The
 //      Host check stops DNS rebinding, not this.
+//   6. THE OWNER'S PROXY LIST (2026-09-22, design/proxy/THE-PROXY.md):
+//      relay-state/proxy.json is neither served nor writable through fs;
+//      closing the gate, or one key, stops net.fetch on the next call; and
+//      the proxy imposes no wait of its own — a far end slower than the old
+//      10-second default is still answered.
 //
 // EXPECTED TO FAIL until those are fixed. Cases 1-3 are confirmed live
 // against this tree; case 4 is confirmed by reading substituteEnvPlaceholders.
@@ -86,7 +91,7 @@ function request(port, method, rawPath, bodyObj, as) {
       res.on('end', function () { resolve({ status: res.statusCode, text: chunks }); });
     });
     req.on('error', function (err) { resolve({ status: 0, text: '', error: err.code || String(err) }); });
-    req.setTimeout(8000, function () { req.destroy(new Error('timeout')); });
+    req.setTimeout((as && as.waitMs) || 8000, function () { req.destroy(new Error('timeout')); });
     req.end(payload);
   });
 }
@@ -114,13 +119,16 @@ function waitForBoot(port) {
 }
 
 // Stands in for "some host on the internet the caller names" in case 4.
-function startSink() {
+// `delayMs` makes it answer late (case 6: the proxy must not cut it off).
+function startSink(delayMs) {
   return new Promise(function (resolve) {
     const seen = { headers: null };
     const sink = http.createServer(function (req, res) {
       seen.headers = req.headers;
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end('{"ok":true}');
+      setTimeout(function () {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end('{"ok":true}');
+      }, delayMs || 0);
     });
     sink.listen(0, '127.0.0.1', function () {
       resolve({ port: sink.address().port, seen: seen, close: function () { sink.close(); } });
@@ -404,6 +412,94 @@ freePort()
         test.fail('a local script was refused: HTTP ' + r.status);
       }
       return port;
+    });
+  })
+
+  // ---- 6. the owner's proxy list, through a real node -------------------
+  .then(function (port) {
+    test.subHeading('The owner\'s proxy list: private, closable, and no wait of its own');
+    function verb(obj, waitMs) {
+      return request(port, 'POST', '/api/spirit', null, {
+        raw: JSON.stringify(obj), headers: { 'Content-Type': 'application/json' }, waitMs: waitMs,
+      });
+    }
+    let quick = null;
+    return verb({ verb: 'proxy.list' }).then(function (r) {
+      let body = null;
+      try { body = JSON.parse(r.text); } catch (e) { body = null; }
+      if (r.status === 200 && body && body.list && body.list.open === true && body.list.entries.length >= 3) {
+        test.check('proxy.list answers the owner\'s list — written from the old code list on first use');
+      } else {
+        test.fail('proxy.list: HTTP ' + r.status + ' ' + r.text.slice(0, 160));
+      }
+      return request(port, 'GET', '/relay-state/proxy.json');
+    }).then(function (r) {
+      if (r.status !== 200 && r.text.indexOf('GROK_API_KEY') === -1) {
+        test.check('relay-state/proxy.json is not served (HTTP ' + r.status + ')');
+      } else {
+        test.fail('the proxy list was SERVED: HTTP ' + r.status);
+      }
+      return verb({ verb: 'fs.save', path: 'relay-state/proxy.json', content: '{"open":true,"entries":[{"key":"GROK_API_KEY","host":"127.0.0.1"}]}' });
+    }).then(function (r) {
+      return verb({ verb: 'proxy.list' }).then(function (l) {
+        const hijacked = l.text.indexOf('"host":"127.0.0.1"') !== -1;
+        if (r.status >= 400 && !hijacked) {
+          test.check('and fs.save cannot write it (HTTP ' + r.status + ') — only the proxy verbs change it');
+        } else {
+          test.fail('fs.save rewrote the proxy list: HTTP ' + r.status);
+        }
+      });
+    }).then(function () {
+      return startSink();
+    }).then(function (s) {
+      quick = s;
+      return verb({ verb: 'proxy.close' });
+    }).then(function () {
+      quick.seen.headers = null;
+      return verb({ verb: 'net.fetch', url: 'http://127.0.0.1:' + quick.port + '/x', method: 'GET' });
+    }).then(function (r) {
+      if (r.status === 403 && /closed by the owner/.test(r.text) && !quick.seen.headers) {
+        test.check('proxy.close: the next net.fetch is refused "closed by the owner", and nothing leaves');
+      } else {
+        test.fail('closed gate: HTTP ' + r.status + ' ' + r.text.slice(0, 120) + ', reached: ' + !!quick.seen.headers);
+      }
+      return verb({ verb: 'proxy.open' });
+    }).then(function () {
+      return verb({ verb: 'net.fetch', url: 'http://127.0.0.1:' + quick.port + '/x', method: 'GET' });
+    }).then(function (r) {
+      if (r.status === 200 && quick.seen.headers) {
+        test.check('proxy.open: and the next one goes again');
+      } else {
+        test.fail('reopened gate: HTTP ' + r.status);
+      }
+      return verb({ verb: 'proxy.close', key: 'GROK_API_KEY' });
+    }).then(function () {
+      quick.seen.headers = null;
+      return verb({ verb: 'net.fetch', url: 'http://127.0.0.1:' + quick.port + '/x', method: 'GET',
+        headers: { Authorization: 'Bearer ${ENV:GROK_API_KEY}' } });
+    }).then(function (r) {
+      if (r.status === 403 && /GROK_API_KEY is closed by the owner/.test(r.text) && !quick.seen.headers) {
+        test.check('proxy.close { key }: a call naming that key is refused before it leaves');
+      } else {
+        test.fail('closed key: HTTP ' + r.status + ' ' + r.text.slice(0, 120));
+      }
+      return verb({ verb: 'proxy.open', key: 'GROK_API_KEY' });
+    }).then(function () {
+      quick.close();
+      return startSink(11000);
+    }).then(function (slow) {
+      const started = Date.now();
+      return verb({ verb: 'net.fetch', url: 'http://127.0.0.1:' + slow.port + '/slow', method: 'GET' }, 20000)
+        .then(function (r) {
+          slow.close();
+          const took = Date.now() - started;
+          if (r.status === 200 && took >= 10500) {
+            test.check('no wait of its own: a far end that takes 11 s — past the old 10 s default — is answered (' + took + ' ms)');
+          } else {
+            test.fail('slow far end: HTTP ' + r.status + ' after ' + took + ' ms ' + r.text.slice(0, 120));
+          }
+          return port;
+        });
     });
   })
 

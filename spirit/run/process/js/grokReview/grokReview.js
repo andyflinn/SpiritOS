@@ -59,9 +59,9 @@ const API = 'https://api.x.ai/v1';
 const NODE = process.env.GROK_NODE || process.env.AGENTS_NODE || 'http://127.0.0.1:65432';
 const KEY_PLACEHOLDER = '${ENV:GROK_API_KEY}';
 // Andy's management key: read-only at xAI, and GET-only to its host at the
-// node (js/envSecrets.js). Spelled as he set it. Used for the balance only.
+// node (the owner's proxy list). Used for the balance only.
 const MGMT = 'https://management-api.x.ai/v1';
-const MGMT_PLACEHOLDER = '${ENV:GROK_MANAGMENT_KEY}';
+const MGMT_PLACEHOLDER = '${ENV:GROK_MANAGEMENT_KEY}';
 const REPO = path.join(__dirname, '..', '..', '..', '..', '..');
 const THREADS = path.join(REPO, 'design', 'reviews', 'grok');
 const TICKS_PER_USD = 1e10;
@@ -305,7 +305,7 @@ async function balance(deps) {
   if (!res.ok) {
     throw new Error('balance refused (' + res.status + '): ' + res.text.slice(0, 200) +
       (res.status === 401 || res.status === 403
-        ? ' — is GROK_MANAGMENT_KEY set on the node, and is this box\'s address on the key\'s allowed list?'
+        ? ' — is GROK_MANAGEMENT_KEY set on the node, and is this box\'s address on the key\'s allowed list?'
         : ''));
   }
   return JSON.parse(res.text);

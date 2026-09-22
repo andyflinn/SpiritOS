@@ -29,44 +29,42 @@
 // Anything not allowed leaves the literal placeholder, and the target
 // rejects the bad auth — never a silent substitution of nothing.
 //
-// A SEAM, NOT THE SHAPE. Andy, 2026-09-22: "a instrinisc app will
-// maintain the allow list associated with that part of SpiritOS
-// services." This list is code until that app exists; when it does, the
-// owner keeps these entries through it, and the constant goes. Decided,
-// not built — a new persist shape and an owner screen, so a UI session and
-// a review (design/agents/GROK-REVIEWS.md). A design sitting for the proxy
-// system comes first (Andy: "must come soon").
+// THE LIST IS THE OWNER'S NOW, NOT CODE (2026-09-22). It moved to a node
+// file, relay-state/proxy.json, kept by proxyList.js and changed only
+// through the proxy verbs. Andy: "on the core-side it's primarily about
+// having a configuration file for allowed key/website combinations". This
+// module only applies it: the entries are passed in, and default to the
+// list a fresh node starts with.
+const proxyList = require('./proxyList');
 
-const ALLOWLIST = [
-  { name: 'ANTHROPIC_API_KEY', hosts: ['api.anthropic.com'] },
-  // Andy's Grok key, for agent reviews on a budget he grants
-  // (process/js/grokReview). Andy, 2026-09-22: "this is where the
-  // env-variable proxy-call in node should come in" — "may as well
-  // excercise that aspect of the SpiritOS". The script never holds the
-  // key; this node fills it in, and only for xAI's API.
-  { name: 'GROK_API_KEY', hosts: ['api.x.ai'] },
-  // Andy's xAI management key — read-only on xAI's side, pinned to his
-  // address there, and READ-ONLY HERE TOO: GET only, to the management API
-  // only, so a review can report the prepaid balance and nothing through
-  // this node can change his account. The name is spelled as Andy set it.
-  { name: 'GROK_MANAGMENT_KEY', hosts: ['management-api.x.ai'], methods: ['GET'] },
-];
-
-function allowed(varName, targetHost, method) {
-  const entry = ALLOWLIST.find(function (row) { return row.name === varName; });
-  if (!entry) return false;
-  if (entry.hosts.indexOf(String(targetHost || '').toLowerCase()) === -1) return false;
-  if (entry.methods && entry.methods.indexOf(String(method || 'GET').toUpperCase()) === -1) return false;
-  return true;
+function entriesOr(entries) {
+  return Array.isArray(entries) ? entries : proxyList.DEFAULTS.entries;
 }
 
-function substitute(value, targetHost, method, env) {
+function allowed(varName, targetHost, method, entries) {
+  const host = String(targetHost || '').toLowerCase();
+  const verb = String(method || 'GET').toUpperCase();
+  return entriesOr(entries).some(function (e) {
+    return e.key === varName && e.host === host && e.open !== false &&
+      (!e.methods || e.methods.indexOf(verb) !== -1);
+  });
+}
+
+// The ${ENV:NAME}s a value names, for the gate to ask about.
+function named(value) {
+  const out = [];
+  if (typeof value !== 'string') return out;
+  value.replace(/\$\{ENV:([A-Z0-9_]+)\}/g, function (m, k) { if (out.indexOf(k) === -1) out.push(k); return m; });
+  return out;
+}
+
+function substitute(value, targetHost, method, env, entries) {
   if (typeof value !== 'string') return value;
   const source = env || process.env;
   return value.replace(/\$\{ENV:([A-Z0-9_]+)\}/g, function (match, varName) {
-    if (!allowed(varName, targetHost, method)) return match;
+    if (!allowed(varName, targetHost, method, entries)) return match;
     return source[varName] !== undefined ? source[varName] : match;
   });
 }
 
-module.exports = { ALLOWLIST: ALLOWLIST, allowed: allowed, substitute: substitute };
+module.exports = { allowed: allowed, substitute: substitute, named: named };

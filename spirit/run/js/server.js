@@ -16,6 +16,9 @@ if (process.argv.slice(2).includes('--relay')) {
 }
 
 const http = require('http');
+// For the proxy's outbound calls (handleGenericProxy) — with no 300-second
+// cut of its own, which Node's fetch has.
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const spirit = require('./kernel');
@@ -466,6 +469,8 @@ function handleFsAnnotate(req, res) {
 // change things — by method. It moved out of this file on 2026-09-22 so
 // the rule can be tested directly (spirit/test/envSecrets.js).
 const envSecrets = require('./envSecrets');
+// The owner's list: which key may go to which website, and the gate.
+const proxyList = require('./proxyList');
 
 // Generic outbound-request proxy — knows nothing about LM Studio, Claude,
 // or any other specific service, unlike the two hardcoded handlers this
@@ -476,6 +481,25 @@ const envSecrets = require('./envSecrets');
 // url/method/headers/body/timeout and owns all response-shape parsing —
 // this just forwards and relays back whatever the target actually
 // returned, or a synthesized {error} on timeout/unreachable.
+// ── THE PROXY, UNDER THE OWNER'S LIST (2026-09-22) ─────────────────────
+//
+// design/proxy/THE-PROXY.md. Three things changed here, each ruled by Andy:
+//
+//   THE GATE. The owner's list (relay-state/proxy.json, proxyList.js) is
+//   read on every call, so a close takes effect on the next one. A closed
+//   proxy, website or key is refused with words saying the owner closed it.
+//
+//   THE KEYS come from that list, not from code (envSecrets.js applies it).
+//
+//   NO WAIT OF ITS OWN. Andy: "wait times are not the proxies concern."
+//   The caller's timeoutMs is honoured when given; when not, the proxy
+//   waits as long as the far end takes. This used Node's fetch, whose own
+//   300-second limit dropped the first Grok review at high reasoning; it is
+//   http/https.request now, which imposes none — the same shape as
+//   relayRequest.js, and the same two requires counted by oneDoor.js.
+//
+// No size limit either: "size limits would break the proxy facility real
+// quick." The answer is relayed whole, as before.
 function handleGenericProxy(req, res) {
   readJsonBody(req).then((body) => {
     if (!body.url) {
@@ -484,33 +508,63 @@ function handleGenericProxy(req, res) {
       return;
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), body.timeoutMs || 10000);
-
+    let target = null;
+    try { target = new URL(body.url); } catch (err) { target = null; }
+    if (!target || (target.protocol !== 'https:' && target.protocol !== 'http:')) {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'url must be http or https' }));
+      return;
+    }
     // Whatever host the outbound request will actually reach — the only
     // thing that decides whether a secret is allowed into these headers.
-    let targetHost = '';
-    try { targetHost = new URL(body.url).hostname.toLowerCase(); }
-    catch (err) { /* unparseable — no host matches, so nothing substitutes; fetch fails below on its own */ }
+    const targetHost = target.hostname.toLowerCase();
+    const method = String(body.method || 'GET').toUpperCase();
 
-    const fetchOptions = { method: body.method || 'GET', signal: controller.signal };
     const headers = Object.assign({}, body.body !== undefined ? { 'Content-Type': 'application/json' } : {}, body.headers || {});
-    Object.keys(headers).forEach((key) => { headers[key] = envSecrets.substitute(headers[key], targetHost, fetchOptions.method); });
-    if (Object.keys(headers).length > 0) fetchOptions.headers = headers;
-    if (body.body !== undefined) fetchOptions.body = JSON.stringify(body.body);
+    const keys = [];
+    Object.keys(headers).forEach((k) => {
+      envSecrets.named(headers[k]).forEach((n) => { if (keys.indexOf(n) === -1) keys.push(n); });
+    });
 
-    fetch(body.url, fetchOptions)
-      .then((response) => response.text().then((text) => ({ status: response.status, text })))
-      .then(({ status, text }) => {
-        clearTimeout(timeoutId);
-        res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(text);
-      })
-      .catch((err) => {
-        clearTimeout(timeoutId);
-        res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ error: err.name === 'AbortError' ? 'proxy request timed out' : 'proxy target unreachable' }));
+    const list = proxyList.load(ROOT_DIR);
+    const gate = proxyList.gate(list, targetHost, keys);
+    if (!gate.ok) {
+      res.writeHead(gate.status, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: gate.error, closed: true }));
+      return;
+    }
+    const entries = proxyList.openEntries(list);
+    Object.keys(headers).forEach((k) => { headers[k] = envSecrets.substitute(headers[k], targetHost, method, undefined, entries); });
+
+    const payload = body.body !== undefined ? JSON.stringify(body.body) : null;
+    if (payload !== null) headers['Content-Length'] = Buffer.byteLength(payload);
+
+    let answered = false;
+    function answer(status, text) {
+      if (answered) return;
+      answered = true;
+      res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(text);
+    }
+
+    const lib = target.protocol === 'https:' ? https : http;
+    const out = lib.request(target, { method: method, headers: headers }, (reply) => {
+      const chunks = [];
+      reply.on('data', (c) => { chunks.push(c); });
+      reply.on('end', () => { answer(reply.statusCode, Buffer.concat(chunks).toString('utf8')); });
+      reply.on('error', () => { answer(502, JSON.stringify({ error: 'proxy target unreachable' })); });
+    });
+    // The caller's own patience, when it names one. None otherwise.
+    if (typeof body.timeoutMs === 'number' && body.timeoutMs > 0) {
+      out.setTimeout(body.timeoutMs, () => {
+        answer(502, JSON.stringify({ error: 'proxy request timed out' }));
+        out.destroy();
       });
+    }
+    out.on('error', () => { answer(502, JSON.stringify({ error: 'proxy target unreachable' })); });
+    // A caller that gives up takes the call down with it.
+    req.on('close', () => { if (!answered) out.destroy(); });
+    out.end(payload === null ? undefined : payload);
   }).catch(() => {
     res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Invalid JSON body');
@@ -1351,6 +1405,38 @@ contactBook.syncMarks(ROOT_DIR);
     'net.fetch': handleGenericProxy,
     // WIRE: it reaches the internet, so being offline fails it.
   }, { wire: true });
+
+  // ── THE OWNER'S LIST, MAINTAINED (2026-09-22) ─────────────────────────
+  //
+  // The only way to change relay-state/proxy.json: the fs verbs cannot
+  // write relay-state, and the static route cannot serve it. Andy: "a
+  // client api (loopback) that allows that internal list to be
+  // maintained." For agents first; the shell's manager is deferred.
+  //   proxy.list                       the list as it stands
+  //   proxy.allow  { host, key?, methods? }   add or replace one entry
+  //   proxy.remove { host, key? }             take one entry out
+  //   proxy.close  {} | { key } | { host }    close the gate, a key, a site
+  //   proxy.open   {} | { key } | { host }    and open it again
+  function proxyVerb(work) {
+    return function (rq, rs) {
+      readJsonBody(rq).then((body) => {
+        const out = work(body || {});
+        rs.writeHead(out.status || (out.ok ? 200 : 400), { 'Content-Type': 'application/json; charset=utf-8' });
+        rs.end(JSON.stringify(out.ok ? { ok: true, list: out.list } : { error: out.error }));
+      }).catch(() => {
+        rs.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        rs.end('Invalid JSON body');
+      });
+    };
+  }
+  loopbackVerbs.claim('proxy', 'server.js', {
+    'proxy.list': proxyVerb(function () { return { ok: true, status: 200, list: proxyList.load(ROOT_DIR) }; }),
+    'proxy.allow': proxyVerb(function (b) { return proxyList.allow(ROOT_DIR, b); }),
+    'proxy.remove': proxyVerb(function (b) { return proxyList.remove(ROOT_DIR, b); }),
+    'proxy.close': proxyVerb(function (b) { return proxyList.close(ROOT_DIR, b); }),
+    'proxy.open': proxyVerb(function (b) { return proxyList.open(ROOT_DIR, b); }),
+    // LOCAL: the owner's own list, on this node's disk.
+  }, { wire: false });
 
   loopbackVerbs.claim('jobs', 'server.js', {
     'jobs.list': function (rq, rs) {
