@@ -1,0 +1,18 @@
+{
+  // Andy, 2026-09-22: "starting all of them your personal nodes, labMaster
+  // and personal node for me should occur in one fell swoop when SpiritOS
+  // sessions start." Runs when this folder opens (VS Code asks once to allow
+  // automatic tasks), and from the Command Palette: "Tasks: Run Task".
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "SpiritOS: start everything",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\platform\\windows\\start-spirit.ps1"],
+      "runOptions": { "runOn": "folderOpen" },
+      "presentation": { "reveal": "silent", "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    }
+  ]
+}
