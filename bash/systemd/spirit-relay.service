@@ -8,7 +8,13 @@ Type=simple
 # One-operator host. root is spirit. No second Unix user.
 WorkingDirectory=__RUN_DIR__
 ExecStart=/usr/bin/node js/server.js --relay --port __PORT__
-Restart=on-failure
+# ALWAYS, NOT on-failure (cycle 9). An owner may now ask his relay to
+# restart from his own node — `{ config: { …, restart: true } }`, signed,
+# over the wire — and that goodbye exits 0 so members are told to come
+# back in three seconds rather than seeing a crash. `on-failure` would
+# have left the box down after exactly the one restart somebody asked
+# for. Andy: "remote adjustment with possibly restart must be there."
+Restart=always
 RestartSec=3
 # 78 is the relay REFUSING to start (relayServer.js STARTUP_REFUSED):
 # members but no owner, a store it cannot open, a config it cannot honour.
@@ -16,6 +22,26 @@ RestartSec=3
 # every 3 s; bash/restart and bash/update print why (check_started).
 RestartPreventExitStatus=78
 Environment=PORT=__PORT__
+
+# ── THE DECLARED LIMIT, ENFORCED BY THE BOX (cycle 9) ────────────────
+#
+# `ramLimitMB` in relay-state/config.json is what the relay PROMISES to
+# stay within — it sizes the connection allowance at 16 streams per MB.
+# Nothing made the promise true: a wrong estimate meant a box that swapped
+# or was killed by the kernel with no explanation.
+#
+# MemoryMax is the promise made enforceable, and it is NOT the same
+# number. The relay's own footprint — Node, the SQLite page cache, the
+# working set — sits underneath the allowance rather than inside it, so
+# the cap is the configured figure PLUS headroom. Capping at ramLimitMB
+# exactly would kill a relay long before it reached the connections it
+# was told it may have.
+#
+#   __MEMORY_MAX__ = ramLimitMB + 128 MB, written by bash/install-units.
+#
+# systemd kills the process when it is exceeded, and Restart=always brings
+# it back — a visible, logged event instead of a box that quietly swaps.
+MemoryMax=__MEMORY_MAX__
 
 # Soft sandbox. The process still runs as root because this box has
 # one operator and the clone lives under /root. These flags limit what

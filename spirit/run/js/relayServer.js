@@ -25,6 +25,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const relayConfig = require('./relayConfig');
+const relayLimits = require('./relayLimits');
 const spirit = require('./kernel');
 const createRelay = require('./relay');
 // For keyFromUrl only — translating a URL segment back to the stored key
@@ -138,17 +139,97 @@ if (require('./relayAuth').loadAllow(ROOT_DIR).mode !== 'keys' &&
 // ── THE OWNER'S BOUND, READ ONCE (cycle 1) ───────────────────────────
 //
 // relay-state/config.json, beside allow.json. Bounded by the box: a
-// ceiling larger than this machine refuses to start rather than being
-// honoured (relayConfig.js). Never re-read — the configuration is not a
-// real-time tool (NODE-AND-RELAY §5, scope).
+// ceiling larger than this machine can GIVE refuses to start rather than
+// being honoured (relayConfig.js, relayLimits.js). Never re-read — the
+// configuration is not a real-time tool (NODE-AND-RELAY §5, scope).
+//
+// ── AND WRITTEN, THE FIRST TIME, SO NOTHING IS IMPLICIT (cycle 9) ────
+//
+//   Andy, 2026-09-22: "on first start, relay may initialize config.json
+//   with a default, or the command-line provides args so the first start
+//   already confines the relay to those sizes."
+//
+// A relay used to fall back to a 256 MB constant and write nothing, so
+// the figures it was running on existed nowhere an owner could read. Now
+// the first start writes what it measured — half of the box, clamped to
+// what the box can give — or what `--ram` / `--disc` asked for. After
+// that the file is the record, and `source: 'default'` stops being a
+// state that hides.
+//
+// THE SAME ARITHMETIC THE INSTALLER USES (relayLimits.js), so `node
+// install` and a bare first start cannot propose different figures for
+// the same machine.
+const MEASURED = relayLimits.measure(ROOT_DIR);
 const CONFIG = (function () {
+  const file = path.join(ROOT_DIR, 'relay-state', 'config.json');
   let text = null;
-  try { text = fs.readFileSync(path.join(ROOT_DIR, 'relay-state', 'config.json'), 'utf8'); }
+  try { text = fs.readFileSync(file, 'utf8'); }
   catch (e) { text = null; }
-  const read = relayConfig.parse(text, os.totalmem() / (1024 * 1024));
+
+  // Args are only read when there is no file: they configure a relay's
+  // first start, they do not override an owner's written choice. A figure
+  // on the command line of an already-configured relay would be a limit
+  // that changes on a restart nobody remembers typing.
+  if (text == null) {
+    const ramAsked = argMB('--ram');
+    const discAsked = argMB('--disc');
+    if (ramAsked !== null || discAsked !== null) {
+      const proposed = relayLimits.defaults(MEASURED);
+      text = relayConfig.fileText({
+        ramLimitMB: ramAsked === null ? proposed.ramLimitMB : ramAsked,
+        discLimitMB: discAsked === null ? proposed.discLimitMB : discAsked,
+      });
+    }
+  }
+
+  // AT BOOT the ceiling clamps rather than refuses (relayConfig.js): a
+  // figure that stopped fitting because the box filled up is not a reason
+  // to keep a relay down. Nonsense in the file still refuses — that is a
+  // state a restart cannot fix.
+  const read = relayConfig.parse(text, MEASURED, { atBoot: true });
   if (!read.ok) refuseToStart(read.error);
+
+  if (text == null || read.config.source === 'default') {
+    // Written before the relay serves anything, so a box that dies in its
+    // first minute still says what it had decided. A failure here is not
+    // fatal: a relay that cannot write its own config can still run on
+    // what it measured, and the owner has a bigger problem to find.
+    try {
+      fs.mkdirSync(path.join(ROOT_DIR, 'relay-state'), { recursive: true });
+      // What was ASKED for, never a boot-time clamp: a busy afternoon
+      // must not shrink a relay's configuration permanently.
+      fs.writeFileSync(file, relayConfig.fileText(relayConfig.asked(read.config)));
+      console.log('    wrote relay-state/config.json (measured: ' +
+        read.config.ramLimitMB + ' MB RAM, ' + read.config.discLimitMB + ' MB disc)');
+    } catch (e) {
+      console.error('    could not write relay-state/config.json: ' + e.message);
+    }
+  } else if (text !== null && read.config.source === 'file') {
+    try {
+      const had = JSON.parse(text);
+      if (had && had.discLimitMB === undefined) {
+        fs.writeFileSync(file, relayConfig.fileText(relayConfig.asked(read.config)));
+        console.log('    added discLimitMB ' + read.config.discLimitMB + ' MB to relay-state/config.json');
+      }
+    } catch (e) { /* an unreadable file already refused above */ }
+  }
   return read.config;
 }());
+
+// `--ram 256`, `--disc 64`. Megabytes, positive, integers; anything else
+// is refused rather than rounded, because a typed limit that silently
+// becomes something else is worse than no limit at all.
+function argMB(flag) {
+  const args = process.argv.slice(2);
+  const i = args.indexOf(flag);
+  if (i === -1) return null;
+  const raw = args[i + 1];
+  const mb = Number(raw);
+  if (!isFinite(mb) || mb <= 0 || Math.floor(mb) !== mb) {
+    refuseToStart(flag + ' wants a positive whole number of megabytes, got ' + JSON.stringify(raw));
+  }
+  return mb;
+}
 
 // HOW THIS RELAY ASKS A PARTNER, injected rather than reached for.
 //
@@ -169,6 +250,76 @@ const relay = createRelay.createRelay(undefined, {
     return partnerRouter.post(url, relayKey, text, null, { budgetMs: budgetMs });
   },
   config: CONFIG,
+
+  // ── THE OWNER'S `config` VERB NEEDS HANDS (cycle 9) ───────────────
+  //
+  // relay.js decides — is this the owner, is the figure inside the
+  // ceiling, would it strand members — and these three do the parts that
+  // touch the box. Injected rather than reached for, so a relay built in
+  // a suite simply has no hands and says so honestly instead of writing
+  // into somebody's checkout.
+  measure: function () { return relayLimits.measure(ROOT_DIR); },
+
+  writeConfig: function (next) {
+    try {
+      fs.writeFileSync(path.join(ROOT_DIR, 'relay-state', 'config.json'), relayConfig.fileText(next));
+      console.log(`    owner reconfigured: ${next.ramLimitMB} MB RAM, ${next.discLimitMB} MB disc (applies at next start)`);
+      return true;
+    } catch (e) {
+      console.error('    could not write relay-state/config.json: ' + e.message);
+      return false;
+    }
+  },
+
+  // ── A RESTART THIS PROCESS CANNOT PROMISE ON ITS OWN ──────────────
+  //
+  // Exiting is easy; COMING BACK is somebody else's job. Under systemd
+  // with `Restart=always` the unit brings it back in seconds; started
+  // from a shell it just stops, and an owner in a datacentre would be
+  // left with a box that went quiet because he changed a number.
+  //
+  // So it answers first and acts second, and it only claims a restart
+  // when systemd is the thing that started it — INVOCATION_ID is set by
+  // systemd for every service it runs, and by nothing else.
+  //
+  // The goodbye is the one that already exists: members are told to come
+  // back in three seconds, the store is closed, and the process exits 0.
+  // `Restart=on-failure` would NOT bring back a clean exit, which is why
+  // bash/systemd/spirit-relay.service now says `always`.
+  restart: function () {
+    if (!process.env.INVOCATION_ID) {
+      return {
+        will: false,
+        why: 'this relay was not started by systemd, so nothing would bring it back — ' +
+          'the figures are written and apply the next time it starts',
+      };
+    }
+    // ── SYSTEMD IS NOT ENOUGH; THE POLICY HAS TO SAY `always` ────────
+    //
+    // A unit with `Restart=on-failure` does NOT bring back a clean exit,
+    // and the goodbye exits 0 on purpose so members are told to come
+    // back rather than seeing a crash. So a relay running under the
+    // old unit would take this verb, stop, and stay stopped until
+    // somebody SSH'd in — the exact outage this verb exists to avoid.
+    //
+    // `bash/update` pulls and restarts but does not reinstall the unit,
+    // so this is the live state of every relay between a pull and the
+    // next `./bash/install-units`. Asked of systemd rather than assumed,
+    // and a box that will not answer is treated as "will not come back".
+    const policy = restartPolicy();
+    if (policy !== 'always' && policy !== 'on-success') {
+      return {
+        will: false,
+        why: 'the unit says Restart=' + (policy || 'unknown') + ', which does not bring back a clean ' +
+          'exit — the figures are written; run ./bash/install-units and ./bash/restart to apply them',
+      };
+    }
+    // After the answer has been written to the wire, not before: an owner
+    // who asked for a restart should still receive the report of what he
+    // just changed.
+    setTimeout(function () { restartNow(); }, 250);
+    return { will: true };
+  },
 });
 
 // A relay is a party to conversations, and `relay` is the caption it
@@ -656,6 +807,40 @@ common.refuseListenError(server, port, 'js/relayServer.js');
 //
 // The node's own goodbye (server.js) tells its browser pages the same
 // thing, through the same presence.sayGoingAway.
+// WHAT SYSTEMD WOULD DO IF THIS PROCESS EXITED CLEANLY.
+//
+// The unit's own name is not handed to a service, so it is read from the
+// cgroup path, which ends in `<unit>.service` for anything systemd runs.
+// Then systemd is asked directly: no guessing from a file in the
+// checkout, which may not be the file that was installed.
+//
+// Every failure answers null, and the caller reads null as "will not come
+// back" — the safe direction: a relay that refuses to restart itself is
+// an inconvenience, one that stops and stays stopped is an outage.
+function restartPolicy() {
+  try {
+    const cgroup = fs.readFileSync('/proc/self/cgroup', 'utf8');
+    const unit = /([A-Za-z0-9@_.\\-]+\.service)/.exec(cgroup);
+    if (!unit) return null;
+    const out = require('child_process').execFileSync(
+      'systemctl', ['show', '-p', 'Restart', '--value', unit[1]],
+      { encoding: 'utf8', timeout: 2000 }
+    );
+    return String(out || '').trim() || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// The owner's `config` verb asks for this one by name (relay.js
+// reconfigure), so it is reachable from outside the block that arms the
+// signal handlers. One goodbye, three ways in: SIGTERM, SIGINT, and an
+// owner who asked.
+let goodbyeFn = null;
+function restartNow() {
+  if (goodbyeFn) goodbyeFn('the owner asked for a restart');
+}
+
 {
   let leaving = false;
   const goodbye = function (signal) {
@@ -671,6 +856,7 @@ common.refuseListenError(server, port, 'js/relayServer.js');
     try { relayStore.closeAll(); } catch (e) { /* never opened */ }
     process.exit(0);
   };
+  goodbyeFn = goodbye;
   process.on('SIGTERM', function () { goodbye('SIGTERM'); });
   process.on('SIGINT', function () { goodbye('SIGINT'); });
 }
@@ -722,4 +908,33 @@ server.listen(port, BIND_HOST, () => {
   // cycle 8: the relay manages itself within a fixed allowance, set once at
   // boot from the owner's RAM, and tells the owner on every event instead.
   console.log(`    RAM limit ${CONFIG.ramLimitMB} MB (${CONFIG.source}); ${relay.allowance()} streams allowed, fixed`);
+
+  // ── BOTH BOUNDS ON ONE LINE, AND THE OVERFLOW IF THERE IS ONE ──────
+  //
+  // A relay can be over its disc figure without anybody shrinking
+  // anything: a later boot measures a lower ceiling on a box that has
+  // filled up, or an owner edits the file downward while it is stopped.
+  //
+  // IT STILL STARTS. A relay that refused to boot because a number moved
+  // would take everybody's messages down to enforce an accounting rule,
+  // and the owner would need SSH to undo it. So it comes up, says so
+  // here and in the owner's report, takes no new claims — and evicts
+  // nobody. Andy: "the owner must evict before shrinkage."
+  const usedMB = Math.round((relayStore.open(ROOT_DIR).bytes() / (1024 * 1024)) * 100) / 100;
+  console.log(`    disc limit ${CONFIG.discLimitMB} MB; ${usedMB} MB used by relay-state/relay.db`);
+  if (CONFIG.overflow) {
+    const o = CONFIG.overflow;
+    if (o.ramAsked) {
+      console.log(`    NOTE: config.json asks for ${o.ramAsked} MB of RAM and the box can give ` +
+        `${CONFIG.ramLimitMB} MB today — running on what it can give. The file is unchanged.`);
+    }
+    if (o.discAsked) {
+      console.log(`    NOTE: config.json asks for ${o.discAsked} MB of disc and ${CONFIG.discLimitMB} MB ` +
+        `is free today — running on what is free. The file is unchanged.`);
+    }
+  }
+  if (usedMB >= CONFIG.discLimitMB) {
+    console.log(`    FULL: the roll is at its disc limit — no new claims until discLimitMB is raised ` +
+      `or members are removed. Nobody has been evicted.`);
+  }
 });

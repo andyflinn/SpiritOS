@@ -30,6 +30,11 @@ This directory contains the vision, principles, and architecture decisions for *
   question earns a bounded answer or none, never everything. The reason
   behind 0012 and the census eradication, and what decides presence
   scoping.
+- [A limited resource is released before it is claimed](principles/LIMITED-RESOURCES.md)
+  — *"it's like member slots, you must evict before adding new ones."* A full
+  resource refuses and names the obstruction; the holder releases first, and
+  the system never frees on anybody's behalf. Behind the full-relay refusal,
+  the shrink refusal, 0021's cache cap, and two relays sharing one box.
 - [Storage Philosophy](storage/STORAGE-PHILOSOPHY.md)
 - [A correspondent that is not a person](principles/A-CORRESPONDENT-NODE.md) —
   **sketch, nothing built.** A node whose `answer` hook is a model rather than a

@@ -18,6 +18,12 @@ const routerTable = require('./router');
 const relayStatus = require('./relayStatus');
 // The relay's data on disc (cycle 3): members, invites, partners.
 const relayStore = require('./relayStore');
+// The same validation the file gets at boot, so the owner's `config` verb
+// (reconfigure) cannot accept a figure a restart would then refuse.
+const relayConfig = require('./relayConfig');
+// The ceilings the owner's read reports — what this box could give — from
+// the same module the installer and first start use.
+const relayLimits = require('./relayLimits');
 // Once, at load, for the same reason server.js does it: the answer must
 // describe the code that is running, not the code on disk.
 const RUNNING = require('./buildStamp').resolve(path.join(__dirname, '..'));
@@ -278,6 +284,9 @@ function createRelay(rootDir, deps) {
     get invites() { return relayStore.open(rootDir).invites; },
     get partners() { return relayStore.open(rootDir).partners; },
     transaction: function (fn) { return relayStore.open(rootDir).transaction(fn); },
+    // What the roll occupies on disc — the figure `discLimitMB` bounds
+    // (cycle 9). Fetched the same way as the rest: through open().
+    bytes: function () { return relayStore.open(rootDir).bytes(); },
   };
 
   // ── THE ACTIVE MEMBERS, IN RAM (cycle 3) ─────────────────────────────
@@ -490,6 +499,214 @@ function createRelay(rootDir, deps) {
     }),
   } : null;
   if (allowance) presentNow.setAllowed(allowance);
+
+  // ── THE SECOND BOUND: WHAT THE ROLL MAY OCCUPY (cycle 9) ───────────
+  //
+  // `ramLimitMB` says how many may be connected; `discLimitMB` says how
+  // much disc this relay's state may take, and therefore how many members
+  // it will ever hold. One object so the claim path, the status report
+  // and the boot line all read the same arithmetic.
+  //
+  // MEASURED FROM THE FILE, NOT COUNTED IN ROWS. What an owner bounded is
+  // disc, and `relayStore.bytes()` is the disc. A per-member estimate
+  // would be a constant that drifts away from the schema silently.
+  //
+  // A relay built with no configuration — every in-process suite — has no
+  // disc bound, the same way it has no allowance. `full()` is then always
+  // false, so nothing in a suite is refused by a limit it never set.
+  var discLimit = (function () {
+    var limitMB = config && typeof config.discLimitMB === 'number' ? config.discLimitMB : null;
+    var limitBytes = limitMB === null ? null : limitMB * 1024 * 1024;
+    function used() {
+      try { return store.bytes ? store.bytes() : 0; } catch (e) { return 0; }
+    }
+    return {
+      limitMB: function () { return limitMB; },
+      usedBytes: used,
+      full: function () { return limitBytes !== null && used() >= limitBytes; },
+    };
+  }());
+
+  // ── RESIZING THE BOX, AND THE ONE THING IT WILL NOT DO (cycle 9) ───
+  //
+  //   Andy, 2026-09-22: "the owner must evict before shrinkage."
+  //
+  // A shrink that would leave existing members outside the new figure is
+  // REFUSED — no confirmation field, no override
+  // (design/principles/LIMITED-RESOURCES.md, which also forbids adding
+  // one later). The answer names the gap; the owner removes members with
+  // the verbs that exist for it
+  // (`removePeer`, `revoke`) and asks again. Eviction is never a side
+  // effect of a number changing: membership moves only by a signed grant
+  // aimed at a person.
+  //
+  // The IO is injected. This decides — owner, ceiling, shrink — and
+  // `relayServer.js` writes the file and restarts the process, because a
+  // relay built in a suite has neither and must still be able to answer.
+  function reconfigure(ask) {
+    var measure = typeof deps.measure === 'function' ? deps.measure : null;
+    var writeConfig = typeof deps.writeConfig === 'function' ? deps.writeConfig : null;
+    var restart = typeof deps.restart === 'function' ? deps.restart : null;
+    if (!config || !writeConfig) {
+      return { ok: false, status: 501, error: 'this relay has no configuration file to write' };
+    }
+
+    var held = store.members.count();
+    var usedBytes = 0;
+    try { usedBytes = store.bytes(); } catch (e) { usedBytes = 0; }
+
+    // ── ASKING WITHOUT TELLING: `{ config: {} }` READS (cycle 9) ─────
+    //
+    //   Andy, 2026-09-22: "so the API must be able to read the config,
+    //   and so we can assess how to correct the somewhat unpredictable
+    //   outcome of a tag-push, and then set the config to our liking."
+    //
+    // A relay that only accepted figures would make the owner guess what
+    // he was changing FROM — and after an update the figures may not be
+    // the ones he last typed: a fresh box writes what it measured, and a
+    // boot on a busy box runs on a clamped figure while the file keeps
+    // what was asked (relayConfig.asked).
+    //
+    // So an empty ask reads and writes nothing: what the file says, what
+    // this process is actually running on, what the box could give, and
+    // what is on the roll. Everything needed to choose the next figure.
+    var reading = ask.ramLimitMB === undefined && ask.discLimitMB === undefined;
+    if (reading) {
+      var box = measure ? measure() : null;
+      var room = box ? relayLimits.ceilings(box) : {};
+      var onFile = relayConfig.asked(config);
+      return {
+        ok: true,
+        status: 200,
+        source: config.source,
+        // WHAT THE FILE ASKS FOR, and what this process got. They differ
+        // only when the box could not give what was written, and an
+        // owner who cannot see both cannot tell a shrunken relay from a
+        // misconfigured one.
+        onFile: { ramLimitMB: onFile.ramLimitMB, discLimitMB: onFile.discLimitMB },
+        running: {
+          ramLimitMB: config.ramLimitMB,
+          discLimitMB: config.discLimitMB,
+          allowance: allowance,
+          clamped: !!config.overflow,
+        },
+        // ── THE MEASUREMENT ITSELF, NOT JUST ITS CONCLUSION ────────
+        //
+        //   Andy, 2026-09-22: "the read interface should also return the
+        //   results from the current freeMemory() calls... and
+        //   availableDisc() calls so we can predict the outcome of our
+        //   set-calls better."
+        //
+        // TAKEN NOW, not at boot: this is what the box can give at the
+        // moment the owner is deciding, which is the number his next
+        // figure will be judged against. A ceiling alone would make him
+        // guess how it was reached; with the raw figures and the margins
+        // he can do the arithmetic himself and predict the answer before
+        // he sends it.
+        //
+        //   ramMaxMB  = availableMB − ramMarginMB
+        //   discMaxMB = discFreeMB  − discMarginMB
+        room: {
+          ramMaxMB: room.ramMaxMB,
+          discMaxMB: room.discMaxMB,
+          totalMB: box ? Math.floor(box.totalMB) : undefined,
+          availableMB: box && box.availableMB !== undefined ? Math.floor(box.availableMB) : undefined,
+          discTotalMB: box && box.discTotalMB !== undefined ? Math.floor(box.discTotalMB) : undefined,
+          discFreeMB: box && box.discFreeMB !== undefined ? Math.floor(box.discFreeMB) : undefined,
+          ramMarginMB: relayLimits.RAM_MARGIN_MB,
+          discMarginMB: box && box.discFreeMB !== undefined
+            ? Math.floor(Math.max(relayLimits.DISC_MARGIN_MB, box.discFreeMB * relayLimits.DISC_MARGIN_SHARE))
+            : undefined,
+          // WHAT THE DEFAULTS WOULD BE on this box today — half of it,
+          // clamped — so "put it back to standard" needs no arithmetic
+          // at all.
+          wouldDefaultTo: box ? relayLimits.defaults(box) : undefined,
+        },
+        // AND WHAT IS ALREADY HERE, which is what a shrink is refused
+        // against: the two numbers that decide whether the figure he has
+        // in mind would strand anybody.
+        roll: {
+          members: held,
+          discUsedMB: Math.round((usedBytes / (1024 * 1024)) * 100) / 100,
+        },
+      };
+    }
+
+    var wantRam = ask.ramLimitMB === undefined ? config.ramLimitMB : ask.ramLimitMB;
+    var wantDisc = ask.discLimitMB === undefined ? config.discLimitMB : ask.discLimitMB;
+
+    // The same validation the file gets at boot, against the same
+    // measurement — one arithmetic, three doors (installer, first start,
+    // here). A figure the box cannot give is refused now rather than
+    // discovered as a relay that will not come back up.
+    var checked = relayConfig.parse(
+      JSON.stringify({ ramLimitMB: wantRam, discLimitMB: wantDisc }),
+      measure ? measure() : null
+    );
+    if (!checked.ok) return { ok: false, status: 400, error: checked.error };
+
+    // STRANDED BY DISC: the roll already occupies more than the new
+    // figure allows.
+    if (usedBytes > checked.config.discLimitMB * 1024 * 1024) {
+      return {
+        ok: false,
+        status: 409,
+        error: 'that disc figure is smaller than the roll: ' + held + ' member(s) occupy ' +
+          Math.round((usedBytes / (1024 * 1024)) * 100) / 100 + ' MB, and you asked for ' +
+          checked.config.discLimitMB + ' MB. Remove members first — nobody is evicted by a number.',
+      };
+    }
+    // STRANDED BY RAM: the new allowance is fewer streams than there are
+    // members, so somebody on the roll could never connect.
+    var after = allowanceFor(checked.config.ramLimitMB);
+    if (after !== null && held > after) {
+      return {
+        ok: false,
+        status: 409,
+        error: 'that RAM figure allows ' + after + ' connection(s) and this relay has ' + held +
+          ' member(s), so ' + (held - after) + ' could never connect. Remove members first — ' +
+          'nobody is evicted by a number.',
+      };
+    }
+
+    var wrote = writeConfig(checked.config);
+    if (!wrote) {
+      return { ok: false, status: 500, error: 'could not write relay-state/config.json' };
+    }
+
+    var answer = {
+      ok: true,
+      status: 200,
+      applies: 'next start',
+      now: {
+        ramLimitMB: config.ramLimitMB,
+        discLimitMB: config.discLimitMB,
+        allowance: allowance,
+        members: held,
+        discUsedMB: Math.round((usedBytes / (1024 * 1024)) * 100) / 100,
+      },
+      after: {
+        ramLimitMB: checked.config.ramLimitMB,
+        discLimitMB: checked.config.discLimitMB,
+        allowance: after,
+      },
+    };
+
+    // THE RESTART IS ASKED FOR, NOT ASSUMED. A written figure that only
+    // applies when somebody happens to reboot is a configuration nobody
+    // can trust; a relay that restarted itself on every edit would drop
+    // every stream on the box to change a number. So the owner says.
+    //
+    // HONEST ABOUT THE RESTARTER. A relay under systemd comes back; one
+    // started by hand does not, and saying "restarting" to an owner whose
+    // box will simply stop is the worst answer available.
+    if (ask.restart) {
+      var plan = restart ? restart() : { will: false, why: 'this relay cannot restart itself' };
+      answer.restarting = !!(plan && plan.will);
+      if (!answer.restarting) answer.restartRefused = (plan && plan.why) || 'no restarter';
+    }
+    return answer;
+  }
 
   function reloadAllow() {
     allow = auth.loadAllow(rootDir);
@@ -1331,6 +1548,36 @@ function createRelay(rootDir, deps) {
     }
     if (findByKey(publicKey)) {
       return { ok: false, status: 409, error: 'key already claimed', peer: findByKey(publicKey) };
+    }
+
+    // ── THE DISC BOUND BITES HERE (cycle 9) ──────────────────────────
+    //
+    //   Andy, 2026-09-22: "disc bound must be in place for completeness."
+    //
+    // RAM bounds how many members may be CONNECTED at once (allowanceFor);
+    // this bounds how many there may BE. A relay writes no traffic and no
+    // payloads, so the only thing that grows with use is the roll — and
+    // the roll is what the owner's disc figure is about.
+    //
+    // REFUSED BEFORE THE INVITE BURNS, like every other refusal above: a
+    // token spent on a claim the box cannot honour would be a seat lost
+    // to nobody.
+    //
+    // THE OWNER IS NEVER TURNED AWAY. A first-owner claim goes through
+    // whatever the figure says — a relay that locked out the one account
+    // that could raise its own limit would need SSH to undo a number, and
+    // `firstOwner` is also how an owner returns to a box he already has.
+    //
+    // NOBODY IS EVICTED. Full means no new claims; it never means a row
+    // is dropped — design/principles/LIMITED-RESOURCES.md, Andy: "it's
+    // like member slots, you must evict before adding new ones."
+    if (!firstOwner && discLimit.full()) {
+      return {
+        ok: false,
+        status: 507,
+        error: 'this relay is full: its state is at the configured disc limit of ' +
+          discLimit.limitMB() + ' MB. Its owner must raise discLimitMB or remove members.',
+      };
     }
 
     // Consume BEFORE the write, and only write if the row actually
@@ -2817,6 +3064,29 @@ function createRelay(rootDir, deps) {
       out = setRelayLabel(String(body.relayLabel.label || ''), hash);
     }
 
+    // ── THE OWNER RESIZES HIS OWN BOX, FROM HIS OWN NODE (cycle 9) ──
+    //
+    //   Andy, 2026-09-22: "i want interfaces to do this remotely." —
+    //   "remote adjustment with possibly restart must be there, at least
+    //   in the core, not neccessarily in UI."
+    //
+    // The figures used to be reachable only by SSH, which meant the owner
+    // of a relay in a datacentre could not answer "how many may join?"
+    // without a terminal. This is that answer as a packet, signed by the
+    // key in allow.json, arriving down the same wire as every other owner
+    // grant — no door, no console, no credential on the box.
+    //
+    // WHAT IT DOES NOT DO: change anything that is live. The
+    // configuration is still read once, at boot (relayConfig.js), and
+    // this writes the FILE. A live ceiling that moved under a running
+    // relay would be a limit nobody could reason about, and cycle 1's
+    // scope says configuration is not a real-time tool. So the answer
+    // says what will apply at next start, and `restart` asks for that
+    // start to be now.
+    if (body && body.config && owner) {
+      out = reconfigure(body.config);
+    }
+
     // ── PARTNERSHIP, AND THE PROOF WAS READ BEFORE IT GOT HERE ──────
     //
     // Owner-only: who this relay partners with is the owner's decision
@@ -3844,6 +4114,23 @@ function createRelay(rootDir, deps) {
       // boot (cycle 8 — the Governor that moved them is gone). Absent on a
       // relay with no configuration.
       ramLimitMB: config ? config.ramLimitMB : undefined,
+      // AND THE DISC BOUND BESIDE IT (cycle 9), with which of the two the
+      // next member will meet. An owner told only "256 MB of RAM" cannot
+      // tell whether the box will refuse the next claim for space or the
+      // next connection for memory.
+      //
+      // `binding` is decided here, where both figures are known: disc
+      // once the roll is within a tenth of its limit — that is the one
+      // that refuses people outright — otherwise RAM, which only refuses
+      // connections.
+      discLimitMB: discLimit.limitMB() === null ? undefined : discLimit.limitMB(),
+      discUsedMB: discLimit.limitMB() === null ? undefined
+        : Math.round((discLimit.usedBytes() / (1024 * 1024)) * 100) / 100,
+      binding: (function () {
+        if (discLimit.limitMB() === null) return undefined;
+        var room = discLimit.limitMB() * 1024 * 1024 - discLimit.usedBytes();
+        return room <= discLimit.limitMB() * 1024 * 1024 * 0.1 ? 'disc' : 'ram';
+      }()),
       // EVERY GAUGE, KEYED BY ITS OWN LABEL — never a list the app has to
       // know the order of, and never one named in the app's code. Sent
       // under `levers`, the name the owner's monitor already draws.

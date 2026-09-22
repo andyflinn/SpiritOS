@@ -125,6 +125,30 @@ function report(opts) {
     // Governor" and "a Governor that has not moved" must not be drawn the
     // same.
     ramLimitMB: typeof o.ramLimitMB === 'number' ? o.ramLimitMB : undefined,
+
+    // ── THE SECOND BOUND, AND WHICH ONE IS BITING (cycle 9) ──────────
+    //
+    //   Andy, 2026-09-22: "DISC boundaries must be set also."
+    //
+    // `ramLimitMB` bounds who may be CONNECTED, `discLimitMB` bounds how
+    // many there may BE. An owner watching one number cannot tell which
+    // of the two will stop the next person, so the report says it:
+    //
+    //   discLimitMB   the configured figure
+    //   discUsedMB    what the roll occupies now, measured off the file
+    //   binding       'ram' | 'disc' — which limit the next member meets
+    //
+    // `binding` is COMPUTED BY THE CALLER and passed in, like every other
+    // fact here: this file is a pure function from facts to a report and
+    // reads nothing for itself.
+    //
+    // Absent rather than zeroed on a relay with no configuration, for the
+    // same reason as `meter`: "no bound" and "a bound with room left"
+    // must not be drawn the same.
+    discLimitMB: typeof o.discLimitMB === 'number' ? o.discLimitMB : undefined,
+    discUsedMB: typeof o.discUsedMB === 'number' ? o.discUsedMB : undefined,
+    binding: o.binding || undefined,
+
     levers: o.levers || undefined,
     // THE CAPTURE TIME, passed through rather than taken here: this file
     // reads no clock it was not handed. It is what lets a monitor say

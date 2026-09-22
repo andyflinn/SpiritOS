@@ -218,6 +218,27 @@ function build(rootDir, db, key) {
   const store = {
     path: dbPath(rootDir),
 
+    // ── WHAT THIS RELAY'S STATE OCCUPIES, IN BYTES (cycle 9) ─────────
+    //
+    //   Andy, 2026-09-22: "DISC boundaries must be set also."
+    //
+    // The database and its rollback journal, which is the whole of what a
+    // relay writes that grows: members, invites and the partner roll. No
+    // traffic, no payloads (relayServer.js, NO TRAFFIC LOG), so this
+    // number moves only when membership does.
+    //
+    // MEASURED, NOT ESTIMATED. A per-member byte estimate would be a
+    // guess that drifts with a schema change; the file on disc is the
+    // thing the owner's disc limit is actually about. Claims are rate
+    // limited (CLAIM_PER_MIN), so a stat on that path costs nothing.
+    bytes: function () {
+      let total = 0;
+      [dbPath(rootDir), dbPath(rootDir) + '-journal'].forEach(function (p) {
+        try { total += fs.statSync(p).size; } catch (e) { /* absent is zero */ }
+      });
+      return total;
+    },
+
     members: {
       get: function (publicKey) { return member(q.memberGet.get(String(publicKey || ''))); },
       // Labels duplicate by design, so this answers every holder up to

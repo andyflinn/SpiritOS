@@ -178,6 +178,43 @@ define('memory-full', {
     'a retry: nothing changes until the owner raises the cap or lets ' +
     'somebody go — "it\'s just reality".',
 });
+// ── THE OWNER RESIZING HIS OWN BOX (cycle 9) ──────────────────────
+//
+// Four refusals of one verb, and the two 409s are the rule Andy set:
+// "the owner must evict before shrinkage." They are `fault: 'caller'`
+// because the caller here IS the owner — the box is telling him what he
+// asked for cannot be done, not reporting a fault of its own.
+define('relay-not-configurable', {
+  status: 501, presence: NONE, retry: 'no', fault: 'target',
+  texts: ['this relay has no configuration file to write'],
+  note: 'A relay built in process (a suite) has no config.json and no hands ' +
+    'to write one. Nothing to retry and nothing the owner can fix from here.',
+});
+define('shrink-would-strand', {
+  status: 409, presence: NONE, retry: 'no', fault: 'caller',
+  prefixes: ['that disc figure is smaller than the roll', 'that RAM figure allows'],
+  note: 'The figure asked for would leave existing members outside it — off ' +
+    'the disc, or past the connection allowance. Refused whole: nobody is ' +
+    'evicted by a number (Andy: "the owner must evict before shrinkage"). ' +
+    'The owner removes members and asks again.',
+});
+define('config-not-written', {
+  status: 500, presence: NONE, retry: 'no', fault: 'target',
+  texts: ['could not write relay-state/config.json'],
+  note: 'The figures were valid and the file would not take them — a disc ' +
+    'that is full or read-only. The running relay is unchanged; this is an ' +
+    'SSH problem.',
+});
+define('relay-full', {
+  status: 507, presence: NONE, retry: 'no', fault: 'target',
+  prefixes: ['this relay is full'],
+  note: 'The relay\'s roll is at its configured disc limit (cycle 9, ' +
+    'relayConfig discLimitMB). Not a retry and not the caller\'s doing: ' +
+    'nothing changes until its owner raises the figure or removes ' +
+    'members — and nobody is ever evicted to make room (Andy: "the owner ' +
+    'must evict before shrinkage"). The sibling of memory-full, one level ' +
+    'up: that one is a node\'s cache, this is a relay\'s disc.',
+});
 define('too-big', {
   status: 413, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['too big'],

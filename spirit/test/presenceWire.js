@@ -146,11 +146,25 @@ function cleanup() {
 test.startTest('Presence wire — a real socket, end to end');
 
 // Answers when the relay is actually serving, or null if it never does.
+// TWELVE SECONDS, NOT FIVE, AND THE CHILD'S OWN WORDS IF IT NEVER COMES.
+//
+// The restart below reuses the port the killed relay had, so this waits
+// out both the old socket's lingering and the new process's start. Five
+// seconds was enough for one suite alone and not for the same suite in a
+// full harness run, where the box is doing a hundred other things —
+// cycle 9, where two more suites tipped it over.
+//
+// `stdio: 'ignore'` hid the only thing worth knowing when it fails: a
+// relay that REFUSED to start looked exactly like a port that was held.
+// The output is kept and printed with the failure instead.
 async function awaitRelay(runDir, port) {
+  const said = [];
   const kid = spawn(process.execPath, ['js/server.js', '--port', String(port), '--relay'],
-    { cwd: runDir, stdio: 'ignore' });
+    { cwd: runDir, stdio: ['ignore', 'pipe', 'pipe'] });
+  kid.stdout.on('data', function (b) { said.push(String(b)); });
+  kid.stderr.on('data', function (b) { said.push(String(b)); });
   const base = 'http://127.0.0.1:' + port;
-  for (let n = 0; n < 25; n += 1) {
+  for (let n = 0; n < 60; n += 1) {
     await sleep(200);
     try {
       const res = await fetch(base + '/api/relay/key');
@@ -158,8 +172,13 @@ async function awaitRelay(runDir, port) {
     } catch (e) { /* not up yet, or this port was taken */ }
   }
   try { kid.kill(); } catch (e) { /* gone */ }
+  lastRelaySaid = said.join('').trim();
   return null;
 }
+
+// What the last relay that would not come up printed, so a refusal to
+// start is reported as a refusal rather than as a held port.
+let lastRelaySaid = '';
 
 async function run() {
   const lab = buildRelayHome();
@@ -307,7 +326,8 @@ async function run() {
 
   const again = await awaitRelay(lab.runDir, PORT);
   if (!again) {
-    test.fail('the relay did not come back on ' + PORT + ' — the port may still be held');
+    test.fail('the relay did not come back on ' + PORT + ' — the port may still be held' +
+      (lastRelaySaid ? '; it said: ' + lastRelaySaid : '; it said nothing at all'));
     return;
   }
   child = again.kid;
