@@ -94,6 +94,41 @@ have scrolled up.
 - **Live and forgotten.** Memory only; nothing written. The record (2) is
   figures, not traffic.
 
+#### The first real use: watching his agents talk
+
+> **Andy, 2026-09-23:** *"the testing for this must include my being able
+> to monitor your messages, (even if the payload should be encrypted now)
+> besides inspecting payload is NOT what this is for.... but just seeing
+> your back and forth with it's timing tells me things, and is an example
+> of ID-based filtering in the rolling console...."*
+
+**This is the console's acceptance test**, and it is the right one because
+it is traffic he already has, on a relay he owns, between two parties he
+can name.
+
+- **He filters by IDENTITY, not by caption.** The two agents' public keys
+  are what the relay routes by; a label is a caption anyone may change. So
+  the filter takes a key (pasted, or picked from a contact) and the relay
+  applies it — `peer` in the existing monitor filter.
+- **What he sees is the envelope**: who posted to whom, when, how big, and
+  whether it was refused. That is all the feed has ever carried
+  (`monitorEvent`), and it is what *"facts, never payloads"* means in
+  practice rather than as a slogan.
+- **The timing IS the content.** Andy: *"just seeing your back and forth
+  with it's timing tells me things."* A ten-second gap is one agent
+  thinking; a four-minute gap is one of them building; a burst of refusals
+  is something wrong. None of that needs a word of what was said.
+- **Sealing changes nothing here** (`CONSIDERATIONS-FOR-EARLY-PRODUCTS.md`
+  §3). Once `peer.post` is encrypted, the payload is ciphertext to the
+  relay and therefore to this screen — and the screen loses nothing,
+  because it never drew payloads. The one thing sealing must not break is
+  the envelope, which is what this pane is made of.
+
+**So the acceptance criteria are:** open the console on the owned relay,
+paste one agent's key, and see only that agent's traffic, both directions,
+with times — across every owned relay when `All` is selected. If a
+sealed-payload build still shows that, the feature holds.
+
 ### 4. The configuration, readable
 
 Cycle 9 lets an owner read and set a relay's figures over the wire. The
