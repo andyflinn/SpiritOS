@@ -295,6 +295,47 @@ said about it.
 - *Vision:* a per-lever dialog — one lever across all owned relays, against
   its effects; needs trends kept on the node.
 
+**AMENDED 2026-09-22, after cycles 8 and 9.** Andy, on reading the section
+above: *"the monitor was already designed, it is stale now."* Four things
+moved under it, and the UI session must read these rather than the list
+above where they disagree.
+
+- **There is no tick.** The Governor was deleted in cycle 8 (*"relay will
+  self-manage within fixed/constant limits"*), and with it the five-second
+  timer the cadence above assumes. A relay now reports **on every event**,
+  in full, with no coalescing — Andy: *"if the relay can handle 500
+  near-simultaneous connects, AND broadcast them … the owner certainly can
+  handle the incoming updates."* So *"every Governor tick"* reads as *"on
+  every event, and when the monitor opens"*.
+- **Levers no longer move, so ranking cannot be about their headroom.**
+  The allowance is fixed at boot from the owner's RAM (`relay.js`,
+  `allowanceFor`) and reported as a read-only gauge. The triage rule
+  sketched above — *"lowest lever headroom, heap % of limit"* — needs its
+  first term replaced: **connections against the allowance**, and now also
+  **the roll against the disc figure**.
+- **There are two bounds, and the report says which one is biting**
+  (cycle 9). `ramLimitMB` bounds who may be connected; `discLimitMB`
+  bounds how many there may be. `relayStatus.report` carries both, plus
+  `discUsedMB` and `binding` — so a screen that draws only memory is
+  drawing half the box. The 70% warning belongs against whichever is
+  biting, not against the allowance alone.
+- **"The relay is a sensor, the node the recorder" is now a store, not a
+  metaphor.** Decision 0015 left *"what 'record' means concretely"* open;
+  Andy settled it on 2026-09-22 — the history is kept **on the node**, in
+  `node.db` (*"this is not user-stuff, its machine and network
+  maintenance"*), owner-only, with stream open/close rows so gaps are
+  recorded rather than guessed. The monitor draws the member curve from
+  that, and the relay still stores no history.
+
+**And one thing the monitor may now do that this section forbids.** The
+owner configures a relay's figures over the wire (cycle 9, R7): a signed
+`{ config: … }` posted to the relay's own key, read and set, with an
+optional restart. That is deliberately **core-only** — Andy: *"remote
+adjustment with possibly restart must be there, at least in the core, not
+neccessarily in UI"* — so the Relay Monitor may grow a control for it
+later or never. It is not a lever, and it does not reopen §5: the
+configuration is still read once, at boot.
+
 ---
 
 ## 5. Owner sets, relay decides
