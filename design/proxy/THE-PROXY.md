@@ -68,7 +68,7 @@ door — has **the proxy as its whole internet**. Then:
    `usage.cost_in_usd_ticks` itself; `aiChat` does not; the node keeps no
    record of paid calls.
 
-## The questions, for Andy
+## The questions, for Andy — all five ruled 2026-09-22 (below)
 
 Each with a recommendation; none decided.
 
@@ -142,6 +142,24 @@ Each with a recommendation; none decided.
   new verbs change it, and an app cannot quietly add "send my key to this
   site" through the file door. It holds names, websites and methods — the
   secrets stay in the environment.
+
+### Waiting and size — decided 2026-09-22
+
+> **Andy:** *"wait times are not the proxies concern. the size limit is a
+> separate question. proxied requests are generally not meant for the
+> SpiritOS routning services, and often are GET, etc. so size limits would
+> break the proxy facility real quick."*
+
+- **Question 3: the proxy imposes no wait of its own.** It waits as long as
+  the caller asked (`timeoutMs`), or as long as the far end takes when the
+  caller names none. So the 10-second default (`server.js:488`) goes, and so
+  does Node `fetch`'s own 300-second cut (fact 3), which is a wait the proxy
+  imposes without anyone choosing it.
+- **Question 4: the proxy gets no size limits.** Proxied traffic is not
+  SpiritOS routing, and a limit shaped for packets would break GETs and
+  downloads. **Whether the door's 17 KB body cap should keep applying to a
+  `net.fetch` request is a separate question, open** — it is the peer
+  packet's bound, inherited because the proxy shares the door (fact 4).
 
 ## What bounds the spending, honestly
 
