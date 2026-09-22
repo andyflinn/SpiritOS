@@ -47,6 +47,9 @@ This directory contains the vision, principles, and architecture decisions for *
   **decided and built, 2026-09-22.** A review is agent work; Andy gets decisions.
   A thread per review with a message cap in his words; the node holds the key
   and fills it in for `api.x.ai` only; exact cost recorded per message.
+- [The proxy — `net.fetch`, and the keys it carries](proxy/THE-PROXY.md) —
+  **design sitting, opened 2026-09-22.** Who may use which key, where the rules live
+  (an intrinsic app, Andy), how long and how big a call may be, and what it cost.
 
 ## Spring Cleaning
 - [Morituri Te Salutant — Execution Roadmap](cleanup/MORITURI-TE-SALUTANT.md)
