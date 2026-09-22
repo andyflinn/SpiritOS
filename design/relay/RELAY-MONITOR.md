@@ -238,6 +238,50 @@ be there, at least in the core, not neccessarily in UI."*
 | one bound, `ramLimitMB` | two, with `binding` saying which is nearer |
 | *"the relay is a sensor, the node the recorder"* — a metaphor | a store: `node.db`, owner-only (cycle 9) |
 
+## Constraints from the Linux side — wsl-claude, 2026-09-23
+
+Measured on the boxes this actually runs on, and each one is a way a
+plausible screen would be wrong rather than a preference.
+
+1. **The relay host has no browser and must never need one.** spirit-3 is
+   reached over SSH; the relay binds `0.0.0.0` because platforms
+   health-check the port, not because anybody opens a page there. So the
+   monitor is a **node-side app**, the page is never served *by* the
+   relay, and **everything the screen shows must also be gettable as text
+   from the verbs** — over SSH that is all there is. *"Otherwise the first
+   operator to firewall it correctly loses his monitor."*
+2. **`localhost` is ambiguous, and lies silently.** WSL2 mirrors a Linux
+   listener onto Windows' loopback **only when that port is free there**;
+   if Windows already holds it, the same URL reaches a different machine's
+   service and looks fine. It happened twice in this cycle — including to
+   this agent, minutes after reading the warning. **Every screen names
+   which node and which relay, by name and key, never by `localhost:PORT`
+   — and the triage list is useless if two rows can be one relay seen from
+   two sides.**
+3. **A disc gauge must say whose disc.** Inside WSL, `df` reports the VM's
+   virtual disk: 969 GB free while Windows may be nearly full. A ring
+   drawn from the relay's own figure is honest; one that implies the
+   operator's machine is not.
+4. **A memory ceiling is not constant.** The same relay measured 60 GB
+   uncapped, 373 MB under a 384 MB scope, 181 MB under a 192 MB ancestor.
+   A gauge with a fixed maximum looks broken on any capped box: draw
+   against the ceiling **the report carries at that moment**, and show the
+   ceiling changing as an event rather than as a glitch.
+5. **The curve will have gaps, and must not be interpolated across them.**
+   A laptop suspends; WSL's clock jumps on resume — the bug behind
+   halt/resume becoming id-based this cycle. So the record will hold
+   holes and occasionally backwards time. **Draw the gap as a gap, never
+   smooth it, and never let a backwards timestamp reorder the series.**
+6. **Two clocks.** The relay stamps what it reports; the node stamps what
+   it records, and they disagree in exactly the case a monitor is most
+   wanted — under load, or just back from a restart. Measured: a restart
+   gap of 645 ms against the 3,000 ms members are told. **The page says
+   which clock it is showing.**
+
+**And the monitor never holds a key.** It reads what the owner's node
+already has. *"A page that can be given a key is a page somebody will give
+a key."*
+
 ## Decided by Andy, 2026-09-23
 
 > *"hmmm. that's a key purpose of the monitor, yes: draw attention to what
@@ -262,6 +306,20 @@ be there, at least in the core, not neccessarily in UI."*
    **And a relay with nothing wrong says so in one line.** A triage list
    that lists everything is a status board, which this is not: *"i only
    want to direct attention to where it's needed"*.
+
+## Open — one, raised by wsl-claude after the approval
+
+**Whose clock timestamps the record, and what the monitor does when the
+two disagree.** Not a UI question: it decides what the record *is*, and it
+is expensive to change once ninety days of rows exist. The relay stamps
+its report (`at`), the node stamps the row it writes, and a restart or a
+suspended laptop puts them minutes apart.
+
+Claude's reading, for Andy to rule: **the node's clock owns the row, and
+the relay's `at` is kept beside it** — the node is the recorder (0015),
+its clock is the one the whole series shares, and keeping the relay's
+stamp as a second field is what makes a disagreement visible instead of
+lost. The screen draws the node's, and says so (constraint 6).
 
 ## What it costs
 
