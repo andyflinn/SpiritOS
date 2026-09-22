@@ -54,7 +54,10 @@ one — relays partner.
   the allowance — so RAM is added before anyone is turned away. Paying for
   it: GitHub Sponsors suits this crowd — and when growth outruns that, Andy:
   *"that's angel-investor-time"*. The member count and its curve, from the
-  relay's own reports, are then the evidence to show.
+  relay's own reports, are then the evidence to show. **Where it lives:** Andy —
+  *"part of the owner-monitor"*: the monitor already draws the allowance gauge;
+  it shows connections against it, warns near 70%, and keeps the member count
+  over time. Screen work, so it joins the UI session's batch.
 
 ## 3. End-to-end encryption between nodes — the precondition for 2
 
