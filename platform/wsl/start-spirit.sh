@@ -12,10 +12,22 @@
 #   - the WSL desktop, :45480 (platform/wsl/desktop).
 # One line per piece: started / already running / DID NOT COME UP.
 #
-# Left out on purpose: Andy's WSL node (65432) and a labMaster on WSL. The
-# WSL node is his test bed and stays his (AGENT.md, rule 6 as narrowed).
-# The agent's listener is not started here either: it belongs to the agent's
+#   - Andy's labMaster, :65420, from HIS checkout (~/SpiritOS) — "no
+#     labMaster yet on wsl" — the same arrangement as on Windows;
+#   - Andy's WSL node, :65432, brought up THROUGH that labMaster as its work
+#     row. Andy: "that's what i needed chrome for easily accessible on the
+#     wsl side, to see the shell there." Started only — never pulled or
+#     restarted here: the checkout and when it moves are his (AGENT.md,
+#     rule 6 as narrowed). A node already up is left as it is: labMaster
+#     sees it by its port and adopts it, and start never kills a process.
+#
+# The agent's listener is not started here: it belongs to the agent's
 # session, which re-arms it (AGENT.md, Agents on the network).
+#
+# Order matters on one point: WSL2 mirrors a Linux listener onto Windows'
+# 127.0.0.1 when that port is free there. The Windows script starts Andy's
+# Windows node on 65432 BEFORE calling this, so his WSL node never takes
+# that port on the Windows side. Run this alone first and it could.
 
 set -u
 
@@ -39,6 +51,42 @@ node_answers() {
     --data '{"verb":"node.card"}' "http://127.0.0.1:$1/api/spirit" | grep -q '"ok":true'
 }
 page_answers() { curl -s -m 2 -o /dev/null -w '%{http_code}' "http://127.0.0.1:$1/" | grep -q '^200$'; }
+
+ANDY="$HOME/SpiritOS"
+master_answers() { curl -s -m 2 -o /dev/null -w '%{http_code}' "http://127.0.0.1:$1/api/nodes" | grep -q '^200$'; }
+
+# ── Andy's labMaster ─────────────────────────────────────────────────
+PORT=65420
+if listening $PORT; then
+  echo "Andy's labMaster :$PORT already running"
+elif [ ! -f "$ANDY/spirit/test/labMaster/labMaster.js" ]; then
+  echo "Andy's labMaster :$PORT DID NOT COME UP (no checkout at $ANDY)"
+else
+  # From his checkout, so its work row is his node's home. Log gitignored.
+  setsid -f env -C "$ANDY" "$NODE_BIN" spirit/test/labMaster/labMaster.js \
+    >> "$ANDY/labmaster.log" 2>&1 < /dev/null
+  if wait_for master $PORT "master_answers $PORT"; then
+    echo "Andy's labMaster :$PORT started"
+  else
+    echo "Andy's labMaster :$PORT DID NOT COME UP (see $ANDY/labmaster.log)"
+  fi
+fi
+
+# ── Andy's WSL node, through his labMaster ───────────────────────────
+PORT=65432
+if listening $PORT; then
+  echo "Andy's WSL node :$PORT already running"
+elif master_answers 65420; then
+  curl -s -m 10 -o /dev/null -X POST -H 'Content-Type: application/json' --data '{}' \
+    http://127.0.0.1:65420/api/nodes/work/start
+  if wait_for andy $PORT "node_answers $PORT"; then
+    echo "Andy's WSL node :$PORT started (through labMaster)"
+  else
+    echo "Andy's WSL node :$PORT DID NOT COME UP (labMaster's work row; see $ANDY/labmaster.log)"
+  fi
+else
+  echo "Andy's WSL node :$PORT DID NOT COME UP (no labMaster to start it)"
+fi
 
 # ── wsl-claude's node ────────────────────────────────────────────────
 PORT=45441

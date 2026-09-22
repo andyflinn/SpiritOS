@@ -33,5 +33,5 @@ for `http` in `spirit/test/oneDoor.js`, the same as every other file
   when SpiritOS sessions start."*
 - [`wsl/start-spirit.sh`](wsl/start-spirit.sh) — the WSL half, called last
   by the Windows script through `wsl.exe`: wsl-claude's node (45441) and the
-  desktop (45480), only what is down, one line each. Andy's WSL test bed is
-  left to him.
+  desktop (45480), and Andy's labMaster (65420) and WSL node (65432, through
+  labMaster), all from the right checkout, only what is down, one line each.
