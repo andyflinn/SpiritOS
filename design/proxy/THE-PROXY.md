@@ -86,6 +86,25 @@ Each with a recommendation; none decided.
    shows it. Where a service does not, the node counts calls
    and says the cost is unknown — never guesses.
 
+## What bounds the spending, honestly
+
+> **Andy, 2026-09-22:** *"here, in our multi (platform, vscode-instance)
+> environment, it is in fact trust, that reigns in grok-account-abuse."*
+
+The message cap is enforced by `grokReview.js`, not by the node. With no
+pass (question 1), any program on the box — an agent included — could call
+`net.fetch` with the key directly and never meet the cap. What holds spend
+back is therefore:
+
+1. **Trust** — the agents keep the rule that a paid call needs Andy's grant
+   in words (`design/agents/GROK-REVIEWS.md`).
+2. **The prepaid ceiling** — xAI will not spend past the credit Andy loaded.
+3. **Seeing it** — the balance is readable at any time (`grokReview.js
+   balance`), so a spend nobody granted shows.
+
+Question 5, if built, turns 3 from "readable" into "recorded per call, by
+key", whoever made the call.
+
 ## Decided already, and not reopened here
 
 - The node holds the keys; askers name them (Andy: *"this is where the
