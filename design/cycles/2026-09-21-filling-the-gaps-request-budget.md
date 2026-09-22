@@ -105,7 +105,7 @@ cancelled — hints carry keys, never URLs.
 | <sub>R25</sub> | <sub>*a route is learned at every opportunity; policy does not gate it*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R26</sub> | <sub>*the shadow needs a store, and it is a persist shape*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R27</sub> | <sub>*a presence event about a stranger is discarded, and it is a route*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| **R28** | a label change reaches everybody, at every level | OPEN — **decided `0019`**; hop 1 built; hops 2-3 **reviewed: a new event, not `route`**; Andy opens the sitting | **yes** | |
+| **R28** | a label change reaches everybody, at every level | OPEN — **ruled 2026-09-22: broadcast the whole row to every member**; which event carries it is Andy's to pick | **yes** | |
 | <sub>R29</sub> | <sub>*the shadow row carries rank and provenance*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R30</sub> | <sub>*presence is last-known, and the shadow dates it — the screen is R37*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R31</sub> | <sub>*the owner caps the cache — the screen is R34*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -2110,8 +2110,25 @@ new name at their next search or exchange — correct, because a relay
 speaks for its own members and a partner passing a name on is second-hand
 by construction.
 
-**Status:** OPEN — **decided, not built.** Hop 1 is already built. Hops 2
-and 3 are new broadcasts on the wire, so a **team review** (`CLAUDE.md`).
+**Reviewed, then ruled, 2026-09-22.** Grok: a new event, not `route`,
+because *"a rename is not a path. Riding it will look like a reconnect."*
+**The tree says otherwise:** the node's `onRoute` (`server.js`) only
+merges the row into the shadow — greedy, never blanking, refusing a
+downgrade — and reads a label already; nothing treats it as a reconnect.
+
+> **Andy:** *"the advantage of sending the whole route. because the
+> information of a new label/name is new to all, but, the rest of the info
+> is new to some for sure....."* — and: *"AND, i agree to broadcast a name
+> to all members"*
+
+**So: the whole row `{key, label, at}` goes to every member,** on rename
+and on claim, and the merge makes the part a node already knew free.
+**Open, Andy's:** ride `route` (no node change; noted at rank PROVED, one
+below its true source) or a new event carrying the same row (noted at
+HOST, a few lines on the node). If `route`, it goes back to Grok with
+`onRoute` as the reason.
+
+**Status:** OPEN — decided, not built; the event is Andy's to pick.
 
 ### R29 — the shadow row carries rank and provenance
 
