@@ -31,3 +31,7 @@ for `http` in `spirit/test/oneDoor.js`, the same as every other file
   VS Code (`.vscode/tasks.json`). Andy: *"starting all of them your personal
   nodes, labMaster and personal node for me should occur in one fell swoop
   when SpiritOS sessions start."*
+- [`wsl/start-spirit.sh`](wsl/start-spirit.sh) — the WSL half, called last
+  by the Windows script through `wsl.exe`: wsl-claude's node (45441) and the
+  desktop (45480), only what is down, one line each. Andy's WSL test bed is
+  left to him.
