@@ -163,8 +163,10 @@ async function run() {
     test.fail('a relay did not come up: ' + (A.out || '') + (B.out || ''));
     return;
   }
-  await sleep(1500);   // each dials the other at boot
-  test.check('both relays up, partnered, dialled');
+  // NOTHING TO DIAL (R13, gap cycle 8): partners hold no streams, so the
+  // two are partnered the moment both answer. This slept 1.5 s for the
+  // dial at boot.
+  test.check('both relays up, and partnered');
 
   // amy's client, with sseClient's published seams: the timer records the
   // reconnect delay it schedules, and no jitter, so the delay is exact.
@@ -212,8 +214,11 @@ async function run() {
   await until(function () { return !!A.exited; }, 5000);
 
   const bye = /SIGTERM — told (\d+) stream\(s\) to come back in 3s/.exec(A.out);
-  if (A.exited && A.exited.code === 0 && bye && Number(bye[1]) >= 2) {
-    test.check('A exits 0 and says it told ' + bye[1] + ' stream(s) to come back in 3s (amy, and B\'s link)');
+  // EXACTLY ONE: amy. It was at least two — amy, and B's partner link —
+  // until R13 took partner streams away; a second here now would be a
+  // partner stream that should not exist.
+  if (A.exited && A.exited.code === 0 && bye && Number(bye[1]) === 1) {
+    test.check('A exits 0 and says it told 1 stream to come back in 3s — amy; no partner holds one');
   } else {
     test.fail('exit=' + JSON.stringify(A.exited) + ' out=' + JSON.stringify(A.out.slice(-300)));
   }
@@ -233,18 +238,19 @@ async function run() {
     test.fail('reconnect delays scheduled: ' + JSON.stringify(delays));
   }
 
-  // THE PARTNER LINK. A stopping its partner links is a stream closing on
-  // B; B registering it is what R10's streamClose fix made possible, and
-  // B says so to its members as the partner key going absent.
-  await until(function () {
-    return bellaHeard.some(function (p) { return p && p.key === aKey && p.present === false; });
-  }, 3000);
-  if (bellaHeard.some(function (p) { return p && p.key === aKey && p.present === false; })) {
-    test.check('B saw A\'s partner link close, and told its members A is gone');
+  // THE PARTNER, SEEN FROM B (R13, gap cycle 8). This checked that B saw
+  // A's partner stream close and told bella "A is gone". There is no
+  // partner stream now, so a partner is never in B's presence at all:
+  // bella hears nothing about A, arriving or leaving. B learns A is down
+  // the next time it asks A something and gets no answer (relay.js,
+  // partnerLive) — a change members can see, named to Andy by wsl-claude
+  // on 2026-09-22.
+  await sleep(500);
+  const aboutA = bellaHeard.filter(function (p) { return p && p.key === aKey; });
+  if (aboutA.length === 0) {
+    test.check('bella hears nothing about A — a partner is not a presence on B, arriving or leaving');
   } else {
-    test.fail('bella heard about A: ' + JSON.stringify(bellaHeard.filter(function (p) {
-      return p && p.key === aKey;
-    })));
+    test.fail('bella heard about A: ' + JSON.stringify(aboutA));
   }
 
   test.subHeading('The disc is clean');
