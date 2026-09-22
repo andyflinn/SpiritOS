@@ -198,3 +198,11 @@ your listeners to follow the project."* Agreed by both agents over the wire,
    agent asks its own node for its card; if it does not answer, the agent does
    not re-arm on a dead door — it stays on the last good commit and tells Andy
    which commit broke startup. A pull can break a node as easily as fix it.
+6. **Andy's personal nodes follow too.** Andy: *"i like it when my personal
+   nodes get auto-restarted."* (2026-09-22, after deb5978 had to be carried to
+   each node by hand.) When a push touches `spirit/run/js`, the agent on that
+   machine restarts Andy's personal node there as well — Windows: the Claude
+   there, WSL: wsl-claude — only once his checkout is at the new commit, and
+   checks it before and after the way rule 5 checks its own. It never pulls
+   into Andy's checkout for him; a checkout behind `master` is reported, not
+   updated. **spirit-3 is not a personal node** and stays Andy's alone.
