@@ -103,6 +103,35 @@ else
   fi
 fi
 
+# ── wsl-claude's second node ─────────────────────────────────────────
+#
+# Andy, 2026-09-23: "i want to be able to filter by either one of you or
+# any of your local persitent nodes, that i have a choice of ID's to
+# filter by, so two more permanent nodes to add to the test environment
+# (one more for each of you)." The Relay Monitor's traffic console filters
+# by identity, and two keys barely test a filter.
+#
+# Its own checkout, because a node's identity lives in its home's
+# relay-state/ — two nodes from one tree would be one identity twice.
+PORT=45442
+TWO="$HOME/SpiritOS-agent-wsl-claude-2"
+if listening $PORT; then
+  echo "wsl-claude-2 node :$PORT already running"
+elif [ ! -f "$TWO/spirit/run/js/server.js" ]; then
+  echo "wsl-claude-2 node :$PORT DID NOT COME UP (no checkout at $TWO)"
+else
+  setsid -f env -C "$TWO/spirit/run" "$NODE_BIN" js/server.js --port $PORT \
+    >> "$TWO/node.log" 2>&1 < /dev/null
+  # It answers `node.card` only once it holds a key, which a node gets when
+  # it claims its relay seat — so a node awaiting its invite is UP and
+  # cardless, and the port is what says it is running.
+  if wait_for node2 $PORT "listening $PORT"; then
+    echo "wsl-claude-2 node :$PORT started"
+  else
+    echo "wsl-claude-2 node :$PORT DID NOT COME UP (see $TWO/node.log)"
+  fi
+fi
+
 # ── the WSL desktop ──────────────────────────────────────────────────
 PORT=45480
 LOG="${XDG_CONFIG_HOME:-$HOME/.config}/wsl-desktop/desktop.log"
