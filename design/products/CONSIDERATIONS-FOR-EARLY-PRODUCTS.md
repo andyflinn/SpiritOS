@@ -168,6 +168,11 @@ out on one machine..."*
    invites (say N a day, expiring in days) rather than the owner's key itself;
    a mail sender; limits per address and per day against bots; and care with
    the addresses — personal data, kept only until the invite is used.
+   Andy: *"kind of the equivalent of connecting to github...."* — which
+   suggests the developer's version: **sign in with GitHub, and the invite
+   appears on the page**. The target group already has the account; there is
+   no address to store and no mail to send; one invite per GitHub account
+   holds off bots. Email stays as the way in for everyone else.
 2. **Find their friends** — search already does it, by name, across the relay
    and its partners.
 3. **A trivial script that talks** — the agents program
