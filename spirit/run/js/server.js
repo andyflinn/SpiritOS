@@ -461,55 +461,11 @@ function handleFsAnnotate(req, res) {
   });
 }
 
-// Small, explicit allowlist of env var NAMES that net.fetch is willing to
-// substitute into an outgoing header value, via a ${ENV:NAME} placeholder
-// (see substituteEnvPlaceholders, below) — e.g. a caller can send
-// {"headers": {"x-api-key": "${ENV:ANTHROPIC_API_KEY}"}} and the real
-// secret is filled in here, server-side, right before the outbound fetch,
-// so it never has to exist in browser-visible code. This is credential-
-// SCOPING infrastructure, not app-specific knowledge — the proxy still
-// knows nothing about what any particular API looks like or does; it just
-// knows which secrets this one mechanism is allowed to touch at all, so it
-// can't be used to leak an unrelated server env var to an arbitrary URL a
-// caller names. Add a name here only when something genuinely needs to
-// reference it this way.
-// Each entry pairs a variable NAME with the destination hosts it may be
-// sent to. The name alone was not enough: gating which env var could be
-// substituted, without gating where it went, meant any caller could post
-// {"url":"https://somewhere-else","headers":{"x-api-key":"${ENV:ANTHROPIC_API_KEY}"}}
-// and the server would faithfully hand the real key to a host of the
-// caller's choosing. The allow-list stopped an UNRELATED variable reaching
-// an arbitrary URL; it did nothing for the one variable it allowed. A
-// secret is scoped by name AND by recipient or it isn't scoped.
-const PROXY_ENV_SUBSTITUTION_ALLOWLIST = [
-  { name: 'ANTHROPIC_API_KEY', hosts: ['api.anthropic.com'] },
-  // Andy's Grok key, for agent reviews on a budget he grants
-  // (process/js/grokReview). Andy, 2026-09-22: "this is where the
-  // env-variable proxy-call in node should come in" — "may as well
-  // excercise that aspect of the SpiritOS". The script never holds the
-  // key; this node fills it in, and only for xAI's API.
-  { name: 'GROK_API_KEY', hosts: ['api.x.ai'] },
-];
-// A SEAM, NOT THE SHAPE. Andy, 2026-09-22: "a instrinisc app will
-// maintain the allow list associated with that part of SpiritOS
-// services." This list is code until that app exists; when it does, the
-// owner keeps the pairs (a secret's name, the hosts it may reach) through
-// it, and this constant goes. Decided, not built — a new persist shape and
-// an owner screen, so a UI session and a review (design/agents/
-// GROK-REVIEWS.md).
-
-function substituteEnvPlaceholders(value, targetHost) {
-  if (typeof value !== 'string') return value;
-  return value.replace(/\$\{ENV:([A-Z0-9_]+)\}/g, (match, varName) => {
-    // Not allowlisted, or allowlisted but pointed somewhere it isn't meant
-    // to go — leave the literal placeholder either way, and let the target
-    // reject the bad auth rather than silently substituting nothing.
-    const entry = PROXY_ENV_SUBSTITUTION_ALLOWLIST.find((row) => row.name === varName);
-    if (!entry) return match;
-    if (entry.hosts.indexOf(targetHost) === -1) return match;
-    return process.env[varName] !== undefined ? process.env[varName] : match;
-  });
-}
+// WHICH SECRET MAY GO WHERE lives in envSecrets.js: the ${ENV:NAME}
+// allowlist, scoped by name, by recipient host, and — for a key that can
+// change things — by method. It moved out of this file on 2026-09-22 so
+// the rule can be tested directly (spirit/test/envSecrets.js).
+const envSecrets = require('./envSecrets');
 
 // Generic outbound-request proxy — knows nothing about LM Studio, Claude,
 // or any other specific service, unlike the two hardcoded handlers this
@@ -539,7 +495,7 @@ function handleGenericProxy(req, res) {
 
     const fetchOptions = { method: body.method || 'GET', signal: controller.signal };
     const headers = Object.assign({}, body.body !== undefined ? { 'Content-Type': 'application/json' } : {}, body.headers || {});
-    Object.keys(headers).forEach((key) => { headers[key] = substituteEnvPlaceholders(headers[key], targetHost); });
+    Object.keys(headers).forEach((key) => { headers[key] = envSecrets.substitute(headers[key], targetHost, fetchOptions.method); });
     if (Object.keys(headers).length > 0) fetchOptions.headers = headers;
     if (body.body !== undefined) fetchOptions.body = JSON.stringify(body.body);
 

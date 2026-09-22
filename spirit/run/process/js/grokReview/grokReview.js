@@ -43,6 +43,7 @@
 // a review is a document, like the ones beside it.
 //
 //   node grokReview.js models
+//   node grokReview.js balance
 //   node grokReview.js start  <thread> --cap N --grant "<Andy's words>" --goal "<goal>" [--model m]
 //   node grokReview.js send   <thread> <file.md | "text"> [--attach path ...]
 //   node grokReview.js grant  <thread> --cap N --grant "<Andy's words>"
@@ -55,6 +56,10 @@ const API = 'https://api.x.ai/v1';
 // The node that makes the call, and holds the key. Its own loopback door.
 const NODE = process.env.GROK_NODE || process.env.AGENTS_NODE || 'http://127.0.0.1:65432';
 const KEY_PLACEHOLDER = '${ENV:GROK_API_KEY}';
+// Andy's management key: read-only at xAI, and GET-only to its host at the
+// node (js/envSecrets.js). Spelled as he set it. Used for the balance only.
+const MGMT = 'https://management-api.x.ai/v1';
+const MGMT_PLACEHOLDER = '${ENV:GROK_MANAGMENT_KEY}';
 const REPO = path.join(__dirname, '..', '..', '..', '..', '..');
 const THREADS = path.join(REPO, 'design', 'reviews', 'grok');
 const TICKS_PER_USD = 1e10;
@@ -84,10 +89,10 @@ function nodeFetch(node, init, fetchFn) {
 
 // One call to Grok, made by the node. Answers { ok, status, text } — the
 // node relays Grok's own status and body.
-function callApi(pathname, method, payload, d) {
+function callApi(pathname, method, payload, d, base, placeholder) {
   const verb = {
-    verb: 'net.fetch', url: API + pathname, method: method,
-    headers: { Authorization: 'Bearer ' + KEY_PLACEHOLDER },
+    verb: 'net.fetch', url: (base || API) + pathname, method: method,
+    headers: { Authorization: 'Bearer ' + (placeholder || KEY_PLACEHOLDER) },
     timeoutMs: CALL_TIMEOUT_MS,
   };
   if (payload !== undefined) verb.body = payload;
@@ -246,7 +251,27 @@ async function models(deps) {
   return ((body && body.data) || []).map(function (m) { return m.id; });
 }
 
-module.exports = { start: start, send: send, grant: grant, load: load, statusLine: statusLine,
+// ── WHAT IS LEFT OF THE BUDGET ─────────────────────────────────────────
+// Free: the key's own status names the team, and the management API reads
+// the team's prepaid balance. Andy set the management key read-only; the
+// node sends it GET-only, to management-api.x.ai only.
+async function balance(deps) {
+  const d = deps || {};
+  const who = await callApi('/api-key', 'GET', undefined, d);
+  if (!who.ok) throw new Error('key status refused (' + who.status + ')' + explainAuth(who.status));
+  const team = JSON.parse(who.text).team_id;
+  if (!team) throw new Error('the key status named no team');
+  const res = await callApi('/billing/teams/' + encodeURIComponent(team) + '/prepaid/balance', 'GET', undefined, d, MGMT, MGMT_PLACEHOLDER);
+  if (!res.ok) {
+    throw new Error('balance refused (' + res.status + '): ' + res.text.slice(0, 200) +
+      (res.status === 401 || res.status === 403
+        ? ' — is GROK_MANAGMENT_KEY set on the node, and is this box\'s address on the key\'s allowed list?'
+        : ''));
+  }
+  return JSON.parse(res.text);
+}
+
+module.exports = { balance: balance, start: start, send: send, grant: grant, load: load, statusLine: statusLine,
   models: models, refuseVault: refuseVault, TICKS_PER_USD: TICKS_PER_USD, THREADS: THREADS,
   KEY_PLACEHOLDER: KEY_PLACEHOLDER };
 
@@ -267,6 +292,7 @@ if (require.main === module) {
   const name = f._[1];
   (async function () {
     if (cmd === 'models') { (await models()).forEach(function (m) { console.log(m); }); return; }
+    if (cmd === 'balance') { console.log(JSON.stringify(await balance(), null, 2)); return; }
     if (cmd === 'start') { console.log(statusLine(start(THREADS, name, f))); return; }
     if (cmd === 'grant') { console.log(statusLine(grant(THREADS, name, f))); return; }
     if (cmd === 'status') {
@@ -286,7 +312,7 @@ if (require.main === module) {
         String(r.thread.rounds.length).padStart(2, '0') + '-grok.md'));
       return;
     }
-    console.log('usage: grokReview.js models | start <thread> --cap N --grant "<words>" --goal "<goal>" [--model m] | ' +
+    console.log('usage: grokReview.js models | balance | start <thread> --cap N --grant "<words>" --goal "<goal>" [--model m] | ' +
       'send <thread> <file|text> [--attach p ...] | grant <thread> --cap N --grant "<words>" | status [thread]');
   })().catch(function (e) { console.error(String(e && e.message || e)); process.exitCode = 1; });
 }
