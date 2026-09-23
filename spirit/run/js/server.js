@@ -1082,6 +1082,26 @@ contactBook.syncMarks(ROOT_DIR);
   // Personal mode only, which is what this block is. A relay's
   // identity.json holds its public label and it answers `answerSelf`; it
   // has no card and must not grow one by accident.
+  // ── AN IDENTITY FROM BEFORE CYCLE 10 GAINS ITS SEAL KEY AT BOOT ────
+  //
+  // R2 verifies: "an identity from before this cycle gains a seal key on
+  // FIRST START and says so". It did not. `ensureIdentity` grows the
+  // second keypair in place, and on a node it was reached only from
+  // `signedClaim` (hub.js) — the claim path — so a node that already has
+  // its seat never claims again and never grew one. A relay did, because
+  // relayServer.js calls it at boot.
+  //
+  // WHAT THAT COST, measured between the two agent nodes on 2026-09-24:
+  // both updated to the flag-day tag, both booted clean, and both served
+  // a card with sealKey "". A card with no cipher key is nothing to seal
+  // to, so each refused to post to the other — correctly, and for ever,
+  // because nothing in a running node would ever have grown the key. The
+  // flag day cannot be crossed by an existing node without this line.
+  //
+  // BESIDE ensureDescription, and for the same reason: both are things a
+  // node must have before anybody can ask it anything.
+  try { require('./relayAuth').ensureIdentity(ROOT_DIR, ''); }
+  catch (e) { /* a node with no identity yet is answered by the claim path */ }
   try { nodeCard.ensureDescription(ROOT_DIR); }
   catch (e) { /* a caption must never be the reason a node will not boot */ }
 
