@@ -48,6 +48,19 @@ function createPresence(opts) {
   // LEARNS, which is a different question and was never meant to be the
   // same one. Injected, like every other outward reach in this file.
   const noteSeen = typeof opts.noteSeen === 'function' ? opts.noteSeen : null;
+
+  // ── THE OWNER'S RELAY RECORD (cycle 11's R2) ─────────────────────
+  //
+  // The node process writes it, and no job does: this file already
+  // receives every report, around the clock, on the stream it already
+  // holds. A job would be a second writer on a file the node owns and a
+  // second thing to be running.
+  //
+  // INJECTED, like every other outward reach here. This file has never
+  // known about node.db and does not start now — it is handed two
+  // functions and calls them.
+  const recordReport = typeof opts.recordReport === 'function' ? opts.recordReport : null;
+  const recordEdge = typeof opts.recordEdge === 'function' ? opts.recordEdge : null;
   // Given rather than made here, because a node has ONE of these and the
   // hub needs the same instance to post from — an outbound request and
   // the answer that matches it must meet in the same table.
@@ -380,6 +393,16 @@ function createPresence(opts) {
         // holds exactly one object per relay it owns.
         else if (msg.event === 'relay-status') {
           statusByRelay[url] = msg.data;
+          // KEPT AS WELL AS HELD (cycle 11's R2). The line above is the
+          // latest report, overwritten — what a monitor draws. This is
+          // the series 0015 asked for and nothing kept: "every move, its
+          // reason, its capture time". Written before the pacing below,
+          // because a report that is too soon to redraw a screen for is
+          // still a report worth keeping.
+          if (recordReport) {
+            try { recordReport(url, msg.data); }
+            catch (e) { /* a witness, never a participant */ }
+          }
           // AND THE PAGE IS NUDGED TO REDRAW (cycle 1). A Governor's lever
           // move arrives only as a fresh report, and a monitor that
           // redrew only on membership events would sit frozen through the
@@ -432,8 +455,24 @@ function createPresence(opts) {
           try { onOwnerEvent(ev); } catch (e) { /* a witness, never a participant */ }
         }
       },
-      onOpen: function () { seedRelay(url); handOverCard(url); publish('connected to ' + url); },
-      onClose: function (reason) { forget(url); publish('lost ' + url + ': ' + reason); },
+      // ── THE TWO EDGES, WHICH ARE WHAT MAKE A GAP READABLE ────────
+      //
+      // cycle 11's R3: reports arrive on events and never on a timer, so a
+      // quiet relay and a dead one produce the same silence. These are
+      // the two moments this node knows for certain, and without them a
+      // reader cannot tell a stretch with nothing to say from a stretch
+      // with nobody there.
+      onOpen: function () {
+        seedRelay(url);
+        handOverCard(url);
+        if (recordEdge) { try { recordEdge(url, 'open', ''); } catch (e) { /* witness */ } }
+        publish('connected to ' + url);
+      },
+      onClose: function (reason) {
+        forget(url);
+        if (recordEdge) { try { recordEdge(url, 'close', reason); } catch (e) { /* witness */ } }
+        publish('lost ' + url + ': ' + reason);
+      },
     });
   }
 

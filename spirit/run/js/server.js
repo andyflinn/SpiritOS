@@ -1296,6 +1296,25 @@ contactBook.syncMarks(ROOT_DIR);
         rank: require('./seenPeers').HOST,
       }, what || {}));
     },
+    // ── THE OWNER'S RELAY RECORD (cycle 11's R2) ─────────────────
+    //
+    // presenceNode receives the reports; nodeStore owns node.db; this
+    // file is where they meet, as it is for every other seam. The store
+    // is opened per call rather than held, the same as everywhere else
+    // in this file — it is a cheap handle over a file already open.
+    //
+    // A FAILURE HERE IS SWALLOWED ON PURPOSE. The record is a witness.
+    // A node that could not write its history must still route, and an
+    // owner whose disc filled up would otherwise lose presence itself
+    // rather than the log of it.
+    recordReport: function (url, report) {
+      try { require('./nodeStore').open(ROOT_DIR).record.put(url, report); }
+      catch (e) { /* the record is a witness, never a participant */ }
+    },
+    recordEdge: function (url, kind, why) {
+      try { require('./nodeStore').open(ROOT_DIR).record.edge(url, kind, null, why); }
+      catch (e) { /* as above */ }
+    },
     rootDir: ROOT_DIR,
     jobs: jobs,
     router: peerRouter,

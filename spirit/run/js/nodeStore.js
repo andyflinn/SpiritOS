@@ -251,6 +251,54 @@ function open(rootDir, opts) {
     CREATE INDEX IF NOT EXISTS replay_at ON replay (at);
   `);
 
+  // ── THE OWNER'S RELAY RECORD (cycle 11's R1) ───────────────────────
+  //
+  //   Andy: "relay record is in the alpha" — kept "node-side app issue",
+  //   in a database because "this is not user-stuff, its machine and
+  //   network maintenance".
+  //
+  // Decision 0015 left this open in as many words: a monitor draws the
+  // CURRENT report, and the analysis Andy describes needs a SERIES —
+  // every move, its capture time, kept. Nothing kept one. The node holds
+  // exactly one report per relay, in memory, overwritten
+  // (presenceNode.js, `statusByRelay[url] = msg.data`), so a restart lost
+  // a history that never existed.
+  //
+  // WHY THE NODE AND NOT THE RELAY. Only an owner receives a relay's
+  // reports at all, and the node already holds the stream they arrive on
+  // around the clock. A relay keeping its own history would be a relay
+  // storing something for somebody (0006), and a job would be a second
+  // writer on a file the node owns.
+  //
+  // NAMED COLUMNS ARE THE ONES ORDERED AND QUERIED ON. `rest` is the
+  // remainder of the report as JSON, so a new figure in relayStatus needs
+  // no schema change — a figure nobody thought to name is exactly what a
+  // later question wants, and losing it to a migration nobody ran is how
+  // a series becomes useless.
+  //
+  // `kind` SEPARATES A REPORT FROM AN EDGE. Reports arrive on events and
+  // never on a timer, so a quiet stretch and an outage are the same
+  // absence unless the stream's open and close are written too (cycle 11's R3).
+  //
+  // `at` IS MILLISECONDS, like `replay` above and unlike relay.db's ISO
+  // strings: this one is compared, ordered and swept on, and a
+  // millisecond count is what that path wants.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS relay_record (
+      relay     TEXT    NOT NULL,
+      at        INTEGER NOT NULL,
+      kind      TEXT    NOT NULL DEFAULT 'report',
+      members   INTEGER NOT NULL DEFAULT 0,
+      connected INTEGER NOT NULL DEFAULT 0,
+      allowance INTEGER NOT NULL DEFAULT 0,
+      routes    INTEGER NOT NULL DEFAULT 0,
+      rssMB     INTEGER NOT NULL DEFAULT 0,
+      rest      TEXT    NOT NULL DEFAULT '',
+      PRIMARY KEY (relay, at, kind)
+    );
+    CREATE INDEX IF NOT EXISTS relay_record_when ON relay_record (relay, at);
+  `);
+
   // ── THE MIGRATION FROM THE MORNING'S SHAPE ───────────────────
   //
   // `node.db` shipped a few hours before this with `at` and `url` on the
@@ -342,6 +390,15 @@ function open(rootDir, opts) {
     rPut: db.prepare('INSERT OR IGNORE INTO replay (hash, at) VALUES (?, ?)'),
     rSweep: db.prepare('DELETE FROM replay WHERE at < ?'),
     rCount: db.prepare('SELECT COUNT(*) AS n FROM replay'),
+    recPut: db.prepare(`INSERT OR REPLACE INTO relay_record
+      (relay, at, kind, members, connected, allowance, routes, rssMB, rest)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`),
+    recSince: db.prepare(`SELECT * FROM relay_record
+      WHERE relay = ? AND at >= ? ORDER BY at ASC LIMIT ?`),
+    recCount: db.prepare('SELECT COUNT(*) AS n FROM relay_record'),
+    recLastAt: db.prepare(`SELECT MAX(at) AS at FROM relay_record
+      WHERE relay = ? AND kind = 'report'`),
+    recRelays: db.prepare('SELECT DISTINCT relay FROM relay_record ORDER BY relay'),
     bPut: db.prepare(`INSERT INTO queue_backoff (relayUrl, toKey, untilWall, lastWait)
       VALUES (?, ?, ?, ?)
       ON CONFLICT(relayUrl, toKey) DO UPDATE SET untilWall = excluded.untilWall,
@@ -710,6 +767,72 @@ function open(rootDir, opts) {
         });
         return n;
       },
+    },
+
+    // ── THE OWNER'S RELAY RECORD (cycle 11) ────────────────────────
+    record: {
+      // ── ONE ROW A MINUTE, AND THE COARSENING (cycle 11) ───────────────
+      //
+      // A busy relay reports on every claim and every stream that opens,
+      // which on a stress run is hundreds a minute. Keeping all of them
+      // would make the record a traffic log of the owner's own box, and
+      // cycle 9 bounds every persisted dataset by disc.
+      //
+      // So a report is written at most once a minute per relay. The LAST
+      // one in a minute wins rather than the first — INSERT OR REPLACE on
+      // the minute-truncated key — because the newest figures are the
+      // ones a reader wants and the earlier ones in the same minute
+      // differ by a claim or two.
+      //
+      // The figures are proposed and NOT ruled: Andy has not named them.
+      MINUTE_MS: 60 * 1000,
+      FINE_MS: 90 * 24 * 60 * 60 * 1000,
+
+      // A REPORT, as it arrives. The named figures are pulled out; the
+      // rest of the report is kept whole, so a reader in a year can ask a
+      // question nobody thought of today.
+      put: function (relay, report, now) {
+        const r = report || {};
+        const at = Math.floor((now == null ? Date.now() : now) / this.MINUTE_MS) * this.MINUTE_MS;
+        const named = ['peers', 'present', 'routes', 'memory', 'seats'];
+        const rest = {};
+        Object.keys(r).forEach(function (k) {
+          if (named.indexOf(k) === -1) rest[k] = r[k];
+        });
+        q.recPut.run(
+          String(relay || ''), at, 'report',
+          Number(r.peers) || 0,
+          Number(r.present) || 0,
+          Number(r.seats && r.seats.allowance) || 0,
+          Number(r.routes) || 0,
+          Math.round((Number(r.memory && r.memory.rss) || 0) / 1048576),
+          JSON.stringify(Object.assign({ seats: r.seats }, rest))
+        );
+      },
+
+      // ── AN EDGE, WHICH IS WHAT MAKES A GAP READABLE (cycle 11) ─────────
+      //
+      // Reports arrive on events and never on a timer, so a quiet relay
+      // and a dead one produce the same silence. The stream opening and
+      // closing are the two moments the node knows for certain, and they
+      // are the only marks that let a reader tell those apart.
+      //
+      // NOT truncated to the minute: an edge is an instant and two of
+      // them in one minute is a flap, which is exactly the thing worth
+      // seeing.
+      edge: function (relay, kind, now, why) {
+        q.recPut.run(String(relay || ''), now == null ? Date.now() : now,
+          kind === 'open' ? 'open' : 'close', 0, 0, 0, 0, 0,
+          JSON.stringify(why ? { why: String(why) } : {}));
+      },
+
+      since: function (relay, from, limit) {
+        return q.recSince.all(String(relay || ''), Number(from) || 0,
+          Number(limit) > 0 ? Number(limit) : 5000);
+      },
+      relays: function () { return q.recRelays.all().map(function (r) { return r.relay; }); },
+      lastAt: function (relay) { return (q.recLastAt.get(String(relay || '')) || {}).at || 0; },
+      count: function () { return q.recCount.get().n; },
     },
 
     queue: {
