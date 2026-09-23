@@ -1065,14 +1065,28 @@ function createPeerPost(opts) {
     // without one (see `opts.store`), and it has no app to protect.
     // ONLY A SEALED POST CAN BE JUDGED. An unsealed one carries no
     // timestamp — `opened.at` is '' — and the index would read that as
-    // 1970 and refuse it as older than this node remembers. Caught by
-    // queueUnderLoad.js, where a node runs with sealing off and every
-    // post it sent came back refused: "only 0 attempts got out".
+    // 1970 and refuse it as older than this node remembers.
     //
-    // There is no protection lost. A node that accepts unsealed posts has
-    // already decided not to require the seal (`sealsPosts`), and the
-    // sealed timestamp is the only thing that makes the window honest —
-    // judging without it would be inventing a verdict.
+    // ── THIS CANNOT FIRE TODAY, AND IS KEPT ANYWAY ──────────────────
+    //
+    // Said plainly because the first version of this comment claimed the
+    // guard had been CAUGHT by queueUnderLoad.js failing. It had not.
+    // That suite was red for an unrelated reason — a relay leaked by an
+    // interrupted run was holding its port — and the guard was added on
+    // a wrong diagnosis. The sentence was invented to explain a change
+    // that needed no explaining, which is worse than the change.
+    //
+    // Reachability, measured: the only `sealsPosts: false` in the tree is
+    // relayServer's partner router, and a relay passes no `store`. So
+    // wherever a store exists, sealing is required and an unsealed post
+    // is refused above, before anything is opened. The third condition
+    // never changes the outcome.
+    //
+    // It stays because the pairing it protects — a store present AND
+    // sealing off — is one line of configuration away, and the failure it
+    // would produce is silent and total: every post refused as older than
+    // this node remembers, on a node whose operator turned sealing off
+    // for some other reason entirely.
     if (store && store.replay && seal.isSealed(sealedText)) {
       var verdict = store.replay.seen(hash, opened.at);
       if (verdict !== 'new') {
