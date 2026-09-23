@@ -200,7 +200,23 @@ const test = {
     // failure as a DEFERRED requirement nobody re-opened. When the unit
     // lands, this becomes a failure telling whoever built it to write the
     // real assertion.
-    awaiting: function (req, unit, available, note) {
+    // ── AND EACH ONE CARRIES A PRICE AND A POSITION ──────────────────
+    //
+    //   Andy: "during the brains storm, the 'failing' test suite can
+    //   allready be run, yellows (hour-glasses) have a price-note and
+    //   %-already there guess."
+    //
+    // A list of what is missing is not a plan. `est` makes the yellow
+    // block one: `{ there: 40, cost: 'a sitting' }` — how much of this
+    // already exists, and what the rest is worth. Both are GUESSES and
+    // are printed as guesses; the point is to be argued with during a
+    // design sitting, not to be believed afterwards.
+    //
+    // `there` is a percentage because that is the shape he asked for.
+    // `cost` is words rather than hours — "a sitting", "an afternoon",
+    // "one line" — because an agent's hours mean nothing to him and the
+    // unit he plans in is a sitting.
+    awaiting: function (req, unit, available, note, est) {
         if (available) {
             this.failureCount++;
             this.comment('FAILURE #' + this.counter + '.' + this.failureCount +
@@ -210,7 +226,14 @@ const test = {
             return;
         }
         this.awaitingCount = (this.awaitingCount || 0) + 1;
-        this.comment('AWAITING ' + req + ' [' + unit + ']: ' +
+        const there = est && typeof est.there === 'number' ? est.there : null;
+        const cost = est && est.cost ? String(est.cost) : '';
+        // Machine-readable, because the runner groups these and totals the
+        // guesses. A format nobody can parse is a note, not a measurement.
+        const tag = (there === null && !cost) ? ''
+            : ' (' + (there === null ? '' : 'there:' + there) +
+              (there !== null && cost ? ' ' : '') + (cost ? 'cost:' + cost : '') + ')';
+        this.comment('AWAITING ' + req + ' [' + unit + ']' + tag + ': ' +
             (note || 'the unit is not there to be tested') + ' ⏳');
     },
 

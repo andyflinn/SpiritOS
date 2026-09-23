@@ -452,4 +452,18 @@ test.subHeading('A node.db from this morning still opens (R29 migration)');
   migrated.close();
 }
 
+// ── DECLARED, NOT BUILT (cycle 10, R17) ──────────────────────────────
+//
+// The recipient keeps a replay index, because the relay is deliberately
+// not in the sealed packet associated data — so the same sealed blob
+// carried by a DIFFERENT relay meets a registered-hash guard that has
+// never seen it. The index belongs to the node, in node.db, checked
+// before an app sees a message, and rebuildable from the traffic log.
+//
+// Asked as availability: there is no `replay` surface on the store yet.
+test.awaiting('cycle-10/R17', 'nodeStore.replay',
+  !!(nodeStore.open(home()).replay),
+  'a node refuses a sealed post whose hash it has already admitted',
+  { there: 20, cost: 'a sitting — a table, a check before delivery, and a rebuild from the log' });
+
 test.reportSuccessFailureCount();

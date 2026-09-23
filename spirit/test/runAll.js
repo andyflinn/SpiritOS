@@ -237,20 +237,29 @@ function runOne(file) {
 
     child.on('close', function (code) {
       clearTimeout(killer);
-      const m = out.match(/Test completed\.\s+✅:(\d+)(?:\s+❌:(\d+))?(?:\s+⏳:(\d+))?/);
+      // REPORTED IS NOT THE SAME AS PASSED. A suite may legitimately have
+      // no greens at all — `cycle10Pending.js` is nothing but awaiting
+      // declarations — and an earlier regex that required ✅ read that as
+      // "never reported", which is the worst verdict there is. So the
+      // line is found first, and the three counts are read off it
+      // independently.
+      const said = /Test completed\./.test(out);
+      const g = /✅:(\d+)/.exec(out);
+      const b = /❌:(\d+)/.exec(out);
+      const w = /⏳:(\d+)/.exec(out);
       done({
         file: file,
         ms: Date.now() - started,
-        ok: m ? Number(m[1]) : 0,
+        ok: said && g ? Number(g[1]) : 0,
         // DECLARED AND NOT BUILT (test.awaiting). Not a failure and not a
         // pass: the lines are lifted out of the output so the summary can
         // say what is waiting and for which requirement.
-        waiting: m ? Number(m[3] || 0) : 0,
+        waiting: said && w ? Number(w[1]) : 0,
         waitingLines: (out.match(/AWAITING [^\n]*/g) || []),
         // -1 for "never reported", which is not zero failures. A suite
         // that crashed before its last line has to read as worse than
         // one that ran and passed, not the same.
-        no: m ? Number(m[2] || 0) : -1,
+        no: said ? (b ? Number(b[1]) : 0) : -1,
         code: code,
         out: out,
       });
@@ -291,8 +300,15 @@ function requirementTitles() {
       const id = blocks[i];
       const body = blocks[i + 1] || '';
       const title = (/^[^\n]*/.exec(body) || [''])[0].replace(/^\s*—\s*/, '').trim();
-      const status = (/\**Status:\**\s*([A-Z]+)/.exec(body) || [null, '?'])[1];
-      out[cycle + '/' + id] = { title: title, status: status, cycle: cycle };
+      const status = (/\**Status:\**\s*([A-Z]+)/.exec(body) || [null, ''])[1];
+      const key = cycle + '/' + id;
+      // A CYCLE NAMES THE SAME ID TWICE ON PURPOSE: `### R6` is the
+      // requirement and `### <that same number> amended` is what a review changed about
+      // it. Taking the last match gave the amendment's heading as the
+      // title and no status at all — so the block carrying a Status line
+      // is the requirement, and it wins. First in wins a tie.
+      const better = !out[key] || (status && !out[key].status);
+      if (better) out[key] = { title: title, status: status || '?', cycle: cycle };
     }
   });
   return out;
@@ -445,11 +461,19 @@ async function main() {
     const byReq = Object.create(null);
     waitingAll.forEach(function (r) {
       r.waitingLines.forEach(function (line) {
-        const mm = /^AWAITING (\S+)\s*\[([^\]]*)\]:\s*(.*)$/.exec(line);
+        const mm = /^AWAITING (\S+)\s*\[([^\]]*)\](?:\s*\(([^)]*)\))?:\s*(.*)$/.exec(line);
         if (!mm) return;
         const id = mm[1].trim();
+        const tag = mm[3] || '';
+        const there = /there:(\d+)/.exec(tag);
+        const cost = /cost:([^)]*)$/.exec(tag);
         (byReq[id] = byReq[id] || { units: [], suites: {} })
-          .units.push({ unit: mm[2].trim(), note: mm[3].replace(/\s*⏳\s*$/, '').trim() });
+          .units.push({
+            unit: mm[2].trim(),
+            note: mm[4].replace(/\s*⏳\s*$/, '').trim(),
+            there: there ? Number(there[1]) : null,
+            cost: cost ? cost[1].trim() : '',
+          });
         byReq[id].suites[r.file] = true;
       });
     });
@@ -463,7 +487,14 @@ async function main() {
         (known ? known.title : 'NOT DECLARED IN design/cycles — a suite waits on a requirement no document names'));
       if (known) console.log('          ' + known.cycle + ' · status ' + known.status);
       byReq[id].units.forEach(function (u) {
-        console.log('          missing: ' + u.unit);
+        // THE GUESS RIDES WITH THE THING IT IS ABOUT, and is marked a
+        // guess. Andy asked for a price-note and a "%-already there" on
+        // each hourglass so the yellow block reads as a plan rather than
+        // a list of complaints.
+        const guess = (u.there === null && !u.cost) ? ''
+          : '   ~' + (u.there === null ? '?' : u.there) + '% there' +
+            (u.cost ? ', guess: ' + u.cost : '');
+        console.log('          missing: ' + u.unit + YELLOW + guess + RESET);
         if (u.note) console.log('                   ' + u.note);
       });
       console.log('          declared in ' + Object.keys(byReq[id].suites).join(', '));

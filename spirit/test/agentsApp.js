@@ -97,7 +97,8 @@ async function run() {
     let refusesEmpty = false;
     try { agents.makeEnvelope('x', 'ask', '   '); } catch (e) { refusesEmpty = true; }
     test.awaiting('cycle-10/R19', 'agents.makeEnvelope refusing empty text', refusesEmpty,
-      'a send with no text should be refused, as a `blocked` with no `what` already is');
+      'a send with no text should be refused, as a `blocked` with no `what` already is',
+      { there: 80, cost: 'one line beside the kind check it copies' });
   }
 
   test.subHeading('It sends, and a peer that is offline is retried, then reported');
