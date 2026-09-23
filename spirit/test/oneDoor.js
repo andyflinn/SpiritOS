@@ -312,6 +312,37 @@ test.subHeading('peerPost owns the mechanics, and is handed its socket');
   } else {
     test.fail('the transport is back inside something');
   }
+
+  // ── ONE SEALING SITE AND ONE OPENING SITE (cycle 10, R8 amended) ────
+  //
+  // wsl-claude, reviewing: counting CALL SITES is not enough — *"one
+  // composing site does not catch a second SEALING function beside the
+  // first, and two seal functions differing in one detail is how AAD gets
+  // dropped on one path."*
+  //
+  // So this counts IMPLEMENTATIONS. Anything that derives a shared
+  // secret, stretches it or drives the cipher belongs in seal.js and
+  // nowhere else; a second one is how the associated data — which is the
+  // whole difference between "this decrypts" and "this was sent to me by
+  // them" — goes missing on one route while the suite stays green on the
+  // other.
+  //
+  // A test may not implement one either. A suite that seals by hand is a
+  // suite asserting its own construction rather than the one that ships.
+  {
+    const PRIMITIVES = /createCipheriv|createDecipheriv|diffieHellman|hkdfSync/;
+    const owners = [];
+    ['js', 'app', 'process'].forEach(function (rel) {
+      walk(path.join(SPIRIT, 'run', rel), rel + '/', []).forEach(function (f) {
+        if (PRIMITIVES.test(fs.readFileSync(f.full, 'utf8'))) owners.push(f.rel);
+      });
+    });
+    if (owners.length === 1 && owners[0] === 'js/seal.js') {
+      test.check('the sealing primitives exist in exactly one file — seal.js, and nothing beside it');
+    } else {
+      test.fail('sealing is implemented in ' + owners.length + ' places: ' + owners.join(', '));
+    }
+  }
 }
 
 // ── 4. AN INTERFACE IS OPAQUE, OR IT IS NOT AN INTERFACE ───────────────

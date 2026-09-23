@@ -145,10 +145,43 @@ nonce and the ciphertext. No session, no handshake — a message may sit
 queued for days and still open — and a node stolen later cannot read what
 it sent.
 
-**Verify:** a round trip opens; a tampered ciphertext fails; the same
-plaintext twice produces different bytes.
+**Verify:** `spirit/test/seal.js` — a round trip opens; not one word of
+the plaintext appears in what travels; a blob re-addressed to a third
+party does not open there; a blob re-labelled as being from somebody else
+does not open either; one flipped byte anywhere fails; a ciphertext short
+of its tag is refused rather than half-read; the same plaintext twice
+produces different bytes; a nine-day-old message still opens.
 
-**Status:** OPEN — cycle 10 is opened, not built.
+**Status:** DONE. `spirit/run/js/seal.js`, pure — keys and bytes in, no
+identity loaded, no file read, correct in a node, a relay or a test.
+
+- **AAD is sender, recipient and the domain separator `spirit-seal-v1`.**
+  The version is in the label so a changed construction fails to open
+  LOUDLY instead of opening into something subtly wrong.
+- **The relay is deliberately NOT in the AAD**, and the file argues it
+  rather than asserting it, because it is the line most likely to be
+  "fixed" later: binding a message to its carrying relay would make
+  store-and-forward a routing promise, and a message may legitimately
+  arrive by another route — a partner carries it, a peer is reached
+  elsewhere, a queued post goes out after the relay list changed. The gap
+  that leaves is closed by R17 and C2, with the one party who can tell.
+- **The timestamp (C2) is stamped by `seal()`**, not by each caller: what
+  is encrypted is `{at, text}`. A timestamp every caller must remember is
+  one that goes missing.
+- **Not forward secrecy, said in the file**: the sender discards its
+  ephemeral, the recipient's key is static, so a stolen node reads
+  everything ever sent to it, queued messages included.
+- **No plaintext fallback anywhere.** An unusable key answers `null`,
+  which is the sender's refusal — a fallback hands everything to an
+  attacker who can withhold a card.
+
+**And the R8-amended guard is in, early, because it protects this.**
+`oneDoor.js` now counts IMPLEMENTATIONS, not call sites: anything using
+`createCipheriv`, `createDecipheriv`, `diffieHellman` or `hkdfSync` must
+be `seal.js` and nothing else. wsl-claude's reason — *"two seal functions
+differing in one detail is how AAD gets dropped on one path."* Proven to
+bite: a second implementation planted in `limits.js` turned it red, and it
+catches a commented-out one too, which is how a second one arrives.
 
 ### R5 — STRICT: unsealed is refused in both directions
 
