@@ -240,6 +240,29 @@ It costs one line and it removes the one question he should never have to
 ask. **Silence is not a state**; a window that says nothing reads exactly
 like a window whose agent died.
 
+**AND THE OTHER HALF, WHICH IS THE ONE THAT REMOVES "STUCK".** Andy:
+*"what could be done: statement at the end of the chat, working on the
+following request from lead"*. So the last line of an agent's window is
+**always one of two**, and never absent:
+
+```
+listening on node
+working on: <the request, in one line> — asked by <lead | Andy | which agent>
+```
+
+**Why it names who asked.** With a lead designated elsewhere — a laptop
+he is travelling with — work can arrive that Andy did not ask for. A
+window saying only *working on X* leaves him deciding whether that is his
+request coming back to him or somebody else's; naming the source answers
+it before he wonders.
+
+**And it is what makes STUCK visible at all.** Neither line says
+"stuck" — nothing can, honestly, because an agent that knew it was stuck
+would say so. What the pair gives him is the one thing that reveals it:
+the same `working on:` line, unchanged, for far longer than that request
+should take. Ambiguity between *working*, *stuck* and *finished* collapses
+to a question he can answer by looking twice.
+
 **And it follows the project.** Andy: *"you both must decide how to update
 your listeners to follow the project."* Agreed by both agents over the wire,
 2026-09-22:
