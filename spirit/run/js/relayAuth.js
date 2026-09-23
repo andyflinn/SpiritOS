@@ -458,10 +458,47 @@ function setDescription(rootDir, text) {
   return id;
 }
 
+// ── THE PRIVATE HALF IS NOT A WORLD-READABLE FILE ───────────────────
+//
+// `identity.json` holds the signing key and, since cycle 10, the cipher
+// key. It was written at whatever the umask gave — 644 on a typical box,
+// so every account on the machine could read both.
+//
+// 600 ON THE FILE, 700 ON THE DIRECTORY, at creation. Not checked at
+// start-up and nothing refuses to run over it: Windows, WSL's drvfs and
+// a deliberately widened permission are where that check would produce
+// false alarms, and a relay that will not start because of a mode bit is
+// worse than one that runs with a known residual.
+//
+// WHAT IT ACTUALLY BUYS, said plainly rather than implied. The realistic
+// reader is a SERVICE ACCOUNT on the same box — www-data, a container
+// user, a backup agent — not a second person at a keyboard. Root reads
+// everything regardless, and on a single-tenant VPS root is the operator.
+// So this closes the accidental path and none of the deliberate ones.
+//
+// AND IT DOES NOTHING ON WINDOWS. Measured 2026-09-24: `chmod(0o600)`
+// leaves mode 666 on NTFS — it is silently inert. The node's prime
+// platform is Windows, so this protects the RELAY, which runs on Ubuntu,
+// and on a node it is a no-op that costs nothing. The Windows answer is
+// an ACL and is deliberately not attempted here; it is a different
+// mechanism and would need its own evidence.
+//
+// FAILURES ARE SWALLOWED. A filesystem that cannot express a mode — a
+// mounted share, drvfs — must not stop a node writing its own identity.
+function protectFile(file) {
+  try { fs.chmodSync(file, 0o600); } catch (e) { /* a mode it cannot express */ }
+}
+function protectDir(dir) {
+  try { fs.chmodSync(dir, 0o700); } catch (e) { /* as above */ }
+}
+
 function saveIdentity(rootDir, id) {
   const dir = path.join(rootDir, 'relay-state');
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, 'identity.json'), JSON.stringify(id, null, 2));
+  protectDir(dir);
+  const file = path.join(dir, 'identity.json');
+  fs.writeFileSync(file, JSON.stringify(id, null, 2));
+  protectFile(file);
 }
 
 function ensureIdentity(rootDir, name) {
