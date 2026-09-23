@@ -268,7 +268,75 @@ on its own, because it is what a visitor sees.
 
 ## Divergences at reconciliation
 
-*Empty until the close. Entries are logged unresolved: the sentence
-quoted, what each side took it to mean, what each costs, and a suggestion
-— then **settled by Andy** or **reconciled by the agents**, appended
-rather than replacing what was recorded.*
+**One divergence, logged unresolved. The cycle stops here.**
+
+---
+
+### D1 — R5, and whether "never kept" reaches a plain string
+
+**The sentence, quoted from R5:**
+
+> Invite labels. Partner names. Anything per member. […] the record must
+> not reassemble one by accumulation — **a series of counts is a different
+> object from a series of names, and only the first is machine
+> maintenance.**
+
+**What Claude took it to mean.** The people in a report arrive as LISTS —
+`invites`, `partners`, a roll — so the rule is about lists, and the filter
+turns any array or object into a count. A name arriving as a plain STRING
+is not a list and passes through. **This was not overlooked**: it is
+written in the code as a named residual — *"a future STRING field carrying
+a person's name passes straight through. Shape cannot see that, and
+nothing here pretends it can"* — and it was sent to wsl-claude in the same
+words.
+
+**What wsl-claude took it to mean.** "Never kept" is absolute. A name in
+the record is a name in the record whatever shape it arrived in, and the
+daily tier keeps it **for good** (R4). His assertion feeds `ownerLabel`,
+`lastClaim` and `partner` as plain strings and fails on all three. His
+proposed fix: **keep numbers and booleans only.**
+
+**It is not hypothetical.** Storing spirit-3's REAL report — read live on
+2026-09-23 — the record keeps:
+
+```
+{"at":"…","owner":"Andy Flinn","mode":"keys","key":"MCowBQYD…",
+ "version":"0.0.1 6b6dffa","ramLimitMB":256,"messages":0,
+ "uptimeSec":340716,"partners":0,"invites":1}
+```
+
+The lists became counts. **The owner's name and the relay's key did not.**
+
+**What each costs.**
+- *Claude's reading:* nothing to change. The residual stands, and any
+  future string field carrying a member's name is kept for ever with
+  nothing to notice it.
+- *wsl-claude's reading:* a few lines — an allow-list of numbers and
+  booleans instead of a deny-list of shapes. The cost is that a future
+  STRING figure worth keeping (`mode: "keys"`, `version`) is dropped
+  unless named, so R1's *"a figure nobody thought to name"* stops being
+  free and becomes a decision each time.
+
+**The two readings disagree about which requirement yields.** R1 wants the
+unnamed remainder kept; R5 wants people never kept. A string is exactly
+where those meet.
+
+**Suggestion, not a resolution:** keep numbers and booleans by default,
+plus an explicitly named short list of strings that are facts about the
+BOX rather than about people — `mode`, `version`. That satisfies R5
+absolutely and keeps R1's intent for the figures that matter. It costs the
+open-endedness R1 was written for.
+
+**Settled by:** *(open — awaiting Andy)*
+
+---
+
+### Not a divergence, but found at the same moment
+
+**wsl-claude's suite crashes on Windows before it reports.** `fs.rmSync`
+on a temp directory whose SQLite handle is still open fails `EPERM` on
+Windows and succeeds on Linux, so the suite runs green-then-red on his box
+and dies at the first cleanup on mine. His code, his to fix — recorded
+here because it is the first thing the two-platform arrangement caught
+about the arrangement itself, and because a suite that cannot report on
+one platform cannot be the independent check on that platform.
