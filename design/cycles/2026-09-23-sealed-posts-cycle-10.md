@@ -1,6 +1,6 @@
 # Cycle 10 — a relay carries what it cannot read
 
-**Opened 2026-09-23, from `989f39a`. Nothing built yet. Eleven requirements.**
+**Opened 2026-09-23, from `989f39a`. Nothing built yet. Twelve requirements.**
 
 > **Andy:** *"I also want to make sure we have alpha Product at the end,
 > and you agreed, or suggested that developper-nerds wouldn't be happy
@@ -329,5 +329,41 @@ plaintext; the same sealed blob re-addressed to a third party fails to
 open there; the registered hash still refuses a replay; a partner-carried
 sealed post keeps its `innerHash` behaviour; and a receipt still proves
 "exactly those bytes".
+
+**Status:** OPEN — cycle 10 is opened, not built.
+
+### R12 — the relay's hash must differ from the endpoints' hash of the words
+
+> **Andy, 2026-09-23:** *"which adds another test, a passing payload in
+> the relay must hash DIFFERENTLY from the endpoint hashes"*
+
+A canary for the failure that looks like success. If sealing were skipped,
+misconfigured, or silently bypassed for one code path, everything else in
+this cycle would still pass — the post routes, the signature verifies,
+the receipt returns. The one thing that would change is that the bytes
+the relay hashes would be the same bytes the endpoints hold.
+
+So the test asserts a **difference**, which is cheap to check and
+impossible to fake:
+
+1. **`relayHash !== sha256(plaintext)`.** The relay's registered hash is
+   over the sealed bytes (R11); the endpoints are the only parties that
+   can hash the words. If those two are ever equal, the payload travelled
+   in clear, whatever the rest of the suite says.
+2. **The same message sent twice produces two different relay hashes.**
+   Sealing is randomised — a fresh ephemeral key and nonce per message
+   (R4) — so identical plaintext must never yield identical ciphertext.
+   Equal hashes would mean deterministic sealing, which would hand the
+   relay something it must not have: *the ability to tell that two
+   messages are the same message.*
+3. **And the plaintext hash never appears on the wire.** An endpoint may
+   compute one for its own log — the owner's record of their own
+   correspondence — but it is not sent, not in the envelope, and not in a
+   header. A plaintext hash beside a sealed payload is a confirmation
+   oracle: anyone who can guess the message can check the guess.
+
+**Verify:** all three, in one suite, against a real routed post — and
+point (2) run at least twice with the identical string, because a single
+run cannot show randomisation.
 
 **Status:** OPEN — cycle 10 is opened, not built.
