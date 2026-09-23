@@ -145,6 +145,22 @@ function report(opts) {
     // Absent rather than zeroed on a relay with no configuration, for the
     // same reason as `meter`: "no bound" and "a bound with room left"
     // must not be drawn the same.
+    // ── SEATS, WHICH IS THE ONE AN OWNER ACTS ON ───────────────────
+    //
+    //   Andy, 2026-09-23: "our alpha shape needs to monitor member count
+    //   so, that RAM capacity can guarantee service."
+    //
+    // `ramLimitMB` bounds who may be CONNECTED and `discLimitMB` how much
+    // may be STORED; neither says how close the roll is to the number of
+    // people this box can actually serve. That is what admission is now
+    // refused on, so it is what an owner needs to watch.
+    //
+    // PASSED THROUGH WHOLE, like every other fact here: this file is a
+    // pure function from facts to a report and computes nothing. Its
+    // shape is { held, outstanding, allowance, free } — outstanding being
+    // seats already promised in invites nobody has redeemed, which is the
+    // half that makes a relay full while the roll still looks short.
+    seats: o.seats || undefined,
     discLimitMB: typeof o.discLimitMB === 'number' ? o.discLimitMB : undefined,
     discUsedMB: typeof o.discUsedMB === 'number' ? o.discUsedMB : undefined,
     binding: o.binding || undefined,

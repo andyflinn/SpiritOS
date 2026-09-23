@@ -533,6 +533,80 @@ function createRelay(rootDir, deps) {
     };
   }());
 
+  // ── SEATS: A MEMBER IS ADMITTED ONLY IF THIS RELAY CAN SERVE THEM ──
+  //
+  //   Andy, 2026-09-23: "why admit a member when we cannot guarantee
+  //   service for that member? that'd be horrible" — and, ruling what the
+  //   bound is: "a relay could hold a few million CARDs on disk, members
+  //   are strictly limited by RAM allotment."
+  //
+  // THE DISC BOUND ABOVE IS NOT THIS AND DOES NOT REPLACE IT. Disc says
+  // how many rows may EXIST; this says how many people can be SERVED, and
+  // serving is what membership is for. They were never in conflict — the
+  // RAM half was simply absent, so a relay configured at 256 MB admitted
+  // members up to its ~111,000-row disc ceiling while only 4,096 could
+  // ever hold a stream. Member 4,097 got a row, got a card, and then a
+  // 503 for ever. Nothing was mis-gated; the second gate did not exist.
+  //
+  // AND IT IS WORSE WITHOUT A QUEUE. A relay does not store traffic
+  // (relay.js, `sendSelfAnswer`), so a member who cannot connect does not
+  // collect messages to read later — they receive nothing at all. In a
+  // queueing system over-admission is a delay; here it is an exclusion
+  // dressed as a membership.
+  //
+  // AN OUTSTANDING INVITE HOLDS A SEAT. Minting past capacity is the same
+  // broken promise made earlier and in writing: the owner hands somebody
+  // a token that cannot be redeemed. So free seats are the allowance less
+  // the members held AND the invites still live. Expired ones hold
+  // nothing — they are already spent by the clock.
+  //
+  // NOBODY IS EVICTED, ever. Andy, design/principles/LIMITED-RESOURCES.md:
+  // "it's like member slots, you must evict before adding new ones." Full
+  // means no new claims and no new invites; it never means a row is
+  // dropped.
+  //
+  // A RELAY WITH NO CONFIGURATION HAS NO ALLOWANCE and therefore no seat
+  // bound — every in-process suite is in that state, and a gate that
+  // refused there would refuse the whole harness rather than the thing it
+  // is aimed at.
+  var seats = (function () {
+    function live(nowMs) {
+      var at = nowMs == null ? Date.now() : nowMs;
+      var rows;
+      try { rows = invites.load(rootDir) || []; } catch (e) { return 0; }
+      // EXPIRY IS THE ONLY TEST, because a redeemed invite is DELETED
+      // rather than marked (invites.consume). There is no spent-but-
+      // present state to filter out, and a filter on a field that never
+      // exists would imply one.
+      return rows.filter(function (row) {
+        if (!row) return false;
+        var ends = Date.parse(row.expiresAt || '');
+        return !(ends > 0) || ends > at;
+      }).length;
+    }
+    function held() {
+      try { return store.members.count(); } catch (e) { return 0; }
+    }
+    return {
+      allowance: function () { return allowance; },
+      held: held,
+      outstanding: live,
+      // Seats left for somebody NOT yet holding one. Never negative: a
+      // relay whose limit was lowered under it reports zero free rather
+      // than a negative number that arithmetic elsewhere would carry.
+      free: function (nowMs) {
+        if (!allowance) return null;
+        return Math.max(0, allowance - held() - live(nowMs));
+      },
+      // Admission asks only about MEMBERS, not invites: a claim redeeming
+      // an invite is taking the seat that invite was already holding, so
+      // counting both would refuse the very token the relay issued.
+      fullForMembers: function () {
+        return allowance !== null && held() >= allowance;
+      },
+    };
+  }());
+
   // ── RESIZING THE BOX, AND THE ONE THING IT WILL NOT DO (cycle 9) ───
   //
   //   Andy, 2026-09-22: "the owner must evict before shrinkage."
@@ -1330,6 +1404,33 @@ function createRelay(rootDir, deps) {
       // A COUNT, not the roll (cycle 3): the report says how many, which
       // is one query; the rows never leave the store to be counted.
       peers: store.members.count(),
+
+      // ── THE SEAT COUNT, SO A FULL RELAY IS SEEN COMING ─────────────
+      //
+      //   Andy, 2026-09-23: "that's why our alpha shape needs to monitor
+      //   member count so, that RAM capacity can guarantee service."
+      //
+      // The refusal at the boundary is the guarantee; THIS is what stops
+      // the guarantee arriving as a surprise. An owner who can only learn
+      // the relay is full by watching somebody fail to join has no lever
+      // left — every tightening measure worth using (shorten expiry, stop
+      // minting, raise the limit, get a bigger box) needs warning.
+      //
+      // ALL THREE NUMBERS, because two of them cannot be derived from the
+      // others. `held` is the roll, `outstanding` is seats already
+      // promised in unredeemed invites, and `seats` is what the RAM
+      // allotment permits. Publishing only "3,900 of 4,096" would hide
+      // that 200 invites are out and the relay is actually full.
+      //
+      // ABSENT, not zeroed, on a relay with no configuration — the same
+      // rule the rest of this report follows: "no bound" and "a bound
+      // with room left" must not be drawn the same.
+      seats: seats.allowance() === null ? undefined : {
+        held: seats.held(),
+        outstanding: seats.outstanding(),
+        allowance: seats.allowance(),
+        free: seats.free(),
+      },
       // `messages: messages.length` STOOD HERE and went with the ring.
       // A relay stores nothing on anyone's behalf (0006), so there is no
       // count to report — the honest number is not zero, it is that the
@@ -1613,6 +1714,29 @@ function createRelay(rootDir, deps) {
     // NOBODY IS EVICTED. Full means no new claims; it never means a row
     // is dropped — design/principles/LIMITED-RESOURCES.md, Andy: "it's
     // like member slots, you must evict before adding new ones."
+    // ── AND THE RAM BOUND BITES HERE TOO (cycle 9, amended) ──────────
+    //
+    //   Andy, 2026-09-23: "why admit a member when we cannot guarantee
+    //   service for that member? that'd be horrible"
+    //
+    // FIRST, because it is the bound that decides whether this person can
+    // ever be SERVED. The disc refusal below is about the box filling up;
+    // this one is about the promise. An owner told "your disc is full"
+    // when the real answer is "you have as many members as you can talk
+    // to" would raise the wrong figure and change nothing.
+    //
+    // THE OWNER IS NEVER TURNED AWAY, for the same reason as below: the
+    // one account that can raise the limit must always be able to get on.
+    if (!firstOwner && seats.fullForMembers()) {
+      return {
+        ok: false,
+        status: 507,
+        error: 'this relay is full: ' + seats.held() + ' of ' + seats.allowance() +
+          ' members, which is what ' + (config && config.ramLimitMB) +
+          ' MB of RAM can serve at once. Its owner must raise ramLimitMB or remove members.',
+      };
+    }
+
     if (!firstOwner && discLimit.full()) {
       return {
         ok: false,
@@ -1856,6 +1980,40 @@ function createRelay(rootDir, deps) {
     // name an inviter who is not here.
     if (!owner || !allow.byName[owner]) {
       return { ok: false, status: 403, error: 'not the owner' };
+    }
+
+    // ── A SEAT IS RESERVED WHEN THE INVITE IS MINTED, NOT WHEN IT IS
+    //    CLAIMED ──────────────────────────────────────────────────────
+    //
+    // Minting past capacity is the same broken promise as admitting past
+    // it, made earlier and in writing: the owner hands somebody a token,
+    // that person installs a node, types it in, and is refused by a relay
+    // that was already full when the token was written.
+    //
+    // MEASURED BEFORE THIS EXISTED: mint had no capacity check of any
+    // kind. An owner could mint a thousand invites on a relay with three
+    // free seats and every one of them read as valid.
+    //
+    // COUNTED AT MINT TIME, NEVER CACHED. A relay restarted with a lower
+    // ramLimitMB would otherwise keep minting against the figure it had
+    // when it came up. `seats.free()` reads the roll and the live invites
+    // each time it is asked, which costs a count and a file read on an
+    // owner verb that runs rarely.
+    //
+    // AN EXPIRED INVITE RETURNS ITS SEAT, which is why unclaimed invites
+    // are not a permanent tax on a relay's capacity, and why shortening
+    // expiry is one of the listed tightening levers rather than a new
+    // mechanism.
+    var room = seats.free();
+    if (room !== null && room <= 0) {
+      return {
+        ok: false,
+        status: 507,
+        error: 'this relay is full: ' + seats.held() + ' members and ' +
+          seats.outstanding() + ' invites outstanding, against ' + seats.allowance() +
+          ' seats. Minting now would promise a seat that does not exist — ' +
+          'raise ramLimitMB, remove members, or let invites expire.',
+      };
     }
     // THE WRITE, and the one place in this function that can meet a full
     // disc (guardWrite). A refusal comes back as an answer, not as a

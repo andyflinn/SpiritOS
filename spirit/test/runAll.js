@@ -57,6 +57,12 @@ const NOT_A_SUITE = [
   // A helper, not a suite: reads a relay's roll off its disc for the suites
   // that inspect it (cycle 3).
   'rollOf.js',
+  // A TOOL, not a suite: rewrites the front page's generated capacity
+  // block from the Ubuntu measurement (Andy, 2026-09-23 — "the front page
+  // README.md should have a marked block that will be auto-updated with
+  // the ubuntu-relay capacity only"). It writes a file and makes no
+  // pass/fail claim; `capacityFresh.js` is the suite that holds it honest.
+  'publishCapacity.js',
   // A helper, not a suite (cycle 10, R5): sealing a post to a relay and
   // opening the answer, in one place so twenty suites cannot each grow
   // their own opinion about what a sealed reply looks like.
