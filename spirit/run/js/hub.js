@@ -2442,6 +2442,52 @@ function createHub(rootDir) {
     });
   }
 
+  // ── THE OWNER'S RELAY RECORD, READ (cycle 11's R6) ─────────────────
+  //
+  // `relay.status` above answers what a relay says about itself RIGHT
+  // NOW. This answers what it has said over time, which is the thing
+  // decision 0015 left open: "a monitor draws the current report; the
+  // analysis Andy describes needs a SERIES."
+  //
+  // NOT KEY-GATED, exactly like `relay.status` beside it: this door is
+  // loopback and everything behind it is the owner's own box. Whether it
+  // should ALSO be gated by key is an open question in the cycle document
+  // and is Andy's, not settled here by being built one way.
+  //
+  // `from` and `limit` are the caller's window. The default is a day,
+  // because a monitor drawing a curve wants a day and a caller that wants
+  // a year should say so — an unbounded default is how a read verb turns
+  // into a table dump by accident.
+  function handleRecord(req, res, readJsonBody, deps) {
+    Promise.resolve()
+      .then(function () { return readJsonBody(req); })
+      .catch(function () { return {}; })
+      .then(function (body) {
+        const rootDir = (deps && deps.rootDir) || '';
+        const relay = String((body && body.relay) || '');
+        const from = Number(body && body.from) || (Date.now() - 24 * 60 * 60 * 1000);
+        const limit = Number(body && body.limit) || 2000;
+        let store = null;
+        try { store = require('./nodeStore').open(rootDir); }
+        catch (e) { return fail(res, 503, 'no record on this node'); }
+
+        // A caller with no relay named gets the list of relays that have
+        // a history, which is the one question that has to be answerable
+        // before any other can be asked.
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        if (!relay) {
+          return res.end(JSON.stringify({ ok: true, relays: store.record.relays() }));
+        }
+        return res.end(JSON.stringify({
+          ok: true,
+          relay: relay,
+          from: from,
+          series: store.record.series(relay, from, limit),
+        }));
+      })
+      .catch(function (err) { fail(res, 500, String((err && err.message) || err)); });
+  }
+
   function handleStatus(req, res, readJsonBody, deps) {
     Promise.resolve()
       .then(function () { return readJsonBody(req); })
@@ -2512,6 +2558,7 @@ function createHub(rootDir) {
     // other one and this is what a node has.
     handlePost: handlePost,
     handleStatus: handleStatus,
+    handleRecord: handleRecord,
     handlePartnerCheck: handlePartnerCheck,
     handleSearch: handleSearch,
     handleWho: handleWho,

@@ -96,6 +96,47 @@ function available() {
 // somebody has never been the one that worked.
 const MAX_ROUTES = 3;
 
+// ── WHAT IS NEVER KEPT, ENFORCED BY SHAPE (cycle 11's R5) ──────
+//
+// This cycle's R1 says the remainder of the report is kept whole, so a figure
+// nobody thought to name is there when a later question wants it.
+// Its R5 says invite labels, partner names and anything per member
+// are NEVER kept. As first written the one broke the other on every
+// row for ever:
+// the live report carries `invites` as a list of objects, each with a
+// `label` and an `invitedBy` — a person's name — and the whole
+// remainder was being stored.
+//
+// That was a contradiction inside the design document, not a
+// difference of reading, and it was found by looking at a real report
+// from spirit-3 rather than at the shape the plan assumed.
+//
+// BY SHAPE, NOT BY FIELD NAME. An array is replaced by its COUNT:
+// three invites becomes 3, not three labels. A deny-list of names
+// would need updating every time the report grew a field, and the
+// field that got missed would be the one that mattered. The shape
+// rule survives additions, and it matches what that requirement is
+      // actually about —
+// a series of counts is a different object from a series of names,
+// and only the first is machine maintenance.
+//
+// WHAT IT DOES NOT CATCH, said rather than left to be discovered: a
+// future STRING field carrying a person's name passes straight
+// through. Shape cannot see that, and nothing here pretends it can.
+//
+// Nested objects are walked, because `levers` and `meter` are objects
+// of numbers today and an object of lists tomorrow is exactly the
+// quiet way this would be defeated.
+function countIfPeople(v) {
+  if (Array.isArray(v)) return v.length;
+  if (v && typeof v === 'object') {
+    const out = {};
+    Object.keys(v).forEach(function (k) { out[k] = countIfPeople(v[k]); });
+    return out;
+  }
+  return v;
+}
+
 function open(rootDir, opts) {
   const key = path.resolve(rootDir);
   if (open_.has(key)) return open_.get(key);
@@ -399,6 +440,14 @@ function open(rootDir, opts) {
     recLastAt: db.prepare(`SELECT MAX(at) AS at FROM relay_record
       WHERE relay = ? AND kind = 'report'`),
     recRelays: db.prepare('SELECT DISTINCT relay FROM relay_record ORDER BY relay'),
+    // Everything older than the fine window except the LAST report of
+    // each day, per relay. Edges are excluded by `kind`, deliberately.
+    recCoarsen: db.prepare(`DELETE FROM relay_record
+      WHERE kind = 'report' AND at < ? AND at NOT IN (
+        SELECT MAX(at) FROM relay_record
+        WHERE kind = 'report' AND at < ?
+        GROUP BY relay, at / 86400000
+      )`),
     bPut: db.prepare(`INSERT INTO queue_backoff (relayUrl, toKey, untilWall, lastWait)
       VALUES (?, ?, ?, ?)
       ON CONFLICT(relayUrl, toKey) DO UPDATE SET untilWall = excluded.untilWall,
@@ -797,7 +846,8 @@ function open(rootDir, opts) {
         const named = ['peers', 'present', 'routes', 'memory', 'seats'];
         const rest = {};
         Object.keys(r).forEach(function (k) {
-          if (named.indexOf(k) === -1) rest[k] = r[k];
+          if (named.indexOf(k) !== -1) return;
+          rest[k] = countIfPeople(r[k]);
         });
         q.recPut.run(
           String(relay || ''), at, 'report',
@@ -826,6 +876,51 @@ function open(rootDir, opts) {
           JSON.stringify(why ? { why: String(why) } : {}));
       },
 
+      // ── WHAT CROSSES TO A CALLER (cycle 11's R6) ──────────────────
+      //
+      // 0020: "A value may cross. A structure may not" — and its own test
+      // for which is which: "whether the node has already DECIDED the
+      // thing. A decided value is an answer; a row, a depth or a timer is
+      // the working-out."
+      //
+      // A SERIES IS A STRUCTURE BY SHAPE AND AN ANSWER BY THAT TEST, and
+      // the cycle document flags this sentence as one two readers may
+      // take differently. The reading built here: what crosses is a list
+      // of ANSWERS — at this minute, this many members, this many
+      // connected, this many seats free — and not the row. No `rest`, no
+      // `kind` column, no primary key, nothing a caller could use to
+      // reconstruct the table or to ask a second question of it.
+      //
+      // The difference is not cosmetic. A caller holding rows will
+      // eventually filter them, and then the shape of this table is a
+      // client surface that cannot be changed. A caller holding answers
+      // has what it needs to draw a curve and nothing else.
+      //
+      // An EDGE crosses as a moment with a kind, because "the stream
+      // closed at 14:02" is an answer too, and without it the curve has
+      // gaps a reader cannot interpret (cycle 11's R3).
+      series: function (relay, from, limit) {
+        return this.since(relay, from, limit).map(function (r) {
+          if (r.kind !== 'report') return { at: r.at, was: r.kind };
+          let seats = null;
+          try { seats = (JSON.parse(r.rest || '{}') || {}).seats || null; }
+          catch (e) { seats = null; }
+          return {
+            at: r.at,
+            members: r.members,
+            connected: r.connected,
+            allowance: r.allowance,
+            routes: r.routes,
+            rssMB: r.rssMB,
+            // cycle 11's R7: the seat figures are the series every
+            // tightening lever reads from, so they cross as answers
+            // rather than being dug out of `rest` by a caller.
+            free: seats && typeof seats.free === 'number' ? seats.free : null,
+            outstanding: seats && typeof seats.outstanding === 'number' ? seats.outstanding : null,
+          };
+        });
+      },
+
       since: function (relay, from, limit) {
         return q.recSince.all(String(relay || ''), Number(from) || 0,
           Number(limit) > 0 ? Number(limit) : 5000);
@@ -833,6 +928,36 @@ function open(rootDir, opts) {
       relays: function () { return q.recRelays.all().map(function (r) { return r.relay; }); },
       lastAt: function (relay) { return (q.recLastAt.get(String(relay || '')) || {}).at || 0; },
       count: function () { return q.recCount.get().n; },
+
+      // ── THE SECOND TIER (cycle 11's R4) ───────────────────────────
+      //
+      // Minute rows are kept 90 days; past that, one row a day survives
+      // and the rest go. The daily curve is the thing a growth argument
+      // is made from and it costs a row a day, so it is never pruned —
+      // C1 says this record is NOT derived and cannot be rebuilt, which
+      // argues for the cheap tier being permanent rather than for a
+      // recovery that cannot exist.
+      //
+      // THE LAST ROW OF EACH DAY SURVIVES, not the first: the same reason
+      // the last report of a minute wins. A day's final figures are what
+      // that day ended at.
+      //
+      // EDGES ARE NEVER COARSENED. An open and a close are instants, two
+      // in a day is a flap, and a flap is exactly what somebody reading a
+      // year later wants to see. They are the cheapest rows here and the
+      // least replaceable.
+      //
+      // The figures are proposed and NOT ruled — Andy has not named them.
+      coarsen: function (now) {
+        const n = now == null ? Date.now() : now;
+        const before = n - this.FINE_MS;
+        // BOTH placeholders. Bound once, the subquery compared `at` to
+        // NULL, returned nothing, and `NOT IN (empty)` is true — so the
+        // sweep deleted EVERY old report instead of keeping one a day.
+        // node:sqlite did not complain about the missing parameter; the
+        // row counts did.
+        return q.recCoarsen.run(before, before).changes;
+      },
     },
 
     queue: {

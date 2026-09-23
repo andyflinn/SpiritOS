@@ -1653,6 +1653,14 @@ contactBook.syncMarks(ROOT_DIR);
     'relay.status': function (rq, rs) {
       hub.handleStatus(rq, rs, readJsonBody, { presence: presence });
     },
+    // WHAT A RELAY HAS SAID OVER TIME, beside what it says now —
+    // cycle 11's R6. `relay.status` probes; this reads what was already
+    // written as the reports arrived, so it reaches no network at all —
+    // which is why it is here and not marked `wire: true` like its
+    // neighbours.
+    'relay.record': function (rq, rs) {
+      hub.handleRecord(rq, rs, readJsonBody, { rootDir: ROOT_DIR });
+    },
   }, { wire: true });
 
   // ── STAGE 4c — contact (2026-09-15) ────────────────────────────────

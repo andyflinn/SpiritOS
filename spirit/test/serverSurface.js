@@ -650,6 +650,11 @@ freePort()
       // either way.
       ['POST', '/api/spirit', { verb: 'relay.claim', url: 'https://not-on-the-list.example', name: 'x' }],
       ['POST', '/api/spirit', { verb: 'relay.status', name: 'x' }],
+      // cycle 11's R6. Reads what the node already wrote as reports
+      // arrived; reaches no network, so unlike its neighbour it cannot
+      // time out. With no relay named it answers the list of relays that
+      // have a history, which is the cheapest call that proves the door.
+      ['POST', '/api/spirit', { verb: 'relay.record' }],
       // Reads a roll from a url this node is not on. 127.0.0.1:1 for the
       // reason partnerCheck below uses it: refused by the kernel, no DNS,
       // and the handler must ANSWER rather than throw.
