@@ -112,7 +112,7 @@ function cdTitle() {
 // every table in the shell still needs a guard against.
 // THE "OBVIOUS DUD" BUBBLE AND THE "LOCKED TO RELAYS I OWN" FOLD STOOD
 // HERE (2026-09-19). Both were drawn from facts a roster sweep wrote —
-// `missingSince` (a key on no census) and `memberOf` (seats on relays I
+// `missingSince` (a key on no roll) and `memberOf` (seats on relays I
 // own) — and no relay may return a roster any more. Andy: "relays only
 // provide one way to find nodes or relays: SEARCH. What is not found
 // cannot influence decisions." A contact that went stale is simply stale:
@@ -279,8 +279,8 @@ function cdReleaseSeats() {
     var keyFor = Object.create(null);
     var seats = [];
     rows.forEach(function (row) {
-      if (row && row.owned && row.url && row.census && row.census.relayKey) {
-        keyFor[row.url] = row.census.relayKey;
+      if (row && row.owned && row.url && row.roll && row.roll.relayKey) {
+        keyFor[row.url] = row.roll.relayKey;
         seats.push(row.url);
       }
     });

@@ -119,8 +119,8 @@ function mountApp(home, relays) {
       } else if (name === 'relay.status') {
         // The shape ownerBadge.probe answers with: one row per configured
         // relay, `claimed` where this key holds a seat, `claimedLabel`
-        // read off the public census by key, and the relay's own key on
-        // `census` — which is the address a rename is posted to.
+        // read off the public roll by key, and the relay's own key on
+        // `roll` — which is the address a rename is posted to.
         said = {
           ok: true,
           rows: boxes.map(function (b) {
@@ -128,9 +128,9 @@ function mountApp(home, relays) {
             if (b.claimed) {
               row.claimedLabel = b.calls;
               // A relay that answered but said nothing about its key gets
-              // no census — the real `censusFacts` returns null when the
-              // census cannot be read, and this screen must cope.
-              if (b.relayKey) row.census = { relayKey: b.relayKey, myLabel: b.calls };
+              // no roll — the real `censusFacts` returns null when the
+              // roll cannot be read, and this screen must cope.
+              if (b.relayKey) row.roll = { relayKey: b.relayKey, myLabel: b.calls };
             } else {
               row.error = 'no row here';
             }

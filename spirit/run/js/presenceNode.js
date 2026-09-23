@@ -273,7 +273,7 @@ function createPresence(opts) {
   function openTo(url) {
     if (streams[url]) return;
     // Fired alongside the connect rather than awaited: the stream is what
-    // presence is for, and a census that is slow to answer must not delay
+    // presence is for, and a roll that is slow to answer must not delay
     // it. The pin lands before anything can be posted down the stream,
     // because a post needs the stream to be open at the far end first.
     pinRelay(url);

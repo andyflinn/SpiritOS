@@ -87,7 +87,7 @@ test.subHeading('The bytes say when');
   // into a standing grant on the wire.
   //
   // This was written against `status`, the signature an owner made for
-  // every census — the one most likely to be lying around. R3 deleted
+  // every roll — the one most likely to be lying around. R3 deleted
   // that verb on 2026-09-15, so the check moved to `claim`, which is now
   // the only other format naming something a caller supplies.
   if (auth.streamMessage('KEY', at) !== auth.claimMessage('KEY') &&

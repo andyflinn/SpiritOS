@@ -300,12 +300,12 @@
   //
   // natterDetails' ndRelayKey has carried the real answer since cycle 3,
   // and the ORDER matters there for a reason that does not apply here but
-  // is worth keeping anyway: `census.relayKey` comes off the public
-  // census every probe already fetches, so a plain MEMBER has it, while
+  // is worth keeping anyway: `roll.relayKey` comes off the public
+  // roll every probe already fetches, so a plain MEMBER has it, while
   // `report.key` is pushed to the owner alone. Reading the owner's copy
   // first would work for exactly one person and look fine.
   function rmRelayKey(row, report) {
-    return (row && row.census && row.census.relayKey) ||
+    return (row && row.roll && row.roll.relayKey) ||
       (report && report.key) || '';
   }
 

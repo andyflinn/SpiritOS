@@ -5,7 +5,7 @@
 //
 // ── THE CHECK THIS SUITE EXISTS FOR ──────────────────────────────────
 //
-// The report carries live invite LABELS. Those are in no census, on no
+// The report carries live invite LABELS. Those are in no roll, on no
 // public route, and the console gated them behind an owner check that
 // existed for that one word and nothing else.
 //
@@ -65,7 +65,7 @@ const T0 = Date.parse('2026-09-13T12:00:00.000Z');
     test.fail('peers=' + r.peers + ' present=' + r.present);
   }
 
-  // The first figure here that could never be had from the census: not
+  // The first figure here that could never be had from the roll: not
   // how many people exist, but whether this box is BUSY.
   if (r.routes === 2) {
     test.check('requests in flight — the number that says busy, which no public route answers');

@@ -109,7 +109,7 @@ function mountDialog(options) {
         rows: (opts.relays || []).map(function (r) {
           return {
             url: r.url, owned: true, claimed: true, status: 200,
-            census: r.relayKey ? { relayKey: r.relayKey } : null,
+            roll: r.relayKey ? { relayKey: r.relayKey } : null,
           };
         }),
       });

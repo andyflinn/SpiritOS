@@ -1034,7 +1034,7 @@ function createPeerPost(opts) {
   }
 
   // AN ANSWER CAME BACK. Verified against the key of whoever signed it,
-  // which the caller already has from the relay's public census — so the
+  // which the caller already has from the relay's public roll — so the
   // relay cannot manufacture a receipt for a request nobody answered.
   function onReply(body) {
     if (!body || !body.hash || !body.from || !body.sig) return false;

@@ -162,7 +162,7 @@ test.startTest('Invite mint — owner-signed, label and duration bound');
   // reaches anything that mints.
   //
   // The verb named here was `status`, because an owner signed one for
-  // every census and it was therefore the most abundant credential to
+  // every roll and it was therefore the most abundant credential to
   // steal. R3 deleted that verb on 2026-09-15 along with the badge that
   // spent it; `claim` is what is left to try.
   const otherVerb = auth.sign(r.owner.privateKey, auth.claimMessage('andy'));

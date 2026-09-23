@@ -538,7 +538,7 @@ is relay-side, and the requester split fixes it.
    needs more than one in flight *per member*.
 5. **Rewrite `relayMeter`'s claim** as the repeal it is.
 6. **Add the `infoDraw` repaint**, so serialisation reads as progress.
-7. **Then set the member cap to 1**, with a census asserting it, in the
+7. **Then set the member cap to 1**, with a roll asserting it, in the
    shape `settableCensus.js` already uses.
 
 ## What "proven to break" has to mean
@@ -1784,7 +1784,7 @@ Three shapes, and they are not equivalent:
 - **Ask on demand.** A presence query to the partner, request/response.
   Precise, but at one request in flight it spends the member's only slot
   on a question about somebody they have not written to yet.
-- **Poll a census.** Cheap to build and the thing `EVENT-STREAM.md`
+- **Poll a roll.** Cheap to build and the thing `EVENT-STREAM.md`
   exists to have killed — *"the node already calls the relay 30 times a
   minute"*. Not seriously on the table.
 
@@ -1867,7 +1867,7 @@ design is avoiding.
   by their going offline; you can only fail to *meet* them.
 - **Search is one acquisition route of six.** `contacts.js:94` —
   `['message', 'invite', 'handle', 'member']` are listening routes beside
-  `census` and `hold`, and **`handle` and `invite` do not need the peer
+  `roll` and `hold`, and **`handle` and `invite` do not need the peer
   present at all**. The presence-dependent path is one of several, and
   not the one a person uses when they already know who they are looking
   for.
@@ -2259,7 +2259,7 @@ exactly that.
 
 **So the ceremony was not protecting consent either.** Operating a public
 relay IS the grant — the same argument `0010` already makes for the
-census, which is public and unsigned because it is *"what a node reads
+roll, which is public and unsigned because it is *"what a node reads
 before it has anything"*. An owner does not consent to each reader of
 `/api/relay/who`; they consented by running a box that publishes one.
 
@@ -2658,7 +2658,7 @@ version had one... and that is precisely what got used."* Default-on
 partnering is not unlimited: provisional rows are evictable freely, the
 roll is bounded by disc, and every request a stranger can make is bounded
 by the partner requester class. **But it is default-on, and the
-discipline in this tree is that such things get a census rather than a
+discipline in this tree is that such things get a roll rather than a
 comment.**
 
 **Recommended, not decided:** on by default, provisional rows, and a

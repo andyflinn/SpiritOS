@@ -463,7 +463,7 @@ test.subHeading('The relay as a peer, for its owner');
   // ── AND IT IS IN EVERY MEMBER'S ROSTER (2026-09-15) ────────────────
   //
   // THIS ASSERTED THE OPPOSITE — "in the OWNER's roster and in no
-  // peer's, a per-recipient census, as agreed" — and the agreement was
+  // peer's, a per-recipient roll, as agreed" — and the agreement was
   // sound when everything answerSelf could be asked was an owner verb.
   //
   // It stopped being sound when `rename` arrived: a peer renaming ITSELF
@@ -476,7 +476,7 @@ test.subHeading('The relay as a peer, for its owner');
   // arrived at by omission.
   //
   // Nothing is given away by widening it. The key is already public at
-  // /api/relay/who to anyone who asks — see the census check below, which
+  // /api/relay/who to anyone who asks — see the roll check below, which
   // is a DIFFERENT claim and still stands.
   //
   // THE ROSTER WAS DELETED IN CYCLE 3 (0012 widened: no member list served,
@@ -495,11 +495,11 @@ test.subHeading('The relay as a peer, for its owner');
     test.fail('member to relay: ' + JSON.stringify(toRelay) + ', roster absent: ' + noRoster);
   }
 
-  // AND THE KEY IS STILL IN NO CENSUS. Addressable is not published — a
+  // AND THE KEY IS STILL IN NO ROLL. Addressable is not published — a
   // relay that listed itself would put its own key in every peer's roster.
-  const census = JSON.stringify(rollOf(w.box));
-  if (census.indexOf(relayKey) === -1) {
-    test.check('while the relay key stays out of the census — addressable is not published');
+  const roll = JSON.stringify(rollOf(w.box));
+  if (roll.indexOf(relayKey) === -1) {
+    test.check('while the relay key stays out of the roll — addressable is not published');
   } else {
     test.fail('the relay listed itself as a peer');
   }

@@ -101,8 +101,8 @@ read this to see what happens to their findings.
    so "R16" names a different requirement in different cycles. Write the
    cycle beside the number — `gap R13`, `governor R2`, or "cycle 3's R5" —
    the way a line is cited with its commit. This is for agents, not for
-   Andy (general rule 9). `spirit/test/cycleCitations.js` holds a census
+   Andy (general rule 9). `spirit/test/cycleCitations.js` holds a roll
    of the bare ones left from before this rule: a file's count may fall
-   and never rise, and a file not in the census must have none. The old
+   and never rise, and a file not in the roll must have none. The old
    ones are fixed when that code is touched anyway. Decided by Andy
    2026-09-22, at the end-of-cycle-8 gate the gap cycle set for it.

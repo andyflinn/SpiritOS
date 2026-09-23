@@ -48,7 +48,7 @@ Found while writing this, and it narrows what the mechanism is actually for.
 
 | interface | the route it gives | harvested today? |
 |---|---|---|
-| **the census** — `/api/relay/who`, read on every probe | every member of every relay this node is bound to | **yes.** `hub.buildPeople` → `whoBook.handshake({… relay: relayUrl })` |
+| **the roll** — `/api/relay/who`, read on every probe | every member of every relay this node is bound to | **yes.** `hub.buildPeople` → `whoBook.handshake({… relay: relayUrl })` |
 | **an arriving message** | the sender is bound to the relay it came through | **yes.** `hub.remember(…, relayUrl)` → `acquire` with `relay` |
 | **search** | which partners hold them — `via`, and now `vias` for all of them | **yes** |
 | **the roster and the presence stream** | every member of a relay this node holds a stream to | **in RAM only** — `presenceNode.byRelay[url][key]`, never written to the book |
@@ -62,7 +62,7 @@ discovery, but refresh** — a route that went stale — **and presence at scale
 which is the roster's replacement. A smaller job with a different justification,
 and worth knowing before anybody builds the big version of it.
 
-### And the census is bootstrap scaffolding that became load-bearing
+### And the roll is bootstrap scaffolding that became load-bearing
 
 > **Andy:** *"the most fetched because it bootstrapped concepts quickly, but is
 > not scalable."*
@@ -71,7 +71,7 @@ and worth knowing before anybody builds the big version of it.
 sites** — and it is the largest ship-the-material payload in it:
 
 ```
-census row  151 bytes  →  1 000 members = 147 KB per fetch
+roll row  151 bytes  →  1 000 members = 147 KB per fetch
 roster row  101 bytes  →  1 000 members =  99 KB per connect
 ```
 
@@ -81,7 +81,7 @@ fetched **whole**, **repeatedly**, **per relay**.
 
 **It is not a design. It is the thing that was easiest to reach for while the
 concepts were being proven**, and the call sites accreted around it. So the
-useful question is not *"how do we shrink the census"* but **what is each caller
+useful question is not *"how do we shrink the roll"* but **what is each caller
 actually asking**, because most of them want something far narrower:
 
 | caller | the question it is really asking | cheaper form |
@@ -96,14 +96,14 @@ actually asking**, because most of them want something far narrower:
 **`peer.acquire` is the sharpest waste:** it pulls up to 147 KB to answer yes or
 no about **one key**.
 
-**One constraint stops it disappearing.** The census is *public and unsigned* —
+**One constraint stops it disappearing.** The roll is *public and unsigned* —
 decision 0010 calls it *"what a node reads before it has anything"*. `device.html`
 resolves a label with no identity at all, and acquire verifies keys on relays the
 node is **not a member of**. An authenticated per-key question cannot serve a
 party that has no relationship yet.
 
 So the shape of its retirement is probably **members ask questions; strangers
-still get a census** — and the open question becomes whether the public census
+still get a roll** — and the open question becomes whether the public roll
 can be bounded (paged, capped, or answered by prefix) without breaking the
 bootstrap it exists for.
 
@@ -287,7 +287,7 @@ discoveries are rare. **The expensive one is the thing already running.**
 **What broadcasting costs, recorded rather than waved away:**
 
 - **Timing leaks interest.** The route itself is public — the named relay's
-  census says so to anyone — but *"a route for sonny appeared just now"* tells
+  roll says so to anyone — but *"a route for sonny appeared just now"* tells
   everyone on the relay that somebody here went looking. The cache does not leak
   this. It is the one real advantage the rejected option had.
 - **Members receive routes they will never use.** True, and at 90 KB/day it does
@@ -446,7 +446,7 @@ decided:
 - *Trust on first use.* A route is provisional until a forward returns a reply
   signed by the expected key. Costs one packet per lie, once. Cheap and
   node-side.
-- *Verify against the public census* of the named relay before persisting. The
+- *Verify against the public roll* of the named relay before persisting. The
   node **can** — `/api/relay/who` is public and unsigned, and nodes make
   outbound requests — but on a large relay that is the ship-the-material problem
   again, which is what this whole document exists to avoid.

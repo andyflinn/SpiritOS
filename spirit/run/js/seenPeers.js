@@ -265,7 +265,7 @@ function createSeenPeers(opts) {
   //   deleted."
   //
   // `contactBook.forget` says the same thing about itself: it "forgets
-  // YOUR side of a relationship, and a relay's census is not yours to
+  // YOUR side of a relationship, and a relay's roll is not yours to
   // edit". Deleting a row is a statement about an address book, not about
   // what this node was told — so the shadow survives, and re-adding
   // somebody gets their route back without a search.

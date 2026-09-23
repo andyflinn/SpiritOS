@@ -4,12 +4,12 @@
 
 | | |
 |---|---|
-| **done** | **the census is eradicated.** `GET /api/relay/who` is deleted, with `handleRelayWho` and `expandKeys`. Nothing in the tree reads it |
+| **done** | **the roll is eradicated.** `GET /api/relay/who` is deleted, with `handleRelayWho` and `expandKeys`. Nothing in the tree reads it |
 | **done** | `GET /api/relay/key` — who a box is and who runs it, 97 bytes, flat |
 | **done** | `relayKeys.seat` — a node records its own enrolment at claim and reads it at boot |
 | **design** | 2b, 2c, 2d. 2a is superseded: `claim` need not carry the key, because the key door serves every moment rather than only the claim |
 
-`censusNarrow.js` is the guard: it goes red if any file under `run/` names
+`rollNarrow.js` is the guard: it goes red if any file under `run/` names
 the route, if the route returns, or if 0012 loses its widened rule.
 
 This note is about the *shape* of a relay's interface, not what travels on
@@ -29,11 +29,11 @@ case that all three can go, and what each costs to remove.
 
 ### Why it is forced, not merely tidier
 
-> **Andy:** *"the census gets are on our shooting list too — because they
+> **Andy:** *"the roll gets are on our shooting list too — because they
 > cannot withstand 1000 entries."*
 
 `PAYLOAD_MAX` is 16384 ([limits.js:70](../../spirit/run/js/limits.js#L70)).
-A census row measures 151 bytes
+A roll row measures 151 bytes
 ([boundedByTime.js](../../spirit/test/boundedByTime.js)), so a thousand
 members is **~147 KB — nine times the ceiling.**
 
@@ -60,7 +60,7 @@ Everything reachable from the internet on a relay, at `833d5d4`
 |---|---|---|
 | `GET` | the brochure, the key-addressed device page | files |
 | `GET /api/relay/key` | who this relay is — 97 bytes, flat | **granted exception** (added 2026-09-18) |
-| `GET /api/relay/who` | the public census | granted — **warrant handed to `key`**, three readers left |
+| `GET /api/relay/who` | the public roll | granted — **warrant handed to `key`**, three readers left |
 | `GET /api/relay/stream` | the held connection | **granted exception** |
 | `GET /api/version` | build facts | **granted exception** |
 | `POST /api/relay/claim` | enrol | outside by nature — you cannot post to a relay you have no row on |
@@ -99,7 +99,7 @@ the post rule by 0010's own reasoning. It answers
 ([relay.js:1152](../../spirit/run/js/relay.js#L1152)).
 
 **Add `relayPublicKey` to that response.** The key then arrives with the
-row, and the census stops being where a node learns it — which is the *only*
+row, and the roll stops being where a node learns it — which is the *only*
 justification `GET /api/relay/who` has ever had:
 
 > *it is where a node learns the relay's KEY. You cannot post to an address
@@ -444,7 +444,7 @@ everything lives.
   cannot reach across the re-wrap. Route hints are a separate matter and sit
   outside the packet entirely — see below.
 
-  Census rows per packet is ~105 either way, so paging `handleRoster` lands
+  Roll rows per packet is ~105 either way, so paging `handleRoster` lands
   in the same place, and the nine-times argument in §1 is unaffected.
 - **Tunnelling costs a second envelope, and the budget has not paid for it.**
 
@@ -641,7 +641,7 @@ everything lives.
   used, which 0013 disfavours anyway. Verify-and-cull still happens — at the
   moment of the fan-out it prevents, on the one route in question.
 - **Ordering.** Narrowing comes first — see "Why it is forced" above; a
-  whole-census verb cannot be delivered. 2a and 2c are independent and cheap.
+  whole-roll verb cannot be delivered. 2a and 2c are independent and cheap.
   2b needs the route
   broadcast shape from [ROUTE-DISCOVERY.md](ROUTE-DISCOVERY.md). 2d now needs
   only the Caddy test — dropping the couplets out of the constructor removed
@@ -654,11 +654,11 @@ everything lives.
   |---|---|---|
   | ~~`answerRelay.relayKey`~~ | one envelope field | **moved to `GET /api/relay/key`, 2026-09-18** — see below |
   | `handleWho` (`peer.list`) | the address book | paging or search. Two app callers |
-  | `handlePartnerCheck` | the owner row | **narrowed 2026-09-17.** Pays one whole census only to name the other owner when it refuses |
+  | `handlePartnerCheck` | the owner row | **narrowed 2026-09-17.** Pays one whole roll only to name the other owner when it refuses |
   | `ownerBadge.probe` | its own row **and** the roster | **cannot narrow** — see below |
   | ~~`device.html`~~ | a label for one sentence | **stopped asking, 2026-09-17** — see below |
 
-  So four still read the census whole on the happy path.
+  So four still read the roll whole on the happy path.
 
   ### `GET /api/relay/key` — built 2026-09-18
 
@@ -669,7 +669,7 @@ everything lives.
   ([hub.js:564](../../spirit/run/js/hub.js#L564)) and `handleSearch`'s
   *"which key do I address this box as"*
   ([hub.js:1929](../../spirit/run/js/hub.js#L1929)). Both need a **pin**, and
-  the pin was being derived from the whole census, once per relay per node
+  the pin was being derived from the whole roll, once per relay per node
   boot.
 
   ```
@@ -677,10 +677,10 @@ everything lives.
   ```
 
   **97 bytes, and flat** — `relayKeyDoor.js` measures it at 13 members and at
-  201 and gets the same number, against 30,349 bytes of census at 201. That
+  201 and gets the same number, against 30,349 bytes of roll at 201. That
   flatness is what earns the exemption under
   [0013](../decisions/0013-a-relay-is-fixed-cost-per-time-unit.md); the
-  census fails the test.
+  roll fails the test.
 
   **This supersedes §2a for this caller.** The plan had `claim` carrying the
   key. Both are trust-on-first-use, so neither is more secure — the door is
@@ -688,11 +688,11 @@ everything lives.
   needs no `409` special case for a restored backup. 2a may still be worth
   doing for its own reasons; it is no longer load-bearing here.
 
-  **No fallback to the census, deliberately.** One was written and cut the
+  **No fallback to the roll, deliberately.** One was written and cut the
   same hour: *"the suite asserts the order — small door first, or else
   fail."* A fallback is a path nobody exercises (four such were deleted the
   day before), and — the reason that settles it — **a fallback is a
-  reader**: while anything reaches for `who`, the census has a caller that
+  reader**: while anything reaches for `who`, the roll has a caller that
   is not a list and cannot be demoted. The cost is a deploy order,
   **relay before node**, and it is visible rather than quiet: an unpinned
   relay is reported `silent` by search.
@@ -708,7 +708,7 @@ everything lives.
   `onKeyChanged: []` and was right to. The saving was always the door, not
   the skipping.
 
-  **No browser reads the census any more**, and that is worth more than the
+  **No browser reads the roll any more**, and that is worth more than the
   bytes it saved.
 
   > **Andy:** *"the page posts a constant username and a pasted secret.
@@ -722,7 +722,7 @@ everything lives.
 
   **This removes one of the reasons the door has to answer a party with no
   identity at all.** That page had none — a browser arriving there has not
-  enrolled yet — so it was a standing argument for the census being open to
+  enrolled yet — so it was a standing argument for the roll being open to
   anybody. Nothing in a browser reads the route now, which narrows the
   question at 2a to bootstrap alone.
 
@@ -754,7 +754,7 @@ everything lives.
   genuinely wanted a *list*, so it was the one that would have had paging
   designed for it. It wanted a list for a panel whose own note admitted the
   rows were unusable — *"Not reachable: posting needs forwarding, which is
-  not built"* — at a cost of one whole census per partner, per visit. Worth
+  not built"* — at a cost of one whole roll per partner, per visit. Worth
   remembering the next time a caller looks like it needs a bigger answer.
 
   **Look for the dead ones before designing a narrower question for them.**
@@ -771,7 +771,7 @@ Kept rather than edited away, because a conclusion whose reasoning is
 invisible gets undone by the next reader.
 
 - **`GET /api/relay/key` was proposed and killed.** A small fixed-cost door
-  answering `{ relayPublicKey, relayLabel }`, to replace the census fetch in
+  answering `{ relayPublicKey, relayLabel }`, to replace the roll fetch in
   `answerRelay.relayKey`. Andy: *"they're not necessary"* — and they are
   not, because the introduction (2a, 2b) already carries the key. **A door
   that was one message from being built.**
@@ -803,9 +803,9 @@ invisible gets undone by the next reader.
 
 ---
 
-## 10. Eradicating the census — the plan
+## 10. Eradicating the roll — the plan
 
-> **Andy:** *"the census mechanism is a cheat."* — *"when a cheat is
+> **Andy:** *"the roll mechanism is a cheat."* — *"when a cheat is
 > identified, it must be eradicated."* — *"and eradication of a cheat
 > requires a plan. always."*
 
@@ -857,7 +857,7 @@ scans the whole list for six facts, and five are already available:
 
 ### `claimed` is the one that is not solved
 
-**The census is the only thing that tells a node it holds a row anywhere.**
+**The roll is the only thing that tells a node it holds a row anywhere.**
 `presenceNode.start` calls `probe` to decide which relays to dial
 ([presenceNode.js:309-313](../../spirit/run/js/presenceNode.js#L309-L313)),
 so the stream cannot answer it — the stream depends on the answer. And
@@ -872,7 +872,7 @@ Two ways out, neither yet chosen:
 **Dial everything.** `presenceNode` opens a stream to every *configured*
 relay rather than only claimed ones, and the stream becomes the test: it
 opens, or the relay refuses `no such identity`. No circularity, no new
-store, cheaper than a census per relay, and it takes `probe` out of presence
+store, cheaper than a roll per relay, and it takes `probe` out of presence
 startup altogether.
 
 The catch is real: `sseClient` treats any non-OK as retry-with-backoff
@@ -895,9 +895,9 @@ the stream carries after the narrowing is read there.
 
 ### Intrinsic UI
 
-Nothing fetches; all of it reads `badge.census.*` and moves when the node
+Nothing fetches; all of it reads `badge.roll.*` and moves when the node
 changes shape. `natter` (badges), `info` and `contactsDetails`
-(`census.relayKey`) all point at `/api/relay/key`. `natterDetails`'
+(`roll.relayKey`) all point at `/api/relay/key`. `natterDetails`'
 partner picker loses its rosters and is **owed nothing** — its own comment
 says *"the fields remain the real path and this is only a shortcut."*
 
@@ -942,7 +942,7 @@ where they were lost rather than quietly dropped:
 | `presenceShow`'s remove-by-label | asks for a key now; a label was never the right handle |
 
 **And one thing got better rather than merely cheaper.** A stranger who
-writes to you arrives unnamed. The census sweep used to caption them — a
+writes to you arrives unnamed. The roll sweep used to caption them — a
 name taken from a survey nobody gave you — and `peer.list` was handshaking
 every member of the relay into that node's own book on every Contacts
 refresh.
@@ -956,7 +956,7 @@ and it would have left the door open for the length of the whole programme.
 **Step 2 builds nothing**, and an earlier draft of this paragraph proposed
 that it should — `about([keys])` as a new signed verb.
 
-> **Andy:** *"callers of the census have two choices: use other interfaces
+> **Andy:** *"callers of the roll have two choices: use other interfaces
 > or die."*
 
 No caller is accommodated. `peer.acquire` confirms that a key really is on
@@ -970,7 +970,7 @@ ways out and none is a door:
 2. **For a paste, reaching them beats listing them.** `peerPost` already
    answers it: [0006](../decisions/0006-fast-and-true-not-guaranteed.md) has
    the relay deliver or refuse instantly, so a post to a key nobody holds
-   comes back refused at once. A stronger check than the census — *reachable*
+   comes back refused at once. A stronger check than the roll — *reachable*
    rather than *enrolled* — on an interface that exists.
 3. **Or the check dies.** What it buys is preventing a row for somebody who
    is not there. A contacts row is this node's own perception, in a local
@@ -993,12 +993,12 @@ is built and the route goes in the same commit.
 ### Verification
 
 `node spirit/test/runAll.js` throughout, plus the source-level assertion in
-`censusNarrow.js` that nothing in `run/` reaches `/api/relay/who` — the check
+`rollNarrow.js` that nothing in `run/` reaches `/api/relay/who` — the check
 that has caught every relapse so far.
 
 ### Two wrong drafts, kept
 
-**Draft one listed each fact the census served and hunted a replacement.**
+**Draft one listed each fact the roll served and hunted a replacement.**
 Andy: *"bottom-up means the relay looks after itself first and will serve
 **necessary** facts. Not every fact."* That is migration, not eradication:
 every dependent gets what it had by a different road and the cost is

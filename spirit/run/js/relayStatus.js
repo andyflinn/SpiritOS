@@ -87,7 +87,7 @@ function report(opts) {
     // In flight right now: posts registered and not yet answered. The
     // number that says whether this relay is BUSY, as opposed to merely
     // populated — and the first figure here that could not be had from
-    // the census.
+    // the roll.
     routes: typeof o.routes === 'number' ? o.routes : 0,
 
     // ── WHAT IT MOVED, NOT ONLY WHAT IT HOLDS ────────────────────────
@@ -163,7 +163,7 @@ function report(opts) {
     messages: typeof snap.messages === 'number' ? snap.messages : 0,
 
     // THE ONE THING THE CONSOLE COULD TELL AN OWNER THAT NOTHING ELSE
-    // CAN. Live tokens are not in the census and not on any public
+    // CAN. Live tokens are not in the roll and not on any public
     // route; without this, deleting the console would remove a
     // capability rather than relocate one.
     //
@@ -171,7 +171,7 @@ function report(opts) {
     // — it is what somebody claims a row with — and a monitor is a view,
     // not a place to keep secrets where a screenshot can find them.
     // WHO THIS RELAY PARTNERS WITH, and it is here rather than in the
-    // census on purpose: a partnership is a public statement of
+    // roll on purpose: a partnership is a public statement of
     // association between two relays, and nothing needs a stranger to
     // read one yet. The report reaches the owner alone.
     //

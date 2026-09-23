@@ -144,7 +144,7 @@ async function removeFromLab(label) {
   if (!me || !me.privateKey) return 'your node has no identity, so nothing can be signed';
 
   // NAMED BY KEY, not by label. This looked the label up in the relay's
-  // census; there is no such door, and the owner's view of its own roster
+  // roll; there is no such door, and the owner's view of its own roster
   // is the relay's report to its owner (relay.statusToOwner), which does
   // not carry one yet — design/relay/SURFACE.md §10, the improvement tier.
   //

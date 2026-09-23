@@ -28,7 +28,7 @@ This directory contains the vision, principles, and architecture decisions for *
 - [The requester is responsible for the question](principles/THE-REQUESTER-IS-RESPONSIBLE.md)
   — *"the more specific my question, the more precise the answer."* A vague
   question earns a bounded answer or none, never everything. The reason
-  behind 0012 and the census eradication, and what decides presence
+  behind 0012 and the roll eradication, and what decides presence
   scoping.
 - [A limited resource is released before it is claimed](principles/LIMITED-RESOURCES.md)
   — *"it's like member slots, you must evict before adding new ones."* A full
@@ -97,7 +97,7 @@ This directory contains the vision, principles, and architecture decisions for *
 - [2026-09-15 — labels are not identities](cycles/2026-09-15-labels-are-not-identities.md)
   — **CLOSED.** 3 requirements, all done. Peer-by-key settled that identity is a
   key and stopped halfway. The relay owner chose every peer's public name,
-  permanently, and the census published it — so an invite labelled with a phone
+  permanently, and the roll published it — so an invite labelled with a phone
   number published that number; now the invite label proves and the claimer
   names themselves. Claims, mints, revokes and removals reach the owner's log,
   to the owner's sink alone and bounded by the rate gate — the relay's only
@@ -175,7 +175,7 @@ This directory contains the vision, principles, and architecture decisions for *
   untouched. Carries the register of all 24, sorted into protocol, bootstrap,
   dying and cheats. **Amended 2026-09-18**: naming a cheat is not a resting
   state — identify, **plan**, eradicate, and the plan is written before any of
-  it is built. One cheat stands named: the census.
+  it is built. One cheat stands named: the roll.
   `spirit/test/protocolSurface.js` goes red if the tree holds a door the register
   does not, or the register names one the tree has lost.
 
@@ -197,7 +197,7 @@ This directory contains the vision, principles, and architecture decisions for *
   a partner's members"* structural instead of a policy somebody has to remember.
   **Widened 2026-09-18**: nobody is *served* one either — not a stranger, not a
   member, not the owner, not by request and not by broadcast. Which names the
-  census a cheat, condemns `streamRoster`'s member list with it, and settles
+  roll a cheat, condemns `streamRoster`'s member list with it, and settles
   that owning the box does not make an enrolment list necessary.
   The line that matters: a relay's memory stops being a function of decisions
   other people make. Cost is latency on a cold post, in the fallback mode the
@@ -230,7 +230,7 @@ This directory contains the vision, principles, and architecture decisions for *
   — the Governor is the result of programming, so the loop is observe →
   record → analyse → reprogram and the owner's hand enters it between
   cycles, not at runtime. A lever declares `settable` (every lever in the
-  tree ships `false`, guarded by a census the way `oneDoor.js` guards
+  tree ships `false`, guarded by a roll the way `oneDoor.js` guards
   reaches) and `worseAt`, because a green-to-red meter asserts a direction
   of badness an app that names no lever cannot know. Cycle 4.1's owner
   verb is kept dormant rather than deleted: a proven seam, not a

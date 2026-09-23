@@ -63,7 +63,7 @@ function ping(box, from, to, text) {
 // to its socket, and its `writableLength` is the socket's plus whatever
 // it holds itself (Node's OutgoingMessage). The claim under test is the
 // socket's — that it keeps accepting what nobody reads — and this suite
-// stays out of the oneDoor census, which counts HTTP reaches and would
+// stays out of the oneDoor roll, which counts HTTP reaches and would
 // need a line granted for a fixture that asks nothing of anybody.
 function streamServer() {
   const state = { sink: null, written: 0, cutAt: null };

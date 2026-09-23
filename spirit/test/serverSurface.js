@@ -71,7 +71,7 @@ function freePort() {
 // the way a fetch() would.
 // `as`, when given, sends a RAW body with the caller's own headers — the
 // shape a browser on another site would send (case 5). One reach for both,
-// so oneDoor's census for this file does not grow.
+// so oneDoor's roll for this file does not grow.
 function request(port, method, rawPath, bodyObj, as) {
   return new Promise(function (resolve, reject) {
     const payload = as ? String(as.raw == null ? '' : as.raw) : (bodyObj == null ? '' : JSON.stringify(bodyObj));
@@ -650,7 +650,7 @@ freePort()
       // either way.
       ['POST', '/api/spirit', { verb: 'relay.claim', url: 'https://not-on-the-list.example', name: 'x' }],
       ['POST', '/api/spirit', { verb: 'relay.status', name: 'x' }],
-      // Reads a census from a url this node is not on. 127.0.0.1:1 for the
+      // Reads a roll from a url this node is not on. 127.0.0.1:1 for the
       // reason partnerCheck below uses it: refused by the kernel, no DNS,
       // and the handler must ANSWER rather than throw.
       // ── THIS ONE REACHES THE NETWORK, AND SAID IT DID NOT ───────────

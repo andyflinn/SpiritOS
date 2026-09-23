@@ -91,7 +91,7 @@ function pinned(rootDir, url) {
 //   memberships registered in a way that allows rapid re-connect? Like
 //   the relay, the node must record the enrolment details."
 //
-// It did not, and the cost was the last census read in the tree.
+// It did not, and the cost was the last roll read in the tree.
 //
 // A node knew everything at claim time — the url, the relay's key, the
 // label it asked for, and a 201 saying it worked — and wrote none of it
@@ -122,7 +122,7 @@ function seat(rootDir, url, label, atMs) {
 }
 
 // Where this node holds a seat — the question `probe` used to answer by
-// reading a census.
+// reading a roll.
 //
 // ── A PIN COUNTS AS A SEAT, FOR NODES THAT PREDATE THIS ──────────────
 //
@@ -132,7 +132,7 @@ function seat(rootDir, url, label, atMs) {
 // pinned set IS the membership set — written at the wrong moment, for a
 // different reason, but sound.
 //
-// That is the migration: an existing node needs no census read to learn
+// That is the migration: an existing node needs no roll read to learn
 // what it already has on disk, and a node claiming from here on records
 // the seat properly at the moment it is granted.
 function seatedUrls(rootDir) {

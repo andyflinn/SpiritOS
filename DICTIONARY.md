@@ -48,7 +48,7 @@ Format: **term** — aliases — meaning.
 
 **Natter** — relays.json, relay list — The list of public relays this personal node uses (`app/natter/relays.json`). First URL is what hub calls today. A row carries an **owner badge** when this node’s local public key matches the owner on that relay. Natter is an **intrinsic shell app**: it lives in the **Spirit group**, has no location control, and the App Builder cannot overwrite its script or manifest — a node with no relay list can reach nobody at all. Keeps its last public row (`canRemoveRelay`).
 
-**Owner badge** — owned row — The Natter mark meaning *this node’s key is `owner` on that relay*. Zero, one, or several rows may carry it. It is what unlocks create-invitation in Relay Chat. Decided (Andy): the badge is a **signed status 200** on that Natter URL — no extra endpoint unless one proves necessary. The same probe answers *"is this label still mine?"* off the public census (`claimedLabel`), which is where Natter's binding check went when R8 deleted the signed inbox read it used.
+**Owner badge** — owned row — The Natter mark meaning *this node’s key is `owner` on that relay*. Zero, one, or several rows may carry it. It is what unlocks create-invitation in Relay Chat. Decided (Andy): the badge is a **signed status 200** on that Natter URL — no extra endpoint unless one proves necessary. The same probe answers *"is this label still mine?"* off the public roll (`claimedLabel`), which is where Natter's binding check went when R8 deleted the signed inbox read it used.
 
 **Hub** — hub.js — Personal-node code that signs and forwards claim, post and invite to a relay over HTTPS (or loopback HTTP for a lab relay). It forwarded `send` and `inbox` until R8 (2026-09-15).
 
@@ -66,7 +66,7 @@ Format: **term** — aliases — meaning.
 
 **Public key** — pubkey — The half that may go to a relay on claim.
 
-**Public label** — claim name, caption on the wire today — The string peers see in a relay's census (`andy`, `john`). May collide after peer-by-key. **Stored once per membership, set once for all of them:** the ledger holds one label per key per relay and two relays may legally disagree, but a person has one name, so **Info** keeps it and posts it to every relay this key holds a seat on. A relay that was down or that refuses (a live invite holding the name) stays out of step, and Info's table is where that shows. *Natter Details used to set it one relay at a time; that panel is gone — Andy: "i have no idea which 'relay' contains which 'label' of mine."*
+**Public label** — claim name, caption on the wire today — The string peers see in a relay's roll (`andy`, `john`). May collide after peer-by-key. **Stored once per membership, set once for all of them:** the ledger holds one label per key per relay and two relays may legally disagree, but a person has one name, so **Info** keeps it and posts it to every relay this key holds a seat on. A relay that was down or that refuses (a live invite holding the name) stays out of step, and Info's table is where that shows. *Natter Details used to set it one relay at a time; that panel is gone — Andy: "i have no idea which 'relay' contains which 'label' of mine."*
 
 **My label** — private caption, perception — What *you* call that key in whoBook (`lovelyJohn`). Never on the wire.
 
@@ -76,13 +76,15 @@ Format: **term** — aliases — meaning.
 
 **Partner** — the other end, for a relay — *Relays have partners.* Another **relay**, promoted by an owner and pinned by its relay key (`partners.json`). Never a person: a relay's counterpart is a box like itself, which is why partnership survives banning the human who owns it.
 
-**Member** — an enrolled row — Who claimed a name on a relay. A relay *has* members; it does not have peers. Note `routingTable.json` still calls this map `peers`, and the public census still answers `{ "peers": [...] }` — naming them from the node's vantage rather than the relay's, and the one place the tree contradicts the line above.
+**Member** — an enrolled row — Who claimed a name on a relay. A relay *has* members; it does not have peers. Note `routingTable.json` still calls this map `peers`, and the public roll still answers `{ "peers": [...] }` — naming them from the node's vantage rather than the relay's, and the one place the tree contradicts the line above.
 
-**Owner** — first claim, allow.json keys[0] — The key that first-claimed (or pending-owner redeemed). Mints invites. Reads `/api/relay/status`. Gets the chat-to-relay census.
+**Roll** — member roll, `GET /api/relay/who` — The list a relay keeps of the members enrolled on it. **It was `census` until 2026-09-23** — Andy: *"i hate the word census now, but for the relay it's true... the relay can't falsify the record in the member roll (not census)?"*, then *"we loose census from the dictionary."* A census is something a counter performs on a population; a roll is a list a body keeps of its own members and is answerable for — and cycle 10 makes it answerable in writing, since a roll entry now carries the cipher key everything sent to that member is sealed to. Renamed inside cycle 10's flag day. `acquiredVia: "roll"` is also the **lowest contact rank** — seen on a roll is not knowing somebody — and rows on disc still reading `"census"` fall through to it (`contacts.js`, `acquiredVia`). A file's count ledger is a **tally**, never a roll (`oneDoor.js`, `cycleCitations.js`).
+
+**Owner** — first claim, allow.json keys[0] — The key that first-claimed (or pending-owner redeemed). Mints invites. Reads `/api/relay/status`. Gets the chat-to-relay roll.
 
 **Pending owner** — pending-owner.json — Installer-set name that must win first claim. Cleared after that claim.
 
-**Reserved name** — `relay` — Cannot be claimed. Send-to-`relay` is accepted; census reply is owner-only.
+**Reserved name** — `relay` — Cannot be claimed. Send-to-`relay` is accepted; roll reply is owner-only.
 
 ## Allow and invites
 
@@ -118,7 +120,7 @@ Format: **term** — aliases — meaning.
 
 **Bones** — ugly implementation — Behaviour without chrome.
 
-**Gates** — inbox sig, send clientKey, bucket sweep, owner census — Must survive bones commits.
+**Gates** — inbox sig, send clientKey, bucket sweep, owner roll — Must survive bones commits.
 
 **clientKey** — socket key — Rate-limit identity. Behind Caddy this is often `127.0.0.1` for everyone. Not `X-Forwarded-For` until we say so.
 

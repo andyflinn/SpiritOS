@@ -161,7 +161,7 @@ async function answering(url) {
 //
 // `owner` lets a caller supply an existing identity to own the lab relay
 // instead of one being made here — which is what lets Andy's own node own
-// it, so the owner-only surfaces (invites, the device panel, the census)
+// it, so the owner-only surfaces (invites, the device panel, the roll)
 // are the ones he actually sees. His identity is READ, never written: the
 // key that owns spirit.andyflinn.com lives in that file and regenerating
 // it would cost him the relay he already has.
@@ -304,7 +304,7 @@ function createWorld(opts) {
       // node's: the box gets a row and the node is never told.
       //
       // That was invisible while a node re-derived its memberships from
-      // each relay's census on every boot. It records them itself now —
+      // each relay's roll on every boot. It records them itself now —
       // Andy: "persist necessary information at claim time, re-use that
       // information on boot" — so a claim made AROUND a node leaves it
       // correctly not knowing, and a world-builder has to write the
@@ -357,7 +357,7 @@ function createWorld(opts) {
   // bottom is where cheats go: nothing here reaches past the protocol.
   // It speaks the protocol by hand because there is no node to speak it.
   async function askOn(relayUrl, ownerId, body) {
-    // The census already carries it — no second endpoint, which is the
+    // The roll already carries it — no second endpoint, which is the
     // same reason answerRelay.relayKey reads it there on a real node.
     let relayKey = '';
     try {

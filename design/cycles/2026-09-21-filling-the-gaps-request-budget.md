@@ -100,7 +100,7 @@ cancelled — hints carry keys, never URLs.
 | <sub>R41</sub> | <sub>*what R35–R39 left on screen*</sub> | <sub>*deferred — UI session*</sub> | <sub>**yes**</sub> | |
 | <sub>R42</sub> | <sub>*a partner's availability, broadcast when it changes; a request from a partner revives it*</sub> | <sub>*done — built in cycle 8, after R13*</sub> | <sub>—</sub> | |
 | <sub>R21</sub> | <sub>*labMaster blocks on netstat; Windows RSTs a full backlog*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
-| <sub>R22</sub> | <sub>*censusNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
+| <sub>R22</sub> | <sub>*rollNarrow reads a file another suite deletes*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R23</sub> | <sub>*a sibling is a route too, and both ends are told*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R24</sub> | <sub>*a search answer is kept until somebody acts on it*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
 | <sub>R25</sub> | <sub>*a route is learned at every opportunity; policy does not gate it*</sub> | <sub>*done*</sub> | <sub>—</sub> | |
@@ -1812,10 +1812,10 @@ is named and measured rather than inferred.
 
 **Status:** DONE
 
-### R22 — censusNarrow reads a file another suite deletes
+### R22 — rollNarrow reads a file another suite deletes
 
 Found in the WSL checkout, 2026-09-21, once in three runs.
-`censusNarrow.js` walks `spirit/run` and then reads every file it found.
+`rollNarrow.js` walks `spirit/run` and then reads every file it found.
 `buildStamp.js` writes `spirit/run/zz-copy-probe.js`, checks it is named
 as uncopied, and unlinks it in a `finally` (`buildStamp.js:118-130`). Land
 the walk before that write and the read after that unlink, and the read
@@ -1835,7 +1835,7 @@ deleted files, `plantRun.js` copies a listing that can go stale mid-copy,
 and now this. **Anything that walks and then reads must tolerate the walk
 being out of date.**
 
-**Verify:** `spirit/test/censusNarrow.js` — the read tolerates ENOENT, so
+**Verify:** `spirit/test/rollNarrow.js` — the read tolerates ENOENT, so
 the suite survives a file appearing and vanishing beneath it.
 
 **Status:** DONE

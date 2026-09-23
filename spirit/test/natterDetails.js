@@ -210,7 +210,7 @@ function mountApp(opts) {
         relayStatus: opts.relayStatus || {},
       });
     } else if (verb === 'relay.partnerCheck') {
-      // Read-only eligibility. The fixture answers what a public census
+      // Read-only eligibility. The fixture answers what a public roll
       // would have proved, so a test can drive both outcomes without a
       // second relay.
       text = JSON.stringify(opts.partnerCheck || { ok: false, error: 'no fixture' });
@@ -545,7 +545,7 @@ function claimIsOfferedOnlyWhereThereIsNoSeat() {
   });
   const mine = mountApp({
     rows: [{ url: OWNED, label: 'spirit', status: 200, claimed: true, claimedLabel: 'andy',
-      census: { owner: 'zoe', peers: 3, myLabel: 'andy', relayKey: 'RELAYKEY' } }],
+      roll: { owner: 'zoe', peers: 3, myLabel: 'andy', relayKey: 'RELAYKEY' } }],
   });
 
   return settle().then(function () {
@@ -1018,17 +1018,17 @@ function theOwnerGroupFolds() {
 //   Andy: "via owner input, both can establish that fact."
 //
 // The owner types WHERE, because a key is not an address and nothing on
-// this wire maps one to the other. The census supplies the proof.
+// this wire maps one to the other. The roll supplies the proof.
 //
 // TWO STEPS, AND THE FIRST GRANTS NOTHING. `relay.partnerCheck` is
-// read-only — it fetches a public census and compares a key. Only a yes
+// read-only — it fetches a public roll and compares a key. Only a yes
 // leads to the owner verb, so there is exactly one path that writes a
 // peer row and the check is not on it.
 function thePartnerPanelChecksBeforeItAdds() {
-  test.subHeading('A partnership is checked against a public census before it is made');
+  test.subHeading('A partnership is checked against a public roll before it is made');
 
   const app = mountApp({
-    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true, census: { relayKey: 'RELAYKEY' } }],
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true, roll: { relayKey: 'RELAYKEY' } }],
     relayStatus: { [OWNED]: { key: 'RELAYKEY', partners: [] } },
     partnerCheck: {
       ok: true, url: 'https://lab.example',
@@ -1065,7 +1065,7 @@ function thePartnerPanelChecksBeforeItAdds() {
       }
 
       // AND THEN THE OWNER VERB, carrying THEIR relay's key — pinned from
-      // the same census that proved the ownership, so a later forward hop
+      // the same roll that proved the ownership, so a later forward hop
       // can verify them signing as themselves.
       const posts = app.log.filter(function (c) { return c.url.indexOf('/api/hub/post') === 0; });
       const sent = posts.length ? JSON.parse(posts[posts.length - 1].body) : null;
@@ -1081,14 +1081,14 @@ function thePartnerPanelChecksBeforeItAdds() {
 }
 
 // A REFUSAL STOPS AT THE CHECK. Nothing is posted, nothing is promoted,
-// and the reason is the one the census gave — "that relay is owned by
+// and the reason is the one the roll gave — "that relay is owned by
 // somebody else" is a different problem from "that relay is down", and
 // the screen must not flatten them.
 function aRefusedCheckPromotesNobody() {
   test.subHeading('And a relay somebody else owns is refused before anything is posted');
 
   const app = mountApp({
-    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true, census: { relayKey: 'RELAYKEY' } }],
+    rows: [{ url: OWNED, label: 'spirit', status: 200, owned: true, roll: { relayKey: 'RELAYKEY' } }],
     relayStatus: { [OWNED]: { key: 'RELAYKEY', partners: [] } },
     partnerCheck: { ok: false, error: 'that relay is owned by somebody else (carol)' },
   });
@@ -1479,7 +1479,7 @@ function someoneElsesMailbox() {
     url: THEIRS,
     rows: [{
       url: THEIRS, label: 'theirs', owned: false, claimed: true,
-      census: { owner: 'carol', peers: 4, myLabel: 'bert' },
+      roll: { owner: 'carol', peers: 4, myLabel: 'bert' },
     }],
   });
 
@@ -1495,7 +1495,7 @@ function someoneElsesMailbox() {
       test.fail('mint offered on a mailbox we do not own: ' + panel);
     }
 
-    // Three facts from the PUBLIC census, not the owner-only report.
+    // Three facts from the PUBLIC roll, not the owner-only report.
     // This used to print the 403 — "not the owner" — which is the app
     // telling somebody off for the ordinary case of being a member.
     if (panel.indexOf('carol') !== -1 && panel.indexOf('bert') !== -1 &&
@@ -1742,7 +1742,7 @@ function openingAnotherMailboxLetsGoOfTheLast() {
   const app = mountApp({
     rows: [
       { url: OWNED, label: 'spirit', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } },
-      { url: THEIRS, label: 'theirs', owned: false, claimed: true, census: { owner: 'carol', peers: 4, myLabel: 'bert' } },
+      { url: THEIRS, label: 'theirs', owned: false, claimed: true, roll: { owner: 'carol', peers: 4, myLabel: 'bert' } },
     ],
   });
 
@@ -2080,7 +2080,7 @@ function noRemovalSurfaceForNow() {
     canRemove: true,
     rows: [
       { url: OWNED, label: 'spirit', owned: true, report: { owner: 'andy', mode: 'keys', peers: [], messages: 0 } },
-      { url: THEIRS, label: 'theirs', owned: false, claimed: true, census: { owner: 'carol', peers: 4, myLabel: 'bert' } },
+      { url: THEIRS, label: 'theirs', owned: false, claimed: true, roll: { owner: 'carol', peers: 4, myLabel: 'bert' } },
     ],
   });
 

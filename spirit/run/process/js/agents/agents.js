@@ -219,7 +219,7 @@ function obeyControl(cfg, fromKey, env, atIso) {
 
 // ── THE ONE DOOR ────────────────────────────────────────────────────────
 // THE ONE REACH, written so test/oneDoor.js SEES it. `(fetchFn || fetch)(…)`
-// would do the same and slip past the census's pattern — which would be
+// would do the same and slip past the roll's pattern — which would be
 // working around the exception instead of taking it. A suite passes its
 // own function; everything else goes through this line.
 function nodeFetch(cfg, pathname, init, fetchFn) {

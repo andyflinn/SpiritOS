@@ -60,7 +60,7 @@ and it is instructive rather than an exception. The thing asking is a
 browser enrolling the identity it does not yet have. There is nothing for
 it to sign with, so the relay signs — and the receiving node verifies
 that signature against the `mailboxPublicKey` **of the relay the request
-arrived on**, fetched from that relay's own census.
+arrived on**, fetched from that relay's own roll.
 
 That check is load-bearing. Without it any peer could post a device offer
 and drive somebody's enrolment. With it, a peer posting an identical

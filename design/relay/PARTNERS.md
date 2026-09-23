@@ -9,8 +9,8 @@ tree below was checked at `02f4bd1`.
 > and may reject it, both owners must sign, and the relays manage the
 > partnership from there. The model described below — a partner flag on a
 > member's peer row, promoted by an owner verb, verified against the far
-> relay's public census — is **rejected and deprecated**, and goes once the
-> new design is proven. The census it verifies against was deleted on
+> relay's public roll — is **rejected and deprecated**, and goes once the
+> new design is proven. The roll it verifies against was deleted on
 > 2026-09-18. Also superseded: *"either side may drop the other"* is now
 > silent — the far side learns by a failed handshake. The one-hop rule and
 > the vouching argument below still stand.
@@ -319,7 +319,7 @@ are five orders of magnitude apart and should be shed separately:
 | state | holds | routes to that partner |
 |---|---|---|
 | healthy | flag + hint list | immediately, from memory |
-| under pressure | **flag only** | on demand — ask the partner's public census when a packet actually needs it |
+| under pressure | **flag only** | on demand — ask the partner's public roll when a packet actually needs it |
 | cancelled | nothing | refuses, as before the partnership |
 
 So **memory pressure degrades performance, not connectivity.** A relay that
@@ -425,7 +425,7 @@ not "too many relays" by count, which would be the wrong measure for the
 same reason partner-count was.
 
 **It needs no new wire either.** `ownerBadge.probe` already fetches every
-configured relay's census on every probe; the unions and the subtraction
+configured relay's roll on every probe; the unions and the subtraction
 are arithmetic on data already in hand.
 
 **And the rule already exists in embryo.** `canRemoveRelay` refuses to
@@ -470,7 +470,7 @@ member of another) but a packet cannot cross.
 | fact | where |
 |---|---|
 | `GET /api/relay/who` is **public and unsigned** — 0010 calls it "what a node reads *before* it has anything" | `decisions/0010` |
-| every census row carries `publicKey` and `owner` | `relay.who()` |
+| every roll row carries `publicKey` and `owner` | `relay.who()` |
 | so **"this peer owns a relay over there" is checkable against public data**, by key, with no new wire | — |
 | a peer row already carries a boolean status (`owner: true`) — `partner: true` is the same shape in the same store | `relay.js` |
 | relays already have keys of their own, and nodes already pin them | `relayKeys.json`, `ownerBadge` |
@@ -509,7 +509,7 @@ This is the real threshold in the proposal — bigger than the flag.
 > route table below nearly shipped keyed by the wrong noun.
 >
 > The one place the tree still disagrees: `routingTable.json` names its
-> enrolment map `peers`, and the public census answers `{"peers": [...]}`.
+> enrolment map `peers`, and the public roll answers `{"peers": [...]}`.
 > Those are **members**. Recorded rather than renamed — it is on the wire
 > and in a persisted shape — but nothing *new* may take the word.
 
@@ -527,7 +527,7 @@ This is the real threshold in the proposal — bigger than the flag.
    the new store costs.
 
 2. **Reciprocity is the test, and it is tested once.** At promotion, the
-   far relay's public census must show that key marked owner — both sides
+   far relay's public roll must show that key marked owner — both sides
    establish it through owner input, and neither takes the other's word.
    Afterwards the partnership stands on the **pinned relay key**, which is
    what the forward path has always authenticated against.
@@ -546,7 +546,7 @@ This is the real threshold in the proposal — bigger than the flag.
    have let any non-owner peer partner this box with itself by naming its
    own url.
 
-   Nothing in (4) weakens. With one owner the census proves *"one key
+   Nothing in (4) weakens. With one owner the roll proves *"one key
    owns both"*, which is true, public and checkable by key; and no third
    party's consent is bypassed, because partnering only creates routes
    between the two relays' own members and the other relay's owner must
@@ -577,7 +577,7 @@ This is the real threshold in the proposal — bigger than the flag.
 ## Recommended (Claude), not yet decided
 
 8. **The node fetches; the relay stores the conclusion.** The owner's node
-   already fetches censuses per relay (`ownerBadge.probe`). Let it do the
+   already fetches rolls per relay (`ownerBadge.probe`). Let it do the
    reciprocity check and post the result. The relay keeps `partner: true`
    and never learns how to reach out.
 9. **One hop, full stop.** A forwarded post is never forwarded again. With
@@ -608,7 +608,7 @@ This is the real threshold in the proposal — bigger than the flag.
 - **What a partner may do, beyond carrying one hop.** Start with the
   cheapest useful allowance and add deliberately. "Partner exists" is worth
   having before "partner may".
-- **Is `partner: true` public in the census?** It is a public statement of
+- **Is `partner: true` public in the roll?** It is a public statement of
   association between two relays. Probably fine, possibly useful, not
   obviously either.
 - **How the hint list is obtained and refreshed.** On demand per question is
@@ -776,7 +776,7 @@ forwarded request's `requester` is **A**, so `routeReply` finds A's sink in
 
 `streamOpen` today needs a **member** row. A partner has none and must not be
 given one — that would mean invites minted for boxes and relays in the
-census pretending to be people. **The pinned partner key is the
+roll pretending to be people. **The pinned partner key is the
 authorization**: same route shape, same `streamSignatureOk`, one more
 identity source. Breaking the partnership closes the stream, because the
 key that authorized it is no longer pinned.
@@ -787,7 +787,7 @@ key that authorized it is no longer pinned.
 > exchanged, the relays use a protocol-post to get info?"
 
 **The handshake already happened.** Promotion verified reciprocity against
-the far public census and pinned that relay's key. The pin *is* the proof;
+the far public roll and pinned that relay's key. The pin *is* the proof;
 there is nothing further to exchange before two relays can talk.
 
 So a relay asking a partner anything is a **post signed with its own relay
@@ -799,17 +799,17 @@ A ─POST (signed as A) → B    "forward this"       the delivery leg
 A ─POST (signed as A) → B    "who is present?"    the same door
 ```
 
-**Which is why presence stays OFF the public census.** Partners get it
+**Which is why presence stays OFF the public roll.** Partners get it
 because they are authenticated; a stranger reading `/api/relay/who` still
 gets enrolment and nothing else. That also puts the filter where it can
 work: B is answering a known party, so B can decide what to send —
 present-only, capped, priced per partner. A public GET cannot, because it
 does not know who is asking.
 
-> **Withdrawn with it:** adding `present:` to census rows. It was the
+> **Withdrawn with it:** adding `present:` to roll rows. It was the
 > cheap way to let a partner filter, and it published per-person
 > attendance to the whole internet to solve a problem between two
-> authenticated boxes. The census stays enrolment, and stays stable.
+> authenticated boxes. The roll stays enrolment, and stays stable.
 
 ### Replies are matched. Events are not.
 
@@ -1076,12 +1076,12 @@ a peer acquired through a partner search the honest value is *my own*
 relay's URL, which is the wrong address the moment it matters.
 
 **What is already safe.** Relay-side this is handled: a relay that sheds a
-hint list asks the partner's census on demand, so *"memory pressure
+hint list asks the partner's roll on demand, so *"memory pressure
 degrades performance, not connectivity"*, and item 10 makes every hint
 non-authoritative. Nothing above changes.
 
 **What is not.** The node offers its relay nothing. On a cold post it says
-only *"deliver to key K"*, and the relay must hunt every partner census —
+only *"deliver to key K"*, and the relay must hunt every partner roll —
 bounded, but a hunt — and fails outright if that partnership has since
 ended or the peer moved. The node holds the one thing that would have
 helped and never wrote it down.
@@ -1721,7 +1721,7 @@ Worth keeping apart when this is implemented, because they fail
 differently:
 
 - **Reporting** — letting a partner's member *ask* this relay things
-  (`search`, `partners`, a card). Small blast radius; the census is
+  (`search`, `partners`, a card). Small blast radius; the roll is
   already public. Today the classes are: **owner** (the full pushed report
   — version, invites, connected count), **member** (`search`, `partners`,
   the latter narrowed to url + relay key), **partner** (`search` only),
@@ -1776,7 +1776,7 @@ Granting reporting without routing is coherent. The reverse is not.
 > > give better information prior to the acquisition-decision."*
 >
 > This is what makes the first ruling cheap rather than a sacrifice.
-> Acquisition reads the **public census** of the relay named on the row —
+> Acquisition reads the **public roll** of the relay named on the row —
 > proven live, both directions, 2026-09-17 — and never asks the peer
 > anything. So a description that is sometimes unavailable blocks nothing.
 > It is advice before a decision, not a precondition of it.
@@ -1900,7 +1900,7 @@ is *"have these two agreed?"* — about a **pair**.
 ### Mutual acquisition is consent, and consent is the authority
 
 The node already works this way and has since 2026-09-12. `whoBook` ranks
-an acquisition — `census 0 < hold 1 < message 2 < invite 3 < handle 4 <
+an acquisition — `roll 0 < hold 1 < message 2 < invite 3 < handle 4 <
 member 5` — and `ACQUIRED_LISTENING` (`['message','invite','handle',
 'member']`) is what decides **whether this node accepts somebody's mail at
 all**. A key you have not acquired is not heard from.
@@ -1947,7 +1947,7 @@ Candidates, none decided:
   relays compare notes over the partner stream they already hold. Costs a
   per-pair row on the relay, which is the thing `0006` and the memory
   model are most careful about — and a list of who you have added is far
-  more revealing than a census.
+  more revealing than a roll.
 - **One greeting is allowed**, rate-limited, and acceptance creates the
   pair. This is how the local front door already behaves: an unacquired
   sender's message is **held** (`hold`, rank 1) for a human to accept. It
@@ -1998,7 +1998,7 @@ three `john`s for ever.
 
 So the exception is structural rather than a relaxation: the one request
 that must cross before any relationship exists is the one that asks *"who
-are you?"*, and it is the one request that discloses nothing the census
+are you?"*, and it is the one request that discloses nothing the roll
 does not already publish.
 
 #### This refines the section above, it does not cancel it

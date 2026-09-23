@@ -27,7 +27,7 @@
 // spirit/run/relay-state/identity.json is the key that owns
 // spirit.andyflinn.com; generating a new one here would silently cost you
 // the relay you already have, and you would not find out until the next
-// time you asked it for a census. Every call below takes the key it
+// time you asked it for a roll. Every call below takes the key it
 // finds. Nothing calls saveIdentity on the work node, ever.
 // ──────────────────────────────────────────────────────────────────────
 //
@@ -144,7 +144,7 @@ async function post(url, body) {
 // router.post, which is what a peerPost IS.
 //
 // ADDRESSED BY KEY, so the relay's own key has to be fetched first. It
-// is public in the census, which is the same place a browser reads it.
+// is public in the roll, which is the same place a browser reads it.
 //
 // The answer comes back inside the envelope the relay replied in, and
 // the body is what a caller wants — the same shape api.peerPost hands a

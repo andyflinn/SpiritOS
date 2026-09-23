@@ -88,7 +88,7 @@ function claimMessage(name) {
 // signature on the query outright.
 //
 // ITS OWN VERB, and that was the point of it. The argument was that the
-// owner signed `status` constantly, for every census, so a captured
+// owner signed `status` constantly, for every roll, so a captured
 // signature was always lying around — and what a STREAM opens is a
 // standing grant rather than a single read, which makes it the better
 // prize. Same reason deviceGate gave `device-take` its own bytes.

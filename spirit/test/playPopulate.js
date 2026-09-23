@@ -4,7 +4,7 @@
 // A RELAY FULL OF PEOPLE WHO ARE NAMED LIKE PEOPLE.
 //
 //   Andy: "create a little loop that generates new public keys and then
-//   creates an invite for it, the key consumes it, and labels the census
+//   creates an invite for it, the key consumes it, and labels the roll
 //   entry with consecutive lines of a shakespeare play — create 200
 //   searchable entries on the fly."
 //

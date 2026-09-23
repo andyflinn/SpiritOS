@@ -134,7 +134,7 @@ Promise.resolve()
   })
   .then(function (r) {
     if (r.status === 200 && r.text.indexOf('mailbox') !== -1 && r.text.indexOf('/api/relay/who') === -1) {
-      test.check('GET / is brochure, no census script');
+      test.check('GET / is brochure, no roll script');
     } else {
       test.fail('GET / → ' + r.status + ' ' + r.text.slice(0, 160));
     }
@@ -143,7 +143,7 @@ Promise.resolve()
   .then(function (r) {
     // ── IT MUST 404 NOW (2026-09-18) ──────────────────────────────
     //
-    // This asserted `GET /api/relay/who` answers 200. The census was a
+    // This asserted `GET /api/relay/who` answers 200. The roll was a
     // public, unsigned, unbounded read of every member — named a cheat in
     // 0010 and deleted the next day — so the surface a relay presents is
     // exactly the claim being inverted here.
@@ -151,8 +151,8 @@ Promise.resolve()
     // Asserted rather than dropped, because "the caller is gone" and "the
     // door is shut" are different facts, and 0010's temptation argument
     // is about the second: a door that answers is an invitation.
-    if (r.status === 404) test.check('GET /api/relay/who is 404 — the census is gone');
-    else test.fail('the census still answers: ' + r.status);
+    if (r.status === 404) test.check('GET /api/relay/who is 404 — the roll is gone');
+    else test.fail('the roll still answers: ' + r.status);
     // Jobs folded into the one door on 2026-09-15; what a relay must
     // refuse is the door, and the check above already makes that claim.
     // This one keeps asking about the old path because a relay must 404

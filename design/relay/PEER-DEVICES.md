@@ -82,7 +82,7 @@ owner's own `inbox` stop resolving. Identity in a URL must therefore be the
 
 **3. A peer's sandbox is subordinate in existence, not in access.** The owner
 decides a peer exists (every peer arrived through a minted invite) and sees them
-in the census — but cannot read their mail or send as them. `inbox('bert')`
+in the roll — but cannot read their mail or send as them. `inbox('bert')`
 proves against bert's own row key. The rooms are **siblings; one holds the keys
 to the building and still cannot open the other door.**
 

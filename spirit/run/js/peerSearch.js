@@ -63,7 +63,7 @@ var PEER_SIGNALS = [
   // for, would come back here as a new signal with a new name.
 
   // HOW NEAR. `via` null means the caller's own members; anything else came
-  // from a partner. Acquiring needs a census this node can reach, and the
+  // from a partner. Acquiring needs a roll this node can reach, and the
   // nearer one is reachable without a partnership — the rule `harvest`
   // already follows in hub.js. Lightest of the signals: it is about cost,
   // not about whether the row is the right one.

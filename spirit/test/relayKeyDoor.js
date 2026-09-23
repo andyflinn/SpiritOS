@@ -10,17 +10,17 @@ const rollOf = require('./rollOf');
 // The two being the front door's "is this sender a relay?"
 // (hub.frontDoor) and search's "which key do I address this box as"
 // (hub.handleSearch). Both need a PIN, and the pin was derived from the
-// whole census — once per relay, per node boot, at 151 bytes a member.
+// whole roll — once per relay, per node boot, at 151 bytes a member.
 //
 // ── WHY A NEW DOOR RATHER THAN A NARROWER QUESTION ───────────────────
 //
 // `?key=` cannot help here. It filters the PEERS; the relay's own key is
 // on the envelope, so narrowing to a key nobody holds would still be
-// asking the census a question about its membership in order to read a
+// asking the roll a question about its membership in order to read a
 // field beside it. A caller that wants one fixed fact should ask for one
 // fixed fact.
 //
-// And it is what makes the census demotable. 0010 grants `who` a GET
+// And it is what makes the roll demotable. 0010 grants `who` a GET
 // exemption for exactly one reason — "it is where a node learns the
 // relay's KEY. You cannot post to an address you are still asking for" —
 // and while that is true of `who`, `who` can never require a signature,
@@ -32,7 +32,7 @@ const rollOf = require('./rollOf');
 // 0013: a relay is fixed-cost per time-unit. This answer has no
 // membership term in it at all, so it is the same size on a relay with
 // one member and on a relay with a million. That is the test, and the
-// census fails it.
+// roll fails it.
 
 const os = require('os');
 const fs = require('fs');
@@ -128,7 +128,7 @@ N.answerer.relayKey('https://relay.example').then(function (key) {
   }
 
   if (N.asked.length === 1 && N.asked[0] === '/api/relay/key') {
-    test.check('and it asked /api/relay/key — the census was not read at all');
+    test.check('and it asked /api/relay/key — the roll was not read at all');
   } else {
     test.fail('asked ' + JSON.stringify(N.asked));
   }
@@ -150,7 +150,7 @@ N.answerer.relayKey('https://relay.example').then(function (key) {
   // can echo the pinned key back, but an honest rebuild cannot.
   //
   // So the saving is the DOOR, not the skipping. What used to cost a
-  // whole census now costs two fields, and the behaviour is unchanged.
+  // whole roll now costs two fields, and the behaviour is unchanged.
 
   test.subHeading('And it still asks each boot — cheaply, not never');
 
@@ -165,7 +165,7 @@ N.answerer.relayKey('https://relay.example').then(function (key) {
     }
 
     if (again.asked.length === 1 && again.asked[0] === '/api/relay/key') {
-      test.check('and re-checks it against the small door, never the census');
+      test.check('and re-checks it against the small door, never the roll');
     } else {
       test.fail('asked ' + JSON.stringify(again.asked));
     }
@@ -175,11 +175,11 @@ N.answerer.relayKey('https://relay.example').then(function (key) {
     //   Andy: "why not: the suite asserts the order — small door first,
     //   or else fail."
     //
-    // A census fallback was written here and cut the same hour. Two
+    // A roll fallback was written here and cut the same hour. Two
     // reasons, and the second is the one that settles it: a fallback is a
     // path nobody exercises (four such were deleted the day before), and
     // **a fallback is a reader** — while anything reaches for `who`, the
-    // census has a caller that is not a list and cannot be demoted to a
+    // roll has a caller that is not a list and cannot be demoted to a
     // signed post. It would have preserved the thing this door removes.
     //
     // The cost is a deploy order: relay before node. A node updated first
@@ -232,26 +232,26 @@ N.answerer.relayKey('https://relay.example').then(function (key) {
         test.fail('it grew: ' + small + ' then ' + bigSmall);
       }
 
-      const census = JSON.stringify({
+      const roll = JSON.stringify({
         peers: rollOf(big.box),
         relayPublicKey: big.box.relayPublicKey(),
         relayLabel: big.box.relayLabel(),
       }).length;
 
-      if (census > bigSmall * 20) {
-        test.check('against ' + census + ' bytes for the census it replaces — ' +
-          Math.round(census / bigSmall) + 'x at 201 members, and the gap is the membership');
+      if (roll > bigSmall * 20) {
+        test.check('against ' + roll + ' bytes for the roll it replaces — ' +
+          Math.round(roll / bigSmall) + 'x at 201 members, and the gap is the membership');
       } else {
-        test.fail('census ' + census + ' vs door ' + bigSmall);
+        test.fail('roll ' + roll + ' vs door ' + bigSmall);
       }
 
-      // ── 5. IT REVEALS NOTHING THE CENSUS DID NOT ───────────────────
+      // ── 5. IT REVEALS NOTHING THE ROLL DID NOT ───────────────────
       //
       // A new public door has to be argued for on what it hands out, not
       // only on what it costs. This answers two fields that were already
       // on a route open to anyone, and no third thing.
 
-      test.subHeading('And says nothing the census did not already say');
+      test.subHeading('And says nothing the roll did not already say');
 
       const keys = Object.keys(JSON.parse(JSON.stringify({
         relayPublicKey: R.box.relayPublicKey(),

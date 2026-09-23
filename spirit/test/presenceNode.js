@@ -20,7 +20,7 @@ const relayKeys = require('../run/js/relayKeys');
 // ── A NODE KNOWS ITS OWN SEATS NOW (2026-09-18) ─────────────────────
 //
 // These fixtures used to say "I hold a row here" by having the fake
-// request return a CENSUS with this node's key in it — which is how
+// request return a ROLL with this node's key in it — which is how
 // ownerBadge.probe used to find out, by reading every member of every
 // relay and looking for itself.
 //
@@ -624,7 +624,7 @@ async function run() {
       test.fail('pinned ' + pinned.length + ' of ' + opened.length + ' streams');
     }
 
-    // AND IT SURVIVES A RELAY THAT WILL NOT SAY. A census that fails must
+    // AND IT SURVIVES A RELAY THAT WILL NOT SAY. A roll that fails must
     // not stop the stream: presence is what the stream is for, and an
     // unpinned relay simply does not get party standing.
     const deafHome = tmpHome();
@@ -640,12 +640,12 @@ async function run() {
       jobs: fakeJobs(),
       router: fakeRouter(),
       connectImpl: function (o) { deafOpened.push(o.url); return { close: function () {} }; },
-      pinRelay: function () { return Promise.reject(new Error('census down')); },
+      pinRelay: function () { return Promise.reject(new Error('roll down')); },
     });
     seatEveryRelay(deafHome, 'pinner2');
     await D.start(keyDoor);
     if (deafOpened.length) {
-      test.check('and a relay whose census will not answer still gets its stream opened');
+      test.check('and a relay whose roll will not answer still gets its stream opened');
     } else {
       test.fail('a failed pin stopped the stream');
     }
@@ -758,7 +758,7 @@ async function run() {
   });
 
   // Seats on both relays, so openTo accepts each and the streams are
-  // opened the way they are in production. This said "a census naming
+  // opened the way they are in production. This said "a roll naming
   // this node" until 2026-09-18 — the node reads its own record now.
   seatEveryRelay(home, 'me');
   await P.start(keyDoor);

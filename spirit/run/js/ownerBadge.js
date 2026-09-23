@@ -5,7 +5,7 @@
 //
 // That is the whole definition (DICTIONARY.md, "Owner badge"; CYCLE-A.md).
 // The mailbox already answers "is this key the owner here?" every time the
-// owner asks for a census, so the badge gets no endpoint of its own: a
+// owner asks for a roll, so the badge gets no endpoint of its own: a
 // second, cheaper "am I owner?" route would be a second authority on the
 // same fact, and the two would drift.
 //
@@ -198,7 +198,7 @@ function ensureRelays(rootDir) {
 //   knows its owner by key, and already filters requests by that, because
 //   the owner gets a wider peer-post-api than non-owning peers."
 //
-// He was right, and it was redundant three ways over. The census below
+// He was right, and it was redundant three ways over. The roll below
 // already says `owner: true|false` on every row, unsigned, to anyone —
 // and `claimedFrom` was already fetching and parsing that exact list to
 // answer a different question, with the flag open in a variable and
@@ -214,18 +214,18 @@ function ensureRelays(rootDir) {
 // no row on.
 //
 // Deleting it fixes that by removing it rather than by patching it, and
-// costs one fewer request per relay: the census answers `owned` and
+// costs one fewer request per relay: the roll answers `owned` and
 // `claimed` together.
 
 // readBadge STOOD HERE — *"200 alone is not the badge"* — parsing the
 // owner-only report to decide whether this key owned the box. It went
 // with the route it read (R3).
 //
-// ── FOUR CENSUS PARSERS STOOD HERE, DELETED 2026-09-19 ────────────────
+// ── FOUR ROLL PARSERS STOOD HERE, DELETED 2026-09-19 ────────────────
 //
 // ownedFrom ("is my key the one marked owner?"), claimedFrom,
-// claimedLabelFrom and censusFacts — each read a public census list
-// (`/api/relay/who` answering `peers`). The census went on 2026-09-18;
+// claimedLabelFrom and censusFacts — each read a public roll list
+// (`/api/relay/who` answering `peers`). The roll went on 2026-09-18;
 // `probe` below had already stopped fetching it, and only suites still
 // called these. Andy: "nothing is allowed to return a roster", and a row
 // never says who owns the relay — "ownership is only determined by one
@@ -252,7 +252,7 @@ function summarize(rows) {
   };
 }
 
-// ONE REQUEST PER RELAY, and it is the public census.
+// ONE REQUEST PER RELAY, and it is the public roll.
 //
 // It was two: a signed `GET /api/relay/status` to decide `owned`, and
 // then `GET /api/relay/who` for `claimed` on every relay the first one
@@ -273,7 +273,7 @@ function summarize(rows) {
 //
 // `myKey` is REQUIRED now rather than optional. It used to refine the
 // answer — `owned` came from the signed report, `claimed` needed a key —
-// and both come from the census by key, so a caller without one gets
+// and both come from the roll by key, so a caller without one gets
 // nothing and should.
 // ── IT ASKS WHO THE RELAY IS, AND READS ITS OWN SEAT ────────────────
 //
@@ -281,8 +281,8 @@ function summarize(rows) {
 //   when the bind occurs? … Like the relay, the node must record the
 //   enrolment details. Simple, no?"
 //
-// It fetched the WHOLE CENSUS of every configured relay, on a timer, and
-// looked for its own key in the list — the last census read in the tree,
+// It fetched the WHOLE ROLL of every configured relay, on a timer, and
+// looked for its own key in the list — the last roll read in the tree,
 // and the only one that was not a question about other people. It was
 // asking each relay to remember what this node did.
 //
@@ -291,7 +291,7 @@ function summarize(rows) {
 // Neither answer has a membership term in it.
 //
 // `owned` is now a COMPARISON rather than a search — is the key this box
-// names as its owner my key — which is the same fact the census row
+// names as its owner my key — which is the same fact the roll row
 // marked `owner` carried, arrived at without reading anybody else's row.
 function probe(rootDir, request, myKey) {
   var relays = loadRelays(rootDir);
@@ -333,13 +333,13 @@ function probe(rootDir, request, myKey) {
         // Kept only for a row this node is actually on. A relay it merely
         // lists tells it nothing, and a panel is not offered for one.
         //
-        // STILL CALLED `census` AND IT IS NO LONGER ONE. The name is the
+        // STILL CALLED `roll` AND IT IS NO LONGER ONE. The name is the
         // apps' and changing it is their commit, not this one
         // (SURFACE.md §10, step 2). What it carries is what the key door
         // answers; `roster`, `peers` and `myLabel` are gone, and every
         // reader of those already guards with `|| []`.
         if (badge.claimed) {
-          badge.census = {
+          badge.roll = {
             owner: (said && said.ownerLabel) || '',
             relayKey: (said && said.relayPublicKey) || '',
             relayLabel: (said && said.relayLabel) || '',

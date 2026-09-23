@@ -28,17 +28,17 @@
 //      is a live example: it drives B by calling B.box.routePost() rather
 //      than by reaching B the way anything real would.
 //
-// ── SO THERE IS ONE CENSUS AND NOTHING SITS OUTSIDE IT ───────────────
+// ── SO THERE IS ONE TALLY AND NOTHING SITS OUTSIDE IT ───────────────
 //
 // Every .js under run/js, run/js/client, run/app and test is counted. A
 // file's number may FALL freely and may never RISE. A file not in the
-// census must have zero. There is no category that means "unlimited",
+// tally must have zero. There is no category that means "unlimited",
 // because that category is what got used.
 //
 // The interface is `peerPost` — signing, the hash computed and never sent
 // and derived again on the answering side, dispatch by that hash — over
 // `relayRequest` for the outbound half and `sseClient` for the inbound.
-// Those two files are in the census like everything else; being the
+// Those two files are in the tally like everything else; being the
 // transport earns a number, not an exemption.
 //
 // WHY A TEST AND NOT A CONVENTION: `fetch` is a global in both runtimes.
@@ -59,7 +59,7 @@ const REACHES = [
   { what: 'XMLHttpRequest',    re: /\bnew\s+XMLHttpRequest\b/ },
 ];
 
-// ── THE CENSUS, TAKEN 2026-09-16 ──────────────────────────────────────
+// ── THE TALLY, TAKEN 2026-09-16 ──────────────────────────────────────
 //
 // Every number here is a decision somebody has to defend. Lowering one is
 // ordinary work and needs no ceremony; RAISING one, or adding a line, is
@@ -67,7 +67,7 @@ const REACHES = [
 //
 // Read it as a bill. The two at the top are the interface itself; the rest
 // is what has not been moved onto it yet.
-const CENSUS = {
+const TALLY = {
   // THE INTERFACE. Counted like everything else.
   'js/relayRequest.js': 2,   // http + https, the outbound socket
   'js/sseClient.js': 0,      // global fetch, via a capability probe
@@ -95,7 +95,7 @@ const CENSUS = {
   // Counted for the first time. Some of these are legitimate — a suite
   // that spawns a real relay must be able to ask it something at the
   // transport level, and asserting a 404 needs a request rather than a
-  // verb. Others are the quick way to green. The census does not judge
+  // verb. Others are the quick way to green. The tally does not judge
   // which is which; it stops the number growing while nobody looks.
   'test/chatPeople.js': 1,
   'test/cycleA.js': 1,
@@ -161,7 +161,7 @@ const CENSUS = {
   // one talks to no node and no peer. But it serves a page, so it reaches
   // twice — require('http') for its own server, and the page's fetch back
   // to that same server — and every file is counted, so platform/ is
-  // walked and it is counted here rather than living outside the census.
+  // walked and it is counted here rather than living outside the tally.
   'platform/wsl/desktop/desktop.js': 2,
 };
 
@@ -205,47 +205,47 @@ const files = walk(path.join(SPIRIT, 'run', 'js'), 'js/', [])
   // platform/ — tools for Andy's machines, beside spirit/ (platform/README.md).
   .concat(walk(path.join(SPIRIT, '..', 'platform'), 'platform/', []));
 
-// ── 1. NOBODY OUTSIDE THE CENSUS TOUCHES THE WIRE ──────────────────────
-test.subHeading('A file not in the census reaches for nothing');
+// ── 1. NOBODY OUTSIDE THE TALLY TOUCHES THE WIRE ──────────────────────
+test.subHeading('A file not in the tally reaches for nothing');
 
 {
   const strangers = [];
   files.forEach(function (f) {
-    if (Object.prototype.hasOwnProperty.call(CENSUS, f.rel)) return;
+    if (Object.prototype.hasOwnProperty.call(TALLY, f.rel)) return;
     const n = reachesIn(f.full);
     if (n > 0) strangers.push(f.rel + ' (' + n + ')');
   });
 
   if (strangers.length === 0) {
-    test.check(files.length + ' files scanned; everything outside the census is clean');
+    test.check(files.length + ' files scanned; everything outside the tally is clean');
   } else {
     test.fail('reaching past the interface: ' + strangers.join(', ') +
-      ' — use peerPost, or decide to modify the interface. Do not add a line to the census.');
+      ' — use peerPost, or decide to modify the interface. Do not add a line to the tally.');
   }
 }
 
-// ── 2. AND THE CENSUS ONLY FALLS ───────────────────────────────────────
+// ── 2. AND THE TALLY ONLY FALLS ───────────────────────────────────────
 test.subHeading('Every counted file is at or below its number');
 
 {
   const grown = [];
   const fell = [];
   const gone = [];
-  Object.keys(CENSUS).forEach(function (rel) {
+  Object.keys(TALLY).forEach(function (rel) {
     // Three roots: test/ is spirit/test, platform/ sits beside spirit/, and
     // every other entry is under spirit/run.
     const full = rel.indexOf('platform/') === 0 ? path.join(SPIRIT, '..', rel)
       : path.join(SPIRIT, rel.indexOf('test/') === 0 ? '' : 'run', rel);
     if (!fs.existsSync(full)) { gone.push(rel); return; }
     const n = reachesIn(full);
-    if (n > CENSUS[rel]) grown.push(rel + ': ' + CENSUS[rel] + ' -> ' + n);
-    if (n < CENSUS[rel]) fell.push(rel + ': ' + CENSUS[rel] + ' -> ' + n);
+    if (n > TALLY[rel]) grown.push(rel + ': ' + TALLY[rel] + ' -> ' + n);
+    if (n < TALLY[rel]) fell.push(rel + ': ' + TALLY[rel] + ' -> ' + n);
   });
 
   if (grown.length === 0) {
-    const total = Object.keys(CENSUS).reduce(function (n, k) { return n + CENSUS[k]; }, 0);
+    const total = Object.keys(TALLY).reduce(function (n, k) { return n + TALLY[k]; }, 0);
     test.check('no file grew a reach — ' + total + ' across ' +
-      Object.keys(CENSUS).length + ' files, and that number may only fall');
+      Object.keys(TALLY).length + ' files, and that number may only fall');
   } else {
     test.fail('THE COUNT WENT UP: ' + grown.join(', ') +
       ' — that is the back-sliding this suite exists to stop');
@@ -259,7 +259,7 @@ test.subHeading('Every counted file is at or below its number');
   } else {
     test.fail('good news, needs recording: ' + fell.concat(gone.map(function (g) {
       return g + ' (file gone)';
-    })).join(', ') + ' — lower it in CENSUS');
+    })).join(', ') + ' — lower it in TALLY');
   }
 }
 
@@ -320,7 +320,7 @@ test.subHeading('peerPost owns the mechanics, and is handed its socket');
 //   interface helpers. that is the whole point of interfaces. they must be
 //   opaque. their internal mechanics shouldn't even be reachable."
 //
-// The reach that a `fetch` census cannot see. I gave peerSearch and
+// The reach that a `fetch` tally cannot see. I gave peerSearch and
 // gradedSearch an `internal: {...}` bag holding eleven helpers, labelled
 // "for the suite alone" — an escape hatch with a note on it. Reachable is
 // reachable: a caller will eventually reach for the same reason a test

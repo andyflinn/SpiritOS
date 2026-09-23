@@ -129,15 +129,15 @@ async function run() {
   if (owner) {
     test.check('and it still knows its owner (' + (owner.publicLabel || owner.name) + ')');
   } else {
-    test.fail('no owner in the census');
+    test.fail('no owner in the roll');
   }
 
   // THE RELAY'S OWN KEY, which is not its owner's. Everything below
   // needs it, and a node needs it to tell this relay apart from a peer.
-  if (census.relayPublicKey && census.relayPublicKey !== (owner && owner.publicKey)) {
+  if (roll.relayPublicKey && roll.relayPublicKey !== (owner && owner.publicKey)) {
     test.check("and publishes a key of its own, which is not its owner's");
   } else {
-    test.fail('relayPublicKey: ' + String(census.relayPublicKey).slice(-12));
+    test.fail('relayPublicKey: ' + String(roll.relayPublicKey).slice(-12));
   }
 
   test.subHeading('A held stream, through whatever is in front of it');

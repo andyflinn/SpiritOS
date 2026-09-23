@@ -28,7 +28,7 @@
 // app/natterDetails/ — NOT to Natter's folder — so this app writes
 // nothing locally. It does not need to: every verb here is a hub call,
 // and the one file Natter keeps about minting (minted.json, the labels
-// it is watching the census for) belongs to the list. A mint made here
+// it is watching the roll for) belongs to the list. A mint made here
 // is RETURNED, and Natter records it.
 
 var ndEscapeHtml = spirit.core.util.escapeHtml;
@@ -51,21 +51,21 @@ var ndIcon = spirit.core.const.ICON;
 // KEY. `ndUrl` still says which relay this screen is ABOUT; it no longer
 // aims anything.
 //
-// TWO PLACES CARRY IT, and the order matters: `census.relayKey` comes
-// from the public census every probe already fetches, so a plain MEMBER
+// TWO PLACES CARRY IT, and the order matters: `roll.relayKey` comes
+// from the public roll every probe already fetches, so a plain MEMBER
 // has it — which `report.key` cannot give, because a report is pushed to
 // the owner alone. `rename` is an own-row verb every member holds, so
 // reading the owner's copy first would have worked for exactly one
 // person and looked fine.
 function ndRelayKey() {
   if (!ndBadge) return '';
-  return (ndBadge.census && ndBadge.census.relayKey)
+  return (ndBadge.roll && ndBadge.roll.relayKey)
     || (ndBadge.report && ndBadge.report.key)
     || '';
 }
 
 // Said once, because three verbs need to say it. A relay that has not
-// answered a census yet cannot be addressed, and that is a different
+// answered a roll yet cannot be addressed, and that is a different
 // thing from a relay that refused.
 function ndNoKey(out, cls) {
   out.className = 'job-manifest-note ' + cls + ' is-error';
@@ -276,7 +276,7 @@ function ndLoad() {
       ndBadge = rows.filter(function (row) { return row && row.url === ndUrl; })[0] || null;
       // ── AND THE OTHER RELAYS, WHICH WERE FETCHED AND THROWN AWAY ────
       //
-      //   Andy: "i can fetch the census of all relays I'm connected to,
+      //   Andy: "i can fetch the roll of all relays I'm connected to,
       //   and find potential partners that are not partners yet."
       //
       // `relay.status` answers for EVERY configured relay, roster and
@@ -426,13 +426,13 @@ function ndReportHtml() {
       '</div></div>';
   }
 
-  // A MEMBER'S VIEW, from the public census rather than the owner-only
+  // A MEMBER'S VIEW, from the public roll rather than the owner-only
   // report. Three facts, not four: Mode and Messages are things the
   // mailbox tells its owner. What a member gets instead is the one fact
   // an owner never needs — the name they wear HERE, which with one
   // browser across several relays is a per-relay answer.
   if (!ndBadge.owned && ndBadge.claimed) {
-    var c = ndBadge.census || {};
+    var c = ndBadge.roll || {};
     return ndPanel('relay', ndIcon.INFO, 'What this relay says', spirit.shell.factRow([
       ['Owner', c.owner || '(unknown)'],
       ['Peers', c.peers == null ? '(unknown)' : c.peers],
@@ -878,8 +878,8 @@ function ndOwnerGroupHtml(inner) {
 // itself, so every member's screen can show it.
 function ndRelayLabelHtml() {
   if (!ndBadge || !ndBadge.owned) return '';
-  var census = ndBadge.census || {};
-  var now = census.relayLabel || '';
+  var roll = ndBadge.roll || {};
+  var now = roll.relayLabel || '';
   return ndPanel('relaylabel', ndIcon.INFO, 'Change what this relay is called',
     '<div class="start-job-form card">' +
     '<label class="field-label grow">Public label of this relay' +
@@ -953,7 +953,7 @@ function ndWhen(iso) {
 // ── ADDING ONE PERSON, BY KEY ───────────────────────────────────────
 //
 // `peer.acquire` is the same verb Contacts uses to confirm somebody
-// found by handle, and it verifies against the relay's census before it
+// found by handle, and it verifies against the relay's roll before it
 // writes a row — so this cannot add a key the relay does not actually
 // carry, however stale this screen's copy of the list is.
 // ── THE KEY FROM THE ROW INTO THE PARTNER FORM ───────────────────────
@@ -970,7 +970,7 @@ function ndWhen(iso) {
 
 // Picking a candidate fills BOTH fields, because unlike the Partner
 // button on a peer row this one knows the address as well — it came from
-// the relay whose census named that key as owner.
+// the relay whose roll named that key as owner.
 function ndPartnerPicked(select) {
   var key = select.value || '';
   var body = ndBody();
@@ -991,7 +991,7 @@ function ndPartnerPicked(select) {
     // The empty option is a real choice — it clears rather than doing
     // nothing, so a mis-click is undoable without a reload.
     out.textContent = key
-      ? 'filled in — “Check and add” will verify it against their census'
+      ? 'filled in — “Check and add” will verify it against their roll'
       : '';
   }
 }
@@ -1018,7 +1018,7 @@ function ndPartnerPicked(select) {
 // THE OWNER TYPES THE URL, and that is load-bearing rather than lazy: a
 // KEY IS NOT AN ADDRESS. Nothing on this wire maps one to the other, and
 // nothing should — that is the DNS-shaped question this system has
-// avoided. So a human supplies where, and the census supplies the proof.
+// avoided. So a human supplies where, and the roll supplies the proof.
 // ── WHO HERE IS ALREADY ELIGIBLE, COMPUTED FROM WHAT IS IN HAND ──────
 //
 //   Andy: "the drop box in this one should just show peers that are
@@ -1026,7 +1026,7 @@ function ndPartnerPicked(select) {
 //
 // Possible for a real subset, and the subset is the one that matters.
 // Eligibility is "owns a relay elsewhere", which in general is only
-// provable by reading THEIR relay's census — and its address is the thing
+// provable by reading THEIR relay's roll — and its address is the thing
 // being asked for, so it cannot be known in advance.
 //
 // But for every relay this node is on, `relay.status` already returned
@@ -1034,7 +1034,7 @@ function ndPartnerPicked(select) {
 // question "which peers enrolled here are the owner of another relay I
 // know about" is answerable with no request at all — and for those, the
 // URL is known too, so selecting one fills both fields and the check that
-// follows is certain to pass, because it re-reads the census this answer
+// follows is certain to pass, because it re-reads the roll this answer
 // came from.
 //
 // WHAT IT CANNOT SEE, stated in the panel rather than hidden: somebody
@@ -1045,7 +1045,7 @@ function ndPartnerPicked(select) {
 function ndPartnerCandidates() {
   if (!ndBadge || !ndBadge.owned) return [];
 
-  var here = ((ndBadge.census || {}).roster) || [];
+  var here = ((ndBadge.roll || {}).roster) || [];
   var hereKeys = Object.create(null);
   here.forEach(function (p) { if (p && p.publicKey) hereKeys[p.publicKey] = p; });
 
@@ -1059,7 +1059,7 @@ function ndPartnerCandidates() {
     // Not this relay: a relay is not its own partner, and that is a
     // question about the BOX (relay.js, setPartner).
     if (!row || row.url === ndUrl) return;
-    var roster = ((row.census || {}).roster) || [];
+    var roster = ((row.roll || {}).roster) || [];
     var theirOwner = roster.filter(function (p) { return p && p.owner; })[0];
     if (!theirOwner || !theirOwner.publicKey) return;
 
@@ -1077,7 +1077,7 @@ function ndPartnerCandidates() {
       // what the far relay calls itself is how they will recognise the
       // address.
       hereLabel: rowHere.publicLabel || '(no label)',
-      relayLabel: (row.census && row.census.relayLabel) || row.label || row.url,
+      relayLabel: (row.roll && row.roll.relayLabel) || row.label || row.url,
     });
   });
   return out;
@@ -1124,7 +1124,7 @@ function ndPartnerPickerHtml(existing) {
 // panel's own note was the argument against it — "Not reachable: posting
 // needs forwarding, which is not built" — so what it offered was a list
 // of people you cannot write to, and it cost a `relay.roster` per
-// partner to draw: a whole public census of somebody else's box, fanned
+// partner to draw: a whole public roll of somebody else's box, fanned
 // out across every partnership, on every visit to this screen.
 //
 // WHAT WENT WITH IT: ndReachAdd and its click handler, the ndReach
@@ -1191,7 +1191,7 @@ function ndPartnersHtml() {
 }
 
 // TWO STEPS, AND THE FIRST ONE GRANTS NOTHING. `relay.partnerCheck` is
-// read-only: it fetches a PUBLIC census and compares a key. Only if that
+// read-only: it fetches a PUBLIC roll and compares a key. Only if that
 // says yes does the second step post an owner verb — so there is exactly
 // one path that writes a peer row, and the check is not on it.
 function ndPartnerAdd(button) {
@@ -1217,7 +1217,7 @@ function ndPartnerAdd(button) {
       return;
     }
     // THE PROOF CAME BACK, so now the owner verb. `relayKey` here is
-    // THEIR relay's own key, captured from the same census that proved
+    // THEIR relay's own key, captured from the same roll that proved
     // the ownership — pinned now so a later forward hop can verify them
     // signing as themselves.
     say('they own it — adding…');
@@ -1514,7 +1514,7 @@ function ndDeviceHtml() {
 //
 //   Andy: "the Label change doesn't propagate on my UI"
 //
-// It did not, and nothing was broken: the census carried the new name to
+// It did not, and nothing was broken: the roll carried the new name to
 // the browser correctly and NOTHING DREW IT. Every caption on this
 // screen came from the caller's relays.json — the reader's private
 // shorthand — so publishing a name changed a field nobody displayed.
@@ -1529,8 +1529,8 @@ function ndDeviceHtml() {
 // So: published first, local second, url last. Somebody who prefers
 // their own word still has it in the list, which is where they wrote it.
 function ndRelayName() {
-  var census = (ndBadge && ndBadge.census) || {};
-  return census.relayLabel || ndRelayLabel || ndUrl || '';
+  var roll = (ndBadge && ndBadge.roll) || {};
+  return roll.relayLabel || ndRelayLabel || ndUrl || '';
 }
 
 function ndSetTitle() {
@@ -1829,7 +1829,7 @@ function ndMint(button) {
     var token = (said && said.invite && said.invite.token) || '';
     // RETURNED, NOT RECORDED. minted.json is Natter's file — api.fs here
     // is scoped to this app's own folder — and the label is the only
-    // part worth carrying back: it is what Natter watches the census for,
+    // part worth carrying back: it is what Natter watches the roll for,
     // so the person can be added as a contact the moment they turn up.
     // Never the token. That is the secret, and it does not leave this
     // screen.
@@ -1975,7 +1975,7 @@ spirit.shell.activateApp({
     //
     // So the two are ordered frames on one already-open socket, and this
     // screen's reaction to the first has to cross an SSE delivery, an
-    // HTTP request, and a census fetch before it reads the second. The
+    // HTTP request, and a roll fetch before it reads the second. The
     // status has effectively always landed by then. It is not a formal
     // guarantee, and it is the thing to suspect if an invite ever shows
     // up exactly one beat late.

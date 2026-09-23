@@ -119,9 +119,9 @@ if (!/who-for/.test(code)) {
 const deviceCode = code.replace(/\/\/.*/g, '');
 
 if (!/\/api\/relay\/who/.test(deviceCode)) {
-  test.check('and it fetches nothing before the enrolment post — no census read from a browser');
+  test.check('and it fetches nothing before the enrolment post — no roll read from a browser');
 } else {
-  test.fail('the device page still reads the census');
+  test.fail('the device page still reads the roll');
 }
 
 // ── 3. STATED, NOT ASKED ─────────────────────────────────────────────

@@ -90,7 +90,7 @@ survives being remote.
 > **Andy:** *"The handling of strangers is a policy problem for the node."*
 
 Worked example, because it came up as an apparent regression and was not
-one. When the census sweep went, a stranger who writes to you began arriving
+one. When the roll sweep went, a stranger who writes to you began arriving
 **unnamed** — the sweep had been captioning every member of the relay into
 the node's own book in advance.
 
@@ -186,7 +186,7 @@ partners invites label expiresAt invitedBy memory rss heapUsed heapTotal uptimeS
 
 So "report, not files" is not a thing to build. **It is a thing to finish**:
 the wire half exists and the window does not. That inverts today's accident,
-where the richest diagnostic surface was the census — readable by every
+where the richest diagnostic surface was the roll — readable by every
 stranger, and no better for the owner than for them.
 
 ---
@@ -237,13 +237,13 @@ cold, and the enrolment count becomes a file read while the active count
 stays free.
 
 So the number that matters stays cheap and the number that does not becomes
-expensive — the census argument one level down. It is also the last
+expensive — the roll argument one level down. It is also the last
 membership-shaped number on the wire:
 [0012](../decisions/0012-a-relay-never-asks-for-a-member-list.md) forbids the
 list, and a count of the list is its residue.
 
-**Evidence it is the right cut:** `probe` stopped supplying `census.peers`
-when it came off the census on 2026-09-18, so the member-facing panel has
+**Evidence it is the right cut:** `probe` stopped supplying `roll.peers`
+when it came off the roll on 2026-09-18, so the member-facing panel has
 rendered `Peers (unknown)` on both live relays since 05:30. Nothing has been
 said about it.
 
@@ -502,8 +502,8 @@ to partners — the owner narrows who may be considered; the relay decides
 within that, including *no*.
 
 **What "verify" can stand on today, and what it cannot.** PARTNERS.md's
-handshake *"verified reciprocity against the far public census"* — and the
-census is gone (2026-09-18). `GET /api/relay/key` says who a box is and who
+handshake *"verified reciprocity against the far public roll"* — and the
+roll is gone (2026-09-18). `GET /api/relay/key` says who a box is and who
 runs it, which covers *"an actual relay"*. **Nothing on the wire says
 *"capable of partnership"*** — which is the same gap as §7: a box has no way
 to say what it speaks. One answer can serve both.
@@ -764,7 +764,7 @@ meantime.
 **This is the one place the split costs something, and it deserves deciding
 rather than discovering.**
 
-On 2026-09-18 `answerRelay`'s census fallback was removed on the grounds
+On 2026-09-18 `answerRelay`'s roll fallback was removed on the grounds
 that *"a fallback is a reader"* — it kept a cheat alive. Correct for that.
 Generalised into "no fallbacks", it makes version skew **fatal**: deploy
 relays before nodes, or a node cannot pin and loses search, partner
@@ -2376,7 +2376,7 @@ that relay handles nothing else while it runs".)* Localhost says nothing about r
 > *"Special fan-out-at relay level posts must be subject to a different
 > budget tier."* — *"… or the concept that peer acquisition for nodes
 > requires liveness of the partners; this would accelerate search
-> significantly."* — *"Search vs. census is already a loss in
+> significantly."* — *"Search vs. roll is already a loss in
 > completeness."*
 
 - **Live partners only.** A member's search is propagated only to partners
@@ -2386,7 +2386,7 @@ that relay handles nothing else while it runs".)* Localhost says nothing about r
   every search for the full timeout. Relays dial their partners at boot,
   so a healthy partner is normally live. What is left out is mostly the
   partners that could not have answered in time. Leaving some members out
-  was already accepted when search replaced the census.
+  was already accepted when search replaced the roll.
 - **Its own budget tier.** One member search becomes *n* partner posts.
   Today it costs the member one post from the ordinary 600 a minute, and at
   the partner it lands in the partner pool of 60 a minute, which every other
@@ -2538,7 +2538,7 @@ four hold:
    Andy watches both monitors in the browser and sees RAM and in-flight
    counts rise, at least one shed with its reason, and RAM fall back under
    the ceiling.
-3. **No regression.** `npm test` green; the `oneDoor` census does not rise.
+3. **No regression.** `npm test` green; the `oneDoor` roll does not rise.
 4. **Bookkeeping.** Every cycle requirement has a verification;
    `cycleRequirements.js` green.
 
@@ -2623,7 +2623,7 @@ utmost care** (Andy, 2026-09-19). Nothing is resident that current activity
 does not need.
 
 **Completeness is a trap** (Andy, 2026-09-19): *"The concept of 'complete'
-datasets like the census is a trap. Life will always require decisions made
+datasets like the roll is a trap. Life will always require decisions made
 from incomplete information … with member and partner rolls expiring and
 shed, nothing is 100% true."* And its capstone: *"A windowed roll will only
 ever be searched — 'what can I recall that's useful' — and we offer the user
@@ -2633,7 +2633,7 @@ those choices. Period. No planning for 'knowing it all'."*
 - **Every answer is best effort** — capped, dated, saying what it could not
   cover; `more` means "ask more specifically", never "next page".
 - **Rolls are never enumerated**, not even in pages (the whole roll in
-  slices is the census by another route — 0012 by symmetry, for partners and
+  slices is the roll by another route — 0012 by symmetry, for partners and
   invites too). The report carries counts; rolls answer bounded questions.
 - **Discovery searches live participants only** — "active participants are
   the most precious". Member search walks the cache of connected members'
@@ -2654,7 +2654,7 @@ find nodes or relays: **search**. What is not found does not influence
 decisions. *"Every internet/email user knows: email addresses change,
 contacts go stale. Deal with it."* Searches can still be improved. What does
 not change is that nothing waits for a list it cannot have. The first case:
-hub.js swept every contact against an owned relay's roster. After the census
+hub.js swept every contact against an owned relay's roster. After the roll
 went on 2026-09-18, that roster read empty, and the sweep pruned every member
 contact. It was deleted rather than guarded, and so were the fields it wrote
 (`memberOf`, `missingSince`) and the UI drawn from them: the lock column, the
@@ -3046,7 +3046,7 @@ manageable pieces"), each its own commit:
 - **4.4 triage** — the cadence switch, `All`, the ranking module.
 - **4.5 dialogs** — `consequence`; the traffic dialog.
 - **4.6 deprecation** — D9 (natterDetails' monitor rows), D10 (the old
-  partner form), and deleting the dead partner picker (it read the census).
+  partner form), and deleting the dead partner picker (it read the roll).
 - **Then cycle 5.1, the vouch** (§6), before alpha.
 - **And the node daemon, its own small cycle, before beta** — the personal
   node runs unattended or the rules above are only true where somebody
@@ -3061,7 +3061,7 @@ network we can implement.**
 
 | stage | anticipated problem |
 |---|---|
-| cycle 4 | rolls passing the payload (answered: counts, bounded questions); network-wide triage without the relay selecting; hub.js still reading `census.roster` — *traced and answered 2026-09-19: the sweep it fed had pruned every member contact since the census went; deleted, with adoption moved onto the claim event* |
+| cycle 4 | rolls passing the payload (answered: counts, bounded questions); network-wide triage without the relay selecting; hub.js still reading `roll.roster` — *traced and answered 2026-09-19: the sweep it fed had pruned every member contact since the roll went; deleted, with adoption moved onto the claim event* |
 | cycle 5 | partners chosen by relays inside the owner's admitted set; the minting cycle; the partner-to-partner API; the old promotion model and the dead picker going |
 | Governor / tuning | the timeout floor measured; waits nesting; a deadline travelling with the request; the fan-out's own budget tier; the ranking learned; refusal paths seen live (exit 78, `check_started`) |
 | learning cycles | a search index (mostly dissolved by searching live participants); last-active per member; the flush of longest-inactive; trends kept on the node |
@@ -3144,7 +3144,7 @@ none is mine to take.
   Andy's suspicion was right — a near-cap quote-dense packet would have
   413'd at the far hop). **Still open for replies** crossing back.
 - **"Capable of partnership" has nothing on the wire to check** (§5). The
-  census the old handshake used is gone; the answer is probably the same
+  roll the old handshake used is gone; the answer is probably the same
   thing §7 needs — a box saying what it speaks.
 - **The partner interface's verbs** (§5) — the objective is decided; the
   list is a recommendation.

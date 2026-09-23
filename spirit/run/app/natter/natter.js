@@ -109,7 +109,7 @@ function natterRemoveAt(relays, index) {
 }
 
 // What the badge probe last said about each URL: { owned, report }.
-// `report` is the census the mailbox answers an owner with — owner, mode,
+// `report` is the roll the mailbox answers an owner with — owner, mode,
 // peers, message count — and it arrives with the same signed call that
 // decides whether this node owns the row at all (js/ownerBadge.js,
 // readBadge). So the panel below costs no endpoint and no second
@@ -261,7 +261,7 @@ function natterRenderList(container, api, relays) {
 // handed one, because the numbers move while it is open.
 //
 // What comes back matters for one reason: a mint made over there is a
-// label this app has to start watching the census for, and minted.json
+// label this app has to start watching the roll for, and minted.json
 // is Natter's file — the dialog's own api.fs is scoped to its folder and
 // cannot write it. So the dialog RETURNS the label and this records it,
 // which is the dialog contract doing exactly what it is for.
@@ -277,7 +277,7 @@ function natterLabelFor(relays, url) {
 //   Andy: "the Label change doesn't propagate on my UI"
 //   Andy: "The relay list displays it"
 //
-// It did not propagate, and nothing was broken: the census carried the
+// It did not propagate, and nothing was broken: the roll carried the
 // new name to the browser and NOTHING DREW IT. Every caption came from
 // relays.json — the reader's private shorthand — so a relay could
 // publish a name and no screen would ever show it.
@@ -294,7 +294,7 @@ function natterLabelFor(relays, url) {
 // still what shows for a relay that has never been named.
 function natterRelayName(relays, url) {
   var badge = natterBadgeByUrl[url];
-  var published = (badge && badge.census && badge.census.relayLabel) || '';
+  var published = (badge && badge.roll && badge.roll.relayLabel) || '';
   return published || natterLabelFor(relays, url) || url || '';
 }
 
@@ -334,7 +334,7 @@ function natterOpenRelay(api, container, relays, url) {
     //
     // Nothing had to replace it, and that is worth saying because it
     // looks like a gap. natterCheckBinding already ADOPTS each relay's
-    // caption off the census on every probe — see the long note on it
+    // caption off the roll on every probe — see the long note on it
     // below, written after a rename that succeeded was mistaken for
     // theft. A label changed anywhere is picked up here by the ordinary
     // probe, with nobody telling this app anything.
@@ -353,7 +353,7 @@ function natterOpenRelay(api, container, relays, url) {
 
 // One signed status per row, the same call the owner badge makes: the
 // mailbox already answers "is this key the owner here?" every time an
-// owner asks for a census, so there is no second route and no second
+// owner asks for a roll, so there is no second route and no second
 // authority (js/ownerBadge.js). Answers land in natterBadgeByUrl and the
 // list repaints — stars appear for what is owned and nothing else moves.
 //
@@ -369,7 +369,7 @@ function natterOpenRelay(api, container, relays, url) {
 // nothing to sign as, no stars". That was true when the probe SIGNED a
 // status request as a label. R3 ended it — hub.handleStatus reads `name`
 // only to echo it back for display, and ownerBadge.probe asks the public
-// census by KEY (handleStatus: "both answers come from the census, by
+// roll by KEY (handleStatus: "both answers come from the roll, by
 // key, so a caller without a key gets nothing").
 //
 // Leaving the guard in place meant a node that lost session.json could
@@ -496,7 +496,7 @@ function natterPaintBind(api, relays) {
 //
 // THIS USED TO GUESS, and the guess was made of labels. Natter kept
 // minted.json — the invite labels this browser had issued — and watched
-// the owner census for a peer whose PUBLIC LABEL matched one of them.
+// the owner roll for a peer whose PUBLIC LABEL matched one of them.
 // Three ways that was wrong, and only the first was ever written down:
 //
 //   IT MATCHED THE WRONG THING. A claimant picks their public label
@@ -710,7 +710,7 @@ function natterBind(api, container, relays, url, label) {
 // That was never a READ: it was an authorization probe wearing a read's
 // clothes, and R8 deleted the route under it on 2026-09-15.
 //
-// THE CENSUS ANSWERS IT BETTER, and was already on the wire. probe()
+// THE ROLL ANSWERS IT BETTER, and was already on the wire. probe()
 // above fetches a status per relay and, for any row this node holds,
 // `/api/relay/who` alongside it — so the label this relay calls us by is
 // a fact already in hand, thrown away until now (ownerBadge.claimedLabel).
@@ -719,7 +719,7 @@ function natterBind(api, container, relays, url, label) {
 //
 //   NO SECOND REQUEST. One round of fetches answers the badge, the
 //   member panel and this.
-//   NO SIGNATURE. The census is public by design (decision 0010), so
+//   NO SIGNATURE. The roll is public by design (decision 0010), so
 //   nothing here puts a credential anywhere.
 //   IT SAYS WHAT HAPPENED. A 403 could not tell "somebody else has this
 //   name" from "the relay forgot me" from "I was removed". A label in

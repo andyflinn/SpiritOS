@@ -73,8 +73,9 @@ blob verifies **from its own bytes** without trusting how it arrived.
 
 `describe` as a wire word goes. Free today only because of the flag day.
 
-**Verify:** a card whose any field was altered fails; a card signed by the
-wrong key fails; a swapped `sealKey` fails.
+**Verify:** `spirit/test/nodeCardSigned.js` — a card whose any field was
+altered fails; a card signed by the wrong key fails; a swapped `sealKey`
+fails, including when the carrier re-signs with its own key.
 
 **Status:** DONE at `15f8ccc`. `nodeCard.js` — `asks` matches `card`,
 `cardFields`/`signable`/`verify`; fifteen callers moved. Suite
@@ -86,8 +87,9 @@ cipher key and re-signs with its own. `describe` as a wire word is gone.
 X25519, written into `identity.json` beside the Ed25519 pair. One file to
 protect, one file to back up, one file to lose.
 
-**Verify:** a fresh identity has both; an identity from before this cycle
-gains a seal key on first start and says so.
+**Verify:** `spirit/test/sealKeys.js` — a fresh identity has both; an
+identity from before this cycle gains a seal key on first start, says so,
+and keeps its signing key, its name and its description.
 
 **Status:** DONE. `generateIdentity` makes both; `withSealKey` grows an
 old one in place and `ensureIdentity` saves it and says so. Suite
@@ -599,6 +601,53 @@ R10 re-read for any field that is not an envelope fact; and the whole
 check run against today's unsealed tree, where it must go red.
 
 **Status:** OPEN — cycle 10 is opened, not built.
+
+### R18 — `census` becomes `roll`, inside this flag day
+
+> **Andy, 2026-09-23:** *"i hate the word census now, but for the relay
+> it's true... the relay can't falsify the record in the member roll (not
+> census)?"* — then, deciding it: *"we loose census from the dictionary."*
+
+A census is something a counter performs on a population. A roll is a list
+a body keeps of its own members and is answerable for, which is what a
+relay has — and this cycle makes it answerable in writing, since a roll
+entry now carries the key everything sent to that member is sealed to.
+
+Inside the flag day on wsl-claude's sequencing: the break is already being
+spent, and a vocabulary change that slips a week becomes a second one.
+
+**Two rules, because a blanket rename would corrupt the record:**
+
+- **A deleted thing keeps the name it was deleted under.** No function
+  named `rollFacts` ever existed, so `censusFacts STOOD HERE` stays as
+  written; the prose around it renames.
+- **Dated records are not rewritten.** `design/cycles/`, `decisions/`,
+  `reviews/` and the *"measured at working tree"* pages under
+  `design/andy/` said what they said on their date. Living reference —
+  `design/relay/`, `design/principles/`, `DICTIONARY.md` — describes the
+  system now and renames. Only a stale **path** is corrected in a dated
+  record, because a path is a citation, not prose.
+
+**A count ledger is a `tally`, never a roll** — `oneDoor.js` and
+`cycleCitations.js` were using the word in an unrelated sense, and
+renaming them to `roll` would have conflated two things this cycle exists
+to keep apart.
+
+**The one place the word was a value, not prose:** `acquiredVia` on the
+contact row. `acquiredVia()` already fell back to rank zero for anything
+unrecognised, so rows on disc reading `"census"` migrate for free — but
+that is now said out loud at the fallback, because if a later hand turns
+it into a refusal, every contact met through a roll silently becomes a
+stranger the node will not hear from, and the only symptom is mail going
+missing.
+
+**Verify:** `spirit/test/contacts.js` — a row stored as `census`, and a
+row with no field at all, both read as `roll`; neither crosses the
+listening line; the address book still holds only people this node knows.
+
+**Status:** DONE. 476 words across 75 code files, the living design docs,
+and a `Roll` entry in `DICTIONARY.md` naming the old word. The suite
+`censusNarrow.js` became `rollNarrow.js` and its citations moved with it.
 
 
 ---

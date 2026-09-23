@@ -23,7 +23,7 @@
 //   one the relay this request ARRIVED ON publishes about itself.
 //
 // Not any relay. Not a key that was handed over in the request. The
-// census key of the socket it came down, fetched from that relay and
+// roll key of the socket it came down, fetched from that relay and
 // compared. A request from anyone else is somebody else's traffic and
 // gets the plain receipt every request gets.
 //
@@ -147,7 +147,7 @@ function createAnswerer(opts) {
   // `GET /api/relay/key` answers `{ relayPublicKey, relayLabel }` and
   // nothing else.
   //
-  // THERE IS NO FALLBACK TO THE CENSUS, and that is the decision rather
+  // THERE IS NO FALLBACK TO THE ROLL, and that is the decision rather
   // than an omission.
   //
   //   Andy: "why not: the suite asserts the order — small door first, or
@@ -164,7 +164,7 @@ function createAnswerer(opts) {
   //      came, each rotting in place while looking alive.
   //
   //   2. **A fallback is a reader.** While this reaches for `who`, `who`
-  //      has a caller that is not a list, and the census cannot be
+  //      has a caller that is not a list, and the roll cannot be
   //      demoted to a signed post. The fallback would have preserved the
   //      exact thing the door was built to remove.
   //

@@ -267,7 +267,7 @@ function mountApp(options) {
     //
     // `opts.cards` maps a key to what that node says back, or to a
     // refusal — there is no third state worth faking, because the one
-    // thing this bubble reports that a census cannot is whether anybody
+    // thing this bubble reports that a roll cannot is whether anybody
     // was home.
     peerPost: function (packetApp, toKey, body) {
       posts.push({ app: packetApp, to: toKey, body: body });
@@ -835,8 +835,8 @@ function distinctNamesCarryNoKey() {
 
   const app = mountApp({
     matches: [
-      { publicKey: 'KEY-BERT', publicLabel: 'bert', tail: 'mjowM=', relay: 'https://a.example', acquiredVia: 'census', owner: false },
-      { publicKey: 'KEY-CAROL', publicLabel: 'carol', tail: 'Zv0gX0=', relay: 'https://b.example', acquiredVia: 'census', owner: false },
+      { publicKey: 'KEY-BERT', publicLabel: 'bert', tail: 'mjowM=', relay: 'https://a.example', acquiredVia: 'roll', owner: false },
+      { publicKey: 'KEY-CAROL', publicLabel: 'carol', tail: 'Zv0gX0=', relay: 'https://b.example', acquiredVia: 'roll', owner: false },
     ],
   });
 
@@ -892,12 +892,12 @@ function foundPeopleShowWhetherTheyAreHome() {
   const app = mountApp({
     matches: [
       // On a relay this node shares: its own presence table will answer.
-      { publicKey: 'KEY-HERE', publicLabel: 'here', tail: 'aaa=', relay: 'https://a.example', acquiredVia: 'census', present: true },
-      { publicKey: 'KEY-AWAY', publicLabel: 'away', tail: 'bbb=', relay: 'https://a.example', acquiredVia: 'census', present: false },
+      { publicKey: 'KEY-HERE', publicLabel: 'here', tail: 'aaa=', relay: 'https://a.example', acquiredVia: 'roll', present: true },
+      { publicKey: 'KEY-AWAY', publicLabel: 'away', tail: 'bbb=', relay: 'https://a.example', acquiredVia: 'roll', present: false },
       // A PARTNER'S MEMBER. This node holds no stream to them, so its own
       // table never mentions the key — the answering relay's word is the
       // only answer there is.
-      { publicKey: 'KEY-PARTNER', publicLabel: 'faraway', tail: 'ccc=', relay: 'https://b.example', acquiredVia: 'census', present: true, viaPartner: true },
+      { publicKey: 'KEY-PARTNER', publicLabel: 'faraway', tail: 'ccc=', relay: 'https://b.example', acquiredVia: 'roll', present: true, viaPartner: true },
     ],
   });
 
@@ -977,7 +977,7 @@ function foundPeopleShowWhetherTheyAreHome() {
 //   Andy: "when a contact is found, there should be a bubble below with a
 //   description obtained via a peerPost to the ID of the found peer."
 //
-// A search answers off a relay's census: a label and a key, which the
+// A search answers off a relay's roll: a label and a key, which the
 // relay was told and has no opinion about. Each row is then asked, and
 // the answer is a different kind of fact — they wrote it, they are awake
 // to say it, and the packet came back.
@@ -991,8 +991,8 @@ function aFoundPersonCanBeAsked() {
 
   const app = mountApp({
     matches: [
-      { publicKey: 'KEY-SONNY', publicLabel: 'sonny', tail: 'mjowM=', relay: 'https://a.example', acquiredVia: 'census', owner: false },
-      { publicKey: 'KEY-GHOST', publicLabel: 'ghost', tail: 'Zv0gX0=', relay: 'https://b.example', acquiredVia: 'census', owner: false },
+      { publicKey: 'KEY-SONNY', publicLabel: 'sonny', tail: 'mjowM=', relay: 'https://a.example', acquiredVia: 'roll', owner: false },
+      { publicKey: 'KEY-GHOST', publicLabel: 'ghost', tail: 'Zv0gX0=', relay: 'https://b.example', acquiredVia: 'roll', owner: false },
     ],
     cards: {
       'KEY-SONNY': { name: 'sonny', description: 'jazz, and a synth in the corner' },
@@ -1087,12 +1087,12 @@ function aFoundPersonCanBeAsked() {
         test.fail('no bubble: ' + out);
       }
 
-      // ── THE ONE A CENSUS COULD NEVER ANSWER ─────────────────────────
+      // ── THE ONE A ROLL COULD NEVER ANSWER ─────────────────────────
       //
       //   Andy, earlier: "this would incidentally also validate true
       //   'reachability'."
       if (/could not reach them/.test(out)) {
-        test.check('and somebody who does not answer is reported unreachable, which a census cannot tell you');
+        test.check('and somebody who does not answer is reported unreachable, which a roll cannot tell you');
       } else {
         test.fail('ghost: ' + out);
       }
@@ -1295,8 +1295,8 @@ function addsByHandle() {
   // happens, so the test follows it rather than going with the box.
   const app = mountApp({
     matches: [
-      { publicKey: 'KEY-BERT-ONE', publicLabel: 'bert', tail: 'mjowM=', relay: 'https://a.example', acquiredVia: 'census', owner: false },
-      { publicKey: 'KEY-BERT-TWO', publicLabel: 'bert', tail: 'Zv0gX0=', relay: 'https://b.example', acquiredVia: 'census', owner: false },
+      { publicKey: 'KEY-BERT-ONE', publicLabel: 'bert', tail: 'mjowM=', relay: 'https://a.example', acquiredVia: 'roll', owner: false },
+      { publicKey: 'KEY-BERT-TWO', publicLabel: 'bert', tail: 'Zv0gX0=', relay: 'https://b.example', acquiredVia: 'roll', owner: false },
     ],
   });
 
@@ -1359,7 +1359,7 @@ function addsByHandle() {
 
       // AND THE RELAY IS NOT A COLUMN. Andy: "The user shouldn't worry
       // about relays." It rides on the row as data-url, because the
-      // confirm is checked against that census and the contact keeps it as
+      // confirm is checked against that roll and the contact keeps it as
       // a route — but nobody reads it.
       // NOT IN A CELL, but present as an attribute. A first draft asked
       // for the URL to be absent AND present, which no render can satisfy:
@@ -1697,7 +1697,60 @@ function theDotColumn() {
   });
 }
 
+// ── THE RENAME'S MIGRATION (cycle 10, R18) ───────────────────────────
+//
+//   Andy, 2026-09-23: "we loose census from the dictionary."
+//
+// `acquiredVia` was the one place the old word was a VALUE ON DISC, not
+// prose. Every live node — Andy's, both agents', every member of
+// spirit-3 — has rows reading `"census"` written before today, and they
+// are read by the code that decides whom this node will hear from. So
+// the migration is asserted rather than assumed: if the fallback ever
+// became a refusal, every contact met through a roll would quietly
+// become a stranger, and the only symptom would be mail going missing.
+function oldRowsStillRead() {
+  const os = require('os');
+  const contactBook = require('../run/js/contacts');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-r18-'));
+  fs.mkdirSync(path.join(dir, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'relay-state', 'contacts.json'), JSON.stringify([
+    { publicKey: BERT, publicLabel: 'bert', acquiredVia: 'census' },  // written before today
+    { publicKey: CAROL, publicLabel: 'carol' },                        // written before the field
+    { publicKey: DAVE, publicLabel: 'dave', acquiredVia: 'message' },
+  ]));
+
+  const rows = contactBook.load(dir);
+  const bert = rows.filter(function (r) { return r.publicKey === BERT; })[0];
+  const carol = rows.filter(function (r) { return r.publicKey === CAROL; })[0];
+
+  if (contactBook.acquiredVia(bert) === contactBook.ROLL &&
+      contactBook.acquiredVia(carol) === contactBook.ROLL) {
+    test.check('a row stored as `census` reads as `roll` — the same rank it always had, and so does a row with no field');
+  } else {
+    test.fail('an old row did not migrate: ' + contactBook.acquiredVia(bert));
+  }
+
+  // The rank is what the inbox asks about, so this is the assertion that
+  // matters: nobody gains a hearing they did not have, and nobody loses
+  // one they did.
+  if (!contactBook.listens(bert) && !contactBook.listens(carol) && contactBook.listens(dave())) {
+    test.check('and it changes nothing about who is heard — a roll row is still not a correspondent');
+  } else {
+    test.fail('the rename moved somebody across the listening line');
+  }
+  function dave() { return rows.filter(function (r) { return r.publicKey === DAVE; })[0]; }
+
+  if (contactBook.addressBook(dir).length === 1) {
+    test.check('and the address book still holds only the people this node actually knows');
+  } else {
+    test.fail('the address book took in roll rows: ' + contactBook.addressBook(dir).length);
+  }
+
+  try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) { /* leave it */ }
+}
+
 listsTheBook()
+  .then(oldRowsStillRead)
   .then(theHandleColumnStillIdentifies)
   .then(aRowOpensThePerson)
   .then(refreshesWhenTheDialogChangedSomething)

@@ -2,14 +2,14 @@
 const rollOf = require('./rollOf');
 
 // Contacts — the To control lists people this node ACQUIRED
-// (CYCLE-CONTACTS-IMPL.md, replacing chat 2's "To is the census").
+// (CYCLE-CONTACTS-IMPL.md, replacing chat 2's "To is the roll").
 //
-// A mailbox census is not an address book. Everyone who ever claimed on
+// A mailbox roll is not an address book. Everyone who ever claimed on
 // a public relay is in `who`, and a To list built from it means
 // "everyone who exists" — which is how a friend picks a stranger's john.
 // So a contactBook row carries how it arrived, and only some ways count:
 //
-//   census  — seen in `who`. Not a contact. Also what a row with no
+//   roll  — seen in `who`. Not a contact. Also what a row with no
 //             field at all is, since that is exactly what those were.
 //   message — they wrote to you and the mailbox carried their key.
 //   invite  — a token this node minted was consumed by that key.
@@ -135,23 +135,23 @@ function line(id, fromLabel, fromKey, toKey, text) {
 
 test.startTest('Contacts — the To list is who this node knows, not who exists');
 
-test.subHeading('A census is not an address book');
+test.subHeading('A roll is not an address book');
 
-// And since 2026-09-19 there is no census to walk: buildPeople took one
+// And since 2026-09-19 there is no roll to walk: buildPeople took one
 // (`peers`) to refresh captions through contactBook.handshake and to mark
-// rows `onRelay` and `owner`, and was fed [] once the census went — so
+// rows `onRelay` and `owner`, and was fed [] once the roll went — so
 // both marks were always false. Deleted with the roster readers (Andy:
 // "nothing is allowed to return a roster").
 {
   const home = nodeHome(null, [RELAY_URL]);
   if (buildPeople.length === 1 && buildPeople(home).length === 0 &&
       typeof contactBook.handshake === 'undefined') {
-    test.check('the To list is built from the book alone — no census argument, no census sync');
+    test.check('the To list is built from the book alone — no roll argument, no roll sync');
   } else {
     test.fail('buildPeople takes ' + buildPeople.length + ' arguments');
   }
 
-  // A row written before the field existed is exactly what a census row
+  // A row written before the field existed is exactly what a roll row
   // is, so that is how it reads — nothing has to be migrated.
   const johnA = auth.generateIdentity('john').publicKey;
   const legacy = nodeHome(null, [RELAY_URL]);
@@ -160,7 +160,7 @@ test.subHeading('A census is not an address book');
     { publicKey: johnA, publicLabel: 'john', myLabel: 'john', relays: [], onRelay: true, owner: true },
   ]));
   if (contactBook.contacts(legacy).length === 0 && buildPeople(legacy).length === 0) {
-    test.check('a row from before the field is a census row, and stays out of To');
+    test.check('a row from before the field is a roll row, and stays out of To');
   } else {
     test.fail('a legacy row was treated as a contact');
   }
@@ -173,9 +173,9 @@ test.subHeading('A message is how a stranger becomes someone you can answer');
   const home = nodeHome(me, [RELAY_URL]);
   const johnA = auth.generateIdentity('john').publicKey;
   const johnB = auth.generateIdentity('john').publicKey;
-  // Rows a census sync left before 2026-09-19 — named, not contacts.
-  contactBook.acquire(home, { publicKey: johnA, publicLabel: 'john', relay: RELAY_URL }, 'census');
-  contactBook.acquire(home, { publicKey: johnB, publicLabel: 'john', relay: RELAY_URL }, 'census');
+  // Rows a roll sync left before 2026-09-19 — named, not contacts.
+  contactBook.acquire(home, { publicKey: johnA, publicLabel: 'john', relay: RELAY_URL }, 'roll');
+  contactBook.acquire(home, { publicKey: johnB, publicLabel: 'john', relay: RELAY_URL }, 'roll');
   // The policy is part of the fixture now rather than implied by calling
   // acquireFromInbox directly: the front door reads it, so a section
   // about strangers being let in has to be a node that lets them in.
@@ -241,15 +241,15 @@ test.subHeading('Ranks never fall');
     test.fail('downgraded to: ' + contactBook.acquiredVia(contactBook.byPublicKey(home, bert)));
   }
 
-  // Seen again at a lower rank (a census row, as older code wrote), the
+  // Seen again at a lower rank (a roll row, as older code wrote), the
   // public caption is corrected and the row is not turned back into a
   // stranger.
-  contactBook.acquire(home, { publicKey: bert, publicLabel: 'bertram' }, 'census');
+  contactBook.acquire(home, { publicKey: bert, publicLabel: 'bertram' }, 'roll');
   const row = contactBook.byPublicKey(home, bert);
   if (contactBook.acquiredVia(row) === 'handle' && row.publicLabel === 'bertram') {
     test.check('and seeing them at a lower rank updates the label without demoting the row');
   } else {
-    test.fail('after census: ' + JSON.stringify(row));
+    test.fail('after roll: ' + JSON.stringify(row));
   }
 
   // Your own key is never filed by reading your own mail back.
@@ -271,14 +271,14 @@ test.subHeading('Add by handle: every key behind the word');
   const johnA = auth.generateIdentity('john').publicKey;
   const johnB = auth.generateIdentity('john').publicKey;
   const bert = auth.generateIdentity('bert').publicKey;
-  const census = [
+  const roll = [
     peer('andy', me.publicKey, true),
     peer('john', johnA),
     peer('john', johnB),
     peer('bert', bert),
   ];
 
-  const johns = handleMatches(home, census, 'john');
+  const johns = handleMatches(home, roll, 'john');
   if (johns.length === 2 && johns[0].publicKey !== johns[1].publicKey) {
     test.check('a handle two people answer to gives two candidates');
   } else {
@@ -297,20 +297,20 @@ test.subHeading('Add by handle: every key behind the word');
   // A handle is a word said out loud, not a search: `joh` is not john,
   // and a substring match would hand back strangers who merely contain
   // the word.
-  if (handleMatches(home, census, 'joh').length === 0 && handleMatches(home, census, 'JOHN').length === 2) {
+  if (handleMatches(home, roll, 'joh').length === 0 && handleMatches(home, roll, 'JOHN').length === 2) {
     test.check('the handle matches the whole caption, case aside');
   } else {
     test.fail('partial or case handling is wrong');
   }
 
-  if (handleMatches(home, census, 'nobody').length === 0) {
+  if (handleMatches(home, roll, 'nobody').length === 0) {
     test.check('a handle nobody answers to is no candidates');
   } else {
     test.fail('invented a match');
   }
 
   // Never yourself: you cannot be added to your own address book.
-  if (handleMatches(home, census, 'andy').length === 0) {
+  if (handleMatches(home, roll, 'andy').length === 0) {
     test.check('and this node is never a candidate for itself');
   } else {
     test.fail('self offered as a candidate');
@@ -318,7 +318,7 @@ test.subHeading('Add by handle: every key behind the word');
 
   // One match is still a question, so the candidate still carries its
   // tail — the UI has everything it needs to make somebody confirm.
-  const one = handleMatches(home, census, 'bert');
+  const one = handleMatches(home, roll, 'bert');
   if (one.length === 1 && one[0].tail === bert.slice(-6)) {
     test.check('a lone match is still shown by its key tail');
   } else {
@@ -330,7 +330,7 @@ test.subHeading('Add by handle: every key behind the word');
   // though they were new.
   setUnknownPolicy(home, 'acquire');
   wrote(home, [line(5, 'bert', bert, me.publicKey, 'hi')], RELAY_URL);
-  if (handleMatches(home, census, 'bert')[0].acquiredVia === 'message') {
+  if (handleMatches(home, roll, 'bert')[0].acquiredVia === 'message') {
     test.check('a candidate says how this node already knows them');
   } else {
     test.fail('acquiredVia missing from a candidate');
@@ -344,10 +344,10 @@ test.subHeading('Confirming writes handle, and nothing else changes');
   const johnA = auth.generateIdentity('john').publicKey;
   const johnB = auth.generateIdentity('john').publicKey;
 
-  contactBook.acquire(home, { publicKey: johnA, publicLabel: 'john', relay: RELAY_URL }, 'census');
-  contactBook.acquire(home, { publicKey: johnB, publicLabel: 'john', relay: RELAY_URL }, 'census');
+  contactBook.acquire(home, { publicKey: johnA, publicLabel: 'john', relay: RELAY_URL }, 'roll');
+  contactBook.acquire(home, { publicKey: johnB, publicLabel: 'john', relay: RELAY_URL }, 'roll');
 
-  // The upgrade a confirm performs: census to handle, in place, on one
+  // The upgrade a confirm performs: roll to handle, in place, on one
   // key. Identity is the key, so the other john is untouched.
   contactBook.acquire(home, { publicKey: johnA, publicLabel: 'john', relay: RELAY_URL }, 'handle');
 
@@ -358,7 +358,7 @@ test.subHeading('Confirming writes handle, and nothing else changes');
     test.fail('contacts: ' + JSON.stringify(contacts));
   }
 
-  if (contactBook.acquiredVia(contactBook.byPublicKey(home, johnB)) === 'census') {
+  if (contactBook.acquiredVia(contactBook.byPublicKey(home, johnB)) === 'roll') {
     test.check('and the other john is still a stranger');
   } else {
     test.fail('the wrong john was promoted');
@@ -372,7 +372,7 @@ test.subHeading('Confirming writes handle, and nothing else changes');
     test.fail('handle was downgraded by a message');
   }
 
-  // To is still contacts only: a census row does not follow a confirm in.
+  // To is still contacts only: a roll row does not follow a confirm in.
   const people = buildPeople(home);
 
   // Every row carries its tail, not only the ambiguous ones. Contacts
@@ -408,7 +408,7 @@ test.subHeading('Confirming writes handle, and nothing else changes');
 // what crosses between the two nodes is a signed post down a held
 // stream, which is the only thing that crosses now.
 //
-// `/api/relay/who` is still fetched, because the census is still a
+// `/api/relay/who` is still fetched, because the roll is still a
 // fetch: it is the one GET that must work before a post is possible
 // (decision 0010).
 
@@ -417,7 +417,7 @@ function relayServer(box) {
     const server = http.createServer(function (req, res) {
       const url = new URL(req.url, 'http://127.0.0.1');
       // A `/api/relay/who` branch STOOD HERE serving rollOf(box). The
-      // census was deleted on 2026-09-18 (decision 0010, 0012), and a
+      // roll was deleted on 2026-09-18 (decision 0010, 0012), and a
       // fake more capable than the thing it stands in for is how two
       // mocks come to agree about a protocol neither implements.
       if (req.method === 'GET' && url.pathname === '/api/relay/key') {
@@ -580,14 +580,14 @@ function runOverLoopback() {
 
     // ── HE ARRIVES UNNAMED, AND THAT IS THE DESIGN NOW (2026-09-18) ──
     //
-    // THIS REVERSES THE CHECK THAT STOOD HERE. It asserted "the census is
-    // what named him", because `peer.list` used to walk the whole census
+    // THIS REVERSES THE CHECK THAT STOOD HERE. It asserted "the roll is
+    // what named him", because `peer.list` used to walk the whole roll
     // and handshake every member into this book — so anybody who later
     // wrote to you was already captioned by a survey you had run before
     // they spoke.
     //
     //   Andy: "there is absolutely no reason for unbound entities to
-    //   conduct surveys of our network." — "we're killing the census. we
+    //   conduct surveys of our network." — "we're killing the roll. we
     //   will break what needs breaking."
     //
     // A survey by a BOUND entity is still a survey, and a name taken from
@@ -1106,12 +1106,12 @@ async function countsTheRowItMakes() {
   // thing R8 really did cost. acquireFromInbox read `publicLabel` off the
   // relay's stored copy of the line; a post carries keys and no captions,
   // because the relay does not read the payload. This node has walked no
-  // census, so there is nothing else to name him with — and that is what
+  // roll, so there is nothing else to name him with — and that is what
   // an unnamed row looks like until one is walked.
   if (row && row.publicLabel === '') {
-    test.check('and no caption — a post carries keys, and the census does the naming');
+    test.check('and no caption — a post carries keys, and the roll does the naming');
   } else {
-    test.fail('label on a node that walked no census: ' + JSON.stringify(row && row.publicLabel));
+    test.fail('label on a node that walked no roll: ' + JSON.stringify(row && row.publicLabel));
   }
 }
 

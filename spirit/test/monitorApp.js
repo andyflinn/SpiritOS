@@ -273,13 +273,13 @@ test.subHeading('Where a relay’s key lives');
 // because `row.relayKey` does not exist — natterDetails' ndRelayKey has
 // carried the real answer since cycle 3.
 {
-  const fromCensus = { census: { relayKey: 'CENSUS_KEY' } };
+  const fromRoll = { roll: { relayKey: 'ROLL_KEY' } };
   const report = { key: 'REPORT_KEY' };
 
-  if (monitor.relayKey(fromCensus, report) === 'CENSUS_KEY') {
-    test.check('the census copy wins — a plain member has it, where a report reaches the owner alone');
+  if (monitor.relayKey(fromRoll, report) === 'ROLL_KEY') {
+    test.check('the roll copy wins — a plain member has it, where a report reaches the owner alone');
   } else {
-    test.fail('census was not preferred');
+    test.fail('roll was not preferred');
   }
   if (monitor.relayKey({}, report) === 'REPORT_KEY') {
     test.check('and the owner’s report is the fallback');

@@ -506,11 +506,11 @@ function isRelayPublicPath(method, pathname) {
   //
   // The two being the front door's "is this sender a relay?" and search's
   // "which key do I address this box as" — both of which need a PIN, and
-  // the pin was being derived from the whole census, once per relay per
+  // the pin was being derived from the whole roll, once per relay per
   // boot. ~147 KB at a thousand members to learn 44 bytes.
   //
   // Fixed cost per request, with no membership term in it, which is what
-  // earns it the exemption the census is losing (0013, and 0010's
+  // earns it the exemption the roll is losing (0013, and 0010's
   // granted-GET table).
   if (method === 'GET' && pathname === '/api/relay/key') return true;
   // The presence wire. Public in the same sense the rest is: reachable
@@ -569,7 +569,7 @@ const server = http.createServer((req, res) => {
     // both, and nothing has to learn a second shape. Null on a relay that
     // has not been restarted since it grew a key of its own.
     // AND WHO RUNS IT, which a caller can ask for without asking for a
-    // membership list. It is what `relay.partnerCheck` needed the census
+    // membership list. It is what `relay.partnerCheck` needed the roll
     // for, and the last thing it needed it for.
     var own = relay.ownerPublic();
     res.end(JSON.stringify({
@@ -581,7 +581,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // GET /api/relay/who STOOD HERE — THE CENSUS, DELETED 2026-09-18. See
+  // GET /api/relay/who STOOD HERE — THE ROLL, DELETED 2026-09-18. See
   // the tombstone in server.js's history and decision 0012: no party may
   // ask a relay for its whole enrolment list.
 

@@ -43,7 +43,7 @@
 //
 // NOTHING IS WRITTEN TO NATTER, which could not be done from here anyway
 // (api.fs is scoped to this folder). It does not need to be:
-// natterCheckBinding already ADOPTS each relay's caption off the census
+// natterCheckBinding already ADOPTS each relay's caption off the roll
 // on every probe, which is a mechanism that exists because its absence
 // once cost a live session — a successful rename looked like theft.
 //
@@ -76,8 +76,8 @@ var infoCard = null;
 // From `relay.status`, which probes every configured relay and answers a
 // row each: the url, whether this key holds a row there (`claimed`, which
 // `owned` implies), what that relay calls this key (`claimedLabel`, read
-// off the public census by key, never by name), and the relay's own
-// public key on `census.relayKey` — which is the address a rename is
+// off the public roll by key, never by name), and the relay's own
+// public key on `roll.relayKey` — which is the address a rename is
 // posted to.
 //
 // Everything needed is in that ONE call. It is the same probe Natter
@@ -177,10 +177,10 @@ function infoDraw() {
 // Which rows may be renamed: the ones this key actually holds a seat on,
 // and that told us the relay's key. A relay this node merely LISTS has no
 // row to rename, and one that did not answer has not said what its key is
-// — `censusFacts` returns nothing when the census could not be read.
+// — `censusFacts` returns nothing when the roll could not be read.
 function infoSeats() {
   return infoRelays.filter(function (row) {
-    return row && (row.claimed || row.owned) && row.census && row.census.relayKey;
+    return row && (row.claimed || row.owned) && row.roll && row.roll.relayKey;
   });
 }
 
@@ -225,7 +225,7 @@ function infoDrawRelays() {
       var note = '';
       if (pushed && !pushed.ok) note = pushed.why;
       else if (!seat) note = 'no seat here';
-      else if (!row.census || !row.census.relayKey) note = 'has not said what its key is';
+      else if (!row.roll || !row.roll.relayKey) note = 'has not said what its key is';
       else if (wanted && calls && calls !== wanted) note = 'out of step';
       else if (!calls) note = 'enrolled, but unnamed';
 
@@ -283,7 +283,7 @@ function infoPush(label) {
   if (!seats.length) return Promise.resolve(0);
 
   return Promise.all(seats.map(function (row) {
-    return infoApi.peerPost('relay', row.census.relayKey, { rename: { label: label } })
+    return infoApi.peerPost('relay', row.roll.relayKey, { rename: { label: label } })
       .then(function (r) {
         var said = (r && r.body) || {};
         if (r && r.ok && said.ok) {

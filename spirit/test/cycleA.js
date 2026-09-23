@@ -7,7 +7,7 @@ const rollOf = require('./rollOf');
 //
 //   1. The owner badge is a signed GET /api/relay/status that came back
 //      200 with a report. No second endpoint, no cheaper "am I owner?"
-//      — the census already answers it (DICTIONARY.md, "Owner badge").
+//      — the roll already answers it (DICTIONARY.md, "Owner badge").
 //   2. The badge is asked of EVERY Natter row, so a node can own two
 //      mailboxes, one, or none, and the answer names which.
 //   3. A mint goes to the mailbox that was chosen. relays.json[0] is a
@@ -65,7 +65,7 @@ function askedWith(body) {
 }
 
 // `seats` names the urls this node has a row on. It used to be implied —
-// the census listed the key, so probe found it — and a node keeps that
+// the roll listed the key, so probe found it — and a node keeps that
 // record itself now, so a fixture has to write it (relayKeys.seat, which
 // hub.handleClaim calls when a claim is granted).
 //
@@ -84,17 +84,17 @@ function nodeHome(id, urls, seats) {
 
 // Answers a status request out of a relay object in this process. Same
 // shape as the wire: the report itself on 200, { error } otherwise.
-// THE PUBLIC CENSUS, which is the only thing probe() asks for now.
+// THE PUBLIC ROLL, which is the only thing probe() asks for now.
 //
 // It answered a SIGNED `GET /api/relay/status` until 2026-09-15 and
 // handed back the owner-only report, because that was how the badge was
 // decided. R3 deleted that route's only caller: `owner: true|false` is
-// on every census row already, unsigned, and `probe` reads it by key.
+// on every roll row already, unsigned, and `probe` reads it by key.
 //
 // A stub that still served the old route would keep passing while the
 // thing it stands in for had stopped being asked — which is the failure
 // mode every stub in this tree is written against.
-// ── IT SERVES THE KEY DOOR NOW, NOT THE CENSUS (2026-09-18) ─────────
+// ── IT SERVES THE KEY DOOR NOW, NOT THE ROLL (2026-09-18) ─────────
 //
 // This answered `/api/relay/who` with `rollOf(box)` — the whole membership —
 // because that is how probe used to learn both who runs a box and whether
@@ -105,7 +105,7 @@ function nodeHome(id, urls, seats) {
 // seat (relayKeys, written at claim). So this serves the key door, and
 // keeps rejecting everything else — the loud-stub rule below is what made
 // this change announce itself instead of passing quietly.
-function censusAnswerer(boxes) {
+function rollAnswerer(boxes) {
   return function (url, method, pathname) {
     var box = boxes[url];
     if (!box) return Promise.reject(new Error('connection refused'));
@@ -163,7 +163,7 @@ test.startTest('Cycle A — owner badge, mailbox picker, mint goes where it was 
 
 test.subHeading('What counts as a badge');
 
-// THE BADGE IS A CENSUS READ NOW, not a signed 200 (R3, 2026-09-15,
+// THE BADGE IS A ROLL READ NOW, not a signed 200 (R3, 2026-09-15,
 // design/cycles/2026-09-15-labels-are-not-identities.md).
 //
 //   Andy: "i don't understand the ownerbadge concept at all: the relay
@@ -176,17 +176,17 @@ test.subHeading('What counts as a badge');
 // on this wire that could not expire.
 //
 // The question survives the mechanism: IS MY KEY THE OWNER'S? It was
-// answered off the public census by `ownedFrom` — "my key carrying
-// owner:true" — until the census went and then, on 2026-09-19, the mark
+// answered off the public roll by `ownedFrom` — "my key carrying
+// owner:true" — until the roll went and then, on 2026-09-19, the mark
 // on the row ("a row in the roll doesn't know who the owner is"). The
 // relay names its owner's key at /api/relay/key, and `probe` compares:
 // runBadgeProbe below is where the badge is asserted now.
 {
   if (typeof ownerBadge.ownedFrom === 'undefined' && typeof ownerBadge.censusFacts === 'undefined' &&
       typeof ownerBadge.claimedLabelFrom === 'undefined') {
-    test.check('no census parser is left in the badge');
+    test.check('no roll parser is left in the badge');
   } else {
-    test.fail('a census parser is still exported');
+    test.fail('a roll parser is still exported');
   }
 
   // AND IT IS UNSIGNED. The point of R3: this question now costs no
@@ -221,7 +221,7 @@ function runBadgeProbe() {
   boxes[urlMine] = mine.box;
   boxes[urlTheirs] = theirs.box;
 
-  return ownerBadge.probe(home, censusAnswerer(boxes), andy.publicKey).then(function (summary) {
+  return ownerBadge.probe(home, rollAnswerer(boxes), andy.publicKey).then(function (summary) {
     if (summary.ownedUrls.length === 1 && summary.ownedUrls[0] === urlMine) {
       test.check('the badge lands only on the mailbox this key owns');
     } else {
@@ -237,11 +237,11 @@ function runBadgeProbe() {
     // SOMEBODY ELSE'S RELAY ANSWERS PERFECTLY WELL. It used to come back
     // 403 — the owner-only route refusing us — and the row was unbadged
     // because the request failed. Since R3 the request is the public
-    // census, which answers 200 to anyone, so the row is unbadged
+    // roll, which answers 200 to anyone, so the row is unbadged
     // because OUR KEY IS NOT THE ONE MARKED OWNER.
     //
     // The better assertion, and the one that survives the relay being
-    // reachable: not owned, not claimed, and the census read fine.
+    // reachable: not owned, not claimed, and the roll read fine.
     const foreign = summary.rows.filter(function (r) { return r.url === urlTheirs; })[0];
     if (foreign && !foreign.owned && !foreign.claimed && foreign.status === 200) {
       test.check("someone else's relay answers us, and is still unbadged");
@@ -255,7 +255,7 @@ function runBadgeProbe() {
     const twoBoxes = {};
     twoBoxes[urlMine] = mine.box;
     twoBoxes[urlSecond] = second.box;
-    return ownerBadge.probe(nodeHome(andy, [urlMine, urlSecond]), censusAnswerer(twoBoxes), andy.publicKey);
+    return ownerBadge.probe(nodeHome(andy, [urlMine, urlSecond]), rollAnswerer(twoBoxes), andy.publicKey);
   }).then(function (summary) {
     if (summary.ownedUrls.length === 2 && summary.mustPick) {
       test.check('two owned mailboxes must be picked between, never defaulted');
@@ -268,7 +268,7 @@ function runBadgeProbe() {
     const urlDown = 'https://down.example';
     const upBoxes = {};
     upBoxes[urlUp] = mine.box;
-    return ownerBadge.probe(nodeHome(andy, [urlDown, urlUp]), censusAnswerer(upBoxes), andy.publicKey);
+    return ownerBadge.probe(nodeHome(andy, [urlDown, urlUp]), rollAnswerer(upBoxes), andy.publicKey);
   }).then(function (summary) {
     const down = summary.rows[0];
     if (summary.ownedUrls.length === 1 && down && !down.owned && down.status === 0) {
@@ -353,7 +353,7 @@ function relayServer(box) {
       // (relayKeys, written at claim), so a fixture says so by writing
       // the seat rather than by being listed in an answer.
       //
-      // THE CENSUS BRANCH STOOD HERE and served `rollOf(box)`. It was added
+      // THE ROLL BRANCH STOOD HERE and served `rollOf(box)`. It was added
       // because the fake did not serve it at first, so claimedFrom() saw
       // a 404 in every test and answered false — a suite cannot notice a
       // flag that is false because the question was never asked. The same
@@ -703,7 +703,7 @@ function boundNodeSeesItsRow() {
     // ── "AND HOW MANY ARE ON IT" IS GONE (2026-09-18) ──────────────
     //
     // This asserted `facts.peers === 2` as well. The count came from the
-    // census, and a count of the membership is a membership fact: the
+    // roll, and a count of the membership is a membership fact: the
     // relay does not serve one, to anybody, and no screen in run/ ever
     // read it. It was in the badge because censusFacts had the list in
     // hand and reducing it was free.
@@ -711,11 +711,11 @@ function boundNodeSeesItsRow() {
     // What the panel can still say is who runs the box and what it calls
     // YOU — both off GET /api/relay/key and this node's own seat record,
     // neither with a membership term in it.
-    const facts = row.census || {};
+    const facts = row.roll || {};
     if (facts.owner === 'andy' && facts.myLabel === 'bert') {
       test.check('and the panel can say who runs it and what it calls you');
     } else {
-      test.fail('census: ' + JSON.stringify(facts));
+      test.fail('roll: ' + JSON.stringify(facts));
     }
 
     // The fact an owner never needs. One browser now serves every relay

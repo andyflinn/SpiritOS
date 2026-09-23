@@ -2,7 +2,7 @@
 
 **Stated by Andy, 2026-09-18.** A principle, not a mechanism: it is the
 reason behind [0012](../decisions/0012-a-relay-never-asks-for-a-member-list.md)
-and the census eradication in [../relay/SURFACE.md](../relay/SURFACE.md),
+and the roll eradication in [../relay/SURFACE.md](../relay/SURFACE.md),
 and it decides cases those do not name.
 
 > **Andy:** *"The relay has duties to the owner: survive, and get the job
@@ -24,7 +24,7 @@ not say what it wants has not been refused — it has not asked.
 
 ## Why this, rather than "protect the membership"
 
-Both arguments arrive at the same place for the census, and they are not
+Both arguments arrive at the same place for the roll, and they are not
 the same argument. Privacy is about what may be disclosed; this is about
 **who bears the cost of imprecision**, and it holds even where nothing is
 secret.
@@ -129,7 +129,7 @@ has never meant complete, and the two are easily confused by somebody
 reading only the sentence.
 
 **Anything with no argument to it.** A caller that cannot say what it wants
-is usually asking the wrong question, and the census's history is the
+is usually asking the wrong question, and the roll's history is the
 evidence: five callers were removed between 2026-09-17 and 2026-09-18 —
 `peer.candidates`, `peer.find`, `relay.roster`, the device page's label,
 `peer.list`'s sweep — and **not one needed a replacement.** Each had a

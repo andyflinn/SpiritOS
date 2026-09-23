@@ -149,7 +149,7 @@ test.subHeading('Deleting a contact does not reach into the shadow');
   //   deleted."
   //
   // `contactBook.forget` says the same of itself: it forgets YOUR side of
-  // a relationship, and a relay's census is not yours to edit. Deleting a
+  // a relationship, and a relay's roll is not yours to edit. Deleting a
   // row is a statement about an address book, not about what this node
   // was told — so re-adding somebody gets their route back without a
   // search, which is what makes pruning safe (R32).

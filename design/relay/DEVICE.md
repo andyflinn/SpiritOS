@@ -83,7 +83,7 @@ anyone can read, and it can address nobody but the node that owns it.
 | key | permanent identity | temporary session key |
 | may address | any peer on the relay | **its owner — and only because the node's key is the address it posts to** |
 | reaches a peer by | posting | **asking its node to** |
-| appears in the census | to everyone | **to its owner, and to nobody else** |
+| appears in the roll | to everyone | **to its owner, and to nobody else** |
 | authority toward peers | signs as itself | **none — it petitions** |
 | held by the relay | on disk, the ledger | **in RAM, and paired to its owner** |
 | its key resolves for | anyone who asks | **its owner and the relay, and nobody else** |
@@ -218,7 +218,7 @@ machinery for a property the addressing already had.
 > Andy: what the relay is NOT allowed to do is: expose the temporary
 > device ID to any other peer
 
-> the connected device must only appear on the census for its owning node
+> the connected device must only appear on the roll for its owning node
 
 > a device key only resolves for its owner AND the relay
 
@@ -395,7 +395,7 @@ key. It can route to it and verify its signatures; it cannot forge one.
 
 ### The reverse direction, which nobody has ruled on
 
-If the device is sent a roster, **what is in it?** The full census would
+If the device is sent a roster, **what is in it?** The full roll would
 hand a seized phone every label and key its owner can see. Under *"a
 device can only talk to its owning node"* the answer that follows is **its
 owner and nothing else** — stated here because it follows from the premise
@@ -408,7 +408,7 @@ Andy: *"if there was one step in the device architecture that should be
 tested, it is."*
 
 Stand up a relay, enrol a device, connect a second peer, and assert the
-temporary ID appears in **none** of: the public census, that peer's
+temporary ID appears in **none** of: the public roll, that peer's
 roster, any presence event that peer receives, or a `deviceIdentityPublic`
 lookup. False negatives only, never false positives (ROUTER.md §4).
 
@@ -563,7 +563,7 @@ WebCrypto exposes none. **There is nothing to seal to.**
 Sealing would need an **X25519** key alongside every Ed25519 identity,
 published wherever the signing key is, pinned the same way, with browser
 support confirmed the way Ed25519 was on 2026-09-10. That touches
-`generateIdentity`, the census, the device URL's shape and pinning.
+`generateIdentity`, the roll, the device URL's shape and pinning.
 
 **And the device channel is not uniquely unsealed — nothing is.**
 TRANSPORT.md's admission holds for every packet in the system for exactly

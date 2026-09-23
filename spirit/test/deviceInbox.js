@@ -71,7 +71,7 @@ test.startTest('A device key proves nothing to a relay');
   // Read off the relay's disc (relay.db since cycle 3): the report
   // carries a COUNT of members now, never the rows.
   const who = { peers: rollOf(box) };
-  // `p.name` until 2026-09-15, when a census row stopped saying a peer's
+  // `p.name` until 2026-09-15, when a roll row stopped saying a peer's
   // label twice. One field, and it is the one that says what it is.
   const andys = (who.peers || []).filter(function (p) { return p.publicLabel === 'andy'; });
   const anyDeviceKey = (who.peers || []).some(function (p) { return p.devicePublicKey; });

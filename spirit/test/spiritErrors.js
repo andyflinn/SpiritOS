@@ -16,7 +16,7 @@
 // catalogue agrees with. A new sentence anywhere turns this red until
 // somebody decides what it means.
 //
-// That is the same shape as cycleRequirements.js and settableCensus.js:
+// That is the same shape as cycleRequirements.js and settableRoll.js:
 // the rule is not remembered, it is counted.
 
 const fs = require('fs');

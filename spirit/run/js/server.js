@@ -687,7 +687,7 @@ const server = http.createServer((req, res) => {
   const pathname = parsed.pathname;
 
   // THE RELAY ROUTES STOOD HERE — /api/relay/key, the device page and
-  // /api/relay/stream, with the census and ring tombstones beside them.
+  // /api/relay/stream, with the roll and ring tombstones beside them.
   // A node no longer answers any relay route (cycle 0, Andy 2026-09-19);
   // they are relayServer.js.
 
@@ -726,12 +726,12 @@ const server = http.createServer((req, res) => {
   // relay.streamSignatureFrom, and the stream route above that calls it.
 
   // expandKeys STOOD HERE. It turned `?key=a&key=b` or `?key=a,b` into a
-  // list for the census's narrow form, and normalised the device page's
+  // list for the roll's narrow form, and normalised the device page's
   // url-safe spelling through deviceAuth.keyFromUrl so a page holding one
   // could ask about itself without converting it back.
   //
   // Both callers are gone: the device page asks the relay nothing, and the
-  // census route it served was deleted the same day. Narrowing was the
+  // roll route it served was deleted the same day. Narrowing was the
   // intermediate strategy and it is not the one that finished the job —
   // "a narrower cheat is a defended one" (0012).
 
@@ -817,7 +817,7 @@ const server = http.createServer((req, res) => {
     // morning.
     //
     // What does NOT fold into a post, because 0010 says it cannot:
-    // claim, device and the census reads. You cannot post to a relay you
+    // claim, device and the roll reads. You cannot post to a relay you
     // have no row on, and you cannot post to an address you are still
     // asking for. They are verbs at the same door now, which is a
     // different thing — the door is one, the plumbing behind it is not.
@@ -1107,7 +1107,7 @@ contactBook.syncMarks(ROOT_DIR);
   catch (e) { /* nor a relay list */ }
 
   // THE BOOT-TIME ROSTER SWEEP STOOD HERE (hub.syncMembers). It read every
-  // owned relay's census roster, which no relay may return any more; see
+  // owned relay's roll roster, which no relay may return any more; see
   // the note where reconcileMembers stood in hub.js. A new member becomes a
   // contact on the claim event instead — onOwnerEvent, below.
 
@@ -1261,7 +1261,7 @@ contactBook.syncMarks(ROOT_DIR);
     // A FULL RECONCILE RATHER THAN AN ACQUIRE OF THAT ONE KEY, and the
     // extra probe is worth it: the event says a key claimed, it does not
     // say on which of this node's relays, and a reconcile answers that
-    // from the census — the same authority that runs at boot. One
+    // from the roll — the same authority that runs at boot. One
     // mechanism, exercised twice, rather than two that can disagree.
     //
     // Nothing waits on it and a failure is silent: this is a convenience
@@ -1400,7 +1400,7 @@ contactBook.syncMarks(ROOT_DIR);
       return relayEvents.note(ev);
     },
     // WHO EACH RELAY IS, pinned as its stream opens. relayKey fetches the
-    // census, accepts a key never seen before, and refuses one that
+    // roll, accepts a key never seen before, and refuses one that
     // changed — so by the time any enrolment can be posted down that
     // stream, hub.frontDoor already knows whether to admit the relay as a
     // party.
@@ -1572,10 +1572,10 @@ contactBook.syncMarks(ROOT_DIR);
       });
     },
     // Eligibility, read-only: does this peer own the relay at that url?
-    // Answered off a PUBLIC census, so it grants nothing — the promotion
+    // Answered off a PUBLIC roll, so it grants nothing — the promotion
     // itself is an owner verb posted to the relay like any other.
     'relay.partnerCheck': function (rq, rs) { hub.handlePartnerCheck(rq, rs, readJsonBody); },
-    // `relay.roster` STOOD HERE — the public census of a relay this node
+    // `relay.roster` STOOD HERE — the public roll of a relay this node
     // is not on, "what a partnership makes visible". Deleted 2026-09-17
     // with the only screen that drew it; see the tombstone in hub.js.
     'relay.status': function (rq, rs) {
@@ -1590,7 +1590,7 @@ contactBook.syncMarks(ROOT_DIR);
   //
   // THIS NODE'S OWN ADDRESS BOOK, and nothing else. Every verb here is
   // a contactBook write or a preferences read on this machine, so the group
-  // is uniformly local — which is what lets the census reads live
+  // is uniformly local — which is what lets the roll reads live
   // somewhere else even though a person would call them contact work
   // too. `peer.list` and `peer.find` ask a RELAY who is out there;
   // `contact.*` is what this node has decided to keep.
@@ -1619,7 +1619,7 @@ contactBook.syncMarks(ROOT_DIR);
   // reason the flag is on the namespace.
   //
   //   peer.post     the only thing on this node that reaches router.post
-  //   peer.list     the relay's census, captioned by this node's book
+  //   peer.list     the relay's roll, captioned by this node's book
   //   peer.find     the keys behind one spoken handle
   //   peer.acquire  a human confirmed one of those keys
   //
@@ -1646,10 +1646,10 @@ contactBook.syncMarks(ROOT_DIR);
     'peer.list': function (rq, rs) { hub.handleWho(rq, rs); },
     'peer.acquire': function (rq, rs) { hub.handleContact(rq, rs, readJsonBody); },
     // Ask every relay who matches, rather than downloading every
-    // census to find out. See hub.handleSearch.
+    // roll to find out. See hub.handleSearch.
     //
     // `peer.candidates` STOOD BESIDE THIS and answered the same question
-    // by downloading every census on every relay and partner. Deleted
+    // by downloading every roll on every relay and partner. Deleted
     // 2026-09-17 with no caller — see the tombstone in hub.js.
     'peer.search': function (rq, rs) {
       hub.handleSearch(rq, rs, readJsonBody, { router: peerRouter, presence: presence });

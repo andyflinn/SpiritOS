@@ -108,7 +108,7 @@ function mountApp(options) {
     // A `/api/hub/inbox` branch stood here, answering whatever
     // `opts.inboxStatus` said, because Natter checked its binding with a
     // signed inbox read. R8 deleted that route (2026-09-15) and the check
-    // moved onto the census — see `claimedLabel` on the rows above, and
+    // moved onto the roll — see `claimedLabel` on the rows above, and
     // natterCheckBinding.
     const text = JSON.stringify(payload);
     return Promise.resolve({
@@ -643,7 +643,7 @@ function aRowOpensTheMailbox() {
 // The subject survives twice over now: an owner who invited somebody ends
 // up connected to them. This app used to do it — watch the owner's claim
 // events, post `peer.acquire` by key — and that was itself a rewrite of
-// an older version that matched invite LABELS against the census.
+// an older version that matched invite LABELS against the roll.
 //
 // It has moved again, to hub.syncMembers, and the new home fixes the one
 // thing neither browser version could: **it does not need a browser**.
@@ -707,7 +707,7 @@ function anInviteRedeemedAddsThemHere() {
 //
 // A relay could publish a name and no screen would show it: every
 // caption came from relays.json, the reader's private shorthand. The
-// census carried the new name to the browser correctly and nothing drew
+// roll carried the new name to the browser correctly and nothing drew
 // it — which is a whole feature reaching the last inch and stopping.
 //
 // THE ORDER IS THE OPPOSITE OF A CONTACT'S, deliberately. contactBook
@@ -723,7 +723,7 @@ function aRelayNameBeatsTheListsOwnWord() {
     relays: [{ label: 'spirit', url: OWNED }],
     rows: [{
       url: OWNED, label: 'spirit', status: 200, owned: true,
-      census: { relayKey: 'RELAYKEY', relayLabel: 'Andy Flinn home relay', roster: [] },
+      roll: { relayKey: 'RELAYKEY', relayLabel: 'Andy Flinn home relay', roster: [] },
     }],
   });
 
@@ -759,7 +759,7 @@ function anUnnamedRelayKeepsMyWordForIt() {
     relays: [{ label: 'spirit', url: OWNED }],
     rows: [{
       url: OWNED, label: 'spirit', status: 200, owned: true,
-      census: { relayKey: 'RELAYKEY', relayLabel: '', roster: [] },
+      roll: { relayKey: 'RELAYKEY', relayLabel: '', roster: [] },
     }],
   });
 

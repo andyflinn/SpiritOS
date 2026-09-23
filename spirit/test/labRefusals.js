@@ -168,7 +168,7 @@ async function run() {
   // AND THE RECIPIENT IS CHECKED TOO — a generated `to` answered 404
   // "no such peer" for the same reason. So the destination here is THE
   // RELAY'S OWN KEY: a relay is a peer to every member, it publishes
-  // that key in its own census, and posts addressed to it are answered
+  // that key in its own roll, and posts addressed to it are answered
   // like anybody's. It is the one address guaranteed to exist on a box
   // this suite has not spent an invite on.
   const relayKey = (await (await fetch(ORIGIN + '/api/relay/key')).json()).relayPublicKey;

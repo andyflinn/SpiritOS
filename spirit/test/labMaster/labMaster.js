@@ -982,7 +982,7 @@ function livePost(url, body) {
 // it to router.post, which is what a peerPost IS — so the door was a
 // second way of saying what the protocol already said.
 //
-// ADDRESSED BY KEY, which the census publishes to anyone. The answer
+// ADDRESSED BY KEY, which the roll publishes to anyone. The answer
 // arrives inside the envelope the relay replied in, and the body is what
 // a caller wants — the same shape api.peerPost hands a page.
 async function postToRelayVia(nodeUrl, relayUrl, body) {
@@ -1250,7 +1250,7 @@ async function buildLiveWorld(body) {
   }
 
   // WHETHER IT IS ALREADY ON, asked of the node rather than the relay —
-  // see liveWorldReport above for why the census is gone. If the node is
+  // see liveWorldReport above for why the roll is gone. If the node is
   // wrong, the claim below answers `409 key already claimed` and says so,
   // which is the relay's own answer rather than a list to search.
   const reachable = await fetch(LIVE_RELAY + '/api/relay/key')

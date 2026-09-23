@@ -37,11 +37,11 @@ That is *request by post, reply by stream*. The stream is the **inbound half of 
 
 **No component reaches for `http`, `https`, `fetch`, `XMLHttpRequest` or `EventSource`. EVERY FILE. ALWAYS — run code and TESTS alike.** Not to get something done quickly, not because the interface is awkward here. If the interface is insufficient for the task, **decide**: modify the interface, or grant an explicit, recorded exception. Never work around it. This rule has been re-derived and back-slid more than once — `fetch` is a global in both runtimes, so nothing stops it but this line and `spirit/test/oneDoor.js`.
 
-**A TEST IS WHERE IT GETS ESCAPED FIRST**, because bypassing the interface is always the quickest way to make something go green. `oneDoor.js` holds a CENSUS of every reach in every file under `run/js`, `run/app` and `test` — 76 across 26 files, counted recursively. A number may fall freely and may never rise; a file not in the census must have zero. **There is no category meaning "unlimited"**, because the first version had one (`server.js` and `kernel.js`, "structural") and that is precisely what got used.
+**A TEST IS WHERE IT GETS ESCAPED FIRST**, because bypassing the interface is always the quickest way to make something go green. `oneDoor.js` holds a ROLL of every reach in every file under `run/js`, `run/app` and `test` — 76 across 26 files, counted recursively. A number may fall freely and may never rise; a file not in the roll must have zero. **There is no category meaning "unlimited"**, because the first version had one (`server.js` and `kernel.js`, "structural") and that is precisely what got used.
 
 > **Andy:** *"it's not only new files. it's all files! Always! we need to enforce this stronger."*
 
-Raising a number, or adding a line to the census, is Andy granting an exception out loud. It is never a commit that happens to pass.
+Raising a number, or adding a line to the roll, is Andy granting an exception out loud. It is never a commit that happens to pass.
 
 A relay is a client of the same interface. `createPeerPost` already takes `traffic` injected so a relay can omit it, and touches `whoBook` only on the inbound unknown-sender path — it was built to be constructed on a relay.
 
@@ -60,7 +60,7 @@ A relay is a client of the same interface. `createPeerPost` already takes `traff
 - Identity = keypair on the personal node. Perception = whoBook, never uploaded.
 - Live Kamatera (spirit-3) is **keys-mode**, owner **`Andy Flinn`** in `allow.json` (read on the box 2026-09-19; this line said `andy`), cut over 2026-09-07 (`CUTOVER.md`), on `relay.db` since release `v-2026-09-19-17-00`. The harness cannot see the VPS, so this line is the only record.
 - Extra keys-mode claims need a live invite. **The first claim needs one too** (cycle 3, 0003 amended): an unclaimed relay takes only the owner invite `node install.js` mints over SSH. The owner key in `allow.json` may reclaim its own row if the roll lost it. **If `allow.json` is lost while `relay.db` holds members, the relay refuses to start (exit 78); recovery is SSH, restoring `allow.json` by hand — never the wire** (Andy). (This line said "Owner key may reclaim if `routingTable.json` is gone"; that file became `relay.db` in cycle 3, and a recovery rule naming a file that no longer exists is followed literally at the worst moment.)
-- Reserved name `relay` cannot be claimed. Chat-to-relay census is owner-only (asserted in `firstOwner.js`, not `relayGates.js`).
+- Reserved name `relay` cannot be claimed. Chat-to-relay roll is owner-only (asserted in `firstOwner.js`, not `relayGates.js`).
 - Inbox signed. Send rate-limit on `clientKey`. No `X-Forwarded-For` unless asked.
 
 ## UI and test discipline
@@ -73,7 +73,7 @@ Andy looks at the spirit-shell whenever a cycle changes what a human sees. That 
 - Not apps (do not tidy into `app/`): `js/kernel.js`, `js/client/shell.js`, `index.html`, `js/ownerBadge.js` (script-tag helper). `js/client/browser.js` is unused by `index.html` / `relay.html` / `server.js` — do not assume it is loaded; do not delete it until Andy opens that sitting.
 - `mount(container, api, params)` — third argument is real; viewers use it.
 - **Apps do not name HTTP paths and do not call `fetch`.** Methods live on `api`; the shell reaches the node, the node reaches the wire — see **Comms** above. This was written as a *target* with a standing pass for Relay Chat, and that is precisely how twelve direct `fetch`es accumulated across six apps: one file had a named exemption, so the next file took one too. The twelve are now a frozen, dated list in `spirit/test/oneDoor.js` — the count goes down or the harness goes red. **Nothing is added to it without Andy granting the exception explicitly.**
-- `api.hub.status` means the **badge summary** (`rows`, `ownedUrls`, `mustPick`), not the relay census (`/api/relay/status`).
+- `api.hub.status` means the **badge summary** (`rows`, `ownedUrls`, `mustPick`), not the relay roll (`/api/relay/status`).
 - `api.fs` is scoped to `app/<name>/` **by convention**. The jail is server-side `fileWritable`. Shared reads via `spirit.core.fs` are not a security regression.
 - Kernel rules may be `js/*.js` modules on `api` or a documented script-tag global (`spiritOwnerBadge`). Do not delete `js/ownerBadge.js` as a stray.
 - Intrinsic apps sit in the **Spirit** group and cannot be moved or hidden. **Name and icon lock is not true in the tree yet** — later sitting, and it must land *before* Stats/Processes/Jobs/Apps/Groups move.

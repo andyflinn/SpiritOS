@@ -28,7 +28,7 @@ const world = require('./world');
 const RELAY_URL = 'http://relay.example';
 const OTHER_URL = 'http://other.example';
 
-// A relay that answers a census and takes a set-device, and records what
+// A relay that answers a roll and takes a set-device, and records what
 // it was asked. Small on purpose: what is under test is the node's
 // decision, not a relay.
 //
@@ -66,27 +66,27 @@ function fakeRelay(opts) {
       // ── THE KEY COMES FROM ITS OWN DOOR NOW (2026-09-18) ─────────
       //
       // This fake served `/api/relay/who` because that is where
-      // answerRelay read `relayPublicKey` — the whole census, fetched to
+      // answerRelay read `relayPublicKey` — the whole roll, fetched to
       // take one field off the envelope. `GET /api/relay/key` answers
       // that field and nothing else, and there is no fallback: a relay
       // without the door yields no key at all (see the note on fetchKey).
       //
-      // `opts.censusFails` keeps its name and its meaning — "the box will
+      // `opts.rollFails` keeps its name and its meaning — "the box will
       // not say who it is" — because every check that used it is about
       // what the node does when it cannot pin, not about which path it
       // asked down.
       if (method === 'GET' && /\/api\/relay\/key$/.test(pathname)) {
-        if (opts.censusFails) return Promise.reject(new Error('down'));
+        if (opts.rollFails) return Promise.reject(new Error('down'));
         return said({
           relayPublicKey: url === OTHER_URL ? opts.otherKey : opts.mailboxKey,
         });
       }
 
-      // AND THE CENSUS IS NOT SERVED HERE AT ALL. If answerRelay ever
+      // AND THE ROLL IS NOT SERVED HERE AT ALL. If answerRelay ever
       // reaches for it again, it gets `{ok:false}` and no key — which
       // fails these checks loudly rather than working at 300x the price.
       if (method === 'GET' && /\/api\/relay\/who$/.test(pathname)) {
-        test.fail('answerRelay read the census: ' + pathname);
+        test.fail('answerRelay read the roll: ' + pathname);
       }
 
       return said({ ok: false });
@@ -225,7 +225,7 @@ async function run() {
     });
 
     const elsewhere = auth.generateIdentity('elsewhere');
-    // Arriving on OTHER_URL, whose census says its key is relayId — so
+    // Arriving on OTHER_URL, whose roll says its key is relayId — so
     // `elsewhere` is nobody's relay key.
     const said = await A.answer(arriving(elsewhere.publicKey, offer(node.password, phone.publicKey), OTHER_URL));
     if (said === '') {
@@ -341,11 +341,11 @@ async function run() {
   }
 
   {
-    // A CENSUS THAT CANNOT BE REACHED FAILS CLOSED. An unknown relay key
+    // A ROLL THAT CANNOT BE REACHED FAILS CLOSED. An unknown relay key
     // matches nothing, so the request is treated as a stranger's rather
     // than acted on — the safe direction for a lookup that can fail.
     const node = nodeWithPassword();
-    const relay = fakeRelay({ mailboxKey: relayId.publicKey, censusFails: true });
+    const relay = fakeRelay({ mailboxKey: relayId.publicKey, rollFails: true });
     const A = answerRelay.createAnswerer({
       rootDir: node.home, request: relay.request, post: relay.post,
       urls: function () { return [RELAY_URL]; },
@@ -360,7 +360,7 @@ async function run() {
 
   {
     // ASKED ONCE. A relay's key is made on its first --relay boot and
-    // does not change while it is the same relay, so a census per
+    // does not change while it is the same relay, so a roll per
     // enrolment would be a round trip spent on a constant.
     const node = nodeWithPassword();
     const relay = fakeRelay({ mailboxKey: relayId.publicKey });
@@ -370,11 +370,11 @@ async function run() {
     });
     await A.answer(arriving(relayId.publicKey, offer('wrong', phone.publicKey)));
     await A.answer(arriving(relayId.publicKey, offer('wrong', phone.publicKey)));
-    const censuses = relay.calls.filter(function (c) { return /key$/.test(c.pathname); });
-    if (censuses.length === 1) {
+    const rolls = relay.calls.filter(function (c) { return /key$/.test(c.pathname); });
+    if (rolls.length === 1) {
       test.check('and the relay\'s key is asked for once, not once per enrolment');
     } else {
-      test.fail(censuses.length + ' key lookups for two offers');
+      test.fail(rolls.length + ' key lookups for two offers');
     }
   }
 

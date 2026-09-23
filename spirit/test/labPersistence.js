@@ -57,7 +57,7 @@ async function post(url, body) {
   }
 }
 
-async function census() {
+async function roll() {
   try {
     const res = await fetch(ORIGIN + '/api/relay/key');
     if (res.status !== 200) return null;
@@ -71,7 +71,7 @@ async function waitServing(timeoutMs) {
   const startedAt = Date.now();
   for (;;) {
     /* eslint-disable no-await-in-loop */
-    if (await census()) return true;
+    if (await roll()) return true;
     if (Date.now() - startedAt > timeoutMs) return false;
     await sleep(200);
   }
@@ -187,7 +187,7 @@ async function run() {
   // IT IS REALLY DOWN. Without this the checks below could be answered
   // by the process that never died, and "it persisted" would be
   // indistinguishable from "it never restarted".
-  if (!(await census())) {
+  if (!(await roll())) {
     test.check('and stops answering, so what comes back next is a new process');
   } else {
     test.fail('the relay was still serving after stop');
@@ -221,7 +221,7 @@ async function run() {
         .map(function (k) { return String(k).slice(-8); })));
   }
 
-  // AND THE BOX IS STILL SHUT. A census that lists somebody proves the
+  // AND THE BOX IS STILL SHUT. A roll that lists somebody proves the
   // file was read; a refused claim proves the relay is ACTING on what it
   // read. Different failures, and only one of them is visible in a list.
   //

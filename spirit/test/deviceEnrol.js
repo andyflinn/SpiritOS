@@ -166,9 +166,9 @@ async function theRelayPostsAsItself() {
   }
 
   // The node must be able to tell the relay apart from anybody else, and
-  // the census is where it learns that key — no new endpoint.
+  // the roll is where it learns that key — no new endpoint.
   if (mailboxKey && req.to === owner.publicKey) {
-    test.check('and addressed to the identity being enrolled, from a key the census publishes');
+    test.check('and addressed to the identity being enrolled, from a key the roll publishes');
   } else {
     test.fail('addressing: to=' + req.to);
   }

@@ -7,14 +7,14 @@
 //   Andy: "i want to erase the whole whoBook nonsense — it's like: what
 //   the hell is that. It's the contacts.json, the contact storage."
 //
-// `who` was the CENSUS's word: GET /api/relay/who, everyone who ever
+// `who` was the ROLL's word: GET /api/relay/who, everyone who ever
 // claimed on a relay. This file's first paragraph below is an argument
-// that it is NOT that — "a mailbox census is not an address book" — and
+// that it is NOT that — "a mailbox roll is not an address book" — and
 // it was named after the thing it exists to keep out.
 //
 // That is not a cosmetic complaint. `peer.list` spent as long as the two
-// wore one name pouring the census into this file on every Contacts
-// refresh, as census-rank rows, for people the node would then refuse to
+// wore one name pouring the roll into this file on every Contacts
+// refresh, as roll-rank rows, for people the node would then refuse to
 // hear from. A name that argues with its own purpose is how that goes
 // unnoticed.
 //
@@ -44,14 +44,14 @@
 //   somebody this node knows and somebody who merely claimed on the same
 //   mailbox (CYCLE-CONTACTS-IMPL.md).
 //
-// A mailbox census is not an address book. Everyone who ever claimed on
+// A mailbox roll is not an address book. Everyone who ever claimed on
 // a public relay appears in `who`, and copying that into the To list
 // makes "people I talk to" mean "people who exist" — which is how a
 // friend ends up picking a stranger's john out of a list.
 //
 // So a row carries how it arrived, and only some ways count as knowing:
 //
-//   census  — seen in `who`. Not a contact. The default for a row with
+//   roll    — seen in `who`. Not a contact. The default for a row with
 //             no field at all, which is every row written before this,
 //             since that is exactly what those rows were.
 //   message — they wrote to you and the mailbox carried their key. Weak:
@@ -60,7 +60,7 @@
 //   handle  — a human confirmed the key out of band (cut 2).
 //   member  — they hold a seat on a relay THIS NODE OWNS.
 //
-// Ranks never fall. A census sync may correct a publicLabel on a row you
+// Ranks never fall. A roll sync may correct a publicLabel on a row you
 // already know, and can never demote it back to a stranger.
 //
 // ── WHY `member` IS A RANK AND NOT A FLAG ────────────────────────────
@@ -70,7 +70,7 @@
 //
 // It has to be a rank because ACQUIRED_LISTENING is what decides whether
 // this node accepts somebody's mail at all. A member auto-added as
-// `census` would be a contact this node refuses to hear from, which is
+// `roll` would be a contact this node refuses to hear from, which is
 // the opposite of the point — the owner let them onto the box.
 //
 // TOP OF THE LADDER, above `handle`: a human confirming a key out of band
@@ -82,22 +82,51 @@
 const fs = require('fs');
 const path = require('path');
 
-const ACQUIRED_CENSUS = 'census';
+// ── IT WAS `census` UNTIL 2026-09-23 (cycle 10, R18) ─────────────────
+//
+//   Andy: "i hate the word census now, but for the relay it's true. so
+//   the relay is the keeper of cards, in the database, on disc... and the
+//   relay can't falsify the record in the member roll (not census)?" —
+//   then, deciding it: "we loose census from the dictionary."
+//
+// A census is something a counter performs on a population. A roll is a
+// list a body keeps of its own members, and that is what a relay has: the
+// members are enrolled, the relay is answerable for the list, and cycle
+// 10 makes it answerable in writing — a roll entry now introduces the key
+// everything sent to that member is sealed to.
+//
+// Renamed INSIDE this flag day on purpose (wsl-claude's sequencing): the
+// break is already being spent, and a vocabulary change that slips a week
+// becomes a second one.
+const ACQUIRED_ROLL = 'roll';
 const ACQUIRED_HOLD = 'hold';
 const ACQUIRED_MEMBER = 'member';
 const ACQUIRED_RANK = {
-  census: 0, hold: 1, message: 2, invite: 3, handle: 4, member: 5,
+  roll: 0, hold: 1, message: 2, invite: 3, handle: 4, member: 5,
 };
 // The ways of arriving that mean this node will listen. `hold` is not one
 // of them: a held row exists so a human can see who is waiting and say
 // yes, and until they do it is a name, not a correspondent.
 const ACQUIRED_LISTENING = ['message', 'invite', 'handle', 'member'];
 
-// A row with no field predates the field, and what it was is a census
-// row: it was written by handshake (deleted 2026-09-19) from `who`.
+// A row with no field predates the field, and what it was is a roll row:
+// it was written by handshake (deleted 2026-09-19) from `who`.
+//
+// AND THIS IS ALSO THE RENAME'S MIGRATION, which is why it is said out
+// loud rather than left to work by accident. Every live node — Andy's,
+// both agents', every member of spirit-3 — has rows on disc reading
+// `acquiredVia: "census"`. That string is no longer in ACQUIRED_RANK, so
+// it falls through here to `roll`, which is the rank and the meaning it
+// always had. Nothing is rewritten on disc; the next write to a row
+// stores the new word (normalize keeps named fields only).
+//
+// So the old value is CAUGHT, not merely unrecognised. If a later hand
+// turns this fallback into a refusal, it must migrate these rows first,
+// or every contact a node ever met through a roll silently becomes a
+// stranger it will not hear from.
 function acquiredVia(row) {
   var via = row && row.acquiredVia;
-  return Object.prototype.hasOwnProperty.call(ACQUIRED_RANK, via) ? via : ACQUIRED_CENSUS;
+  return Object.prototype.hasOwnProperty.call(ACQUIRED_RANK, via) ? via : ACQUIRED_ROLL;
 }
 
 function acquiredRank(via) {
@@ -132,24 +161,24 @@ function contacts(rootDir) {
   return load(rootDir).filter(listens);
 }
 
-// Everyone this node has a row for beyond the census: the people it
+// Everyone this node has a row for beyond the roll: the people it
 // listens to, plus the ones waiting to be accepted and the ones it has
 // blocked. What the To list is built from — a held row that cannot be
 // seen cannot be accepted, and a blocked row that vanishes cannot be
 // unblocked.
 function addressBook(rootDir) {
-  return load(rootDir).filter(function (row) { return acquiredVia(row) !== ACQUIRED_CENSUS; });
+  return load(rootDir).filter(function (row) { return acquiredVia(row) !== ACQUIRED_ROLL; });
 }
 
 // ── IT WAS who.json UNTIL 2026-09-18 ────────────────────────────────
 //
 //   Andy: "who.json should be contacts.json."
 //
-// `who` is the CENSUS'S word — `GET /api/relay/who`, everyone who ever
+// `who` is the ROLL'S word — `GET /api/relay/who`, everyone who ever
 // claimed on that box. This file's first paragraph is an argument that it
 // is not that, and it was named after the thing it exists to keep out.
 // That is how the confusion got in: `peer.list` spent two years pouring
-// the census into the address book because the two wore one name.
+// the roll into the address book because the two wore one name.
 function bookPath(rootDir) {
   return path.join(rootDir, 'relay-state', 'contacts.json');
 }
@@ -301,7 +330,7 @@ function upsert(rootDir, row) {
     row.myLabel != null ? row.myLabel : (prev.myLabel || publicLabel)
   ).trim();
   // Never downgrade: a key you confirmed by phone does not become a
-  // stranger because the census mentioned it again.
+  // stranger because the roll mentioned it again.
   const wanted = row.acquiredVia === undefined ? acquiredVia(prev) : row.acquiredVia;
   const via = acquiredRank(wanted) >= acquiredRank(acquiredVia(prev)) ? wanted : acquiredVia(prev);
 
@@ -332,7 +361,7 @@ function upsert(rootDir, row) {
 }
 
 // setMemberOf, setMissing AND missingSince STOOD HERE — the roster
-// sweep's writers and the "on no census since" mark. Gone with the sweep
+// sweep's writers and the "on no roll since" mark. Gone with the sweep
 // (2026-09-19): what is not found cannot influence decisions (Andy), and a
 // key's absence from a list no relay may return is not a finding.
 
@@ -354,15 +383,15 @@ function byPublicKey(rootDir, publicKey) {
   return load(rootDir).find(function (r) { return r.publicKey === publicKey; }) || null;
 }
 
-// handshake STOOD HERE — "seeing somebody in a census": it refreshed a
-// row's public caption and relays from a census list, and wrote a
-// stranger in as `census`. Its one caller was hub.buildPeople's census
-// walk, fed [] since the census went (2026-09-18); both deleted
+// handshake STOOD HERE — "seeing somebody in a roll": it refreshed a
+// row's public caption and relays from a roll list, and wrote a
+// stranger in as `roll`. Its one caller was hub.buildPeople's roll
+// walk, fed [] since the roll went (2026-09-18); both deleted
 // 2026-09-19 with the other roster readers. Old rows still read
-// `census` (acquiredVia above) — that is history, not a source.
+// `roll` (acquiredVia above) — that is history, not a source.
 
 // Coming to know somebody: they wrote to you, they consumed an invite of
-// yours, or a human confirmed the key out of band. Upgrades a census row
+// yours, or a human confirmed the key out of band. Upgrades a roll row
 // in place rather than making a second one — identity is the key, and
 // there is only ever one row per key.
 function acquire(rootDir, peer, via) {
@@ -474,9 +503,9 @@ function labelForKey(rootDir, publicKey, fallbackPublicLabel) {
 // wrong one", which until now had no answer at all.
 //
 // WHAT IT DOES NOT DO is make them unfindable. If they are on a relay this
-// node is on, they are in its census, and the next search will show them
+// node is on, they are in its roll, and the next search will show them
 // again as somebody you could add. That is correct and worth saying: this
-// forgets YOUR side of a relationship, and a relay's census is not yours
+// forgets YOUR side of a relationship, and a relay's roll is not yours
 // to edit.
 //
 // WHAT IT ALSO DOES NOT DO is unblock them. A blocked row that is simply
@@ -492,7 +521,7 @@ function forget(rootDir, publicKey) {
     rows[at] = {
       publicKey: rows[at].publicKey,
       publicLabel: rows[at].publicLabel || '',
-      acquiredVia: ACQUIRED_CENSUS,
+      acquiredVia: ACQUIRED_ROLL,
       blocked: true,
     };
     save(rootDir, rows);
@@ -519,7 +548,7 @@ module.exports = {
   syncMarks: syncMarks,
   markOf: markOf,
   forget: forget,
-  CENSUS: ACQUIRED_CENSUS,
+  ROLL: ACQUIRED_ROLL,
   HOLD: ACQUIRED_HOLD,
   MEMBER: ACQUIRED_MEMBER,
   load: load,

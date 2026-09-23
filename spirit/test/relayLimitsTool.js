@@ -34,7 +34,7 @@ function doorSaying(answer, seen) {
     if (seen) seen.push({ pathname: pathname, body: body });
     if (body && body.verb === 'relay.status') {
       return Promise.resolve({ rows: ROWS.map(function (r) {
-        return { url: r.url, owned: r.owned, census: { relayKey: r.key, relayLabel: r.label } };
+        return { url: r.url, owned: r.owned, roll: { relayKey: r.key, relayLabel: r.label } };
       }) });
     }
     return Promise.resolve(answer);

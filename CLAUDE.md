@@ -14,7 +14,7 @@ You hold the **in-studio** position (`AGENT.md`, Split of labour): you work **in
 
 1. **Findings first**, on the code that just landed or the diff Andy points at, triaged as the rules say.
 2. **Apply fixes only after Andy answers.** A short pasted verdict is the leash for the sitting. Do not expand the sitting. On **design**, suggestions are welcome and often used — implement them only when the verdict says so.
-3. **Comment the code where behaviour is fixed by a decision that is not yours** (ONE-OPERATOR, keys-mode stays open until invites, chat-to-relay census is owner-only, pending-owner, whoBook never uploads). Point at `AGENT.md` or the decision file. Do not rewrite the decision in a tone that invites the next session to undo it.
+3. **Comment the code where behaviour is fixed by a decision that is not yours** (ONE-OPERATOR, keys-mode stays open until invites, chat-to-relay roll is owner-only, pending-owner, whoBook never uploads). Point at `AGENT.md` or the decision file. Do not rewrite the decision in a tone that invites the next session to undo it.
 4. **Run the harness. Paste the last lines. Green means stop.** Stage by name; never `git add -A`.
 
 ## Delivering a design sitting

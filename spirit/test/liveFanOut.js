@@ -5,7 +5,7 @@
 //
 //   Andy: "… or the concept that peer acquisition for nodes requires
 //   liveness of the partners; this would accelerate search
-//   significantly." — "Search vs. census is already a loss in
+//   significantly." — "Search vs. roll is already a loss in
 //   completeness." (cycle 3, NODE-AND-RELAY §10)
 //
 // Until cycle 3 a search was propagated to every `partnered` row and the

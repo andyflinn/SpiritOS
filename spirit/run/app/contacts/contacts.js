@@ -100,12 +100,12 @@ var contactsSelfTail = '';
 //   can then be procured via the relay-partner POST chain, this would
 //   incidentally also validate true 'reachability'."
 //
-// A search answers off a relay's CENSUS — a label and a key, which is
+// A search answers off a relay's ROLL — a label and a key, which is
 // what the relay was told and has no opinion about. This asks the person
 // themselves, and it is a different kind of fact: they composed it, they
 // are awake to say it, and the packet came back. That last part is why
 // "could not reach them" is an answer here and not a failure — it is the
-// one thing a census can never tell you.
+// one thing a roll can never tell you.
 //
 // Keyed by public key: `'asking' | { name, description } | { why }`.
 // Kept across repaints of the list so pressing a row twice does not
@@ -405,7 +405,7 @@ function contactsRefresh() {
 // ── EVERYBODY VISIBLE AND NOT YET KNOWN ──────────────────────────────
 //
 // One ask. The node walks every relay this node is on, asks each which
-// relays it partners with, reads those censuses too, and subtracts
+// relays it partners with, reads those rolls too, and subtracts
 // everybody already in the book — so this page does not have to know how
 // many places the answer came from, and will not have to change when the
 // relay starts answering a search instead (PARTNERS.md, tier three).
@@ -418,7 +418,7 @@ function contactsRefresh() {
 //   thousand people in this list... We want the partner-space
 //   searchable."
 //
-// This fetched every census whole and rendered whoever was left after
+// This fetched every roll whole and rendered whoever was left after
 // subtracting the book. Fine at ten members; at a thousand it is 150 KB
 // a relay to draw a list nobody can read to the end of.
 //
@@ -500,7 +500,7 @@ function contactsPaintSeen() {
       : '') +
     // NO "WHERE" COLUMN. Andy: "The user shouldn't worry about relays."
     // The relay is still on the row, as `data-url`, because the confirm is
-    // checked against that census and the contact keeps it as a route —
+    // checked against that roll and the contact keeps it as a route —
     // but it is the node's business and not a column somebody reads.
     //
     // AND NO "KEY ENDS" COLUMN EITHER, now that a row can be opened.
@@ -548,7 +548,7 @@ function contactsPaintSeen() {
       // who is out there, and dropping the people you have would make
       // the answer depend on your book — which is how somebody ends up
       // typing a name, seeing nothing, and concluding they are gone.
-      const known = c.acquiredVia && c.acquiredVia !== 'census';
+      const known = c.acquiredVia && c.acquiredVia !== 'roll';
       // THE ROW IS A CONTROL AGAIN (2026-09-21), and this is a reversal
       // rather than a repair.
       //
@@ -588,7 +588,7 @@ function contactsPaintSeen() {
           : '<button type="button" class="cancel-btn contacts-seen-add"' +
             ' data-key="' + contactsEscapeHtml(c.publicKey) + '"' +
             // THE LABEL TRAVELS WITH THE ROW (2026-09-18). peer.acquire
-            // used to fetch it from the relay's census by key; the relay
+            // used to fetch it from the relay's roll by key; the relay
             // already said it, right here, when it answered the search.
             // Asking again is the node spending its own request budget on
             // something it was told.
@@ -999,7 +999,7 @@ spirit.shell.activateApp({
       // across every relay this node is on AND their partners, which the
       // node gathers so the page does not have to know how many places it
       // took. `peer.search` — it ASKS each relay who matches rather than
-      // downloading each census, which is the same question with a bound
+      // downloading each roll, which is the same question with a bound
       // on the answer. (It said `peer.candidates` until 2026-09-17; that
       // verb had already stopped being called and is now deleted.)
       //

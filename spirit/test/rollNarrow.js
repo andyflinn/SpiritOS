@@ -1,9 +1,9 @@
 'use strict';
 
-// spirit/test/censusNarrow.js
-// THE CENSUS IS GONE, AND NOTHING REACHES FOR IT.
+// spirit/test/rollNarrow.js
+// THE ROLL IS GONE, AND NOTHING REACHES FOR IT.
 //
-//   Andy: "the census mechanism is a cheat." — "when a cheat is
+//   Andy: "the roll mechanism is a cheat." — "when a cheat is
 //   identified, it must be eradicated." — "the eradication must be done to
 //   eliminate temptation."
 //
@@ -14,11 +14,11 @@
 //
 // ── WHY THIS FILE STILL HAS THIS NAME ────────────────────────────────
 //
-// It was written for the INTERMEDIATE strategy — narrowing the census with
+// It was written for the INTERMEDIATE strategy — narrowing the roll with
 // `?key=` so callers could ask about somebody specific. That worked, moved
 // five callers, and was not what finished the job:
 //
-//   Andy: "callers of the census have two choices: use other interfaces
+//   Andy: "callers of the roll have two choices: use other interfaces
 //   or die."
 //
 // Narrowing is how a cheat survives. 0012 says it plainly — *a narrower
@@ -83,7 +83,7 @@ function walk(dir, out) {
   return out;
 }
 
-test.startTest('The census is gone, and nothing reaches for it');
+test.startTest('The roll is gone, and nothing reaches for it');
 
 // ── 1. NO CALLER, ANYWHERE UNDER run/ ────────────────────────────────
 
@@ -97,7 +97,7 @@ if (offenders.length === 0) {
   test.check('no code under run/ names /api/relay/who — ' +
     walk(RUN, []).length + ' files checked');
 } else {
-  test.fail('still reaching for the census: ' + offenders.join(', '));
+  test.fail('still reaching for the roll: ' + offenders.join(', '));
 }
 
 // ── 2. AND THE DOOR ITSELF IS SHUT ───────────────────────────────────
@@ -108,7 +108,7 @@ if (offenders.length === 0) {
 test.subHeading('And the relay does not serve it');
 
 // BOTH STARTUP MODULES. The relay's routes moved to relayServer.js with
-// cycle 0 (node and relay as separate startup modules); a census door
+// cycle 0 (node and relay as separate startup modules); a roll door
 // would have to be in one of the two.
 const server = codeOf(path.join('js', 'server.js')) + '\n' + codeOf(path.join('js', 'relayServer.js'));
 
@@ -162,7 +162,7 @@ if (/relayKeys\.seat\(/.test(hub)) {
 // paginated or owner-only version of one. A broadcast is a different
 // thing: what is refused is an unbounded PULL, not disclosure to members.
 //
-// Asserted on the decision rather than on code, because the next census
+// Asserted on the decision rather than on code, because the next roll
 // will not be called `who`.
 
 test.subHeading('And the rule that keeps a second one from appearing');

@@ -76,7 +76,7 @@ function norm(p) {
 }
 
 // Through api(), below — one reach for every call this file makes, so
-// oneDoor's census for it does not grow.
+// oneDoor's roll for it does not grow.
 async function servesThisCheckout() {
   const mine = norm(REPO_ROOT);
   const root = await api('GET', '/api/root');

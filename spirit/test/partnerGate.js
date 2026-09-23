@@ -140,14 +140,14 @@ async function main() {
 test.subHeading('A partner is admitted, and is not a member');
 
 {
-  // It has no row, no label, and never appears in a census — the partner
+  // It has no row, no label, and never appears in a roll — the partner
   // is recognised only by the key it signs with.
-  const census = rollOf(B.box);
-  const asRow = (census.peers || census || []).filter(function (p) {
+  const roll = rollOf(B.box);
+  const asRow = (roll.peers || roll || []).filter(function (p) {
     return p && p.publicKey === A.key;
   });
   if (asRow.length === 0) {
-    test.check('the partner relay has no row on B and is in no census');
+    test.check('the partner relay has no row on B and is in no roll');
   } else {
     test.fail('partner appeared as a member: ' + JSON.stringify(asRow));
   }

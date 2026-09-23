@@ -10,10 +10,10 @@
 // ── WHAT THIS SUITE ASSERTED UNTIL 2026-09-19 ────────────────────────
 //
 // A roster sweep (hub.reconcileMembers, reconcileOrphans, syncMembers):
-// everybody on an owned relay's census roster became a contact carrying
-// `memberOf`, everybody on no roster lost it, a key on no census was marked
+// everybody on an owned relay's roll roster became a contact carrying
+// `memberOf`, everybody on no roster lost it, a key on no roll was marked
 // `missingSince`, and Forget refused while `memberOf` named a relay. The
-// census went on 2026-09-18 and a roster may never be returned again — a
+// roll went on 2026-09-18 and a roster may never be returned again — a
 // member list, which 0012 widened forbids, and one that breaks PAYLOAD_MAX.
 // The sweep then read [] for ever and pruned every member contact on every
 // probe, until it was found and deleted.

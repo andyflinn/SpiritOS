@@ -86,8 +86,8 @@ function relays(doorFn) {
       return {
         url: row.url,
         owned: !!row.owned,
-        label: (row.census && row.census.relayLabel) || row.label || '',
-        key: (row.census && row.census.relayKey) || '',
+        label: (row.roll && row.roll.relayLabel) || row.label || '',
+        key: (row.roll && row.roll.relayKey) || '',
       };
     });
   });

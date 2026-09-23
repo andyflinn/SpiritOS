@@ -23,7 +23,7 @@ const rollOf = require('./rollOf');
 //     somebody, published forever.
 //
 // The first had to land before a stability claim, because it changes the
-// census shape. The second adds no route and no signed format at all —
+// roll shape. The second adds no route and no signed format at all —
 // it rides the post that already exists (decision 0010's collapse), so
 // the protocol register does not move for it.
 //
@@ -65,9 +65,9 @@ test.subHeading('One field, on the row and on the wire');
 
   const row = rollOf(L.box)[0];
   if (row.publicLabel && row.name === undefined) {
-    test.check('a census row says a peer’s label once, under publicLabel');
+    test.check('a roll row says a peer’s label once, under publicLabel');
   } else {
-    test.fail('census row: ' + JSON.stringify(row));
+    test.fail('roll row: ' + JSON.stringify(row));
   }
 
   // ON DISK TOO, or the collapse is cosmetic: a file still carrying both
@@ -157,9 +157,9 @@ test.subHeading('The key may move its label; nobody else may');
   }
 
   if (labels(L.box) === 'andy,john,johnny') {
-    test.check('and the census says so — one john moved, the other did not');
+    test.check('and the roll says so — one john moved, the other did not');
   } else {
-    test.fail('census: ' + labels(L.box));
+    test.fail('roll: ' + labels(L.box));
   }
 
   // THE CONTRACT. There is no key field on the verb at all, so the owner
@@ -297,7 +297,7 @@ test.subHeading('The owner’s label lives in two places, and they move together
   }
 
   // AND THERE IS ONE AUTHORITY. This asserted "one owner row in the
-  // census" — a row flag that could disagree with allow.json. Since
+  // roll" — a row flag that could disagree with allow.json. Since
   // 2026-09-19 no row carries one (Andy: "a row in the roll doesn't know
   // who the owner is"), so the relay's own answer is asserted instead.
   const named = L.box.ownerPublic();
@@ -316,7 +316,7 @@ test.subHeading('And the owner hears about it');
 
 {
   // R2's category: a member changing what they are called is a
-  // membership fact. An owner watching a new name appear in the census
+  // membership fact. An owner watching a new name appear in the roll
   // with no record of how it got there is the gap that category exists
   // to close.
   const L = world.build(SCENARIO);

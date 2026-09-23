@@ -59,7 +59,7 @@ function run() {
 
   // ── WHAT THESE CHECKS BECAME ────────────────────────────────────────
   //
-  // Three stood here about removePeerMessage: that a census signature
+  // Three stood here about removePeerMessage: that a roll signature
   // could not be spent as a removal, that a two-minute-old one was dead,
   // and that it named a KEY because labels duplicate.
   //
@@ -77,7 +77,7 @@ function run() {
   // this person" — and cannot even be presented as one, because it is not
   // a post signature at all.
   //
-  // This named the CENSUS signature, on the argument that it was the
+  // This named the ROLL signature, on the argument that it was the
   // owner's most abundant credential. R3 deleted that verb on 2026-09-15
   // along with the owner badge that spent it, so the check uses `claim`.
   // The claim is unchanged: bytes are good for one verb.
@@ -237,7 +237,7 @@ function run() {
   // it could only be deleted once a live relay had actually written
   // routingTable.json. spirit-3 has: forced on 2026-09-13 with one
   // self-addressed ring message (77 → 78, which is persist() running),
-  // census 10 rows before and 10 after.
+  // roll 10 rows before and 10 after.
   //
   // What is asserted now is the deletion, because the dangerous direction
   // is the quiet one: a box with only the old file must open EMPTY rather

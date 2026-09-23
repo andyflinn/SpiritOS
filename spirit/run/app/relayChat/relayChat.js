@@ -38,7 +38,7 @@ spirit.shell.activateApp({
     // casualty: it arrived as `selfTail` on `peer.list`'s answer
     // (hub.js, handleWho), where the node computes it from its own
     // identity on disk — a purely LOCAL fact that was paying a whole
-    // census fetch to be told. It wants its own home, not a bigger
+    // roll fetch to be told. It wants its own home, not a bigger
     // question. Contacts reads it the same way and will hit the same
     // wall when it moves.
     var myTail = '';
@@ -64,7 +64,7 @@ spirit.shell.activateApp({
     // ever set it, so it went empty the moment the To control became a
     // slot (refreshPeople). Restore it from the selector's answer if
     // yesterday's lines turn out to need it; do not restore it by
-    // reading the census.
+    // reading the roll.
     var people = [];     // the mailbox's peers, captioned by this node
     var search = '';     // a gesture, never remembered
 
@@ -678,7 +678,7 @@ spirit.shell.activateApp({
         return !needle || String(text).toLowerCase().indexOf(needle) !== -1;
       }
 
-      // Contacts, not the census: a mailbox full of peers is an empty
+      // Contacts, not the roll: a mailbox full of peers is an empty
       // list until somebody writes to this node or it redeems an invite.
       // Said plainly, or an empty control reads as a broken one and the
       // first fix anyone reaches for is to refill it from `who`.

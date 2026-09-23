@@ -810,13 +810,13 @@ function createRelay(rootDir, deps) {
   // ring is what made labels addressable, and that is the half of the
   // old transport that is not worth rebuilding.
 
-  // -- THE CENSUS, OPTIONALLY NARROWED TO KEYS SOMEBODY NAMED ---------
+  // -- THE ROLL, OPTIONALLY NARROWED TO KEYS SOMEBODY NAMED ---------
   //
   //   Andy: "the most fetched because it bootstrapped concepts quickly,
   //   but is not scalable."
   //
   // Nine callers read this and six of them want one row. `peer.acquire` is
-  // the sharpest: it pulls the whole census -- 151 bytes a member, so
+  // the sharpest: it pulls the whole roll -- 151 bytes a member, so
   // ~147 KB at a thousand -- to answer yes or no about ONE key.
   //
   // SAME DOOR, NARROWER ANSWER. Not a new route, so nothing is added to
@@ -839,7 +839,7 @@ function createRelay(rootDir, deps) {
         // `name` STOOD BESIDE THIS, carrying the identical value. Two
         // spellings of one fact on a public route, so every reader had
         // to know which to trust and none could be told apart. Gone
-        // 2026-09-15 — a census row says a peer's label once.
+        // 2026-09-15 — a roll row says a peer's label once.
         publicLabel: labelOf(p),
         publicKey: p.publicKey || null,
         // WHEN THIS KEY ENROLLED, published here all along with nothing
@@ -923,12 +923,12 @@ function createRelay(rootDir, deps) {
   // ── WHO RUNS THIS BOX ────────────────────────────────────────────
   //
   // Two fields, both public: the owner's key and label, from allow.json —
-  // the one place ownership lives. They were once also on every census row
-  // as `owner: true`; the census went, and on 2026-09-19 so did the mark on
+  // the one place ownership lives. They were once also on every roll row
+  // as `owner: true`; the roll went, and on 2026-09-19 so did the mark on
   // the row ("a row in the roll doesn't know who the owner is"). This is
   // how they are ASKED FOR, without asking for any membership.
   //
-  // This is the last thing `handlePartnerCheck` needed the census for.
+  // This is the last thing `handlePartnerCheck` needed the roll for.
   // A partner promotion has to be verifiable — "the key marked owner over
   // there is the key of the peer here" — and setPartner's own note leans
   // on that proof being a PUBLIC page: "a node reporting a public page is
@@ -962,7 +962,7 @@ function createRelay(rootDir, deps) {
   // ADDRESS — nothing on this wire maps one to the other, which is why
   // the owner supplies it. `relayKey` because the forward hop in a later
   // tier must verify the partner signing as itself, and the moment to
-  // capture that is while somebody is looking at the census that proves
+  // capture that is while somebody is looking at the roll that proves
   // the partnership.
   //
   // 0006 IS UNTOUCHED. Their ledger is not here and never will be — the
@@ -971,7 +971,7 @@ function createRelay(rootDir, deps) {
   // asserts.
   //
   // THE RECIPROCITY CHECK IS NOT HERE, and that is deliberate. The proof
-  // is a public census: anybody may read `/api/relay/who` and see which
+  // is a public roll: anybody may read `/api/relay/who` and see which
   // key is marked owner (0010 — it is the bootstrap). So the owner's NODE
   // fetches it and this stores the conclusion, and a relay still never
   // makes an outbound request. A node reporting a public page is not
@@ -1018,7 +1018,7 @@ function createRelay(rootDir, deps) {
     // identity compared is the box's.
     //
     // Nothing else weakens. The reciprocity proof (decided 2 and 4) is
-    // the far census showing that key marked owner — with one owner it
+    // the far roll showing that key marked owner — with one owner it
     // proves "one key owns both", which is true, public, and checkable
     // by key. No third party's consent is bypassed: partnering only
     // creates routes between the two relays' own members, and the other
@@ -1086,7 +1086,7 @@ function createRelay(rootDir, deps) {
   // ── A PARTNER RELAY, RECOGNISED BY THE KEY IT SIGNS WITH ───────────
   //
   // A partner is NOT a member and must never become one. Its relay key is
-  // not a row in `peers`, is not in the census, and cannot claim a label —
+  // not a row in `peers`, is not in the roll, and cannot claim a label —
   // so `deviceIdentity` answers null for it, which is correct and is why
   // this exists separately rather than as a branch inside that.
   //
@@ -1349,7 +1349,7 @@ function createRelay(rootDir, deps) {
   // claim's name equal the invite's label. That made the owner's word the
   // peer's permanent name — and since `who()` publishes it unsigned, it
   // published whatever the owner used to identify the invitee. An invite
-  // labelled with a phone number put that number in a public census.
+  // labelled with a phone number put that number in a public roll.
   //
   // THE LABEL STILL PROVES. It is not merely a caption: an invite is
   // KEYLESS, so the token is the entire credential, and a SPOKEN token is
@@ -1488,7 +1488,7 @@ function createRelay(rootDir, deps) {
       //
       // REDEEMED ON `onInvite`, WRITTEN AS `n`. The invite's label is
       // proof — the second factor on a token that may be a spoken word —
-      // and the claimer's own `n` is what the row and the census get.
+      // and the claimer's own `n` is what the row and the roll get.
       // They were the same string until 2026-09-15; see the note on this
       // function for why that published the owner's word for somebody.
       //
@@ -1599,7 +1599,7 @@ function createRelay(rootDir, deps) {
     var peer = {
       // ONE LABEL. `name` stood here carrying the same string, and went
       // on 2026-09-15 — see loadRoutingTable for the migration and
-      // `who()` for what a census row says now.
+      // `who()` for what a roll row says now.
       publicLabel: n,
       publicKey: publicKey,
       // THE ENROLMENT LEDGER'S ONE DATE. Written once, never rewritten:
@@ -1889,7 +1889,7 @@ function createRelay(rootDir, deps) {
   //
   // The bytes are their own message (deviceAuth.setDeviceMessage), so a
   // captured `status` signature — which the owner makes constantly, for
-  // every census — cannot be replayed as "install this key". That is
+  // every roll — cannot be replayed as "install this key". That is
   // asserted in deviceInbox.js rather than left to reading.
   //
   // No peer row is written and no label is claimed. A second row wearing
@@ -2213,7 +2213,7 @@ function createRelay(rootDir, deps) {
   //
   // DUPLICATE LABELS ARE ALLOWED, so renaming INTO one is allowed too.
   // Two johns are two keys and always were, `findByLabel` answers null
-  // rather than picking, and every census row carries `claimedAt` and a
+  // rather than picking, and every roll row carries `claimedAt` and a
   // key. Refusing a duplicate here would invent a scarcity the rest of
   // the box does not have.
   //
@@ -2281,7 +2281,7 @@ function createRelay(rootDir, deps) {
 
     // THE OWNER HEARS ABOUT IT (R2). A member changing what they are
     // called is a membership fact, and an owner watching a name appear
-    // in the census with no record of how it got there is exactly the
+    // in the roll with no record of how it got there is exactly the
     // gap that category exists to close.
     ownerEvent('peer-renamed', { key: who.publicKey, was: was, label: next, cause: cause });
     // AND EVERY MEMBER HEARS IT (R28), whole — see announceMember.
@@ -2863,7 +2863,7 @@ function createRelay(rootDir, deps) {
     // entered. A member needs the address to go and look, and the key to
     // know what it is looking at.
     //
-    // NOT ON THE PUBLIC CENSUS, deliberately. A member learns the reach
+    // NOT ON THE PUBLIC ROLL, deliberately. A member learns the reach
     // they were given by joining; a stranger reading /api/relay/who
     // learns nothing about who this box talks to. Publishing the mesh is
     // a different decision and nobody has taken it.
@@ -2873,17 +2873,17 @@ function createRelay(rootDir, deps) {
     //   a thousand people in this list… We want the partner-space
     //   searchable."
     //
-    // The node used to fetch every census WHOLE and subtract what it
+    // The node used to fetch every roll WHOLE and subtract what it
     // knew. At ten members that is a list; at a thousand it is 150 KB per
     // relay to render something nobody can read. So the relay answers the
     // question instead of shipping the material to answer it with.
     //
-    // ANY MEMBER MAY ASK, like `partners` above. The census is already
+    // ANY MEMBER MAY ASK, like `partners` above. The roll is already
     // public in full, so a search over it gives away nothing new — what it
     // saves is the transfer, and that saving is the entire point.
     //
     // A FLOOR ON THE QUERY, because substring matching with no floor is
-    // the census again with extra steps: `a` would return everybody.
+    // the roll again with extra steps: `a` would return everybody.
     //
     // CANDIDATES, NEVER AN ANSWER (R1). Three johns come back as three
     // rows and the caller confirms by key, exactly as contacts does for a
@@ -3157,7 +3157,7 @@ function createRelay(rootDir, deps) {
     // about their own box, the same class as naming it.
     //
     // The reciprocity — that this peer really owns the relay at that url
-    // — was checked against a PUBLIC census by the owner's node before
+    // — was checked against a PUBLIC roll by the owner's node before
     // this post was signed. It is not re-checked here because a relay
     // makes no outbound request, and because nothing about the check
     // needs privilege: `/api/relay/who` is readable by anyone, which is
@@ -3291,7 +3291,7 @@ function createRelay(rootDir, deps) {
       // its one try since" (partnerLive). Asking one that is down held
       // every search for the full timeout (the answer waits on all of
       // them); leaving it out loses no more than search already gave up
-      // against a census.
+      // against a roll.
       var partnerList = askPartner
         ? (partners() || []).filter(partnerLive)
         : [];
@@ -3555,7 +3555,7 @@ function createRelay(rootDir, deps) {
     //
     // Checked before deviceIdentity is asked about the target, because
     // the relay's own key is deliberately not a row and never will be —
-    // publishing it as one would put it in every census.
+    // publishing it as one would put it in every roll.
     if (postedToSelf(toToken)) {
       var selfSigned = auth.postSignatureFor(who.publicKey, who.id, String(toToken), text, sig);
       if (!selfSigned) return { ok: false, status: 403, error: 'bad post signature' };
@@ -3941,7 +3941,7 @@ function createRelay(rootDir, deps) {
   // The delivery rule lives here rather than in relayStatus.js because
   // this is the only place that knows who the owner is, and because
   // getting it wrong is the whole risk: this report carries live invite
-  // labels, which are in no census and on no public route.
+  // labels, which are in no roll and on no public route.
   //
   // `presentNow.send(id, ...)` addresses ONE sink. The mistake to avoid
   // is broadcast(), which walks every sink and cannot express a
@@ -4420,10 +4420,10 @@ function createRelay(rootDir, deps) {
     rootDir: function () { return rootDir; },
     relayPublicKey: relayPublicKey,
     // The other half of the pair. Read by server.js for the public
-    // census; set through the `relayLabel` verb in answerSelf.
+    // roll; set through the `relayLabel` verb in answerSelf.
     relayLabel: relayLabel,
     // Who runs this box — key and label, both already public on the
-    // census row marked `owner`. Served at GET /api/relay/key so a
+    // roll row marked `owner`. Served at GET /api/relay/key so a
     // partner promotion can be verified without reading a membership.
     ownerPublic: ownerPublic,
     // Exported for the suite that drives it directly (ownerLog). The

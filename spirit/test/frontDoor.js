@@ -104,7 +104,7 @@ async function knownAndStranger() {
 
   const N = nodeWith({});
   // 'message' rather than a bare acquire: contactBook's ACQUIRED_LISTENING is
-  // ['message', 'invite', 'handle'], so a census row is somebody merely
+  // ['message', 'invite', 'handle'], so a roll row is somebody merely
   // SEEN and is deliberately not somebody this node hears. Having noticed
   // a stranger exists is not an introduction, and a first draft of this
   // suite failed for exactly that reason.

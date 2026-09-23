@@ -587,7 +587,7 @@ async function run() {
   // nothing, so before B2 its device timer got an empty list and never
   // polled — the feature stopped at the owner for want of one word.
   // `claimed` is the other question, and it is asked of THIS NODE'S OWN
-  // RECORD now, not of a census (2026-09-18).
+  // RECORD now, not of a roll (2026-09-18).
   const ownerBadge = require('../run/js/ownerBadge');
   const nodeHome = world.tmpHome();
   fs.mkdirSync(path.join(nodeHome, 'app', 'natter'), { recursive: true });

@@ -1117,7 +1117,7 @@ So the cheap-for-expensive ranking (*RAM expensive, CPU and bandwidth cheap*)
 is how it is **implemented** — a lookup against disk, with the page cache
 making it cheaper still — rather than why it is right.
 
-### The census is why the roll is resident
+### The roll is why the roll is resident
 
 This is the connection worth seeing, because it makes the two jobs one:
 **"list everyone" cannot be answered from a lazy store.** Any door that
@@ -1129,7 +1129,7 @@ and after [SURFACE.md](SURFACE.md) §10 the shape is:
 
 | scan | what it wants | after |
 |---|---|---|
-| `who()` | the census | **gone** |
+| `who()` | the roll | **gone** |
 | `findByLabel` | label → peer, for claims | a point lookup wanting an index |
 | `partnerByRelayKey`, `partners()` | the partner subset | **resident** — few, and routing state |
 | the empty check | *is this relay unclaimed* | one bit |
@@ -1175,5 +1175,5 @@ The mechanism is not designed here and should not be built from this
 section. `routingTable.json` is a single JSON file read whole; a lazy roll
 wants either an index or a different store, and **CLAUDE.md names relay
 persist-shape work as a stop-and-call-a-team-review line.** What is recorded
-is the *shape* — activity, not history — and the fact that the census
+is the *shape* — activity, not history — and the fact that the roll
 eradication is its precondition rather than a separate piece of work.

@@ -13,9 +13,9 @@ const rollOf = require('./rollOf');
 // test, executable — build the same relay twice, once small and once
 // large, ask it the same things, and measure what grew.
 //
-// ── WHY A CENSUS AND NOT A PASS/FAIL ─────────────────────────────────
+// ── WHY A ROLL AND NOT A PASS/FAIL ─────────────────────────────────
 //
-// Three interfaces fail it today and are known to: the public census, the
+// Three interfaces fail it today and are known to: the public roll, the
 // stream roster, and the presence broadcast. A suite that simply went red
 // would be red for ever, and a permanent red is noise nobody reads —
 // which is the opposite of a reminder.
@@ -43,7 +43,7 @@ const { createRelay } = require('../run/js/relay');
 // Bytes (or events) added to one response for each additional member.
 // Measured, not guessed: run the suite and it prints what it found.
 //
-//   census     the public /api/relay/who, fetched by nine callers
+//   roll     the public /api/relay/who, fetched by nine callers
 //   roster     REACHED ZERO BY DELETION, 2026-09-19 (cycle 3): the whole
 //              roll pushed to every member on every stream open was a
 //              served member list (0012 widened). Gone from the allowance,
@@ -53,7 +53,7 @@ const { createRelay } = require('../run/js/relay');
 const ALLOWANCE = {
   // 150 until 2026-09-19, when `owner` came off every row ("a row in the
   // roll doesn't know who the owner is") — the ratchet asked for this.
-  census: 136,
+  roll: 136,
   presence: 1,
   // A NEW ENTRY, ARGUED FOR RATHER THAN DISCOVERED (R28, cycle 7). A claim
   // is announced to every member on `route`, whole — "a member is added,
@@ -67,7 +67,7 @@ const ALLOWANCE = {
 // What each entry is for, printed beside the number so a reader does not
 // have to go and find out what they are looking at.
 const WHAT = {
-  census: 'the census — eight callers, all gone. GET /api/relay/who deleted 2026-09-18',
+  roll: 'the roll — eight callers, all gone. GET /api/relay/who deleted 2026-09-18',
   presence: 'events per presence change — one per member, per change',
   memberAnnounce: 'route events per claim — one per member, per new member (R28, 0019)',
 };
@@ -128,7 +128,7 @@ function relayOf(n) {
 function measure(n) {
   const R = relayOf(n);
 
-  const census = JSON.stringify({
+  const roll = JSON.stringify({
     peers: rollOf(R.box),
     relayPublicKey: R.box.relayPublicKey(),
     relayLabel: R.box.relayLabel(),
@@ -137,7 +137,7 @@ function measure(n) {
   // THE ALTERNATIVE, MEASURED BESIDE IT. Same door, `?key=` supplied: the
   // answer is the row asked for and nothing else, so it must not grow at
   // all. This is the number that has to stay flat as callers migrate off
-  // the whole-census form.
+  // the whole-roll form.
   const one = R.people.length
     ? JSON.stringify({
       peers: R.box.who([R.people[0].publicKey]),
@@ -175,7 +175,7 @@ function measure(n) {
   const announceAfter = count('route');
 
   return {
-    census: census, narrowed: one,
+    roll: roll, narrowed: one,
     presence: presenceAfter - presenceBefore,
     memberAnnounce: announceAfter - announceBefore,
     other: (after - before) - (presenceAfter - presenceBefore) - (announceAfter - announceBefore),
@@ -220,7 +220,7 @@ Object.keys(ALLOWANCE).forEach(function (k) {
 });
 
 // A relay of a thousand, in the units an owner would actually feel.
-test.check('so at 1000 members: census ' + Math.round(slope.census * 1000 / 1024) +
+test.check('so at 1000 members: roll ' + Math.round(slope.roll * 1000 / 1024) +
   ' KB per fetch, presence ' + Math.round(slope.presence * 1000) +
   ' events per change');
 
@@ -241,17 +241,17 @@ if (narrowSlope === 0) {
   test.check('`?key=` answers ' + small.narrowed + ' bytes at ' + SMALL +
     ' members and ' + large.narrowed + ' at ' + LARGE + ' — 0 per member');
 } else {
-  test.fail('the narrowed census grows too: ' + narrowSlope + ' bytes per member');
+  test.fail('the narrowed roll grows too: ' + narrowSlope + ' bytes per member');
 }
 
-// WHAT ONE CALLER SAVED BY MOVING. peer.acquire asked the whole census to
+// WHAT ONE CALLER SAVED BY MOVING. peer.acquire asked the whole roll to
 // answer yes or no about one key; it asks about the key now.
-test.check('so peer.acquire went from ' + Math.round(slope.census * 1000 / 1024) +
+test.check('so peer.acquire went from ' + Math.round(slope.roll * 1000 / 1024) +
   ' KB to ' + large.narrowed + ' bytes at 1000 members');
 
 // ── 2. THE RATCHET ──────────────────────────────────────────
 //
-// A number may fall, never rise. The census line stays at 150 until the
+// A number may fall, never rise. The roll line stays at 150 until the
 // LAST caller stops asking for the whole thing — one migration does not
 // move it, which is honest: the interface still has the per-member term,
 // and what changed is who pays it.
@@ -293,7 +293,7 @@ if (!better.length) {
 test.subHeading('While anything with no per-member term is fine however big');
 
 const fixed = JSON.stringify({ relayPublicKey: 'x'.repeat(44), relayLabel: 'a relay' }).length;
-if (small.census - slope.census * SMALL > 0 && fixed > 0) {
+if (small.roll - slope.roll * SMALL > 0 && fixed > 0) {
   test.check('a constant overhead is not what this measures — only the slope is');
 } else {
   test.fail('the measurement is not isolating the per-member term');

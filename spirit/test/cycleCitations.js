@@ -20,14 +20,14 @@
 // cycle — neither the word "cycle" nor a cycle's tag (TAGS, below). An
 // R-number only one cycle defines is not ambiguous and is not counted.
 //
-// ── A CENSUS, THE SHAPE oneDoor.js USES ──────────────────────────────
+// ── A TALLY, THE SHAPE oneDoor.js USES ──────────────────────────────
 //
 // 290 were bare, in 84 files, when the rule was made. Fixing them by hand means working
 // out, for each, which cycle it meant — slow, and a wrong guess is worse
 // than a bare number. So each file's count may FALL and may never RISE, a
-// file not in the census must have none, and the old ones are fixed when
+// file not in the tally must have none, and the old ones are fixed when
 // that code is touched anyway. When a count falls, lower it here in the
-// same commit: a census that is not lowered is room for the next one.
+// same commit: a tally that is not lowered is room for the next one.
 
 const fs = require('fs');
 const path = require('path');
@@ -49,9 +49,9 @@ const FILES = ['AGENT.md', 'CLAUDE.md', 'ANDYS_RULES_FOR_AGENTS.md', 'DICTIONARY
 // to fix (2026-09-22, the first API review).
 const SKIP_DIRS = ['node_modules', 'cycles', 'brains', 'relay-state', 'visual', 'grok'];
 
-// ── THE CENSUS, AS FOUND ON 2026-09-22 ───────────────────────────────
+// ── THE TALLY, AS FOUND ON 2026-09-22 ───────────────────────────────
 // file -> bare citations allowed. May only go down.
-const CENSUS = {
+const TALLY = {
   'AGENT.md': 1,
   'ANDYS_RULES_FOR_AGENTS.md': 1,
   'DICTIONARY.md': 4,
@@ -213,23 +213,23 @@ if (require.main === module) {
   const rose = [];
   const fell = [];
   Object.keys(r.found).forEach(function (f) {
-    const allowed = CENSUS[f] || 0;
-    if (r.found[f] > allowed) rose.push(f + ': ' + r.found[f] + ' (census ' + allowed + ')');
-    else if (r.found[f] < allowed) fell.push(f + ': ' + r.found[f] + ' (census ' + allowed + ')');
+    const allowed = TALLY[f] || 0;
+    if (r.found[f] > allowed) rose.push(f + ': ' + r.found[f] + ' (tally ' + allowed + ')');
+    else if (r.found[f] < allowed) fell.push(f + ': ' + r.found[f] + ' (tally ' + allowed + ')');
   });
-  Object.keys(CENSUS).forEach(function (f) {
-    if (!r.found[f]) fell.push(f + ': 0 (census ' + CENSUS[f] + ')');
+  Object.keys(TALLY).forEach(function (f) {
+    if (!r.found[f]) fell.push(f + ': 0 (tally ' + TALLY[f] + ')');
   });
 
   if (!rose.length) {
-    test.check('no file cites more bare R-numbers than the census allows — name the cycle: "gap R13"');
+    test.check('no file cites more bare R-numbers than the tally allows — name the cycle: "gap R13"');
   } else {
     test.fail('bare R-numbers added — name the cycle beside the number ("gap R13", "cycle 3\'s R5"):\n  ' + rose.join('\n  '));
   }
   if (!fell.length) {
-    test.check('and the census is exact: every count that fell has been lowered');
+    test.check('and the tally is exact: every count that fell has been lowered');
   } else {
-    test.fail('counts fell — lower the census in the same commit, so the room is not reused:\n  ' + fell.join('\n  '));
+    test.fail('counts fell — lower the tally in the same commit, so the room is not reused:\n  ' + fell.join('\n  '));
   }
 
   const total = Object.keys(r.found).reduce(function (a, f) { return a + r.found[f]; }, 0);

@@ -363,7 +363,7 @@ test.subHeading('A row remembers who supplied it, and the nearer copy wins');
   }
 
   if (dup[0] && dup[0].via === null) {
-    test.check('and the nearer source wins — acquiring needs a census this node can reach');
+    test.check('and the nearer source wins — acquiring needs a roll this node can reach');
   } else {
     test.fail('kept via=' + (dup[0] && dup[0].via));
   }

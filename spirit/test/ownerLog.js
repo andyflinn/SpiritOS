@@ -751,7 +751,7 @@ test.subHeading('Partnership — the flag, and nothing routes differently yet');
 // as it did before.
 //
 // THE RECIPROCITY CHECK IS NOT ASSERTED HERE, because it is not the
-// relay's. The proof is a PUBLIC census read by the owner's node before
+// relay's. The proof is a PUBLIC roll read by the owner's node before
 // the post was signed (hub.handlePartnerCheck) — this box stores a
 // conclusion it could have reached itself, which is what makes the
 // node's report trustworthy rather than merely trusted.
@@ -791,14 +791,14 @@ test.subHeading('Partnership — the flag, and nothing routes differently yet');
     test.fail('partners(): ' + JSON.stringify(listed));
   }
 
-  // NOT IN THE PUBLIC CENSUS. A partnership is a public statement of
+  // NOT IN THE PUBLIC ROLL. A partnership is a public statement of
   // association between two relays, and nothing needs a stranger to read
   // one yet — it travels in the owner's report instead.
   const row = rollOf(box).filter(function (p) { return p.publicKey === her.publicKey; })[0];
   if (row && !row.partner) {
-    test.check('while the public census says nothing about it — that is the owner’s business');
+    test.check('while the public roll says nothing about it — that is the owner’s business');
   } else {
-    test.fail('the census exposed a partnership: ' + JSON.stringify(row));
+    test.fail('the roll exposed a partnership: ' + JSON.stringify(row));
   }
 
   test.subHeading('And the four things a partnership cannot be');

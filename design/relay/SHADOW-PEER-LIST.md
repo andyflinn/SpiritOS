@@ -423,7 +423,7 @@ the machine, so its shape is the machine's to choose).
   broadcast to attach a label to. The rename broadcast that remains is
   about a relay's own members, which `0012:88` already covers.
   *(The `SURFACE.md` §10 observation — that `0012`'s "membership is not
-  secret from members" rests on a census being eradicated — is still
+  secret from members" rests on a roll being eradicated — is still
   true and still unaddressed. It is now somebody else's problem, not
   this note's.)*
 - **Label-key tuplets on request and reply**, carried over from

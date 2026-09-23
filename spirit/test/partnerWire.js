@@ -315,7 +315,7 @@ async function run() {
   // it can name one by without trusting a URL somebody sent it. The NODE
   // turns that into a URL — hub.handleSearch asks its own relay
   // `{partners:true}` and maps key -> url — and confirming a peer means
-  // finding him on a census, so that URL has to be B's or the confirm is
+  // finding him on a roll, so that URL has to be B's or the confirm is
   // looked up in the wrong book.
   //
   // This suite is relay-to-relay and does not run a node, so it asserts
@@ -341,8 +341,8 @@ async function run() {
   auth.saveIdentity(nodeHome, auth.generateIdentity('alice'));
   // ── THE SEARCH REPLY IS THE CONFIRMATION (2026-09-18) ────────────
   //
-  // This fetched the far relay's census and looked for the key: "he is on
-  // that census, which is what confirms him". Both halves are gone.
+  // This fetched the far relay's roll and looked for the key: "he is on
+  // that roll, which is what confirms him". Both halves are gone.
   //
   // The route was a public, unsigned read of every member — a cheat in
   // 0010, deleted the next day. And `peer.acquire` no longer confirms
@@ -351,7 +351,7 @@ async function run() {
   // it just said is a node spending its own request budget on nothing
   // (design/principles/THE-REQUESTER-IS-RESPONSIBLE.md).
   //
-  // What the census check never did, and this makes plain: it proved
+  // What the roll check never did, and this makes plain: it proved
   // enrolment, not that the key belonged to the person you meant. That is
   // what `via: 'handle'` means — a human compared key endings out loud.
   //

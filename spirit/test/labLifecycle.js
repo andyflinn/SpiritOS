@@ -62,7 +62,7 @@ async function waitUntil(fn, timeoutMs, label) {
   }
 }
 
-// A RELAY IS SERVING when its public census answers. Expressed through
+// A RELAY IS SERVING when its public roll answers. Expressed through
 // the one door below rather than opening a second: oneDoor.js counts
 // every reach for the wire in every file, tests included, and a number
 // that may only fall is the whole mechanism (AGENT.md, Comms).
@@ -214,7 +214,7 @@ async function run() {
   // walked the path a person walks.
   //
   // The green badge was not lying either, which is what made it hard to
-  // see: it is read off the public census, and `claimed` means "you have
+  // see: it is read off the public roll, and `claimed` means "you have
   // a row here" — a different question from "you are connected".
   test.subHeading('A node that claims after boot connects without a restart');
 

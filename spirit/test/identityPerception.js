@@ -31,8 +31,8 @@ test.startTest('Identity vs perception (sticks and stones)');
     test.fail('key collision on two generateIdentity(john)');
   }
 
-  // contactBook.handshake (a census sync) wrote these until 2026-09-19;
-  // it went with the census readers. Known by handle is the same row.
+  // contactBook.handshake (a roll sync) wrote these until 2026-09-19;
+  // it went with the roll readers. Known by handle is the same row.
   contactBook.acquire(annie, { publicKey: johnA.publicKey, publicLabel: 'john' }, 'handle');
   contactBook.acquire(annie, { publicKey: johnB.publicKey, publicLabel: 'john' }, 'handle');
   contactBook.acquire(annie, { publicKey: jim.publicKey, publicLabel: 'jim' }, 'handle');
@@ -183,30 +183,30 @@ test.subHeading('Knowing somebody, and merely seeing them');
   const seen = auth.generateIdentity('stranger').publicKey;
   const wrote = auth.generateIdentity('bert').publicKey;
 
-  // A census row, as older code wrote one (nothing writes `census` now).
-  contactBook.acquire(annie2, { publicKey: seen, publicLabel: 'stranger' }, 'census');
+  // A roll row, as older code wrote one (nothing writes `roll` now).
+  contactBook.acquire(annie2, { publicKey: seen, publicLabel: 'stranger' }, 'roll');
   contactBook.acquire(annie2, { publicKey: wrote, publicLabel: 'bert' }, 'message');
 
   const known = contactBook.contacts(annie2).map(function (r) { return r.publicKey; });
   if (known.length === 1 && known[0] === wrote) {
-    test.check('a census row is not a contact; a message is');
+    test.check('a roll row is not a contact; a message is');
   } else {
     test.fail('contacts: ' + JSON.stringify(known));
   }
 
-  // Every row written before the field is exactly what a census row is,
+  // Every row written before the field is exactly what a roll row is,
   // so it reads as one without anything being migrated.
-  if (contactBook.acquiredVia({ publicKey: 'x', publicLabel: 'old' }) === 'census') {
-    test.check('a row with no acquiredVia reads as census');
+  if (contactBook.acquiredVia({ publicKey: 'x', publicLabel: 'old' }) === 'roll') {
+    test.check('a row with no acquiredVia reads as roll');
   } else {
     test.fail('a fieldless row was treated as acquired');
   }
 
   // Perception is still the caption and never the identity: renaming a
   // contact does not change what the mailbox calls them, and seeing them
-  // again in a census does not unknow them.
+  // again in a roll does not unknow them.
   contactBook.setMyLabel(annie2, wrote, 'bertie');
-  contactBook.acquire(annie2, { publicKey: wrote, publicLabel: 'bertram' }, 'census');
+  contactBook.acquire(annie2, { publicKey: wrote, publicLabel: 'bertram' }, 'roll');
   const row = contactBook.byPublicKey(annie2, wrote);
   if (row.myLabel === 'bertie' && row.publicLabel === 'bertram' && contactBook.acquiredVia(row) === 'message') {
     test.check('seeing them again at a lower rank corrects the public label and leaves the rest alone');

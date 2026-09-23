@@ -221,7 +221,7 @@ function bytesHeldByPeer(rootDir) {
 
 // The people list behind Relay Chat's To control (CYCLE-CONTACTS-IMPL).
 //
-// CONTACTS, not the census. Everyone who ever claimed on a public
+// CONTACTS, not the roll. Everyone who ever claimed on a public
 // mailbox is in `who`; that is a fact about the mailbox, not an address
 // book, and a To list built from it means "everyone who exists" — which
 // is how a friend picks a stranger's john. So the list is contactBook rows
@@ -232,9 +232,9 @@ function bytesHeldByPeer(rootDir) {
 // caption is this node's own (myLabel where it has one) and never
 // decides identity.
 //
-// `peers` and `relayUrl` WERE ARGUMENTS, and a census list was walked
+// `peers` and `relayUrl` WERE ARGUMENTS, and a roll list was walked
 // here to refresh captions (contactBook.handshake) and to mark each row
-// `onRelay` and `owner`. The census went on 2026-09-18 and the only
+// `onRelay` and `owner`. The roll went on 2026-09-18 and the only
 // caller had passed [] since, so both marks were always false. Deleted
 // 2026-09-19 with the rest of the roster readers — Andy: "nothing is
 // allowed to return a roster." What a contact is doing now is the
@@ -273,7 +273,7 @@ function buildPeople(rootDir) {
         myLabel: row.myLabel || '',
         acquiredVia: contactBook.acquiredVia(row),
         // `memberOf` and `missingSince` STOOD HERE: seats on relays this
-        // node owns, and when a key was first found on no census. Both were
+        // node owns, and when a key was first found on no roll. Both were
         // read off rosters, which no relay may return (2026-09-19, see the
         // note where reconcileMembers stood). A row says what this node
         // knows about a person, not what a vanished list once said.
@@ -375,7 +375,7 @@ function keyTail(publicKey) {
 // two-johns rule is written down as code, and whether ranked search has
 // genuinely absorbed that — exact-label matching, key tails, and the
 // contactBook cross-reference that says "already a contact" — is a question
-// for whoever moves the last census reader, not something to settle by
+// for whoever moves the last roll reader, not something to settle by
 // deleting the tested version first.
 function handleMatches(rootDir, peers, handle) {
   var want = String(handle || '').trim().toLowerCase();
@@ -415,7 +415,7 @@ function handleMatches(rootDir, peers, handle) {
 // ONE DIFFERENCE, NAMED RATHER THAN QUIETLY DROPPED: this captured the
 // sender's `publicLabel` off `m.from`, because the relay stored a line
 // with a label on it. Nothing stores a line any more, so `remember`
-// acquires with an empty label and the census
+// acquires with an empty label and the roll
 // (`/api/hub/who` → contactBook) is what fills the caption in. A contact
 // acquired by being written to is briefly unlabelled where it used to be
 // named on arrival.
@@ -597,7 +597,7 @@ function frontDoor(rootDir, from) {
   //
   // "Acquired" is narrower than "on record", deliberately: contactBook's
   // ACQUIRED_LISTENING is ['message', 'invite', 'handle'], so somebody
-  // merely SEEN in a relay's census is not somebody this node agreed to
+  // merely SEEN in a relay's roll is not somebody this node agreed to
   // hear. Having noticed a stranger exists is not an introduction.
   if (listenSet(rootDir)[key]) return 'known';
 
@@ -618,7 +618,7 @@ function frontDoor(rootDir, from) {
 //
 // `'message'` is the acquisition route, the same one acquireFromInbox
 // used for the same event on the old transport: this person wrote. It
-// matters because ACQUIRED_LISTENING contains 'message' and not 'census',
+// matters because ACQUIRED_LISTENING contains 'message' and not 'roll',
 // so writing is what makes somebody heard next time.
 //
 // `relayUrl` IS WHICH ROAD THEY CAME DOWN, and it is here because R8
@@ -634,7 +634,7 @@ function frontDoor(rootDir, from) {
 //
 // NOT THE LABEL, and that one really is gone. acquireFromInbox read
 // `publicLabel` off the relay's stored copy of the line; nothing stores a
-// line now, and a post carries keys and no captions. The census fills the
+// line now, and a post carries keys and no captions. The roll fills the
 // caption in afterwards (`/api/hub/who` → contactBook), so a contact acquired
 // by being written to is briefly unlabelled where it used to be named on
 // arrival. That is the cost of the relay not reading the payload, which
@@ -862,7 +862,7 @@ function createHub(rootDir) {
   // EVERY NEW NODE GOES THROUGH EXACTLY THAT SEQUENCE. Boot, claim,
   // nothing. It could not search, could not be posted to, and could not
   // receive — while looking bound, because the badge is read off the
-  // public census and `claimed` means "you have a row here", not "you are
+  // public roll and `claimed` means "you have a row here", not "you are
   // connected". Green was telling the truth about a different question.
   //
   // `presence.start` is safe to call again: it creates its job only if it
@@ -894,7 +894,7 @@ function createHub(rootDir) {
               // 2026-09-18 none of it was recorded, so every subsequent
               // boot re-derived it by fetching the relay's ENTIRE
               // membership and looking for itself (ownerBadge.probe) — the
-              // last census read in the tree, and the only one that was
+              // last roll read in the tree, and the only one that was
               // not a question about other people.
               //
               //   Andy: "persist necessary information at claim time,
@@ -1320,10 +1320,10 @@ function createHub(rootDir) {
       //
       //   Andy: "there is absolutely no reason for unbound entities to
       //   conduct surveys of our network." — and on the packet ceiling
-      //   blocking the census's demotion: "that's the point, so bound
+      //   blocking the roll's demotion: "that's the point, so bound
       //   entities now MUST use alternate interfaces: easy!"
       //
-      // This fetched the whole census of the relay to answer a question
+      // This fetched the whole roll of the relay to answer a question
       // about THIS NODE'S OWN BOOK. Every field below is on disk:
       //
       //   relay             relays.json
@@ -1331,7 +1331,7 @@ function createHub(rootDir) {
       //   selfPublicKey     this node's identity
       //   people            contactBook.addressBook — buildPeople reads it
       //
-      // WHAT THE CENSUS WAS DOING HERE, and neither is worth a request:
+      // WHAT THE ROLL WAS DOING HERE, and neither is worth a request:
       //
       //   1. A fresher `publicLabel` fallback. The caption a person
       //      actually sees comes from contactBook.labelForKey, locally, and
@@ -1341,7 +1341,7 @@ function createHub(rootDir) {
       //      person concerned.
       //
       //   2. `contactBook.handshake` on EVERY member of the relay, which
-      //      recorded each of them here as a `census`-rank row. That is
+      //      recorded each of them here as a `roll`-rank row. That is
       //      not a side effect worth keeping: it is this node building a
       //      copy of the membership, on every refresh of its own contact
       //      list, for people it has never spoken to. The rank was
@@ -1361,7 +1361,7 @@ function createHub(rootDir) {
         relayPublicKey: relayKeys.pinned(rootDir, url) || null,
         selfPublicKey: (self && self.publicKey) || null,
         selfTail: self && self.publicKey ? keyTail(self.publicKey) : null,
-        // No census rows: the book was never built out of the wire.
+        // No roll rows: the book was never built out of the wire.
         people: buildPeople(rootDir),
       }));
     });
@@ -1372,7 +1372,7 @@ function createHub(rootDir) {
   //
   //   Andy: "handles are not used in keyed mode by definition."
   //
-  // It fetched the whole census from `urls[0]` and filtered it down to
+  // It fetched the whole roll from `urls[0]` and filtered it down to
   // rows whose label matched a word exactly — the "is the john I was
   // told about here" question.
   //
@@ -1396,7 +1396,7 @@ function createHub(rootDir) {
 
   // POST /api/hub/contact — a human confirmed one of those candidates.
   //
-  // The key is checked against the census before it is written: a stale
+  // The key is checked against the roll before it is written: a stale
   // page, or a mistyped paste, must not put a contact in the book for
   // somebody who is not there. The label comes from the mailbox rather
   // than from the browser, for the same reason.
@@ -1439,7 +1439,7 @@ function createHub(rootDir) {
         return;
       }
       // Blocking somebody this node has no row for is a real case: they
-      // are in the census, they have been picked in the list, and they
+      // are in the roll, they have been picked in the list, and they
       // have never been acquired. A row is made so the block has
       // somewhere to live and somewhere to be undone from.
       if (action === 'block' && !contactBook.byPublicKey(rootDir, publicKey)) {
@@ -1478,7 +1478,7 @@ function createHub(rootDir) {
           forgotten: !!gone.forgotten,
           // Said plainly rather than implied: a blocked person is still
           // blocked, and a person on a relay you are on will be findable
-          // again, because a census is not yours to edit.
+          // again, because a roll is not yours to edit.
           stillBlocked: !gone.forgotten,
         }));
         return;
@@ -1520,7 +1520,7 @@ function createHub(rootDir) {
         fail(res, 400, 'publicKey required');
         return;
       }
-      // ── WHICH CENSUS PROVES IT ───────────────────────────────────────
+      // ── WHICH ROLL PROVES IT ───────────────────────────────────────
       //
       //   Andy: "now we need to be able to add foreign peers to contacts,
       //   peer post to foreign peers require that."
@@ -1528,11 +1528,11 @@ function createHub(rootDir) {
       // This asked `withRelay`, which is `urls[0]` — the first row in
       // relays.json, whatever the question was. So a key that is real and
       // enrolled on a PARTNER could never be confirmed: it is not on this
-      // relay's census, and 404 was the honest answer to the wrong
+      // relay's roll, and 404 was the honest answer to the wrong
       // question.
       //
       // The caller names the relay now. What is checked is exactly what
-      // was checked before — the key must be listed on that census, so a
+      // was checked before — the key must be listed on that roll, so a
       // stale page or a mistyped paste still cannot write a row for
       // somebody who is not there. Only the source moves, from "the first
       // relay in the file" to "the one the caller was looking at".
@@ -1555,11 +1555,11 @@ function createHub(rootDir) {
         //
         // ── IT ASKS THE RELAY NOTHING (2026-09-18) ──────────────────
         //
-        //   Andy: "callers of the census have two choices: use other
+        //   Andy: "callers of the roll have two choices: use other
         //   interfaces or die."
         //
-        // It fetched the entire census to answer yes or no about a single
-        // key, then narrowed to `?key=` for a day. Both were the census,
+        // It fetched the entire roll to answer yes or no about a single
+        // key, then narrowed to `?key=` for a day. Both were the roll,
         // and this was the last caller holding the route open.
         //
         // The read did two jobs: it CONFIRMED the key was on that relay,
@@ -1576,7 +1576,7 @@ function createHub(rootDir) {
         // it looked:
         //
         // - It never checked the thing that matters. `via: 'handle'` means
-        //   a human compared key endings out loud; the census only said
+        //   a human compared key endings out loud; the roll only said
         //   "that key is enrolled here", which a typo landing on a real
         //   key passes just as well.
         // - A contacts row is this node's OWN PERCEPTION, in a local file.
@@ -1704,9 +1704,9 @@ function createHub(rootDir) {
   // ── THE ROSTER SWEEP STOOD HERE, AND IS GONE (2026-09-19) ────────────
   //
   // reconcileMembers, reconcileOrphans and syncMembers read every owned
-  // relay's census roster: whoever was on it became a contact with
-  // `memberOf`, whoever was on no roster lost it, and a key on no census
-  // at all was marked `missingSince`. The census went on 2026-09-18 and a
+  // relay's roll roster: whoever was on it became a contact with
+  // `memberOf`, whoever was on no roster lost it, and a key on no roll
+  // at all was marked `missingSince`. The roll went on 2026-09-18 and a
   // roster may never be returned again — it is a member list, which 0012
   // widened forbids, and it breaks PAYLOAD_MAX — so the sweep read []
   // forever, and pruned every member contact on every probe until a guard
@@ -1842,7 +1842,7 @@ function createHub(rootDir) {
   //
   // WHY THE NODE DOES THE FETCHING: a relay makes no outbound request of
   // any kind and this does not change that. Nothing is being laundered —
-  // the census is public, so a node reporting it hands over nothing the
+  // the roll is public, so a node reporting it hands over nothing the
   // relay could not have read itself.
   //
   // TWO KEYS, TWO JOBS, and conflating them is the likeliest bug in this
@@ -1854,7 +1854,7 @@ function createHub(rootDir) {
   //   Andy: "we want to prove that with a partnership more peer id's can
   //   be visible for every node bound to either partner."
   //
-  // The census of a relay this node is NOT on. Public, unauthenticated,
+  // The roll of a relay this node is NOT on. Public, unauthenticated,
   // the same page `handlePartnerCheck` above already reads — this just
   // hands back the roster instead of a verdict about one key.
   //
@@ -1864,16 +1864,16 @@ function createHub(rootDir) {
   // budget. Reading a public page needs none of those, and it is enough
   // to SEE — which is the whole of what this step claims.
   //
-  // NOT A PROXY. It fetches one fixed path, returns only what a census
+  // NOT A PROXY. It fetches one fixed path, returns only what a roll
   // carries, and `assertRelayUrl` applies as everywhere else. A caller
   // that wants an arbitrary url has `net.fetch` and its own refusals.
   // ── handleRoster STOOD HERE (`relay.roster`), DELETED 2026-09-17 ───
   //
-  // It fetched a named relay's whole public census so natterDetails could
+  // It fetched a named relay's whole public roll so natterDetails could
   // tabulate who a partner holds. That panel is gone (see the tombstone
   // in natterDetails.js) and this had no other caller.
   //
-  // It was the one census reader that genuinely wanted a LIST, and so the
+  // It was the one roll reader that genuinely wanted a LIST, and so the
   // one that would have needed paging designed for it. It turned out to
   // want a list for a screen nobody needed — which is worth remembering
   // the next time a caller looks like it needs a bigger answer.
@@ -1898,12 +1898,12 @@ function createHub(rootDir) {
   //
   // Three hops, and only the middle one needs a signature:
   //
-  //   1. each configured relay's census      public GET
+  //   1. each configured relay's roll      public GET
   //   2. ask it who it partners with         signed post, any member may
-  //   3. each partner's census               public GET
+  //   3. each partner's roll               public GET
   //
   // WHAT IS SUBTRACTED is anybody already known — `contactBook.contacts()` is
-  // every row that arrived by more than a census sighting. A candidate is
+  // every row that arrived by more than a roll sighting. A candidate is
   // precisely somebody visible and not yet known, which is the list the
   // question asks for and nothing more.
   // ── THE ONE DOOR ONTO THE WIRE ───────────────────────────────────────
@@ -2008,7 +2008,7 @@ function createHub(rootDir) {
   //   thousand people in this list… We want the partner-space
   //   searchable."
   //
-  // handleCandidates fetched every census whole and subtracted what this
+  // handleCandidates fetched every roll whole and subtracted what this
   // node knows — fine at ten members and absurd at a thousand: 150 KB per
   // relay, per refresh, to build a list nobody can read. It was kept "for
   // the small case" and deleted on 2026-09-17 once the app had moved off
@@ -2052,10 +2052,10 @@ function createHub(rootDir) {
       //   us in the long run... the protocol has cut down response time
       //   for device-login from 30 seconds to a fraction of a second."
       //
-      // This fetched the WHOLE census over plain HTTPS to read one field
+      // This fetched the WHOLE roll over plain HTTPS to read one field
       // off it — relayPublicKey — so that it could then send the search
       // as a proper packet. A 150 KB download on the path whose entire
-      // purpose is to stop downloading censuses.
+      // purpose is to stop downloading rolls.
       //
       // relayKeys.js has held that key since first contact; pinning it is
       // what makes a relay identifiable at all. And the LABEL comes off
@@ -2112,7 +2112,7 @@ function createHub(rootDir) {
               // WHICH RELAY THIS ROW CAN BE ACQUIRED FROM, which is not
               // always the one that answered. A row carrying `via` came
               // from a PARTNER of this relay, and confirming a key means
-              // finding it on a census — so the URL has to be the
+              // finding it on a roll — so the URL has to be the
               // partner's or the confirm is looked up in the wrong book
               // and answers "no peer at ... with that key".
               //
@@ -2201,7 +2201,7 @@ function createHub(rootDir) {
             // A partner this node cannot name is a row it cannot confirm.
             // Left with the answering relay's URL rather than a guess: the
             // confirm then fails honestly, naming a relay, instead of
-            // succeeding against the wrong census.
+            // succeeding against the wrong roll.
             if (at) { row.relay = at; row.relayLabel = labels[at] || ''; }
           });
         });
@@ -2266,17 +2266,17 @@ function createHub(rootDir) {
     }).catch(function () { fail(res, 400, 'bad body'); });
   }
 
-  // ── handleCandidates STOOD HERE, AND TOOK THE LAST WHOLE-CENSUS ────
+  // ── handleCandidates STOOD HERE, AND TOOK THE LAST WHOLE-ROLL ────
   //     FAN-OUT WITH IT (2026-09-17)
   //
-  //   Andy: "we can kill the census getting in the partner
+  //   Andy: "we can kill the roll getting in the partner
   //   communications. we already are working with search concepts only
   //   there... nothing should break, contacts also uses search now."
   //
   // `peer.candidates` answered "everybody visible from here and not yet
-  // known" by fetching EVERY census whole — this node's relays and each
+  // known" by fetching EVERY roll whole — this node's relays and each
   // of their partners — and subtracting what the contactBook already had.
-  // It was the worst census reader in the tree and the only one with no
+  // It was the worst roll reader in the tree and the only one with no
   // narrow form, because not knowing the keys was the entire point of
   // it: at a thousand members across five partners, six times 147 KB in
   // one call.
@@ -2310,17 +2310,17 @@ function createHub(rootDir) {
       //
       //   Andy: "when a cheat is identified, it must be eradicated."
       //
-      // This read the whole census of a relay this node has never been on
+      // This read the whole roll of a relay this node has never been on
       // — every member, every label, every join date — to answer one
       // question about ONE key. It narrowed to `?key=` for a day, keeping
-      // a whole-census read on the refusal path so it could still name
+      // a whole-roll read on the refusal path so it could still name
       // the other owner.
       //
-      // BOTH OF THOSE WERE THE CENSUS. `GET /api/relay/key` carries
+      // BOTH OF THOSE WERE THE ROLL. `GET /api/relay/key` carries
       // `ownerKey` and `ownerLabel` now — two fields that were already
       // public on the row marked `owner`, asked for without asking for
       // the membership they were buried in. One request, fixed cost, and
-      // this verb no longer touches the census on any path.
+      // this verb no longer touches the roll on any path.
       //
       // Narrowing would have been the wrong move and is worth saying so:
       // a `?owner=1` parameter answers the same question by making the
@@ -2384,7 +2384,7 @@ function createHub(rootDir) {
     //
     // It was once possible to call this WITHOUT a key and still get
     // `owned`, because owning was decided by a signed status 200 and only
-    // `claimed` needed a census match. That asymmetry cost a real bug —
+    // `claimed` needed a roll match. That asymmetry cost a real bug —
     // three arguments here meant `claimed` was never set on any row, and
     // Natter's `owned || claimed` quietly collapsed to `owned`, so every
     // relay this node was merely BOUND to drew no panel at all. The same
@@ -2392,7 +2392,7 @@ function createHub(rootDir) {
     // feature stopped at the owner for want of one word."
     //
     // The asymmetry is gone rather than fixed twice. Both answers come
-    // from the census, by key, so a caller without a key gets nothing —
+    // from the roll, by key, so a caller without a key gets nothing —
     // which is the truth, and is now unmistakable.
     //
     // `name` no longer travels at all: it was there to sign a LABEL to

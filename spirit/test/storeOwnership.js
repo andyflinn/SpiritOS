@@ -60,8 +60,8 @@ const STORES = [
   { file: 'contacts.json', owner: 'contacts.js', what: 'the address book' },
   // The name it wore until 2026-09-18, renamed on first load. Listed so a
   // node upgrading in place is a case somebody decided rather than a file
-  // that quietly stops being read — `who` was the census's word, and this
-  // book exists precisely to not be the census.
+  // that quietly stops being read — `who` was the roll's word, and this
+  // book exists precisely to not be the roll.
   { file: 'who.json', owner: 'contacts.js', what: 'the address book, under its old name' },
   { file: 'device.json', owner: 'deviceAuth.js', what: 'the door password and device slot' },
 ];

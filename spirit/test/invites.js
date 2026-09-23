@@ -184,11 +184,11 @@ test.subHeading('The invite proves; the claimer names themselves');
   // THE FINDING THIS CYCLE OPENED ON. Before R1 the peer row was written
   // `{name: n, publicLabel: n}` with n forced equal to the invite label,
   // and /api/relay/who hands publicLabel to anyone unsigned.
-  const census = JSON.stringify(rollOf(box));
-  if (census.indexOf(PHONE) === -1) {
-    test.check('and the phone number on the invite is nowhere in the census');
+  const roll = JSON.stringify(rollOf(box));
+  if (roll.indexOf(PHONE) === -1) {
+    test.check('and the phone number on the invite is nowhere in the roll');
   } else {
-    test.fail('the invite label reached the census: ' + census);
+    test.fail('the invite label reached the roll: ' + roll);
   }
 
   // Nor anywhere else on the box that a peer can reach. The invite row

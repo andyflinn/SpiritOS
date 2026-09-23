@@ -180,7 +180,7 @@ function run() {
   //
   // It has outlived two of them now. Written against an INBOX signature —
   // one the owner made every two seconds — which R8 deleted; moved to
-  // `status`, which an owner signed for every census, which R3 deleted a
+  // `status`, which an owner signed for every roll, which R3 deleted a
   // few hours later. `claim` is what is left, and the claim is unchanged:
   // bytes signed for one verb must not open another.
   const wrongVerb = L.box.streamOpen(

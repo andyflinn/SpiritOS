@@ -101,7 +101,7 @@ function inbound(home, fromKey) {
 }
 
 // `contacts.json` since 2026-09-18 — it was `who.json`, which was the
-// census's word for a file that exists precisely to not be the census.
+// roll's word for a file that exists precisely to not be the roll.
 // Read off disk rather than through the module because what this suite
 // checks is that a REAL node wrote a row, not that a function returns one.
 function contactsOf(home) {
@@ -314,9 +314,9 @@ async function run() {
     }
 
     // THE ROW, and the route it was acquired BY. 'message' is in
-    // contactBook's ACQUIRED_LISTENING and 'census' is not — so writing is
+    // contactBook's ACQUIRED_LISTENING and 'roll' is not — so writing is
     // what makes somebody heard next time, and being merely seen in a
-    // census would not have.
+    // roll would not have.
     const row = rowFor(homeOf(bravo), alfaKey);
     if (row && row.acquiredVia === 'message') {
       test.check("and alfa now has a row acquired by 'message', which is what listening means");
