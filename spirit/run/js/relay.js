@@ -3284,6 +3284,69 @@ function createRelay(rootDir, deps) {
       };
     }
 
+    // ── A MEMBER HANDS OVER ITS CARD (cycle 10, R20) ──────────────────
+    //
+    // The claim carries a card, and every member enrolled before this
+    // cycle has none — so the relay cannot seal an answer to them, and it
+    // mints an invite, spends the seat and answers with silence. Found by
+    // checking whether Andy's own boxes could be updated, before one was
+    // touched. **A flag day nobody can cross is not a flag day.**
+    //
+    // ── WHY THE NODE PUSHES RATHER THAN THE RELAY ASKING ─────────────
+    //
+    // Decided with Andy. The relay could ask when it finds it holds none,
+    // and that was the other candidate — but:
+    //
+    //   ROTATION NEEDS THIS PATH ANYWAY. A node that changes its cipher
+    //   key must tell every relay it is enrolled at, and a relay cannot
+    //   know to re-ask. Build it here and the rotation requirement's rotation is the same
+    //   message, verified the same way.
+    //   IT IS SELF-HEALING. Any node on the new code, connecting to any
+    //   relay, delivers its card: no migration script and nothing for an
+    //   owner to run. That is what makes the flag day crossable rather
+    //   than merely declared.
+    //   THE NODE OWNS THE FACT. It is the only party that knows when its
+    //   card changed; a relay asking can only ask at moments it thinks of.
+    //
+    // ANY MEMBER MAY, and not only the owner: everybody needs a card on
+    // their row or the relay can answer none of them.
+    //
+    // VERIFIED, NEVER TRUSTED. `cardFor` checks the blob against the key
+    // this sender signed the post with, so a member can only ever deliver
+    // its OWN card — and it is the same check the claim route makes,
+    // which is why it is that function and not a second one.
+    if (body && typeof body.card === 'string' && body.card) {
+      var mineNow = findByKey(who.id);
+      if (!mineNow) {
+        out = { ok: false, status: 404, error: 'no such peer' };
+      } else {
+        var offered = cardFor(who.id, body.card);
+        if (!offered) {
+          out = { ok: false, status: 400, error: 'that card is not yours' };
+        } else {
+          // NEWER, OR NOT AT ALL (cycle 10's C1). A validly signed old
+          // card can be re-served after a rotation and it verifies — a
+          // downgrade needing no forgery, only a copy, possibly back to
+          // the very key whose compromise caused the rotation. The roll
+          // takes a card only when its counter is strictly higher.
+          var held = mineNow.card ? nodeCard.verify(mineNow.card) : null;
+          var fresh = nodeCard.verify(offered);
+          if (held && fresh && !(fresh.at > held.at)) {
+            out = { ok: false, status: 409, error: 'not newer than the card on file' };
+          } else {
+            store.members.put({
+              publicKey: mineNow.publicKey,
+              publicLabel: mineNow.publicLabel,
+              claimedAt: mineNow.claimedAt,
+              card: offered,
+            });
+            rememberActive(who.id);
+            out = { ok: true, status: 200, card: 'taken', at: fresh ? fresh.at : 0 };
+          }
+        }
+      }
+    }
+
     if (body && body.monitor && owner) {
       // Already proved: this arrived signed by the owner, over bytes that
       // bind sender, recipient and this exact text. So a captured `on`

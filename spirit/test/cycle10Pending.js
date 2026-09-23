@@ -62,8 +62,8 @@
 // an API would have to be rewritten when the design settles, and a
 // progress board that lies is worse than none.
 //
-// So this file is DELIBERATELY SHORT. Three are declared here because
-// three have an unambiguous absent unit. The rest are named at the foot of this file with the
+// So this file is DELIBERATELY SHORT. Two are declared here because two
+// have an unambiguous absent unit. The rest are named at the foot of this file with the
 // reason they are not declared, so the gap is visible rather than
 // mistaken for completeness.
 //
@@ -123,30 +123,17 @@ test.subHeading('The two that block the live boxes');
 // (`labWorld.sealedClaimBody`). A relay that stopped opening sealed
 // claims, or a node that stopped sealing them, turns all three red.
 
-// cycle-10/R20 — every member enrolled before this cycle has no card on its roll
-// row, so the relay cannot seal an answer to them: it mints the invite,
-// spends the seat, and answers with silence. Found by checking whether
-// Andy's own boxes could be updated, before any was touched.
+// cycle-10/R20 is BUILT — and its proof is spirit/test/memberCard.js,
+// which asserts the DEFECT first (a mint that spends the seat and answers
+// with silence) and then that the same mint answers with the token once
+// the card has been handed over. The declaration is gone from the board
+// because the board is for what is not built.
 //
-// The unit: a way for a member already holding a seat to deliver a card.
-// There is none — the claim is the only path that carries one.
-{
-  const home = tmp();
-  auth.saveIdentity(home, auth.generateIdentity('relay'));
-  const store = relayStore.open(home);
-  const member = auth.generateIdentity('early');
-  store.members.put({ publicKey: member.publicKey, publicLabel: 'early', claimedAt: '2026-01-01' });
-  const before = store.members.get(member.publicKey);
-  // Nothing in the tree offers this member a way to hand its card over
-  // after the fact. If one appears, the row below stops being empty.
-  test.awaiting('cycle-10/R20', 'a path for an enrolled member to deliver its card',
-    !!(before && before.card),
-    'a relay can answer a member who joined before the flag day, instead of minting in silence',
-    { there: 30, cost: 'a sitting, and it needs a decision on which of three paths' });
-  try { store.close(); } catch (e) { /* already closed */ }
-  try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* leave it */ }
-}
-
+// The path Andy chose, over the relay asking: the NODE pushes its card
+// when a stream opens. It is self-healing — update the code, restart,
+// and the card is there, with no migration script and nothing for an
+// owner to run — and rotation needs exactly this push anyway, which the
+// relay could never initiate because it cannot know a card changed.
 test.subHeading('And the card the relay would seal to');
 
 // cycle-10/R13 — a card is ordered in time, and the shadow roll protects BOTH

@@ -841,13 +841,36 @@ does. Candidate paths, in the order they look cheapest:
 - the relay asks for a card when it finds it holds none — correct, but it
   turns a synchronous answer into a round trip.
 
-**Verify:** a member enrolled before the flag day delivers its card and is
-answerable afterwards; a card that is not theirs is refused as at claim; a
-relay that holds no card for a member says so rather than answering with
-silence.
+**Verify:** `spirit/test/memberCard.js` — the DEFECT is asserted first (a
+mint that spends the seat and answers with silence), then the handover,
+then that the same mint answers with the token. Also: a valid card
+belonging to somebody else is refused, and an older card cannot roll the
+row back.
 
-**Status:** OPEN — found before the live boxes were touched, and it blocks
-them.
+**Status:** DONE. **Andy chose the node pushing over the relay asking**,
+and the reasons are worth keeping because they decided it:
+
+- **Rotation needs this path anyway.** A node that changes its cipher key
+  must tell every relay it is enrolled at, and a relay cannot know to
+  re-ask. R13's rotation is the same message, verified the same way.
+- **It is self-healing.** Any node on the new code, connecting to any
+  relay, delivers its card — no migration script, nothing for an owner to
+  run. **That is what makes this flag day crossable rather than merely
+  declared:** update, restart, and the cards are there.
+- **The node owns the fact.** It is the only party that knows when its
+  card changed; a relay asking can only ask at moments it thinks of.
+
+**Built as:** `{ card: <blob> }` through `answerSelf`, sealed like every
+other post to a relay — so it needs **no new plaintext exception** and
+the countable rule is untouched. `presenceNode` hands it over when a
+stream opens, fire and forget: a refusal is not the node's to retry,
+because the next connection sends it again. Verified with `cardFor`, the
+same function the claim route uses, so a member can deliver only its own;
+and taken only when its counter is strictly higher (condition C1).
+
+**One thing the suite learned the hard way**, kept as a comment there: a
+node that rotates without holding the new private half has made itself
+unreachable, politely — the relay seals every answer to the new key.
 
 ### R18 — `census` becomes `roll`, inside this flag day
 

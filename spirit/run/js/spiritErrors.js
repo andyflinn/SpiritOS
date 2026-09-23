@@ -369,6 +369,28 @@ define('no-cipher-key', {
     'fallback — that would hand everything to an attacker who can simply ' +
     'withhold a card. Ask for the card, then post.',
 });
+// ── HANDING A RELAY YOUR CARD (cycle 10, R20) ────────────────────────
+//
+// A member delivers its own card so the relay can seal answers to it.
+// Both refusals are about WHOSE card and WHICH card, and neither is
+// retryable as sent.
+define('card-not-yours', {
+  status: 400, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['that card is not yours'],
+  note: 'The card verified — it is a real card — and it was signed by a ' +
+    'key other than the one that signed the post carrying it. A member ' +
+    'delivers only its own, which is the same check the claim route makes.',
+});
+define('card-not-newer', {
+  status: 409, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['not newer than the card on file'],
+  note: 'THE ROLLBACK REFUSAL. A validly signed OLD card can be re-served ' +
+    'after a rotation and it still verifies — a downgrade needing no ' +
+    'forgery, only a copy, possibly back to the very key whose compromise ' +
+    'caused the rotation. The roll takes a card only when its counter is ' +
+    'strictly higher. Not an error to retry: it means the relay already ' +
+    'holds this card or a better one.',
+});
 define('not-owner', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['not the owner', 'no owner key on this relay', 'the owner cannot be removed',

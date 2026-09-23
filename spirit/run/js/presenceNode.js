@@ -179,6 +179,46 @@ function createPresence(opts) {
     byRelay[url] = set;
   }
 
+  // ── AND THIS NODE HANDS THE RELAY ITS CARD (cycle 10, R20) ──────────
+  //
+  // A relay seals its answers to the card on the member's roll row. The
+  // claim carries one — but every member enrolled before this cycle has
+  // none, so the relay mints an invite, spends the seat, and answers with
+  // silence. **A flag day nobody can cross is not a flag day.**
+  //
+  // THE MOMENT A STREAM OPENS IS THE RIGHT MOMENT. It is when this node
+  // is demonstrably reachable at that relay, it happens on every boot and
+  // every reconnection, and it needs nobody to run anything — which is
+  // what makes this self-healing: update the code, restart, and the card
+  // is there. Decided with Andy over the alternative of the relay asking:
+  // a relay cannot know when a card CHANGED, and rotation (cycle 10's
+  // this same cycle R13 needs this push anyway.
+  //
+  // FIRE AND FORGET, deliberately. A refusal here is not this node's
+  // business to retry: the next reconnection sends it again, and a relay
+  // that already holds a newer card answers `not newer` — which is the
+  // right answer and not an error. What must never happen is presence
+  // waiting on it, so nothing is awaited.
+  //
+  // COSTS ONE POST PER RELAY PER CONNECTION. Sealed like every other post
+  // to a relay, so it needs no plaintext exception: the countable rule —
+  // the card REQUEST and its answer travel plain, everything else is
+  // sealed — is left exactly as it was.
+  function handOverCard(url) {
+    if (!router || !identity || !identity.publicKey) return;
+    const relayKey = relayKeys.pinned(rootDir, url);
+    if (!relayKey) return;
+    let card = '';
+    try { card = require('./nodeCard').describe(rootDir); }
+    catch (e) { card = ''; }
+    if (!card) return;
+    try {
+      const said = router.post(url, relayKey,
+        JSON.stringify({ app: 'relay', v: 1, body: { card: card } }));
+      if (said && typeof said.catch === 'function') said.catch(function () { /* the next connection tries again */ });
+    } catch (e) { /* a relay that will not take it is not this node's problem */ }
+  }
+
   function onChange(url, body) {
     if (!body || !body.key) return;
     if (!byRelay[url]) byRelay[url] = Object.create(null);
@@ -392,7 +432,7 @@ function createPresence(opts) {
           try { onOwnerEvent(ev); } catch (e) { /* a witness, never a participant */ }
         }
       },
-      onOpen: function () { seedRelay(url); publish('connected to ' + url); },
+      onOpen: function () { seedRelay(url); handOverCard(url); publish('connected to ' + url); },
       onClose: function (reason) { forget(url); publish('lost ' + url + ': ' + reason); },
     });
   }
