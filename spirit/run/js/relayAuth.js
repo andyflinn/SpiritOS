@@ -197,13 +197,54 @@ function receiptSignatureOk(publicKey, hash, sig, atMs) {
   return false;
 }
 
+// ── TWO KEYPAIRS, ONE IDENTITY (cycle 10, R2) ────────────────────────
+//
+//   Andy, 2026-09-23, asked where the cipher key should live: *"same
+//   file"*.
+//
+// The Ed25519 pair SIGNS; the X25519 pair SEALS. Never one key for both:
+// a signing key that also decrypts is one theft away from being both, and
+// the two have different lifetimes — an identity is who you are, a seal
+// key is what your correspondence rests on.
+//
+// ONE FILE, which is the ruling and also the practical answer: one thing
+// to protect with a file mode, one thing to back up, one thing to lose.
+// A second file would mean a node that has half an identity, which is a
+// state nothing in this tree knows how to be.
+//
+// X25519 is in Node's own crypto (22.x), so nothing is hand-rolled and
+// nothing is added to package.json. The public half serialises to 60
+// characters of base64, which is what rides on the card.
 function generateIdentity(name) {
   const pair = crypto.generateKeyPairSync('ed25519');
+  const seal = crypto.generateKeyPairSync('x25519');
   return {
     name: name,
     publicKey: pair.publicKey.export({ type: 'spki', format: 'der' }).toString('base64'),
     privateKey: pair.privateKey.export({ type: 'pkcs8', format: 'der' }).toString('base64'),
+    sealPublicKey: seal.publicKey.export({ type: 'spki', format: 'der' }).toString('base64'),
+    sealPrivateKey: seal.privateKey.export({ type: 'pkcs8', format: 'der' }).toString('base64'),
   };
+}
+
+// ── AN IDENTITY FROM BEFORE THIS CYCLE GAINS A SEAL KEY ─────────────
+//
+// Every node in existence predates cycle 10, including Andy's own and
+// both agents'. They keep their identity — the key IS the identity and
+// regenerating it would make them strangers to every relay they are
+// enrolled at — and gain the second pair in place.
+//
+// The caller saves and says so; this function only decides. Returns null
+// when nothing was needed, so a start that changes nothing prints
+// nothing.
+function withSealKey(id) {
+  if (!id || !id.privateKey) return null;
+  if (id.sealPublicKey && id.sealPrivateKey) return null;
+  const seal = crypto.generateKeyPairSync('x25519');
+  return Object.assign({}, id, {
+    sealPublicKey: seal.publicKey.export({ type: 'spki', format: 'der' }).toString('base64'),
+    sealPrivateKey: seal.privateKey.export({ type: 'pkcs8', format: 'der' }).toString('base64'),
+  });
 }
 
 function privateKeyFromB64(b64) {
@@ -388,7 +429,20 @@ function saveIdentity(rootDir, id) {
 
 function ensureIdentity(rootDir, name) {
   var existing = loadIdentity(rootDir);
-  if (existing && existing.privateKey && existing.publicKey) return existing;
+  if (existing && existing.privateKey && existing.publicKey) {
+    // IN PLACE, KEEPING THE IDENTITY (cycle 10, R2). Every node alive
+    // predates sealing, and its Ed25519 key IS its identity — every relay
+    // it is enrolled at knows it by that key, so regenerating would make
+    // it a stranger. It gains the second pair and stays itself.
+    var grown = withSealKey(existing);
+    if (grown) {
+      saveIdentity(rootDir, grown);
+      try { console.log('    identity gained a seal key (cycle 10) — the signing key is unchanged'); }
+      catch (e) { /* nowhere to say it */ }
+      return grown;
+    }
+    return existing;
+  }
   var id = generateIdentity(name);
   saveIdentity(rootDir, id);
   return id;
@@ -473,6 +527,7 @@ module.exports = {
   receiptMessage,
   receiptSignatureOk,
   generateIdentity,
+  withSealKey,
   sign,
   verify,
   loadAllow,

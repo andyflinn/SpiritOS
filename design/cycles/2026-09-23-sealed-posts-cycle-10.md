@@ -560,8 +560,187 @@ own screen may not be handed other people's words — which is the same
 rule as 0006 keeping a relay from storing them, applied to the one
 surface that was built to watch.
 
+**AND THIS IS WHERE THE PROOF IS TAKEN FROM.** Andy: *"that is for
+testing/proving in the harness that the transit packages are sealed. it's
+part of the proof."*
+
+The monitor stream is not merely a surface that must behave — it is the
+harness's WINDOW onto traffic in transit. It is the one place a party who
+is neither sender nor recipient sees a post at all, which makes it
+exactly the vantage point a proof of sealing needs: what an observer at
+that window can see IS what the relay can give away.
+
+So the suite does not assert sealing by inspecting the sealing function.
+It stands where a watcher stands, takes what arrives, and tries to read
+it:
+
+1. a real post is routed through a relay built in the suite;
+2. a monitor stream is held by the owner, as in cycle 9;
+3. every event that arrives is searched for the plaintext, for any field
+   that is not an envelope fact, and for a hash equal to the hash of the
+   words (R12);
+4. and the same capture is taken live, against spirit-3, with the drill
+   supplying the known text.
+
+A green then means: **from the only seat that sees traffic, nothing
+legible was available.** That is a stronger claim than "the seal function
+was called", and it is the claim the cycle actually makes.
+
 **Verify:** every monitor event shape asserted to carry no text field; a
-deliberately added payload field fails the guard; and the live capture
-from R10 re-read for any field that is not an envelope fact.
+deliberately added payload field fails the guard; the live capture from
+R10 re-read for any field that is not an envelope fact; and the whole
+check run against today's unsealed tree, where it must go red.
 
 **Status:** OPEN — cycle 10 is opened, not built.
+
+
+---
+
+# Cycle 10, as ruled — the settled plan
+
+**Appended to `2026-09-23-sealed-posts-cycle-10.md` on 2026-09-23, after
+Andy walked wsl-claude's nine findings one at a time in plain English and
+wsl-claude answered the result.** Everything above this line is how the
+cycle was thought through; this is what gets built.
+
+> **Andy, on being shown the review only after it had been written into
+> the tree:** *"i'm upset because you denied me an opportunity for
+> review."* — *"i need due diligence at those moments, and it MUST include
+> me."*
+>
+> And, walking them: *"so let's work through wsl point one by one, in
+> english"* — after which four of the nine came out different, and two came
+> out smaller.
+
+## What he changed, and it is the better design
+
+- **The introduction is a broadcast, not a fetch.** *"it must say: these
+  two keys, this name"*, and *"signed by relay"*. Nobody fetches a card to
+  write to somebody who just joined.
+- **Rotation lives in the shadow roll**, not in a rule about cards: the
+  identity key **is** the row and never changes; the cipher key changes
+  only by proof.
+- **The relay is not bound into the seal.** *"why would the relay worry,
+  not its job."* Replay is the recipient's business, and that removed a
+  re-seal on every failover.
+- **The stack, corrected by him mid-design**, and then corrected back when
+  the reason was given: *"ah, during the design brainstorm i tossed in the
+  wrong stack sequence. i stand corrected."*
+- **`census` is retired from the vocabulary.** It is the **roll**.
+
+## The order of operations, settled
+
+```
+  sending                          receiving
+  ─────────                        ──────────
+  write the log (plaintext)        check the hash
+  seal      (AAD: from, to, label) verify the signature
+  sign      (over sealed bytes)    open the seal
+  hash      (over what travels)    write the log (plaintext)
+  send                             hand to the app
+```
+
+**Never decrypt what has not been authenticated** — which is why opening
+is third on the way in and not first.
+
+## The three conditions wsl-claude attached, all accepted
+
+> *"YES, AND HIS RULINGS IMPROVED ON MY FINDINGS… Three conditions follow;
+> none is a veto, and each is the mechanism a ruling of his needs in order
+> to be true rather than merely stated."*
+
+### C1 — "newer" is a number inside the signature
+
+A cipher key changes only by a card signed with the peer's identity key
+**and carrying a counter strictly greater than the stored one**. If
+newness were decided by arrival order or position in the roll, **the relay
+would decide which card is newer** — and could roll a peer *back* to a
+superseded key, possibly the one whose compromise caused the rotation.
+That is a different attack from faking a rotation, and the ruling's
+wording left it open.
+
+**And the consequence in plain words, because a user meets it once:**
+since the identity key *is* the row, **losing `identity.json` is not
+losing a password — it is ceasing to be that person.** No recovery path
+exists by design; every peer must re-introduce the node as a stranger.
+That belongs where somebody reads it *before* it happens.
+
+### C2 — replay protection needs a bound and a clock
+
+The recipient refuses a hash it has already heard. But that index grows
+for ever, and cycle 9 bounds every persisted dataset by disc — so it
+**will** be trimmed, and at that moment old messages become replayable
+again, silently.
+
+So: **a sender timestamp goes inside the sealed plaintext** — not in the
+envelope, where it would leak and be forgeable — and anything older than
+the index's retention window is refused for age. A hash can then only
+leave the index once a message bearing it would be refused anyway.
+
+**And the index rebuilds from the log.** It is derived: every hash in it
+is also in `traffic.jsonl`. Lose `node.db` and you lose a rebuild, not
+your replay protection — *"a derived thing that cannot be rebuilt is a
+single point of silent weakening."*
+
+### C3 — keep the signed introduction, not only the keys
+
+Relay-signed announcements buy **accountability**, and accountability
+exists only if somebody can produce the contradiction. So the node stores
+the **signed blob** on the row, not merely the two keys read out of it.
+Otherwise the victim holds a key and a memory while the relay holds
+everything. A few hundred bytes per contact turns a deterrent into
+evidence.
+
+## Andy's question, answered, because the two sentences are easily confused
+
+> *"so the log is now machine owned and a table in the SQLite database?"*
+
+**No.** The log stays `traffic.jsonl` — plain text, permanent, greppable,
+the owner's own correspondence, decision 0009 untouched. **Only the hash
+index** goes into `node.db`, holding nothing a person would read. The
+words are his, in text; the lookup is the machine's, in the database; and
+the machine's copy can always be rebuilt from his.
+
+## Sequencing, from wsl-claude and agreed
+
+- **The `census` → `roll` rename happens INSIDE this flag day.** 474
+  occurrences and a stored acquisition rank to migrate: exactly the change
+  that becomes a *second* flag day if it slips a week, and this cycle is
+  already spending the break.
+- **The flag day carries a version the other side can read.** At the seam
+  an un-updated relay answers 413 to a legal sealed post, which reads as
+  *"message too big"* and means *"that box is old"*. The release note
+  names the symptom, not the cause.
+
+## One defect found by being committed
+
+wsl-claude sent an **empty** message — a cleared scratchpad piped into a
+send. `agents.js` refuses a `blocked` with no `what`; it should refuse a
+send with no text the same way, rather than spending a post and a receipt
+on nothing.
+
+## What this changes in the requirement list above
+
+| | |
+|---|---|
+| R1 | the card keeps `name`, `description`, `publicKey`, `sealKey`, `sig` — **plus the monotonic counter of C1** |
+| R3 | introduction is the **relay-signed broadcast** carrying both keys and the name; the card request is the recovery path; the roll is bulk catch-up; **the signed blob is stored** (C3) |
+| R4 | AAD is **sender, recipient and a protocol label** — the relay is *not* in it; a **sender timestamp inside the plaintext** (C2) |
+| R9 | the claim body is sealed to the relay's published cipher key |
+| R12 | unchanged, and the canary now also proves the timestamp is not in the envelope |
+| R13 | becomes **the shadow roll protects both keys**: identity immutable, cipher replaced only by a signed, strictly-newer card, every change reported |
+| R14 | log before sealing out, after opening in |
+| R15 | **length is public and documented**; no padding |
+| new | **R17** — the recipient's replay index: in `node.db`, checked before an app sees a message, rebuildable from the log |
+| new | **R18** — the `census` → `roll` rename, with the stored-rank migration, inside this flag day |
+| new | **R19** — `agents.js` refuses an empty send |
+
+## And how it was arrived at, which is the part worth keeping
+
+Andy read every finding in English before any of it was written, ruled on
+each, and changed four. Two of his changes **removed** work rather than
+adding it. His own summary, mid-walk, after being corrected on the stack
+he had proposed:
+
+> *"see! i'm learning and benefitting when you must do due diligence with
+> me."*
