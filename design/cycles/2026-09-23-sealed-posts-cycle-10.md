@@ -76,7 +76,10 @@ blob verifies **from its own bytes** without trusting how it arrived.
 **Verify:** a card whose any field was altered fails; a card signed by the
 wrong key fails; a swapped `sealKey` fails.
 
-**Status:** OPEN — cycle 10 is opened, not built.
+**Status:** DONE at `15f8ccc`. `nodeCard.js` — `asks` matches `card`,
+`cardFields`/`signable`/`verify`; fifteen callers moved. Suite
+`nodeCardSigned.js`, 9 assertions, including the carrier that swaps the
+cipher key and re-signs with its own. `describe` as a wire word is gone.
 
 ### R2 — a seal keypair, made where the identity is made
 
@@ -86,7 +89,11 @@ protect, one file to back up, one file to lose.
 **Verify:** a fresh identity has both; an identity from before this cycle
 gains a seal key on first start and says so.
 
-**Status:** OPEN — cycle 10 is opened, not built.
+**Status:** DONE. `generateIdentity` makes both; `withSealKey` grows an
+old one in place and `ensureIdentity` saves it and says so. Suite
+`sealKeys.js`, 12 assertions — most of them on what the migration must
+NOT change, since every node alive predates this cycle and its Ed25519
+key is how three relays know it.
 
 ### R3 — the card is kept, and accepted from anywhere the signature holds
 
