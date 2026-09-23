@@ -39,6 +39,24 @@ A project governed this way carries four kinds of file. Names in brackets are th
 10. **A design is accompanied by a test suite, and progress is observed against it.** Andy, 2026-09-23: *"nice would be. a design is accompanied by a test suite, and i want to observe progress agains that."* — because *"harness all green doesn't measure progress for me."* A green run says nothing claimed is broken; it cannot say how much is left. So a cycle document ships with `spirit/test/<cycle>Pending.js`, declaring each open requirement with `test.awaiting(...)`, and the count falls as the cycle is built. **A declared assertion asks whether the UNIT IS THERE, not whether it works** — *"a test goes and checks if the unit is available for testing, and fails for that simple reason. and easily categorized failure"* — because a test written before the code cannot assert behaviour. **Yellow, never red:** *"so if a stub is already there and fails, it goes red, if nothing's there yet it goes yellow"*, and *"so you guys don't get a heart-attack anytime it's not all green"*. It turns red the moment its unit appears, so the board cannot rot into finished work nobody relabelled. **Only requirements with an unambiguous absent unit are declared**; the rest are listed in the same file with the reason, so the number is read as "four of thirteen" and not as the whole. This is also what the R-number apparatus is FOR: *"the agents labeling and reference system can be quantified for andy, instead of jargonized"* — the runner joins each declaration against `design/cycles/` so the summary writes itself from what the documents already say.
 11. **Andy gets the decisions, bundled, in plain English — and nothing else.** What only agents need (reference systems, test mechanics, how agents coordinate) is settled between the agents and does not reach Andy as a question. What needs him arrives as one bundle of decisions, each a plain yes/no or a choice between named options, with what it costs and what happens if he says nothing. Andy, 2026-09-22, on a proposal about requirement citations: *"so you want to institue a reference system for agents, and bundle related decision-request to me in english?"* — *"yes."*
 
+12. **A long cycle ends in a report package, and the window it ran in stays readable while it runs.** Andy, 2026-09-23: *"i think it's fair to expect my desired report packece including completion-time estimates for alpha core, collated after such long cycles, i'll ask for what i want to learn in addition to that."* So the package is **owed, not requested** — it is collated at the close of a long stretch without being asked for, and whatever he asks afterwards is *in addition* to it, never instead of it.
+
+    **What it always carries**, because each part answers a question he has already had to ask twice:
+    - **The board** — done, open, and the yellows with their price-note and %-there, each naming what it counts.
+    - **Completion-time estimates for the alpha core**, as a guess marked a guess, with the reasoning visible and what would be cut if a date became hard.
+    - **Measurements per platform, named by which half they prove.** Andy, 2026-09-23: *"swl harness is the target for relay, windows may be the prime target for node"* — so the two agents' harnesses are not redundant, they are the authoritative measurement for different halves of the product, and one merged number hides which box proved what.
+    - **What could NOT be done, as loudly as what was.** A closing step that reports only its successes is the same defect as a board that drops a row, and unattended is exactly when nobody notices.
+    - **The nodes and labMasters brought up to the tree** (rule 9), or a sentence saying why not.
+
+13. **The rolling window is a progress view, not a transcript.** Andy, 2026-09-23: *"this window could show a watch-the-water-boil output, that would be nice, if we could eliminate code snippets and stuff that clutters our rolling chat, i can't follow that in realtime anyway....."*
+
+    **He cannot read code in real time and should not be asked to.** So code, diffs, command output and tool results do not go into the chat as prose. They belong in the files, in the commit message, and on the board, where he reads them at his own pace and where they are searchable later.
+
+    **What the window carries instead** is a short line per step that says where the work is — the cycle, the counts, and what is being worked on right now — plus the working/listening line at the end of a turn. Everything else waits for the report package.
+
+    The test of a window line: **it is worth reading at a glance, or it is not written.**
+
+
 ## Andys preferences for  Planning and implementation cycles
 
 This is a working method, not anything about a particular agent. It has two
