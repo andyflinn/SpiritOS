@@ -68,6 +68,7 @@ const { spawn, execSync, execFileSync } = require('child_process');
 
 const REPO = path.join(__dirname, '..', '..');
 const auth = require('../run/js/relayAuth');
+const nodeCard = require('../run/js/nodeCard');
 const hub = require('../run/js/hub');
 const plantRun = require('./plantRun');
 const buildStamp = require('../run/js/buildStamp');
@@ -191,7 +192,52 @@ function discPerRow() {
     }
   });
   const afterMembers = fs.statSync(rfile).size;
-  out.perMember = Math.round((afterMembers - out.emptyRelayDb) / M);
+  out.perMemberUncarded = Math.round((afterMembers - out.emptyRelayDb) / M);
+
+  // ── AND THE ROW A MEMBER ACTUALLY HAS AFTER CYCLE 10 ───────────────
+  //
+  // THE FIGURE ABOVE MEASURES A MEMBER THAT WILL NOT EXIST. It writes no
+  // `card`, so the column defaults to '' and the row costs ~199 bytes —
+  // which was the whole truth until cycle 10 and is the whole truth for
+  // nobody afterwards, because every claim carries a card (R20) and a
+  // relay that holds none cannot seal an answer at all.
+  //
+  // Found 2026-09-23 the hard way: `capacityFresh.js` was written to
+  // catch a published figure going stale, it correctly went red, this box
+  // re-measured, the gate went GREEN — and the number it certified was
+  // still 199 against a real 575. A freshness check cannot see that the
+  // measurement is asking the wrong question. That is the failure Andy
+  // named in the same hour: *"not-knowing is the deal breaker"*, and a
+  // green gate over a wrong number is not-knowing wearing a badge.
+  //
+  // ONE REPRESENTATIVE CARD, REPEATED. A card's size is fixed by its
+  // shape — two keys, a signature, a counter — and varies only with the
+  // description, so 5,000 distinct keypairs would buy nothing and cost a
+  // minute of keygen. SQLite stores each row's copy; nothing dedupes.
+  //
+  // BOTH ARE REPORTED, and neither is quietly renamed. The uncarded
+  // figure is what every relay deployed today is actually running, so it
+  // stays measurable until the flag day lands; the carded one is what
+  // they become. A reader comparing an old capacity.json against a new
+  // one needs both or the jump looks like a measurement error.
+  const sampleId = auth.generateIdentity('member-name');
+  sampleId.description = 'a node that belongs to a member with an ordinary description';
+  const sampleCard = nodeCard.cardFrom(sampleId);
+  out.cardBytes = Buffer.byteLength(sampleCard);
+
+  const beforeCarded = fs.statSync(rfile).size;
+  rstore.transaction(function () {
+    for (let i = 0; i < M; i += 1) {
+      rstore.members.put({
+        publicKey: K + String(i + M).padStart(27, '0') + '=',
+        publicLabel: 'carded-member-' + i,
+        claimedAt: new Date().toISOString(),
+        card: sampleCard,
+      });
+    }
+  });
+  const afterCarded = fs.statSync(rfile).size;
+  out.perMember = Math.round((afterCarded - beforeCarded) / M);
 
   const P = 1000;
   rstore.transaction(function () {
@@ -539,6 +585,8 @@ async function main() {
         return { n: pt.n, rss: pt.rss, kernel: pt.kernel || null };
       }),
       perMemberRowBytes: disc.perMember,
+      perMemberRowBytesUncarded: disc.perMemberUncarded,
+      cardBytes: disc.cardBytes,
       perPartnerRowBytes: disc.perPartner,
       perShadowRowBytes: disc.perShadowRow,
       perRouteRowBytes: disc.perRouteRow,

@@ -1,16 +1,16 @@
 {
-  "measuredAt": "2026-09-21T22:57:25.021Z",
-  "commit": "00181a8",
+  "measuredAt": "2026-09-23T13:37:42.803Z",
+  "commit": "dbe5859",
   "platform": "win32",
   "release": "10.0.26200",
   "node": "v24.20.0",
-  "seconds": 61,
-  "exitCode": 0,
+  "seconds": 78,
+  "exitCode": 1,
   "summary": {
-    "suites": 119,
-    "green": 2749,
-    "red": 0,
-    "unhappy": 0,
+    "suites": 140,
+    "green": 3025,
+    "red": 2,
+    "unhappy": 2,
     "notRun": 0
   },
   "summaryParsed": true
