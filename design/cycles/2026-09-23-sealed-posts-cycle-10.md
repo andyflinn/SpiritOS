@@ -368,7 +368,32 @@ plaintext is refused; a relay's published cipher key fails verification
 if altered; a partner-carried post is opened by the member and not by the
 partner.
 
-**Status:** OPEN — cycle 10 is opened, not built.
+**Status:** OPEN — and deliberately, although most of it is built. What
+R9 PROMISES is that an invite token stops touching the terminator and its
+logs, and that is the one part not done. Calling this DONE because the
+other four parts landed would retire a requirement that has not delivered
+its headline. The parts, so nobody rebuilds them:
+
+- **DONE at `85e424b`** — the relay publishes `relaySealKey` and a
+  signature over both keys and the label together, on `GET
+  /api/relay/key`. A node that cannot verify it gets no key at all.
+  Registered in decision 0010. Suite `relayKeyDoor.js`.
+- **DONE at `78e5487`** — owner verbs are sealed to the relay and opened
+  at `answerSelf`; the same verb plaintext is refused; answers are sealed
+  back off the member's card, which the claim now carries and the relay
+  keeps in `relay.db`.
+- **DONE** — a partner-carried post is opened by the member and not by
+  the partner, because the packet a partner carries is sealed to the
+  member it is addressed to.
+- **NOT DONE: the claim route itself.** `POST /api/relay/claim` is a
+  direct POST, not a peer post, and it still travels plaintext — so the
+  invite TOKEN still touches the terminator and whatever it logs, which
+  is the thing R9's headline promised to stop. The claimer must fetch the
+  relay's cipher key first (the door is signed now, so that part is
+  ready) and seal the claim body to it. **Andy ruled this: "3. seal it.
+  agreed."**
+- **NOT DONE: the partner wrapper** — see R5 and `relay.js`,
+  `fromPartnerBox`. Belongs with the partnership handshake.
 
 ### R10 — prove the relay cannot read it, by trying to read it
 
