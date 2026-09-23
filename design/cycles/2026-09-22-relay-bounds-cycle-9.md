@@ -199,6 +199,97 @@ streams, which is the same rule seen from the other side.
 
 **Status:** DONE
 
+### R13 — admission is bounded by RAM, not by disc
+
+**Found 2026-09-23 by Andy, in a question this cycle could not answer:**
+*"why would a relay enroll more members than it can hold in RAM?"* — and
+then the rule: *"a relay could hold a few million CARDs on disk, members
+are strictly limited by RAM allotment"*, *"RAM cap and member cap go
+lock-step"*, *"why admit a member when we cannot guarantee service for
+that member? that'd be horrible"*.
+
+**This cycle built one half of a pair and did not record the other.** R10
+and the shrink refusal closed the door where an owner LOWERS the figure
+under existing members — *"that RAM figure allows N connection(s) and this
+relay has M member(s), so M-N could never connect. Remove members first —
+nobody is evicted by a number."* Andy: *"the owner must evict before
+shrinking."* That was correct and is untouched.
+
+The other door was open. **Admission had no RAM bound at all.** The disc
+bound (R4) answers how many rows may EXIST and was never wrong; nothing
+answered how many people could be SERVED. So a relay at 256 MB admitted
+members up to its ~111,000-row disc ceiling while only 4,096 could ever
+hold a stream: member 4,097 got a row, a card, and then a 503 for ever.
+**And mint had no capacity check of any kind** — a thousand tokens against
+three free seats, each reading valid until somebody tried it.
+
+**It is worse without a queue.** A relay stores no traffic, so a member who
+cannot connect does not collect messages to read later; they receive
+nothing. Over-admission is not a delay, it is an exclusion dressed as a
+membership.
+
+**What was built:** a claim past the RAM-derived seat count is refused,
+naming `ramLimitMB` as the lever; a live invite HOLDS a seat, counted at
+mint time and never cached, so a relay restarted smaller cannot keep
+minting against the figure it booted with; an expired invite returns its
+seat. **Nobody is ever evicted** — `design/principles/LIMITED-RESOURCES.md`,
+Andy: *"it's like member slots, you must evict before adding new ones."*
+The owner is exempt, because the one account that can raise the limit must
+always be able to get on.
+
+**And the monitoring half**, because a guarantee that arrives as a surprise
+leaves the owner no lever. Andy: *"our alpha shape needs to monitor member
+count so, that RAM capacity can guarantee service."* The report carries
+`held`, `outstanding`, `allowance` and `free` — all four, because two
+cannot be derived from the others: *"3,900 of 4,096"* hides that 200
+invites are out and the relay is already full.
+
+**Verify:** `spirit/test/relaySeats.js` — the roll stops at the seats the
+RAM allotment buys, the refusal names the lever, the roll is untouched by
+a refusal, minting stops when members plus live invites reach the
+allowance, an expired invite returns its seat, and an unconfigured relay
+is silent rather than zeroed. `spirit/test/guarantees.js` asserts the
+product this makes possible: every member on the roll reconnects at once
+and none is turned away.
+
+**Status:** DONE at `eda5e28`.
+
+### R14 — the guarantees are tested as products, not as halves
+
+**Found the same day, by the same question.** With R13 built, the promise
+*"a relay serves every member it admits"* rested on two proven halves —
+the seat cap here, and one inbound route per member (`router.js`
+`DEFAULT_PER_TARGET = 1`, the request-budget cycle's R6) — with nothing
+asserting their product. Andy, shown that: *"ouch!"*, and then *"yes. this
+is neccessary in the harness."*
+
+**Every finding of 2026-09-23 had that shape.** Not one was a broken
+component; each was two correct things with nothing asserting the
+relationship between them — the disc bound beside a missing admission
+bound, a freshness gate beside a correct measurement certifying a wrong
+number, a generated page beside a stale drop, an agent protocol beside a
+misconfigured agent node. The gates this repo already has check
+COMPONENTS: fresh, cited, catalogued, one-door. **A component gate cannot
+see a join, and a join is where all of them lived.**
+
+What makes half B load-bearing here, in Andy's words: *"clear
+predictability of resource requirements per member, and the abondoning ...
+dynamically managing RAM useage for members with up to 16 requests in
+flight."* With a variable number of routes per member a seat cap bounds
+headcount while per-member cost floats, and bounds nothing that matters.
+
+**Verify:** `spirit/test/guarantees.js` — each guarantee names its halves
+and the suites that prove them, then asserts the product. Four are
+covered: a relay serves every member it admits; a relay guarantees
+connectivity to its members, online or not; no relay can read what one
+node says to another (cycle 10's R10, against a real relay rather than
+against `seal.js`); and the capacity this repo publishes is the capacity
+it measured. The arithmetic is read off live objects rather than
+restated, so raising `DEFAULT_PER_TARGET` fails HERE while every component
+suite stays green.
+
+**Status:** DONE at `fbbd8f6`.
+
 ---
 
 ## What Linux found that Windows could not

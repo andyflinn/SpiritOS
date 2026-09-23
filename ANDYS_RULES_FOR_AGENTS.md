@@ -52,6 +52,39 @@ failed, however correct it reads.
 8. The agent is allowed to comment on flaws in these general rules.
 9. **Closing a batch includes bringing every relevant permanent node up to the tree.** Andy, 2026-09-23: *"i want my personal nodes on both sides auto-updated appropriately after lengthy batches. at least my puttering around can verify that nothing has changed for me yet."* — and, on where it belongs: *"ie. the part where we do things on both sides, verify, measure, etc, includes auto updating all relevant permanent nodes."* It sits inside the closing step beside push, measure and the brains update; it is not a courtesy afterwards. **Push is first, and that is an ordering rather than a habit** — Andy: *"you must first push, so we can parallelize this procedure."* Push is the only part of the step that unblocks anybody else; nobody can pull, measure, verify or review against a tree that is still local, so pushing last serialises two agents who could have worked at once. Push, tell the other side, then do the rest alongside them. The corollary, in his words: *"wsl can't review stuff you didn't push."* **It is the last measurement, and it measures what no harness can** — that the thing a person uses still behaves the way it did. **All relevant permanent nodes**, not only Andy's two: his node on each side, the agents' standing nodes, and the relays they speak to, because a system half updated is not the system. **"Appropriately" is the half that will be got wrong.** A node updated into a half-built flag day is worse than one left alone — it refuses the boxes it must still talk to, and his puttering then measures the gap rather than the work; boxes that must interoperate move together or not at all. **When the tree is not coherent the step is still owed, as a sentence:** say the update is not being applied and name what is missing. Going quiet reads identically to having forgotten.
 10. **A design is accompanied by a test suite, and progress is observed against it.** Andy, 2026-09-23: *"nice would be. a design is accompanied by a test suite, and i want to observe progress agains that."* — because *"harness all green doesn't measure progress for me."* A green run says nothing claimed is broken; it cannot say how much is left. So a cycle document ships with `spirit/test/<cycle>Pending.js`, declaring each open requirement with `test.awaiting(...)`, and the count falls as the cycle is built. **A declared assertion asks whether the UNIT IS THERE, not whether it works** — *"a test goes and checks if the unit is available for testing, and fails for that simple reason. and easily categorized failure"* — because a test written before the code cannot assert behaviour. **Yellow, never red:** *"so if a stub is already there and fails, it goes red, if nothing's there yet it goes yellow"*, and *"so you guys don't get a heart-attack anytime it's not all green"*. It turns red the moment its unit appears, so the board cannot rot into finished work nobody relabelled. **Only requirements with an unambiguous absent unit are declared**; the rest are listed in the same file with the reason, so the number is read as "four of thirteen" and not as the whole. This is also what the R-number apparatus is FOR: *"the agents labeling and reference system can be quantified for andy, instead of jargonized"* — the runner joins each declaration against `design/cycles/` so the summary writes itself from what the documents already say.
+10a. **A design declares tests for the half of the pair it is NOT
+    building.** Andy, 2026-09-23, after an hour spent re-deriving a
+    decision from code: *"that's why design time is when tests should be
+    initalized."*
+
+    Rule 10 says a design ships with declarations for what it is about to
+    build. This is the other half, and it is where the expensive gaps
+    live. **Cycle 9 bounded a relay's disc and refused a shrink that would
+    strand members — and never recorded that admission had no RAM bound at
+    all.** Every suite passed. The board was complete. The gap was found
+    four days later by Andy asking a question the cycle could not answer:
+    *"why would a relay enroll more members than it can hold in RAM?"*
+
+    **A requirement that is obvious enough to skip is the one that leaves
+    no trace.** Nobody decided not to bound admission; it simply never got
+    a number, so its absence read as finished work. Declaring it awaiting
+    would have cost one line and shown it as yellow with a price on it,
+    for four days, in front of him.
+
+    **So when a cycle builds one direction of something, name the other
+    direction and declare it** — even to say it is out of scope, because
+    a declared out-of-scope is a decision and an undeclared one is an
+    oversight wearing the same clothes. The pairs to look for: a bound
+    that refuses at one door and not the other; a figure published and a
+    figure measured; a thing written and a thing read; a sender's check
+    and a receiver's.
+
+    **And the product of two halves is itself a requirement**, recorded as
+    cycle 9's R14. Two correct components with nothing asserting their
+    relationship is the single commonest defect this project has found in
+    itself — every finding of 2026-09-23 had that shape, and none of them
+    was a broken component.
+
 11. **Andy gets the decisions, bundled, in plain English — and nothing else.** What only agents need (reference systems, test mechanics, how agents coordinate) is settled between the agents and does not reach Andy as a question. What needs him arrives as one bundle of decisions, each a plain yes/no or a choice between named options, with what it costs and what happens if he says nothing. Andy, 2026-09-22, on a proposal about requirement citations: *"so you want to institue a reference system for agents, and bundle related decision-request to me in english?"* — *"yes."*
 
 12. **A long cycle ends in a report package, and the window it ran in stays readable while it runs.** Andy, 2026-09-23: *"i think it's fair to expect my desired report packece including completion-time estimates for alpha core, collated after such long cycles, i'll ask for what i want to learn in addition to that."* So the package is **owed, not requested** — it is collated at the close of a long stretch without being asked for, and whatever he asks afterwards is *in addition* to it, never instead of it.

@@ -145,6 +145,30 @@ const test = {
         
         this.titleLine(result);
         this.lineFeed();
+
+        // ── AND THE EXIT CODE SAYS THE SAME THING AS THE LINE ABOVE ────
+        //
+        // Until 2026-09-23 it did not. Every suite in this repo exited 0
+        // whether it passed or failed, so the verdict existed only in the
+        // printed output and `runAll.js` was the one reader that parsed
+        // it. Anything gating on the exit code — a shell chain, a hook,
+        // the automated closing step Andy wants — saw success always.
+        //
+        // MEASURED: `node spirit/test/cycleCitations.js && git commit`
+        // was run repeatedly that day while the gate was RED, and the
+        // commit went through every time. The gate reported correctly and
+        // the exit code was a separate channel with nothing joining them
+        // — the same shape as every other finding of that day.
+        //
+        // `exitCode`, not `process.exit()`: a suite may still have output
+        // to flush and cleanup to run, and exiting here would cut it off
+        // mid-report. The value is set and the process ends when it ends.
+        //
+        // runAll is unaffected. It reads the completion line to decide
+        // what happened and keeps `code` beside it; a suite that reports
+        // AND exits 1 is still read as having reported, because `said` is
+        // what distinguishes a failure from a crash.
+        if (failureCount > 0) process.exitCode = 1;
     },
 
     check: function(str){
