@@ -16,6 +16,7 @@ const auth = require('../run/js/relayAuth');
 const peerPost = require('../run/js/peerPost');
 const trafficLog = require('../run/js/trafficLog');
 const routerTable = require('../run/js/router');
+const seal = require('../run/js/seal');
 const nodeCard = require('../run/js/nodeCard');
 
 // THE ANSWERER'S LOG IS ON ITS OWN TIMELINE.
@@ -213,6 +214,33 @@ async function whatCrossedIsWrittenDown() {
     test.check('the receiver kept what arrived, and who it was from');
   } else {
     test.fail('inbound entry: ' + JSON.stringify(inbound));
+  }
+
+  // ── cycle 10's R14, WHICH IS THE CONJUNCTION OF THE THREE ABOVE ────
+  //
+  //   "the endpoints keep the words; the relay keeps the envelope"
+  //
+  // Both halves were already asserted here — the sender kept it byte for
+  // byte, the receiver kept what arrived — and NEITHER SAYS THE THING
+  // THE REQUIREMENT CLAIMS. Two logs holding plaintext is only half a
+  // promise; the other half is that the same exchange was ciphertext in
+  // between, and no assertion joined them.
+  //
+  // Andy, asked whether sealing would cost him the readable history of
+  // his own correspondence: "isnt that why the seal must sit inside of
+  // hash and verification in the stack?" — yes, and this is where that
+  // answer is checked rather than restated. The relay sits OUTSIDE the
+  // seal, so its record is the envelope; the endpoints sit inside it, so
+  // theirs are the words.
+  const carried = relay.posts.filter(function (p) { return p.hash === (posted && posted.hash); })[0];
+  const opaque = carried && carried.text.indexOf(SECRET) === -1 && seal.isSealed(carried.text);
+
+  if (opaque && posted.payload === sent && inbound.payload === sent) {
+    test.check('AND THE RELAY CARRIED CIPHERTEXT for the same exchange — both endpoints hold ' +
+      'the words, the carrier holds the envelope, and it is one message');
+  } else {
+    test.fail('the endpoints-and-envelope conjunction: relay held ' + (carried ? carried.text.slice(0, 60) : 'nothing') +
+      ', sealed ' + (carried ? seal.isSealed(carried.text) : '?'));
   }
 
   if (inbound && inbound.relay === 'http://relay' && posted.relay === 'http://relay') {

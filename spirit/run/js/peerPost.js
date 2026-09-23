@@ -1063,7 +1063,17 @@ function createPeerPost(opts) {
     //
     // A NODE WITH NO STORE SKIPS THIS. A relay constructs a peerPost
     // without one (see `opts.store`), and it has no app to protect.
-    if (store && store.replay) {
+    // ONLY A SEALED POST CAN BE JUDGED. An unsealed one carries no
+    // timestamp — `opened.at` is '' — and the index would read that as
+    // 1970 and refuse it as older than this node remembers. Caught by
+    // queueUnderLoad.js, where a node runs with sealing off and every
+    // post it sent came back refused: "only 0 attempts got out".
+    //
+    // There is no protection lost. A node that accepts unsealed posts has
+    // already decided not to require the seal (`sealsPosts`), and the
+    // sealed timestamp is the only thing that makes the window honest —
+    // judging without it would be inventing a verdict.
+    if (store && store.replay && seal.isSealed(sealedText)) {
       var verdict = store.replay.seen(hash, opened.at);
       if (verdict !== 'new') {
         note({

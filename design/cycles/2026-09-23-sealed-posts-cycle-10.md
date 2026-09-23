@@ -329,10 +329,22 @@ all peer traffic is. Andy's monitor console is unaffected — it draws
 envelopes, never payloads — which cycle 9's screenless verification
 already proved end to end.
 
-**Verify:** the drill runs sealed and the feed still attributes every
-event to the right identity.
+**Verify:** `spirit/test/sealedLayering.js` — **counted, not argued.**
+Exactly one place in `spirit/run/js` can set `sealsPosts: false`, and it
+is `relayServer.js`'s partner router; and `agents.js` contains no sealing
+code whatsoever.
 
-**Status:** OPEN — cycle 10 is opened, not built.
+**Status:** DONE — **and it was already true, which is the requirement.**
+The agents seal because they post through the same door as everybody
+else, so testing the agents specifically would have proved only that the
+agents are fine today. What is asserted instead is that the door has ONE
+documented bypass. An exemption anybody grants themselves later fails
+here, whoever they are.
+
+The one bypass carries a relay's query to a partner — an envelope, never
+a person's words — and cannot be closed from one side, because a partner
+is not a member of the box it is partnered with and there is no card to
+seal an answer to.
 
 ### R8 — suites that INSIST, not suites that demonstrate
 
@@ -553,7 +565,18 @@ open there; the registered hash still refuses a replay; a partner-carried
 sealed post keeps its `innerHash` behaviour; and a receipt still proves
 "exactly those bytes".
 
-**Status:** OPEN — cycle 10 is opened, not built.
+**Status:** DONE — **and it was true before it was asserted, which is
+exactly why it needed asserting.** The layering was built correctly in R4
+and R5; nothing checked that it stayed that way, and the order is the
+kind of thing a later refactor reverses without noticing.
+
+**Verify:** `spirit/test/sealedLayering.js` — the hash a relay registers
+is of the SEALED bytes and is NOT the hash of the words (so replay,
+receipts and the route table all work on what travelled); the plaintext
+hash is one the relay could not have computed, because the words are not
+in what it held; and a post whose signature was made BEFORE sealing is
+refused, with a control proving the same bytes signed after sealing are
+carried, so the refusal is about order and not content.
 
 ### R12 — the relay's hash must differ from the endpoints' hash of the words
 
@@ -761,7 +784,18 @@ and after opening on the way in.
 And it is what keeps the live half of R10 honest: if the sender keeps no
 plaintext record, there is nothing to search the feed FOR.
 
-**Status:** OPEN — cycle 10 is opened, not built.
+**Status:** DONE — **and both halves were already asserted while the
+requirement was not.** `peerPost.js` has long checked that the sender
+kept the packet byte for byte and that the receiver kept what arrived.
+Neither says the thing R14 claims: two logs holding plaintext is half a
+promise, and the other half is that the same exchange was ciphertext in
+between. Nothing joined them.
+
+**Verify:** `spirit/test/peerPost.js` — the conjunction, on one exchange:
+both endpoints hold the words AND the relay carried a sealed blob that
+does not contain them. `spirit/test/guarantees.js` asserts the relay side
+against a live relay, searching its routed text, its database and its
+owner report.
 
 ### R15 — message LENGTH is public, or it is padded
 
