@@ -70,16 +70,40 @@ const STATES = ['parked', 'abandoned', 'worked-around'];
 
 // ── CONFIGURATION, FROM THE ENVIRONMENT ────────────────────────────────
 //
-// AGENTS_NODE     this agent's node door        (default http://127.0.0.1:65432)
+// AGENTS_NODE     this agent's node door         (REQUIRED — no default)
 // AGENTS_ROOT     that node's spirit/run         (default: this checkout's)
 // AGENTS_SELF     this agent's name              (default claude-windows)
 // AGENTS_PEERS    name=key,name=key              the other agents
 // AGENTS_CONTROL  the key of the node Andy keeps; halt and resume are
 //                 obeyed from it and nothing else, and reports go to it
+// ── AGENTS_NODE HAS NO DEFAULT, AND THAT IS THE FIX ────────────────────
+//
+// It defaulted to http://127.0.0.1:65432, which is not "a node" — it is
+// ANDY'S node, the one his shell and his apps use. So an agent that was
+// never configured did not fail; it quietly spoke and listened on the
+// human's door, and every message a peer sent to the agent's own node sat
+// unread.
+//
+// MEASURED, not imagined (2026-09-23): wsl-claude's review verdict was
+// delivered to claude-windows on port 45440 and read as missing, because
+// this agent was reading 65432. Nothing errored. A default that is wrong
+// and silent costs more than no default at all.
+//
+// So it is refused here, at the sender, where the mistake is and where it
+// costs one failed command — the same rule cycle 10's R19 applies to an
+// empty send. The message names the variable and the door, because an
+// agent that cannot find its own node cannot ask anybody.
 function config(env) {
   const e = env || process.env;
+  const node = String(e.AGENTS_NODE || '').trim();
+  if (!node) {
+    throw new Error(
+      'AGENTS_NODE is not set. An agent talks on its OWN node, never on ' +
+      "Andy's (http://127.0.0.1:65432). Set AGENTS_NODE, and AGENTS_ROOT " +
+      'to that node\'s spirit/run.');
+  }
   return {
-    node: e.AGENTS_NODE || 'http://127.0.0.1:65432',
+    node: node,
     root: e.AGENTS_ROOT || path.resolve(__dirname, '..', '..', '..'),
     self: e.AGENTS_SELF || 'claude-windows',
     peers: parsePeers(e.AGENTS_PEERS || ''),

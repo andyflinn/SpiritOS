@@ -30,6 +30,9 @@ function home() {
 
 function cfgFor(root, extra) {
   return Object.assign(agents.config({
+    // AGENTS_NODE is required and has no default — the suite says which
+    // door it means, even though `door()` below answers every post.
+    AGENTS_NODE: 'http://127.0.0.1:45440',
     AGENTS_ROOT: root, AGENTS_SELF: 'claude-windows',
     AGENTS_PEERS: 'wsl-claude=' + PEER, AGENTS_CONTROL: CONTROL, AGENTS_RETRY_MS: '60000',
   }), extra || {});
@@ -399,6 +402,39 @@ async function run() {
       test.check('and a note is untouched by any of this');
     } else {
       test.fail('an ordinary note grew a block: ' + JSON.stringify(note));
+    }
+  }
+
+  test.subHeading('An agent with no node configured is refused, not pointed at Andy');
+
+  {
+    // THE DEFECT THIS REPLACES, measured 2026-09-23: AGENTS_NODE defaulted
+    // to http://127.0.0.1:65432 — Andy's node. An unconfigured agent did
+    // not fail; it spoke on the human's door, and wsl-claude's verdict sat
+    // unread on claude-windows' own node (45440) while this agent read
+    // 65432. Nothing errored, which is what made it expensive.
+    //
+    // Asserted on the ABSENT variable rather than on the old number, so
+    // the check survives the port changing and still fails if somebody
+    // reintroduces a default of any kind.
+    let threw = null;
+    try {
+      agents.config({ AGENTS_SELF: 'claude-windows' });
+    } catch (e) {
+      threw = e;
+    }
+    if (threw && /AGENTS_NODE/.test(threw.message)) {
+      test.check('config with no AGENTS_NODE throws, naming the variable — silence was the whole cost');
+    } else {
+      test.fail('expected a refusal naming AGENTS_NODE, got: ' + (threw ? threw.message : 'no throw'));
+    }
+
+    // And the refusal says whose door it is refusing to use, because an
+    // agent that cannot find its own node cannot ask anybody.
+    if (threw && /65432/.test(threw.message)) {
+      test.check('and says which door it will not silently borrow');
+    } else {
+      test.fail('the refusal does not name Andy\'s door: ' + (threw ? threw.message : 'no throw'));
     }
   }
 

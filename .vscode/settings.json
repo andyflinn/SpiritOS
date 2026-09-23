@@ -1,4 +1,16 @@
 {
     "terminal.integrated.profileName": "PowerShell",
-    "git.path": "C:\\Program Files\\Git\\cmd\\git.exe"
+    "git.path": "C:\\Program Files\\Git\\cmd\\git.exe",
+
+    // The vault (andyflinn/VSCode-Brain) is its own repository nested at
+    // spirit/run/brains. Two things hide it from the Source Control panel:
+    // it sits 3 folders deep and git.repositoryScanMaxDepth defaults to 1,
+    // and .gitignore:191 ignores the folder in SpiritOS. Naming it here
+    // answers both — an explicit path is scanned regardless.
+    //
+    // Andy commits his own writing there (VAULT_RULES.md, rule 2a), so the
+    // panel is the door he uses.
+    "git.scanRepositories": [
+        "spirit/run/brains"
+    ]
 }
