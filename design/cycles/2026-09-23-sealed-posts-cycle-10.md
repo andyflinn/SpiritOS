@@ -777,10 +777,22 @@ and a receipt on nothing.
 **Verify:** `spirit/test/agentsApp.js` — `makeEnvelope` refuses text that
 is empty or only whitespace, as it already refuses an unknown kind.
 
-**Status:** OPEN — and **declared in the harness as awaiting**
-(`test.awaiting`), so the run says not-done-yet on the tally line rather
-than only here. That is the first use of the mechanism, and this
-requirement is small enough to be an honest one.
+**Status:** DONE at `cfe965c`, **by wsl-claude**. Refused at the SENDER,
+where the mistake is and where it costs one failed command rather than a
+message nobody can answer. Three kinds are exempt and each is reasoned:
+`halt` and `resume` are control verbs whose whole content is the kind —
+a refusal catching them would make the one message Andy sends to stop an
+exchange impossible to send — and a `blocked` carries its meaning in
+`block.what`, which was already refused when missing.
+
+**AND IT IS THE FIRST FULL TURN OF THE AWAITING MECHANISM.** It was
+declared yellow on the board within the hour of the board existing; the
+other agent took it off the board without being asked; and his commit
+records why the assertion replaced the declaration — *"the yellow went
+red the moment it did, which is the mechanism working."* **Neither agent
+had to tell the other what was owed. The run said it**, which is the
+whole of what Andy asked the harness to do: *"harness all green doesn't
+measure progress for me."*
 
 ### R20 — AN EXISTING MEMBER HAS NO CARD, AND THE FLAG DAY CANNOT LAND WITHOUT ONE
 
