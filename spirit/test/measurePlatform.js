@@ -134,7 +134,7 @@ function main() {
   // reported honestly as a single run. `--runs 3` is what a published
   // figure should be taken from.
   const dir = path.join(REPO, 'README', 'CAPACITY', slug);
-  const RUNS = Math.max(1, Number(flags(process.argv.slice(2)).runs) || 1);
+  const RUNS = Math.max(1, Number(process.argv[process.argv.indexOf('--runs') + 1]) || 1);
   const samples = [];
   console.log('2/2  capacity' + (RUNS > 1 ? ' (' + RUNS + ' runs)' : ''));
   let capRun = null;

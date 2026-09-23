@@ -1,13 +1,13 @@
 # windows-10.0
 
-**Measured 2026-09-23, against `1f0199a`.**
+**Measured 2026-09-23, against `6d7dfa7`.**
 
 | | |
 |---|---|
 | platform | win32 10.0.26200 |
 | node | v24.20.0 |
-| harness | **2 red, 1 unhappy** — see `harness.txt` across 144 suites, 75s |
-| per stream, process | **58 KB** |
+| harness | **1 red, 1 unhappy** — see `harness.txt` across 145 suites, 74s |
+| per stream, process | **61 KB** |
 | a reachable peer | **579 B** |
 | bare node / relay at rest | 56 MB / 68 MB |
 
