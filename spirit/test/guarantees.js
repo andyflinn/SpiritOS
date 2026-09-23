@@ -133,9 +133,14 @@ test.subHeading('GUARANTEE: a relay serves every member it admits');
   function sink() {
     return { write: function () {}, close: function () {} };
   }
-  joined.forEach(function (id) {
+  // THE SINKS ARE KEPT, because streamClose(token, SINK) disconnects the
+  // exact sink it was given — a close with the wrong one silently does
+  // nothing, which is how the reconnect check below first passed without
+  // ever having disconnected anybody.
+  const sinks = joined.map(function () { return sink(); });
+  joined.forEach(function (id, i) {
     w.box.streamOpen(id.publicKey,
-      auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), sink());
+      auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), sinks[i]);
   });
 
   // One inbound route per member, all at once. Nothing answers, so every
@@ -145,6 +150,56 @@ test.subHeading('GUARANTEE: a relay serves every member it admits');
     const sent = post(w, w.owner, target, JSON.stringify({ app: 'x', v: 1, body: { hi: 1 } }));
     if (sent && sent.ok) opened += 1;
   });
+
+  // ── THE MEMBER-FACING FORM, WHICH IS THE ONE A PERSON CARES ABOUT ──
+  //
+  //   Andy, 2026-09-23: "a relay guarantees connectivity to it's members,
+  //   online or not."
+  //
+  // The arithmetic above is the owner's view. THIS is the promise made to
+  // the member: whenever you come back, there is room. Nobody on the roll
+  // is ever turned away from their own relay.
+  //
+  // AND IT IS WHY AN ABSENT MEMBER STILL HOLDS A SEAT. That looked like
+  // the cost of the strict cap when this was first argued — a seat nobody
+  // is using. It is the mechanism: the seat is reserved BECAUSE they are
+  // allowed to be offline, and a relay that reissued it would be a relay
+  // that cannot honour this sentence. It is also why no queue is needed
+  // for this particular promise — the guarantee is about getting ON, not
+  // about messages waiting.
+  //
+  // Asserted by disconnecting every member and bringing them all back at
+  // once, which is the worst case a real relay meets: a network blip, and
+  // the whole roll reconnecting together.
+  // THE DISCONNECT IS ASSERTED FIRST. A first draft called
+  // `streamClose(id.publicKey)` with no sink, which disconnects nobody —
+  // so the "reconnect" was really the original streams still open, and
+  // the check passed having tested nothing. Today produced four greens of
+  // that shape; this one is not allowed to be the fifth.
+  const closed = joined.map(function (id, i) {
+    return w.box.streamClose(id.publicKey, sinks[i]);
+  });
+  if (closed.every(function (x) { return x === true; })) {
+    test.check('every member is genuinely disconnected first — the reconnect below ' +
+      'is a reconnect, not a re-read of streams that never closed');
+  } else {
+    test.fail('the disconnect did not happen, so the next check would prove nothing: ' +
+      JSON.stringify(closed));
+  }
+
+  const back = joined.map(function (id) {
+    return w.box.streamOpen(id.publicKey,
+      auth.sign(id.privateKey, auth.streamMessage(id.publicKey)), sink());
+  });
+  const turnedAway = back.filter(function (r) { return r && r.ok === false; });
+
+  if (!turnedAway.length) {
+    test.check('every member on the roll reconnects at once and NONE is turned away — ' +
+      'the seat is theirs whether they are online or not');
+  } else {
+    test.fail('THE CONNECTIVITY GUARANTEE IS BROKEN: ' + turnedAway.length + ' of ' +
+      joined.length + ' members refused on reconnect: ' + JSON.stringify(turnedAway[0]));
+  }
 
   // A SECOND ROUTE TO A MEMBER ALREADY BUSY. This is half B doing its job,
   // and it is what makes the count above a ceiling rather than a sample.
