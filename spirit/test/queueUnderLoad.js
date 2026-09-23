@@ -137,7 +137,36 @@ async function startRelay(w, port) {
     await sleep(200);
     try {
       const r = await hub.relayRequest(base, 'GET', '/api/relay/key', null);
-      if (r.status === 200) { w.base = base; return base; }
+      if (r.status === 200) {
+        // ── IS THIS THE RELAY WE STARTED? ───────────────────────────
+        //
+        // A 200 on the port is not the same question. Measured
+        // 2026-09-23: a relay leaked by an INTERRUPTED earlier run of
+        // this same suite was still holding the port, so the suite
+        // started its own relay (which could not bind), talked to the
+        // squatter, and every post came back "no such identity" —
+        // because the squatter had never heard of these members.
+        //
+        // That diagnosis cost a bisect across two commits and a wrong
+        // hypothesis about a production change. The port collision was
+        // reported as an identity failure, which is the least helpful
+        // true thing it could have said.
+        //
+        // So: the key is compared. A stranger on the port fails HERE,
+        // by name, with the thing an operator has to do.
+        let said = null;
+        try { said = JSON.parse(r.text).relayPublicKey; } catch (e) { said = null; }
+        const mine = w.box.relayPublicKey();
+        if (said && mine && said !== mine) {
+          w.why = 'port ' + port + ' is held by a DIFFERENT relay (' +
+            String(said).slice(0, 16) + '… not ' + String(mine).slice(0, 16) +
+            '…) — almost certainly one leaked by an interrupted run. ' +
+            'Stop that process and run again; nothing in the tree is wrong.';
+          return null;
+        }
+        w.base = base;
+        return base;
+      }
     } catch (e) { /* not up yet */ }
   }
   return null;
