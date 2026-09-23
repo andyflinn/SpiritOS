@@ -38,6 +38,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 const { openReply, sealFor } = require('./openReply');
 const auth = require('../run/js/relayAuth');
+const nodeCard = require('../run/js/nodeCard');
 const invites = require('../run/js/invites');
 const world = require('./world');
 const scenario = require('./scenario');
@@ -246,7 +247,13 @@ test.subHeading('Who may mint');
     '10.0.0.6',
     mInvite.ok && mInvite.invite.token
   ,
-    'mallory');
+    'mallory',
+    // WITH HER CARD, because a relay seals its answers to it
+    // (cycle 10's R5) and a member with none is answered the fixed sentence
+    // instead of the verb's refusal. This suite is about WHAT THE VERB
+    // SAYS, so the asker has to be reachable — which after the flag day
+    // every member is, since the claim carries a card (cycle 10, R20).
+    nodeCard.cardFrom(Object.assign({ name: 'mallory' }, mallory)));
   if (mClaim.ok) {
     test.check('an invited stranger becomes a peer');
   } else {
@@ -457,7 +464,10 @@ function askRevoke(r, who, label) {
   const mallory = auth.generateIdentity('mallory');
   const minted = r.box.mint('andy', 'mallory', 7);
   r.box.claim('mallory', auth.sign(mallory.privateKey, auth.claimMessage('mallory')),
-    mallory.publicKey, '10.0.0.6', minted.invite.token, 'mallory');
+    mallory.publicKey, '10.0.0.6', minted.invite.token, 'mallory',
+    // Carrying a card, as above: otherwise the relay cannot seal to her
+    // and she hears "no card for you" rather than the verb's refusal.
+    nodeCard.cardFrom(Object.assign({ name: 'mallory' }, mallory)));
 
   r.box.mint('andy', 'saint', 7, 'blue-fish');
   const heard = heardBy(r, mallory);

@@ -461,12 +461,44 @@ async function main() {
     const byReq = Object.create(null);
     waitingAll.forEach(function (r) {
       r.waitingLines.forEach(function (line) {
-        const mm = /^AWAITING (\S+)\s*\[([^\]]*)\](?:\s*\(([^)]*)\))?:\s*(.*)$/.exec(line);
-        if (!mm) return;
+        // ── A ROW THIS CANNOT PARSE IS STILL SHOWN ────────────────────
+        //
+        // The tag was matched with `\(([^)]*)\)`, which stops at the
+        // FIRST close paren — so a cost note containing one, like
+        // "setCard refuses an older card (contacts.js)", failed the whole
+        // line, and `if (!mm) return` DROPPED THE REQUIREMENT FROM THE
+        // BOARD. Measured 2026-09-23: cycle 10's R13 vanished while the tally still
+        // counted it, so the header read "3 assertions across 2
+        // requirements" and the missing one was the one being worked on.
+        //
+        // A board that silently loses a row is worse than no board: Andy
+        // reads it to answer "is this in the code and verified yet", and
+        // a dropped row answers that question wrongly and confidently.
+        //
+        // So: the tag is matched NON-GREEDILY up to the first "): ",
+        // which lets a cost carry parentheses — and anything still
+        // unparseable falls through to a rough row rather than silence.
+        let mm = /^AWAITING (\S+)\s*\[([^\]]*)\]\s*\((there:.*?)\):\s*(.*)$/.exec(line);
+        if (!mm) mm = /^AWAITING (\S+)\s*\[([^\]]*)\]:\s*(.*)$/.exec(line);
+        if (!mm) {
+          // Shape unknown. Show the id and the whole line rather than
+          // losing the requirement.
+          const bare = /^AWAITING (\S+)/.exec(line);
+          if (!bare) return;
+          (byReq[bare[1].trim()] = byReq[bare[1].trim()] || { units: [], suites: {} })
+            .units.push({
+              unit: 'UNPARSED — ' + line.replace(/^AWAITING \S+\s*/, '').replace(/\s*⏳\s*$/, ''),
+              note: '', there: null, cost: '',
+            });
+          byReq[bare[1].trim()].suites[r.file] = true;
+          return;
+        }
+        // The short form has no tag, so the note is group 3, not 4.
+        if (mm.length === 4) mm = [mm[0], mm[1], mm[2], '', mm[3]];
         const id = mm[1].trim();
         const tag = mm[3] || '';
         const there = /there:(\d+)/.exec(tag);
-        const cost = /cost:([^)]*)$/.exec(tag);
+        const cost = /cost:([^]*)$/.exec(tag);
         (byReq[id] = byReq[id] || { units: [], suites: {} })
           .units.push({
             unit: mm[2].trim(),

@@ -121,6 +121,45 @@ const w = worldBeforeTheFlagDay();
   }
 }
 
+test.subHeading('AND THE ONE PLAIN SENTENCE SAYS NOTHING ABOUT THE RELAY');
+
+{
+  // A refusal must still be heard when it cannot be sealed, or an old box
+  // cannot tell a flag day from a broken relay. But what travels in clear
+  // used to be the VERB'S own sentence.
+  //
+  // wsl-claude found it: the branch rebuilt the status and passed the
+  // sentence through, under a comment claiming no verb could leak its
+  // figures. An unsealed asker never reaches a verb — but a SEALED asker
+  // with no card on file does, and refusal sentences in this tree name
+  // the relay's condition: megabytes free and needed, the disc guard, the
+  // obstruction on a full relay. Decision 0006 says that is the owner's
+  // business.
+  //
+  // bella is enrolled, sealed and cardless, and asks for an invite she
+  // has no standing to mint. The VERB refuses her as not the owner.
+  const sent = ask(w, w.bella, { invite: { label: 'cheeky', days: 7, token: '' } });
+  const raw = w.heard.bella.filter(function (m) {
+    return m.event === 'reply' && m.data && m.data.hash === sent.hash;
+  }).pop();
+  const said = raw ? JSON.parse(raw.data.text).body : null;
+
+  if (said && said.ok === false && said.status === 428 &&
+      said.error === 'this relay holds no card for you, so it cannot seal a reply') {
+    test.check('the plain refusal is ONE fixed sentence and one fixed status, whatever the verb said');
+  } else {
+    test.fail('the plain refusal was not the fixed one: ' + JSON.stringify(said));
+  }
+
+  // The point stated as its own assertion, so it fails loudly rather than
+  // as a string mismatch if somebody restores the pass-through.
+  if (said && !/owner|not your/i.test(String(said.error))) {
+    test.check('and it carries no trace of the verb refusal underneath it');
+  } else {
+    test.fail('the verb\'s own sentence reached the wire: ' + JSON.stringify(said));
+  }
+}
+
 test.subHeading('The member hands over its card');
 
 {

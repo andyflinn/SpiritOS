@@ -374,6 +374,33 @@ define('no-cipher-key', {
 // A member delivers its own card so the relay can seal answers to it.
 // Both refusals are about WHOSE card and WHICH card, and neither is
 // retryable as sent.
+// THE ONE SENTENCE THAT TRAVELS IN CLEAR, and the reason it is fixed.
+//
+// A relay seals its answers to the card on the asker's roll row. When it
+// holds no card it cannot seal, and a refusal must still be heard or the
+// flag day is indistinguishable from a broken relay. So that one refusal
+// goes out plain — and it says THIS, always, whatever the verb underneath
+// it would have said.
+//
+// wsl-claude found why that matters: the plain branch used to forward
+// `answer.error`, the verb's own sentence. Refusal sentences in this tree
+// carry the relay's CONDITION — the disc guard says it cannot write its
+// own state, the compaction refusal names megabytes free and needed, a
+// full relay names the obstruction. Decision 0006 makes that the owner's
+// business and not the asker's, and an asker with no card is the one
+// party least entitled to it.
+//
+// It is also the only sentence an old node can act on: it has exactly one
+// move, which is to hand over a card (cycle 10, R20).
+define('no-card-for-you', {
+  status: 428, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['this relay holds no card for you, so it cannot seal a reply'],
+  note: 'NOT a verb failure. The verb may well have succeeded; what ' +
+    'failed is the relay being able to say so privately. Fixed text AND ' +
+    'fixed status, because the verb\'s status is the verb\'s information ' +
+    'too, and this asker is owed one fact only: hand over a card, then ' +
+    'ask again.',
+});
 define('card-not-yours', {
   status: 400, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['that card is not yours'],

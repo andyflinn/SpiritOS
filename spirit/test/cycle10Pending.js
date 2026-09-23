@@ -142,12 +142,21 @@ test.subHeading('And the card the relay would seal to');
 // with cycle-10/R3 (`setCard` refuses an older card and keeps the disputed one);
 // what is missing is the rotation that produces a newer one.
 //
+// AND THE COUNTER'S WRITER LANDED 2026-09-23: `describe()` advances it on
+// a change, so a rotated seal key already produces a card every peer
+// takes. What is still missing is the deliberate ACT — nothing asks for a
+// rotation, and nothing tells the owner one happened.
+//
 // `cardFrom` exists for exactly this and is commented as built ahead of
 // its caller — Andy: "we're building towards right now."
 test.awaiting('cycle-10/R13', 'nodeCard.rotate raising the counter and the seal key',
   !!nodeCard.rotate,
   'a node can rotate its cipher key and every peer takes the newer card and refuses the old',
-  { there: 55, cost: 'a sitting — the store refuses an older card already; the rotation and the owner report are missing' });
+  // THE GUESS NAMES WHAT IT COUNTS (wsl-claude's amendment): a guess that
+  // cannot be checked is the one number on Andy's board nobody can audit.
+  { there: 80, cost: 'three of four parts exist — setCard refuses an older card (contacts.js), ' +
+      'cardFrom signs from a held identity (nodeCard.js), describe() advances the counter on a ' +
+      'change (nodeCard.js). Missing: the verb that makes a new keypair, and the owner report' });
 
 // ── WHAT IS OPEN AND NOT DECLARED HERE, AND WHY ──────────────────────
 //

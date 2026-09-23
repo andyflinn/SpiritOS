@@ -3004,16 +3004,34 @@ function createRelay(rootDir, deps) {
     // indistinguishable from a broken relay: "old nodes MUST update to
     // stay in the game" is only true if an old node can find out.
     //
-    // SO A REFUSAL TRAVELS PLAIN, and nothing else ever does. What is
-    // sent is rebuilt from two fields rather than passed through — the
-    // status and the sentence — so no verb can leak its figures out of
-    // this branch by putting them on a refusal it returns. An ANSWER
+    // SO A REFUSAL TRAVELS PLAIN, and nothing else ever does. An ANSWER
     // that cannot be sealed is not sent at all.
+    //
+    // ── AND IT IS ONE FIXED SENTENCE, NOT THE VERB'S ─────────────────
+    //
+    // This used to forward `answer.status` and `answer.error`, with a
+    // comment claiming no verb could leak its figures through the branch.
+    // wsl-claude, reviewing: the status was rebuilt, the SENTENCE was
+    // not. `String(answer.error)` IS the verb's own text. An unsealed
+    // asker never reaches a verb so that half was safe — but a SEALED
+    // asker the relay holds no card for does reach one, and its refusal
+    // sentence then travelled in clear.
+    //
+    // Refusal sentences here carry the relay's CONDITION: the disc guard
+    // says it cannot write its own state, the compaction refusal names
+    // megabytes free and needed, a full relay names the obstruction.
+    // Decision 0006 makes that the owner's business, not the asker's.
+    //
+    // THE STATUS IS FIXED TOO, which goes one step past the finding: a
+    // status is the verb's information as much as its prose is, and this
+    // branch is not reporting a verb. It is reporting that the relay
+    // cannot answer privately. The asker is owed exactly one fact,
+    // because it has exactly one move — hand over a card (cycle 10, R20).
     if (!reply && answer && answer.ok === false) {
       reply = JSON.stringify({ v: 1, body: {
         ok: false,
-        status: answer.status || 400,
-        error: String(answer.error || 'refused'),
+        status: 428,
+        error: 'this relay holds no card for you, so it cannot seal a reply',
       } });
     }
 

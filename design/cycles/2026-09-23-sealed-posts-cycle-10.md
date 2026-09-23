@@ -648,7 +648,12 @@ on the card, signed with the rest, and a node never accepts a card older
 than the one on its row. Free now, impossible to retrofit without
 re-introducing every peer. It also gives rotation somewhere to live.
 
-**Status:** DONE. The field and the refusal landed with R1 and R3; **the
+**Status:** OPEN — **the counter now moves; the rotation does not.** Said
+this way round because the board briefly carried this requirement as DONE
+and awaiting at once, which is the fourth state Andy's standing question
+exists to catch: in the code, and not the whole of what was asked.
+
+The field and the refusal landed with R1 and R3; **the
 writer did not, and without it the field was a constant**. wsl-claude,
 reviewing: the card counter never moves. Confirmed by sweep — `cardAt` was
 read in `nodeCard.cardFields` and written nowhere outside suites, so every
@@ -673,8 +678,11 @@ stopped hand-setting `cardAt = 2` — it was the suite supplying the one
 thing the tree never did, and it now asserts strictly-greater, which is
 what R13 actually requires.
 
-**Still open, and NOT this:** a rotation the owner can ask for. R13 is the
-ordering that makes one safe; the verb has no caller yet.
+**What is left in R13:** `nodeCard.rotate` — a new cipher key, the
+counter raised, the card signed again — and the change reported to the
+owner. The ordering that makes a rotation safe is now complete, and so is
+the counter it turns on; nothing yet produces a rotation deliberately.
+Declared in `cycle10Pending.js`, so the harness keeps counting it.
 
 ### R14 — the endpoints keep the words; the relay keeps the envelope
 
