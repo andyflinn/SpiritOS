@@ -747,6 +747,54 @@ check run against today's unsealed tree, where it must go red.
 
 **Status:** OPEN — cycle 10 is opened, not built.
 
+### R20 — AN EXISTING MEMBER HAS NO CARD, AND THE FLAG DAY CANNOT LAND WITHOUT ONE
+
+**Found 2026-09-23 by Andy's rule that his own nodes are brought up to the
+tree after a batch** (`ANDYS_RULES_FOR_AGENTS.md`, general rule 9) — the
+first thing that rule caught, before a single box was touched.
+
+A relay seals its answer to the card on the member's roll row (R5). The
+claim carries that card. **Every member enrolled before this cycle has an
+empty one**, because the column is new — so `memberSealKey` answers
+nothing and the answer is sent with no text.
+
+**IT IS WORSE THAN A REFUSAL.** Measured, not reasoned:
+
+```
+  post accepted: true 202
+  reply text:    ""
+  invites on disc: 1
+```
+
+The owner mints an invite. The relay mints it, the seat is spent, the row
+is on disc — **and the owner never learns the token.** A refusal would at
+least be legible; this is a silent half-success, on the one verb whose
+whole output is a credential.
+
+So the flag day cannot be applied to a live relay in this state. That is
+not a deployment detail: **a flag day nobody can cross is not a flag day.**
+
+**The shape, not yet built.** A member already holding a seat must be able
+to deliver its card to the relay it is enrolled at, and the relay must
+verify it against the key the row is filed under, exactly as the claim
+does. Candidate paths, in the order they look cheapest:
+
+- the node posts its card to the relay when it connects — presence is
+  already the moment a member appears, and a card is the one packet that
+  travels plain, so nothing new crosses the wire;
+- an owner verb that takes a card, which puts the migration in the
+  owner's hands and needs no new moment;
+- the relay asks for a card when it finds it holds none — correct, but it
+  turns a synchronous answer into a round trip.
+
+**Verify:** a member enrolled before the flag day delivers its card and is
+answerable afterwards; a card that is not theirs is refused as at claim; a
+relay that holds no card for a member says so rather than answering with
+silence.
+
+**Status:** OPEN — found before the live boxes were touched, and it blocks
+them.
+
 ### R18 — `census` becomes `roll`, inside this flag day
 
 > **Andy, 2026-09-23:** *"i hate the word census now, but for the relay
