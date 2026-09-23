@@ -26,6 +26,16 @@
 // each verb behaves as described. `serverSurface.js` insists every
 // claimed verb is actually posted to; this insists the published LIST is
 // the real list. Neither reads the prose.
+//
+// ── AND IT GUARDS THE EXAMPLES, WHICH ARE THE PITCH ──────────────────
+//
+// 2026-09-24 closed this page's own first admitted gap: `examples/`
+// holds a shell and a Python program, both exercised live against a node
+// and a relay. What a suite can hold them to is their SHAPE — that they
+// exist, that the page sends people to them, and that neither ever
+// acquires a dependency. It cannot hold them to working, which needs a
+// live node with a peer, and the page says so in its gaps rather than
+// letting a green here be read as more than it is.
 
 const fs = require('fs');
 const path = require('path');
@@ -124,21 +134,92 @@ test.subHeading('The error catalogue is as large as the page claims');
   }
 }
 
-test.subHeading('And the page admits what it has not got');
+test.subHeading('The any-language claim has examples, and they are not JavaScript');
 
 {
-  // A contract that lists only what it covers reads as complete. This one
-  // names its own gaps, and that section is load-bearing: the
-  // any-language claim is untested prose until an example that is not
-  // JavaScript sits beside it. If somebody deletes the admission without
-  // closing the gap, that is worth a red.
+  // THE PITCH IS THE EXAMPLES. "A developer in any language gets a local
+  // port" was prose on this page until 2026-09-24, and the page said so
+  // in its own gaps section. Two examples closed it — so what is gated
+  // now is that they keep existing and keep being what they claim.
+  const dir = path.join(ROOT, 'design', 'protocol', 'examples');
+  let names = [];
+  try { names = fs.readdirSync(dir); } catch (e) { names = []; }
+
+  const nonJs = names.filter(function (nm) { return !/\.(js|mjs|cjs|ts)$/i.test(nm); });
+
+  if (nonJs.length >= 2) {
+    test.check(nonJs.length + ' worked examples beside the page, none of them JavaScript — ' +
+      nonJs.join(', '));
+  } else {
+    test.fail('the any-language claim has ' + nonJs.length +
+      ' non-JavaScript example(s): ' + (names.join(', ') || 'the folder is empty or missing'));
+  }
+
+  // AND THE PAGE POINTS AT THEM. An example nobody is sent to is an
+  // example nobody runs, and the contract is what a stranger reads.
+  const unlinked = nonJs.filter(function (nm) { return page.indexOf(nm) === -1; });
+  if (!unlinked.length && nonJs.length) {
+    test.check('and the contract links every one of them');
+  } else {
+    test.fail('on disc but not linked from the page: ' + unlinked.join(', '));
+  }
+}
+
+test.subHeading('THE THING ABOUT AN EXAMPLE THAT ROTS FIRST — a dependency');
+
+{
+  // Forty lines with no package is the CLAIM, not a style preference.
+  // The natural improvement to `hello.py` is `import requests`, and the
+  // natural improvement to `hello.sh` is a helper — and either one turns
+  // "anything that can POST JSON" into "install this first", which is the
+  // sentence this whole page exists to avoid. So it is asserted rather
+  // than left to a reviewer's taste.
+  const dir = path.join(ROOT, 'design', 'protocol', 'examples');
+  const STDLIB = ['json', 'os', 'sys', 'urllib', 'urllib.request', 'urllib.error',
+    'base64', 'time', 'http', 'http.client', 'argparse'];
+
+  const offenders = [];
+  let checked = 0;
+
+  (fs.existsSync(dir) ? fs.readdirSync(dir) : []).forEach(function (nm) {
+    const text = fs.readFileSync(path.join(dir, nm), 'utf8');
+    checked += 1;
+
+    if (/\.py$/i.test(nm)) {
+      [...text.matchAll(/^\s*(?:import|from)\s+([A-Za-z_][\w.]*)/gm)].forEach(function (m) {
+        if (STDLIB.indexOf(m[1]) === -1) offenders.push(nm + ' imports ' + m[1]);
+      });
+    }
+    // Any example at all: no installer is ever the first step.
+    if (/\b(pip|pip3)\s+install\b|\bnpm\s+i(nstall)?\b|\bapt(-get)?\s+install\b/.test(text)) {
+      offenders.push(nm + ' tells the reader to install something');
+    }
+  });
+
+  if (!offenders.length && checked > 0) {
+    test.check('all ' + checked + ' examples run on a stock machine — no package, no installer, ' +
+      'which is the claim and not a preference');
+  } else {
+    test.fail(checked ? offenders.join('; ') : 'no examples to check');
+  }
+}
+
+test.subHeading('And the page still admits what it has not got');
+
+{
+  // A contract that lists only what it covers reads as complete. Two gaps
+  // remain named, and one NEW admission replaced the closed one: the
+  // examples above are held to their shape by this suite but are not RUN
+  // by it, because running them needs a live node and a peer. Gating the
+  // promise is not gating the proof, and the page says which it has.
   const admits = /## What this page does not yet have/.test(page) &&
-    /not JavaScript|is not JavaScript/i.test(page) &&
-    /version/i.test(page);
+    /not run by the harness/i.test(page) &&
+    /Per-verb arguments/i.test(page) &&
+    /\*\*A version\.\*\*/.test(page);
 
   if (admits) {
-    test.check('the page still names its own gaps — no non-JavaScript example, no per-verb ' +
-      'arguments, no stated version');
+    test.check('the page still names its own gaps — the examples are unexercised by the harness, ' +
+      'no per-verb arguments, no stated version');
   } else {
     test.fail('the "what this page does not yet have" section is gone or no longer names the gaps');
   }

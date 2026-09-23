@@ -36,6 +36,33 @@ ciphertext (see *What the relay cannot do*, below).
 
 ---
 
+## Two worked examples, neither of them JavaScript
+
+The any-language claim above is the whole pitch, so it is not left as
+prose. Both of these were **run against a live node on 2026-09-24** and
+both posted a sealed message that arrived:
+
+- **[`examples/hello.sh`](examples/hello.sh)** — POSIX shell and `curl`.
+  No dependencies at all.
+- **[`examples/hello.py`](examples/hello.py)** — Python 3, standard
+  library only. No `pip`, no package.
+
+```
+sh hello.sh                      ask this node about itself
+sh hello.sh <public-key> "hi"    and send somebody a sealed message
+```
+
+Neither is a client library and neither should become one. Forty lines is
+the point: the day one of these needs a package, the claim this page
+makes has quietly been given up.
+
+**The keys never come near either script.** The node holds the signing
+key and the cipher key; a caller says what it wants to say and to whom.
+The word "sealed" in these examples costs the developer nothing, which is
+the only way a default survives contact with people in a hurry.
+
+---
+
 ## What can be asked
 
 **36 verbs, in 9 families.** This list is generated from `server.js` and is exhaustive at the commit above.
@@ -182,9 +209,13 @@ is public today.
 
 Said here rather than discovered by a reader who trusted it:
 
-- **A worked example that is not JavaScript.** The claim is that any
-  language works. Until a Python and a shell example sit beside this,
-  that claim is untested prose.
+- **The examples are not run by the harness.** They exist, and
+  `doorContract.js` holds them to being non-JavaScript and free of any
+  dependency — which is the thing about them that would rot first. But
+  running them needs a live node with a peer to post to, so what is
+  gated is the promise, not the proof. They were last exercised by hand
+  on 2026-09-24, against a node and a relay, in both the delivered and
+  the refused case.
 - **Per-verb arguments and answers.** This page names the verbs and the
   rules around them; it does not yet say what each one takes. The shell's
   own calls are the working reference in the meantime.
