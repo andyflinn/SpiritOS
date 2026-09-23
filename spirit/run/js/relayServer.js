@@ -571,9 +571,18 @@ const server = http.createServer((req, res) => {
     // AND WHO RUNS IT, which a caller can ask for without asking for a
     // membership list. It is what `relay.partnerCheck` needed the roll
     // for, and the last thing it needed it for.
+    // AND WHAT POSTS TO IT ARE SEALED TO (cycle 10, R9), signed by the
+    // identity key named beside it. This answer was unsigned, and
+    // answerRelay.js said what that was worth — the re-check "compares
+    // against an UNSIGNED answer and so catches nothing an attacker could
+    // not forge". Tolerable for an identity to pin; not tolerable once
+    // the same answer carries the key every owner verb is sealed to,
+    // invite tokens included.
     var own = relay.ownerPublic();
     res.end(JSON.stringify({
       relayPublicKey: relay.relayPublicKey(),
+      relaySealKey: relay.relaySealKey(),
+      keySig: relay.relayKeyStatement(),
       relayLabel: relay.relayLabel(),
       ownerKey: own.ownerKey,
       ownerLabel: own.ownerLabel,

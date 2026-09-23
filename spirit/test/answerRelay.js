@@ -39,6 +39,28 @@ const OTHER_URL = 'http://other.example';
 // wear the same five-argument signature, and a fake that picks the
 // convenient one tests the wrong contract. The first live run answered
 // "not now" in 126ms — the round trip perfect, the answer wrong.
+// ── THE FAKE SIGNS AS ITSELF, OR IT PROVES NOTHING (cycle 10's R9) ───
+//
+// `GET /api/relay/key` is signed now, so this fake has to hold the
+// private half of whatever key it serves. Registered here rather than
+// passed in, because every relay identity in this suite is made here —
+// and a fake that could sign for a key it does not hold would have a
+// power the real world gives nobody, which is the opposite of what a
+// fake is for.
+const signers = Object.create(null);
+function remember(id) { signers[id.publicKey] = id; return id; }
+
+function keyAnswer(key) {
+  const id = signers[key];
+  if (!id) return { relayPublicKey: key };   // unsigned on purpose: a box we hold no key for
+  return {
+    relayPublicKey: id.publicKey,
+    relaySealKey: id.sealPublicKey,
+    keySig: auth.sign(id.privateKey, auth.relayKeyMessage(id.publicKey, id.sealPublicKey, '')),
+    relayLabel: '',
+  };
+}
+
 function fakeRelay(opts) {
   opts = opts || {};
   const calls = [];
@@ -77,9 +99,17 @@ function fakeRelay(opts) {
       // asked down.
       if (method === 'GET' && /\/api\/relay\/key$/.test(pathname)) {
         if (opts.rollFails) return Promise.reject(new Error('down'));
-        return said({
-          relayPublicKey: url === OTHER_URL ? opts.otherKey : opts.mailboxKey,
-        });
+        // SIGNED, since cycle 10's R9. The answer now carries the key
+        // posts to that box are sealed to, so a node refuses an unsigned
+        // one and pins nothing — and a fake that did not sign would be
+        // testing the refusal rather than the thing under test.
+        //
+        // Signed by whoever owns the key being served, looked up in
+        // `signers`: the relay answers for itself, and a fake that could
+        // sign for a key it does not hold would be a fake with a power
+        // the real world does not give anybody.
+        const key = url === OTHER_URL ? opts.otherKey : opts.mailboxKey;
+        return said(keyAnswer(key));
       }
 
       // AND THE ROLL IS NOT SERVED HERE AT ALL. If answerRelay ever
@@ -120,7 +150,7 @@ function arriving(from, text, url) {
 test.startTest('Answering the relay — and checking it IS the relay');
 
 async function run() {
-  const relayId = auth.generateIdentity('relay');
+  const relayId = remember(auth.generateIdentity('relay'));
   const phone = auth.generateIdentity('phone');
 
   test.subHeading('A real offer, from the relay it arrived on');
@@ -194,7 +224,11 @@ async function run() {
     // A peer with a perfectly good identity, posting a perfectly good
     // offer, with the RIGHT password. Everything about it is valid
     // except that it is not the relay.
-    const impostor = auth.generateIdentity('impostor');
+    // Registered as a signer too: a substituted relay is a real box with a
+    // real key of its own, so it CAN sign its own answer. Leaving it
+    // unsigned would test cycle 10's R9 refusal rather than the continuity check
+    // this is about.
+    const impostor = remember(auth.generateIdentity('impostor'));
     const said = await A.answer(arriving(impostor.publicKey, offer(node.password, phone.publicKey)));
 
     if (said === '') {
@@ -389,7 +423,11 @@ async function run() {
   // code stopped looking.
   {
     const node = nodeWithPassword();
-    const impostor = auth.generateIdentity('impostor-relay');
+    // A signer too, since cycle 10's R9: a box that answers at this
+    // address holds its own key and can sign its own statement. An
+    // unsigned impostor would be caught by the signature check and never
+    // reach the continuity check that is actually under test here.
+    const impostor = remember(auth.generateIdentity('impostor-relay'));
 
     const honest = fakeRelay({ mailboxKey: relayId.publicKey });
     const first = answerRelay.createAnswerer({

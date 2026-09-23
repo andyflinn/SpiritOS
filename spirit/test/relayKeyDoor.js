@@ -85,10 +85,16 @@ function nodeAgainst(box, opts) {
       // rather than assumed.
       if (pathname === '/api/relay/key') {
         if (opts.oldRelay) return Promise.resolve({ status: 404, text: 'Not found' });
+        // SIGNED, since cycle 10's R9 — the same answer now carries the
+        // key every post to this box is sealed to, so an unsigned one is
+        // refused and yields no key at all. Built from the real box so
+        // this fake cannot drift from what a relay actually says.
         return Promise.resolve({
           status: 200,
           text: JSON.stringify({
             relayPublicKey: box.relayPublicKey(),
+            relaySealKey: box.relaySealKey(),
+            keySig: box.relayKeyStatement(),
             relayLabel: box.relayLabel(),
           }),
         });
@@ -255,13 +261,60 @@ N.answerer.relayKey('https://relay.example').then(function (key) {
 
       const keys = Object.keys(JSON.parse(JSON.stringify({
         relayPublicKey: R.box.relayPublicKey(),
+        relaySealKey: R.box.relaySealKey(),
         relayLabel: R.box.relayLabel(),
       })));
 
-      if (keys.length === 2 && keys.indexOf('peers') === -1) {
-        test.check('two fields, and neither of them names a member');
+      if (keys.length === 3 && keys.indexOf('peers') === -1) {
+        test.check('three fields, and none of them names a member');
       } else {
         test.fail('the door answers ' + JSON.stringify(keys));
+      }
+
+      // ── AND THE STATEMENT IS SIGNED (cycle 10, R9) ────────────────
+      //
+      // The comment on `fetchKey` used to admit what this answer was
+      // worth: the re-check "compares against an UNSIGNED answer and so
+      // catches nothing an attacker could not forge". Fair while the
+      // answer was an identity to pin. Not fair once it carries the key
+      // every owner verb — invite tokens included — is sealed to.
+      test.subHeading('What the relay says its keys are, it signs');
+
+      {
+        const pub = R.box.relayPublicKey();
+        const sealKey = R.box.relaySealKey();
+        const label = R.box.relayLabel();
+        const sig = R.box.relayKeyStatement();
+
+        if (sealKey && sig && auth.relayKeySigned(pub, sealKey, label, sig)) {
+          test.check('the box publishes a cipher key and signs it with the identity key beside it');
+        } else {
+          test.fail('the statement does not verify: ' + JSON.stringify({ sealKey: sealKey, sig: sig }));
+        }
+
+        // THE ATTACK: a carrier swapping in its own cipher key so that
+        // every post to this relay is sealed to it instead. It cannot
+        // sign as the relay, so the statement stops verifying.
+        const mallory = auth.generateIdentity('mallory');
+        if (!auth.relayKeySigned(pub, mallory.sealPublicKey, label, sig)) {
+          test.check('swap the cipher key and the signature no longer holds');
+        } else {
+          test.fail('THE CIPHER KEY COULD BE SWAPPED — every owner verb would be readable');
+        }
+
+        // All three fields are signed together on purpose: a signature
+        // over the cipher key alone could be lifted onto another relay's
+        // answer, and key and label are a pair besides.
+        const lifted = [
+          auth.relayKeySigned(mallory.publicKey, sealKey, label, sig),
+          auth.relayKeySigned(pub, sealKey, label + 'x', sig),
+          auth.relayKeySigned(pub, sealKey, label, ''),
+        ].filter(Boolean);
+        if (!lifted.length) {
+          test.check('and it cannot be lifted onto another identity, another label, or dropped');
+        } else {
+          test.fail('the statement survived being moved: ' + lifted.length);
+        }
       }
 
       test.reportSuccessFailureCount();

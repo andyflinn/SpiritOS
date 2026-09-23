@@ -882,6 +882,33 @@ function createRelay(rootDir, deps) {
     return (id && id.publicKey) || null;
   }
 
+  // ── AND THE KEY POSTS TO IT ARE SEALED TO (cycle 10, R9) ────────────
+  //
+  //   Andy: "relay needs a cypher key too, because it has answerSelf()."
+  //
+  // A relay is a peer with a key, so the rule gets no exception: every
+  // peer post is sealed, including the owner verbs addressed to the box
+  // itself, and it opens them with this key to act on them.
+  //
+  // Sealing to the relay hides nothing FROM the relay — it must read a
+  // verb to obey it. What it hides is everything BETWEEN: TLS ends at
+  // Caddy on this host, so an invite token — a credential, spoken down a
+  // phone — is plaintext in that process and in anything it writes.
+  function relaySealKey() {
+    var id = auth.loadIdentity(rootDir);
+    return (id && id.sealPublicKey) || null;
+  }
+
+  // The statement a node pins, signed by the identity key it names. A key
+  // handed over unsigned is a key whoever handed it over chose — and this
+  // answer is now the one that says what to seal to.
+  function relayKeyStatement() {
+    var id = auth.loadIdentity(rootDir);
+    if (!id || !id.privateKey || !id.sealPublicKey) return null;
+    var label = relayLabel();
+    return auth.sign(id.privateKey, auth.relayKeyMessage(id.publicKey, id.sealPublicKey, label));
+  }
+
   // ── AND WHAT THIS RELAY CALLS ITSELF ────────────────────────────────
   //
   //   Andy: "the owner should be able to change the public label of his
@@ -4419,6 +4446,12 @@ function createRelay(rootDir, deps) {
     // it, and there is no whole-roll read on the relay itself (cycle 3).
     rootDir: function () { return rootDir; },
     relayPublicKey: relayPublicKey,
+    // What posts to this box are sealed to, and the signature over both
+    // keys and the label together (cycle 10, R9). Signed as one statement
+    // because a signature over the cipher key alone could be lifted onto
+    // another relay's answer.
+    relaySealKey: relaySealKey,
+    relayKeyStatement: relayKeyStatement,
     // The other half of the pair. Read by server.js for the public
     // roll; set through the `relayLabel` verb in answerSelf.
     relayLabel: relayLabel,

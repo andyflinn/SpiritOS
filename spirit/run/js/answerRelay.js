@@ -35,6 +35,7 @@
 
 const deviceTick = require('./deviceTick');
 const relayKeys = require('./relayKeys');
+const auth = require('./relayAuth');
 
 // ── WHAT A RELAY MAY SPEND ON THIS NODE'S PASSWORD ───────────────────
 //
@@ -125,6 +126,9 @@ function createAnswerer(opts) {
   // so the request is treated as a stranger's and receipted rather than
   // acted on. That is the safe direction for a lookup that can fail.
   var keyOf = Object.create(null);
+  // And what a post to that relay is sealed to (cycle 10, R9), learned
+  // in the same answer as the identity above and never on its own.
+  var sealOf = Object.create(null);
 
   // AND THE PIN THAT OUTLIVES THE PROCESS. This cache used to be the
   // whole of it: forgotten on restart, believing whatever answered next
@@ -174,13 +178,44 @@ function createAnswerer(opts) {
   // door's "this sender is a relay" list. That is visible rather than
   // quiet, which is the right shape for a version skew. `liveRelay.js`
   // will say so first, being the one suite that talks to a real box.
+  // ── AND IT IS SIGNED NOW (cycle 10, R9) ────────────────────────────
+  //
+  // The paragraph above admits what this answer used to be worth: the
+  // re-check "compares against an UNSIGNED answer and so catches nothing
+  // an attacker could not forge". That was a fair trade while the answer
+  // was an identity to pin — the case it exists for is a REBUILT relay
+  // answering honestly, not an attacker.
+  //
+  // It stops being a fair trade in this cycle, because the same answer
+  // now carries the key every post to that box is sealed to. Hand over
+  // your own cipher key here and you read every owner verb that follows,
+  // invite tokens included. So the statement is signed by the identity
+  // key it names, over both keys and the label together, and an answer
+  // that does not verify yields NO KEY AT ALL — which lands in the same
+  // place a missing door does: the relay drops out, visibly, rather than
+  // being used on weaker terms.
+  //
+  // Self-signed, so it settles tampering and not introduction — the same
+  // honest limit a node's card has. The PIN is what gives it teeth: a
+  // substitution after first sighting is the case that happens, and that
+  // is the one this catches.
   function fetchKey(url) {
     return Promise.resolve()
       .then(function () { return request(url, 'GET', '/api/relay/key'); })
       .then(function (answer) {
         var key = answer && answer.relayPublicKey;
-        return (typeof key === 'string' && key) ? key : '';
+        if (typeof key !== 'string' || !key) return '';
+        if (!auth.relayKeySigned(key, answer.relaySealKey, answer.relayLabel, answer.keySig)) return '';
+        sealOf[url] = String(answer.relaySealKey);
+        return key;
       });
+  }
+
+  // What a post addressed to this relay is sealed to, learned in the same
+  // breath as its identity and never separately — a cipher key fetched on
+  // its own is a cipher key somebody could answer for.
+  function relaySealKey(url) {
+    return sealOf[url] || '';
   }
 
   function relayKey(url) {
@@ -281,7 +316,7 @@ function createAnswerer(opts) {
     });
   }
 
-  return { answer: answer, relayKey: relayKey };
+  return { answer: answer, relayKey: relayKey, relaySealKey: relaySealKey };
 }
 
 module.exports = { createAnswerer: createAnswerer };

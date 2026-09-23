@@ -197,6 +197,43 @@ function receiptSignatureOk(publicKey, hash, sig, atMs) {
   return false;
 }
 
+// ── WHAT A RELAY SAYS ITS KEYS ARE (cycle 10, R9) ────────────────────
+//
+//   Andy, 2026-09-23: "relay needs a cypher key too, because it has
+//   answerSelf()."
+//
+// A relay is a peer with a key (decision 0010), so after this cycle posts
+// addressed to it are sealed like any other — which means a node must
+// learn its CIPHER key, and learn it in a way a carrier cannot choose.
+//
+// `GET /api/relay/key` was unsigned, and answerRelay.js already said in
+// as many words what that was worth: the re-check *"compares against an
+// UNSIGNED answer and so catches nothing an attacker could not forge."*
+// That was tolerable while the answer was only an identity to pin. It
+// stops being tolerable the moment the same answer carries the key
+// everything sent to that box is sealed to — hand over your own cipher
+// key there and you read every owner verb, every invite token included.
+//
+// So the relay signs the statement with its IDENTITY key, and the three
+// fields are signed together: a signature over the cipher key alone could
+// be lifted onto another relay's answer, and key and label are a pair
+// besides (Andy: *"key and label are a pair, in keyed mode"*).
+//
+// THIS IS SELF-SIGNED, with the same honest limit as a node's card: it
+// settles tampering, not introduction. What makes it worth anything here
+// is the PIN — `relayKeys` remembers the identity across restarts, so a
+// substitution after first sighting is what gets caught, which is the
+// case that actually happens.
+function relayKeyMessage(publicKey, sealKey, label) {
+  return 'relay-key\n' + String(publicKey || '') + '\n' +
+    String(sealKey || '') + '\n' + String(label || '');
+}
+
+function relayKeySigned(publicKey, sealKey, label, sig) {
+  if (!publicKey || !sealKey || !sig) return false;
+  return verify(publicKey, relayKeyMessage(publicKey, sealKey, label), sig);
+}
+
 // ── TWO KEYPAIRS, ONE IDENTITY (cycle 10, R2) ────────────────────────
 //
 //   Andy, 2026-09-23, asked where the cipher key should live: *"same
@@ -525,6 +562,8 @@ module.exports = {
   postSignatureFor,
   requestHash,
   receiptMessage,
+  relayKeyMessage,
+  relayKeySigned,
   receiptSignatureOk,
   generateIdentity,
   withSealKey,
