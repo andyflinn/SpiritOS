@@ -437,6 +437,11 @@ This directory contains the vision, principles, and architecture decisions for *
   It proves work CAN be delegated to a local AI; it also changes what we would
   delegate. Breadth with a checkable answer, not review, where a confident wrong
   answer looks exactly like a right one. The run is kept whole in the zip.
+- [Local model performance history](reviews/local/MODEL-HISTORY.md)
+  — one appended row per run, so we learn and track WHICH model is useful for
+  WHAT rather than whether local models are any good. The two columns that
+  decide it are fabrication and triage cost: GPU hours are nearly free,
+  attention is not. One cell of the matrix is filled.
 
 ## Future Layer (not yet implemented)
 - [Root Structure — spirit.json](spirit-json/ROOT-STRUCTURE.md)
