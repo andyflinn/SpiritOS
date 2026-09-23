@@ -186,18 +186,33 @@ if 6 hours tittering away only cost me a little bit of power....."* So
 the question about any delegated job is never whether it is small enough,
 but whether its output is cheap to check.
 
-### Two gaps in it, named by Claude rather than left to be found
+### Two gaps in it — and both are closed by patterns already here
 
-Rule 8 says an agent may comment on flaws in these rules. Two, both real:
+Rule 8 says an agent may comment on flaws in these rules. Claude named
+two and proposed new machinery for each. Andy: **"we already have an
+amendment pattern."** He is right, and the correction is worth more than
+the gaps were:
 
-1. **The board counts what was DECLARED, not what exists.** A cycle that
-   forgets to declare a requirement reads as further along than it is,
-   which rewards silence. The cheap close is a gate: every OPEN
-   requirement is either declared awaiting or listed with the reason it
-   cannot be — `cycle10Pending.js` does the second by hand today, and
-   nothing enforces it.
-2. **The guesses have no feedback loop.** *"~70% there, one line"* is an
+1. **The guesses have no feedback loop.** *"~70% there, one line"* is an
    agent's estimate that nobody revisits, so the numbers drift into
-   fiction at no cost to whoever wrote them. The same shape that fixes it
-   already exists in `design/reviews/local/MODEL-HISTORY.md`: record the
-   guess, and record what it turned out to be.
+   fiction at no cost to whoever wrote them. **Nothing new is needed.**
+   A cycle document already amends a requirement in place — `### R6
+   amended — the number, not the approximation` — under rule 6's
+   supersession discipline. So a price-note that turns out wrong is
+   **amended where it was made**, in the requirement, marked as a change
+   rather than quietly corrected. The guess and what it became sit in one
+   document, which is exactly the feedback loop, and the habit already
+   exists.
+2. **The board counts what was DECLARED, not what exists.** A cycle that
+   forgets to declare a requirement reads as further along than it is,
+   which rewards silence. **This is an extension of a gate, not a new
+   one:** `cycleRequirements.js` already reads every `### R<n>` and holds
+   its status honest. Asking it that every OPEN requirement is either
+   declared awaiting or listed with a reason is one more assertion in a
+   suite that already walks the list.
+
+**The general lesson, and it is the SOP's own rule turned on itself:**
+before proposing a mechanism, find the one the tree already has. Two
+patterns — the in-place amendment and the requirement gate — covered both
+gaps, and a new ledger beside them would have been a second place to
+forget something.
