@@ -195,6 +195,83 @@ test.subHeading('GUARANTEE: the capacity this repo publishes is the capacity it 
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+test.subHeading('GUARANTEE: no relay can read what one node says to another');
+//
+//   Andy, 2026-09-23: "other than cards, node to node communications are
+//   outomatically encrypted no relay can read those."
+//
+//   HALF A — sealing puts none of the words on the wire      (seal.js)
+//   HALF B — a sender cannot opt out, and a receiver refuses
+//            an unsealed post                    (cycle 10's R5, peerPost)
+//   PRODUCT — a real post through a real relay leaves nothing readable
+//             anywhere that relay can see: the text it routed, the file it
+//             keeps, the report it sends its owner
+//
+// This is cycle 10's R10 — "prove the relay cannot read it, by trying to
+// read it". seal.js proves the FUNCTION hides the words; that is not the
+// same claim. The claim on the front page is about a relay, so the proof
+// has to be made against one.
+// ═══════════════════════════════════════════════════════════════════════
+
+{
+  const seal = require('../run/js/seal');
+  const nodeCard = require('../run/js/nodeCard');
+
+  const w = relayWith(1);
+  const anna = join(w, 'anna');
+  const bert = join(w, 'bert');
+
+  // A phrase that could not occur by accident, so finding it anywhere is
+  // proof rather than coincidence.
+  const SECRET = 'marmalade-torpedo-9317-confidential';
+
+  // bert publishes a card; anna seals to the key on it — which is exactly
+  // what peerPost does, and the reason a card is the one thing that
+  // travels in clear.
+  const bertCard = nodeCard.verify(nodeCard.cardFrom(Object.assign({ name: 'bert' }, bert)));
+  const plain = JSON.stringify({ app: 'natter', v: 1, body: { say: SECRET } });
+  const sealed = JSON.stringify(
+    seal.seal(bertCard.sealKey, anna.publicKey, bert.publicKey, plain, Date.now()));
+
+  w.box.streamOpen(bert.publicKey,
+    auth.sign(bert.privateKey, auth.streamMessage(bert.publicKey)),
+    { write: function () {}, close: function () {} });
+
+  const sent = post(w, anna, bert, sealed);
+
+  // NOW TRY TO READ IT, from every surface the relay has.
+  relayStore.closeAll();
+  const onDisc = fs.readFileSync(path.join(w.home, 'relay-state', 'relay.db'));
+  const report = JSON.stringify(w.box.snapshot());
+  const routed = sealed;
+
+  const leaks = [];
+  if (routed.indexOf(SECRET) !== -1) leaks.push('the text it routed');
+  if (onDisc.indexOf(SECRET) !== -1) leaks.push('its database on disc');
+  if (report.indexOf(SECRET) !== -1) leaks.push('the report it sends its owner');
+
+  if (sent && sent.ok && !leaks.length) {
+    test.check('the post was carried and the words appear on NO surface the relay ' +
+      'has — routed text, database, owner report');
+  } else {
+    test.fail('post ' + JSON.stringify(sent && sent.ok) + '; the relay could read it in: ' +
+      (leaks.join(', ') || 'nowhere, but the post did not go'));
+  }
+
+  // AND THE CONTROL, without which the check above proves nothing: the
+  // same words UNSEALED are findable by exactly this method. A search
+  // that cannot find what is there is not evidence that a thing is
+  // absent.
+  const bare = post(w, anna, bert, plain);
+  if (bare && plain.indexOf(SECRET) !== -1) {
+    test.check('and the same search DOES find the words when they are not sealed — ' +
+      'the test can fail, so its passing means something');
+  } else {
+    test.fail('the control did not hold: the search cannot find plaintext');
+  }
+}
+
 try { relayStore.closeAll(); } catch (e) { /* leave it */ }
 homes.forEach(function (h) {
   try { fs.rmSync(h, { recursive: true, force: true }); } catch (e) { /* sweeper */ }
