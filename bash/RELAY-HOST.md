@@ -413,6 +413,65 @@ because the mailbox has no HEAD handler. Use GET (`./bash/status` does).
 
 ---
 
+## The cycle-10 flag day — ORDER MATTERS, AND THERE IS NO MIXED MODE
+
+**Read this before promoting anything to a cycle-10 tag.** Agreed with
+Andy 2026-09-23.
+
+Cycle 10 seals every peer post. A node refuses to post without a key to
+seal to — *"if you can't get the card, you can't post anyways"* — and a
+receiver refuses an unsealed post. That makes the cutover a cliff rather
+than a ramp:
+
+| | old relay | new relay |
+|---|---|---|
+| **old node** | works | posts refused — unsealed |
+| **new node** | **mute outward** — nothing to seal to | works |
+
+**Every combination is broken except all-old or all-new.** That is the
+design, not a defect.
+
+### The order
+
+**1. Lab first.** It shares this box with spirit
+(`## More than one relay on this box`), so it is the rehearsal that costs
+nothing. Run the exact sequence you intend to run on spirit.
+
+**2. The relay before any node.** A new node cannot reach an old relay at
+all, so nodes that go first go silent AND cannot claim their way back. A
+relay that goes first merely refuses old nodes, which is recoverable by
+updating them.
+
+**3. Then every node, in one pass.** Anything not updated in that pass is
+off the network until it is.
+
+### Proven, not predicted
+
+This was observed live on 2026-09-23 between the two agents' own boxes:
+wsl-claude's node was updated to cycle-10 code while spirit-3 was not, and
+it went **mute outward** — posts left as `sent` and were never receipted,
+because a receipt is itself an outward message. `GET /api/relay/key` on
+spirit-3 returns no `sealKey`, which is the whole story in one field.
+
+### What the update does NOT do for you
+
+- **`bash/update` does not reinstall the unit.** The unit gained
+  `MemoryMax` and `Restart=always`; run `bash/install-units` where those
+  are wanted. **That script has never run on Linux** — it is the least
+  tested step in this procedure and deserves the lab rehearsal most.
+- **The `card` column is added, not altered.** Rolling a relay back
+  leaves a column nothing reads, which is harmless.
+- **Members enrolled before cycle 10 have no card on the relay.** The node
+  hands one over when its stream opens, so this heals itself — but only
+  once both ends are updated. It does not rescue a node that updated
+  early.
+
+### What is NOT a reason to wait
+
+Cycle 10's remaining requirements — R8, R10, R12, R15, R16 — are proofs
+and padding, not protocol. **The wire is complete.** Waiting for them does
+not make the flag day safer; it only delays it.
+
 ## Common failures
 
 | Symptom | Likely cause | What to run |
