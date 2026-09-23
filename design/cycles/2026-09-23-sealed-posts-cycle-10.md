@@ -638,7 +638,20 @@ is on /api/relay/key, which R9 already requires signed) and seals the
 claim body to it. Without this, R9 headline — that a token stops touching
 the terminator and its logs — would simply have been untrue.
 
-**Status:** OPEN — cycle 10 is opened, not built.
+**Status:** DONE at `95c8a71`. `hub.sealedClaim` fetches `/api/relay/key`,
+verifies `relayKeySigned`, and seals the whole claim body;
+`relayServer.openClaim` opens it, refuses an unsealed claim, and refuses a
+sealed one whose `publicKey` does not match the outer `from`.
+
+**Verify:** `spirit/test/labRefusals.js` — every claim in the suite now
+goes through `labWorld.sealedClaimBody`, so an unsealed claim and a
+mismatched sender are both refused against a running relay.
+
+*(This block read OPEN until 2026-09-23 although the work shipped with
+the commit named above. A stale status is the same defect as a dropped
+row: it is read as the answer to "is this in the code yet", and it
+answered wrongly. Found by counting the open list, which is what that
+list is for.)*
 
 ### R13 — a card is ordered in time, or an old one never dies
 
