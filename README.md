@@ -46,7 +46,7 @@ Measured, not estimated.
 
 Every one of them keeps their seat whether they are online or not — a relay admits only as many members as it can serve at once, so the number above is the membership, not a peak.
 
-Measured on `ubuntu-24.04-wsl2` at `5b0975c`, 2026-09-23: 64 MB resident at rest, 42,691 bytes a held connection, 603 bytes a member on disc. Allowing 150 MB for the operating system and web server, which is the one estimated figure here. **This is one run**, so the connection figure carries the noise of a single measurement — repeated runs of this tool on one box have differed by over a tenth. Disc is nowhere near binding: 10 GB would store 17.8 million rows. **Taken under WSL**, which is the same distribution and runtime but a workstation rather than a VPS; bare-metal figures replace these automatically once such a box publishes.
+Measured on `ubuntu-24.04-wsl2` at `a380af2`, 2026-09-23: 64 MB resident at rest, 43,889 bytes a held connection, 603 bytes a member on disc. Allowing 150 MB for the operating system and web server, which is the one estimated figure here. The connection figure is the **median of 3 runs**, which spanned 40,151–51,231 bytes (27.6%). Disc is nowhere near binding: 10 GB would store 17.8 million rows. **Taken under WSL**, which is the same distribution and runtime but a workstation rather than a VPS; bare-metal figures replace these automatically once such a box publishes.
 
 **[All the measurements, both platforms, and the command to re-run them →](README/CAPACITY/)**
 

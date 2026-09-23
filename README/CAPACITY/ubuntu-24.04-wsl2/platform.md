@@ -1,13 +1,13 @@
 # ubuntu-24.04-wsl2
 
-**Measured 2026-09-23, against `5b0975c`.**
+**Measured 2026-09-23, against `b2cac03`.**
 
 | | |
 |---|---|
 | platform | linux 6.18.33.2-microsoft-standard-WSL2 |
 | node | v24.21.0 |
-| harness | **3052 green, 0 red** across 142 suites, 74s |
-| per stream, process | **42 KB** |
+| harness | **2 red, 2 unhappy** — see `harness.txt` across 145 suites, 73s |
+| per stream, process | **43 KB** |
 | a reachable peer | **579 B** |
 | bare node / relay at rest | 42 MB / 64 MB |
 
