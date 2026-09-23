@@ -747,6 +747,41 @@ check run against today's unsealed tree, where it must go red.
 
 **Status:** OPEN — cycle 10 is opened, not built.
 
+### R17 — the recipient's replay index
+
+A sealed blob replayed to the same recipient through a DIFFERENT relay
+meets a registered-hash guard that has never seen it (R4: the relay is
+deliberately not in the associated data). So the recipient keeps the
+index: in `node.db`, checked before an app sees a message, and **bounded
+by the timestamp inside the seal** so a hash may only leave it once a
+message bearing it would be refused for age anyway (condition C2).
+
+**Rebuildable from the log**, because it is derived — every hash in it is
+also in `traffic.jsonl`. Losing `node.db` costs a rebuild, not the
+protection: *"a derived thing that cannot be rebuilt is a single point of
+silent weakening."*
+
+**Verify:** the same sealed post delivered twice reaches an app once; a
+post older than the retention window is refused for age; the index
+rebuilds from the log and answers identically.
+
+**Status:** OPEN — cycle 10 is opened, not built.
+
+### R19 — `agents.js` refuses an empty send
+
+Found by being committed: wsl-claude piped a cleared scratchpad into a
+send, and it went. `agents.js` refuses a `blocked` with no `what`; a send
+with no text should be refused the same way, rather than spending a post
+and a receipt on nothing.
+
+**Verify:** `spirit/test/agentsApp.js` — `makeEnvelope` refuses text that
+is empty or only whitespace, as it already refuses an unknown kind.
+
+**Status:** OPEN — and **declared in the harness as awaiting**
+(`test.awaiting`), so the run says not-done-yet on the tally line rather
+than only here. That is the first use of the mechanism, and this
+requirement is small enough to be an honest one.
+
 ### R20 — AN EXISTING MEMBER HAS NO CARD, AND THE FLAG DAY CANNOT LAND WITHOUT ONE
 
 **Found 2026-09-23 by Andy's rule that his own nodes are brought up to the

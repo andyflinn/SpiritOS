@@ -135,10 +135,13 @@ const test = {
         }
 
         let result = "Test completed.  ";
-        
+
         if (successCount > 0) result += ICON.SUCCESS + ":" + successCount;
-        if (successCount > 0 && failureCount > 0) result += "  "; 
+        if (successCount > 0 && failureCount > 0) result += "  ";
         if (failureCount > 0) result += ICON.ERROR + ":" + failureCount;
+        // ON THE LAST LINE, because that is the line the runner parses. A
+        // count the runner cannot see is a count nobody reads.
+        if (this.awaitingCount > 0) result += "  ⏳:" + this.awaitingCount;
         
         this.titleLine(result);
         this.lineFeed();
@@ -152,6 +155,63 @@ const test = {
     fail: function(str){
         this.failureCount++;
         this.comment('FAILURE #' + this.counter + '.' + this.failureCount + ': ' + str + ' ' + ICON.ERROR);
+    },
+
+    // ── DECLARED, AND NOT BUILT YET ──────────────────────────────────
+    //
+    //   Andy, 2026-09-23: "in fact if it ists red, not green, it gives me
+    //   instant feedback on 'not-done-yet'" — and on what the run is for:
+    //   "so harness runs can be summarized with reasoning."
+    //
+    // A requirement can be written as an assertion before the code exists.
+    // Left as an ordinary `fail` it would be indistinguishable from a
+    // regression, and the harness would never be green again — so "green
+    // means stop" would stop meaning anything. Declared here instead, it
+    // is a THIRD state: the run stays green, and the count of what is
+    // declared-and-not-built is a number he can watch fall.
+    //
+    // AND IT GOES RED THE MOMENT IT PASSES, which is the half that keeps
+    // it honest. Without that inverse the board rots into a list of things
+    // finished months ago that nobody relabelled — the same failure as a
+    // DEFERRED requirement nobody re-opened. When the code lands, this
+    // turns into a failure that says so, and the only way to clear it is
+    // to make it a `check`.
+    //
+    // ── IT ASKS WHETHER THE UNIT IS THERE, NOT WHETHER IT WORKS ──────
+    //
+    //   Andy: "a test goes and checks if the unit is available for
+    //   testing, and fails for that simple reason. and easily
+    //   categorized failure."
+    //
+    // That is the shape, and it is not the obvious one. A test written
+    // before the code CANNOT meaningfully assert behaviour — there is no
+    // behaviour — so what it asserts is **availability**: the function is
+    // not exported, the column is not on the row, the verb answers
+    // nothing. One question, a plain answer, and a failure that classifies
+    // itself instead of needing to be read.
+    //
+    // `unit` is what is missing, in the words somebody would grep for.
+    // The runner groups by it, so the summary can say which requirement
+    // is waiting and on what, without a reason being written twice.
+    //
+    // AND IT GOES RED THE MOMENT THE UNIT APPEARS, which is the half that
+    // keeps it honest. Without that inverse the board rots into a list of
+    // things finished months ago that nobody relabelled — the same
+    // failure as a DEFERRED requirement nobody re-opened. When the unit
+    // lands, this becomes a failure telling whoever built it to write the
+    // real assertion.
+    awaiting: function (req, unit, available, note) {
+        if (available) {
+            this.failureCount++;
+            this.comment('FAILURE #' + this.counter + '.' + this.failureCount +
+                ': ' + req + ' — `' + unit + '` EXISTS NOW. It was declared as awaiting; ' +
+                'write the assertion it was standing in for' +
+                (note ? ' (' + note + ')' : '') + ' ' + ICON.ERROR);
+            return;
+        }
+        this.awaitingCount = (this.awaitingCount || 0) + 1;
+        this.comment('AWAITING ' + req + ' [' + unit + ']: ' +
+            (note || 'the unit is not there to be tested') + ' ⏳');
     },
 
     showReturnString: function(str){

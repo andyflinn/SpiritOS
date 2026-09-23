@@ -75,6 +75,29 @@ async function run() {
     } else {
       test.fail('an unknown kind was accepted');
     }
+
+    // ── DECLARED, NOT BUILT (cycle 10, R19) ──────────────────────────
+    //
+    //   Andy, 2026-09-23: "i do see the concept of writing tests
+    //   beforehand as detailed statements of intent."
+    //
+    // So this is the intent, written where it can be run: an empty send
+    // is refused the way a `blocked` with no `what` already is. The
+    // defect that asked for it was real — wsl-claude piped a cleared
+    // scratchpad into a send and spent a post and a receipt on nothing.
+    //
+    // IT ASKS WHETHER THE UNIT IS THERE, not whether it works: today
+    // `makeEnvelope` accepts empty text, so the refusal does not exist to
+    // be tested. That is the whole finding, and it classifies itself.
+    //
+    // It sits AWAITING rather than red — the run stays green, the count
+    // says not-done-yet, and the moment the refusal appears this turns
+    // into a failure telling whoever built it to write the real
+    // assertion. See testSupport.awaiting.
+    let refusesEmpty = false;
+    try { agents.makeEnvelope('x', 'ask', '   '); } catch (e) { refusesEmpty = true; }
+    test.awaiting('cycle-10/R19', 'agents.makeEnvelope refusing empty text', refusesEmpty,
+      'a send with no text should be refused, as a `blocked` with no `what` already is');
   }
 
   test.subHeading('It sends, and a peer that is offline is retried, then reported');

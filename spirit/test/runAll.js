@@ -25,6 +25,22 @@
 // nothing needed changing to allow it.
 
 const fs = require('fs');
+// ── YELLOW IS NOT RED (Andy, 2026-09-23) ───────────────────────────
+//
+//   "or youse a color for a specific group like yellow, so you guys
+//   don't get a heart-attack anytime it's not all green"
+//
+// Declared-and-not-built must not read as broken, to him or to an agent.
+// Red is a thing that regressed; yellow is a thing nobody has written
+// yet. Turned off when the output is not a terminal, so a piped run or a
+// log file stays plain text.
+// AND THE LINE BETWEEN THE TWO IS SHARP (Andy): "so if a stub is already
+// there and fails, it goes red, if nothing is there yet it goes yellow".
+// test.awaiting asks ONE question — is the unit there — so the colour
+// follows from the answer and nobody classifies anything by hand.
+const TTY = !!process.stdout.isTTY;
+const YELLOW = TTY ? '\u001b[33m' : '';
+const RESET = TTY ? '\u001b[0m' : '';
 const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -221,11 +237,16 @@ function runOne(file) {
 
     child.on('close', function (code) {
       clearTimeout(killer);
-      const m = out.match(/Test completed\.\s+✅:(\d+)(?:\s+❌:(\d+))?/);
+      const m = out.match(/Test completed\.\s+✅:(\d+)(?:\s+❌:(\d+))?(?:\s+⏳:(\d+))?/);
       done({
         file: file,
         ms: Date.now() - started,
         ok: m ? Number(m[1]) : 0,
+        // DECLARED AND NOT BUILT (test.awaiting). Not a failure and not a
+        // pass: the lines are lifted out of the output so the summary can
+        // say what is waiting and for which requirement.
+        waiting: m ? Number(m[3] || 0) : 0,
+        waitingLines: (out.match(/AWAITING [^\n]*/g) || []),
         // -1 for "never reported", which is not zero failures. A suite
         // that crashed before its last line has to read as worse than
         // one that ran and passed, not the same.
@@ -235,6 +256,61 @@ function runOne(file) {
       });
     });
   });
+}
+
+// EVERY REQUIREMENT THE CYCLE DOCUMENTS DECLARE, by id. Read here so the
+// summary can explain a waiting assertion without the reason being typed
+// a second time — the cycle file is the one place a requirement's title
+// and status live, and `cycleRequirements.js` already holds it to that.
+//
+// A LATER CYCLE WINS a clash of ids: R13 means different things in
+// different cycles (which is why citations must name their cycle), and
+// what a reader wants here is the one currently being built.
+// KEYED BY `<cycle-tag>/R<n>`, NOT BY THE BARE NUMBER. R19 names a
+// different requirement in different cycles — which is the whole reason
+// `cycleCitations.js` exists — so an awaiting assertion that said only
+// "R19" would join to whichever cycle happened to sort last. The tag is
+// any distinctive part of the cycle file's name, so `cycle-10/R19`
+// resolves against `2026-09-23-sealed-posts-cycle-10.md`.
+//
+// It also means the declaration in a suite NAMES ITS CYCLE, which is the
+// same rule prose is already held to.
+function requirementTitles() {
+  const out = Object.create(null);
+  const dir = path.join(__dirname, '..', '..', 'design', 'cycles');
+  let names = [];
+  try { names = fs.readdirSync(dir).filter(function (f) { return f.endsWith('.md'); }).sort(); }
+  catch (e) { return out; }
+  names.forEach(function (name) {
+    let text = '';
+    try { text = fs.readFileSync(path.join(dir, name), 'utf8'); }
+    catch (e) { return; }
+    const cycle = name.replace(/\.md$/, '');
+    const blocks = text.split(/^### (R\d+)\b/m);
+    for (let i = 1; i < blocks.length; i += 2) {
+      const id = blocks[i];
+      const body = blocks[i + 1] || '';
+      const title = (/^[^\n]*/.exec(body) || [''])[0].replace(/^\s*—\s*/, '').trim();
+      const status = (/\**Status:\**\s*([A-Z]+)/.exec(body) || [null, '?'])[1];
+      out[cycle + '/' + id] = { title: title, status: status, cycle: cycle };
+    }
+  });
+  return out;
+}
+
+// `cycle-10/R19` -> the row, by finding the one cycle file whose name
+// carries that tag. An ambiguous tag resolves to nothing rather than to a
+// guess, and the summary then says the requirement is not declared, which
+// is the honest answer.
+function requirementFor(titles, ref) {
+  const cut = String(ref).lastIndexOf('/');
+  if (cut === -1) return null;
+  const tag = ref.slice(0, cut);
+  const id = ref.slice(cut + 1);
+  const hits = Object.keys(titles).filter(function (k) {
+    return k.endsWith('/' + id) && k.indexOf(tag) !== -1;
+  });
+  return hits.length === 1 ? titles[hits[0]] : null;
 }
 
 async function main() {
@@ -320,12 +396,26 @@ async function main() {
       (broke ? 'FAIL  ' : '  ok  ') + f.padEnd(26) +
       String(r.ok).padStart(4) + ' ✅  ' +
       (r.no > 0 ? String(r.no).padStart(2) + ' ❌  ' : r.no < 0 ? ' ? ❌  ' : '       ') +
+      // Yellow, on the suite's own row, so a run that is not all green is
+      // readable at a glance as "nothing broke, some things are not
+      // written yet" rather than as trouble.
+      (r.waiting > 0 ? YELLOW + String(r.waiting).padStart(2) + ' ⏳' + RESET + '  ' : '      ') +
       String(r.ms).padStart(6) + 'ms'
     );
   });
 
   // The failing lines themselves, after the table rather than inside it.
   // A run with one red suite should still show its shape at a glance.
+  // SAID BEFORE THE LINES, so the group is read as what it is. Andy:
+  // *"and reasoned commets for the red group help."* Red is not the same
+  // shape of problem as yellow, and a reader arriving at a wall of
+  // FAILURE lines deserves the sentence that tells them which they are
+  // looking at.
+  if (unhappy.length) {
+    console.log('\n--- RED: something that used to hold does not. These are ' +
+      'unmet assertions or suites that died — not the awaiting group below, ' +
+      'which is work nobody has written yet.');
+  }
   unhappy.forEach(function (r) {
     console.log('\n--- ' + r.file + (r.no < 0 ? ' never reported (exit ' + r.code + ')' : ''));
     const lines = r.out.split('\n').filter(function (l) {
@@ -334,6 +424,51 @@ async function main() {
     (lines.length ? lines : r.out.split('\n').slice(-12)).slice(0, 12)
       .forEach(function (l) { console.log('    ' + l.replace(/\s+$/, '')); });
   });
+
+  // ── WHAT IS DECLARED AND NOT BUILT, WITH ITS REASON ────────────────
+  //
+  //   Andy, 2026-09-23: "so harness runs can be summarized with
+  //   reasoning."
+  //
+  // The reason is not written twice. Each `test.awaiting` names its
+  // requirement, and the cycle documents already carry that requirement's
+  // title and status — so the two are JOINED here. A line nobody typed
+  // says which requirement is waiting, what it is called, and which cycle
+  // it belongs to.
+  //
+  // A requirement the cycle files do not know is shown all the same, with
+  // the join marked missing: a suite waiting on something no document
+  // declares is exactly the drift this is meant to surface.
+  const waitingAll = results.filter(function (r) { return r.waiting > 0; });
+  if (waitingAll.length) {
+    const titles = requirementTitles();
+    const byReq = Object.create(null);
+    waitingAll.forEach(function (r) {
+      r.waitingLines.forEach(function (line) {
+        const mm = /^AWAITING (\S+)\s*\[([^\]]*)\]:\s*(.*)$/.exec(line);
+        if (!mm) return;
+        const id = mm[1].trim();
+        (byReq[id] = byReq[id] || { units: [], suites: {} })
+          .units.push({ unit: mm[2].trim(), note: mm[3].replace(/\s*⏳\s*$/, '').trim() });
+        byReq[id].suites[r.file] = true;
+      });
+    });
+    const totalWaiting = waitingAll.reduce(function (n, r) { return n + r.waiting; }, 0);
+    console.log('\n--- declared, not built yet: ' + totalWaiting +
+      ' assertion(s) across ' + Object.keys(byReq).length + ' requirement(s)');
+    Object.keys(byReq).sort().forEach(function (id) {
+      const known = requirementFor(titles, id);
+      console.log('');
+      console.log('    ' + YELLOW + id + RESET + '  ' +
+        (known ? known.title : 'NOT DECLARED IN design/cycles — a suite waits on a requirement no document names'));
+      if (known) console.log('          ' + known.cycle + ' · status ' + known.status);
+      byReq[id].units.forEach(function (u) {
+        console.log('          missing: ' + u.unit);
+        if (u.note) console.log('                   ' + u.note);
+      });
+      console.log('          declared in ' + Object.keys(byReq[id].suites).join(', '));
+    });
+  }
 
   // NOT RUN, AND NOT SILENT. See the note on `skipped`: a file that looks
   // like a suite and is never discovered is indistinguishable from one
@@ -349,8 +484,14 @@ async function main() {
   const reclaimed = sweepReportedHomes();
   if (reclaimed) console.log('\n--- reclaimed ' + reclaimed + ' temp homes a suite could not remove itself');
 
+  // ON THE LINE HE ACTUALLY READS. Andy: "and visible to me." A count
+  // that only appears in a block above the tally is a count that gets
+  // scrolled past — the tally line is the one thing everybody looks at,
+  // so what is declared-and-not-built belongs on it, beside the greens.
+  const waitingTotal = results.reduce(function (n, r) { return n + (r.waiting || 0); }, 0);
   console.log('\n' + files.length + ' suites, ' + green + ' green, ' + red + ' red, ' +
     unhappy.length + ' unhappy' +
+    (waitingTotal ? ', ' + YELLOW + waitingTotal + ' awaiting' + RESET : '') +
     (skipped.length ? ', ' + skipped.length + ' not run' : '') + '\n');
   process.exit(unhappy.length ? 1 : 0);
 }

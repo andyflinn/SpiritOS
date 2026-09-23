@@ -137,6 +137,25 @@ function signable(fields) {
 // from an identity, and reading that identity off a disc is a different
 // concern — one that a relay enrolling a member, or anything holding an
 // identity it did not load from its own home, does not have.
+//
+// ── IT HAS NO PRODUCTION CALLER YET, AND THAT IS DECIDED ────────────
+//
+// A sweep for exports nobody outside their own file calls finds this one:
+// eleven callers, all of them suites. That is the shape of an escape
+// hatch (`oneDoor.js` §4 — *"their internal mechanics shouldn't even be
+// reachable"*), so it is worth saying why it is not one.
+//
+// It is **ahead of its caller on purpose**. R13, in this same cycle,
+// gives a card a rotation — a new seal key, a counter one higher, signed
+// again — and
+// rotation is exactly the case that holds an identity in hand rather than
+// reading one off a home directory. `describe(rootDir)` is the sugar over
+// it, not the other way round.
+//
+// **Andy ruled it, 2026-09-23:** *"nodeCard.cardFrom we're building
+// towards right now. i see nothing wrong with this kind of foresight."*
+// Do not fold it back into `describe()` to satisfy a sweep; a later
+// session that does will be re-deriving it when that cycle's R13 lands.
 function cardFrom(id) {
   if (!id || !id.privateKey) return '';
   const fields = cardFields(id);
