@@ -22,6 +22,7 @@ an empty one — it gets believed.
 | job type | gpt-oss:120b | gpt-oss:20b | later |
 |---|---|---|---|
 | **review** (open-ended, per file) | ✗ **no** — fabricates; a false finding is indistinguishable from a true one, and only a person can tell | — | — |
+| **corpus extraction** (one question, quotes verified) | — | **built, never run on a real corpus** — mechanism smoke-tested 2026-09-23; the cell stays empty until a night against real documents fills it | — |
 | **dead-code sweep** (harness verifies) | untried — **next** | untried | |
 | **breadth sweep** (one pattern, grep-checkable) | untried | untried | |
 | **draft** (door contract, notes) | untried | untried | |
@@ -103,3 +104,42 @@ Nothing more ambitious, and nothing less useful.
 starts after that, and the first run after the rest should be the
 dead-code sweep — because the harness verifies it for free, which makes
 the `triage` column nearly zero and gives the ledger a clean second row.
+
+
+## Corpus extraction — the job, and why it is shaped this way
+
+**Opened 2026-09-23**, on Andy: *"before we all sign off we setup local AI
+to do things like market research. like (are the bitcoiners and crypto-bros
+looking for an szstem on a usb-stick that has their wallet and UI all in
+one?"*
+
+**The reframe the runner is built on.** Asked that question directly, a
+local model answers fluently, from training data of unknown age, with no
+sources, and nothing can tell the answer from an invention. That is the
+failure this project spent the same day removing from its capacity
+figures — and it is worse here, because a wrong capacity number is caught
+by a re-measurement and a wrong market claim is caught by nobody.
+
+So the job is **extraction from a corpus we fetched**, not research: one
+question, documents already on disc, and every finding carrying the words
+it came from.
+
+**The citation is enforced by the runner, not requested in the prompt.** A
+model told to quote its source quotes it most of the time, and *most of
+the time* is the problem — one fabricated quote among ninety real ones is
+indistinguishable, and it is the one that reaches a positioning document.
+So every quote is checked character-for-character against the document it
+claims to come from, and dropped if it is not there. The model proposes;
+the runner verifies. Whitespace is forgiven and nothing else is.
+
+**It does not fetch.** Fetching is deterministic and auditable and belongs
+in a script somebody can read and re-run, not inside an unattended model
+job. A document with no `SOURCE:` line is skipped and counted.
+
+**What a run reports** is the number kept, the number discarded for
+quoting text that is not there, and the number skipped for having no
+source. **The discard count is the measurement that matters** — it is this
+job's fabrication rate, per model, per night, and it is the number that
+will eventually fill the cell above.
+
+`spirit/run/process/js/localResearch/localResearch.js`
