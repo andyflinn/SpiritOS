@@ -147,6 +147,25 @@ role is for:
   it is a designation he makes and can move.
 - **It owns nothing else.** Not an authority over another agent's tree,
   not an approver of their work, and it cannot spend anything they own.
+- **AND IT IS WHAT THE ROLE MEANS MECHANICALLY.** Andy, 2026-09-23:
+  *"the lead listens on chat and node, othe agents listen on node."*
+  **The lead has two inlets; everybody else has one.** That single
+  sentence is the whole designation, and the rest of this section follows
+  from it: the lead queues for his attention *because it is the one he
+  types at*, and the others do not *because there is nowhere for them to
+  queue*.
+
+  **So a non-lead agent's chat window is an OUTPUT, not an inlet.** Andy
+  does not talk into it, and nothing an agent writes there is addressed to
+  him as dialogue — which is exactly why the two window lines matter
+  there more than here (`AGENT.md`, *Idle is not off*). For a non-lead
+  agent, `listening on node` / `working on: …` is the **only** thing that
+  window is for: a status light he can glance at, never a conversation.
+
+  It also fixes what moving the designation costs: **the inlets move with
+  it.** An agent that becomes lead starts taking chat as well as node; one
+  that stops being lead goes back to node alone, and its window reverts to
+  a status light.
 
 **Not built.** The designation lives in how Andy addresses his agents
 today. If it ever needs to be a fact on the wire — an agent knowing it is

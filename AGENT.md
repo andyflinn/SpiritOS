@@ -240,6 +240,13 @@ It costs one line and it removes the one question he should never have to
 ask. **Silence is not a state**; a window that says nothing reads exactly
 like a window whose agent died.
 
+**AND FOR EVERY AGENT BUT THE LEAD, THAT WINDOW IS ALL THERE IS.** Andy,
+2026-09-23: *"the lead listens on chat and node, othe agents listen on
+node."* The lead has two inlets; everybody else has one. So a non-lead
+agent's chat window is **an output, not an inlet** — Andy does not type
+into it, and nothing written there is dialogue. It is a status light, and
+these two lines are the only thing it is for.
+
 **AND THE OTHER HALF, WHICH IS THE ONE THAT REMOVES "STUCK".** Andy:
 *"what could be done: statement at the end of the chat, working on the
 following request from lead"*. So the last line of an agent's window is
