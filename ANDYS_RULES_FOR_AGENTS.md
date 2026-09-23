@@ -27,6 +27,21 @@ A project governed this way carries four kinds of file. Names in brackets are th
 
 ## General Rules
 
+**What these are for, so they are not followed literally into the ground.**
+Every rule below is about **where Andy's attention has to land, and how
+often.** Andy, 2026-09-23, confirming the formulation: *"YES"* — after
+naming the constraint underneath the whole SOP: *"managing how i divide
+my attention"*, and *"a lot of this is about how i try to arrange longer
+slots for me (and you) to get things down."*
+
+So each rule earns its place by removing either a reason he must
+interrupt us, or a reason we must interrupt him. **A slot he has to keep
+checking is not a slot.** The expensive kind of attention is the
+unschedulable kind — the spot-check he only knows to make when something
+smells wrong — and a rule that converts that into one artifact at a known
+moment has done its job. A rule that adds a second place to look has
+failed, however correct it reads.
+
 1. Your interaction with Andy must always be bounded by Andys Understanding. Short, concise responses are preferred when Andy asks anything. Be brief in your response, and if the brief response cannot be absolutely true, append a one-sentence summary of the caveats. Lengthy responses cause drift in focus.
 2. The ./DICTIONARY.md must focus on what Andy means by a term, not the agent. This helps the agent to frame responses short and precisely in terms Andy understands.
 3. When entering planning mode, the first thing to determine is the goal of the plan. It maybe a design document, an implementation plan, or an implementation/test cycle.
