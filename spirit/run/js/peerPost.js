@@ -1034,6 +1034,55 @@ function createPeerPost(opts) {
     var sealedText = body.text;
     body = Object.assign({}, body, { text: opened.text, sealedText: sealedText, sentAt: opened.at });
 
+    // ── THE REPLAY INDEX (cycle 10's R17 and C2) ─────────────────────
+    //
+    // HERE, and not earlier, because the deciding number lives INSIDE the
+    // seal: `opened.at` is the sender's timestamp, stamped by `seal()`
+    // rather than by a caller, and unavailable until this point. In the
+    // envelope it would leak and be forgeable.
+    //
+    // WHY THE RELAY CANNOT DO THIS. A relay refuses a hash it has already
+    // registered — but a blob replayed through a DIFFERENT relay meets a
+    // guard that has never seen it, because cycle 10's R4 deliberately
+    // leaves the relay out of the associated data: binding a message to a
+    // road would turn store-and-forward into a routing promise. The
+    // recipient is the only party who sees every road.
+    //
+    // BEFORE AN APP SEES IT. Everything below this delivers, logs and
+    // answers; a duplicate that reached an app would have been acted on,
+    // and wsl-claude's condition on cycle 10's R4 is exactly that — repeating a note
+    // is a duplicate line in a log, repeating something that consumes,
+    // mints, spends or toggles is a bug with a credential in it.
+    //
+    // AGE IS REFUSED BY THE SAME CALL, because the window and the memory
+    // are one number (C2). A message older than the index's retention is
+    // refused not because it is suspicious but because THE INDEX CANNOT
+    // VOUCH EITHER WAY — its hash may already have been swept — and
+    // accepting it would be the silent hole the condition exists to
+    // close.
+    //
+    // A NODE WITH NO STORE SKIPS THIS. A relay constructs a peerPost
+    // without one (see `opts.store`), and it has no app to protect.
+    if (store && store.replay) {
+      var verdict = store.replay.seen(hash, opened.at);
+      if (verdict !== 'new') {
+        note({
+          dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
+          hash: hash, outcome: 'refused', code: 'replayed',
+        });
+        return refuse(relayUrl, id, body, hash, 409,
+          verdict === 'again' ? 'this message has already been delivered here'
+            : verdict === 'ahead' ? 'this message is dated further ahead than a clock can explain'
+              : 'this message is older than this node remembers, and cannot be told from a replay');
+      }
+      // REMEMBERED BEFORE IT IS DELIVERED, not after. A crash between
+      // delivery and remembering would let the same message through twice
+      // on restart; a crash between remembering and delivery loses one
+      // message and refuses its retry, which is the failure worth having
+      // when the alternative is acting on something twice.
+      store.replay.remember(hash, opened.at);
+    }
+
     // ── THE FRONT DOOR ───────────────────────────────────────────────
     //
     // A signature proves the sender holds the key they claim. It proves
@@ -1154,6 +1203,13 @@ function createPeerPost(opts) {
       : {
         dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
         hash: hash, outcome: 'delivered', payload: body.text,
+        // THE SENDER'S SEALED TIMESTAMP, so the replay index can be
+        // REBUILT from this log (cycle 10's C2). Without it a rebuild has
+        // the hash and not the window it belongs to, and would either
+        // keep rows past their retention or drop them early — which is
+        // the silent weakening the condition names. No new disclosure:
+        // the log already holds the plaintext (cycle 10's R14).
+        sentAt: body.sentAt,
         admitted: admitted,
       });
 

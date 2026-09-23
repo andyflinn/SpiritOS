@@ -452,18 +452,25 @@ test.subHeading('A node.db from this morning still opens (R29 migration)');
   migrated.close();
 }
 
-// ── DECLARED, NOT BUILT (cycle 10, R17) ──────────────────────────────
+// ── cycle 10's R17 IS BUILT, AND ITS DECLARATION IS GONE ────────────
 //
-// The recipient keeps a replay index, because the relay is deliberately
-// not in the sealed packet associated data — so the same sealed blob
-// carried by a DIFFERENT relay meets a registered-hash guard that has
-// never seen it. The index belongs to the node, in node.db, checked
-// before an app sees a message, and rebuildable from the traffic log.
+// It stood here as `test.awaiting('cycle-10/R17', 'nodeStore.replay', ...)`
+// and went RED the moment the surface appeared, which is the handover the
+// board is for. The assertions live in `spirit/test/replayIndex.js`,
+// which keeps the requirement's name inside them so it cannot leave the
+// board by being finished.
 //
-// Asked as availability: there is no `replay` surface on the store yet.
-test.awaiting('cycle-10/R17', 'nodeStore.replay',
-  !!(nodeStore.open(home()).replay),
-  'a node refuses a sealed post whose hash it has already admitted',
-  { there: 20, cost: 'a sitting — a table, a check before delivery, and a rebuild from the log' });
+// The guess said 20% and "a sitting — a table, a check before delivery,
+// and a rebuild from the log". All three were needed and the estimate was
+// about right; what it did not foresee is that `seal()` stamps `at` as an
+// ISO STRING while the table stores milliseconds. `Number(iso)` is NaN,
+// which fell to 0, which read as 1970 — so every sealed post would have
+// been refused as older than this node remembers. The conversion now
+// happens at one boundary, in `replay.ms`.
+//
+// A note on what the table holds: the SENDER'S timestamp from inside the
+// seal, never the hour of arrival, because the window and the memory are
+// the same number (C2) and a row may only be swept once a message bearing
+// it would be refused for age anyway.
 
 test.reportSuccessFailureCount();

@@ -401,6 +401,30 @@ define('no-card-for-you', {
     'too, and this asker is owed one fact only: hand over a card, then ' +
     'ask again.',
 });
+// ── THE RECIPIENT'S REPLAY INDEX (cycle 10, R17 and C2) ──────────────
+//
+// A relay refuses a hash it has already registered. A blob replayed
+// through a DIFFERENT relay meets a guard that has never seen it, because
+// cycle 10's R4 leaves the relay out of the associated data on purpose. So the
+// recipient keeps the index, and these are the three ways it says no.
+//
+// ALL THREE ARE 409 AND NONE IS RETRYABLE AS SENT. A sender that reseals
+// gets a new hash and a new timestamp, which is a different message and
+// is treated as one.
+define('replayed', {
+  status: 409, presence: NONE, retry: 'no', fault: 'caller',
+  texts: [
+    'this message has already been delivered here',
+    'this message is dated further ahead than a clock can explain',
+    'this message is older than this node remembers, and cannot be told from a replay',
+  ],
+  note: 'THE THIRD ONE IS NOT AN ACCUSATION. A message older than the ' +
+    'index\'s retention is refused because the index CANNOT VOUCH either ' +
+    'way — its hash may already have been swept — and the window and the ' +
+    'memory are deliberately the same number (C2), so that a row leaving ' +
+    'the index can never silently make an old message replayable again. ' +
+    'The second is clock skew past the tolerance, not a forgery claim.',
+});
 define('card-not-yours', {
   status: 400, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['that card is not yours'],

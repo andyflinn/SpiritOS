@@ -856,11 +856,51 @@ also in `traffic.jsonl`. Losing `node.db` costs a rebuild, not the
 protection: *"a derived thing that cannot be rebuilt is a single point of
 silent weakening."*
 
-**Verify:** the same sealed post delivered twice reaches an app once; a
-post older than the retention window is refused for age; the index
-rebuilds from the log and answers identically.
+**Verify:** `spirit/test/replayIndex.js` — a hash is new once and `again`
+for ever after; a message past the window is `old`; a fast clock is
+tolerated and a forged future is not; a row inside the window survives a
+sweep and one past it does not; a rebuilt index answers identically to
+the one that was lost, twice over; and the end-to-end block replays a
+real sealed blob and is refused, with a control proving a different
+message still gets through.
 
-**Status:** OPEN — cycle 10 is opened, not built.
+**Status:** DONE. `node.db` gains a `replay` table keyed by hash, holding
+**the sender's timestamp from inside the seal** — never the hour of
+arrival, because the window and the memory are the same number (C2) and a
+row may only be swept once a message bearing it would be refused for age
+anyway.
+
+`nodeStore.replay` answers four states rather than a boolean, so no caller
+has to reason about the window: **new**, **again**, **old** (outside the
+window — the index cannot vouch either way, which is a refusal and not an
+accusation) and **ahead** (further into the future than clock skew
+explains). Checked in `peerPost` immediately after the seal opens and
+**before anything reaches an app**, and remembered *before* delivery: a
+crash between the two loses one message and refuses its retry, which is
+the better failure when the alternative is acting on something twice.
+
+**The window is 7 days, and it is a figure to rule rather than a
+discovery.** A relay does not queue, so a legitimate post today is seconds
+old — but the seal was deliberately built without a session so a message
+*can* sit and still open, which is what store-and-forward will need.
+Sizing it for the mechanism rather than for today's traffic costs about
+600 KB a week at a thousand messages a day.
+
+**A defect this nearly shipped with**, caught by the suite's end-to-end
+block and worth recording: `seal()` stamps `at` as an **ISO string** and
+the table stores milliseconds. `Number(iso)` is `NaN`, which fell to 0,
+which read as 1970 — so **every sealed post would have been refused as
+older than this node remembers**. Every unit-level assertion passed,
+because they all used numeric timestamps. The conversion now happens at
+one boundary, `replay.ms`.
+
+**Rebuildable, and the log had to change to make it so.** The delivered
+note now carries `sentAt`; without it a rebuild has the hash and not the
+window it belongs to, and would keep rows past their retention or drop
+them early — the silent weakening C2 names. `replay.rebuild(rows)` takes
+pairs rather than reading `traffic.jsonl`, because the log belongs to
+`trafficLog` and a store that learned to parse another module's format
+would be a second reader to keep in step.
 
 ### R19 — `agents.js` refuses an empty send
 

@@ -221,6 +221,36 @@ function open(rootDir, opts) {
     );
   `);
 
+  // ── THE RECIPIENT'S REPLAY INDEX (cycle 10's R17 and C2) ───────────
+  //
+  // A sealed blob replayed to the same recipient THROUGH A DIFFERENT
+  // RELAY meets a registered-hash guard that has never seen it — the
+  // relay is deliberately not in the associated data (cycle 10's R4),
+  // because binding a message to a road would make store-and-forward a
+  // routing promise. The gap that leaves is closed here, by the one party
+  // who can tell: the recipient.
+  //
+  // `at` IS THE SENDER'S TIMESTAMP FROM INSIDE THE SEAL, not the hour it
+  // arrived. C2: the index is bounded by disc like every dataset here, so
+  // it WILL be trimmed — and a row leaving must not silently make an old
+  // message replayable again. Keeping the sealed timestamp means a hash
+  // can only be dropped once a message bearing it would be refused for
+  // age anyway.
+  //
+  // Not in the envelope, where it would leak and be forgeable. Inside the
+  // seal, stamped by `seal()` rather than by each caller.
+  //
+  // DERIVED, AND REBUILDABLE: every hash here is also in traffic.jsonl.
+  // Losing node.db costs a rebuild, not the protection — "a derived thing
+  // that cannot be rebuilt is a single point of silent weakening."
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS replay (
+      hash TEXT PRIMARY KEY,
+      at   INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS replay_at ON replay (at);
+  `);
+
   // ── THE MIGRATION FROM THE MORNING'S SHAPE ───────────────────
   //
   // `node.db` shipped a few hours before this with `at` and `url` on the
@@ -308,6 +338,10 @@ function open(rootDir, opts) {
     qDel: db.prepare('DELETE FROM queue WHERE hash = ?'),
     qAll: db.prepare('SELECT * FROM queue ORDER BY seq ASC'),
     qMaxSeq: db.prepare('SELECT COALESCE(MAX(seq), 0) AS n FROM queue'),
+    rSeen: db.prepare('SELECT at FROM replay WHERE hash = ?'),
+    rPut: db.prepare('INSERT OR IGNORE INTO replay (hash, at) VALUES (?, ?)'),
+    rSweep: db.prepare('DELETE FROM replay WHERE at < ?'),
+    rCount: db.prepare('SELECT COUNT(*) AS n FROM replay'),
     bPut: db.prepare(`INSERT INTO queue_backoff (relayUrl, toKey, untilWall, lastWait)
       VALUES (?, ?, ?, ?)
       ON CONFLICT(relayUrl, toKey) DO UPDATE SET untilWall = excluded.untilWall,
@@ -577,6 +611,107 @@ function open(rootDir, opts) {
     // starts. `seq` here is only an ORDER — the queue hands out its own
     // numbers in a new process — so it is assigned from the table rather
     // than trusted from a queue that may have restarted from 1.
+    // ── THE REPLAY INDEX, AS THE RECEIVE PATH ASKS ABOUT IT ────────
+    //
+    // Three verbs and no more: has this been heard, remember it, and drop
+    // what is too old to matter. Everything a caller needs to decide is in
+    // the answer to `seen`, so no caller has to reason about the window.
+    replay: {
+      // WINDOW: how long a hash is remembered, and therefore how old a
+      // message may be before it is refused for age. The two ARE the same
+      // number — C2 — and separating them would create the silent hole
+      // the condition exists to close.
+      //
+      // SEVEN DAYS, and it is a figure to rule rather than a discovery.
+      // The argument for it: a relay does not queue, so a legitimate post
+      // today is seconds old and a window of minutes would do — but the
+      // seal was deliberately built without a session so a message CAN
+      // sit and still open, which is what store-and-forward will need.
+      // Sizing the window for the mechanism rather than for today's
+      // traffic means the protection does not have to be revisited when
+      // queueing arrives. It costs almost nothing: a hash and an integer
+      // is about 80 bytes, so a thousand messages a day for a week is
+      // under 600 KB.
+      //
+      // The future tolerance is for CLOCK SKEW, not for the sender's
+      // convenience: a node an hour fast would otherwise have every
+      // message refused as being from the future, which reads as a
+      // network fault and is not one.
+      WINDOW_MS: 7 * 24 * 60 * 60 * 1000,
+      SKEW_MS: 60 * 60 * 1000,
+
+      // Answers what the caller must decide, rather than a boolean it
+      // would have to interpret:
+      //   'new'   — never heard, and within the window
+      //   'again' — heard before
+      //   'old'   — outside the window, so the index cannot vouch either
+      //             way and the message must be refused for age
+      //   'ahead' — further in the future than clock skew explains
+      // ── THE TIMESTAMP ARRIVES AS AN ISO STRING, NOT A NUMBER ─────
+      //
+      // `seal()` stamps `at` with an ISO string, and this table stores
+      // milliseconds because it is compared and swept on. `Number(iso)`
+      // is NaN, which fell to 0, which read as 1970 — so EVERY sealed
+      // post would have been refused as "older than this node
+      // remembers". Caught by replayIndex.js before it shipped; the
+      // suite's end-to-end block is the only one that used a real seal.
+      //
+      // Converted HERE, at the one boundary, rather than by each caller:
+      // two callers doing it is two places to get it wrong, and this one
+      // already got it wrong once.
+      ms: function (at) {
+        if (typeof at === 'number') return at;
+        const parsed = Date.parse(String(at || ''));
+        return parsed > 0 ? parsed : 0;
+      },
+      seen: function (hash, at, now) {
+        const key = String(hash || '');
+        const when = this.ms(at);
+        const n = now == null ? Date.now() : now;
+        if (!key) return 'old';
+        if (when > n + this.SKEW_MS) return 'ahead';
+        if (when < n - this.WINDOW_MS) return 'old';
+        return q.rSeen.get(key) ? 'again' : 'new';
+      },
+      remember: function (hash, at) {
+        q.rPut.run(String(hash || ''), this.ms(at));
+      },
+      // Called on the ordinary sweep, never on the receive path: trimming
+      // inside a delivery would make one message pay for the whole index.
+      sweep: function (now) {
+        const n = now == null ? Date.now() : now;
+        return q.rSweep.run(n - this.WINDOW_MS).changes;
+      },
+      count: function () { return q.rCount.get().n; },
+      // ── REBUILT FROM THE LOG, BECAUSE IT IS DERIVED ───────────────
+      //
+      // Every hash here is also in traffic.jsonl. Losing node.db must
+      // cost a rebuild and not the protection — "a derived thing that
+      // cannot be rebuilt is a single point of silent weakening."
+      //
+      // IT TAKES ROWS RATHER THAN READING THE LOG. The log belongs to
+      // trafficLog and this file reads no file it does not own; a store
+      // that learned to parse another module's format would be a second
+      // reader to keep in step. The caller walks the log and hands over
+      // {hash, at} pairs.
+      //
+      // INSERT OR IGNORE, so a rebuild over a partly-populated index is
+      // safe to run twice — which is the state a crash leaves and the
+      // state an operator will actually be in.
+      rebuild: function (rows) {
+        // `self`, because `this` is lost inside the callback and the
+        // conversion must not be duplicated to avoid saying so.
+        const self = this;
+        let n = 0;
+        (Array.isArray(rows) ? rows : []).forEach(function (r) {
+          if (!r || !r.hash) return;
+          q.rPut.run(String(r.hash), self.ms(r.at));
+          n += 1;
+        });
+        return n;
+      },
+    },
+
     queue: {
       put: function (row) {
         const seq = row.seq || (q.qMaxSeq.get().n + 1);
