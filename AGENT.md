@@ -223,6 +223,23 @@ because idle means listening rather than dormant. It changes nothing
 about *"nothing runs while he is away"*: listening is not working, and an
 arriving packet still waits for him unless he started the exchange.
 
+**AND THE AGENT SAYS SO, IN ITS OWN WINDOW.** Andy, 2026-09-23: *"his
+chat window looks idle, so i dont' know what's coing on. i like when his
+chat states: listening on node: because that's signals to me that he's
+done with his current task."*
+
+An idle-looking window is **ambiguous between three states** — working,
+stuck, and finished — and only one of them wants his attention. So an
+agent that has finished what it was doing **states it**, in the window,
+in those words: `listening on node`. It is the same demand as the yellow
+block and the monitor (`ANDYS_RULES_FOR_AGENTS.md`, *The SOP*): he wants
+to look at the thing and see the truth, rather than ask an agent how it
+is getting on.
+
+It costs one line and it removes the one question he should never have to
+ask. **Silence is not a state**; a window that says nothing reads exactly
+like a window whose agent died.
+
 **And it follows the project.** Andy: *"you both must decide how to update
 your listeners to follow the project."* Agreed by both agents over the wire,
 2026-09-22:
