@@ -1,43 +1,43 @@
 {
-  "measuredAt": "2026-09-23T13:41:37.164Z",
-  "commit": "dbe5859",
+  "measuredAt": "2026-09-23T19:17:10.090Z",
+  "commit": "1f0199a",
   "platform": "win32",
   "release": "10.0.26200",
   "version": "Windows 11 Pro",
   "node": "v24.20.0",
   "cpus": 32,
   "totalRamBytes": 137119354880,
-  "bareNodeRss": 58650624,
-  "relayAtRestRss": 70930432,
-  "nodeAtRestRss": 93499392,
-  "perStreamProcessBytes": 58993,
-  "perStreamKernelBytes": 9748,
+  "bareNodeRss": 58748928,
+  "relayAtRestRss": 70828032,
+  "nodeAtRestRss": 93396992,
+  "perStreamProcessBytes": 59464,
+  "perStreamKernelBytes": 11981,
   "kernelCounter": "PoolNonpagedBytes (system-wide)",
   "streamSteps": [
     {
       "n": 0,
-      "rss": 70930432,
-      "kernel": 1661849600
+      "rss": 70828032,
+      "kernel": 1693126656
     },
     {
       "n": 100,
-      "rss": 76234752,
-      "kernel": 1661935616
+      "rss": 76111872,
+      "kernel": 1692897280
     },
     {
       "n": 200,
-      "rss": 77852672,
-      "kernel": 1665118208
+      "rss": 77516800,
+      "kernel": 1694945280
     },
     {
       "n": 400,
-      "rss": 95297536,
-      "kernel": 1666748416
+      "rss": 94535680,
+      "kernel": 1695621120
     },
     {
       "n": 800,
-      "rss": 118894592,
-      "kernel": 1669648384
+      "rss": 118321152,
+      "kernel": 1702711296
     }
   ],
   "perMemberRowBytes": 603,
@@ -48,8 +48,8 @@
   "perRouteRowBytes": 420,
   "perReachablePeerBytes": 579,
   "perLogEntryBytesSynthetic": 253,
-  "installBytes": 4189019,
-  "installFiles": 123,
+  "installBytes": 4218942,
+  "installFiles": 124,
   "caveats": [
     "loopback: both socket endpoints are on this machine",
     "idle streams only; an active stream costs more",
