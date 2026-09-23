@@ -430,6 +430,12 @@ This directory contains the vision, principles, and architecture decisions for *
   one third is new and measurably ~70% true; one third is a name with a hard
   boundary around it. The finding that outranks the rest: Relay Chat still polls
   a 200-entry ring on the relay every two seconds.
+- [What a local model is good for, measured on a night of it](reviews/local/LOCAL-MODEL-REVIEW.md)
+  — gpt-oss:120b read 47 files unattended in fifteen hours and returned 14
+  findings, of which one was real. It proves work CAN be delegated to a local
+  AI; it also changes what we would delegate. Small scope, low reasoning,
+  answers that are checkable — not review, where a confident wrong answer
+  looks exactly like a right one. The run is kept whole in the zip beside it.
 
 ## Future Layer (not yet implemented)
 - [Root Structure — spirit.json](spirit-json/ROOT-STRUCTURE.md)
