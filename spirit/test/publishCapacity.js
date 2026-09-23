@@ -111,6 +111,21 @@ const VPS_DISC_GB = 10;
 // generous rather than flattering.
 const BOX_OVERHEAD_MB = 150;
 
+// How the figure was arrived at, in the reader's own terms. Silent about
+// nothing: a single run is stated as a single run.
+function runsNote(c) {
+  const runs = Number(c.runs) || 1;
+  const sp = c.spread && c.spread.perStreamProcessBytes;
+  if (runs < 2) {
+    return ' **This is one run**, so the connection figure carries the ' +
+      'noise of a single measurement — repeated runs of this tool on one ' +
+      'box have differed by over a tenth.';
+  }
+  return ' The connection figure is the **median of ' + runs + ' runs**' +
+    (sp ? ', which spanned ' + n(sp.low) + '–' + n(sp.high) + ' bytes (' +
+      sp.spreadPct + '%)' : '') + '.';
+}
+
 function render(c) {
   const per = Number(c.perStreamProcessBytes || 0);
   const rest = Number(c.relayAtRestRss || 0) / 1048576;
@@ -145,6 +160,17 @@ function render(c) {
     (carded ? ', ' + n(carded) + ' bytes a member on disc' : '') +
     '. Allowing ' + BOX_OVERHEAD_MB + ' MB for the operating system and web server, ' +
     'which is the one estimated figure here.' +
+    // ── HOW MANY RUNS, AND HOW MUCH THEY DISAGREED ────────────────
+    //
+    //   Andy: "publish the median and how many runs it's over AND the
+    //   spread.... that's honest."
+    //
+    // A figure from ONE run says so, rather than looking like a settled
+    // number. The page that carried 42,691 bytes a connection was
+    // publishing the lowest of three samples that ranged 14% — the most
+    // flattering one — on the same page where the overhead allowance is
+    // deliberately generous. Two standards, one page.
+    runsNote(c) +
     (rows ? ' Disc is nowhere near binding: ' + VPS_DISC_GB + ' GB would store ' +
       (rows / 1000000).toFixed(1) + ' million rows.' : '') +
     (/wsl/i.test(PLATFORM)

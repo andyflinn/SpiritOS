@@ -118,16 +118,42 @@ function main() {
   }
 
   console.log('');
-  console.log('2/2  capacity');
-  const capRun = run('measureCapacity.js',
-    namedAs() ? ['--save', '--as', namedAs()] : ['--save']);
+  // ── REPEATED, BECAUSE ONE SAMPLE IS NOT A FIGURE ──────────────────
+  //
+  //   Andy, 2026-09-23: "publish the median and how many runs it's over
+  //   AND the spread.... that's honest."
+  //
+  // WHY, MEASURED. wsl-claude ran this tool three times at one commit on
+  // one box and got 48,916 / 44,524 / 42,691 bytes a held connection — a
+  // 14% spread — then corrected himself for having reported a single
+  // sample as a rate. The figure the README published was 42,691: the
+  // LOWEST of the three, and therefore the most flattering, which is the
+  // opposite of the standard applied to every other number on that page.
+  //
+  // DEFAULT ONE, so nothing changes for a quick look and a single run is
+  // reported honestly as a single run. `--runs 3` is what a published
+  // figure should be taken from.
+  const dir = path.join(REPO, 'README', 'CAPACITY', slug);
+  const RUNS = Math.max(1, Number(flags(process.argv.slice(2)).runs) || 1);
+  const samples = [];
+  console.log('2/2  capacity' + (RUNS > 1 ? ' (' + RUNS + ' runs)' : ''));
+  let capRun = null;
+  for (let i = 0; i < RUNS; i += 1) {
+    if (RUNS > 1) console.log('     run ' + (i + 1) + ' of ' + RUNS);
+    capRun = run('measureCapacity.js',
+      namedAs() ? ['--save', '--as', namedAs()] : ['--save']);
+    if (capRun.code === 0) {
+      try {
+        samples.push(JSON.parse(fs.readFileSync(path.join(dir, 'capacity.json'), 'utf8')));
+      } catch (e) { /* the check below reports a missing drop */ }
+    }
+  }
   if (capRun.code !== 0) {
     console.log('     the capacity tool failed:');
     console.log(capRun.out.split(/\r?\n/).slice(-8).join('\n'));
     process.exit(1);
   }
 
-  const dir = path.join(REPO, 'README', 'CAPACITY', slug);
   if (!fs.existsSync(path.join(dir, 'capacity.json'))) {
     console.log('     capacity.json is not where this script expected it:');
     console.log('     ' + dir);
@@ -135,6 +161,54 @@ function main() {
     process.exit(1);
   }
   const cap = JSON.parse(fs.readFileSync(path.join(dir, 'capacity.json'), 'utf8'));
+
+  // ── THE MEDIAN, THE COUNT, AND THE SPREAD ────────────────────────
+  //
+  // Andy: "publish the median and how many runs it's over AND the
+  // spread.... that's honest."
+  //
+  // THE MEDIAN, not the mean: one run that paged badly drags a mean and
+  // leaves a median alone, and the thing being measured is a typical run
+  // rather than an average of typical and pathological.
+  //
+  // WRITTEN EVEN WHEN RUNS IS ONE. A drop that says `runs: 1, spread: 0`
+  // is telling the truth about how much is known, and a reader can see
+  // that a figure came from a single sample. Silence would let a single
+  // sample be read as a settled number, which is what happened.
+  //
+  // The figures that vary are the measured ones. `perMemberRowBytes` is
+  // a SQLite row and came back identical to the byte across platforms,
+  // so it is included for completeness rather than because it moves.
+  const VARIES = ['perStreamProcessBytes', 'relayAtRestRss', 'nodeAtRestRss',
+    'bareNodeRss', 'perMemberRowBytes'];
+  if (samples.length) {
+    const stats = {};
+    VARIES.forEach(function (key) {
+      const vals = samples.map(function (x) { return Number(x[key]) || 0; })
+        .filter(function (v) { return v > 0; }).sort(function (a, b) { return a - b; });
+      if (!vals.length) return;
+      const mid = vals.length % 2
+        ? vals[(vals.length - 1) / 2]
+        : Math.round((vals[vals.length / 2 - 1] + vals[vals.length / 2]) / 2);
+      cap[key] = mid;
+      stats[key] = {
+        runs: vals.length,
+        median: mid,
+        low: vals[0],
+        high: vals[vals.length - 1],
+        spreadPct: vals[0] > 0
+          ? Math.round(((vals[vals.length - 1] - vals[0]) / vals[0]) * 1000) / 10
+          : 0,
+      };
+    });
+    cap.runs = samples.length;
+    cap.spread = stats;
+    fs.writeFileSync(path.join(dir, 'capacity.json'), JSON.stringify(cap, null, 2));
+    if (samples.length > 1) {
+      console.log('     median of ' + samples.length + ' runs; per-stream spread ' +
+        (stats.perStreamProcessBytes ? stats.perStreamProcessBytes.spreadPct + '%' : 'n/a'));
+    }
+  }
   console.log('     ' + Math.round(cap.perStreamProcessBytes / 1024) + ' KB per stream, ' +
     cap.perReachablePeerBytes + ' B a reachable peer  (' + capRun.seconds + 's)');
 
