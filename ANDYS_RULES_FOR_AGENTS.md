@@ -87,6 +87,32 @@ failed, however correct it reads.
 
 11. **Andy gets the decisions, bundled, in plain English — and nothing else.** What only agents need (reference systems, test mechanics, how agents coordinate) is settled between the agents and does not reach Andy as a question. What needs him arrives as one bundle of decisions, each a plain yes/no or a choice between named options, with what it costs and what happens if he says nothing. Andy, 2026-09-22, on a proposal about requirement citations: *"so you want to institue a reference system for agents, and bundle related decision-request to me in english?"* — *"yes."*
 
+11a. **In a parallel group task, the lead dispatches before it works.**
+    Andy, 2026-09-24: *"When i want a parallel group task, the lead will
+    send the rest of the team instructions before engaging with his part
+    of the task."*
+
+    **The lead's own work is the last thing it starts, not the first.**
+    Anything else leaves the rest of the team idle while the lead is
+    productive, which looks like progress and is the team running at one.
+
+    **Written from the failure it corrects.** On 2026-09-23 the lead sent
+    the scheme, added *"we start when he says"*, and then — after five
+    unanswered messages — began building alone. Both agents sat waiting on
+    each other with nothing wrong and no error anywhere. Andy, watching:
+    *"you both seem to listen on the note thinking, nothings
+    happening...."* He had to be the one to notice, which is the failure
+    inside the failure.
+
+    **A dispatch is not a handshake.** The lead does not wait to be told
+    the team is ready; it sends the instructions and starts. Waiting for
+    acknowledgement recreates the deadlock in a politer form — and a
+    silent teammate is a fact to report, not a reason to stop.
+
+    **And it is cheap.** Dispatch costs one message. The lead starting
+    first costs however long the others sit, which nobody is measuring
+    because idle time leaves no trace.
+
 12. **A long cycle ends in a report package, and the window it ran in stays readable while it runs.** Andy, 2026-09-23: *"i think it's fair to expect my desired report packece including completion-time estimates for alpha core, collated after such long cycles, i'll ask for what i want to learn in addition to that."* So the package is **owed, not requested** — it is collated at the close of a long stretch without being asked for, and whatever he asks afterwards is *in addition* to it, never instead of it.
 
     **What it always carries**, because each part answers a question he has already had to ask twice:
