@@ -218,6 +218,54 @@ mean the history disappears exactly when somebody asks what happened.
 
 ---
 
+## The state before, measured
+
+**wsl-claude asked for the existing suite to be run against the tree
+before this cycle started, and sent the results. Andy backed the ask:**
+*"i do think that was a legitimate ask. log the state-before."*
+
+**I got the order wrong** — R1 to R3 were already built when the ask
+arrived. So two numbers are recorded rather than one, and what each means
+is stated rather than blurred.
+
+| | suites | green | red | awaiting |
+|---|---|---|---|---|
+| **before any cycle-11 code** (`d1dd409`, working checkout) | 145 | **3,066** | 1 | 1 |
+| **after R1–R3** (`d51a2e2`) | 145 | **3,073** | 1 | 1 |
+
+**The +7 is not new tests.** `cycleRequirements.js` asserts one per
+requirement in `design/cycles/`, and this document added seven. No
+assertion about the record exists — under this cycle's agreement the
+suite is wsl-claude's and the implementer has written none.
+
+**The single red in both is `capacityFresh` on Ubuntu**, which is
+wsl-claude's re-measure to clear and predates this cycle.
+
+### And a third number, which is the one worth keeping
+
+A **fresh checkout** of `d1dd409` — a worktree with only the tracked
+tree, which is what a stranger who clones this repository gets — runs at
+**2,978 green and 12 red**.
+
+Nine of those twelve are the lab and live suites, which need local
+untracked state (`relays.json` is gitignored; a labMaster must be
+running). One is the stale Ubuntu measurement. **And one was a real
+defect, found only because this baseline was taken:**
+
+`publishCapacity --check` writes LF and git checks `README.md` out with
+CRLF, so on a fresh Windows clone the comparison differed on all 66 lines
+and `guarantees.js` reported *"the published block and the measurement
+disagree"* about two identical texts. **The guarantee that this repo's
+published capacity IS its measured capacity was failing for the one
+reader it exists for.** Fixed: compared without line endings, written
+back in the convention the file already uses.
+
+**That vindicates the ask.** A baseline nobody takes is a baseline that
+hides this — and the 12-red fresh-clone figure is worth carrying forward
+on its own, because it is what a visitor sees.
+
+---
+
 ## Divergences at reconciliation
 
 *Empty until the close. Entries are logged unresolved: the sentence

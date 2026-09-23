@@ -181,7 +181,28 @@ function main() {
   const built = render(c);
   const next = page.slice(0, a) + built + page.slice(b + SHUT.length);
 
-  if (next === page) {
+  // ── COMPARED WITHOUT LINE ENDINGS, AND WRITTEN WITH THE FILE'S ────
+  //
+  // This generator writes LF. Git checks README.md out with CRLF on
+  // Windows, so on a FRESH CLONE the comparison below found a difference
+  // on every one of 66 lines and `--check` reported the published block
+  // as out of date when it was identical.
+  //
+  // Measured 2026-09-23 in a worktree at d1dd409: `guarantees.js` went
+  // red on "the published block and the measurement disagree" for a
+  // reason that had nothing to do with either. The guarantee that this
+  // repo's published capacity IS its measured capacity was failing for a
+  // stranger cloning it — which is the one reader it exists for.
+  //
+  // Found because wsl-claude asked for the existing suite to be run
+  // against the tree before cycle 11 started, and Andy backed the ask. A
+  // baseline nobody took is a baseline that hides this.
+  const CR = String.fromCharCode(13);
+  const NL = String.fromCharCode(10);
+  const LF = function (t) { return String(t).split(CR + NL).join(NL); };
+  const same = function (x, y) { return LF(x) === LF(y); };
+
+  if (same(next, page)) {
     console.log('README.md capacity block is current (' +
       String(c.commit || '?').slice(0, 7) + ').');
     return;
@@ -194,7 +215,10 @@ function main() {
     process.exit(1);
   }
 
-  fs.writeFileSync(PAGE, next);
+  // Written back in the convention the file already uses, so a generator
+  // run does not turn a whole page into a diff.
+  const crlf = (page.split(CR + NL).length - 1) > (page.split(NL).length / 2);
+  fs.writeFileSync(PAGE, crlf ? LF(next).split(NL).join(CR + NL) : LF(next));
   console.log('README.md capacity block rewritten from ' + PLATFORM +
     ' (' + String(c.commit || '?').slice(0, 7) + ', ' +
     String(c.measuredAt || '?').slice(0, 10) + ').');
