@@ -1,6 +1,6 @@
 # Cycle 10 — a relay carries what it cannot read
 
-**Opened 2026-09-23, from `989f39a`. Nothing built yet. Ten requirements.**
+**Opened 2026-09-23, from `989f39a`. Nothing built yet. Eleven requirements.**
 
 > **Andy:** *"I also want to make sure we have alpha Product at the end,
 > and you agreed, or suggested that developper-nerds wouldn't be happy
@@ -264,5 +264,70 @@ sealing has quietly stopped happening.
 **What it does NOT claim.** The envelope stays readable by design — who
 posted to whom, when, how big. That is not a gap in the test; it is the
 thing the monitor draws, and cycle 9 proved it end to end.
+
+**Status:** OPEN — cycle 10 is opened, not built.
+
+### R11 — where the signing happens, and what a hash can still cover
+
+> **Andy, 2026-09-23:** *"This also means: careful where the signing
+> happens, and, the relay cannot possibly hash check the payload unless
+> it's the target."*
+
+Both true, and together they fix the construction rather than leaving it
+to taste.
+
+**THE SIGNATURE COVERS THE SEALED BYTES, NOT THE PLAINTEXT.** The relay
+verifies a post's signature before it routes it (`postSignatureFor`), and
+it will never hold the plaintext again — so a signature over plaintext
+would be a signature nobody on the path could check, and the relay would
+be forwarding unauthenticated bytes. Sealed first, signed second.
+
+**AND THE SEAL BINDS SENDER AND RECIPIENT, or signing the ciphertext is
+not enough.** A sealed blob that names nobody can be re-addressed: lift
+it, sign it as yourself, send it to a third party, and their node opens
+it — because the maths works. So sender and recipient go in as
+**associated data** in the AEAD, and opening fails if either differs from
+the envelope that carried it. That is the difference between "this
+decrypts" and "this was sent to me by them".
+
+**THE LAYERING, IN ONE SENTENCE.** Andy: *"the hashing must sit outside
+of the cyphering."* So, innermost to outermost:
+
+```
+  plaintext
+    └─ sealed        (X25519 + AES-GCM, sender and recipient as AAD)
+         └─ signed   (the sender's Ed25519 over the sealed bytes)
+              └─ hashed   (SHA-256 of what travels — routing, receipts, replay)
+```
+
+Every layer outside the seal operates on bytes it cannot read, which is
+what lets the relay do its whole job — verify, register, route, receipt —
+without ever holding a word. Put the hash inside and the relay would need
+the plaintext to compute it, which is the thing this cycle exists to
+prevent.
+
+**THE HASH IS OVER WHAT TRAVELS**, which is the ciphertext.
+`auth.requestHash` is a SHA-256 of the message as sent
+(`relayAuth.js:179-181`), and everything built on it keeps working
+unchanged: the registered hash that makes a post un-replayable, the
+receipt a target signs (*"I received exactly those bytes"*), the route
+table's key, the monitor's `hash` field, and the **`innerHash` on the
+partner path** (`relay.js:2524`, `:2603`), where a relay hashes what it
+carries for another box. All of those are about **bytes in flight**, and
+none of them was ever about meaning.
+
+**What genuinely becomes impossible — and was never done.** Nothing may
+hash or check the PLAINTEXT except the target, because nobody else has
+it. No relay-side deduplication by content, no content-addressed routing,
+no "same message, different envelope" detection at the relay. Andy's
+sentence is the rule: *the relay cannot possibly hash check the payload
+unless it's the target.* Written down so a later cycle does not propose
+one of those and discover it three days in.
+
+**Verify:** a sealed post's signature verifies at the relay without the
+plaintext; the same sealed blob re-addressed to a third party fails to
+open there; the registered hash still refuses a replay; a partner-carried
+sealed post keeps its `innerHash` behaviour; and a receipt still proves
+"exactly those bytes".
 
 **Status:** OPEN — cycle 10 is opened, not built.
