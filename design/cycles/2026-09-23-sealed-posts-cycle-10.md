@@ -362,8 +362,29 @@ impossible to fake:
    header. A plaintext hash beside a sealed payload is a confirmation
    oracle: anyone who can guess the message can check the guess.
 
+**AND IT IS CHECKABLE FROM THE MONITOR, WHICH IS WHERE IT MATTERS.**
+Andy: *"the payload on the monitor MUST be different from the endpoint
+hash."*
+
+The monitor already carries a `hash` per event — the relay's, over the
+sealed bytes. So the canary needs no instrumentation and no access to the
+relay at all: **take the hash the feed shows, hash the plaintext the drill
+sent, and they must differ.** A match means the words travelled in clear,
+and it means it on the live box, from the owner's own screen, in
+arithmetic he can do himself.
+
+That makes R12 the same shape as everything else Andy asked for this
+cycle: a number the drill knows, a number the feed shows, and a
+comparison — except here the proof is that they must NOT be equal.
+
+It also settles what the monitor may show of a payload: **the relay's
+hash and the size, never a plaintext hash**. A screen that displayed both
+would be a confirmation oracle on a wall.
+
 **Verify:** all three, in one suite, against a real routed post — and
 point (2) run at least twice with the identical string, because a single
-run cannot show randomisation.
+run cannot show randomisation. Then once more live: the drill sends known
+text, the feed is captured as in cycle 9, and every `hash` in the capture
+is compared against `sha256` of what was sent. Zero matches.
 
 **Status:** OPEN — cycle 10 is opened, not built.
