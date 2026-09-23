@@ -276,10 +276,51 @@ grows it, and `MAX_ROUTED_TEXT` with it. The release notes name the flag
 day; a relay says its limit so a sender can tell "too big for me" from
 "too big for that box".
 
-**Verify:** 16 KB of text survives sealing and routing; the relay's limit
-is readable.
+**Verify:** `spirit/test/payloadCeiling.js` — a packet at the plaintext
+ceiling seals to 22,049 and fits the wire bound; the two constants are
+asserted as a RELATIONSHIP, not as two numbers; a full-size sealed message
+is carried by a real relay; and one byte past the wire bound is still
+refused, because a ceiling that only ever accepts is not a ceiling.
 
-**Status:** OPEN — cycle 10 is opened, not built.
+**Status:** DONE. **The figure, computed from the real envelope** as the
+amendment asked: a packet of exactly 16,384 bytes seals to **22,049** on
+the wire (×1.3458), and `PAYLOAD_MAX` is **22,528** — 22 KiB, clearing it
+by 479 bytes. Before this, a full-size message could not be sent **at
+all**: the relay refused it by 5,665 bytes, which is why this blocked the
+flag day rather than tidying after it.
+
+**IT TOOK TWO CONSTANTS, NOT ONE**, and the guess of *"one line"* was
+wrong about that. One number meant both *what a composer may build* and
+*what may travel*, which was correct until sealing made them different
+bytes. `PLAINTEXT_MAX` stays at 16,384 — the promise apps were written
+against — and `PAYLOAD_MAX` is the wire.
+
+**The trap in the single-constant version, which nothing would have
+caught:** `MATCH_BUDGET` sizes a search reply the relay is about to
+compose, and `sendSelfAnswer` seals it afterwards. Raise one constant and
+that budget rises silently with it — the relay builds a 22 KB reply, seals
+it past the wire bound, and refuses a packet it wrote itself. Every
+component suite stays green while that is true. `client/packet.js` had the
+same shape: every app would be told it has 22 KB and be refused at about
+16.
+
+**The relay states its limit** in `/api/relay/key` as `payloadMax`, so a
+sender can tell *"too big for me"* from *"too big for that box"* —
+unsigned like the label beside it, which is safe because the figure can
+only make a sender send less.
+
+**THE FLAG DAY, and the symptom an operator sees:** an un-updated relay
+still refuses at 16,384, so a legal sealed post from an updated node is a
+413 from an old box — large messages failing to send to some peers and not
+others, with no pattern a user could describe.
+
+**Six suites had to change**, and the reason is worth keeping: their
+fixtures hardcoded sizes against the old ceiling (`16385`, `8300` quotes,
+`9000` quotes), so a bound that moved turned "too big" cases into legal
+ones and the suites asserted refusals that no longer happened. They derive
+from the constant now — `routeHints.js`, `hintWire.js`, `labRefusals.js`,
+`packet.js`. **A fixture that hardcodes the number it is testing against
+tests that number once.**
 
 ### R7 — the agents seal, like everybody else
 

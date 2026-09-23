@@ -75,7 +75,7 @@ test.subHeading('Too big is refused here, not there');
   // disagreement and made the gap look intentional. One source now
   // (js/limits.js), and this checks the rule rather than the value.
   const huge = packet.encode('relay-chat', 'x'.repeat(packet.MAX_TEXT));
-  if (!huge.ok && /too long/.test(huge.error) && huge.limit === limits.PAYLOAD_MAX) {
+  if (!huge.ok && /too long/.test(huge.error) && huge.limit === limits.PLAINTEXT_MAX) {
     test.check('an envelope over the limit is refused before the wire');
   } else {
     test.fail('oversize: ' + JSON.stringify(huge).slice(0, 120));
@@ -124,10 +124,14 @@ test.subHeading('One number, in one place');
 // So this checks the property that was missing: that there is only one
 // number, and that everything defers to it rather than copying it.
 {
-  if (packet.MAX_TEXT === limits.PAYLOAD_MAX) {
+  // PLAINTEXT_MAX since cycle 10's R6. An app composes a packet and the
+  // node seals it afterwards, so what the browser pre-refuses is the
+  // plaintext bound — against the wire bound every app would be told it
+  // has 22 KB and be refused at about 16.
+  if (packet.MAX_TEXT === limits.PLAINTEXT_MAX) {
     test.check('packet.js takes its limit from js/limits.js rather than holding one');
   } else {
-    test.fail('packet ' + packet.MAX_TEXT + ' vs limits ' + limits.PAYLOAD_MAX);
+    test.fail('packet ' + packet.MAX_TEXT + ' vs limits ' + limits.PLAINTEXT_MAX);
   }
 
   // AND NOBODY ELSE DECLARES ONE. A literal here is how the gap comes

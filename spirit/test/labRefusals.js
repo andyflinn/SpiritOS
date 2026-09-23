@@ -32,6 +32,7 @@
 
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
+const limits = require('../run/js/limits');
 const rule = require('../run/js/labelRule.js');
 const lab = require('./labMaster/ensureMaster.js');
 const { mintOwnerInvite } = require('./ownerClaim');
@@ -177,7 +178,10 @@ async function run() {
   const relayKey = (await (await fetch(ORIGIN + '/api/relay/key')).json()).relayPublicKey;
   if (!relayKey) { test.fail('the relay published no key of its own'); return; }
   const target = { publicKey: relayKey };
-  const huge = 'x'.repeat(16385);
+  // One byte past the WIRE bound, derived. It was 16385 — one past a
+  // PAYLOAD_MAX that cycle 10's R6 raised to 22,528, at which point this
+  // "oversized" post was simply a legal one and the relay accepted it.
+  const huge = 'x'.repeat(limits.PAYLOAD_MAX + 1);
 
   const over = await post('/api/relay/post', {
     from: sender.publicKey, to: target.publicKey, text: huge,

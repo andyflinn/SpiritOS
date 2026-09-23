@@ -30,6 +30,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
+const limits = require('../run/js/limits');
 const auth = require('../run/js/relayAuth');
 const { claimOwner } = require('./ownerClaim');
 const hub = require('../run/js/hub');
@@ -189,7 +190,11 @@ async function run() {
       // Asked for something 'big', he answers with a reply that fits one
       // hop and not the return tunnel (8,300 quotes, as the post case).
       from: bertrand.publicKey, hash: hash,
-      text: /big/.test(d.text) ? '"'.repeat(8300) : JSON.stringify({ v: 1, body: { hello: 'alice' } }),
+      // Quotes escape to two characters each, so half the wire bound in
+      // quotes is one bound's worth of JSON — derived rather than typed,
+      // since cycle 10's R6 moved that bound and a hardcoded 8,300
+      // quietly started fitting.
+      text: /big/.test(d.text) ? '"'.repeat(Math.ceil(limits.PAYLOAD_MAX / 2)) : JSON.stringify({ v: 1, body: { hello: 'alice' } }),
       sig: auth.sign(bertrand.privateKey, auth.receiptMessage(hash)),
     }).catch(function () {});
   });
@@ -305,7 +310,7 @@ async function run() {
   // wrapper it is ~16.9 KB, over PAYLOAD_MAX. So it passes the socket and
   // fails only the tunnel check — the case that would otherwise 413 at B.
   // (At 9,000 the body cap refuses it first, which proves the wrong thing.)
-  const stuffed = await postWithHints(A, alice, bertrand.publicKey, '"'.repeat(8300), [bKey]);
+  const stuffed = await postWithHints(A, alice, bertrand.publicKey, '"'.repeat(Math.ceil(limits.PAYLOAD_MAX / 2)), [bKey]);
   if (stuffed.status === 413 && /tunnel/.test(stuffed.body.error || '')) {
     test.check('a packet that would not survive the tunnel: 413 at A, before B ever sees it');
   } else {

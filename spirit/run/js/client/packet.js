@@ -65,7 +65,11 @@ var PACKET_VERSION = 1;
 // same string, disagreeing by 16×, with this comment claiming to mirror
 // a number it undercut. Every app was capped at a sixteenth of what the
 // relay would take. One rule, one place: js/limits.js.
-var PACKET_MAX_TEXT = limits.PAYLOAD_MAX;
+// PLAINTEXT_MAX since cycle 10's R6: an app composes a packet and the node
+// seals it afterwards, so what an app may build is the plaintext bound.
+// Against the wire figure every app would be told it has 22 KB and be
+// refused at about 16.
+var PACKET_MAX_TEXT = limits.PLAINTEXT_MAX;
 
 // 128 bits. It was 64, from Math.random, and both halves were wrong for
 // what this field is about to become (design/relay/ROUTER.md §6).

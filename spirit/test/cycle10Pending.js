@@ -93,14 +93,18 @@ function tmp() {
 
 test.subHeading('The ceiling and the flag day');
 
-// cycle-10/R6 — sealing grows a payload by base64, about a third plus sixty bytes,
-// so the 16 KB a sender is promised no longer fits once sealed. Andy took
-// raising the ceiling over letting the promise shrink: "that's a better
-// way.yes". The unit is the constant itself.
-test.awaiting('cycle-10/R6', 'limits.PAYLOAD_MAX raised for sealed bodies',
-  limits.PAYLOAD_MAX >= 22000,
-  'sixteen thousand characters of text still fit after sealing, rather than about twelve',
-  { there: 70, cost: 'one line and a flag-day note; the arithmetic is already argued' });
+// cycle-10/R6 BUILT 2026-09-23 and its declaration removed in the same
+// commit, which is the handover this file is for. It went RED the moment
+// PAYLOAD_MAX rose — "the unit is the constant itself" — and a yellow for
+// a thing that exists is exactly what rule 10 forbids.
+//
+// The requirement keeps its name inside the real assertions rather than
+// here, so it cannot leave the board by being finished:
+// `spirit/test/payloadCeiling.js`. The measurement it was guessing at:
+// 16,384 bytes of packet seal to 22,049 on the wire, and the ceiling is
+// 22,528. The guess said 70% and "one line"; it took two constants,
+// because one number could not mean both what a composer may build and
+// what may travel.
 
 test.subHeading('The two that block the live boxes');
 

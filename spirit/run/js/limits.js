@@ -63,11 +63,61 @@
 // concurrency of 256. It buys a class of outage that nobody would
 // diagnose quickly.
 
-// What a sender may put on the wire: the encoded envelope, measured as
-// `JSON.stringify(envelope).length`. The browser refuses it before the
+// ── TWO BOUNDS SINCE CYCLE 10, BECAUSE SEALING MADE THEM TWO ────────
+//
+// One number meant both of these until sealed posts arrived, and it was
+// right to: what an app composed WAS what travelled. After cycle 10 a
+// packet is sealed before it is signed, so the bytes on the wire are no
+// longer the bytes the app wrote — and a single constant would have to be
+// wrong for one of its two readers.
+//
+//   PLAINTEXT_MAX  what a composer may BUILD, before sealing
+//   PAYLOAD_MAX    what may TRAVEL, after sealing
+//
+// Keeping one constant was tried on paper and fails in a way nothing
+// would have caught: `MATCH_BUDGET` (relay.js) composes a search reply
+// against it and then seals the result. Raise the single number to fit
+// sealed bytes and that budget silently rises with it — the relay builds
+// a 22 KB reply, seals it to ~29 KB, and the wire refuses a packet the
+// relay itself composed. Every component test stays green.
+
+// WHAT A COMPOSER MAY BUILD. Unchanged at 16 KB, deliberately: this is
+// the promise apps were written against, and cycle 10 is not an occasion
+// to move it. `natterDetails`, `gradedSearch` and every app that sizes a
+// payload measure themselves against this.
+var PLAINTEXT_MAX = 16384;
+
+// WHAT MAY TRAVEL: the encoded envelope as it goes on the wire, measured
+// as `JSON.stringify(envelope).length`. The browser refuses it before the
 // round trip; the relay refuses it because the browser's check is a
 // courtesy and not a limit — a client-side cap binds only honest clients.
-var PAYLOAD_MAX = 16384;
+//
+// ── THE FIGURE, COMPUTED FROM THE REAL ENVELOPE (cycle 10's R6) ─────
+//
+// Andy's amendment asked for the number rather than the approximation.
+// Measured 2026-09-23 by sealing a packet of exactly PLAINTEXT_MAX bytes
+// through `seal.seal` and taking `JSON.stringify(...).length`:
+//
+//     16,384 bytes of packet  ->  22,049 bytes on the wire   (x1.3458)
+//
+// Base64 of the ciphertext is the whole of it — GCM adds a 16-byte tag
+// and no block padding — plus the throwaway public key, the nonce and the
+// JSON around them. It is DETERMINISTIC in the plaintext's length: the
+// same 16,384 bytes of any content seal to the same 22,049.
+//
+// 22,528 is 22 KiB, which clears that by 479 bytes. The margin is for the
+// envelope growing a field, not for the arithmetic being uncertain.
+//
+// ── AND IT IS A FLAG DAY, WHICH THE RELEASE NOTE MUST SAY ──────────
+//
+// A relay that has not been updated still refuses at 16,384, so a legal
+// sealed post from an updated node is a 413 from an old box. THE SYMPTOM
+// AN OPERATOR SEES: large messages fail to send to some peers and not
+// others, with no pattern a user could describe. Before this, a 16 KB
+// message could not be sent AT ALL once sealing landed — the ceiling and
+// the seal were incompatible, which is why cycle 10's R6 blocks the flag day rather
+// than tidying after it.
+var PAYLOAD_MAX = 22528;
 
 // Measured, not estimated. See above; kept so the headroom below reads
 // as a decision rather than a guess.
@@ -173,6 +223,7 @@ function fitsWrappedReply(text, from, sig) {
 
 var limitsApi = {
   PAYLOAD_MAX: PAYLOAD_MAX,
+  PLAINTEXT_MAX: PLAINTEXT_MAX,
   WIRE_OVERHEAD: WIRE_OVERHEAD,
   WIRE_HEADROOM: WIRE_HEADROOM,
   HINTS_PER_POST: HINTS_PER_POST,

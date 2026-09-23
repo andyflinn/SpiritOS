@@ -644,6 +644,24 @@ const server = http.createServer((req, res) => {
       relayLabel: relay.relayLabel(),
       ownerKey: own.ownerKey,
       ownerLabel: own.ownerLabel,
+      // ── AND WHAT IT WILL CARRY (cycle 10's R6) ────────────────────
+      //
+      // So a sender can tell "too big for me" from "too big for THAT
+      // box". Without it, the flag day's symptom is unreadable: an
+      // updated node posts a legal sealed packet, an un-updated relay
+      // answers 413, and the sender cannot distinguish a message that is
+      // genuinely oversized from a relay that has not been updated yet.
+      //
+      // UNSIGNED, like the label beside it, and that is fine because it
+      // can only make a sender send LESS. A relay that understated it
+      // would be refusing traffic it could carry — its own loss, and
+      // visible. A relay that overstated it would earn a 413 from
+      // itself, which is the same refusal the sender would have had.
+      //
+      // It is read off `limits`, never configured: a relay that could be
+      // told its own ceiling is a relay whose owner can promise what the
+      // code will not honour.
+      payloadMax: require('./limits').PAYLOAD_MAX,
     }));
     return;
   }

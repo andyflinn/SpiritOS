@@ -3015,7 +3015,11 @@ function createRelay(rootDir, deps) {
   // finished adding sources to it. So this file supplies the one number it
   // actually knows (what fits in the envelope it is about to send) and the
   // ranker does the rest. Same rule as "the ranking is not this file's".
-  var MATCH_BUDGET = limits.PAYLOAD_MAX - 512;
+  // PLAINTEXT_MAX, not PAYLOAD_MAX: this budget sizes a reply the relay
+  // is about to COMPOSE, and `sendSelfAnswer` seals it afterwards. Against
+  // the wire figure it would build a 22 KB reply, seal it to ~29 KB, and
+  // have the wire refuse a packet this relay wrote itself (cycle 10's R6).
+  var MATCH_BUDGET = limits.PLAINTEXT_MAX - 512;
 
   // Every owner verb that writes — minting, renaming, forgetting,
   // partnering, reconfiguring — goes through here, so the disc guard sits

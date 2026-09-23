@@ -292,13 +292,18 @@ async function run() {
 
   test.subHeading('A packet that would not survive the tunnel never leaves');
 
-  const long = 'a'.repeat(16000);
-  const stuffed = '"'.repeat(9000);
+  // DERIVED FROM THE CONSTANT, not typed. These were 16,000 and 9,000,
+  // sized against a PAYLOAD_MAX of 16,384 — and when cycle 10's R6 raised
+  // the wire bound to 22,528 the "too big" case quietly started fitting,
+  // so the suite asserted a refusal that no longer happened. A fixture
+  // that hardcodes the number it is testing against tests the number once.
+  const long = 'a'.repeat(limits.PAYLOAD_MAX - 600);
+  const stuffed = '"'.repeat(Math.ceil(limits.PAYLOAD_MAX / 2));
   const someKey = A.people.jazz.publicKey;
   const someSig = auth.sign(A.people.jazz.privateKey, 'x');
   if (limits.fitsWrapped(long, someKey, someKey, someSig) &&
       !limits.fitsWrapped(stuffed, someKey, someKey, someSig)) {
-    test.check('fitsWrapped: a 16,000-byte message fits wrapped; 9,000 quotes do not — measured, not a constant');
+    test.check('fitsWrapped: a full-size message fits wrapped; half as many quotes do not — escaping doubles them, which is why this is measured and not counted');
   } else {
     test.fail('fitsWrapped is wrong on the two cases');
   }
@@ -369,12 +374,13 @@ async function run() {
 async function replyDirection(A, B) {
   test.subHeading('A reply that would not survive the return tunnel');
 
-  const plain = 'a'.repeat(16000);
-  const stuffed = '"'.repeat(8300);
+  // Derived, for the reason given above the outbound pair.
+  const plain = 'a'.repeat(limits.PAYLOAD_MAX - 600);
+  const stuffed = '"'.repeat(Math.ceil(limits.PAYLOAD_MAX / 2));
   const k = A.people.jazz.publicKey;
   const s = auth.sign(A.people.jazz.privateKey, 'x');
   if (limits.fitsWrappedReply(plain, k, s) && !limits.fitsWrappedReply(stuffed, k, s)) {
-    test.check('fitsWrappedReply: 16,000 plain bytes fit the return wrapper; 8,300 quotes do not');
+    test.check('fitsWrappedReply: a full-size reply fits the return wrapper; half as many quotes do not');
   } else {
     test.fail('fitsWrappedReply is wrong on the two cases');
   }
