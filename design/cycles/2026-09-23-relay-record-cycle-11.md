@@ -106,7 +106,9 @@ what a later question will want.
 **Verify:** wsl-claude's suite. *(Under this cycle's agreement the
 assertions are his; this document states what they must hold true.)*
 
-**Status:** OPEN.
+**Verify:** `spirit/test/relayRecord.js`, written by wsl-claude from this document without reading the implementation — the five named figures are columns queried without opening the JSON, and a figure the schema never heard of survives whole.
+
+**Status:** DONE at `78d6e3a`.
 
 ### R2 — the node process writes it, and no job does
 
@@ -114,7 +116,9 @@ The node already receives every report, around the clock, on the stream
 it already holds. A job would be a second writer on a file the node owns,
 and a second thing to be running.
 
-**Status:** OPEN.
+**Verify:** `spirit/test/relayRecord.js`, written by wsl-claude from this document without reading the implementation — the node process writes the record and nothing else does.
+
+**Status:** DONE at `78d6e3a`.
 
 ### R3 — gaps are recorded, not guessed
 
@@ -130,7 +134,9 @@ with `kind` distinguishing them from a report.
 open/close rows belong to this requirement or are a separate one, and
 whether a gap is *marked* or merely *inferable* from the rows either side.
 
-**Status:** OPEN.
+**Verify:** `spirit/test/relayRecord.js`, written by wsl-claude from this document without reading the implementation — the two edges sit in the series in order and distinguishable by kind; an edge keeps its INSTANT rather than its minute, so a flap does not vanish; and a close says why.
+
+**Status:** DONE at `78d6e3a`.
 
 ### R4 — bounded, in two tiers
 
@@ -144,7 +150,9 @@ row a day.
 
 **The figures are proposed, not ruled.** Andy has not named them.
 
-**Status:** OPEN.
+**Verify:** `spirit/test/relayRecord.js`, written by wsl-claude from this document without reading the implementation — one row a minute, and a day older than ninety keeps one row.
+
+**Status:** DONE at `78d6e3a`.
 
 ### R5 — what is never kept
 
@@ -155,7 +163,9 @@ already refuses to carry a member list (0012); the record must not
 reassemble one by accumulation — **a series of counts is a different
 object from a series of names, and only the first is machine maintenance.**
 
-**Status:** OPEN.
+**Verify:** `spirit/test/relayRecord.js`, written by wsl-claude from this document without reading the implementation — a report carrying people becomes a record carrying counts — nine strings searched for, none found — and a name arriving as a plain string is dropped too.
+
+**Status:** DONE at `78d6e3a`.
 
 ### R6 — one read verb, answering values
 
@@ -171,7 +181,9 @@ worth saying so plainly: a series *is* a structure by shape, and a series
 of decided values is an answer by 0020's own test. The two readings give
 different verbs. Neither is obviously wrong from the text.
 
-**Status:** OPEN.
+**Verify:** `spirit/test/relayRecord.js`, written by wsl-claude from this document without reading the implementation — what crosses is a series of decided values, not rows.
+
+**Status:** DONE at `78d6e3a`.
 
 ### R7 — the seat series, because it is what the alpha needs it for
 
@@ -184,7 +196,9 @@ capacity can guarantee service."* The refusal at the boundary is the
 guarantee; this is what stops the guarantee arriving as a surprise, and
 it is the series every tightening lever in the growth plan reads from.
 
-**Status:** OPEN.
+**Verify:** `spirit/test/relayRecord.js`, written by wsl-claude from this document without reading the implementation — and the seat figures cross as answers.
+
+**Status:** DONE at `78d6e3a`.
 
 ---
 
@@ -217,6 +231,34 @@ mean the history disappears exactly when somebody asks what happened.
 3. **Whether R3's open/close rows are this cycle or the next.**
 
 ---
+
+### C3 — the state the record cannot mark: its own node being down
+
+**Found by wsl-claude while writing the suite, and it is not in any
+requirement.** R3 distinguishes two states and there are three:
+
+| | rows written |
+|---|---|
+| **an outage** — the relay goes, the stream closes | `close` edge, then `open` when it returns |
+| **a quiet stretch** — nothing happens, stream up | none |
+| **THE NODE ITSELF DOWN** | none — identical to a quiet stretch |
+
+**The node is what writes the record, so it cannot record its own
+absence.** A reader looking at an empty stretch cannot tell a relay with
+nothing to say from a machine that was switched off, which is exactly the
+ambiguity R3 exists to remove — removed for one case and left for the
+other.
+
+**Not fixed here, because it is a new requirement and not a defect in
+these seven.** The obvious shape is a `started` edge at boot: it cannot
+mark the gap as it happens, but it bounds it afterwards — everything
+between the last row and a `started` edge is *"this node was not
+running"*, which is a different sentence from *"nothing happened"*.
+
+**This is the artefact the working agreement said to keep:** a test the
+author added mid-cycle that the design had not asked for. It is the
+record of what the design forgot, and it is worth more than the
+requirements that were right.
 
 ## The state before, measured
 
