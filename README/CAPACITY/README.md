@@ -49,6 +49,55 @@ skipped — leaving one machine with two directories and one of them stale.
 **Commit both files.** The JSON is what a comparison is built from; the
 markdown is what a person reads.
 
+## Comments are not stripped from deliverables — decided, with the numbers
+
+**Asked and answered 2026-09-23.** Andy: *"what do those figures look like
+minimized, stipped of comments etc? does that affect memory usage?"* — and
+on the result: *"no. we won't strip comments from diliverables. agreed."*
+
+It is written down because the question will be asked again by anyone who
+measures this tree and finds that **67% of `spirit/run/js` is comment**
+(880 KB of 1,320 KB, 54 files). That is a startling ratio and it invites
+an obvious-looking saving.
+
+**Measured rather than argued**, loading the nineteen modules a relay
+loads, three runs each, on Windows:
+
+| | rss | heap |
+|---|---|---|
+| bare `node`, nothing loaded | 59.1 MB | — |
+| with comments | 68.6 MB | 7.36 MB |
+| comments stripped | 67.1 MB | 6.08 MB |
+| **saved** | **1.57 MB (2.3%)** | **1.28 MB (17%)** |
+
+So it is real: V8 retains script source, and 880 KB of text costs about
+1.3 MB of heap — roughly 1.45x its byte count, with overhead. Against our
+OWN footprint it is larger than it looks: the bare-node floor is 59 MB, so
+SpiritOS adds 9.6 MB with comments and 8.0 MB without, and stripping would
+cut our share by about a sixth.
+
+**And it is still the wrong trade.**
+
+- **It does not touch the thing that moves.** Node-at-rest rose 16 MB in
+  one cycle (73.0 -> 89.2 MB on Windows, 84.5 -> 100.9 MB on Ubuntu).
+  Stripping every comment in the tree recovers a tenth of that. The growth
+  is objects, not text.
+- **The floor is not ours.** 59 MB is `node` before a line of this runs —
+  88% of a relay's resident memory. Serious memory work is about the
+  runtime, not the source.
+- **A running relay is sockets, not source.** At 52 KB a held connection,
+  thirty connected members outweigh every comment in the repository.
+- **The comments are a deliverable.** This project ships explanation as
+  product — the hello-world sample is ten lines of code and about 150 of
+  comment by design. Trading that for 2% of resident memory is a bad
+  trade, and a relay whose source cannot be read is a relay nobody can
+  audit.
+
+**If it ever does matter**, the shape is: strip at install time, for a
+relay only, never in the repository and never for a node a developer
+reads. A relay is the memory-constrained box and nobody reads its source
+in place. Nothing today justifies building that.
+
 ## What may be compared, and what may not
 
 **Comparable across platforms:** the disc figures. A row in SQLite is a
