@@ -110,6 +110,26 @@ function resolvePeer(cfg, to) {
 // ── THE ENVELOPE — protocol v1 ─────────────────────────────────────────
 function makeEnvelope(from, kind, text, re, idFn, block) {
   if (KINDS.indexOf(kind) === -1) throw new Error('unknown kind: ' + kind);
+  // ── AND NOTHING EMPTY LEAVES (cycle 10's R19) ───────────────────────
+  //
+  // Found by being committed: wsl-claude piped a cleared scratchpad into a
+  // send and it went — a post, a route and a receipt spent carrying
+  // nothing, and a peer given an empty message to make sense of. A
+  // `blocked` already refuses a missing `what` at the sender for the same
+  // reason: an agent that believes it has reported and has not is worse
+  // off than one that was told no.
+  //
+  // AT THE SENDER, where the mistake is, and where the fix costs one
+  // failed command rather than a message nobody can answer.
+  // THREE KINDS CARRY THEIR MEANING SOMEWHERE ELSE and are exempt:
+  // `halt` and `resume` are control verbs whose whole content is the kind,
+  // and a `blocked` says what it needs in `block.what`, which is refused
+  // below if it is missing. Everything else is somebody talking, and
+  // somebody talking with nothing to say is the defect.
+  const CARRIES_NO_TEXT = ['halt', 'resume', 'blocked'];
+  if (CARRIES_NO_TEXT.indexOf(kind) === -1 && !String(text || '').trim()) {
+    throw new Error('a send with no text is refused — ' + kind + ' needs something to say');
+  }
   const env = {
     app: APP, v: 1,
     id: (idFn || function () { return crypto.randomBytes(12).toString('hex'); })(),

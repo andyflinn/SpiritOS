@@ -84,21 +84,35 @@ async function run() {
     // So this is the intent, written where it can be run: an empty send
     // is refused the way a `blocked` with no `what` already is. The
     // defect that asked for it was real — wsl-claude piped a cleared
-    // scratchpad into a send and spent a post and a receipt on nothing.
+    // scratchpad into a send and spent a post and a receipt on nothing,
+    // and handed a peer an empty message to make sense of.
     //
-    // IT ASKS WHETHER THE UNIT IS THERE, not whether it works: today
-    // `makeEnvelope` accepts empty text, so the refusal does not exist to
-    // be tested. That is the whole finding, and it classifies itself.
-    //
-    // It sits AWAITING rather than red — the run stays green, the count
-    // says not-done-yet, and the moment the refusal appears this turns
-    // into a failure telling whoever built it to write the real
-    // assertion. See testSupport.awaiting.
-    let refusesEmpty = false;
-    try { agents.makeEnvelope('x', 'ask', '   '); } catch (e) { refusesEmpty = true; }
-    test.awaiting('cycle-10/R19', 'agents.makeEnvelope refusing empty text', refusesEmpty,
-      'a send with no text should be refused, as a `blocked` with no `what` already is',
-      { there: 80, cost: 'one line beside the kind check it copies' });
+    // DECLARED AWAITING FIRST, then built: this assertion replaces a
+    // `test.awaiting` that asked only whether the refusal existed. The
+    // yellow went red the moment it did, which is the mechanism working
+    // — and the requirement keeps its name here so it cannot leave the
+    // board by being finished.
+    let refusedEmpty = null;
+    try { agents.makeEnvelope('x', 'ask', '   '); }
+    catch (e) { refusedEmpty = e.message; }
+    if (refusedEmpty && /no text/.test(refusedEmpty)) {
+      test.check('cycle-10/R19: a send with no text is refused at the sender — "' + refusedEmpty + '"');
+    } else {
+      test.fail('empty text was accepted: ' + JSON.stringify(refusedEmpty));
+    }
+
+    // AND THE TWO KINDS THAT CARRY NO WORDS ARE UNTOUCHED. `halt` and
+    // `resume` are control verbs whose whole content is the kind, and a
+    // refusal that caught them would make the one message Andy sends to
+    // stop an exchange impossible to send.
+    let controlOk = true;
+    try { agents.makeEnvelope('andy', 'halt', ''); agents.makeEnvelope('andy', 'resume', ''); }
+    catch (e) { controlOk = false; }
+    if (controlOk) {
+      test.check('and halt and resume still send with no text, because the kind is the message');
+    } else {
+      test.fail('the empty-text refusal caught a control verb');
+    }
   }
 
   test.subHeading('It sends, and a peer that is offline is retried, then reported');
