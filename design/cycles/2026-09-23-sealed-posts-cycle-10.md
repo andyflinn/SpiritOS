@@ -12,6 +12,27 @@ that survives that audience, and it is the precondition for strangers
 sharing one relay (`design/products/CONSIDERATIONS-FOR-EARLY-PRODUCTS.md`
 §3).
 
+## The monitor is this cycle's instrument, not a neighbour of it
+
+> **Andy, 2026-09-23:** *"i guess monitor and cyphering go together now.
+> agreed from that point of view."* — and, on the order they happened in:
+> *"so it was lucky we did the monitor too early!"*
+
+The monitor work looked like a detour from the alpha's core. It turned
+out to be the only way this cycle can be proven at all:
+
+- **R10** reads the feed and fails if the words can be parsed out of it.
+- **R12** compares the hash the feed shows with a hash of the plaintext,
+  which needs no instrumentation and works on the live box.
+- **The drill** supplies known text in known counts, which is what a "can
+  you read this?" test needs on the sending side.
+- **The screenless procedure** — *"you both verify screenless first"* —
+  means sealing is proven before any screen exists to flatter it.
+
+It also found a real defect on the way: a post at a key nobody holds was
+refused in silence, which the console would have inherited as a blank
+where the refusals should be.
+
 ## What was found before anything was written
 
 - **No key agreement exists** anywhere in `spirit/run/js`. Node's own
