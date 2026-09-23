@@ -161,6 +161,66 @@ if (nodeCard.asks(JSON.stringify({ app: 'natter', v: 1, body: { card: true } }))
   test.fail('an app packet was answered as a card request');
 }
 
+test.subHeading('THE COUNTER MOVES — on change, and only on change');
+
+{
+  // THE DEFECT, measured 2026-09-23: cardAt was read in cardFields and
+  // written nowhere in the tree. Every card carried at: 1, so a rotation
+  // could never be accepted ("not newer") and a retyped description never
+  // reached a peer. A monotonic field nothing increments is a constant.
+  const bob = home('bob');
+  const first = nodeCard.verify(nodeCard.describe(bob.dir));
+
+  // Handing the same card over again must NOT burn a counter: a card goes
+  // out on every stream open, and a number that climbed per reconnect
+  // would leave every peer holding something permanently stale.
+  const again = nodeCard.verify(nodeCard.describe(bob.dir));
+  if (first && again && first.at === again.at) {
+    test.check('the same card handed over twice keeps its number — publication is not a change');
+  } else {
+    test.fail('the counter moved without a change: ' +
+      (first && first.at) + ' -> ' + (again && again.at));
+  }
+
+  // A description the owner retypes IS a change, and is the half of cycle 10's R13
+  // that has nothing to do with keys.
+  nodeCard.setDescription(bob.dir, 'a node that belongs to bob, who says more now');
+  const described = nodeCard.verify(nodeCard.describe(bob.dir));
+  if (described && described.at > again.at &&
+      /says more now/.test(described.description)) {
+    test.check('a retyped description advances the counter — or a peer keeps the old one for ever');
+  } else {
+    test.fail('description change did not advance: ' + JSON.stringify(described));
+  }
+
+  // AND THE KEY CASE, which is what cycle 10's R13 exists for: rotate the seal key
+  // and the card must be accepted over the one a peer already holds.
+  const rotated = auth.generateIdentity('bob');
+  const held = auth.loadIdentity(bob.dir);
+  held.sealPublicKey = rotated.sealPublicKey;
+  held.sealPrivateKey = rotated.sealPrivateKey;
+  auth.saveIdentity(bob.dir, held);
+
+  const after = nodeCard.verify(nodeCard.describe(bob.dir));
+  if (after && after.at > described.at && after.sealKey === rotated.sealPublicKey) {
+    test.check('a rotated seal key advances it too — the downgrade refusal now has a number to refuse against');
+  } else {
+    test.fail('rotation did not advance: ' + JSON.stringify(after));
+  }
+
+  // The number is PERSISTED, not held in memory: a node that forgot it on
+  // restart would offer a number it had already used, and every peer would
+  // refuse the card as not newer.
+  const onDisc = Number(auth.loadIdentity(bob.dir).cardAt);
+  if (onDisc === after.at) {
+    test.check('and it is on disc, so a restart does not reissue a number already spent');
+  } else {
+    test.fail('disc says ' + onDisc + ', card says ' + (after && after.at));
+  }
+
+  try { fs.rmSync(bob.dir, { recursive: true, force: true }); } catch (e) { /* leave it */ }
+}
+
 [andy.dir, mallory.dir].forEach(function (d) {
   try { fs.rmSync(d, { recursive: true, force: true }); } catch (e) { /* leave it */ }
 });

@@ -648,7 +648,33 @@ on the card, signed with the rest, and a node never accepts a card older
 than the one on its row. Free now, impossible to retrofit without
 re-introducing every peer. It also gives rotation somewhere to live.
 
-**Status:** OPEN — cycle 10 is opened, not built.
+**Status:** DONE. The field and the refusal landed with R1 and R3; **the
+writer did not, and without it the field was a constant**. wsl-claude,
+reviewing: the card counter never moves. Confirmed by sweep — `cardAt` was
+read in `nodeCard.cardFields` and written nowhere outside suites, so every
+card published carried `at: 1`: rotation could never be accepted, and a
+retyped description never reached a peer.
+
+`nodeCard.describe()` now advances it, because that is the one door where
+a card is made from a home and the counter is state that belongs with the
+home. `cardFrom(id)` stays pure, as R5 separated it. **It advances on
+change, not on publication** — the last published contents are kept beside
+the counter, so a card handed over on every stream open does not burn a
+number and leave peers permanently stale.
+
+**Verify:** `spirit/test/nodeCardSigned.js` — the same card handed over
+twice keeps its number; a retyped description advances it; a rotated seal
+key advances it; and the number is on disc, so a restart cannot reissue
+one already spent. Against a peer's row: `spirit/test/contactCard.js` and
+`spirit/test/memberCard.js` refuse an older card and an equal one.
+
+`contactCard.js`
+stopped hand-setting `cardAt = 2` — it was the suite supplying the one
+thing the tree never did, and it now asserts strictly-greater, which is
+what R13 actually requires.
+
+**Still open, and NOT this:** a rotation the owner can ask for. R13 is the
+ordering that makes one safe; the verb has no caller yet.
 
 ### R14 — the endpoints keep the words; the relay keeps the envelope
 

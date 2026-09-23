@@ -130,16 +130,21 @@ test.subHeading('THE ROLLBACK: a card that verifies, and is old');
   // and it will verify — a downgrade needing no forgery, only a copy, and
   // possibly back to the very key whose compromise caused the rotation.
   const before = nodeCard.describe(john.dir);
+  const beforeAt = nodeCard.verify(before).at;
   const rotated = auth.loadIdentity(john.dir);
   const fresh = auth.generateIdentity('john');
   rotated.sealPublicKey = fresh.sealPublicKey;
   rotated.sealPrivateKey = fresh.sealPrivateKey;
-  rotated.cardAt = 2;
+  // THE COUNTER IS NO LONGER SET BY HAND HERE. It used to read
+  // `rotated.cardAt = 2`, which was the suite supplying the one thing the
+  // tree never did — describe() now advances it because the seal key
+  // changed. Asserting the RELATION rather than the literal is also the
+  // honest test: what cycle 10's R13 needs is strictly-greater, not the number 2.
   auth.saveIdentity(john.dir, rotated);
   const after = nodeCard.describe(john.dir);
 
   const moved = contactBook.setCard(me, john.id.publicKey, after, 'reply');
-  if (moved.ok && !moved.first && moved.at === 2) {
+  if (moved.ok && !moved.first && moved.at > beforeAt) {
     test.check('a strictly newer card replaces the one held — which is where rotation lives');
   } else {
     test.fail('a newer card was not taken: ' + JSON.stringify(moved));
@@ -151,7 +156,7 @@ test.subHeading('THE ROLLBACK: a card that verifies, and is old');
   }
 
   const back = contactBook.setCard(me, john.id.publicKey, before, 'roll');
-  if (!back.ok && back.why === 'not newer' && back.held === 2 && back.offered === 1) {
+  if (!back.ok && back.why === 'not newer' && back.held === moved.at && back.offered === beforeAt) {
     test.check('THE OLD CARD IS REFUSED — a copy is not a forgery, and it must not be enough');
   } else {
     test.fail('A ROLLBACK SUCCEEDED — the compromised key would be back in use: ' + JSON.stringify(back));

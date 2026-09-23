@@ -167,8 +167,60 @@ function cardFrom(id) {
   });
 }
 
+// ── AND THE COUNTER MOVES HERE, OR IT NEVER MOVES AT ALL ─────────────
+//
+// THE DEFECT, found by wsl-claude reviewing cycle 10 and confirmed by a
+// sweep: `cardAt` was READ in one place (cardFields, above) and WRITTEN
+// in none. Only suites set it, by hand. So every card this node ever
+// published carried `at: 1`, and the consequences were both halves of
+// cycle 10's R13:
+//   - **rotation was impossible.** A new seal key needs a higher counter
+//     or the receiver refuses it as "not newer" — so a node could rotate
+//     and never be heard again.
+//   - **a changed description never propagated.** Retype it, hand the
+//     card over, and the peer keeps the old one for the same reason.
+// A monotonic field nothing increments is not a monotonic field; it is a
+// constant with a refusal attached.
+//
+// WHY HERE AND NOT IN THE SETTERS. `cardFrom(id)` stays pure — cycle 10's R5 split
+// it out on purpose, and rotation holds an identity rather than a home.
+// The counter is STATE, and state belongs with the home, which is exactly
+// what `describe(rootDir)` is. Put the bump in setName and setDescription
+// instead and there are two places to remember, then three when cycle 10's R13 adds
+// rotation, and the one that gets forgotten is silent again.
+//
+// IT ADVANCES ON CHANGE, NOT ON PUBLICATION. A card is handed over on
+// every stream open; bumping there would burn a counter per reconnect and
+// make a peer's stored card permanently stale. So the last published
+// contents are kept beside the counter and compared.
 function describe(rootDir) {
-  return cardFrom(auth.loadIdentity(rootDir));
+  const id = auth.loadIdentity(rootDir);
+  if (!id || !id.privateKey) return '';
+  return cardFrom(advance(rootDir, id));
+}
+
+// The four fields a receiver acts on, WITHOUT the counter — comparing a
+// string that contains the counter would never match and would bump for
+// ever. Built explicitly rather than by trimming `signable`, because that
+// is a wire format and this is a local comparison; tying them together
+// would mean a wire change silently resetting every node's counter.
+function cardContents(fields) {
+  return [fields.name, fields.description, fields.publicKey, fields.sealKey].join('\n');
+}
+
+function advance(rootDir, id) {
+  const said = cardContents(cardFields(id));
+  if (Number(id.cardAt) > 0 && String(id.cardSaid || '') === said) return id;
+
+  id.cardAt = Number(id.cardAt || 0) + 1;
+  id.cardSaid = said;
+  // A FAILED WRITE STILL PUBLISHES, and fails safe. The counter on disc
+  // stays where it was, so the next change offers the same number again
+  // with different contents — which a receiver REFUSES as "not newer".
+  // The node goes quiet rather than rolling a peer back, and a node that
+  // cannot write its own identity.json has a louder problem than this.
+  try { auth.saveIdentity(rootDir, id); } catch (e) { /* published anyway */ }
+  return id;
 }
 
 // ── AND THE CHECK, WHICH IS THE WHOLE POINT ──────────────────────────
