@@ -108,3 +108,96 @@ read this to see what happens to their findings.
    and never rise, and a file not in the roll must have none. The old
    ones are fixed when that code is touched anyway. Decided by Andy
    2026-09-22, at the end-of-cycle-8 gate the gap cycle set for it.
+
+## The SOP, as Andy analysed it — 2026-09-23
+
+> *"this is my current analysis of our SOP"*
+
+The rules above accumulated one at a time. This is the argument they add
+up to, in the order he made it, because the pieces only hold together
+read as one thing. **His words; the reasoning is his.**
+
+**It starts from a complaint.** *"harness all green doesn't measure
+progress for me."* And it is true: a green run says nothing claimed is
+broken. It cannot say how much is left, so it answers a question nobody
+was asking.
+
+**The question he actually asks is this one**, and he asks it often
+enough to have noticed himself doing it: *"i frequently ask: 'is this in
+the code and verified yet?'"* **That is two questions in one sentence** —
+does the thing exist, and does anything assert it holds — and the pair
+exists to catch the state where the answer is *yes* and *no*: built, not
+verified, nobody noticed. That is what an agent reports by accident when
+it says **done** and means **written**.
+
+**So the design phase has to produce more than prose.** *"a design is
+accompanied by a test suite, and i want to observe progress agains
+that"*, and *"so the design phase codifies the requirements
+specifically"*. A cycle document argues what should be true; the suite
+beside it says the same thing where it can be run. *"i do see the concept
+of writing tests beforehand as detailed statements of intent."*
+
+**A test written before the code cannot test behaviour, so it tests
+presence.** *"a test goes and checks if the unit is available for
+testing, and fails for that simple reason. and easily categorized
+failure."* One question, a plain answer, a failure that classifies itself.
+
+**Which gives three states, and they must not look alike.** *"so if a
+stub is already there and fails, it goes red, if nothing's there yet it
+goes yellow"* — and the reason for the colour is not decoration: *"so you
+guys don't get a heart-attack anytime it's not all green"*. Red is a
+thing that regressed. Yellow is a thing nobody has written. An agent that
+treats them the same wastes a day; a person who does stops reading the
+output.
+
+**The yellow block is not bookkeeping he overhears.** *"the yellow block
+are agent-tags for communication with me"* — *"yellow-details that is"*.
+It is a channel from the agents to him, which decides the voice: the unit
+named as he would ask about it, the note saying what becomes true, and
+per hourglass *"a price-note and %-already there guess"*, so the block
+reads as a plan instead of a list of complaints. Costs are in sittings,
+never hours.
+
+**And it must be where he looks:** *"and visible to me"* — on the tally
+line, beside the greens, not only in a block above it.
+
+**The reasoning comes from the documents, not from a second hand.** *"so
+harness runs can be summarized with reasoning."* Each declaration names
+its requirement; the runner joins it against `design/cycles/` for the
+title and the status. Nothing is written twice, so nothing can disagree.
+
+**Which is what the whole reference apparatus was for**, and this is the
+sentence that justifies it: *"think of it as: the agents labeling and
+reference system can be quantified for andy, instead of jargonized."*
+R-numbers, citations and the requirement gate were built for agents and
+cost him a vocabulary he never asked for. The board is where they pay him
+back.
+
+**Then the work has to reach the world.** Closing a batch includes
+bringing every relevant permanent node up to the tree — *"the part where
+we do things on both sides, verify, measure, etc, includes auto updating
+all relevant permanent nodes"* — because his hands on a running node test
+what no harness can. **Push is first** (*"you must first push, so we can
+parallelize this procedure"*), and *"appropriately"* is a refusal: a node
+updated into a half-built flag day is worse than one left alone.
+
+**And the price of anything is attention, not machine time.** *"remember
+if 6 hours tittering away only cost me a little bit of power....."* So
+the question about any delegated job is never whether it is small enough,
+but whether its output is cheap to check.
+
+### Two gaps in it, named by Claude rather than left to be found
+
+Rule 8 says an agent may comment on flaws in these rules. Two, both real:
+
+1. **The board counts what was DECLARED, not what exists.** A cycle that
+   forgets to declare a requirement reads as further along than it is,
+   which rewards silence. The cheap close is a gate: every OPEN
+   requirement is either declared awaiting or listed with the reason it
+   cannot be — `cycle10Pending.js` does the second by hand today, and
+   nothing enforces it.
+2. **The guesses have no feedback loop.** *"~70% there, one line"* is an
+   agent's estimate that nobody revisits, so the numbers drift into
+   fiction at no cost to whoever wrote them. The same shape that fixes it
+   already exists in `design/reviews/local/MODEL-HISTORY.md`: record the
+   guess, and record what it turned out to be.
