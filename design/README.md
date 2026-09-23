@@ -2,6 +2,16 @@
 
 This directory contains the vision, principles, and architecture decisions for **SpiritOS** — the sovereign personal operating system for your digital spirit.
 
+## The door
+
+- [The door — what a program may ask this node to do](protocol/THE-DOOR.md)
+  — **the contract**, and the thing this project is actually for: a local
+  HTTP port that any language can post to. 36 verbs, the limits, the
+  rates, and what the relay cannot do. Every figure on it is checked
+  against the running tree by `spirit/test/doorContract.js`, and the page
+  names its own gaps — no non-JavaScript example yet, no per-verb
+  arguments, no stated version.
+
 ## Core Principles
 - [Node Architecture Principles](principles/NODE-ARCHITECTURE.md)
 - [A node and a relay are two different things](principles/NODE-AND-RELAY.md)
