@@ -71,9 +71,9 @@ Every figure, both platforms, and the command to re-measure: [README/CAPACITY/](
 |---|---|---|
 | **RAM** | **128 MB** | **128 MB** |
 | **Disc** | **1 GB** | **1 GB** |
-| **at rest** | 60 MB resident | 72 MB resident |
-| **holds at once** | **~930** connected on Windows, **~1,500** on Linux | its own relay connections |
-| **holds on disc** | **5.5 million** members enrolled, or 3.8 million partners | **2.4 million** exchanges logged for ever |
+| **at rest** | 67 MB resident | 89 MB resident |
+| **holds at once** | **~1,070** connected on Windows, **~1,230** on Linux | its own relay connections |
+| **holds on disc** | not the bound — see below | **2.4 million** exchanges logged for ever |
 | **the rest of the disc** | — | **98% is yours** — media, writing, apps |
 
 **128 MB because that is where the arithmetic stops being a fiction.**
@@ -110,13 +110,26 @@ substitute for a number you cannot get.
 
 ### What decides each number
 
-- **A relay is bounded by RAM.** Its roll is not the limit — the measured
-  block above says what a member costs today and how many fit on a
-  gigabyte. **A relay can know far more people than it can hold
-  conversations with**, and the gap between those two numbers is the
-  design. (This line carried **197 bytes** by hand until 2026-09-23,
-  when cycle 10 put a signed card on every member row and nothing
-  noticed. It is generated now.)
+- **A relay is bounded by RAM, and its membership is bounded with it.**
+  A relay admits only as many members as it can serve at once, because a
+  member it cannot serve is not a member. Andy, 2026-09-23: *"why admit a
+  member when we cannot guarantee service for that member? that'd be
+  horrible"* — *"RAM cap and member cap go lock-step."* **So the roll is
+  not a disc question.** A gigabyte of disc would hold millions of rows;
+  none of them would ever be admitted, and the figure that used to stand
+  here — *5.5 million members enrolled* — described storage and read as
+  capacity. **A relay guarantees connectivity to its members, online or
+  not**: the seat stays yours while you are away, which is why the two
+  numbers must be the same number.
+
+- **What the disc actually holds.** Cards, rows and partners. A member
+  with their signed card costs **603 bytes**, so a gigabyte would store
+  millions of them — which is why disc is bounded *separately* and only so
+  that a full disc cannot take the box down. It is not a membership
+  figure and must never be read as one. The measured block above carries
+  the current cost; it was **197 bytes** typed by hand until 2026-09-23,
+  when cycle 10 put a signed card on every row and nothing noticed. It is
+  generated now.
 - **A peer you can reach costs 579 bytes** on a node — 159 for the name,
   420 for the route. Both platforms agree to the byte, because that is the
   schema speaking rather than the operating system.
