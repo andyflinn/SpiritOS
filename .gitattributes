@@ -1,0 +1,21 @@
+# ── THE PROTOCOL EXAMPLES ARE CHECKED OUT AS THEY WERE WRITTEN ───────
+#
+# design/protocol/examples/ exists to prove that a developer in any
+# language, on any machine, can use the node's door (design/protocol/
+# THE-DOOR.md). The Linux developer is the one it is aimed at, and a
+# .sh file checked out with CRLF fails on Linux with
+#
+#     /bin/sh: bad interpreter: No such file or directory
+#
+# — a message that names the interpreter and not the line ending, so the
+# reader concludes the example is broken rather than the checkout. This
+# repository is developed on Windows with autocrlf on; without this rule
+# the guarantee holds only as long as nobody commits from an editor that
+# rewrites endings.
+#
+# Scoped deliberately to these two patterns. A tree-wide rule would
+# renormalise every file in the repository, which is a decision of its
+# own and not this one. spirit/test/doorContract.js asserts these lines
+# are still here.
+design/protocol/examples/*.sh text eol=lf
+design/protocol/examples/*.py text eol=lf

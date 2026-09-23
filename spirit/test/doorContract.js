@@ -202,6 +202,32 @@ test.subHeading('THE THING ABOUT AN EXAMPLE THAT ROTS FIRST — a dependency');
   } else {
     test.fail(checked ? offenders.join('; ') : 'no examples to check');
   }
+
+  // ── AND THEY SURVIVE THE CHECKOUT ──────────────────────────────────
+  //
+  // This tree is developed on Windows with autocrlf on. `hello.sh`
+  // checked out with CRLF dies on Linux as "bad interpreter: No such
+  // file or directory" — a message naming the interpreter and not the
+  // line ending, so the reader concludes the example is broken. The
+  // Linux developer with no browser on the box is the one these
+  // examples are FOR, which makes that the worst possible reader to
+  // hand it to. `.gitattributes` pins both patterns; this asserts the
+  // pin is still there, since the failure only shows up on somebody
+  // else's machine.
+  let attrs = '';
+  try { attrs = fs.readFileSync(path.join(ROOT, '.gitattributes'), 'utf8'); } catch (e) { attrs = ''; }
+  const pinned = ['sh', 'py'].filter(function (ext) {
+    return new RegExp('design/protocol/examples/\\*\\.' + ext +
+      '\\s+text\\s+eol=lf').test(attrs);
+  });
+
+  if (pinned.length === 2) {
+    test.check('and .gitattributes pins both to eol=lf, so a Windows checkout cannot hand a ' +
+      'Linux reader a script its shell refuses to start');
+  } else {
+    test.fail('.gitattributes no longer pins the examples to LF (' + pinned.length + '/2) — ' +
+      'a CRLF hello.sh is "bad interpreter" on the platform it is written for');
+  }
 }
 
 test.subHeading('And the page still admits what it has not got');
