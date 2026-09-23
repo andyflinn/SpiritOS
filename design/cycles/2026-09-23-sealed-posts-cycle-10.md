@@ -101,13 +101,41 @@ key is how three relays know it.
 
 Acquiring a contact keeps the card on the row, so sealing needs no second
 fetch. Because the card is self-signed, **no source is privileged**: it
-may arrive on acquisition, on a peer's reply, or later from a census, and
+may arrive on acquisition, on a peer's reply, or later from a roll, and
 is accepted only if the signature verifies.
 
-**Verify:** a stored card is used without a fetch; an unsigned or badly
-signed card never reaches the row.
+**Verify:** `spirit/test/contactCard.js` — a stored card is read back off
+the row with both keys; an unsigned or badly signed card never reaches
+it; a card signed by another identity is refused, kept and reported; an
+older card is refused; the first sighting is never overwritten by a
+weaker one. And `spirit/test/peerPost.js` — a relay rewriting a card in
+flight is caught by the asker, over the wire the answer really travels on.
 
-**Status:** OPEN — cycle 10 is opened, not built.
+**Status:** DONE. Three pieces:
+
+- **`contacts.js`** carries `card` (the signed blob, per C3), `cardVia`
+  and `cardDisputed`, written only through `setCard`, which verifies.
+  `cardOf`/`sealKeyOf` re-verify on every read, so a blob trusted when it
+  was written is not trusted for ever afterwards. `upsert` builds its row
+  from named fields, so a card handed to it is dropped — one door.
+- **`peerPost.js`** verifies at `settle`, the one point every answer
+  converges, and hands up `answer.card`: the checked fields, or a refusal.
+  **It does not write the book.** `oneDoor.js` caught the first draft
+  doing so — *"contactBook is inbound-only, so a relay may construct
+  one"* — and a relay has no book, so the keeping is injected
+  (`opts.keepCard`) beside `opts.store` and `opts.admit`.
+- **Contacts** reads `r.card`, not `r.body`. It drew `name` and
+  `description` straight off the reply until today, which meant anything
+  that could answer could choose what a stranger was called on somebody's
+  screen — and after this cycle that same reply carries the key
+  everything sent to them is sealed to.
+
+**The attack is reproduced, not argued.** A third party cannot answer in
+the target's place (`routes.answer` takes a reply only from the target),
+but the CARRIER can, because a receipt signs `hash` and a minute and not
+the text. The suite has the relay swap the card in a reply it forwards:
+the receipt still verifies, the exchange still succeeds, and the asker
+refuses it on the key. That assertion fails on a tree without R1.
 
 ### R4 — sealing
 
@@ -234,7 +262,7 @@ read a verb to obey it. What it hides is everything between:
   posts to the relay"* needs a judgement about every destination.
 
 **What the relay publishes.** Its cipher key rides with its identity key
-where a node already fetches it — `/api/relay/key` and the census — and
+where a node already fetches it — `/api/relay/key` and the roll — and
 is signed by the relay's identity key for the same reason a node's card
 is: a key handed over unsigned is a key whoever handed it over chose.
 
@@ -430,7 +458,7 @@ as holes; two he verified in the tree rather than reasoned about.
 
 His words: a card signed by the key it introduces proves only internal
 consistency. If the first card a node ever sees for a peer comes from the
-relay census, a hostile relay hands over ITS keys for both sides, signs
+relay roll, a hostile relay hands over ITS keys for both sides, signs
 each card with the matching key, and every signature verifies while it
 reads everything.
 
@@ -440,7 +468,7 @@ So, in the cycle rather than assumed:
 - The one genuinely out-of-band path is the INVITE — a spoken label and a
   token, carried by a person — which binds a key to a name without the
   relay. First sighting by invite is the strong case; first sighting by
-  census is the weak one, and they must not be drawn the same.
+  roll is the weak one, and they must not be drawn the same.
 - A card for a KNOWN peer bearing a DIFFERENT key is refused, kept and
   reported to the owner. Never silently accepted. That is the only moment
   a node can notice a relay swapping keys under it.
@@ -644,6 +672,22 @@ missing.
 **Verify:** `spirit/test/contacts.js` — a row stored as `census`, and a
 row with no field at all, both read as `roll`; neither crosses the
 listening line; the address book still holds only people this node knows.
+
+**ANDY OBJECTED TO THE FALLBACK, AND WAS RIGHT** (2026-09-23): *"while i
+don't agree with 'fallbacks' before alpha (carrying garbage from internal
+development into a release) i'll let it go for now."*
+
+The objection is consistent and this cycle's own flag day is the argument
+for it: if old nodes MUST update to stay in the game, then old *data* has
+no claim to be carried either, and a fallback written during internal
+development ships as a permanent obligation nobody chose. **Kept for now
+by his word, not by an argument that it is right.**
+
+**So it is a named alpha strip-out, not a feature.** Before the alpha:
+delete the `roll` fallback in `acquiredVia()` and the two-row assertion
+above, and let an unrecognised `acquiredVia` be what it is. The same pass
+should sweep for the other fallbacks internal development has left, since
+the same reasoning retires all of them at once.
 
 **Status:** DONE. 476 words across 75 code files, the living design docs,
 and a `Roll` entry in `DICTIONARY.md` naming the old word. The suite

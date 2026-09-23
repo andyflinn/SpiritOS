@@ -16,6 +16,7 @@ const auth = require('../run/js/relayAuth');
 const peerPost = require('../run/js/peerPost');
 const trafficLog = require('../run/js/trafficLog');
 const routerTable = require('../run/js/router');
+const nodeCard = require('../run/js/nodeCard');
 
 // THE ANSWERER'S LOG IS ON ITS OWN TIMELINE.
 //
@@ -118,6 +119,12 @@ function nodeFor(name, relay, answer, more) {
     admit: (more && more.admit) || null,
     onArrival: (more && more.onArrival) || null,
     remember: (more && more.remember) || null,
+    // WHAT A NODE DOES WITH A CARD THAT VERIFIED (cycle 10, R3). Injected
+    // rather than reached for, because the contact book is node-only and
+    // a RELAY builds a peerPost too — see oneDoor.js. Left off here, a
+    // card is still verified and simply not kept, which is the shape a
+    // relay runs in.
+    keepCard: (more && more.keepCard) || null,
   });
   relay.listen(id.publicKey, function (event, body) {
     if (event === 'request') P.onRequest('http://relay', body);
@@ -330,6 +337,93 @@ test.startTest('Peer post — a node asks a node');
 // would not hear a word from, AND that same packet reaches no app. A
 // version that got the first right and the second wrong would be a hole:
 // a stranger the front door dropped, delivered to an app anyway.
+// ── THE SWAP, THROUGH A REAL EXCHANGE (cycle 10, R3) ─────────────────
+//
+// The reason the card is signed at all. A relay that wants to read what
+// is sent to somebody answers the card request with a card of its own:
+// correctly formed, correctly signed, and simply not theirs. Every
+// signature check passes; the only thing wrong with it is whose it is.
+//
+// Checked here rather than only in the store, because the store can be
+// handed anything a test likes. This one goes over the wire the answer
+// really travels on, with a relay that lies.
+async function aSwappedCardIsCaught() {
+  test.subHeading('A relay rewriting a card in flight is caught by the asker');
+
+  // A THIRD PARTY CANNOT DO THIS, and the fake relay is right to refuse
+  // it: `routes.answer` takes a reply only from the target. The one who
+  // CAN is the carrier itself, because it holds the bytes — and the
+  // receipt does not stop it. A reply's signature covers
+  // `receiptMessage(hash, minute)`: the hash and a clock minute, NOT the
+  // text (relayAuth.js). So a relay may replace the card in a reply it
+  // forwards and every existing check still passes.
+  //
+  // That is the hole this cycle was opened for, reproduced here: the
+  // target answers honestly, the relay swaps in a card of its own, and
+  // the sender would then seal everything to the relay.
+  const honest = fakeRelay();
+  const carrier = nodeFor('carrier-swap', honest);
+  const carrierCard = nodeCard.describe(carrier.home);
+
+  const relay = {
+    listen: honest.listen,
+    request: function (url, method, pathname, body) {
+      if (/\/api\/relay\/reply$/.test(pathname)) {
+        // The receipt is left exactly as the target signed it. Only the
+        // text changes — which is precisely what the receipt does not
+        // cover.
+        return honest.request(url, method, pathname,
+          Object.assign({}, body, { text: carrierCard }));
+      }
+      return honest.request(url, method, pathname, body);
+    },
+  };
+
+  const target = nodeFor('target-swap', relay);
+  const askerHome = tmpHome('asker-swap');
+  const kept = [];
+  const P = peerPost.createPeerPost({
+    rootDir: askerHome, request: relay.request, waitMs: 800,
+    keepCard: function (toKey, text) { kept.push({ toKey: toKey, text: text }); return { ok: true }; },
+  });
+  relay.listen(auth.loadIdentity(askerHome).publicKey, function (event, body) {
+    if (event === 'reply') P.onReply(body);
+  });
+
+  const said = await P.post('http://relay', target.id.publicKey,
+    JSON.stringify({ v: 1, body: { card: true } }));
+
+  // The exchange SUCCEEDED at every level below this cycle: the post was
+  // routed, a reply came back, and its receipt verified. Said out loud
+  // because it is the measure of what was actually wrong.
+  if (said.ok && said.receipt === true) {
+    test.check('the swapped reply passes the receipt check — which is the hole, not a bug in the test');
+  } else {
+    test.fail('the exchange failed for some other reason: ' + JSON.stringify(said));
+  }
+
+  if (said.card && said.card.ok === false && said.card.why === 'wrong key' &&
+      said.card.signedBy === carrier.id.publicKey) {
+    test.check('the answer verified — as the carrier — and is refused for the key it was asked of');
+  } else {
+    test.fail('A SWAPPED CARD PASSED: ' + JSON.stringify(said.card));
+  }
+
+  if (!said.card || said.card.sealKey === undefined) {
+    test.check('and no seal key is handed up, so nothing can be sealed to the carrier by mistake');
+  } else {
+    test.fail('the carrier\'s seal key reached the caller anyway');
+  }
+
+  // KEPT ANYWAY, so an owner can be shown the contradiction. A refusal
+  // nobody can produce afterwards is a refusal the carrier can retry.
+  if (kept.length === 1 && kept[0].toKey === target.id.publicKey) {
+    test.check('the refused card is still handed to the keeper, filed against the key it claimed to be');
+  } else {
+    test.fail('the evidence was dropped: ' + JSON.stringify(kept));
+  }
+}
+
 async function aCardIsAnsweredToAnybody() {
   test.subHeading('A node answers for itself, to anybody, and tells no app');
 
@@ -372,6 +466,28 @@ async function aCardIsAnsweredToAnybody() {
     test.check('and gets the name with it, which is often all a fresh node has');
   } else {
     test.fail('name: ' + JSON.stringify(said));
+  }
+
+  // ── AND THE ASKER CHECKED IT, NOT BELIEVED IT (cycle 10's R3) ──────
+  //
+  // Above, this suite parsed the reply itself — a test may, because it
+  // holds both keys. A PAGE MAY NOT: it holds none, cannot check a
+  // signature, and Contacts used to draw `name` and `description` off
+  // exactly those bytes. So the asking node verifies at settle and hands
+  // up `answer.card`, the checked fields, and that is what a screen reads.
+  if (card.card && card.card.ok === true &&
+      card.card.description === SAID && card.card.name === 'sonny-card') {
+    test.check('the asking node verified the card itself and hands up the checked fields');
+  } else {
+    test.fail('no verified card on the answer: ' + JSON.stringify(card.card));
+  }
+
+  // The seal key rides up with it, because that is what the card is FOR
+  // after this cycle: the key everything sent to sonny will be sealed to.
+  if (card.card && card.card.sealKey === auth.loadIdentity(sonny.home).sealPublicKey) {
+    test.check('and the seal key comes with it — which is what a card is for now');
+  } else {
+    test.fail('the seal key did not reach the asker');
   }
 
   // STILL A RECEIPT, signed over the hash by the node that answered. The
@@ -615,6 +731,7 @@ async function run() {
 
   await aNodeCanAnswer();
   await aCardIsAnsweredToAnybody();
+  await aSwappedCardIsCaught();
   await whatCrossedIsWrittenDown();
 
   // ── A REFUSAL RETRYING CANNOT FIX ───────────────────────────────────

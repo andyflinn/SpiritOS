@@ -1191,6 +1191,18 @@ contactBook.syncMarks(ROOT_DIR);
     admit: function (from) {
       return require('./hub').frontDoor(ROOT_DIR, from);
     },
+    // WHERE A VERIFIED CARD IS KEPT (cycle 10, R3). peerPost checks the
+    // signature — pure, and correct in a relay as in a node — and hands
+    // the writing here, because the contact book is node-only and a relay
+    // builds a peerPost too (oneDoor.js: "contactBook is inbound-only, so
+    // a relay may construct one").
+    //
+    // `setCard` refuses a card for a key it has no row for, which is the
+    // wanted answer: Contacts asks strangers for a card BEFORE adding
+    // them, and a question must not write somebody into the book.
+    keepCard: function (toKey, cardText) {
+      return require('./contacts').setCard(ROOT_DIR, toKey, cardText, 'reply');
+    },
     // And what to write down about a stranger who got through the floor.
     // Separate from the judgement on purpose: the verdict is decided
     // before the budget is checked, the row is written after.

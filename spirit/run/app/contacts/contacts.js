@@ -633,13 +633,29 @@ function contactsAskCard(key) {
   if (!key || contactsCards[key]) return;
   contactsCards[key] = 'asking';
 
+  // ── WHAT IS DRAWN IS WHAT THE NODE VERIFIED (cycle 10, R3) ─────────
+  //
+  // This used to read `name` and `description` off the reply body and
+  // draw them. A page holds no key and cannot check a signature, so
+  // anything that could answer could choose what a stranger was called on
+  // somebody's screen — and after this cycle the same reply carries the
+  // key everything sent to them is sealed to.
+  //
+  // `r.card` is the node's verdict: the fields, checked against the key
+  // this request was addressed to, or a refusal saying why. The raw body
+  // is deliberately not read here any more.
   contactsApi.peerPost('', key, { card: true }).then(function (r) {
-    var said = (r && r.body) || null;
+    var said = (r && r.card) || null;
     if (r && r.ok && said && said.ok) {
       contactsCards[key] = {
         name: String(said.name || ''),
         description: String(said.description || ''),
       };
+    } else if (said && said.why === 'wrong key') {
+      // NAMED, NOT SWALLOWED. The answer verified — as somebody else.
+      // That is the one symptom of a carrier swapping keys, and a blank
+      // "no answer" is exactly how it would go unnoticed.
+      contactsCards[key] = { why: 'answered by a different key — not this person\'s card' };
     } else {
       // WHY, and it is usually one of two things: their node is not
       // reachable from here — which for somebody found on a PARTNER'S

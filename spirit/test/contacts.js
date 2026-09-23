@@ -276,8 +276,14 @@ function mountApp(options) {
         return Promise.resolve({ ok: false, status: 503, body: null,
           error: 'that peer is not reachable right now' });
       }
+      // ANSWERED IN `card`, NOT IN `body` (cycle 10, R3). The node
+      // verifies a card's signature before any page sees it, and hands
+      // back the checked fields — a page holds no key and cannot check
+      // one, so the raw body is no longer what the screen draws. Faking
+      // `body` here would let this suite pass while Contacts drew
+      // whatever a stranger sent.
       return Promise.resolve({ ok: true, status: 200,
-        body: { ok: true, name: card.name || '', description: card.description || '' } });
+        card: { ok: true, name: card.name || '', description: card.description || '' } });
     },
     readProject: function (path) {
       return Object.prototype.hasOwnProperty.call(project, path) ? project[path] : null;

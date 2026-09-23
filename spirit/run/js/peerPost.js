@@ -121,6 +121,10 @@ function createPeerPost(opts) {
   // that does not care.
   var noteSeen = opts.noteSeen || null;
   var traffic = opts.traffic || null;
+  // NODE-ONLY, AND SO IT IS INJECTED (cycle 10, R3). What to do with a
+  // card that verified: on a node, write it to the contact book; on a
+  // relay, nothing, because a relay keeps no book. See keepCard below.
+  var cardKeeper = typeof opts.keepCard === 'function' ? opts.keepCard : null;
   function note(entry) {
     if (!traffic) return;
     try { traffic.note(entry); } catch (e) { /* a witness, never a participant */ }
@@ -322,9 +326,77 @@ function createPeerPost(opts) {
     }
     persistOut(hash);
     noteOutcome(hash, slot, answer);
+    if (slot.askedCard) keepCard(slot, answer);
     slot.resolve(answer);
     pump();
     return true;
+  }
+
+  // ── A CARD IS VERIFIED HERE, BECAUSE A PAGE CANNOT (cycle 10, R3) ────
+  //
+  // `shell.js` says it plainly where the client half of a peerPost is
+  // built: *"A page holds no key, cannot verify a signature, and must
+  // never be built as though it could."* Until this cycle Contacts read
+  // `name` and `description` straight off the reply and drew them, which
+  // meant anything that could answer could choose what a stranger was
+  // called on somebody's screen.
+  //
+  // So it is checked at the one point every answer converges — whether it
+  // came down the held stream or on the POST itself — and the caller is
+  // handed `answer.card`: the VERIFIED fields, or a refusal with a
+  // reason. Never the raw blob to interpret for itself.
+  //
+  // THE KEY WE ASKED IS THE KEY THAT MUST HAVE SIGNED. A card verifies
+  // against whoever signed it, which proves whose it is and nothing about
+  // whose it was meant to be. `slot.toKey` is the question; the signature
+  // is the answer; this is where the two are made to agree.
+  //
+  // ── AND KEEPING IT IS SOMEBODY ELSE'S JOB, ON PURPOSE ────────────────
+  //
+  // `oneDoor.js` caught the first draft of this, which wrote the contact
+  // book from here: *"contactBook is inbound-only, so a relay may
+  // construct one."* A RELAY builds a peerPost too, for partner traffic,
+  // and a relay has no contact book — so a write on the outbound path
+  // would have made this module node-only and grown a second transport
+  // for partners to need.
+  //
+  // Verifying is pure: keys and bytes, no node-only state, correct in a
+  // relay as in a node. Storing is the node's business, so it arrives the
+  // way everything else node-only does — injected (`opts.keepCard`,
+  // beside `opts.store` and `opts.admit`). A relay passes none and simply
+  // gets the verdict.
+  function keepCard(slot, answer) {
+    if (!answer || !answer.ok || typeof answer.text !== 'string') return;
+    var fields = nodeCard.verify(answer.text);
+    if (!fields) { answer.card = { ok: false, why: 'not a card' }; return; }
+    if (fields.publicKey !== slot.toKey) {
+      // The one moment a node can notice a carrier swapping keys under
+      // it. Logged here, not by the keeper, because a refusal that
+      // depends on somebody having wired a keeper up is a refusal that
+      // goes missing in the configuration that needs it most.
+      note({
+        dir: 'in', kind: 'reply', peer: slot.toKey, relay: slot.relayUrl,
+        hash: answer.hash, outcome: 'refused', code: 'card-wrong-key',
+      });
+      answer.card = { ok: false, why: 'wrong key', signedBy: fields.publicKey };
+      if (cardKeeper) cardKeeper(slot.toKey, answer.text);
+      return;
+    }
+    var stored = cardKeeper ? cardKeeper(slot.toKey, answer.text) : null;
+    answer.card = {
+      ok: true,
+      name: fields.name,
+      description: fields.description,
+      sealKey: fields.sealKey,
+      at: fields.at,
+      // Whether it was WRITTEN, which is not the same as whether it was
+      // good: Contacts asks strangers for a card before adding them — the
+      // whole point of a card — and a question must not write somebody
+      // into the book. The screen shows what was checked, not what was
+      // kept.
+      stored: !!(stored && stored.ok),
+      why: (stored && !stored.ok) ? stored.why : undefined,
+    };
   }
 
   // ── WHAT MAY BE TRIED AGAIN ──────────────────────────────────────────
@@ -638,6 +710,11 @@ function createPeerPost(opts) {
         // Kept for the log: the resolving entry has to name who this was
         // with, and by then the caller's arguments are long gone.
         toKey: toKey,
+        // Whether this exchange was a card request, decided from the
+        // outgoing text by the same predicate the answering side uses
+        // (cycle 10, R3). Recorded here rather than re-derived at settle,
+        // where the request is gone.
+        askedCard: nodeCard.asks(text),
         at: Date.now(),
         timer: null,
         seq: 0,

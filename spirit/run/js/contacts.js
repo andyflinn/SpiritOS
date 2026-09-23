@@ -81,6 +81,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const nodeCard = require('./nodeCard');
 
 // ── IT WAS `census` UNTIL 2026-09-23 (cycle 10, R18) ─────────────────
 //
@@ -353,7 +354,23 @@ function upsert(rootDir, row) {
     // `memberOf` and `missingSince` were carried here, both written by the
     // roster sweep that went on 2026-09-19. Not carried any more, so a row
     // written by older code loses them on its next write.
+    //
+    // THE CARD IS CARRIED, NEVER SET HERE (cycle 10, R3). It is the only
+    // field on this row that is EVIDENCE rather than perception, so it
+    // goes in through `setCard` and its signature check, and no other
+    // path. `upsert` builds `next` from named fields only, so a card
+    // passed in here would be dropped — which is the intended answer, not
+    // an oversight: a caller who wants to record a card must go through
+    // the one door that verifies it.
+    card: prev.card === undefined ? undefined : prev.card,
+    cardVia: prev.cardVia === undefined ? undefined : prev.cardVia,
+    cardDisputed: prev.cardDisputed === undefined ? undefined : prev.cardDisputed,
   };
+  // Dropped rather than written as `undefined`, so the file keeps the
+  // shape it had for rows that have never seen a card.
+  ['card', 'cardVia', 'cardDisputed'].forEach(function (k) {
+    if (next[k] === undefined) delete next[k];
+  });
   if (i === -1) rows.push(next);
   else rows[i] = next;
   save(rootDir, rows);
@@ -364,6 +381,122 @@ function upsert(rootDir, row) {
 // sweep's writers and the "on no roll since" mark. Gone with the sweep
 // (2026-09-19): what is not found cannot influence decisions (Andy), and a
 // key's absence from a list no relay may return is not a finding.
+
+// ── THE CARD ON THE ROW (cycle 10, R3) ───────────────────────────────
+//
+// A contact's card is kept here so that sealing a message needs no second
+// fetch: the key everything is sealed to is on the row beside the key
+// everything is verified against.
+//
+// THE SIGNED BLOB IS STORED, NOT THE TWO KEYS READ OUT OF IT (C3).
+// wsl-claude: relay-signed introductions buy ACCOUNTABILITY, and
+// accountability exists only if somebody can produce the contradiction.
+// Keep the keys alone and the victim holds a key and a memory while the
+// relay holds everything. A few hundred bytes per contact turns a
+// deterrent into evidence.
+//
+// ── THIS IS TRUST ON FIRST USE, AND IT IS NAMED AS THAT ──────────────
+//
+// wsl-claude's finding, and it is the honest limit of the whole scheme: a
+// card signed by the key it introduces proves only INTERNAL CONSISTENCY.
+// If the first card a node ever sees for a peer comes from the relay, a
+// hostile relay hands over its own keys for both sides, signs each card
+// with the matching key, and every signature verifies while it reads
+// everything. Nothing below detects that. What it detects is a key
+// CHANGING afterwards, which is why first sighting matters so much:
+//
+//   invite  — a spoken label and a token, carried by a person. The one
+//             genuinely out-of-band path, and the only strong case.
+//   reply   — they answered a card request. As strong as the route was.
+//   roll    — the relay said so. The weak case, and it must never be
+//             drawn the same as the first.
+//
+// `cardVia` records which, because a screen that shows them alike is a
+// screen that launders the weak one into the strong one.
+const CARD_VIA = ['invite', 'reply', 'roll'];
+// Enough to show an owner a pattern, few enough that a relay spraying
+// cards cannot grow this file without bound.
+const DISPUTES_KEPT = 5;
+
+// What a row's card SAYS, verified from its own bytes every time it is
+// read. Nothing in the tree may read a field off a stored card except
+// through here: a blob that was checked when it was written and trusted
+// blindly afterwards is a blob whose file anybody who can write the disc
+// can edit.
+function cardOf(row) {
+  if (!row || !row.card) return null;
+  return nodeCard.verify(row.card);
+}
+
+// The key a message to this contact is sealed to, or null — which is the
+// sender's refusal (cycle 10's R5): no card, no post.
+function sealKeyOf(row) {
+  const card = cardOf(row);
+  return (card && card.sealKey) || null;
+}
+
+// ── AND THE ONE DOOR THAT WRITES IT ──────────────────────────────────
+//
+// Answers a verdict rather than a boolean, because every refusal here is
+// something a person may need to be told, and three of them mean quite
+// different things:
+//
+//   { ok: true,  via, first }          stored
+//   { ok: false, why: 'not a card' }   the signature does not hold
+//   { ok: false, why: 'wrong key' }    A CARD FOR SOMEBODY ELSE — see below
+//   { ok: false, why: 'not newer' }    a rollback (cycle 10's R13, condition C1)
+//   { ok: false, why: 'no such contact' }
+//
+// NO SOURCE IS PRIVILEGED. A card is accepted on acquisition, on a peer's
+// reply, or from a roll, and only ever because the signature verifies —
+// so a hostile relay gains nothing by being the one that hands it over,
+// beyond the first-sighting problem named above, which no check can fix.
+function setCard(rootDir, publicKey, cardText, via) {
+  const rows = load(rootDir);
+  const i = rows.findIndex(function (r) { return r.publicKey === publicKey; });
+  if (i === -1) return { ok: false, why: 'no such contact' };
+
+  const fields = nodeCard.verify(cardText);
+  if (!fields) return { ok: false, why: 'not a card' };
+
+  // THE BINDING THIS ROW EXISTS FOR. A card always verifies against the
+  // key that signed it, so a valid card proves whose it is and nothing
+  // about whose it was MEANT to be. The row is addressed by key, and if
+  // the card that came back was signed by a different identity then the
+  // answer did not come from the peer we asked.
+  //
+  // REFUSED, KEPT, AND THE OWNER TOLD (cycle 10's R3, amended). Never silently
+  // dropped: this is the only moment a node can notice a relay swapping
+  // keys underneath it, and a refusal nobody sees is a swap that
+  // succeeded on the second attempt.
+  if (fields.publicKey !== publicKey) {
+    const kept = Array.isArray(rows[i].cardDisputed) ? rows[i].cardDisputed.slice() : [];
+    kept.unshift({ card: String(cardText), at: new Date().toISOString(), why: 'wrong key' });
+    rows[i].cardDisputed = kept.slice(0, DISPUTES_KEPT);
+    save(rootDir, rows);
+    return { ok: false, why: 'wrong key', signedBy: fields.publicKey, disputed: true };
+  }
+
+  const held = cardOf(rows[i]);
+  // A COUNTER THAT ONLY GOES UP (C1). A validly signed OLD card can be
+  // re-served after a rotation and it will verify — a downgrade needing
+  // no forgery, only a copy, and possibly back to the very key whose
+  // compromise caused the rotation. Strictly greater, so replaying the
+  // card we already hold is refused too.
+  if (held && !(fields.at > held.at)) {
+    return { ok: false, why: 'not newer', held: held.at, offered: fields.at };
+  }
+
+  rows[i].card = String(cardText);
+  // The first sighting is the one that is worth anything, so it is not
+  // overwritten by a later, weaker source: a contact first met by invite
+  // does not become roll-sighted because a roll mentioned them again.
+  if (!rows[i].cardVia) {
+    rows[i].cardVia = CARD_VIA.indexOf(via) === -1 ? 'roll' : via;
+  }
+  save(rootDir, rows);
+  return { ok: true, via: rows[i].cardVia, first: !held, at: fields.at };
+}
 
 function setMyLabel(rootDir, publicKey, myLabel) {
   const rows = load(rootDir);
@@ -562,6 +695,9 @@ module.exports = {
   acquiredVia: acquiredVia,
   acquire: acquire,
   upsert: upsert,
+  setCard: setCard,
+  cardOf: cardOf,
+  sealKeyOf: sealKeyOf,
   setMyLabel: setMyLabel,
   byMyLabel: byMyLabel,
   byPublicKey: byPublicKey,
