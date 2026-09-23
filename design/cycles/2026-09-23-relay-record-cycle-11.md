@@ -327,7 +327,48 @@ BOX rather than about people — `mode`, `version`. That satisfies R5
 absolutely and keeps R1's intent for the figures that matter. It costs the
 open-endedness R1 was written for.
 
-**Settled by:** *(open — awaiting Andy)*
+**Settled by: RECONCILED BY THE AGENTS**, 2026-09-24. Andy saw it, and
+left it to us: *"sometimes, sometimes i'll leave it to you both to
+reconcile."* wsl-claude accepted the suggestion and improved it three
+ways, all of which are in the implementation:
+
+**1. The argument the proposal was missing: an allow-list fails in the
+safe direction.** His words: if somebody adds a figure and nobody
+classifies it, an allow-list simply drops it — a lost column, and a
+column can be added back. A deny-list that forgets keeps a person's name
+for ever in the tier that is never deleted, and that cannot be taken
+back. **One mistake costs a column; the other is permanent.** That is a
+better reason than the one offered for it, which was a balance of
+requirements rather than a direction of failure.
+
+**2. A public key is not on the list.** It identifies a person as
+reliably as a name and worse, because it is exact and permanent. The
+first proposal had not considered it; spirit-3's real report carries one.
+
+**3. The record admits what it withheld, by field NAME and never by
+content.** `owner` is a field name; *"Andy Flinn"* is a person. Without
+this the record looks like a report that never carried those fields, and
+whoever maintains the allow-list cannot see what is actually arriving to
+be classified.
+
+**What is kept now**, against spirit-3's real report:
+
+```
+{"mode":"keys","version":"0.0.1 6b6dffa","ramLimitMB":256,
+ "uptimeSec":340716,"partners":0,"invites":1,
+ "withheld":["at","owner","key"]}
+```
+
+**The requirement conflict remains real and is not papered over.** R1's
+*"a figure nobody thought to name"* is no longer free: a new string
+figure is dropped until somebody adds it to `KEEP_STRINGS`. That is the
+price of R5 being absolute, it was paid deliberately, and `withheld` is
+what makes the price visible instead of silent.
+
+**wsl-claude's suite is green on both platforms** — 21 assertions — after
+he fixed the two defects found at the same moment: a database handle held
+open across `rmSync`, which Windows refuses and Linux allows, and 27
+citations that did not name their cycle.
 
 ---
 

@@ -96,45 +96,66 @@ function available() {
 // somebody has never been the one that worked.
 const MAX_ROUTES = 3;
 
-// ── WHAT IS NEVER KEPT, ENFORCED BY SHAPE (cycle 11's R5) ──────
+// ── WHAT IS NEVER KEPT (cycle 11's R5) ────────────────────────────
 //
-// This cycle's R1 says the remainder of the report is kept whole, so a figure
-// nobody thought to name is there when a later question wants it.
-// Its R5 says invite labels, partner names and anything per member
-// are NEVER kept. As first written the one broke the other on every
-// row for ever:
-// the live report carries `invites` as a list of objects, each with a
-// `label` and an `invitedBy` — a person's name — and the whole
-// remainder was being stored.
+// THIS IS D1, THE CYCLE'S ONE DIVERGENCE, RESOLVED. The suite's author
+// and the implementer read this cycle's R5 differently, and neither
+// had misread it:
+// this cycle's R1 says keep any figure nobody thought to name, so a
+// later question has something to ask of; R5 in the same cycle says
+// never keep
+// people. A name arriving as a plain STRING is exactly where those two
+// meet, and the document did not say which yields.
 //
-// That was a contradiction inside the design document, not a
-// difference of reading, and it was found by looking at a real report
-// from spirit-3 rather than at the shape the plan assumed.
+// The first version filtered BY SHAPE — arrays and objects became
+// counts — which handles how people arrive today (invites, partners, a
+// roll) and let a plain string through. Measured against spirit-3's real
+// report, that kept `"owner":"Andy Flinn"` and the relay's public key
+// verbatim, in every row, in a tier the same cycle never deletes.
 //
-// BY SHAPE, NOT BY FIELD NAME. An array is replaced by its COUNT:
-// three invites becomes 3, not three labels. A deny-list of names
-// would need updating every time the report grew a field, and the
-// field that got missed would be the one that mattered. The shape
-// rule survives additions, and it matches what that requirement is
-      // actually about —
-// a series of counts is a different object from a series of names,
-// and only the first is machine maintenance.
+// ── AN ALLOW-LIST, AND WHY: IT FAILS IN THE SAFE DIRECTION ────────
 //
-// WHAT IT DOES NOT CATCH, said rather than left to be discovered: a
-// future STRING field carrying a person's name passes straight
-// through. Shape cannot see that, and nothing here pretends it can.
+// wsl-claude's argument, and it is better than the one that was offered
+// for it: if somebody adds a figure and nobody classifies it, an
+// allow-list simply DROPS it — a lost column, and a column can be added
+// back. A deny-list that forgets keeps a person's name for ever in the
+// tier that is never deleted, and that cannot be taken back. One mistake
+// costs a column; the other is permanent.
 //
-// Nested objects are walked, because `levers` and `meter` are objects
-// of numbers today and an object of lists tomorrow is exactly the
-// quiet way this would be defeated.
-function countIfPeople(v) {
-  if (Array.isArray(v)) return v.length;
-  if (v && typeof v === 'object') {
-    const out = {};
-    Object.keys(v).forEach(function (k) { out[k] = countIfPeople(v[k]); });
-    return out;
-  }
-  return v;
+// So: numbers and booleans always, plus a short NAMED list of strings
+// that are facts about the BOX rather than about people.
+//
+// A PUBLIC KEY IS NOT ON THE LIST, and that is his too. A key identifies
+// a person as reliably as a name and worse — it is exact, and it is
+// permanent.
+const KEEP_STRINGS = [
+  'mode',      // which mode the relay is in
+  'version',   // which code was running when a figure moved
+];
+
+// ── AND THE RECORD ADMITS WHAT IT WITHHELD ──────────────────────────
+//
+// wsl-claude's second addition: keep the NAMES of the fields that were
+// dropped, never their contents. `owner` is a field name; "Andy Flinn"
+// is a person. Without this the record looks like a report that never
+// carried those fields, and whoever maintains the list above cannot see
+// what is actually arriving to be classified.
+function keptFigures(report) {
+  const out = {};
+  const dropped = [];
+  Object.keys(report || {}).forEach(function (k) {
+    const v = report[k];
+    if (typeof v === 'number' || typeof v === 'boolean') { out[k] = v; return; }
+    if (typeof v === 'string') {
+      if (KEEP_STRINGS.indexOf(k) !== -1) out[k] = v;
+      else dropped.push(k);
+      return;
+    }
+    if (Array.isArray(v)) { out[k] = v.length; return; }
+    if (v && typeof v === 'object') { out[k] = keptFigures(v).kept; return; }
+    if (v != null) dropped.push(k);
+  });
+  return { kept: out, dropped: dropped };
 }
 
 function open(rootDir, opts) {
@@ -844,11 +865,15 @@ function open(rootDir, opts) {
         const r = report || {};
         const at = Math.floor((now == null ? Date.now() : now) / this.MINUTE_MS) * this.MINUTE_MS;
         const named = ['peers', 'present', 'routes', 'memory', 'seats'];
+        const sifted = keptFigures(r);
         const rest = {};
-        Object.keys(r).forEach(function (k) {
-          if (named.indexOf(k) !== -1) return;
-          rest[k] = countIfPeople(r[k]);
+        Object.keys(sifted.kept).forEach(function (k) {
+          if (named.indexOf(k) === -1) rest[k] = sifted.kept[k];
         });
+        // The names of what was withheld, never the contents — so the
+        // record says it held something back rather than looking like a
+        // report that never carried it (cycle 11's D1).
+        if (sifted.dropped.length) rest.withheld = sifted.dropped;
         q.recPut.run(
           String(relay || ''), at, 'report',
           Number(r.peers) || 0,
