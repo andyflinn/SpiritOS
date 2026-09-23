@@ -1,6 +1,6 @@
 # Cycle 10 — a relay carries what it cannot read
 
-**Opened 2026-09-23, from `989f39a`. Nothing built yet. Twelve requirements.**
+**Opened 2026-09-23, from `989f39a`. Nothing built but the keypair. Fifteen requirements, after wsl-claude reviewed it.**
 
 > **Andy:** *"I also want to make sure we have alpha Product at the end,
 > and you agreed, or suggested that developper-nerds wouldn't be happy
@@ -407,5 +407,122 @@ point (2) run at least twice with the identical string, because a single
 run cannot show randomisation. Then once more live: the drill sends known
 text, the feed is captured as in cycle 9, and every `hash` in the capture
 is compared against `sha256` of what was sent. Zero matches.
+
+**Status:** OPEN — cycle 10 is opened, not built.
+
+---
+
+## wsl-claude reviewed it, 2026-09-23 — nine findings, all taken
+
+Read at d25ea0e, before a line of R1 was written. Four would have shipped
+as holes; two he verified in the tree rather than reasoned about.
+
+### R3 amended — a self-signed card settles TAMPERING, not INTRODUCTION
+
+His words: a card signed by the key it introduces proves only internal
+consistency. If the first card a node ever sees for a peer comes from the
+relay census, a hostile relay hands over ITS keys for both sides, signs
+each card with the matching key, and every signature verifies while it
+reads everything.
+
+So, in the cycle rather than assumed:
+
+- This is TRUST ON FIRST USE, and it is named as that.
+- The one genuinely out-of-band path is the INVITE — a spoken label and a
+  token, carried by a person — which binds a key to a name without the
+  relay. First sighting by invite is the strong case; first sighting by
+  census is the weak one, and they must not be drawn the same.
+- A card for a KNOWN peer bearing a DIFFERENT key is refused, kept and
+  reported to the owner. Never silently accepted. That is the only moment
+  a node can notice a relay swapping keys under it.
+
+### R4 amended — say plainly what is NOT forward secrecy
+
+The sender discards its ephemeral; the recipient key is static, so a
+stolen node reads everything ever sent to it, queued messages included.
+Normal, and it goes in as one sentence, because ephemeral-static reads
+like forward secrecy to a developer skimming — and this cycle exists for
+the developer skimming it.
+
+### R4 and R11 amended — the AAD carries a domain separator and the relay
+
+Sender and recipient stop re-addressing. They do not stop the same sealed
+blob being replayed to the same recipient THROUGH A DIFFERENT RELAY,
+where the registered-hash guard has never seen it. One more string in the
+AAD, free before any of this is code.
+
+### R6 amended — the number, not the approximation
+
+16,384 bytes base64 to 21,848, plus ephemeral key, nonce and JSON: about
+120 more. Compute it from the real envelope and write the figure. And the
+release note names the symptom an operator sees: an un-updated relay 413s
+a legal sealed post.
+
+### R8 amended — count IMPLEMENTATIONS, not only call sites
+
+One composing site does not catch a second SEALING function beside the
+first, and two seal functions differing in one detail is how AAD gets
+dropped on one path. The guard counts the sealing site as one and the
+opening site as one, and fails on two.
+
+### R9 amended — SEAL THE CLAIM ROUTE. Andy: "3. seal it. agreed."
+
+Verified by him: an invite is redeemed by a direct POST to
+/api/relay/claim carrying the token, which is not a peer post — so
+sealing peer posts never touched it. The owner MINT is a post and was
+covered; the claimer redemption was not, and the claimer holds the token.
+
+Andy ruled it sealed. The claimer fetches the relay cipher key first (it
+is on /api/relay/key, which R9 already requires signed) and seals the
+claim body to it. Without this, R9 headline — that a token stops touching
+the terminator and its logs — would simply have been untrue.
+
+**Status:** OPEN — cycle 10 is opened, not built.
+
+### R13 — a card is ordered in time, or an old one never dies
+
+A validly signed old card can be re-served after a rotation and it will
+verify: a downgrade needing no forgery, only a copy. One monotonic field
+on the card, signed with the rest, and a node never accepts a card older
+than the one on its row. Free now, impossible to retrofit without
+re-introducing every peer. It also gives rotation somewhere to live.
+
+**Status:** OPEN — cycle 10 is opened, not built.
+
+### R14 — the endpoints keep the words; the relay keeps the envelope
+
+Verified in the tree: peerPost.js:291 writes payload: answer.text into
+the traffic log, and the agents program reads that field to show a
+message (agents.js:360-361). Seal the text and both hold ciphertext — so
+the agents lose the readable history of their own exchange, and ANDY
+record of his own correspondence becomes unreadable on his own machine.
+
+Andy, asked about it: "isnt that why the seal must sit inside of hash and
+verification in the stack?" — yes, and that is exactly what makes this
+requirement possible rather than contradictory. The relay only ever holds
+the outer layers, so its record is the envelope. The endpoints sit INSIDE
+the seal: the sender has the plaintext before sealing, the recipient
+after opening. Each writes its own correspondence in the clear, on its
+own disk, which is what A-CORRESPONDENT-NODE already says the log is for.
+
+The only real change is WHERE the log is written: today peerPost logs the
+text as it passes on the wire. It must log before sealing on the way out,
+and after opening on the way in.
+
+And it is what keeps the live half of R10 honest: if the sender keeps no
+plaintext record, there is nothing to search the feed FOR.
+
+**Status:** OPEN — cycle 10 is opened, not built.
+
+### R15 — message LENGTH is public, or it is padded
+
+AES-GCM ciphertext is the plaintext length plus a constant, and R12
+settles that the monitor shows size. With a known drill sending known
+phrases, the size column identifies which message is which without
+opening anything. Two honest options, Andy to choose: say plainly that
+length is public, in the same breath as R10 saying the envelope is public
+by design; or pad the plaintext up to a multiple of 256 bytes before
+sealing. Recommendation: say it plainly now, pad later if a real case
+wants it — the envelope already names both parties.
 
 **Status:** OPEN — cycle 10 is opened, not built.
