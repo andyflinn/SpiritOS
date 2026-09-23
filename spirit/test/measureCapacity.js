@@ -199,7 +199,7 @@ function discPerRow() {
   // THE FIGURE ABOVE MEASURES A MEMBER THAT WILL NOT EXIST. It writes no
   // `card`, so the column defaults to '' and the row costs ~199 bytes —
   // which was the whole truth until cycle 10 and is the whole truth for
-  // nobody afterwards, because every claim carries a card (R20) and a
+  // nobody afterwards, because every claim carries a card (cycle 10's R20) and a
   // relay that holds none cannot seal an answer at all.
   //
   // Found 2026-09-23 the hard way: `capacityFresh.js` was written to
