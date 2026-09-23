@@ -1,6 +1,6 @@
 # Cycle 10 — a relay carries what it cannot read
 
-**Opened 2026-09-23, from `989f39a`. Nothing built yet. Nine requirements.**
+**Opened 2026-09-23, from `989f39a`. Nothing built yet. Ten requirements.**
 
 > **Andy:** *"I also want to make sure we have alpha Product at the end,
 > and you agreed, or suggested that developper-nerds wouldn't be happy
@@ -217,5 +217,52 @@ property `PARTNERS.md` always wanted and could not have.
 plaintext is refused; a relay's published cipher key fails verification
 if altered; a partner-carried post is opened by the member and not by the
 partner.
+
+**Status:** OPEN — cycle 10 is opened, not built.
+
+### R10 — prove the relay cannot read it, by trying to read it
+
+> **Andy, 2026-09-23:** *"How to test this. listen to the monitor stream
+> in the previous tests, and make sure you cannot parse the package
+> content."*
+
+The test is an attempt, not an assertion — and it only means something
+because the same attempt **succeeds today**.
+
+**THE BASELINE, measured 2026-09-23 before a line of cycle 10 was
+written.** A member posts an ordinary agents packet; the text the relay
+receives is captured at `routePost`:
+
+```
+  parses as JSON:      YES
+  app name readable:   "agents"
+  message readable:    "the harness is green, 2922"
+```
+
+That is the leak, measured rather than argued. Every claim this cycle
+makes is the inverse of those three lines.
+
+**AFTER, at two levels, both required.**
+
+1. **In process, at the relay's own hands.** The same capture at
+   `routePost`: the text must **not** parse as an app packet, must carry
+   none of the sender's words, and must contain nothing but the sealed
+   envelope — ephemeral key, nonce, ciphertext, each base64. The suite
+   searches the whole routed string for the plaintext it sent and fails
+   if it finds any of it.
+2. **Live and screenless, on the real relay.** The drill runs sealed; the
+   owner's monitor feed is captured as in cycle 9; and the capture is
+   **searched for any word the drill sent**. Zero hits, and no event
+   carrying a payload field at all. Andy: *"listen to the monitor stream
+   in the previous tests."*
+
+**And the test is proven by failing.** Run it against the tree as it
+stands and it must go red on all three baseline lines — recorded here,
+run once by hand, so nobody later mistakes a green for evidence when the
+sealing has quietly stopped happening.
+
+**What it does NOT claim.** The envelope stays readable by design — who
+posted to whom, when, how big. That is not a gap in the test; it is the
+thing the monitor draws, and cycle 9 proved it end to end.
 
 **Status:** OPEN — cycle 10 is opened, not built.
