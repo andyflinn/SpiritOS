@@ -66,36 +66,39 @@ elseif (Listening 65420) {
   Write-Output ('work node: ' + $(if (WaitFor 65432 30) { 'started' } else { 'DID NOT COME UP' }))
 }
 
-# 3. The Windows agent's node.
-if (Listening 45440) { Write-Output 'claude-windows node: already running' }
-elseif (Test-Path "$agent\spirit\run\js\server.js") {
-  Start-Process -FilePath $node -ArgumentList 'js/server.js', '--port', '45440' -WorkingDirectory "$agent\spirit\run" -WindowStyle Hidden `
-    -RedirectStandardOutput "$agent\node.log" -RedirectStandardError "$agent\node.err" | Out-Null
-  Write-Output ('claude-windows node: ' + $(if (WaitFor 45440 20) { 'started' } else { 'DID NOT COME UP' }))
-} else { Write-Output "claude-windows node: no clone at $agent" }
+# 3. THE AGENTS NODES, THROUGH labMaster — like Andy own node.
+#
+#   Andy, 2026-09-23: "why does he access node starting through anything
+#   but labMaster?"
+#
+# They used to be spawned here directly, which meant the control plane
+# knew about every node on this box except the two that post to each
+# other all day. Now each is an AGENT row in labMaster (its own clone as
+# home, never cloned, never recycled, never swept) and this script only
+# asks for it to be started. An agent therefore never spawns a process
+# at all — it asks labMaster over HTTP, which is one fewer permission
+# either agent needs.
+function EnsureAgentNode([string]$id, [int]$port, [string]$runDir) {
+  if (-not (Test-Path (Join-Path $runDir "js/server.js"))) { Write-Output ($id + " node: no clone at " + $runDir); return }
+  if (-not (Listening 65420)) { Write-Output ($id + " node: no labMaster to ask"); return }
 
-# 3b. The Windows agent's SECOND node, so the monitor's filter has more
-#     than one identity of ours to choose between.
-#
-#   Andy, 2026-09-23: "i want to be able to filter by either one of you or
-#   any of your local persitent nodes, that i have a choice of ID's to
-#   filter by, so two more permanent nodes to add to the test environment
-#   (one more for each of you)."
-#
-# Its own clone, its own identity, its own seat on spirit.andyflinn.com —
-# claude-windows-2, key ...RJo9BXQ=. 45441 belongs to wsl-claude's node,
-# which WSL proxies onto this box's loopback, so this one is 45442.
-if (Listening 45442) { Write-Output 'claude-windows-2 node: already running' }
-elseif (Test-Path "$agent2\spirit\run\js\server.js") {
-  Start-Process -FilePath $node -ArgumentList 'js/server.js', '--port', '45442' -WorkingDirectory "$agent2\spirit\run" -WindowStyle Hidden `
-    -RedirectStandardOutput "$agent2\node.log" -RedirectStandardError "$agent2\node.err" | Out-Null
-  Write-Output ('claude-windows-2 node: ' + $(if (WaitFor 45442 20) { 'started' } else { 'DID NOT COME UP' }))
-} else { Write-Output "claude-windows-2 node: no clone at $agent2" }
+  # The ROW first, always — so labMaster knows about this node even when
+  # it is already listening. A 409 means the row is already there, which
+  # is the ordinary case and not a problem.
+  $body = @{ name = $id; type = "avatar"; kind = "agent"; port = $port; home = ($runDir.Replace([string][char]92, "/")) } | ConvertTo-Json
+  try { Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:65420/api/nodes" -Body $body -ContentType "application/json" -TimeoutSec 20 | Out-Null } catch { }
+
+  if (Listening $port) { Write-Output ($id + " node: already running"); return }
+  try { Invoke-RestMethod -Method Post -Uri ("http://127.0.0.1:65420/api/nodes/" + $id + "/start") -TimeoutSec 30 | Out-Null } catch { }
+  Write-Output ($id + " node: " + $(if (WaitFor $port 25) { "started (labMaster)" } else { "DID NOT COME UP" }))
+}
+
+EnsureAgentNode "claude-windows" 45440 "$agent\spirit\run"
+EnsureAgentNode "claude-windows-2" 45442 "$agent2\spirit\run"
 
 # 4. The WSL side, if wsl-claude has given it a start script.
 $wsl = Get-Command wsl.exe -ErrorAction SilentlyContinue
 if ($wsl) {
   # No double quotes inside: PowerShell mangles them on the way to wsl.exe.
   $out = & wsl.exe -e bash -lc 'test -x ~/SpiritOS-agent-wsl-claude/platform/wsl/start-spirit.sh && ~/SpiritOS-agent-wsl-claude/platform/wsl/start-spirit.sh || echo wsl: no start script yet' 2>&1
-  ($out -join "`n") -replace "`0", '' | Write-Output
 }

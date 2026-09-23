@@ -81,11 +81,39 @@ const FIXTURE_ROOT = labPaths.FIXTURE_ROOT;
 const LAB_KIND = 'lab';
 const FIXTURE_KIND = 'fixture';
 
+// ── THREE KINDS NOW: lab, fixture, AGENT ─────────────────────────────
+//
+//   Andy, 2026-09-23: "why does he access node starting through anything
+//   but labMaster?"
+//
+// He was asking about the agents, and the answer was that nothing said
+// they should: an agent's node was spawned by a platform start script,
+// directly, while ANDY's node has gone through labMaster since update
+// rule 6. So the control plane knew about every node on the box except
+// the two that post to each other all day.
+//
+// An AGENT row is a node labMaster runs but did not make. Its home is the
+// agent's own clone — `D:\SpiritOS-agent-claude`, `~/SpiritOS-agent-wsl-
+// claude-2` — which exists before the row does and outlives it. So:
+// no cloning, no recycling, no deleting, and a port outside the lab
+// range, because these are not lab nodes and must never be swept with
+// them.
+//
+// What it buys, beyond tidiness: an agent stops SPAWNING PROCESSES. It
+// asks labMaster over HTTP like anything else, which removes the
+// capability rather than granting it — and removes the auto-mode
+// exception each agent needed in order to start its own node.
+const AGENT_KIND = 'agent';
+
 function kindOf(node) {
-  return (node && node.kind) === FIXTURE_KIND ? FIXTURE_KIND : LAB_KIND;
+  const k = node && node.kind;
+  if (k === FIXTURE_KIND) return FIXTURE_KIND;
+  if (k === AGENT_KIND) return AGENT_KIND;
+  return LAB_KIND;
 }
 
 function rootFor(kind) {
+  // An agent row never asks: its home is given, not derived (handleCreate).
   return kind === FIXTURE_KIND ? FIXTURE_ROOT : LAB_ROOT;
 }
 const STATE_DIR = labPaths.STATE_DIR;
@@ -677,6 +705,49 @@ function handleCreate(body) {
   if (!id) return { status: 400, error: 'name required' };
   if (id === WORK_ID) return { status: 403, error: 'work row is reserved' };
   if (findNode(id)) return { status: 409, error: 'id already exists' };
+
+  // ── AN AGENT ROW IS A NODE THAT ALREADY EXISTS ────────────────────
+  //
+  // It brings its own home — the agent's clone — so labMaster runs it
+  // without having made it. Everything below that clones, recycles or
+  // sweeps is skipped for it, and its port sits OUTSIDE the lab range so
+  // a sweep of lab ports can never reach an agent.
+  if (kind === AGENT_KIND) {
+    const given = String(body && body.home || '').trim();
+    if (!given) return { status: 400, error: 'an agent node must name its own home' };
+    const runDir = given.split(String.fromCharCode(92)).join("/");
+    if (!fs.existsSync(path.join(runDir, 'js', 'server.js'))) {
+      return { status: 400, error: 'no js/server.js under ' + runDir };
+    }
+    if (typeof port !== 'number' || port !== (port | 0) || port <= 0) {
+      return { status: 400, error: 'port required' };
+    }
+    if (port === WORK_PORT) return { status: 403, error: '65432 is the work node' };
+    if (port === MASTER_PORT) return { status: 403, error: "that is labMaster own port" };
+    if (port >= LAB_PORT_MIN && port <= LAB_PORT_MAX) {
+      return { status: 400, error: 'an agent node keeps out of the lab range ' + LAB_PORT_MIN + '-' + LAB_PORT_MAX };
+    }
+    if (portTaken(port)) return { status: 409, error: 'port in use in table' };
+
+    const agentRow = {
+      id: id,
+      name: name,
+      type: type,
+      port: port,
+      permanent: false,
+      kind: AGENT_KIND,
+      home: runDir,
+      commit: '',
+      pid: null,
+      running: false,
+      lastError: '',
+      startedAt: null,
+    };
+    nodes.push(agentRow);
+    saveDesired(nodes);
+    return { status: 201, node: publicNode(agentRow) };
+  }
+
   if (!portAllowedForLab(port)) {
     return { status: 400, error: 'lab port must be 65400-65429 except 65420' };
   }
@@ -767,6 +838,8 @@ function handleRestart(node) {
 // identity in the lab is how this whole sitting started.
 function handleRecycle(node) {
   if (node.permanent) return { status: 403, error: 'cannot recycle work node' };
+  // An agent's clone is the agent's, not labMaster's to wipe.
+  if (kindOf(node) === AGENT_KIND) return { status: 403, error: 'an agent node is its own clone' };
   stopNode(node);
   try {
     node.home = (kindOf(node) === FIXTURE_KIND
@@ -812,7 +885,19 @@ function handleRefresh(node) {
 
 function handleDelete(node) {
   if (node.permanent) return { status: 403, error: 'cannot delete work node' };
+
   stopNode(node);
+  // ── DELETING AN AGENT ROW REMOVES THE ROW, NEVER THE CLONE ──────
+  //
+  // The guard here used to refuse outright, which was the wrong half of
+  // the rule: what must be protected is the agent CLONE, not labMaster's
+  // note about it. A test row that leaked into the real table could then
+  // never be swept, which is how this was found.
+  if (kindOf(node) === AGENT_KIND) {
+    nodes = nodes.filter(function (n) { return n.id !== node.id; });
+    saveDesired(nodes);
+    return { status: 200, ok: true, id: node.id, wiped: false, kept: node.home };
+  }
   // The disk goes too. Dropping only the table row left the home behind,
   // so a node created again under the same name inherited the identity,
   // the mailbox and the device slot of the one that was deleted — which
@@ -1470,9 +1555,28 @@ server.on('error', function (err) {
   process.exit(1);
 });
 
+// ── RUN IT, OR ASK IT (2026-09-23) ───────────────────────────────────
+//
+// Started as a program it listens, as it always has. REQUIRED, it does
+// not: a suite asking what labMaster would DECIDE should not have to
+// take a port to find out, and a stray require would otherwise fight the
+// real one for 65420 — which is what happened the first time
+// agentNodeRows.js was run.
+if (require.main === module) {
 server.listen(MASTER_PORT, '127.0.0.1', function () {
   console.log('labMaster http://127.0.0.1:' + MASTER_PORT);
 });
+}
+
+// The decisions, for suites. Not the table, not the children, not the
+// spawning: what a caller may ask is what labMaster would answer.
+module.exports = {
+  handleCreate: handleCreate,
+  handleRecycle: handleRecycle,
+  handleDelete: handleDelete,
+  findNode: findNode,
+  kindOf: kindOf,
+};
 
 process.on('exit', function () {
   Object.keys(children).forEach(function (id) {
