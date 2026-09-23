@@ -508,4 +508,49 @@ test.subHeading('The relay as a peer, for its owner');
   fs.rmSync(w.home, { recursive: true, force: true });
 })();
 
+// ---------------------------------------------------------------------
+test.subHeading('A post at a key nobody holds reaches the owner');
+// ---------------------------------------------------------------------
+
+(function unknownTargetIsReported() {
+  // Found screenless against the live relay, 2026-09-23: four posts
+  // deliberately aimed at a key on no roll produced NOTHING in the
+  // owner's feed. Every other refusal on that path reports itself
+  // ("minting incomplete", "peer not reachable"); this one returned in
+  // silence, so the shape most worth an owner's attention — somebody
+  // posting at addresses that do not exist — was the one he could not
+  // see.
+  //
+  // Andy: "you both verify screenless first, that's the procedure." This
+  // is the assertion that keeps the answer once a screen exists.
+  const w = world();
+  startMonitor(w);
+
+  const nowhere = 'MCowBQYDK2VwAyEA' + 'A'.repeat(27) + '=';
+  const probe = JSON.stringify({ app: 'probe', v: 1, body: { hello: true } });
+  const out = w.box.routePost(w.bella.publicKey, nowhere, probe,
+    auth.sign(w.bella.privateKey, auth.postMessage(w.bella.publicKey, nowhere, probe)));
+
+  const seen = events(w.heard.andy).filter(function (m) {
+    return m.data && m.data.kind === 'refused' && m.data.why === 'no such peer';
+  });
+  if (!out.ok && out.status === 404 && seen.length === 1 &&
+      seen[0].data.from === w.bella.publicKey && seen[0].data.to === nowhere) {
+    test.check('refused to the sender, and reported to the owner, naming the token it was aimed at');
+  } else {
+    test.fail('unknown target: ' + JSON.stringify(out) + ' events: ' +
+      JSON.stringify(events(w.heard.andy).map(function (m) { return m.data; })));
+  }
+
+  // AND IT IS THE OWNER'S ALONE, like every other event here.
+  if (events(w.heard.bella).length === 0) {
+    test.check('and no member sees it — a refusal is the owner\'s business');
+  } else {
+    test.fail('a member heard the refusal: ' + JSON.stringify(events(w.heard.bella)));
+  }
+
+  require('../run/js/relayStore').closeAll();
+  fs.rmSync(w.home, { recursive: true, force: true });
+})();
+
 test.reportSuccessFailureCount();

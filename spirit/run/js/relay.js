@@ -3654,7 +3654,28 @@ function createRelay(rootDir, deps) {
       if (carried) return carried;
     }
 
-    if (!target) return { ok: false, status: 404, error: 'no such peer' };
+    // ── A POST AT A KEY NOBODY HOLDS IS STILL SOMETHING THAT HAPPENED ──
+    //
+    // Found screenless, 2026-09-23, running the monitor drill against the
+    // live relay: four posts deliberately aimed at a key on no roll, and
+    // the owner's feed showed nothing at all — not as `refused`, not in
+    // any form. Every other refusal on this path reports itself
+    // (`minting incomplete`, `peer not reachable`); this one returned in
+    // silence, so the one shape that most deserves an owner's attention
+    // — somebody posting at addresses that do not exist — was the one
+    // shape he could not see.
+    //
+    // Andy's procedure is why it was found before a screen existed:
+    // *"you both verify screenless first."*
+    //
+    // The TOKEN is reported, not a resolved identity, because there is
+    // nothing to resolve: that is the fact. Bounded like every other
+    // event here by the caller's rate gate, and it reaches the owner's
+    // sink alone.
+    if (!target) {
+      monitorEvent('refused', who.id, String(toToken), { why: 'no such peer' });
+      return { ok: false, status: 404, error: 'no such peer' };
+    }
 
     if (typeof text !== 'string' || !text) {
       return { ok: false, status: 400, error: 'text required' };

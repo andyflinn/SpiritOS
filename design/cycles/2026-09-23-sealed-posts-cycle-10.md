@@ -1,6 +1,6 @@
 # Cycle 10 — a relay carries what it cannot read
 
-**Opened 2026-09-23, from `989f39a`. Nothing built yet.**
+**Opened 2026-09-23, from `989f39a`. Nothing built yet. Nine requirements.**
 
 > **Andy:** *"I also want to make sure we have alpha Product at the end,
 > and you agreed, or suggested that developper-nerds wouldn't be happy
@@ -55,7 +55,7 @@ blob verifies **from its own bytes** without trusting how it arrived.
 **Verify:** a card whose any field was altered fails; a card signed by the
 wrong key fails; a swapped `sealKey` fails.
 
-**Status:** open
+**Status:** OPEN — cycle 10 is opened, not built.
 
 ### R2 — a seal keypair, made where the identity is made
 
@@ -65,7 +65,7 @@ protect, one file to back up, one file to lose.
 **Verify:** a fresh identity has both; an identity from before this cycle
 gains a seal key on first start and says so.
 
-**Status:** open
+**Status:** OPEN — cycle 10 is opened, not built.
 
 ### R3 — the card is kept, and accepted from anywhere the signature holds
 
@@ -77,7 +77,7 @@ is accepted only if the signature verifies.
 **Verify:** a stored card is used without a fetch; an unsigned or badly
 signed card never reaches the row.
 
-**Status:** open
+**Status:** OPEN — cycle 10 is opened, not built.
 
 ### R4 — sealing
 
@@ -90,7 +90,7 @@ it sent.
 **Verify:** a round trip opens; a tampered ciphertext fails; the same
 plaintext twice produces different bytes.
 
-**Status:** open
+**Status:** OPEN — cycle 10 is opened, not built.
 
 ### R5 — STRICT: unsealed is refused in both directions
 
@@ -102,9 +102,14 @@ that exist.** Everything else between people is sealed, and:
   why.
 
 The second half is not belt-and-braces, it is the rule: a sender-only
-check is bypassed by not being the sender. Posts addressed to the RELAY —
-monitor, invite, search, config — are unaffected, because those are
-instructions the relay must read to act.
+check is bypassed by not being the sender.
+
+**Posts addressed to the relay are sealed too — see R9.** This paragraph
+said the opposite when the cycle opened (*"unaffected, because those are
+instructions the relay must read to act"*), and Andy corrected it the same
+hour: *"relay needs a cypher key too, because it has answerSelf()."*
+Struck rather than deleted, because the reasoning behind the correction is
+the useful part.
 
 Andy: *"yes. VERY strict about that!"*
 
@@ -112,7 +117,7 @@ Andy: *"yes. VERY strict about that!"*
 post, injected, is refused coming in; a card passes both ways; a relay
 verb is untouched.
 
-**Status:** open
+**Status:** OPEN — cycle 10 is opened, not built.
 
 ### R6 — the ceiling, and the flag day
 
@@ -124,7 +129,7 @@ day; a relay says its limit so a sender can tell "too big for me" from
 **Verify:** 16 KB of text survives sealing and routing; the relay's limit
 is readable.
 
-**Status:** open
+**Status:** OPEN — cycle 10 is opened, not built.
 
 ### R7 — the agents seal, like everybody else
 
@@ -136,7 +141,7 @@ already proved end to end.
 **Verify:** the drill runs sealed and the feed still attributes every
 event to the right identity.
 
-**Status:** open
+**Status:** OPEN — cycle 10 is opened, not built.
 
 ### R8 — suites that INSIST, not suites that demonstrate
 
@@ -169,4 +174,48 @@ anybody took it.
 which is how it is proven rather than trusted — the test that tests the
 test, run once by hand and recorded here.
 
-**Status:** open
+**Status:** OPEN — cycle 10 is opened, not built.
+
+### R9 — the relay has a cipher key too
+
+> **Andy, 2026-09-23:** *"relay needs a cypher key too, because it has
+> answerSelf()."*
+
+The relay is a peer with a key — that is what decision 0010 made it, and
+`answerSelf` is the proof: monitor, invite, rename, partner, revoke and
+cycle 9's `config` all arrive as ordinary posts addressed to it. So the
+rule has no exception at all: **every peer post is sealed, including the
+ones addressed to the relay**, and it opens them with its own key to act
+on them.
+
+**Sealing to the relay does not hide anything FROM the relay** — it must
+read a verb to obey it. What it hides is everything between:
+
+- **The terminator, and its logs.** TLS ends at Caddy on the relay host,
+  so today an invite **token** — a credential, spoken down a phone — is
+  plaintext in that process and in anything it writes. Sealed, Caddy
+  carries bytes it cannot read.
+- **Anything the packet passes through later.** A partner that carries a
+  post, a proxy somebody puts in front of their own box, a future hop
+  nobody has thought of yet.
+- **And it removes the carve-out from the rule**, which is worth as much
+  as either: a guard that says *"everything is sealed except the card"*
+  is enforceable by counting, while *"everything except the card and
+  posts to the relay"* needs a judgement about every destination.
+
+**What the relay publishes.** Its cipher key rides with its identity key
+where a node already fetches it — `/api/relay/key` and the census — and
+is signed by the relay's identity key for the same reason a node's card
+is: a key handed over unsigned is a key whoever handed it over chose.
+
+**And a relay may hold a partner's cipher key**, which is the case to get
+right early: a partner-carried post is sealed to the MEMBER, not to the
+carrying relay, so a partner forwards what it cannot read — which is the
+property `PARTNERS.md` always wanted and could not have.
+
+**Verify:** an owner verb sealed to the relay is obeyed; the same verb
+plaintext is refused; a relay's published cipher key fails verification
+if altered; a partner-carried post is opened by the member and not by the
+partner.
+
+**Status:** OPEN — cycle 10 is opened, not built.
