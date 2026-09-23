@@ -45,21 +45,22 @@ re-measure are in [README/CAPACITY.md](README/CAPACITY.md).
 
 ### An Ubuntu relay, measured
 
-Taken on `ubuntu-24.04-wsl2` at commit `27374ee`, 2026-09-21. Ubuntu because **that is what a relay runs on** — the Windows figures are measured too and kept beside these, never averaged with them. **This is WSL, which is a proxy**: the same distribution and the same runtime, but a virtual machine on a workstation rather than a small VPS under memory pressure. Bare-metal figures replace these automatically once such a box publishes.
+Taken on `ubuntu-24.04-wsl2` at commit `5b0975c`, 2026-09-23. Ubuntu because **that is what a relay runs on** — the Windows figures are measured too and kept beside these, never averaged with them. **This is WSL, which is a proxy**: the same distribution and the same runtime, but a virtual machine on a workstation rather than a small VPS under memory pressure. Bare-metal figures replace these automatically once such a box publishes.
 
 | | |
 |---|---|
-| at rest | **63.3 MB** resident |
-| a held connection | **52,091 bytes** |
-| a member on disc | **197 bytes** — measured BEFORE the signed card was added to the row, so this understates a member today |
+| at rest | **63.8 MB** resident |
+| a held connection | **44,524 bytes** |
+| a member on disc | **603 bytes** with their card, 199 without |
+| the card itself | 376 bytes, signed |
 
 | relay RAM limit | connected at once |
 |---|---|
-| 128 MB | **2,576** |
-| 256 MB | **5,153** |
-| 512 MB | **10,306** |
+| 128 MB | **3,014** |
+| 256 MB | **6,029** |
+| 512 MB | **12,058** |
 
-**The roll figure is withheld until this box re-measures.** A gigabyte divided by a pre-card row would print a membership roughly three times larger than a relay could hold — and that is the most quotable number on this page.
+A **1 GB disc** holds **1,780,666** members. A relay is bounded by RAM, not by its roll — and the gap between those two numbers is the design.
 
 Every figure, both platforms, and the command to re-measure: [README/CAPACITY/](README/CAPACITY/).
 

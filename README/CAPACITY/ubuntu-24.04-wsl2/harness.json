@@ -1,14 +1,14 @@
 {
-  "measuredAt": "2026-09-21T23:03:39.276Z",
-  "commit": "27374ee",
+  "measuredAt": "2026-09-23T15:06:06.965Z",
+  "commit": "5b0975c",
   "platform": "linux",
   "release": "6.18.33.2-microsoft-standard-WSL2",
   "node": "v24.21.0",
-  "seconds": 58,
+  "seconds": 74,
   "exitCode": 0,
   "summary": {
-    "suites": 119,
-    "green": 2756,
+    "suites": 142,
+    "green": 3052,
     "red": 0,
     "unhappy": 0,
     "notRun": 0
