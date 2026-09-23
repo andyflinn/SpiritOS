@@ -113,6 +113,33 @@ failed, however correct it reads.
     first costs however long the others sit, which nobody is measuring
     because idle time leaves no trace.
 
+11b. **On a pull, the agent brings every resident node up to the
+    highest release it can.** Andy, 2026-09-24: *"on pulls the agent will
+    properly update all resident nodes to the highest release possible."*
+
+    **"Resident" means every node on that machine, not the one the agent
+    was thinking about.** On 2026-09-23 the repository was pulled and the
+    agent's own node went on running code from the previous day for
+    hours — then the wrong process was stopped, then the wrong clone was
+    restarted, and the agent identity turned out to live in a different
+    clone from the one that had been updated. **On a machine with more
+    than one clone, `relay-state/identity.json` decides which node is
+    which — never the directory name.**
+
+    **"Properly" is the load-bearing word, and it means verified.** A
+    node can be on the right commit and still be broken: cycle 10's seal
+    key is grown at boot, and a node that came up without that line
+    serves a card nobody can seal to while looking perfectly healthy.
+    **So the check is not the commit — it is the boot line and the
+    behaviour.** *"identity gained a seal key"* in the log, and a card
+    that carries a real `sealKey`.
+
+    **"Highest release possible" is not always the newest commit.** A
+    clone with `SPIRIT_TRACK=tag` moves only to tags, so its highest
+    release is the highest tag — and if the tag is behind master, the
+    right move is to say so rather than to leave the box short. **Cutting
+    the tag is Andy's; noticing that it is needed is the agent's.**
+
 12. **A long cycle ends in a report package, and the window it ran in stays readable while it runs.** Andy, 2026-09-23: *"i think it's fair to expect my desired report packece including completion-time estimates for alpha core, collated after such long cycles, i'll ask for what i want to learn in addition to that."* So the package is **owed, not requested** — it is collated at the close of a long stretch without being asked for, and whatever he asks afterwards is *in addition* to it, never instead of it.
 
     **What it always carries**, because each part answers a question he has already had to ask twice:
