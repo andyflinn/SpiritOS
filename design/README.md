@@ -431,11 +431,12 @@ This directory contains the vision, principles, and architecture decisions for *
   boundary around it. The finding that outranks the rest: Relay Chat still polls
   a 200-entry ring on the relay every two seconds.
 - [What a local model is good for, measured on a night of it](reviews/local/LOCAL-MODEL-REVIEW.md)
-  — gpt-oss:120b read 47 files unattended in fifteen hours and returned 14
-  findings, of which one was real. It proves work CAN be delegated to a local
-  AI; it also changes what we would delegate. Small scope, low reasoning,
-  answers that are checkable — not review, where a confident wrong answer
-  looks exactly like a right one. The run is kept whole in the zip beside it.
+  — gpt-oss:120b read 47 files unattended in fifteen hours and returned 242
+  findings, untriaged. It held its format, marked its own uncertainty, and read
+  AGENT.md — and it also FABRICATED, reporting a typo that is not in the file.
+  It proves work CAN be delegated to a local AI; it also changes what we would
+  delegate. Breadth with a checkable answer, not review, where a confident wrong
+  answer looks exactly like a right one. The run is kept whole in the zip.
 
 ## Future Layer (not yet implemented)
 - [Root Structure — spirit.json](spirit-json/ROOT-STRUCTURE.md)
