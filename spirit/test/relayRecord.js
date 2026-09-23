@@ -7,14 +7,14 @@
 //   capacity can guarantee service."
 //
 // Written by wsl-claude under this cycle's agreement: the Windows Claude
-// built R1-R7 and deliberately wrote no assertions, so that the suite is
+// built cycle 11 R1-cycle 11 R7 and deliberately wrote no assertions, so that the suite is
 // written from `design/cycles/2026-09-23-relay-record-cycle-11.md` rather
 // than from the implementation. A suite written from the code can only
 // describe it; one written from the document can disagree with it.
 //
 // WHERE THIS SUITE DISAGREES IT SAYS SO IN THE SUBHEADING, rather than
 // going red on a reading the document leaves open. Two such places are
-// flagged in the document itself (R3 and R6) and both are exercised here.
+// flagged in the document itself (cycle 11 R3 and cycle 11 R6) and both are exercised here.
 
 const os = require('os');
 const fs = require('fs');
@@ -31,9 +31,19 @@ function home() {
   return { dir: dir, store: nodeStore.open(dir) };
 }
 
+// CLOSE THE HANDLE BEFORE THE DIRECTORY GOES. Windows refuses to remove a
+// file SQLite still holds — EPERM — while Linux removes it and says
+// nothing, so this suite ran here and died at the first cleanup there.
+// Found by the Windows Claude on the first cross-platform run of this
+// file, which is the arrangement catching something about itself.
+function closeAndRemove(w) {
+  try { w.store.close(); } catch (e) { /* already closed */ }
+  fs.rmSync(w.dir, { recursive: true, force: true });
+}
+
 // A report shaped like the one a relay actually sends (cycle 9's R13 for
 // `seats`), with the people-carrying fields a relay must never leave in a
-// record — R5 exists because a report CAN carry them.
+// record — cycle 11 R5 exists because a report CAN carry them.
 function report(n, extra) {
   return Object.assign({
     peers: n,
@@ -46,8 +56,8 @@ function report(n, extra) {
 
 test.startTest('Cycle 11 — the record: what is kept, what is never kept, and what crosses');
 
-// ── R1 ────────────────────────────────────────────────────────────────
-test.subHeading('R1 — the named figures are columns, and an unnamed one survives whole');
+// ── cycle 11 R1 ────────────────────────────────────────────────────────────────
+test.subHeading('cycle 11 R1 — the named figures are columns, and an unnamed one survives whole');
 {
   const w = home();
   w.store.record.put(RELAY, report(12, { somethingNobodyNamedYet: 7 }), 3 * MIN);
@@ -65,11 +75,11 @@ test.subHeading('R1 — the named figures are columns, and an unnamed one surviv
   } else {
     test.fail('an unnamed figure was dropped: ' + JSON.stringify(rest));
   }
-  fs.rmSync(w.dir, { recursive: true, force: true });
+  closeAndRemove(w);
 }
 
-// ── R5, before R2, because it is the one that matters if it is wrong ──
-test.subHeading('R5 — a report carrying people becomes a record carrying counts');
+// ── cycle 11 R5, before cycle 11 R2, because it is the one that matters if it is wrong ──
+test.subHeading('cycle 11 R5 — a report carrying people becomes a record carrying counts');
 {
   const w = home();
   const withPeople = report(3, {
@@ -100,10 +110,10 @@ test.subHeading('R5 — a report carrying people becomes a record carrying count
   // shape a roll, a partner list and an invite list arrive in. A name
   // that arrives as a PLAIN STRING is not a list, so it is copied into
   // the JSON column verbatim and kept — including in the daily tier,
-  // which R4 keeps for good. R5 is about what is KEPT, and this keeps it.
+  // which cycle 11 R4 keeps for good. cycle 11 R5 is about what is KEPT, and this keeps it.
   //
   // It does not cross to a caller today, because the series drops that
-  // column entirely (R6). So the exposure is the record on disc rather
+  // column entirely (cycle 11 R6). So the exposure is the record on disc rather
   // than the read verb — a difference worth stating rather than
   // blurring: one would be a leak, this is a permanent record of people
   // on a box whose whole point is that it does not keep them.
@@ -117,15 +127,15 @@ test.subHeading('R5 — a report carrying people becomes a record carrying count
   if (kept.length === 0) {
     test.check('a name arriving as a plain string is dropped too — the record keeps figures, not people');
   } else {
-    test.fail('R5 BROKEN FOR SCALARS: kept verbatim in the record: ' + kept.join(', ') +
-      ' — countIfPeople counts arrays and objects and copies a string through. Fix: keep numbers and booleans only, which is all R1 asks of that column');
+    test.fail('cycle 11 R5 BROKEN FOR SCALARS: kept verbatim in the record: ' + kept.join(', ') +
+      ' — countIfPeople counts arrays and objects and copies a string through. Fix: keep numbers and booleans only, which is all cycle 11 R1 asks of that column');
   }
-  fs.rmSync(scalars.dir, { recursive: true, force: true });
-  fs.rmSync(w.dir, { recursive: true, force: true });
+  closeAndRemove(scalars);
+  closeAndRemove(w);
 }
 
-// ── R4 ────────────────────────────────────────────────────────────────
-test.subHeading('R4 — one row a minute, and a day older than ninety keeps one row');
+// ── cycle 11 R4 ────────────────────────────────────────────────────────────────
+test.subHeading('cycle 11 R4 — one row a minute, and a day older than ninety keeps one row');
 {
   const w = home();
   for (let i = 0; i < 5; i += 1) w.store.record.put(RELAY, report(i), 10 * MIN + i * 1000);
@@ -145,7 +155,7 @@ test.subHeading('R4 — one row a minute, and a day older than ninety keeps one 
   // past the epoch and are themselves older than ninety days once "now"
   // is day two hundred — which is a fixture mistake, not a defect, and it
   // cost this suite two red assertions before anybody read the dates.
-  fs.rmSync(w.dir, { recursive: true, force: true });
+  closeAndRemove(w);
   const s2 = home();
   const now = 200 * DAY;
   const old = now - 120 * DAY;
@@ -168,11 +178,11 @@ test.subHeading('R4 — one row a minute, and a day older than ninety keeps one 
   } else {
     test.fail('the sweep reached into the fine tier');
   }
-  fs.rmSync(s2.dir, { recursive: true, force: true });
+  closeAndRemove(s2);
 }
 
-// ── R3 ────────────────────────────────────────────────────────────────
-test.subHeading('R3 — an outage is marked; a quiet stretch is not — and a THIRD state is neither');
+// ── cycle 11 R3 ────────────────────────────────────────────────────────────────
+test.subHeading('cycle 11 R3 — an outage is marked; a quiet stretch is not — and a THIRD state is neither');
 {
   const w = home();
   w.store.record.put(RELAY, report(5), 10 * MIN);
@@ -222,11 +232,11 @@ test.subHeading('R3 — an outage is marked; a quiet stretch is not — and a TH
   } else {
     test.fail('unexpected rows inside the gap: ' + nodeWasDown);
   }
-  fs.rmSync(w.dir, { recursive: true, force: true });
+  closeAndRemove(w);
 }
 
-// ── R6 and R7 ─────────────────────────────────────────────────────────
-test.subHeading('R6 — what crosses is a series of decided values, and R7 keeps the seats in it');
+// ── cycle 11 R6 and cycle 11 R7 ─────────────────────────────────────────────────────────
+test.subHeading('cycle 11 R6 — what crosses is a series of decided values, and cycle 11 R7 keeps the seats in it');
 {
   const w = home();
   w.store.record.put(RELAY, report(9, { invites: [{ label: 'bella' }] }), 30 * MIN);
@@ -246,7 +256,7 @@ test.subHeading('R6 — what crosses is a series of decided values, and R7 keeps
     test.fail('the working-out crossed with the answer: ' + JSON.stringify(value));
   }
   if (value.free === 4087 && value.outstanding === 2) {
-    test.check('R7: seats free and outstanding cross as figures, so a lever reads them without digging in JSON');
+    test.check('cycle 11 R7: seats free and outstanding cross as figures, so a lever reads them without digging in JSON');
   } else {
     test.fail('the seat series is not in the answer: ' + JSON.stringify(value));
   }
@@ -257,15 +267,15 @@ test.subHeading('R6 — what crosses is a series of decided values, and R7 keeps
     test.fail('the edge crossed as figures: ' + JSON.stringify(edge));
   }
   if (JSON.stringify(series).indexOf('bella') === -1) {
-    test.check('and R5 holds through the reader as well as the writer');
+    test.check('and cycle 11 R5 holds through the reader as well as the writer');
   } else {
     test.fail('a label crossed to the caller');
   }
-  fs.rmSync(w.dir, { recursive: true, force: true });
+  closeAndRemove(w);
 }
 
-// ── R2 ────────────────────────────────────────────────────────────────
-test.subHeading('R2 — the node process writes the record, and nothing else does');
+// ── cycle 11 R2 ────────────────────────────────────────────────────────────────
+test.subHeading('cycle 11 R2 — the node process writes the record, and nothing else does');
 {
   const RUN = path.join(__dirname, '..', 'run');
   function walk(dir, out) {
@@ -290,7 +300,7 @@ test.subHeading('R2 — the node process writes the record, and nothing else doe
   } else if (writers.length === 0) {
     test.fail('no writer found — either the record is written elsewhere or this guard has gone blind');
   } else {
-    test.fail('more than one writer, and a second writer on the node\'s own file is what R2 forbids: ' + writers.join(', '));
+    test.fail('more than one writer, and a second writer on the node\'s own file is what cycle 11 R2 forbids: ' + writers.join(', '));
   }
   const jobs = writers.filter(function (f) { return /job/i.test(f); });
   if (jobs.length === 0) {
