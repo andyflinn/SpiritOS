@@ -357,7 +357,7 @@ async function aCardIsAnsweredToAnybody() {
   auth.setDescription(sonny.home, SAID);
 
   const card = await stranger.P.post('http://relay', sonny.id.publicKey,
-    JSON.stringify({ v: 1, body: { describe: true } }));
+    JSON.stringify({ v: 1, body: { card: true } }));
 
   let said = null;
   try { said = JSON.parse(card.text).body; } catch (e) { said = null; }
@@ -467,7 +467,7 @@ async function aCardIsAnsweredToAnybody() {
   auth.setDescription(shut.home, 'not hearing from anybody, thanks');
 
   const throughShut = await stranger.P.post('http://relay', shut.id.publicKey,
-    JSON.stringify({ v: 1, body: { describe: true } }));
+    JSON.stringify({ v: 1, body: { card: true } }));
   let shutSaid = null;
   try { shutSaid = JSON.parse(throughShut.text).body; } catch (e) { shutSaid = null; }
 

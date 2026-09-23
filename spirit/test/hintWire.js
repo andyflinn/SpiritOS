@@ -214,7 +214,7 @@ async function run() {
   test.subHeading('alice posts to bertrand, hinting B');
 
   const sent = await postWithHints(A, alice, bertrand.publicKey,
-    JSON.stringify({ v: 1, body: { describe: true } }), [bKey]);
+    JSON.stringify({ v: 1, body: { card: true } }), [bKey]);
   if (sent.status >= 200 && sent.status < 300) {
     test.check('A accepted the hinted post from the wire: ' + sent.status);
   } else {
@@ -269,7 +269,7 @@ async function run() {
 
   aliceReplies.length = 0;
   const toBella = await postWithHints(A, alice, B.members.bella.publicKey,
-    JSON.stringify({ v: 1, body: { describe: true } }), [bKey]);
+    JSON.stringify({ v: 1, body: { card: true } }), [bKey]);
   await until(function () { return !!relayedError(); }, 6000);
   const absent = relayedError();
   if (toBella.status === 202 && absent && absent.ok === false && /not reachable/.test(absent.error) && absent.relayed) {
@@ -293,7 +293,7 @@ async function run() {
 
   const stranger = auth.generateIdentity('nobody').publicKey;
   const notMine = await postWithHints(A, alice, bertrand.publicKey,
-    JSON.stringify({ v: 1, body: { describe: true } }), [stranger]);
+    JSON.stringify({ v: 1, body: { card: true } }), [stranger]);
   if (notMine.status === 409 && notMine.body.error === 'minting incomplete') {
     test.check('a hint naming no partner of A: 409 "minting incomplete"');
   } else {

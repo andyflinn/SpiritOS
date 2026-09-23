@@ -75,7 +75,6 @@ const CENSUS = {
   'spirit/run/app/natterDetails/natterDetails.js': 7,
   'spirit/run/js/client/shell.js': 2,
   'spirit/run/js/hub.js': 10,
-  'spirit/run/js/nodeCard.js': 1,
   'spirit/run/js/nodeStore.js': 2,
   'spirit/run/js/ownerBadge.js': 5,
   'spirit/run/js/peerPost.js': 6,

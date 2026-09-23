@@ -180,7 +180,7 @@ D.box.setPartner(D.owner, A.owner.publicKey, 'http://a.example', A.key, 'h6');
 
 test.subHeading('jazz posts to sonny, who is on nobody jazz has ever heard of');
 
-const sent = post(A.box, A.people.jazz, B.people.sonny.publicKey, { describe: true }, B.key);
+const sent = post(A.box, A.people.jazz, B.people.sonny.publicKey, { card: true }, B.key);
 
 if (sent && sent.ok) {
   test.check('A took it rather than answering "no such peer" — 202 with a hash');
@@ -300,7 +300,7 @@ test.subHeading('And sonny’s answer reaches jazz');
   B.box.setPartner(B.owner, C.owner.publicKey, 'http://c.example', C.key, 'h3');
   C.box.setPartner(C.owner, B.owner.publicKey, 'http://b.example', B.key, 'h4');
 
-  post(A.box, A.people.jazz, C.people.carol.publicKey, { describe: true }, B.key);
+  post(A.box, A.people.jazz, C.people.carol.publicKey, { card: true }, B.key);
   await Promise.resolve();
   await Promise.resolve();
   const reachedCarol = C.inboxes.carol.filter(function (m) { return m.event === 'request'; });
@@ -375,7 +375,7 @@ test.subHeading('And sonny’s answer reaches jazz');
   // process, no hints on the wire — is never guessed at. (Since cycle 2 a
   // node names one with route hints; without them this still holds.)
   D.inboxes.dave.length = 0;
-  const unnamed = post(A.box, A.people.jazz, D.people.dave.publicKey, { describe: true });
+  const unnamed = post(A.box, A.people.jazz, D.people.dave.publicKey, { card: true });
 
   if (unnamed && !unnamed.ok && unnamed.status === 404) {
     test.check('and a post with no named partner is "no such peer", not a guess');
@@ -530,7 +530,7 @@ test.subHeading('And sonny’s answer reaches jazz');
 
   // jazz posts to sonny through the partnership, naming B -- a claim.
   const claimed = post(A.box, A.people.jazz, B.people.sonny.publicKey,
-    { describe: true }, B.key);
+    { card: true }, B.key);
 
   const beforeReply = heard.filter(function (m) { return m.event === 'route'; }).length;
 

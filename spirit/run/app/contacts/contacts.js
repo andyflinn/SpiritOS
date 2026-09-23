@@ -633,7 +633,7 @@ function contactsAskCard(key) {
   if (!key || contactsCards[key]) return;
   contactsCards[key] = 'asking';
 
-  contactsApi.peerPost('', key, { describe: true }).then(function (r) {
+  contactsApi.peerPost('', key, { card: true }).then(function (r) {
     var said = (r && r.body) || null;
     if (r && r.ok && said && said.ok) {
       contactsCards[key] = {

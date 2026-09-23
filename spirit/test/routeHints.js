@@ -207,7 +207,7 @@ async function run() {
 
   test.subHeading('A hint block the relay must not act on');
 
-  const unsigned = post(A.box, A.people.jazz, sonny, { describe: true }, [B.key], { unsigned: true });
+  const unsigned = post(A.box, A.people.jazz, sonny, { card: true }, [B.key], { unsigned: true });
   if (!unsigned.ok && unsigned.status === 403 && /hint signature/.test(unsigned.error)) {
     test.check('unsigned hints: 403 "' + unsigned.error + '"');
   } else {
@@ -216,7 +216,7 @@ async function run() {
 
   await settled();
   answerPending(B.box, B.people.sonny, B.inboxes.sonny);
-  const lifted = post(A.box, A.people.jazz, sonny, { describe: true }, [B.key],
+  const lifted = post(A.box, A.people.jazz, sonny, { card: true }, [B.key],
     { signOver: 'a-signature-from-some-other-packet' });
   if (!lifted.ok && lifted.status === 403) {
     test.check('hints signed for another packet: refused — a hint block cannot be lifted');
@@ -226,7 +226,7 @@ async function run() {
 
   await settled();
   answerPending(B.box, B.people.sonny, B.inboxes.sonny);
-  const tooMany = post(A.box, A.people.jazz, sonny, { describe: true },
+  const tooMany = post(A.box, A.people.jazz, sonny, { card: true },
     [B.key, D.key, C.key, 'k4', 'k5'].slice(0, limits.HINTS_PER_POST + 1));
   if (!tooMany.ok && tooMany.status === 400) {
     test.check('more than HINTS_PER_POST (' + limits.HINTS_PER_POST + '): 400');
@@ -238,7 +238,7 @@ async function run() {
 
   await settled();
   answerPending(B.box, B.people.sonny, B.inboxes.sonny);
-  const notMine = post(A.box, A.people.jazz, sonny, { describe: true }, [C.key]);
+  const notMine = post(A.box, A.people.jazz, sonny, { card: true }, [C.key]);
   if (!notMine.ok && notMine.status === 409 && notMine.error === 'minting incomplete') {
     test.check('hint naming only C: 409 "minting incomplete", at once');
   } else {
@@ -250,7 +250,7 @@ async function run() {
   carriedTo.length = 0;
   await settled();
   answerPending(B.box, B.people.sonny, B.inboxes.sonny);
-  const both = post(A.box, A.people.jazz, sonny, { describe: true }, [D.key, B.key]);
+  const both = post(A.box, A.people.jazz, sonny, { card: true }, [D.key, B.key]);
   if (both.ok && carriedTo.length === 1 && carriedTo[0] === B.key) {
     test.check('hints [D, B]: carried to B alone — B is live, D is only minted');
   } else {

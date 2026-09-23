@@ -1069,7 +1069,7 @@ function aFoundPersonCanBeAsked() {
       // end. An app name here would meet the front door instead, which for
       // a stranger is silence.
       const one = app.posts[0] || {};
-      if (one.app === '' && one.body && one.body.describe === true) {
+      if (one.app === '' && one.body && one.body.card === true) {
         test.check('with an app-less packet, which is the one a node answers about itself');
       } else {
         test.fail('wrong packet: ' + JSON.stringify(one));

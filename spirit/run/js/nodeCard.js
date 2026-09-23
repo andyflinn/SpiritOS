@@ -51,32 +51,130 @@
 const auth = require('./relayAuth');
 const labelRule = require('./labelRule');
 
-// Recognises the ask. An app-less system packet — the shape a relay's
-// `answerSelf` already takes, so a node and a relay are asked the same way
-// and neither had to grow a vocabulary for it.
+// ── ONE NAME FOR ONE THING (cycle 10, R1) ────────────────────────────
+//
+//   Andy, 2026-09-23: "why have two calls for what could be one only?" —
+//   and, on the answer: "card & description".
+//
+// It was one call wearing two names: the request said `describe`, the
+// answer was composed by `answerCard`, and the module is `nodeCard.js`.
+// Nothing was abandoned to fix that — **the description was always a
+// FIELD of the card** — and the wire word is now `card` on both sides.
+//
+// Free to rename today only because of the flag day (cycle 10, R6): old
+// nodes must update to stay in the game, so a word that disagrees with
+// itself costs nothing to correct now and can never be corrected this
+// cheaply again.
 function asks(text) {
   let parsed = null;
   try { parsed = JSON.parse(String(text || '')); }
   catch (e) { return false; }
   if (!parsed || parsed.app) return false;   // an app's packet is an app's
   const body = parsed.body;
-  return !!(body && body.describe);
+  return !!(body && body.card);
 }
 
-// The card. Answers a STRING, because that is what peerPost sends as the
-// reply text, and the same envelope a relay answers in.
+// ── WHAT A CARD CARRIES, AND WHY EACH FIELD IS IN THE SIGNATURE ─────
 //
-// `name` is what the identity was minted with and is not a public label:
-// labels belong to relays, one each, and a node has as many as it has
-// enrolments (R1). It is here because it is often the only word a fresh
-// node has, and an empty card is worse than a weak one.
+// The card introduces a node to somebody who has never met it, and after
+// cycle 10 it introduces the key everything they ever send will be sealed
+// to. So it is signed by the identity key, over every field, and it
+// verifies FROM ITS OWN BYTES — no trust in whoever handed it over.
+//
+// The reason is measured rather than assumed: a reply's signature covers
+// `receiptMessage(hash, minute)` — the hash and a clock minute, NOT the
+// text (relayAuth.js). So a relay could rewrite a card in flight today
+// without breaking anything: hand over its own cipher key, have the
+// sender seal to it, read everything and re-seal onward. Encryption built
+// on an unsigned card is encryption addressed to whoever forwards it.
+//
+//   name         what the identity was minted with, not a public label —
+//                labels belong to relays, one each, and a node has as
+//                many as it has enrolments. It is here because it is
+//                often the only word a fresh node has, and an empty card
+//                is worse than a weak one
+//   description  the owner's own sentence about this node
+//   publicKey    the identity — in the signed bytes on purpose, so the
+//                blob is self-contained and can be checked without the
+//                envelope that carried it
+//   sealKey      what messages to this node are sealed to
+//   at           a counter that only goes up (cycle 10, C1)
+//
+// `at` IS THE ONE THAT LOOKS OPTIONAL AND IS NOT. wsl-claude, reviewing:
+// if newness were decided by arrival order or position in the roll, **the
+// relay would decide which card is newer**, and could roll a peer back to
+// a superseded cipher key — possibly the very key whose compromise caused
+// the rotation. A number inside the signature is what takes that decision
+// away from it. A receiver refuses anything not strictly greater than
+// what it holds.
+function cardFields(id) {
+  return {
+    name: String(id.name || ''),
+    description: String(id.description || ''),
+    publicKey: String(id.publicKey || ''),
+    sealKey: String(id.sealPublicKey || ''),
+    at: Number(id.cardAt || 1),
+  };
+}
+
+// THE BYTES THAT ARE SIGNED, in one place, so the signer and the verifier
+// cannot drift apart. Ordered explicitly rather than by JSON.stringify's
+// key order, because that order is an implementation detail and this is a
+// wire format.
+function signable(fields) {
+  return 'card\n' +
+    fields.name + '\n' +
+    fields.description + '\n' +
+    fields.publicKey + '\n' +
+    fields.sealKey + '\n' +
+    fields.at;
+}
+
+// The card as it travels: the fields, and a signature over exactly those
+// bytes. Answers a STRING, because that is what peerPost sends as the
+// reply text, and the same envelope a relay answers in.
 function describe(rootDir) {
-  const card = read(rootDir);
-  if (!card) return '';
+  const id = auth.loadIdentity(rootDir);
+  if (!id || !id.privateKey) return '';
+  const fields = cardFields(id);
   return JSON.stringify({
     v: 1,
-    body: { ok: true, name: card.name, description: card.description },
+    body: Object.assign({ ok: true }, fields, {
+      sig: auth.sign(id.privateKey, signable(fields)),
+    }),
   });
+}
+
+// ── AND THE CHECK, WHICH IS THE WHOLE POINT ──────────────────────────
+//
+// Returns the card's fields when the signature holds over exactly those
+// bytes, and null otherwise. A caller that skips this has a card that
+// proves nothing — so nothing in the tree may read a field off a card
+// without coming through here.
+//
+// It does NOT decide whether this card supersedes one already held: that
+// is the shadow roll's, where both keys are protected (cycle 10, R13).
+// This answers one question only — are these fields the ones their owner
+// signed?
+function verify(text) {
+  let parsed = null;
+  try { parsed = JSON.parse(String(text || '')); }
+  catch (e) { return null; }
+  const body = parsed && parsed.body;
+  if (!body || !body.publicKey || !body.sig) return null;
+  const fields = {
+    name: String(body.name || ''),
+    description: String(body.description || ''),
+    publicKey: String(body.publicKey || ''),
+    sealKey: String(body.sealKey || ''),
+    at: Number(body.at || 0),
+  };
+  // A card with no counter is a card from before this cycle, and the flag
+  // day says those do not travel. Refused rather than defaulted, because
+  // a default would be a number the signer never chose.
+  if (!(fields.at > 0)) return null;
+  if (!auth.verify(fields.publicKey, signable(fields), body.sig)) return null;
+  return fields;
 }
 
 // ── THE SAME CARD, READ AT HOME ──────────────────────────────────────
@@ -193,6 +291,8 @@ function setDescription(rootDir, text) {
 module.exports = {
   asks: asks,
   describe: describe,
+  verify: verify,
+  signable: signable,
   read: read,
   ensureDescription: ensureDescription,
   firstDescription: firstDescription,
