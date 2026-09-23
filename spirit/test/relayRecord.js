@@ -310,4 +310,53 @@ test.subHeading('cycle 11 R2 — the node process writes the record, and nothing
   }
 }
 
+// ── C3 — THE STATE THE RECORD CANNOT REACH, AND THE SHAPE FOR IT ─────
+//
+// Found by this suite: an outage is marked by edges and a quiet stretch
+// has no rows, so those two do not look alike. A NODE THAT WAS ITSELF
+// DOWN writes neither, because the node is what writes the record and
+// cannot record its own absence. "The relay was quiet" and "nobody was
+// watching" are one shape, and the second is the one that makes a
+// reader trust a gap they should not trust.
+//
+// THE SHAPE, wsl-claude’s call as the finder, and it is deliberately
+// two rows rather than one:
+//
+//   `started` — written at node boot, for each relay it will watch.
+//   `stopped` — written in the goodbye the node already runs on SIGTERM.
+//
+// Why both. A `started` alone bounds a gap from the right: a reader
+// meeting it knows the node began watching THERE and that anything
+// before it is unattributed. Adding `stopped` separates the two ways a
+// node leaves: STOPPED then STARTED is a deliberate absence — an update,
+// a reboot, an operator — while a STARTED with no `stopped` before it is
+// a node that died or was killed. Those are different sentences to an
+// owner asking why his record has a hole in it, and the second is the
+// one worth chasing.
+//
+// AND THE HONEST LIMIT, which belongs in the cycle rather than in a
+// comment nobody reads: NOTHING CAN MARK A GAP WHILE IT IS HAPPENING,
+// because the writer is gone. The record can only ever say where it
+// stopped and where it resumed. A reader must still not read the
+// interval between them as evidence about the relay — only as evidence
+// about the node. That is a smaller claim than the edges make, and it
+// should be stated where the edges are documented, or the two kinds of
+// gap will be read alike again by whoever arrives next.
+//
+// Declared rather than built: the code is one line in the node’s boot
+// beside the seal-key migration, and one in the goodbye beside
+// presence.goingAway — but writing it is the builder’s half of this
+// cycle’s agreement, and this is the assertion that says what it must do.
+{
+  const w = home();
+  const kinds = [];
+  try { w.store.record.edge(RELAY, 'started', 1000); } catch (e) { /* not built */ }
+  w.store.record.since(RELAY, 0, 10).forEach(function (r) { kinds.push(r.kind); });
+  const hasStarted = kinds.indexOf('started') !== -1;
+  test.awaiting('cycle-11/C3', 'a started row at node boot and a stopped row in its goodbye',
+    hasStarted,
+    'a reader can tell "the relay was quiet" from "this node was not running", and a deliberate stop from a death',
+    { there: 40, cost: 'MEASURED WHILE DECLARING IT, not guessed: record.edge coerces any kind that is not open to close, so the two row kinds do not exist yet — that is one line there. Then the call at boot (server.js, beside ensureIdentity), the call in the goodbye (beside presence.goingAway), the reader in series treating them as moments, and this assertion becoming real' });
+  closeAndRemove(w);
+}
 test.reportSuccessFailureCount();
