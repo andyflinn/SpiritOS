@@ -28,6 +28,8 @@ const path = require('path');
 const v8 = require('v8');
 const vm = require('vm');
 const test = require('./testSupport.js');
+const { sealFor, openBody } = require('./openReply');
+const nodeCard = require('../run/js/nodeCard');
 const auth = require('../run/js/relayAuth');
 const relayStore = require('../run/js/relayStore');
 const { createRelay } = require('../run/js/relay');
@@ -58,8 +60,14 @@ function homeWith(tag, n) {
   // One member with a real key, so something besides the owner can sign.
   const real = auth.generateIdentity('real');
   store.transaction(function () {
-    store.members.put({ publicKey: owner.publicKey, publicLabel: 'owner', claimedAt: '2026-01-01' });
-    store.members.put({ publicKey: real.publicKey, publicLabel: 'real', claimedAt: '2026-01-01' });
+    // WITH CARDS (cycle 10, R5). This fixture writes rows straight into
+    // the store rather than claiming, which is the point of it — but a row
+    // with no card is a member the relay can seal nothing to, and every
+    // answer below would come back empty.
+    store.members.put({ publicKey: owner.publicKey, publicLabel: 'owner', claimedAt: '2026-01-01',
+      card: nodeCard.cardFrom(Object.assign({ name: 'owner' }, owner)) });
+    store.members.put({ publicKey: real.publicKey, publicLabel: 'real', claimedAt: '2026-01-01',
+      card: nodeCard.cardFrom(Object.assign({ name: 'real' }, real)) });
     for (let i = 0; i < n; i += 1) {
       const pad = String(i).padStart(5, '0');
       store.members.put({
@@ -86,17 +94,20 @@ function sinkFor(bag) {
   };
 }
 
+// Sealed when it is addressed to the relay (cycle 10, R9); a peer-to-peer
+// packet is routed rather than read, so it travels as it always did.
 function post(box, from, toKey, bodyObj) {
-  const text = JSON.stringify({ v: 1, body: bodyObj });
+  const plain = JSON.stringify({ v: 1, body: bodyObj });
+  const text = toKey === box.relayPublicKey() ? sealFor(from, box, plain) : plain;
   return box.routePost(from.publicKey, toKey, text,
     auth.sign(from.privateKey, auth.postMessage(from.publicKey, toKey, text)));
 }
 
-function lastReply(bag) {
+function lastReply(bag, who, relayKey) {
   const replies = bag.filter(function (m) { return m.event === 'reply'; });
   if (!replies.length) return null;
-  try { return JSON.parse(replies[replies.length - 1].data.text).body || null; }
-  catch (e) { return null; }
+  // Opened: a relay seals its answers now (cycle 10, R5).
+  return openBody(who, relayKey, replies[replies.length - 1].data.text);
 }
 
 
@@ -125,7 +136,7 @@ async function relayCost(fixture) {
   post(box, fixture.owner, box.relayPublicKey(), { search: { q: 'member0004' } });
   await until(function () { return replies(bag) > 0; }, 10000);
   const after = heap();
-  return { box: box, bag: bag, bytes: after - before };
+  return { box: box, bag: bag, owner: fixture.owner, bytes: after - before };
 }
 
 test.startTest('RAM is a client of disc — a big roll costs no heap, and blocks nothing');
@@ -162,7 +173,7 @@ async function run() {
   // walk is over the connected members' rows in RAM now (relay.js
   // walkRoll), bounded by the connection allowance, so neither the disc
   // walk nor its stall exists to measure.
-  const answer = lastReply(B.bag);
+  const answer = lastReply(B.bag, B.owner, B.box.relayPublicKey());
   if (answer && answer.ok && (answer.matches || []).length === 0) {
     test.check(BIG + ' members on the roll and none connected: a search finds nobody');
   } else {
@@ -175,7 +186,7 @@ async function run() {
   let n = replies(B.bag);
   post(B.box, big.owner, B.box.relayPublicKey(), { search: { q: 'real' } });
   await until(function () { return replies(B.bag) > n; }, 10000);
-  const found = lastReply(B.bag);
+  const found = lastReply(B.bag, B.owner, B.box.relayPublicKey());
   const top = found && found.matches && found.matches[0];
   if (top && top.publicLabel === 'real' && found.matches.length === 1) {
     test.check('and once one of them connects, a search finds them');
@@ -236,7 +247,7 @@ async function run() {
   const before = replies(realSink);
   reads = [];
   post(B.box, big.real, B.box.relayPublicKey(), { partners: true });
-  const reply = replies(realSink) > before ? lastReply(realSink) : null;
+  const reply = replies(realSink) > before ? lastReply(realSink, big.real, B.box.relayPublicKey()) : null;
   if (reply && reply.ok && reads.indexOf(big.real.publicKey) === -1) {
     test.check('a member with an open stream posts without its row being read from disc');
   } else {

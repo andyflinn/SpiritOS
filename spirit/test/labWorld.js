@@ -22,6 +22,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const auth = require('../run/js/relayAuth');
+const seal = require('../run/js/seal');
+const nodeCard = require('../run/js/nodeCard');
+const { relayRequest } = require('../run/js/relayRequest');
 // GAP 1 again: the node's own record of where it holds a seat.
 const relayKeys = require('../run/js/relayKeys');
 const buildStamp = require('../run/js/buildStamp');
@@ -251,6 +254,10 @@ function createWorld(opts) {
       sig: auth.sign(owner.privateKey, auth.claimMessage(ownerName)),
       invite: ownerInvite.token,
       inviteLabel: ownerName,
+      // AND THE CARD (cycle 10, R5), as hub.signedClaim sends on a real
+      // node: the relay seals its answers to the key on it, so an owner
+      // enrolled without one can be told nothing.
+      card: nodeCard.cardFrom(Object.assign({ name: ownerName }, owner)),
     });
     if (!claimed.ok) {
       return { ok: false, error: 'lab owner could not claim: ' +
@@ -285,6 +292,7 @@ function createWorld(opts) {
         sig: auth.sign(id.privateKey, auth.claimMessage(name)),
         invite: token,
         inviteLabel: name,
+        card: nodeCard.cardFrom(Object.assign({ name: name }, id)),
       });
       if (!joined.ok) {
         return { ok: false, error: 'join ' + name + ': ' + JSON.stringify(joined.body) };
@@ -392,7 +400,29 @@ function createWorld(opts) {
     // Read the stream until the reply to THIS hash arrives. Matched by
     // hash and not by "the next reply", because a roster and a presence
     // event arrive down the same pipe.
-    const text = JSON.stringify({ app: 'relay', v: 1, body: body });
+    // ── SEALED TO THE RELAY (cycle 10, R9) ──────────────────────────
+    //
+    // The box refuses an unsealed post addressed to itself, so the key it
+    // publishes is fetched from the same signed door a node uses — over
+    // the wire, because this lab talks to a real relay in another
+    // process. Sealed first, signed second (cycle 10's R11).
+    // Through the product's own transport rather than a bare `fetch`:
+    // oneDoor.js counts raw fetches here and is right to, and this is a
+    // door a NODE reaches for — so it should be reached the way a node
+    // reaches it.
+    const keyDoor = JSON.parse((await relayRequest(relayUrl, 'GET', '/api/relay/key', null)).text);
+    if (!auth.relayKeySigned(keyDoor.relayPublicKey, keyDoor.relaySealKey,
+      keyDoor.relayLabel, keyDoor.keySig)) {
+      stop.abort();
+      return { ok: false, error: 'that relay does not sign what it says its keys are' };
+    }
+    const wrapped = seal.seal(keyDoor.relaySealKey, ownerId.publicKey, relayKey,
+      JSON.stringify({ app: 'relay', v: 1, body: body }));
+    if (!wrapped) {
+      stop.abort();
+      return { ok: false, error: 'could not seal to that relay' };
+    }
+    const text = JSON.stringify(wrapped);
     const sig = auth.sign(ownerId.privateKey,
       auth.postMessage(ownerId.publicKey, relayKey, text));
 
@@ -412,7 +442,10 @@ function createWorld(opts) {
           if (!ev || ev[1] !== 'reply' || !da) continue;
           try {
             const said = JSON.parse(da[1]);
-            const inner = JSON.parse(said.text);
+            // Opened: a relay seals its answers now (cycle 10, R5).
+            const inner = seal.isSealed(said.text)
+              ? JSON.parse((seal.open(ownerId.sealPrivateKey, relayKey, ownerId.publicKey, said.text) || {}).text || 'null')
+              : JSON.parse(said.text);
             if (inner && inner.body) return inner.body;
           } catch (e) { /* not the frame we are waiting for */ }
         }

@@ -36,6 +36,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
+const { openReply, sealFor } = require('./openReply');
 const auth = require('../run/js/relayAuth');
 const invites = require('../run/js/invites');
 const world = require('./world');
@@ -67,8 +68,12 @@ function askMint(r, who, label, days, token) {
     v: 1,
     body: { invite: { label: label, days: days, token: token || '' } },
   });
-  return r.box.routePost(who.publicKey, relayKey, text,
-    auth.sign(who.privateKey, auth.postMessage(who.publicKey, relayKey, text)));
+  // SEALED, LIKE EVERY POST BUT A CARD (cycle 10, R5). The relay refuses
+  // an unsealed one, and signing happens over what actually travels —
+  // sealed first, signed second (cycle 10's R11).
+  const sending = sealFor(who, r.box, text);
+  return r.box.routePost(who.publicKey, relayKey, sending,
+    auth.sign(who.privateKey, auth.postMessage(who.publicKey, relayKey, sending)));
 }
 
 // What the relay said back. The answer travels on the asker's stream, so
@@ -82,7 +87,8 @@ function heardBy(r, who) {
         const ev = /^event: (.+)$/m.exec(String(chunk));
         const da = /^data: (.+)$/m.exec(String(chunk));
         if (!ev || ev[1] !== 'reply' || !da) return;
-        try { said.push(JSON.parse(JSON.parse(da[1]).text)); }
+        // OPENED, because a relay seals its answers now (cycle 10, R5).
+        try { said.push(openReply(who, r.box.relayPublicKey(), JSON.parse(da[1]).text)); }
         catch (e) { /* a malformed reply is no reply */ }
       },
       close: function () {},
@@ -134,11 +140,27 @@ test.startTest('Invite mint — owner-signed, label and duration bound');
   const forEve = JSON.stringify({
     app: 'relay', v: 1, body: { invite: { label: 'eve', days: 7, token: '' } },
   });
+  // ── SEALED FIRST, THEN SIGNED (cycle 10, R5 and R11) ─────────────
+  //
+  // These four checks are about a signature binding what was asked. They
+  // would now ALL pass without that binding, because an unsealed post is
+  // refused before any signature is looked at — which would make them
+  // vacuous in exactly the way a suite must not be. So each variant is
+  // sealed like a real post, and the signature is over the bytes that
+  // travel.
+  //
+  // WHAT THE BINDING IS MADE OF CHANGED, and it is worth saying: the
+  // label and the day count used to be inside the signed plaintext.
+  // They are inside the SEALED plaintext now, and the signature covers
+  // the sealed bytes — so altering either still cannot be done without
+  // breaking the signature, by a shorter argument than before.
   const relayKey = r.box.relayPublicKey();
+  const sealedSaint = sealFor(r.owner, r.box, forSaint);
   const saintSig = auth.sign(r.owner.privateKey,
-    auth.postMessage(r.owner.publicKey, relayKey, forSaint));
+    auth.postMessage(r.owner.publicKey, relayKey, sealedSaint));
 
-  const wrongLabel = r.box.routePost(r.owner.publicKey, relayKey, forEve, saintSig);
+  const wrongLabel = r.box.routePost(r.owner.publicKey, relayKey,
+    sealFor(r.owner, r.box, forEve), saintSig);
   if (!wrongLabel.ok && wrongLabel.status === 403) {
     test.check("a signature for 'saint' does not mint 'eve'");
   } else {
@@ -149,7 +171,8 @@ test.startTest('Invite mint — owner-signed, label and duration bound');
   const for15 = JSON.stringify({
     app: 'relay', v: 1, body: { invite: { label: 'saint', days: 15, token: '' } },
   });
-  const wrongDays = r.box.routePost(r.owner.publicKey, relayKey, for15, saintSig);
+  const wrongDays = r.box.routePost(r.owner.publicKey, relayKey,
+    sealFor(r.owner, r.box, for15), saintSig);
   if (!wrongDays.ok && wrongDays.status === 403) {
     test.check('a signature for 7 days does not mint 15 days');
   } else {
@@ -166,7 +189,7 @@ test.startTest('Invite mint — owner-signed, label and duration bound');
   // steal. R3 deleted that verb on 2026-09-15 along with the badge that
   // spent it; `claim` is what is left to try.
   const otherVerb = auth.sign(r.owner.privateKey, auth.claimMessage('andy'));
-  const replay = r.box.routePost(r.owner.publicKey, relayKey, forSaint, otherVerb);
+  const replay = r.box.routePost(r.owner.publicKey, relayKey, sealedSaint, otherVerb);
   if (!replay.ok && replay.status === 403) {
     test.check('a signature for another verb cannot be replayed into a mint');
   } else {
@@ -177,7 +200,8 @@ test.startTest('Invite mint — owner-signed, label and duration bound');
   // old format had and could not have closed: mintMessage carried no
   // clock, so one captured signature minted a fresh token every time it
   // was sent. A post's hash is registered before it is answered.
-  const again = r.box.routePost(r.owner.publicKey, relayKey, forSaint, saintSig);
+  // The same bytes again: a retry by the owner, which mints again.
+  const again = r.box.routePost(r.owner.publicKey, relayKey, sealedSaint, saintSig);
   const twice = invites.load(r.home).filter(function (row) {
     return row.label === 'saint';
   });
@@ -372,8 +396,12 @@ function askRevoke(r, who, label) {
   const text = JSON.stringify({
     app: 'relay', v: 1, body: { revoke: { label: label } },
   });
-  return r.box.routePost(who.publicKey, relayKey, text,
-    auth.sign(who.privateKey, auth.postMessage(who.publicKey, relayKey, text)));
+  // SEALED, LIKE EVERY POST BUT A CARD (cycle 10, R5). The relay refuses
+  // an unsealed one, and signing happens over what actually travels —
+  // sealed first, signed second (cycle 10's R11).
+  const sending = sealFor(who, r.box, text);
+  return r.box.routePost(who.publicKey, relayKey, sending,
+    auth.sign(who.privateKey, auth.postMessage(who.publicKey, relayKey, sending)));
 }
 
 {

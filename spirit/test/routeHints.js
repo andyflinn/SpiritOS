@@ -27,6 +27,9 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const { sealFor, sealedPost, rememberKeys, sealKeyFor } = require('./openReply');
+const seal = require('../run/js/seal');
+const nodeCard = require('../run/js/nodeCard');
 const auth = require('../run/js/relayAuth');
 const limits = require('../run/js/limits.js');
 const { createRelay } = require('../run/js/relay');
@@ -130,7 +133,12 @@ function answeredJustNow(X, Y) {
 // A signed post with a signed hint block — what peerPost puts on the wire.
 function post(box, from, toKey, bodyObj, hints, opts) {
   const o = opts || {};
-  const text = o.text || JSON.stringify({ v: 1, body: bodyObj });
+  const plain = o.text || JSON.stringify({ v: 1, body: bodyObj });
+  // SEALED WHEN IT IS ADDRESSED TO THE RELAY (cycle 10, R9). Peer-to-peer
+  // posts here are routed rather than read, so the relay does not mind
+  // what they are; a post to the BOX itself is refused unless sealed, and
+  // an unsealed one would silently skip the fixture it was setting up.
+  const text = toKey === box.relayPublicKey() ? sealFor(from, box, plain) : plain;
   const sig = auth.sign(from.privateKey, auth.postMessage(from.publicKey, toKey, text));
   let route;
   if (hints) {
@@ -310,8 +318,12 @@ async function run() {
   const nodeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-hints-node-'));
   auth.saveIdentity(nodeHome, A.people.jazz);
   const sent = [];
+  // sonny's card is held, so the compose-time refusal under test is the
+  // TUNNEL check and not the missing-key one (cycle 10, R5).
+  rememberKeys(B.people.sonny);
   const pp = createPeerPost({
     rootDir: nodeHome,
+    sealKeyFor: sealKeyFor,
     checkTunnel: true,
     waitMs: 50,
     request: function (url, method, p, body) {
@@ -410,6 +422,9 @@ async function replyDirection(A, B) {
   function replier(checkTunnel) {
     return createPeerPost({
       rootDir: replierHome,
+      // The asker's card is held, so the answer can be sealed back and the
+      // check under test is the TUNNEL one (cycle 10, R5).
+      sealKeyFor: sealKeyFor,
       checkTunnel: checkTunnel,
       answer: function () { return stuffed; },
       request: function (url, method, p, body) {
@@ -418,17 +433,21 @@ async function replyDirection(A, B) {
       },
     });
   }
-  const ask = (function () {
-    const text = JSON.stringify({ v: 1, body: { ask: 'big' } });
-    const to = B.people.sonny.publicKey;
-    return { from: k, to: to, text: text,
-      sig: auth.sign(A.people.jazz.privateKey, auth.postMessage(k, to, text)) };
-  }());
+  // SEALED, like every post but a card (cycle 10, R5): the replier
+  // refuses an unsealed one before it ever composes an answer.
+  rememberKeys(A.people.jazz);
+  const ask = sealedPost(A.people.jazz, B.people.sonny,
+    JSON.stringify({ v: 1, body: { ask: 'big' } }));
   return replier(true).onRequest('http://b.example', ask).then(function () {
     const withCheck = out.pop();
     return replier(false).onRequest('http://b.example', ask).then(function () {
       const without = out.pop();
-      if (withCheck && withCheck.text === '' && without && without.text === stuffed) {
+      // The answer that DID go is sealed, so it is opened to compare —
+      // which also proves the reply was sealed rather than sent plain.
+      const got = without && seal.open(A.people.jazz.sealPrivateKey,
+        B.people.sonny.publicKey, A.people.jazz.publicKey, without.text);
+      const opened = got && got.text;
+      if (withCheck && withCheck.text === '' && opened === stuffed) {
         test.check('the replying node sends the receipt without the oversize answer — only when checking, as a node does');
       } else {
         test.fail('compose check on replies: with ' + JSON.stringify(withCheck && withCheck.text.length) +
@@ -444,6 +463,7 @@ async function replyDirection(A, B) {
     const asked = [];
     const asker = createPeerPost({
       rootDir: askerHome,
+      sealKeyFor: sealKeyFor,
       waitMs: 2000,
       request: function (url, method, p, body) {
         asked.push(body);
@@ -453,7 +473,14 @@ async function replyDirection(A, B) {
     const to = B.people.sonny.publicKey;
     const text = JSON.stringify({ v: 1, body: { ask: 1 } });
     const waiting = asker.post('http://a.example', to, text);
-    return Promise.resolve().then(function () {
+    // WAITED FOR, not assumed: composing a post now resolves the
+    // recipient's cipher key first (cycle 10, R5), which a node may have
+    // to fetch — so the bytes leave a tick later than they used to.
+    return (async function () {
+      for (let n = 0; n < 50 && !asked[0]; n += 1) {
+        await new Promise(function (r) { setTimeout(r, 2); });
+      }
+    }()).then(function () {
       const b = asked[0];
       const hash = auth.requestHash(auth.postSignatureFor(b.from, b.from, b.to, b.text, b.sig));
       const relayId = auth.loadIdentity(A.home);

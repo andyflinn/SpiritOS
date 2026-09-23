@@ -218,6 +218,23 @@ function createAnswerer(opts) {
     return sealOf[url] || '';
   }
 
+  // The same answer, asked the other way round: a post is addressed by
+  // KEY, not by URL, so the one thing sealing needs is "what does the box
+  // with this identity seal to". Both halves came from one signed
+  // statement, so a match here means that relay said both about itself.
+  //
+  // Only relays this node has already pinned are in here, which is the
+  // right bound: a relay nobody has spoken to is a relay with no stream,
+  // and there is nothing to address a post to.
+  function relaySealKeyByKey(publicKey) {
+    if (!publicKey) return '';
+    var urls = Object.keys(keyOf);
+    for (var i = 0; i < urls.length; i += 1) {
+      if (keyOf[urls[i]] === publicKey) return sealOf[urls[i]] || '';
+    }
+    return '';
+  }
+
   function relayKey(url) {
     if (keyOf[url]) return Promise.resolve(keyOf[url]);
 
@@ -316,7 +333,7 @@ function createAnswerer(opts) {
     });
   }
 
-  return { answer: answer, relayKey: relayKey, relaySealKey: relaySealKey };
+  return { answer: answer, relayKey: relayKey, relaySealKey: relaySealKey, relaySealKeyByKey: relaySealKeyByKey };
 }
 
 module.exports = { createAnswerer: createAnswerer };

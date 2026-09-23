@@ -46,6 +46,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
+const { sealFor } = require('./openReply');
 const auth = require('../run/js/relayAuth');
 const trafficLog = require('../run/js/trafficLog');
 const world = require('./world');
@@ -688,8 +689,11 @@ test.subHeading('An owner event names the post that caused it');
   const text = JSON.stringify({
     app: 'relay', v: 1, body: { invite: { label: 'carl', days: 7, token: '' } },
   });
-  box.routePost(L.owner.publicKey, to, text,
-    auth.sign(L.owner.privateKey, auth.postMessage(L.owner.publicKey, to, text)));
+  // Sealed to the relay, like every owner verb (cycle 10, R9), and
+  // signed over the bytes that travel (cycle 10's R11).
+  const sending = sealFor(L.owner, box, text);
+  box.routePost(L.owner.publicKey, to, sending,
+    auth.sign(L.owner.privateKey, auth.postMessage(L.owner.publicKey, to, sending)));
 
   const minted = ownerSink.owned().slice(at).filter(function (e) {
     return e.kind === 'invite-minted';

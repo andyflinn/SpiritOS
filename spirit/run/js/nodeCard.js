@@ -133,8 +133,11 @@ function signable(fields) {
 // The card as it travels: the fields, and a signature over exactly those
 // bytes. Answers a STRING, because that is what peerPost sends as the
 // reply text, and the same envelope a relay answers in.
-function describe(rootDir) {
-  const id = auth.loadIdentity(rootDir);
+// THE SIGNING, SEPARATED FROM THE LOADING (cycle 10, R5). A card is made
+// from an identity, and reading that identity off a disc is a different
+// concern — one that a relay enrolling a member, or anything holding an
+// identity it did not load from its own home, does not have.
+function cardFrom(id) {
   if (!id || !id.privateKey) return '';
   const fields = cardFields(id);
   return JSON.stringify({
@@ -143,6 +146,10 @@ function describe(rootDir) {
       sig: auth.sign(id.privateKey, signable(fields)),
     }),
   });
+}
+
+function describe(rootDir) {
+  return cardFrom(auth.loadIdentity(rootDir));
 }
 
 // ── AND THE CHECK, WHICH IS THE WHOLE POINT ──────────────────────────
@@ -291,6 +298,7 @@ function setDescription(rootDir, text) {
 module.exports = {
   asks: asks,
   describe: describe,
+  cardFrom: cardFrom,
   verify: verify,
   signable: signable,
   read: read,

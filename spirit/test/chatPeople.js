@@ -26,6 +26,7 @@ const http = require('http');
 const path = require('path');
 const { URL } = require('url');
 const test = require('./testSupport.js');
+const { sealedPost } = require('./openReply');
 const auth = require('../run/js/relayAuth');
 const contactBook = require('../run/js/contacts');
 const peerFile = require('../run/js/peerFile');
@@ -532,12 +533,7 @@ function runOverLoopback() {
     // Bert writes. Said nothing about the policy, so silence: bert is on
     // the relay and has written, and this node has still never added him.
     const TEXT = '{"app":"relay-chat","v":1,"body":"first line from bert"}';
-    const packet = {
-      from: bert.publicKey,
-      to: andy.publicKey,
-      text: TEXT,
-      sig: auth.sign(bert.privateKey, auth.postMessage(bert.publicKey, andy.publicKey, TEXT)),
-    };
+    const packet = sealedPost(bert, andy, TEXT);
     return step.router.onRequest(server.url, packet)
       .then(function () { return { router: step.router, packet: packet }; });
   }).then(function (step) {
@@ -944,13 +940,10 @@ function countingNode(me, home) {
 
 // One packet, signed by its sender and addressed here — the shape that
 // comes off the wire.
-function arriving(sender, toKey, text) {
-  return {
-    from: sender.publicKey,
-    to: toKey,
-    text: text,
-    sig: auth.sign(sender.privateKey, auth.postMessage(sender.publicKey, toKey, text)),
-  };
+// Sealed, like every post but a card (cycle 10, R5): a node refuses an
+// unsealed one, so a plaintext fixture would test the refusal instead.
+function arriving(sender, toId, text) {
+  return sealedPost(sender, toId, text);
 }
 
 test.subHeading('Who is counted, and who is not');
@@ -979,13 +972,13 @@ async function whoIsCounted() {
 
   setUnknownPolicy(home, 'silent');
   const N = countingNode(me, home);
-  await N.router.onRequest(RELAY_URL, arriving(friend, me.publicKey, 'hello'));
-  await N.router.onRequest(RELAY_URL, arriving(waiting, me.publicKey, 'let me in'));
-  await N.router.onRequest(RELAY_URL, arriving(refused, me.publicKey, 'still here'));
-  await N.router.onRequest(RELAY_URL, arriving(stranger, me.publicKey, 'who am i'));
+  await N.router.onRequest(RELAY_URL, arriving(friend, me, 'hello'));
+  await N.router.onRequest(RELAY_URL, arriving(waiting, me, 'let me in'));
+  await N.router.onRequest(RELAY_URL, arriving(refused, me, 'still here'));
+  await N.router.onRequest(RELAY_URL, arriving(stranger, me, 'who am i'));
   // Our own line coming back. Counting it would make writing to somebody
   // look like them writing to us.
-  await N.router.onRequest(RELAY_URL, arriving(me, me.publicKey, 'note to self'));
+  await N.router.onRequest(RELAY_URL, arriving(me, me, 'note to self'));
 
   const count = function (key) { return peerStats.readSummary(home, key).unansweredInbound; };
 
@@ -1046,7 +1039,7 @@ async function whoIsCounted() {
   peerStats.noteIn(home, refused.publicKey, 'earlier');
   const frozen = count(refused.publicKey);
   setUnknownPolicy(home, 'acquire');
-  await N.router.onRequest(RELAY_URL, arriving(refused, me.publicKey, 'again'));
+  await N.router.onRequest(RELAY_URL, arriving(refused, me, 'again'));
   if (count(refused.publicKey) === frozen && frozen === 1) {
     test.check('and a blocked key\'s numbers freeze rather than fall, file and all');
   } else {
@@ -1067,7 +1060,7 @@ async function countsTheRowItMakes() {
 
   setUnknownPolicy(home, 'hold');
   const N = countingNode(me, home);
-  await N.router.onRequest(RELAY_URL, arriving(newcomer, me.publicKey, 'hello?'));
+  await N.router.onRequest(RELAY_URL, arriving(newcomer, me, 'hello?'));
 
   const row = contactBook.byPublicKey(home, newcomer.publicKey);
   if (row && contactBook.acquiredVia(row) === contactBook.HOLD &&
@@ -1081,7 +1074,7 @@ async function countsTheRowItMakes() {
   // And the packet itself is still not delivered. Counting is not
   // delivering, and a held sender must reach no app until a human says
   // so.
-  await N.router.onRequest(RELAY_URL, arriving(newcomer, me.publicKey, 'still?'));
+  await N.router.onRequest(RELAY_URL, arriving(newcomer, me, 'still?'));
   if (N.arrived.length === 0 &&
       peerStats.readSummary(home, newcomer.publicKey).unansweredInbound === 2) {
     test.check('and it is still held — counted is not delivered');

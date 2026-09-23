@@ -21,6 +21,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const { sealFor, openReply } = require('./openReply');
 const auth = require('../run/js/relayAuth');
 const { createRelay } = require('../run/js/relay');
 const { claimOwner } = require('./ownerClaim');
@@ -70,8 +71,11 @@ function ask(R, body, who) {
   const from = who || R.owner;
   const relayKey = R.box.relayPublicKey();
   const packet = JSON.stringify({ app: 'relay', v: 1, body: body });
-  const out = R.box.routePost(from.publicKey, relayKey, packet,
-    auth.sign(from.privateKey, auth.postMessage(from.publicKey, relayKey, packet)));
+  // SEALED TO THE RELAY, like every owner verb now (cycle 10, R9), and
+  // signed over the bytes that travel (cycle 10's R11).
+  const sending = sealFor(from, R.box, packet);
+  const out = R.box.routePost(from.publicKey, relayKey, sending,
+    auth.sign(from.privateKey, auth.postMessage(from.publicKey, relayKey, sending)));
   if (!out || !out.hash) return out;
   // The answer is the REPLY to that post, on the asker's own stream.
   const reply = R.heard.filter(function (m) {
@@ -81,7 +85,8 @@ function ask(R, body, who) {
   // The relay answers in the same envelope it is addressed in, so the
   // verb's answer is `body` — as it is for every other owner verb.
   try {
-    const packetBack = JSON.parse(reply.data.text);
+    // OPENED, because a relay seals its answers now (cycle 10, R5).
+    const packetBack = openReply(from, relayKey, reply.data.text);
     return packetBack && packetBack.body ? packetBack.body : packetBack;
   } catch (e) { return reply.data; }
 }

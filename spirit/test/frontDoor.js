@@ -30,6 +30,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
+const { sealedPost } = require('./openReply');
 const peerPost = require('../run/js/peerPost');
 const relayKeys = require('../run/js/relayKeys');
 const contactBook = require('../run/js/contacts');
@@ -42,13 +43,11 @@ const RELAY = 'http://relay.example';
 
 // A request as it arrives off the stream: signed by the sender, over the
 // bytes, addressed to this node.
+// SEALED, like every post but a card (cycle 10, R5). `to` may be a key
+// or an identity; an identity is what lets this seal, and a bare key is
+// kept for the checks that are ABOUT a post nobody can open.
 function arriving(sender, to, text) {
-  return {
-    from: sender.publicKey,
-    to: to,
-    text: text,
-    sig: auth.sign(sender.privateKey, auth.postMessage(sender.publicKey, to, text)),
-  };
+  return sealedPost(sender, to, text);
 }
 
 // A node with a router, an address book, and a door that can be told who
@@ -87,7 +86,7 @@ async function theDefaultIsUnchanged() {
   // what an unwired gate looks like.
   const N = nodeWith({ noDoor: true });
   const stranger = auth.generateIdentity('nobody');
-  await N.router.onRequest(RELAY, arriving(stranger, N.me.publicKey, 'hello'));
+  await N.router.onRequest(RELAY, arriving(stranger, N.me, 'hello'));
 
   if (N.arrived.length === 1) {
     test.check('with no door given, a stranger is delivered — the old behaviour, on purpose');
@@ -112,7 +111,7 @@ async function knownAndStranger() {
     publicKey: friend.publicKey, publicLabel: 'bella', relays: [RELAY],
   }, 'message');
 
-  await N.router.onRequest(RELAY, arriving(friend, N.me.publicKey, 'from a friend'));
+  await N.router.onRequest(RELAY, arriving(friend, N.me, 'from a friend'));
   if (N.arrived.length === 1 && N.arrived[0].text === 'from a friend') {
     test.check('somebody in the book reaches the apps');
   } else {
@@ -121,7 +120,7 @@ async function knownAndStranger() {
 
   // THE CHECK THIS FILE EXISTS FOR. A perfectly valid signature from a
   // key this node has never heard of.
-  await N.router.onRequest(RELAY, arriving(stranger, N.me.publicKey, 'from nobody'));
+  await N.router.onRequest(RELAY, arriving(stranger, N.me, 'from nobody'));
   if (N.arrived.length === 1) {
     test.check('and a stranger with a perfect signature reaches no app at all');
   } else {
@@ -162,7 +161,7 @@ async function theRelayIsKnownIfAccepted() {
   const N = nodeWith({});
   relayKeys.accept(N.home, RELAY, relayId.publicKey);
 
-  await N.router.onRequest(RELAY, arriving(relayId, N.me.publicKey, '{"relay":"device-offer"}'));
+  await N.router.onRequest(RELAY, arriving(relayId, N.me, '{"relay":"device-offer"}'));
   if (N.arrived.length === 1) {
     test.check('an accepted relay is heard, so an enrolment it carries is not refused at the door');
   } else {
@@ -171,7 +170,7 @@ async function theRelayIsKnownIfAccepted() {
 
   // And only one that was accepted. Without relayKeys, "is this a relay?"
   // could only be answered by asking the thing that wants in.
-  await N.router.onRequest(RELAY, arriving(impostor, N.me.publicKey, '{"relay":"device-offer"}'));
+  await N.router.onRequest(RELAY, arriving(impostor, N.me, '{"relay":"device-offer"}'));
   if (N.arrived.length === 1) {
     test.check('and a key claiming to be a relay, which this node never accepted, is not');
   } else {
@@ -190,7 +189,7 @@ async function thePreference() {
   const A = nodeWith({});
   fs.writeFileSync(path.join(A.home, 'preferences.json'),
     JSON.stringify({ unknownSenders: 'acquire' }));
-  await A.router.onRequest(RELAY, arriving(stranger, A.me.publicKey, 'hello'));
+  await A.router.onRequest(RELAY, arriving(stranger, A.me, 'hello'));
   const row = contactBook.byPublicKey(A.home, stranger.publicKey);
   if (A.arrived.length === 1 && row) {
     test.check('under `acquire` a stranger gets a row and is delivered');
@@ -203,7 +202,7 @@ async function thePreference() {
   const H = nodeWith({});
   fs.writeFileSync(path.join(H.home, 'preferences.json'),
     JSON.stringify({ unknownSenders: 'hold' }));
-  await H.router.onRequest(RELAY, arriving(stranger, H.me.publicKey, 'hello'));
+  await H.router.onRequest(RELAY, arriving(stranger, H.me, 'hello'));
   const held = contactBook.byPublicKey(H.home, stranger.publicKey);
   if (held && H.arrived.length === 0) {
     test.check('under `hold` they get a waiting row and reach no app');
@@ -225,7 +224,7 @@ async function thePreference() {
   // also the default.
   const B = nodeWith({});
   fs.writeFileSync(path.join(B.home, 'preferences.json'), '{ not json');
-  await B.router.onRequest(RELAY, arriving(stranger, B.me.publicKey, 'hello'));
+  await B.router.onRequest(RELAY, arriving(stranger, B.me, 'hello'));
   if (B.arrived.length === 0) {
     test.check('and a broken preferences.json reads as silent, never as acquire');
   } else {
@@ -252,7 +251,7 @@ async function theFloor() {
   for (let n = 1; n <= 12; n += 1) {
     const who = auth.generateIdentity('flood-' + n);
     /* eslint-disable no-await-in-loop */
-    const got = await N.router.onRequest(RELAY, arriving(who, N.me.publicKey, big));
+    const got = await N.router.onRequest(RELAY, arriving(who, N.me, big));
     if (got === null && !refusedAt) refusedAt = n;
   }
   if (refusedAt > 1 && refusedAt <= 9) {
@@ -289,7 +288,7 @@ async function theFloor() {
   let stopped = 0;
   for (let n = 1; n <= 10; n += 1) {
     /* eslint-disable no-await-in-loop */
-    const got = await M.router.onRequest(RELAY, arriving(one, M.me.publicKey, 'tiny'));
+    const got = await M.router.onRequest(RELAY, arriving(one, M.me, 'tiny'));
     if (got === null && !stopped) stopped = n;
   }
   if (stopped === 7) {
@@ -307,7 +306,7 @@ async function theFloor() {
   const newcomer = auth.generateIdentity('newcomer');
   for (let n = 0; n < 10; n += 1) {
     /* eslint-disable no-await-in-loop */
-    await K.router.onRequest(RELAY, arriving(newcomer, K.me.publicKey, 'hello'));
+    await K.router.onRequest(RELAY, arriving(newcomer, K.me, 'hello'));
   }
   if (K.arrived.length === 10 && contactBook.listens(contactBook.byPublicKey(K.home, newcomer.publicKey))) {
     test.check('while under `acquire` one message makes them a contact, and a contact is not rationed');
@@ -322,7 +321,7 @@ async function theFloor() {
   contactBook.acquire(F.home, { publicKey: friend.publicKey, publicLabel: 'bella', relays: [] }, 'message');
   for (let n = 0; n < 20; n += 1) {
     /* eslint-disable no-await-in-loop */
-    await F.router.onRequest(RELAY, arriving(friend, F.me.publicKey, 'x'.repeat(9000)));
+    await F.router.onRequest(RELAY, arriving(friend, F.me, 'x'.repeat(9000)));
   }
   if (F.arrived.length === 20) {
     test.check('while somebody in the book is not rationed at all — the floor is about strangers');
@@ -341,7 +340,7 @@ async function theAnswerIsGatedToo() {
   const stranger = auth.generateIdentity('nobody');
   const N = nodeWith({ answer: function (item) { asked.push(item.from); return 'x'; } });
 
-  await N.router.onRequest(RELAY, arriving(stranger, N.me.publicKey, '{"relay":"device-offer"}'));
+  await N.router.onRequest(RELAY, arriving(stranger, N.me, '{"relay":"device-offer"}'));
   if (asked.length === 0) {
     test.check('a stranger never reaches the answerer, so cannot drive an enrolment');
   } else {
@@ -350,7 +349,7 @@ async function theAnswerIsGatedToo() {
 
   const friend = auth.generateIdentity('bella');
   contactBook.acquire(N.home, { publicKey: friend.publicKey, publicLabel: 'bella', relays: [] }, 'message');
-  await N.router.onRequest(RELAY, arriving(friend, N.me.publicKey, 'hi'));
+  await N.router.onRequest(RELAY, arriving(friend, N.me, 'hi'));
   if (asked.length === 1 && asked[0] === friend.publicKey) {
     test.check('and somebody admitted does');
   } else {

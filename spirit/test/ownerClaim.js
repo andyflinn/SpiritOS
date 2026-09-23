@@ -20,6 +20,7 @@
 const auth = require('../run/js/relayAuth');
 const invites = require('../run/js/invites');
 const relayStore = require('../run/js/relayStore');
+const nodeCard = require('../run/js/nodeCard');
 
 // For a relay running in ANOTHER process: the row goes into its relay.db,
 // and this process's connection is closed at once, so it holds no handle on
@@ -36,7 +37,12 @@ function claimOwner(box, identity, label, clientKey) {
   const row = invites.mintOwner(home, label);
   return box.claim(label,
     auth.sign(identity.privateKey, auth.claimMessage(label)),
-    identity.publicKey, clientKey || '10.0.0.1', row.token, label);
+    identity.publicKey, clientKey || '10.0.0.1', row.token, label,
+    // THE OWNER'S CARD (cycle 10, R5). The owner is the one member who
+    // must always be answerable — every owner verb's reply is sealed to
+    // the key on this card — so a suite that claimed without one would
+    // build a relay that cannot answer its own owner.
+    nodeCard.cardFrom(Object.assign({ name: label }, identity)));
 }
 
 module.exports = { claimOwner: claimOwner, mintOwnerInvite: mintOwnerInvite };

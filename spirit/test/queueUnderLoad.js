@@ -58,6 +58,8 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
+const { rememberKeys, sealKeyFor } = require('./openReply');
+const nodeCard = require('../run/js/nodeCard');
 const auth = require('../run/js/relayAuth');
 const { claimOwner } = require('./ownerClaim');
 const hub = require('../run/js/hub');
@@ -99,10 +101,13 @@ function buildRelay(memberNames) {
   claimOwner(box, owner, 'owner', 'fx-owner');
   const members = {};
   memberNames.forEach(function (name) {
-    const id = auth.generateIdentity(name);
+    // Registered so this node can seal to them (cycle 10, R5), and
+    // enrolled with a card so the relay can seal back.
+    const id = rememberKeys(auth.generateIdentity(name));
     const minted = box.mint('owner', name, 7, '');
     box.claim(name, auth.sign(id.privateKey, auth.claimMessage(name)),
-      id.publicKey, 'fx-' + name, minted.invite.token, name);
+      id.publicKey, 'fx-' + name, minted.invite.token, name,
+      nodeCard.cardFrom(Object.assign({ name: name }, id)));
     members[name] = id;
   });
   return { home: home, box: box, owner: owner, members: members };
@@ -196,6 +201,7 @@ function sender(w, identity) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-qul-node-'));
   auth.saveIdentity(home, identity);
   const P = peerPost.createPeerPost({
+    sealKeyFor: sealKeyFor,
     rootDir: home,
     request: hub.relayRequest,
     waitMs: 2000,

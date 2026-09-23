@@ -21,6 +21,7 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const { sealedPost } = require('./openReply');
 const auth = require('../run/js/relayAuth');
 const packet = require('../run/js/client/packet');
 const arrivalsModule = require('../run/js/arrivals');
@@ -382,12 +383,11 @@ test.subHeading('Connected: peerPost actually notes into it');
   });
 
   const encoded = packet.encode('chess', { move: 'e4' });
-  const text = encoded.text;
-  const sig = auth.sign(them.privateKey, auth.postMessage(them.publicKey, me.publicKey, text));
-
-  return router.onRequest('https://relay.example', {
-    from: them.publicKey, to: me.publicKey, text: text, sig: sig,
-  }).then(function () {
+  // SEALED, like every post but a card (cycle 10, R5): a node refuses an
+  // unsealed one, so handing it plaintext would test the refusal rather
+  // than the seam.
+  return router.onRequest('https://relay.example',
+    sealedPost(them, me, encoded.text)).then(function () {
     // Decoded here, not by the node — see the first subscriber above.
     if (seen.length === 1 && seen[0].packet === undefined &&
         packet.decode(seen[0].text).app === 'chess') {
@@ -399,10 +399,8 @@ test.subHeading('Connected: peerPost actually notes into it');
     // And the negative half, or the check above passes for a node that
     // hands every stranger straight to its apps.
     const stranger = auth.generateIdentity('stranger');
-    const sSig = auth.sign(stranger.privateKey, auth.postMessage(stranger.publicKey, me.publicKey, text));
-    return router.onRequest('https://relay.example', {
-      from: stranger.publicKey, to: me.publicKey, text: text, sig: sSig,
-    }).then(function () {
+    return router.onRequest('https://relay.example',
+      sealedPost(stranger, me, encoded.text)).then(function () {
       if (seen.length === 1) {
         test.check('and a stranger reaches no app at all — the front door binds before the seam');
       } else {

@@ -25,6 +25,8 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const { sealFor, openBody } = require('./openReply');
+const nodeCard = require('../run/js/nodeCard');
 const auth = require('../run/js/relayAuth');
 const { createRelay } = require('../run/js/relay');
 
@@ -53,7 +55,11 @@ function relayWith(tag, memberNames) {
   auth.writeAllowKeys(home, [{ name: 'owner' + tag, publicKey: owner.publicKey }]);
 
   const box = createRelay(home);
-  box.claim('owner' + tag, auth.sign(owner.privateKey, auth.claimMessage('owner' + tag)), owner.publicKey);
+  // WITH CARDS (cycle 10, R5): the relay seals its answers to the key on
+  // a member's card, so a fixture that enrols without one builds a relay
+  // that can tell its members nothing.
+  box.claim('owner' + tag, auth.sign(owner.privateKey, auth.claimMessage('owner' + tag)), owner.publicKey,
+    null, null, null, nodeCard.cardFrom(Object.assign({ name: 'owner' + tag }, owner)));
 
   // The real way on, as relayStatus and relayMonitor do it: a fixture that
   // writes a row directly proves a rule against a relay nobody could join.
@@ -62,7 +68,8 @@ function relayWith(tag, memberNames) {
     const id = auth.generateIdentity(name);
     const minted = box.mint('owner' + tag, name, 7, '');
     box.claim(name, auth.sign(id.privateKey, auth.claimMessage(name)),
-      id.publicKey, null, minted.invite.token, name);
+      id.publicKey, null, minted.invite.token, name,
+      nodeCard.cardFrom(Object.assign({ name: name }, id)));
     members[name] = id;
   });
 
@@ -70,8 +77,11 @@ function relayWith(tag, memberNames) {
 }
 
 // A signed post, exactly as one arrives off the wire.
+// SEALED when it is addressed to the relay (cycle 10, R9) — which is
+// every call here, since this suite is about what a box will do for whom.
 function post(box, from, toKey, bodyObj) {
-  const text = JSON.stringify({ v: 1, body: bodyObj });
+  const plain = JSON.stringify({ v: 1, body: bodyObj });
+  const text = toKey === box.relayPublicKey() ? sealFor(from, box, plain) : plain;
   return box.routePost(from.publicKey, toKey, text,
     auth.sign(from.privateKey, auth.postMessage(from.publicKey, toKey, text)));
 }
@@ -96,13 +106,12 @@ async function askAsRelay(box, fromKey, fromPrivate, toKey, bodyObj) {
   return { sent: sent, answer: answer, packet: packet };
 }
 
-function lastReply(bag) {
+function lastReply(bag, who, relayKey) {
   const replies = bag.filter(function (m) { return m.event === 'reply'; });
   if (!replies.length) return null;
   let parsed = null;
-  try { parsed = JSON.parse(replies[replies.length - 1].data.text); }
-  catch (e) { return null; }
-  return (parsed && parsed.body) || null;
+  // Opened, because a relay seals its answers now (cycle 10, R5).
+  return openBody(who, relayKey, replies[replies.length - 1].data.text);
 }
 
 test.startTest('The partner gate — two relays, one hop, nothing running');
@@ -124,7 +133,8 @@ function enrol(relay, tag, identity, name) {
   const minted = relay.box.mint('owner' + tag, name, 7, '');
   return relay.box.claim(name,
     auth.sign(identity.privateKey, auth.claimMessage(name)),
-    identity.publicKey, null, minted.invite.token, name);
+    identity.publicKey, null, minted.invite.token, name,
+    nodeCard.cardFrom(Object.assign({ name: name }, identity)));
 }
 enrol(B, 'b', A.owner, 'ownera');
 enrol(A, 'a', B.owner, 'ownerb');
@@ -275,7 +285,7 @@ test.subHeading('A member is unaffected, and still gets its own relay');
     sinkFor(heardByBella));
 
   post(B.box, B.members.bella, B.key, { search: { q: 'ber' } });
-  const answer = lastReply(heardByBella);
+  const answer = lastReply(heardByBella, B.members.bella, B.key);
   const labels = ((answer && answer.matches) || []).map(function (m) { return m.publicLabel; });
   if (answer && answer.ok && labels.indexOf('bertrand') !== -1) {
     test.check('a member still searches its own relay: ' + labels.join(', '));
@@ -285,7 +295,7 @@ test.subHeading('A member is unaffected, and still gets its own relay');
 
   // And a member may still ask the verbs a member may ask.
   post(B.box, B.members.bella, B.key, { partners: true });
-  const mine = lastReply(heardByBella);
+  const mine = lastReply(heardByBella, B.members.bella, B.key);
   if (mine && mine.ok === true && Array.isArray(mine.partners)) {
     test.check('and may still ask who B partners with, which a partner may not');
   } else {

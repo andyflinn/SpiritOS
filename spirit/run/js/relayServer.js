@@ -266,6 +266,18 @@ function argMB(flag) {
   return mb;
 }
 
+// A PARTNER'S CIPHER KEY STOOD HERE, briefly, during cycle 10's R5.
+// It fetched the key from the partner's own signed door and sealed the
+// relay-to-relay wrapper to it — and was backed out the same hour,
+// because the OTHER half cannot be done that way: a partner answering has
+// no card to seal ITS reply to, since a partner is not a member of the
+// box it is partnered with.
+//
+// Sealing one direction only is worse than sealing neither: it looks
+// done. See relay.js, fromPartnerBox, for exactly what is and is not
+// covered, and why the fix belongs with the partnership handshake — which
+// is where a key could be exchanged once instead of fetched for ever.
+
 // HOW THIS RELAY ASKS A PARTNER, injected rather than reached for.
 //
 // LATE-BOUND on purpose: createRelay runs at module load and partnerRouter
@@ -449,7 +461,12 @@ function handleRelayClaim(req, res) {
       // and it is matched and then forgotten (R1, 2026-09-15). A caller
       // that sends only `name` gets the old behaviour, where the two were
       // one string.
-      body && body.inviteLabel
+      body && body.inviteLabel,
+      // THE CARD THEY ENROL WITH (cycle 10, R5). Verified inside `claim`
+      // against the key that signed the claim, and dropped if it belongs
+      // to anybody else. A claim without one is still taken; that member
+      // simply has no cipher key here until they send one.
+      body && body.card
     );
     res.writeHead(result.status, { 'Content-Type': 'application/json; charset=utf-8' });
     // A 409 carries the peer that is already there so the caller can tell
@@ -984,6 +1001,26 @@ server.listen(port, BIND_HOST, () => {
     // NO TRAFFIC LOG. peerPost takes it injected precisely so a relay
     // can omit it: that file is correct on a personal node and is "the
     // worst thing in the system on a relay" (peerPost.js).
+    //
+    // ── NOT SEALED, AND ASKED FOR BY NAME (cycle 10, R5) ────────────
+    //
+    // peerPost seals by default and refuses when it cannot, so an
+    // absence here would read as "somebody forgot to wire the key up".
+    // This is not that: it is the one traffic in the tree deliberately
+    // left plain, and it says so.
+    //
+    // WHAT IS AND IS NOT COVERED is argued at relay.js, `fromPartnerBox`.
+    // In short: every packet a partner CARRIES is sealed to the member it
+    // is addressed to, so a partner forwards what it cannot read — the
+    // property PARTNERS.md always wanted. What travels plain is the
+    // WRAPPER: one relay's instruction to another, a query and an
+    // envelope, never a person's words.
+    //
+    // It cannot be closed from this side alone. A partner is not a member
+    // of the box it is partnered with, so there is no card to seal an
+    // ANSWER to — and sealing one direction only is worse than sealing
+    // neither, because it looks done.
+    sealsPosts: false,
   });
 
   // THE GOVERNOR'S TICK STOOD HERE (cycle 1), every five seconds. Deleted in

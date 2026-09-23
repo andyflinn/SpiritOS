@@ -40,6 +40,8 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const { sealFor, sealedPost, openBody, openReply } = require('./openReply');
+const nodeCard = require('../run/js/nodeCard');
 const auth = require('../run/js/relayAuth');
 const createRelay = require('../run/js/relay');
 
@@ -73,7 +75,10 @@ function world() {
   auth.writeAllowKeys(home, [{ name: 'andy', publicKey: owner.publicKey }]);
 
   const box = createRelay.createRelay(home);
-  box.claim('andy', auth.sign(owner.privateKey, auth.claimMessage('andy')), owner.publicKey);
+  // WITH A CARD (cycle 10, R5): the relay seals its answers to the key
+  // on it, and the owner is the one member who must always be answerable.
+  box.claim('andy', auth.sign(owner.privateKey, auth.claimMessage('andy')), owner.publicKey,
+    null, null, null, nodeCard.cardFrom(Object.assign({ name: 'andy' }, owner)));
 
   // The real way on, for the same reason relayStatus.js does it: a
   // fixture that writes the row directly proves the delivery rule against
@@ -81,7 +86,8 @@ function world() {
   [['bella', bella], ['carl', carl]].forEach(function (pair) {
     const minted = box.mint('andy', pair[0], 7, '');
     box.claim(pair[0], auth.sign(pair[1].privateKey, auth.claimMessage(pair[0])),
-      pair[1].publicKey, null, minted.invite.token, pair[0]);
+      pair[1].publicKey, null, minted.invite.token, pair[0],
+      nodeCard.cardFrom(Object.assign({ name: pair[0] }, pair[1])));
   });
 
   const heard = { andy: [], bella: [] };
@@ -91,10 +97,12 @@ function world() {
   return { home: home, box: box, owner: owner, bella: bella, carl: carl, heard: heard };
 }
 
+// SEALED, like every post but a card (cycle 10, R5) — and here that is
+// the point rather than an obligation: what the monitor is shown has to
+// be the envelope of a packet nobody on this box can read.
 function post(w, from, to, text) {
-  const signed = auth.postMessage(from.publicKey, to.publicKey, text);
-  return w.box.routePost(from.publicKey, to.publicKey, text,
-    auth.sign(from.privateKey, signed));
+  const body = sealedPost(from, to, text);
+  return w.box.routePost(body.from, body.to, body.text, body.sig);
 }
 
 function events(bag) {
@@ -114,9 +122,13 @@ function askMonitor(w, who, on, filter) {
     app: 'relay', v: 1, body: { monitor: { on: !!on, filter: filter || null } },
   });
   const relayKey = w.box.relayPublicKey();
-  return w.box.routePost((who || w.owner).publicKey, relayKey, packet,
-    auth.sign((who || w.owner).privateKey,
-      auth.postMessage((who || w.owner).publicKey, relayKey, packet)));
+  const asker = who || w.owner;
+  // SEALED TO THE RELAY, like every owner verb now (cycle 10, R9), and
+  // signed over the bytes that travel (cycle 10's R11).
+  const sending = sealFor(asker, w.box, packet);
+  return w.box.routePost(asker.publicKey, relayKey, sending,
+    auth.sign(asker.privateKey,
+      auth.postMessage(asker.publicKey, relayKey, sending)));
 }
 
 function startMonitor(w, filter) {
@@ -155,9 +167,14 @@ test.subHeading('Silent until asked');
   // FACTS, NOT PAYLOADS. A monitor carrying the text would make the
   // owner's screen a place everybody else's words pass through, which is
   // exactly what 0006 emptied off this box.
+  // AND THE SIZE IS THE SIZE OF WHAT TRAVELLED, which after cycle 10 is
+  // the sealed bytes — bigger than the words, and no longer a measure of
+  // them. This used to assert `bytes === 'again'.length`, which was a
+  // true statement about a relay that held the plaintext. That it is no
+  // longer true is the change working.
   const row = seen[0].data;
-  if (row.bytes === 'again'.length && JSON.stringify(row).indexOf('again') === -1) {
-    test.check('carrying the size and not the words — a monitor is not a mailbox');
+  if (row.bytes > 'again'.length && JSON.stringify(row).indexOf('again') === -1) {
+    test.check('carrying the size of the sealed packet and not the words — a monitor is not a mailbox');
   } else {
     test.fail('row: ' + JSON.stringify(row));
   }
@@ -194,7 +211,8 @@ test.subHeading('Silent until asked');
   const theirs = askMonitor(w, w.bella, false);
   const bellaHeard = w.heard.bella.filter(function (m) { return m.event === 'reply'; });
   let refused = null;
-  try { refused = JSON.parse(bellaHeard[bellaHeard.length - 1].data.text).body; }
+  // OPENED: a relay seals its answers now (cycle 10, R5).
+  try { refused = openBody(w.bella, w.box.relayPublicKey(), bellaHeard[bellaHeard.length - 1].data.text); }
   catch (e) { refused = null; }
 
   if (theirs.ok && w.box.monitoring() === true &&
@@ -395,8 +413,9 @@ test.subHeading('The relay as a peer, for its owner');
     app: 'relay', v: 1, body: { monitor: { on: true, filter: { kinds: ['refused'] } } },
   });
 
-  const sent = w.box.routePost(w.owner.publicKey, relayKey, packet,
-    auth.sign(w.owner.privateKey, auth.postMessage(w.owner.publicKey, relayKey, packet)));
+  const sending = sealFor(w.owner, w.box, packet);
+  const sent = w.box.routePost(w.owner.publicKey, relayKey, sending,
+    auth.sign(w.owner.privateKey, auth.postMessage(w.owner.publicKey, relayKey, sending)));
 
   if (sent.ok && sent.status === 202 && sent.hash) {
     test.check('the owner can post to the relay itself, and gets a hash like any other post');
@@ -416,7 +435,7 @@ test.subHeading('The relay as a peer, for its owner');
     test.fail('reply: ' + JSON.stringify(replies.map(function (m) { return m.data; })));
   }
 
-  const answered = JSON.parse(replies[0].data.text);
+  const answered = openReply(w.owner, w.box.relayPublicKey(), replies[0].data.text) || {};
   if (answered.body && answered.body.monitoring === true &&
       w.box.monitorFilter() && w.box.monitorFilter().kinds.join() === 'refused') {
     test.check('the packet did the work — monitoring on, filtered, entirely over protocol');
@@ -433,8 +452,12 @@ test.subHeading('The relay as a peer, for its owner');
   const relayKey = w.box.relayPublicKey();
   const packet = JSON.stringify({ app: 'relay', v: 1, body: { monitor: { on: true } } });
 
-  const theirs = w.box.routePost(w.bella.publicKey, relayKey, packet,
-    auth.sign(w.bella.privateKey, auth.postMessage(w.bella.publicKey, relayKey, packet)));
+  // SEALED, so the refusal that comes back is the VERB refusing and not
+  // the seal check refusing — which would make this assertion pass while
+  // proving nothing about who may ask for what.
+  const theirPacket = sealFor(w.bella, w.box, packet);
+  const theirs = w.box.routePost(w.bella.publicKey, relayKey, theirPacket,
+    auth.sign(w.bella.privateKey, auth.postMessage(w.bella.publicKey, relayKey, theirPacket)));
 
   // THE CHECK THE GATING RESTS ON, and it is about the WORDING as much as
   // the refusal.
@@ -445,7 +468,7 @@ test.subHeading('The relay as a peer, for its owner');
   // cannot be enumerated by asking it.
   const bellaSaw = w.heard.bella.filter(function (m) { return m.event === 'reply'; });
   let said = null;
-  try { said = JSON.parse(bellaSaw[bellaSaw.length - 1].data.text).body; }
+  try { said = openBody(w.bella, w.box.relayPublicKey(), bellaSaw[bellaSaw.length - 1].data.text); }
   catch (e) { said = null; }
 
   if (theirs.ok && said && said.ok === false && said.error === 'no such peer') {

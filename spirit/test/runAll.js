@@ -41,6 +41,10 @@ const NOT_A_SUITE = [
   // A helper, not a suite: reads a relay's roll off its disc for the suites
   // that inspect it (cycle 3).
   'rollOf.js',
+  // A helper, not a suite (cycle 10, R5): sealing a post to a relay and
+  // opening the answer, in one place so twenty suites cannot each grow
+  // their own opinion about what a sealed reply looks like.
+  'openReply.js',
   // A helper, not a suite: the first claim with the owner invite (cycle 3,
   // Part B), in process.
   'ownerClaim.js',

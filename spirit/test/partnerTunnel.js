@@ -40,6 +40,8 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const { sealFor, openBody } = require('./openReply');
+const nodeCard = require('../run/js/nodeCard');
 const auth = require('../run/js/relayAuth');
 const { createRelay } = require('../run/js/relay');
 
@@ -102,7 +104,8 @@ function relayWith(tag, memberNames) {
   auth.writeAllowKeys(home, [{ name: 'owner' + tag, publicKey: owner.publicKey }]);
 
   const box = createRelay(home, { askPartner: askPartner(home) });
-  box.claim('owner' + tag, auth.sign(owner.privateKey, auth.claimMessage('owner' + tag)), owner.publicKey);
+  box.claim('owner' + tag, auth.sign(owner.privateKey, auth.claimMessage('owner' + tag)), owner.publicKey,
+    null, null, null, nodeCard.cardFrom(Object.assign({ name: 'owner' + tag }, owner)));
 
   const people = {};
   const inboxes = {};
@@ -110,7 +113,8 @@ function relayWith(tag, memberNames) {
     const id = auth.generateIdentity(name);
     const minted = box.mint('owner' + tag, name, 7, '');
     box.claim(name, auth.sign(id.privateKey, auth.claimMessage(name)),
-      id.publicKey, null, minted.invite.token, name);
+      id.publicKey, null, minted.invite.token, name,
+      nodeCard.cardFrom(Object.assign({ name: name }, id)));
     people[name] = id;
     inboxes[name] = [];
     box.streamOpen(id.publicKey,
@@ -130,8 +134,11 @@ function relayWith(tag, memberNames) {
 // partner, which disclosed a member's packet to relays that had no
 // business seeing it and burned a pool unit at each of them. Passing the
 // target explicitly is what makes that impossible rather than discouraged.
+// Sealed when it is addressed to the relay (cycle 10, R9); a peer-to-peer
+// packet is routed rather than read, so it travels as it always did.
 function post(box, from, toKey, bodyObj, atRelayKey) {
-  const text = JSON.stringify({ v: 1, body: bodyObj });
+  const plain = JSON.stringify({ v: 1, body: bodyObj });
+  const text = toKey === box.relayPublicKey() ? sealFor(from, box, plain) : plain;
   return box.routePost(from.publicKey, toKey, text,
     auth.sign(from.privateKey, auth.postMessage(from.publicKey, toKey, text)), atRelayKey);
 }
@@ -419,7 +426,9 @@ test.subHeading('And sonny’s answer reaches jazz');
   await new Promise(function (r) { setTimeout(r, 0); });
 
   const answer = A.inboxes.jazz.filter(function (m) { return m.event === 'reply'; }).pop();
-  const found = answer && JSON.parse(answer.data.text).body.matches
+  // Opened: a relay seals its answers now (cycle 10, R5).
+  const foundIn = answer && openBody(A.people.jazz, A.key, answer.data.text);
+  const found = (foundIn && foundIn.matches || [])
     .filter(function (r) { return r.publicKey === daveKey; })[0];
 
   if (found) {
@@ -438,7 +447,7 @@ test.subHeading('And sonny’s answer reaches jazz');
   // AND AN ORDINARY ANSWER IS UNCHANGED. `vias` is absent when there is
   // one route, so a peer found in one place costs exactly the bytes it
   // always did.
-  const sonnyRow = answer && JSON.parse(answer.data.text).body.matches
+  const sonnyRow = (foundIn && foundIn.matches || [])
     .filter(function (r) { return r.publicLabel === 'sonny'; })[0];
   if (!sonnyRow || sonnyRow.vias === undefined) {
     test.check('and a peer found in one place carries no extra field');
@@ -478,7 +487,10 @@ test.subHeading('And sonny’s answer reaches jazz');
   await new Promise(function (r) { setTimeout(r, 0); });
 
   const andyReply = A.inboxes.jazz.filter(function (m) { return m.event === 'reply'; }).pop();
-  const andyRow = andyReply && JSON.parse(andyReply.data.text).body.matches
+  // Opened: a relay seals its answers now (cycle 10, R5). A CARD reply
+  // is still read raw above — cards are the one thing that travels plain.
+  const andySaid = andyReply && openBody(A.people.jazz, A.key, andyReply.data.text);
+  const andyRow = (andySaid && andySaid.matches || [])
     .filter(function (r) { return r.publicKey === andy.publicKey; })[0];
 
   if (andyRow) {

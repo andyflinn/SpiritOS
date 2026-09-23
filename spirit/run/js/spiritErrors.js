@@ -338,6 +338,37 @@ define('no-such-peer', {
     'same condition with two statuses. Recorded rather than changed, ' +
     'because changing a relay status is a wire change.',
 });
+// ── THE TWO REFUSALS SEALING ADDS (cycle 10, R5) ─────────────────────
+//
+// Both are FLAG-DAY errors, which is why they say so in as many words.
+// Andy: "we're pre-alpha, old nodes MUST update to stay in the game." A
+// node from before this cycle posts plaintext and is refused, and the
+// one thing its operator needs to learn is that the box is old rather
+// than broken — so neither of these may ever become a silent drop.
+define('unsealed-post', {
+  status: 400, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['unsealed posts are refused'],
+  note: 'A post that is not a card must be sealed to the recipient\'s ' +
+    'cipher key. Refused by the RECEIVER as well as the sender, because ' +
+    'a sender-only check is bypassed by not being the sender. Not worth ' +
+    'retrying as sent: fetch the card and seal to it.',
+});
+define('will-not-open', {
+  status: 400, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['this did not open for me'],
+  note: 'Sealed, but not to this box — or altered on the way. The three ' +
+    'causes (wrong key, tampering, a blob lifted from another exchange ' +
+    'and re-addressed) are deliberately not distinguished: telling them ' +
+    'apart is only useful to somebody trying them.',
+});
+define('no-cipher-key', {
+  status: 428, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['no cipher key for that peer', 'cipher key cannot be used'],
+  note: 'THE SENDER\'S OWN REFUSAL, before anything leaves. Andy: "if ' +
+    'you can\'t get the card, you can\'t post anyways." Never a plaintext ' +
+    'fallback — that would hand everything to an attacker who can simply ' +
+    'withhold a card. Ask for the card, then post.',
+});
 define('not-owner', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['not the owner', 'no owner key on this relay', 'the owner cannot be removed',

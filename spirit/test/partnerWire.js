@@ -44,6 +44,8 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
+const { sealFor, openReply } = require('./openReply');
+const nodeCard = require('../run/js/nodeCard');
 const auth = require('../run/js/relayAuth');
 const { claimOwner } = require('./ownerClaim');
 const hub = require('../run/js/hub');
@@ -90,7 +92,8 @@ function buildRelay(tag, memberNames) {
     const id = auth.generateIdentity(name);
     const minted = box.mint('owner' + tag, name, 7, '');
     box.claim(name, auth.sign(id.privateKey, auth.claimMessage(name)),
-      id.publicKey, null, minted.invite.token, name);
+      id.publicKey, null, minted.invite.token, name,
+      nodeCard.cardFrom(Object.assign({ name: name }, id)));
     members[name] = id;
   });
 
@@ -143,7 +146,9 @@ async function startRelay(w, port) {
 // route, which is what a node's sseClient does with more ceremony.
 function askAsMember(w, member, bodyObj) {
   const relayKey = w.box.relayPublicKey();
-  const text = JSON.stringify({ v: 1, body: bodyObj });
+  // Sealed to the relay, like every owner verb (cycle 10, R9), and
+  // signed over the bytes that travel (cycle 10's R11).
+  const text = sealFor(member, w.box, JSON.stringify({ v: 1, body: bodyObj }));
   const sig = auth.sign(member.privateKey,
     auth.postMessage(member.publicKey, relayKey, text));
   return hub.relayRequest(w.base, 'POST', '/api/relay/post',
@@ -165,7 +170,8 @@ async function run() {
   [[B, 'b', A.owner, 'ownera'], [A, 'a', B.owner, 'ownerb']].forEach(function (p) {
     const minted = p[0].box.mint('owner' + p[1], p[3], 7, '');
     p[0].box.claim(p[3], auth.sign(p[2].privateKey, auth.claimMessage(p[3])),
-      p[2].publicKey, null, minted.invite.token, p[3]);
+      p[2].publicKey, null, minted.invite.token, p[3],
+      nodeCard.cardFrom(Object.assign({ name: p[3] }, p[2])));
   });
 
   const urlA = 'http://127.0.0.1:' + PORTS[0];
@@ -243,7 +249,7 @@ async function run() {
     },
     onEvent: function (msg) {
       if (msg.event !== 'reply' || !msg.data) return;
-      try { saw = JSON.parse(msg.data.text).body; }
+      try { saw = (openReply(A.members.alice, A.box.relayPublicKey(), msg.data.text) || {}).body; }
       catch (e) { /* not an envelope this test understands */ }
     },
   });

@@ -12,6 +12,7 @@
 // go back to the member they are about.
 
 const test = require('./testSupport.js');
+const { sealFor } = require('./openReply');
 const auth = require('../run/js/relayAuth');
 const relayStore = require('../run/js/relayStore');
 const world = require('./world');
@@ -72,8 +73,10 @@ if (partnerOpen && partnerOpen.ok === false && partnerOpen.status === 403) {
 
 {
   const text = JSON.stringify({ v: 1, body: { rename: { label: 'johnny' } } });
-  const r = box.routePost(john.publicKey, relayKey, text,
-    auth.sign(john.privateKey, auth.postMessage(john.publicKey, relayKey, text)));
+  // Sealed, like every post to a relay (cycle 10, R9).
+  const sending = sealFor(john, box, text);
+  const r = box.routePost(john.publicKey, relayKey, sending,
+    auth.sign(john.privateKey, auth.postMessage(john.publicKey, relayKey, sending)));
   const heard = routesAbout(bertBag, john.publicKey).pop();
   if (r && r.ok !== false && heard && heard.data.label === 'johnny' && heard.data.at === relayKey &&
       heard.data.present === true && typeof heard.data.seen === 'string') {

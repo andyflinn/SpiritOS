@@ -14,6 +14,8 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const { rememberKeys, sealKeyFor } = require('./openReply');
+const seal = require('../run/js/seal');
 const auth = require('../run/js/relayAuth');
 const peerPost = require('../run/js/peerPost');
 const nodeStore = require('../run/js/nodeStore');
@@ -28,7 +30,10 @@ function home() {
 }
 
 const RELAY = 'http://relay.example';
-const TO = auth.generateIdentity('someone').publicKey;
+// Somebody whose card this node holds — a post to anyone else is
+// refused before it is queued (cycle 10, R5), which is a different test.
+const RECIPIENT = rememberKeys(auth.generateIdentity('someone'));
+const TO = RECIPIENT.publicKey;
 
 // A relay that refuses with whatever it is told, and counts what it saw.
 function fakeRelay(answer) {
@@ -57,17 +62,32 @@ async function run() {
   const H = home();
   const store = nodeStore.open(H);
   const busy = fakeRelay({ status: 503, body: { error: 'target is busy', busy: true, retryAfterMs: 60000 } });
-  const first = peerPost.createPeerPost({ rootDir: H, request: busy.request, waitMs: 2000, store: store });
+  const first = peerPost.createPeerPost({ rootDir: H, request: busy.request, waitMs: 2000, store: store, sealKeyFor: sealKeyFor });
 
   // A day's patience, a busy target: the first attempt is refused and the
   // entry waits, which is the state a restart has to preserve.
   first.post(RELAY, TO, 'a letter that must not be lost', null, { patienceMs: 86400000 });
   await sleep(150);
 
+  // ── WHAT IS KEPT IS WHAT WILL BE SENT (cycle 10, R5) ──────────────
+  //
+  // The persisted body holds the SEALED bytes, and it has to: the
+  // signature covers what travels, so a queue that kept the plaintext
+  // would have to re-seal on resend — a fresh ephemeral, different bytes,
+  // and a signature that no longer matches. Days later, with the sender
+  // asleep in between, that is not a thing to get right twice.
+  //
+  // So the row is opened here to prove the words survived the restart,
+  // rather than the plaintext being read off it directly.
   const rows = store.queue.all();
+  const body = rows.length === 1 ? JSON.parse(rows[0].body) : null;
+  // Opened as the recipient would, so this asserts the WORDS survived the
+  // restart and that what is on disc is genuinely sealed — not one or the
+  // other.
+  const kept = body && seal.open(RECIPIENT.sealPrivateKey, body.from, body.to, body.text);
   if (rows.length === 1 && rows[0].toKey === TO && rows[0].attempts === 1 &&
-      JSON.parse(rows[0].body).text === 'a letter that must not be lost') {
-    test.check('the message is on disc, with its body and the one attempt it has had');
+      kept && kept.text === 'a letter that must not be lost') {
+    test.check('the message is on disc as the sealed bytes that will be sent, and still opens to the words');
   } else {
     test.fail('queue rows: ' + JSON.stringify(rows));
   }
@@ -83,7 +103,7 @@ async function run() {
 
   // THE RESTART. Nothing in memory; everything from node.db.
   const after = fakeRelay({ status: 503, body: { error: 'target is busy', busy: true, retryAfterMs: 60000 } });
-  peerPost.createPeerPost({ rootDir: H, request: after.request, waitMs: 2000, store: store });
+  peerPost.createPeerPost({ rootDir: H, request: after.request, waitMs: 2000, store: store, sealKeyFor: sealKeyFor });
   await sleep(150);
 
   // A NODE THAT CRASHED MUST NOT HAMMER A TARGET IT WAS TOLD TO LEAVE
@@ -100,7 +120,7 @@ async function run() {
     const H2 = home();
     const store2 = nodeStore.open(H2);
     const dead = fakeRelay({ status: 503, body: { error: 'target is busy', busy: true, retryAfterMs: 60000 } });
-    const before = peerPost.createPeerPost({ rootDir: H2, request: dead.request, waitMs: 2000, store: store2 });
+    const before = peerPost.createPeerPost({ rootDir: H2, request: dead.request, waitMs: 2000, store: store2, sealKeyFor: sealKeyFor });
     before.post(RELAY, TO, 'resume me', null, { patienceMs: 86400000 });
     await sleep(150);
     const stored = JSON.parse(store2.queue.all()[0].body);
@@ -109,7 +129,7 @@ async function run() {
     store2.backoff.put(RELAY, TO, Date.now() - 1000, 60000);
 
     const live = fakeRelay({ status: 503, body: { error: 'peer not reachable' } });
-    peerPost.createPeerPost({ rootDir: H2, request: live.request, waitMs: 2000, store: store2 });
+    peerPost.createPeerPost({ rootDir: H2, request: live.request, waitMs: 2000, store: store2, sealKeyFor: sealKeyFor });
     await sleep(200);
 
     const resent = live.seen[0];

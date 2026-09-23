@@ -25,6 +25,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
+const { sealFor, openReply } = require('./openReply');
 const auth = require('../run/js/relayAuth');
 const hub = require('../run/js/hub');
 const plantRun = require('./plantRun');
@@ -93,7 +94,9 @@ function stopRelay(w) {
 // already has.
 function askOwner(w, bodyObj) {
   const relayKey = w.box.relayPublicKey();
-  const text = JSON.stringify({ app: 'relay', v: 1, body: bodyObj });
+  // Sealed to the relay, like every owner verb (cycle 10, R9), and signed
+  // over the bytes that travel (cycle 10's R11).
+  const text = sealFor(w.owner, w.box, JSON.stringify({ app: 'relay', v: 1, body: bodyObj }));
   const sig = auth.sign(w.owner.privateKey, auth.postMessage(w.owner.publicKey, relayKey, text));
   return new Promise(function (resolve, reject) {
     let answered = false;
@@ -105,7 +108,9 @@ function askOwner(w, bodyObj) {
       onEvent: function (msg) {
         if (answered || msg.event !== 'reply' || !msg.data) return;
         let back = null;
-        try { back = JSON.parse(msg.data.text); } catch (e) { return; }
+        // Opened, because a relay seals its answers now (cycle 10, R5).
+        back = openReply(w.owner, relayKey, msg.data.text);
+        if (!back) return;
         answered = true;
         try { stop.close(); } catch (e) { /* already closed */ }
         resolve(back && back.body ? back.body : back);

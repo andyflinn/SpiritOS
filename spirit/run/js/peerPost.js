@@ -31,6 +31,10 @@ const limits = require('./limits.js');
 // stats call below, which came from the ring's countInbound.
 const contactBook = require('./contacts');
 const nodeCard = require('./nodeCard');
+// The one sealing implementation (cycle 10, R4). oneDoor.js asserts it is
+// the only one in the tree — two seal functions differing in one detail
+// is how associated data gets dropped on one path.
+const seal = require('./seal');
 // WHICH REQUEST GOES NEXT. A relay holds one route per member (0016), so
 // a node that fires freely is refused; one that queues turns a refusal
 // into latency, which is `reach over speed`. The rules live next door
@@ -125,6 +129,27 @@ function createPeerPost(opts) {
   // card that verified: on a node, write it to the contact book; on a
   // relay, nothing, because a relay keeps no book. See keepCard below.
   var cardKeeper = typeof opts.keepCard === 'function' ? opts.keepCard : null;
+  // WHAT A PEER'S POSTS ARE SEALED TO (cycle 10, R5), by key. Injected
+  // for the same reason as everything else node-only here: on a node it
+  // reads the contact card or the pinned relay key, on a relay it reads a
+  // partner's published key, and neither belongs in the file that moves
+  // packets. Given nothing, every post but a card is refused — which is
+  // the strict direction, and the right one to fail towards.
+  var sealKeyFor = typeof opts.sealKeyFor === 'function' ? opts.sealKeyFor : null;
+  // ── AND AN OPT-OUT THAT HAS TO BE ASKED FOR ────────────────────────
+  //
+  // Default ON, so a caller that forgets `sealKeyFor` gets refusals
+  // rather than plaintext — fail closed, which is the whole shape of
+  // this cycle. The one caller that turns it off is a RELAY's partner
+  // router, and it says so in a named field rather than by omission, so
+  // "no key wired up" and "this traffic is deliberately not sealed yet"
+  // cannot be confused for each other.
+  //
+  // What that opt-out covers is argued in relay.js at `fromPartnerBox`:
+  // everything a partner CARRIES is sealed to its recipient; the wrapper
+  // around it is not, and cannot be until the partnership handshake
+  // carries a key.
+  var sealsPosts = opts.sealsPosts !== false;
   function note(entry) {
     if (!traffic) return;
     try { traffic.note(entry); } catch (e) { /* a witness, never a participant */ }
@@ -323,6 +348,24 @@ function createPeerPost(opts) {
         persistPair(slot.relayUrl, slot.toKey);
       }
       queue.done(slot.seq);
+    }
+    // ── THE ANSWER IS OPENED BEFORE ANYBODY SEES IT (cycle 10, R5) ────
+    //
+    // Replies are sealed too, so the asker opens one here — after the
+    // receipt signature was checked in onReply, never before (cycle 10's R11). A
+    // reply that will not open is handed up as the empty answer it
+    // effectively is, rather than as ciphertext for a caller to puzzle
+    // over.
+    //
+    // A CARD ANSWER IS NOT SEALED, and a refusal is not either, so both
+    // pass through untouched. `isSealed` is the one question asked, which
+    // is why it is structural and cheap.
+    if (answer && answer.ok && typeof answer.text === 'string' && seal.isSealed(answer.text)) {
+      var mine = me();
+      var got = mine && seal.open(mine.sealPrivateKey, slot.toKey, mine.publicKey, answer.text);
+      answer.sealed = true;
+      answer.text = got ? got.text : '';
+      if (got) answer.sentAt = got.at;
     }
     persistOut(hash);
     noteOutcome(hash, slot, answer);
@@ -649,11 +692,74 @@ function createPeerPost(opts) {
       });
     }
 
-    var message = auth.postMessage(id.publicKey, toKey, text);
+    // ── SEALED BEFORE IT IS SIGNED (cycle 10, R4, R5 and R11) ───────
+    //
+    //   Andy: "and card is the only possible un-cyphered peerPost,
+    //   shouldn't it be?" — "yes. VERY strict about that!"
+    //
+    // THE ORDER IS THE POINT. The relay verifies a post's signature
+    // before it routes it and will never hold the plaintext, so a
+    // signature over plaintext would be a signature nobody on the path
+    // could check — the relay would be forwarding unauthenticated bytes.
+    // Sealed first, signed second, hashed outermost: every layer outside
+    // the seal works on bytes it cannot read, which is what lets a relay
+    // do its whole job without ever holding a word.
+    //
+    // ONE EXCEPTION, AND IT IS COUNTABLE. The card request and the card
+    // answer travel plain, because the card is how you learn the key to
+    // seal to. That is a guard you can enforce by asking one question;
+    // "everything except the card and posts to the relay" would need a
+    // judgement about every destination, which is why posts to a relay
+    // are sealed too (cycle 10's R9).
+    //
+    // NO CARD, NO POST — Andy: "if you can't get the card, you can't post
+    // anyways." Refused here rather than sent plain, because a plaintext
+    // fallback hands everything to an attacker who can simply withhold a
+    // card.
+    // THE KEY MAY HAVE TO BE FETCHED, so this step is allowed to be
+    // asynchronous: a node reads it off a contact row and answers at
+    // once, while a RELAY may have to ask a partner for its published
+    // key. Resolved here, before anything is registered or queued, so
+    // the ordering everything below depends on — register, then forward
+    // — is exactly as it was.
+    return Promise.resolve(nodeCard.asks(text) ? '' : (sealKeyFor ? sealKeyFor(toKey) : ''))
+      .catch(function () { return ''; })
+      .then(function (sealKey) { return sealAndSend(sealKey); });
+
+    function sealAndSend(sealKey) {
+    var sending = text;
+    if (!nodeCard.asks(text) && sealsPosts) {
+      var wrapped = sealKey ? seal.seal(sealKey, id.publicKey, toKey, text) : null;
+      if (!wrapped) {
+        // ON THE RECORD, like every other refusal. Nothing crossed, so
+        // there is no hash to join it to — but this is the exact symptom
+        // of the flag day ("old nodes MUST update to stay in the game")
+        // and of a peer whose card was never fetched, and a person
+        // staring at a message that will not send needs to find the
+        // reason somewhere. The payload is kept because it is the
+        // owner's own words, not a stranger's.
+        note({
+          dir: 'out', kind: 'request', peer: toKey, relay: relayUrl,
+          outcome: 'refused', code: 'no-seal-key', payload: text,
+        });
+        return Promise.resolve({
+          ok: false, status: 428, noSealKey: true,
+          error: sealKey
+            ? 'that peer\'s cipher key cannot be used'
+            : 'no cipher key for that peer — ask for their card first',
+        });
+      }
+      sending = JSON.stringify(wrapped);
+    }
+
+    var message = auth.postMessage(id.publicKey, toKey, sending);
     var sig = auth.sign(id.privateKey, message);
     var hash = auth.requestHash(message);
 
-    if (checkTunnel && !limits.fitsWrapped(text, id.publicKey, toKey, sig)) {
+    // MEASURED ON WHAT TRAVELS, which is the sealed bytes: base64 grows
+    // a payload by about a third, and checking the plaintext would let a
+    // packet through here and have it refused on the wire.
+    if (checkTunnel && !limits.fitsWrapped(sending, id.publicKey, toKey, sig)) {
       return Promise.resolve({
         ok: false, status: 413, hash: hash,
         error: 'too big to tunnel — this packet would not fit if carried to a partner',
@@ -664,7 +770,7 @@ function createPeerPost(opts) {
       ? hints.filter(function (k) { return typeof k === 'string' && k; }).slice(0, limits.HINTS_PER_POST)
       : [];
 
-    var body = { from: id.publicKey, to: toKey, text: text, sig: sig };
+    var body = { from: id.publicKey, to: toKey, text: sending, sig: sig };
 
     // ── HOW LONG THIS ASKER WILL WAIT, SAID OUT LOUD ────────────────
     //
@@ -766,6 +872,7 @@ function createPeerPost(opts) {
     // this identical to the behaviour before a queue existed.
     pump();
     return answered;
+    }
   }
 
   // SOMEBODY ASKED US SOMETHING.
@@ -808,6 +915,23 @@ function createPeerPost(opts) {
       // no list.
       return null;
     }).catch(function () { return null; });
+  }
+
+  // ── A REFUSAL THAT IS HEARD (cycle 10, R5) ──────────────────────────
+  //
+  // Sent as an ordinary signed reply, in the card's shape and by the same
+  // door, so a refusal is not a second protocol either. It travels PLAIN,
+  // and that is deliberate and narrow: the whole content of it is "this
+  // node would not take what you sent", which the refuser is willing to
+  // say to anybody and which leaks nothing a sealed post was protecting.
+  // Sealing it would be impossible in the case that matters anyway —
+  // a sender whose cipher key we do not hold is exactly who gets refused.
+  function refuse(relayUrl, id, body, hash, status, why) {
+    var text = JSON.stringify({ v: 1, body: { ok: false, status: status, error: why } });
+    var receipt = auth.sign(id.privateKey, auth.receiptMessage(hash));
+    return request(relayUrl, 'POST', '/api/relay/reply', {
+      from: id.publicKey, hash: hash, text: text, sig: receipt,
+    }).then(function () { return null; }).catch(function () { return null; });
   }
 
   function onRequest(relayUrl, body) {
@@ -854,6 +978,61 @@ function createPeerPost(opts) {
     // the description cap. What bounds the rate is the relay, which limits
     // posts before they ever arrive here.
     if (nodeCard.asks(body.text)) return answerCard(relayUrl, id, body, hash);
+
+    // ── AND EVERYTHING ELSE ARRIVES SEALED, OR NOT AT ALL ────────────
+    //
+    //   Andy: "and card is the only possible un-cyphered peerPost,
+    //   shouldn't it be?" — "yes. VERY strict about that!"
+    //
+    // THIS HALF IS NOT BELT AND BRACES, IT IS THE RULE. The sender's
+    // refusal above lives in this same file and is bypassed by the
+    // simplest means there is: not being the sender. Anybody can compose
+    // a plaintext post by hand. So the receiver refuses one, and the two
+    // checks together are what makes "sealed" a property of the protocol
+    // rather than a habit of one implementation.
+    //
+    // REFUSED BEFORE THE FRONT DOOR, deliberately. Whether this node
+    // would talk to them is a later question than whether this is a
+    // well-formed packet at all, and an unsealed post is not one.
+    //
+    // AND IT SAYS WHY. A silent drop reads exactly like an unreachable
+    // node, and on a flag day — "old nodes MUST update to stay in the
+    // game" — the one thing a person needs to be told is that the box at
+    // the other end is old, not broken.
+    if (sealsPosts && !seal.isSealed(body.text)) {
+      note({
+        dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
+        hash: hash, outcome: 'refused', code: 'unsealed',
+      });
+      return refuse(relayUrl, id, body, hash, 400,
+        'unsealed posts are refused — seal to this node\'s cipher key (cycle 10)');
+    }
+
+    // NEVER OPENED BEFORE IT IS AUTHENTICATED (cycle 10's R11). The hash was
+    // derived and the signature verified above; only now is anything
+    // decrypted. Opening first would mean doing cryptography on bytes
+    // nobody has vouched for.
+    //
+    // The AAD binds sender and recipient, so this also settles what a
+    // signature alone cannot: that the blob was sealed FOR this node BY
+    // that sender, rather than lifted off another exchange and
+    // re-addressed.
+    var opened = seal.isSealed(body.text)
+      ? seal.open(id.sealPrivateKey, body.from, body.to, body.text)
+      : { text: body.text, at: '' };
+    if (!opened) {
+      note({
+        dir: 'in', kind: 'request', peer: body.from, relay: relayUrl,
+        hash: hash, outcome: 'refused', code: 'will-not-open',
+      });
+      return refuse(relayUrl, id, body, hash, 400, 'this did not open for me');
+    }
+    // FROM HERE DOWN THE NODE WORKS ON THE PLAINTEXT, and the log writes
+    // it (cycle 10's R14: the endpoints keep the words, the relay keeps the
+    // envelope). `sealedText` is kept only for the hash the wire already
+    // committed to, which is over what travelled.
+    var sealedText = body.text;
+    body = Object.assign({}, body, { text: opened.text, sealedText: sealedText, sentAt: opened.at });
 
     // ── THE FRONT DOOR ───────────────────────────────────────────────
     //
@@ -1094,13 +1273,48 @@ function createPeerPost(opts) {
           });
           text = '';
         }
+        // ── AND THE ANSWER IS SEALED TOO (cycle 10, R5) ─────────────
+        //
+        // Both directions, or the rule is half a rule: an app's answer
+        // is as much a person's words as the question was, and a relay
+        // that could read every reply would learn most conversations
+        // from one side. Sealed back to whoever asked, with the parties
+        // in the associated data the other way round.
+        //
+        // The receipt is signed over the HASH, not the text, so nothing
+        // about the receipt changes — which is exactly why the layering
+        // puts hashing outside the seal (cycle 10's R11).
+        //
+        // THE LOG KEEPS THE WORDS (cycle 10's R14). Written from `text` before it
+        // is sealed, because the endpoints keep the plaintext and the
+        // relay keeps the envelope; a log holding ciphertext would be a
+        // record its own owner cannot read.
+        var plain = text;
+        if (text) {
+          var back = sealKeyFor ? sealKeyFor(body.from) : '';
+          var wrapped = back ? seal.seal(back, id.publicKey, body.from, text) : null;
+          if (!wrapped) {
+            // No key for the asker means no answer — never a plaintext
+            // one. They reached us, so they hold our card; we may simply
+            // not hold theirs yet. The receipt still goes: "it arrived,
+            // no answer travelled."
+            note({
+              dir: 'out', kind: 'reply', peer: body.from, relay: relayUrl,
+              hash: hash, outcome: 'refused', code: 'no-seal-key',
+            });
+            text = '';
+            plain = '';
+          } else {
+            text = JSON.stringify(wrapped);
+          }
+        }
         return request(relayUrl, 'POST', '/api/relay/reply', {
           from: id.publicKey, hash: hash, text: text, sig: receipt,
         }).then(function () {
-          if (text) {
+          if (plain) {
             note({
               dir: 'out', kind: 'reply', peer: body.from, relay: relayUrl,
-              hash: hash, outcome: 'answered', payload: text,
+              hash: hash, outcome: 'answered', payload: plain,
             });
           }
           return item;

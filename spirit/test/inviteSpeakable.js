@@ -30,6 +30,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const test = require('./testSupport.js');
+const { sealFor, openReply } = require('./openReply');
 const auth = require('../run/js/relayAuth');
 const invites = require('../run/js/invites');
 const world = require('./world');
@@ -76,8 +77,14 @@ test.subHeading('The token is part of the request');
   //
   // A2 bought this with a third field and a compatibility rule. It is now
   // free: the token is in the text, and the signature is over the text.
-  const tokenless = invitePacket('saint', 7, '');
-  const spoken = invitePacket('saint', 7, 'blue-fish');
+  // ── SEALED FIRST, THEN SIGNED (cycle 10, R5 and R11) ─────────────
+  //
+  // These three refusals are about a SIGNATURE binding what was asked.
+  // An unsealed post is refused before any signature is looked at, so
+  // leaving them plain would make all three pass while proving nothing —
+  // exactly the vacuous green a suite must not go.
+  const tokenless = sealFor(r.owner, r.box, invitePacket('saint', 7, ''));
+  const spoken = sealFor(r.owner, r.box, invitePacket('saint', 7, 'blue-fish'));
   const forTokenless = auth.sign(r.owner.privateKey,
     auth.postMessage(r.owner.publicKey, relayKey, tokenless));
 
@@ -99,7 +106,7 @@ test.subHeading('The token is part of the request');
   const forBlue = auth.sign(r.owner.privateKey,
     auth.postMessage(r.owner.publicKey, relayKey, spoken));
   const swapped = r.box.routePost(r.owner.publicKey, relayKey,
-    invitePacket('saint', 7, 'red-fish'), forBlue);
+    sealFor(r.owner, r.box, invitePacket('saint', 7, 'red-fish')), forBlue);
   const dropped = r.box.routePost(r.owner.publicKey, relayKey, tokenless, forBlue);
   if (!swapped.ok && swapped.status === 403 && !dropped.ok && dropped.status === 403) {
     test.check("a signature for one token mints neither another nor the relay's hex");

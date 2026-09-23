@@ -29,6 +29,8 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const { sealFor, openBody } = require('./openReply');
+const nodeCard = require('../run/js/nodeCard');
 const auth = require('../run/js/relayAuth');
 const relayStore = require('../run/js/relayStore');
 const { createRelay } = require('../run/js/relay');
@@ -49,8 +51,11 @@ function sinkFor(bag) {
   };
 }
 
+// Sealed when it is addressed to the relay (cycle 10, R9); a peer-to-peer
+// packet is routed rather than read, so it travels as it always did.
 function post(box, from, toKey, bodyObj) {
-  const text = JSON.stringify({ v: 1, body: bodyObj });
+  const plain = JSON.stringify({ v: 1, body: bodyObj });
+  const text = toKey === box.relayPublicKey() ? sealFor(from, box, plain) : plain;
   return box.routePost(from.publicKey, toKey, text,
     auth.sign(from.privateKey, auth.postMessage(from.publicKey, toKey, text)));
 }
@@ -59,11 +64,11 @@ function replies(bag) {
   return bag.filter(function (m) { return m.event === 'reply'; });
 }
 
-function lastReply(bag) {
+function lastReply(bag, who, relayKey) {
   const r = replies(bag);
   if (!r.length) return null;
-  try { return JSON.parse(r[r.length - 1].data.text).body || null; }
-  catch (e) { return null; }
+  // Opened: a relay seals its answers now (cycle 10, R5).
+  return openBody(who, relayKey, r[r.length - 1].data.text);
 }
 
 function until(pred, ms) {
@@ -115,7 +120,9 @@ async function run() {
       });
     },
   });
-  box.claim('owner', auth.sign(owner.privateKey, auth.claimMessage('owner')), owner.publicKey);
+  // With a card, so the relay can seal its answers back (cycle 10, R5).
+  box.claim('owner', auth.sign(owner.privateKey, auth.claimMessage('owner')), owner.publicKey,
+    null, null, null, nodeCard.cardFrom(Object.assign({ name: 'owner' }, owner)));
 
   const bag = [];
   box.streamOpen(owner.publicKey,
@@ -147,10 +154,10 @@ async function run() {
   } else {
     test.fail('first search asked: ' + JSON.stringify(got));
   }
-  if (lastReply(bag) && lastReply(bag).ok) {
+  if (lastReply(bag, owner, box.relayPublicKey()) && lastReply(bag, owner, box.relayPublicKey()).ok) {
     test.check('and the member is answered although the quiet one said nothing');
   } else {
-    test.fail('answer: ' + JSON.stringify(lastReply(bag)));
+    test.fail('answer: ' + JSON.stringify(lastReply(bag, owner, box.relayPublicKey())));
   }
 
   test.subHeading('Its try failed, so it is skipped — for fifteen minutes, not for ever');

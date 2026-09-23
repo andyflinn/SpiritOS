@@ -204,11 +204,70 @@ the useful part.
 
 Andy: *"yes. VERY strict about that!"*
 
-**Verify:** a plaintext post to a person is refused going out; the same
-post, injected, is refused coming in; a card passes both ways; a relay
-verb is untouched.
+**Verify:** `spirit/test/peerPost.js` and `spirit/test/liveFrontDoor.js`
+— a plaintext post is refused going out, with the refusal on the record;
+an unsealed post is refused coming in and told why; a card passes both
+ways; a relay verb sealed to the box is obeyed and the same verb
+plaintext is refused. `liveFrontDoor` proves it on real processes: a node
+fetches a card, then posts, in that order, because there is no other one.
 
-**Status:** OPEN — cycle 10 is opened, not built.
+**Status:** DONE, and it is the largest requirement in the cycle —
+sealing touches every path that puts bytes on the wire.
+
+- **Sender**, in `peerPost.post`: seal, then sign, then hash. No card, no
+  post — refused at 428 with the refusal written to the traffic log,
+  because that refusal is the flag day's symptom and a person staring at
+  a message that will not send needs to find the reason somewhere.
+- **Receiver**, in `peerPost.onRequest`: an unsealed post that is not a
+  card is refused *before the front door*, and told why. Not belt and
+  braces — the sender's check lives in the same file and is bypassed by
+  the simplest means there is, which is not being the sender.
+- **Both directions.** Replies are sealed back to the asker; an app's
+  answer is as much a person's words as the question was.
+- **The relay too** (R9): `answerSelf` opens at the one door every verb
+  addressed to the box comes through, and `sendSelfAnswer` seals the
+  answer back. A refusal it *cannot* seal travels plain, rebuilt from a
+  status and a sentence so no verb can leak its figures through that
+  branch — because the one asker who may have no card is a node from
+  before this cycle, and silence there would make the flag day
+  indistinguishable from a broken relay.
+- **The relay keeps members' cards** — Andy: *"so the relay is the keeper
+  of cards, in the database, on disc."* A `card` column on `members`,
+  carried by the claim, verified against the key that signed it, and read
+  back through `findByKey` so it costs no disc seek.
+
+**WHAT IS DELIBERATELY NOT SEALED, and it is one thing.** The
+relay-to-relay WRAPPER — one relay's instruction to another. A partner is
+not a member of the box it is partnered with, so there is no card to seal
+an *answer* to, and the partnership handshake carries no key today.
+Sealing one direction only is worse than sealing neither, because it
+looks done. Everything a partner CARRIES is sealed to the member it is
+for, which is the property `PARTNERS.md` always wanted. Asked for by name
+(`sealsPosts: false`) rather than by omission, so "nobody wired the key
+up" and "this is deliberately plain" cannot be confused. See `relay.js`,
+`fromPartnerBox`. **Closing it belongs with the partnership handshake.**
+
+**Two real defects the harness caught on the way:**
+
+- **A disc seek per answer.** `memberSealKey` first read the roll from
+  the store; `diskClient.js` counts reads and went red. It reads through
+  `findByKey`, which prefers the in-RAM `activeRows`, and every asker this
+  is used for is by definition connected.
+- **A card with nowhere to sit.** A node could fetch a peer's card and
+  still not post, because `setCard` refuses a card for a key it has no
+  row for. `keepCard` now makes a row at the lowest rank, `roll` — seen,
+  not known, not listened to. That is *us asking them*, which is not the
+  case `nodeCard.js` warns about (somebody asking us still writes
+  nothing).
+
+**And the suites were rewritten to insist rather than to pass.** Several
+refusal checks — `inviteMint`, `inviteSpeakable` — would have gone green
+on an unsealed post being refused *before any signature was looked at*,
+which is the vacuous pass this cycle must not buy. Each seals its
+variants so the assertion is about the signature again. One helper,
+`spirit/test/openReply.js`, holds sealing and opening for all of them, so
+twenty suites cannot each grow their own opinion about what a sealed
+reply looks like.
 
 ### R6 — the ceiling, and the flag day
 

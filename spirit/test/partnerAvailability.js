@@ -21,6 +21,8 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+const { sealFor } = require('./openReply');
+const nodeCard = require('../run/js/nodeCard');
 const auth = require('../run/js/relayAuth');
 const relayStore = require('../run/js/relayStore');
 const { createRelay } = require('../run/js/relay');
@@ -42,8 +44,10 @@ function sinkFor(bag) {
   };
 }
 
+// Sealed when addressed to the relay (cycle 10, R9).
 function post(box, from, toKey, bodyObj) {
-  const text = JSON.stringify({ v: 1, body: bodyObj });
+  const plain = JSON.stringify({ v: 1, body: bodyObj });
+  const text = toKey === box.relayPublicKey() ? sealFor(from, box, plain) : plain;
   return box.routePost(from.publicKey, toKey, text,
     auth.sign(from.privateKey, auth.postMessage(from.publicKey, toKey, text)));
 }
@@ -85,7 +89,8 @@ async function relayHalf() {
       return Promise.resolve({ ok: true, status: 200, text: JSON.stringify({ v: 1, body: { ok: true, matches: [] } }) });
     },
   });
-  box.claim('owner', auth.sign(owner.privateKey, auth.claimMessage('owner')), owner.publicKey);
+  box.claim('owner', auth.sign(owner.privateKey, auth.claimMessage('owner')), owner.publicKey,
+    null, null, null, nodeCard.cardFrom(Object.assign({ name: 'owner' }, owner)));
   const heard = [];
   box.streamOpen(owner.publicKey, auth.sign(owner.privateKey, auth.streamMessage(owner.publicKey)), sinkFor(heard));
 

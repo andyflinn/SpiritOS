@@ -244,6 +244,27 @@ async function run() {
     //
     // A fresh node has no preferences.json, so unknownPolicy answers
     // `silent`: the tightest setting, and the default for the same reason.
+    // ── THE CARD COMES FIRST, BECAUSE IT HAS TO (cycle 10, R5) ──────
+    //
+    //   Andy: "if you can't get the card, you can't post anyways."
+    //
+    // A node refuses to post to somebody whose cipher key it does not
+    // hold, and the card request is the one packet that travels plain —
+    // so this is the real order a caller works in, not a step added to
+    // satisfy a test. alfa asks bravo who it is; bravo answers in front
+    // of its own front door; alfa can then seal to it.
+    //
+    // WHICH IS THE POINT OF THE CASE BELOW. bravo will still ignore what
+    // arrives: holding somebody's card is not being introduced to them.
+    const card = await hub(portOf(alfa), 'POST', '/api/spirit', {
+      verb: 'peer.post', to: bravoKey, text: JSON.stringify({ v: 1, body: { card: true } }),
+    });
+    if (card.status === 200 && card.body && card.body.card && card.body.card.ok) {
+      test.check('alfa asks bravo for its card and gets one — the only unsealed post there is');
+    } else {
+      test.fail('card: ' + card.status + ' ' + JSON.stringify(card.body));
+    }
+
     const first = await hub(portOf(alfa), 'POST', '/api/spirit', {
       verb: 'peer.post', to: bravoKey, text: 'unsolicited hello',
     });
@@ -405,6 +426,12 @@ async function run() {
     // acquire a stranger becomes a contact on their first message and has
     // exactly one rationed request in them.
     await hub(portOf(bravo), 'POST', '/api/spirit', { verb: 'contact.setSenders', policy: 'silent' });
+    // Charlie fetches the card first, like any sender must (cycle 10,
+    // cycle 10 R5) — and note what that does NOT buy: holding somebody's card is
+    // not being introduced to them, so every knock below is still
+    // ignored and then refused outright. The floor is unchanged.
+    await hub(portOf(charlie), 'POST', '/api/spirit',
+      { verb: 'peer.post', to: bravoKey, text: JSON.stringify({ v: 1, body: { card: true } }) });
     for (let n = 0; n < 9; n += 1) {
       /* eslint-disable no-await-in-loop */
       await hub(portOf(charlie), 'POST', '/api/spirit', { verb: 'peer.post', to: bravoKey, text: 'knock ' + n });

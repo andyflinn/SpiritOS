@@ -23,6 +23,8 @@ const path = require('path');
 const auth = require('../run/js/relayAuth');
 const { claimOwner } = require('./ownerClaim');
 const invites = require('../run/js/invites');
+const nodeCard = require('../run/js/nodeCard');
+const { openBody, sealFor } = require('./openReply');
 const scenario = require('./scenario');
 const { createRelay } = require('../run/js/relay');
 
@@ -146,7 +148,13 @@ function assemble(s) {
         id.publicKey,
         from,
         token,
-        token ? p.label : undefined
+        token ? p.label : undefined,
+        // AND THE CARD THEY ENROL WITH (cycle 10, R5). A real node sends
+        // one on every claim (hub.signedClaim), and a relay seals its
+        // answers to the key on it — so a built world that enrolled
+        // without one would be a world whose members can be told nothing,
+        // which is not the world any suite here means to describe.
+        nodeCard.cardFrom(Object.assign({ name: p.label }, id))
       );
       if (!joined.ok) throw new Error('join ' + p.name + ': ' + joined.error);
     });
@@ -284,21 +292,29 @@ function ask(box, id, body) {
         const ev = /^event: (.+)$/m.exec(String(chunk));
         const da = /^data: (.+)$/m.exec(String(chunk));
         if (!ev || ev[1] !== 'reply' || !da) return;
-        try { said.push(JSON.parse(JSON.parse(da[1]).text).body); }
+        // OPENED, because a relay seals its answers to the member's card
+        // now (cycle 10, R5). A refusal it could not seal comes back
+        // plain and passes through — that is the one thing a relay says
+        // to anybody, and it is how an un-updated node learns it is old.
+        try { said.push(openBody(id, box.relayPublicKey(), JSON.parse(da[1]).text)); }
         catch (e) { /* a malformed reply is no reply */ }
       },
       close: function () {},
     });
 
+  // SEALED, LIKE EVERY POST BUT A CARD (cycle 10, R5), and signed over
+  // the bytes that travel — sealed first, signed second (cycle 10's R11). A relay
+  // refuses an unsealed post addressed to itself, so a helper that sent
+  // one would be testing the refusal in every suite that uses it.
   const to = box.relayPublicKey();
-  const text = JSON.stringify({ app: 'relay', v: 1, body: body });
+  const text = sealFor(id, box, JSON.stringify({ app: 'relay', v: 1, body: body }));
   const sent = box.routePost(id.publicKey, to, text,
     auth.sign(id.privateKey, auth.postMessage(id.publicKey, to, text)));
 
   return {
     sent: sent,
     answer: said.length ? said[said.length - 1] : null,
-    ok: !!(sent && sent.ok && said.length && said[said.length - 1].ok),
+    ok: !!(sent && sent.ok && said.length && said[said.length - 1] && said[said.length - 1].ok),
   };
 }
 

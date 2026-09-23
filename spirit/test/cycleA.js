@@ -23,6 +23,7 @@ const http = require('http');
 const path = require('path');
 const { URL } = require('url');
 const test = require('./testSupport.js');
+const { sealFor, openReply } = require('./openReply');
 const auth = require('../run/js/relayAuth');
 const { claimOwner } = require('./ownerClaim');
 const invites = require('../run/js/invites');
@@ -428,13 +429,20 @@ function routerTo(boxes, owner) {
             const ev = /^event: (.+)$/m.exec(String(chunk));
             const da = /^data: (.+)$/m.exec(String(chunk));
             if (!ev || ev[1] !== 'reply' || !da) return;
-            try { answered = JSON.parse(da[1]).text || ''; } catch (e) { answered = ''; }
+            // Opened: a relay seals its answers now (cycle 10, R5), so
+            // what the hub hands back is the plaintext a node would.
+            try {
+              const got = openReply(owner, box.relayPublicKey(), JSON.parse(da[1]).text);
+              answered = got ? JSON.stringify(got) : '';
+            } catch (e) { answered = ''; }
           },
           close: function () {},
         });
 
-      const sent = box.routePost(owner.publicKey, key, text,
-        auth.sign(owner.privateKey, auth.postMessage(owner.publicKey, key, text)));
+      // Sealed when addressed to the relay itself (cycle 10, R9).
+      const sending = key === box.relayPublicKey() ? sealFor(owner, box, text) : text;
+      const sent = box.routePost(owner.publicKey, key, sending,
+        auth.sign(owner.privateKey, auth.postMessage(owner.publicKey, key, sending)));
       if (!sent.ok) return Promise.resolve(sent);
       return Promise.resolve({ ok: true, status: 200, hash: sent.hash, text: answered });
     },

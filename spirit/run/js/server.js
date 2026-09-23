@@ -1201,7 +1201,48 @@ contactBook.syncMarks(ROOT_DIR);
     // wanted answer: Contacts asks strangers for a card BEFORE adding
     // them, and a question must not write somebody into the book.
     keepCard: function (toKey, cardText) {
-      return require('./contacts').setCard(ROOT_DIR, toKey, cardText, 'reply');
+      const book = require('./contacts');
+      // ── A CARD WE ASKED FOR GETS A ROW TO SIT ON ──────────────────
+      //
+      // `setCard` refuses a card for a key it has no row for, which is
+      // right: a card must not be smuggled in beside an unverified one.
+      // But after cycle 10 R5 a node cannot POST to somebody whose card it does
+      // not hold — so with no row, asking for a card would achieve
+      // nothing and the first message to a new peer would be impossible.
+      //
+      // THE ROW IS MADE AT THE LOWEST RANK, `roll`, and that is the whole
+      // of it: seen, not known, not listened to. Nothing about the front
+      // door changes, nobody becomes a correspondent, and the To list
+      // (addressBook) still excludes them.
+      //
+      // WHY THIS IS NOT "a book that fills up with everyone who looked at
+      // you" — the case nodeCard.js warns about. That is somebody ASKING
+      // US, and it still writes nothing. This is us asking THEM: our own
+      // act, about a key we chose to look up.
+      if (!book.byPublicKey(ROOT_DIR, toKey)) {
+        book.upsert(ROOT_DIR, { publicKey: toKey, acquiredVia: book.ROLL });
+      }
+      return book.setCard(ROOT_DIR, toKey, cardText, 'reply');
+    },
+    // ── WHAT A POST TO THAT KEY IS SEALED TO (cycle 10, R5) ──────────
+    //
+    // Two sources, because a node addresses two kinds of box and both
+    // publish a cipher key in the place you would already have looked:
+    //
+    //   a PERSON  — the card on their contact row (cycle 10's R3), which is why
+    //               the card had to be kept before this could exist
+    //   a RELAY   — the signed statement on `/api/relay/key` (cycle 10's R9),
+    //               learned when the relay's identity was pinned and
+    //               never separately
+    //
+    // Read per post rather than captured, for the same reason `admit`
+    // is: a card can arrive, and a key can rotate, while the process
+    // runs. Empty means the post is refused — never sent plain.
+    sealKeyFor: function (toKey) {
+      var row = require('./contacts').byPublicKey(ROOT_DIR, toKey);
+      var fromCard = row && require('./contacts').sealKeyOf(row);
+      if (fromCard) return fromCard;
+      return answerer.relaySealKeyByKey ? answerer.relaySealKeyByKey(toKey) : '';
     },
     // And what to write down about a stranger who got through the floor.
     // Separate from the judgement on purpose: the verdict is decided

@@ -21,6 +21,12 @@ const relayStore = require('./relayStore');
 // The same validation the file gets at boot, so the owner's `config` verb
 // (reconfigure) cannot accept a figure a restart would then refuse.
 const relayConfig = require('./relayConfig');
+// A relay is a peer with a key (0010), so posts addressed to it are
+// sealed like any other and it opens them with its own (cycle 10, R9).
+const seal = require('./seal');
+// And it keeps its members' cards, verifying each one on every read
+// against the key its row is filed under (cycle 10, R5 and R13).
+const nodeCard = require('./nodeCard');
 // The ceilings the owner's read reports — what this box could give — from
 // the same module the installer and first start use.
 const relayLimits = require('./relayLimits');
@@ -1410,7 +1416,16 @@ function createRelay(rootDir, deps) {
   // the rate gate, and under what words. Out-parameter rather than a
   // richer return, so every one of the eleven refusals below stays the
   // single line it is.
-  function claimAttempt(name, sig, publicKey, clientKey, inviteToken, inviteLabel, seen) {
+  // A card is kept only if it is THEIRS. Self-signed, so one lifted from
+  // anybody else verifies as that person and is discarded here rather
+  // than filed under the wrong key (cycle 10, R5).
+  function cardFor(publicKey, cardText) {
+    if (!cardText) return '';
+    var card = nodeCard.verify(cardText);
+    return (card && card.publicKey === publicKey) ? String(cardText) : '';
+  }
+
+  function claimAttempt(name, sig, publicKey, clientKey, inviteToken, inviteLabel, seen, claimedCard) {
     var inviteRow = null;
     // ── SIGNED AS SENT, STORED AS NORMALISED ─────────────────────────
     //
@@ -1636,6 +1651,25 @@ function createRelay(rootDir, deps) {
       // `owner: firstOwner` STOOD HERE. A row does not know who owns the
       // relay (relayStore.js, 2026-09-19): becomeOwner above wrote the one
       // key that does into allow.json. The claim's ANSWER still says so.
+      //
+      // ── AND THE CARD THEY ENROLLED WITH (cycle 10, R5 and R13) ────
+      //
+      //   Andy: "so the relay is the keeper of cards, in the database,
+      //   on disc. got it."
+      //
+      // It is what the relay seals its answers to this member with, and
+      // what `whoBook` broadcasts say about them. VERIFIED HERE, against
+      // the key that just signed the claim: a card is self-signed, so one
+      // belonging to anybody else verifies as that person and fails this
+      // check. Nothing else about the claim needs to change — the claim
+      // signature does not cover the card, and does not need to, because
+      // the card covers itself.
+      //
+      // A claim carrying no card is taken, and the member simply has no
+      // cipher key here until they send one. That is the flag day, not a
+      // fallback: what it costs them is an answer they cannot be sent,
+      // with a reason, rather than an answer sent in the clear.
+      card: cardFor(publicKey, claimedCard),
     };
     // KEYED BY KEY, always, because a claim without one is refused
     // above. The map used to be `publicKey || n`, which is how a row
@@ -1716,10 +1750,10 @@ function createRelay(rootDir, deps) {
     }
   }
 
-  function claim(name, sig, publicKey, clientKey, inviteToken, inviteLabel) {
+  function claim(name, sig, publicKey, clientKey, inviteToken, inviteLabel, card) {
     var seen = { gate: false, label: '', invite: '' };
     var out = guardWrite('claim', function () {
-      return claimAttempt(name, sig, publicKey, clientKey, inviteToken, inviteLabel, seen);
+      return claimAttempt(name, sig, publicKey, clientKey, inviteToken, inviteLabel, seen, card);
     });
     if (seen.gate) {
       ownerEvent(out && out.ok ? 'claim' : 'claim-refused', {
@@ -2829,10 +2863,189 @@ function createRelay(rootDir, deps) {
   // partnering, reconfiguring — goes through here, so the disc guard sits
   // on the outside once rather than on each of them. A relay whose disc
   // is full still answers its owner, and the answer says why.
+  // ── A POST TO THE RELAY IS SEALED TOO (cycle 10, R5 and R9) ─────────
+  //
+  //   Andy: "relay needs a cypher key too, because it has answerSelf()."
+  //
+  // Opened here, at the one door every verb addressed to this box comes
+  // through, so no verb can be added later that forgot to.
+  //
+  // SEALING TO THE RELAY HIDES NOTHING FROM THE RELAY — it must read a
+  // verb to obey it. What it hides is everything BETWEEN: TLS ends at
+  // Caddy on this host, so an invite token — a credential somebody reads
+  // down a phone — is plaintext in that process and in whatever it logs.
+  // Sealed, Caddy carries bytes it cannot read.
+  //
+  // AND IT REMOVES THE CARVE-OUT, which is worth as much: "everything is
+  // sealed except the card" is a rule you can enforce by counting, while
+  // "everything except the card and posts to the relay" needs a judgement
+  // about every destination.
+  // ── THE ONE THING NOT SEALED YET, AND WHY (cycle 10, R9's rest) ─────
+  //
+  // A PARTNER IS NOT A MEMBER. It has no row in the roll and therefore no
+  // card, so this box has nowhere to read its cipher key from — and the
+  // partnership handshake, which is the natural place to carry one, does
+  // not carry keys today. Building that means changing how partnering
+  // works, which is partnership's cycle and not this one.
+  //
+  // WHAT IS AND IS NOT COVERED, precisely, so this is a scope line and
+  // not a hole somebody finds later:
+  //
+  //   SEALED    every packet a partner CARRIES — those are addressed to a
+  //             member and sealed to that member's card, so a partner
+  //             forwards what it cannot read. That is the property
+  //             PARTNERS.md always wanted, and it is the one that matters.
+  //   NOT YET   the wrapper around it: the instruction one relay gives
+  //             another (`search`, `forward`). Its contents are a query
+  //             and an envelope, never a person's words.
+  //
+  // The cost, said plainly: a proxy in front of either relay, and each
+  // relay's own terminator, can read WHICH members are being asked about.
+  // Not what anybody said.
+  function fromPartnerBox(who) { return !!(who && who.partner); }
+
   function answerSelf(hash, text, who) {
-    return guardWrite('owner verb', function () {
-      return answerSelfInner(hash, text, who);
+    var mine = auth.loadIdentity(rootDir);
+    var plain = text;
+    if (fromPartnerBox(who)) return guardWrite('owner verb', function () {
+      return answerSelfInner(hash, plain, who);
     });
+    if (seal.isSealed(text)) {
+      var got = mine && seal.open(mine.sealPrivateKey, who && who.id, mine.publicKey, text);
+      if (!got) return sendSelfAnswer(hash, who, { ok: false, status: 400, error: 'this did not open for me' });
+      plain = got.text;
+    } else if (!isCardAsk(text)) {
+      // The receiver's half of the strict rule, on the relay's own door.
+      // A sender-only check is bypassed by not being the sender, and
+      // "the relay is the one box everybody can reach" is precisely the
+      // door where that matters.
+      return sendSelfAnswer(hash, who, {
+        ok: false, status: 400,
+        // No apostrophe: spiritErrors.js scans these literals out of the
+        // source, and an escaped quote truncates what it reads.
+        error: 'unsealed posts are refused — seal to the cipher key this relay publishes',
+      });
+    }
+    return guardWrite('owner verb', function () {
+      return answerSelfInner(hash, plain, who);
+    });
+  }
+
+  // ── AND THE RELAY'S OWN ANSWER GOES BACK SEALED ─────────────────────
+  //
+  // Both directions, or it is half a rule. A relay's answers are not
+  // nothing: a mint carries an invite TOKEN, a status carries this box's
+  // figures, a search carries who matched. Sealed to whoever asked, with
+  // the parties the other way round in the associated data.
+  //
+  // WHAT IT NEEDS is the asker's cipher key, and the relay has it for the
+  // same reason a node does — from the roll, where a member's card is
+  // kept (cycle 10's R13). No key, no answer text: never a plain one, and
+  // the receipt still goes so the asker learns it arrived.
+  // ── WHAT A MEMBER'S ANSWERS ARE SEALED TO ───────────────────────────
+  //
+  // Off the card on their roll row, VERIFIED EVERY TIME against the key
+  // the row is filed under — which is what makes the relay the keeper of
+  // cards without being trusted with them.
+  //
+  //   Andy: "and the relay can't falsify the record in the member roll?"
+  //
+  // It cannot. A card it altered stops verifying, and a card it swapped
+  // for another member's verifies as that member and so fails the key
+  // check here. The worst it can do is lose one, and a lost card means
+  // an answer it cannot seal — a refusal, never a plaintext answer.
+  //
+  // A PARTNER IS NOT A MEMBER, so a partner's key is looked up where
+  // partner keys live; its cipher key came from its own signed door.
+  // FROM RAM WHEN THEY ARE CONNECTED, which is every asker this is used
+  // for: a relay answers the member who just posted, and a member who
+  // posted is holding a stream. `findByKey` is the existing one-read
+  // lookup and prefers `activeRows` — using anything else here would put
+  // a disc seek on every single answer, which `diskClient.js` catches by
+  // counting reads and is right to.
+  function memberSealKey(publicKey) {
+    var row = findByKey(publicKey);
+    if (!row || !row.card) return '';
+    var card = nodeCard.verify(row.card);
+    if (!card || card.publicKey !== publicKey) return '';
+    return card.sealKey || '';
+  }
+
+  function sealBack(mine, toKey, partner, text) {
+    // A partner gets the plain answer, for the reason given at
+    // `fromPartnerBox`: there is no card to seal to, and what travels is
+    // a query rather than anybody's words.
+    if (partner) return text;
+    var to = toKey && memberSealKey(toKey);
+    var wrapped = to ? seal.seal(to, mine.publicKey, toKey, text) : null;
+    return wrapped ? JSON.stringify(wrapped) : '';
+  }
+
+  // THE ONE WAY THIS BOX ANSWERS A POST ADDRESSED TO ITSELF. Lifted out
+  // of `answerSelfInner` so that the refusals `answerSelf` makes BEFORE
+  // it — an unsealed post, one that will not open — leave by the same
+  // door as every verb's answer, with the same sealing and the same
+  // receipt. A second exit would be a second protocol, and would be the
+  // exit that quietly forgot to seal.
+  function sendSelfAnswer(hash, who, answer) {
+    var mine = auth.loadIdentity(rootDir);
+    if (!mine || !mine.privateKey) return;
+    // NO APP. A packet addressed to a relay has no app on any node to be
+    // for, and the absence is what marks it as a system packet to
+    // whoever decodes one. Andy: "nothing in node and relay should know
+    // about apps."
+    var reply = sealBack(mine, who && who.id, fromPartnerBox(who), JSON.stringify({ v: 1, body: answer }));
+
+    // ── A REFUSAL IS HEARD EVEN WHEN IT CANNOT BE SEALED ─────────────
+    //
+    // Sealing needs the asker's card, and the one asker who may not have
+    // sent one is a node from before this cycle — which is exactly the
+    // node that needs to be told. Silence there would make the flag day
+    // indistinguishable from a broken relay: "old nodes MUST update to
+    // stay in the game" is only true if an old node can find out.
+    //
+    // SO A REFUSAL TRAVELS PLAIN, and nothing else ever does. What is
+    // sent is rebuilt from two fields rather than passed through — the
+    // status and the sentence — so no verb can leak its figures out of
+    // this branch by putting them on a refusal it returns. An ANSWER
+    // that cannot be sealed is not sent at all.
+    if (!reply && answer && answer.ok === false) {
+      reply = JSON.stringify({ v: 1, body: {
+        ok: false,
+        status: answer.status || 400,
+        error: String(answer.error || 'refused'),
+      } });
+    }
+
+    // NOT THROUGH routeReply, and the reason is the asymmetry that made
+    // this necessary in the first place: routeReply begins with
+    // deviceIdentity, which resolves the owner and peer rows and NOT this
+    // relay's own key. Sending its own answer through the public door
+    // would have it refuse itself. Everything else is identical — same
+    // table, same check that the replier is the route's target, same
+    // event on the requester's stream.
+    var matched = routes.answer(hash, mine.publicKey);
+    if (!matched.ok) return;
+    var packet = {
+      hash: hash,
+      from: mine.publicKey,
+      text: reply,
+      sig: auth.sign(mine.privateKey, auth.receiptMessage(hash)),
+    };
+    // A PARTNER HOLDS NO STREAM (cycle 8's R13): its answer goes back as
+    // the reply to the post it asked with, which is still open, waiting.
+    if (settleForPartner(hash, packet)) return;
+    presentNow.send(matched.requester, 'reply', packet);
+  }
+
+  // A card request is the one plain packet there is, and a relay answers
+  // `answerSelf` rather than a card — so this exists only to keep the
+  // refusal above from swallowing one, and to say so out loud.
+  function isCardAsk(text) {
+    var parsed = null;
+    try { parsed = JSON.parse(String(text || '')); }
+    catch (e) { return false; }
+    return !!(parsed && !parsed.app && parsed.body && parsed.body.card);
   }
 
   function answerSelfInner(hash, text, who) {
@@ -3242,40 +3455,13 @@ function createRelay(rootDir, deps) {
     // reply is sent by calling this rather than by falling off the end.
     //
     // Every other verb calls it at once and behaves exactly as before.
+    // THE BODY OF THIS MOVED OUT (cycle 10, R5) to `sendSelfAnswer`, so
+    // that the refusals `answerSelf` makes before any verb runs leave by
+    // the same door, sealed the same way. This is the name the verbs
+    // below call it by, and it carries the two things they do not have to
+    // repeat: which post is being answered, and who asked.
     function sendAnswer(answer) {
-      var mine = auth.loadIdentity(rootDir);
-      if (!mine || !mine.privateKey) return;
-    // NO APP. This wrote an app name into every answer — the box
-    // naming an app, in bytes the box never reads. Andy: "nothing in node
-    // and relay should know about apps." A packet addressed to a relay
-    // has no app on any node to be for, and the absence is now what marks
-    // it as a system packet to whoever decodes one. Which is not this
-    // file, and not any file next to it — the decoder lives in js/client/.
-      var reply = JSON.stringify({ v: 1, body: answer });
-
-    // NOT THROUGH routeReply, and the reason is the same asymmetry that
-    // made this requirement necessary in the first place: routeReply
-    // begins with deviceIdentity, which resolves the owner and peer rows
-    // and NOT this relay's own key. Sending its own answer through the
-    // public door would have it refuse itself.
-    //
-    // Everything else is identical to what routeReply does, and
-    // deliberately so — same table, same `answer` check that the replier
-    // is the route's target, same event on the requester's stream. Only
-    // the identity lookup is skipped, because the identity is this
-    // process.
-      var matched = routes.answer(hash, mine.publicKey);
-      if (!matched.ok) return;
-      var packet = {
-        hash: hash,
-        from: mine.publicKey,
-        text: reply,
-        sig: auth.sign(mine.privateKey, auth.receiptMessage(hash)),
-      };
-      // A PARTNER HOLDS NO STREAM (R13): its answer goes back as the reply
-      // to the post it asked with, which is still open, waiting.
-      if (settleForPartner(hash, packet)) return;
-      presentNow.send(matched.requester, 'reply', packet);
+      sendSelfAnswer(hash, who, answer);
     }
 
     // ── ASK THE PARTNERS, AND MERGE WHAT COMES BACK ──────────────────

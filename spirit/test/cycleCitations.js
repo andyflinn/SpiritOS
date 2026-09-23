@@ -79,7 +79,7 @@ const TALLY = {
   'spirit/run/js/ownerBadge.js': 5,
   'spirit/run/js/peerPost.js': 6,
   'spirit/run/js/presenceNode.js': 1,
-  'spirit/run/js/relay.js': 35,
+  'spirit/run/js/relay.js': 34,
   'spirit/run/js/relayAuth.js': 5,
   'spirit/run/js/relayServer.js': 4,
   'spirit/run/js/relayStatus.js': 1,

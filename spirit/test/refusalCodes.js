@@ -16,6 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
+const { rememberKeys, sealKeyFor } = require('./openReply');
 const auth = require('../run/js/relayAuth');
 const hub = require('../run/js/hub');
 const buildStamp = require('../run/js/buildStamp');
@@ -52,12 +53,15 @@ async function run() {
     const H = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-codes-'));
     auth.saveIdentity(H, auth.generateIdentity('sender'));
     const P = peerPost.createPeerPost({
+      sealKeyFor: sealKeyFor,
       rootDir: H, waitMs: 2000,
       request: function () {
         return Promise.resolve({ status: 503, text: JSON.stringify({ error: 'peer not reachable', code: 'peer-unreachable' }) });
       },
     });
-    const a = await P.post('http://relay.example', auth.generateIdentity('x').publicKey, 'hello');
+    // Their card is held, so the post is composed and the RELAY's refusal
+    // is what comes back — which is what this suite is about.
+    const a = await P.post('http://relay.example', rememberKeys(auth.generateIdentity('x')).publicKey, 'hello');
     if (!a.ok && a.code === 'peer-unreachable' && a.error === 'peer not reachable' &&
         spiritErrors.classifyAnswer(a).code === 'peer-unreachable') {
       test.check('a refusal keeps both: the sentence, and the code the relay sent');

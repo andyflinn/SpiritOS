@@ -43,9 +43,27 @@ async function settledRow(traffic, pick) {
   return null;
 }
 
+// ── WHO SEALS TO WHOM (cycle 10, R5) ────────────────────────────────
+//
+// Every post but a card is sealed now, and a node that cannot find the
+// recipient's cipher key refuses to send — which is the rule, and would
+// otherwise make this whole suite red for the right reason and the wrong
+// one. On a real node `sealKeyFor` reads the contact card or the pinned
+// relay key; here every identity is made in this file, so they are
+// registered as they are made.
+//
+// A key that was never registered answers empty, and that is on purpose:
+// it is how a test asks for the refusal.
+const sealKeys = Object.create(null);
+function sealKeyFor(key) { return sealKeys[key] || ''; }
+// Somebody whose card this node holds, without a home of their own here.
+function known(id) { sealKeys[id.publicKey] = id.sealPublicKey; return id; }
+
 function tmpHome(name) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-peerpost-'));
-  auth.saveIdentity(home, auth.generateIdentity(name));
+  const id = auth.generateIdentity(name);
+  auth.saveIdentity(home, id);
+  sealKeys[id.publicKey] = id.sealPublicKey;
   return home;
 }
 
@@ -55,8 +73,12 @@ function tmpHome(name) {
 function fakeRelay() {
   const routes = routerTable.createRouter({});
   const streams = Object.create(null);
+  // WHAT THE RELAY ACTUALLY SAW (cycle 10). Recorded so a test can ask
+  // the one question that matters now: are the words in there?
+  const posts = [];
   const R = {
     routes: routes,
+    posts: posts,
     listen: function (key, onEvent) { streams[key] = onEvent; },
     hangUp: function (key) { delete streams[key]; },
     request: function (url, method, pathname, body) {
@@ -69,6 +91,7 @@ function fakeRelay() {
           return Promise.resolve({ status: 503, text: '{"error":"peer not reachable"}' });
         }
         const hash = auth.requestHash(verified);
+        posts.push({ hash: hash, text: body.text, from: body.from, to: body.to });
         const opened = routes.open(hash, body.from, body.to, function () {
           streams[body.to]('request', {
             from: body.from, to: body.to, text: body.text, sig: body.sig,
@@ -125,6 +148,7 @@ function nodeFor(name, relay, answer, more) {
     // card is still verified and simply not kept, which is the shape a
     // relay runs in.
     keepCard: (more && more.keepCard) || null,
+    sealKeyFor: (more && more.sealKeyFor) || sealKeyFor,
   });
   relay.listen(id.publicKey, function (event, body) {
     if (event === 'request') P.onRequest('http://relay', body);
@@ -212,7 +236,9 @@ async function whatCrossedIsWrittenDown() {
   // A REFUSAL IS THE ENTRY THAT MATTERS MOST. It is the whole reason this
   // log exists: once a relay stores nothing, this is the only evidence
   // that a thing was tried and did not land.
-  const stranger = auth.generateIdentity('nobody');
+  // Their card is held — so this is a post that went nowhere because
+  // nobody was there, not one this node refused to compose.
+  const stranger = known(auth.generateIdentity('nobody'));
   const refused = await bert.P.post('http://relay', stranger.publicKey, '{"ping":1}');
   if (refused.ok) { test.fail('a post to nobody succeeded'); return; }
 
@@ -608,16 +634,37 @@ async function run() {
     test.fail('post: ' + JSON.stringify(answer));
   }
 
-  // The caller gets the hash even on the fast path, so a late answer is
-  // still matchable if the wait ever expires first.
-  const expected = auth.requestHash(
+  // ── THE HASH IS OVER WHAT TRAVELLED (cycle 10, R11) ───────────────
+  //
+  //   Andy: "the hashing must sit outside of the cyphering."
+  //
+  // This assertion used to read "and names the hash the caller could
+  // have computed itself", recomputing it from the plaintext. That is no
+  // longer true and the reason is the cycle: the seal is randomised per
+  // message, so nobody can derive this number from the words — not the
+  // caller, and not the relay.
+  //
+  // What it names is the BYTES THAT CROSSED. So it is checked against
+  // what the relay actually registered, which is the only place the two
+  // meet, and asserted NOT to be the hash of the plaintext — because a
+  // hash the relay could compute from meaning would hand it back
+  // content-addressed routing and content deduplication, the things
+  // cycle 10's R11 says become impossible.
+  const posted = relay.posts[0];
+  const ofPlaintext = auth.requestHash(
     auth.postMessage(bert.id.publicKey, john.id.publicKey, '{"ping":1}')
   );
-  if (answer.hash === expected) {
-    test.check('and names the hash the caller could have computed itself');
+  if (posted && answer.hash === posted.hash) {
+    test.check('the hash names the bytes that crossed — the same number the relay registered');
   } else {
-    test.fail('hash: ' + answer.hash + ' expected ' + expected);
+    test.fail('hash: ' + answer.hash + ' relay saw ' + (posted && posted.hash));
   }
+  if (answer.hash !== ofPlaintext) {
+    test.check('and it is NOT the hash of the words — the relay cannot hash-check a payload it cannot read');
+  } else {
+    test.fail('THE HASH IS OVER THE PLAINTEXT — the seal is outside the hash, not inside it');
+  }
+  const expected = answer.hash;
 
   // Signed by the recipient, so the relay in the middle could not have
   // manufactured it. This is what a receipt is worth.
@@ -658,7 +705,9 @@ async function run() {
 
   test.subHeading('Nobody there');
 
-  const ghost = auth.generateIdentity('ghost');
+  // Their card is held — we know where to seal to. What is missing is
+  // the box, which is the case this test is about.
+  const ghost = known(auth.generateIdentity('ghost'));
   const nowhere = await bert.P.post('http://relay', ghost.publicKey, '{"ping":1}');
   if (nowhere.ok === false && nowhere.status === 503) {
     test.check('a peer with no open stream is an immediate refusal, not a wait');
@@ -680,7 +729,7 @@ async function run() {
   // exists for. Crucially this is a failure to WAIT, not a failure of
   // the request: it is still open at the relay, and its hash still
   // matches if the answer turns up.
-  const mute = auth.generateIdentity('mute');
+  const mute = known(auth.generateIdentity('mute'));
   relay.listen(mute.publicKey, function () { /* hears everything, says nothing */ });
   const timedOut = await bert.P.post('http://relay', mute.publicKey, '{"ping":1}');
   if (timedOut.ok === false && timedOut.status === 504 && timedOut.stillOpen === true) {
@@ -762,6 +811,7 @@ async function tooLittleTimeIsNotWorthRepeating() {
   let attempts = 0;
   const P = peerPost.createPeerPost({
     rootDir: home,
+    sealKeyFor: sealKeyFor,
     request: function (url, method, pathname, body) {
       attempts += 1;
       return Promise.resolve({
@@ -771,7 +821,7 @@ async function tooLittleTimeIsNotWorthRepeating() {
     },
   });
 
-  const target = auth.generateIdentity('them');
+  const target = known(auth.generateIdentity('them'));
   // PATIENCE OF SECONDS, so anything retryable would be retried several
   // times before this returns. One attempt is the whole assertion.
   const said = await P.post('http://relay', target.publicKey, '{"ping":1}',
@@ -800,6 +850,7 @@ async function tooLittleTimeIsNotWorthRepeating() {
   let busyTries = 0;
   const Q = peerPost.createPeerPost({
     rootDir: home,
+    sealKeyFor: sealKeyFor,
     request: function () {
       busyTries += 1;
       return Promise.resolve({

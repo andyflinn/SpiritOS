@@ -137,6 +137,21 @@ function signedClaim(rootDir, name, invite, inviteLabel) {
     name: name,
     publicKey: id.publicKey,
     sig: auth.sign(id.privateKey, auth.claimMessage(name)),
+    // ── AND THE CARD, AT THE MOMENT OF ENROLMENT (cycle 10, R5) ─────
+    //
+    //   Andy: "so the relay is the keeper of cards, in the database, on
+    //   disc. got it."
+    //
+    // The relay seals its answers to this member with the key on it, and
+    // its broadcasts say "these two keys, this name" from it. Sent here
+    // because enrolment is the one moment a node and a relay are already
+    // talking and the node has just been given a name.
+    //
+    // NOT COVERED BY THE CLAIM SIGNATURE, and it does not need to be: a
+    // card covers itself, and the relay checks that the key inside it is
+    // the key that signed the claim. Adding it to `claimMessage` would
+    // change a signed format — a protocol decision — to buy nothing.
+    card: nodeCard.describe(rootDir),
   };
   if (invite) body.invite = invite;
   const onInvite = String(inviteLabel == null ? '' : inviteLabel).trim();

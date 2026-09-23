@@ -182,7 +182,13 @@ function open(rootDir) {
       publicKey   TEXT PRIMARY KEY,
       publicLabel TEXT NOT NULL DEFAULT '',
       labelNorm   TEXT NOT NULL DEFAULT '',
-      claimedAt   TEXT NOT NULL DEFAULT ''
+      claimedAt   TEXT NOT NULL DEFAULT '',
+      -- THE MEMBER'S CARD, as they signed it (cycle 10, R5 and R13).
+      -- Andy: "so the relay is the keeper of cards, in the database, on
+      -- disc. got it." The signed blob, not the keys read out of it, so
+      -- the relay cannot falsify the record in the roll: every reader
+      -- checks the signature against the key the row is filed under.
+      card        TEXT NOT NULL DEFAULT ''
     );
     CREATE INDEX IF NOT EXISTS members_label ON members (labelNorm);
     CREATE TABLE IF NOT EXISTS invites (
@@ -234,6 +240,19 @@ function open(rootDir) {
   // Cycle 3 created `members` with an `owner` column copied from it at
   // claim time; a relay.db that has one loses it here, once. Idempotent:
   // asked of the table, not assumed.
+  // The card arrives with cycle 10; a relay.db from before it gains the
+  // column here, empty. An empty card means the relay cannot seal an
+  // answer to that member, which is the flag day working as ruled —
+  // "old nodes MUST update to stay in the game" — and it is a refusal
+  // with a reason rather than a silent plaintext answer.
+  try {
+    const mcols = db.prepare('PRAGMA table_info(members)').all()
+      .map(function (c) { return c.name; });
+    if (mcols.indexOf('card') === -1) {
+      db.exec("ALTER TABLE members ADD COLUMN card TEXT NOT NULL DEFAULT ''");
+    }
+  } catch (e) { /* a brand-new database already has it, from the CREATE above */ }
+
   const hasOwnerColumn = db.prepare('PRAGMA table_info(members)').all()
     .some(function (c) { return c.name === 'owner'; });
   if (hasOwnerColumn) db.exec('ALTER TABLE members DROP COLUMN owner');
@@ -254,10 +273,14 @@ function build(rootDir, db, key) {
     memberByKeys: null,
     memberCount: db.prepare('SELECT COUNT(*) AS n FROM members'),
     memberAll: db.prepare('SELECT * FROM members ORDER BY claimedAt'),
-    memberPut: db.prepare(`INSERT INTO members (publicKey, publicLabel, labelNorm, claimedAt)
-      VALUES (?, ?, ?, ?)
+    memberPut: db.prepare(`INSERT INTO members (publicKey, publicLabel, labelNorm, claimedAt, card)
+      VALUES (?, ?, ?, ?, ?)
       ON CONFLICT(publicKey) DO UPDATE SET publicLabel = excluded.publicLabel,
-        labelNorm = excluded.labelNorm, claimedAt = excluded.claimedAt`),
+        labelNorm = excluded.labelNorm, claimedAt = excluded.claimedAt,
+        -- A RENAME MUST NOT ERASE A CARD. Every other write through here
+        -- is a label change, and passing no card would blank the key the
+        -- relay seals its answers to (cycle 10, R5).
+        card = CASE WHEN excluded.card = '' THEN members.card ELSE excluded.card END`),
     memberDel: db.prepare('DELETE FROM members WHERE publicKey = ?'),
     inviteAll: db.prepare('SELECT * FROM invites ORDER BY expiresAt'),
     inviteGet: db.prepare('SELECT * FROM invites WHERE token = ?'),
@@ -289,6 +312,10 @@ function build(rootDir, db, key) {
       publicKey: row.publicKey,
       publicLabel: row.publicLabel,
       claimedAt: row.claimedAt,
+      // As the member signed it. Verified by every reader against the key
+      // this row is filed under, so the relay keeping it is not the relay
+      // being trusted with it.
+      card: row.card || '',
     };
   }
 
@@ -359,7 +386,7 @@ function build(rootDir, db, key) {
       },
       put: function (row) {
         q.memberPut.run(String(row.publicKey), String(row.publicLabel || ''),
-          normLabel(row.publicLabel), String(row.claimedAt || ''));
+          normLabel(row.publicLabel), String(row.claimedAt || ''), String(row.card || ''));
         return member(q.memberGet.get(String(row.publicKey)));
       },
       remove: function (publicKey) {
