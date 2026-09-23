@@ -327,6 +327,106 @@ test.subHeading('GUARANTEE: no relay can read what one node says to another');
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+test.subHeading('GUARANTEE: a node from before cycle 10 can still be spoken to');
+//
+//   HALF A — `ensureIdentity` grows a seal key in place   (sealKeys.js)
+//   HALF B — a node serves a card built from its identity (nodeCardSigned.js)
+//   PRODUCT — an identity that predates the cycle ends up serving a card
+//             with a REAL cipher key, so somebody can seal to it
+//
+// ── THE MOST EXPENSIVE JOIN FOUND SO FAR, AND IT WAS LIVE ───────────
+//
+// Cycle 10's R2 verifies: "an identity from before this cycle gains a
+// seal key on FIRST START, says so, and keeps its signing key".
+// `sealKeys.js` asserts exactly that — by calling `ensureIdentity`
+// DIRECTLY. It was green every day.
+//
+// Nothing asserted that STARTING A NODE calls it. And nothing did: on a
+// node `ensureIdentity` was reached only from the claim path, and a node
+// that already holds its seat never claims again. A relay grew one at
+// boot, which is why every relay was fine and every node was not.
+//
+// MEASURED 2026-09-24, between the two agents' own machines: both nodes
+// updated to the flag-day tag, both booted clean, and both served a card
+// with `sealKey: ""`. A card with no cipher key is nothing to seal to, so
+// each refused to post to the other — correctly, and FOR EVER. Two nodes
+// obeying the specification into permanent mutual silence, and it would
+// have done the same to every node on the network the moment it updated.
+//
+// Found by wsl-claude. Fixed in one line at boot (79e467d) — which
+// shipped with no assertion at all, which is why this exists.
+//
+// ── WHAT EACH HALF OF THIS BLOCK PROVES, SAID PLAINLY ──────────────
+//
+// The first check is BEHAVIOUR: an old identity, migrated, produces a
+// card a stranger could seal to. The second is STRUCTURAL: the boot path
+// calls the migration. Only the pair is the guarantee.
+//
+// A stronger version would spawn a real node from a planted tree and ask
+// it for its card over HTTP. That is what `plantRun` exists for and it is
+// not done here, because copying a tracked tree for one assertion would
+// change what this suite is. **So the structural half is a count, not a
+// proof** — it would not catch the call being made too late, or made and
+// then undone. It catches the call being gone, which is the way it broke.
+// ═══════════════════════════════════════════════════════════════════════
+
+{
+  const auth2 = require('../run/js/relayAuth');
+  const card2 = require('../run/js/nodeCard');
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-precycle10-'));
+  homes.push(home);
+  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
+
+  // AN IDENTITY AS IT LOOKED BEFORE CYCLE 10: a signing pair, a name, a
+  // description, and no cipher key. Built by stripping a fresh one rather
+  // than by hand, so it cannot drift from whatever `generateIdentity`
+  // produces later.
+  const old = auth2.generateIdentity('ancient');
+  delete old.sealPublicKey;
+  delete old.sealPrivateKey;
+  old.description = 'enrolled long before any of this';
+  auth2.saveIdentity(home, old);
+
+  const before = card2.verify(card2.describe(home));
+  if (!before || !before.sealKey) {
+    test.check('an identity from before the cycle serves a card with NO cipher key — ' +
+      'the state both agent nodes were in, and nobody could have sealed to either');
+  } else {
+    test.fail('the fixture is wrong: a stripped identity already had a seal key');
+  }
+
+  // THE MIGRATION, as the boot path calls it.
+  auth2.ensureIdentity(home, '');
+  const after = card2.verify(card2.describe(home));
+
+  if (after && after.sealKey && after.publicKey === old.publicKey &&
+      after.name === before.name && after.description === before.description) {
+    test.check('after the migration it serves a card with a real cipher key — and the ' +
+      'SIGNING key, the name and the description are untouched, so every relay it is ' +
+      'enrolled at still knows it');
+  } else {
+    test.fail('migrated card: ' + JSON.stringify(after));
+  }
+
+  // THE JOIN, structurally: does starting a node reach the migration at
+  // all? This is the half that was missing, and the only half that was
+  // ever wrong.
+  const boot = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8');
+  const calls = boot.split(String.fromCharCode(10)).filter(function (line) {
+    return /ensureIdentity\s*\(/.test(line) && !/^\s*\/\//.test(line);
+  });
+
+  if (calls.length >= 1) {
+    test.check('and the node boot path calls the migration (' + calls.length +
+      ' site) — the half that did not exist, and whose absence silenced every node');
+  } else {
+    test.fail('NOTHING IN server.js CALLS ensureIdentity. A node that already holds a ' +
+      'relay seat never claims again, so it will never grow a seal key, will serve a ' +
+      'card nobody can seal to, and will be silent while appearing healthy.');
+  }
+}
+
 try { relayStore.closeAll(); } catch (e) { /* leave it */ }
 homes.forEach(function (h) {
   try { fs.rmSync(h, { recursive: true, force: true }); } catch (e) { /* sweeper */ }
