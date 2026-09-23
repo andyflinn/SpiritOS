@@ -4,6 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const { URL } = require('url');
 const auth = require('./relayAuth');
+// The one sealing implementation (cycle 10, R4). Used here for the claim
+// route, which is a direct POST rather than a peer post and so was not
+// reached by cycle 10's R5 — see sealedClaim below.
+const seal = require('./seal');
 // invites.js STOOD HERE, required and never used — it is the relay's
 // waiting room, on the relay's disc (cycle 3), and nothing on a node reads it.
 const ownerBadge = require('./ownerBadge');
@@ -157,6 +161,58 @@ function signedClaim(rootDir, name, invite, inviteLabel) {
   const onInvite = String(inviteLabel == null ? '' : inviteLabel).trim();
   if (onInvite) body.inviteLabel = onInvite;
   return body;
+}
+
+// ── AND THE CLAIM IS SEALED TO THE RELAY (cycle 10, R9) ──────────────
+//
+//   Andy, 2026-09-23, on being shown that sealing peer posts never
+//   reached this route: *"3. seal it. agreed."*
+//
+// THE TOKEN IS THE REASON. An invite token is a credential — a word
+// somebody reads down a telephone — and `/api/relay/claim` is a direct
+// POST rather than a peer post, so that cycle's R5 sealing went past it.
+// TLS ends at Caddy on the relay's host, which means today that token is
+// plaintext in that process and in anything it writes down. Sealed, the
+// terminator carries bytes it cannot read, and the headline of this requirement becomes
+// true rather than nearly true.
+//
+// ── WHAT STAYS OUTSIDE THE SEAL, AND WHY IT MUST ────────────────────
+//
+// `from` alone. The recipient has to know who sealed it before it can
+// open it — the sender is in the associated data — so putting the
+// claimer's own public key inside would be a lock whose key is inside
+// the box. It is public anyway: it is what they are claiming WITH.
+//
+// Everything else goes in: the name, the signature, the invite token,
+// the label the owner wrote down, and the card.
+//
+// ── THE KEY COMES FROM THE SIGNED DOOR, OR NOTHING IS SENT ──────────
+//
+// `GET /api/relay/key` publishes the relay's cipher key and signs it with
+// the identity key beside it (this requirement's first half). If that does
+// not verify, this refuses to compose — it does not fall back to a plain
+// claim, because a fallback is exactly what an attacker who can strip a
+// signature would ask for.
+//
+// A NODE WITH NO SEAT CANNOT ASK A PEER FOR THIS. It has no stream and
+// nothing to address a post to, which is why the key door is a granted
+// GET and always was (decision 0010).
+function sealedClaim(url, rootDir, name, invite, inviteLabel) {
+  const body = signedClaim(rootDir, name, invite, inviteLabel);
+  return Promise.resolve()
+    .then(function () { return relayRequest(url, 'GET', '/api/relay/key', null); })
+    .then(function (r) {
+      let said = null;
+      try { said = JSON.parse(r.text); } catch (e) { said = null; }
+      if (!said || !auth.relayKeySigned(said.relayPublicKey, said.relaySealKey,
+        said.relayLabel, said.keySig)) {
+        throw new Error('that relay does not publish a signed cipher key — it may be running older code');
+      }
+      const wrapped = seal.seal(said.relaySealKey, body.publicKey, said.relayPublicKey,
+        JSON.stringify(body));
+      if (!wrapped) throw new Error('that relay\'s cipher key cannot be used');
+      return { from: body.publicKey, sealed: wrapped };
+    });
 }
 
 // signedSend STOOD HERE — the bytes handleSend put on the wire. Its one
@@ -888,12 +944,11 @@ function createHub(rootDir) {
     var probe = deps && deps.probe;
     readJsonBody(req).then(function (body) {
       withChosenRelay(res, body && body.url, function (url) {
-        relayRequest(url, 'POST', '/api/relay/claim', signedClaim(
-          rootDir,
-          body && body.name,
-          body && body.invite,
-          body && body.inviteLabel
-        ))
+        sealedClaim(url, rootDir,
+          body && body.name, body && body.invite, body && body.inviteLabel)
+          .then(function (sending) {
+            return relayRequest(url, 'POST', '/api/relay/claim', sending);
+          })
           .then(function (r) {
             // AFTER THE ANSWER IS WRITTEN, never before: a claim that
             // worked must be reported even if opening a stream does not,

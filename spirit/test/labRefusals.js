@@ -35,6 +35,7 @@ const auth = require('../run/js/relayAuth');
 const rule = require('../run/js/labelRule.js');
 const lab = require('./labMaster/ensureMaster.js');
 const { mintOwnerInvite } = require('./ownerClaim');
+const { sealedClaimBody } = require('./labWorld');
 
 const RELAY_PORT = 65415;
 const RELAY_NAME = 'abuse-relay';
@@ -59,13 +60,15 @@ async function post(pathname, body) {
 // A claim is signed or it is nothing (decision 0003). Every label case
 // below travels with a real signature, so a 400 is the RULE refusing and
 // never the gate.
-function claim(label) {
+async function claim(label) {
   const id = auth.generateIdentity('probe');
-  return post('/api/relay/claim', {
+  // Sealed to the relay, like every claim now (cycle 10, R9) — so a 400
+  // here is the LABEL rule refusing, never the seal check.
+  return post('/api/relay/claim', await sealedClaimBody(ORIGIN, id, {
     name: label,
     publicKey: id.publicKey,
     sig: auth.sign(id.privateKey, auth.claimMessage(label)),
-  });
+  }));
 }
 
 async function waitServing(timeoutMs) {
@@ -139,13 +142,13 @@ async function run() {
   const sender = auth.generateIdentity('sender');
   const ownerInvite = mintOwnerInvite(
     require('path').join(require('./labMaster/labPaths').FIXTURE_ROOT, RELAY_NAME, 'spirit', 'run'), 'sender');
-  const ordinary = await post('/api/relay/claim', {
+  const ordinary = await post('/api/relay/claim', await sealedClaimBody(ORIGIN, sender, {
     name: '../etc: Andy Flinn 🌱',
     publicKey: sender.publicKey,
     sig: auth.sign(sender.privateKey, auth.claimMessage('../etc: Andy Flinn 🌱')),
     invite: ownerInvite.token,
     inviteLabel: 'sender',
-  });
+  }));
   if (ordinary.status === 201) {
     test.check('while spaces, punctuation, emoji and even ../etc are a fine caption — addressing is by key');
   } else {

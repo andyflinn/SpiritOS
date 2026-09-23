@@ -363,16 +363,20 @@ right early: a partner-carried post is sealed to the MEMBER, not to the
 carrying relay, so a partner forwards what it cannot read — which is the
 property `PARTNERS.md` always wanted and could not have.
 
-**Verify:** an owner verb sealed to the relay is obeyed; the same verb
-plaintext is refused; a relay's published cipher key fails verification
-if altered; a partner-carried post is opened by the member and not by the
-partner.
+**Verify:** `spirit/test/relayKeyDoor.js` — a published cipher key fails
+verification if altered, if lifted onto another identity, or if dropped.
+`spirit/test/relayMonitor.js` and `spirit/test/relayReconfigure.js` — an
+owner verb sealed to the relay is obeyed and the same verb plaintext is
+refused. `spirit/test/partnerTunnel.js` — a partner-carried post is
+opened by the member and not by the partner. And the claim route on real
+HTTP against a real relay: `spirit/test/labPersistence.js`,
+`spirit/test/labRefusals.js`, `spirit/test/liveFrontDoor.js`, all three
+sealing through one helper (`labWorld.sealedClaimBody`), so a node that
+stopped sealing or a relay that stopped opening turns all three red.
 
-**Status:** OPEN — and deliberately, although most of it is built. What
-R9 PROMISES is that an invite token stops touching the terminator and its
-logs, and that is the one part not done. Calling this DONE because the
-other four parts landed would retire a requirement that has not delivered
-its headline. The parts, so nobody rebuilds them:
+**Status:** DONE, except the partner wrapper, which is named below and
+belongs with the partnership handshake. The parts, so nobody rebuilds
+them:
 
 - **DONE at `85e424b`** — the relay publishes `relaySealKey` and a
   signature over both keys and the label together, on `GET
@@ -385,13 +389,16 @@ its headline. The parts, so nobody rebuilds them:
 - **DONE** — a partner-carried post is opened by the member and not by
   the partner, because the packet a partner carries is sealed to the
   member it is addressed to.
-- **NOT DONE: the claim route itself.** `POST /api/relay/claim` is a
-  direct POST, not a peer post, and it still travels plaintext — so the
-  invite TOKEN still touches the terminator and whatever it logs, which
-  is the thing R9's headline promised to stop. The claimer must fetch the
-  relay's cipher key first (the door is signed now, so that part is
-  ready) and seal the claim body to it. **Andy ruled this: "3. seal it.
-  agreed."**
+- **DONE — the claim route.** `hub.sealedClaim` fetches the relay's key
+  from its signed door, refuses to compose if that statement does not
+  verify, and seals the whole claim body to it. **`from` is the only
+  field outside the seal**, because the recipient must know who sealed it
+  before it can open one — the sender is in the associated data, so
+  putting the claimer's own key inside would be a lock whose key is in
+  the box. The relay opens at the route before a single field is read,
+  and refuses a claim whose sealed body names a different key than the
+  one that sealed it. **The token is off the terminator**, which is the
+  headline this requirement promised.
 - **NOT DONE: the partner wrapper** — see R5 and `relay.js`,
   `fromPartnerBox`. Belongs with the partnership handshake.
 

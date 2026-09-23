@@ -447,8 +447,49 @@ function handleDeviceOffer(req, res) {
 // installing a key on your own row was never an owner verb and so could
 // never have gone through a door only the owner may knock on.
 
+// ── A CLAIM ARRIVES SEALED (cycle 10, R9) ───────────────────────────
+//
+//   Andy: *"3. seal it. agreed."*
+//
+// `{ from, sealed }` — everything but the claimer's own key is inside,
+// and the token above all. Opened here, before a single field is read,
+// so no part of this route can be written to work on a plaintext claim.
+//
+// THE FLAG DAY IS THE WHOLE COMPATIBILITY STORY. An older node posting a
+// plain claim is refused with a sentence naming the reason, rather than
+// being accepted on the old terms — *"we're pre-alpha, old nodes MUST
+// update to stay in the game."* A relay that took both would be a relay
+// where the token is sometimes in the clear, which is the property this requirement
+// exists to remove.
+function openClaim(body) {
+  if (!body || !body.sealed || !body.from) return null;
+  const mine = require('./relayAuth').loadIdentity(ROOT_DIR);
+  if (!mine || !mine.sealPrivateKey) return null;
+  const got = require('./seal').open(mine.sealPrivateKey, body.from, mine.publicKey, body.sealed);
+  if (!got) return null;
+  try { return JSON.parse(got.text); } catch (e) { return null; }
+}
+
 function handleRelayClaim(req, res) {
-  readJsonBody(req).then(function (body) {
+  readJsonBody(req).then(function (outer) {
+    const body = openClaim(outer);
+    if (!body) {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        error: 'a claim must be sealed to the cipher key this relay publishes at /api/relay/key',
+      }));
+      return;
+    }
+    // THE KEY THAT SEALED IT IS THE KEY THAT CLAIMS. Otherwise a claim
+    // could be sealed by one node on behalf of a key it does not hold —
+    // the signature would still be checked below, but the associated data
+    // would have bound the wrong party, and the two would disagree about
+    // who this is.
+    if (body.publicKey !== outer.from) {
+      res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'the sealed claim names a different key than the one that sealed it' }));
+      return;
+    }
     const result = relay.claim(
       body && body.name,
       body && body.sig,

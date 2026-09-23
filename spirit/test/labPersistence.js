@@ -28,6 +28,7 @@ const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const lab = require('./labMaster/ensureMaster.js');
 const { mintOwnerInvite } = require('./ownerClaim');
+const { sealedClaimBody } = require('./labWorld');
 
 const RELAY_PORT = 65419;
 const RELAY_NAME = 'persist-relay';
@@ -133,13 +134,14 @@ async function run() {
   // here into the relay's own relay.db as install.js would over SSH.
   const andy = auth.generateIdentity('andy');
   const ownerInvite = mintOwnerInvite(relayHome, 'andy');
-  const claimed = await post(ORIGIN + '/api/relay/claim', {
+  // Sealed, like every claim now (cycle 10, R9).
+  const claimed = await post(ORIGIN + '/api/relay/claim', await sealedClaimBody(ORIGIN, andy, {
     name: 'andy',
     publicKey: andy.publicKey,
     sig: auth.sign(andy.privateKey, auth.claimMessage('andy')),
     invite: ownerInvite.token,
     inviteLabel: 'andy',
-  });
+  }));
   if (claimed.status === 201) {
     test.check('a signed claim takes the row, and the first one owns the box');
   } else {
@@ -236,11 +238,13 @@ async function run() {
   // So this proves MORE than the check it replaces. It is not the peer
   // row that came back, it is the ownership.
   const other = auth.generateIdentity('impostor');
-  const retaken = await post(ORIGIN + '/api/relay/claim', {
+  // Sealed too — so the 403 below is the INVITE rule refusing a stranger,
+  // which is what this asserts, and not the seal check refusing a shape.
+  const retaken = await post(ORIGIN + '/api/relay/claim', await sealedClaimBody(ORIGIN, other, {
     name: 'andy',
     publicKey: other.publicKey,
     sig: auth.sign(other.privateKey, auth.claimMessage('andy')),
-  });
+  }));
   if (retaken.status === 403 && /invite/.test(retaken.text)) {
     test.check('and a stranger is refused for want of an invite — the OWNERSHIP came back, not just the row');
   } else {

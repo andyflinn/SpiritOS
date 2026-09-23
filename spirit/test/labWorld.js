@@ -168,6 +168,24 @@ async function answering(url) {
 // are the ones he actually sees. His identity is READ, never written: the
 // key that owns spirit.andyflinn.com lives in that file and regenerating
 // it would cost him the relay he already has.
+
+// ── A CLAIM IS SEALED TO THE RELAY (cycle 10, R9) ───────────────────
+//
+// The token is a credential, and the claim route is a direct POST that
+// cycle 10's R5 never reached — so it is sealed as hub.sealedClaim
+// seals it on a real node: everything but the claimer own key inside,
+// and the relay cipher key taken from its signed door.
+async function sealedClaimBody(relayUrl, id, body) {
+  const keyDoor = JSON.parse((await relayRequest(relayUrl, 'GET', '/api/relay/key', null)).text);
+  if (!auth.relayKeySigned(keyDoor.relayPublicKey, keyDoor.relaySealKey,
+    keyDoor.relayLabel, keyDoor.keySig)) {
+    throw new Error('that relay does not sign what it says its keys are');
+  }
+  const wrapped = seal.seal(keyDoor.relaySealKey, id.publicKey, keyDoor.relayPublicKey,
+    JSON.stringify(body));
+  if (!wrapped) throw new Error('could not seal the claim');
+  return { from: id.publicKey, sealed: wrapped };
+}
 function createWorld(opts) {
   opts = opts || {};
   // NOT CLAMPED. It was `Math.min(PEER_PORTS.length, ...)`, so a scenario
@@ -248,7 +266,7 @@ function createWorld(opts) {
     owner = opts.owner || auth.generateIdentity('labowner');
     const ownerName = owner.name || 'labowner';
     const ownerInvite = mintOwnerInvite(relay.home, ownerName);
-    const claimed = await post(relay.url + '/api/relay/claim', {
+    const claimed = await post(relay.url + '/api/relay/claim', await sealedClaimBody(relay.url, owner, {
       name: ownerName,
       publicKey: owner.publicKey,
       sig: auth.sign(owner.privateKey, auth.claimMessage(ownerName)),
@@ -258,7 +276,7 @@ function createWorld(opts) {
       // node: the relay seals its answers to the key on it, so an owner
       // enrolled without one can be told nothing.
       card: nodeCard.cardFrom(Object.assign({ name: ownerName }, owner)),
-    });
+    }));
     if (!claimed.ok) {
       return { ok: false, error: 'lab owner could not claim: ' +
         JSON.stringify(claimed.body) + ' — the relay was not empty' };
@@ -286,14 +304,14 @@ function createWorld(opts) {
       // name here. Sent explicitly all the same: they are two different
       // things that happen to match in a lab, and writing `name` twice
       // is what says so.
-      const joined = await post(relay.url + '/api/relay/claim', {
+      const joined = await post(relay.url + '/api/relay/claim', await sealedClaimBody(relay.url, id, {
         name: name,
         publicKey: id.publicKey,
         sig: auth.sign(id.privateKey, auth.claimMessage(name)),
         invite: token,
         inviteLabel: name,
         card: nodeCard.cardFrom(Object.assign({ name: name }, id)),
-      });
+      }));
       if (!joined.ok) {
         return { ok: false, error: 'join ' + name + ': ' + JSON.stringify(joined.body) };
       }
@@ -594,4 +612,8 @@ function createWorld(opts) {
 //    from relays.json, other than the Natter UI. Same shape as 1.
 // ---------------------------------------------------------------------
 
-module.exports = { createWorld: createWorld, PREFIX: PREFIX };
+// `sealedClaimBody` is exported for the lab suites that build their own
+// claims (labRefusals, labPersistence). One sealing site for the suites,
+// for the same reason the product has one: two that differ in a detail is
+// how the associated data gets dropped on one path.
+module.exports = { createWorld: createWorld, PREFIX: PREFIX, sealedClaimBody: sealedClaimBody };

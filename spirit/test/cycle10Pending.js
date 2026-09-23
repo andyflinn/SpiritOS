@@ -62,9 +62,8 @@
 // an API would have to be rewritten when the design settles, and a
 // progress board that lies is worse than none.
 //
-// So this file is DELIBERATELY SHORT. The cycle has thirteen open
-// requirements; four are declared here because four have an unambiguous
-// absent unit. The rest are named at the foot of this file with the
+// So this file is DELIBERATELY SHORT. Three are declared here because
+// three have an unambiguous absent unit. The rest are named at the foot of this file with the
 // reason they are not declared, so the gap is visible rather than
 // mistaken for completeness.
 //
@@ -80,7 +79,6 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const limits = require('../run/js/limits.js');
-const hub = require('../run/js/hub');
 const relayStore = require('../run/js/relayStore');
 const auth = require('../run/js/relayAuth');
 const nodeCard = require('../run/js/nodeCard');
@@ -106,20 +104,24 @@ test.awaiting('cycle-10/R6', 'limits.PAYLOAD_MAX raised for sealed bodies',
 
 test.subHeading('The two that block the live boxes');
 
-// cycle-10/R9's remaining half. The claim route is a direct POST, not a peer post,
-// so sealing peer posts never reached it — and the invite TOKEN, a
-// credential spoken down a phone, still arrives in plaintext at the
-// terminator and whatever it logs. Andy ruled it: "3. seal it. agreed."
+// cycle-10/R9's remaining half — the claim route — is BUILT, and its
+// declaration is GONE rather than converted, which is
+// the honest end for this one.
 //
-// The unit: nothing on the claim path seals. `signedClaim` composes the
-// body, and it has no sealing in it.
-{
-  const composed = JSON.stringify(hub.signedClaim ? hub.signedClaim(tmp(), 'someone') : {});
-  test.awaiting('cycle-10/R9', 'a sealed claim body',
-    /"sealed"\s*:\s*1/.test(composed),
-    'an invite token stops touching the relay terminator and its logs, which is this cycle R9\'s headline',
-    { there: 60, cost: 'a sitting — the signed key door is built; the claimer must fetch it and seal' });
-}
+// THE DECLARATION WAS VACUOUS AND ONLY SAYING SO EXPOSED IT. It read
+// `hub.signedClaim ? hub.signedClaim(...) : {}` — and `signedClaim` is
+// not exported, so the guard silently took the empty branch and the test
+// asked nothing at all. It reported yellow for the right reason by
+// accident. A declaration that reaches past a module's front door to ask
+// its question is the escape hatch `oneDoor.js` §4 exists to refuse, and
+// exporting an internal to satisfy a progress board would be the tail
+// wagging the dog.
+//
+// SO THE PROOF LIVES WHERE THE THING HAPPENS: `labPersistence.js`,
+// `labRefusals.js` and `liveFrontDoor.js` claim over real HTTP against a
+// real relay, and all three now seal through one helper
+// (`labWorld.sealedClaimBody`). A relay that stopped opening sealed
+// claims, or a node that stopped sealing them, turns all three red.
 
 // cycle-10/R20 — every member enrolled before this cycle has no card on its roll
 // row, so the relay cannot seal an answer to them: it mints the invite,
@@ -177,6 +179,6 @@ test.awaiting('cycle-10/R13', 'nodeCard.rotate raising the counter and the seal 
 //   cycle-10/R11  the layering is built; only its proof is missing, which is R10
 //   cycle-10/R14  built with R5; the log keeps plaintext on both sides
 //   cycle-10/R15  length is public and documented — a document, not a unit
-test.comment('4 of cycle 10\'s 13 open requirements are declared here; the rest are listed in this file with the reason');
+test.comment('3 of cycle 10\'s 13 open requirements are declared here; the rest are listed in this file with the reason');
 
 test.reportSuccessFailureCount();
