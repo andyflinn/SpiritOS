@@ -1,6 +1,6 @@
 # Cycle 10 — a relay carries what it cannot read
 
-**Opened 2026-09-23, from `989f39a`. Nothing built but the keypair. Fifteen requirements, after wsl-claude reviewed it.**
+**Opened 2026-09-23, from `989f39a`. Nothing built but the keypair. Sixteen requirements, after wsl-claude reviewed it.**
 
 > **Andy:** *"I also want to make sure we have alpha Product at the end,
 > and you agreed, or suggested that developper-nerds wouldn't be happy
@@ -524,5 +524,44 @@ length is public, in the same breath as R10 saying the envelope is public
 by design; or pad the plaintext up to a multiple of 256 bytes before
 sealing. Recommendation: say it plainly now, pad later if a real case
 wants it — the envelope already names both parties.
+
+**Status:** OPEN — cycle 10 is opened, not built.
+
+### R16 — what the relay streams to a monitor is unreadable, by both belts
+
+> **Andy, 2026-09-23:** "the relay streams packets to the monitor, those
+> packets must be unreadable for the monitor"
+
+Two claims, and the requirement is that BOTH hold, because either alone
+would be a promise resting on the other side behaving.
+
+1. **The monitor stream carries envelope facts and nothing else** —
+   from, to, bytes, hash, why-refused. That is what relay.js already
+   does (FACTS, NEVER PAYLOADS) and what a suite must now hold: no
+   monitor event, of any kind, ever carries message text. A guard that
+   walks the event shapes rather than trusting the call sites, because a
+   field added later is exactly how this would break.
+2. **And after sealing the relay has nothing readable to give.** Even a
+   relay that decided to stream the payload could only stream
+   ciphertext, because the seal sits below everything the relay touches
+   (R11). So the first claim is policy and the second is arithmetic, and
+   the owner does not have to trust the policy.
+
+**WHY THIS IS NOT THE SAME AS R10.** R10 asks whether the WORDS can be
+parsed out of the feed. R16 asks whether the feed is entitled to carry
+them at all. A relay whose monitor carried sealed payloads would pass
+R10 and still be wrong: it would be shipping a member's correspondence,
+unreadable today and readable to whoever holds the recipient key or a
+future weakness. The owner of a relay is not a party to what crosses it.
+
+**AND IT IS THE OWNER THIS PROTECTS FROM HIMSELF.** Andy owns the relay
+and will own more; the monitor is his screen. This requirement says his
+own screen may not be handed other people's words — which is the same
+rule as 0006 keeping a relay from storing them, applied to the one
+surface that was built to watch.
+
+**Verify:** every monitor event shape asserted to carry no text field; a
+deliberately added payload field fails the guard; and the live capture
+from R10 re-read for any field that is not an envelope fact.
 
 **Status:** OPEN — cycle 10 is opened, not built.
