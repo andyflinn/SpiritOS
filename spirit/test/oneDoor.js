@@ -107,7 +107,19 @@ const TALLY = {
   // transport level, and asserting a 404 needs a request rather than a
   // verb. Others are the quick way to green. The tally does not judge
   // which is which; it stops the number growing while nobody looks.
-  'test/appServerBoundary.js': 2,
+  // 2 -> 3 (cycle 2, wsl-claude, raising his own number rather than
+  // having it raised for him). The third is fetching the app server's own
+  // PAGE: a public page is the product surface a stranger meets, and
+  // there is no verb for "what does a visitor see" — the whole of G11 is
+  // about what that page says in four states.
+  'test/appServerBoundary.js': 3,
+  // THE WORLD BUILDER, counted for the first time (cycle 2). Three, and
+  // each is a public route with no verb behind it: POST /api/relay/claim
+  // is how a stranger joins a relay, GET /api/relay/key is the liveness
+  // probe every world waits on, and GET /api/relay/who is how the builder
+  // proves a relay meant to be UNCLAIMED really is — an absence a test
+  // must never assume.
+  'test/appServerWorlds.js': 3,
   'test/chatPeople.js': 1,
   'test/cycleA.js': 1,
   'test/htmlEscaping.js': 1,

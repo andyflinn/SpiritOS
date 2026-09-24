@@ -70,6 +70,17 @@ const NOT_A_SUITE = [
   // A helper, not a suite: the first claim with the owner invite (cycle 3,
   // Part B), in process.
   'ownerClaim.js',
+  // A BUILDER, not a suite (cycle 2): the four worlds an app server can
+  // find itself in — a relay nobody claimed, a relay with every seat
+  // taken, an owner node that is not running, a second relay with a
+  // different key. It makes no pass/fail claim; `appServerBoundary.js` is
+  // the suite that asserts against the worlds it builds.
+  //
+  // NAMED HERE RATHER THAN LEFT TO BE NOTICED, because this file family
+  // has form: two suites rotted for months because the runner could not
+  // see them, which is why this list carries a reason per entry instead
+  // of only a name.
+  'appServerWorlds.js',
   // A helper, not a suite: copies the NON-IGNORED spirit/run into a
   // fixture, for the suites that spawn a real server. Replaced a blind
   // fs.cpSync that took the whole 143 MB tree — media, the brains vault
