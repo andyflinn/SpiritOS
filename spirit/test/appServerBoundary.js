@@ -1228,11 +1228,31 @@ const RECIPES = [
             // away the thing the owner needs. The finding is not "it
             // accepted the impostor" — it did not — it is that meeting an
             // impostor costs the server what it knew.
-            const lost = !!(st && !st.boundKey);
-            test.fail('cycle 2 G11 (key-mismatch): the different answer was refused but not kept or reported' +
-              (lost ? ', AND THE PIN WAS EMPTIED BY MEETING IT — boundKey came back "" with lastBind ' +
-                JSON.stringify(st.lastBind) + ', though the same pin survives an ordinary restart' : '') +
-              ' (' + JSON.stringify(st) + '); refused-and-forgotten leaves the owner with no way to tell a migration they made from an attack they did not');
+            // MEASURED AT THE STOP, AND IT CORRECTS THIS LINE'S OWN
+            // EARLIER WORDING. This said "the pin was emptied". It is
+            // not: app-state/<name>/config.json still holds relay,
+            // relayKey and boundAt, intact, after the impostor. The pin
+            // is safe on disc.
+            //
+            // WHAT IS WRONG IS WHAT THE PROCESS SAYS ABOUT IT. A second
+            // start carrying a conflicting --relay comes back
+            // `unbound`, with `no relay configured`, while a perfectly
+            // good pin sits in its own file. Three costs, and the middle
+            // one is the expensive one:
+            //   - the impostor is correctly NOT obeyed;
+            //   - the message is FALSE and is the one an operator acts
+            //     on — they conclude they must pass --relay, which is
+            //     the one thing that cannot work;
+            //   - and the server is down rather than serving the relay
+            //     it is still pinned to.
+            // `app-relay-key-changed` exists in the declared set and is
+            // not what came back.
+            const blind = !!(st && !st.boundKey);
+            test.fail('cycle 2 G11 (key-mismatch): the impostor is refused, and the pin survives on disc — but the RUNNING SERVER cannot see it' +
+              (blind ? ': boundKey "" and lastBind ' + JSON.stringify(st.lastBind) +
+                ', while app-state/<name>/config.json still holds relay, relayKey and boundAt. "No relay configured" is false, ' +
+                'it is the sentence an operator acts on, and the declared code app-relay-key-changed is not the one returned' : '') +
+              '. A server that meets an impostor should go on serving the relay it is pinned to and report the conflict, not go dark');
           }
         }
       }
