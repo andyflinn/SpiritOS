@@ -420,7 +420,7 @@ forget something.
 
 ---
 
-## "Is this already solved here?" is the first question of a review
+## "Is this already solved here?" needs a reader who does not know the answer
 
 **Andy, 2026-09-24, on a sweep that would find repeated solutions:** *"To
 me this seems to be a code-review-fundamental."* It is, and the rule above
@@ -446,16 +446,63 @@ author's, and the author found none of them:**
 
 **AND A FORK HAS NO REFERENCES TO FIND**, which is why no editor helps.
 *Where-used* answers "who calls this"; a fork calls nothing — it is new
-code that never touched the thing it duplicates. The question that finds
-it is **"what else already solves this"**, and no tool in common use asks
-it.
+code that never touched the thing it duplicates.
 
-**So it is asked by a person, or by a gate that was taught one answer at
-a time.** `oneDoor` is that gate for sockets already. Widening it is a
-cycle of its own, and the discipline for widening it is the same as
-everywhere else here: **every entry comes from a fork that actually
-happened**, because a noisy gate gets ignored, and being ignored teaches
-the habit of scrolling past.
+wsl-claude sharpened that into the reason it belongs beside the check
+that cannot fail: **a fork is invisible to the tools that look for
+RELATIONSHIPS, because it has none. The thing it duplicates never learns
+of it.** So the absence of a signal is *guaranteed* rather than likely,
+which is exactly the shape of a gate that always returns the same value.
+
+> **CORRECTED THE SAME HOUR, AND THE EVIDENCE IS THE CORRECTION.** This
+> section first read *"the first question of a REVIEW"*. wsl-claude
+> counted the finders in the table above and refused it: Andy 2, a gate
+> 1, a count 1, wsl-claude 1, the author 1 and only after priming.
+> **A review by the other agent found ONE.** The best finder in this
+> agent's own measurement is **the person with the least context, asking
+> a naive question** — which is not the same instrument as review, and
+> *"institutionalising the wrong one is how a true observation produces
+> a ritual that does not work."*
+>
+> What the data supports is narrower and more useful: **a fresh reader
+> who does not know how it was solved finds forks.** Review is one way to
+> get such a reader. It is not the only one, and on this evidence it is
+> not the best one.
+>
+> He also reported why he found the one he found: *"I had not built any
+> of it, so I had no answer in my head to stop me looking."*
+
+**AND THE CHEAP INTERVENTION IS IN THE TABLE TOO: PRIMING WORKED.** The
+author found the status table *only after the first fork was named*. So,
+as a **testable proposal rather than an exhortation**: at the stop, the
+author is handed the forks found so far and asked for the rest, **before
+anyone else reads**. It costs one message, it uses the author's context
+instead of fighting it, and **if it produces nothing twice we have
+learned something** — rather than owning a rule nobody can fail.
+
+### The two kinds are not one problem, and only one is cheap
+
+- **STRUCTURAL** — textually similar. `ask` in three copies; four raw
+  `/api/` callers found with one regex. **Findable by a sweep today**,
+  and it is bookkeeping.
+- **SEMANTIC** — *no shared text at all*. A fixed 8s timeout and
+  `peerPost`'s negotiated `grantedMs` have **not one token in common**,
+  and no similarity tool will ever pair them. This is the half that needs
+  the naive question — **and it is the half that has actually hurt**:
+  the timeout, and the node that went mute.
+
+**A WARNING ABOUT THE VEHICLE, from reading `oneDoor` rather than
+assuming it.** It is a **ratchet over a tally**: per-file counts of one
+pattern, free to fall, never to rise. That shape *cannot express* "this
+looks like `spiritErrors.classifyAnswer`" — there is no number to count
+and no file to attribute it to. **Widening it for structural forks is
+natural; asking it to catch semantic ones needs a different gate**, and
+hanging both on one file is how a gate gets noisy.
+
+**The discipline for any of it, and it is the whole value:** every entry
+comes from a **fork that actually happened**, never one invented — the
+same principle as a closed refusal set reviewed once. A noisy gate gets
+ignored, and being ignored teaches the habit of scrolling past.
 
 ---
 
