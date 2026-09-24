@@ -9,11 +9,27 @@ This directory contains the vision, principles, and architecture decisions for *
   HTTP port that any language can post to. 36 verbs, the limits, the
   rates, and what the relay cannot do. Every figure on it is checked
   against the running tree by `spirit/test/doorContract.js`, and the page
-  names its own gaps — no non-JavaScript example yet, no per-verb
+  names its own gaps — the two worked examples beside it are not
+  RUN by the harness, no per-verb
   arguments, no stated version.
 
 ## Core Principles
 - [Node Architecture Principles](principles/NODE-ARCHITECTURE.md)
+- [The layers — a node, its one app, and what it declares](principles/PUBLIC-APP-LAYERS.md)
+  — **the picture**, drawn 2026-09-24: a node serves exactly ONE intrinsic
+  app, and the shell is an instance of that rather than an exception.
+  Two layers, the second optional; publicness is a deployment fact and
+  not an architectural axis. The argument is in
+  [the design](shell/PUBLIC-APP-SERVER.md); this is the diagram.
+- [The public app server — and `join` as its first app](shell/PUBLIC-APP-SERVER.md)
+  — **approved 2026-09-24, nothing built.** Thirteen boundary
+  requirements (G1-G13), five reconciliations between the agents and no
+  divergences, and the four readiness findings that came from asking the
+  other agent what he would refuse to be handed. Its purpose, in Andy's
+  words: *"delieating all the mandatory and optional boundaries and
+  layering, so our join-app doesn't have to be retro-fitted forever as
+  the system evolves."* **Approval is not a packet** — a build needs its
+  own.
 - [A node and a relay are two different things](principles/NODE-AND-RELAY.md)
   — **co-design, nothing built.** The node is a person, readable and
   inspectable; the relay is infrastructure that owes its owner *an account
