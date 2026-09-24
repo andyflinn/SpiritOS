@@ -163,6 +163,65 @@ Format: **term** — aliases — meaning.
 
 **Reconciliation stop** — the stop, the close — **The end of a cycle, where the two halves are exchanged and compared, and where autonomous work ends.** *"every cycle must have a stop for reconciliation. so that says how far you can go autonomously."* Every cycle has one, however short it was. An agent does not cross it into the next cycle.
 
+## The app layers
+
+Approved 2026-09-24 with the public app server design
+(`design/shell/PUBLIC-APP-SERVER.md`). They were held out of this file
+while the layering was unsettled, because it records settled usage.
+
+**The node’s app** — intrinsic app, the one app — **The single app a
+node IS.** Every node has exactly one. The tree already used the phrase:
+*"an intrinsic app is what this node IS"* (`shell.js:478`). The shell is
+one of these — its particular job is fanning out to others, which is the
+shell’s own work and not a layer.
+
+**Core** — `spirit.core`, configuration-basics — **The layer every node
+has, whatever it serves:** the door (`ask`), the path jail, the bounds
+and their allotment, the unit, remote reconfiguration, the app contract.
+Not optional — it is what being a node IS, not a choice.
+
+**App surface** — `api`, the handed surface — **One app’s scoped view
+of core.** `api.fs` is `core.fs` narrowed to that app’s folder; `api.verb`
+is `ask`. Present only if the node serves an app — a relay serving a
+static brochure has none, which is why `device.html` had to hand-roll its
+own `fetch`.
+
+**App utilities** — app-utils-and-dialogs, `api.ui` — **The painting**:
+shared elements, the look tokens, dialogs *and the rule that governs
+them*. Optional, and **provided by the shell as FILES rather than by the
+shell as a process** — every clone carries `app/shell/` whether or not
+anything launches it. Elements and style adoption are separately
+optional.
+
+**Sibling app** — — **An app that is a peer of the shell rather than
+hosted by it.** `join` is one; `contacts` is not. Apps belong to the
+NODE; the shell is merely the one whose job is to fan out.
+
+**Public app** — — **A node’s app reached by strangers.** Publicness
+is a **deployment** fact — a Caddy block, a whitelist, `noindex`, a DNS
+record — never a property of the app or of core. The same app on
+loopback is the same app, which is why the module is `appServer.js` and
+the mode is `--app`.
+
+**Declaration** — — **What a node type plugs into core: data, never
+code.** A writable scope, an appetite, which app it serves. Because it is
+data it can be closed, validated and asserted — and because it is not
+code, two types cannot fork the mechanism between them.
+
+**Appetite** — — **A type’s declared share of a box, in place of a
+headcount.** A relay is greedy; a one-page public app is small. Equal
+shares between unequal servers would starve one to feed the other.
+Adding a unit re-divides by appetite and re-caps the others.
+
+**Starter** — `app/starter/`, the starter app — **The official sample
+app, and the acceptance test of the app layer.** Named for its job rather
+than as a greeting — Andy: *"it indicated a forward direction for the
+early adopter"*, and wsl-claude: *"it says COPY ME in the name"*. Not
+`hello`: *"hello world"* is a convention for a language’s first program,
+and `process/js/hello/` already holds the installer’s acceptance test.
+**A throwaway consumer rots; the official sample cannot**, because the
+artefact that proves the layer is the artefact every stranger copies.
+
 ## Do not confuse
 
 | Do not say | If you mean |

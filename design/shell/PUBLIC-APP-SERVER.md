@@ -1,7 +1,21 @@
 # The public app server — and `join` as its first app
 
-**A DESIGN IN PROGRESS. Nothing is built and nothing here is a
-requirement yet.**
+**APPROVED 2026-09-24 by Andy, at the close of the sitting that produced
+it.** *"so we will close this session by approving the design, and
+updating the brain."* Signed by both agents: wsl-claude reported what he
+checked and what he would refuse to be handed, per rule 15, and raised
+four readiness findings of which three are closed.
+
+**Nothing is built. The design is approved; a BUILD still needs its own
+packet** — `CLAUDE.md`: *"Do not build. No patch, no cycle. Feasibility
+and shape only, until a packet says otherwise."*
+
+**Still open and unruled**, carried to whoever opens the build: the app
+contract — how an app DECLARES which parts of the optional layer it
+takes, which is the one readiness finding still standing — and three
+items argued here with a recommendation and no ruling: the `MemoryMax`
+two-writers hole, how units on a box are counted, and the fingerprint’s
+ingredients (wsl-claude’s to measure once the first two are ruled).
 
 > **Andy**, 2026-09-24, stopping this from becoming a cycle: *"no code
 > yet, i hope, this is a design-brainstorm where we will discuss and plan
@@ -771,10 +785,15 @@ travel where the rule has nothing to govern.
 
 ---
 
-## PROVISIONAL TERMS — NOT DICTIONARY ENTRIES
+## THE TERMS — APPROVED, AND NOW THE DICTIONARY’S
 
-**The layer design is not approved by all and may be corrected.** Andy,
-2026-09-24. So these words are **not** in `DICTIONARY.md` and must not be
+**APPROVED 2026-09-24, so these are no longer provisional** and have
+moved to `DICTIONARY.md`. They were held out of it while the layering was
+unsettled, because that file records settled usage and filling it with
+proposals would turn it into a proposal store.
+
+**They were written down here anyway while the design ran**, and that was
+the point: So these words are **not** in `DICTIONARY.md` and must not be
 put there until they are agreed — that file records settled usage, and
 filling it with proposals would turn it into a proposal store, which is
 the one thing it is not.
