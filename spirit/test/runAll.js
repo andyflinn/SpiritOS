@@ -299,13 +299,34 @@ function runOne(file) {
 // same rule prose is already held to.
 function requirementTitles() {
   const out = Object.create(null);
-  const dir = path.join(__dirname, '..', '..', 'design', 'cycles');
-  let names = [];
-  try { names = fs.readdirSync(dir).filter(function (f) { return f.endsWith('.md'); }).sort(); }
-  catch (e) { return out; }
-  names.forEach(function (name) {
+  // ── A DESIGN SITTING DOES NOT PRODUCE A CYCLE FILE (wsl-claude) ──
+  //
+  // CLAUDE.md: a design sitting lands its durable result under
+  // design/<area>/, not design/cycles/ — and its requirements are as
+  // real as any of a cycle. Reading only design/cycles meant every
+  // declaration citing one was reported as naming nothing, with the same
+  // tempting escape the C-headings had: move the document to the wrong
+  // folder so the tool can see it.
+  //
+  // So the whole of design/ is walked and the key stays what it was: the
+  // name of the file. A requirement is found where its document lives
+  // rather than where a reader happened to look first.
+  const root = path.join(__dirname, '..', '..', 'design');
+  const files = [];
+  (function walk(dir) {
+    let entries = [];
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return; }
+    entries.sort(function (a, b) { return a.name < b.name ? -1 : 1; }).forEach(function (e) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (e.name.endsWith('.md')) files.push(p);
+    });
+  }(root));
+  if (!files.length) return out;
+  files.forEach(function (full) {
+    const name = path.basename(full);
     let text = '';
-    try { text = fs.readFileSync(path.join(dir, name), 'utf8'); }
+    try { text = fs.readFileSync(full, 'utf8'); }
     catch (e) { return; }
     const cycle = name.replace(/\.md$/, '');
     // ── A CONDITION IS A HEADING OF THE SAME KIND (wsl-claude) ──────
@@ -322,7 +343,7 @@ function requirementTitles() {
     // nothing anywhere would notice if they were forgotten. A
     // requirement cannot leave the board; a condition could never get
     // onto it.
-    const blocks = text.split(/^### ([RC]\d+)\b/m);
+    const blocks = text.split(/^### ([RCG]\d+)\b/m);
     for (let i = 1; i < blocks.length; i += 2) {
       const id = blocks[i];
       const body = blocks[i + 1] || '';
@@ -350,8 +371,13 @@ function requirementFor(titles, ref) {
   if (cut === -1) return null;
   const tag = ref.slice(0, cut);
   const id = ref.slice(cut + 1);
+  // CASE IS NOT MEANING (wsl-claude): design/cycles files are
+  // lower-case and a design sitting's document may not be, so an
+  // exact-case tag match reports a correct citation as naming
+  // nothing — which is the third costume of the same narrowness.
+  const lower = tag.toLowerCase();
   const hits = Object.keys(titles).filter(function (k) {
-    return k.endsWith('/' + id) && k.indexOf(tag) !== -1;
+    return k.endsWith('/' + id) && k.toLowerCase().indexOf(lower) !== -1;
   });
   return hits.length === 1 ? titles[hits[0]] : null;
 }
