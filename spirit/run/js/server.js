@@ -15,6 +15,26 @@ if (process.argv.slice(2).includes('--relay')) {
   return;
 }
 
+// ── AND A THIRD MODE, FOR THE SAME REASON (cycle 2) ──────────────────
+//
+// `--app` serves ONE app and nothing else: no shell, no dispatch, no
+// relay. Dispatched here, before any node code is required, so an app
+// server carries none of it — the same rule cycle 0 wrote for the relay,
+// applied to the third kind of process.
+//
+// NOT NAMED FOR PUBLICNESS. The mode says what the process IS — one app,
+// no fan-out — rather than where it sits, because publicness is a Caddy
+// block and a DNS record and the same module on loopback is the same
+// module (design/shell/PUBLIC-APP-SERVER.md).
+//
+// `fromArgv` is the only thing in appServer.js that reads arguments, and
+// requiring that file starts nothing — which is what lets a suite drive
+// the module instead of a command line.
+if (process.argv.slice(2).includes('--app')) {
+  require('./appServer').fromArgv(process.argv);
+  return;
+}
+
 const http = require('http');
 // For the proxy's outbound calls (handleGenericProxy) — with no 300-second
 // cut of its own, which Node's fetch has.

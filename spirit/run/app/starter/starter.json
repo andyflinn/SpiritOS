@@ -1,0 +1,19 @@
+{
+  "name": "Starter",
+  "description": "The smallest app a node can serve. Copy this folder to begin.",
+  "icon": "START",
+  "hidden": false,
+  "intrinsic": false,
+  "owner": "system",
+
+  "surface": ["verb"],
+  "utilities": [],
+  "posture": "strict",
+
+  "refusals": {
+    "starter-nothing-to-say": {
+      "status": 400,
+      "text": "this sample has nothing to say yet"
+    }
+  }
+}

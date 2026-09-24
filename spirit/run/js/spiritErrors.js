@@ -515,6 +515,96 @@ define('bad-request', {
   prefixes: ['policy must be one of:'],
 });
 
+// ── AN APP SERVER'S OWN REFUSALS (cycle 2) ──────────────────────
+//
+// Seven, and they are here rather than in appServer.js for the reason
+// this catalogue exists at all: a refusal an app emits must be a MEMBER
+// of a declared set, and nothing outside a set may be sent. A set kept
+// beside the code that emits it is a list; a set kept here is walkable,
+// because `all()` already answers and a suite already counts it.
+//
+// FOUR OF THEM ARE STATES NOBODY CAN REACH IN DEVELOPMENT, which is the
+// whole reason they are enumerated before they are needed: a public
+// app's failure states are the states a developer cannot produce by
+// working normally. You claim the relay in the first five minutes and
+// never see `app-unbound` again; your own node is always up, so
+// `app-owner-asleep` never fires; a development relay is empty, so
+// `app-relay-full` never fires; and the URL in your config is always
+// right on the box that wrote it, so `app-relay-key-changed` never
+// fires. Each will be met, once per deployment, by a stranger.
+//
+// NONE OF THEM CARRIES A FIGURE. An app server talks to people who are
+// not members, and cycle 10's leak rule is sharper here than anywhere:
+// a relay's condition is its owner's business and not a visitor's. So
+// these are literals, and anything dynamic rides beside the sentence
+// rather than inside it.
+define('app-unbound', {
+  status: 503, presence: NONE, retry: 'after', fault: 'relay',
+  texts: ['this service is waiting for its relay to have an owner'],
+  note: 'NOT AN ERROR AND NOT A MISCONFIGURATION. A relay is born ' +
+    'unclaimed and stays so until its first invited claim; until then ' +
+    'ownerKey answers the empty string and there is nobody to act for. ' +
+    'The app serves its page and acts on nothing. Entered exactly once ' +
+    'per deployment, in production, by a stranger.',
+});
+define('app-relay-full', {
+  status: 507, presence: NONE, retry: 'after', fault: 'relay',
+  texts: ['this relay has no seats left'],
+  note: 'The relay refuses a mint with its own sentence, which names ' +
+    'figures — members, allowance, invites outstanding. Those are the ' +
+    'owner\'s business (decision 0006) and a visitor is the party least ' +
+    'entitled to them, so this is what a visitor is told instead, and ' +
+    'the other door — run your own relay — is what they are offered.',
+});
+define('app-owner-asleep', {
+  status: 503, presence: NONE, retry: 'after', fault: 'target',
+  texts: ['the owner of this service is not reachable right now'],
+  note: 'REFUSE, NEVER QUEUE. Whatever a visitor handed over is ' +
+    'short-lived — a one-use code dies in ten minutes — and ' +
+    'queueing it means STORING it, which is the one thing an app ' +
+    'serving strangers promises not to do. Nothing durable holds what ' +
+    'arrived.',
+});
+define('app-relay-key-changed', {
+  status: 409, presence: NONE, retry: 'no', fault: 'relay',
+  texts: ['this service is bound to a different relay key'],
+  note: 'THE FIRST BIND IS FINAL. Refused so a wrong owner cannot take ' +
+    'over, kept so the contradiction survives, and reported because a ' +
+    'relay answering with a different key is either a migration the ' +
+    'owner made or an attack, and only the owner can tell which. The ' +
+    'bind is to the KEY and never the URL: a URL is a name somebody ' +
+    'else controls.',
+});
+define('app-not-a-member', {
+  status: 403, presence: NONE, retry: 'no', fault: 'node',
+  texts: ['this service is not a member of the relay it was pointed at'],
+  note: 'An app server needs a seat on the relay it serves, because a ' +
+    'relay routes between members. The owner mints one seat to ' +
+    'bootstrap it — step 4 of the bind sequence — and without that ' +
+    'there is nothing to route.',
+});
+define('app-surface-undeclared', {
+  status: 500, presence: NONE, retry: 'no', fault: 'node',
+  texts: ['this app declares no surface, so it was handed none'],
+  note: 'ABSENT MEANS NOTHING. The permissive default would make the ' +
+    'app contract a check that cannot fail: if an undeclared app got ' +
+    'the whole surface, "every member an app touches is declared" ' +
+    'would be vacuously true of every app that declares nothing, and ' +
+    'dead surface could never be counted (wsl-claude). Refused at ' +
+    'LOAD, naming what is missing, rather than at the moment the app ' +
+    'reaches for something.',
+});
+define('app-not-strict', {
+  status: 500, presence: NONE, retry: 'no', fault: 'node',
+  texts: ['an app served to strangers must declare posture strict'],
+  note: 'Posture is half enforced and half declared, and saying so is ' +
+    'the honest part: persist-nothing falls out of the writable scope ' +
+    'and is checkable; refusing in sentences a stranger can act on is ' +
+    'prose quality, which a closed set converts into a one-time review ' +
+    'of N sentences plus a mechanical check that nothing outside the ' +
+    'set is emitted. An improvement, and not a guarantee.',
+});
+
 // ── WHAT NOBODY CATALOGUED ───────────────────────────────────────────
 //
 // Not in the table, and says nothing — above all about presence. The

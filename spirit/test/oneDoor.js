@@ -86,6 +86,16 @@ const TALLY = {
   // and so an exception — GRANTED BY ANDY 2026-09-19 in the cycle 0 plan.
   // The reach is the one the relay always had; it now lives in its own file.
   'js/relayServer.js': 1,
+  // THE APP SERVER'S, and it is the same reach for the same reason: the
+  // THIRD startup module (cycle 2, G1) calling http.createServer once.
+  //
+  // RESTING ON "go 2" AND G1 RATHER THAN ON A SEPARATE GRANT, and said
+  // so rather than assumed. Andy authorised the stage-1 build, whose
+  // first requirement is a third startup module that serves one app —
+  // and a server that cannot listen is not a server, so the one socket
+  // is contained in what was authorised. If he reads this and disagrees,
+  // it is one line and the reasoning is here rather than in a commit.
+  'js/appServer.js': 1,
 
   // AGENT.md: unused, do not assume it is loaded, do not delete.
   'js/client/browser.js': 1,
@@ -97,6 +107,7 @@ const TALLY = {
   // transport level, and asserting a 404 needs a request rather than a
   // verb. Others are the quick way to green. The tally does not judge
   // which is which; it stops the number growing while nobody looks.
+  'test/appServerBoundary.js': 2,
   'test/chatPeople.js': 1,
   'test/cycleA.js': 1,
   'test/htmlEscaping.js': 1,

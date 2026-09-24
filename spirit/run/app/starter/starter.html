@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>SpiritOS — starter</title>
+  <style>
+    /* ── THE LOOK IS NOT SHARED, AND THAT IS THE POINT ──────────────
+       This app declares no utilities in its manifest, so it is handed
+       none — no elements, no tokens. A third-party developer owns their
+       own look entirely, because enforcement was never available: an app
+       on a one-app node IS the whole page, with no system chrome beside
+       it to imitate.
+
+       What unification is actually for is the marks that carry MEANING —
+       a key ending, a refusal, a signature — so a user can carry
+       recognition from one app to the next. That is a trust property,
+       not an aesthetic one, and this sample has none of those marks yet.
+       So: twenty lines of plain CSS, and nothing borrowed. */
+    :root { --ink: #111; --quiet: #666; --line: #ddd; }
+    body {
+      font: 16px/1.45 system-ui, sans-serif; color: var(--ink);
+      max-width: 34rem; margin: 10vh auto; padding: 0 1.5rem;
+    }
+    h1 { font-weight: 600; font-size: 1.4rem; letter-spacing: 0.01em; }
+    p { margin: 0.9rem 0; }
+    .state { border: 1px solid var(--line); padding: 0.75rem 1rem; }
+    .state div { display: flex; gap: 0.75rem; }
+    .state b { min-width: 9rem; font-weight: 600; }
+    footer { margin-top: 2rem; font-size: 12px; opacity: 0.75; }
+    code { background: #f4f4f4; padding: 0 0.25rem; }
+    .waiting { color: var(--quiet); }
+  </style>
+</head>
+<body>
+  <h1>Starter</h1>
+
+  <p>This is the smallest app a SpiritOS node can serve, and it is the
+  acceptance test of the app layer. <strong>Copy this folder to
+  begin.</strong></p>
+
+  <p>It binds to one relay, learns who owns it, serves this page, and
+  does nothing else. There is no GitHub here, no seats, no visitor
+  story — those belong to an app built on this one.</p>
+
+  <div class="state" id="state">
+    <div class="waiting">asking this node what it is…</div>
+  </div>
+
+  <footer>
+    <!-- FINE PRINT AT THE FOOT, which is the one look-and-feel rule
+         worth borrowing even when nothing is shared: if a line is worth
+         shrinking it is worth moving down. -->
+    Served by <code>node js/server.js --app starter</code>.
+    Nothing about you is written anywhere.
+  </footer>
+
+<script>
+// ── THE ONLY THING THIS APP RELIES ON IS `verb` ──────────────────────
+//
+// Its manifest declares `"surface": ["verb"]` and nothing else, so that
+// is all it is handed. An app that asks for nothing is handed nothing:
+// absent means nothing, because the permissive default would make the
+// app contract a check that cannot fail.
+//
+// Fourteen lines, and deliberately not a library. If this ever needs a
+// package, the claim the whole layer makes has quietly been given up.
+async function ask(verb, args) {
+  const body = Object.assign({ verb: String(verb) }, args || {});
+  const r = await fetch('/api/spirit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  // A REFUSAL IS AN ANSWER. It arrives as {ok:false, status, error, code}
+  // — with a CODE, because prose cannot be matched against a set, and
+  // every refusal this server can emit is a member of one.
+  return r.json().catch(function () { return { ok: false, error: 'unreadable answer' }; });
+}
+
+function row(label, value, quiet) {
+  const d = document.createElement('div');
+  const b = document.createElement('b');
+  const s = document.createElement('span');
+  b.textContent = label;
+  s.textContent = value;
+  if (quiet) s.className = 'waiting';
+  d.append(b, s);
+  return d;
+}
+
+(async function paint() {
+  const box = document.getElementById('state');
+  const s = await ask('app.state');
+  box.textContent = '';
+
+  if (s && s.ok === false) {
+    // The four states a developer cannot produce by working normally,
+    // and which a stranger meets exactly once per deployment. Each says
+    // what to do and names no figure of the box's.
+    box.append(row('refused', s.error || 'unknown', true));
+    box.append(row('code', s.code || '—', true));
+    return;
+  }
+
+  box.append(row('app', (s && s.appName) || 'starter'));
+  box.append(row('relay', (s && s.relay) || 'none configured yet', !(s && s.relay)));
+  box.append(row('owner', (s && s.ownerKey)
+    ? s.ownerKey.slice(-10)
+    : 'none yet — this relay is unclaimed', !(s && s.ownerKey)));
+  box.append(row('surface granted', (s && s.contract && s.contract.surface.join(', ')) || 'none'));
+})();
+</script>
+</body>
+</html>
