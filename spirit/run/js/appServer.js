@@ -1285,10 +1285,53 @@ function create(opts) {
     state: snapshot,
     handle: handle,
     start: function (cb) {
+      // ── D1, RULED: A BAD MANIFEST REFUSES TO START ──────────────────
+      //
+      // Decided by Andy 2026-09-24, on two independent recommendations.
+      //
+      // MINE WAS ABOUT THE OPERATOR'S SCREEN: a public app server that
+      // starts while it cannot serve anyone LOOKS HEALTHY AND IS NOT, and
+      // on a box nobody is sitting at that is the worst failure
+      // available. At load it lands at deploy time, the one moment
+      // somebody is watching.
+      //
+      // WSL-CLAUDE'S WAS ABOUT THE AUDIENCE, and it is the better one, so
+      // it is the one the rule should carry: A MISCONFIGURED MANIFEST IS
+      // NOT A VISITOR STATE. The four G11 states are conditions a visitor
+      // legitimately meets — nobody's fault, the world is simply like
+      // that today. A non-strict app is a DEPLOYMENT THAT SHOULD NOT HAVE
+      // HAPPENED, and the person owed an explanation is the operator at
+      // deploy time, not a stranger at request time. Keeping the server
+      // up to apologise to strangers for an error the operator fixes in
+      // one line is the wrong audience.
+      //
+      // WHAT IT COSTS, SAID PLAINLY: the port is dead, so a visitor meets
+      // connection-refused, which is indistinguishable from the box being
+      // switched off. That is a real loss and it is accepted for the
+      // reason above — NOT because failing early is generally better.
+      //
+      // AND IT CARRIES ITS DECLARED CODE — wsl-claude's condition, and
+      // the thing most likely to be got wrong. A bare Error here would
+      // trade a walkable refusal for a stack trace at the one moment it
+      // matters most, putting the manifest error OUTSIDE the closed set
+      // in the only path where nothing downstream can classify it. The
+      // operator's screen gets a code they can search.
+      if (state.contractRefusal) {
+        const r = state.contractRefusal;
+        const e = new Error(r.why || r.code);
+        e.code = r.code;
+        e.app = r.app;
+        if (r.members) e.members = r.members;
+        if (r.posture) e.posture = r.posture;
+        throw e;
+      }
+
       // The bind is attempted at start and its failure is NOT a reason
       // not to listen: an unclaimed relay, or one that is simply down,
       // leaves the app serving its page and acting on nothing. That is
-      // the waiting state, and it is a state rather than a fault.
+      // the waiting state, and it is a state rather than a fault. THE
+      // MANIFEST IS A DIFFERENT KIND OF WRONG from the relay being down,
+      // which is why one refuses above and the other does not.
       bind();
       server = http.createServer(handle);
       // LOOPBACK ONLY. Publicness is Caddy's, a whitelist's and a DNS
@@ -1346,15 +1389,36 @@ function fromArgv(argv) {
 
   const h = create({ rootDir: ROOT_DIR, appName: appName, port: port, relay: relay });
   const s = h.state();
-  h.start(function (err, bound) {
+
+  // ── THE OPERATOR GETS A CODE, NOT A STACK TRACE ─────────────────────
+  //
+  // D1 refuses a bad manifest at start, and this is the screen that
+  // refusal was ruled FOR: the operator, at deploy time, on the one
+  // machine somebody is watching. An unhandled throw here would print a
+  // trace of this file's internals — true, useless, and the opposite of
+  // "refused at load names the member".
+  try {
+    h.start(started);
+  } catch (e) {
+    console.error('Refusing to start "' + appName + '" — ' + (e.code || 'app-refused'));
+    console.error('    ' + (e.message || String(e)));
+    if (e.members) console.error('    members: ' + e.members.join(', '));
+    console.error('    the manifest is app/' + appName + '/' + appName + '.json');
+    process.exit(1);
+  }
+  return h;
+
+  function started(err, bound) {
     console.log('App server for "' + appName + '" listening on http://127.0.0.1:' + bound);
     console.log('    relay: ' + (s.relay || 'none configured yet (--relay <url> at first start)'));
     console.log('    state: ' + s.stateDir);
     if (s.unbound) {
       console.log('    UNBOUND — this relay has no owner yet. Serving, and acting on nothing.');
     }
-  });
-  return h;
+    if (s.lastClaim && !s.lastClaim.ok) {
+      console.log('    NO SEAT — ' + (s.lastClaim.why || s.lastClaim.error || s.lastClaim.reason));
+    }
+  }
 }
 
 module.exports = {
