@@ -208,3 +208,7 @@ node.err
 # Per-app state (G12): code is replaced by deployment, state is not.
 # Same reason relay-state is ignored above.
 app-state/
+
+# What one box says about itself (see .spiritbox.example). Machine facts,
+# never shared: the file exists so a box can stop re-typing them.
+.spiritbox

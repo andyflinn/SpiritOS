@@ -52,7 +52,12 @@ const { execFileSync } = require('child_process');
 // one box — so the other agent could not use the cure for the problem
 // they both had. SPIRIT_OUTBOX lets a box say where its own is; the
 // constant below is this file's LAST resort, never an override.
-const OUTBOX = String(process.env.SPIRIT_OUTBOX || '').trim() ||
+// The order is box.js's: SPIRIT_OUTBOX, then `.spiritbox` at the checkout
+// root, then this file's last resort. A box that has said once does not say
+// again, and the command stays the constant it exists to be.
+const box = require('./box.js');
+const said = box.resolve();
+const OUTBOX = String(process.env.SPIRIT_OUTBOX || (said.ok && said.outbox) || '').trim() ||
   '/tmp/claude-1000/-home-andy-SpiritOS/66737044-2a29-4977-b5a6-c9ad520c6b2e/scratchpad/outbox.txt';
 
 const RUN = path.join(__dirname, '..', '..', 'run');

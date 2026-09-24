@@ -1,0 +1,34 @@
+# .spiritbox — what THIS box says about itself. Copy to `.spiritbox` at the
+# checkout root and fill in. The real file is gitignored, because these are
+# facts about one machine and the whole point of it is that they are NOT
+# shared: a file at a shared path is not shared if its contents name one box.
+#
+# WHY IT EXISTS. Every question `spirit/test/tools/box.js` asks is otherwise
+# answered by an environment variable, and on a box where nothing sets them
+# the suites stand down — so the one run that produces the board does not
+# exercise what it was written to exercise. wsl-claude, 2026-09-24, having
+# produced 17 green by typing a variable in by hand: "a result that depends
+# on somebody remembering is a result that will be missing the day it
+# matters."
+#
+# The environment still wins over this file, and this file wins over any
+# guess. A box that answers nothing stands down rather than defaulting.
+
+# Which agent this box is. One of: claude, claude-windows, claude-windows-2,
+# wsl-claude. Normally omitted — the platform is measured (Windows, or Linux
+# whose /proc/version says microsoft) and AGENTS_SELF usually answers it.
+# agent = wsl-claude
+
+# Where the vault is, when it is NOT beside this checkout. An agent working
+# in a clone of its own (SpiritOS-agent-wsl-claude) has no vault in it; the
+# vault lives in Andy's checkout, and only the box can say so.
+# vault = /home/andy/SpiritOS/spirit/run/brains
+
+# Where `spirit/test/tools/say.js` reads the message it is about to send.
+# outbox = /home/andy/.../scratchpad/outbox.txt
+
+# A NOTE ON PATH DIALECT, learned by getting it wrong: this file is read by
+# node, not by the shell. On Windows a Git-Bash path (/c/Users/...) does not
+# resolve — write the drive form (C:/Users/...). say.js fails loudly and
+# names the path it tried, rather than guessing, which is how this was found
+# in one run.

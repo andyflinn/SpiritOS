@@ -76,6 +76,41 @@ function measure() {
   return null;
 }
 
+// ── WHERE A BOX SAYS THINGS ABOUT ITSELF, ONCE ──────────────────────
+//
+// Every question below is answered by an environment variable, and on one
+// of the two boxes NOTHING SETS THEM. wsl-claude, after producing 17 green
+// by hand: "in the one run that produces the board, my box still does not
+// exercise the guard. A result that depends on somebody remembering is a
+// result that will be missing the day it matters."
+//
+// That is the inline-pipeline defect one level up: THE KNOWLEDGE LIVES IN
+// A STRING SOMEBODY TYPES RATHER THAN AT A PATH. An exported variable dies
+// with the session; a file does not.
+//
+// So `.spiritbox` at the checkout root, gitignored, is the box speaking
+// ONCE. It is not a candidate list and it is not inference — it is the
+// same answer the environment gives, written down. `.spiritbox.example`
+// is tracked and documents the keys.
+//
+// The alternative was to put these facts in whatever starts the session —
+// Andy's ~/.bashrc or his settings — which are HIS files, and would spend
+// one of his decisions on a thing the tree can hold.
+function spiritbox() {
+  const p = path.join(__dirname, '..', '..', '..', '.spiritbox');
+  let raw = '';
+  try { raw = fs.readFileSync(p, 'utf8'); } catch (e) { return {}; }
+  const out = {};
+  raw.split(/\r?\n/).forEach(function (line) {
+    const t = line.trim();
+    if (!t || t[0] === '#') return;
+    const eq = t.indexOf('=');
+    if (eq === -1) return;
+    out[t.slice(0, eq).trim().toLowerCase()] = t.slice(eq + 1).trim();
+  });
+  return out;
+}
+
 function isVault(p) {
   try { return !!p && fs.existsSync(path.join(p, 'VAULT_RULES.md')); }
   catch (e) { return false; }
@@ -107,8 +142,8 @@ function isVault(p) {
 // is the FALLBACK and not the rule. A box that can answer neither still
 // stands down, because an unset variable and a missing folder both leave
 // it unanswered — no list, no default to either agent.
-function vaultFrom(start) {
-  const declared = String(process.env.SPIRIT_VAULT || '').trim();
+function vaultFrom(start, box) {
+  const declared = String(process.env.SPIRIT_VAULT || box.vault || '').trim();
   if (declared) return isVault(declared) ? path.resolve(declared) : null;
   const p = path.join(start, '..', '..', 'run', 'brains');
   return isVault(p) ? path.resolve(p) : null;
@@ -118,7 +153,8 @@ function resolve() {
   // ENVIRONMENT FIRST. SPIRIT_BOX_AGENT is the explicit override; AGENTS_SELF
   // is what the box already tells agents.js (`agents.js:108`), so a box that
   // has configured one agent has already answered this question once.
-  const declared = String(process.env.SPIRIT_BOX_AGENT || process.env.AGENTS_SELF || '').trim();
+  const said = spiritbox();
+  const declared = String(process.env.SPIRIT_BOX_AGENT || process.env.AGENTS_SELF || said.agent || '').trim();
   const measured = measure();
   const name = declared || measured;
 
@@ -130,13 +166,16 @@ function resolve() {
     return { ok: false, why: 'agent "' + name + '" is not one of the declared agents (' + Object.keys(AGENTS).join(', ') + ')' };
   }
 
-  const vault = vaultFrom(__dirname);
+  const vault = vaultFrom(__dirname, said);
   if (!vault) {
-    return { ok: false, why: process.env.SPIRIT_VAULT
-      ? 'SPIRIT_VAULT is set to "' + process.env.SPIRIT_VAULT + '" but there is no VAULT_RULES.md there'
-      : 'this box does not say where its vault is: SPIRIT_VAULT is unset, and there is none beside this checkout ' +
-        '(expected spirit/run/brains/VAULT_RULES.md). On a box whose agent works in a clone of its own, the vault ' +
-        'sits elsewhere and only the box can say where' };
+    const stated = process.env.SPIRIT_VAULT || said.vault;
+    return { ok: false, why: stated
+      ? 'the vault is declared as "' + stated + '" (' + (process.env.SPIRIT_VAULT ? 'SPIRIT_VAULT' : '.spiritbox') +
+        ') but there is no VAULT_RULES.md there'
+      : 'this box does not say where its vault is: SPIRIT_VAULT is unset, no .spiritbox at the checkout root, ' +
+        'and none beside this checkout (expected spirit/run/brains/VAULT_RULES.md). On a box whose agent works ' +
+        'in a clone of its own, the vault sits elsewhere and only the box can say where — write .spiritbox, ' +
+        'see .spiritbox.example' };
   }
 
   // The OTHER agents are the vault's own agent folders minus mine, read off
@@ -159,6 +198,10 @@ function resolve() {
     agreed: !declared || !measured || AGENTS[measured].folder === me.folder,
     measured: measured,
     vault: vault,
+    // say.js's outbox, resolved by the same order so one file answers every
+    // question a box is asked about itself.
+    outbox: String(process.env.SPIRIT_OUTBOX || said.outbox || '').trim() || null,
+    said: said,
     mine: [me.folder, 'input/' + me.folder, 'output/' + me.folder],
     others: others,
     other: others[0] || null,
