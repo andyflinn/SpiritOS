@@ -163,7 +163,14 @@ test.awaiting('public-app-server/G10', 'the four box fields in the owner report'
 test.subHeading('G11 — the four failure states, each reachable from outside an unmodified instance');
 [
   ['unbound', 'start a real relay and do not claim it', 'the app server serves a waiting page and acts on nothing'],
-  ['full', 'start a relay whose seat figure is zero', 'the visitor is offered the other door and sees none of the box figures'],
+  // MEASURED RATHER THAN ASSUMED: a relay cannot be given zero seats. The
+  // floor is one megabyte because the floor in relay.js is one stream, and
+  // the allowance is sixteen streams per megabyte, so the smallest honest
+  // relay has sixteen. full() is `held >= allowance`, so the world is built
+  // by FILLING it rather than by configuring it to nothing. The recipe in
+  // this declaration is the sample README under G11, so a recipe nobody can
+  // follow would have shipped as documentation.
+  ['full', 'start a relay at ramLimitMB 1 — sixteen seats, the smallest honest allowance — and claim all sixteen', 'the visitor is offered the other door and sees none of the box figures'],
   ['owner-asleep', 'do not start the owner node', 'the refusal names what to do and nothing durable holds what arrived'],
   ['key-mismatch', 'stand up a second relay with a different key and point the sample at it', 'the bind refuses rather than learning a new owner'],
 ].forEach(function (s) {
