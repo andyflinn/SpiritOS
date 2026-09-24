@@ -343,7 +343,50 @@ function boxReport(rootDir, appName) {
 // relay is born unclaimed, so there is a window — exactly one per
 // deployment — in which the app has a relay, no owner, and nothing
 // wrong.
-const relayRequest = require('./relayRequest').relayRequest;
+const relayRequestRaw = require('./relayRequest').relayRequest;
+
+// ── AND IT IS BOUNDED HERE, BECAUSE relayRequest IS NOT ──────────────
+//
+// Measured: `relayRequest` has no timeout of any kind, so a relay that
+// accepts a connection and never answers holds this process for as long
+// as the far end likes. That is tolerable for a personal node where a
+// human is watching; it is not tolerable for a server strangers reach,
+// and it is absurd in the ONE state this module exists to handle
+// gracefully — the owner being asleep IS the far end not answering.
+//
+// Found the honest way: wsl-claude's suite drove it against a world with
+// no owner in it and took 103 SECONDS instead of failing. A hang is the
+// worst failure shape available, because it is indistinguishable from
+// work.
+//
+// The bound is set HERE and not in relayRequest, deliberately. Andy
+// ruled for the proxy that *"wait times are not the proxies concern"* —
+// the caller's timeout is honoured when given. The same holds one layer
+// down: the interface carries the socket, the caller carries the
+// patience, and a shared module that imposed one would be deciding for
+// callers it cannot see.
+const REACH_MS = 8000;
+
+function relayRequest(url, method, pathname, body) {
+  return new Promise(function (resolve, reject) {
+    let settled = false;
+    const timer = setTimeout(function () {
+      if (settled) return;
+      settled = true;
+      // Not an error — an ANSWER, and the one the states are written
+      // around. A timeout that threw would make "the owner is asleep"
+      // arrive as a stack trace.
+      resolve({ status: 0, text: '', timedOut: true });
+    }, REACH_MS);
+    relayRequestRaw(url, method, pathname, body).then(function (r) {
+      if (settled) return;
+      settled = true; clearTimeout(timer); resolve(r);
+    }, function (e) {
+      if (settled) return;
+      settled = true; clearTimeout(timer); reject(e);
+    });
+  });
+}
 
 function askRelay(url) {
   return relayRequest(url, 'GET', '/api/relay/key', null)
