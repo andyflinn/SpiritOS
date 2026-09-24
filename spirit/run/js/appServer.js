@@ -531,11 +531,30 @@ function claimSeat(rootDir, appName, relayUrl, invite, label) {
       if (r && r.status === 409 && said && said.peer && said.peer.publicKey === id.publicKey) {
         return { ok: true, already: true };
       }
-      if (r && r.status === 200) return { ok: true, already: false };
+      if (r && r.status === 200) return { ok: true, already: false, reason: 'seated' };
+      // ── AN EXPIRED INVITE IS ITS OWN ANSWER ─────────────────────────
+      //
+      // wsl-claude, refusing the first version: invites carry days and
+      // the sweep removes them, so a deployment prepared on Monday and
+      // started on Friday meets a token that is well-formed, correctly
+      // stored, and DEAD. "Not yet a member" is true and useless there —
+      // the operator pastes the same dead token again and again, because
+      // THE ONE STATE THEY CAN ACTUALLY FIX READS EXACTLY LIKE THE TWO
+      // THEY CANNOT.
+      //
+      // The relay already says it plainly (`invites.js:136`, 403 "invite
+      // expired"), and a spent invite is DELETED rather than marked, so
+      // an unknown token is the spent case. Three answers, three
+      // sentences, and the owner is told which one he has to act on.
+      const why = String((said && said.error) || '');
       return {
         ok: false,
         status: (r && r.status) || 0,
-        error: (said && said.error) || 'the claim was refused',
+        reason: /expired/i.test(why) ? 'invite-expired' : 'invite-refused',
+        error: why || 'the claim was refused',
+        fix: /expired/i.test(why)
+          ? 'this invite has expired — the owner mints a fresh one and installs it'
+          : 'the relay refused this invite; a spent invite is deleted rather than marked, so an unknown token is one already used',
       };
     })
     .catch(function (e) { return { ok: false, status: 0, error: String((e && e.message) || e) }; });
@@ -1190,7 +1209,7 @@ function create(opts) {
           // invite with the app; until he has, this server is not a
           // member and nothing it posts will be routed. Said plainly so
           // nobody debugs the relay for it.
-          state.lastClaim = { ok: false, code: 'app-not-a-member', why: 'no invite installed — the owner mints one and installs it with the app' };
+          state.lastClaim = { ok: false, code: 'app-not-a-member', reason: 'no-invite', why: 'no invite installed — the owner mints one and installs it into app-state/<name>/config.json when he installs the app' };
         }
       }
       if (!p.ok) {
@@ -1250,7 +1269,26 @@ function fromArgv(argv) {
   const appName = at('--app');
   const port = Number(common.portFromArgs(args)) || 0;
   const relay = at('--relay');
-  const invite = at('--invite');
+
+  // ── THE INVITE DOES NOT COME FROM ARGV, AND THAT WAS A DEFECT ───────
+  //
+  // Written first as `--invite <token>`, refused by wsl-claude before it
+  // had been running an hour: AN INVITE ON THE COMMAND LINE IS A BEARER
+  // TOKEN IN `ps`. `--relay` is a URL and `--port` is a number; an invite
+  // is the first SECRET this module would have taken that way, and on a
+  // VPS it lands in the process list for every user on the box, in shell
+  // history, and in the unit file. First-bind-is-final stops it being
+  // re-pointed; it does nothing about it being read.
+  //
+  // AND THE TREE ALREADY DOES IT THE OTHER WAY. `ownerClaim.js`: the
+  // owner invite is minted by the installer, shown once, and pasted in.
+  // Andy's words were "he can install the minted relay invites, WHEN HE
+  // INSTALLS the app on a VPS" — INSTALL, not a flag.
+  //
+  // So the installer writes it into `app-state/<name>/config.json`, which
+  // is where the pinned relay key already lives: gitignored, and safe
+  // across a redeployment by G12 precisely because code is replaced and
+  // state is not.
 
   if (!appName) {
     console.error('Refusing to start: --app needs the name of the app to serve,\n' +
@@ -1258,7 +1296,7 @@ function fromArgv(argv) {
     process.exit(1);
   }
 
-  const h = create({ rootDir: ROOT_DIR, appName: appName, port: port, relay: relay, invite: invite });
+  const h = create({ rootDir: ROOT_DIR, appName: appName, port: port, relay: relay });
   const s = h.state();
   h.start(function (err, bound) {
     console.log('App server for "' + appName + '" listening on http://127.0.0.1:' + bound);
