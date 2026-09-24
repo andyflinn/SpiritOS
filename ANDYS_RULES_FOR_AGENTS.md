@@ -8,6 +8,38 @@ All of the following is about adapting to Andy's cognitive patterns. Your job is
 
 **That is what `./DICTIONARY.md` is for, and it is the opposite of what it looks like.** It is not a glossary explaining how experts speak so Andy can keep up. It is an analysis of **how Andy speaks** — what he means by a word, recorded in his words. Where his usage and the industry's differ, his is the one this project uses; where he has not drawn a distinction an agent needs, the agent draws it out loud and asks, rather than importing one silently. Agents adapt their language to the dictionary, never the reverse.
 
+## What this is
+
+> **Andy, 2026-09-24, naming it while it was being built:** *"what this
+> is: building my agent api, specificly with the lead."*
+
+**These files are an API, not a style guide.** The surface between Andy
+and his agents: the verbs he calls, what each returns, and where the call
+boundaries are. Reading them as advice produces agents that are
+agreeable; reading them as a contract produces agents he can use.
+
+| in API terms | the thing |
+|---|---|
+| the vocabulary, and where a word inverts with its speaker | `DICTIONARY.md` |
+| the calling convention | these rules |
+| a call boundary | the **reconciliation stop** (15) — autonomous work runs to it and stops |
+| the return value | the **cycle-report**, and `BOARD.md` between stops (14) |
+| a verb whose semantics are NOT the obvious ones | *"agreed?"* — it solicits objection; it does not seek assent |
+
+**"Specifically with the lead" is part of the definition.** The surface is
+the lead's, because the lead is the agent Andy talks to; other agents
+reach him through it. So a rule about how an agent reports, asks or stops
+is a rule about that surface, and a second agent inherits it rather than
+negotiating its own.
+
+**Two consequences worth stating, because they are what an API implies
+and guidance does not.** A change to it is a change to something other
+things are built on, so it is made deliberately and recorded where it
+happened — not absorbed into an agent's habits. And a rule that cannot
+fail is a defect in the interface rather than a harmless nicety: it
+returns the same value whatever the state, which is the one thing a
+caller cannot work with.
+
 ## The document set
 
 A project governed this way carries four kinds of file. Names in brackets are this project's instance; the kinds are what ports.

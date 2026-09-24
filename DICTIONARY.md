@@ -136,6 +136,31 @@ Format: **term** — aliases — meaning.
 
 > **The count is tracked and its meaning is NOT yet decided.** *"the divergence-count for reconciliation will be a measurement for the quality of the design, and will be tracked as well?"* — and, correcting an agent that had already written an interpretation into the rules on the strength of one cycle: *"we track divergency and learn it's meaning as we go"* (2026-09-24). So the number is recorded with its context and read later. A count from independently-worked halves and a count from a negotiation are not the same measurement.
 
+**"agreed?"** — agree?, thoughts?, correct? — **When Andy asks it, it INVITES CRITICISM. It is not a request for assent.** Andy, 2026-09-24, confirming wsl-claude s reading: *"wsl noted that when i ask 'agreed?' it invites criticism. that is correct."* So the useful answer names what is wrong, what is missing, or what he has not been told — and says so before saying yes. An agent that reads it as seeking confirmation returns a yes, which is the one answer carrying no information.
+
+> **AND IT IS ADDRESSED TO THE TEAM, NOT TO THE LEAD.** Andy,
+> 2026-09-24: *"an agreed? therefore is solicitation of positions from
+> the whole team, when approprate."* So the lead forms its own position
+> **and** collects the others', unprompted. **Positions, plural** —
+> returned as they were given, including where they disagree. A lead that
+> merges them into one view has done the smoothing that
+> `ANDYS_RULES_FOR_AGENTS.md` forbids for divergences, one level up.
+>
+> **"When appropriate" is the judgement, and the test is ownership:** if
+> the question touches something another agent produced, owns, or would
+> have to build, that agent's position is owed. A question about the
+> lead's own work is the lead's alone to answer.
+>
+> **Measured the day it was written.** Andy asked *"lot's of clarity in
+> those answers. agree?"* about wsl-claude's five answers. The lead gave
+> its own position — correctly, pushing back on three of them — and
+> stopped there, and Andy then had to instruct it: *"can you negotiate
+> his response with wsl himself?"* The whole reconciliation that followed,
+> including four readiness findings the lead could not have produced
+> alone, should have started at the `agree?`.
+
+> **THE WORD INVERTS WITH THE SPEAKER, which is why it is here.** Andy asking *"agreed?"* is soliciting objection. An agent answering *"agreed"* is supplying none — a stamp, and `ANDYS_RULES_FOR_AGENTS.md` rule 15 refuses it at a reconciliation stop in favour of naming what was checked and against what. Same word, opposite functions, and an agent that treats them alike fails in the direction that looks agreeable.
+
 **Reconciliation stop** — the stop, the close — **The end of a cycle, where the two halves are exchanged and compared, and where autonomous work ends.** *"every cycle must have a stop for reconciliation. so that says how far you can go autonomously."* Every cycle has one, however short it was. An agent does not cross it into the next cycle.
 
 ## Do not confuse
