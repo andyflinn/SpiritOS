@@ -343,51 +343,37 @@ function boxReport(rootDir, appName) {
 // relay is born unclaimed, so there is a window — exactly one per
 // deployment — in which the app has a relay, no owner, and nothing
 // wrong.
-const relayRequestRaw = require('./relayRequest').relayRequest;
+const relayRequest = require('./relayRequest').relayRequest;
 
-// ── AND IT IS BOUNDED HERE, BECAUSE relayRequest IS NOT ──────────────
+// ── WHERE PATIENCE LIVES, AND WHERE IT DOES NOT ────────────────────
 //
-// Measured: `relayRequest` has no timeout of any kind, so a relay that
-// accepts a connection and never answers holds this process for as long
-// as the far end likes. That is tolerable for a personal node where a
-// human is watching; it is not tolerable for a server strangers reach,
-// and it is absurd in the ONE state this module exists to handle
-// gracefully — the owner being asleep IS the far end not answering.
+// `relayRequest` has no timeout, and that is CORRECT rather than a gap:
+// it is the raw interface, and Andy ruled for the proxy that *"wait
+// times are not the proxies concern"* — the caller's timeout is
+// honoured when given. A shared module that imposed one would be
+// deciding for callers it cannot see.
 //
-// Found the honest way: wsl-claude's suite drove it against a world with
-// no owner in it and took 103 SECONDS instead of failing. A hang is the
-// worst failure shape available, because it is indistinguishable from
-// work.
+// THE PATIENCE OF A PEER POST LIVES IN peerPost, AND IT DIMINISHES.
+// Andy asked where the diminishing-timeout logic was, and it is
+// `peerPost.js:553-564`: the relay answers `grantedMs` = min(what we
+// asked, its own ceiling), and the node SHRINKS ITS OWN TIMER to match,
+// because *"asking 8 s of a relay that allows 5 s means the route is
+// gone at 5 s… waiting the remaining three seconds holds this member's
+// only slot for nothing — the asker blocking itself, which looks
+// exactly like the relay blocking it."*
 //
-// The bound is set HERE and not in relayRequest, deliberately. Andy
-// ruled for the proxy that *"wait times are not the proxies concern"* —
-// the caller's timeout is honoured when given. The same holds one layer
-// down: the interface carries the socket, the caller carries the
-// patience, and a shared module that imposed one would be deciding for
-// callers it cannot see.
-const REACH_MS = 8000;
-
-function relayRequest(url, method, pathname, body) {
-  return new Promise(function (resolve, reject) {
-    let settled = false;
-    const timer = setTimeout(function () {
-      if (settled) return;
-      settled = true;
-      // Not an error — an ANSWER, and the one the states are written
-      // around. A timeout that threw would make "the owner is asleep"
-      // arrive as a stack trace.
-      resolve({ status: 0, text: '', timedOut: true });
-    }, REACH_MS);
-    relayRequestRaw(url, method, pathname, body).then(function (r) {
-      if (settled) return;
-      settled = true; clearTimeout(timer); resolve(r);
-    }, function (e) {
-      if (settled) return;
-      settled = true; clearTimeout(timer); reject(e);
-    });
-  });
-}
-
+// ── WHICH MAKES THE FIRST VERSION OF THIS FILE A FOURTH FORK ────
+//
+// It reached the owner over `relayRequest` directly and bolted on a
+// fixed eight-second timer of its own. That is a second copy of a
+// policy that already exists, is negotiated with the relay, and is
+// better than the copy — written twenty minutes after this design
+// recorded three such forks (`ask`, `relayLimits`, `lib.sh`) as the
+// disease it exists to prevent. Andy found it with one question.
+//
+// The reach goes through `peerPost` now. `relayRequest` is used for one
+// thing only: `GET /api/relay/key`, which is not a peer post, has no
+// route to hold open, and is what `hub.js:203` already uses it for.
 function askRelay(url) {
   return relayRequest(url, 'GET', '/api/relay/key', null)
     .then(function (r) {
@@ -500,30 +486,84 @@ function reachOwner(rootDir, appName, state, body) {
   if (!state.relay) return Promise.resolve({ ok: false, code: 'app-unbound' });
   if (!state.ownerKey) return Promise.resolve({ ok: false, code: 'app-unbound' });
 
-  const me = identity(rootDir, appName);
-  const sending = {
-    to: state.ownerKey,
-    from: me.publicKey,
-    text: JSON.stringify(body || {}),
-    sentAt: new Date().toISOString(),
-  };
-  sending.sig = auth.sign(me.privateKey, auth.postMessage(sending));
+  // THE KEY MUST EXIST BEFORE peerPost LOOKS FOR IT. Rewiring onto
+  // peerPost dropped this call and the reach answered "this node has no
+  // identity" — correct, and entirely my doing: the identity was created
+  // lazily by the function the old path used, and the new path has no
+  // reason to know that.
+  identity(rootDir, appName);
 
-  return relayRequest(state.relay, 'POST', '/api/relay/post', sending)
-    .then(function (r) {
-      if (r.status === 200) return { ok: true, status: 200 };
-      // 403/404 from the relay is the relay declining to route FOR us,
-      // which means this server holds no seat.
-      if (r.status === 403 || r.status === 404) {
-        return { ok: false, code: 'app-not-a-member', status: r.status };
+  // Built per reach rather than held: an app server posts rarely, and a
+  // router kept alive is a queue kept alive, which is state this module
+  // has no business holding on an app's behalf.
+  //
+  // `request` is the node-to-relay leg and it is THE SAME FUNCTION a
+  // node uses — Andy: *"the node-to-relay leg of a peerPost() must be
+  // the exact same path as a node to relay post."* Verified rather than
+  // assumed: `require('./hub').relayRequest === require('./relayRequest')
+  // .relayRequest` is true, because they were moved into one module on
+  // 2026-09-16 for exactly this reason — so a caller that is not the
+  // node's hub can still reach the one interface without dragging the
+  // node's machinery in behind it.
+  const poster = require('./peerPost').createPeerPost({
+    rootDir: stateDir(rootDir, appName),
+    request: relayRequest,
+  });
+
+  // post(relayUrl, toKey, text) — positional, and it answers a promise.
+  // The identity it signs with is read from the rootDir it was built
+  // with, which is why the app's key sits at
+  // app-state/<name>/relay-state/identity.json: the nested path that
+  // looked ugly an hour ago is what lets the one identity reader find
+  // it without a second convention.
+  return poster.post(state.relay, state.ownerKey, JSON.stringify(body || {}))
+    .then(function (answer) {
+      const a = answer || {};
+      if (a.ok) return { ok: true, status: a.status || 200 };
+
+      // ── CLASSIFIED BY THE CATALOGUE, NOT BY A TABLE IN THIS FILE ────
+      //
+      // `spiritErrors.classifyAnswer` already turns `{ok,status,error}`
+      // into a known condition, and 66 of them were catalogued before
+      // this module existed. A hand-rolled status map here would be the
+      // FIFTH fork of something the tree already owns — and the first
+      // version of this function nearly was one: it read 428 as
+      // "the owner is asleep", when 428 is `no-cipher-key`, the
+      // SENDER'S OWN refusal before anything leaves. Two different
+      // facts, and only one of them is about the owner.
+      const known = errors.classifyAnswer(a);
+      // ── THE THREE FAILURES ARE DISTINGUISHED, NOT LUMPED ──────
+      //
+      // A relay that REFUSES to route answers; a relay that routes and
+      // gets nothing back TIMES OUT. Those are different facts, and an
+      // app that reported them alike would send an operator to fix the
+      // wrong thing.
+      // The relay declining to route FOR us: no seat, so there is
+      // nothing to route. It ANSWERS, which is what distinguishes it.
+      if (a.status === 403 || a.status === 404) {
+        return { ok: false, code: 'app-not-a-member', status: a.status };
       }
-      // A timeout is the relay waiting on the owner's node. The owner
-      // exists, the seat exists, the person is not there.
-      return { ok: false, code: 'app-owner-asleep', status: r.status };
+      // Routed, and nobody home. 504 is peerPost's verdict after the
+      // window THE RELAY granted — not after a number this file
+      // invented, which is the whole point of going through peerPost.
+      if (a.status === 504) {
+        return {
+          ok: false, code: 'app-owner-asleep',
+          status: a.status, grantedMs: a.grantedMs,
+        };
+      }
+      // Anything else is a real condition with a real name, and this
+      // module does not get to rename it. A 428 here means this server
+      // holds no card for its owner yet — a step of the bind sequence
+      // that has not happened, and emphatically not a sleeping owner.
+      return {
+        ok: false,
+        code: (known && known.code) || 'app-owner-asleep',
+        status: a.status || 0,
+        error: (known && known.text) || a.error,
+      };
     })
-    .catch(function () {
-      return { ok: false, code: 'app-owner-asleep', status: 0 };
-    });
+    .catch(function () { return { ok: false, code: 'app-owner-asleep', status: 0 }; });
 }
 
 function roleOf(state) {

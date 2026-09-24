@@ -363,7 +363,22 @@ define('will-not-open', {
 });
 define('no-cipher-key', {
   status: 428, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['no cipher key for that peer', 'cipher key cannot be used'],
+  // THE SENTENCES AS peerPost.js:748-749 ACTUALLY EMITS THEM. This
+  // held shortened paraphrases of both — 'no cipher key for that
+  // peer' and 'cipher key cannot be used' — so `classifyAnswer`
+  // answered UNKNOWN for a condition that was fully catalogued, in
+  // the one mechanism whose whole job is to be a closed set.
+  //
+  // Found 2026-09-24 by an app server asking the catalogue what a
+  // live 428 meant and being told nothing. A catalogue that cannot
+  // name its own emitter's words is a list, and the difference only
+  // shows when something actually asks.
+  texts: [
+    'no cipher key for that peer — ask for their card first',
+    "that peer's cipher key cannot be used",
+    'no cipher key for that peer',
+    'cipher key cannot be used',
+  ],
   note: 'THE SENDER\'S OWN REFUSAL, before anything leaves. Andy: "if ' +
     'you can\'t get the card, you can\'t post anyways." Never a plaintext ' +
     'fallback — that would hand everything to an attacker who can simply ' +
