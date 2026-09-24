@@ -672,13 +672,30 @@ forget something.
     reason: **reviewability rather than quoting.** A command that needs
     approval goes in a named file, and the prompt names the file.
 
-    **The shape of the answer is to BATCH, never to remove.** A close is
-    a bounded sequence of an agent’s own operations on its own folders
-    — compile, file, stage, commit, push — and it is known in
-    advance, which is what distinguishes it from an arbitrary write. So
-    it is asked **once, at the start, naming the sequence**, or it is
-    silent for an agent’s own paths and loud for everything else. What
-    must not happen is **N prompts for one declared intention.**
+    **A CALL CARRIES THE PERMISSIONS ITS STEPS REQUIRE.** Andy, the same
+    day: *"when i ask for the closing cycle in my "api" the permission to
+    extract quotes, write entries, compile, and push are very clearly
+    implicit in that ask."*
+
+    > **SUPERSEDES the answer this agent proposed**, which was to BATCH
+    > the question — ask once at the start of a close rather than N
+    > times during it. Batching is better than N prompts and it is still
+    > the wrong frame: **there is no question to batch, because it was
+    > already answered by the ask.**
+
+    **This is the API framing doing real work rather than reading well.**
+    `close the cycle` is a named call, and its steps — extract the
+    quotes, write the entries, compile, push — are what the call MEANS.
+    An agent that re-asks for them has **downgraded an API call to a
+    suggestion**, and made him authorise the same thing twice: once in
+    English, once in a dialog.
+
+    **What still prompts is anything OUTSIDE the named sequence.** The
+    grant is the call’s own steps on the agent’s own folders, not a
+    general amnesty for the duration — a close that wants to touch a
+    shared file, another agent’s folder, or the live relay is doing
+    something the ask did not contain, and that is exactly where a guard
+    earns its place.
 
     **And an agent whose guard cannot yet do that says so in the
     cycle-report**, rather than letting him discover it by being asked.
