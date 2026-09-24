@@ -610,6 +610,51 @@ load, it names the member."*
 
 ---
 
+### PROPOSED, NOT IN THIS CYCLE — a sweep for forks
+
+**Andy, 2026-09-24, during the build:** *"can the tree be swept
+periodically to detect those kind of repetition patterns? I noticed that
+the editors in vscode don't seem to have a where-used memory for
+functions....?"* — and *"that would seem to be a hardening-approach:
+find repeated tricky code-segments solving the same problem."*
+
+**The editor gap is real and worse than stated.** Where-used exists;
+**what no editor offers is "what else already solves this"** — and only
+that catches a fork, because a fork HAS NO REFERENCES TO FIND. It is new
+code that never called the thing it duplicates.
+
+**Six forks were found in one sitting, five of them this agent's**,
+which is the evidence base rather than a hypothesis:
+
+| what forked | its one home |
+|---|---|
+| `ask` — three copies | `kernel.js:642` |
+| a fixed 8s timeout | `peerPost`'s negotiated `grantedMs` |
+| a status-to-meaning table | `spiritErrors.classifyAnswer` |
+| box arithmetic named `relayLimits` | generic all along |
+| unit infrastructure named for relays | `bash/lib.sh` |
+| `peerPost` wiring divergence | one factory, three shapes |
+
+**They share one shape: an operation the tree already owns, performed
+through new code.** Which is exactly what `oneDoor` detects for SOCKETS
+— so the mechanism is built and proven, and all that is missing is
+that it knows about one operation.
+
+**RECOMMENDED: generalise `oneDoor`, do not build a clone detector.** A
+declared table of owned operations — the socket, the wait, status
+classification, identity and key generation, manifest reading — each
+with its home and the shapes that indicate a re-implementation. Red on a
+new occurrence outside the tally.
+
+**AND THE CAUTION THAT DECIDES WHETHER IT IS WORTH DOING.** Generic clone
+detection is easy to write and NOISY, and **a noisy gate gets ignored,
+which is worse than no gate**: it teaches the habit of scrolling past —
+the same failure Andy named about dated commitments rotting into
+embarrassments. Start narrow, and let **every entry come from a fork that
+actually happened.**
+
+---
+
 ### MOVED OUT OF SCOPE, and why
 
 - **The Relay Monitor representing a second server type** (was S8) — a
