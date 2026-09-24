@@ -128,6 +128,16 @@ Format: **term** — aliases — meaning.
 
 **Master-only** — no feature branches, no courtesy PRs.
 
+**Divergence** — divergency — **A difference between two halves worked independently, found at the reconciliation stop and shown to Andy unresolved.** Not a bug, not a fault in an agent, and not a disagreement to be settled quietly on the way past: *"on-the-go reconciliation will hide the divergence"* (2026-09-23). It is the **output** of working in parallel, not a cost of it — *"that's a stop in the cycle. i want to see the divergence."*
+
+> **It is often a hole in the writing rather than a misreading.** Cycle 11's only divergence was two requirements in one document contradicting each other on a case neither sentence mentioned — neither agent had read it wrong. So a divergence is logged with **what it was about**, not only that it happened.
+
+> **He sometimes hands it back:** *"sometimes, sometimes i'll leave it to you both to reconcile."* That is his ruling to make at the stop, and an agent does not assume either way.
+
+> **The count is tracked and its meaning is NOT yet decided.** *"the divergence-count for reconciliation will be a measurement for the quality of the design, and will be tracked as well?"* — and, correcting an agent that had already written an interpretation into the rules on the strength of one cycle: *"we track divergency and learn it's meaning as we go"* (2026-09-24). So the number is recorded with its context and read later. A count from independently-worked halves and a count from a negotiation are not the same measurement.
+
+**Reconciliation stop** — the stop, the close — **The end of a cycle, where the two halves are exchanged and compared, and where autonomous work ends.** *"every cycle must have a stop for reconciliation. so that says how far you can go autonomously."* Every cycle has one, however short it was. An agent does not cross it into the next cycle.
+
 ## Do not confuse
 
 | Do not say | If you mean |
