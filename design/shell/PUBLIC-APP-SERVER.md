@@ -282,7 +282,7 @@ exist and it is a migration.*
 
 ### G13 — the official sample instantiates the template, and IS the acceptance test
 
-**Status:** OPEN. Nothing built. **Name is Andy's to rule.**
+**Status:** OPEN. Nothing built. **Named `app/starter/`, ruled by Andy 2026-09-24.**
 
 It binds, learns its owner, serves a page, posts to the owner's node —
 and nothing else. No GitHub, no seats, no visitor story, so the stage
@@ -307,7 +307,16 @@ boundary is wrong and we learn it **before `join` exists**.
   program; this is a template instantiation whose comments are the
   product.
 
-Whichever is ruled, **one artefact carries the name** — a tree with two
+**RULED: `app/starter/`** (Andy, 2026-09-24), and his reason adds to
+wsl-claude’s rather than repeating it. wsl argued from the artefact —
+*it says COPY ME in the name*. Andy argued from the person: *"i
+actually agree with wsl, it indicated a forward direction for the early
+adopter."* **"Hello world" implies a demo you run once and leave; a
+starter is where somebody BEGINS something.** That is the reason to
+keep written down, because it is the one that stops a later session
+renaming it back to a greeting.
+
+**One artefact carries the name** — a tree with two
 things called `hello` is a defect a board can hold rather than a matter
 of taste.
 
