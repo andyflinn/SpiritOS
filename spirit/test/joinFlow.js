@@ -97,113 +97,26 @@ test.subHeading('cycle 12 R10 — the claim route is untouched; only the screen 
   }
 }
 
-// ── cycle 12 R1 ────────────────────────────────────────────────────────────────
-test.subHeading('cycle 12 R1 — join/ exists, is publishable, and carries no credential');
-if (!joinExists) {
-  test.awaiting('cycle-12/R1', 'the join/ directory', false,
-    'join/ exists in the repository, nothing in it is a secret, and .gitignore does not exclude it',
-    { there: 0, cost: 'the directory and its first file; nothing of it exists at ' + OPENED_AT });
-} else {
-  const files = filesUnder(JOIN);
-  test.check('join/ exists — ' + files.length + ' file(s) outside relay-state/');
-
-  // A CREDENTIAL-SHAPED LITERAL, named by shape rather than by name,
-  // because a secret does not announce itself in a variable called
-  // secret. GitHub's own formats are the ones this site can hold.
-  const shapes = [
-    [/\bgh[pousr]_[A-Za-z0-9]{16,}/, 'a GitHub token'],
-    [/\b[0-9a-f]{40}\b/, 'a 40-character hex string (an OAuth client secret)'],
-    [/client_secret\s*[:=]\s*['"][^'"]{8,}/i, 'an inline client_secret'],
-    [/-----BEGIN [A-Z ]*PRIVATE KEY-----/, 'a private key'],
-  ];
-  const caught = [];
-  files.forEach(function (f) {
-    let text = '';
-    try { text = fs.readFileSync(f, 'utf8'); } catch (e) { return; }
-    shapes.forEach(function (s) {
-      if (s[0].test(text)) caught.push(path.relative(REPO, f) + ': ' + s[1]);
-    });
-  });
-  if (!caught.length) {
-    test.check('and no file under join/ carries a credential-shaped literal — four shapes searched for');
-  } else {
-    test.fail('a credential is in the tree: ' + caught.join('; '));
-  }
-
-  const ignore = now('.gitignore') || '';
-  if (!/^\s*join\/?\s*$/m.test(ignore)) {
-    test.check('and .gitignore does not exclude join/ — it is publishable, which is the point of it holding nothing');
-  } else {
-    test.fail('.gitignore excludes join/, so the site cannot be published from this repository');
-  }
-}
-
-// ── cycle 12 R2, R3 ────────────────────────────────────────────────────────────
-test.subHeading('cycle 12 R2 and R3 — an ordinary member, and one identity provider');
-test.awaiting('cycle-12/R2', 'the site node configuration under join/', joinExists,
-  'the site is a member of spirit with no owner key and no relay-side privilege, and reaches only its own loopback door',
-  { there: 0, cost: 'a node client and its configuration; the relay side already exists and is not touched' });
-test.awaiting('cycle-12/R3', 'the sign-in flow under join/', joinExists,
-  'one identity provider and no field anywhere that collects an address',
-  { there: 0, cost: 'the sign-in page and its redirect; no mail sender exists to remove' });
-
-// ── cycle 12 R4 — the security claim of the whole design ───────────────────────
+// ── THE DOCUMENT THIS SUITE WAS WRITTEN FROM IS BEING REPLACED ───────
 //
-// THE DOCUMENT ASKS A QUESTION HERE RATHER THAN STATING A FACT: "whether
-// this can be asserted positively rather than by absence is an open
-// question this cycle must answer, not assume." So this declaration says
-// what the ABSENCE test is, and records that absence is the weaker of the
-// two — a site that never exchanges a code looks exactly like a site
-// whose exchange nobody has written yet.
-test.subHeading('cycle 12 R4 — the site holds a code it cannot spend');
-test.awaiting('cycle-12/R4', 'the join/ code path that receives and forwards without exchanging', joinExists,
-  'no exchange request exists in join/, and the code leaves only as a peer.post payload',
-  { there: 0, cost: 'the receive handler and the post; the assertion is a search for an exchange that is not there, ' +
-    'and the document itself asks whether absence is enough — a positive assertion would need the site to REFUSE ' +
-    'an exchange it is asked to make, which is a different thing to build' });
-
-// ── cycle 12 R5 ────────────────────────────────────────────────────────────────
-test.subHeading('cycle 12 R5 — signed and sealed, and a stranger is not acted on');
-test.awaiting('cycle-12/R5', 'the site posting the code to Andy node', joinExists,
-  'the post is sealed and signed, the relay carries ciphertext, and a post from an unknown key is not acted on',
-  { there: 60, cost: 'sealing, signing and the refusal of an unknown sender all exist in the node (cycle 10 R4, R5, R11); ' +
-    'missing is the site calling them and the minting program checking WHICH key posted' });
-
-// ── cycle 12 R6, R7, R8 ────────────────────────────────────────────────────────
-test.subHeading('cycle 12 R6, R7, R8 — the minting program, refusal when asleep, and the off switch');
-test.awaiting('cycle-12/R6', 'the minting program on Andy node', joinExists,
-  'it calls net.fetch and the owner verb and nothing else, carrying the same redirect_uri and client_id to the exchange',
-  { there: 50, cost: 'net.fetch under the proxy gate exists (server.js) and the owner mint verb exists (relay.js); ' +
-    'missing is the program that joins them and the seat policy between' });
-test.awaiting('cycle-12/R7', 'the refusal path when Andy node is unreachable', joinExists,
-  'the visitor gets a refusal naming what to do, and nothing durable holds the code afterwards',
-  { there: 0, cost: 'a refusal page and the proof that no queue, cache or log retains the code — the second half is ' +
-    'the harder one and is what makes this a requirement rather than a message' });
-test.awaiting('cycle-12/R8', 'the proxy gate shipping closed', joinExists,
-  'with the host absent from proxy.json the mint path refuses, and proxyList.remove() is the only action needed',
-  { there: 70, cost: 'the gate and proxyList.remove() exist and are tested; missing is join/ shipping with the host ' +
-    'ABSENT by default and a test that opens it deliberately' });
-
-// ── cycle 12 R9, R11 — what a stranger is shown ────────────────────────────────
-test.subHeading('cycle 12 R9 and R11 — what a stranger sees, and what is admitted to them');
-test.awaiting('cycle-12/R9', 'the visitor-facing page for a full relay', joinExists,
-  'a mint refused for capacity offers the other door and shows none of the relay internal figures',
-  { there: 40, cost: 'the relay already refuses with 507 and a sentence (relay.js); missing is the page that turns it ' +
-    'into a door a stranger can walk through, and the check that the figures do NOT cross' });
-test.awaiting('cycle-12/R11', 'the sentence on the page that admits the link', joinExists,
-  'the page says that a GitHub account is linked to a node key, and nothing else about a visitor is durable',
-  { there: 0, cost: 'one sentence of copy, and the search that proves nothing else about a visitor is written — the ' +
-    'sentence is cheap and the search is the requirement' });
-
-// ── C1, C2 — conditions, recorded so they cannot be forgotten ─────────
-test.subHeading('cycle 12 C1 and C2 — conditions this cycle found and did not promise');
-test.awaiting('cycle-12/C1', 'the second box hardened', false,
-  'the site VPS has 600/700 on everything, a loopback node door with only 443 open, a synced clock and Restart=always',
-  { there: 0, cost: 'not cycle-12 code at all — it is between join working and join being live, and the clock matters ' +
-    'because OAuth expiry depends on it' });
-test.awaiting('cycle-12/C2', 'the seat policy in Andy minting program', joinExists,
-  'no account-age gate today, and the relay record is the instrument that says when to tighten',
-  { there: 30, cost: 'the record exists and answers (cycle 11); missing is the policy that reads it, which lives on ' +
-    'his box so tightening needs no redeploy' });
-
+// Cycle 12 was redesigned in a sitting on 2026-09-24: join/ as a
+// directory is gone, the site is not a separate node story, and the
+// third startup module is a PUBLIC APP SERVER — the companion to the
+// shell — with join as its first public app rather than the mode
+// itself. Several of R1-R11 no longer exist.
+//
+// THE TWELVE DECLARATIONS THAT STOOD HERE ARE REMOVED RATHER THAN LEFT
+// TO ROT. A board showing twelve items waiting on a dead specification
+// is worse than a board showing none: it reports work nobody is going
+// to do, and it is exactly the rot the awaiting mechanism was built to
+// prevent. The assertions above survive because they are about what the
+// cycle promises NOT to do, and that promise did not move.
+//
+// This is the SPEC MOVING, not a divergence: no reading of mine was
+// wrong and nobody yielded. It is recorded here because the next reader
+// will otherwise wonder why a cycle-12 suite asserts two things and
+// declares one.
+test.awaiting('cycle-12/R1', 'the rewritten cycle 12 document', false,
+  'the suite follows the document: when the new one lands, these become declarations again and then assertions',
+  { there: 0, cost: 'the document is being rewritten; this suite is deliberately empty of requirement claims until it exists' });
 test.reportSuccessFailureCount();
