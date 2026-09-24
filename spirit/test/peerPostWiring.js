@@ -81,7 +81,24 @@ const DECLARED = {
   //   answer      it answers no verbs; it posts
   //   onArrival   it receives nothing
   //   admit/remember/traffic  it persists nothing about anybody
-  'appServer.js': ['rootDir', 'request', 'checkTunnel'],
+  //   keepCard    PRESENT since cycle 3. The app server must hold its
+  //               OWNER's card before it can seal anything to them, and a
+  //               card request is the one packet that travels unsealed
+  //               (Andy: "card is the only possible un-cyphered
+  //               peerPost"). Without it every reach was refused at 428
+  //               by this server before anything left the box — which
+  //               read as "the owner is asleep" and was not.
+  //   sealKeyFor  PRESENT since cycle 3, and it is the other half: read
+  //               per post rather than captured, so a card that arrives
+  //               or a key that rotates mid-run is seen. Empty means the
+  //               post is refused rather than sent plain.
+  //
+  // THESE TWO ARE A NARROWING, NOT A WIDENING, and that is why they are
+  // allowed here: the app server now holds exactly ONE contact row, its
+  // owner's, and G9's "acts on nothing" is a promise about STRANGERS. It
+  // still passes no store, no answer, no onArrival, no admit, no
+  // remember and no traffic.
+  'appServer.js': ['rootDir', 'keepCard', 'sealKeyFor', 'request', 'checkTunnel'],
 };
 
 // Reads the keys a call site passes, from the source. Deliberately
