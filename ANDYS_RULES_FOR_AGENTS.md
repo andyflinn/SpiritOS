@@ -113,9 +113,36 @@ failed, however correct it reads.
     first costs however long the others sit, which nobody is measuring
     because idle time leaves no trace.
 
-11b. **On a pull, the agent brings every resident node up to the
-    highest release it can.** Andy, 2026-09-24: *"on pulls the agent will
-    properly update all resident nodes to the highest release possible."*
+11b. **On a pull, the agent brings every resident node — and every
+    running labMaster — up to the highest release it can.** Andy,
+    2026-09-24: *"on pulls the agent will properly update all resident
+    nodes to the highest release possible."* Amended the same day:
+    *"please amend the pull rule, all resident and running labmasters
+    must be upgraded as well."*
+
+    **A labMaster is included because of what it does, not because it is
+    a process.** Every lab suite is a client of it, and a fixture is a
+    copy of the **labMaster's own working tree** — so a labMaster left
+    running from a stale or foreign checkout does not make the lab suites
+    fail. It makes them test **that** tree, and pass. It is the one thing
+    on the machine that can turn a green board into a statement about
+    code nobody is looking at.
+
+    **Measured twice, on both platforms, on 2026-09-24.** wsl-claude's
+    fresh clone on Linux showed six red — all six were Andy's labMaster
+    answering from his checkout. The same six appeared on Windows from
+    our own leftovers, plus **four more in `relayConfigWire.js`, which
+    has nothing to do with labMaster**: the six failed in milliseconds
+    instead of holding their runner slots, the schedule reshuffled, and
+    an unrelated suite blew its timeout. A stale labMaster does not
+    produce a contained error.
+
+    **So: stop it or update it, never leave it.** A labMaster is cheap to
+    restart and the harness starts its own when none is up — which makes
+    stopping the honest default when in doubt. `ensureMaster.stop()` only
+    kills the one it spawned, so leftovers accumulate silently across
+    runs; two were found running on this box the day the rule was
+    written.
 
     **"Resident" means every node on that machine, not the one the agent
     was thinking about.** On 2026-09-23 the repository was pulled and the
