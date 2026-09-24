@@ -89,6 +89,26 @@ naming the constraint underneath the whole SOP: *"managing how i divide
 my attention"*, and *"a lot of this is about how i try to arrange longer
 slots for me (and you) to get things down."*
 
+**AND THAT IS "ARRANGE", NOT "MINIMISE" — a distinction the agents have
+been drifting away from.** Andy, 2026-09-24, naming it as a trend after
+reading an agent's view about not bothering him:
+
+> *"what this design proposal is: it designates the time i must pay full
+> attention, exactly so i can spend the implementation time doing
+> something else."*
+
+**The goal is DESIGNATED attention, never LESS of it.** A rule that
+concentrates his attention into one moment so the rest of a cycle is
+genuinely his to spend elsewhere has done the job. **An agent that avoids
+asking AT the designated moment has broken this file, not honoured it**
+— and the failure looks like diligence, which is why it spreads.
+
+**The expensive kind of attention was never the scheduled kind.** It is
+the unschedulable spot-check he only knows to make when something smells
+wrong. A rule that converts that into one artefact at a known moment has
+done its job; a rule that converts it into silence has moved the cost
+onto him and hidden it.
+
 So each rule earns its place by removing either a reason he must
 interrupt us, or a reason we must interrupt him. **A slot he has to keep
 checking is not a slot.** The expensive kind of attention is the
@@ -620,12 +640,18 @@ afterwards. He is IN it, and he is its primary instrument.** The rule's
 whole job, on this evidence, is to put his question at the moment it
 costs a sentence instead of a rewrite.
 
-**AND IT IS THE SOP'S OWN PURPOSE ARRIVING AGAIN.** Every rule here earns
-its place by removing a reason he must interrupt us, or a reason we must
-interrupt him. This one does something rarer: it **schedules** him, at
-the one moment his particular way of seeing is worth most — which is
-the opposite of protecting his attention by spending less of it, and is
-the better trade where his attention is the thing that finds the defect.
+**AND IT IS THE SOP'S OWN PURPOSE, NOT AN EXCEPTION TO IT.** This section
+first called the scheduling *"the opposite of protecting his attention by
+spending less of it"* — which still treats sparing him as the default.
+Andy corrected the framing: *"it designates the time i must pay full
+attention, exactly so i can spend the implementation time doing something
+else."*
+
+**Designating is the whole mechanism, and it always was.** The preamble
+says *where his attention has to land, and how often* — both halves.
+A brainstorm at design time is expensive on purpose, and it buys the
+implementation hours back: a cycle whose forks were found at the start
+does not need him watching the middle of it.
 
 ### The form: a CITATION naming the CAPABILITY, not the places
 
