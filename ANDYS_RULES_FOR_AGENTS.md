@@ -362,3 +362,48 @@ before proposing a mechanism, find the one the tree already has. Two
 patterns — the in-place amendment and the requirement gate — covered both
 gaps, and a new ledger beside them would have been a second place to
 forget something.
+
+---
+
+14. **The board is a document Andy keeps open, and the lead maintains the
+    display.** Andy, 2026-09-24, asking what he actually wants from it:
+    *"is the board a document i can keep in a window and gets updated
+    automatically as the cycles progress?"* — and on whose job it is:
+    *"lead maintains the board-display?"* Yes.
+
+    **The seam, which already existed before it was named:**
+
+    | | owner | answers |
+    |---|---|---|
+    | the declarations, and the resolver that reads them | **the suite's owner** | *is this declaration real, and does it name something the tree holds?* |
+    | the rendering, `BOARD.md`, and its freshness gate | **the lead** | *how does Andy read it?* |
+
+    The display belongs to the lead because the display is **for Andy**,
+    and the lead is the one talking to him. The resolver belongs to
+    whoever owns the suite — in the cycle this rule was written in, that
+    was wsl-claude, who had widened it three times in a day (C-headings
+    beside R-numbers, `design/` walked whole rather than only
+    `design/cycles`, and a case-insensitive tag match).
+
+    **THE DISPLAY MAY NEVER INTERPRET.** It prints what was declared —
+    the requirement, what is missing, the %-there and the cost note, **in
+    the declarer's own words**. The moment a display summarises, it
+    becomes a second opinion about the work, and there are two places to
+    look that can disagree. That is the failure this whole file exists to
+    prevent, and a board is the worst possible place for it because it is
+    the thing he trusts without re-deriving.
+
+    **It changes only when work moves.** The file holds the awaiting
+    rows, not the green tally, so two runs over an unchanged tree produce
+    an identical file. Every change he sees in that window is real
+    progress rather than noise — which is the whole reason he can leave
+    it open.
+
+    **And it is the same on both platforms**, because declarations are
+    read from the tree rather than measured on a box. Only the tally
+    differs, and the tally is what is left out. So neither agent's run
+    fights the other's.
+
+    **Stale is red**, exactly as the published capacity block is: a board
+    that quietly describes a tree that has moved is worse than no board,
+    because it is believed.
