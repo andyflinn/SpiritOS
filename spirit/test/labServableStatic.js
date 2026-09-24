@@ -143,7 +143,20 @@ Promise.resolve()
       // NEVER ANOTHER CHECKOUT'S labMaster (2026-09-22): its fixtures are its
       // own tree, so this suite would test that tree and pass.
       return require('./labMaster/ensureMaster').checkout().then(function (c) {
-        if (!c.same) throw new Error('the labMaster on ' + require('./labMaster/labPaths').PORT + ' copies from ' + c.theirs + ', not this checkout — run your own: LAB_MASTER_PORT=45420');
+        // STOOD DOWN, NOT RED (2026-09-24). Another checkout's
+        // labMaster is a fact about this machine, cleared in one
+        // command; a suite that reports it as a fault says the tree
+        // is broken when it is not. `standDown` is marked on the
+        // error so the chain's own catch below can tell it from a
+        // genuine failure without matching on the sentence.
+        if (!c.same) {
+          const e = new Error('the labMaster on ' + require('./labMaster/labPaths').PORT +
+            ' copies from ' + c.theirs + ', not this checkout — run your own: ' +
+            'LAB_MASTER_PORT=45420, or stop theirs — the harness starts its own ' +
+            'when none is up.');
+          e.standDown = true;
+          throw e;
+        }
       });
     }
     test.comment('starting labMaster');
@@ -196,6 +209,7 @@ Promise.resolve()
     else test.fail('delete → ' + r.status);
   })
   .catch(function (err) {
+    if (err && err.standDown) { test.standsDown(err.message); return; }
     test.fail(String(err && err.message || err));
   })
   .then(function () {

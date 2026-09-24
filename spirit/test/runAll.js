@@ -253,6 +253,7 @@ function runOne(file) {
       const g = /✅:(\d+)/.exec(out);
       const b = /❌:(\d+)/.exec(out);
       const w = /⏳:(\d+)/.exec(out);
+      const s = /⏭:(\d+)/.exec(out);
       done({
         file: file,
         ms: Date.now() - started,
@@ -262,6 +263,12 @@ function runOne(file) {
         // say what is waiting and for which requirement.
         waiting: said && w ? Number(w[1]) : 0,
         waitingLines: (out.match(/AWAITING [^\n]*/g) || []),
+        // STOOD DOWN (test.standsDown). The suite ran, diagnosed its own
+        // environment and declined — not a pass, not a failure, and the
+        // reason is lifted out so a green board never quietly means less
+        // than it did yesterday.
+        stood: said && s ? Number(s[1]) : 0,
+        stoodLines: (out.match(/STOOD DOWN[^\n]*/g) || []),
         // -1 for "never reported", which is not zero failures. A suite
         // that crashed before its last line has to read as worse than
         // one that ran and passed, not the same.
@@ -422,6 +429,11 @@ async function main() {
       // readable at a glance as "nothing broke, some things are not
       // written yet" rather than as trouble.
       (r.waiting > 0 ? YELLOW + String(r.waiting).padStart(2) + ' ⏳' + RESET + '  ' : '      ') +
+      // Stood down, on the suite's own row for the same reason as the
+      // yellow: a run that is not all green should be readable at a
+      // glance as what it is, and "this did not execute here" is a
+      // different sentence from both "it broke" and "nobody wrote it".
+      (r.stood > 0 ? String(r.stood).padStart(2) + ' ⏭  ' : '      ') +
       String(r.ms).padStart(6) + 'ms'
     );
   });
@@ -557,10 +569,31 @@ async function main() {
   // that only appears in a block above the tally is a count that gets
   // scrolled past — the tally line is the one thing everybody looks at,
   // so what is declared-and-not-built belongs on it, beside the greens.
+  // ── WHAT STOOD DOWN, AND WHY, BEFORE THE TALLY ─────────────────────
+  //
+  // A stand-down is the one outcome that makes the board mean LESS
+  // without anything looking wrong, so its reasons are printed rather
+  // than summarised into a number. Each sentence was written by the
+  // suite that declined and names the condition and the remedy; a reader
+  // who cannot act on it should not have been given a stand-down.
+  const stoodTotal = results.reduce(function (n, r) { return n + (r.stood || 0); }, 0);
+  if (stoodTotal) {
+    console.log('\n--- stood down: these suites ran, diagnosed the MACHINE rather than the ' +
+      'tree, and declined. Not red and not awaiting — the board below is that much smaller ' +
+      'than it looks, and clearing the condition is what makes them run.');
+    results.forEach(function (r) {
+      (r.stoodLines || []).forEach(function (line) {
+        console.log('\n    ' + r.file);
+        console.log('      ' + line.replace(/^\s*\*+\s*/, '').replace(/\s*⏭\s*$/, '').trim());
+      });
+    });
+  }
+
   const waitingTotal = results.reduce(function (n, r) { return n + (r.waiting || 0); }, 0);
   console.log('\n' + files.length + ' suites, ' + green + ' green, ' + red + ' red, ' +
     unhappy.length + ' unhappy' +
     (waitingTotal ? ', ' + YELLOW + waitingTotal + ' awaiting' + RESET : '') +
+    (stoodTotal ? ', ' + stoodTotal + ' stood down' : '') +
     (skipped.length ? ', ' + skipped.length + ' not run' : '') + '\n');
   process.exit(unhappy.length ? 1 : 0);
 }

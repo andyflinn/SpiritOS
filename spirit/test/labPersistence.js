@@ -113,7 +113,14 @@ test.startTest('A relay forgets nothing across a restart');
 
 async function run() {
   const ready = await lab.ensure();
-  if (!ready.ok) { test.fail('no lab: ' + ready.error); return; }
+  if (!ready.ok) {
+    // A labMaster from another checkout is the MACHINE's condition and
+    // not this tree's, so it stands down rather than reporting a fault
+    // that is not there. A labMaster that will not start still goes red.
+    if (ready.foreign) { test.standsDown(ready.error); test.reportSuccessFailureCount(); return; }
+    test.fail('no lab: ' + ready.error);
+    return;
+  }
 
   try { await lab.api('POST', '/api/nodes/' + RELAY_NAME + '/delete', {}); } catch (e) { /* fine */ }
 

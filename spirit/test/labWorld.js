@@ -232,7 +232,12 @@ function createWorld(opts) {
     }
 
     const up = await ensureMaster();
-    if (!up.ok) return { ok: false, error: up.error };
+    // `foreign` is carried through rather than flattened: a caller needs
+    // to tell a labMaster that will not start (a fault) from one that
+    // belongs to another checkout (the machine's condition, and a
+    // stand-down). Dropping the flag here would make every world-builder
+    // go red for something the developer clears in one command.
+    if (!up.ok) return { ok: false, error: up.error, foreign: !!up.foreign };
 
     // A WORLD STARTS EMPTY. Anything still standing from an interrupted
     // run holds a port this one wants, and the failure that produces

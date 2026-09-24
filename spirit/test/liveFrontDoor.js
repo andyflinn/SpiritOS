@@ -138,6 +138,10 @@ async function run() {
   const W = labWorld.createWorld({ peers: 3, peerNames: ['alfa', 'bravo', 'charlie'] });
   const built = await W.build();
   if (!built.ok) {
+    // A labMaster from another checkout is the machine's condition, not
+    // this tree's: stand down with the sentence rather than claim a
+    // fault. Anything else that stops a world being built is still red.
+    if (built.foreign) { test.standsDown(built.error); test.reportSuccessFailureCount(); return; }
     test.fail('could not build the lab: ' + built.error);
     test.reportSuccessFailureCount();
     return;

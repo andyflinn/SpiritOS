@@ -142,7 +142,8 @@ const test = {
         // ON THE LAST LINE, because that is the line the runner parses. A
         // count the runner cannot see is a count nobody reads.
         if (this.awaitingCount > 0) result += "  ⏳:" + this.awaitingCount;
-        
+        if (this.stoodDownCount > 0) result += "  ⏭:" + this.stoodDownCount;
+
         this.titleLine(result);
         this.lineFeed();
 
@@ -169,6 +170,49 @@ const test = {
         // AND exits 1 is still read as having reported, because `said` is
         // what distinguishes a failure from a crash.
         if (failureCount > 0) process.exitCode = 1;
+    },
+
+    // ── STOOD DOWN: THE CONDITION IS THE ENVIRONMENT, NOT THE TREE ───
+    //
+    // A suite that knows exactly why it cannot run, and fails anyway, is
+    // reporting a fault in the tree that is not there. wsl-claude, after
+    // running a fresh clone on Linux (2026-09-24): *"A suite that knows
+    // precisely why it cannot run, and fails anyway, is reporting a fault
+    // in the tree that is not there... it is the same discipline as the
+    // awaiting block: a thing nobody has written is not a thing that
+    // broke."*
+    //
+    // ── AND A FALSE RED DOES NOT STAY WHERE IT STARTED ───────────────
+    //
+    // This was built for six lab suites that refuse when a labMaster from
+    // another checkout is up — but the measurement that justified it was
+    // a SEVENTH suite. Windows, fresh clone, 2026-09-24: the six failed
+    // in ~400ms each instead of holding their runner slots for their
+    // normal duration, which reshuffled what ran concurrently and blew
+    // `relayConfigWire.js`'s 15-second budget. Four more red, in a suite
+    // with no connection to the cause, green when run alone.
+    //
+    // So a false red is not merely noise a reader learns to discount. It
+    // changes the shape of the run and manufactures a second false red
+    // somewhere unrelated, where nobody will connect the two.
+    //
+    // ── WHAT IT IS NOT ───────────────────────────────────────────────
+    //
+    // Not a way to quiet an inconvenient failure. The bar is that the
+    // suite has ALREADY DIAGNOSED the condition and can name it, that the
+    // condition is about the machine rather than the code, and that a
+    // developer reading the reason knows what to change. `why` is that
+    // sentence, and it is required — a stand-down with no reason is a
+    // skip, which is the thing this is not.
+    //
+    // Unlike `awaiting` there is no inverse that turns this red when the
+    // condition clears: a clear condition simply means the suite RUNS,
+    // which is its own proof. The counter exists so the run says out loud
+    // that something did not execute, rather than a green board quietly
+    // meaning less than it did yesterday.
+    standsDown: function (why) {
+        this.stoodDownCount = (this.stoodDownCount || 0) + 1;
+        this.comment('STOOD DOWN: ' + String(why || '').replace(/\s+/g, ' ').trim() + ' ⏭');
     },
 
     check: function(str){

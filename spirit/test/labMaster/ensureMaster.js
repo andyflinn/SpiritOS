@@ -95,9 +95,21 @@ async function ensure() {
     if (!check.same) {
       return {
         ok: false,
+        // ── MARKED AS THE MACHINE'S CONDITION, NOT THE TREE'S ─────────
+        //
+        // `foreign` is what lets a caller stand down instead of going
+        // red. The two ways ensure() can fail are not the same kind of
+        // thing: a labMaster that WILL NOT START is a fault worth a red,
+        // while a labMaster belonging to somebody else's checkout is a
+        // fact about this machine that the developer can clear in one
+        // command. Without the flag a caller has to match on the
+        // sentence, which is how a message becomes an API by accident.
+        foreign: true,
+        theirs: check.theirs,
         error: 'the labMaster on ' + labPaths.PORT + ' copies from ' + check.theirs +
           ', not from this checkout (' + norm(REPO_ROOT) + '), so a lab suite here would test the ' +
-          'wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429).',
+          'wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), ' +
+          'or stop theirs — the harness starts its own when none is up.',
       };
     }
     return { ok: true, started: false };

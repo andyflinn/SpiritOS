@@ -101,6 +101,13 @@ async function run() {
   if (!ready.ok) {
     // NOT A PRODUCT FAILURE, and said as one line rather than as a dozen
     // red checks about relays. The lesson presenceWire paid for.
+    //
+    // AND SINCE 2026-09-24 IT IS NOT A FAILURE AT ALL when the cause is
+    // a labMaster from another checkout: that is a fact about the
+    // machine the developer can clear in one command, and reporting it
+    // as red says the tree is broken when it is not. A labMaster that
+    // will not START is still a fault and still goes red.
+    if (ready.foreign) { test.standsDown(ready.error); test.reportSuccessFailureCount(); return; }
     test.fail('no lab: ' + ready.error);
     return;
   }
