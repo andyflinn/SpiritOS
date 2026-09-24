@@ -481,6 +481,60 @@ forget something.
     - **the readiness findings** — what a second agent would refuse to be
       handed. That is what caught everything the count missed.
 
+    **THE OTHER AGENT REPORTS WHAT HE CHECKED — this is not a
+    sign-off.** Andy asked whether the other agent's buy-in should be an
+    automatic element of a stop rather than something the lead remembers
+    to ask for. Yes — and the FORM is the whole of it, because a
+    sign-off that is always given is *the check that cannot fail wearing
+    process clothes*, which is the animal this file hunts everywhere
+    else.
+
+    So what is owed at a stop is **not assent**:
+
+    > **The other agent reports WHAT HE CHECKED, NAMING IT, and WHAT HE
+    > WOULD REFUSE TO BE HANDED.** Assent is then a by-product of
+    > evidence rather than the thing being asked for.
+
+    *"I verified G6 against the document at `3829f57` and the bypass at
+    `relay.js:1730`"* is a report. *"Agreed"* is a stamp — **and the
+    difference is visible on the page without anybody judging
+    sincerity.** A stamp that cannot hide is a stamp nobody bothers to
+    make.
+
+    **Three ways it still rots, and the antidote to each** (wsl-claude,
+    asked to attack the proposal rather than agree with it):
+
+    - **The signer can only refuse what he was handed.** The report is
+      written by the party being checked, so an omission is invisible to
+      the question. → **He reports against the TREE and the BOARD at a
+      named commit, never against the report's text.** *"I read the
+      report"* and *"I read what the report describes"* are different
+      acts and only the second can find a hole.
+    - **An agent with no artefact in the cycle signs by impression**, and
+      an impression is always favourable because it costs nothing. → A
+      report is worth something only from an agent who **produced**
+      something in that cycle: the suite, a platform run, a measurement.
+      If neither did independent work, **there is nothing to sign and the
+      honest report says so.**
+    - **It rots by cadence.** Asked at every stop including trivial ones,
+      the ritual goes cheap and a real *no* becomes expensive — which is
+      backwards. → Naming what was checked is what keeps it from going
+      cheap, because an empty one is legible as empty.
+
+    **The general form, which this project keeps arriving at from
+    different directions:** *a check that cannot fail is cured by making
+    it carry evidence, not by asking it more sincerely.*
+
+    **AND A COUNT IS REPORTED SO IT CANNOT SURVIVE ITS CONTEXT.**
+    *"Divergences: 0"* is true of a negotiated cycle and will mislead a
+    reader tomorrow, because a number outlives the sentence that
+    qualified it. A zero from a negotiation means *we talked everything
+    through*; a one from independently-worked halves means *two agents
+    worked blind and disagreed*, which is the fact the count was invented
+    to measure. So it is written **"0 of 0 independently-worked halves"**,
+    or not reported at all for a cycle that had none. Four words, and it
+    cannot be misread.
+
     **A stop is a STOP.** The agent does not begin the next cycle across
     it. If the work would obviously continue, that is a recommendation in
     the report, not a licence — because the value of the stop is that it

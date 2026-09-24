@@ -91,6 +91,43 @@ standing on it.
 
 ---
 
+## HOW A BOUNDARY ACTUALLY ROTS — three narrownesses in one day
+
+**Added at wsl-claude's request when signing the cycle-report**, and it
+belongs in a document whose deliverable is boundaries: *"it is evidence
+about how boundaries rot: not by being wrong, but by a tool quietly
+narrowing what counts."*
+
+Three times on 2026-09-24 a reader could not see something true, and each
+was found the same way — by a declaration citing something that existed:
+
+```
+  a CONDITION could not reach the board      the reader knew only ### R<n>
+  a DESIGN could not reach the board         the reader walked only design/cycles
+  a CORRECT CITATION reported as naming       the reader matched the document
+  nothing                                     name case-sensitively
+```
+
+**AND EACH HAD THE SAME TEMPTING ESCAPE: move the document to where the
+tool looks.** Rename `C3` to an `R`. Put the design under `cycles/`.
+Rename the file to lower case. **Each would have worked**, each would
+have been the tool teaching the tree where to keep its own design, and
+each would have cost a true thing to keep a narrow reader comfortable.
+
+**Why this is not a note about a test file.** A boundary is only as wide
+as what can be said inside it. A reader that silently refuses a valid
+citation does not announce a limitation — it reports the citation as
+naming nothing, which reads exactly like a mistake by the person who
+wrote it. So the pressure is always on the writer to conform, and the
+narrowing never appears as a decision anybody made.
+
+**The rule it produces, for this design and after it:** when a tool and a
+true thing disagree, the tool is the thing that changes. And a tool that
+narrows what counts should be suspected first whenever a correct
+statement is reported as wrong.
+
+---
+
 ## THE CURRENT REQUIREMENT LIST — stage 1, after five reconciliations
 
 **This list supersedes `S1-S8` further down**, which are kept for the
