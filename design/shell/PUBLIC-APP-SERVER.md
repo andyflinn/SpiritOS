@@ -162,6 +162,12 @@ one app's business, and stage 2's.
 
 ### G5 — the mode's NAME is decided here; its rendering is not
 
+**RULED 2026-09-24: the mode is `--app`, and the module is
+`appServer.js`.** Andy: *"1 agreed."* It names what the process IS
+— one app, no dispatch — rather than where it sits, because
+publicness is a deployment fact. A builder no longer stops on line
+one of the first file.
+
 **Status:** OPEN. One hardcoded `--relay` blocks it.
 
 `join` ships a unit file carrying the mode, so a later rename retrofits
@@ -256,6 +262,21 @@ readiness check: the interface being deferred does NOT defer the
 minting, because without it a server has no label to report and the four
 fields below become three, so a builder would do the server half and
 stop.
+
+**AND THE REASON IT CANNOT BE DEFERRED IS VERIFIABILITY, NOT
+COMPLETENESS.** Andy, closing it: *"the owner half is needed to verify
+the server half?"* Yes — and that is stronger than the completeness
+argument recorded a commit earlier. The server half COULD be tested
+with a hand-supplied label and would pass, and the pass would certify
+the FIXTURE rather than the product. That is wsl-claude’s finding from
+the same morning arriving in a new place: *"a suite that supplies the
+one thing the tree never did is a green that certifies the test’s own
+scaffolding."*
+
+So the label must arrive **the way it really arrives**, or the server
+half is verified against a world that does not exist — the same
+discipline as *build the fixture with the production writer, never
+hand-assemble it*.
 
 **What the owner s node owes: assign a label at bind, refuse a
 duplicate, remember it.** It is the one party holding the whole list,
