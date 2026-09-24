@@ -38,6 +38,7 @@ const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
 const test = require('./testSupport.js');
+const box = require('./tools/box.js');
 
 const GUARD = path.join(os.homedir(), '.claude', 'hooks', 'vault-guard.js');
 
@@ -54,14 +55,25 @@ const GUARD = path.join(os.homedir(), '.claude', 'hooks', 'vault-guard.js');
 // for the longer unattended stretches Andy asked for.
 //
 // A guard that is not there is not a guard that permitted something.
-const VAULT_CANDIDATES = [
-  '/home/andy/SpiritOS/spirit/run/brains',
-  '/mnt/d/SpiritOS/spirit/run/brains',
-  path.join(__dirname, '..', 'run', 'brains'),
-];
-const VAULT = VAULT_CANDIDATES.filter(function (p) {
-  try { return fs.existsSync(p); } catch (e) { return false; }
-})[0] || null;
+// ── AND THE SUBJECT IS RESOLVED TOO, NOT ONLY THE LOCATION ──────────
+//
+// v2 of this file made the VAULT box-aware and left the AGENT hardcoded,
+// so on the Windows box it asserted that claude's guard must be silent
+// about input/wsl-claude/ — and the guard's own refusal said why it was
+// not: "is not in claude's folders." Rules 7 and 8 working correctly read
+// as four failures, and the two `still asks` cases about claude/ read as
+// two more. A suite that names one agent asserts that each guard should
+// behave like the other one.
+//
+// "MY OWN FOLDER" AND "THE OTHER AGENT'S FOLDER" ARE ROLES, NOT PATHS,
+// and they swap with whoever is running. So every case below is built
+// from MINE and OTHER, and the same fourteen assertions mean the right
+// thing on either box. `tools/box.js` answers who this box is, from the
+// rule hooks/pre-commit has used since 2026-09-21.
+const BOX = box.resolve();
+const VAULT = BOX.ok ? BOX.vault : null;
+const MINE = BOX.ok ? BOX.agent : null;
+const OTHER = BOX.ok ? BOX.other : null;
 
 function askedBy(input) {
   let out = '';
@@ -103,14 +115,39 @@ if (!fs.existsSync(GUARD)) {
   test.reportSuccessFailureCount();
   return;
 }
-if (!VAULT) {
-  test.standsDown('this box carries no vault (tried ' + VAULT_CANDIDATES.join(', ') + '), ' +
-    'so there is nothing for the guard to be right or wrong about');
+if (!BOX.ok) {
+  test.standsDown('this box does not identify its agent — ' + BOX.why + '. ' +
+    'An unidentified box must not default to either agent: it would assert that one ' +
+    'guard should behave like the other, which is how this suite read eight failures ' +
+    'against a guard that was right every time');
+  test.reportSuccessFailureCount();
+  return;
+}
+if (!OTHER) {
+  test.standsDown('the vault holds only ' + MINE + "'s folders, so there is no other " +
+    'agent for the rule 7 and 8 half to be about');
   test.reportSuccessFailureCount();
   return;
 }
 test.check('the guard is installed on this box and the vault resolves to ' + VAULT +
   ' — so the assertions below are about a gate that exists');
+test.check('this box is ' + MINE + ' (' + BOX.source + '), and the other agent is ' + OTHER +
+  ' — so "own folder" and "the other agent\'s folder" below mean what they say');
+
+// THE SHELL TWIN MUST AGREE. box.js states in node the rule that
+// hooks/pre-commit states in shell, because node on Windows sees win32 and
+// never MINGW. Two statements of one rule is the fork this whole day was
+// about, so the drift is asserted rather than hoped for: if the box DECLARES
+// an agent and the platform MEASURES a different one, that is a box whose
+// environment and whose kernel disagree, and no assertion below is safe.
+if (!BOX.agreed) {
+  test.fail('this box declares agent "' + MINE + '" but measures as "' + BOX.measured +
+    '" — the environment and the platform disagree, so one of them is lying about which ' +
+    'agent is running, and hooks/pre-commit would refuse a commit this suite calls fine');
+} else {
+  test.check('the declared agent and the measured platform agree (' + BOX.source + '), so ' +
+    'box.js and hooks/pre-commit would name the same agent here');
+}
 
 // ── HALF ONE: THE CLOSE'S OWN WORK MUST BE SILENT ────────────────────
 //
@@ -120,14 +157,14 @@ test.check('the guard is installed on this box and the vault resolves to ' + VAU
 // write, compile and push.
 test.subHeading('silent — the steps a close consists of');
 [
-  ['filing a note into input/wsl-claude by redirect',
-    bash('perl -0pe s/a/b/ x.md > ../x.md', VAULT + '/input/wsl-claude/suggested')],
-  ['writing a note into input/wsl-claude',
-    write(VAULT + '/input/wsl-claude/2026-09-24-a-note.md')],
-  ['writing a compile page in wsl-claude/',
-    write(VAULT + '/wsl-claude/facts/A-PAGE.md')],
+  ['filing a note into input/' + MINE + ' by redirect',
+    bash('perl -0pe s/a/b/ x.md > ../x.md', VAULT + '/input/' + MINE + '/suggested')],
+  ['writing a note into input/' + MINE,
+    write(VAULT + '/input/' + MINE + '/2026-09-24-a-note.md')],
+  ['writing a compile page in ' + MINE + '/',
+    write(VAULT + '/' + MINE + '/facts/A-PAGE.md')],
   ['appending to the compile ledger',
-    bash('cat >> COMPILED.md', VAULT + '/wsl-claude')],
+    bash('cat >> COMPILED.md', VAULT + '/' + MINE)],
   // Correction 2: an arrow function is not a redirect.
   ['an inline node script containing an arrow function',
     bash('node -e "const a = rows.map(x => x.text)"')],
@@ -135,8 +172,8 @@ test.subHeading('silent — the steps a close consists of');
   // MENTIONS the vault. This is the one that fired while the problem was
   // being measured.
   ['a script written to /tmp whose text names vault paths',
-    bash('cat > /tmp/probe.sh <<SH\nV=' + VAULT + '/input/wsl-claude\nSH')],
-  ['staging by name', bash('git add wsl-claude/INDEX.md input/wsl-claude/x.md')],
+    bash('cat > /tmp/probe.sh <<SH\nV=' + VAULT + '/input/' + MINE + '\nSH')],
+  ['staging by name', bash('git add ' + MINE + '/INDEX.md input/' + MINE + '/x.md')],
 ].forEach(function (c) {
   const r = askedBy(c[1]);
   if (!r.ran) { test.fail(c[0] + ' — the guard could not be run: ' + r.why); return; }
@@ -157,10 +194,14 @@ test.subHeading('silent — the steps a close consists of');
 test.subHeading('still asks — shared documents, the other agent, the unresolvable');
 [
   ['a shared governance document', write(VAULT + '/VAULT_RULES.md')],
-  ['the other agent\'s own compile', write(VAULT + '/claude/COMPILED.md')],
+  ['the other agent\'s own compile', write(VAULT + '/' + OTHER + '/COMPILED.md')],
   ['a redirect into a shared vault file', bash('echo x > README.md')],
   ['sed -i on a shared vault file', bash('sed -i s/a/b/ VAULT_RULES.md')],
-  ['rm inside the other agent\'s folder', bash('rm claude/INDEX.md')],
+  ['rm inside the other agent\'s folder', bash('rm ' + OTHER + '/INDEX.md')],
+  // Rule 2a: input/andy/ is HIS hand, and no agent writes there on either
+  // box. It is in this half because it is the one folder whose owner is
+  // never the agent running — so it must ask whichever box this is.
+  ['Andy\'s own input folder', write(VAULT + '/input/andy/2026-09-24-15-46.md')],
   ['a command naming brains from outside, unresolvable',
     bash('echo x > SpiritOS/spirit/run/brains/README.md', os.homedir())],
 ].forEach(function (c) {

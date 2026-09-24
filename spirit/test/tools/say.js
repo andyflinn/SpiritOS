@@ -44,19 +44,38 @@ const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
-// FIXED. A varying path in the command is a varying command.
-const OUTBOX = '/tmp/claude-1000/-home-andy-SpiritOS/66737044-2a29-4977-b5a6-c9ad520c6b2e/scratchpad/outbox.txt';
+// ── THE PATH IS FIXED; WHICH BOX IT IS ON IS NOT ────────────────────
+//
+// A varying path in the command is a varying command, so the OUTBOX must
+// not be an argument. But the first version of this file named ONE box's
+// outbox, and a file at a shared path is not shared if its contents name
+// one box — so the other agent could not use the cure for the problem
+// they both had. SPIRIT_OUTBOX lets a box say where its own is; the
+// constant below is this file's LAST resort, never an override.
+const OUTBOX = String(process.env.SPIRIT_OUTBOX || '').trim() ||
+  '/tmp/claude-1000/-home-andy-SpiritOS/66737044-2a29-4977-b5a6-c9ad520c6b2e/scratchpad/outbox.txt';
 
 const RUN = path.join(__dirname, '..', '..', 'run');
 const AGENTS = path.join(RUN, 'process', 'js', 'agents', 'agents.js');
 
-const ENV = Object.assign({}, process.env, {
+// ── THE ENVIRONMENT BEATS THE CONSTANTS, WHICH IS THE WHOLE CORRECTION ──
+//
+// This was `Object.assign({}, process.env, {...})` — the constants LAST,
+// so they overrode the environment and no caller could point this file at
+// another box. wsl-claude, handing it over: "Defaults that override the
+// environment are not defaults." They are a lock.
+//
+// So the constants go FIRST and process.env wins. A box that has already
+// configured its agent — and both have, since `agents.js:98-109` reads
+// exactly these names — answers this question by having been set up, and
+// this file stops having an opinion about which box it is on.
+const ENV = Object.assign({
   AGENTS_NODE: 'http://127.0.0.1:45441',
   AGENTS_SELF: 'wsl-claude',
   AGENTS_PEERS: 'claude-windows=MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=,' +
     'claude-windows-2=MCowBQYDK2VwAyEAAJJk0G0jq2/1LToJhzZOZuLKUf2sP+aNrPKFRJo9BXQ=',
   AGENTS_CONTROL: 'MCowBQYDK2VwAyEAgrEcBu0FkTzmGKs+oBS+OllzvZh+d/0Rr6fO/fXD+0c=',
-});
+}, process.env);
 
 const KINDS = ['note', 'ask', 'answer', 'report'];
 
@@ -67,7 +86,9 @@ function fail(why) {
 
 let raw = '';
 try { raw = fs.readFileSync(OUTBOX, 'utf8'); } catch (e) {
-  fail('no outbox at ' + OUTBOX + ' — write the message there first.');
+  fail('no outbox at ' + OUTBOX + ' — write the message there first, or set ' +
+    'SPIRIT_OUTBOX to this box\'s own outbox. It is named rather than guessed: ' +
+    'a send to the wrong peer is worse than a send that did not happen.');
 }
 
 // THE HEADER IS PARSED, NEVER GUESSED. A message sent to the wrong peer or
