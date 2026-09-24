@@ -60,7 +60,7 @@ not describe. Run the harness if in doubt.
 - **missing:** the unbound state reachable from outside: start a real relay and do not claim it — **~0% there**, guess: no lever ships, so this needs the world built around an unmodified instance — the same method as the systemd rehearsal and the private-network-namespace clone run; the four commands are the sample README rather than a suite elsewhere
   
   the app server serves a waiting page and acts on nothing
-- **missing:** the full state reachable from outside: start a relay at ramLimitMB 1 — sixteen seats, the smallest honest allowance — and claim all sixteen — **~0% there**, guess: no lever ships, so this needs the world built around an unmodified instance — the same method as the systemd rehearsal and the private-network-namespace clone run; the four commands are the sample README rather than a suite elsewhere
+- **missing:** the full state reachable from outside: start a relay at ramLimitMB 1 — sixteen seats, the smallest honest allowance — then the owner claim and FIFTEEN more — **~0% there**, guess: no lever ships, so this needs the world built around an unmodified instance — the same method as the systemd rehearsal and the private-network-namespace clone run; the four commands are the sample README rather than a suite elsewhere
   
   the visitor is offered the other door and sees none of the box figures
 - **missing:** the owner-asleep state reachable from outside: do not start the owner node — **~0% there**, guess: no lever ships, so this needs the world built around an unmodified instance — the same method as the systemd rehearsal and the private-network-namespace clone run; the four commands are the sample README rather than a suite elsewhere
