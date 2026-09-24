@@ -60,6 +60,21 @@ function cycleFiles() {
 // until the next heading. Parsed rather than regexed whole, so a
 // malformed one is visible as a requirement with nothing in it rather
 // than silently not matching at all.
+// A CONDITION — `### C<n>` — is what a cycle FOUND and did not promise.
+// It is held to less than a requirement on purpose: no Status is
+// demanded, because an unpromised thing has no delivery to report. What
+// it must do is exist by name, so a suite can cite it and the board can
+// resolve it. (wsl-claude, after a declaration citing cycle-11/C3 was
+// reported as naming nothing.)
+function conditionsIn(text) {
+  const out = [];
+  text.split(/\r?\n/).forEach(function (line) {
+    const head = /^###\s+(C\d+)\s*(?:—|-)\s*(.*)$/.exec(line);
+    if (head) out.push({ id: head[1], title: head[2].trim() });
+  });
+  return out;
+}
+
 function requirementsIn(text) {
   const out = [];
   const lines = text.split(/\r?\n/);
@@ -104,7 +119,12 @@ files.forEach(function (file) {
   const text = fs.readFileSync(path.join(CYCLES, file), 'utf8');
   const reqs = requirementsIn(text);
 
-  test.subHeading(file + ' — ' + reqs.length + ' requirement(s)');
+  const conds = conditionsIn(text);
+  test.subHeading(file + ' — ' + reqs.length + ' requirement(s)' +
+    (conds.length ? ' and ' + conds.length + ' condition(s)' : ''));
+  conds.forEach(function (c) {
+    test.check(c.id + ' is a condition this cycle found — ' + c.title);
+  });
 
   if (!reqs.length) {
     test.fail(file + ' has no `### R<n>` requirements — a cycle file with none is a file nobody is keeping');

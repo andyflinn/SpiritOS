@@ -308,7 +308,21 @@ function requirementTitles() {
     try { text = fs.readFileSync(path.join(dir, name), 'utf8'); }
     catch (e) { return; }
     const cycle = name.replace(/\.md$/, '');
-    const blocks = text.split(/^### (R\d+)\b/m);
+    // ── A CONDITION IS A HEADING OF THE SAME KIND (wsl-claude) ──────
+    //
+    // A cycle document holds REQUIREMENTS it promised and CONDITIONS it
+    // discovered and did not: within one cycle a C-heading is as real as
+    // an R-heading, lives in the same file, and a suite may legitimately
+    // wait on one. Reading only R-numbers meant a declaration citing a
+    // condition was reported as naming nothing, and the escape was to
+    // relabel it as a requirement — which would claim the cycle promised
+    // something it did not.
+    //
+    // The deeper hole it closes: C1 and C2 sit in cycle 11 today and
+    // nothing anywhere would notice if they were forgotten. A
+    // requirement cannot leave the board; a condition could never get
+    // onto it.
+    const blocks = text.split(/^### ([RC]\d+)\b/m);
     for (let i = 1; i < blocks.length; i += 2) {
       const id = blocks[i];
       const body = blocks[i + 1] || '';
