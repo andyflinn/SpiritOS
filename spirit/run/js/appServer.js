@@ -215,6 +215,121 @@ function settleRelay(rootDir, appName, asked) {
 // demand and **unknown means NOT the owner node** — never "assume yes
 // because it was yes a minute ago", because the tempting implementation
 // is a one-minute cache that reintroduces exactly what the rule prevents.
+// ── WHAT THIS SERVER SAYS ABOUT THE BOX IT SITS ON (G10) ────────
+//
+// Four fields, and one opinion deliberately withheld.
+//
+// THE GAP THIS CLOSES, which Andy found and neither agent had: remote
+// resource configuration is PER SERVER; division of a box is PER BOX;
+// nothing reconciles them. An owner can legitimately raise two servers
+// on one VPS to eighty percent each from his own node and nothing
+// notices until the box does. The INTERFACE that would show him is
+// deferred by his ruling; the DATA is not, because adding it later
+// touches every deployed server.
+//
+// A SERVER REPORTS FACTS AND NEVER AN OPINION. It says which box it
+// believes it is on, what it was allotted, and what that box measures in
+// total. It does NOT say "this box is over-committed", because it cannot
+// know — it holds one report and the contradiction lives across
+// several. The arithmetic belongs to the party holding all the reports,
+// which is the owner's node, and which is also the party that will one
+// day draw the screen. So no server here needs to know its siblings
+// exist, and that is what keeps the deferral honest rather than
+// half-kept.
+//
+// AND ONE FIELD IS DELIBERATELY ABSENT: anything about what the server
+// is FOR. That is the app's business — *"a box view that starts
+// carrying app facts is how the general layer acquires its first
+// join-shaped wart"* (wsl-claude).
+const os = require('os');
+const crypto = require('crypto');
+const relayLimits = require('./relayLimits');
+
+// ── THE LABEL IS MINTED BY THE OWNER, LIKE AN INVITE ────────────────
+//
+// Not declared by the operator — two different boxes both saying
+// `box-1` collide SILENTLY, and the owner then tunes a pair that does
+// not exist. Not derived either: cloned VMs share a machine-id and
+// containers inherit one from an image, so "unique per box" is a
+// property no derived value actually has.
+//
+// The owner minting it makes collision IMPOSSIBLE rather than visible,
+// and it is the pattern this system already uses for the only other
+// thing that must be unique across strangers: an invite. One party does
+// the naming, refuses a duplicate because it holds the whole list, and
+// the server carries what it was given and echoes it back.
+//
+// Empty until the owner assigns one. An empty label is not a fault —
+// it is a server that has not been named yet, which is every server
+// before its first bind completes.
+function boxLabel(cfg) {
+  return String((cfg && cfg.boxLabel) || '');
+}
+
+// ── AND A LABEL CANNOT NOTICE IT HAS BECOME WRONG ──────────────────
+//
+// A server moved to another VPS, or an image cloned with its state,
+// carries its label with it: still unique, now attached to the wrong
+// machine, FAILING IN THE DIRECTION OF LOOKING CORRECT.
+//
+// So the server reports a second value it derives itself. Not to
+// identify the box — this identifies nothing to anybody and carries
+// nothing about a person — but so the owner's node can SEE A
+// CONTRADICTION: two servers claiming one label with different
+// fingerprints, or one server whose fingerprint changed between reports.
+//
+// Neither value is trustworthy alone. Together they are loud. This is
+// the morning's rule in a new place: *freshness and citation are gates
+// on provenance; the only gate on meaning is an independent derivation.*
+// The label is the claim; this is the derivation; the owner has to trust
+// neither.
+//
+// ── THE INGREDIENTS ARE NOT SETTLED, AND THEY ARE IN ONE PLACE ────
+//
+// Deliberately open in the design: a fingerprint must survive a reboot,
+// change when the machine genuinely changes, and reveal nothing — and
+// on WSL half the obvious ingredients lie. wsl-claude measures them on
+// both platforms when Andy rules, and until then this is the SEAM and
+// not the answer: one function, one list, one edit. What is required of
+// it is fixed (stable, opaque, changes with the machine); what it is
+// made of is not.
+const FINGERPRINT_INGREDIENTS = ['hostname', 'platform', 'arch', 'totalmem'];
+
+function fingerprint() {
+  const parts = FINGERPRINT_INGREDIENTS.map(function (name) {
+    if (name === 'hostname') return os.hostname();
+    if (name === 'platform') return process.platform;
+    if (name === 'arch') return process.arch;
+    if (name === 'totalmem') return String(os.totalmem());
+    return '';
+  });
+  // Hashed, so nothing about the box is legible in it — a value that
+  // identifies nothing is the only kind that may travel to an owner who
+  // did not ask for a machine's name.
+  return crypto.createHash('sha256').update(parts.join('\u0000')).digest('hex').slice(0, 32);
+}
+
+function boxReport(rootDir, appName) {
+  const cfg = loadConfig(rootDir, appName);
+  let measured = {};
+  try { measured = relayLimits.measure(rootDir) || {}; } catch (e) { measured = {}; }
+  return {
+    // The label the owner minted, echoed back. Empty until named.
+    boxLabel: boxLabel(cfg),
+    // The independent derivation. Opaque, and it identifies nothing.
+    fingerprint: fingerprint(),
+    // What this server was given at install. Null rather than a guess:
+    // a figure invented here is a figure the owner would have to
+    // disbelieve, and he cannot tell an invented one from a real one.
+    allottedMB: typeof cfg.allottedMB === 'number' ? cfg.allottedMB : null,
+    // Free — measure() already produces it. It is what lets the owner
+    // compute over-commitment without asking anybody, AND it lets two
+    // servers on one box contradict each other about the box's own
+    // size, which is another way the same lie surfaces.
+    boxTotalMB: typeof measured.totalMB === 'number' ? measured.totalMB : null,
+  };
+}
+
 // ── ASKING THE RELAY WHO IT IS, THROUGH THE ONE DOOR ────────────────
 //
 // `relayRequest` is the interface, and this module reaches for no socket
@@ -444,6 +559,8 @@ function create(opts) {
         refusals: PLATFORM_REFUSALS.slice(),
         nodeIsOwnerNode: r.nodeIsOwnerNode,
         nodeIsPublicApp: r.nodeIsPublicApp,
+        // G10. Facts about the box, and no opinion about them.
+        box: boxReport(rootDir, appName),
         stateDir: stateDir(rootDir, appName),
       };
     },
@@ -508,4 +625,6 @@ module.exports = {
   stateDir: stateDir,
   manifestPath: manifestPath,
   contractOf: contractOf,
+  boxReport: boxReport,
+  FINGERPRINT_INGREDIENTS: FINGERPRINT_INGREDIENTS,
 };
