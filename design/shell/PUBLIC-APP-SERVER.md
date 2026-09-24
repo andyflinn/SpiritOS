@@ -27,6 +27,680 @@ will not survive it.
 
 
 
+## THE PURPOSE — the criterion everything here is judged against
+
+> **Andy**, 2026-09-24: *"my purpose for this design cycle is:
+> delieating all the mandatory and optional boundaries and layering, so
+> our join-app doesn't have to be retro-fitted forever as the system
+> evolves"*.
+
+So the deliverable is **the boundaries**, and the test of the design is
+not whether it is elegant but whether a boundary moves under `join`
+later.
+
+**THE SCOPE TEST THAT FOLLOWS.** A boundary must be settled in this cycle
+if getting it wrong would change `join`'s **shape**. If it would only
+change `join`'s **contents**, it can stay open without costing anything.
+
+| | |
+|---|---|
+| **shape — settle now** | which part of `api.*` a standalone app may rely on; mandatory vs optional at each layer; whether the module's identity is *public app* or *app*, since that rides in the unit file `join` ships with |
+| **contents — may stay open** | how style adoption is facilitated; which elements exist; the look itself; badges |
+
+**And the cheaper half of the same insurance: the less `join` depends on,
+the fewer boundaries can move under it.** Every dependency is a boundary
+with a future. So *what does `join` touch* is not an inventory — it is
+what bounds this cycle. The design must be complete over what `join`
+stands on, not over everything that could be layered.
+
+**THE ASYMMETRY.** If something **optional** later becomes **mandatory**,
+every app that skipped it is retrofitted. If something **mandatory**
+later becomes **optional**, nothing breaks — apps keep what they already
+have. The boundary is safe to move in one direction only.
+
+> **SUPERSEDED, and marked rather than rewritten.** This agent concluded
+> from that asymmetry: *"where a call is genuinely unclear, make it
+> mandatory — the cost is a fatter core."* Andy replaced it the same
+> hour: *"plan with foresight, reduce implementation to the minimum that
+> must cater to the foresight."*
+>
+> His removes the payment mine accepted. **The PLAN carries the
+> foresight; the CODE carries only what the foresight requires.** Making
+> a thing mandatory *and built* is the bloat, not the insurance — and
+> erring toward a fatter core would have spent exactly what this project
+> spends least of.
+
+**SO EACH BOUNDARY IS A SMALLER QUESTION THAN IT LOOKS:** what is the
+minimum that must exist **now** so the absent part can arrive **without
+moving this**? Usually that is the seam and not the thing — one
+declaration where there will be many, a named subset rather than a full
+surface, a slot rather than a mechanism.
+
+**AND IT GIVES THE DESIGN A TEST IT CAN BE HELD TO.** Anything deferred
+must be **addable without changing anything already built**. If adding it
+later would edit existing code, the seam is in the wrong place — and that
+is a design fault to find here, while it costs a sentence, rather than in
+the cycle that trips over it.
+
+This is also the reconciliation with the instinct the tree already has —
+*"Later keys (a disc limit) arrive with the cycle that uses them"*
+(`relayConfig.js:26`). That instinct was never wrong; it is about
+**features**. The foresight is about **boundaries**. A missing feature is
+added later at its own cost; a boundary that moves retrofits everything
+standing on it.
+
+---
+
+## THE CURRENT REQUIREMENT LIST — stage 1, after five reconciliations
+
+**This list supersedes `S1-S8` further down**, which are kept for the
+reasoning inside each but carry the pre-negotiation wording. Where they
+differ, this list is the one that holds.
+
+**Stage 2 (`J1-J10`) is an agenda for a later cycle and is NOT
+requirements** — Andy postponed it to its own design-implementation
+cycle.
+
+### What this phase proves, which had no answer until Andy asked
+
+The settlement said *greenfield proves the boundary can be built on; the
+first migration proves it is general* — and the first migration is the
+**next** cycle's acceptance test. But `join` was already postponed, which
+left this phase building the layer **with no consumer at all**. Both
+agents had argued that a boundary validated without something built on it
+is worth nothing, and then agreed a sequence that does exactly that.
+
+> **Andy:** *"the second consumer is the offical hello-world app for this
+> layer."*
+
+**A throwaway consumer rots; the official sample cannot** — the artefact
+that proves the layer is the artefact every stranger copies, so it is
+exercised for ever and its comments are the documentation. And `join`
+stops being the user the abstraction was fitted to: it becomes the
+**second instantiation of a template that was already proven.**
+
+---
+
+### G1 — `appServer.js` is a third startup module
+
+**Status:** OPEN. Nothing built.
+
+Dispatched from `server.js` before any node code is required, exactly as
+`--relay` is (`server.js:13-16`), so it loads no shell code and no relay
+code. **Not named for publicness** — publicness is deployment, so the
+mode names what the process *is*: one app, no dispatch.
+
+### G2 — one app, one whitelist, no dispatch
+
+**Status:** OPEN. Nothing built.
+
+A whitelisted set of paths, `noindex`, loopback behind Caddy, no
+directory listing. Key-addressing available on `device.html`'s terms — a
+locator that grants nothing.
+
+**Open:** offering shell files widens the whitelist. It must be *these
+files are offered*, never *the shell's folder is servable*.
+
+### G3 — `ask` has one home, and the app server uses it
+
+**Status:** OPEN. Three divergent copies exist.
+
+Fourteen lines, not `kernel.js` wholesale. Existing copies are **not**
+migrated in this cycle; no fourth is written.
+
+### G4 — the shell provides the optional layer, as files
+
+**Status:** OPEN. Zero `.css` files exist.
+
+Elements and style adoption are **separately optional**. The provider is
+the shell's **folder**, not its process — every clone carries
+`app/shell/` whether or not anything launches it. *"Paints, never
+decides"* is the condition of being offerable at all.
+
+**Out of scope:** whether a given page conforms to the tokens. That is
+one app's business, and stage 2's.
+
+### G5 — the mode's NAME is decided here; its rendering is not
+
+**Status:** OPEN. One hardcoded `--relay` blocks it.
+
+`join` ships a unit file carrying the mode, so a later rename retrofits
+join's own deployment artefact — which puts the **decision** in scope by
+Andy's shape test. The rendering, the variable renames and the
+compatibility shims are implementation and stay **out**.
+
+### G6 — an app server serves exactly one relay, and learns its owner
+
+**Status:** OPEN. Nothing built.
+
+Bound to one relay, learns `ownerKey` from it, **waits while the relay is
+unclaimed**, refuses to start if it is not a member. No owner key and no
+domain in the tree or in its configuration.
+
+### G7 — the node's role is asked, never cached, and fails CLOSED
+
+**Status:** OPEN. No such constant exists.
+
+`nodeIsOwnerNode`, `nodeIsPublicApp`, derived on demand. **Unknown means
+NOT the owner node** — never "assume yes because it was yes a minute
+ago", because the tempting implementation is a one-minute cache that
+reintroduces the exact failure the rule exists to prevent.
+
+### G8 — layer 1 splits by PROMISE, and the stable half is named
+
+**Status:** OPEN. One undivided bucket today.
+
+The app contract must hold for ever; box concerns change per deployment.
+**Anything in the stable half needs a deprecation path and anything in
+the other half does not** — so the test is mechanical: *if removing it
+would break an app that never changed, it is in the stable half.*
+
+### G9 — strict posture: one enforced half, one declared half
+
+**Status:** OPEN. Nothing built.
+
+**Persist nothing about a visitor** falls out of the writable-scope
+declaration and is checkable. **Refusals are members of a declared closed
+set** — and the set is *both* platform and app:
+
+- **the platform owns the refusals the platform produces** — unbound,
+  full, owner asleep, key mismatch, not a member — identical in every
+  app, so a stranger meeting *"this relay is full"* in two apps meets one
+  sentence;
+- **an app owns its own, declared the same way** — closed, literal, no
+  interpolated figures, reviewed once.
+
+*"Nobody has to agree to a vocabulary they did not write; they have to
+agree to declare theirs."* And the assertion is the same either way:
+**every refusal is a member of SOME declared set, and nothing outside a
+set is emitted** — which is walkable, so *which* set is a question of
+ownership rather than of enforcement.
+
+**The honest limit:** a closed set does not make a sentence good. It
+converts a continuous prose problem into a one-time review of N sentences
+plus a mechanical check. Written as a guarantee, it would be the check
+that cannot fail, in a document.
+
+### G10 — a server reports the box it sits on: four fields, one opinion withheld
+
+**Status:** OPEN. Nothing built. **Interface deferred by Andy.**
+
+```
+  assigned box label      minted by the OWNER when the server binds
+  opaque fingerprint      derived locally; identifies nothing
+  allotted at install     what this server was given
+  box total as measured   free; measure() already produces it
+```
+
+**A server reports facts and never an opinion.** It never says "this box
+is over-committed" — it holds one report and the contradiction lives
+across several. The arithmetic belongs to the party holding all the
+reports, which is the owner's node. **No server needs to know its
+siblings exist**, which is what keeps the deferral honest.
+
+**Deliberately absent: anything about what the server is FOR.** A box
+view carrying app facts is how the general layer acquires its first
+join-shaped wart.
+
+### G11 — no failure-state lever; the states are reachable from outside
+
+**Status:** OPEN. Nothing built.
+
+The template ships **no switch**. Every failure state must be reachable
+by **arranging the world around an unmodified instance**: start a real
+relay and do not claim it; start one whose seat figure is zero; do not
+start the owner's node; stand up a second relay with a different key.
+
+**And the four runs are the sample's own README** — the four commands
+beside the sample, not a suite elsewhere describing them. *A sample whose
+failure states are only reachable by our harness has taught the stranger
+nothing about the states they will actually meet.*
+
+**If a state cannot be reached from outside, it is not testable by
+anyone, ever — and that is the finding rather than an inconvenience.**
+
+### G12 — app code and app state do not share a directory
+
+**Status:** OPEN. Today `app/<name>/` is both.
+
+The convention that code and data share a folder was written when apps
+were files in a private shell. **A public app is deployed by
+replacement**: replacing the folder destroys whatever sat beside the
+code, and merging leaves orphans nobody can reason about — *"both are
+wrong and the second is worse, because it looks fine."*
+
+So an app's state has its own home keyed by the app's name, beside the
+node's state rather than inside the app. **The tree already has that
+shape in `relay-state/`**: gitignored, deployment-safe, never confused
+with code.
+
+**It costs nearly nothing today**, because a public app persists nothing
+about a visitor by default — and it prevents the one unrecoverable
+failure: a redeployment silently eating data an app was trusted with.
+*Decide it now and the sample demonstrates it; decide it after two apps
+exist and it is a migration.*
+
+### G13 — the official sample instantiates the template, and IS the acceptance test
+
+**Status:** OPEN. Nothing built. **Name is Andy's to rule.**
+
+It binds, learns its owner, serves a page, posts to the owner's node —
+and nothing else. No GitHub, no seats, no visitor story, so the stage
+split holds exactly where Andy drew it.
+
+**The acceptance test of this phase:** the sample, unmodified, driven
+into all four failure states from outside (G11). If it cannot be, the
+boundary is wrong and we learn it **before `join` exists**.
+
+**THE NAME, three proposals and one ruling owed:**
+
+- **`hallo`** (Andy) — distinguishes by spelling. Against it: *the first
+  thing a copier does is rename it to something they can spell, so the
+  distinguishing property is destroyed by the artefact's own purpose.*
+- **`app/hello/`** (this agent) — convention followed, told apart from
+  `process/js/hello/` by path. Against it: *works in a tree and fails in
+  a sentence — "run hello" costs somebody an afternoon, and it will be a
+  stranger's afternoon rather than ours.*
+- **`app/starter/`** (wsl-claude) — named for its job. *"It says COPY ME
+  in the name, which is the one thing the artefact needs a stranger to
+  understand."* And "hello world" is a convention for a language's first
+  program; this is a template instantiation whose comments are the
+  product.
+
+Whichever is ruled, **one artefact carries the name** — a tree with two
+things called `hello` is a defect a board can hold rather than a matter
+of taste.
+
+---
+
+### MOVED OUT OF SCOPE, and why
+
+- **The Relay Monitor representing a second server type** (was S8) — a
+  consequence of the boundary existing, and a screen. Later.
+- **Page conformance to the style tokens** (S4's second half) — one app's
+  business, stage 2's.
+- **The unit template's rendering and the `SPIRIT_RELAY_*` renames**
+  (S5's implementation) — deployment infrastructure, not a boundary.
+- **The owner's box-management interface** — deferred by Andy; only the
+  data it will need is in scope (G10).
+
+**Keeping them in would not make the cycle wrong — it would make it an
+implementation cycle wearing a design cycle's name**, which is the error
+that has already cost this sitting two false starts.
+
+---
+
+## SETTLED BETWEEN THE AGENTS — the four contested points
+
+**Reconciled 2026-09-24. No divergence sent to Andy**, who asked for the
+negotiation to happen between the agents rather than through him.
+
+### 1. Layer 1 splits by PROMISE, not by audience
+
+wsl-claude found layer 1 defined by exclusion ("not painting") and argued
+two audiences. This agent argued the stronger form — **two stability
+promises in one bucket** — and he took it over his own: *"mine was a
+readability argument and yours is a correctness one. An audience mix-up
+costs a reader a minute; a promise mix-up is the retrofit Andy opened the
+cycle to prevent."*
+
+**AND THE CONSEQUENCE THAT MAKES THE SPLIT ENFORCEABLE RATHER THAN
+DECORATIVE**, his: *"anything in the stable half needs a deprecation path
+and anything in the other half does not."* That one sentence tells a
+later session which half a new thing belongs in without re-deriving the
+philosophy — **if removing it would break an app that never changed, it
+is in the stable half.** Mechanical, and independent of who is reading.
+
+### 2. Strict posture is half-enforceable, and the closed set is the half
+
+*Persist nothing about a visitor* falls out of the writable-scope
+declaration and is checkable. *Refuse in sentences a stranger can act on*
+is prose quality and no declaration reaches it. A **closed set of refusal
+sentences** converts most of the second half into something mechanical:
+
+- every refusal an app can emit is a **member** of the set, assertable by
+  walking the emission sites the way `oneDoor` counts doors;
+- **no member carries an interpolated figure**, which makes cycle 10's
+  leak rule structural instead of a habit — members are literals, and
+  anything dynamic is a named slot with its own whitelist;
+- a member nothing can emit is **dead vocabulary**, and shows up as such.
+
+**AND THE HONEST LIMIT, which belongs beside it:** *"a closed set does
+not make a sentence good. It converts a continuous prose-quality problem
+into a ONE-TIME review of N sentences plus a mechanical check that
+nothing outside the set is emitted. That is a real improvement and it is
+not a guarantee, and if we write it as a guarantee we have built the
+check that cannot fail, in a document."*
+
+### 3. The `__MODE__` DECISION is in scope — and it must not be named for publicness
+
+wsl-claude conceded: *"join ships that unit file, so join's deployment
+artefact IS join's, and a rename retrofits it."* The **decision** is in
+scope; the rendering, the variable renames and the compatibility shims
+are implementation and stay out.
+
+**AND THE DECISION IS ALREADY HALF-MADE BY SOMETHING BOTH AGREED:** if
+publicness is not an architectural axis, **the mode must not be named for
+publicness.** It should name what the process *is* — one app, no dispatch
+— not where it sits. So `--app` or `--appserver` rather than `--public`,
+and **`publicAppServer.js` becomes `appServer.js`.** The same module on
+loopback is the same module, which is the open question answering itself.
+
+### 4. The failure-state lever is WITHDRAWN, and the replacement is better
+
+wsl-claude proposed that a public app be able to enter each of its own
+failure states **on command**. This agent objected that such a switch is
+a live lever — *pretend unbound, pretend full, pretend the owner is
+asleep* — in a process strangers can reach, on the one box with no shell
+and no operator watching. He withdrew it.
+
+> **DO NOT PRETEND THE STATE — BUILD THE WORLD THAT PRODUCES IT, FROM
+> OUTSIDE THE PROCESS.** Do not fake an unclaimed relay: start a real
+> relay and do not claim it. Do not fake a full one: start one whose seat
+> figure is zero. Do not fake a sleeping owner: do not start the owner's
+> node. Do not fake a swapped key: stand up a second relay and point the
+> app at it.
+
+That is the shape of the cycle-9 systemd rehearsal and of this evening's
+fresh-clone run in a private network namespace — **both produced findings
+nothing in-process could have produced.**
+
+**SO THE REQUIREMENT CHANGES SHAPE.** The template ships **no lever**.
+What it must have instead is that **every one of its failure states is
+reachable by arranging the world around an unmodified instance** — a
+design constraint on the app server rather than a feature of it. It
+forbids a failure state that can only be produced by a condition nobody
+can construct, which is the trap that would otherwise hide inside *"waits
+while the relay is unclaimed"*.
+
+**And the sharp form:** *if a state cannot be reached from outside, it is
+not testable by anyone, ever — and that is the finding rather than an
+inconvenience.*
+
+---
+
+## SETTLED BETWEEN THE AGENTS — the box a server sits on
+
+Andy found the gap and ruled half of it: *"are you guys proposing that an
+owner node gets a comprehensive interface to manage depoyed public
+servers… and provides help for tuning two public servers on same VPS?"* →
+**"interface deferred. yes. you and wsl settle on the shape."**
+
+**THE GAP:** remote resource configuration is **per server**; division of
+a box is **per box**; nothing reconciles them. An owner can legitimately
+raise two servers on one VPS to eighty percent each from his own node and
+nothing notices until the box does — the `MemoryMax` two-writers problem
+one level up. The **interface** is contents and is deferred; the **data**
+is shape, because adding it later touches every deployed server.
+
+### A server reports facts and never an opinion
+
+wsl-claude's addition, and it decides where the logic lives: a server
+says **which box it believes it is on**, **what it was allotted**, and
+**what that box measures in total**. It does **not** say "this box is
+over-committed", because it cannot know — it holds one report and the
+contradiction lives across several.
+
+**The reconciliation belongs to the party that holds all the reports** —
+the owner's node, which is also the party that will one day draw the
+interface. **Data per-server, arithmetic per-owner, and no server ever
+needs to know its siblings exist**, which is what keeps the deferral
+honest rather than half-kept.
+
+### The box label is MINTED BY THE OWNER, like an invite
+
+Over-commitment is **reported, not refused** — refusal would need sibling
+figures, which needs the deferred box view, dragging it back in through
+the cellar.
+
+And "which box" is neither declared by the operator nor derived:
+
+- **declared by the operator collides silently** — two different boxes
+  both saying `box-1`, and the owner tunes a pair that does not exist;
+- **derived is fragile** — *"this box reports itself as Linux and behaves
+  like NTFS underneath, cloned VMs share a machine-id, and containers
+  inherit one from an image, so 'unique per box' is a property no derived
+  value actually has."*
+- **minted by the owner makes collision impossible rather than visible**,
+  and it is the pattern this system already uses for the only other thing
+  that must be unique across strangers: **an invite**. The owner mints
+  it, the server carries it and echoes it back, and nobody else can
+  produce one.
+
+### And the half neither agent had: a label cannot notice it has become wrong
+
+A server moved to another VPS, or an image cloned with its state, carries
+its label with it — **still unique, now attached to the wrong machine,
+failing in the direction of looking correct.**
+
+**So the server reports BOTH: the assigned label, and an opaque local
+fingerprint it derives itself.** Not to identify the box — the
+fingerprint identifies nothing to anybody and carries nothing about a
+person — but so the owner's node can **see a contradiction**: two servers
+claiming one label with different fingerprints, or one server whose
+fingerprint changed between reports. **Neither value is trustworthy
+alone. Together they are loud.**
+
+**This is the morning's rule arriving in a new place:** *freshness and
+citation are gates on provenance; the only gate on meaning is an
+independent derivation.* The label is the claim; the fingerprint is the
+independent derivation; the owner has to trust neither.
+
+### Four fields, and one deliberately absent
+
+```
+  assigned box label      minted by the owner when the server binds
+  opaque fingerprint      derived locally; identifies nothing, contradicts loudly
+  allotted at install     what this server was given
+  box total as measured   free — measure() already produces it
+```
+
+The last is what lets the owner compute over-commitment without asking
+anybody, **and lets two servers on one box contradict each other about
+the box's own size**, which is another way the same lie surfaces.
+
+**One field deliberately NOT added: anything about what the server is
+FOR.** That is the app's business — *"a box view that starts carrying app
+facts is how the general layer acquires its first join-shaped wart."*
+
+**Open, and deliberately left so: the fingerprint's ingredients.** It
+must survive a reboot, change when the machine genuinely changes, and
+reveal nothing — and on WSL half the obvious ingredients lie. The
+requirement is that a server reports **a stable opaque value** and that
+the owner treats **a change as a contradiction rather than as an
+update**; which ingredients produce it is **contents**, and wants
+measuring on both platforms first. That measurement is wsl-claude's.
+
+---
+
+## SETTLED BETWEEN THE AGENTS — implementation order
+
+**Reconciled 2026-09-24, no divergence.** Andy asked whether an
+implementation plan would first retrofit existing modules into compliance
+(*"so an iplementation plan will first retrofit existing modules, to be
+in compliance with the new structured layering proposal?"*), agreed it
+would not, and asked the two agents to settle it between themselves. The
+result is a third position, not either agent's.
+
+**NO RETROFIT FIRST, and the deciding reason is structural rather than
+about risk.** A boundary drawn by looking at four existing modules and
+then proven by moving those same four onto it has proven nothing — it is
+wsl-claude's own *"an abstraction proven by its first user is a shape
+fitted to that user"*, with the existing tree as the user. The risk
+argument and Andy's foresight rule both agree, and are secondary.
+
+**THE ORDER:** name the boundary (design only) → build the new consumer
+greenfield, because a thing built *only* on the boundary is the honest
+test of whether the boundary works → migrate existing modules later, one
+at a time, each migration a test of the boundary rather than a chore.
+
+### But a sentence is too weak an instrument — wsl-claude's finding
+
+This agent proposed that each module which ought to move gets **one
+written line** saying what would have to be true for it to move, and
+flagged it as the part it was least sure of. It was right to be unsure,
+and the reason is better than "people are lazy":
+
+> **A SENTENCE IN A DESIGN DOCUMENT CAN NEVER BECOME FALSE.** It sits
+> there being equally true the day it is written and two years later when
+> the thing it describes has quietly become impossible. Nothing about it
+> changes when the world does, so nothing ever tells anyone to look at it
+> again.
+
+That is the same disease caught three times in one evening wearing three
+costumes: a card counter nothing advanced, a migration nothing called, a
+condition no board could see.
+
+**AND A DATE IS WORSE THAN A SENTENCE.** A dated commitment in a
+repository nobody polices is a sentence with a number in it. It rots into
+an embarrassment people learn to scroll past — *which teaches the habit
+of scrolling past.*
+
+**THE INSTRUMENT ALREADY EXISTS**: the `### C<n>` declared condition,
+built the same morning. A condition is on the tally line every run, it is
+counted, and it **turns red the day somebody does the thing** — which
+tells the next person to replace the declaration with a real assertion.
+
+**And the test of a declaration is the test of everything else here: if
+it cannot turn red, it is prose with a counter.** *"`device.html` calls
+the shared `ask`"* can — walk for the hand-rolled `fetch`.
+*"`relayLimits.js` has an honest name"* cannot, and should stay a
+sentence rather than pretend to be a gate.
+
+### The synthesis: the layer is not done when this cycle ends
+
+**Greenfield proves the boundary can be BUILT ON. The first migration
+proves it is GENERAL. Those are different claims and they need different
+evidence.**
+
+So: **the general layer is not considered done at the end of this cycle.
+It is done when ONE EXISTING MODULE HAS MOVED, and that migration is the
+acceptance test of the cycle that follows.** Not retrofit-first —
+**retrofit-as-proof, second, and named as the proof rather than as
+tidying**, which also means the first migration is chosen for what it
+would **teach** rather than for how easy it is.
+
+**`device.html` teaches most**: it is the other interactive enrolment
+flow, it hand-rolls the door call, and it is somebody else's file.
+
+### The renames wait, and the reason is sharper than "not now"
+
+> **A RENAME IS THE ONLY CHANGE THAT TOUCHES EVERY CALL SITE WHILE
+> CHANGING NO BEHAVIOUR.** Maximum diff, minimum information.
+
+And it lands on the two files this cycle has promised not to change — so
+it would **destroy the one assertion that holds that promise**, by making
+a byte comparison fail for a reason nobody cares about. *A tidy-up that
+breaks the guard protecting the cycle's central claim is not a tidy-up.*
+
+---
+
+## THE `api.*` INVENTORY — measured at `b03ed80`, not proposed
+
+Both agents named this the first deliverable and the whole cycle: **the
+subset a standalone app may rely on IS the boundary.** So it is counted
+rather than argued. `buildApiFor(app)` (`shell.js:1216`) hands an app
+**28 members**. Sorted by whether they mean anything with no shell
+present:
+
+```
+COULD STAND ALONE — the node is all they need           13
+  verb                 1228   the door: POST /api/spirit, api.verb is
+                              "its only public form" (shell.js:1207)
+  peerPost             1605   ── the whole point of a public app
+  sendMessagePacket    1556
+  onPacket             1571
+  onRelayEvent         1577
+  onRegarding          1667
+  fetchExternal        1238   the proxy, owner-gated at the node
+  fs                   1709   ← scoped, and ONLY for a dynamic app
+  readProject          1483   an unscoped read, deliberately
+  onFiles              1491
+  onJobs               1502
+  nodeLabel            1680
+  escapeHtml           1218   a string function; it needs nothing
+
+SHELL NAVIGATION — meaningless with one app                10
+  launchApp  callDialog  setDialogResult  closeDialog
+  addTitlebarLink  setScreenTitle  setScreenMark
+  armUntilElsewhere  isVisible  nodeLabelChanged
+
+SHELL CATALOGUE — about OTHER apps                          4
+  listApps  listGroups  getAppOverride  setAppOverride
+
+PAINTING                                                    1
+  ui.elements.createIconSelector    1469
+```
+
+**THE BOUNDARY IS ALREADY VISIBLE IN THE SHAPE OF THE COUNT.** Thirteen
+of twenty-eight need nothing but a node; fourteen are the shell's own
+job — navigation for a stack that a one-app node does not have, and a
+catalogue of apps it does not host. That is not a subset somebody has to
+negotiate. It is a line the existing code already draws and nobody had
+counted.
+
+**Two that need deciding rather than sorting:**
+
+- **`fs` is conditional today** — it is attached only when
+  `app._scriptPath` exists (`shell.js:1707-1710`), i.e. only for a
+  dynamically loaded app. A standalone app is always "dynamic" in that
+  sense, so this is likely a non-issue; it is listed because a
+  conditional member is a boundary with a hole in it.
+- **`readProject` is an unscoped read by design** — *"the Process Browser
+  lists files under `process/`, the Files app walks the whole tree, and
+  neither is doing anything `api.fs` (scoped to `app/<name>/`) can
+  express"* (`shell.js:1475-1478`). On a one-app node there is no Files
+  app and no Process Browser. Handing a public app an unscoped read of
+  the whole tree is a decision, not an inheritance.
+
+**And one observation that belongs with the dialog question.**
+`callDialog` launches *another app* as a dialog and waits for its result.
+On a one-app node there is no other app — so a standalone app does not
+need `callDialog` at all, and a modal inside one app is ordinary UI. The
+dialog **rule** (*"a dialog can only return"*) governs a thing that
+cannot occur there. That strengthens the ruling rather than weakening it:
+the rule travels with the painting precisely because the painting can
+travel where the rule has nothing to govern.
+
+---
+
+## PROVISIONAL TERMS — NOT DICTIONARY ENTRIES
+
+**The layer design is not approved by all and may be corrected.** Andy,
+2026-09-24. So these words are **not** in `DICTIONARY.md` and must not be
+put there until they are agreed — that file records settled usage, and
+filling it with proposals would turn it into a proposal store, which is
+the one thing it is not.
+
+They are written down anyway, and here rather than nowhere, because two
+agents working a design need the same words or they diverge on vocabulary
+before they diverge on substance — and a divergence about wording is the
+most expensive kind to find late, because it looks like agreement.
+
+**Use them while the design runs. Move them to `DICTIONARY.md` when, and
+only when, the layering is approved. If the layering is corrected, these
+are corrected with it — they carry no authority of their own.**
+
+| provisional term | interface | present? |
+|---|---|---|
+| **core** | `spirit.core.*` | always — it is what being a node is |
+| **app surface** | `api.*` | only if the node serves an app |
+| **app utilities** | `api.ui.*` | optional |
+| **the node's app** | — | exactly one per node |
+| **sibling app** | — | a peer of the shell, not hosted by it |
+| **public app** | — | a node's app reached by strangers |
+| **declaration** | — | what a type plugs into core: data, never code |
+| **appetite** | — | a type's declared share of a box |
+
+**Two are flagged as weak by their author.** `core` is the most
+overloaded word in software, though it has the merit that the interface
+already carries the name. And **`app surface` is the one least likely to
+survive** — it names the layer this sitting kept circling without naming,
+which makes it the one that matters most and the one thought about least.
+What it means is *what one app is handed, and nothing beyond it*.
+
+---
+
 ## DECIDED IN THE SITTING — 2026-09-24
 
 Attribution marks authority, not authorship: these are named so a later
@@ -134,6 +808,75 @@ proposal until it appears here.
   installer, arriving from the other direction. Three ways out are
   argued in the open questions.
 
+- **THE SHELL PROVIDES THE OPTIONAL LAYER, and it provides it as FILES.**
+  Andy: *"the shell is provider of optional ui-elements and optional
+  style adoption, however the style adoption is facilitated."* So there is
+  no `app/uielements/` owned by nobody — the elements are the shell's to
+  give, and **elements and style adoption are separately optional**: an
+  app may take one, both or neither.
+
+  **The provider is the shell's FOLDER, not the shell's PROCESS.** Every
+  clone carries `app/shell/` whether or not anything launches it, so a
+  public app node already has the elements on disk. Provision costs
+  nothing at deploy time and creates no second copy.
+
+  **And "paints, never decides" stops being good practice and becomes the
+  condition of being offerable at all** — *"the deciding is done in an
+  isomorphic module (js/iconIndex.js) that node can drive, and what lives
+  here is only the painting"* (`shell.js:1465-1468`). An element that
+  only paints survives a version skew between a shell and an app that was
+  never tested against it; one that decides does not.
+
+  **Open:** a public app server's whitelist is *one app*, so offering
+  shell files widens it. That widening must be *these files are offered*
+  and never *the shell's folder is servable*, or a one-app whitelist
+  quietly becomes two folders and the next app makes it three. And *how*
+  style adoption is facilitated is undecided — from a clean start, since
+  there are zero `.css` files in the tree today.
+
+- **LOOK AND FEEL: THE DEVELOPER OWNS THEIR LOOK; THE MARKS THAT CARRY
+  MEANING ARE OFFERED.** Andy raised the tension — *"3rd party single app
+  developers will likely want their own look-and-feel. we likely want a
+  unified look-and-feel"* — and shared the view below.
+
+  **Enforcement was never available, so it cannot be the plan.** A
+  third-party app on a one-app node **is** the whole page: no module
+  boundary, no system chrome beside it, nothing to police it with — the
+  same reason browser-side `api.fs` scoping is a declaration rather than
+  a jail. Any rule that third-party apps must look like us would be
+  unenforceable exactly where third parties live.
+
+  | | who decides |
+  |---|---|
+  | colour, font, spacing, layout, voice | **the developer, entirely.** It is their page |
+  | marks that carry meaning — a key ending, a refusal, a signature, fine print | **offered**, and worth making good enough that not adopting them is the harder path |
+  | the *rules* — the dialog contract, *"a dialog can only return"* | **not look at all.** Behaviour, and it travels with what it governs |
+
+  **Where unification genuinely matters is not "our apps should look nice
+  together".** It is **where a user is asked to trust or decide
+  something.** If every app invents its own way of showing *this is your
+  key ending*, a user cannot carry recognition from one app to the next,
+  and recognition is the whole defence. That is a **trust** property of
+  look-and-feel, not an aesthetic one.
+
+  **The shell is the one place unification is a constraint rather than an
+  offer**, because there apps share a surface with system chrome and an
+  app painting something that resembles a system statement is a phishing
+  surface. That is already the shell's business
+  (`UI_DESIGN_STYLE.md`, 418 lines) and does not become the platform's.
+
+  **So what we actually get:** third parties own their look, and we get a
+  unified look among those who adopt it. That is not weaker than
+  enforcement — it is the only outcome that was ever available, and it
+  has the merit that adoption is evidence the elements are good.
+
+- **NOTED AND WAY OUT OF SCOPE: look-and-feel badges.** Andy shared the
+  view and marked the scope. Offering a house style to strangers is
+  offering a badge: a user may reasonably read an adopted look as
+  endorsement. Written down while it costs nothing rather than discovered
+  with a live example we would rather not be associated with. **Nothing
+  is proposed, nothing is designed, and no cycle owns it.**
+
 - **The launcher is the companion object to the shell's lowest layer.**
   Andy: it *"should be named `run/js/publicAppServer.js`, be the
   companion-object to shell-lowest-layer"*. **Open within this
@@ -161,6 +904,19 @@ unification and does not require the shell's conversion**, or it would
 inherit a far larger job than its own.
 
 ## OPEN — put to Andy, not yet ruled
+
+> **STALE IN PART, and marked rather than silently edited.** The first
+> three entries below were SETTLED later the same day, and are kept only
+> so the reasoning that settled them stays visible:
+>
+> - *Is `public` the architectural axis?* **No** — it is deployment, and
+>   the module became `appServer.js`.
+> - *Where do shared UI elements live?* **The shell provides them, as
+>   files**, with elements and style adoption separately optional.
+> - *Dialogs are a rule, not a widget.* **The rule travels with the
+>   dialogs** — take the painting, take the rule.
+>
+> The remaining entries are genuinely open.
 
 - **Is *public* the architectural axis?** If a node serves one intrinsic
   app, then publicness is a **deployment** fact — a Caddy block, a
@@ -383,7 +1139,15 @@ not fail.** It has a relay, no owner, and nothing wrong.
 
 ---
 
-## SCOPE 1 — THE PUBLIC APP SERVER
+## SCOPE 1 — THE PUBLIC APP SERVER  **[SUPERSEDED]**
+
+> **SUPERSEDED BY "THE CURRENT REQUIREMENT LIST" ABOVE**, and kept
+> rather than deleted because the reasoning inside each item is still
+> good. The WORDING here predates five reconciliations and is wrong in
+> at least four places: S1 names `publicAppServer.js` (now
+> `appServer.js`), S2 frames the module by publicness (not an axis),
+> S4 and S5 are each half out of scope, and **S8 is out of scope
+> entirely**. Where the two lists differ, the list above holds.
 
 ### S1 — `spirit/run/js/publicAppServer.js` is a third startup module
 
@@ -485,7 +1249,13 @@ inventing relay figures for it.
 
 ---
 
-## SCOPE 2 — `join`, THE FIRST PUBLIC APP
+## SCOPE 2 — `join`, THE FIRST PUBLIC APP  **[AGENDA, NOT REQUIREMENTS]**
+
+> **Andy postponed stage 2 to its own design-implementation cycle.**
+> Nothing below is a requirement of this one. It is carried forward so
+> the later cycle starts from something rather than nothing, and
+> several of these will not survive contact with the settled
+> boundaries above.
 
 ### J1 — `spirit/run/join.html`, served at `join.<domain>`
 
