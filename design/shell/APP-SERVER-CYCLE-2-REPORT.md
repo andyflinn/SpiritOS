@@ -171,6 +171,83 @@ by-design.**
 
 ---
 
+## ADAPTATION — proposed as a condition of closing
+
+**Andy made this the condition:** *"propose the neccessary adaption of
+cycle sequence and/or configuration as condition to closing this cycle.
+record the fallout and plan adaption."* **So the cycle does not close on
+the report. It closes when the cycle itself has been told how to
+change.**
+
+### The fallout, recorded before the remedies
+
+| what happened | what it cost |
+|---|---|
+| `G13`, the acceptance test, never ran | the cycle closes unable to say whether its own boundary works |
+| `G3` and the sample scoped with no order between them | the sample **necessarily** violated `G3`; a raw `fetch` now sits in the artefact every stranger copies |
+| the cycle spent more of itself on the rules than the build | the source half is behind, **and no mechanism saw it happen** |
+| a finding about the author's code was believed without reproduction | a false defect was reported to Andy and had to be withdrawn |
+| four worlds ran with no app deployed | caught by their author; **unchecked, four of eight red would have been his** |
+| the interface was named only because the suite's author asked | had he not, every behavioural assertion would have been red for a reason that was not a defect |
+
+### S1 — a requirement the consumer must obey is built BEFORE the consumer
+
+**D2 generalised.** The scoping step must **order requirements by
+dependency**, and the dependency that matters is *"X constrains Y"* as
+much as *"X is needed by Y"*. `G3` and the sample had no order between
+them, so the sample was written first and could not comply.
+
+### S2 — the acceptance test cannot be last, because last is what does not happen
+
+`G13` was the exit condition and it was scheduled at the end, so the
+first interruption removed it. **Any cycle that schedules its exit
+condition last will skip it**, and cycles get interrupted.
+
+**Proposed:** the acceptance test's **world** is built first — which
+wsl-claude did unprompted — and **the test itself is the cycle's exit
+condition rather than its last task**, so *closed* and *the acceptance
+ran* are one fact instead of two.
+
+### S3 — nothing noticed that the cycle stopped building
+
+**This is the important one and it has no remedy yet.** The cycle became
+a rules cycle, and **no mechanism saw it**: not the board, not the
+report, not either agent. A cycle can be displaced entirely and still
+look busy.
+
+**No proposal is offered rather than a weak one invented.** The honest
+minimum today is that the stop reports where the time went — which
+this one did **only because the author chose to**, and a rule that
+depends on the author choosing to confess is *the check that cannot fail*
+in the exact shape this project spent the day hunting.
+
+**Named as open, and put to the other agent for a mechanism.**
+
+### C1 — the interface is named in the DESIGN, not discovered at build
+
+`G15` exists only because the suite's author asked for five names before
+writing three hundred lines. **Any cycle that splits suite from source
+needs its interface named as a requirement, not as a favour** — or
+every behavioural assertion is red at the close for a reason that is not
+a defect.
+
+### C2 — a world asserts its own preconditions
+
+wsl-claude's finding, in his area, and stated because **the failure is
+indistinguishable from the thing being measured**: an app server running
+with no app deployed looks exactly like a feature being unbuilt. A world
+must prove it is the world before it proves anything about the code.
+
+### C3 — a finding about the other half is reproduced by its OWNER before it goes upward
+
+**The author's fallout.** He held his own proof that *kept* worked,
+believed the other half's suite over his own measurement, and reported a
+false defect to Andy without reproducing it once. **The existing rule —
+report what you CHECKED — did not reach the case of a finding about
+somebody else's code.**
+
+---
+
 ## Carried forward
 
 `G3` **before** any further sample work (D2's ordering constraint) ·
