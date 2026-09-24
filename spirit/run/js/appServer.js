@@ -512,13 +512,24 @@ function pin(rootDir, appName, seen) {
 // THE BUILDER IS `hub.sealedClaim` AND NOT A SECOND ONE. It seals to the
 // relay's published cipher key, refuses a relay that publishes no signed
 // key, and is the same motion the relay install is proven on.
-function claimSeat(rootDir, appName, relayUrl, invite, label) {
+function claimSeat(rootDir, appName, relayUrl, invite, inviteLabel) {
   const home = stateDir(rootDir, appName);
   const id = identity(rootDir, appName);
-  const name = String(label || appName);
-  return require('./hub').sealedClaim(relayUrl, home, name, invite, name)
+  // TWO WORDS, AND THEY ARE NOT THE SAME WORD. `name` is what this key
+  // asks to be called on the relay; `inviteLabel` is what the owner wrote
+  // on the invite when he minted it, matched and then forgotten. Passing
+  // the app's name as both is what produced "invite label mismatch".
+  const name = String(appName);
+  return require('./hub').sealedClaim(relayUrl, home, name, invite, String(inviteLabel || appName))
     .then(function (sending) {
-      return relayRequest(relayUrl, 'POST', '/api/relay/claim', JSON.stringify(sending));
+      // THE OBJECT, NOT ITS TEXT. `relayRequest` serialises the body
+      // itself, so stringifying here sent the relay a JSON *string* where
+      // it expected an object — and its refusal, "a claim must be sealed
+      // to the cipher key this relay publishes", was true of what it
+      // received and told me nothing about why. `hub.handleClaim` passes
+      // `sending` straight through; copying the builder and not its call
+      // was the whole of the bug.
+      return relayRequest(relayUrl, 'POST', '/api/relay/claim', sending);
     })
     .then(function (r) {
       let said = null;
@@ -531,7 +542,14 @@ function claimSeat(rootDir, appName, relayUrl, invite, label) {
       if (r && r.status === 409 && said && said.peer && said.peer.publicKey === id.publicKey) {
         return { ok: true, already: true };
       }
-      if (r && r.status === 200) return { ok: true, already: false, reason: 'seated' };
+      // 2xx, NOT 200. The relay answers 201 for a seat it just created,
+      // and a check written as `=== 200` called a successful claim a
+      // refusal — then reported "the relay refused this invite" about an
+      // invite the relay had just accepted. `hub.handleClaim` has always
+      // read it as a RANGE; I copied the builder and wrote my own
+      // narrower test of its answer, which is the third time in this
+      // cycle that taking a mechanism without its call site cost a bug.
+      if (r && r.status >= 200 && r.status < 300) return { ok: true, already: false, reason: 'seated' };
       // ── AN EXPIRED INVITE IS ITS OWN ANSWER ─────────────────────────
       //
       // wsl-claude, refusing the first version: invites carry days and
@@ -828,6 +846,22 @@ function reachOwner(rootDir, appName, state, body) {
           status: a.status, grantedMs: a.grantedMs,
         };
       }
+      // ── AND THE RELAY SAYING SO OUTRIGHT ────────────────────────────
+      //
+      // `peer-unreachable`, 503: the relay knows the owner is not
+      // connected and refuses immediately rather than holding the post
+      // for a window — decision 0006, "refused instantly if the peer is
+      // not there to receive it". THE SAME FACT AS THE 504, learned
+      // sooner and more cheaply, and it is the answer a real deployment
+      // meets most often because the relay usually knows.
+      //
+      // Translated into THIS server's closed set rather than forwarded.
+      // `peer-unreachable` is the platform's word for any peer; an app
+      // has exactly one peer it ever posts to, and for a visitor reading
+      // the page the fact is that THE OWNER is not there.
+      if (known && known.code === 'peer-unreachable') {
+        return { ok: false, code: 'app-owner-asleep', status: a.status };
+      }
       // Anything else is a real condition with a real name, and this
       // module does not get to rename it. A 428 here means this server
       // holds no card for its owner yet — a step of the bind sequence
@@ -874,6 +908,20 @@ function create(opts) {
   const seatCfg = settled.config || loadConfig(rootDir, appName);
   if (o.invite && !seatCfg.invite) {
     seatCfg.invite = String(o.invite);
+    // ── THE LABEL TRAVELS WITH THE INVITE, AND IS NOT THE APP'S NAME ──
+    //
+    // `inviteLabel` is what the OWNER wrote down to identify who he was
+    // inviting; `name` is what this key wants to be called. Two different
+    // words, and the relay matches the first (`relay.js`, "the word on
+    // the invite, which is not the name being claimed").
+    //
+    // Built first as `cfg.label || appName`, which guessed — and guessed
+    // wrong the moment a fixture minted an invite labelled anything but
+    // the app's name, with the relay answering "invite label mismatch".
+    // AN APP CANNOT DERIVE THIS: it is a word in the owner's head at the
+    // moment he minted. So it is installed WITH the invite, by the
+    // installer that already has both.
+    if (o.inviteLabel) seatCfg.inviteLabel = String(o.inviteLabel);
     saveConfig(rootDir, appName, seatCfg);
   }
 
@@ -1202,7 +1250,7 @@ function create(opts) {
         // stop. The seat is worthless if it is taken at an impostor.
         const cfg = loadConfig(rootDir, appName);
         if (cfg.invite) {
-          state.seated = claimSeat(rootDir, appName, state.relay, cfg.invite, cfg.label || appName)
+          state.seated = claimSeat(rootDir, appName, state.relay, cfg.invite, cfg.inviteLabel || cfg.label || appName)
             .then(function (r) { state.lastClaim = r; return r; });
         } else {
           // NOT A FAULT, AN UNFINISHED DEPLOYMENT. The owner installs the

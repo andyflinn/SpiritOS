@@ -978,7 +978,7 @@ const RECIPES = [
           '. The recipe is "' + RECIPES[0].world + '"');
       } else {
         const root = freshRoot();
-        const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url, invite: w.appInvite && w.appInvite.token });
+        const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url, invite: w.appInvite && w.appInvite.token, inviteLabel: w.appInvite && w.appInvite.label });
         h.start();
         await worlds.answering('http://127.0.0.1:' + APP_PORT + '/', 6000);
         const page = await pageOf(APP_PORT);
@@ -1172,7 +1172,7 @@ const RECIPES = [
         }
 
         const root = freshRoot();
-        const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url, invite: w.appInvite && w.appInvite.token });
+        const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url, invite: w.appInvite && w.appInvite.token, inviteLabel: w.appInvite && w.appInvite.label });
         h.start();
         await worlds.answering('http://127.0.0.1:' + APP_PORT + '/', 6000);
         const page = await pageOf(APP_PORT);
@@ -1203,7 +1203,7 @@ const RECIPES = [
           test.fail('cycle 2 G11 (owner-asleep): the owner node could not be built and stopped — ' + sleeping.error);
         } else {
           const root = freshRoot();
-          const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url, invite: w.appInvite && w.appInvite.token });
+          const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url, invite: w.appInvite && w.appInvite.token, inviteLabel: w.appInvite && w.appInvite.label });
           h.start();
           await worlds.answering('http://127.0.0.1:' + APP_PORT + '/', 6000);
           // THE REFUSAL HAS TO BE PROVOKED BEFORE IT CAN BE READ. The
@@ -1261,7 +1261,10 @@ const RECIPES = [
                 ? 'The app server never claims a seat: there is no invite and no claim in appServer.js, so it is not a ' +
                   'member of the relay it serves and nothing it posts is routed.'
                 : 'The refusal came from this server before anything left the box.') +
-              ' Expected ' + ABOUT_THE_OWNER.join(', ') + ' — this world means exactly one state and must not pass on a nearer one.');
+              ' Expected ' + ABOUT_THE_OWNER.join(', ') + ' — this world means exactly one state and must not pass on a nearer one.' +
+              // THE SEAT IS THE FIRST THING TO LOOK AT and the failure
+              // used to make the reader go and reproduce it to see this.
+              ' The seat: ' + JSON.stringify((await settled(h, 2000) || {}).lastClaim || null));
           } else {
             test.fail('cycle 2 G11 (owner-asleep): the door answered ' + JSON.stringify(answered).slice(0, 200) +
               ' — a refusal that carries no code over HTTP cannot be matched against the declared set by anyone outside this process');
@@ -1333,7 +1336,7 @@ const RECIPES = [
         test.fail('cycle 2 G11 (key-mismatch): the first relay could not be built — ' + first.error);
       } else {
         const root = freshRoot();
-        const bound = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: first.relay.url, invite: first.appInvite && first.appInvite.token });
+        const bound = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: first.relay.url, invite: first.appInvite && first.appInvite.token, inviteLabel: first.appInvite && first.appInvite.label });
         bound.start();
         await worlds.answering('http://127.0.0.1:' + APP_PORT + '/', 6000);
         const boundState = await settled(bound, 8000);
