@@ -76,13 +76,42 @@ function measure() {
   return null;
 }
 
+function isVault(p) {
+  try { return !!p && fs.existsSync(path.join(p, 'VAULT_RULES.md')); }
+  catch (e) { return false; }
+}
+
+// ── WHERE THE VAULT IS, AND THIS FILE'S OWN BOX ASSUMPTION ──────────
+//
+// The first version derived the vault from where this file sits and said
+// so proudly: "not a candidate list — a candidate list is how v1 found the
+// wrong box's vault." The rejection of the list was right. The replacement
+// was the same mistake wearing the other box's clothes.
+//
+// ON THE WSL BOX THE VAULT IS NOT BESIDE THE CHECKOUT. That agent works in
+// an agent clone (SpiritOS-agent-wsl-claude) which has never carried the
+// vault; the vault sits in Andy's own checkout, and the installed guard's
+// constant says so: WSL_VAULT = '/home/andy/SpiritOS/spirit/run/brains'.
+// So `derive from the checkout` is one box's TOPOLOGY, exactly as a
+// candidate list was the other box's. wsl-claude, finding it in one run:
+// "the assumption is invisible from the box that holds it, and visible in
+// one run from the box that does not — so the instrument is the OTHER BOX
+// and not more care."
+//
+// FOUR FOR FOUR, TWO EACH: path, identity, everything, topology. That is
+// the honest version of the tally, and it is why neither agent reviews its
+// own box assumptions.
+//
+// THE ANSWER IS THE ONE THIS FILE ALREADY USES TWICE: THE BOX SAYS, AND
+// THE FILE DOES NOT INFER. SPIRIT_VAULT first; the checkout-relative guess
+// is the FALLBACK and not the rule. A box that can answer neither still
+// stands down, because an unset variable and a missing folder both leave
+// it unanswered — no list, no default to either agent.
 function vaultFrom(start) {
-  // The vault is this checkout's own, derived from where this file sits.
-  // Not a candidate list: a candidate list is how v1 found the wrong box's
-  // vault and asserted against it.
+  const declared = String(process.env.SPIRIT_VAULT || '').trim();
+  if (declared) return isVault(declared) ? path.resolve(declared) : null;
   const p = path.join(start, '..', '..', 'run', 'brains');
-  try { return fs.existsSync(path.join(p, 'VAULT_RULES.md')) ? path.resolve(p) : null; }
-  catch (e) { return null; }
+  return isVault(p) ? path.resolve(p) : null;
 }
 
 function resolve() {
@@ -102,7 +131,13 @@ function resolve() {
   }
 
   const vault = vaultFrom(__dirname);
-  if (!vault) return { ok: false, why: 'no vault beside this checkout (expected spirit/run/brains/VAULT_RULES.md)' };
+  if (!vault) {
+    return { ok: false, why: process.env.SPIRIT_VAULT
+      ? 'SPIRIT_VAULT is set to "' + process.env.SPIRIT_VAULT + '" but there is no VAULT_RULES.md there'
+      : 'this box does not say where its vault is: SPIRIT_VAULT is unset, and there is none beside this checkout ' +
+        '(expected spirit/run/brains/VAULT_RULES.md). On a box whose agent works in a clone of its own, the vault ' +
+        'sits elsewhere and only the box can say where' };
+  }
 
   // The OTHER agents are the vault's own agent folders minus mine, read off
   // the disc rather than listed here — so a folder added to the vault is
