@@ -10,10 +10,14 @@ four readiness findings of which three are closed.
 packet** — `CLAUDE.md`: *"Do not build. No patch, no cycle. Feasibility
 and shape only, until a packet says otherwise."*
 
-**Still open and unruled**, carried to whoever opens the build: the app
-contract — how an app DECLARES which parts of the optional layer it
-takes, which is the one readiness finding still standing — and three
-items argued here with a recommendation and no ruling: the `MemoryMax`
+**CYCLE 2 OPENED 2026-09-24** — Andy: *"go 2"* — and the last
+readiness finding was closed before either agent started: **G14, the
+app contract**, which says how an app declares what it takes. Closing
+it first was deliberate: writing it after wsl-claude began asserting
+would repeat exactly what cost him a sitting on 2026-09-24, the spec
+moving under him while he worked.
+
+**Still open and unruled**, and a builder may meet them: the `MemoryMax`
 two-writers hole, how units on a box are counted, and the fingerprint’s
 ingredients (wsl-claude’s to measure once the first two are ruled).
 
@@ -431,6 +435,74 @@ renaming it back to a greeting.
 **One artefact carries the name** — a tree with two
 things called `hello` is a defect a board can hold rather than a matter
 of taste.
+
+---
+
+### G14 — an app DECLARES what it takes, in its manifest, and gets nothing it did not ask for
+
+**Status:** OPEN. Nothing built. **This closes wsl-claude's readiness
+finding 1**, raised at the sign-off and the only one still standing when
+the build opened: *"G2 offers files, G3 gives `ask` one home, G4 makes
+elements and tokens separately optional — and NOTHING SAYS HOW AN APP
+DECLARES WHICH IT TAKES. A builder reaching G4 must invent that
+mechanism, and inventing it is inventing the boundary, which is the one
+thing this cycle exists to fix."*
+
+**The vehicle already exists and nothing new is invented.** An app is a
+folder plus a sibling manifest of pure data — `name`, `description`,
+`icon`, `hidden`, `intrinsic`, `owner`. No behaviour. That is the plugin
+pattern this design arrived at three times from different directions, and
+it is already proven one level down: **the type declares data, and
+inherits the mechanism.**
+
+So the app contract is **three keys in the manifest an app already has**:
+
+```json
+{
+  "surface": ["verb", "peerPost", "onPacket", "fs"],
+  "utilities": ["elements", "dialogs"],
+  "posture": "strict"
+}
+```
+
+| key | says | absent means |
+|---|---|---|
+| `surface` | which members of `api.*` this app relies on | **nothing** — an app that declares no surface is handed none |
+| `utilities` | `elements`, `dialogs`, `tokens` — separately, as G4 requires | none of the optional layer |
+| `posture` | `strict` for an app serving strangers (G9) | ordinary — and a public app server **refuses to serve an app that is not strict** |
+
+**ABSENT MEANS NOTHING, AND THAT IS THE LOAD-BEARING CHOICE.** The
+tempting default is *absent means everything*, because it makes the first
+app easy to write. It is wrong in the direction that cannot be undone:
+every app then depends on the whole surface by accident, and **the
+boundary becomes unmovable the day the second app ships.** An app that
+asks for nothing and gets nothing fails immediately and obviously, in
+development, at the hands of the person who can fix it.
+
+**THE DECLARATION IS DATA AND NEVER CODE**, which is what keeps this from
+becoming a fork. A manifest that could declare *behaviour* would let two
+apps disagree about what `fs` means; a manifest that names members can
+only be right or wrong, and being wrong is visible.
+
+**AND IT IS WHAT MAKES THE BOUNDARY ASSERTABLE AT ALL.** Until now
+*"which part of `api.*` may a standalone app rely on"* could only be
+answered by reading code. With a declared surface it is walkable: every
+member an app touches is in its `surface`; every member in a `surface` is
+one the server can hand it; **and a member no app has ever declared is
+dead surface**, which is the same counting discipline as `oneDoor` and
+the closed refusal set.
+
+**Asserted by:** an app declaring no `surface` receives no `api` members;
+an app touching a member it did not declare fails, and fails in
+development rather than in front of a stranger; `utilities` are
+independently grantable; a public app server refuses a non-`strict`
+app; and every declared member exists in the `api` the server builds.
+
+**Open inside this, and deliberately so:** whether `surface` may name a
+member the shell has and the app server does not. **Recommended:
+no** — one vocabulary, and a member the app server cannot supply is
+refused at load with the member named, rather than at the moment the app
+reaches for it. That is the difference between a boundary and a surprise.
 
 ---
 
