@@ -514,17 +514,54 @@ test.subHeading('G13 — the starter is the official sample, and one artefact ow
 
     // AND NOTHING FROM STAGE 2. The sample's value is that a stranger can
     // read all of it; a sample that grew a visitor story is a product.
+    // COMMENTS ARE STRIPPED FIRST, and this is the second time in one
+    // suite that the same mistake was made: a comment saying "no GitHub,
+    // no seats" is the requirement being HONOURED, and matching the word
+    // inside it reports the sample for carrying its own instructions. The
+    // lever check learned this an hour earlier; this one had to learn it
+    // again, which is what a habit looks like when it is not yet a rule.
     const body = files.map(function (f) {
       const p = path.join(REPO, STARTER_DIR_REL, f);
-      try { return fs.statSync(p).isFile() ? fs.readFileSync(p, 'utf8') : ''; } catch (e) { return ''; }
+      let raw = '';
+      try { raw = fs.statSync(p).isFile() ? fs.readFileSync(p, 'utf8') : ''; } catch (e) { raw = ''; }
+      return raw
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/(^|[^:])\/\/[^\n]*/g, '$1');
     }).join('\n');
-    const outOfScope = ['github', 'oauth', 'invite', 'seat'].filter(function (w) {
-      return new RegExp('\\b' + w, 'i').test(body);
+    // AND THE FAILURE CARRIES THE SENTENCE IT MATCHED. "The starter
+    // mentions seat" sends the reader hunting; the line it appeared in
+    // lets them judge in a second whether it is stage 2 leaking in or a
+    // word doing an innocent job. A finding that costs the receiver a
+    // search is a finding that gets postponed.
+    // MATCH WHAT IT DOES, NOT WHAT IT SAYS — third time this suite has
+    // had to learn the same thing in one sitting, and the first two were
+    // comments. This one was PROSE: the sample's own page says "There is
+    // no GitHub here, no seats, no visitor", which is the requirement
+    // being honoured out loud, and a word-match reported it as the
+    // requirement being broken.
+    //
+    // A sentence naming a thing is not the thing. So the check looks for
+    // the ACTIONS stage 2 would need — a link to GitHub, an OAuth
+    // endpoint, an invite being consumed, a seat being claimed — and a
+    // page that merely mentions them in English passes, correctly.
+    const ACTIONS = [
+      [/https?:\/\/[^\s"']*github\.com/i, 'a link to github.com'],
+      [/\boauth\b[^\n]{0,20}(url|endpoint|client_id|redirect)/i, 'an OAuth endpoint'],
+      [/["'`][^"'`\n]*\/(invite|invites)\b/i, 'an invite route'],
+      [/\bconsume\w*\s*\(\s*["'`]?invite/i, 'an invite being consumed'],
+      [/["'`][^"'`\n]*\/(seat|seats)\b/i, 'a seat route'],
+    ];
+    const outOfScope = [];
+    ACTIONS.forEach(function (pair) {
+      const m = pair[0].exec(body);
+      if (m) outOfScope.push(pair[1] + ' — "' + String(m[0]).trim() + '"');
     });
     if (!outOfScope.length) {
       test.check('cycle 2 G13: the starter carries nothing from stage 2 — no GitHub, no seats, no invite, no visitor story');
     } else {
-      test.fail('cycle 2 G13: the starter mentions ' + outOfScope.join(', ') + ', which this cycle put out of scope; a sample that grew a product is no longer a sample');
+      test.fail('cycle 2 G13: the starter mentions stage-2 material outside its comments: ' + outOfScope.join(' | ') +
+        '. A sample that grew a product is no longer a sample');
     }
   }
 
@@ -751,9 +788,20 @@ const RECIPES = [
   // it exists to find, manufactured. What the document DOES guarantee is
   // that every refusal is a member of a declared set and carries a code,
   // so that is what is asserted.
+  // WHERE A CODE IS CARRIED IS THE INTERFACE'S TO DECIDE, NOT THIS
+  // SUITE'S. The first version looked only at `carrier.code` and reported
+  // "no code" against a state that carried one at `lastBind.code` — a red
+  // line about the product that was a defect in the reader. The document
+  // guarantees that a refusal HAS a declared code; it never said where it
+  // sits, so the suite looks in the places a state can reasonably put it
+  // and fails only when none of them has one.
   function refusalIsDeclared(carrier) {
     if (!carrier || typeof carrier !== 'object') return { ok: false, why: 'no refusal was carried at all' };
-    const code = carrier.code || (carrier.refusal && carrier.refusal.code) || '';
+    const code = carrier.code ||
+      (carrier.refusal && carrier.refusal.code) ||
+      (carrier.lastBind && carrier.lastBind.code) ||
+      (carrier.lastReach && carrier.lastReach.code) ||
+      '';
     if (!code) return { ok: false, why: 'the refusal carries no code, so "member of a declared set" cannot be walked — prose cannot be matched against a set' };
     if (!errors.byCode(code)) return { ok: false, why: 'the code ' + JSON.stringify(code) + ' is in no declared set' };
     return { ok: true, code: code };
@@ -773,9 +821,19 @@ const RECIPES = [
       let st;
       try { st = fs.statSync(p); } catch (e) { continue; }
       if (st.isDirectory()) { fs.readdirSync(p).forEach(function (n) { stack.push(path.join(p, n)); }); continue; }
-      // The config and the pinned key are the app server's OWN state and
-      // are supposed to be there. A visitor's trace is anything else.
-      if (/config\.json$|relay-key|pinned/i.test(path.basename(p))) continue;
+      // The config, the pinned key and the server's OWN IDENTITY are its
+      // own state and are supposed to be there. A visitor's trace is
+      // anything else.
+      //
+      // identity.json was missing from this list and produced two red
+      // lines that were this suite's fault: a server writes its own key
+      // at start because a server with no key cannot be addressed at all,
+      // and calling that "acting on a visitor" confuses being alive with
+      // doing something. Named rather than quietly widened — the point of
+      // the list is that anything NOT on it is a trace, so every addition
+      // has to earn its place out loud.
+      if (/^(config\.json|identity\.json)$/i.test(path.basename(p))) continue;
+      if (/relay-key|pinned/i.test(path.basename(p))) continue;
       held.push(path.relative(rootDir, p));
     }
     return { ok: held.length === 0, held: held };
@@ -793,9 +851,40 @@ const RECIPES = [
     }
   }
 
+  // A FRESH BOX WITH THE APP DEPLOYED ONTO IT. The app is copied in
+  // because that is what a deployment does and because, without it, an
+  // app server started with `appName: 'starter'` finds no starter — which
+  // is what happened on the first run of these worlds and looked exactly
+  // like the feature being unbuilt.
+  // A BIND IS NOT INSTANT, AND READING BEFORE IT SETTLES INVENTS A
+  // FINDING. `start()` returns as soon as the server listens; reaching the
+  // relay, learning its key and pinning it happen after that. The first
+  // version of the pin check read state() straight after the page
+  // answered, saw an empty boundKey, and was one sentence away from
+  // reporting "the pin did not survive the process" about a bind that had
+  // not yet happened.
+  //
+  // So the suite WAITS FOR THE STATE TO SETTLE and says so when it does
+  // not — a timeout here is itself a finding, and a different one from an
+  // empty pin.
+  async function settled(h, ms) {
+    const until = Date.now() + (ms || 8000);
+    let st = null;
+    while (Date.now() < until) {
+      try { st = h.state(); } catch (e) { st = null; }
+      if (st && st.lastBind) return st;
+      await new Promise(function (r) { setTimeout(r, 120); });
+    }
+    return st;
+  }
+
   function freshRoot() {
     try { fs.rmSync(appRoot, { recursive: true, force: true }); } catch (e) { /* nothing to remove */ }
     fs.mkdirSync(appRoot, { recursive: true });
+    if (!worlds.plantStarter(appRoot, REPO)) {
+      test.fail('cycle 2 G11: the sample could not be deployed onto the fixture box — ' + STARTER_DIR_REL +
+        ' is not there to copy, so every world below would test an app server with no app');
+    }
     return appRoot;
   }
 
@@ -830,12 +919,152 @@ const RECIPES = [
           test.fail('cycle 2 G11 (unbound): it persisted ' + held.held.join(', ') + ' while waiting; "acts on nothing" is the requirement');
         }
 
-        if (st && st.bound === false) {
+        // THE FIELD NAME WAS THIS SUITE'S GUESS AND THE GUESS WAS WRONG.
+        // The document requires the waiting state to be observable; it
+        // never said the field is called `bound`. Asserting `bound ===
+        // false` was inventing a vocabulary and then reporting the
+        // interface for not speaking it — the divergence manufactured
+        // rather than found. Either spelling satisfies the requirement.
+        const saysUnbound = !!st && (st.unbound === true || st.bound === false);
+        if (saysUnbound) {
           test.check('cycle 2 G11 (unbound): state() reports itself unbound, so the waiting state is observable rather than only visible on a page');
         } else {
           test.fail('cycle 2 G11 (unbound): state() does not report the unbound condition (' + JSON.stringify(st) + '); a state a suite cannot read is a state nobody can monitor');
         }
         h.stop();
+      }
+      await worlds.clear();
+    }
+
+    // ── G14, BEHAVING — four manifests that are each wrong in one way ─
+    //
+    // The sample cannot show any of this, because the sample is correct.
+    // A correct declaration exercises the grant and never the refusal, so
+    // the suite brings four apps of its own, each wrong in exactly one
+    // named way. They are the suite's artefacts, planted in the app
+    // server's own fixture root and thrown away with it.
+    {
+      const w = await worlds.claimedRelay({});
+      if (!w.ok) {
+        test.fail('cycle 2 G14 (behaving): the backdrop relay could not be built — ' + w.error);
+      } else {
+        const root = freshRoot();
+        worlds.plantWrongApps(root);
+
+        // ── THE CONTROL, AND IT CAUGHT THIS SUITE CHEATING ITSELF ────
+        //
+        // The first run of these four reported "an app that declares no
+        // surface is handed NONE" as a PASS — and it passed because the
+        // contract came back entirely empty for every fixture, including
+        // the one that declares a surface. Nothing had been loaded at
+        // all, so "was handed nothing" was true of everything and the
+        // assertion could not have failed.
+        //
+        // THAT IS THE CHECK THAT CANNOT FAIL, IN THIS AGENT'S OWN FILE,
+        // one hour after writing a page about it. The cure is the same
+        // one: make it carry evidence. Before asking what an app was
+        // GRANTED, prove its manifest was READ — by planting one that
+        // declares something and requiring the server to show it back.
+        // If that control fails, the four assertions below say so and
+        // claim nothing, because a grant assertion against an unread
+        // manifest is noise wearing a result's clothes.
+        let contractsAreRead = false;
+        {
+          const probe = mod.create({ rootDir: root, appName: 'asb-elements-only', port: APP_PORT, relay: w.relay.url });
+          try { probe.start(); } catch (e) { /* the control is the state, not the start */ }
+          const st = probe.state();
+          const c = (st && st.contract) || {};
+          const sawSomething = (Array.isArray(c.surface) && c.surface.length > 0) ||
+            (Array.isArray(c.utilities) && c.utilities.length > 0) ||
+            (typeof c.posture === 'string' && c.posture !== '');
+          contractsAreRead = sawSomething;
+          try { probe.stop(); } catch (e) { /* nothing to stop */ }
+
+          if (contractsAreRead) {
+            test.check('cycle 2 G14 (control): a manifest planted under the server\'s own rootDir is READ — ' +
+              'so the four assertions below are about what an app was granted, rather than about a manifest nobody opened');
+          } else {
+            test.fail('cycle 2 G14 (control): a manifest at app/<name>/<name>.json under the given rootDir was NOT read — ' +
+              'the contract came back ' + JSON.stringify(c) + '. G15 says create() takes rootDir and appName, so either the app is resolved ' +
+              'somewhere else or the manifest is read at a moment this suite has not reached. EVERY G14 assertion below is suspended: ' +
+              'against an unread manifest they would all pass, and a pass that cannot fail is worse than a red');
+          }
+        }
+
+        // 1. ABSENT MEANS NOTHING.
+        if (contractsAreRead) {
+          const h = mod.create({ rootDir: root, appName: 'asb-declares-nothing', port: APP_PORT, relay: w.relay.url });
+          let started = true;
+          try { h.start(); } catch (e) { started = false; }
+          const st = h.state();
+          const granted = (st && (st.surface || st.api || st.granted)) || [];
+          const count = Array.isArray(granted) ? granted.length : Object.keys(granted || {}).length;
+          if (count === 0) {
+            test.check('cycle 2 G14: an app that declares no surface is handed NONE — which is what makes "every member an app touches is declared" a check that can fail, ' +
+              'and absent-means-everything would have made it vacuous for every app that declared nothing');
+          } else {
+            test.fail('cycle 2 G14: an app declaring no surface was handed ' + count +
+              ' member(s). Absent must mean nothing: with the other default, dead surface can never be counted because no member is ever provably unused');
+          }
+          if (started) { try { h.stop(); } catch (e) { /* nothing to stop */ } }
+        }
+
+        // 2. A MEMBER THAT CANNOT BE SUPPLIED IS REFUSED AT LOAD, NAMED.
+        // (suspended with the rest when the control above did not hold)
+        if (contractsAreRead) {
+          const h = mod.create({ rootDir: root, appName: 'asb-asks-the-impossible', port: APP_PORT, relay: w.relay.url });
+          let threw = null;
+          try { h.start(); } catch (e) { threw = e; }
+          const st = h.state();
+          const text = String((threw && threw.message) || '') + ' ' + JSON.stringify(st || {});
+          const refused = !!threw || !!(st && (st.refused || st.error || st.code));
+          if (refused && /thereIsNoSuchMember/.test(text)) {
+            test.check('cycle 2 G14: a surface naming a member the server cannot supply is refused AT LOAD and the member is NAMED — ' +
+              'refused at reach, the failure names a runtime symptom and the author guesses; refused at load, it names the member');
+          } else if (refused) {
+            test.fail('cycle 2 G14: the impossible member was refused but not NAMED (' + text.slice(0, 200) +
+              '); the naming is the whole difference between a boundary and a surprise');
+          } else {
+            test.fail('cycle 2 G14: an app declaring a member that does not exist was loaded anyway; it will fail at the moment it reaches, in front of a stranger');
+          }
+          try { h.stop(); } catch (e) { /* nothing to stop */ }
+        }
+
+        // 3. A PUBLIC APP SERVER REFUSES AN APP THAT IS NOT STRICT.
+        if (contractsAreRead) {
+          const h = mod.create({ rootDir: root, appName: 'asb-not-strict', port: APP_PORT, relay: w.relay.url });
+          let threw = null;
+          try { h.start(); } catch (e) { threw = e; }
+          const st = h.state();
+          const refused = !!threw || !!(st && (st.refused || st.error || st.code));
+          if (refused) {
+            test.check('cycle 2 G14: an app that is not strict is refused by a public app server — the posture is enforced at the door rather than trusted');
+          } else {
+            test.fail('cycle 2 G14: a non-strict app was served to strangers; the manifest said ordinary and the server did not mind');
+          }
+          try { h.stop(); } catch (e) { /* nothing to stop */ }
+        }
+
+        // 4. UTILITIES ARE SEPARATELY GRANTABLE — G4, MADE OBSERVABLE.
+        if (contractsAreRead) {
+          const h = mod.create({ rootDir: root, appName: 'asb-elements-only', port: APP_PORT, relay: w.relay.url });
+          let started = true;
+          try { h.start(); } catch (e) { started = false; }
+          const st = h.state();
+          const utils = (st && (st.utilities || st.granted)) || [];
+          const list = Array.isArray(utils) ? utils : Object.keys(utils || {});
+          const hasElements = list.indexOf('elements') !== -1;
+          const hasDialogs = list.indexOf('dialogs') !== -1;
+          if (hasElements && !hasDialogs) {
+            test.check('cycle 2 G14: taking elements did not bring dialogs along — separately optional, which is G4 made observable instead of described');
+          } else if (!started) {
+            test.fail('cycle 2 G14: the elements-only app did not start at all, so separability could not be observed');
+          } else {
+            test.fail('cycle 2 G14: utilities are not separately grantable — the app asked for elements and holds ' +
+              JSON.stringify(list) + '; G4 requires elements and style adoption to be independently optional');
+          }
+          if (started) { try { h.stop(); } catch (e) { /* nothing to stop */ } }
+        }
       }
       await worlds.clear();
     }
@@ -898,13 +1127,25 @@ const RECIPES = [
           const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url });
           h.start();
           await worlds.answering('http://127.0.0.1:' + APP_PORT + '/', 6000);
-          const st = h.state();
+          // THE REFUSAL HAS TO BE PROVOKED BEFORE IT CAN BE READ. The
+          // first version of this read state() straight after start and
+          // reported "no code" — but nothing had tried to reach the owner
+          // yet, so there was no refusal to carry. Asserting the shape of
+          // a refusal nobody caused is asking a question of a state that
+          // has not happened.
+          //
+          // A VISIT IS WHAT CAUSES IT: the sample posts to the owner node,
+          // which is the act the owner being asleep interrupts.
+          await pageOf(APP_PORT);
+          const st = await settled(h, 8000);
           const declared = refusalIsDeclared(st);
           if (declared.ok) {
             test.check('cycle 2 G11 (owner-asleep): the refusal carries the code ' + declared.code +
               ', a member of a declared set — which is what makes "every refusal is declared" walkable rather than hoped');
           } else {
-            test.fail('cycle 2 G11 (owner-asleep): ' + declared.why);
+            test.fail('cycle 2 G11 (owner-asleep): ' + declared.why +
+              '. The state was ' + JSON.stringify(st) +
+              ' — carried in full because a refusal-shape finding that does not show the shape sends the reader to reproduce it');
           }
           const held = nothingPersisted(root);
           if (held.ok) {
@@ -928,7 +1169,28 @@ const RECIPES = [
         const bound = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: first.relay.url });
         bound.start();
         await worlds.answering('http://127.0.0.1:' + APP_PORT + '/', 6000);
+        const boundState = await settled(bound, 8000);
         bound.stop();
+
+        // DOES THE PIN SURVIVE THE PROCESS? Asserted separately from the
+        // refusal below, because they fail together and mean different
+        // things: a server that refuses the second relay because it
+        // FORGOT the first is not pinning, it is amnesiac, and the two
+        // are indistinguishable from the refusal alone.
+        //
+        // "The first bind is final" is a promise about what happens after
+        // a restart. A pin held only in memory keeps it for exactly as
+        // long as nothing goes wrong.
+        const after = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT });
+        const remembered = after.state();
+        try { after.stop(); } catch (e) { /* never started */ }
+        if (remembered && remembered.boundKey && remembered.boundKey === boundState.boundKey) {
+          test.check('cycle 2 G6: the pinned relay key survives the process — a second handle on the same box remembers what the first bound to, which is what makes "the first bind is final" a promise rather than a habit');
+        } else {
+          test.fail('cycle 2 G6: the pin did not survive. The first bind held ' + JSON.stringify(boundState.boundKey) +
+            ' and a fresh handle on the same rootDir reports ' + JSON.stringify(remembered && remembered.boundKey) +
+            ' (' + JSON.stringify(remembered && remembered.lastBind) + '). A pin that dies with the process cannot make a first bind final');
+        }
 
         const second = await worlds.otherRelay();
         if (!second.ok) {
@@ -959,8 +1221,18 @@ const RECIPES = [
           if (st && (st.contradiction || st.reported || st.conflict)) {
             test.check('cycle 2 G11 (key-mismatch): the contradiction is kept and reported, so the owner can tell a migration from an attack');
           } else {
-            test.fail('cycle 2 G11 (key-mismatch): the different answer was refused but not kept or reported (' + JSON.stringify(st) +
-              '); refused-and-forgotten leaves the owner with no way to tell which of the two it was');
+            // TWO HALVES, AND ONLY ONE OF THEM IS SATISFIED. Refusing the
+            // new relay is right. Coming back with NO relay at all is the
+            // part that is not: the pin proved itself durable in the
+            // check above, so a contradiction that empties it has thrown
+            // away the thing the owner needs. The finding is not "it
+            // accepted the impostor" — it did not — it is that meeting an
+            // impostor costs the server what it knew.
+            const lost = !!(st && !st.boundKey);
+            test.fail('cycle 2 G11 (key-mismatch): the different answer was refused but not kept or reported' +
+              (lost ? ', AND THE PIN WAS EMPTIED BY MEETING IT — boundKey came back "" with lastBind ' +
+                JSON.stringify(st.lastBind) + ', though the same pin survives an ordinary restart' : '') +
+              ' (' + JSON.stringify(st) + '); refused-and-forgotten leaves the owner with no way to tell a migration they made from an attack they did not');
           }
         }
       }

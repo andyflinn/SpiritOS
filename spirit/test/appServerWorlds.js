@@ -330,8 +330,92 @@ async function otherRelay() {
   return made;
 }
 
+// ── FIXTURE APPS — FOUR WRONG MANIFESTS, WHICH THE SAMPLE CANNOT BE ──
+//
+// G14 says an app gets nothing it did not ask for, that absent means
+// nothing, that utilities are separately grantable, and that a public app
+// server refuses an app that is not strict. NONE of that is observable
+// from the sample's manifest, because the sample is correct — a correct
+// declaration exercises the grant and never the refusal.
+//
+// So the suite brings its own apps. These are the suite's artefacts and
+// not the other half's: they live under the app server's own rootDir in a
+// fixture, they are thrown away with it, and they exist only to be wrong
+// in one named way each.
+//
+// AN APP IS A FOLDER PLUS A SIBLING MANIFEST — `app/<name>/<name>.json`,
+// which `kernel.js` enforces (MANIFEST_PATTERN) and G15 inherits rather
+// than reinvents. These are built to that shape for the same reason the
+// contract uses it: a fixture that invented its own layout would be
+// testing a boundary nobody ships.
+function plantApp(rootDir, name, manifest) {
+  const dir = path.join(rootDir, 'app', name);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, name + '.json'),
+    JSON.stringify(Object.assign({ name: name, description: 'a fixture app' }, manifest), null, 2));
+  // A page, because an app that serves nothing cannot be asked for
+  // anything, and half these assertions are about what it is handed when
+  // it asks.
+  fs.writeFileSync(path.join(dir, 'index.html'),
+    '<!doctype html><meta name="robots" content="noindex"><title>' + name + '</title><p>' + name + '</p>');
+  return dir;
+}
+
+// The four, each wrong in ONE way, because a fixture wrong in two cannot
+// say which one produced the refusal.
+const WRONG_MANIFESTS = {
+  // Declares nothing. Under "absent means nothing" it must be handed no
+  // api members at all — and this is the fixture that makes the rule
+  // assertable, which was the argument for choosing it.
+  'asb-declares-nothing': { posture: 'strict' },
+  // Declares a member that is not in any vocabulary. The open item was
+  // settled recommended-no: refused AT LOAD with the member NAMED, never
+  // at the moment the app reaches for it.
+  'asb-asks-the-impossible': { posture: 'strict', surface: ['verb', 'thereIsNoSuchMember'] },
+  // Not strict. A public app server refuses to serve it.
+  'asb-not-strict': { posture: 'ordinary', surface: ['verb'] },
+  // One utility of the three. G4 requires them SEPARATELY optional, so
+  // taking elements must not bring dialogs along.
+  'asb-elements-only': { posture: 'strict', surface: ['verb'], utilities: ['elements'] },
+};
+
+// AND THE REAL APP HAS TO BE ON THE BOX, which is the defect this
+// function exists to close. The four G11 worlds ran an app server with
+// `appName: 'starter'` against a fixture root that contained no starter —
+// so the contract came back empty, and every assertion about what the
+// sample does was made about an app that was not there.
+//
+// It was invisible because it looks exactly like the state where the
+// feature is unbuilt. THE CONTROL THAT FOUND IT was planting a manifest
+// this suite wrote itself and requiring the server to show it back: that
+// one WAS read, which proved the reader worked and the cupboard was bare.
+//
+// Copying the app onto the box is what a deployment does — G12's whole
+// point is that code is replaced and state is not — so this is the real
+// motion rather than a convenience.
+function plantStarter(rootDir, repoRoot) {
+  const from = path.join(repoRoot, 'spirit', 'run', 'app', 'starter');
+  if (!fs.existsSync(from)) return null;
+  const to = path.join(rootDir, 'app', 'starter');
+  fs.mkdirSync(path.dirname(to), { recursive: true });
+  fs.cpSync(from, to, { recursive: true });
+  return to;
+}
+
+function plantWrongApps(rootDir) {
+  const planted = {};
+  Object.keys(WRONG_MANIFESTS).forEach(function (name) {
+    planted[name] = plantApp(rootDir, name, WRONG_MANIFESTS[name]);
+  });
+  return planted;
+}
+
 module.exports = {
   PREFIX: PREFIX,
+  plantApp: plantApp,
+  plantStarter: plantStarter,
+  plantWrongApps: plantWrongApps,
+  WRONG_MANIFESTS: WRONG_MANIFESTS,
   PORT_RELAY: PORT_RELAY,
   PORT_OTHER_RELAY: PORT_OTHER_RELAY,
   PORT_OWNER_NODE: PORT_OWNER_NODE,
