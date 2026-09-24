@@ -177,6 +177,28 @@ Bound to one relay, learns `ownerKey` from it, **waits while the relay is
 unclaimed**, refuses to start if it is not a member. No owner key and no
 domain in the tree or in its configuration.
 
+**AND TWO PROPERTIES THAT LIVED ONLY IN THE NEGOTIATION UNTIL NOW**, which
+wsl-claude flagged at the readiness check as the gap he would least like
+to ship — *"built as written, 'learns its owner' IS the hostile-relay
+hole we closed in conversation"*, and the most dangerous item on his list
+**because the requirement reads complete without them**:
+
+- **PIN THE RELAY'S IDENTITY KEY, NEVER THE URL.** A URL is a name
+  somebody else controls: an expired domain, a DNS change, a restored
+  backup or a typo answers once and, under `learns its owner`, owns the
+  app for good. The bind is to the key the relay proved at first contact.
+- **THE FIRST BIND IS FINAL: a later different answer is REFUSED, KEPT
+  AND REPORTED.** Not accepted, not silently ignored. Refused so the
+  wrong owner cannot take over; kept so the contradiction survives; and
+  reported because a relay that has started answering with a different
+  key is either a migration the owner made or an attack, and only the
+  owner can tell which.
+
+This is cycle 10's card-ordering argument arriving at the bind: *accepted
+once, from whoever got there first* is not the same as *accepted from
+anywhere the signature holds*, and the difference is the whole value of
+pinning.
+
 ### G7 — the node's role is asked, never cached, and fails CLOSED
 
 **Status:** OPEN. No such constant exists.
@@ -223,7 +245,25 @@ that cannot fail, in a document.
 
 ### G10 — a server reports the box it sits on: four fields, one opinion withheld
 
-**Status:** OPEN. Nothing built. **Interface deferred by Andy.**
+**Status:** OPEN. Nothing built. **Interface deferred by Andy; the
+OWNER-SIDE MINTING IS IN**, ruled 2026-09-24: *"the owner is needed for
+minting and onboarding features."*
+
+The owner s node is the minting party by design — it already mints
+invites (`relay.js:3677-3684`) — so a box label minted at bind is the
+same kind of act rather than new territory. wsl-claude raised it at the
+readiness check: the interface being deferred does NOT defer the
+minting, because without it a server has no label to report and the four
+fields below become three, so a builder would do the server half and
+stop.
+
+**What the owner s node owes: assign a label at bind, refuse a
+duplicate, remember it.** It is the one party holding the whole list,
+which is what makes a collision impossible rather than merely visible.
+
+**AND THE SCOPE LINE, held so the two do not merge:** the BOX LABEL
+minting is stage 1. `join` s OAuth minting program is stage 2. Same
+party, different cycles.
 
 ```
   assigned box label      minted by the OWNER when the server binds
