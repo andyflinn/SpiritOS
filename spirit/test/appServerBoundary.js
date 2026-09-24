@@ -884,13 +884,26 @@ const RECIPES = [
   const appRoot = path.join(labPaths.FIXTURE_ROOT, 'asb-appserver', 'spirit', 'run');
   const APP_PORT = 45610;
 
-  async function pageOf(port) {
+  // ── ONE PLACE IN THIS SUITE TOUCHES THE WIRE ───────────────────────
+  //
+  // `oneDoor` counts what reaches past the interface and fails on GROWTH,
+  // which is how it stops back-sliding. Adding a second call site for the
+  // door would have raised the tally — so the two readers share one, and
+  // the suite obeys the rule it was written to assert about everything
+  // else. The count does not go up because there is nothing new to count.
+  async function reach(port, path, opts) {
     try {
-      const res = await fetch('http://127.0.0.1:' + port + '/');
-      return { status: res.status, body: await res.text() };
+      const res = await fetch('http://127.0.0.1:' + port + path, opts || undefined);
+      const text = await res.text();
+      return { status: res.status, text: text };
     } catch (e) {
-      return { status: 0, body: '', error: String((e && e.message) || e) };
+      return { status: 0, text: '', error: String((e && e.message) || e) };
     }
+  }
+
+  async function pageOf(port) {
+    const r = await reach(port, '/');
+    return { status: r.status, body: r.text, error: r.error };
   }
 
   // ── A FETCH OF THE PAGE RUNS NONE OF THE PAGE ───────────────────────
@@ -907,16 +920,14 @@ const RECIPES = [
   // asserted statically instead, under G3, by requiring the sample to
   // import the one `ask` and hold no raw call of its own.
   async function doorOf(port, verb) {
-    try {
-      const res = await fetch('http://127.0.0.1:' + port + '/api/spirit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ verb: verb }),
-      });
-      return { status: res.status, body: await res.json().catch(function () { return null; }) };
-    } catch (e) {
-      return { status: 0, body: null, error: String((e && e.message) || e) };
-    }
+    const r = await reach(port, '/api/spirit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verb: verb }),
+    });
+    let body = null;
+    try { body = JSON.parse(r.text); } catch (e) { body = null; }
+    return { status: r.status, body: body, error: r.error };
   }
 
   // A FRESH BOX WITH THE APP DEPLOYED ONTO IT. The app is copied in
