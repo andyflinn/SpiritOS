@@ -189,3 +189,18 @@ NEXT_PROMPT.md
 # — the vault is singular and belongs to the person, so a lab home that
 # grew a `brains` folder would be a bug to see, not a path to hide.
 spirit/run/brains/
+
+# ── A RESTARTED NODE'S CONSOLE, WHEREVER IT IS RESTARTED FROM ────────
+#
+# Starting a node detached needs somewhere for its stdout and stderr to
+# go, and the obvious place is beside the clone it runs from. Those two
+# files are the node's console and nothing else — they are recreated on
+# every start and mean nothing to anybody who was not watching that
+# process. Added 2026-09-24 after rule 11b's first application left them
+# in `git status` in two checkouts.
+#
+# It matters more here than the size of the files suggests: this
+# repository stages by name and never `git add -A`, and untracked noise
+# in the root is exactly what makes somebody reach for the shortcut.
+node.out
+node.err
