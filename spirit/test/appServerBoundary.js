@@ -456,6 +456,39 @@ test.awaiting('public-app-server/G8', 'the named stable half of layer 1', false,
   { there: 0, cost: 'a naming and a written test, no code; the value is that a later session can place a new thing without re-deriving the philosophy, ' +
     'and this suite deliberately asserts nothing about it because a name this agent invented would BE the divergence rather than find one' });
 
+// ── G17 — THE PUPPET SHOWS WHAT ITS MASTER COMPUTED ──────────────────
+//
+// A DEFECT WITH A VERIFIED CAUSE, declared here because a defect fix that
+// is not a requirement is invisible to every instrument we have — and
+// this one went an hour without a board row while two agents designed a
+// hosting product on top of it.
+//
+// `reachOwner` throws the answer away:
+//
+//     appServer.js — `if (a.ok) return { ok: true, status: a.status || 200 };`
+//
+// and `peerPost.js:363-373` has already UNSEALED the reply into
+// `answer.text` before resolving the caller's promise. So the transport
+// carries a body home and the app server drops it.
+//
+// IT IS THE ONLY WAY A PUPPET CAN SHOW ANYTHING. Andy, 2026-09-24: *"The
+// app actually lives on the owners node. the 'site' is just a screen"* —
+// so everything a visitor sees that was not already in the HTML came down
+// this string, and the string is cut. Invisible for `starter`, which has
+// nothing to show; fatal for `join`, where the invite IS the answer.
+//
+// DECLARED AWAITING RATHER THAN ASSERTED, and the reason is the honest
+// one: proving a body arrives needs an owner that ANSWERS with one, and
+// the owner-side program — the master — is unbuilt. The fixture's owner
+// node is a plain node that answers nothing. So the unit that is missing
+// is named and the count carries it until somebody builds both halves.
+test.awaiting('public-app-server/G17', 'the answer body reaching the door', false,
+  'a reply carries a body, already unsealed, to the original poster — and reachOwner keeps it, so what the master computed reaches the screen',
+  { there: 70, cost: 'the transport half is DONE and verified by both agents (peerPost.js:363-373 unseals into answer.text before resolving). ' +
+    'What is missing is that appServer stops discarding it, and an owner-side program that answers with a body — the second is the master, ' +
+    'and it is the unbuilt half of every show. This is declared awaiting rather than red because an assertion needs a master that answers, ' +
+    'and asserting against a fixture owner that answers nothing would test the fixture' });
+
 // ── G9 — strict posture, and refusals that are walkable ──────────────
 test.subHeading('G9 — every refusal is a member of a declared set, and carries its code');
 {
