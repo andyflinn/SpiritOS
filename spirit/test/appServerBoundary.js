@@ -1262,6 +1262,44 @@ const RECIPES = [
           } else {
             test.fail('cycle 2 G11 (owner-asleep): it kept ' + held.held.join(', ') + ' while the owner was asleep');
           }
+
+          // ── THE OWNER'S NAME IS A BOX FIGURE THAT DOES NOT LOOK LIKE ONE ──
+          //
+          // G11 says the visitor sees none of the box figures, and the
+          // manifest check below forbids interpolated NUMBERS. A NAME
+          // passes both: it carries no digits and no `${}`, and it is the
+          // most identifying thing that could appear on that page.
+          //
+          // It cannot be caught statically — a manifest cannot know whose
+          // relay it will serve. It CAN be caught here, because this world
+          // built the owner and knows the label it gave them. That is the
+          // whole argument for asserting it in a world rather than in a
+          // file: the check needs a fact only the world has.
+          //
+          // Andy approved the sample's sentence on the strength of it
+          // naming nobody ("The person who looks after this service"), so
+          // this is the assertion that keeps that property true after the
+          // next person edits the manifest.
+          // IT CHECKS THE REFUSAL, NOT THE PAGE — and the first version of
+          // this assertion checked the page, went red, and would have been
+          // reported as a defect in the other half.
+          //
+          // The page is not the same question. A public app server is "a
+          // public node-app, CONTROLLED BY THE OWNER", so a landing page
+          // that says whose service it is may be entirely correct and
+          // nobody has ruled otherwise. What Andy approved was the wording
+          // of the REFUSAL, on the strength of it naming nobody — so that
+          // is what this holds to, and the wider question stays unasked
+          // rather than being decided by an assertion I wrote.
+          const label = (w.owner && w.owner.name) || 'asbowner';
+          const refusalText = JSON.stringify((answered && answered.body) || {});
+          if (refusalText.indexOf(label) === -1) {
+            test.check('cycle 2 G11 (owner-asleep): the refusal names nobody — a name is the box figure that carries no digits, passes every check that looks for figures, and is the most identifying thing that could be on that screen');
+          } else {
+            test.fail('cycle 2 G11 (owner-asleep): the owner label ' + JSON.stringify(label) +
+              ' is in the refusal the visitor receives: ' + refusalText.slice(0, 160) +
+              '. It is the owner\'s to publish, not the app\'s to leak');
+          }
           h.stop();
         }
       }
