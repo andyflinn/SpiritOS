@@ -687,11 +687,26 @@ function create(opts) {
   // dispatch here and there is not meant to be: fanning out to other apps
   // is the SHELL's job, which is what the shell's own app happens to do,
   // and a node that serves one app has nothing to fan.
+  // ── THESE FILES ARE OFFERED; NO FOLDER IS SERVABLE ──────────────────
+  //
+  // G2's open question, answered the way it framed itself: *"offering
+  // shell files widens the whitelist. It must be `these files are
+  // offered`, never `the shell's folder is servable`."* So the shared
+  // file is named, one entry, and a path that is not in this function is
+  // 404 before anything looks at it. There is still no directory read
+  // anywhere in this module.
+  //
+  // `app/shared/ask.js` is G3's one home. It is offered to every app
+  // because the app contract is mandatory, not optional — the OPTIONAL
+  // layer is `app/shell`'s elements and tokens (G4), and those are
+  // granted per manifest, not handed out here.
   function servable(pathname) {
-    if (pathname === '/' || pathname === '/index.html') return appName + '.html';
+    const own = function (f) { return path.join(appDir(rootDir, appName), f); };
+    if (pathname === '/' || pathname === '/index.html') return own(appName + '.html');
     const m = /^\/([A-Za-z0-9._-]+)$/.exec(pathname);
     if (!m) return null;
-    if (m[1] === appName + '.html' || m[1] === appName + '.js') return m[1];
+    if (m[1] === appName + '.html' || m[1] === appName + '.js') return own(m[1]);
+    if (m[1] === 'ask.js') return path.join(rootDir, 'app', 'shared', 'ask.js');
     if (m[1] === 'favicon.svg') return null;
     return null;
   }
@@ -850,7 +865,7 @@ function create(opts) {
     // by a stranger — so it serves the app's page and acts on nothing,
     // rather than refusing to start.
     res.setHeader('X-Robots-Tag', 'noindex');
-    return common.sendFile(res, path.join(appDir(rootDir, appName), file));
+    return common.sendFile(res, file);
   }
 
   // ── THE BIND, RUN ONCE AT START AND RE-CHECKABLE ────────────────────

@@ -56,7 +56,7 @@
     Nothing about you is written anywhere.
   </footer>
 
-<script>
+<script type="module">
 // ── THE ONLY THING THIS APP RELIES ON IS `verb` ──────────────────────
 //
 // Its manifest declares `"surface": ["verb"]` and nothing else, so that
@@ -64,20 +64,18 @@
 // absent means nothing, because the permissive default would make the
 // app contract a check that cannot fail.
 //
-// Fourteen lines, and deliberately not a library. If this ever needs a
-// package, the claim the whole layer makes has quietly been given up.
-async function ask(verb, args) {
-  const body = Object.assign({ verb: String(verb) }, args || {});
-  const r = await fetch('/api/spirit', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  // A REFUSAL IS AN ANSWER. It arrives as {ok:false, status, error, code}
-  // — with a CODE, because prose cannot be matched against a set, and
-  // every refusal this server can emit is a member of one.
-  return r.json().catch(function () { return { ok: false, error: 'unreadable answer' }; });
-}
+// ── AND THE `ask` IS IMPORTED, NEVER COPIED ─────────────────────────
+//
+// This file used to carry its own fourteen-line `ask`, naming the node's
+// door in a raw call of its own, and that was the worst copy of the four:
+// THE SAMPLE IS WHAT EVERY STRANGER COPIES, so a fork here does not add
+// one caller, it teaches the habit. It was written by the agent
+// enforcing the rule against it, and found by the other agent's suite.
+//
+// `/ask.js` is served by the app server from `app/shared/ask.js` — one
+// named file on the whitelist, never a servable folder (G2). The same
+// import works under the shell, because both hosts answer the same door.
+import { ask } from './ask.js';
 
 function row(label, value, quiet) {
   const d = document.createElement('div');

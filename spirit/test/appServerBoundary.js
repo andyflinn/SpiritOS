@@ -259,6 +259,24 @@ test.subHeading('G3 — the one shared ask, and no fourth divergent copy');
   // So the assertion counts copies and fails on growth, which is the only
   // form that can fail — asserting that three exist would pass for ever
   // and prove nothing.
+  // ── THE ONE HOME IS NOT A COPY, AND IT HAS TO BE NAMED SOMEWHERE ────
+  //
+  // Written before `ask` had a home, this counted every file naming the
+  // door — which would have counted THE HOME ITSELF the moment it was
+  // built, so G3 could never have gone green. The requirement is "one
+  // home and no fourth copy", so the suite has to know which file is the
+  // home. It is named here, once, and asserted to exist: an exemption
+  // for a file that is not there would quietly excuse everything.
+  const HOME = 'spirit/run/app/shared/ask.js';
+  const homePath = path.join(REPO, HOME);
+  if (fs.existsSync(homePath)) {
+    test.check('cycle 2 G3: the one home exists at ' + HOME +
+      ' — so "no fourth copy" is a statement about copies of something, rather than about nothing');
+  } else {
+    test.fail('cycle 2 G3: ' + HOME + ' does not exist, so there is no home for `ask` and the ' +
+      'count below exempts a file that is not there');
+  }
+
   const copies = [];
   (function walk(dir) {
     let entries = [];
@@ -268,6 +286,9 @@ test.subHeading('G3 — the one shared ask, and no fourth divergent copy');
       const p = path.join(dir, e.name);
       if (e.isDirectory()) { walk(p); return; }
       if (!/\.(js|html)$/.test(e.name)) return;
+      // The home names the door once, on purpose. Everything else that
+      // names it is a copy.
+      if (path.relative(REPO, p).split(path.sep).join('/') === HOME) return;
       const body = fs.readFileSync(p, 'utf8');
       // A raw call at the node's own API from a page — the shape the
       // shared ask exists to replace.
