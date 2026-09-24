@@ -260,41 +260,87 @@ somebody else's code.**
 
 ---
 
-## THE ADAPTED IMPLEMENTATION PLAN — this state is the status quo
+## THE ADAPTED IMPLEMENTATION PLAN — agreed by both agents
 
-**Andy, closing, and this step is new:** *"considering this the status
-quo, and changing adapting the implementation plans with recognized
-dependencies etc... before updating the brain and going idle for the next
-'go'."*
+**Andy, closing:** *"considering this the status quo, and changing
+adapting the implementation plans with recognized dependencies etc...
+before updating the brain and going idle for the next 'go'."* And:
+**"new plan must be agreed to by wsl."**
 
-**So the carried-forward list is not a list any more. It is an ORDER**,
-built from the dependencies this cycle discovered rather than from the
-order the requirements happened to be written in — which is S1 applied
-to the plan that S1 came out of.
+**Agreed, with four refusals, all taken.** The carried-forward list is
+not a list any more — it is an **order**, built from dependencies this
+cycle discovered rather than the order the requirements happened to be
+written in.
 
 | # | what | why it sits here |
 |---|---|---|
-| **1** | `settleRelay` stops going blind; refusals reach HTTP with their code | **blocks G11.** Two of the four states cannot be OBSERVED until a refusal carries a code and a mismatch stops blanking the pin |
-| **2** | **G3** — `ask` gets one home | **blocks everything touching the sample** (D2's ordering constraint) |
-| **3** | the starter moves onto the shared `ask` | clears D2's violation. **Cannot precede 2**, which is the whole finding |
-| **4** | **G4** — `app/shell` offers elements and tokens as files | **blocks 5.** Utilities cannot be GRANTED from a folder that does not exist |
-| **5** | G14's remainder: grant utilities, refuse a missing member at load | 4 first |
-| **6** | **D1**, per Andy's ruling: posture at start or per request | touches `create`/`start`, which 7 and 8 drive |
-| **7** | **G11** — the four states driven from outside | needs 1, and 6 settled |
-| **8** | **G13** — the acceptance runs. **THE EXIT CONDITION** | needs 3 and 7. **S2: the cycle is not closed until this has run** |
-| **9** | **G10**'s owner-side label minting | independent; ruled in and unbuilt |
+| **1** | **G16** — a server meeting an impostor keeps serving its pinned relay and reports the conflict; every refusal reaches HTTP carrying its code | **blocks 7.** Two of the four states cannot be OBSERVED until a refusal carries a code and a mismatch stops blanking the pin |
+| **2** | **G3** — `ask` gets one home | **blocks everything touching the sample** (D2) |
+| **3** | the starter moves onto the shared `ask` | clears D2's violation. **Finish before 7 BEGINS** — not merely before it ends |
+| **4** | **G4** — `app/shell` offers elements and tokens as files | **blocks 5.** Utilities cannot be granted from a folder that does not exist |
+| **5a** | **SETTLED:** refuse a missing member at load; grant utilities | G15 says it, both agents agreed it. Build it |
+| **5b** | **UNRULED — D1, posture at load vs per request. BLOCKED ON ANDY** | written apart from 5a **on purpose** |
+| **6** | **G11** — the four states driven from outside, against the post-item-3 sample | needs 1, and 5b settled |
+| **7** | **G13** — the acceptance runs. **THE EXIT CONDITION** | needs 3 and 6 |
+| **8** | **G10**'s owner-side label minting, **plus one assertion that something reads the label back** | ruled in by Andy |
 
-**THREE OF THESE WERE INVISIBLE WHEN THE CYCLE WAS SCOPED**, and each is
-a dependency rather than a preference: **2 before 3** (D2), **4 before
-5**, **1 before 7**. The old plan had them in none of those orders.
+### The four refusals, and why each changed the plan
 
-**AND S2 IS APPLIED RATHER THAN NOTED:** 8 is the exit condition, not the
-last task. A cycle carrying this plan cannot close by running out of
-time, because *closed* and *the acceptance ran* are now one fact.
+**R1 — the plan had no slot for the divergence it was sending to Andy.**
+Posture goes to him unresolved and **nothing in the nine items touched
+it**, so *"mid-cycle we meet a ruling with no slot to put it in, and
+whoever is holding the work decides on the spot — which is how a
+divergence gets settled quietly by whoever got there first."* It is
+**5b** now, blocked, and **written apart from 5a** — because the settled
+half sits one line away and *"the second gets built on the momentum of
+the first."*
 
-**BLOCKED ON ANDY, and a builder stops on each:** D1 (item 6), the
-`MemoryMax` two-writers hole, how units on a box are counted, and the
-fingerprint's ingredients.
+**R2 — item 3 modifies the sample; G11 says the sample UNMODIFIED.** Fine
+as ordered, but the four states must be driven against the post-item-3
+sample, and his worlds deploy whatever is in `app/starter` at run time.
+So **3 finishes before 6 begins**, rather than overlapping.
+
+**R3 — item 8 would write a label nothing reads.** The owner interface
+that would consume it is deferred, so a minted label has no consumer this
+cycle — which is *declaring is not granting* arriving against its own
+author. It carries **one assertion that something reads it back**; if
+nothing in the cycle can, **that fact goes in the report where Andy can
+see what he ruled in**, rather than being found next cycle as an empty
+field.
+
+**R4 — item 1 is a defect fix and it is first, and the cure is to stop
+calling it a defect fix.** It is **G16** now, with an id and a status.
+*"A defect fix that is not a requirement is INVISIBLE TO EVERY INSTRUMENT
+WE HAVE — no board row, no status, no citation. That is S3 at
+requirement scale, and we should not reintroduce it one level down on the
+first item of the new plan."*
+
+### And S3's meter is corrected before adoption
+
+**wsl-claude refused his own mechanism.** This agent had called *"the
+meter would have been reading red on us for the last hour"* the strongest
+thing that could be said for it. **It is also the defect:**
+
+> *"EVERY cycle ends in a stop, and every stop produces out-of-scope
+> commits — the report, the rules, the plan, the brains. So a tail-run
+> signal fires at the end of every cycle that ever existed, including
+> cycles that built their scope perfectly. I built a meter that is red by
+> construction at the only moment anyone reads it."*
+
+**The fix is not a threshold. The run is measured up to the moment the
+STOP IS CALLED**, which is a declared event — Andy says *proceed with
+reconciliation* — so the boundary is a fact and not a judgement.
+Everything after it is close-work and is expected to be out of scope.
+**The question the meter asks is whether the cycle stopped building
+BEFORE anybody called the stop.** Ours did, by two and a half hours.
+
+**And the scope declaration must include the cycle's own design
+document**, or a future cycle reads as displaced while doing the most
+in-scope thing there is.
+
+**BLOCKED ON ANDY, and a builder stops on each:** 5b (the posture
+divergence), the `MemoryMax` two-writers hole, how units on a box are
+counted, and the fingerprint's ingredients.
 
 ---
 
