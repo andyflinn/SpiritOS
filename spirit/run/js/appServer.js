@@ -595,6 +595,58 @@ function router(home) {
   if (heldRouters[home]) return heldRouters[home];
   heldRouters[home] = require('./peerPost').createPeerPost({
     rootDir: home,
+
+    // ── A SLAVE TAKES ITS MASTER'S KEY FROM ITS MASTER ───────────────
+    //
+    //   Andy, 2026-09-24, ruling the shape of this: "think of it as: a
+    //   public app-server under SpiritOS is a slave to it's owner, as it
+    //   should." And on the procedure: "the join app needs the owner to
+    //   be awake, an owner who is live is the suggested SOP."
+    //
+    // THIS IS WHY THE RELAY WAS THE WRONG ANSWER AND NOT MERELY THE
+    // EXPENSIVE ONE. The relay holds the owner's card (relayStore.js,
+    // members.card) and a route could have handed it over, which would
+    // let an app server come up while its owner has never been reachable
+    // — cold start. That is a slave arranging its master's business
+    // behind the master's back, and it buys an autonomy nothing here is
+    // supposed to have. Ruled out by Andy rather than by cost.
+    //
+    // SO THE CARD COMES FROM THE OWNER, OVER THE WIRE, SIGNED. If the
+    // owner is not there, this server does nothing and says so — it does
+    // not improvise a second source. A card request is the ONE packet
+    // that may travel unsealed (`peerPost.js:697`, Andy: "card is the
+    // only possible un-cyphered peerPost ... yes. VERY strict about
+    // that!"), which is exactly what makes the first introduction
+    // possible without a prior key, and why there was never a deadlock
+    // here to break.
+    keepCard: function (toKey, cardText) {
+      const book = require('./contacts');
+      // A card needs a row to sit on — `setCard` refuses one for a key it
+      // has no row for, which is right: a card must not be smuggled in
+      // beside an unverified one. The row is made at the lowest rank,
+      // exactly as the node's own door does it (`server.js:1262`): seen,
+      // not known, not listened to.
+      //
+      // THE ONE ROW THIS SERVER EVER WRITES ABOUT ANYBODY, and it is
+      // about its OWNER — not a visitor. G9's "acts on nothing" is a
+      // promise about strangers, and the suite checks the app's state
+      // home for exactly that; the owner is the one party this server is
+      // definitionally not anonymous to.
+      if (!book.byPublicKey(home, toKey)) {
+        book.upsert(home, { publicKey: toKey, acquiredVia: book.ROLL });
+      }
+      return book.setCard(home, toKey, cardText, 'reply');
+    },
+
+    // Read per post, never captured: a card can arrive, and a key can
+    // rotate, while the process runs. Empty means the post is refused
+    // rather than sent plain — the same rule the node holds itself to.
+    sealKeyFor: function (toKey) {
+      const book = require('./contacts');
+      const row = book.byPublicKey(home, toKey);
+      return (row && book.sealKeyOf(row)) || '';
+    },
+
     // The node-to-relay leg, and it is the SAME FUNCTION a node uses —
     // `require('./hub').relayRequest === require('./relayRequest')
     // .relayRequest` is true, verified rather than assumed. They were
@@ -617,13 +669,57 @@ function reachOwner(rootDir, appName, state, body) {
   identity(rootDir, appName);
   const poster = router(stateDir(rootDir, appName));
 
+  // ── INTRODUCE YOURSELF BEFORE YOU SPEAK ─────────────────────────────
+  //
+  // A post to somebody whose card this server does not hold is refused at
+  // 428 BEFORE ANYTHING LEAVES — `peerPost.js:749`, "no cipher key for
+  // that peer — ask for their card first". That is not a fact about the
+  // owner and must never be reported as one: this suite's owner-asleep
+  // world passed for four minutes carrying that 428, and the state it
+  // claimed to test had never happened.
+  //
+  // THE MOVE THE PROTOCOL ALREADY HAS. A card request travels unsealed,
+  // by Andy's rule and only for this, so the introduction needs no prior
+  // key. Contacts does exactly this to strangers; nothing here is new.
+  //
+  // AND IT MAKES THE SLEEPING OWNER HONEST. The request DEPARTS, so an
+  // owner who is not answering produces a timeout — `app-owner-asleep`,
+  // a fact about the owner — instead of this server's own refusal. The
+  // wrong-code bug and the missing introduction were one defect.
+  //
+  // ONCE, AND THEN NEVER AGAIN: the card is kept, so this costs one
+  // extra round trip on the first reach of a deployment's life.
+  function introduced() {
+    const book = require('./contacts');
+    const row = book.byPublicKey(stateDir(rootDir, appName), state.ownerKey);
+    if (row && book.sealKeyOf(row)) return Promise.resolve({ ok: true, held: true });
+    return poster.post(state.relay, state.ownerKey, JSON.stringify({ v: 1, body: { card: true } }));
+  }
+
   // post(relayUrl, toKey, text) — positional, and it answers a promise.
   // The identity it signs with is read from the rootDir it was built
   // with, which is why the app's key sits at
   // app-state/<name>/relay-state/identity.json: the nested path that
   // looked ugly an hour ago is what lets the one identity reader find
   // it without a second convention.
-  return poster.post(state.relay, state.ownerKey, JSON.stringify(body || {}))
+  // ── AND A FAILED INTRODUCTION IS THE ANSWER ─────────────────────────
+  //
+  // Written first as "introduce, then post regardless", which posted into
+  // a peer this server still held no card for — so the real post was
+  // refused at 428 by THIS server and the sleeping owner was reported as
+  // the sender's own precondition all over again. The introduction had
+  // been added and the bug it was added to fix survived it.
+  //
+  // IF THE INTRODUCTION DID NOT ARRIVE, NOTHING ELSE WILL. The card
+  // request departs, so its failure is already a fact about the owner or
+  // the relay, and it goes through the same classifier as any other
+  // answer rather than being retold here.
+  return introduced()
+    .then(function (hello) {
+      if (hello && hello.held) return poster.post(state.relay, state.ownerKey, JSON.stringify(body || {}));
+      if (!hello || !hello.ok) return hello || { ok: false, status: 0 };
+      return poster.post(state.relay, state.ownerKey, JSON.stringify(body || {}));
+    })
     .then(function (answer) {
       const a = answer || {};
       if (a.ok) return { ok: true, status: a.status || 200 };

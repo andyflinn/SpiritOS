@@ -1232,16 +1232,36 @@ const RECIPES = [
           // OWNER. Anything else means the reach died at home, and a
           // world that cannot get out of its own process proves nothing
           // about a peer that is not answering.
-          const ABOUT_THE_OWNER = ['app-owner-asleep', 'app-not-a-member', 'app-relay-full'];
+          // ── AND `app-not-a-member` IS NOT THIS STATE EITHER ─────────
+          //
+          // Widened to three codes once the 428 was fixed, and it passed
+          // immediately on `app-not-a-member` at 403 — which is a fact
+          // about the OWNER'S RELAY refusing to route, not about the
+          // owner being asleep. THE APP SERVER NEVER CLAIMS A SEAT: there
+          // is no invite and no claim anywhere in appServer.js, so it is
+          // not a member of the relay it serves and nothing it posts is
+          // ever routed.
+          //
+          // THIRD TIME THIS WORLD HAS GONE GREEN ON A STATE IT WAS NOT
+          // IN — first on the missing card, then on the missing
+          // membership. Each time a layer underneath was absent and its
+          // absence produced an answer that looked like the answer. The
+          // only cure that has worked is naming the ONE code this world
+          // means, so the next missing layer fails loudly instead of
+          // substituting itself.
+          const ABOUT_THE_OWNER = ['app-owner-asleep'];
           const got = (answered.body && answered.body.code) || '';
           if (ABOUT_THE_OWNER.indexOf(got) !== -1) {
             test.check('cycle 2 G11 (owner-asleep): the door answers the reach with code ' + got +
               ' at status ' + answered.status + ' — a refusal about the OWNER, reaching HTTP, which is where a stranger meets it');
           } else if (got) {
             test.fail('cycle 2 G11 (owner-asleep): the reach was refused with ' + got + ' at status ' + answered.status +
-              ', which is not a fact about the owner — it is this server refusing before anything left. ' +
-              'The app server holds no card for its owner and never asks for one, so the reach cannot leave the box ' +
-              'and three of the four states are not producible. Expected one of ' + ABOUT_THE_OWNER.join(', '));
+              ', which is not a fact about the OWNER — the owner being asleep was never exercised, because something ' +
+              'nearer than the owner refused first. ' + (got === 'app-not-a-member'
+                ? 'The app server never claims a seat: there is no invite and no claim in appServer.js, so it is not a ' +
+                  'member of the relay it serves and nothing it posts is routed.'
+                : 'The refusal came from this server before anything left the box.') +
+              ' Expected ' + ABOUT_THE_OWNER.join(', ') + ' — this world means exactly one state and must not pass on a nearer one.');
           } else {
             test.fail('cycle 2 G11 (owner-asleep): the door answered ' + JSON.stringify(answered).slice(0, 200) +
               ' — a refusal that carries no code over HTTP cannot be matched against the declared set by anyone outside this process');
