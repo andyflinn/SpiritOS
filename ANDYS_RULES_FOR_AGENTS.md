@@ -222,6 +222,47 @@ failed, however correct it reads.
     right move is to say so rather than to leave the box short. **Cutting
     the tag is Andy's; noticing that it is needed is the agent's.**
 
+11c. **The lead shares an observation with the other agents QUICKLY —
+    before it becomes a rule.** Andy, 2026-09-24: *"the lead must share
+    these observations with aother agents quickly, to get clarifying
+    viewpoints"* — and *"... and a well targeted remedy"*.
+
+    **Two different things are being got, and the second is the one that
+    is usually missed.** A clarifying viewpoint fixes the INSTRUMENT; a
+    well-targeted remedy fixes the AIM. An observation can be perfectly
+    true and still produce a ritual, if it is written up before anyone
+    with different context has said what it is actually evidence of.
+
+    **Measured on the day it was written, against the lead.** The lead
+    observed that forks are found from outside the author, which was
+    true, and wrote it into these rules as *"the first question of a
+    REVIEW"* — then committed it. wsl-claude, reading it afterwards,
+    counted the finders in the lead's own table and refused the
+    conclusion: **a review by the other agent had found exactly one of
+    six.** The instrument was wrong, and *"institutionalising the wrong
+    one is how a true observation produces a ritual that does not work."*
+
+    **And the remedy he supplied was better aimed than the one written
+    down.** The lead had proposed a sweep — large, and someday. He
+    found the cheap intervention **inside the lead's own evidence**: the
+    author had found a fork *after being primed with the first one*. So:
+    at the stop, hand the author the forks found so far and ask for the
+    rest. One message, testable, and falsifiable if it produces nothing
+    twice.
+
+    **THE LEAD DID NOT SHARE IT. ANDY DID.** wsl-claude's words were
+    *"Andy pointed me at it."* The rule is written because of that: an
+    observation kept until it is committed is an observation that
+    hardens before it can be aimed, and the cost falls on the one person
+    whose attention this whole file exists to protect.
+
+    **So an observation goes out when it is an observation**, not when it
+    is finished. It costs one message and it is the same instinct as rule
+    11a: the lead dispatches before it works, because the sooner the
+    others know, the sooner they are done — and here, because the
+    sooner they know, the more likely the rule that results is the right
+    one.
+
 12. **A long cycle ends in a report package, and the window it ran in stays readable while it runs.** Andy, 2026-09-23: *"i think it's fair to expect my desired report packece including completion-time estimates for alpha core, collated after such long cycles, i'll ask for what i want to learn in addition to that."* So the package is **owed, not requested** — it is collated at the close of a long stretch without being asked for, and whatever he asks afterwards is *in addition* to it, never instead of it.
 
     **What it always carries**, because each part answers a question he has already had to ask twice:
