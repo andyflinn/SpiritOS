@@ -78,6 +78,25 @@ const TALLY = {
   // now and the number may only fall.
   'js/kernel.js': 14,
 
+  // THE SAME RULE FOR AN APP SERVED WITHOUT A SHELL — a new line, and so
+  // an exception. GRANTED BY ANDY 2026-09-24, asked for out loud as this
+  // tally requires: *"i grant ask.js (app/shared/ask.js), i approve of
+  // where it sits in the folder tree. go. it's a useful tool"*.
+  //
+  // `kernel.js` above is here because a page cannot require a node
+  // module. This is that sentence again for a page the shell never
+  // serves: an app on a public app server loads no kernel, and peerPost
+  // is node-side, so the browser needs one door of its own.
+  //
+  // IT EXISTS TO MAKE THIS NUMBER SMALLER, NOT LARGER. G3 counted four
+  // raw callers and the fourth was in `app/starter` — the sample every
+  // stranger copies, where a fork does not add one caller, IT TEACHES
+  // THE HABIT. One home means app pages stop writing their own.
+  //
+  // ONE REACH, AND THE NUMBER MAY ONLY FALL. The moment it is two, this
+  // suite fails, which is what makes the grant safe to have given.
+  'app/shared/ask.js': 1,
+
   // THE SERVER ITSELF: http.createServer, and fetchExternal, the gated
   // door apps ask for by verb rather than by URL.
   'js/server.js': 2,
