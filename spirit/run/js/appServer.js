@@ -400,6 +400,89 @@ function pin(rootDir, appName, seen) {
   return { ok: true, key: seen, first: false, config: cfg };
 }
 
+// ── THE APP SERVER'S OWN IDENTITY, AND WHERE ITS KEY LIVES ──────
+//
+// An app server is an ordinary member of the relay it serves — no
+// privileged status, no second protocol. Its only power is that the
+// owner's node answers it. So it needs a key, and the key is a file.
+//
+// WRITTEN BY relayAuth.saveIdentity AND NOT BY A SECOND WRITER, which
+// costs a nested path: `app-state/<name>/relay-state/identity.json`.
+// That is uglier than it should be and it is the right trade. A second
+// identity writer would drift from the first, and this design spent a
+// whole sitting on three things that forked for exactly that reason —
+// `ask`, `relayLimits`, `lib.sh`. Reusing it also gets the 600/700
+// permissions for free, which is the difference between a private key
+// and a readable file on a box strangers can reach.
+//
+// It is under `app-state/` rather than `app/` for G12's reason: a
+// deployment replaces CODE. An identity inside the code folder is an
+// identity a redeployment destroys, and a node that loses its key does
+// not lose a password — it ceases to be that person.
+const auth = require('./relayAuth');
+
+function identity(rootDir, appName) {
+  const home = stateDir(rootDir, appName);
+  let id = null;
+  try { id = auth.loadIdentity(home); } catch (e) { id = null; }
+  if (id) return id;
+  id = auth.generateIdentity(appName);
+  auth.saveIdentity(home, id);
+  return id;
+}
+
+// ── REACHING THE OWNER, AND THE THREE WAYS IT FAILS ────────────────
+//
+// The starter's whole job, per G13: bind, learn the owner, serve a page,
+// post to the owner's node — and nothing else. This is the post.
+//
+// IT IS WHAT MAKES THREE OF THE FOUR FAILURE STATES REAL RATHER THAN
+// DESCRIBED. Without an actual attempt, `app-owner-asleep` and
+// `app-not-a-member` are sentences in a catalogue that nothing can
+// produce, which is the thing G11 exists to prevent: *if a state cannot
+// be reached from outside, it is not testable by anyone, ever.*
+//
+//   no owner yet          → app-unbound     (the relay is unclaimed)
+//   the relay refuses us   → app-not-a-member (no seat; a relay routes
+//                            between members, so there is nothing to
+//                            route)
+//   routed, nobody home    → app-owner-asleep (the relay waited on the
+//                            owner's node and gave up)
+//
+// AND THE SECOND IS NOT INFERRED FROM THE THIRD. A relay that refuses
+// the post answers; a relay that routes it and gets nothing back times
+// out. Those are different facts and an app that reported them alike
+// would tell an operator to fix the wrong thing.
+function reachOwner(rootDir, appName, state, body) {
+  if (!state.relay) return Promise.resolve({ ok: false, code: 'app-unbound' });
+  if (!state.ownerKey) return Promise.resolve({ ok: false, code: 'app-unbound' });
+
+  const me = identity(rootDir, appName);
+  const sending = {
+    to: state.ownerKey,
+    from: me.publicKey,
+    text: JSON.stringify(body || {}),
+    sentAt: new Date().toISOString(),
+  };
+  sending.sig = auth.sign(me.privateKey, auth.postMessage(sending));
+
+  return relayRequest(state.relay, 'POST', '/api/relay/post', sending)
+    .then(function (r) {
+      if (r.status === 200) return { ok: true, status: 200 };
+      // 403/404 from the relay is the relay declining to route FOR us,
+      // which means this server holds no seat.
+      if (r.status === 403 || r.status === 404) {
+        return { ok: false, code: 'app-not-a-member', status: r.status };
+      }
+      // A timeout is the relay waiting on the owner's node. The owner
+      // exists, the seat exists, the person is not there.
+      return { ok: false, code: 'app-owner-asleep', status: r.status };
+    })
+    .catch(function () {
+      return { ok: false, code: 'app-owner-asleep', status: 0 };
+    });
+}
+
 function roleOf(state) {
   return {
     nodeIsPublicApp: true,
@@ -544,6 +627,10 @@ function create(opts) {
 
   return {
     bind: bind,
+    // The starter's one outward act, and the thing that makes three of
+    // the four failure states producible rather than merely catalogued.
+    reachOwner: function (body) { return reachOwner(rootDir, appName, state, body); },
+    identity: function () { return identity(rootDir, appName); },
     state: function () {
       const r = roleOf(state);
       return {
@@ -561,6 +648,9 @@ function create(opts) {
         nodeIsPublicApp: r.nodeIsPublicApp,
         // G10. Facts about the box, and no opinion about them.
         box: boxReport(rootDir, appName),
+        // This server's own public key. It is an ordinary member of the
+        // relay it serves; its only power is that the owner answers it.
+        selfKey: (function () { try { return identity(rootDir, appName).publicKey; } catch (e) { return ''; } }()),
         stateDir: stateDir(rootDir, appName),
       };
     },
