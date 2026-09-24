@@ -549,9 +549,29 @@ nothing:
 
 ```js
 const app = require('./appServer');
-const h = app.create({ rootDir, appName, port, relay });   // no listen
-h.start(); h.stop(); h.state();
+const h = app.create({ rootDir, appName, port, relay, invite, inviteLabel });
+h.start(); h.stop(); h.state();                            // create: no listen
 ```
+
+**`invite` and `inviteLabel` were added in cycle 3 and are here for the
+reason this requirement exists.** wsl-claude met them by asking rather
+than by reading the source, which is correct under the working agreement
+and cost a message: *"a parameter added after the document was written is
+a parameter I can only learn by asking or by reading you."* **G15 is only
+true if it is kept true** — a named interface that stops being updated is
+a guess with a date on it.
+
+- **`invite`** — a relay invite **the owner minted and installed**. It is
+  taken here and **never from `argv`**: an invite is a bearer token, and
+  `argv` is the process list, the shell history and the unit file. The
+  installed home is `app-state/<name>/config.json`, beside the pinned
+  relay key.
+- **`inviteLabel`** — the word **the owner wrote on the invite**, which is
+  *not* the name the app asks to be called. The relay matches it and then
+  forgets it. **An app cannot derive this**: it is a word in the owner's
+  head at the moment of minting, so it is installed with the invite.
+
+Both are first-start-only, like `--relay`, and for the same reason.
 
 `server.js` dispatches with `require('./appServer').fromArgv(process.argv)`
 before any node code is required, exactly as `--relay` does
