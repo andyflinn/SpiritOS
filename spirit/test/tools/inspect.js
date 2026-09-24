@@ -1,7 +1,16 @@
 #!/usr/bin/env node
 
-// spirit/test/tools/ask.js
+// spirit/test/tools/inspect.js
 // ASK THE TREE A QUESTION, WITH A COMMAND THAT NEVER CHANGES.
+//
+// NAMED inspect AND NOT ask, AFTER A VOCABULARY COLLISION. Both agents
+// created an ask.js within minutes: this one, and spirit/run/app/shared/ask.js
+// — the app's door, ask(verb, args), which is G3's "ask has one home".
+// THAT ONE OWNS THE WORD. `ask` is the product's verb, in the dictionary and
+// in the requirement; this is a dev tool that reads files. A collision in
+// vocabulary costs more than a duplicate implementation, because nothing
+// ever goes red — the two just quietly mean different things in the same
+// sentence.
 //
 //   Andy, 2026-09-24, refusing a grep and naming the cure in three words:
 //   "use your ask.js"
@@ -19,7 +28,7 @@
 // stating as a rule rather than as a fix: WORK THAT WILL BE REPEATED
 // LIVES AT A PATH, NOT IN A STRING.
 //
-//     node spirit/test/tools/ask.js
+//     node spirit/test/tools/inspect.js
 //
 // The question lives in a file, the way say.js's message does. One
 // approval, once, for every question after it.
@@ -131,7 +140,7 @@ const VERBS = {
 };
 
 function fail(why) {
-  process.stderr.write('ask: ' + why + '\n');
+  process.stderr.write('inspect: ' + why + '\n');
   process.exit(1);
 }
 
