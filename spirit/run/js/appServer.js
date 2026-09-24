@@ -482,33 +482,77 @@ function identity(rootDir, appName) {
 // the post answers; a relay that routes it and gets nothing back times
 // out. Those are different facts and an app that reported them alike
 // would tell an operator to fix the wrong thing.
+// ── ONE ROUTER, HELD — AND EVERY OMISSION IS A DECISION ─────────────
+//
+// Andy: *"so we again have multiple implementations of peerPost()?"* No —
+// ONE implementation and three instantiations: the node's
+// (`server.js:1213`), the relay's partner router
+// (`relayServer.js:1057`), and this. But the question found two real
+// defects in this one.
+//
+// FIRST, IT WAS BUILT PER REACH. The other two build one per process and
+// hold it, because peerPost carries a QUEUE and in-flight state, and
+// cycle R16 made that queue outlive the process. A fresh router per call
+// throws all of it away every time. Worse, the comment justifying it —
+// *"a router kept alive is a queue kept alive, which is state this
+// module has no business holding"* — was a shortcut dressed as a
+// principle. It is built once now.
+//
+// SECOND, IT WAS WIRED BARE, WHICH IS HOW arrivals.js HAPPENED. Until
+// 2026-09-13 `server.js` built its router without `onArrival`, so every
+// packet a peer posted was *"admitted at the front door, written to the
+// traffic log, answered with a bare receipt, and dropped. Nothing above
+// the node boundary could ever see it"* — for months, because one call
+// site was wired differently than the code assumed. An absent hook that
+// nobody DECIDED is a dropped packet.
+//
+// So each absence here is a decision and says so:
+//
+//   store       ABSENT BY DECISION. peerPost's durable queue would make
+//               an app server hold a post for an owner who is asleep —
+//               and "refuse, never queue" is the design's own rule for
+//               exactly that state, because whatever a visitor handed
+//               over is short-lived and queueing it means STORING it.
+//   answer      ABSENT. This server answers no verbs. It posts.
+//   onArrival   ABSENT. It receives nothing; there is no app above the
+//               node boundary here to hand a packet to.
+//   admit /
+//   remember /
+//   traffic     ABSENT. It keeps no whoBook and no traffic log, because
+//               it persists nothing about anybody by default.
+//   checkTunnel TRUE, and the one that is present: a packet that would
+//               not fit once wrapped must be refused at COMPOSE, since
+//               a signed packet cannot be trimmed at the far hop.
+// Keyed by the home it was built for: one process serves ONE app, but a
+// suite drives several in one process, and a router silently shared
+// between two identities would sign with the wrong key — a failure that
+// would look like a permissions problem and be a bookkeeping one.
+const heldRouters = Object.create(null);
+function router(home) {
+  if (heldRouters[home]) return heldRouters[home];
+  heldRouters[home] = require('./peerPost').createPeerPost({
+    rootDir: home,
+    // The node-to-relay leg, and it is the SAME FUNCTION a node uses —
+    // `require('./hub').relayRequest === require('./relayRequest')
+    // .relayRequest` is true, verified rather than assumed. They were
+    // moved into one module on 2026-09-16 so a caller that is not the
+    // node's hub could reach the one interface without dragging the
+    // node's machinery behind it.
+    request: relayRequest,
+    checkTunnel: true,
+  });
+  return heldRouters[home];
+}
+
 function reachOwner(rootDir, appName, state, body) {
   if (!state.relay) return Promise.resolve({ ok: false, code: 'app-unbound' });
   if (!state.ownerKey) return Promise.resolve({ ok: false, code: 'app-unbound' });
 
   // THE KEY MUST EXIST BEFORE peerPost LOOKS FOR IT. Rewiring onto
   // peerPost dropped this call and the reach answered "this node has no
-  // identity" — correct, and entirely my doing: the identity was created
-  // lazily by the function the old path used, and the new path has no
-  // reason to know that.
+  // identity" — correct, and entirely my doing.
   identity(rootDir, appName);
-
-  // Built per reach rather than held: an app server posts rarely, and a
-  // router kept alive is a queue kept alive, which is state this module
-  // has no business holding on an app's behalf.
-  //
-  // `request` is the node-to-relay leg and it is THE SAME FUNCTION a
-  // node uses — Andy: *"the node-to-relay leg of a peerPost() must be
-  // the exact same path as a node to relay post."* Verified rather than
-  // assumed: `require('./hub').relayRequest === require('./relayRequest')
-  // .relayRequest` is true, because they were moved into one module on
-  // 2026-09-16 for exactly this reason — so a caller that is not the
-  // node's hub can still reach the one interface without dragging the
-  // node's machinery in behind it.
-  const poster = require('./peerPost').createPeerPost({
-    rootDir: stateDir(rootDir, appName),
-    request: relayRequest,
-  });
+  const poster = router(stateDir(rootDir, appName));
 
   // post(relayUrl, toKey, text) — positional, and it answers a promise.
   // The identity it signs with is read from the rootDir it was built
