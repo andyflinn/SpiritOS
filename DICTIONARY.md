@@ -222,6 +222,98 @@ and `process/js/hello/` already holds the installer’s acceptance test.
 **A throwaway consumer rots; the official sample cannot**, because the
 artefact that proves the layer is the artefact every stranger copies.
 
+## The show
+
+Andy, 2026-09-24, in four sentences that retired an hour of design:
+*"The app actually lives on the owners node. the 'site' is just a
+screen"* — *"owner=master .... app=puppet"* — *"it's THE SHOW!"*
+
+**Recorded first and alone**, before any of the design that followed,
+because an hour was lost to the word *app* — and twice over. First both
+agents read it as the thing on the public box and designed capabilities
+for a machine the program does not run on; every correction Andy made
+moved one of those back to the owner's node, five times, and neither
+agent saw the pattern from inside. Then the first draft of this entry
+over-corrected into **two kinds of thing**, which the tree refutes:
+sixteen of the seventeen apps under `spirit/run/app` are neither public
+nor autonomous, so *public* and *autonomous* cannot be what the word
+means.
+
+**ONE KIND, WITH AXES.** That is the correction, and the fork mechanism
+underneath it is the one this file exists to stop: a word covering more
+than one thing, with nothing linking the uses, invisible to whoever holds
+it.
+
+**Master** — the owner. Not a role an agent may take and not a thing a
+puppet may become.
+
+**Puppet** — **what an app IS.** A thing its master moves: it displays,
+it carries, and it decides only what it was given leave to decide.
+
+**AND IT OWNS NOTHING IT RUNS ON.** Andy: *"the node holds the store...
+the node hosts the store and the connections"*. A puppet has no store and
+no connections of its own — it uses its **node's**, and only as far as it
+was granted. That is why a public puppet persists nothing about a visitor
+and posts to exactly one correspondent: not restrictions placed on an app,
+but the shape of a thing that owns neither the disc nor the wire.
+
+**AND THE LOOPBACK APPS ARE THE SAME PUPPETS.** Andy: *"the loopback
+apps on the node are the same, the intrinsic ones obviously"* — natter,
+contacts, the relay monitor, the shell itself. They are not a different
+kind of thing from the screen on a public box; they are puppets whose
+audience is their own master, reached on 127.0.0.1 instead of from the
+internet.
+
+*Written first as two different things — app on the node, puppet on the
+public box — and that was too narrow. One concept with axes, and the
+axes are what the words below name.*
+
+**App** — a puppet, described by how much it has been given:
+**programmable, public, autonomous.** Andy: *"an app ist just a
+programmable, public and autonomous puppet."* So the difference between
+the shell's apps and a screen on a VPS is REACH and AUTONOMY, never kind.
+
+| axis | private end | public end |
+|---|---|---|
+| **reach** | loopback — the master is the whole audience | a public box — strangers arrive |
+| **autonomy** | decides what its master programmed it to | **decides nothing** — today, on every public box |
+
+**A PUPPET THAT ACTS BEYOND ITS LEAVE IS BROKEN**, and on a public box
+today that leave is NOTHING. Its emptiness is not a restriction: it
+persists nothing because it has nothing OF ITS OWN to persist, it answers
+no verbs because it is not the thing being asked, and it has one
+correspondent because the program driving it is at the other end of that
+link.
+
+*Whether a puppet is the process or the page it serves is **not
+distinguished, and nothing has needed it.** Left uncoined deliberately: an
+unused term is a fork waiting for somebody to need one of its halves.*
+
+**Show** — **the arrangement, and it is the unit.** A puppet with no
+master is a poster; a master with no puppet has no stage. `join` is a
+show whose act is turning a stranger into a member: a loopback puppet on
+Andy's node that mints, and a public puppet on a VPS that displays —
+*"The app actually lives on the owners node. the 'site' is just a
+screen"*. Neither half is the product alone.
+
+**Audience** — whoever arrives at the puppet. **They never see the
+strings** — and that one is ASSERTABLE rather than merely said: it is the
+generalisation of `appServerBoundary`'s *the refusal names nobody*. The
+visitor-facing surface reveals no owner key, no label, no address.
+
+**Strings** — the post to the owner and **the answer coming back**.
+Everything the audience does travels them; everything they see came down
+them. A reply carries a body, already unsealed, to the original poster
+(`peerPost.js:363-373`) — so a puppet needs nothing knocking on its door
+to show what its master computed.
+
+**And `surface` belongs to the PUPPET.** It is declared in the manifest
+on the public box, read by the app server, and what it declares is what
+**the screen and door** require. The program on the owner's node needs
+whatever it needs: that is the node's own business, there is no contract
+for it, and there may never need to be one — **a program on your own node
+does not negotiate with you.**
+
 ## Do not confuse
 
 | Do not say | If you mean |
@@ -238,3 +330,6 @@ artefact that proves the layer is the artefact every stranger copies.
 | mailbox | a relay (the word is retired — see **Public relay**) |
 | VPS | work box |
 | GROQ | GROK.md |
+| app | the puppet (the screen on the public box) |
+| the site | the puppet — it is a screen, not the app |
+| the app server | the puppet's server, which runs no app |
