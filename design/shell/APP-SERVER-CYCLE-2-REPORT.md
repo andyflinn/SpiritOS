@@ -215,13 +215,25 @@ a rules cycle, and **no mechanism saw it**: not the board, not the
 report, not either agent. A cycle can be displaced entirely and still
 look busy.
 
-**No proposal is offered rather than a weak one invented.** The honest
-minimum today is that the stop reports where the time went — which
-this one did **only because the author chose to**, and a rule that
-depends on the author choosing to confess is *the check that cannot fail*
-in the exact shape this project spent the day hunting.
+> **CORRECTED BY ANDY AT THE CLOSE, and it changes what S3 IS.** *"i
+> forced it to happen, because i noticed drift. this is ok, from my point
+> of view."*
+>
+> **The drift was steered, not accidental.** He saw it and caused it. So
+> nothing failed here — **he was the mechanism**, which is the same
+> finding as everywhere else in this cycle: the reader without the answer
+> in his head, arriving at the right moment.
 
-**Named as open, and put to the other agent for a mechanism.**
+**The gap that remains is narrower and real: it only bites UNATTENDED.**
+While Andy is in the room, drift is steered and visible to him. In a long
+autonomous stretch — which is where this project is heading — nothing
+would compare *what the cycle is doing* against *what the cycle was for*,
+and the stop would report it **only because the author chose to say so.**
+A rule that depends on the author confessing is *the check that cannot
+fail*.
+
+**No proposal is offered rather than a weak one invented.** Put to the
+other agent for a mechanism, scoped to unattended cycles.
 
 ### C1 — the interface is named in the DESIGN, not discovered at build
 
@@ -245,6 +257,44 @@ believed the other half's suite over his own measurement, and reported a
 false defect to Andy without reproducing it once. **The existing rule —
 report what you CHECKED — did not reach the case of a finding about
 somebody else's code.**
+
+---
+
+## THE ADAPTED IMPLEMENTATION PLAN — this state is the status quo
+
+**Andy, closing, and this step is new:** *"considering this the status
+quo, and changing adapting the implementation plans with recognized
+dependencies etc... before updating the brain and going idle for the next
+'go'."*
+
+**So the carried-forward list is not a list any more. It is an ORDER**,
+built from the dependencies this cycle discovered rather than from the
+order the requirements happened to be written in — which is S1 applied
+to the plan that S1 came out of.
+
+| # | what | why it sits here |
+|---|---|---|
+| **1** | `settleRelay` stops going blind; refusals reach HTTP with their code | **blocks G11.** Two of the four states cannot be OBSERVED until a refusal carries a code and a mismatch stops blanking the pin |
+| **2** | **G3** — `ask` gets one home | **blocks everything touching the sample** (D2's ordering constraint) |
+| **3** | the starter moves onto the shared `ask` | clears D2's violation. **Cannot precede 2**, which is the whole finding |
+| **4** | **G4** — `app/shell` offers elements and tokens as files | **blocks 5.** Utilities cannot be GRANTED from a folder that does not exist |
+| **5** | G14's remainder: grant utilities, refuse a missing member at load | 4 first |
+| **6** | **D1**, per Andy's ruling: posture at start or per request | touches `create`/`start`, which 7 and 8 drive |
+| **7** | **G11** — the four states driven from outside | needs 1, and 6 settled |
+| **8** | **G13** — the acceptance runs. **THE EXIT CONDITION** | needs 3 and 7. **S2: the cycle is not closed until this has run** |
+| **9** | **G10**'s owner-side label minting | independent; ruled in and unbuilt |
+
+**THREE OF THESE WERE INVISIBLE WHEN THE CYCLE WAS SCOPED**, and each is
+a dependency rather than a preference: **2 before 3** (D2), **4 before
+5**, **1 before 7**. The old plan had them in none of those orders.
+
+**AND S2 IS APPLIED RATHER THAN NOTED:** 8 is the exit condition, not the
+last task. A cycle carrying this plan cannot close by running out of
+time, because *closed* and *the acceptance ran* are now one fact.
+
+**BLOCKED ON ANDY, and a builder stops on each:** D1 (item 6), the
+`MemoryMax` two-writers hole, how units on a box are counted, and the
+fingerprint's ingredients.
 
 ---
 
