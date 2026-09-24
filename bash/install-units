@@ -22,22 +22,57 @@ chmod 700 "$STATE_DIR"
 # relay before it reached the connections it was told it may have.
 #
 # Before the relay has ever started there is no config.json, so this
-# falls back to what the relay itself would compute — half the box — so a
-# fresh install is capped from its first minute rather than uncapped
-# until somebody remembers.
+# falls back to what the relay itself would compute, so a fresh install is
+# capped from its first minute rather than uncapped until somebody
+# remembers.
+#
+# ── AND IT ASKS THE RELAY RATHER THAN RE-DERIVING ITS RULE ───────────
+#
+# This block used to compute half of MemTotal in shell and say it was
+# capping "as the relay would". That sentence was true when it was
+# written and stopped being true at cycle 9, which gave the default a
+# ceiling: relayLimits.defaults() is half the box clamped to
+# DEFAULT_MAX_MB (256) and clamped again to what the box can actually
+# give. Nobody updated the shell.
+#
+# wsl-claude measured the gap on 2026-09-24, the first time this script
+# had ever run on Linux — the FIRST TIME, which is why a defect this size
+# survived: a 64 GB box got MemoryMax=32201M from this script in the same
+# minute the relay it caps logged "RAM limit 256 MB (default)". A factor
+# of 125. The cap is the one thing that makes ramLimitMB enforceable, and
+# a first install is exactly when no config.json exists, so the
+# enforcement everybody believed in was effectively absent on every fresh
+# relay host — with nothing telling the operator to re-run the installer
+# once a config appeared.
+#
+# So the formula is not restated here in any form. The script asks the
+# module the relay itself asks, and the two cannot drift apart again
+# because there is only one of them. If node cannot answer, this STOPS:
+# an installer that silently invents a cap is how the last one got here,
+# and a relay host has node by definition.
 #
 # THE CAP DOES NOT FOLLOW A LATER RECONFIGURE. The owner changes figures
 # from his own node now (a signed `config` verb), and systemd knows
 # nothing about it: re-run this script and restart when the figure moves.
 CONFIG_JSON="$STATE_DIR/config.json"
 RAM_MB=""
+RAM_SOURCE="config.json"
 if [ -f "$CONFIG_JSON" ]; then
   RAM_MB=$(sed -n 's/.*"ramLimitMB"[[:space:]]*:[[:space:]]*\([0-9]*\).*/\1/p' "$CONFIG_JSON" | head -1)
 fi
 if [ -z "$RAM_MB" ]; then
-  TOTAL_KB=$(sed -n 's/^MemTotal:[[:space:]]*\([0-9]*\).*/\1/p' /proc/meminfo | head -1)
-  RAM_MB=$(( TOTAL_KB / 1024 / 2 ))
-  say "no config.json yet — capping at half the box, as the relay would"
+  RAM_MB=$(node -e '
+    var L = require(process.argv[1] + "/js/relayLimits");
+    var d = L.defaults(L.measure());
+    if (!d || !(d.ramLimitMB > 0)) process.exit(1);
+    process.stdout.write(String(d.ramLimitMB));
+  ' "$RUN_DIR" 2>/dev/null) \
+    || die "could not ask relayLimits.defaults() for the default RAM limit.
+    The cap must equal the relay's own default and is not guessed here.
+    Check that node runs and that $RUN_DIR/js/relayLimits.js is present."
+  [ -n "$RAM_MB" ] || die "relayLimits.defaults() named no ramLimitMB for this box"
+  RAM_SOURCE="the relay's own default"
+  say "no config.json yet — capping at ${RAM_MB} MB, which is what the relay will use"
 fi
 MEMORY_MAX=$(( RAM_MB + 128 ))M
 
@@ -56,11 +91,24 @@ fi
 
 install -m 644 "$tmp" "/etc/systemd/system/${UNIT_NAME}.service"
 rm -f "$tmp"
-systemctl daemon-reload
+
+# ── THE RELOAD IS CHECKED, BECAUSE ITS FAILURE IS AMBIGUOUS ──────────
+#
+# The unit file is already on disc by this line. An unchecked
+# daemon-reload that fails exits non-zero BEFORE the "installed …" line,
+# so the operator sees a bare failure and cannot tell whether anything
+# landed — when in fact the install succeeded and only systemd's
+# re-read did not. wsl-claude hit exactly this in a user namespace
+# (2026-09-24) where systemd is not pid 1. On a real relay host it does
+# not fire; on a container it will, and the sentence costs nothing.
+systemctl daemon-reload || die "the unit was written to /etc/systemd/system/${UNIT_NAME}.service
+    but 'systemctl daemon-reload' failed, so systemd has not read it yet.
+    Nothing is broken and nothing needs undoing — run the reload by hand,
+    or check that systemd is pid 1 on this box (it is not, inside most containers)."
 ok "installed /etc/systemd/system/${UNIT_NAME}.service"
 echo "    runs as root (one-operator host — see bash/ONE-OPERATOR.md)"
 echo "    clone: $REPO_ROOT"
 echo "    state: $STATE_DIR"
-echo "    memory cap: $MEMORY_MAX (ramLimitMB + 128 MB headroom)"
+echo "    memory cap: $MEMORY_MAX (${RAM_MB} MB from $RAM_SOURCE, + 128 MB headroom)"
 echo "    re-run this after changing ramLimitMB, then ./bash/restart"
 echo "    next: ./bash/start    then ./bash/boot-on"

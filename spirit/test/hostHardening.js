@@ -842,4 +842,70 @@ test.subHeading('lab-install and lab-remove cannot be aimed at the live relay');
   }
 }
 
+test.subHeading('THE MEMORY CAP IS THE RELAY’S OWN FIGURE — asked, never re-derived');
+
+{
+  // ── WHY THIS IS A GATE AND NOT A COMMENT ───────────────────────────
+  //
+  // The installer computed half of MemTotal in shell and told the
+  // operator it was capping "as the relay would". True when written;
+  // false from cycle 9, which gave the default a 256 MB ceiling. The
+  // sentence stayed. wsl-claude ran this script on Linux for the FIRST
+  // TIME on 2026-09-24 and measured the result: MemoryMax=32201M written
+  // in the same minute the relay under it logged "RAM limit 256 MB
+  // (default)".
+  //
+  // A factor of 125, on the one directive that makes ramLimitMB
+  // enforceable, on every fresh relay host, for as long as this script
+  // has existed. It survived because nothing could see it: the figure is
+  // correct arithmetic on a formula that had moved.
+  //
+  // So the repair is not a better formula. It is having only ONE, and
+  // this asserts that — the installer must ask `relayLimits.defaults()`
+  // and must not contain arithmetic that could disagree with it.
+  const asks = /relayLimits/.test(installer) && /defaults\(/.test(installer);
+
+  if (asks) {
+    test.check('install-units asks relayLimits.defaults() for the fresh-install cap, ' +
+      'so it cannot disagree with the relay it caps');
+  } else {
+    test.fail('install-units no longer asks relayLimits for the default — ' +
+      'a second copy of that rule is how the 32201M-versus-256MB defect happened');
+  }
+
+  // AND NO SHELL ARITHMETIC ON MEMORY. `MemTotal` read in sh is the
+  // specific shape the old defect had; any halving of a measured figure
+  // is the same mistake wearing different clothes. The `+ 128` headroom
+  // is arithmetic this script legitimately owns, so it is named as the
+  // one allowed sum rather than caught by a blanket rule.
+  const lines = installer.split('\n').filter(function (line) {
+    return !/^\s*#/.test(line);
+  });
+  const rederives = lines.filter(function (line) {
+    return /MemTotal|\/proc\/meminfo/.test(line) ||
+      (/\$\(\(/.test(line) && /\/\s*2\b/.test(line));
+  });
+
+  if (!rederives.length) {
+    test.check('and it reads no MemTotal and halves nothing — the only sum left is the ' +
+      '128 MB headroom, which is the installer’s own to own');
+  } else {
+    test.fail('install-units computes a memory figure itself again: ' +
+      rederives.map(function (l) { return l.trim(); }).join(' | '));
+  }
+
+  // ── AND IT STOPS RATHER THAN INVENTING ONE ─────────────────────────
+  //
+  // The failure mode that produced the defect is a cap that is silently
+  // wrong. A cap that is absent because the script refused to guess is
+  // recoverable in a way the first is not, and an operator reading
+  // "could not ask relayLimits" knows exactly what to fix.
+  if (/could not ask relayLimits/.test(installer)) {
+    test.check('and it dies rather than guessing when relayLimits cannot answer — ' +
+      'a wrong cap hides, a missing one does not');
+  } else {
+    test.fail('install-units no longer refuses when it cannot get the relay’s default');
+  }
+}
+
 test.reportSuccessFailureCount();
