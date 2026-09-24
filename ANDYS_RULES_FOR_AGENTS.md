@@ -407,3 +407,71 @@ forget something.
     **Stale is red**, exactly as the published capacity block is: a board
     that quietly describes a tree that has moved is worse than no board,
     because it is believed.
+
+---
+
+15. **Every cycle has a stop for reconciliation, and that stop is the
+    boundary of autonomous work.** Andy, 2026-09-24, answering how far an
+    agent may get unsupervised: *"every cycle must have a stop for
+    reconciliation. so that says how far you can go autonomously. the
+    cycle stop must be accompanied by a cycle-report featuring harness
+    status for that cycle."*
+
+    **This is what makes unsupervised stretches possible rather than
+    risky.** An agent does not need permission at each step and does not
+    need to guess when to surface — the structure says both. Work runs to
+    the stop; the stop is where Andy's attention is spent, once, on
+    something collated.
+
+    **EVERY cycle, not only a long one.** Rule 12 already owes a report
+    package at the close of a long stretch. This is narrower and always
+    applies: a cycle of any size ends in a stop, and the stop is not
+    optional because the cycle was short or went well. *"The close is a
+    stop"* — a cycle that ends by rolling straight into the next one has
+    spent his attention without ever offering it a moment.
+
+    **What the cycle-report carries, beyond rule 12's package:**
+
+    - **The harness status FOR THAT CYCLE**, not only the global tally.
+      Which of the cycle's own requirements are built and asserted, which
+      are declared and not built, and what each is missing — the cycle's
+      rows, in the declarer's words. `BOARD.md` holds these across all
+      cycles; a cycle-report is that view narrowed to one.
+    - **The global numbers beside them**, because a cycle that went green
+      while the tree went red is a fact about the tree.
+    - **The divergences, unresolved.** They are logged and handed over,
+      never smoothed — Andy rules each or hands them back.
+    - **What could not be done, and why**, which is the section he has
+      twice had to ask for.
+
+    **THE DIVERGENCE COUNT IS TRACKED, AND IT IS TWO-SIDED.** Andy,
+    2026-09-24: *"the divergence-count for reconciliation will be a
+    measurement for the quality of the design, and will be tracked as
+    well?"* Yes — and lower is not better. Cycle 11's compile already
+    says why: *"Zero would have been the bad outcome. On a spec written
+    in English, worked independently, some divergence is expected — its
+    absence means one of us was reading the other."*
+
+    **AND THE COUNT ALONE IS NOT ENOUGH, measured the day it was
+    adopted.** The public-app-server sitting produced five reconciliations
+    and ZERO divergences — and a readiness check then found FOUR defects
+    that would have stopped a builder mid-flight, including a recipe
+    naming a world that cannot exist. The count measured **agreement**
+    and said nothing about **readiness**. A design can be perfectly
+    agreed and unbuildable.
+
+    So three things are tracked at the stop, never one:
+
+    - **the divergences**, with a zero on independently-worked halves
+      read as a flag rather than as a score;
+    - **what each was ABOUT** — a defect in the document, or a difference
+      of reading. Cycle 11's D1 was a hole in the writing that neither
+      agent got wrong, and that classification says whether the spec or
+      the collaboration needs the work;
+    - **the readiness findings** — what a second agent would refuse to be
+      handed. That is what caught everything the count missed.
+
+    **A stop is a STOP.** The agent does not begin the next cycle across
+    it. If the work would obviously continue, that is a recommendation in
+    the report, not a licence — because the value of the stop is that it
+    is the one place the direction can change cheaply.
