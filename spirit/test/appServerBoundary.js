@@ -170,7 +170,16 @@ test.subHeading('G11 — the four failure states, each reachable from outside an
   // by FILLING it rather than by configuring it to nothing. The recipe in
   // this declaration is the sample README under G11, so a recipe nobody can
   // follow would have shipped as documentation.
-  ['full', 'start a relay at ramLimitMB 1 — sixteen seats, the smallest honest allowance — and claim all sixteen', 'the visitor is offered the other door and sees none of the box figures'],
+  // AND THE FIRST SEAT IS ALREADY TAKEN. A relay is not a relay until it
+  // is owned, and the owner's claim is admitted REGARDLESS of capacity —
+  // relay.js:1730 and :1740 both read `if (!firstOwner && …full…)`, so the
+  // owner bypasses the seat check AND the disc check. That bypass is what
+  // makes a relay recoverable at all: the one account that can raise the
+  // limit must be able to get on. So sixteen seats is the owner plus
+  // fifteen, and a recipe that says sixteen more sends a stranger one claim
+  // past the wall it was meant to stop at. (Andy found the premise; the
+  // line numbers are this suite checking it rather than taking it.)
+  ['full', 'start a relay at ramLimitMB 1 — sixteen seats, the smallest honest allowance — then the owner claim and FIFTEEN more', 'the visitor is offered the other door and sees none of the box figures'],
   ['owner-asleep', 'do not start the owner node', 'the refusal names what to do and nothing durable holds what arrived'],
   ['key-mismatch', 'stand up a second relay with a different key and point the sample at it', 'the bind refuses rather than learning a new owner'],
 ].forEach(function (s) {
