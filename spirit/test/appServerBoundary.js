@@ -657,8 +657,17 @@ const RECIPES = [
     // saying "sixteen more" sends a stranger one claim past the wall it
     // was meant to stop at. (Andy found the premise; the line numbers
     // are this suite checking it rather than taking it.)
+    // AND IT TAKES OVER A MINUTE, WHICH IS THE PRODUCT WORKING. Measured
+    // while rehearsing this builder: the tenth claim from one address is
+    // refused with `too many claims` — `relay.js:1559`, CLAIM_PER_MIN = 10
+    // at :148 over a 60-second window at :220, keyed by the caller. So
+    // sixteen seats cannot be taken from one machine inside two minutes,
+    // and a reader who meets a 429 while reproducing this has found a
+    // DIFFERENT wall from the one the recipe is about. That sentence
+    // belongs in the sample's README beside the recipe.
     state: 'full',
-    world: 'start a relay at ramLimitMB 1 — sixteen seats, the smallest honest allowance — then the owner claim and FIFTEEN more',
+    world: 'start a relay at ramLimitMB 1 — sixteen seats, the smallest honest allowance — then the owner claim and FIFTEEN more, ' +
+      'in two batches a minute apart because ten claims a minute from one address is the limit',
     expect: 'the visitor is offered the other door and sees none of the box figures',
   },
   {
@@ -732,14 +741,239 @@ const RECIPES = [
     return;
   }
 
-  // The worlds are built in the order that costs least to tear down, and
-  // each names its own recipe in the assertion text so a reader can
-  // rebuild it by hand. That text IS the sample's README under G11.
-  RECIPES.forEach(function (r) {
-    needs('cycle 2 G11 (' + r.state + ')', 'the world builder for this state',
-      'the world is "' + r.world + '" and the state is "' + r.expect +
-      '". labMaster is ours and the units exist; what is not written yet is this suite\'s builder for the state');
-  });
+  const worlds = require('./appServerWorlds');
+  const errors = require(path.join(REPO, 'spirit/run/js/spiritErrors.js'));
+  const mod = require(path.join(REPO, APP_SERVER_REL));
+
+  // A REFUSAL IS CHECKED FOR MEMBERSHIP, NEVER FOR ITS WORDS. The
+  // document does not name the code strings, and a suite that invented
+  // them would be asserting its own vocabulary — which is the divergence
+  // it exists to find, manufactured. What the document DOES guarantee is
+  // that every refusal is a member of a declared set and carries a code,
+  // so that is what is asserted.
+  function refusalIsDeclared(carrier) {
+    if (!carrier || typeof carrier !== 'object') return { ok: false, why: 'no refusal was carried at all' };
+    const code = carrier.code || (carrier.refusal && carrier.refusal.code) || '';
+    if (!code) return { ok: false, why: 'the refusal carries no code, so "member of a declared set" cannot be walked — prose cannot be matched against a set' };
+    if (!errors.byCode(code)) return { ok: false, why: 'the code ' + JSON.stringify(code) + ' is in no declared set' };
+    return { ok: true, code: code };
+  }
+
+  // NOTHING DURABLE HELD, which is the half of "acts on nothing" that can
+  // be observed from outside: the app's own state home is empty. An app
+  // server that persisted a visitor would leave the evidence here, and
+  // G9's strict posture is exactly the promise that it does not.
+  function nothingPersisted(rootDir) {
+    const dir = path.join(rootDir, 'app-state');
+    if (!fs.existsSync(dir)) return { ok: true, held: [] };
+    const held = [];
+    const stack = [dir];
+    while (stack.length) {
+      const p = stack.pop();
+      let st;
+      try { st = fs.statSync(p); } catch (e) { continue; }
+      if (st.isDirectory()) { fs.readdirSync(p).forEach(function (n) { stack.push(path.join(p, n)); }); continue; }
+      // The config and the pinned key are the app server's OWN state and
+      // are supposed to be there. A visitor's trace is anything else.
+      if (/config\.json$|relay-key|pinned/i.test(path.basename(p))) continue;
+      held.push(path.relative(rootDir, p));
+    }
+    return { ok: held.length === 0, held: held };
+  }
+
+  const appRoot = path.join(labPaths.FIXTURE_ROOT, 'asb-appserver', 'spirit', 'run');
+  const APP_PORT = 45610;
+
+  async function pageOf(port) {
+    try {
+      const res = await fetch('http://127.0.0.1:' + port + '/');
+      return { status: res.status, body: await res.text() };
+    } catch (e) {
+      return { status: 0, body: '', error: String((e && e.message) || e) };
+    }
+  }
+
+  function freshRoot() {
+    try { fs.rmSync(appRoot, { recursive: true, force: true }); } catch (e) { /* nothing to remove */ }
+    fs.mkdirSync(appRoot, { recursive: true });
+    return appRoot;
+  }
+
+  try {
+    await worlds.clear();
+
+    // ── unbound ──────────────────────────────────────────────────────
+    {
+      const w = await worlds.unclaimedRelay();
+      if (!w.ok) {
+        test.fail('cycle 2 G11 (unbound): the world could not be built — ' + w.error +
+          '. The recipe is "' + RECIPES[0].world + '"');
+      } else {
+        const root = freshRoot();
+        const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url });
+        h.start();
+        await worlds.answering('http://127.0.0.1:' + APP_PORT + '/', 6000);
+        const page = await pageOf(APP_PORT);
+        const st = h.state();
+
+        if (page.status === 200) {
+          test.check('cycle 2 G11 (unbound): against a relay nobody has claimed the app server STARTS and serves a page — ' +
+            'waiting is a state, not a crash, and the recipe is "' + RECIPES[0].world + '"');
+        } else {
+          test.fail('cycle 2 G11 (unbound): the app server did not serve a page against an unclaimed relay (status ' + page.status + ')');
+        }
+
+        const held = nothingPersisted(root);
+        if (held.ok) {
+          test.check('cycle 2 G11 (unbound): it acted on nothing — the app state home holds no trace beyond its own config');
+        } else {
+          test.fail('cycle 2 G11 (unbound): it persisted ' + held.held.join(', ') + ' while waiting; "acts on nothing" is the requirement');
+        }
+
+        if (st && st.bound === false) {
+          test.check('cycle 2 G11 (unbound): state() reports itself unbound, so the waiting state is observable rather than only visible on a page');
+        } else {
+          test.fail('cycle 2 G11 (unbound): state() does not report the unbound condition (' + JSON.stringify(st) + '); a state a suite cannot read is a state nobody can monitor');
+        }
+        h.stop();
+      }
+      await worlds.clear();
+    }
+
+    // ── full ─────────────────────────────────────────────────────────
+    {
+      // SIXTEEN SEATS AT ramLimitMB 1 — the smallest honest allowance —
+      // and the owner holds the first, so fifteen more fill it.
+      const w = await worlds.claimedRelay({ ramLimitMB: 1, members: 15, proveFull: true });
+      if (!w.ok) {
+        test.fail('cycle 2 G11 (full): the world could not be built — ' + w.error);
+      } else {
+        // THE WORLD IS CHECKED BEFORE THE ASSERTION IT FEEDS. A relay that
+        // took only twelve is not full, and an assertion about fullness
+        // run against it would pass or fail for a reason nobody could see.
+        // So the builder takes one claim too many and reports what it met:
+        // if that claim was ADMITTED there was a spare seat, and the world
+        // is not the one this section asserts against.
+        const seated = 1 + w.joined.length;
+        if (w.wall && w.wall.admitted === false) {
+          test.check('cycle 2 G11 (full): the world is genuinely full — ' + seated +
+            ' seats taken and one more claim refused, so the assertions below are made against a wall rather than a crowd');
+        } else {
+          test.fail('cycle 2 G11 (full): the world is not full — the extra claim was admitted (' + seated +
+            ' seats). Everything below would be asserting against the wrong world');
+        }
+
+        const root = freshRoot();
+        const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url });
+        h.start();
+        await worlds.answering('http://127.0.0.1:' + APP_PORT + '/', 6000);
+        const page = await pageOf(APP_PORT);
+        h.stop();
+
+        // NONE OF THE BOX FIGURES. A full relay tells a stranger that it
+        // is full; it does not tell them how full, how much memory the
+        // box has, or how many seats there are. Those are the owner's
+        // figures and G10 keeps them on the owner's side.
+        const leaked = /\b\d+\s?(MB|GB|seats?|members?)\b/i.exec(page.body || '');
+        if (!leaked) {
+          test.check('cycle 2 G11 (full): the visitor sees none of the box figures — no seat count, no memory, no allowance');
+        } else {
+          test.fail('cycle 2 G11 (full): a box figure reached the visitor: ' + JSON.stringify(leaked[0]));
+        }
+      }
+      await worlds.clear();
+    }
+
+    // ── owner asleep ─────────────────────────────────────────────────
+    {
+      const w = await worlds.claimedRelay({});
+      if (!w.ok) {
+        test.fail('cycle 2 G11 (owner-asleep): the world could not be built — ' + w.error);
+      } else {
+        const sleeping = await worlds.ownerAsleep(w);
+        if (!sleeping.ok) {
+          test.fail('cycle 2 G11 (owner-asleep): the owner node could not be built and stopped — ' + sleeping.error);
+        } else {
+          const root = freshRoot();
+          const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url });
+          h.start();
+          await worlds.answering('http://127.0.0.1:' + APP_PORT + '/', 6000);
+          const st = h.state();
+          const declared = refusalIsDeclared(st);
+          if (declared.ok) {
+            test.check('cycle 2 G11 (owner-asleep): the refusal carries the code ' + declared.code +
+              ', a member of a declared set — which is what makes "every refusal is declared" walkable rather than hoped');
+          } else {
+            test.fail('cycle 2 G11 (owner-asleep): ' + declared.why);
+          }
+          const held = nothingPersisted(root);
+          if (held.ok) {
+            test.check('cycle 2 G11 (owner-asleep): nothing durable holds what arrived while the owner was unreachable');
+          } else {
+            test.fail('cycle 2 G11 (owner-asleep): it kept ' + held.held.join(', ') + ' while the owner was asleep');
+          }
+          h.stop();
+        }
+      }
+      await worlds.clear();
+    }
+
+    // ── key mismatch ─────────────────────────────────────────────────
+    {
+      const first = await worlds.claimedRelay({});
+      if (!first.ok) {
+        test.fail('cycle 2 G11 (key-mismatch): the first relay could not be built — ' + first.error);
+      } else {
+        const root = freshRoot();
+        const bound = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: first.relay.url });
+        bound.start();
+        await worlds.answering('http://127.0.0.1:' + APP_PORT + '/', 6000);
+        bound.stop();
+
+        const second = await worlds.otherRelay();
+        if (!second.ok) {
+          test.fail('cycle 2 G11 (key-mismatch): the second relay could not be built — ' + second.error);
+        } else {
+          // THE SAME rootDir, A DIFFERENT RELAY. This is the attack the
+          // pinning exists for: something else answers where the relay
+          // used to, and under "learns its owner" it would own the app
+          // for good.
+          const again = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: second.relay.url });
+          let refusedAtStart = null;
+          try { again.start(); } catch (e) { refusedAtStart = e; }
+          const st = again.state();
+          try { again.stop(); } catch (e) { /* a server that refused to start has nothing to stop */ }
+
+          const declared = refusalIsDeclared(st);
+          if (refusedAtStart || declared.ok) {
+            test.check('cycle 2 G11 (key-mismatch): a second relay answering with a different key is REFUSED rather than learned — ' +
+              'the bind is to the key proved at first contact, never to the URL');
+          } else {
+            test.fail('cycle 2 G11 (key-mismatch): the app server accepted a relay with a different key. ' +
+              'This is the hostile-relay hole: a URL is a name somebody else controls, and "learns its owner" hands the app to whoever answers');
+          }
+
+          // KEPT AND REPORTED, not merely refused. A contradiction that is
+          // discarded leaves the owner unable to tell a migration they
+          // made from an attack they did not.
+          if (st && (st.contradiction || st.reported || st.conflict)) {
+            test.check('cycle 2 G11 (key-mismatch): the contradiction is kept and reported, so the owner can tell a migration from an attack');
+          } else {
+            test.fail('cycle 2 G11 (key-mismatch): the different answer was refused but not kept or reported (' + JSON.stringify(st) +
+              '); refused-and-forgotten leaves the owner with no way to tell which of the two it was');
+          }
+        }
+      }
+      await worlds.clear();
+    }
+  } catch (e) {
+    // A WORLD THAT BROKE IS REPORTED AS A WORLD THAT BROKE, never as the
+    // product failing. The distinction cost an evening once: six causes
+    // ruled out by measurement, and the answer was in the first failure
+    // line the whole time.
+    test.fail('cycle 2 G11: the worlds could not be run to the end — ' + String((e && e.stack) || e));
+    try { await worlds.clear(); } catch (e2) { /* the teardown's own failure must not mask the first */ }
+  }
 
   test.reportSuccessFailureCount();
 }());
