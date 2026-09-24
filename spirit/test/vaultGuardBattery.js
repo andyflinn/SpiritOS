@@ -33,13 +33,35 @@
 // must ASK are what rule 4b exists for. A guard tested only on the first
 // half is a guard on its way to being switched off.
 
+const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
 const test = require('./testSupport.js');
 
 const GUARD = path.join(os.homedir(), '.claude', 'hooks', 'vault-guard.js');
-const VAULT = '/home/andy/SpiritOS/spirit/run/brains';
+
+// ── THE BOX THIS RUNS ON, RESOLVED RATHER THAN ASSUMED ──────────────
+//
+// THIS FILE BROKE MY OWN RULE ON THE DAY I WROTE IT. `PROVING-IT.md`,
+// hours earlier: *a world asserts its own preconditions, and when the
+// absence of a precondition produces the same observation as the defect
+// you are hunting, the precondition is not context — it is the first
+// assertion.* This battery hardcoded one box's vault and one box's guard,
+// so on any other box it read a MISSING GUARD as a SILENT guard and
+// reported six failures about a gate that was not installed. Six red on
+// every box but mine, on a board whose honesty is the stated precondition
+// for the longer unattended stretches Andy asked for.
+//
+// A guard that is not there is not a guard that permitted something.
+const VAULT_CANDIDATES = [
+  '/home/andy/SpiritOS/spirit/run/brains',
+  '/mnt/d/SpiritOS/spirit/run/brains',
+  path.join(__dirname, '..', 'run', 'brains'),
+];
+const VAULT = VAULT_CANDIDATES.filter(function (p) {
+  try { return fs.existsSync(p); } catch (e) { return false; }
+})[0] || null;
 
 function askedBy(input) {
   let out = '';
@@ -66,6 +88,29 @@ function write(filePath) {
 }
 
 test.startTest('The vault guard — silent on a close, loud on rule 4b');
+
+// ── STAND DOWN RATHER THAN REPORT A GATE THAT IS NOT THERE ──────────
+//
+// Two preconditions, each asserted separately because they fail for
+// different reasons and the fixes are different: no guard installed on
+// this box, and no vault on this box. Either one makes every assertion
+// below meaningless — and, worse, PLAUSIBLE: a missing guard is silent,
+// and silence is what half of them assert.
+if (!fs.existsSync(GUARD)) {
+  test.standsDown('no vault guard is installed on this box (' + GUARD + '). ' +
+    'A guard that is not there is not a guard that permitted something, and reporting six ' +
+    'failures about an absent gate would make the board red on every box but one');
+  test.reportSuccessFailureCount();
+  return;
+}
+if (!VAULT) {
+  test.standsDown('this box carries no vault (tried ' + VAULT_CANDIDATES.join(', ') + '), ' +
+    'so there is nothing for the guard to be right or wrong about');
+  test.reportSuccessFailureCount();
+  return;
+}
+test.check('the guard is installed on this box and the vault resolves to ' + VAULT +
+  ' — so the assertions below are about a gate that exists');
 
 // ── HALF ONE: THE CLOSE'S OWN WORK MUST BE SILENT ────────────────────
 //
