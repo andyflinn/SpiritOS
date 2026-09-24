@@ -420,6 +420,45 @@ forget something.
 
 ---
 
+## "Is this already solved here?" is the first question of a review
+
+**Andy, 2026-09-24, on a sweep that would find repeated solutions:** *"To
+me this seems to be a code-review-fundamental."* It is, and the rule above
+is its narrow form — true of mechanisms, and true of every line.
+
+**THE AUTHOR IS STRUCTURALLY THE WORST PERSON TO ASK IT.** Solving a
+problem is what makes you stop looking for prior solutions: the answer is
+in your head, so there is no reason to search. That is not carelessness
+and it cannot be fixed by trying harder — which is exactly why it
+belongs to review rather than to authoring.
+
+**Measured in one sitting, 2026-09-24. Six forks, five of them the
+author's, and the author found none of them:**
+
+| fork | its one home | who found it |
+|---|---|---|
+| a fixed 8s timeout | `peerPost`'s negotiated `grantedMs` | **Andy**, in one question |
+| a hand-rolled status table | `spiritErrors.classifyAnswer` | the author, only after the first was named |
+| `peerPost` built per call, wired bare | `server.js`'s held router | **Andy**, in one question |
+| a wrong wiring declaration | — | **the gate**, on its first run |
+| the app contract left unnamed | — | **wsl-claude**, at the readiness check |
+| `ask` in three copies | `kernel.js:642` | a count, not a reading |
+
+**AND A FORK HAS NO REFERENCES TO FIND**, which is why no editor helps.
+*Where-used* answers "who calls this"; a fork calls nothing — it is new
+code that never touched the thing it duplicates. The question that finds
+it is **"what else already solves this"**, and no tool in common use asks
+it.
+
+**So it is asked by a person, or by a gate that was taught one answer at
+a time.** `oneDoor` is that gate for sockets already. Widening it is a
+cycle of its own, and the discipline for widening it is the same as
+everywhere else here: **every entry comes from a fork that actually
+happened**, because a noisy gate gets ignored, and being ignored teaches
+the habit of scrolling past.
+
+---
+
 13a. **An agent's window is a channel to Andy, and it says something to
     him before it goes idle.** Andy, 2026-09-24, on wsl-claude's
     practice: *"wsl prints messages for me in hist output, generally
