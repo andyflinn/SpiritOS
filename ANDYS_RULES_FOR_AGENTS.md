@@ -397,6 +397,30 @@ forget something.
 
 ---
 
+13a. **An agent's window is a channel to Andy, and it says something to
+    him before it goes idle.** Andy, 2026-09-24, on wsl-claude's
+    practice: *"wsl prints messages for me in hist output, generally
+    before returning to idle/listening state. i very much appreciate
+    that."* Confirmed and kept, not a proposal.
+
+    **Why it is worth a rule rather than a habit.** An agent that goes
+    quiet is ambiguous between working, stuck, finished and waiting, and
+    the ambiguity costs Andy more than it costs the agent — he has to go
+    and look to find out which. A line addressed to him before the agent
+    returns to listening removes that, once, at the only moment the agent
+    knows the answer.
+
+    **It is addressed to HIM, not to the other agent.** The agent channel
+    carries agent-to-agent traffic; this is the window he reads. So it is
+    in his terms — what moved, what is owed, what is waiting on him — and
+    never a paste of what was just sent to a peer.
+
+    **And it pairs with the last line being unambiguous**: either
+    *listening on node*, or *working on: &lt;request&gt; — asked by
+    &lt;who&gt;*, never absent. Naming who asked matters more than it
+    looks — when a lead sits elsewhere, *asked by* is the only way Andy
+    can tell a dispatch he did not make from one he did.
+
 14. **The board is a document Andy keeps open, and the lead maintains the
     display.** Andy, 2026-09-24, asking what he actually wants from it:
     *"is the board a document i can keep in a window and gets updated
