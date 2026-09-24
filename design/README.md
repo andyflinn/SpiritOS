@@ -15,6 +15,13 @@ This directory contains the vision, principles, and architecture decisions for *
 
 ## Core Principles
 - [Node Architecture Principles](principles/NODE-ARCHITECTURE.md)
+- [Devices and ports — how you run a public HTML face on the internet](principles/DEVICES-AND-PORTS.md)
+  — **the model**, 2026-09-24: everything the master owns is a device, a
+  device has ports its master wires, the app runs on the owner's node and
+  the public box holds a face. **The relay is not a precedent for it —
+  the relay IS the implementation.** Vocabulary in `DICTIONARY.md` under
+  *The show*; open questions and the security conditions are in the
+  document.
 - [The layers — a node, its one app, and what it declares](principles/PUBLIC-APP-LAYERS.md)
   — **the picture**, drawn 2026-09-24: a node serves exactly ONE intrinsic
   app, and the shell is an instance of that rather than an exception.
