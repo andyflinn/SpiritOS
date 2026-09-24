@@ -101,6 +101,23 @@ is the other direction** — it can be asked and cannot be told, so
 shutdown, silence, and changing a face while nobody is looking have
 nowhere to arrive.
 
+> **CORRECTION, 2026-09-24, before this document was a night old.** It
+> first said no app in the tree receives. **That is false and it was
+> load-bearing** — wsl-claude, checking a premise its author had written
+> without a citation:
+>
+> `app/relayChat/relayChat.js:1205` — `if (typeof api.onPacket === 'function')`
+> `app/relayChat/relayChat.js:600` — *"Relay Chat receives through api.onPacket or it does not"*
+>
+> **An app-layer receive path EXISTS and `onPacket` is already in the
+> surface vocabulary.** So the gap is not a missing mechanism at the app
+> layer — it is that the app server hands `peerPost` no `onArrival`.
+> Narrower than this document claimed, and in one file rather than in the
+> design.
+>
+> *And the app that proves it is `relayChat`, which is parked. The
+> mechanism a parked app is built on is not parked with it.*
+
 ## THE RELAY IS NOT A PRECEDENT. IT IS THE IMPLEMENTATION.
 
 | the model | already built, in the relay |
