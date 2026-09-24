@@ -1,0 +1,70 @@
+/* spirit/run/app/shell/tokens.css
+ * STYLE ADOPTION, OFFERED AS A FILE.
+ *
+ *   G4, PUBLIC-APP-SERVER.md: "Elements and style adoption are separately
+ *   optional. The provider is the shell's FOLDER, not its process — every
+ *   clone carries app/shell/ whether or not anything launches it."
+ *
+ * An app takes this by declaring `"utilities": ["tokens"]` in its
+ * manifest. Declaring nothing is handed nothing: absent means nothing,
+ * because the permissive default would make the app contract a check that
+ * cannot fail.
+ *
+ * PAINTS, NEVER DECIDES — and that is the condition of being offerable at
+ * all, not a style note. A token that carried a decision would make every
+ * app that adopted it inherit the decision, and an app cannot refuse what
+ * it did not know it was taking.
+ *
+ * SO: custom properties and nothing else. No layout, no element
+ * selectors, no @media that moves things, no behaviour. An app that takes
+ * tokens and no elements gets colours and spacing and keeps its own
+ * shape, which is what "separately optional" means when it is true rather
+ * than described.
+ */
+
+:root {
+  --spirit-ink: #14171a;
+  --spirit-ink-quiet: #5b6570;
+  --spirit-page: #fbfbfa;
+  --spirit-panel: #ffffff;
+  --spirit-line: #e2e5e9;
+  --spirit-accent: #2f6f4f;
+  --spirit-warn: #8a5a00;
+  --spirit-refuse: #9a2f2f;
+
+  --spirit-gap: 12px;
+  --spirit-gap-wide: 20px;
+  --spirit-radius: 8px;
+
+  --spirit-face: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --spirit-face-fixed: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --spirit-size: 15px;
+  --spirit-size-small: 13px;
+}
+
+/* The dark answer is a REDEFINITION OF THE SAME TOKENS, never a second
+ * set of names. An app that adopted one name and not the other would go
+ * half-dark, which is the drift this file exists to prevent. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --spirit-ink: #e8eaed;
+    --spirit-ink-quiet: #9aa4ae;
+    --spirit-page: #16181b;
+    --spirit-panel: #1e2125;
+    --spirit-line: #31363c;
+    --spirit-accent: #6fbf90;
+    --spirit-warn: #d9a441;
+    --spirit-refuse: #e07a7a;
+  }
+}
+
+:root[data-theme="dark"] {
+  --spirit-ink: #e8eaed;
+  --spirit-ink-quiet: #9aa4ae;
+  --spirit-page: #16181b;
+  --spirit-panel: #1e2125;
+  --spirit-line: #31363c;
+  --spirit-accent: #6fbf90;
+  --spirit-warn: #d9a441;
+  --spirit-refuse: #e07a7a;
+}

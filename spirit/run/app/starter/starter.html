@@ -108,6 +108,28 @@ function row(label, value, quiet) {
     ? s.ownerKey.slice(-10)
     : 'none yet — this relay is unclaimed', !(s && s.ownerKey)));
   box.append(row('surface granted', (s && s.contract && s.contract.surface.join(', ')) || 'none'));
+
+  // ── THE ONE OUTWARD ACT, AND IT IS WHY THIS SAMPLE EXISTS ──────────
+  //
+  // Everything above is this server describing itself. This line is the
+  // app doing the only thing it can do: reach its owner through the
+  // relay it is a member of. Three of the four states a stranger can
+  // meet are PRODUCIBLE only because something actually reaches — the
+  // relay refusing to route, the relay full, the owner asleep. Reading
+  // state alone would show none of them, and a failure state that
+  // cannot be produced is a failure state nobody has tested.
+  //
+  // IT IS SHOWN, NOT SWALLOWED. A refusal is an answer, arriving with a
+  // code that is a member of a declared set, and the page says which.
+  // NOTHING IS WRITTEN ANYWHERE either way: the reach is the act, the
+  // answer is painted, and the visitor leaves no trace on the box.
+  const reach = await ask('app.reach');
+  if (reach && reach.ok) {
+    box.append(row('owner reached', 'yes'));
+  } else {
+    box.append(row('owner reached', (reach && reach.error) || 'no answer', true));
+    box.append(row('code', (reach && reach.code) || '—', true));
+  }
 })();
 </script>
 </body>

@@ -1,0 +1,56 @@
+/* spirit/run/app/shell/elements.css
+ * THE SHARED ELEMENTS, OFFERED AS A FILE.
+ *
+ * Taken by declaring `"utilities": ["elements"]`. SEPARATELY OPTIONAL
+ * from tokens, and that separation is asserted rather than promised —
+ * appServerBoundary's G14 plants an app that asks for elements alone and
+ * requires that dialogs do not arrive with it.
+ *
+ * ── IT READS TOKENS AND DOES NOT DEFINE THEM ───────────────────────
+ *
+ * Every value here is a var() with a fallback, so an app that takes
+ * elements WITHOUT tokens still renders — in its own colours, which is
+ * the point. If this file defined the tokens it needed, taking elements
+ * would silently drag the whole palette in, and "separately optional"
+ * would be a sentence in a document contradicted by its own stylesheet.
+ *
+ * PAINTS, NEVER DECIDES. Class names an app opts into, one at a time.
+ * Nothing here selects a bare element, so adopting this file cannot
+ * restyle a page that merely linked it.
+ */
+
+.spirit-panel {
+  background: var(--spirit-panel, #fff);
+  border: 1px solid var(--spirit-line, #e2e5e9);
+  border-radius: var(--spirit-radius, 8px);
+  padding: var(--spirit-gap, 12px);
+}
+
+.spirit-row {
+  display: flex;
+  gap: var(--spirit-gap, 12px);
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--spirit-line, #e2e5e9);
+}
+.spirit-row:last-child { border-bottom: 0; }
+.spirit-row > b {
+  flex: 0 0 11em;
+  font-weight: 600;
+  color: var(--spirit-ink-quiet, #5b6570);
+  font-size: var(--spirit-size-small, 13px);
+}
+.spirit-row > span { color: var(--spirit-ink, #14171a); }
+
+/* A state, not a failure: the relay has no owner yet, and every
+ * deployment passes through it exactly once, in front of a stranger. */
+.spirit-waiting { color: var(--spirit-ink-quiet, #5b6570); font-style: italic; }
+
+/* A refusal is an answer, and it is allowed to look like one. */
+.spirit-refusal {
+  color: var(--spirit-refuse, #9a2f2f);
+  font-family: var(--spirit-face-fixed, monospace);
+  font-size: var(--spirit-size-small, 13px);
+}
+
+.spirit-quiet { color: var(--spirit-ink-quiet, #5b6570); font-size: var(--spirit-size-small, 13px); }

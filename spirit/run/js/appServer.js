@@ -115,6 +115,47 @@ function contractOf(manifest) {
   };
 }
 
+// ── WHAT AN APP MAY ASK FOR, AS TWO CLOSED SETS ─────────────────────
+//
+// DATA, NOT CODE — the plugin pattern this design arrived at three times
+// from different directions: the manifest declares data and inherits the
+// mechanism. A member outside these sets cannot be supplied, and the
+// difference between saying so at LOAD and at REACH is the difference
+// between naming the member and naming a runtime symptom while the
+// author guesses.
+//
+// `verb` is the whole surface today, and that is not a placeholder: the
+// sample declares it and nothing else, and an app that asks for nothing
+// is handed nothing.
+const SURFACE_MEMBERS = ['verb'];
+
+// The optional layer (G4), and SEPARATELY optional — taking elements
+// must not bring dialogs along. The files that satisfy these live in
+// `app/shell/`, which every clone carries whether or not anything
+// launches the shell; the vocabulary is here because the grant is a
+// contract decision and the files are a deployment fact.
+const UTILITIES = ['elements', 'tokens', 'dialogs'];
+
+// ── THE CONTRACT IS CHECKED AT LOAD, AND THE MEMBER IS NAMED ────────
+//
+// Returns a standing refusal or null. G14: "refused at reach, the
+// failure names a runtime symptom and the author guesses; refused at
+// load, it names the member."
+function checkContract(contract, appName) {
+  const unknown = contract.surface.filter(function (m) { return SURFACE_MEMBERS.indexOf(m) === -1; });
+  if (unknown.length) {
+    return {
+      code: 'app-surface-undeclared',
+      app: appName,
+      // NAMED, and the whole vocabulary beside it — an author who is
+      // told only that something is wrong reads the source next.
+      members: unknown,
+      why: 'this server cannot supply ' + unknown.join(', ') + '; the surface is ' + SURFACE_MEMBERS.join(', '),
+    };
+  }
+  return null;
+}
+
 // ── WHAT THIS SERVER CAN REFUSE, AS A CLOSED SET ─────────────────────
 //
 // The platform's refusals are `spiritErrors` entries, because that
@@ -669,6 +710,29 @@ function create(opts) {
     // OBSERVABLE rather than merely returned to whoever caused it. A state
     // a suite cannot read is a state nobody can monitor.
     lastReach: null,
+    // ── WHAT THE CONTRACT REFUSED, DECIDED ONCE AT LOAD ──────────────
+    //
+    // An impossible member and a non-strict posture are both properties
+    // of the manifest, so they are settled when it is read rather than
+    // re-decided per request. The ENFORCEMENT moment for posture is D1
+    // and is Andy's to rule; this is the REPORT, which is needed either
+    // way — a condition nothing can observe cannot be monitored, whether
+    // it bites at load or at the door.
+    contractRefusal: checkContract(contract, appName) ||
+      (contract.posture !== 'strict'
+        ? { code: 'app-not-strict', app: appName, posture: contract.posture || '(none declared)',
+            why: 'a public app server serves strict apps; this manifest says ' + (contract.posture || 'nothing') }
+        : null),
+    // GRANTED, AND ONLY WHAT WAS ASKED FOR. Absent means nothing, so the
+    // grant is the declaration intersected with what exists — never the
+    // vocabulary handed out because nothing said otherwise.
+    granted: {
+      surface: contract.surface.filter(function (m) { return SURFACE_MEMBERS.indexOf(m) !== -1; }),
+      // SEPARATELY OPTIONAL, which is G4 made observable instead of
+      // described: this is a filter over what THIS app declared, so
+      // asking for elements cannot bring dialogs along.
+      utilities: contract.utilities.filter(function (u) { return UTILITIES.indexOf(u) !== -1; }),
+    },
     // Learned from the relay, never configured. Empty until the relay is
     // claimed — which is why an app server WAITS rather than failing
     // while its relay is unclaimed: it has a relay, no owner, and
@@ -707,6 +771,21 @@ function create(opts) {
     if (!m) return null;
     if (m[1] === appName + '.html' || m[1] === appName + '.js') return own(m[1]);
     if (m[1] === 'ask.js') return path.join(rootDir, 'app', 'shared', 'ask.js');
+    // ── A GRANT THAT SERVES NOTHING IS NOT A GRANT ──────────────────
+    //
+    // The optional layer is offered only to an app that DECLARED it, so
+    // separability is enforced and not merely reported: an app granted
+    // `elements` and not `tokens` gets 404 on tokens.css, and the
+    // stylesheet is built to render without it for exactly that reason.
+    //
+    // Still one named file per entry — G2's rule holds here too, and
+    // app/shell is never a servable folder.
+    const util = { 'elements.css': 'elements', 'tokens.css': 'tokens' }[m[1]];
+    if (util) {
+      return state.granted.utilities.indexOf(util) === -1
+        ? null
+        : path.join(rootDir, 'app', 'shell', m[1]);
+    }
     if (m[1] === 'favicon.svg') return null;
     return null;
   }
@@ -719,6 +798,10 @@ function create(opts) {
   // a fork is: nothing calls the other, so nothing can tell they disagree.
   function snapshot() {
     const r = roleOf(state);
+    const standing = state.contractRefusal ||
+      (state.relayRefusal
+        ? { code: state.relayRefusal.code, held: state.relayRefusal.held, offered: state.relayRefusal.offered }
+        : null);
     return {
       appName: state.appName,
       port: state.port,
@@ -732,14 +815,21 @@ function create(opts) {
       // happened must be observable, not merely returned to whoever
       // caused it.
       lastReach: state.lastReach || null,
-      // ── THE REFUSAL, AND IT CARRIES ITS CODE ────────────────────────
+      // ── THE STANDING REFUSAL, AND IT CARRIES ITS CODE ───────────────
       //
       // A standing refusal must be walkable against the declared set, so
-      // it is reported with its code and not as prose. This is the LIVE
-      // fact: the server is refusing the relay it was offered, right now.
-      refusal: state.relayRefusal
-        ? { code: state.relayRefusal.code, held: state.relayRefusal.held, offered: state.relayRefusal.offered }
-        : null,
+      // it is reported with its code and never as prose. The CONTRACT's
+      // refusal comes first because it is decided at load and an app that
+      // cannot be served at all is not made servable by its relay being
+      // fine.
+      //
+      // `code` sits at the top as well as inside, because two different
+      // readers ask this two different ways — one walks `refusal.code`
+      // against the declared set, the other asks whether the server is
+      // refusing at all. One fact, and neither reader has to know the
+      // other's shape.
+      code: standing ? standing.code : null,
+      refusal: standing,
       // And this is the KEPT one, read back off the disc: what was held,
       // what was offered, and when it was first seen. Two questions about
       // one event — is it refusing now, and can the owner still tell a
@@ -749,6 +839,11 @@ function create(opts) {
         try { return loadConfig(rootDir, appName).contradiction || null; } catch (e) { return null; }
       }()),
       contract: state.contract,
+      // WHAT WAS GRANTED, beside what was declared. The declaration is
+      // the app's claim; these two are the server's answer, and a reader
+      // comparing them can see a member that was asked for and withheld.
+      surface: state.granted.surface.slice(),
+      utilities: state.granted.utilities.slice(),
       refusals: PLATFORM_REFUSALS.slice(),
       nodeIsOwnerNode: r.nodeIsOwnerNode,
       nodeIsPublicApp: r.nodeIsPublicApp,
@@ -809,8 +904,20 @@ function create(opts) {
         app: appName, manifest: manifest ? 'present' : 'missing',
       });
     }
-    if (contract.posture !== 'strict') {
-      return refuse(res, 'app-not-strict', { app: appName });
+    // ── DECIDED AT LOAD, ENFORCED HERE ──────────────────────────────
+    //
+    // The contract was judged once when the manifest was read, and this
+    // is where that judgement bites. Re-deriving it per request would be
+    // two decisions about one manifest, which is a fork with extra steps.
+    //
+    // WHETHER IT SHOULD ALSO REFUSE TO START is D1, and it is ANDY'S to
+    // rule — written apart from the settled half on purpose, because the
+    // two sit one line from each other and the second would otherwise be
+    // built on the momentum of the first. Until he rules, the condition
+    // is decided at load, reported in state(), and refused at the door.
+    if (state.contractRefusal) {
+      const r = state.contractRefusal;
+      return refuse(res, r.code, { app: r.app, members: r.members, posture: r.posture, why: r.why });
     }
     // ── THE CONFLICT IS REPORTED, NOT SERVED THROUGH THE DOOR ─────────
     //

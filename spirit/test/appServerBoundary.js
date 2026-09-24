@@ -112,10 +112,31 @@ test.subHeading('the measurements the design rests on are still true');
       else if (e.name.endsWith('.css')) cssFiles.push(path.relative(REPO, p));
     });
   }(RUN));
-  if (!cssFiles.length) {
+  // ── THIS PREMISE WAS MOVED ON PURPOSE, BY BUILDING G4 ───────────────
+  //
+  // It read "there are still zero .css files under spirit/run", and that
+  // was TRUE AT DESIGN TIME and was the reason G4 says the look is shared
+  // as tokens: there was no stylesheet to share. Building G4 creates the
+  // first two, so the guard had to move or G4 could never be built
+  // without going red.
+  //
+  // IT IS NARROWED RATHER THAN DELETED, which is the whole difference. A
+  // premise guard that is removed the first time it fires was a comment.
+  // The thing it was actually protecting — that a look does not grow in
+  // an app folder where nobody offered it — is still asserted, and a
+  // third stylesheet anywhere else still fails this.
+  const OFFERED = ['spirit/run/app/shell/elements.css', 'spirit/run/app/shell/tokens.css'];
+  const stray = cssFiles.filter(function (p) {
+    return OFFERED.indexOf(p.split(path.sep).join('/')) === -1;
+  });
+  if (!stray.length && cssFiles.length) {
+    test.check('the only stylesheets under spirit/run are app/shell\'s offered layer (' + cssFiles.length +
+      ') — the look is still shared rather than grown per app, which is what the original "zero .css" premise was protecting');
+  } else if (!cssFiles.length) {
     test.check('there are still zero .css files under spirit/run — the look is shared as tokens because there is no stylesheet to share');
   } else {
-    test.fail('a stylesheet appeared: ' + cssFiles.join(', ') + ' — G4 assumed none exists');
+    test.fail('a stylesheet appeared outside the offered layer: ' + stray.join(', ') +
+      ' — G4 offers the look from app/shell so apps do not each grow one');
   }
 
   // G15 names `MANIFEST_PATTERN` as the convention the manifest path
@@ -872,6 +893,32 @@ const RECIPES = [
     }
   }
 
+  // ── A FETCH OF THE PAGE RUNS NONE OF THE PAGE ───────────────────────
+  //
+  // The owner-asleep recipe said "a visit is what causes it: the sample
+  // posts to the owner node" — and `pageOf` fetches HTML over HTTP, where
+  // no script executes. So the act the recipe describes never happened,
+  // and the suite waited for a refusal nobody had caused.
+  //
+  // THE DOOR IS THE OUTSIDE. Driving it is not a shortcut around the
+  // sample: it is the same request the sample's `ask` makes, made by the
+  // thing standing where a browser stands. A headless browser would
+  // prove one more link — that the page calls it — and that link is
+  // asserted statically instead, under G3, by requiring the sample to
+  // import the one `ask` and hold no raw call of its own.
+  async function doorOf(port, verb) {
+    try {
+      const res = await fetch('http://127.0.0.1:' + port + '/api/spirit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ verb: verb }),
+      });
+      return { status: res.status, body: await res.json().catch(function () { return null; }) };
+    } catch (e) {
+      return { status: 0, body: null, error: String((e && e.message) || e) };
+    }
+  }
+
   // A FRESH BOX WITH THE APP DEPLOYED ONTO IT. The app is copied in
   // because that is what a deployment does and because, without it, an
   // app server started with `appName: 'starter'` finds no starter — which
@@ -1158,6 +1205,36 @@ const RECIPES = [
           // A VISIT IS WHAT CAUSES IT: the sample posts to the owner node,
           // which is the act the owner being asleep interrupts.
           await pageOf(APP_PORT);
+          // The act the page performs, performed from where the page is.
+          // Without this the visit is a GET of some HTML and nothing has
+          // tried to reach anybody.
+          const answered = await doorOf(APP_PORT, 'app.reach');
+          // ── THE STATE NAMED MUST BE THE STATE TESTED ────────────────
+          //
+          // This first passed on code `no-cipher-key` at 428, and 428 is
+          // THE SENDER'S OWN REFUSAL BEFORE ANYTHING LEAVES — appServer's
+          // own comment says it: "emphatically not a sleeping owner." So
+          // the owner being asleep was never exercised, and the assertion
+          // was green about a world it had not built.
+          //
+          // A DECLARED CODE IS NOT ENOUGH; it has to be a code ABOUT THE
+          // OWNER. Anything else means the reach died at home, and a
+          // world that cannot get out of its own process proves nothing
+          // about a peer that is not answering.
+          const ABOUT_THE_OWNER = ['app-owner-asleep', 'app-not-a-member', 'app-relay-full'];
+          const got = (answered.body && answered.body.code) || '';
+          if (ABOUT_THE_OWNER.indexOf(got) !== -1) {
+            test.check('cycle 2 G11 (owner-asleep): the door answers the reach with code ' + got +
+              ' at status ' + answered.status + ' — a refusal about the OWNER, reaching HTTP, which is where a stranger meets it');
+          } else if (got) {
+            test.fail('cycle 2 G11 (owner-asleep): the reach was refused with ' + got + ' at status ' + answered.status +
+              ', which is not a fact about the owner — it is this server refusing before anything left. ' +
+              'The app server holds no card for its owner and never asks for one, so the reach cannot leave the box ' +
+              'and three of the four states are not producible. Expected one of ' + ABOUT_THE_OWNER.join(', '));
+          } else {
+            test.fail('cycle 2 G11 (owner-asleep): the door answered ' + JSON.stringify(answered).slice(0, 200) +
+              ' — a refusal that carries no code over HTTP cannot be matched against the declared set by anyone outside this process');
+          }
           const st = await settled(h, 8000);
           const declared = refusalIsDeclared(st);
           if (declared.ok) {
