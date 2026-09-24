@@ -215,6 +215,76 @@ function settleRelay(rootDir, appName, asked) {
 // demand and **unknown means NOT the owner node** — never "assume yes
 // because it was yes a minute ago", because the tempting implementation
 // is a one-minute cache that reintroduces exactly what the rule prevents.
+// ── ASKING THE RELAY WHO IT IS, THROUGH THE ONE DOOR ────────────────
+//
+// `relayRequest` is the interface, and this module reaches for no socket
+// of its own beyond the one it listens on. `/api/relay/key` is what a
+// node already asks when it learns a relay's key (`hub.js:203`), and it
+// answers the two things a bind needs: the relay's own public key, and
+// `ownerKey` — which is the EMPTY STRING until the relay's first invited
+// claim.
+//
+// That emptiness is not an error and it is why an app server WAITS: a
+// relay is born unclaimed, so there is a window — exactly one per
+// deployment — in which the app has a relay, no owner, and nothing
+// wrong.
+const relayRequest = require('./relayRequest').relayRequest;
+
+function askRelay(url) {
+  return relayRequest(url, 'GET', '/api/relay/key', null)
+    .then(function (r) {
+      // `relayRequest` resolves `{ status, text }` and parses nothing —
+      // checked rather than assumed, after this read `r.json` and
+      // treated every successful answer as a relay that did not reply.
+      // A 200 reported as silence is the worst shape of wrong: it looks
+      // like the network and it is the caller.
+      let b = {};
+      try { b = JSON.parse((r && r.text) || '{}'); } catch (e) { b = {}; }
+      return {
+        ok: r && r.status === 200,
+        status: (r && r.status) || 0,
+        relayKey: String(b.relayPublicKey || ''),
+        ownerKey: String(b.ownerKey || ''),
+        ownerLabel: String(b.ownerLabel || ''),
+      };
+    })
+    .catch(function (e) { return { ok: false, status: 0, error: e.message }; });
+}
+
+// ── THE PIN, AND WHY IT IS THE KEY AND NEVER THE URL ────────────────
+//
+// A URL is a name somebody else controls. An expired domain, a DNS
+// change, a restored backup or a typo answers once and — under a plain
+// *learns its owner* — owns the app for good. So the first answer's
+// relay key is written into `app-state/<name>/config.json`, and from
+// then on it is the thing that must match.
+//
+// A LATER DIFFERENT KEY IS REFUSED, KEPT AND REPORTED. Refused, so a
+// wrong owner cannot take over. Kept, so the contradiction survives
+// rather than being a thing somebody remembers. Reported, because a
+// relay answering with a different key is either a migration the owner
+// made or an attack, and **only the owner can tell which** — which is
+// also why this module does not try to guess.
+function pin(rootDir, appName, seen) {
+  const cfg = loadConfig(rootDir, appName);
+  if (!cfg.relayKey) {
+    cfg.relayKey = seen;
+    cfg.boundAt = new Date().toISOString();
+    return { ok: true, key: seen, first: true, config: saveConfig(rootDir, appName, cfg) };
+  }
+  if (cfg.relayKey !== seen) {
+    // KEPT. The contradiction is written down, once, with both halves
+    // and when it was first seen — a deterrent nobody can produce is
+    // not a deterrent.
+    if (!cfg.contradiction) {
+      cfg.contradiction = { held: cfg.relayKey, offered: seen, at: new Date().toISOString() };
+      saveConfig(rootDir, appName, cfg);
+    }
+    return { ok: false, code: 'app-relay-key-changed', held: cfg.relayKey, offered: seen };
+  }
+  return { ok: true, key: seen, first: false, config: cfg };
+}
+
 function roleOf(state) {
   return {
     nodeIsPublicApp: true,
@@ -250,7 +320,9 @@ function create(opts) {
     // while its relay is unclaimed: it has a relay, no owner, and
     // nothing wrong.
     ownerKey: '',
+    ownerLabel: '',
     selfKey: '',
+    lastBind: null,
     boundKey: (settled.ok && settled.config && settled.config.relayKey) || '',
   };
 
@@ -314,7 +386,49 @@ function create(opts) {
     return common.sendFile(res, path.join(appDir(rootDir, appName), file));
   }
 
+  // ── THE BIND, RUN ONCE AT START AND RE-CHECKABLE ────────────────────
+  //
+  // Nothing here is cached as a decision. The relay's answer is stored
+  // so the page can be served without a round trip per request, but the
+  // ROLE is derived from it every time it is asked (G7) — a cached "I
+  // own this" is how a node believes it owns something it no longer
+  // does, and the tempting implementation is exactly a one-minute cache.
+  //
+  // FAILS CLOSED. An unreachable relay leaves `ownerKey` empty, which
+  // means unbound, which means the app acts on nothing. Unknown is never
+  // "assume yes because it was yes a minute ago".
+  function bind() {
+    if (!state.relay) {
+      state.lastBind = { ok: false, code: 'app-unbound', why: 'no relay configured' };
+      return Promise.resolve(state.lastBind);
+    }
+    return askRelay(state.relay).then(function (seen) {
+      if (!seen.ok || !seen.relayKey) {
+        // The relay did not answer, or answered without a key. Not a
+        // contradiction — an absence. The app waits.
+        state.ownerKey = '';
+        state.lastBind = { ok: false, code: 'app-unbound', why: 'relay did not answer', status: seen.status };
+        return state.lastBind;
+      }
+      const p = pin(rootDir, appName, seen.relayKey);
+      if (!p.ok) {
+        state.relayRefusal = p;
+        state.ownerKey = '';
+        state.lastBind = p;
+        return p;
+      }
+      state.boundKey = p.key;
+      // LEARNED, NEVER CONFIGURED. Empty is the unclaimed relay, and
+      // that is a state the app serves through rather than fails on.
+      state.ownerKey = seen.ownerKey;
+      state.ownerLabel = seen.ownerLabel;
+      state.lastBind = { ok: true, first: p.first, relayKey: p.key, unbound: !seen.ownerKey };
+      return state.lastBind;
+    });
+  }
+
   return {
+    bind: bind,
     state: function () {
       const r = roleOf(state);
       return {
@@ -323,7 +437,9 @@ function create(opts) {
         relay: state.relay,
         boundKey: state.boundKey,
         ownerKey: state.ownerKey,
+        ownerLabel: state.ownerLabel || '',
         unbound: !state.ownerKey,
+        lastBind: state.lastBind || null,
         contract: state.contract,
         refusals: PLATFORM_REFUSALS.slice(),
         nodeIsOwnerNode: r.nodeIsOwnerNode,
@@ -333,6 +449,11 @@ function create(opts) {
     },
     handle: handle,
     start: function (cb) {
+      // The bind is attempted at start and its failure is NOT a reason
+      // not to listen: an unclaimed relay, or one that is simply down,
+      // leaves the app serving its page and acting on nothing. That is
+      // the waiting state, and it is a state rather than a fault.
+      bind();
       server = http.createServer(handle);
       // LOOPBACK ONLY. Publicness is Caddy's, a whitelist's and a DNS
       // record's — never this process's.
