@@ -473,11 +473,22 @@ So the app contract is **three keys in the manifest an app already has**:
 
 **ABSENT MEANS NOTHING, AND THAT IS THE LOAD-BEARING CHOICE.** The
 tempting default is *absent means everything*, because it makes the first
-app easy to write. It is wrong in the direction that cannot be undone:
-every app then depends on the whole surface by accident, and **the
-boundary becomes unmovable the day the second app ships.** An app that
-asks for nothing and gets nothing fails immediately and obviously, in
-development, at the hands of the person who can fix it.
+app easy to write.
+
+**THE DECIDING REASON IS wsl-claude’s, NOT THIS AGENT’S, AND IT IS
+STRONGER.** The argument offered was that absent-means-everything becomes
+unmovable when the second app ships — true, and a **prediction**. His:
+*"absent-means-everything is UNASSERTABLE. If an undeclared app gets the
+whole surface, then 'every member an app touches is in its surface' is
+vacuously satisfied by every app that declares nothing, and dead surface
+can never be counted, because no member is ever provably unused. Your own
+walkability argument dies with the default."*
+
+**So it is not a taste about first-app ergonomics: absent-means-everything
+would make G14 a check that cannot fail** — in the requirement written to
+make the boundary checkable. An app that asks for nothing and gets nothing
+fails immediately and obviously, in development, at the hands of the
+person who can fix it.
 
 **THE DECLARATION IS DATA AND NEVER CODE**, which is what keeps this from
 becoming a fork. A manifest that could declare *behaviour* would let two
@@ -503,6 +514,99 @@ member the shell has and the app server does not. **Recommended:
 no** — one vocabulary, and a member the app server cannot supply is
 refused at load with the member named, rather than at the moment the app
 reaches for it. That is the difference between a boundary and a surprise.
+
+---
+
+### G15 — the named interface, so a suite need not guess it
+
+**Status:** OPEN. Nothing built. **Written 2026-09-24 in answer to
+wsl-claude, before he wrote three hundred lines**: *"the document
+specifies BEHAVIOUR and does not name the INTERFACE, and I cannot assert
+a name I invented — if I guess and you guess differently, every assertion
+is red at the close for a reason that is not a defect."*
+
+Five names. Each one is decided here rather than discovered in source,
+because under the working agreement he does not read the source — and
+*"inferring the interface from your source is reading you with extra
+steps."*
+
+#### 1. Starting one
+
+```
+node js/server.js --app <name> --port <n> [--relay <url>]
+```
+
+`--app` carries the app's name, so the mode and its argument are one
+thing. `--relay` is accepted **at first start only** and written to the
+config below; afterwards it is read, and passing a different one is
+refused rather than obeyed — that is G6's *first bind is final* at the
+command line, where it would otherwise be trivially bypassed.
+
+#### 2. The seam a suite drives
+
+`appServer.js` **exports and does not self-start.** Requiring it does
+nothing:
+
+```js
+const app = require('./appServer');
+const h = app.create({ rootDir, appName, port, relay });   // no listen
+h.start(); h.stop(); h.state();
+```
+
+`server.js` dispatches with `require('./appServer').fromArgv(process.argv)`
+before any node code is required, exactly as `--relay` does
+(`server.js:13-16`). **The split is cycle 0's** — startup separate from
+logic — with one module rather than two because there is far less of it
+than a relay.
+
+#### 3. The manifest
+
+`app/<name>/<name>.json`, which is the convention the tree already
+enforces: `MANIFEST_PATTERN = /^app\/([^/]+)\/\1\.json$/`
+(`kernel.js:220`), protected from being written by anything. So the
+starter's is **`app/starter/starter.json`**.
+
+#### 4. App state (G12)
+
+**`app-state/<name>/`**, beside `relay-state/` and never inside
+`app/<name>/`. Gitignored, deployment-safe, and holding the config, the
+pinned relay key and anything the app persists.
+
+`relay-state/` is the shape being copied and the reason is the same: a
+deployment replaces **code**, and code and state in one folder means a
+redeployment either eats the state or leaves orphans — *"both are wrong
+and the second is worse, because it looks fine."*
+
+#### 5. Refusals (G9)
+
+**The platform's set already exists and is already walkable.**
+`spiritErrors.js` is a closed catalogue of `define(code, {status, texts,
+…})` with `byCode()` and `all()` (`spiritErrors.js:80-96`, exports at the
+foot), and a suite already holds it honest. The app server's own refusals
+— unbound, full, owner asleep, key mismatch, not a member — are entries
+there.
+
+**An app's own refusals are declared in its manifest**, same shape, which
+is G14's pattern rather than a second mechanism:
+
+```json
+"refusals": { "<code>": { "status": 400, "text": "…" } }
+```
+
+**The wire shape adds one field to what the door already answers.**
+Today a refusal is `{ok:false, status, error}`; it becomes
+`{ok:false, status, error, code}`. The `code` is what makes G9 walkable
+— prose cannot be matched against a set, and wsl-claude asked exactly
+that: *"prose makes it unwalkable and I would rather know that now than
+assert it at the close."*
+
+**Open, recommended and not decided:** whether a `surface` may name a
+member the shell has and the app server does not. **Recommended no** —
+one vocabulary, and an unsuppliable member is **refused at load with the
+member named**, never at the moment the app reaches for it. wsl-claude
+agreed and gave the reason one level down: *"refused at reach, the
+failure names a runtime symptom and the app author guesses; refused at
+load, it names the member."*
 
 ---
 

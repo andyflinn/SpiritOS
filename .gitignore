@@ -204,3 +204,7 @@ spirit/run/brains/
 # in the root is exactly what makes somebody reach for the shortcut.
 node.out
 node.err
+
+# Per-app state (G12): code is replaced by deployment, state is not.
+# Same reason relay-state is ignored above.
+app-state/
