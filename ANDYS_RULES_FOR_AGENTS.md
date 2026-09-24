@@ -591,6 +591,42 @@ badly-performed ritual this section feared; a brainstorm nobody wrote
 down is this cycle's two strikes, invisible to the next session. **Both,
 or the thing has a known hole.**
 
+### And the reader it schedules is Andy
+
+**Andy, 2026-09-24:** *"actually, it tends to be me who asks those dumb
+questions too late. and the brainstorm for design requirements would
+therefore harness my unique cognitive abilities at the right time."*
+
+**They are not dumb questions, and the measurement says so.** In the
+table above **he is the best-performing finder** — two of six, more
+than any agent, more than any gate. Both in one line: *"no timeout in
+relayRequest? doesn't that go through peerPost()?"* and *"so we again
+have multiple implementations of peerPost()?"* Each landed on code that
+was already committed.
+
+**THEY WERE LATE FOR A STRUCTURAL REASON, NOT A PERSONAL ONE: nothing
+scheduled them.** He arrived after the commit because there was no
+earlier moment that asked for him.
+
+**And the cognitive position has a precise shape.** He holds the whole
+system's INTENT while holding none of its IMPLEMENTATION. Both agents are
+the reverse: they hold implementations and reconstruct intent. That makes
+him **the permanently freshest reader in the project** — which is
+exactly the position that finds forks, and the one neither agent can
+occupy for long, because building something is what costs you it.
+
+**So the brainstorm is not two agents conferring with Andy ruling
+afterwards. He is IN it, and he is its primary instrument.** The rule's
+whole job, on this evidence, is to put his question at the moment it
+costs a sentence instead of a rewrite.
+
+**AND IT IS THE SOP'S OWN PURPOSE ARRIVING AGAIN.** Every rule here earns
+its place by removing a reason he must interrupt us, or a reason we must
+interrupt him. This one does something rarer: it **schedules** him, at
+the one moment his particular way of seeing is worth most — which is
+the opposite of protecting his attention by spending less of it, and is
+the better trade where his attention is the thing that finds the defect.
+
 ### The form: a CITATION naming the CAPABILITY, not the places
 
 The obligation is not *go and search*. It is that every requirement
