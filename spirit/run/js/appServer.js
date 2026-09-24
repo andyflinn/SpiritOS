@@ -194,11 +194,33 @@ function settleRelay(rootDir, appName, asked) {
     return { ok: true, config: saveConfig(rootDir, appName, cfg), relay: cfg.relay };
   }
   if (asked && String(asked) !== cfg.relay) {
+    // THE REFUSAL CARRIES THE CONFIG, AND THAT IS THE WHOLE OF G16'S
+    // FIRST HALF. Written without it, the caller had a refusal and no
+    // relay, set `state.relay = ''`, and the running server then reported
+    // "no relay configured" — FALSE, and the sentence an operator acts
+    // on, while `app-state/<name>/config.json` still held relay, relayKey
+    // and boundAt the entire time.
+    //
+    // A server that meets an impostor GOES ON SERVING THE RELAY IT IS
+    // PINNED TO and reports the conflict. Going dark is the one response
+    // that rewards the impostor: it costs the operator the service AND
+    // tells them the wrong thing about why.
+    // KEPT, NOT ONLY REFUSED — the same deterrent `pin()` writes when a
+    // KEY contradicts. Refusing the second relay and writing nothing down
+    // leaves the owner unable to tell a migration they made from an
+    // attack they did not, and that is the whole value of the record.
+    // Written ONCE, with both halves and when it was first seen.
+    if (!cfg.contradiction) {
+      cfg.contradiction = { held: cfg.relay, offered: String(asked), at: new Date().toISOString() };
+      saveConfig(rootDir, appName, cfg);
+    }
     return {
       ok: false,
       code: 'app-relay-key-changed',
       held: cfg.relay,
       offered: String(asked),
+      config: cfg,
+      relay: cfg.relay,
     };
   }
   return { ok: true, config: cfg, relay: cfg.relay };
@@ -638,8 +660,15 @@ function create(opts) {
     port: port,
     manifest: manifest,
     contract: contract,
-    relay: settled.ok ? settled.relay : '',
+    // THE HELD RELAY, WHETHER OR NOT THE CHANGE WAS REFUSED. `settled.relay`
+    // is the pinned one in both cases now, so a refused `--relay` no longer
+    // blinds the server to what it is bound to (G16).
+    relay: settled.relay || '',
     relayRefusal: settled.ok ? null : settled,
+    // The last reach this server attempted, so a refusal that happened is
+    // OBSERVABLE rather than merely returned to whoever caused it. A state
+    // a suite cannot read is a state nobody can monitor.
+    lastReach: null,
     // Learned from the relay, never configured. Empty until the relay is
     // claimed — which is why an app server WAITS rather than failing
     // while its relay is unclaimed: it has a relay, no owner, and
@@ -648,7 +677,7 @@ function create(opts) {
     ownerLabel: '',
     selfKey: '',
     lastBind: null,
-    boundKey: (settled.ok && settled.config && settled.config.relayKey) || '',
+    boundKey: (settled.config && settled.config.relayKey) || '',
   };
 
   // ── ONE APP, ONE WHITELIST, NO DISPATCH ─────────────────────────────
@@ -665,6 +694,83 @@ function create(opts) {
     if (m[1] === appName + '.html' || m[1] === appName + '.js') return m[1];
     if (m[1] === 'favicon.svg') return null;
     return null;
+  }
+
+  // ── ONE SNAPSHOT, READ BY BOTH DOORS ────────────────────────────────
+  //
+  // `state()` is what a suite and an operator read in process; `app.state`
+  // is what the page reads over HTTP. THEY MUST BE THE SAME FACTS. Two
+  // builders would drift, and the drift would be invisible exactly the way
+  // a fork is: nothing calls the other, so nothing can tell they disagree.
+  function snapshot() {
+    const r = roleOf(state);
+    return {
+      appName: state.appName,
+      port: state.port,
+      relay: state.relay,
+      boundKey: state.boundKey,
+      ownerKey: state.ownerKey,
+      ownerLabel: state.ownerLabel || '',
+      unbound: !state.ownerKey,
+      lastBind: state.lastBind || null,
+      // The last outward reach and how it ended. G16: a refusal that
+      // happened must be observable, not merely returned to whoever
+      // caused it.
+      lastReach: state.lastReach || null,
+      // ── THE REFUSAL, AND IT CARRIES ITS CODE ────────────────────────
+      //
+      // A standing refusal must be walkable against the declared set, so
+      // it is reported with its code and not as prose. This is the LIVE
+      // fact: the server is refusing the relay it was offered, right now.
+      refusal: state.relayRefusal
+        ? { code: state.relayRefusal.code, held: state.relayRefusal.held, offered: state.relayRefusal.offered }
+        : null,
+      // And this is the KEPT one, read back off the disc: what was held,
+      // what was offered, and when it was first seen. Two questions about
+      // one event — is it refusing now, and can the owner still tell a
+      // migration from an attack tomorrow — so they are answered
+      // separately rather than by one field doing double duty.
+      contradiction: (function () {
+        try { return loadConfig(rootDir, appName).contradiction || null; } catch (e) { return null; }
+      }()),
+      contract: state.contract,
+      refusals: PLATFORM_REFUSALS.slice(),
+      nodeIsOwnerNode: r.nodeIsOwnerNode,
+      nodeIsPublicApp: r.nodeIsPublicApp,
+      // G10. Facts about the box, and no opinion about them.
+      box: boxReport(rootDir, appName),
+      // This server's own public key. It is an ordinary member of the
+      // relay it serves; its only power is that the owner answers it.
+      selfKey: (function () { try { return identity(rootDir, appName).publicKey; } catch (e) { return ''; } }()),
+      stateDir: stateDir(rootDir, appName),
+    };
+  }
+
+  // ── THE DOOR'S VERBS, AND THE SURFACE IS WHAT WAS DECLARED ──────────
+  //
+  // `verb` is the one member the sample declares, and the door hands out
+  // nothing that was not asked for: absent means nothing, here as
+  // everywhere else in this file.
+  function door(body) {
+    const verb = String((body && body.verb) || '');
+    if (!verb) return Promise.resolve({ ok: false, code: 'app-surface-undeclared', extra: { why: 'no verb named' } });
+    if (contract.surface.indexOf('verb') === -1) {
+      return Promise.resolve({ ok: false, code: 'app-surface-undeclared', extra: { app: appName, asked: verb } });
+    }
+    if (verb === 'app.state') return Promise.resolve({ ok: true, value: snapshot() });
+    if (verb === 'app.reach') {
+      // THE ONE OUTWARD ACT, and the thing that makes three of the four
+      // failure states producible rather than merely catalogued. It was
+      // written, classified correctly, and NEVER CALLED — the declared
+      // surface had no route, so every refusal it could raise was
+      // unreachable from outside this process.
+      return reachOwner(rootDir, appName, state, body && body.args).then(function (r) {
+        state.lastReach = r;
+        if (r && r.ok) return { ok: true, value: { reached: true, status: r.status } };
+        return { ok: false, code: (r && r.code) || 'app-owner-asleep', extra: { status: (r && r.status) || 0 } };
+      });
+    }
+    return Promise.resolve({ ok: false, code: 'app-surface-undeclared', extra: { asked: verb } });
   }
 
   function handle(req, res) {
@@ -691,9 +797,45 @@ function create(opts) {
     if (contract.posture !== 'strict') {
       return refuse(res, 'app-not-strict', { app: appName });
     }
-    if (state.relayRefusal) {
-      return refuse(res, 'app-relay-key-changed', {
-        held: state.relayRefusal.held, offered: state.relayRefusal.offered,
+    // ── THE CONFLICT IS REPORTED, NOT SERVED THROUGH THE DOOR ─────────
+    //
+    // This used to refuse EVERY request with `app-relay-key-changed`, so
+    // a server that met an impostor went dark — which is the one response
+    // that rewards the impostor twice: the operator loses the service and
+    // is told the wrong reason. G16: a server meeting an impostor KEEPS
+    // SERVING ITS PINNED RELAY and reports the conflict.
+    //
+    // So the conflict rides in `state()` and in the door's answer, where
+    // an operator and a suite can both read it, and the page is still
+    // served — the app is bound to the relay it was always bound to.
+
+    // ── THE DOOR: ONE PATH, VERBS IN THE BODY ─────────────────────────
+    //
+    // `POST /api/spirit` is the whole of the app surface, and it is the
+    // contract the sample's fourteen-line `ask` already speaks. It exists
+    // here because a refusal that never reaches HTTP is a refusal nobody
+    // outside this process can observe: `reachOwner` classified its
+    // failures correctly from the day it was written, and NOTHING CALLED
+    // IT — the declared `verb` surface had no route at all.
+    if (pathname === '/api/spirit') {
+      if (req.method !== 'POST') {
+        res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8' });
+        return res.end('the door takes POST');
+      }
+      // `serveCommon.readJsonBody` — the reader the node's own door has
+      // used since before this module existed, already bounded and
+      // already holding the chunked-body case. A private one here would
+      // have been the sixth fork of the day.
+      return common.readJsonBody(req).then(function (body) {
+        return door(body || {});
+      }).then(function (answer) {
+        if (answer && answer.ok === false && answer.code) {
+          return refuse(res, answer.code, answer.extra || {});
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(Object.assign({ ok: true }, answer && answer.value)));
+      }).catch(function (e) {
+        return refuse(res, 'app-owner-asleep', { why: String((e && e.message) || e) });
       });
     }
 
@@ -758,29 +900,7 @@ function create(opts) {
     // the four failure states producible rather than merely catalogued.
     reachOwner: function (body) { return reachOwner(rootDir, appName, state, body); },
     identity: function () { return identity(rootDir, appName); },
-    state: function () {
-      const r = roleOf(state);
-      return {
-        appName: state.appName,
-        port: state.port,
-        relay: state.relay,
-        boundKey: state.boundKey,
-        ownerKey: state.ownerKey,
-        ownerLabel: state.ownerLabel || '',
-        unbound: !state.ownerKey,
-        lastBind: state.lastBind || null,
-        contract: state.contract,
-        refusals: PLATFORM_REFUSALS.slice(),
-        nodeIsOwnerNode: r.nodeIsOwnerNode,
-        nodeIsPublicApp: r.nodeIsPublicApp,
-        // G10. Facts about the box, and no opinion about them.
-        box: boxReport(rootDir, appName),
-        // This server's own public key. It is an ordinary member of the
-        // relay it serves; its only power is that the owner answers it.
-        selfKey: (function () { try { return identity(rootDir, appName).publicKey; } catch (e) { return ''; } }()),
-        stateDir: stateDir(rootDir, appName),
-      };
-    },
+    state: snapshot,
     handle: handle,
     start: function (cb) {
       // The bind is attempted at start and its failure is NOT a reason
