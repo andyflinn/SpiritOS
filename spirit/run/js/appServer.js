@@ -492,6 +492,55 @@ function pin(rootDir, appName, seen) {
   return { ok: true, key: seen, first: false, config: cfg };
 }
 
+// ── TAKING THE SEAT THE OWNER INSTALLED ─────────────────────────────
+//
+//   Andy, 2026-09-24: "The owner knows about the app. so he can install
+//   the minted, relay invites, when he installs the app on a VPS." And:
+//   "WE already have all those mechanisms proven during the
+//   relay-install."
+//
+// DEPLOYMENT IS THE ENROLMENT, and that is the whole design. This server
+// never asks to be seated: an app that could request its own membership
+// would be negotiating its own position, and it does not have one. The
+// owner mints an invite with the verb he already has and installs it
+// beside the app, exactly as he installs the relay URL.
+//
+// So there is no enrolment flow, no approval screen and no in-band
+// negotiation to build — the thing that looked like the next requirement
+// turned out to be a line in a deployment.
+//
+// THE BUILDER IS `hub.sealedClaim` AND NOT A SECOND ONE. It seals to the
+// relay's published cipher key, refuses a relay that publishes no signed
+// key, and is the same motion the relay install is proven on.
+function claimSeat(rootDir, appName, relayUrl, invite, label) {
+  const home = stateDir(rootDir, appName);
+  const id = identity(rootDir, appName);
+  const name = String(label || appName);
+  return require('./hub').sealedClaim(relayUrl, home, name, invite, name)
+    .then(function (sending) {
+      return relayRequest(relayUrl, 'POST', '/api/relay/claim', JSON.stringify(sending));
+    })
+    .then(function (r) {
+      let said = null;
+      try { said = JSON.parse((r && r.text) || '{}'); } catch (e) { said = null; }
+      // ── A SEAT ALREADY HELD IS THE NORMAL CASE ──────────────────────
+      //
+      // Every restart after the first meets a spent invite, and a
+      // deployment whose ordinary restart reads as an error is a
+      // deployment somebody will "fix". 409 on our OWN key is us.
+      if (r && r.status === 409 && said && said.peer && said.peer.publicKey === id.publicKey) {
+        return { ok: true, already: true };
+      }
+      if (r && r.status === 200) return { ok: true, already: false };
+      return {
+        ok: false,
+        status: (r && r.status) || 0,
+        error: (said && said.error) || 'the claim was refused',
+      };
+    })
+    .catch(function (e) { return { ok: false, status: 0, error: String((e && e.message) || e) }; });
+}
+
 // ── THE APP SERVER'S OWN IDENTITY, AND WHERE ITS KEY LIVES ──────
 //
 // An app server is an ordinary member of the relay it serves — no
@@ -691,6 +740,9 @@ function reachOwner(rootDir, appName, state, body) {
   // extra round trip on the first reach of a deployment's life.
   function introduced() {
     const book = require('./contacts');
+    // THE SEAT COMES FIRST. A card request from a non-member is refused
+    // by the relay before it is routed, which is how "owner asleep" read
+    // as `app-not-a-member` for the second false green of the day.
     const row = book.byPublicKey(stateDir(rootDir, appName), state.ownerKey);
     if (row && book.sealKeyOf(row)) return Promise.resolve({ ok: true, held: true });
     return poster.post(state.relay, state.ownerKey, JSON.stringify({ v: 1, body: { card: true } }));
@@ -714,7 +766,9 @@ function reachOwner(rootDir, appName, state, body) {
   // request departs, so its failure is already a fact about the owner or
   // the relay, and it goes through the same classifier as any other
   // answer rather than being retold here.
-  return introduced()
+  return Promise.resolve(state.seated)
+    .catch(function () { return null; })
+    .then(introduced)
     .then(function (hello) {
       if (hello && hello.held) return poster.post(state.relay, state.ownerKey, JSON.stringify(body || {}));
       if (!hello || !hello.ok) return hello || { ok: false, status: 0 };
@@ -789,6 +843,20 @@ function create(opts) {
   const manifest = readJson(manifestPath(rootDir, appName));
   const contract = contractOf(manifest);
   const settled = settleRelay(rootDir, appName, o.relay);
+  // ── THE INVITE, AT FIRST START ONLY, LIKE THE RELAY ─────────────────
+  //
+  // Accepted once and read thereafter. A seat that can be re-pointed by
+  // typing a different invite is not a seat the first bind settled, and
+  // `--relay` is refused on the same grounds one function above.
+  //
+  // It is KEPT after it is spent, because "which invite seated this
+  // server" is the owner's audit trail — he minted it, and he is the one
+  // who has to tell a deployment he made from one he did not.
+  const seatCfg = settled.config || loadConfig(rootDir, appName);
+  if (o.invite && !seatCfg.invite) {
+    seatCfg.invite = String(o.invite);
+    saveConfig(rootDir, appName, seatCfg);
+  }
 
   let server = null;
   const state = {
@@ -806,6 +874,11 @@ function create(opts) {
     // OBSERVABLE rather than merely returned to whoever caused it. A state
     // a suite cannot read is a state nobody can monitor.
     lastReach: null,
+    // The claim in flight, and how it ended. `seated` is the promise so a
+    // reach can wait for it rather than racing it; `lastClaim` is the
+    // verdict, reported like every other one.
+    seated: null,
+    lastClaim: null,
     // ── WHAT THE CONTRACT REFUSED, DECIDED ONCE AT LOAD ──────────────
     //
     // An impossible member and a non-strict posture are both properties
@@ -911,6 +984,11 @@ function create(opts) {
       // happened must be observable, not merely returned to whoever
       // caused it.
       lastReach: state.lastReach || null,
+      // Whether this server has a seat on the relay it serves. An owner
+      // reading a server that cannot reach anybody needs to see this
+      // before he looks at the relay.
+      lastClaim: state.lastClaim || null,
+      seated: !!(state.lastClaim && state.lastClaim.ok),
       // ── THE STANDING REFUSAL, AND IT CARRIES ITS CODE ───────────────
       //
       // A standing refusal must be walkable against the declared set, so
@@ -1096,6 +1174,25 @@ function create(opts) {
         return state.lastBind;
       }
       const p = pin(rootDir, appName, seen.relayKey);
+      if (p.ok && !state.seated) {
+        // ── AND THEN TAKE THE SEAT, ONCE THE RELAY IS THE RIGHT ONE ───
+        //
+        // AFTER the pin, never before: claiming on a relay whose key has
+        // not been checked would hand this server's identity to whoever
+        // answered the URL, which is the whole thing the pin exists to
+        // stop. The seat is worthless if it is taken at an impostor.
+        const cfg = loadConfig(rootDir, appName);
+        if (cfg.invite) {
+          state.seated = claimSeat(rootDir, appName, state.relay, cfg.invite, cfg.label || appName)
+            .then(function (r) { state.lastClaim = r; return r; });
+        } else {
+          // NOT A FAULT, AN UNFINISHED DEPLOYMENT. The owner installs the
+          // invite with the app; until he has, this server is not a
+          // member and nothing it posts will be routed. Said plainly so
+          // nobody debugs the relay for it.
+          state.lastClaim = { ok: false, code: 'app-not-a-member', why: 'no invite installed — the owner mints one and installs it with the app' };
+        }
+      }
       if (!p.ok) {
         state.relayRefusal = p;
         state.ownerKey = '';
@@ -1153,6 +1250,7 @@ function fromArgv(argv) {
   const appName = at('--app');
   const port = Number(common.portFromArgs(args)) || 0;
   const relay = at('--relay');
+  const invite = at('--invite');
 
   if (!appName) {
     console.error('Refusing to start: --app needs the name of the app to serve,\n' +
@@ -1160,7 +1258,7 @@ function fromArgv(argv) {
     process.exit(1);
   }
 
-  const h = create({ rootDir: ROOT_DIR, appName: appName, port: port, relay: relay });
+  const h = create({ rootDir: ROOT_DIR, appName: appName, port: port, relay: relay, invite: invite });
   const s = h.state();
   h.start(function (err, bound) {
     console.log('App server for "' + appName + '" listening on http://127.0.0.1:' + bound);

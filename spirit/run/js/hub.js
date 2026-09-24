@@ -2585,6 +2585,16 @@ module.exports = {
   // primitive to probe which relays it holds a row on and must not grow
   // a second one that asserts less.
   relayRequest: relayRequest,
+  // THE SEALED CLAIM, exported for the same reason `relayRequest` and
+  // `frontDoor` are: the app server has to take a seat on its relay, and
+  // a second claim builder would be a second answer to a question this
+  // one already answers — including the seal, the signed-key check and
+  // the refusal of a relay that publishes no signed cipher key.
+  //
+  // Andy, 2026-09-24, on the app server needing a seat at all: "WE
+  // already have all those mechanisms proven during the relay-install."
+  // This is the one they were proven on.
+  sealedClaim: sealedClaim,
   buildPeople: buildPeople,
   // The node's own judgement about who it will hear from, exported for
   // the same reason relayRequest is: peerPost needs it and must not grow
