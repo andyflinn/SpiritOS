@@ -553,22 +553,86 @@ other agent and not by the designer.** WHEN and WHO are two axes. State
 only the moment and somebody reads it as *"we asked at design, so we are
 covered."*
 
-### The form: a CITATION, not a search
+### The act is a BRAINSTORM, and it is what supplies the reader
 
-The obligation is not *go and search*. It is that every requirement's
-status carries **one of two sentences**:
+**Andy, completing it:** *"what i mean is that every requirement during
+design time, forces a brains storm of 'where-might-we-have-this-already'."*
+
+**This is the piece that joins the two axes.** The moment does not supply
+a fresh reader — the designer is attached to the shape they conceived
+ten minutes ago. **A brainstorm supplies one**, by putting minds on the
+question that are not holding the answer, at the cheapest moment there
+is. Andy's WHEN and wsl-claude's WHO, and the brainstorm is the HOW.
+
+**AND THE PHRASING IS DOING REAL WORK, exactly as `"agreed?"` does.**
+
+- *"Is this already solved?"* is a yes/no put to somebody who has just
+  decided it is not. **It invites NO.**
+- *"Where might we have this already?"* presumes the answer might be yes
+  and asks for **places**. It primes a search of the tree rather than
+  closing the question.
+
+Same fact requested; opposite yield. This file already records the other
+instance of that — a word that inverts with its speaker — and it is
+the same lesson: **the form of a question decides whether it returns
+information.**
+
+**SO THE CITATION IS THE OUTPUT, NEVER A SUBSTITUTE — AND THEY CURE
+DIFFERENT DISEASES.** Asked directly whether the citation alone would do,
+wsl-claude answered no, and named which is which:
+
+- **the BRAINSTORM cures "nobody looked properly"** — which is
+  attachment;
+- **the CITATION cures "nobody can tell whether anybody looked"** —
+  which is invisibility.
+
+**Neither touches the other.** A citation from one attached mind is the
+badly-performed ritual this section feared; a brainstorm nobody wrote
+down is this cycle's two strikes, invisible to the next session. **Both,
+or the thing has a known hole.**
+
+### The form: a CITATION naming the CAPABILITY, not the places
+
+The obligation is not *go and search*. It is that every requirement
+carries an answer that a third party can falsify:
 
 ```
-  <path>:<line> already does this      → the requirement is STRUCK or narrowed
-  searched <terms> — nothing does this  → it is built
+  peerPost.js:553  already negotiates this   → the requirement is STRUCK or narrowed
+  searched for anything that already
+  negotiates a wait — nothing does           → it is built
+  answered by: wsl-claude
+  also considered: hub.signedClaim — wrong shape
 ```
 
-**Ten words instead of an unbounded obligation**, checkable by a third
-party in seconds — and, the part that matters, **a designer who did
-not search cannot write the sentence.** A citation cannot be performed
-badly without being visibly empty. It is the same move as reporting what
-you checked instead of assenting: *the cure for a check that cannot fail
-is making it carry evidence.*
+**NAME THE CAPABILITY, NEVER THE PLACES — this is the half that decides
+whether the field is worth having.** *"Searched `peerPost`, `hub`,
+`relayRequest`"* is an honest sentence, an honest search, and **a
+worthless answer that reads exactly like a diligent one**: the terms can
+be chosen, without dishonesty, so that the answer is guaranteed to be no.
+A reader checking those three finds nothing — correctly, for ever.
+*"Searched for anything that already negotiates a wait"* is falsifiable
+**by a third party who knows a module you did not think of**, which is
+the only kind of checkable there is here.
+
+**`answered by:` is two words and it is where the rule's own finding
+becomes measurable.** A reader without the answer in their head is the
+one who finds things; **a condition answered only ever by the designer is
+its weakest instance**, and the field turns that from an argument into a
+number.
+
+**AND THE REJECTED CANDIDATES ARE RECORDED, not only the conclusion.**
+*"Where might we have this already?"* asks for **places**, so what it
+produces is **candidates — several, most of them wrong.** If only the
+verdict is written, the next reader cannot tell whether one was
+considered or six. Those sentences were said out loud anyway, so writing
+them costs no extra thinking and is strictly stronger than a search
+sentence.
+
+**Ten to thirty words instead of an unbounded obligation**, and — the
+part that matters — **somebody who did not look cannot write it.** A
+citation cannot be performed badly without being visibly empty. It is the
+same move as reporting what you checked instead of assenting: *the cure
+for a check that cannot fail is making it carry evidence.*
 
 **AND TWO THIRDS OF A LIST IS WORTH ASKING, NOT ALL OF IT.** A
 requirement naming an **action** the system must perform can already be
@@ -579,6 +643,27 @@ and `G12` a directory policy: asking of those returns nothing by
 construction, which is *the check that cannot fail, performed eighteen
 times*. Which third is which is obvious at a glance.
 
+### The brainstorm STOPS when the halves split
+
+**wsl-claude, attacking it because nobody else had:** the brainstorm **is
+on-the-go reconciliation, which Andy forbade by name** — *"on-the-go
+reconciliation will hide the divergence"*, and *"you don't yield. you
+reconcile at the end."*
+
+**At design time that is fine, and it is why the attack is not an
+objection:** the halves have not split yet, design sittings have always
+been joint, and there is no divergence count to protect.
+
+**INSIDE A BUILD CYCLE IT WOULD BE FATAL.** Carried to *"brainstorm each
+requirement as you build it"*, the two independent halves become **one
+reading with a second agent's fingerprints on it**, and the divergence
+count — which Andy has just said to track and learn the meaning of —
+quietly starts measuring nothing.
+
+**So the boundary is in the rule rather than left for whoever tries it:
+the brainstorm belongs to the design sitting, and stops at the moment the
+halves split.**
+
 ### What it cannot reach, and why that is a category rather than a gap
 
 **It catches requirement-level forks and not implementation-level ones.**
@@ -588,23 +673,41 @@ a duplicate of. So the placement is not weak here — this is a category
 it cannot address at all, and saying so stops the next reader expecting
 it to.
 
-### Not gated yet, and the test that would earn it
+### Gated now — a gate that refuses an empty field has no opinion to be wrong about
 
-**wsl-claude, handing this file's own discipline back:** *"Do not gate
-this in the harness on day one. Every entry in a gate should come from a
-failure that actually happened, and this one has no misses behind it
-yet."* So it is a **convention for one cycle**, gated when a missing
-citation has cost something real.
+> **A CAUTION WAS RECORDED HERE UNDER wsl-claude'S NAME AFTER HE
+> WITHDREW IT**, because it was committed before his retraction arrived.
+> It read: *"do not gate this in the harness on day one; every entry in a
+> gate should come from a failure that actually happened."* **He took it
+> back, and a file carrying a superseded position under an agent's name
+> is worse than not carrying it.**
 
-**And it is falsifiable, so it does not become another rule nobody can
-fail.** On each design sitting, record per requirement whether the
-condition **STRUCK** it, **NARROWED** it, or **changed nothing**. The
-sitting it came from would read *one struck* — seats-counted-at-mint,
-already at `relay.js:1997-2014`, which the alpha plan had listed as a
-decision still to be made. **If two sittings strike nothing and narrow
-nothing, either the placement is wrong or the phrasing is** — and
-which one is told by whether anybody wrote the *"searched — nothing"*
-half.
+**The distinction he drew is the useful part.** That caution is right for
+a gate that **JUDGES** — `oneDoor` deciding *"this looks like a fork"*
+needs harvested evidence or it is noise. It is wrong for a gate that
+merely **REFUSES AN EMPTY FIELD**: such a gate **has no opinion, so it
+cannot be noisy, and there is nothing to harvest.**
+
+And the precedent is already in the tree: `cycleRequirements.js` refuses
+a requirement with no `Status` line, and **nobody waited for a miss to
+earn that.**
+
+**So it is gated now.**
+
+### It will be more tedious, and that is the trade
+
+**Andy, on adopting it:** *"it will make design more tedious, and likely
+more precise."* Said plainly rather than argued away — a rule whose
+cost is hidden is a rule that gets quietly dropped the first busy week.
+
+**And it stays falsifiable, so it cannot become a rule nobody can fail.**
+On each design sitting, record per requirement whether the condition
+**STRUCK** it, **NARROWED** it, or **changed nothing**. The sitting it
+came from would read *one struck* — seats-counted-at-mint, already at
+`relay.js:1997-2014`, which the alpha plan had listed as a decision still
+to be made. **If two sittings strike nothing and narrow nothing, either
+the placement is wrong or the phrasing is** — and which one is told by
+whether anybody wrote the *"searched for anything that…"* half.
 
 ### The two kinds are not one problem, and only one is cheap
 
