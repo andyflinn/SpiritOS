@@ -296,7 +296,39 @@ async function claimedRelay(opts) {
     wall = { admitted: res.ok, refusal: res.body, status: res.status };
   }
 
-  return { ok: true, relay: relay, owner: owner, joined: joined, stoppedAt: null, refusal: null, wall: wall };
+  // ── THE APP SERVER'S OWN SEAT, MINTED BY THE OWNER ──────────────────
+  //
+  // Andy, ruling how a public app server becomes a member: "The owner
+  // knows about the app. so he can install the minted, relay invites,
+  // when he installs the app on a VPS." So the invite is the OWNER'S act,
+  // made before the app ever runs — the app does not ask for a seat,
+  // because "a public app-server under SpiritOS is a slave to it's owner"
+  // and an app that could request its own membership would be negotiating
+  // its own position.
+  //
+  // SO THE WORLD MINTS IT, NOT THE APP. That is what makes this fixture
+  // the real motion rather than a convenience: the world is the owner
+  // doing the install, and the app is handed a token it had no part in
+  // obtaining. If the app could produce one for itself, the assertion
+  // below would be proving something the deployment never does.
+  //
+  // It is returned and never written into the app's home by this helper:
+  // where an invite LIVES is the app server's business (app-state, beside
+  // the pinned relay key — never argv, because an invite is a bearer
+  // token and argv is the process list). The suite hands it through
+  // create(), which is a module API and not a command line.
+  let appInvite = null;
+  if (opts.appInvite) {
+    const label = opts.appInviteLabel || 'asbapp';
+    const row = invites.add(relay.home, { label: label, days: 1 });
+    relayStore.open(relay.home).close();
+    appInvite = { token: row.token, label: label };
+  }
+
+  return {
+    ok: true, relay: relay, owner: owner, joined: joined,
+    stoppedAt: null, refusal: null, wall: wall, appInvite: appInvite,
+  };
 }
 
 // ── WORLD 3 — AN OWNER NODE THAT IS NOT RUNNING ─────────────────────

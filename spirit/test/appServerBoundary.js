@@ -978,7 +978,7 @@ const RECIPES = [
           '. The recipe is "' + RECIPES[0].world + '"');
       } else {
         const root = freshRoot();
-        const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url });
+        const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url, invite: w.appInvite && w.appInvite.token });
         h.start();
         await worlds.answering('http://127.0.0.1:' + APP_PORT + '/', 6000);
         const page = await pageOf(APP_PORT);
@@ -1023,7 +1023,7 @@ const RECIPES = [
     // named way. They are the suite's artefacts, planted in the app
     // server's own fixture root and thrown away with it.
     {
-      const w = await worlds.claimedRelay({});
+      const w = await worlds.claimedRelay({ appInvite: true });
       if (!w.ok) {
         test.fail('cycle 2 G14 (behaving): the backdrop relay could not be built — ' + w.error);
       } else {
@@ -1172,7 +1172,7 @@ const RECIPES = [
         }
 
         const root = freshRoot();
-        const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url });
+        const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url, invite: w.appInvite && w.appInvite.token });
         h.start();
         await worlds.answering('http://127.0.0.1:' + APP_PORT + '/', 6000);
         const page = await pageOf(APP_PORT);
@@ -1194,7 +1194,7 @@ const RECIPES = [
 
     // ── owner asleep ─────────────────────────────────────────────────
     {
-      const w = await worlds.claimedRelay({});
+      const w = await worlds.claimedRelay({ appInvite: true });
       if (!w.ok) {
         test.fail('cycle 2 G11 (owner-asleep): the world could not be built — ' + w.error);
       } else {
@@ -1203,7 +1203,7 @@ const RECIPES = [
           test.fail('cycle 2 G11 (owner-asleep): the owner node could not be built and stopped — ' + sleeping.error);
         } else {
           const root = freshRoot();
-          const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url });
+          const h = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: w.relay.url, invite: w.appInvite && w.appInvite.token });
           h.start();
           await worlds.answering('http://127.0.0.1:' + APP_PORT + '/', 6000);
           // THE REFUSAL HAS TO BE PROVOKED BEFORE IT CAN BE READ. The
@@ -1328,12 +1328,12 @@ const RECIPES = [
 
     // ── key mismatch ─────────────────────────────────────────────────
     {
-      const first = await worlds.claimedRelay({});
+      const first = await worlds.claimedRelay({ appInvite: true });
       if (!first.ok) {
         test.fail('cycle 2 G11 (key-mismatch): the first relay could not be built — ' + first.error);
       } else {
         const root = freshRoot();
-        const bound = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: first.relay.url });
+        const bound = mod.create({ rootDir: root, appName: 'starter', port: APP_PORT, relay: first.relay.url, invite: first.appInvite && first.appInvite.token });
         bound.start();
         await worlds.answering('http://127.0.0.1:' + APP_PORT + '/', 6000);
         const boundState = await settled(bound, 8000);
