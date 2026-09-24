@@ -640,6 +640,51 @@ forget something.
     clothes** — an agent with no artefact, asked for evidence, produces
     something that reads like evidence.
 
+    **A CLOSE DOES NOT INTERRUPT HIM, AND A PROMPT HAS TWO WAYS TO BE
+    WRONG.** Andy, 2026-09-24, as a note to the closing procedure: *"wsl
+    still pops dialogs during that phase"* — with an example, *"for me
+    to accept"*: a fifteen-line inline `node -e` script scanning a
+    session transcript for his quotes.
+
+    **THE TIMING.** The guard that fired was one wsl-claude had
+    deliberately ADDED the same day, closing a real hole — his guard
+    caught commits and shell writes, and a `git push` of the vault writes
+    no local document, so nothing looked at it. Plugging it was right.
+    But **a vault push is what a close consists of**, so the fix put a
+    prompt exactly where the operator is least available: reading a
+    report, or already gone.
+
+    **The cost of a prompt is not constant — it is set by what he was
+    doing.** The same question during a sitting costs a second, because
+    he is here and already deciding things. At a close it costs the thing
+    the close exists to produce. **A rule that removes four interruptions
+    from a cycle and adds one to its last minute has not broken even.**
+
+    **THE FORM, which is the half that survives good timing.** An inline
+    multi-line script cannot be judged at a glance, so accepting it means
+    auditing code at the moment he least wants to. A prompt is only worth
+    asking if it can be ANSWERED — *run `tools/quotes.js <transcript>`*
+    can be; fifteen lines of JavaScript in a shell argument cannot.
+
+    **This is a lesson an agent already had, arriving on a different
+    surface.** wsl-claude adopted *compose in a file, never inline* after
+    shell damage three times in one day. Same remedy here, different
+    reason: **reviewability rather than quoting.** A command that needs
+    approval goes in a named file, and the prompt names the file.
+
+    **The shape of the answer is to BATCH, never to remove.** A close is
+    a bounded sequence of an agent’s own operations on its own folders
+    — compile, file, stage, commit, push — and it is known in
+    advance, which is what distinguishes it from an arbitrary write. So
+    it is asked **once, at the start, naming the sequence**, or it is
+    silent for an agent’s own paths and loud for everything else. What
+    must not happen is **N prompts for one declared intention.**
+
+    **And an agent whose guard cannot yet do that says so in the
+    cycle-report**, rather than letting him discover it by being asked.
+    That is the honest failure value: *I could not close unattended, and
+    here is what asked.*
+
     **A stop is a STOP.** The agent does not begin the next cycle across
     it. If the work would obviously continue, that is a recommendation in
     the report, not a licence — because the value of the stop is that it
