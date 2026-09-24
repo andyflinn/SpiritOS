@@ -444,13 +444,21 @@ forget something.
     - **What could not be done, and why**, which is the section he has
       twice had to ask for.
 
-    **THE DIVERGENCE COUNT IS TRACKED, AND IT IS TWO-SIDED.** Andy,
-    2026-09-24: *"the divergence-count for reconciliation will be a
-    measurement for the quality of the design, and will be tracked as
-    well?"* Yes — and lower is not better. Cycle 11's compile already
-    says why: *"Zero would have been the bad outcome. On a spec written
-    in English, worked independently, some divergence is expected — its
-    absence means one of us was reading the other."*
+    **THE DIVERGENCE COUNT IS TRACKED, AND ITS MEANING IS LEARNED
+    RATHER THAN DECLARED.** Andy, 2026-09-24: *"the divergence-count for
+    reconciliation will be a measurement for the quality of the design,
+    and will be tracked as well?"* — and, correcting an agent that had
+    already written an interpretation into this rule: *"we track
+    divergency and learn it is meaning as we go."*
+
+    **So the number is recorded with its context and NOT yet read.** One
+    cycle's observation is n=1, and a metric given a meaning before the
+    evidence exists is the same mistake as a claim without a measurement
+    — which this file spends most of its length preventing. What exists
+    so far is one data point and one hypothesis, both held loosely:
+    cycle 11's compile argued *"zero would have been the bad outcome…
+    its absence means one of us was reading the other"*, and that is an
+    argument rather than a finding.
 
     **AND THE COUNT ALONE IS NOT ENOUGH, measured the day it was
     adopted.** The public-app-server sitting produced five reconciliations
@@ -463,7 +471,9 @@ forget something.
     So three things are tracked at the stop, never one:
 
     - **the divergences**, with a zero on independently-worked halves
-      read as a flag rather than as a score;
+      recorded with how the halves were worked, since a count from
+      independent work and a count from a negotiation are not the same
+      measurement;
     - **what each was ABOUT** — a defect in the document, or a difference
       of reading. Cycle 11's D1 was a hole in the writing that neither
       agent got wrong, and that classification says whether the spec or
