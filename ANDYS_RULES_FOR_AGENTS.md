@@ -521,6 +521,91 @@ anyone else reads**. It costs one message, it uses the author's context
 instead of fighting it, and **if it produces nothing twice we have
 learned something** — rather than owning a rule nobody can fail.
 
+### Every requirement passes a condition: is this already in the tree?
+
+**Andy, 2026-09-24:** *"so a design session should be the first to ask
+this about every requirement"* — and, sharpening it: *"it's like a
+condition cycle every requirement has to go through."*
+
+**A CONDITION, NOT A QUESTION, AND THAT IS THE WHOLE DIFFERENCE.** A
+question can be skipped invisibly and a ritual too expensive to perform
+honestly gets performed badly, which produces a green. **A condition is a
+field, and an empty field is red.**
+
+**THE MOMENT IS THE CHEAPEST ONE THERE IS.** A fork prevented at design
+costs a sentence; found at review, a rewrite; found after a second
+consumer ships, a migration.
+
+**BUT THE MOMENT DOES NOT SUPPLY THE READER, and conflating those is how
+this rule was wrong twice.** This agent first wrote *"the designer has
+not solved it yet, so they are the fresh reader at that moment."*
+wsl-claude refused it:
+
+> *"My mechanism was not 'has not written code'. It was 'I had no answer
+> in my head to stop me looking'. A designer writing a requirement HAS an
+> answer in their head — they have just conceived the mechanism, which
+> is why they are writing it down. The sunk cost is smaller, the
+> ATTACHMENT is the same, and attachment is what stops the search."*
+
+**And the proof is the sitting that produced the rule:** the app contract
+gap was found at design time, in a document with nothing built, **by the
+other agent and not by the designer.** WHEN and WHO are two axes. State
+only the moment and somebody reads it as *"we asked at design, so we are
+covered."*
+
+### The form: a CITATION, not a search
+
+The obligation is not *go and search*. It is that every requirement's
+status carries **one of two sentences**:
+
+```
+  <path>:<line> already does this      → the requirement is STRUCK or narrowed
+  searched <terms> — nothing does this  → it is built
+```
+
+**Ten words instead of an unbounded obligation**, checkable by a third
+party in seconds — and, the part that matters, **a designer who did
+not search cannot write the sentence.** A citation cannot be performed
+badly without being visibly empty. It is the same move as reporting what
+you checked instead of assenting: *the cure for a check that cannot fail
+is making it carry evidence.*
+
+**AND TWO THIRDS OF A LIST IS WORTH ASKING, NOT ALL OF IT.** A
+requirement naming an **action** the system must perform can already be
+solved. One naming a **boundary, a name, or a prohibition** cannot —
+**the tree does not contain absences.** Of the fifteen in the cycle this
+came from, `G5` is a name, `G8` a naming, `G11` a prohibition on levers
+and `G12` a directory policy: asking of those returns nothing by
+construction, which is *the check that cannot fail, performed eighteen
+times*. Which third is which is obvious at a glance.
+
+### What it cannot reach, and why that is a category rather than a gap
+
+**It catches requirement-level forks and not implementation-level ones.**
+Not merely because the *how* comes later: **a fork needs two things to
+exist, and at design time there is only one.** There is nothing yet to be
+a duplicate of. So the placement is not weak here — this is a category
+it cannot address at all, and saying so stops the next reader expecting
+it to.
+
+### Not gated yet, and the test that would earn it
+
+**wsl-claude, handing this file's own discipline back:** *"Do not gate
+this in the harness on day one. Every entry in a gate should come from a
+failure that actually happened, and this one has no misses behind it
+yet."* So it is a **convention for one cycle**, gated when a missing
+citation has cost something real.
+
+**And it is falsifiable, so it does not become another rule nobody can
+fail.** On each design sitting, record per requirement whether the
+condition **STRUCK** it, **NARROWED** it, or **changed nothing**. The
+sitting it came from would read *one struck* — seats-counted-at-mint,
+already at `relay.js:1997-2014`, which the alpha plan had listed as a
+decision still to be made. **If two sittings strike nothing and narrow
+nothing, either the placement is wrong or the phrasing is** — and
+which one is told by whether anybody wrote the *"searched — nothing"*
+half.
+
 ### The two kinds are not one problem, and only one is cheap
 
 - **STRUCTURAL** — textually similar. `ask` in three copies; four raw
