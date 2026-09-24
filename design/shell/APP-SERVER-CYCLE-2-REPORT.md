@@ -286,7 +286,12 @@ written in.
 
 ### The four refusals, and why each changed the plan
 
-**R1 — the plan had no slot for the divergence it was sending to Andy.**
+*(Numbered REFUSAL rather than R, because a bare R-number in this tree
+means a cycle requirement — twenty of them are defined by more than
+one cycle, and `cycleCitations` refuses an unqualified one. It caught
+this file on the commit that introduced it.)*
+
+**REFUSAL 1 — the plan had no slot for the divergence it was sending to Andy.**
 Posture goes to him unresolved and **nothing in the nine items touched
 it**, so *"mid-cycle we meet a ruling with no slot to put it in, and
 whoever is holding the work decides on the spot — which is how a
@@ -295,12 +300,12 @@ divergence gets settled quietly by whoever got there first."* It is
 half sits one line away and *"the second gets built on the momentum of
 the first."*
 
-**R2 — item 3 modifies the sample; G11 says the sample UNMODIFIED.** Fine
+**REFUSAL 2 — item 3 modifies the sample; G11 says the sample UNMODIFIED.** Fine
 as ordered, but the four states must be driven against the post-item-3
 sample, and his worlds deploy whatever is in `app/starter` at run time.
 So **3 finishes before 6 begins**, rather than overlapping.
 
-**R3 — item 8 would write a label nothing reads.** The owner interface
+**REFUSAL 3 — item 8 would write a label nothing reads.** The owner interface
 that would consume it is deferred, so a minted label has no consumer this
 cycle — which is *declaring is not granting* arriving against its own
 author. It carries **one assertion that something reads it back**; if
@@ -308,7 +313,7 @@ nothing in the cycle can, **that fact goes in the report where Andy can
 see what he ruled in**, rather than being found next cycle as an empty
 field.
 
-**R4 — item 1 is a defect fix and it is first, and the cure is to stop
+**REFUSAL 4 — item 1 is a defect fix and it is first, and the cure is to stop
 calling it a defect fix.** It is **G16** now, with an id and a status.
 *"A defect fix that is not a requirement is INVISIBLE TO EVERY INSTRUMENT
 WE HAVE — no board row, no status, no citation. That is S3 at
