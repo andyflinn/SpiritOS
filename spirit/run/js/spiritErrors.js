@@ -511,6 +511,25 @@ define('key-claimed', { status: 409, texts: ['key already claimed'] });
 define('minting-incomplete', { status: 409, retry: 'after', texts: ['minting incomplete'] });
 define('name-reserved', { status: 409, texts: ['name reserved by a live invite'] });
 
+// A GRANTED NAME AND A RESERVED ONE ARE NOT THE SAME REFUSAL, and the
+// difference is in how long it lasts. `name-reserved` frees itself when
+// the invite behind it expires, so the caller can come back. A GRANT
+// DOES NOT EXPIRE — Andy, 2026-09-24: *"A name grant persists. true.
+// but only on the owners node."* — so `retry: 'no'` is the honest
+// answer and the caller must pick another name.
+//
+// Declared here BEFORE `app/appShellApp/` emits it, which is the point:
+// a code that lives only in the file that throws it is outside the
+// closed set at the one moment anybody needs to look it up. The
+// subdomain grant is the appShellApp's whole feature (Andy: *"the
+// feature of the appShellApp is: the granting/associating member ID's
+// with wildcard subdomain names. that's all."*), and this is the one
+// refusal that feature can give.
+define('name-already-granted', {
+  status: 409, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['name already granted'],
+});
+
 // ── A MALFORMED REQUEST ──────────────────────────────────────────────
 //
 // One code for all of them. Every one is the caller's bug, none says

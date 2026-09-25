@@ -127,18 +127,38 @@ const BOTTOMS = {
   // THE COMPLETION CRITERION IS HIS AND IT IS DERIVABLE FROM THE TREE:
   // an interface is probeable when it has a PLATFORM-IMPOSED BOTTOM that
   // every use must pass through AND every passage means the same thing.
-  // Counted by require sites in `spirit/run` today: path 34, fs 29,
-  // http 11, child_process 9, crypto 8, os 4, https 2, url 1,
-  // perf_hooks 1, events 1.
   //
-  // path, os, url, events and perf_hooks are pure or trivial — a passage
-  // through them means nothing in particular, which IS the test. Four
-  // carry a single meaning: http/https (done), fs, crypto, and
-  // child_process, which spawns processes and which neither agent had
-  // mentioned once.
+  // THE DENOMINATOR IS PRODUCED BY ARRIVAL, NOT BY GREP, and this file
+  // of all files must not get that backwards. An earlier draft counted
+  // `require` sites with a pattern and said the answer was four. It was
+  // five: the pattern was `[a-z_]+` and a colon is not in it, so
+  // `node:sqlite` never appeared — and `relayStore.js:44` reaches disc
+  // through exactly that, which is why `relay.db` is absent from every
+  // fs reading. The deeper reason a pattern cannot do this is the one
+  // recorded against `oneDoor`: `require(<variable>)` is invisible to
+  // every pattern, so anything wanting to dodge the count only has to
+  // not write the module's name.
   //
-  // So the denominator is four, and it regenerates from the tree rather
-  // than being a list somebody maintains.
+  // `process.moduleLoadList` records what the run actually loaded.
+  // Filter to entries beginning `NativeModule ` and drop `internal/`.
+  // Verified against the failure mode — a name assembled from a
+  // variable still appears:
+  //   node -e "const m='node:sq'+'lite'; require(m); ..."
+  //   -> events, util/types, buffer, diagnostics_channel, async_hooks,
+  //      timers, path, querystring, fs, util, url, module, SQLITE
+  //
+  // Pure or trivial passages — path, os, url, events, perf_hooks — mean
+  // nothing in particular, which IS the test. Five carry a single
+  // meaning: http/https, fs, node:sqlite, crypto and child_process.
+  //
+  // FOUR OF THE FIVE ARE BELOW. The store is not, and its absence is
+  // deliberate rather than an oversight: its bottom is not a module
+  // function but `DatabaseSync.prototype.exec` / `.prepare`, which the
+  // patcher here cannot name, since a watch entry is `{ mod, fn }` and
+  // `mod` is require()d whole. Building that is a change to the
+  // patcher, not a row in this table, and nobody has asked for it.
+  // Until then every fs reading is missing `relay-state/relay.db`, and
+  // a reading that does not say so is lying by omission.
   crypto: {
     watch: [
       { mod: 'crypto', fn: 'sign' },
@@ -522,7 +542,7 @@ if (require.main === module) {
     const frames = (tab === -1 ? key : key.slice(tab + 1)).split(' < ');
     const tested = frames.filter(function (f) { return f.indexOf('spirit/run/') === 0; });
     const testing = frames.filter(function (f) { return f.indexOf('spirit/run/') !== 0; });
-    const scope = tested.length ? tested.join(' < ') : '(no production frame — the suite reached the wire itself)';
+    const scope = tested.length ? tested.join(' < ') : '(no production frame — the suite reached the ' + bottom + ' bottom itself)';
     const row = byScope.get(scope) || { calls: 0, drivers: new Map() };
     row.calls += n;
     if (testing.length) {
@@ -534,7 +554,7 @@ if (require.main === module) {
 
   const scopes = Array.from(byScope.entries()).sort(function (a, b) { return b[1].calls - a[1].calls; });
 
-  console.log('  -- THE TESTED CODE: ' + scopes.length + ' distinct production scopes reached the wire --');
+  console.log('  -- THE TESTED CODE: ' + scopes.length + ' distinct production scopes reached the ' + bottom + ' bottom --');
   console.log('');
   console.log('  Each row is a route through spirit/run. TWO ROWS DOING THE SAME JOB BY');
   console.log('  DIFFERENT ROUTES IS THE CULPRIT -- that is what a fork looks like from');
