@@ -527,10 +527,32 @@ test.subHeading('G9 — every refusal is a member of a declared set, and carries
 
 // ── G10 — the box report: four fields, one opinion withheld ──────────
 test.subHeading('G10 — four fields about the box, and the opinion that is deliberately absent');
-test.awaiting('public-app-server/G10', 'the four box fields in the owner report', false,
-  'assigned box label, opaque fingerprint, allotment at install, and the box total as measured — and never the opinion that the box is over-committed',
-  { there: 25, cost: 'the box total is free (measure already produces it) and the owner report exists; the label minted by the owner at bind and the ' +
-    'fingerprint are new. THE INGREDIENTS OF THE FINGERPRINT ARE DELIBERATELY NOT DECLARED — they are contents, they want measuring on both ' +
+// ── THE ASSIGNED BOX LABEL IS DROPPED, 2026-09-25 ────────────────────
+//
+// It was FOUR fields. Andy ruled the label in on 2026-09-24; both agents
+// then recommended against building it, because the owner interface that
+// would READ it is deferred and a field written but never read is
+// indistinguishable from a broken one.
+//
+// HE THEN ASKED THE QUESTION THAT SETTLED IT: *"how can i tell in my peer
+// list which is which?"* — and the answer is that the tree already does
+// this. `myLabel` is the private caption, what the owner calls a key in
+// his own book, never on the wire. An app server is an ordinary peer, so
+// it lands there like anyone else and he names it whatever tells him
+// which box it is.
+//
+// So the label was A SECOND MECHANISM FOR A NEED ALREADY MET, which is
+// the pattern this week removed five times. Andy: *"if the peer list does
+// it then that suffices."* Dropped — not deferred, because deferring it
+// would leave a designed thing attached to a condition nobody ruled.
+//
+// WHAT WOULD BRING IT BACK is a different requirement and would need
+// saying out loud: a box asserting a name about ITSELF, so a figure in a
+// report carries the box's own word rather than the reader's.
+test.awaiting('public-app-server/G10', 'the three box fields in the owner report', false,
+  'opaque fingerprint, allotment at install, and the box total as measured — and never the opinion that the box is over-committed',
+  { there: 33, cost: 'the box total is free (measure already produces it) and the owner report exists; the fingerprint is the new part. ' +
+    'THE INGREDIENTS OF THE FINGERPRINT ARE DELIBERATELY NOT DECLARED — they are contents, they want measuring on both ' +
     'platforms first, and that measurement is this agent to make once the MemoryMax and unit-counting questions are ruled: a number measured ' +
     'inside an unruled container gets quoted after the container changes' });
 

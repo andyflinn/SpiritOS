@@ -447,10 +447,32 @@ function askRelay(url) {
       // like the network and it is the caller.
       let b = {};
       try { b = JSON.parse((r && r.text) || '{}'); } catch (e) { b = {}; }
+      // ── THE SEAL KEY IS KEPT, AND IT IS A CACHE RATHER THAN A PIN ────
+      //
+      // It used to be dropped on the floor, so `claimSeat` had nothing to
+      // pass and `hub.sealedClaim` fetched this same document a SECOND
+      // TIME and sealed to whatever answered. The fork detector found the
+      // duplicate; the duplicate was the defect.
+      //
+      // PINNED: `relayPublicKey`, the identity — immutable, and what G6
+      // already pins. CACHED: `relaySealKey`, which a card rotation
+      // legitimately changes. Pinning the rotatable half would make an
+      // app server refuse its owner's own relay months later, on an
+      // unattended box, indistinguishable from the attack the pin is for.
+      //
+      // VERIFIED HERE, at the one moment it means something: the pair is
+      // signed together, and the identity half is then checked against
+      // the pin by `pin()` below. A re-fetch is allowed and is ANCHORED —
+      // substituting a seal key requires forging a signature by the key
+      // already pinned.
+      const signed = !!(b.relayPublicKey && b.relaySealKey &&
+        auth.relayKeySigned(b.relayPublicKey, b.relaySealKey, b.relayLabel, b.keySig));
       return {
         ok: r && r.status === 200,
         status: (r && r.status) || 0,
         relayKey: String(b.relayPublicKey || ''),
+        sealKey: signed ? String(b.relaySealKey || '') : '',
+        signed: signed,
         ownerKey: String(b.ownerKey || ''),
         ownerLabel: String(b.ownerLabel || ''),
       };
@@ -512,7 +534,7 @@ function pin(rootDir, appName, seen) {
 // THE BUILDER IS `hub.sealedClaim` AND NOT A SECOND ONE. It seals to the
 // relay's published cipher key, refuses a relay that publishes no signed
 // key, and is the same motion the relay install is proven on.
-function claimSeat(rootDir, appName, relayUrl, invite, inviteLabel) {
+function claimSeat(rootDir, appName, relayUrl, invite, inviteLabel, known) {
   const home = stateDir(rootDir, appName);
   const id = identity(rootDir, appName);
   // TWO WORDS, AND THEY ARE NOT THE SAME WORD. `name` is what this key
@@ -520,7 +542,11 @@ function claimSeat(rootDir, appName, relayUrl, invite, inviteLabel) {
   // on the invite when he minted it, matched and then forgotten. Passing
   // the app's name as both is what produced "invite label mismatch".
   const name = String(appName);
-  return require('./hub').sealedClaim(relayUrl, home, name, invite, String(inviteLabel || appName))
+  // THE PIN IS PASSED, SO NOTHING IS FETCHED. This server has already
+  // proved this relay's identity at bind; `sealedClaim` used to prove it
+  // again, against a fresh answer, which is not the same proposition.
+  return require('./hub').sealedClaim(relayUrl, home, name, invite,
+    String(inviteLabel || appName), known)
     .then(function (sending) {
       // THE OBJECT, NOT ITS TEXT. `relayRequest` serialises the body
       // itself, so stringifying here sent the relay a JSON *string* where
@@ -1250,7 +1276,13 @@ function create(opts) {
         // stop. The seat is worthless if it is taken at an impostor.
         const cfg = loadConfig(rootDir, appName);
         if (cfg.invite) {
-          state.seated = claimSeat(rootDir, appName, state.relay, cfg.invite, cfg.inviteLabel || cfg.label || appName)
+          // THE PINNED IDENTITY AND THE CACHED SEAL KEY, both from the
+          // answer this bind just verified — so the claim asks nobody a
+          // second time. `p.key` is what `pin()` accepted, which is the
+          // pin itself rather than a copy of it.
+          state.seated = claimSeat(rootDir, appName, state.relay, cfg.invite,
+            cfg.inviteLabel || cfg.label || appName,
+            { relayPublicKey: p.key, relaySealKey: seen.sealKey })
             .then(function (r) { state.lastClaim = r; return r; });
         } else {
           // NOT A FAULT, AN UNFINISHED DEPLOYMENT. The owner installs the

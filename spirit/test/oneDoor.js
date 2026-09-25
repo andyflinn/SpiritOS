@@ -97,6 +97,30 @@ const TALLY = {
   // suite fails, which is what makes the grant safe to have given.
   'app/shared/ask.js': 1,
 
+  // THE FORK DETECTOR, which has to touch the wire to watch the wire — a
+  // new line, and so an exception. GRANTED BY ANDY 2026-09-25, asked for
+  // out loud as this tally requires: he was given the argument and
+  // answered *"Yes."*
+  //
+  // The two are `require('http')` and `require('https')`, and it PATCHES
+  // them rather than calling them: it wraps `.request` to record which
+  // stacks in our own code reach it, and forwards every call untouched.
+  // It sends nothing and receives nothing.
+  //
+  // IT EXISTS TO MAKE THIS TALLY TRUE RATHER THAN MERELY KEPT. This
+  // suite gates which FILES may reach the wire; it cannot see which
+  // ROUTES do, because a fork has no reference for anything to follow.
+  // On its first real run it found `GET /api/relay/key` composed from
+  // three places — and the duplicate was a security defect, not
+  // untidiness: the app server pinned the relay's identity and then
+  // `sealedClaim` fetched it again and sealed an invite to whatever
+  // answered.
+  //
+  // TWO, AND THE NUMBER MAY ONLY FALL. It runs only when invoked
+  // (`node spirit/test/tools/wirePaths.js`) and instruments nothing
+  // during an ordinary harness run.
+  'test/tools/wirePaths.js': 2,
+
   // THE SERVER ITSELF: http.createServer, and fetchExternal, the gated
   // door apps ask for by verb rather than by URL.
   'js/server.js': 2,

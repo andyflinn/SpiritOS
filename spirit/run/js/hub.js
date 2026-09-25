@@ -197,8 +197,72 @@ function signedClaim(rootDir, name, invite, inviteLabel) {
 // A NODE WITH NO SEAT CANNOT ASK A PEER FOR THIS. It has no stream and
 // nothing to address a post to, which is why the key door is a granted
 // GET and always was (decision 0010).
-function sealedClaim(url, rootDir, name, invite, inviteLabel) {
+// ── `known` IS REQUIRED, AND IT SAYS WHETHER THIS RELAY IS ALREADY PINNED
+//
+// FOUND BY THE FORK DETECTOR, 2026-09-24: `GET /api/relay/key` was being
+// composed from three places, and two of them were this function and the
+// app server's `askRelay` — which PINS what it gets. So a caller checked
+// the relay's identity, and then this function FETCHED THE KEY AGAIN and
+// sealed the claim to whatever answered.
+//
+// THE CHECK BELOW PROVES AUTHENTICITY, NOT IDENTITY. `relayKeySigned`
+// says this cipher key is signed by the identity key beside it — an
+// attacker answering with their OWN validly-signed pair passes it
+// completely. Against a caller holding a pin, that is not a check at
+// all, and what got sealed to the stranger is an INVITE: a bearer token
+// we refused to put in `argv` an hour earlier for being readable.
+//
+// THE FIX REMOVES A REQUEST RATHER THAN ADDING A CHECK — Andy: *"fix to
+// avoid unnecessary calls on the wire"* — so the window closes by
+// construction. There is no second answer to substitute. A guard can be
+// got wrong; an absent request cannot.
+//
+//   'first-contact'                   fetch, verify, trust. A node's FIRST
+//                                     claim genuinely is this: there is
+//                                     nothing to compare against, and that
+//                                     fetch is how you learn the relay.
+//   { relayPublicKey, relaySealKey }  seal to what the caller already has.
+//                                     NO REQUEST.
+//   anything else, including omitted  throws.
+//
+// NOT OPTIONAL, and the reason is G14's: an optional guard whose absence
+// means "do the unsafe thing" IS absent-means-everything. With it, "every
+// caller that should have passed a key did" is vacuously true of every
+// caller that passed nothing. So each caller STATES WHICH CASE IT IS IN,
+// and a new one that names neither does not run.
+//
+// PIN THE IDENTITY, CACHE THE SEAL KEY. wsl-claude, correcting the first
+// shape of this: a card gives a node a ROTATION — a new seal key, signed
+// by the same identity — so a caller that pinned the seal key would
+// refuse its owner's own relay months later, on an unattended box, with
+// a failure indistinguishable from the attack the pin exists for. The
+// identity is the anchor; the seal key is derived and may be re-fetched,
+// because substituting it then requires forging a signature by the
+// pinned key.
+function sealedClaim(url, rootDir, name, invite, inviteLabel, known) {
   const body = signedClaim(rootDir, name, invite, inviteLabel);
+
+  const wrap = function (relayPublicKey, relaySealKey) {
+    const wrapped = seal.seal(relaySealKey, body.publicKey, relayPublicKey,
+      JSON.stringify(body));
+    if (!wrapped) throw new Error('that relay\'s cipher key cannot be used');
+    return { from: body.publicKey, sealed: wrapped };
+  };
+
+  if (known && typeof known === 'object' && known.relayPublicKey && known.relaySealKey) {
+    // Already pinned. Seal to what the caller proved, and ask nobody.
+    return Promise.resolve().then(function () {
+      return wrap(String(known.relayPublicKey), String(known.relaySealKey));
+    });
+  }
+
+  if (known !== 'first-contact') {
+    return Promise.reject(new Error(
+      'sealedClaim needs to know whether this relay is already pinned: pass ' +
+      "'first-contact' for a relay never met, or { relayPublicKey, relaySealKey } " +
+      'for one already proved. Omitting it is not a default.'));
+  }
+
   return Promise.resolve()
     .then(function () { return relayRequest(url, 'GET', '/api/relay/key', null); })
     .then(function (r) {
@@ -208,10 +272,7 @@ function sealedClaim(url, rootDir, name, invite, inviteLabel) {
         said.relayLabel, said.keySig)) {
         throw new Error('that relay does not publish a signed cipher key — it may be running older code');
       }
-      const wrapped = seal.seal(said.relaySealKey, body.publicKey, said.relayPublicKey,
-        JSON.stringify(body));
-      if (!wrapped) throw new Error('that relay\'s cipher key cannot be used');
-      return { from: body.publicKey, sealed: wrapped };
+      return wrap(said.relayPublicKey, said.relaySealKey);
     });
 }
 
@@ -944,8 +1005,13 @@ function createHub(rootDir) {
     var probe = deps && deps.probe;
     readJsonBody(req).then(function (body) {
       withChosenRelay(res, body && body.url, function (url) {
+        // FIRST CONTACT, STATED. This is the node's own claim: it has no
+        // pin for this relay — the claim is how it gets one — so the
+        // fetch-and-trust path is correct here and says so rather than
+        // arriving by omission.
         sealedClaim(url, rootDir,
-          body && body.name, body && body.invite, body && body.inviteLabel)
+          body && body.name, body && body.invite, body && body.inviteLabel,
+          'first-contact')
           .then(function (sending) {
             return relayRequest(url, 'POST', '/api/relay/claim', sending);
           })

@@ -37,9 +37,9 @@ not describe. Run the harness if in doubt.
 
 `PUBLIC-APP-SERVER` · status **OPEN**
 
-- **missing:** the four box fields in the owner report — **~25% there**, guess: the box total is free (measure already produces it) and the owner report exists; the label minted by the owner at bind and the fingerprint are new. THE INGREDIENTS OF THE FINGERPRINT ARE DELIBERATELY NOT DECLARED — they are contents, they want measuring on both platforms first, and that measurement is this agent to make once the MemoryMax and unit-counting questions are ruled: a number measured inside an unruled container gets quoted after the container changes
+- **missing:** the three box fields in the owner report — **~33% there**, guess: the box total is free (measure already produces it) and the owner report exists; the fingerprint is the new part. THE INGREDIENTS OF THE FINGERPRINT ARE DELIBERATELY NOT DECLARED — they are contents, they want measuring on both platforms first, and that measurement is this agent to make once the MemoryMax and unit-counting questions are ruled: a number measured inside an unruled container gets quoted after the container changes
   
-  assigned box label, opaque fingerprint, allotment at install, and the box total as measured — and never the opinion that the box is over-committed
+  opaque fingerprint, allotment at install, and the box total as measured — and never the opinion that the box is over-committed
 
 *Declared in `appServerBoundary.js`*
 
