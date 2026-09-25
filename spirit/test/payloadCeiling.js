@@ -75,10 +75,32 @@ function packetOfExactly(bytes) {
 test.subHeading('The two bounds are two, and the sealed one is bigger');
 
 {
+  // ── A PROMISE GUARD, AND IT SAYS SO — NOT A CONSISTENCY CHECK ──────
+  //
+  //   Andy's method for this file, 2026-09-25: "adjusting the limit, see
+  //   if anything breaks, and then resetting it to the current, agreed
+  //   value."
+  //
+  // RUN, 16384 -> 20000: five red. Four of them are consistency and say
+  // what the move BREAKS — the packet seals past the wire bound, the
+  // headroom goes negative, the constants have drifted apart, and a relay
+  // refuses a legal full-size post. THIS ONE IS NOT ONE OF THOSE. It
+  // fires on any change at all, including the deliberate one he just
+  // made, and its only content is "you did the thing you meant to do".
+  //
+  // It is still worth having: PLAINTEXT_MAX is the figure apps were
+  // written against, so moving it by accident is a broken promise rather
+  // than an inconsistency. But a reader counting reds must be able to
+  // tell the two apart, or his experiment reports a failure every time it
+  // succeeds.
+  //
+  // So the wording carries which kind it is. The assertion is unchanged.
   if (limits.PLAINTEXT_MAX === 16384) {
-    test.check('PLAINTEXT_MAX is unchanged at 16 KB — cycle 10 did not move the promise apps were written against');
+    test.check('PROMISE: PLAINTEXT_MAX is unchanged at 16 KB — the ceiling apps were written against');
   } else {
-    test.fail('the app-facing ceiling moved: ' + limits.PLAINTEXT_MAX);
+    test.fail('PROMISE MOVED, not a defect by itself: the app-facing ceiling is now ' +
+      limits.PLAINTEXT_MAX + ' rather than 16384. If that was deliberate, the reds below are what it ' +
+      'costs; if it was not, this is the only line that would have told you');
   }
 
   const packet = packetOfExactly(limits.PLAINTEXT_MAX);
