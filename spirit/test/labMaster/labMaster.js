@@ -538,7 +538,11 @@ const NODE_STATE = [
   path.join('spirit', 'run', 'app', 'natter', 'session.json'),
   path.join('spirit', 'run', 'app', 'natter', 'relays.json'),
   path.join('spirit', 'run', 'app', 'natter', 'minted.json'),
-  path.join('spirit', 'run', 'app', 'relayChat'),
+  // relayChat's entry stood here until 2026-09-25, when the app left for
+  // its own repo. `carryState` skips what is not there, so it would have
+  // gone on being a silent no-op — which is why it wanted removing
+  // rather than leaving: a list that tolerates a missing entry is a list
+  // nobody notices has gone stale.
   path.join('spirit', 'run', 'app', 'contacts'),
   path.join('spirit', 'run', 'app', 'shared'),
 ];
@@ -551,7 +555,7 @@ function carryState(fromRoot, toRoot) {
     const to = path.join(toRoot, rel);
     fs.mkdirSync(path.dirname(to), { recursive: true });
     // Over the top: a clone brings the app FOLDERS (manifests, scripts),
-    // so relayChat/ and contacts/ already exist and only the files a node
+    // so contacts/ already exists and only the files a node
     // wrote into them are being added.
     fs.cpSync(from, to, { recursive: true, force: true });
     carried.push(rel);

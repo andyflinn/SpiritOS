@@ -340,24 +340,16 @@ test.subHeading('The node exposes nothing that reads an envelope');
 }
 test.subHeading('Relay Chat keeps another app’s traffic out of its archive');
 
-{
-  // The rule that keeps a chess move out of a chat log, asserted where
-  // it lives. relayChat.js is loaded in the browser, so this reads the
-  // decision rather than driving it — chatSession.js drives the app.
-  const src = fs.readFileSync(path.join(__dirname, '..', 'run', 'app', 'relayChat', 'relayChat.js'), 'utf8');
-  if (/RC_PACKET_APP = 'relay-chat'/.test(src)) {
-    test.check('it says what it is called on the wire');
-  } else {
-    test.fail('no packet name in relayChat.js');
-  }
-
-  const fn = src.slice(src.indexOf('function chatLineFrom'), src.indexOf('function asChatMessage'));
-  if (/info\.legacy/.test(fn) && /info\.app !== RC_PACKET_APP/.test(fn) && /return null/.test(fn)) {
-    test.check('legacy is a chat line, and another app’s packet is not');
-  } else {
-    test.fail('chatLineFrom: ' + fn);
-  }
-}
+// THE RULE THAT KEEPS A CHESS MOVE OUT OF A CHAT LOG was asserted here,
+// against relayChat.js, until 2026-09-25 — when that app left for its own
+// repo and the assertion went with it (its repo's
+// test/CARRIED-ASSERTIONS.md).
+//
+// IT IS NOT REPLACED BY AN ASSERTION ABOUT THE SUBSTITUTE, and that is
+// deliberate: it was about what ONE APP must not do with a packet name,
+// not about what any app does. Re-pointing it at textEditor would have
+// produced a check that passes because textEditor has no packets —
+// vacuous, and wearing the clothes of the thing it replaced.
 
 test.subHeading('relay.js did not have to change');
 

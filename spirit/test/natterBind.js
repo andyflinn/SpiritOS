@@ -937,37 +937,6 @@ function anUnreachableRelayKeepsTheBinding() {
   });
 }
 
-function chatKeepsNoBinding() {
-  test.subHeading('And the chat window is out of it');
-
-  const chat = fs.readFileSync(path.join(RUN_DIR, 'app', 'relayChat', 'relayChat.js'), 'utf8');
-  // Named as VERBS since the fold, because the paths they used to be no
-  // longer exist anywhere — and a needle that cannot be found in any
-  // file is a check that cannot fail.
-  //
-  // MINTING has no needle of its own any more: it stopped being a door
-  // and became an ordinary peerPost, so what this window must not do is
-  // post at all. `rc-invite` still covers the control, and the prose in
-  // relayChat.js explains where minting went — which is why a bare
-  // "invite" cannot be the test.
-  const gone = ['rc-claim', 'rc-name', 'rc-invite', 'session.json', 'relay.claim', 'peerPost']
-    .filter(function (needle) { return chat.indexOf(needle) !== -1; });
-  if (gone.length === 0) {
-    test.check('relayChat.js neither claims, mints, nor keeps a binding');
-  } else {
-    test.fail('still in the chat window: ' + gone.join(', '));
-  }
-
-  // It asks the shell instead, which reads the file this app writes.
-  if (/api\.nodeLabel\(\)/.test(chat)) {
-    test.check('it asks the shell who this node is');
-  } else {
-    test.fail('relayChat.js does not use api.nodeLabel');
-  }
-
-  return Promise.resolve();
-}
-
 theAddButtonActuallyAdds()
   .then(addRefusesAUrlTheWireWouldRefuse)
   .then(unboundIsThePage)
@@ -982,7 +951,6 @@ theAddButtonActuallyAdds()
   .then(halfOfflineDoesNotUnbind)
   .then(noRowForThisKeyDropsTheBinding)
   .then(anUnreachableRelayKeepsTheBinding)
-  .then(chatKeepsNoBinding)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('natter bind threw: ' + ((err && err.stack) || err));

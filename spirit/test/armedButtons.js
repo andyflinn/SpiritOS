@@ -109,7 +109,11 @@ apps.forEach(function (name) {
   if (!/armUntilElsewhere/.test(code)) missing.push(name);
 });
 
-if (arming.length >= 3) {
+// FLOOR LOWERED FROM 3 TO 2 ON 2026-09-25: relayChat was one of the
+// three and left the repo. Lowering a count when the reason is known is
+// ordinary; what must not happen is the floor staying at 3 and somebody
+// later "fixing" it by arming a button that did not need it.
+if (arming.length >= 2) {
   test.check('found ' + arming.length + ' apps with two-press buttons: ' + arming.join(', '));
 } else {
   test.fail('only ' + arming.length + ' apps matched — the arming shapes moved: ' + arming.join(', '));

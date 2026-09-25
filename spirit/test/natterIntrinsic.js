@@ -315,11 +315,11 @@ test.startTest('Natter is intrinsic — always in the shell, never overwritten')
 
   // Relay Chat is a normal app and is meant to stay one — this cycle
   // pins Natter only.
-  const rc = manifest('app/relayChat/relayChat.json');
+  const rc = manifest('app/textEditor/textEditor.json');
   if (!rc.intrinsic) {
     test.check('Relay Chat is not intrinsic');
   } else {
-    test.fail('relayChat manifest: ' + JSON.stringify(rc));
+    test.fail('textEditor manifest: ' + JSON.stringify(rc));
   }
 }
 
@@ -399,7 +399,7 @@ test.subHeading('The shell always draws it');
   // the check further down about hidden apps needs at least one to exist
   // or it would be asserting something about an empty list.
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/relayChat/relayChat.js',
+    [NATTER_SCRIPT, 'app/textEditor/textEditor.js',
       'app/contactsDetails/contactsDetails.js',
       'app/natterDetails/natterDetails.js'], false, BOUND);
 
@@ -410,11 +410,11 @@ test.subHeading('The shell always draws it');
     test.fail('listApps: ' + JSON.stringify(booted.shell.listApps()));
   }
 
-  const relayChat = appById(booted, 'app/relayChat');
-  if (relayChat && relayChat.intrinsic === false) {
+  const textEditor = appById(booted, 'app/textEditor');
+  if (textEditor && textEditor.intrinsic === false) {
     test.check('and Relay Chat as an ordinary app');
   } else {
-    test.fail('relayChat: ' + JSON.stringify(relayChat));
+    test.fail('textEditor: ' + JSON.stringify(textEditor));
   }
 
   if (natter && natter.group === booted.shell.SPIRIT_GROUP_ID) {
@@ -465,11 +465,13 @@ test.subHeading('The shell always draws it');
     test.fail('desktop: ' + desktopLabels(booted));
   }
 
-  // Relay Chat is ungrouped and stays where it was.
-  if (desktopLabels(booted).indexOf('Relay Chat') !== -1) {
-    test.check('Relay Chat is untouched on the desktop');
+  // The ungrouped app stays where it was. Text Editor stands here since
+  // 2026-09-25 — Relay Chat held this role until it left the repo, and
+  // the role is "an app that is not intrinsic", not that app.
+  if (desktopLabels(booted).indexOf('Text Editor') !== -1) {
+    test.check('the ungrouped app is untouched on the desktop');
   } else {
-    test.fail('relayChat desktop: ' + desktopLabels(booted));
+    test.fail('textEditor desktop: ' + desktopLabels(booted));
   }
 }
 
@@ -477,7 +479,7 @@ test.subHeading('And there is no way to take it off');
 
 {
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], false, BOUND);
+    [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], false, BOUND);
 
   const refused = booted.shell.setAppOverride('app/natter', { group: 'none' });
   if (!refused.ok && refused.reason === 'intrinsic-app-group-locked') {
@@ -511,7 +513,7 @@ test.subHeading('And there is no way to take it off');
     defaultHandlers: {},
     appOverrides: { 'app/natter': { group: 'none' } },
     groups: {},
-  }, [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], false, BOUND);
+  }, [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], false, BOUND);
 
   const staleNatter = appById(stale, 'app/natter');
   if (staleNatter.group === stale.shell.SPIRIT_GROUP_ID && spiritGroupLabels(stale).indexOf('NATter') !== -1) {
@@ -522,11 +524,11 @@ test.subHeading('And there is no way to take it off');
 
   // Relay Chat, by contrast, is the operator's to move — otherwise this
   // whole test would pass on a shell where nobody can move anything.
-  const moved = stale.shell.setAppOverride('app/relayChat', { group: 'none' });
-  if (moved.ok && desktopLabels(stale).indexOf('Relay Chat') === -1) {
+  const moved = stale.shell.setAppOverride('app/textEditor', { group: 'none' });
+  if (moved.ok && desktopLabels(stale).indexOf('Text Editor') === -1) {
     test.check('Relay Chat can still be taken off the desktop');
   } else {
-    test.fail('relayChat move: ' + JSON.stringify(moved) + ' desktop: ' + desktopLabels(stale));
+    test.fail('textEditor move: ' + JSON.stringify(moved) + ' desktop: ' + desktopLabels(stale));
   }
 }
 
@@ -534,7 +536,7 @@ test.subHeading('Name and icon stay as shipped');
 
 {
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], false, BOUND);
+    [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], false, BOUND);
 
   // The lock a built-in has had all along, arriving by a different route:
   // theirs is "no _scriptPath", which stops being true the moment the
@@ -571,7 +573,7 @@ test.subHeading('Name and icon stay as shipped');
     defaultHandlers: {},
     appOverrides: { 'app/natter': { name: 'Mailboxes', icon: '💀' } },
     groups: {},
-  }, [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], false, BOUND);
+  }, [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], false, BOUND);
 
   const staleNatter = appById(stale, 'app/natter');
   if (staleNatter.name === 'NATter' && staleNatter.icon === spirit.core.const.ICON[manifest('app/natter/natter.json').icon]) {
@@ -588,11 +590,11 @@ test.subHeading('Name and icon stay as shipped');
 
   // Relay Chat is still the operator's to rename — the lock is about
   // being intrinsic, not about being an app.
-  const rcRenamed = stale.shell.setAppOverride('app/relayChat', { name: 'Chat' });
-  if (rcRenamed.ok && appById(stale, 'app/relayChat').name === 'Chat') {
+  const rcRenamed = stale.shell.setAppOverride('app/textEditor', { name: 'Chat' });
+  if (rcRenamed.ok && appById(stale, 'app/textEditor').name === 'Chat') {
     test.check('Relay Chat can still be renamed');
   } else {
-    test.fail('relayChat rename: ' + JSON.stringify(rcRenamed));
+    test.fail('textEditor rename: ' + JSON.stringify(rcRenamed));
   }
 }
 
@@ -700,7 +702,7 @@ test.subHeading('The Spirit grid draws one tile per id');
 
 {
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], false, BOUND);
+    [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], false, BOUND);
 
   function tiles(ids) {
     const grid = fakeElement('div');
@@ -712,7 +714,7 @@ test.subHeading('The Spirit grid draws one tile per id');
   // intrinsic app. Today they do not overlap; as the five move into
   // app/<name>/ and become intrinsic, they will — and an app in both
   // halves must not get two tiles.
-  const overlapping = ['app/natter', 'app/relayChat'].concat(booted.shell.listIntrinsicApps());
+  const overlapping = ['app/natter', 'app/textEditor'].concat(booted.shell.listIntrinsicApps());
   const drawn = tiles(overlapping);
   const natterTiles = drawn.filter(function (html) { return html.indexOf('NATter') !== -1; });
   if (overlapping.filter(function (id) { return id === 'app/natter'; }).length === 2 && natterTiles.length === 1) {
@@ -733,8 +735,8 @@ test.subHeading('The Spirit grid draws one tile per id');
 
   // First mention wins, so a fixed list keeps its curated order and the
   // intrinsic half only ever appends what is not already there.
-  const ordered = tiles(['app/relayChat', 'app/natter', 'app/relayChat']);
-  if (ordered.length === 2 && ordered[0].indexOf('Relay Chat') !== -1 && ordered[1].indexOf('NATter') !== -1) {
+  const ordered = tiles(['app/textEditor', 'app/natter', 'app/textEditor']);
+  if (ordered.length === 2 && ordered[0].indexOf('Text Editor') !== -1 && ordered[1].indexOf('NATter') !== -1) {
     test.check('first mention wins, so the curated order survives');
   } else {
     test.fail('order: ' + JSON.stringify(ordered));
@@ -756,7 +758,7 @@ test.subHeading('Spirit is not empty before the first snapshot');
   // that never connects — must still reach Natter, or it cannot be
   // pointed at a mailbox at all. Deferred snapshot is exactly that node.
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], true, BOUND);
+    [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], true, BOUND);
 
   if (booted.shell.INTRINSIC_APP_FOLDERS.indexOf('natter') !== -1) {
     test.check('natter is on the eager boot list');
@@ -782,14 +784,14 @@ test.subHeading('Spirit is not empty before the first snapshot');
 
   // Ordinary apps are still the watcher's business — the boot list is a
   // short-cut for the apps that are the node, not a second registry.
-  if (!appById(booted, 'app/relayChat')) {
+  if (!appById(booted, 'app/textEditor')) {
     test.check('an ordinary app still waits for the snapshot');
   } else {
-    test.fail('relayChat declared before the snapshot');
+    test.fail('textEditor declared before the snapshot');
   }
 
-  booted.snapshot([NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
-  if (appById(booted, 'app/relayChat') && spiritGroupLabels(booted).split('NATter').length === 2) {
+  booted.snapshot([NATTER_SCRIPT, 'app/textEditor/textEditor.js']);
+  if (appById(booted, 'app/textEditor') && spiritGroupLabels(booted).split('NATter').length === 2) {
     test.check('and when the snapshot arrives, it lands — Natter still once');
   } else {
     test.fail('after snapshot: ' + spiritGroupLabels(booted));
@@ -1699,10 +1701,10 @@ test.subHeading('An app that changes id keeps what the operator customised');
   // call nothing to do, and this must test the mechanism rather than
   // whichever apps happen to have moved by now.
   const booted = bootShell({
-    defaultHandlers: { '.md': 'ledger', '.txt': 'app/relayChat' },
-    appOverrides: { ledger: { icon: '💀', name: 'Tasks' }, 'app/relayChat': { name: 'Chat' } },
+    defaultHandlers: { '.md': 'ledger', '.txt': 'app/textEditor' },
+    appOverrides: { ledger: { icon: '💀', name: 'Tasks' }, 'app/textEditor': { name: 'Chat' } },
     groups: {},
-  }, [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], true, BOUND);
+  }, [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], true, BOUND);
 
   const moved = booted.shell.migrateAppIds({ ledger: 'app/ledger' });
   const prefs = booted.saved.preferences;
@@ -1719,7 +1721,7 @@ test.subHeading('An app that changes id keeps what the operator customised');
     test.fail('handlers: ' + JSON.stringify(prefs.defaultHandlers));
   }
 
-  if (prefs.appOverrides['app/relayChat'].name === 'Chat' && prefs.defaultHandlers['.txt'] === 'app/relayChat') {
+  if (prefs.appOverrides['app/textEditor'].name === 'Chat' && prefs.defaultHandlers['.txt'] === 'app/textEditor') {
     test.check('an id that did not move is untouched');
   } else {
     test.fail('untouched: ' + JSON.stringify(prefs));
@@ -1731,7 +1733,7 @@ test.subHeading('An app that changes id keeps what the operator customised');
     id: 'app/ledger', name: 'Ledger', icon: '⚙️', hidden: true,
     mount: function () {}, render: function () {},
   });
-  booted.snapshot([NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+  booted.snapshot([NATTER_SCRIPT, 'app/textEditor/textEditor.js']);
   const afterPrune = booted.saved.preferences;
   if (afterPrune.appOverrides['app/ledger'] && afterPrune.defaultHandlers['.md'] === 'app/ledger') {
     test.check('and it survives the prune on the next snapshot');
@@ -1759,7 +1761,7 @@ test.subHeading('Built-ins are locked by having no folder — until they get one
 
 {
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/relayChat/relayChat.js'], false, BOUND);
+    [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], false, BOUND);
 
   // Registered exactly as index.html registers the five: no script path,
   // no manifest, no intrinsic flag.
@@ -1809,7 +1811,7 @@ test.subHeading('The window title names the node, then the screen');
 // dropped (Andy): the favicon is a ghost saying the same thing, and a
 // truncated tab should spend its characters on the half that differs.
 {
-  const scripts = [NATTER_SCRIPT, 'app/relayChat/relayChat.js'];
+  const scripts = [NATTER_SCRIPT, 'app/textEditor/textEditor.js'];
   const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
 
   function withNotes(booted) {
@@ -1873,14 +1875,11 @@ test.subHeading('The window title names the node, then the screen');
     test.fail('the brand is back: ' + bound.doc.title + ' / ' + fresh.doc.title);
   }
 
-  // Relay Chat used to write this string itself ("Relay Chat [andy] · 3")
-  // and would now be fighting the shell for it on every navigation.
-  const chat = readRun('app/relayChat/relayChat.js');
-  if (chat.indexOf('document.title') === -1) {
-    test.check('and no app writes the tab behind the shell');
-  } else {
-    test.fail('Relay Chat still writes document.title');
-  }
+  // "AND NO APP WRITES THE TAB BEHIND THE SHELL" was asserted here
+  // against relayChat.js until 2026-09-25, when that app left for its own
+  // repo. It was a REGRESSION GUARD for one app that had done it — not a
+  // rule about apps in general — so it travelled with the app rather than
+  // being re-pointed at a substitute that never wrote a title.
 }
 
 test.subHeading('An app can subscribe, instead of being broadcast at');
@@ -1931,7 +1930,7 @@ test.subHeading('An app can subscribe, instead of being broadcast at');
 
   // A different list is.
   booted.shell.launchApp('ledger');
-  booted.snapshot([NATTER_SCRIPT, 'app/relayChat/relayChat.js']);
+  booted.snapshot([NATTER_SCRIPT, 'app/textEditor/textEditor.js']);
   const lastNotes = seen.notes[seen.notes.length - 1];
   const lastLedger = seen.ledger[seen.ledger.length - 1];
   if (seen.notes.length === 2 && seen.ledger.length === 2) {
@@ -2479,7 +2478,7 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
 // and the rest of the shell waits behind it.
 {
   const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
-  const scripts = [NATTER_SCRIPT, 'app/relayChat/relayChat.js'];
+  const scripts = [NATTER_SCRIPT, 'app/textEditor/textEditor.js'];
 
   // A FRESH CLONE SHIPS NO RELAY. This asserted the opposite — "the repo
   // ships pointed at the public mailbox" — by reading relays.json off
@@ -2556,7 +2555,7 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
   // Natter is intrinsic, so its tile is in Spirit rather than loose on
   // the desktop — and Spirit is where an unbound node has to reach it.
   if (spiritGroupLabels(fresh).indexOf('NATter') !== -1 &&
-      spiritGroupLabels(fresh).indexOf('Relay Chat') === -1) {
+      spiritGroupLabels(fresh).indexOf('Text Editor') === -1) {
     test.check('and the Spirit grid holds that one and nothing else');
   } else {
     test.fail('spirit grid unbound: ' + spiritGroupLabels(fresh));
@@ -2609,7 +2608,7 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
   // Bound: the shell it has always been.
   const bound = bootShell(prefs, scripts, false, 'andy');
   const boundList = bound.shell.listApps().map(function (a) { return a.id; });
-  if (boundList.length > 1 && boundList.indexOf('app/relayChat') !== -1) {
+  if (boundList.length > 1 && boundList.indexOf('app/textEditor') !== -1) {
     test.check('a claimed name gives back the whole shell');
   } else {
     test.fail('bound list: ' + JSON.stringify(boundList));
@@ -2641,7 +2640,7 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
   // before any snapshot, and whatever the fs-watcher does or does not
   // report. A first run whose one app waited on a watcher would be an
   // empty desktop with no way out of it.
-  const early = bootShell(prefs, ['app/relayChat/relayChat.js'], true, '');
+  const early = bootShell(prefs, ['app/textEditor/textEditor.js'], true, '');
   const earlyList = early.shell.listApps().map(function (a) { return a.id; });
   if (earlyList.length === 1 && earlyList[0] === 'app/natter') {
     test.check('and the app it shows is declared at boot, before any snapshot');
@@ -2689,24 +2688,17 @@ test.subHeading('Contacts is its own app');
     test.fail('Contacts in the grid ' + inGrid + ' times: ' + spiritGroupLabels(early));
   }
 
-  // The move, from the other end: the chat app must not still be able to
-  // edit the book. Three of the four verbs stayed moved; blocking came
-  // back (Andy), because refusing somebody is what you want in the
-  // middle of a conversation with them. It goes through api.blockId, so
-  // chat still names no hub path of its own — the QUOTED form is what
-  // this asks about, since the file now mentions the path in prose,
-  // explaining why opening a peer's card gives chat no authority it did
-  // not have: the dialog makes that call, from its own screen, exactly
-  // as it does when Contacts opens it. A comment saying why a call is
-  // not made is the opposite of the thing this guards against, and a
-  // check that cannot tell the two apart would push it out of the file.
-  const chat = readRun('app/relayChat/relayChat.js');
-  const quotedPeerPath = /['"]\/api\/hub\/peer/.test(chat);
-  if (chat.indexOf('rc-add-panel') === -1 && !quotedPeerPath) {
-    test.check('and Relay Chat still adds, accepts, renames and blocks nobody on the node');
-  } else {
-    test.fail('relayChat.js still carries address-book verbs');
-  }
+  // THE MOVE, FROM THE OTHER END — that the chat app must not still be
+  // able to edit the book — was asserted here until 2026-09-25, when
+  // relayChat left for its own repo and took the assertion with it.
+  //
+  // Its reasoning is preserved there because it is worth more than the
+  // check: the file mentions the hub path in PROSE, explaining why
+  // opening a peer's card grants chat no authority, so the assertion
+  // asked about the QUOTED form only. A comment saying why a call is not
+  // made is the opposite of the thing the guard exists for, and a check
+  // that could not tell the two apart would have pushed the explanation
+  // out of the file.
 }
 
 test.subHeading('A group screen is a place you can go back to');
@@ -2898,14 +2890,14 @@ test.subHeading('A path always fits, however narrow the pane');
   // spans do NOT provide this — an element boundary is not a line break
   // opportunity — so if <wbr> ever goes, the path stops folding and
   // nothing else says so.
-  const out = pathValue('spirit/run/app/relayChat/relayChat.js');
+  const out = pathValue('spirit/run/app/textEditor/textEditor.js');
   if ((out.match(/<wbr>/g) || []).length === 4) {
     test.check('a four-deep path offers a break after each of its slashes');
   } else {
     test.fail('breaks: ' + out);
   }
 
-  if (/class="path-dir">spirit\//.test(out) && /class="path-file">relayChat\.js</.test(out)) {
+  if (/class="path-dir">spirit\//.test(out) && /class="path-file">textEditor\.js</.test(out)) {
     test.check('and its directories and its filename are told apart');
   } else {
     test.fail('segments: ' + out);

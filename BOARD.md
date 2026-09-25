@@ -43,6 +43,17 @@ not describe. Run the harness if in doubt.
 
 *Declared in `appServerBoundary.js`*
 
+## public-app-server/G17 — NOT DECLARED IN A DOCUMENT — a suite waits on a requirement no document names
+
+**No document names this requirement.** That is drift, and it is
+shown rather than hidden.
+
+- **missing:** the answer body reaching the door — **~70% there**, guess: the transport half is DONE and verified by both agents (peerPost.js:363-373 unseals into answer.text before resolving). What is missing is that appServer stops discarding it, and an owner-side program that answers with a body — the second is the master, and it is the unbuilt half of every show. This is declared awaiting rather than red because an assertion needs a master that answers, and asserting against a fixture owner that answers nothing would test the fixture
+  
+  a reply carries a body, already unsealed, to the original poster — and reachOwner keeps it, so what the master computed reaches the screen
+
+*Declared in `appServerBoundary.js`*
+
 ## public-app-server/G8 — layer 1 splits by PROMISE, and the stable half is named
 
 `PUBLIC-APP-SERVER` · status **OPEN**
@@ -55,4 +66,4 @@ not describe. Run the harness if in doubt.
 
 ---
 
-**4 assertion(s) across 4 requirement(s).**
+**5 assertion(s) across 5 requirement(s).**

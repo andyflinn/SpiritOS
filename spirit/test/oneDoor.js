@@ -139,7 +139,9 @@ const TALLY = {
   // proves a relay meant to be UNCLAIMED really is — an absence a test
   // must never assume.
   'test/appServerWorlds.js': 3,
-  'test/chatPeople.js': 1,
+  // 'test/chatPeople.js': 1 — REMOVED 2026-09-25, the file left with relayChat.
+  // A tally may only fall; an entry for a file that is gone is a room kept
+  // warm for a reach nobody has made.
   'test/cycleA.js': 1,
   'test/htmlEscaping.js': 1,
   'test/jobCallback.js': 1,

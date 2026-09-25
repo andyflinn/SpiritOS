@@ -88,7 +88,7 @@ const TALLY = {
   'spirit/run/js/spiritErrors.js': 1,
   'spirit/run/js/trafficLog.js': 4,
   'spirit/test/arrivals.js': 2,
-  'spirit/test/chatPeople.js': 10,
+  // 'spirit/test/chatPeople.js': 10 — REMOVED 2026-09-25 with relayChat.
   'spirit/test/contacts.js': 1,
   'spirit/test/cycleA.js': 5,
   'spirit/test/deviceDisplace.js': 2,

@@ -27,7 +27,7 @@
 // dot, no separator.
 //
 // Cost: a 44-character key becomes an 88-character name. On the deepest
-// path this project has (a OneDrive clone, app/relayChat/logs/) that is
+// path this project has (a OneDrive clone, app/<someApp>/logs/) that is
 // still comfortably inside Windows' 260-character limit.
 
 var PEER_FILE_HEX = '0123456789abcdef';

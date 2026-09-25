@@ -151,6 +151,43 @@ other reviewing it, while the tree has run it for cycles.
 - **Bounds are the master's**: explicit, never inherited, reported in
   state, and overflow reports rather than silently forgetting.
 
+- **PERMANENT UPTIME IS THE OWNER'S, ALONE.** Andy, 2026-09-25: *"the
+  system collapses when the owner sleeps. it is MY responsibility to keep
+  my node always on and online"* — *"the owner of a public relay is alone
+  responsible for keeping his box online permanently"* — **"because
+  without that, it's an unreliable service system."**
+
+  **This is a refusal to engineer around it**, and the reason is the
+  third sentence. Durable caching on the public box, stale-serving,
+  fallback routing: each buys a little availability and each makes the
+  failure HARDER TO SEE. A service that is sometimes current, sometimes
+  stale, and never says which, is worse than one that is either up or
+  plainly off. That is `REFUSE, NEVER QUEUE` at the scale of a whole
+  arrangement.
+
+  **What it settles, so nobody re-opens it as diligence:** the stage
+  holds nothing across a restart AND the lookup is live AND members'
+  faces go dark when the owner's box does. Those do not conflict — the
+  third is accepted rather than mitigated.
+
+  **What it obliges:**
+  - **A node unit.** `bash/systemd/` holds only `spirit-relay.service`.
+    The node has no unit, no `Restart=always`, no bound, no host
+    document — so today the foundation of the arrangement depends on
+    somebody remembering to leave a program running. *Absent → the
+    system's own precondition is unenforced.*
+  - **Saying it where the role is taken on.** `bash/RELAY-HOST.md` tells
+    a new owner how to install and nothing about what they are
+    accepting.
+  - **And telling the member.** *Alone* means Alice's face goes dark with
+    the owner's box and she has no recourse. She should be told at grant
+    time — one sentence, and it is the difference between a host and a
+    landlord who does not answer the phone.
+
+  **It also retires a question:** *how stale may a face be* is not a
+  caching decision. Staleness is a symptom of the owner failing this
+  responsibility, not a feature to tune.
+
 ## RECOMMENDED — both agents, not yet ruled
 
 - **A device may hold nothing across a restart.** Ephemeral, in memory,
