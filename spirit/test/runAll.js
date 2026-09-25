@@ -628,14 +628,46 @@ function writeScoreboard(byReq, titles, tally) {
   out.push('');
 
   const text = out.join(NL);
-  const target = path.join(REPO, 'SCOREBOARD-' + box + '.md');
   const CR = String.fromCharCode(13);
   const LF = function (t) { return String(t).split(CR + NL).join(NL); };
-  let before = null;
-  try { before = fs.readFileSync(target, 'utf8'); } catch (e) { before = null; }
-  if (before === null || LF(before) !== text) {
-    try { fs.writeFileSync(target, text); } catch (e) { /* said below */ }
-  }
+
+  // ── ONE STABLE FILENAME FOR HIM, AND IT IS THE LEAD BOX THAT WRITES IT
+  //
+  //   Andy, 2026-09-25: "the score board i read will be on the lead-box."
+  //
+  // If the file he opens were SCOREBOARD-<lead>.md then changing lead
+  // changes the name of the window he keeps open — a second place to
+  // look, arriving by the back door, which is the one thing the
+  // attention principle says never to add. So the lead box also writes
+  // SCOREBOARD.md and that name never moves.
+  //
+  // LEAD IS A FACT A BOX HOLDS, not a thing an agent asserts about
+  // itself: `lead = yes` in `.spiritbox`, which is gitignored and is
+  // already where a box states what only it can know. An agent that
+  // BELIEVED it was lead would overwrite his window; a box that SAYS so
+  // was told to.
+  //
+  // AND IF TWO BOXES SAY IT, THE FAILURE IS LOUD RATHER THAN SILENT: the
+  // header names the box and the run, so SCOREBOARD.md flips visibly
+  // between them instead of quietly holding whichever ran last. That is
+  // the honest handling of a stated fact that cannot be derived — lead
+  // is assigned in conversation and is nowhere in the tree.
+  const targets = [path.join(REPO, 'SCOREBOARD-' + box + '.md')];
+  const saysLead = (function () {
+    try {
+      const said = (require('./tools/box.js').resolve().said) || {};
+      return /^(yes|true|1)$/i.test(String(said.lead || '').trim());
+    } catch (e) { return false; }
+  }());
+  if (saysLead) targets.push(path.join(REPO, 'SCOREBOARD.md'));
+
+  targets.forEach(function (target) {
+    let before = null;
+    try { before = fs.readFileSync(target, 'utf8'); } catch (e) { before = null; }
+    if (before === null || LF(before) !== text) {
+      try { fs.writeFileSync(target, text); } catch (e) { /* said below */ }
+    }
+  });
 
   // THE ROW IS APPENDED WHATEVER HAPPENED, because "nothing moved" is a
   // measurement too and a gap in the log would read as a run that did
@@ -647,7 +679,8 @@ function writeScoreboard(byReq, titles, tally) {
       unhappy: tally.unhappy, ids: nowIds,
     }) + NL);
   } catch (e) { /* a log that cannot be written must not fail a run */ }
-  console.log('--- SCOREBOARD-' + box + '.md rewritten (' + rows.length + ' owed)');
+  console.log('--- SCOREBOARD-' + box + '.md' + (saysLead ? ' and SCOREBOARD.md' : '') +
+    ' rewritten (' + rows.length + ' owed)');
 }
 
 function writeBoard(byReq, titles) {

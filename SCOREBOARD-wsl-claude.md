@@ -7,7 +7,7 @@
 **Green board, 12 owed, and nothing waiting on you.**
 
 ```
-153 suites   3120 green   0 red   0 unhappy   12 owed      run b9419d4
+153 suites   3120 green   0 red   0 unhappy   12 owed      run cc5d4a3
 ```
 
 ---
@@ -20,8 +20,7 @@
 
 ## What moved
 
-- +1 green
-- -1 red
+**Nothing moved.** Same requirements owed, same tally, since the run at `b9419d4`.
 
 ---
 
