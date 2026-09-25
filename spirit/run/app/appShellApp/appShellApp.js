@@ -67,6 +67,14 @@
 // exchange at install time, which is why the installer needs no
 // privilege this file does not give every member.
 
+// THE APP ENVELOPE, WHICH ALREADY EXISTED. A first draft of this file
+// invented a second one — raw `{app, verb, …}` JSON with a hand-rolled
+// `re` for correlating the reply — and `packet.js` had all three: the
+// shape (`:13`), what `app` means (`:146`, "which app ON THE RECIPIENT
+// NODE a packet is for"), and `re` (`:262`). Caught by reading
+// `arrivals.js:384`, which has been encoding packets this way all along.
+const packet = require('../../js/client/packet.js');
+
 const NAME_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
 const DATASET = 'grants.json';
 
@@ -131,19 +139,28 @@ function decide(api, name, asker) {
 
 function mount(api) {
   api.subscribe(function (message) {
-    let ask = null;
-    try { ask = JSON.parse(message && message.text); }
-    catch (e) { return; }
-    if (!ask || ask.app !== APP || ask.verb !== 'grant') return;
+    const ask = packet.decode(message && message.text);
+    if (!ask || ask.app !== APP) return;
+    const body = ask.body;
+    if (!body || body.verb !== 'grant') return;
 
-    const answer = decide(api, ask.name, message.fromKey);
+    // THE APP-OWNER'S GATE (Andy: "app provides 1 function, app-owner
+    // manages permission list"). The node's front door has already said
+    // this peer may reach the node; `allows` says whether they may use
+    // THIS app. Absent list means nobody — nodeApps.js.
+    if (!api.allows(message.fromKey)) {
+      api.log(APP + ': not on the list, so no name was granted: ' + String(message.fromKey).slice(0, 8));
+      return;
+    }
+
+    const answer = decide(api, body.name, message.fromKey);
 
     // `re` carries the asking packet's hash, which is what makes two
     // packets one exchange. Without it a reply is just another arrival
-    // and the asker cannot tell which question it answers.
-    const reply = JSON.stringify(Object.assign({
-      app: APP, verb: 'granted', re: message.hash,
-    }, answer));
+    // and the asker cannot tell which question it answers. Carried by
+    // the envelope rather than by a field of ours — see the header.
+    const made = packet.encode(APP, Object.assign({ verb: 'granted' }, answer), { re: message.hash });
+    const reply = made && made.text;
 
     // A THROW HERE REACHES NOBODY — this runs inside peerPost's arrival
     // fan-out, which swallows it (arrivals.js:200) while the sender is
@@ -153,7 +170,7 @@ function mount(api) {
     try {
       if (api.post) api.post('', message.fromKey, reply, null, null);
     } catch (e) {
-      api.log(APP + ': the grant for "' + ask.name + '" could not be posted: ' + ((e && e.message) || e));
+      api.log(APP + ': the grant for "' + body.name + '" could not be posted: ' + ((e && e.message) || e));
     }
   });
 }

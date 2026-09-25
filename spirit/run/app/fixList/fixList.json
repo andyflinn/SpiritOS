@@ -1,0 +1,9 @@
+{
+  "name": "Fix List",
+  "description": "Takes a fix request off the wire and writes it to the owner's disc. Silent: it never answers, never asks, and has no page.",
+  "icon": "NOTE",
+  "hidden": true,
+  "intrinsic": true,
+  "owner": "system",
+  "boots": true
+}

@@ -61,6 +61,13 @@ spirit/currentIssues.md
 # push, 2026-09-25. The app folder still ships its manifest and its .js.
 spirit/run/app/appShellApp/grants.json
 
+# The fix list an admitted peer writes to. Same class and the same lab
+# hazard: a fixes.md left by one run would be planted into every node
+# home, so a suite asserting "the request landed" would pass on lines it
+# never wrote. It is also Andy's, in the plain sense — notes people sent
+# him about his own node, which belong on his disc and in no clone.
+spirit/run/app/fixList/fixes.md
+
 # Personal media that ended up in a folder named test/pix rather than real
 # test fixtures — unreferenced by any code or test (verified), 20MB.
 spirit/test/pix

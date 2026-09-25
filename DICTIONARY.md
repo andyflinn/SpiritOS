@@ -301,6 +301,51 @@ strings** — and that one is ASSERTABLE rather than merely said: it is the
 generalisation of `appServerBoundary`'s *the refusal names nobody*. The
 visitor-facing surface reveals no owner key, no label, no address.
 
+**AND THE MASTER CHOOSES THE AUDIENCE, BY LIST.** Andy, 2026-09-25:
+*"so an app is a node owned by another node (a puppet), it provides an api
+sepecific to itself, and it's owner can control who it provides that api
+to"* — and *"by setting the puppets contact list it limits who can make
+use of puppet"*.
+
+So a puppet has **contacts of its own**, and they are not its master's
+contacts. Two gates, answering different questions:
+
+| gate | question | where |
+|---|---|---|
+| the node's front door | may this peer reach this node at all | `peerPost` — verdict `known`/`admit`; a held stranger reaches no app (`arrivals.js:405`) |
+| the puppet's contact list | may this admitted peer use **this** puppet | `app/<name>/allow.json`, read per ask by `nodeApps.js` |
+
+**Being on the list IS the permission.** Andy: *"it's implicit permission
+to deposit a request on the owners hard drive."* A puppet asks no second
+question about what a listed contact may do — that is what the list said.
+What stays the puppet's own business is the SHAPE of what it accepts:
+bounded, well-formed, attributed. Being allowed to speak is not being
+allowed to say anything.
+
+**An absent list means NOBODY**, never everybody — G14. A puppet arrives
+with no contacts and does nothing until its master gives it one, which is
+the correct amount of nothing.
+
+*One list mechanism for every puppet, in the seam rather than in each
+one: a puppet that grows its own notion of who may use it is the thing to
+go red on.*
+
+**AND ONLY THE MASTER MAY WRITE IT.** Andy: *"the puppet has it's own
+contact list, BUT, only the puppets owner has write-authority over that
+contact list"* — and, asked whether the puppet holds that authority:
+*"the puppet doesn't"*. The list lives in the puppet's folder because
+that is where a puppet's things live, and the folder is where its scope
+ends — so without this the puppet could write its own guest list and the
+permission would be its own to grant. **A puppet that can choose its
+audience has no master.**
+
+**Face** — a puppet's visible surface, and **it has none by default.**
+Andy: *"the app-puppet has no face by default, that's an add-on-option"*.
+Which way round this sits is the whole of it: a puppet does not *lack* a
+face waiting for somebody to supply one. It has none, and a face is a
+thing its master adds on purpose. The seam gives a puppet a subscription,
+a scoped filesystem and a way to post, and nothing that serves.
+
 **Strings** — the post to the owner and **the answer coming back**.
 Everything the audience does travels them; everything they see came down
 them. A reply carries a body, already unsealed, to the original poster
