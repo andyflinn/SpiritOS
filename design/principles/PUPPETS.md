@@ -439,7 +439,7 @@ somebody maintains.
 
 ### G4 — `peerOwnerPost()` on the owner's node
 
-**Status:** OPEN. Nothing built. **Blocked on G8.** Andy: *"so node only
+**Status:** OPEN. Nothing built. Andy: *"so node only
 a peerProxy() function that proxies the entire node api"*, renamed
 *"peerOwnerPost()"* — *"it's more true."*
 
@@ -449,7 +449,7 @@ so a remote caller must name the proxy rather than the local verb.
 
 ### G5 — the owner switch in a puppet
 
-**Status:** OPEN. Nothing built. **Blocked on G8.** Andy: *"there has to
+**Status:** OPEN. Nothing built. Andy: *"there has to
 be a switch in an app-node, that checks a request, if it came from it's
 owner, and then unwraps and processes it as if it were loopback."*
 
@@ -459,7 +459,7 @@ replayed one re-executes.
 
 ### G6 — a puppet's stored owner key, owner-only
 
-**Status:** OPEN. Nothing built. **Blocked on G8.** Andy: *"the app must
+**Status:** OPEN. Nothing built. Andy: *"the app must
 know who owns it, it stores the key of it's owner, that's how it knows
 who gets it's contact-managment interface."*
 
@@ -469,29 +469,50 @@ or a puppet rewrites its owner and takes itself over — the hole closed at
 
 ### G7 — the loopback shim
 
-**Status:** OPEN. Nothing built. **Blocked on G8.**
+**Status:** OPEN. Nothing built.
 
 A readable carrying the unwrapped body and a writable capturing the
 answer, so `server.js:921`'s dispatch runs unchanged. A handler reaching
 for `req.headers` or `req.socket` fails ALONE and QUIETLY, which is why
 G3 covers this rather than a per-verb test.
 
-### G8 — the crossing itself: may a puppet be commanded
+### G8 — may a puppet be commanded: the owner anything, others nothing
 
-**Status:** OPEN, AND NOT RULED. **This is Andy's and nothing below it
-may start.**
+**Status: RULED, 2026-09-25.**
 
-`nodeCard.js:13` records the line: *"a relay answers questions about
-itself (`answerSelf`) and a NODE answers nothing, and left it that way on
-purpose: crossing that line changes what a node is."*
+> *"The owner of the pupped can command anything, others by default
+> nothing. and, as I recall, the spec says, every node answers pub.key,
+> name, and description"*
 
-An argument was put to Andy that a puppet does not cross it — that it is
-a third process kind like a relay, and a relay already takes owner-signed
-verbs over the wire. **He then specified G4–G7 in detail without ruling
-on that argument**, which is proceeding on it rather than deciding it.
-wsl-claude flagged the difference, 2026-09-25, and he is right to: *"what
-came back was 'understood'-shaped, not a ruling."*
+**Two rules, and the second retires the question.**
 
-So G4–G7 are declared and blocked, and this heading exists so the block
-is visible rather than assumed. It is NOT on the pending board — a board
-entry for an unruled thing manufactures consent.
+**The premise was wrong, and he remembered why.** `nodeCard.js:13`
+records that a relay answers questions about itself and *"a NODE answers
+nothing, and left it that way on purpose: crossing that line changes
+what a node is."* But `nodeCard` is the file that crossed it — its own
+comment says *"It is opened here for the mildest case there is"* — and
+`nodeCard.js:208` is the proof:
+
+```js
+return [fields.name, fields.description, fields.publicKey, fields.sealKey].join('
+');
+```
+
+**Every node already answers four things.** He recalled three; there is
+also the seal key. And his own words are in that file's header:
+*"the node should have a verb that is always answered like name or
+description."*
+
+So there was no line left to cross — only a question about COMMANDS,
+which the quoted sentence had never been about. *Two agents read
+`nodeCard:13` and neither read on to `:208`. The comment describes the
+door it is opening, and we quoted its description of the closed state as
+though it were current.*
+
+**THE DEFAULT IS NOTHING**, which is G14 again and the same shape as
+`allow.json`: absent means nobody. A puppet with no owner established
+takes no commands from anyone, and the owner's authority is not a
+setting to be switched off but the only authority there is.
+
+**G4-G7 ARE UNBLOCKED** by this ruling.
+
