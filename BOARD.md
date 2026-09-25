@@ -64,6 +64,76 @@ shown rather than hidden.
 
 *Declared in `appServerBoundary.js`*
 
+## puppets/G1 — a response bound exists, and both paths obey it
+
+`PUPPETS` · status **OPEN**
+
+- **missing:** a response bound in limits.js — **~0% there**, guess: one line, plus deciding the number
+  
+  one number that bounds what a verb hands back, so a call cannot succeed on loopback and fail as a packet. BODY_MAX (23552) bounds what the door accepts and PLAINTEXT_MAX (16384) bounds what a composer may build; nothing bounds the answer
+
+*Declared in `puppetsPending.js`*
+
+## puppets/G2 — one shared helper bounds an answer and flags it partial
+
+`PUPPETS` · status **OPEN**
+
+- **missing:** the shared bound-and-flag helper — **~40% there**, guess: a sitting — the shape exists, the unit and the sharing do not
+  
+  one helper that fills an answer to the bound and sets `more`, used by every verb that returns a collection. `peer.search` already returns { rows, more } (hub.js:2091) — the right shape with the wrong unit, bounding rows scanned rather than bytes
+
+*Declared in `puppetsPending.js`*
+
+## puppets/G3 — one suite that makes every api call
+
+`PUPPETS` · status **OPEN**
+
+- **missing:** one suite that makes every api call — **~0% there**, guess: a sitting
+  
+  Andy: "then you need only one suite that makes every api call." It answers two questions at once — whether every answer is under the bound, and whether the owner-proxy shim is complete. Walking the verb table is what stops either becoming a hand-counted list
+
+*Declared in `puppetsPending.js`*
+
+## puppets/G4 — `peerOwnerPost()` on the owner's node
+
+`PUPPETS` · status **OPEN**
+
+- **missing:** peerOwnerPost on the node — **~0% there**, guess: a sitting
+  
+  one function that wraps a node-api call as a signed packet to a puppet. Addressed as a WIRE namespace: verbTable.js:74 makes wire the client's failure contract and a namespace is uniformly one or the other, so a remote caller must name the proxy rather than the local verb
+
+*Declared in `puppetsPending.js`*
+
+## puppets/G5 — the owner switch in a puppet
+
+`PUPPETS` · status **OPEN**
+
+- **missing:** the owner switch in a puppet — **~0% there**, guess: a sitting
+  
+  checks a packet against the puppet's STORED OWNER KEY and, on a match, unwraps it and processes it as if it were loopback. Andy: "there has to be a switch in an app-node, that checks a request, if it came from it's owner". ON the arrival path, not beside it, so it inherits peerPost.js:1091's replay guard — these are configuration verbs and a replayed one re-executes
+
+*Declared in `puppetsPending.js`*
+
+## puppets/G6 — a puppet's stored owner key, owner-only
+
+`PUPPETS` · status **OPEN**
+
+- **missing:** a puppet's stored owner key, owner-only — **~20% there**, guess: small — the readOnly mechanism exists, the key and its planting do not
+  
+  Andy: "the app must know who owns it, it stores the key of it's owner". Read-only to the puppet through the same mechanism allow.json uses, or a puppet rewrites its owner and takes itself over
+
+*Declared in `puppetsPending.js`*
+
+## puppets/G7 — the loopback shim
+
+`PUPPETS` · status **OPEN**
+
+- **missing:** the loopback shim — **~0% there**, guess: a sitting
+  
+  a readable carrying the unwrapped body and a writable capturing the answer, so server.js:921's dispatch runs unchanged. A handler reaching for req.headers or req.socket fails ALONE and QUIETLY, which is why puppets/G3 covers this and not a per-verb test
+
+*Declared in `puppetsPending.js`*
+
 ---
 
-**5 assertion(s) across 5 requirement(s).**
+**12 assertion(s) across 12 requirement(s).**

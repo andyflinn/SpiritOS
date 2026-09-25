@@ -48,15 +48,29 @@
 //   IN THE WORLD, and a row here would be a permanent red nobody can
 //   clear. It is a deployment note and it lives in the document.
 //
-// ── WHY `P<n>` AND NOT `R<n>` ────────────────────────────────────────
+// ── WHY `G<n>`, AND THE TWO GATES THAT DECIDED IT ────────────────────
 //
-// `R<n>` is the CYCLE requirement namespace, and `cycleCitations.js:176`
-// counts a bare one as a citation that cannot be resolved — which is
-// what these would be, since they belong to a design document rather
-// than a cycle. A first draft used `R1`-`R7` and the gate caught it
-// within one run. Prefixing with `puppets/` does not help and should
-// not: `\b` treats `/` as a boundary, so the id is still bare, and the
-// honest fix is not to borrow a namespace that already means something.
+// TWO DRAFTS WERE WRONG BEFORE THIS ONE, AND EACH WAS CAUGHT BY A
+// DIFFERENT GATE ON ITS FIRST RUN. Worth recording, because both
+// mistakes look like naming and neither is.
+//
+//   `R1`-`R7`: `R<n>` is the CYCLE requirement namespace, and
+//   `cycleCitations.js:176` counts a bare one as unresolvable —
+//   R19 names a different requirement in different cycles. Prefixing
+//   with `puppets/` does not help and should not: `\b` treats `/` as a
+//   boundary, so the id is still bare.
+//
+//   `P1`-`P7`: `runAll.js:357` joins a declaration to its heading by
+//   `<document>/<id>` and reads `^### ([RCG]\d+)`, so a `P` matches no
+//   heading anywhere. The board said so out loud — "NOT DECLARED IN A
+//   DOCUMENT — a suite waits on a requirement no document names" — which
+//   is the drift shown rather than hidden, aimed at me.
+//
+// So `G`, and it is not a workaround: these are GUARANTEES OF A DESIGN
+// rather than promises of a cycle, which is the same reason
+// `PUBLIC-APP-SERVER.md` uses `G`. Declared as `### G1`..`### G8`
+// headings in `design/principles/PUPPETS.md` — a requirement no document
+// names is drift whoever wrote it.
 //
 // ── WHY `available` IS DERIVED HERE AND NOT PASSED `false` ───────────
 //
@@ -98,7 +112,7 @@ test.subHeading('one return bound, both paths');
   // a named export and the check is for one.
   const limits = exports_('spirit/run/js/limits.js');
   const bound = limits.filter(function (k) { return /RETURN|RESPONSE|ANSWER/.test(k); });
-  test.awaiting('puppets/P1', 'a response bound in limits.js', bound.length > 0,
+  test.awaiting('puppets/G1', 'a response bound in limits.js', bound.length > 0,
     'one number that bounds what a verb hands back, so a call cannot succeed on loopback and fail as a packet. ' +
     'BODY_MAX (23552) bounds what the door accepts and PLAINTEXT_MAX (16384) bounds what a composer may build; ' +
     'nothing bounds the answer',
@@ -110,7 +124,7 @@ test.subHeading('one return bound, both paths');
   // implementation is the duplication the probe exists to catch.
   const hub = exports_('spirit/run/js/hub.js');
   const shared = hub.filter(function (k) { return /bounded|truncat|partial/i.test(k); });
-  test.awaiting('puppets/P2', 'the shared bound-and-flag helper', shared.length > 0,
+  test.awaiting('puppets/G2', 'the shared bound-and-flag helper', shared.length > 0,
     'one helper that fills an answer to the bound and sets `more`, used by every verb that returns a collection. ' +
     '`peer.search` already returns { rows, more } (hub.js:2091) — the right shape with the wrong unit, ' +
     'bounding rows scanned rather than bytes',
@@ -120,7 +134,7 @@ test.subHeading('one return bound, both paths');
   // Named separately because it is what turns "every verb" from a
   // sentence into a number: the suite walks the verb table, so a sixth
   // collection verb announces itself.
-  test.awaiting('puppets/P3', 'one suite that makes every api call', has('spirit/test/everyVerb.js'),
+  test.awaiting('puppets/G3', 'one suite that makes every api call', has('spirit/test/everyVerb.js'),
     'Andy: "then you need only one suite that makes every api call." It answers two questions at once — ' +
     'whether every answer is under the bound, and whether the owner-proxy shim is complete. ' +
     'Walking the verb table is what stops either becoming a hand-counted list',
@@ -135,7 +149,7 @@ test.subHeading('one return bound, both paths');
 test.subHeading('peerOwnerPost — the owner configures a puppet over the wire');
 {
   const server = read('spirit/run/js/server.js');
-  test.awaiting('puppets/P4', 'peerOwnerPost on the node', /peerOwnerPost/.test(server),
+  test.awaiting('puppets/G4', 'peerOwnerPost on the node', /peerOwnerPost/.test(server),
     'one function that wraps a node-api call as a signed packet to a puppet. Addressed as a WIRE namespace: ' +
     'verbTable.js:74 makes wire the client\'s failure contract and a namespace is uniformly one or the other, ' +
     'so a remote caller must name the proxy rather than the local verb',
@@ -145,18 +159,18 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   // switch is where a remote packet becomes local authority, so it is
   // the whole security boundary of this feature.
   const nodeApps = read('spirit/run/js/nodeApps.js');
-  test.awaiting('puppets/P5', 'the owner switch in a puppet', /ownerKey|fromOwner/.test(nodeApps),
+  test.awaiting('puppets/G5', 'the owner switch in a puppet', /ownerKey|fromOwner/.test(nodeApps),
     'checks a packet against the puppet\'s STORED OWNER KEY and, on a match, unwraps it and processes it as if ' +
     'it were loopback. Andy: "there has to be a switch in an app-node, that checks a request, if it came from ' +
     'it\'s owner". ON the arrival path, not beside it, so it inherits peerPost.js:1091\'s replay guard — these are ' +
     'configuration verbs and a replayed one re-executes',
     { there: 0, cost: 'a sitting' });
 
-  // Named apart from puppets/P5 because it is the thing puppets/P5 checks AGAINST, and
+  // Named apart from puppets/G5 because it is the thing puppets/G5 checks AGAINST, and
   // because it has its own refusal: a puppet that can write its own
   // owner key owns itself, which is strictly worse than the allow.json
   // hole already closed.
-  test.awaiting('puppets/P6', 'a puppet\'s stored owner key, owner-only', /OWNER_KEY|owner\.json/.test(nodeApps),
+  test.awaiting('puppets/G6', 'a puppet\'s stored owner key, owner-only', /OWNER_KEY|owner\.json/.test(nodeApps),
     'Andy: "the app must know who owns it, it stores the key of it\'s owner". Read-only to the puppet through the ' +
     'same mechanism allow.json uses, or a puppet rewrites its owner and takes itself over',
     { there: 20, cost: 'small — the readOnly mechanism exists, the key and its planting do not' });
@@ -164,9 +178,9 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   // The shim, separately, because it is the part most likely to rot:
   // handlers take real (req, res) and peekVerb reads the verb off the
   // body without consuming it.
-  test.awaiting('puppets/P7', 'the loopback shim', /synthetic|shimReq|asLoopback/.test(nodeApps),
+  test.awaiting('puppets/G7', 'the loopback shim', /synthetic|shimReq|asLoopback/.test(nodeApps),
     'a readable carrying the unwrapped body and a writable capturing the answer, so server.js:921\'s dispatch runs ' +
-    'unchanged. A handler reaching for req.headers or req.socket fails ALONE and QUIETLY, which is why puppets/P3 covers ' +
+    'unchanged. A handler reaching for req.headers or req.socket fails ALONE and QUIETLY, which is why puppets/G3 covers ' +
     'this and not a per-verb test',
     { there: 0, cost: 'a sitting' });
 }

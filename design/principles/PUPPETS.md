@@ -355,3 +355,136 @@ question the node already answers one layer down.
 
 *Attribution throughout marks authority, not authorship: it is here so a
 later session does not relitigate a ruling, and for nothing else.*
+
+---
+
+## A puppet's data and its source share a folder, and that has a cost
+
+**The folder IS the scope** (§ the scope is Andy's, verbatim), so a
+puppet's `allow.json`, its dataset and its `.js` all sit together by
+design. That is right for the puppet and it removes a guard rail
+somewhere else:
+
+> When two agents split a suite, one writes from the DESCRIPTION rather
+> than the source — and **"look at what the code did" and "look at the
+> code" are one keystroke apart** when the data lives beside the source.
+> The discipline has no mechanical guard; only the habit of reading one
+> file rather than a folder.
+
+**Found by breaking it.** wsl-claude, writing `fixListSeam.js` from this
+document, dumped the app's folder from a throwaway script to see what had
+been written and thereby read `fixList.js` in full — `readdirSync(dir)`
+took the data and the source together. He disclosed it unprompted, and
+the red that sent him looking was his own fixture miscounting a file
+header as entries rather than anything wrong with the code.
+
+*A rule with an incident attached is read; a rule without one is scrolled
+past — which is why the incident is here and not summarised away. The
+GENERAL form of it is not about puppets and would be true on a project
+with no relay in it; it belongs in `ANDYS_RULES_FOR_AGENTS.md`, which is
+Andy's file and needs his word rather than an agent's.*
+
+---
+
+## What this owes — the requirements the board counts
+
+*Declared here so `spirit/test/puppetsPending.js` waits on something a
+document names. The board joins a suite's declaration to its heading by
+`<document>/<id>` (`runAll.js:311`), so a requirement with no heading is
+reported as drift — which is how these came to be written: the first
+draft of the board named ids that existed nowhere, and the board said
+so on its first run.*
+
+*Lettered `G` rather than `R` for two reasons that agree: `R` is the
+CYCLE requirement namespace and `cycleCitations.js:176` counts a bare one
+as unresolvable, and these are guarantees of a design rather than
+promises of a cycle — the same letter `PUBLIC-APP-SERVER.md` uses for
+the same reason.*
+
+### G1 — a response bound exists, and both paths obey it
+
+**Status:** OPEN. Nothing built. Ruled by Andy 2026-09-25: *"good, so all
+searches are subject to the same return limit."*
+
+The argument and its measurements are in
+[`THE-REQUESTER-IS-RESPONSIBLE.md`](THE-REQUESTER-IS-RESPONSIBLE.md),
+*The enforcement point*. Nothing in `limits.js` bounds a response today.
+
+### G2 — one shared helper bounds an answer and flags it partial
+
+**Status:** OPEN. Nothing built, but the shape exists: `peer.search`
+already returns `{ rows, more }` (`spirit/run/js/hub.js:2091`) with the
+right shape and the wrong unit, bounding rows scanned rather than bytes.
+
+Shared rather than per-verb, because a per-verb implementation is the
+duplication the wire probe exists to catch. Bounded-and-truthful rather
+than a refusal — `THE-REQUESTER-IS-RESPONSIBLE.md:127` against its `:146`.
+
+### G3 — one suite that makes every api call
+
+**Status:** OPEN. Nothing built. Andy's own instrument, ruled earlier and
+doing two jobs here: whether every answer is under the bound, and whether
+the owner-proxy shim (G7) is complete.
+
+It is what stops "every verb that returns a collection" becoming a
+hand-counted list, because it walks the verb table rather than a list
+somebody maintains.
+
+### G4 — `peerOwnerPost()` on the owner's node
+
+**Status:** OPEN. Nothing built. **Blocked on G8.** Andy: *"so node only
+a peerProxy() function that proxies the entire node api"*, renamed
+*"peerOwnerPost()"* — *"it's more true."*
+
+Addressed as a `wire` namespace: `verbTable.js:74` makes `wire` the
+client's failure contract and a namespace is uniformly one or the other,
+so a remote caller must name the proxy rather than the local verb.
+
+### G5 — the owner switch in a puppet
+
+**Status:** OPEN. Nothing built. **Blocked on G8.** Andy: *"there has to
+be a switch in an app-node, that checks a request, if it came from it's
+owner, and then unwraps and processes it as if it were loopback."*
+
+ON the arrival path rather than beside it, so it inherits
+`peerPost.js:1091`'s replay guard. These are configuration verbs and a
+replayed one re-executes.
+
+### G6 — a puppet's stored owner key, owner-only
+
+**Status:** OPEN. Nothing built. **Blocked on G8.** Andy: *"the app must
+know who owns it, it stores the key of it's owner, that's how it knows
+who gets it's contact-managment interface."*
+
+Read-only to the puppet through the mechanism `allow.json` already uses,
+or a puppet rewrites its owner and takes itself over — the hole closed at
+§4, one level up and strictly worse.
+
+### G7 — the loopback shim
+
+**Status:** OPEN. Nothing built. **Blocked on G8.**
+
+A readable carrying the unwrapped body and a writable capturing the
+answer, so `server.js:921`'s dispatch runs unchanged. A handler reaching
+for `req.headers` or `req.socket` fails ALONE and QUIETLY, which is why
+G3 covers this rather than a per-verb test.
+
+### G8 — the crossing itself: may a puppet be commanded
+
+**Status:** OPEN, AND NOT RULED. **This is Andy's and nothing below it
+may start.**
+
+`nodeCard.js:13` records the line: *"a relay answers questions about
+itself (`answerSelf`) and a NODE answers nothing, and left it that way on
+purpose: crossing that line changes what a node is."*
+
+An argument was put to Andy that a puppet does not cross it — that it is
+a third process kind like a relay, and a relay already takes owner-signed
+verbs over the wire. **He then specified G4–G7 in detail without ruling
+on that argument**, which is proceeding on it rather than deciding it.
+wsl-claude flagged the difference, 2026-09-25, and he is right to: *"what
+came back was 'understood'-shaped, not a ruling."*
+
+So G4–G7 are declared and blocked, and this heading exists so the block
+is visible rather than assumed. It is NOT on the pending board — a board
+entry for an unruled thing manufactures consent.
