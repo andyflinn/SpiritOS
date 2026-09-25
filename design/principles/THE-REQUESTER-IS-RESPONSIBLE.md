@@ -363,6 +363,14 @@ the example for two more verbs would spread that, and extracting Title
 AND description is what makes ranking possible at all: today there is
 nothing to rank ON.
 
+**AND THAT SHORTFALL IS NOT A BLOCKER.** Andy, 2026-09-25: *"and the
+search-matching can be improved separately."* Which is the reason to do
+the structure FIRST rather than a caveat on it: matching is inline in
+one handler today, so improving it means editing that handler — and,
+once two more verbs had copied it, editing three. **Shared, an
+improvement to matching improves every collection at once**, and lands
+without touching a single scan or extractor.
+
 **What lazy fetching does NOT do, said so nobody expects it:** it does
 not shrink the index. It stops every other caller paying for it — which
 is this document's own argument, since the specific question keeps its
