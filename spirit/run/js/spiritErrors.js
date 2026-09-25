@@ -234,6 +234,24 @@ define('too-big-to-tunnel', {
   status: 413, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['too big to tunnel'], prefixes: ['too big to tunnel'],
 });
+// REFUSED BY THE COMPOSER, BEFORE ANYTHING IS SIGNED OR SENT.
+// `client/packet.js:215` is the only emitter: `encode` bounds what it
+// builds and says so, so a caller learns its packet is too big without a
+// round trip and without a relay counting it against a rate limit.
+//
+// Catalogued although `client/` is outside the suite's scan — an error a
+// node hands back is a node's error wherever the sentence was composed,
+// and `hub.peerOwnerPost` returns this one unchanged rather than wording
+// it again.
+//
+// `fault: 'caller'`, `retry: 'no'`: the same packet will not fit next
+// time. The fix is to send less, or — for an owner command — to accept
+// that this verb's arguments do not fit a packet, which is a fact about
+// the verb.
+define('packet-too-long', {
+  status: 413, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['packet too long'], prefixes: ['packet too long'],
+});
 define('reply-too-big', {
   status: 413, presence: NONE, retry: 'no', fault: 'target',
   texts: ['reply too big to tunnel', 'reply was oversized'],
@@ -538,7 +556,7 @@ define('name-already-granted', {
 
 define('bad-request', {
   status: 400, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['text required', 'to required', 'peer key required', 'bad hints', 'bad label',
+  texts: ['text required', 'to required', 'verb required', 'peer key required', 'bad hints', 'bad label',
     'bad token', 'claim needs publicKey', 'claim needs publicKey and sig',
     'first claim needs publicKey and sig', 'forward needs from, to, text and sig',
     'hash required', 'hash, requester and target required', 'invite label required',

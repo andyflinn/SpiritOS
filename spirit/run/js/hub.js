@@ -85,6 +85,32 @@ const deviceAuth = require('./deviceAuth');
 // answered with, so the screen that edits them and the wire that sends
 // them cannot drift.
 const nodeCard = require('./nodeCard');
+const limits = require('./limits');
+
+// ── packet.js IS BACK, AND THE DELETION IT LOOKS LIKE UNDOING STANDS ──
+//
+// `:862-871` below records that `decorateWithPacket` was deleted as "the
+// last thing in the node that read an app envelope", under Andy's
+// *"nothing in node and relay should know about apps"*, and that it was
+// "the only reason hub.js required packet.js at all". That require is
+// here again, so the sentence that reconciles them belongs at the line
+// rather than in a commit nobody will find:
+//
+//   **THE NODE MAY BUILD A SYSTEM PACKET WITH THE FACTORY.**
+//   **IT MAY NOT DECODE AN APP'S ENVELOPE.**
+//
+// What was removed was the node PARSING an arriving app payload on
+// behalf of the shell — a layer above deciding what its traffic meant.
+// Composing a packet addressed to NO app is the node's own business, and
+// this file already did it by hand (`systemPayload`, used at the relay
+// search and partner-check calls below).
+//
+// So this replaces a second builder with the one factory rather than
+// reopening a closed question. Ruled by Andy, 2026-09-25: *"agreed. go."*
+//
+// The rule is assertable and wsl-claude holds it: `hub.js` may call
+// `packet.encode` and never `packet.decode`.
+const packet = require('./client/packet');
 
 // isLoopbackHost, assertRelayUrl and relayRequest MOVED to
 // js/relayRequest.js on 2026-09-16. They were the node's outbound socket
@@ -2060,6 +2086,107 @@ function createHub(rootDir) {
     return router.post(relayUrl, toKey, text, hints);
   }
 
+  // ── peerOwnerPost — THE OWNER COMMANDS A PUPPET HE OWNS ──────────────
+  //
+  //   Andy, 2026-09-25: "so node only a peerProxy() function that proxies
+  //   the entire node api to manipulate the configuration, contactList
+  //   maybe even relayList for the app" — and, naming it: "the interface
+  //   might better be call peerOwnerPost()", "it's more true."
+  //
+  // NAMED FOR WHAT IT IS, NOT FOR WHAT IT DOES. `proxy` already means one
+  // thing here — the outbound web fetcher, `net.fetch` at
+  // `server.js:1563`, marked `{ wire: true }` with "it reaches the
+  // internet, so being offline fails it", and `relay-state/proxy.json`
+  // for which key may go to which website. That proxy points AT the
+  // internet; this one points at a puppet. `peerOwnerPost` names by
+  // family instead: it is `peerPost`, from the owner.
+  //
+  // ── AND THE COMMAND IS RULED, NOT ASSUMED ────────────────────────────
+  //
+  //   Andy, 2026-09-25: "The owner of the pupped can command anything,
+  //   others by default nothing."
+  //
+  // `design/principles/PUPPETS.md` G8. The line `nodeCard.js:13` records
+  // — a relay answers about itself and a node answers nothing — was
+  // already crossed by `nodeCard` itself, whose `:208` returns name,
+  // description, publicKey and sealKey for every node. So there was no
+  // line left to cross, only the question of commands, which is now
+  // answered.
+  //
+  // ── A SYSTEM PACKET, AND WHAT THAT DOES AND DOES NOT BUY ─────────────
+  //
+  // `packet.js:152-154`: "A system packet is now the one with NO app,
+  // which nothing claiming to be an app can forge."
+  //
+  // THAT IS ABOUT DISPATCH, NOT ABOUT SENDERS, and it must not be quoted
+  // as though it meant only an owner can send one (wsl-claude's
+  // correction, 2026-09-25). A hostile peer composes a no-app packet
+  // perfectly well. What it cannot do is be an app AND a system packet at
+  // once — so NO PUPPET CAN INTERCEPT OWNER TRAFFIC, which is the
+  // property this needs. Every puppet filters on its own name
+  // (`fixList.js:131`, `appShellApp.js:143`) and therefore ignores this
+  // automatically.
+  //
+  // **THE OWNER-KEY COMPARISON AT THE RECEIVER IS THE WHOLE BOUNDARY.**
+  // Nothing here authenticates anybody; `peerPost` signs every post with
+  // this node's identity and the puppet decides whether that key is its
+  // master's.
+  //
+  // ── BUILT WITH `systemPayload`, AND THE REASON IS A DELETION ─────────
+  //
+  // A first draft used `packet.encode('', …)` — the factory — and that
+  // would have re-required `packet.js` here. It was DELIBERATELY REMOVED
+  // from this file: `hub.js:862-871` records that `decorateWithPacket`
+  // was "the last thing in the node that read an app envelope", deleted
+  // under Andy's *"nothing in node and relay should know about apps"*,
+  // and that it "was the only reason hub.js required packet.js at all".
+  //
+  // A SYSTEM PACKET IS NOT AN APP OBJECT — it is the one with no app —
+  // so building one is arguably not what that deletion forbade. But the
+  // require would reappear, and the next reader would see the deletion
+  // undone without the sentence explaining why it was not. So this uses
+  // the builder the file already has.
+  //
+  // THAT LEAVES A REAL QUESTION OPEN AND IT IS NOT MINE: `systemPayload`
+  // is a one-line hand-built `{v, body}` with no `id`, no bound and no
+  // refusal, where `packet.encode` validates and refuses — and Andy
+  // ruled this afternoon that anything posted comes from a factory that
+  // validates and (de)serialises. Either `systemPayload` becomes that
+  // factory for system packets, or system packets come from `packet.js`
+  // and the deletion above gets a second sentence. Both are defensible
+  // and neither is a thing to settle inside this function.
+  //
+  // SENDS ONLY. The stored owner key, the switch and the loopback shim
+  // are three separate requirements and none of them exists yet, so
+  // nothing receives this. That is correct rather than incomplete — a
+  // sender built against a receiver written the same hour is two halves
+  // agreeing with each other instead of with the design.
+  function peerOwnerPost(router, relayUrl, toKey, verb, body) {
+    const named = String(verb || '');
+    if (!named) return Promise.resolve({ ok: false, status: 400, error: 'verb required' });
+    if (!toKey) return Promise.resolve({ ok: false, status: 400, error: 'to required' });
+
+    const made = packet.encode('', Object.assign({ verb: named }, body || {}));
+    // A REFUSAL IS A VALUE, NOT A THROW, and the sentence is the
+    // factory's rather than a second wording of it. THE BOUND IS NOT
+    // CHECKED HERE: `encode` bounds what it builds, which is the whole
+    // reason for using it — an earlier draft carried its own length test
+    // because `systemPayload` bounds nothing, and that was the limit
+    // written down in a second place.
+    // THE FACTORY'S SENTENCE, NOT A SECOND ONE. An earlier draft wrapped
+    // this as "owner command too long: <the factory's words>" and read
+    // "too long: packet too long" — two statements of one refusal, which
+    // is the thing this file spent the day removing elsewhere. The
+    // composer refused; that is the answer.
+    if (!made || !made.ok) {
+      return Promise.resolve({ ok: false, status: 413, error: (made && made.error) || 'packet too long' });
+    }
+    // Through the one door. `serverSurface.js:848`: "peer.post is the only
+    // way onto the wire. A second caller is a second door, whether or not
+    // a route has been wired to it yet."
+    return sendPacket(router, relayUrl, toKey, made.text);
+  }
+
   // ── MEMORY IS ONE MORE SOURCE IN THE FAN-OUT (R39, 0021) ─────────────
   //
   //   Andy: "in fact if search fans out to all bound relays first, why not
@@ -2618,6 +2745,9 @@ function createHub(rootDir) {
   }
 
   return {
+    // THE OWNER'S COMMAND PATH. Sends only; nothing receives it until the
+    // stored owner key, the switch and the shim exist. PUPPETS.md G4.
+    peerOwnerPost: peerOwnerPost,
     handleClaim: handleClaim,
     // The transport. handleSend and handleInbox stood beside it while
     // there were two, listed together so that was visible; R8 deleted the
