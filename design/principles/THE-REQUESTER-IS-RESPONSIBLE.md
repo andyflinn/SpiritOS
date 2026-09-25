@@ -260,6 +260,30 @@ were measured:
   never otherwise, so the list grows monotonically in RAM and on the
   wire.
 
+**AND THE LIST IS A SEARCH, ruled minutes later:**
+
+> *"processes come with a length description, they should be filtered
+> via a seach function."* — *"same for jobs actually."*
+
+Which makes this document's own prediction come true late. The section
+*Anything with no argument to it* records that **five argumentless
+callers were removed between 2026-09-17 and 2026-09-18** —
+`peer.candidates`, `peer.find`, `relay.roster`, the device page's label,
+`peer.list`'s sweep — and *"not one needed a replacement."*
+
+**`jobs.list` is the same shape and survived that purge.** It takes no
+argument, so it cannot be asked a specific question, so it answers the
+general one — which is why it hands back 207KB. The rule was already
+written; one verb was never held to it.
+
+The replacement needs nothing invented, and this document already names
+it: *"Search. Already built this way, which is why it is the replacement
+everything else collapses into."* `peer.search` returns
+`{ rows, more }` (`spirit/run/js/hub.js:2091`) — bounded, ranked,
+truthful about being partial. `jobs` and `processes` take the same
+shape, and a long description becomes a thing you search rather than a
+thing you are handed.
+
 **What lazy fetching does NOT do, said so nobody expects it:** it does
 not shrink the index. It stops every other caller paying for it — which
 is this document's own argument, since the specific question keeps its
