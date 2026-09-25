@@ -59,6 +59,107 @@ const path = require('path');
 const REPO = path.resolve(__dirname, '..', '..', '..');
 const SELF = path.resolve(__filename);
 
+// ── THE BOTTOMS AN INTERFACE MAY FUNNEL INTO ────────────────────────
+//
+// DATA, NOT CODE. One probe, many interfaces — because the SOP that
+// makes this tool standing practice would be defeated by a second copy
+// of the tool.
+//
+// `wire` is the one this was built for and stays the default. The rest
+// are the catch-up Andy named — *"this implies that there is some
+// catchup-work to be done"* — and each is here because an interface
+// exists that everything is supposed to go through:
+//
+//   fs-write   the filesystem, whose jail is per-tree rather than
+//              per-app and whose scoped handle says in its own comment
+//              that it is "not a security boundary"
+//   seal       one sealer, or a cipher-key rotation goes half-applied
+//   sign       one signer, over bytes assembled one way
+//
+// A BOTTOM THAT IS NOT LISTED IS NOT WATCHED, and that is the honest
+// state rather than a gap: listing one is a line, and nobody should
+// believe a probe covers what it was never pointed at.
+// ── AND EACH BOTTOM CARRIES ITS OWN DEFAULT SUITES ──────────────────
+//
+// MEASURED, not assumed. The wire's three — Andy's *"then you need only
+// one suite that makes every api call"* — are right for the wire and
+// WRONG FOR THE FILESYSTEM: run against them, `fs-write` reported 384
+// calls and NOT ONE production frame, because those suites write their
+// own fixtures and never drive the node's file verbs.
+//
+// A probe pointed at the wrong suites does not fail. It reports
+// honestly about a run that exercised nothing, and the output looks
+// exactly like an interface with no duplicates in it.
+const BOTTOMS = {
+  wire: {
+    watch: [
+      { mod: 'http', fn: 'request' },
+      { mod: 'https', fn: 'request' },
+    ],
+    suites: ['serverSurface.js', 'verbTable.js', 'protocolSurface.js'],
+  },
+  'fs-write': {
+    watch: [
+      { mod: 'fs', fn: 'writeFileSync' },
+      { mod: 'fs', fn: 'appendFileSync' },
+      { mod: 'fs', fn: 'rmSync' },
+      { mod: 'fs', fn: 'unlinkSync' },
+      { mod: 'fs', fn: 'mkdirSync' },
+    ],
+    // DELIBERATELY EMPTY, WHICH FORCES `--all` OR NAMED SUITES. Nobody
+    // has yet said which suites drive the node's file verbs, and
+    // guessing a set here would produce a quiet, plausible, empty
+    // report. An empty default refuses; a wrong default reassures.
+    suites: [],
+  },
+  // ── CRYPTO AND child_process ARE BOTTOMS. seal AND sign ARE NOT ─────
+  //
+  // The first version of this list had `seal` and `sign` as bottoms, and
+  // wsl-claude's framing shows why that was wrong: THEY ARE THE
+  // CHOKEPOINTS, not the floor. The assertion worth making is not "which
+  // routes reach seal" — it is *every stack that reaches the PRIMITIVE
+  // passes through a named SpiritOS chokepoint*, which asserts that the
+  // funnel EXISTS rather than describing the contents of a list.
+  //
+  // The wire got that property free from Node, because `relayRequest` is
+  // the only place a socket is opened. The filesystem never had it.
+  //
+  // THE COMPLETION CRITERION IS HIS AND IT IS DERIVABLE FROM THE TREE:
+  // an interface is probeable when it has a PLATFORM-IMPOSED BOTTOM that
+  // every use must pass through AND every passage means the same thing.
+  // Counted by require sites in `spirit/run` today: path 34, fs 29,
+  // http 11, child_process 9, crypto 8, os 4, https 2, url 1,
+  // perf_hooks 1, events 1.
+  //
+  // path, os, url, events and perf_hooks are pure or trivial — a passage
+  // through them means nothing in particular, which IS the test. Four
+  // carry a single meaning: http/https (done), fs, crypto, and
+  // child_process, which spawns processes and which neither agent had
+  // mentioned once.
+  //
+  // So the denominator is four, and it regenerates from the tree rather
+  // than being a list somebody maintains.
+  crypto: {
+    watch: [
+      { mod: 'crypto', fn: 'sign' },
+      { mod: 'crypto', fn: 'verify' },
+      { mod: 'crypto', fn: 'generateKeyPairSync' },
+      { mod: 'crypto', fn: 'createCipheriv' },
+      { mod: 'crypto', fn: 'createDecipheriv' },
+    ],
+    suites: [],
+  },
+  'child-process': {
+    watch: [
+      { mod: 'child_process', fn: 'spawn' },
+      { mod: 'child_process', fn: 'spawnSync' },
+      { mod: 'child_process', fn: 'exec' },
+      { mod: 'child_process', fn: 'execFileSync' },
+    ],
+    suites: [],
+  },
+};
+
 // ── OUR OWN CODE, AND NOTHING ELSE ──────────────────────────────────
 //
 // Andy: "it's only the call points in our own code, you have to show."
@@ -150,10 +251,10 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
     return String(method).toUpperCase() + ' ' + String(target).split('?')[0];
   };
 
-  const patch = function (mod) {
-    const original = mod.request;
+  const patch = function (mod, method) {
+    const original = mod[method];
     if (typeof original !== 'function') return;
-    mod.request = function () {
+    mod[method] = function () {
       const stack = callStack();
       // A call with no frame of ours is node talking to itself, and there
       // is no call point in our code to show.
@@ -167,8 +268,26 @@ if (process.env.SPIRIT_WIRE_LOG && require.main !== module) {
     };
   };
 
-  patch(require('http'));
-  patch(require('https'));
+  // ── THE BOTTOM IS AN ARGUMENT, WHICH IS THE RULE APPLIED TO ITSELF ──
+  //
+  //   Andy, 2026-09-25, making this standing practice: "when an interface
+  //   is designed/implemented, it would be SOP to protect those
+  //   interfaces from duplication using that technique."
+  //
+  // A technique copied once per interface is exactly the thing the rule
+  // exists to prevent. So the bottoms are DECLARED DATA in one place and
+  // the mechanism is inherited — the plugin pattern, for the third time
+  // this week.
+  //
+  // Each entry names the module and the function an interface funnels
+  // into. Adding one is a line; writing a second probe would be a fork.
+  // THE PAIR, NOT A FUNCTION — wsl-claude's correction to the shape, and
+  // it is a fact about how the patch works rather than a preference: it
+  // replaces a PROPERTY on a required module (`mod[method] = ...`), so
+  // `probe(require('fs'), 'writeFileSync')` works identically and
+  // `probe(seal.seal)` does not exist as a shape at all.
+  ((BOTTOMS[process.env.SPIRIT_WIRE_BOTTOM] || BOTTOMS.wire).watch || [])
+    .forEach(function (b) { patch(require(b.mod), b.fn); });
 
   // WRITTEN AT EXIT, NOT PER CALL. Appending on every request would make
   // the instrument a participant in what it measures, and this harness
@@ -213,13 +332,40 @@ if (require.main === module) {
   //
   // So the default is the named suites, and the whole harness is an
   // explicit `--all` that says what it is paying for.
-  const SURFACE = ['serverSurface.js', 'verbTable.js', 'protocolSurface.js'];
+  // `--bottom <name>`, defaulting to the wire. REFUSED rather than
+  // defaulted when unknown: a probe that watched something other than
+  // what was asked for would report honestly about the wrong thing.
+  const bottomAt = process.argv.indexOf('--bottom');
+  const bottom = bottomAt === -1 ? 'wire' : String(process.argv[bottomAt + 1] || '');
+  if (!BOTTOMS[bottom]) {
+    console.error('Unknown bottom ' + JSON.stringify(bottom) + '. Declared: ' +
+      Object.keys(BOTTOMS).join(', ') + '.');
+    console.error('A bottom that is not listed is not watched — add it to BOTTOMS, one line.');
+    process.exit(1);
+  }
+
+  // Each bottom carries its own default suites. An empty list means the
+  // bottom has none yet and REFUSES rather than running against a set
+  // that would report a quiet, plausible, empty result.
+  const SURFACE = BOTTOMS[bottom].suites || [];
   const argv = process.argv.slice(2);
   const all = argv.indexOf('--all') !== -1;
-  const named = argv.filter(function (a) { return a.indexOf('--') !== 0; });
+  // The value after `--bottom` is not a suite name. Without this it was
+  // taken as one, the runner looked for `spirit/test/fs-write`, found
+  // nothing, and reported "(no verdict)" with zero calls — a run that
+  // measured nothing and said so quietly.
+  const named = argv.filter(function (a, i) {
+    return a.indexOf('--') !== 0 && argv[i - 1] !== '--bottom';
+  });
   const runner = path.join(REPO, 'spirit', 'test', 'runAll.js');
   const env = Object.assign({}, process.env, {
     SPIRIT_WIRE_LOG: log,
+    // WHICH BOTTOM, PASSED DOWN. `--bottom fs-write` and the probe in
+    // every child instruments the filesystem instead of the wire. An
+    // unknown name is refused above rather than silently falling back to
+    // the wire, because a probe that watched something other than what
+    // was asked for is worse than one that refused.
+    SPIRIT_WIRE_BOTTOM: bottom,
     // EVERY SUITE PROCESS IS INSTRUMENTED AND NO SUITE KNOWS. runAll is
     // not touched, and a suite that had to opt in is a suite that can
     // forget to — which would make the quiet paths the unwatched ones.
@@ -231,6 +377,11 @@ if (require.main === module) {
   // the named files is instrumented. `--all` is the opt-in that pays for
   // coverage with the perturbation risk, and says so out loud.
   const targets = named.length ? named : SURFACE;
+  if (!all && !targets.length) {
+    console.error('The bottom ' + JSON.stringify(bottom) + ' has no default suites yet.');
+    console.error('Name them, or pass --all. An empty default refuses; a wrong default reassures.');
+    process.exit(1);
+  }
   let r;
   if (all) {
     process.stdout.write('Instrumenting the WHOLE HARNESS. This inherits into every\n' +
@@ -288,7 +439,7 @@ if (require.main === module) {
   }
 
   console.log('');
-  console.log('== EVERY CALL STACK IN OUR CODE THAT REACHED http.request ==');
+  console.log('== EVERY CALL STACK IN OUR CODE THAT REACHED THE ' + bottom + ' BOTTOM ==');
   console.log('');
   console.log('  harness: ' + verdict);
   console.log('  ' + ranked.length + ' distinct stacks, ' + calls + ' calls');
