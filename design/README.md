@@ -22,6 +22,13 @@ This directory contains the vision, principles, and architecture decisions for *
   the relay IS the implementation.** Vocabulary in `DICTIONARY.md` under
   *The show*; open questions and the security conditions are in the
   document.
+- [Puppets — what an app is, who may use it, and who may change that](principles/PUPPETS.md)
+  — **the rules**, 2026-09-25, from the sitting that built the first two:
+  a puppet is a node owned by another node, with contacts of its own that
+  only its master may write. Two gates, not one; no face by default;
+  absent means nobody; membership is the channel and the grant is the
+  face. Fourteen decided, two recommended, six open — kept apart so a
+  recommendation is not cited as a ruling.
 - [The layers — a node, its one app, and what it declares](principles/PUBLIC-APP-LAYERS.md)
   — **the picture**, drawn 2026-09-24: a node serves exactly ONE intrinsic
   app, and the shell is an instance of that rather than an exception.
