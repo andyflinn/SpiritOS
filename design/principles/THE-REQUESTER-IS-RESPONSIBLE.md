@@ -348,20 +348,39 @@ one run of code with no seam between them. **Creating the two hooks is
 the work**, and after it `jobs` and `processes` supply a scan and an
 extractor rather than a search.
 
-**And the drift is already inside the single example.** `hub.js:2091`
-returns `{ rows, more }` internally while `:2390` emits
-`{ q, matches, more }` on the wire — the same thing under two names,
-before a second search exists to disagree with it.
+**And one inconsistency is already inside the single example.**
+`hub.js:2091` returns `{ rows, more }` internally while `:2390` emits
+`{ q, matches, more }` on the wire — the same thing under two names.
+*Worth removing when G2 lands, and NOT the 1024-versus-16384 class: that
+scar was two independent measurements of one string disagreeing, with
+nothing to catch them. This is one value passed up a layer under a
+different name, and nothing can disagree with it. It will cost something
+the day a second search copies one of the two names.* (wsl-claude's
+correction of an earlier draft that called it drift.)
 
 **One thing to know before this document's own wording is taken as
 describing the code.** A good answer is called *"bounded, ranked and
 truthful about being partial"* (`:127`). Measured, `peer.search` sorts
-by `publicLabel` — **alphabetically, not by match** — and truncates by
-ROWS SCANNED rather than bytes. So "bounded" is in the wrong unit,
-"ranked" is aspirational, and only the partial flag is real. Adopting
+by `publicLabel` — **alphabetically, not by match** (`hub.js:2385`) —
+and truncates by ROWS SCANNED rather than bytes.
+
+**And the rank is not missing, it is DISCARDED**, which is the fairer
+statement and the sharper one: twelve lines above that sort,
+`hub.js:2378` computes a rank per row — `HEARSAY` for a row a partner
+carried, `HOST` for a relay speaking about its own member — and notes it
+into the node's memory. The answer then orders by label and the caller
+never sees it. So "bounded" is in the wrong unit, **the ranking exists
+and does not reach the asker**, and only the partial flag is whole. Adopting
 the example for two more verbs would spread that, and extracting Title
 AND description is what makes ranking possible at all: today there is
 nothing to rank ON.
+
+**The two findings are one gap with two symptoms** (wsl-claude's
+sentence, and the cleanest in any of this): **the one verb that bounds
+anything bounds the wrong quantity, and the verb that bounds nothing
+returns 207KB.** `more` is set from the memory branch's own row cap, so
+nothing anywhere counts bytes — and `jobs.list` at 207KB is what happens
+when the unit is rows and the rows are large.
 
 **AND THAT SHORTFALL IS NOT A BLOCKER.** Andy, 2026-09-25: *"and the
 search-matching can be improved separately."* Which is the reason to do
