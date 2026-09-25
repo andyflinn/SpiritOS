@@ -119,7 +119,27 @@ const TALLY = {
   // TWO, AND THE NUMBER MAY ONLY FALL. It runs only when invoked
   // (`node spirit/test/tools/wirePaths.js`) and instruments nothing
   // during an ordinary harness run.
-  'test/tools/wirePaths.js': 2,
+  //
+  // ── 2 -> 0 ON 2026-09-25, AND THE REASON IS A BLIND SPOT IN THIS FILE
+  //
+  // The probe was generalised so its bottom is DATA — `{ mod: 'http', fn:
+  // 'request' }` — and patched with `require(b.mod)`. It reaches exactly
+  // as far as it did yesterday. THE LITERAL `require('http')` IS GONE, SO
+  // THIS SUITE CAN NO LONGER SEE IT.
+  //
+  // Lowering is ordinary and needs no ceremony, so the number falls. But
+  // the number is now WRONG IN THE HONEST DIRECTION, and the finding
+  // matters more than the entry: **`require(<variable>)` is invisible to
+  // every pattern in REACHES.** Anything wanting to bypass this gate can
+  // do it by not writing the module's name, and it would show as a file
+  // with a clean zero.
+  //
+  // FOUND BY ACCIDENT, by the tool built to find forks, while being made
+  // reusable. It is not fixed here: a regex cannot follow a variable, and
+  // what would close it is the probe itself — arrival rather than
+  // resemblance, which is the argument for the SOP that produced this
+  // change. Recorded so the zero is not read as "this file is clean".
+  'test/tools/wirePaths.js': 0,
 
   // THE SERVER ITSELF: http.createServer, and fetchExternal, the gated
   // door apps ask for by verb rather than by URL.
