@@ -170,19 +170,19 @@ other reviewing it, while the tree has run it for cycles.
   faces go dark when the owner's box does. Those do not conflict — the
   third is accepted rather than mitigated.
 
-  **What it obliges:**
-  - **A node unit.** `bash/systemd/` holds only `spirit-relay.service`.
-    The node has no unit, no `Restart=always`, no bound, no host
-    document — so today the foundation of the arrangement depends on
-    somebody remembering to leave a program running. *Absent → the
-    system's own precondition is unenforced.*
-  - **Saying it where the role is taken on.** `bash/RELAY-HOST.md` tells
-    a new owner how to install and nothing about what they are
-    accepting.
-  - **And telling the member.** *Alone* means Alice's face goes dark with
-    the owner's box and she has no recourse. She should be told at grant
-    time — one sentence, and it is the difference between a host and a
-    landlord who does not answer the phone.
+  **AND UPTIME IS OUT OF SCOPE** — Andy, the same sitting, correcting
+  this entry: *"Uptime issues are out of scope."*
+
+  This paragraph first listed what the ruling "obliges" — a node
+  service unit, a line in the host document, a sentence told to members
+  — **and that was the ruling turned back into system work, which is
+  exactly what "mine alone" refuses.** An operator's responsibility
+  written as a backlog is a responsibility the system has quietly taken
+  back.
+
+  So: no node unit is a requirement here, no uptime engineering, no
+  resilience item. How an owner keeps his box up is his, by whatever
+  means he chooses, and the system neither helps nor checks.
 
   **It also retires a question:** *how stale may a face be* is not a
   caching decision. Staleness is a symptom of the owner failing this
