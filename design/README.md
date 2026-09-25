@@ -29,6 +29,15 @@ This directory contains the vision, principles, and architecture decisions for *
   absent means nobody; membership is the channel and the grant is the
   face. Fourteen decided, two recommended, six open — kept apart so a
   recommendation is not cited as a ruling.
+- [A shape that crosses is made by a factory](principles/A-SHAPE-THAT-CROSSES.md)
+  — **the rule**, 2026-09-25: any object passed around, posted or
+  received comes from a factory that validates in itself, carries
+  serialize/deserialize, and where **neither succeeds on invalid data**.
+  A refusal is a VALUE, not a throw. Not the deleted type system — that
+  was schema as data; this is one artifact where construction IS the
+  validation. The factory owns the shape; the verb owns the content.
+  Governs objects that never cross a door at all, which is why it is a
+  principle and `THE-DOOR.md` is its consumer.
 - [The layers — a node, its one app, and what it declares](principles/PUBLIC-APP-LAYERS.md)
   — **the picture**, drawn 2026-09-24: a node serves exactly ONE intrinsic
   app, and the shell is an instance of that rather than an exception.
