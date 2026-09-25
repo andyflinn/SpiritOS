@@ -442,3 +442,52 @@ Changing what the node answers changes what they get, so what REPLACES
 it is a product decision rather than a smaller version of the same
 answer.
 
+---
+
+## What this owes
+
+### G1 — certain limits derive from the constant, rather than being written down
+
+**Status:** OPEN. Nothing built. Andy, 2026-09-25: *"sounds like certain
+limits need derivation from the constant"* — *"gets on the to-do list
+now."*
+
+`limits.js` holds four literals and two derivations today:
+
+```
+literal:  PLAINTEXT_MAX 16384   PAYLOAD_MAX 22528   WIRE_HEADROOM 512   HINTS_MAX 512
+derived:  BODY_MAX = PAYLOAD_MAX + WIRE_HEADROOM + HINTS_MAX
+          STREAM_EVENT_MAX = 6 × PAYLOAD_MAX + WIRE_HEADROOM
+```
+
+**`PAYLOAD_MAX` is the break in the chain.** `limits.js:101` records
+where it came from — *"16,384 bytes of packet → 22,049 bytes on the wire
+(×1.3458)"* — so the derivation was performed once, by hand, and the
+ANSWER written down as a literal. **The relationship lives in a comment
+and the value does not follow it.**
+
+That is the remembered fact, in the file that exists to prevent it. Move
+`PLAINTEXT_MAX` today and `PAYLOAD_MAX` stays put, nothing goes red, and
+Andy's own verification — *"adjusting the limit, see if anything breaks,
+and then resetting it"* — would report success over an inconsistent
+pipeline.
+
+**Three facts are collapsed into one number**, and each should be
+separately movable:
+
+| | |
+|---|---|
+| the constant | `PLAINTEXT_MAX` — what a composer may build |
+| a deterministic function | sealing, *"DETERMINISTIC in the plaintext's length: the same 16,384 bytes of any content seal to the same 22,049"* (`limits.js:105-106`) |
+| a deliberate margin | 479 bytes — *"for the envelope growing a field, not for the arithmetic being uncertain"* (`limits.js:108-109`) |
+
+Derived, the margin also becomes arguable: today *"the envelope may grow
+a field"* is a sentence in a comment and 479 inside a literal, and
+nobody can tell whether a new field has eaten it.
+
+**NOT part of this**, and named so it is not swept in: `limits.js:112-119`
+records that raising the ceiling is a FLAG DAY — an un-updated relay
+still refuses at 16,384, and the symptom is *"large messages fail to
+send to some peers and not others, with no pattern a user could
+describe."* Deriving the figures changes none of that. It is a separate
+decision and Andy's.
