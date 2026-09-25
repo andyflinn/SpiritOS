@@ -284,6 +284,48 @@ truthful about being partial. `jobs` and `processes` take the same
 shape, and a long description becomes a thing you search rather than a
 thing you are handed.
 
+**AND THE FILTERS ARE THE FIELDS, ruled minutes later again:**
+
+> *"and a search approach with filters like sysjob / permanent / should
+> filter the search be groups."*
+
+Nothing to invent: a job row already carries `id`, `kind`, `type` and
+`status` (`spirit/run/js/jobs.js:45-48`), and there are exactly two
+kinds — `permanent` (`:141`, `:243`) and `process` (`:197`). Those ARE
+the groups.
+
+Which collapses the whole finding into one verb:
+
+| the complaint | what the search answers |
+|---|---|
+| no way to ask for one | `jobs.get(id)` — the function exists and is exported (`:317`), unrouted |
+| the same rows every time | they are `kind: permanent` — **a group you exclude by asking**, rather than a special case |
+| nothing cleans up | filter by terminal status and the sweepable set IS the answer |
+| long descriptions | the search term, over them |
+
+**The second row is the one worth keeping.** "Do not re-ship the
+constants" would have been a special case in a list verb. A filter makes
+it a QUESTION instead — which is the no-special-case rule arriving from
+the other side, and it needs no code to know which rows are boring.
+
+**And the shape already answers a vague question correctly today.**
+`peer.search` called with no argument at all, measured on a booted node:
+
+```
+{"q":"","matches":[...],"more":false,"asked":1,"remembered":0,
+ "silent":["https://127.0.0.1:1"]}
+```
+
+Bounded, flagged partial, and truthful about who did not reply. Not a
+refusal and not everything — `:127` working, with a receipt rather than
+a principle.
+
+**IT IS NOT ONE VERB, IT IS THREE.** wsl-claude measured the door: the
+purge removed CALLERS and the door still offers three argumentless
+collection verbs. Confirmed here on a booted node — `peer.list` 3,582
+bytes, `proxy.list` 217, `jobs.list` 207,205. `jobs.list` is only the
+biggest.
+
 **What lazy fetching does NOT do, said so nobody expects it:** it does
 not shrink the index. It stops every other caller paying for it — which
 is this document's own argument, since the specific question keeps its
