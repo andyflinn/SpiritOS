@@ -1083,3 +1083,61 @@ ignored, and being ignored teaches the habit of scrolling past.
     it. If the work would obviously continue, that is a recommendation in
     the report, not a licence — because the value of the stop is that it
     is the one place the direction can change cheaply.
+
+## An interface is not finished until duplication of it is DETECTABLE — 2026-09-25
+
+**Andy, ruling it as standing practice:**
+
+> *"when an interface is designed/implemented, it would be SOP to protect
+> those interfaces from duplication using that technique."*
+
+The technique is the **stack-frame probe**: instrument the bottom
+function an interface funnels into, capture the call stack at every
+arrival, keep only the frames in our own code, and report the distinct
+routes. `spirit/test/tools/wirePaths.js` is the first one, built to his
+specification — *"a ranked summary of all call paths to that bottom. you
+two will spot a culprit in a jiffie"*, *"only the call points in our own
+code"*, and the two-scope filter that made the finding legible: **the
+tested code's frames and the testing code's frames separated**, because
+grouping whole stacks ranks suites while claiming to rank code.
+
+### Why an interface needs it, when it already has a gate
+
+**A permission list and an arrival record answer different questions, and
+a fork hides in the gap.**
+
+- `oneDoor.js` gates **which files may** reach the wire. It fails on
+  growth and it is the right instrument for that.
+- The probe reveals **which routes do**. It sees arrival rather than
+  resemblance.
+
+**Neither alone catches a duplicate inside an already-permitted file** —
+and that is not hypothetical. `hub.sealedClaim` and `appServer.askRelay`
+both composed `GET /api/relay/key`; both files were legitimately in the
+tally; `oneDoor` was green throughout. The probe found it on its first
+real run, and the duplicate was **a security defect**: the app server
+pinned the relay's identity and then the second fetch sealed an invite to
+whatever answered.
+
+**A FORK HAS NO REFERENCES TO FIND.** It calls nothing, so nothing that
+looks for relationships can see it — and a semantic fork shares no token
+with what it duplicates, so no search can either. Arrival is the only
+place two strangers doing one job become visible as siblings.
+
+### What the rule obliges, concretely
+
+- **A new interface gets its probe when it is built**, not after somebody
+  duplicates it. The moment an interface exists, the reason to reach past
+  it exists too.
+- **The probe takes its bottom as an argument.** A technique copied once
+  per interface is the thing this rule exists to prevent — the rule
+  applied to itself.
+- **It is a METER, never a gate.** It fails nothing and declares nothing;
+  a reader judges. `oneDoor` is the gate, and a second gate on the same
+  fact would be a fork of a gate.
+- **And it says what it cannot see.** The probe finds forks that
+  CONVERGE. One that bypasses the bottom is invisible to it — the raw
+  `fetch` in `app/starter` ran in a browser and was found by reading the
+  file. A report that does not say so reads as *these are all the ways
+  this tree reaches the wire*, which is false and would retire the static
+  check that caught the worst instance.
