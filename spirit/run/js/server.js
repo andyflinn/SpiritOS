@@ -1319,6 +1319,25 @@ contactBook.syncMarks(ROOT_DIR);
     stats: require('./peerStats'),
   });
 
+  // ── APPS THAT RUN HERE, NOT IN A BROWSER ─────────────────────────
+  //
+  // Mounted once the router exists, because a booted app's only way to
+  // speak is to post. The node hands each one a subscription and a
+  // scoped filesystem and looks inside nothing — see nodeApps.js for why
+  // loading an app is not the same as knowing about one, and for the
+  // boundary on what a booted app may do inside the receipt.
+  //
+  // A page app is untouched: `boots` is opt-in and absent on every
+  // manifest that exists today.
+  require('./nodeApps').mountAll({
+    rootDir: ROOT_DIR,
+    arrivals: arrivals,
+    post: function (relayUrl, toKey, text, hints, how) {
+      return peerRouter.post(relayUrl, toKey, text, hints, how);
+    },
+    log: function (line) { console.log(line); },
+  });
+
   presence = require('./presenceNode').createPresence({
     // The node filters what the relay broadcasts (cycle 3): only its own
     // contacts are kept on its presence picture.

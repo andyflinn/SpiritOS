@@ -1,0 +1,9 @@
+{
+  "name": "App Shell",
+  "description": "Grants subdomain names to members of this node's relay. Faceless: the exchange is the only door, there is no page and no control panel.",
+  "icon": "GLOBE",
+  "hidden": true,
+  "intrinsic": true,
+  "owner": "system",
+  "boots": true
+}

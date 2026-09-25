@@ -49,6 +49,18 @@ spirit/run/app/shared/aiStatus.json
 spirit/run/process/js/lmStudioVisionProbe/results.json
 spirit/currentIssues.md
 
+# The appShellApp's granted subdomain names — a dataset a running app
+# writes, inside a folder that ships. Andy: "A name grant persists. true.
+# but only on the owners node." Committing one would put a node's grants
+# in every clone, and worse in the lab: plantRun.js:56 builds each node
+# home from `git ls-files --cached --others`, so a grants.json left by a
+# test run would be PLANTED INTO EVERY NODE HOME. The durability
+# assertion would then pass on a file the test never wrote, and "a second
+# ask for the same name is refused" would go green or red depending on
+# what the previous run granted. Caught by wsl-claude before the first
+# push, 2026-09-25. The app folder still ships its manifest and its .js.
+spirit/run/app/appShellApp/grants.json
+
 # Personal media that ended up in a folder named test/pix rather than real
 # test fixtures — unreferenced by any code or test (verified), 20MB.
 spirit/test/pix
