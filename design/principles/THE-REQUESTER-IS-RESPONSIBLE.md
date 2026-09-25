@@ -148,3 +148,80 @@ question, the first move is to find the specific question it actually had
 ([0010](../decisions/0010-fix-the-protocol-or-name-the-cheat.md)'s
 identify / plan / eradicate), not to bound the vague one — **a narrower
 cheat is a defended one.**
+
+## The enforcement point — one return bound, both paths (2026-09-25)
+
+Until now this was a principle the code could decline to follow, and
+the verbs that return collections declined. It gets a mechanism here.
+
+> **Andy, 2026-09-25**, on capping every return to one size whether it
+> travels by `peerOwnerPost()` or over loopback: *"good, so all searches
+> are subject to the same return limit."*
+
+**Where it came from.** Designing the owner's proxy path to a puppet
+(`PUPPETS.md`) turned up an asymmetry nobody had looked at: **every
+bound in this system is on a request or a packet, and nothing anywhere
+bounds a response.** `spirit/run/js/limits.js` has no response cap. So:
+
+- `BODY_MAX` (23552) bounds what the local door ACCEPTS.
+- `PLAINTEXT_MAX` (16384) bounds what a composer may BUILD, which is
+  what a reply-as-packet can carry.
+- A contact row of the shape `contacts.js:338` writes — key, two labels,
+  `acquiredVia`, `blocked`, one relay id — serialises at **259 bytes**,
+  so `peer.list` stops fitting a packet at roughly **63 contacts**, while
+  on loopback it has no bound at all. *(A constructed representative row,
+  not a survey of real ones; the order of magnitude is the point, and
+  the arithmetic is 16384/259.)*
+
+The failure that produces is the one worth spending money to avoid: it
+works in development with a dozen contacts and fails in production with
+a hundred, silently, at the far end. A uniform cap removes the
+divergence rather than documenting it, and makes *"processes it as if it
+were loopback"* literally true.
+
+**Bounded and truthful, not refused.** The mechanism is the one this
+document already asks for at `:127` — *"Successful means bounded, ranked
+and truthful about being partial"* — and NOT a refusal, which `:146`
+treats as the lesser branch: *"Nor is it a licence to refuse rather than
+fix."* A caller handed 50 contacts and a "there are more" flag can ask a
+narrower question; a caller handed `answer-too-large` can do nothing.
+
+**The vocabulary already exists.** `peer.search` returns `{ rows, more }`
+(`spirit/run/js/hub.js:2091`) — the one verb where the question is
+obviously vague already answers this way. What is wrong there is the
+UNIT, not the shape: it caps `searchMemoryRows` (default 1000, a row
+count) rather than bytes, and a thousand rows at 259 bytes is ~259 KB,
+sixteen times a packet.
+
+**Which verbs feel it is DERIVED, NEVER COUNTED HERE.** Every verb that
+returns a collection rather than a decided value — and the suite that
+walks the verb table says which those are, at run time. A hand-counted
+list in this file would be a remembered fact among citations that are
+all re-derived, and the day a sixth verb returns a collection it would
+be wrong and silent about it. *(wsl-claude, 2026-09-25, applying the
+lesson `doorContract` taught the same day: it went red when the
+catalogue grew because it re-derives rather than remembers.)*
+
+**The suite is free.** Andy's already-ruled *"then you need only one
+suite that makes every api call"* covers the owner-proxy shim's
+completeness and this cap together — one instrument, two jobs, and it
+cannot rot because it walks the table rather than a list.
+
+**One deliberate exemption, written down rather than discovered.**
+`spirit/run/js/server.js:927` — `if (verb !== 'net.fetch' && ...)`, with
+the comment *"Every verb but the proxy keeps the packet's bound."*
+`net.fetch` is unbounded on loopback by design, which makes it the one
+verb that provably cannot travel as a packet. It is outside the proxy
+and outside the cap. A uniform bound with one stated exemption is still
+uniform; an unstated one is a bug waiting to be found in the field.
+
+**What this does NOT rest on.** Decision 0020 (*"A value may cross. A
+structure may not"*) does **not** support this cap, and an earlier draft
+of the argument said it did, twice. `0020:40` lists *a contact's public
+name* as something that CROSSES; what it forbids is *"the roll, its
+size, its bounds"* — the collection as machinery. The same ambiguity was
+named and resolved the other way in
+`cycles/2026-09-23-relay-record-cycle-11.md:179-184`: what crosses is a
+series of decided values, not rows. **0020 is about content; this is
+about volume.** They are different limits and neither carries the other.
+*(Correction: wsl-claude, 2026-09-25.)*

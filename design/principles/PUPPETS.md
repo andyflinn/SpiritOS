@@ -230,6 +230,16 @@ website*. That proxy points at the internet; this one points at a
 puppet. `peerOwnerPost` also names by family rather than by novelty: it
 is `peerPost`, from the owner.
 
+**THE RETURN PATH HAS ITS OWN BOUND, AND IT LIVES ELSEWHERE.** Designing
+this path turned up that nothing in the system bounds a RESPONSE — every
+limit is on a request or a packet — so a verb that answers fine on
+loopback can fail as a packet, silently, at the far end. `peer.list` does
+it at roughly 63 contacts. **That rule is node-wide, not puppet-specific,
+so it is written where it belongs**:
+[`THE-REQUESTER-IS-RESPONSIBLE.md`](THE-REQUESTER-IS-RESPONSIBLE.md),
+*The enforcement point*. Andy: *"good, so all searches are subject to the
+same return limit."*
+
 **Locality stops being the credential; the key is.** A puppet acts on no
 unsigned request, so a loopback door is the second wall rather than the
 first: the key says who may, loopback says who can even knock. That
