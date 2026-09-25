@@ -207,6 +207,44 @@ suite that makes every api call"* covers the owner-proxy shim's
 completeness and this cap together — one instrument, two jobs, and it
 cannot rot because it walks the table rather than a list.
 
+**ONE LIMIT EXPOSED, NOT ONE LIMIT (2026-09-25).** Andy: *"i do want the
+same payload limit everywhere"* — and the sharpening that makes it
+buildable is wsl-claude's, accepted the same hour.
+
+**The three figures are not three measurements of one thing.** They are
+three points in one pipeline, each derived from the one before by the
+overhead added at that stage:
+
+```
+PLAINTEXT_MAX  16,384   what a composer may BUILD
+PAYLOAD_MAX    22,528   what may TRAVEL, after sealing
+BODY_MAX       23,552   = PAYLOAD_MAX + WIRE_HEADROOM + HINTS_MAX
+```
+
+`limits.js:101` records the measurement that set the middle one: a packet
+of exactly `PLAINTEXT_MAX` sealed to **22,049 bytes on the wire, ×1.3458**.
+**Sealing adds bytes**, so a single figure everywhere means either
+composers build less than they do now, or sealed packets exceed what may
+travel.
+
+**The complaint is satisfiable without moving any number.** What is
+wrong today is that a caller cannot say what the limit IS — three
+correct answers about three segments. So **expose one and derive the
+rest**: one number a caller builds against, the others computed from it
+and never quoted at anybody.
+
+**And no figure moves**, which matters for a reason that predates this:
+a relay running an older `PAYLOAD_MAX` refuses what a newer composer
+builds, and the sender gets a 413 it cannot distinguish from any other
+refusal. *Change which number is exposed; never the numbers.*
+
+**How it gets proved**, and this is Andy's own test method, filed the
+same day: *"it can be tested by adjusting the limit, see if anything
+breaks, and then resetting it to the current, agreed value."* A constant
+is the single source only if everything MOVES when it moves — so perturb
+it, run the harness, and anything holding its own copy stays put and
+goes red. Arrival rather than resemblance, applied to values.
+
 **One deliberate exemption, written down rather than discovered.**
 `spirit/run/js/server.js:927` — `if (verb !== 'net.fetch' && ...)`, with
 the comment *"Every verb but the proxy keeps the packet's bound."*
