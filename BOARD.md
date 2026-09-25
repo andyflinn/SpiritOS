@@ -74,7 +74,7 @@ shown rather than hidden.
 
 *Declared in `puppetsPending.js`*
 
-## puppets/G2 — one shared helper bounds an answer and flags it partial
+## puppets/G2 — one shared search: two hooks per collection, the rest inherited
 
 `PUPPETS` · status **OPEN**
 

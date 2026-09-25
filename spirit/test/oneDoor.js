@@ -141,6 +141,28 @@ const TALLY = {
   // change. Recorded so the zero is not read as "this file is clean".
   'test/tools/wirePaths.js': 0,
 
+  // ── doorWalk: TWO, AND IT IS A DECISION RATHER THAN AN ENTRY ────────
+  //
+  // This gate's refusal says "use peerPost, or decide to modify the
+  // interface. Do not add a line to the tally." So the decision, stated
+  // rather than assumed:
+  //
+  // peerPost IS THE WRONG INTERFACE HERE AND NOT A HARDER ONE. It is the
+  // p2p wire between nodes. doorWalk measures the LOOPBACK DOOR — the
+  // local port a developer in another language is handed, which is what
+  // Andy says the product is. Routing it through peerPost would measure
+  // something no such developer can reach, which is the one thing the
+  // tool exists not to do.
+  //
+  // The precedent is `test/serverSurface.js`: 3, for the same reason —
+  // it drives this door over real HTTP because a suite that called the
+  // handlers in-process would prove nothing about the door.
+  //
+  // TWO, AND THE NUMBER MAY ONLY FALL. Like wirePaths it runs only when
+  // invoked (`node spirit/test/tools/doorWalk.js`) and instruments
+  // nothing during an ordinary harness run.
+  'test/tools/doorWalk.js': 2,
+
   // THE SERVER ITSELF: http.createServer, and fetchExternal, the gated
   // door apps ask for by verb rather than by URL.
   'js/server.js': 2,

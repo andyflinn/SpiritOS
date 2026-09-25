@@ -433,6 +433,223 @@ function requirementFor(titles, ref) {
 // that would need a second parser over the same declarations, which is
 // the drift above. So the file says how it was made and what would make
 // it wrong, rather than pretending to a freshness it cannot check.
+// ── THE SCOREBOARD — WHAT HE OPENS, NOT WHAT WE OPEN (rule 14) ───────
+//
+//   Andy, 2026-09-25, approving the sample: "good nough for now, if that
+//   can be kept running during jobs, i ll be grateful." And the order,
+//   given explicitly: "1, summary 2. what needs me. then the rest."
+//
+// WRITTEN BY THE RUN, for his sentence above: a separate tool is a thing
+// somebody has to remember, and a stale scoreboard is worse than none.
+// Same emitter as BOARD.md, same `byReq`, SEPARATE OUTPUT AND SEPARATE
+// PROMISE.
+//
+// ── WHY IT IS NOT BOARD.md, AND WHY THERE IS ONE PER BOX ────────────
+//
+// BOARD.md promises above that it holds the rows and not the tally, so
+// that "two runs over an unchanged tree produce an identical file" and
+// "neither agent's run fights the other's in git". THIS FILE BREAKS BOTH
+// DELIBERATELY: it carries the tally, which moves every run, and the
+// provenance of the box that measured it.
+//
+// So it is per box, named from `.spiritbox`. Two agents ran the same
+// tree today and got 3120 and 3092 — both correct, the difference being
+// six lab suites that stand down on one box. ONE SHARED FILE WOULD HAVE
+// DESTROYED EXACTLY THAT INFORMATION, silently, and he would have seen
+// whichever of us ran last.
+//
+// ── THE RUN LOG IS THE WORKING-OUT AND DOES NOT TRAVEL (0020) ───────
+//
+// One row per run in `spirit/test/scoreboard-runs.log` — caught by the
+// existing `*.log` ignore, so no shared file had to be edited to make
+// room for it. BOARD.md is overwritten, so state survives and MOVEMENT
+// is thrown away; a row per run is the whole of what "what moved" needs.
+//
+// ── AND THE PERCENTAGES ARE GUESSES AND THE PAGE SAYS SO ────────────
+//
+// testSupport calls them "printed as guesses... not to be believed
+// afterwards". A progress bar makes a guess look measured, which is the
+// wrong direction in a week spent replacing remembered facts with
+// derived ones. The bar is drawn because he asked for the shape; the
+// sentence under it is what keeps it honest.
+let lastBoard = { byReq: Object.create(null), titles: Object.create(null) };
+
+function writeScoreboard(byReq, titles, tally) {
+  const NL = String.fromCharCode(10);
+  const REPO = path.join(DIR, '..', '..');
+  const box = (function () {
+    try { return require('./tools/box.js').resolve().agent || ''; } catch (e) { return ''; }
+  }()) || 'this-box';
+  const RUNS = path.join(DIR, 'scoreboard-runs.log');
+
+  function git(args) {
+    try {
+      return require('child_process').execFileSync('git', args, {
+        cwd: REPO, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim();
+    } catch (e) { return ''; }
+  }
+
+  const commit = git(['rev-parse', '--short', 'HEAD']) || '(no commit)';
+  const ids = Object.keys(byReq).sort();
+
+  // AGE FROM THE TREE, NOT FROM A FIELD ANYBODY MAINTAINS. The first
+  // commit that introduced the id into its declaring suite is when the
+  // requirement started being owed.
+  function owedSince(id) {
+    const files = Object.keys(byReq[id].suites);
+    let oldest = 0;
+    files.forEach(function (f) {
+      const out = git(['log', '--format=%at', '-S', id, '--', path.join('spirit', 'test', f)]);
+      const lines = out ? out.split(NL).filter(Boolean) : [];
+      const first = lines.length ? Number(lines[lines.length - 1]) : 0;
+      if (first && (!oldest || first < oldest)) oldest = first;
+    });
+    return oldest;
+  }
+  function ageWords(at) {
+    if (!at) return '?';
+    const days = Math.floor((Date.now() / 1000 - at) / 86400);
+    if (days <= 0) return 'today';
+    return days === 1 ? '1 day' : days + ' days';
+  }
+
+  // BLOCKED IS A JOIN, NOT A FLAG. Nobody sets it: the requirement's own
+  // document says what it waits on, and a flag somebody had to remember
+  // to set would be the remembered fact this whole page is against.
+  function blockedNote(known) {
+    if (!known) return '';
+    const said = String(known.status || '') + ' ' + String(known.title || '');
+    const m = /blocked on ([^.,;]+)/i.exec(said);
+    if (m) return m[1].trim();
+    return /\bblocked\b/i.test(said) ? 'something not named' : '';
+  }
+
+  const rows = ids.map(function (id) {
+    const known = requirementFor(titles, id);
+    const units = byReq[id].units;
+    const there = units.reduce(function (n, u) {
+      return u.there === null ? n : Math.max(n, u.there);
+    }, 0);
+    const anyThere = units.some(function (u) { return u.there !== null; });
+    return {
+      id: id,
+      title: known ? known.title : id + ' — no document names this requirement',
+      there: anyThere ? there : null,
+      blocked: blockedNote(known),
+      at: owedSince(id),
+    };
+  });
+
+  // ── WHAT MOVED: the previous row, or an honest absence ──────────────
+  let prev = null;
+  try {
+    const lines = fs.readFileSync(RUNS, 'utf8').trim().split(NL).filter(Boolean);
+    if (lines.length) prev = JSON.parse(lines[lines.length - 1]);
+  } catch (e) { prev = null; }
+
+  const nowIds = rows.map(function (r) { return r.id; });
+  const wasIds = (prev && prev.ids) || [];
+  const built = wasIds.filter(function (i) { return nowIds.indexOf(i) === -1; });
+  const added = nowIds.filter(function (i) { return wasIds.indexOf(i) === -1; });
+  const greenMoved = prev ? tally.green - prev.green : 0;
+  const redMoved = prev ? tally.red - prev.red : 0;
+
+  const out = [];
+  out.push('# Scoreboard — ' + box);
+  out.push('');
+  out.push('**Generated by `node spirit/test/runAll.js` on `' + box + '`. Do not edit by hand.**');
+  out.push('');
+
+  out.push('## Summary');
+  out.push('');
+  const needing = rows.filter(function (r) { return r.blocked; });
+  out.push('**' + (tally.red ? tally.red + ' red' : 'Green board') + ', ' + rows.length +
+    ' owed, and ' + (needing.length ? needing.length + ' thing(s) waiting on you' : 'nothing waiting on you') + '.**');
+  out.push('');
+  out.push('```');
+  out.push(tally.suites + ' suites   ' + tally.green + ' green   ' + tally.red + ' red   ' +
+    tally.unhappy + ' unhappy   ' + rows.length + ' owed      run ' + commit);
+  out.push('```');
+  out.push('');
+
+  out.push('---');
+  out.push('');
+  out.push('## What needs you');
+  out.push('');
+  if (!needing.length) {
+    out.push('*Nothing else needs you.*');
+  } else {
+    needing.forEach(function (r) {
+      out.push('**⛔ ' + r.title + '** — blocked on ' + r.blocked + '.');
+      out.push('');
+    });
+    out.push('*Nothing else needs you.*');
+  }
+  out.push('');
+
+  out.push('---');
+  out.push('');
+  out.push('## What moved');
+  out.push('');
+  if (!prev) {
+    out.push('*First run on this box — there is nothing to compare it with yet.*');
+  } else if (!built.length && !added.length && !greenMoved && !redMoved) {
+    // A REAL PARAGRAPH, NOT AN EMPTY SECTION. Most runs move nothing and
+    // silence reads as broken.
+    out.push('**Nothing moved.** Same requirements owed, same tally, since the run at `' +
+      (prev.commit || '?') + '`.');
+  } else {
+    if (greenMoved) out.push('- ' + (greenMoved > 0 ? '+' : '') + greenMoved + ' green');
+    if (redMoved) out.push('- ' + (redMoved > 0 ? '+' : '') + redMoved + ' red');
+    built.forEach(function (i) { out.push('- ✅ **built or withdrawn:** ' + i); });
+    added.forEach(function (i) { out.push('- ⏳ **newly owed:** ' + i); });
+  }
+  out.push('');
+
+  out.push('---');
+  out.push('');
+  out.push('## Owed longest');
+  out.push('');
+  out.push('| | requirement | owed | there | |');
+  out.push('|---|---|---|---|---|');
+  rows.slice().sort(function (a, b) { return (a.at || 1e12) - (b.at || 1e12); })
+    .forEach(function (r) {
+      const n = r.there === null ? null : Math.max(0, Math.min(10, Math.round(r.there / 10)));
+      const bar = n === null ? '`?`'
+        : '`' + '▓'.repeat(n) + '░'.repeat(10 - n) + '` ' + r.there + '%';
+      out.push('| ⏳ | **' + r.title + '** | ' + ageWords(r.at) + ' | ' + bar + ' | ' +
+        (r.blocked ? '⛔' : '') + ' |');
+    });
+  out.push('');
+  out.push('*Percentages are the guesses the declarations carry — `testSupport`:');
+  out.push('"printed as guesses… to be argued with during a design sitting, not to');
+  out.push('be believed afterwards." Everything else is measured.*');
+  out.push('');
+
+  const text = out.join(NL);
+  const target = path.join(REPO, 'SCOREBOARD-' + box + '.md');
+  const CR = String.fromCharCode(13);
+  const LF = function (t) { return String(t).split(CR + NL).join(NL); };
+  let before = null;
+  try { before = fs.readFileSync(target, 'utf8'); } catch (e) { before = null; }
+  if (before === null || LF(before) !== text) {
+    try { fs.writeFileSync(target, text); } catch (e) { /* said below */ }
+  }
+
+  // THE ROW IS APPENDED WHATEVER HAPPENED, because "nothing moved" is a
+  // measurement too and a gap in the log would read as a run that did
+  // not happen.
+  try {
+    fs.appendFileSync(RUNS, JSON.stringify({
+      at: Math.floor(Date.now() / 1000), commit: commit, box: box,
+      suites: tally.suites, green: tally.green, red: tally.red,
+      unhappy: tally.unhappy, ids: nowIds,
+    }) + NL);
+  } catch (e) { /* a log that cannot be written must not fail a run */ }
+  console.log('--- SCOREBOARD-' + box + '.md rewritten (' + rows.length + ' owed)');
+}
+
 function writeBoard(byReq, titles) {
   const NL = String.fromCharCode(10);
   const ids = Object.keys(byReq).sort();
@@ -722,9 +939,11 @@ async function main() {
       });
       console.log('          declared in ' + Object.keys(byReq[id].suites).join(', '));
     });
+    lastBoard = { byReq: byReq, titles: titles };
     writeBoard(byReq, titles);
   } else {
-    writeBoard(Object.create(null), requirementTitles());
+    lastBoard = { byReq: Object.create(null), titles: requirementTitles() };
+    writeBoard(lastBoard.byReq, lastBoard.titles);
   }
 
   // NOT RUN, AND NOT SILENT. See the note on `skipped`: a file that looks
@@ -771,6 +990,10 @@ async function main() {
     (waitingTotal ? ', ' + YELLOW + waitingTotal + ' awaiting' + RESET : '') +
     (stoodTotal ? ', ' + stoodTotal + ' stood down' : '') +
     (skipped.length ? ', ' + skipped.length + ' not run' : '') + '\n');
+  writeScoreboard(lastBoard.byReq, lastBoard.titles, {
+    suites: files.length, green: green, red: red, unhappy: unhappy.length,
+  });
+
   process.exit(unhappy.length ? 1 : 0);
 }
 
