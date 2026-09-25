@@ -218,6 +218,18 @@ availability cost named under it has already been absorbed by it.
 > entire node api to manipulate the configuration, contactList maybe even
 > relayList for the app"*
 
+**It is named `peerOwnerPost()`, not `peerProxy()`.** Andy, naming it
+the same day he proposed the other: *"the interface might better be call
+peerOwnerPost()"* — *"it's more true."* And it avoids a collision that
+would have been read the wrong way round: **`proxy` already names one
+thing here**, the outbound web fetcher —
+`spirit/run/js/server.js:1563` `'net.fetch': handleGenericProxy` marked
+`{ wire: true }` with *"it reaches the internet, so being offline fails
+it"*, and `relay-state/proxy.json` for *which key may go to which
+website*. That proxy points at the internet; this one points at a
+puppet. `peerOwnerPost` also names by family rather than by novelty: it
+is `peerPost`, from the owner.
+
 **Locality stops being the credential; the key is.** A puppet acts on no
 unsigned request, so a loopback door is the second wall rather than the
 first: the key says who may, loopback says who can even knock. That
@@ -281,7 +293,7 @@ question the node already answers one layer down.
 
 ## OPEN — Andy's, and not to be built under
 
-- **`peerProxy` must be addressed as a `wire` namespace.**
+- **`peerOwnerPost` must be addressed as a `wire` namespace.**
   `spirit/run/js/verbTable.js:74` makes `wire` the *client's failure
   contract* — *"wire can answer 'not reachable right now', and yields a
   hash; local cannot be unreachable"* — and a namespace is uniformly one
@@ -293,7 +305,7 @@ question the node already answers one layer down.
   breaks in exactly one shape — **if a remote caller can invoke a local
   verb under its own name**, the same verb string then carries two
   contracts depending on who said it, which is the "somebody remembering"
-  the table refuses. `peerProxy` is not built, so this is a constraint on
+  the table refuses. `peerOwnerPost` is not built, so this is a constraint on
   the design rather than a deviation from the ruling. *(The distinction
   is wsl-claude's, 2026-09-25: a consequence that depends on an unbuilt
   component is neither decided nor recommended — it is the question that
