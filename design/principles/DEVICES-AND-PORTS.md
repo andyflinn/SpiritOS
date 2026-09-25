@@ -206,6 +206,115 @@ Read out of `relay.js` rather than recalled:
   there make it an **oracle** — answering questions for people who have
   not proved they may ask.
 
+---
+
+## THE GRANT AT THE BOTTOM — decided 2026-09-25
+
+> *"so the bottom is the grant mechanism that underpins the installation
+> of join into the DNS namespace as well as member subdomain
+> assignments."*
+
+**ONE MECHANISM, AND IT IS THE WORD THE SYSTEM ALREADY USES** at two
+other heights: an app is granted its interfaces, a node is granted a
+seat, a name is granted in a namespace. *(This agent proposed `slot.claim`
+and was corrected — coining where the vocabulary existed, one day after
+writing that error up.)*
+
+**RESERVATION IS AN EVENT, NOT A LIST.**
+
+> *"in development we put a skeleton for appShellApp in its proper
+> folder, we assume that the installation of join on our VPS reserves its
+> subdomain via a negotiation with appShellApp, and so is logged in
+> appShellApp's subdomain-dataset"*
+
+A name is taken because something took it. **A system face uses the same
+grant path a member does** — *"itself first of all"* — so there is no
+reserved-names concept, no policy list, no second code path, and nothing
+to go stale. Both agents had built a structure for a problem that turned
+out to have no instances.
+
+**AND IT IS NOT HARDCODED**: the dataset lives on the owner's node, and
+the namespace **is the domain** — another owner's stage is a different
+namespace with different names in it.
+
+### The minimum, and the two constraints on it
+
+> *"the appShellApp could implement the bare minimum, and this is the
+> no-face negotiation, without any local shell interface yet or
+> anything."* — **"faceless, no shortcut."**
+
+**FACELESS** — no public face, no control panel, no HTTP surface, no UI.
+**NO SHORTCUT** — a packet even when both ends are on one node.
+
+**Together they give it ONE DOOR**, and that is what makes its suite
+honest: the test drives it the way join's installer will, because there
+is no other way. No UI path to diverge from, no local path to skip.
+
+### The interface (G15 — named so a suite need not guess it)
+
+```
+app: 'appShellApp'
+body:     { grant: '<name>' }
+answered: { ok: true, name, at }
+          { ok: false, code: <declared>, name }
+```
+
+The dataset is one record per name — the name, the holder's key, when,
+and which namespace — in the app's own folder, which
+`WRITABLE_ROOT_NAMES` permits and `createScopedFs` scopes. The refusal is
+a declared code, walkable like every other.
+
+## THE TEST FOR THIS CYCLE — his, and better than the one we started with
+
+> *"the minimum we plan to build must not block the way to this vision."*
+
+**"Cater to the foresight" invites building for it. "Must not block the
+way" does not** — it is a yes/no question about a specific future, asked
+of each piece, answerable without building anything.
+
+**And the filter that separates a blocking property from a fact wearing
+one** (wsl-claude, applied to four candidates and rejecting two):
+
+> **Name the future action that becomes impossible or expensive if this
+> is absent.** If you cannot name it in one clause, it is not blocking —
+> it is either already true or already decided, and both belong somewhere
+> other than the test.
+
+| what | absent → |
+|---|---|
+| an install grants a name | **granting the second name**, because the first collision is an eviction rather than a policy change |
+| a local exchange goes over the wire | **the first VPS install**, where the remote path is exercised for the first time and found broken |
+| the app server does not assume it owns its host | **mounting a second face on one host** — a rewrite rather than a configuration |
+| the face is the generic shell layer | **building the second face**, which copies the first and the generic layer is never written |
+
+*Stated POSITIVELY on purpose. "No local shortcut" as a negative would be
+green on an empty tree — there is no shortcut because there is no
+exchange — which is a check that cannot fail, declared deliberately, on
+the board.*
+
+## SEQUENCED, NOT DISCARDED
+
+**The pamphlet.** *"a member's public face does not necessarily start
+with the member's personal node becoming a web server, it starts with the
+member's personal node being able to put a personal pamphlet on the
+internet."* Pushed once rather than routed per request — so `PAYLOAD_MAX`
+does not bite, no gateway is needed, and **Alice can be asleep**, which on
+real hardware is the difference between a service and a demo.
+`published/` is already a writable root and its filenames are already
+domain-prefixed.
+
+**The appfolder stays ours.** *"for starter: we still control all the
+apps that are in the app-folder. if anybody decides to become a
+relay/appShellApp owner, they can clone the repo and write their own
+apps."* One population — so `oneDoor` walking the filesystem and
+`plantRun` copying only non-ignored files are both correct as they stand.
+
+**A finding deferred WITH its feature is a third category beside keep and
+discard.** The payload bound travels with live serving; the
+two-populations disagreement travels with third-party apps. Both are
+correct unchanged when their feature arrives, and neither becomes
+folklore or a file nobody asked for.
+
 ## OPEN — needs Andy
 
 - **How stale may a face be?** A product question and his taste: a
