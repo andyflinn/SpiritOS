@@ -225,3 +225,52 @@ named and resolved the other way in
 series of decided values, not rows. **0020 is about content; this is
 about volume.** They are different limits and neither carries the other.
 *(Correction: wsl-claude, 2026-09-25.)*
+
+### What a list answers, ruled 2026-09-25
+
+> *"the fetching of the jobs needs more lazyness, the acual list, should
+> be ID's with Title, the rest is fetched when needed. similar for the
+> processes app"*
+
+**A list answers WHAT IS THERE. A get answers WHAT IT IS.** An id and a
+title are decided values; the rest is the working-out, and 0020's test
+already separates them.
+
+**Measured, and it is why this is a ruling rather than a preference.**
+`jobs.list` through the real door on an idle node returns **207,199
+bytes in three rows**, of which 205,539 are one job's `data` — the
+`fs-watcher` job, whose data is the whole file index
+(`spirit/run/js/jobs.js:141`). The door refuses a REQUEST of 23,553
+bytes and returns that.
+
+Three things make it so, and all three were Andy's guesses before they
+were measured:
+
+- **There is no way to ask for one.** `getJob(id)` exists and is
+  exported (`jobs.js:317`); no verb reaches it. Five jobs verbs and none
+  of them is "get one".
+- **The first rows are the same every time.** Exactly two permanent jobs
+  at boot — `fs-watcher` and `server-stats` (`jobs.js:141`, `:243`) — so
+  every caller is handed the same two rows, entire, to learn what it
+  could have been told once.
+- **Nothing cleans up.** `jobsMap.delete` is reached only from
+  `deleteJob` (`jobs.js:123`), which needs a terminal status and an
+  explicit call, and its only caller is `kernel.js:912` — **an XHR from
+  the browser**. A finished job is removed when a person clicks it and
+  never otherwise, so the list grows monotonically in RAM and on the
+  wire.
+
+**What lazy fetching does NOT do, said so nobody expects it:** it does
+not shrink the index. It stops every other caller paying for it — which
+is this document's own argument, since the specific question keeps its
+precise answer and the vague one stops being subsidised. **Whether the
+file index should cross at all is a separate question**, and 0020 would
+say it is working-out.
+
+**And it is not a free trim.** wsl-claude named the consumers before
+anybody starts: the Files app and an app's `scanDirectory` are
+deliberately served by shipping the index and filtering at the far end.
+Changing what the node answers changes what they get, so what REPLACES
+it is a product decision rather than a smaller version of the same
+answer.
+

@@ -183,6 +183,47 @@ succeed, the caller is told so, and nobody is catching the weather.
 
 ---
 
+## And a bound must not arrive before a meter
+
+**A BOUND APPLIED BEFORE A METER CONVERTS A WRONG ANSWER INTO A BIG
+ANSWER, AND THE EVIDENCE OF THE WRONGNESS IS THE PART IT DISCARDS.**
+
+Found by nearly doing it. The return bound was going to be built first;
+wsl-claude argued the meter should come first because nobody had derived
+which verbs return collections. The meter then measured `jobs.list`
+through the real door on an idle node:
+
+```
+207,199 bytes.  Three rows.
+row 0  205,731 bytes -- data=205,539  log=53  createdAt=13
+```
+
+**99.2% of the answer is one job's `data`**, and that job is `fs-watcher`
+(`jobs.js:141`, `createJob('permanent', 'fs-watcher', { files: files })`)
+whose `data` is the whole file index. `jobs.list` is
+`Array.from(jobsMap.values())` — every job entire, internals included.
+
+Had the bound landed first, that answer would have been truncated to the
+limit and flagged partial, and **a verb returning the file index would
+have looked like a big answer rather than a wrong one.** The 190KB the
+bound discarded is the entire evidence that anything was wrong.
+
+It generalises past size: **any normaliser applied before measurement
+does this** — a mechanism that makes a symptom comfortable and takes the
+diagnosis away with it.
+
+*The same file shows the right shape eight lines from the wrong one:
+`jobs.js:266-269` derives a tally FROM the in-memory list — "no extra
+filesystem I/O, just tallying what it already scanned" — which is a
+decided value rather than the working-out. The door is not missing the
+pattern; one verb is not using it.*
+
+**And this is already shipping.** Not a risk that arrives with scale: an
+idle node on a real tree answers 207KB today, and any consumer over a
+packet already cannot have it.
+
+---
+
 ## The fourth sentence, and what it costs
 
 *"a dialog-form needs to manipulate until the data is validated."*
