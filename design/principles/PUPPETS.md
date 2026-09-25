@@ -410,7 +410,7 @@ The argument and its measurements are in
 [`THE-REQUESTER-IS-RESPONSIBLE.md`](THE-REQUESTER-IS-RESPONSIBLE.md),
 *The enforcement point*. Nothing in `limits.js` bounds a response today.
 
-### G2 — one shared helper bounds an answer and flags it partial
+### G2 — one shared search: two hooks per collection, the rest inherited
 
 **Status:** OPEN. Nothing built, but the shape exists: `peer.search`
 already returns `{ rows, more }` (`spirit/run/js/hub.js:2091`) with the
@@ -419,6 +419,13 @@ right shape and the wrong unit, bounding rows scanned rather than bytes.
 Shared rather than per-verb, because a per-verb implementation is the
 duplication the wire probe exists to catch. Bounded-and-truthful rather
 than a refusal — `THE-REQUESTER-IS-RESPONSIBLE.md:127` against its `:146`.
+
+**Its content, ruled 2026-09-25:** a collection supplies a SCAN BY KEY
+and an EXTRACTOR (Title AND description); matching, ranking, the bound,
+the partial flag and the field names are inherited. Neither hook exists
+— `peer.search` does all five inline — so creating them IS this
+requirement. The full statement, with what is measured about the
+existing example, is in `THE-REQUESTER-IS-RESPONSIBLE.md`.
 
 ### G3 — one suite that makes every api call
 

@@ -326,6 +326,43 @@ collection verbs. Confirmed here on a booted node — `peer.list` 3,582
 bytes, `proxy.list` 217, `jobs.list` 207,205. `jobs.list` is only the
 biggest.
 
+**THE MECHANISM, ruled 2026-09-25**, once it was clear this is a pattern
+and not a fix:
+
+> *"and the list though search will become a common pattern"* — *"a scan
+> by the correct key will throw candidates into a bucket and supply the
+> extraction of searchable content, for example Title AND description"*
+
+So a collection supplies **two small things** and inherits the rest:
+
+| | |
+|---|---|
+| **per-collection** | a scan by key — which rows are candidates |
+| **per-collection** | an extractor — what text is searchable, e.g. Title AND description |
+| shared | what matched, ranking, the bound, the partial flag, and the field names |
+
+**Neither hook exists today.** `peer.search` is one handler doing all
+five inline (`spirit/run/js/hub.js:2340-2394`): it gathers candidates
+from relays and memory, sorts, truncates and names the wire fields in
+one run of code with no seam between them. **Creating the two hooks is
+the work**, and after it `jobs` and `processes` supply a scan and an
+extractor rather than a search.
+
+**And the drift is already inside the single example.** `hub.js:2091`
+returns `{ rows, more }` internally while `:2390` emits
+`{ q, matches, more }` on the wire — the same thing under two names,
+before a second search exists to disagree with it.
+
+**One thing to know before this document's own wording is taken as
+describing the code.** A good answer is called *"bounded, ranked and
+truthful about being partial"* (`:127`). Measured, `peer.search` sorts
+by `publicLabel` — **alphabetically, not by match** — and truncates by
+ROWS SCANNED rather than bytes. So "bounded" is in the wrong unit,
+"ranked" is aspirational, and only the partial flag is real. Adopting
+the example for two more verbs would spread that, and extracting Title
+AND description is what makes ranking possible at all: today there is
+nothing to rank ON.
+
 **What lazy fetching does NOT do, said so nobody expects it:** it does
 not shrink the index. It stops every other caller paying for it — which
 is this document's own argument, since the specific question keeps its
