@@ -543,10 +543,24 @@ function writeScoreboard(byReq, titles, tally) {
 
   // ── WHAT MOVED: the previous row, or an honest absence ──────────────
   let prev = null;
+  const history = [];
   try {
-    const lines = fs.readFileSync(RUNS, 'utf8').trim().split(NL).filter(Boolean);
-    if (lines.length) prev = JSON.parse(lines[lines.length - 1]);
+    fs.readFileSync(RUNS, 'utf8').trim().split(NL).filter(Boolean).forEach(function (l) {
+      try { history.push(JSON.parse(l)); } catch (e) { /* a bad line is not a run */ }
+    });
+    if (history.length) prev = history[history.length - 1];
   } catch (e) { prev = null; }
+
+  // WHEN HE LAST UNBLOCKED IT. The most recent run that still listed a
+  // requirement as blocked is the last moment it was waiting on him, so
+  // anything owed since then has been sitting on attention already paid.
+  // Derived from the log: nobody sets it and nobody can forget to clear it.
+  const lastBlockedAt = Object.create(null);
+  history.forEach(function (r) {
+    (r.blocked || []).forEach(function (id) {
+      if (!lastBlockedAt[id] || r.at > lastBlockedAt[id]) lastBlockedAt[id] = r.at;
+    });
+  });
 
   const nowIds = rows.map(function (r) { return r.id; });
   const wasIds = (prev && prev.ids) || [];
@@ -618,8 +632,13 @@ function writeScoreboard(byReq, titles, tally) {
       const n = r.there === null ? null : Math.max(0, Math.min(10, Math.round(r.there / 10)));
       const bar = n === null ? '`?`'
         : '`' + '▓'.repeat(n) + '░'.repeat(10 - n) + '` ' + r.there + '%';
+      // HIS ATTENTION, SPENT AND THEN LEFT. If a run once listed this as
+      // blocked and none does now, he unblocked it — and how long it has
+      // sat since is the thing worth showing him.
+      const freed = (!r.blocked && lastBlockedAt[r.id])
+        ? 'unblocked by you ' + ageWords(lastBlockedAt[r.id]) + ' ago' : '';
       out.push('| ⏳ | **' + r.title + '** | ' + ageWords(r.at) + ' | ' + bar + ' | ' +
-        (r.blocked ? '⛔' : '') + ' |');
+        (r.blocked ? '⛔' : freed) + ' |');
     });
   out.push('');
   out.push('*Percentages are the guesses the declarations carry — `testSupport`:');
@@ -677,6 +696,12 @@ function writeScoreboard(byReq, titles, tally) {
       at: Math.floor(Date.now() / 1000), commit: commit, box: box,
       suites: tally.suites, green: tally.green, red: tally.red,
       unhappy: tally.unhappy, ids: nowIds,
+      // WHICH ONES WERE WAITING ON HIM, so "he unblocked this and it then
+      // sat" is derivable rather than remembered. Andy: "we should work of
+      // those requirements first that were clocked by needing my input."
+      // His attention is the scarce thing; a requirement he has already
+      // paid attention to unblock must not then sit unnoticed.
+      blocked: rows.filter(function (r) { return r.blocked; }).map(function (r) { return r.id; }),
     }) + NL);
   } catch (e) { /* a log that cannot be written must not fail a run */ }
   console.log('--- SCOREBOARD-' + box + '.md' + (saysLead ? ' and SCOREBOARD.md' : '') +
