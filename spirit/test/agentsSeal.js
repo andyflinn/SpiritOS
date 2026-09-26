@@ -153,4 +153,97 @@ if (!agents || !peerPost) {
   }
 }
 
-test.reportSuccessFailureCount();
+test.subHeading('ARRIVAL, NOT RESEMBLANCE: what it actually hands the door');
+
+// ── THE FOUR CLAIMS ABOVE ARE SOURCE TEXT, AND THAT IS A WEAKNESS ──────
+//
+// spiritos-f6 named it: every claim above reads the file, so a harmless
+// rename turns this suite red while the property is untouched, and a clever
+// enough refactor could keep the text and lose the property. This codebase
+// keeps choosing arrival over resemblance and this section is that choice.
+//
+// SO DRIVE THE REAL SEND PATH. agents.js takes an injectable fetch, so the
+// suite can watch what the app hands its node without a node, a relay or a
+// key exchange. What arrives at the door is the whole of the requirement: if
+// the app hands over PLAINTEXT and names the ordinary post verb, it has not
+// sealed and cannot have sealed differently.
+{
+  const os = require('os');
+  const agentsApp = require('../run/process/js/agents/agents.js');
+  // A home with no halt file in it, so `halted` is false for the right
+  // reason rather than by luck.
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'agents-seal-'));
+  const peerKey = 'MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=';
+  const secret = 'PLAINTEXT THE NODE MUST BE THE ONE TO SEAL';
+
+  let seen = null;
+  const capture = function (url, init) {
+    seen = { url: url, body: init && init.body };
+    return Promise.resolve({
+      status: 200,
+      text: function () { return Promise.resolve(JSON.stringify({ hash: 'h' })); },
+    });
+  };
+
+  const cfg = agentsApp.config({
+    AGENTS_NODE: 'http://127.0.0.1:45440',
+    AGENTS_ROOT: home,
+    AGENTS_SELF: 'claude-windows',
+    AGENTS_PEERS: 'wsl-claude=' + peerKey,
+    AGENTS_RETRY_MS: '0',
+  });
+
+  return agentsApp.send(cfg, 'wsl-claude', 'note', secret, null, { fetch: capture })
+    .then(function () {
+      // THE PAIRED POSITIVE FIRST: if nothing was sent, every claim below is
+      // true of silence. wsl-claude's fourth recommendation, again.
+      if (!seen || !seen.body) {
+        test.fail('the agents app sent NOTHING, so this section asserts nothing');
+        return;
+      }
+      test.check('the send path ran and reached a door, so what follows is about traffic');
+
+      let body = null;
+      try { body = JSON.parse(seen.body); } catch (e) { body = null; }
+      if (!body) {
+        test.fail('what it handed the door was not JSON: ' + String(seen.body).slice(0, 80));
+        return;
+      }
+
+      if (seen.url === cfg.node + '/api/spirit') {
+        test.check('it posted to its OWN node door, ' + seen.url + ' — measured by watching '
+          + 'the call rather than by reading the file');
+      } else {
+        test.fail('it reached somewhere other than its node door: ' + seen.url);
+      }
+
+      if (body.verb === 'peer.post') {
+        test.check('it named the ordinary post verb, ' + body.verb + ', and no private one — '
+          + 'so it takes the same path every sender takes');
+      } else {
+        test.fail('it named a verb of its own: ' + String(body.verb));
+      }
+
+      // THE ASSERTION THE REQUIREMENT IS ABOUT. Plaintext at the door means
+      // the app did not seal; the node seals afterwards and cannot be told
+      // not to (see the router-option claim above). Both halves matter: it
+      // must be plaintext, and it must be the text that was asked for rather
+      // than something the app rewrote.
+      const handed = String(body.text || '');
+      if (handed.indexOf(secret) !== -1) {
+        test.check('and it handed the words over IN PLAIN — the app does not seal, so it '
+          + 'cannot seal differently from everybody else');
+      } else {
+        test.fail('the agents app transformed or sealed the text before the door, so it is '
+          + 'no longer inheriting the node decision: ' + handed.slice(0, 80));
+      }
+
+      try { fs.rmSync(home, { recursive: true, force: true }); } catch (e) { /* sweeper */ }
+    })
+    // THE COUNT IS REPORTED HERE AND NOWHERE ELSE. The section above is
+    // asynchronous, so a report at the foot of the file would run before
+    // these checks and publish a tally missing four of them. The `return` a
+    // few lines up is what makes that safe: it ends the module, so there is
+    // no second call to forget about.
+    .then(function () { test.reportSuccessFailureCount(); });
+}
