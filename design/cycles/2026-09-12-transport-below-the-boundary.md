@@ -960,10 +960,19 @@ So the router has carried a reply channel since it landed — `routeReply`,
 correlated by hash, signed by the recipient — and **no app has ever been
 able to use it.**
 
+**A puppet answers its owner through this, not through a new verb.** Andy,
+2026-09-27, asked whether puppets need a `peerOwnerReply()`: the answer is
+R12's reply path, *"where a hash must match"*. The owner's node accepts a
+reply to a command only when it carries the hash of a command that node
+sent. A reply naming any other hash is refused, not guessed at. Unprompted
+news from a puppet to its owner is an ordinary post (`nodeApps.js:317`
+hands every app `post`).
+
 **Verify:** not written. Wants a packet answered by a real app handler,
 the reply reaching the original sender correlated by the same hash, and
 the negative half: an app that says nothing leaves the bare receipt, with
-no `seen`, no tick, and no inference.
+no `seen`, no tick, and no inference. And for owner commands: a reply whose
+hash matches no command the owner sent is refused.
 **Status:** OPEN
 
 ---
