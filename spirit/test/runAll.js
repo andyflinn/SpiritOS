@@ -1263,10 +1263,16 @@ async function main() {
       console.log('          declared in ' + Object.keys(byReq[id].suites).join(', '));
     });
     lastBoard = { byReq: byReq, titles: titles };
-    writeBoard(byReq, titles);
+    // A FILTERED RUN MUST NOT WRITE THIS ONE EITHER, and the first
+    // version of the guard below missed it. `runAll.js payloadCeiling`
+    // emptied BOARD.md of all twelve requirements and left it saying
+    // nothing is declared and unbuilt — because one suite declared none.
+    // Found by committing the half-fix and watching the other half of
+    // the same defect turn up as an unstaged change three lines later.
+    if (!filter) writeBoard(byReq, titles);
   } else {
     lastBoard = { byReq: Object.create(null), titles: requirementTitles() };
-    writeBoard(lastBoard.byReq, lastBoard.titles);
+    if (!filter) writeBoard(lastBoard.byReq, lastBoard.titles);
   }
 
   // NOT RUN, AND NOT SILENT. See the note on `skipped`: a file that looks
