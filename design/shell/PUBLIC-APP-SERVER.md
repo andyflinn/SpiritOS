@@ -791,6 +791,28 @@ Under Andy's topology (an app runs only on its owner's node, and the VPS
 routes by appShellApp), the answer travels back along the route the
 request came in on, to the browser.
 
+**appShellApp signs, as proxy for the visitor.** Andy, 2026-09-27: *"the
+appShellApp has to sign (as proxy for all user-interaction with an app, the
+owner node sees appShellApp as carring a package with the domain name
+attached)"*. A browser visitor has no key, so the VPS node carrying
+appShellApp signs the packet. The signature vouches for the ROUTE ("this
+came in on `join.spirit.andyflinn.com`"), never for the person. The
+receiving node uses the attached domain to hand the packet to the right
+app. The answer is an ordinary reply to that packet, and the VPS turns it
+into the browser's HTTP response. **The VPS reads that traffic in clear:**
+it ends the browser's TLS, so nothing between visitor and app is sealed
+end to end. That is fine for `join`. A member app that is not public needs
+to know it.
+
+**The trust comes from the route, and the route is negotiated.** Andy, the
+same sitting: *"the route creation is negotiated between app and owner
+(registering a subdomain) the appShellApp is implementing a routing table
+managed by the owner."* So no separate proxy grant is needed. Registering a
+subdomain is the existing grant exchange between app and owner
+(`appShellApp.js`, two packets). The result is a row in a routing table the
+owner manages and appShellApp implements. A node accepts a packet that
+appShellApp carries because a row the owner granted names that route.
+
 ---
 
 ### PROPOSED, NOT IN THIS CYCLE — a sweep for forks
