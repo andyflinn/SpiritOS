@@ -4,10 +4,10 @@
 
 ## Summary
 
-**Nothing is broken, 12 requirements are declared and not built yet, and ONE THING IS STOPPED waiting for you, with 6 older question(s) behind them.**
+**Nothing is broken, 12 requirements are declared and not built yet, and ONE THING IS STOPPED waiting for you, with 3 older question(s) behind them.**
 
 ```
-154 suites   3122 green   0 red   0 unhappy   12 owed      run 3bb647b
+154 suites   3122 green   0 red   0 unhappy   12 owed      run 3bb647b   STALE: measured at 3bb647b, tree is now 26cf3c2
 ```
 
 ---
@@ -19,25 +19,18 @@
 **⏳ The outbound queue on the agent node.**
 
 - *You answered today*: "Andy: "keep only a few, and count the deletions, as ameasurement for the system to be discussed in a team review." Then: "keep the inbound queues, not the outbound ones...." And on the reason: "there is duplication there.""
-- **Still owed:** The queue was emptied — 160 rows deleted — but the DUPLICATION is still in the code, so it regrows by one row per send. agents.js:305-327 appends a report row on every send and re-flushes the whole file, while trafficLog.js already records every attempt with its payload, before the wire. Checked: 40 of 40 sampled rows were already in the traffic log. The fix is to delete the outbox concept rather than bound it; a resend, if ever wanted, is derivable from the log. A full copy of the 160 is kept for the team review.
+- **Still owed:** ANDY HAS GIVEN THE SHAPE, 2026-09-26: "the agent app is special, a post is implicitely coupled with a delete in the sent-log." IT IS ALREADY THE CODE SHAPE — agents.js:323 keeps only non-200 rows and rewrites the file, so a delivered post does remove itself. I said twice that it never deletes and both times I was wrong; wsl-claude caught it in the code. THE 158 WERE THEREFORE NEVER DELIVERED, not delivered-and-retained: every one was refused no-seal-key because the sending node holds no card for the owner. So the sent-log is not a duplicate of trafficLog after all — the log says what was ATTEMPTED, for good, and the sent-log says what is STILL OWED and empties itself. What is owed: (1) A REFUSAL THAT WAITING CANNOT FIX MUST BE DEAD-LETTERED rather than re-posted on every send. no-seal-key is a fact about the destination, not a transient, and retrying it turned 158 rows into 11,628 refusals. (2) The sending node needs the owner card, which is the open 1a/1b choice. (3) Optional, and Andy liked the direction: the age of the oldest pending row on the board, so a stuck channel is visible at a glance instead of after three days.
 - **Owed by:** wsl-claude, whose file the agents app is
 
 
 ### Older questions, no hurry
 
-**6 document(s) still hold a decision only you can make.** Each one says a requirement is open, and no test is watching it — so if the work was dropped, nothing will notice.
+**3 document(s) still hold a decision only you can make.** Each one says a requirement is open, and no test is watching it — so if the work was dropped, nothing will notice.
 
 For each: **is it still wanted, has a later cycle replaced it, or is it abandoned?** Say which and it either gets a test or gets closed.
 
-- In `design/cycles/2026-09-12-app-building-removed.md`, 2 things are still marked open with no test watching:
-    - the specimens outlive their subjects
-    - AI Manager and AI Chat still mount
-- In `design/cycles/2026-09-12-device-and-node-defence.md`, 3 things are still marked open with no test watching:
-    - the relay holds `deviceKey → ownerKey` in RAM, and never publishes it
-    - the pairing and the destination rule land together
-    - the node's front door must learn its own device keys
 - In `design/cycles/2026-09-12-transport-below-the-boundary.md`, 2 things are still marked open with no test watching:
-    - an app can reply, and a reply is the only evidence of being read
+    - an app can reply, and a reply is the only evidence of being delivered
     - the log must be able to PROVE what it claims
 - In `design/cycles/2026-09-23-sealed-posts-cycle-10.md`, 5 things are still marked open with no test watching:
     - prove the relay cannot read it, by trying to read it
@@ -45,7 +38,6 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
     - message LENGTH is public, or it is padded
     - what the relay streams to a monitor is unreadable, by both belts
     - suites that INSIST, not suites that demonstrate
-- **certain limits derive from the constant, rather than being written down** — live work in `design/principles/THE-REQUESTER-IS-RESPONSIBLE.md`, and no test is watching it.
 - In `design/shell/PUBLIC-APP-SERVER.md`, 13 things are still marked open with no test watching:
     - `appServer.js` is a third startup module
     - no failure-state lever; the states are reachable from outside
@@ -65,7 +57,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-**Nothing moved.** Same requirements owed, same tally, since the run at `9c22cce`.
+**Nothing moved.** Same requirements owed, same tally, since the run at `3bb647b`.
 
 ---
 
