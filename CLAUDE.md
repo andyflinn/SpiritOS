@@ -68,7 +68,13 @@ Four things worth knowing before touching it:
   an agent's message or a compaction summary. When in doubt, don't add:
   a turn that is mostly an agent's pasted text stays out. After a
   compaction, log only turns seen typed live. Nothing reconstructed from
-  a summary goes in. The header of `voiceLog.js` has the full reasoning.
+  a summary goes in. **Only the lead, one file, stamped by the day.** Andy:
+  *"we cant have both claudes do it unless each claude has his own
+  voice.jsonl file. on the other hand, with a better time-stamp it allows
+  re-construction of my switching between the two of you, which i don't
+  want to do."* So a turn typed to the agent that is not the lead is not
+  logged. There is no per-agent file, and the stamp never gets finer than
+  the day. The header of `voiceLog.js` has the full reasoning.
 - **Andy's words are corrected for spelling only.** Lower-case `i`,
   `andy-rule`, trailing `....`, comma splices and run-ons stay — *"sloppy
   keyboardage is part of me"* (2026-09-20). A garbled phrase stays
