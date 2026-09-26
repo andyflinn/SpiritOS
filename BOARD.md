@@ -17,7 +17,7 @@ not describe. Run the harness if in doubt.
 
 `2026-09-23-sealed-posts-cycle-10` · status **OPEN**
 
-- **missing:** nodeCard.rotate raising the counter and the seal key — **~80% there**, guess: three of four parts exist — setCard refuses an older card (contacts.js), cardFrom signs from a held identity (nodeCard.js), describe() advances the counter on a change (nodeCard.js). Missing: the verb that makes a new keypair, and the owner report
+- **missing:** nodeCard.rotate raising the counter and the seal key — **~50% there**, guess: three of six parts exist — setCard refuses an older card (contacts.js), cardFrom signs from a held identity (nodeCard.js), describe() advances the counter on a change (nodeCard.js). Missing: the verb that makes a new keypair, the owner report, and the sender asking again on will-not-open, which is how peers get the new card — Andy, 2026-09-26: "peers get it on demand. good."
   
   a node can rotate its cipher key and every peer takes the newer card and refuses the old
 

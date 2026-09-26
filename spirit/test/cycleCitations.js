@@ -173,7 +173,19 @@ function bareIn(file, ambiguous) {
   let n = 0;
   text.split(/\r?\n/).forEach(function (line) {
     if (NAMES_A_CYCLE.test(line)) return;
-    (line.match(/\bR\d{1,2}\b/g) || []).forEach(function (id) { if (ambiguous.has(id)) n += 1; });
+    // A NUMBER CARRYING ITS CYCLE AS A PREFIX IS CITED, NOT BARE. `10/R13`
+    // is the handle runAll prints after a title on the scoreboard, which
+    // Andy asked for so he can paste it back — "exactly. that link them for
+    // all of us" (2026-09-27). His words are quoted verbatim and never
+    // edited to pass a gate, so the gate has to know the form. Only the
+    // prefixed number is excused: any other on the same line still counts.
+    //
+    // THE PREFIX MUST BE A BARE NUMBER, NOT THE TAIL OF ANOTHER CITATION.
+    // The first version excused anything after `<digit>/`, and so read
+    // "(R6/R7)" — R6 and R7 — as cycle 6's R7 and let the second go.
+    // targetBusy.js's count fell by one the moment it landed, and the tally
+    // check refused it; that refusal is what found this.
+    (line.match(/(?<!(?:^|[^A-Za-z0-9])\d{1,3}\/)\bR\d{1,2}\b/g) || []).forEach(function (id) { if (ambiguous.has(id)) n += 1; });
   });
   return n;
 }

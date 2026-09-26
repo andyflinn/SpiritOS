@@ -7,7 +7,7 @@
 **Nothing is broken, 13 requirements are declared and not built yet, and 2 older questions need a decision from you.**
 
 ```
-162 suites   3086 green   0 red   0 unhappy   13 owed      run 6feb3e0
+162 suites   3086 green   0 red   0 unhappy   13 owed      run fe55e3b
 ```
 
 ---
@@ -48,29 +48,28 @@
 For each: **is it still wanted, has a later cycle replaced it, or is it abandoned?** Say which and it either gets a test or gets closed.
 
 - In `design/cycles/2026-09-23-sealed-posts-cycle-10.md`, 2 things are still marked open with no test watching:
-    - message LENGTH is public, or it is padded
-    - suites that INSIST, not suites that demonstrate
+    - message LENGTH is public, or it is padded (10/R15)
+    - suites that INSIST, not suites that demonstrate (10/R8)
 - In `design/shell/PUBLIC-APP-SERVER.md`, 13 things are still marked open with no test watching:
-    - `appServer.js` is a third startup module
-    - no failure-state lever; the states are reachable from outside
-    - app code and app state do not share a directory
-    - the official sample instantiates the template, and IS the acceptance test
-    - an app DECLARES what it takes, in its manifest, and gets nothing it did not ask for
-    - the named interface, so a suite need not guess it
-    - one app, one whitelist, no dispatch
-    - `ask` has one home, and the app server uses it
-    - the shell provides the optional layer, as files
-    - the mode's NAME is decided here; its rendering is not
-    - an app server serves exactly one relay, and learns its owner
-    - the node's role is asked, never cached, and fails CLOSED
-    - strict posture: one enforced half, one declared half
+    - `appServer.js` is a third startup module (public-app-server/G1)
+    - no failure-state lever; the states are reachable from outside (G11)
+    - app code and app state do not share a directory (G12)
+    - the official sample instantiates the template, and IS the acceptance test (G13)
+    - an app DECLARES what it takes, in its manifest, and gets nothing it did not ask for (G14)
+    - the named interface, so a suite need not guess it (G15)
+    - one app, one whitelist, no dispatch (public-app-server/G2)
+    - `ask` has one home, and the app server uses it (public-app-server/G3)
+    - the shell provides the optional layer, as files (public-app-server/G4)
+    - the mode's NAME is decided here; its rendering is not (public-app-server/G5)
+    - an app server serves exactly one relay, and learns its owner (public-app-server/G6)
+    - the node's role is asked, never cached, and fails CLOSED (public-app-server/G7)
+    - strict posture: one enforced half, one declared half (public-app-server/G9)
 
 ---
 
 ## What moved
 
-- +2 green
-- -2 red
+**Nothing moved.** Same requirements owed, same tally, since the run at `6feb3e0`.
 
 ---
 
@@ -78,19 +77,19 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 | | requirement | owed | there | |
 |---|---|---|---|---|
-| ⏳ | **a card is ordered in time, or an old one never dies** | 3 days | `▓▓▓▓▓▓▓▓░░` 80% |  |
-| ⏳ | **the state the record cannot mark: its own node being down** | 2 days | `▓▓▓▓░░░░░░` 40% |  |
-| ⏳ | **a server reports the box it sits on: four fields, one opinion withheld** | 2 days | `▓▓▓░░░░░░░` 33% |  |
-| ⏳ | **layer 1 splits by PROMISE, and the stable half is named** | 2 days | `░░░░░░░░░░` 0% |  |
+| ⏳ | **a card is ordered in time, or an old one never dies (10/R13)** | 3 days | `▓▓▓▓▓░░░░░` 50% |  |
+| ⏳ | **the state the record cannot mark: its own node being down (11/C3)** | 2 days | `▓▓▓▓░░░░░░` 40% |  |
+| ⏳ | **a server reports the box it sits on: four fields, one opinion withheld (G10)** | 2 days | `▓▓▓░░░░░░░` 33% |  |
+| ⏳ | **layer 1 splits by PROMISE, and the stable half is named (public-app-server/G8)** | 2 days | `░░░░░░░░░░` 0% |  |
 | ⏳ | **public-app-server/G17 — no document names this requirement** | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
-| ⏳ | **a response bound exists, and both paths obey it** | 1 day | `░░░░░░░░░░` 0% |  |
-| ⏳ | **one shared search: two hooks per collection, the rest inherited** | 1 day | `▓▓▓▓░░░░░░` 40% |  |
-| ⏳ | **one suite that makes every api call** | 1 day | `░░░░░░░░░░` 0% |  |
-| ⏳ | **`peerOwnerPost()` on the owner's node** | 1 day | `░░░░░░░░░░` 0% |  |
-| ⏳ | **a puppet's stored owner key, owner-only** | 1 day | `▓▓░░░░░░░░` 20% |  |
-| ⏳ | **the loopback shim** | 1 day | `░░░░░░░░░░` 0% |  |
-| ⏳ | **an app can reply, and a reply is the only evidence of being delivered** | today | `░░░░░░░░░░` 0% |  |
-| ⏳ | **the log must be able to PROVE what it claims** | today | `░░░░░░░░░░` 0% |  |
+| ⏳ | **a response bound exists, and both paths obey it (puppets/G1)** | 1 day | `░░░░░░░░░░` 0% |  |
+| ⏳ | **one shared search: two hooks per collection, the rest inherited (puppets/G2)** | 1 day | `▓▓▓▓░░░░░░` 40% |  |
+| ⏳ | **one suite that makes every api call (puppets/G3)** | 1 day | `░░░░░░░░░░` 0% |  |
+| ⏳ | **`peerOwnerPost()` on the owner's node (puppets/G4)** | 1 day | `░░░░░░░░░░` 0% |  |
+| ⏳ | **a puppet's stored owner key, owner-only (puppets/G6)** | 1 day | `▓▓░░░░░░░░` 20% |  |
+| ⏳ | **the loopback shim (puppets/G7)** | 1 day | `░░░░░░░░░░` 0% |  |
+| ⏳ | **an app can reply, and a reply is the only evidence of being delivered (transport/R12)** | today | `░░░░░░░░░░` 0% |  |
+| ⏳ | **the log must be able to PROVE what it claims (transport/R16)** | today | `░░░░░░░░░░` 0% |  |
 
 *Percentages are the guesses the declarations carry — `testSupport`:
 "printed as guesses… to be argued with during a design sitting, not to

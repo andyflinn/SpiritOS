@@ -421,6 +421,55 @@ function requirementFor(titles, ref) {
   return hits.length === 1 ? titles[hits[0]] : null;
 }
 
+// ── A HANDLE HE CAN PASTE BACK ───────────────────────────────────────
+//
+//   Andy, 2026-09-27: "i don't mind seeing small (R34) references
+//   accompanying english paragraphs on the score board, because that
+//   allows me to paste your ID's with my questions and responses." And, of
+//   the rule below: "exactly. that link them for all of us".
+//
+// THE TITLE STILL LEADS; the handle follows it in brackets. It is the
+// SHORTEST FORM THAT NAMES ONE THING IN THE WHOLE TREE, not on this page:
+// five cycles define an R13, and a number that is unique on the board is
+// still ambiguous to whoever reads it pasted into a question.
+//
+//   defined by one document anywhere      ->  the bare number, as cycle 10's own R19
+//   a cycle's, defined more than once     ->  10/R13
+//   anything else defined more than once  ->  the full id, puppets/G2
+//
+// `10/R13` is not bare: cycleCitations.js treats a number carrying its
+// cycle prefix as cited, so a handle quoted in his words stays legal —
+// and his words are never edited to make a gate pass.
+function handleFor(titles, ref) {
+  const cut = String(ref).lastIndexOf('/');
+  if (cut === -1) return String(ref);
+  const tag = ref.slice(0, cut);
+  const id = ref.slice(cut + 1);
+  const owners = Object.keys(titles || {}).filter(function (k) { return k.endsWith('/' + id); });
+  if (owners.length === 1) return id;
+  const m = /^cycle-(\d+)$/.exec(tag);
+  if (m) return m[1] + '/' + id;
+  return ref;
+}
+
+// Printed after the title — unless the title IS the id, which is what a
+// requirement no document names gets, and the handle would say it twice.
+function withHandle(title, handle) {
+  return String(title).indexOf(handle) === 0 ? String(title) : title + ' (' + handle + ')';
+}
+
+// The same, for a requirement known only by the document it lives in:
+// turn the file into the tag a declaration would cite, so both routes to
+// one requirement print one handle.
+function handleForKey(titles, key) {
+  const cut = key.lastIndexOf('/');
+  const base = key.slice(0, cut).toLowerCase();
+  const id = key.slice(cut + 1);
+  const cyc = /cycle-(\d+)$/.exec(base);
+  const tag = cyc ? 'cycle-' + cyc[1] : base.replace(/^\d{4}-\d{2}-\d{2}-/, '');
+  return handleFor(titles, tag + '/' + id);
+}
+
 // ── THE TWO SECTIONS ANDY READS, RENDERED ONCE ───────────────────────
 //
 //   Andy, 2026-09-26: "i see nothing on the board that needs me."
@@ -596,7 +645,7 @@ function needsYouSection(titles, declaredIds, blockedRows) {
   }
 
   blocked.forEach(function (r) {
-    out.push('**⛔ ' + r.title + '** — blocked on ' + r.blocked + '.');
+    out.push('**⛔ ' + withHandle(r.title, handleFor(titles, r.id)) + '** — blocked on ' + r.blocked + '.');
     out.push('');
   });
   if (uncounted.length) {
@@ -629,7 +678,9 @@ function needsYouSection(titles, declaredIds, blockedRows) {
       // title; the id is the agents' join key". The first version listed
       // a row of bare numbers, which tells him nothing he can decide
       // on without opening the file — the exact cost the page exists to save.
-      const named = byDoc[f].map(function (k) { return titles[k].title; });
+      const named = byDoc[f].map(function (k) {
+        return withHandle(titles[k].title, handleForKey(titles, k));
+      });
       if (live[f]) {
         // A DOCUMENT THIS CYCLE CITES IS LIVE WORK, not an old question, and
         // the sentence has to say so or he triages it with the rest.
@@ -1011,7 +1062,7 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
       // sat since is the thing worth showing him.
       const freed = (!r.blocked && lastBlockedAt[r.id])
         ? 'unblocked by you ' + ageWords(lastBlockedAt[r.id]) + ' ago' : '';
-      out.push('| ⏳ | **' + r.title + '** | ' + ageWords(r.at) + ' | ' + bar + ' | ' +
+      out.push('| ⏳ | **' + withHandle(r.title, handleFor(titles, r.id)) + '** | ' + ageWords(r.at) + ' | ' + bar + ' | ' +
         (r.blocked ? '⛔' : freed) + ' |');
     });
   out.push('');
