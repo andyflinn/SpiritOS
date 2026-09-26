@@ -4,10 +4,10 @@
 
 ## Summary
 
-**Nothing is broken, 13 requirements are declared and not built yet, and 3 dependencies for you to settle, and 2 older questions need a decision from you.**
+**Nothing is broken, 13 requirements are declared and not built yet, and 2 dependencies for you to settle, and 2 older questions need a decision from you.**
 
 ```
-163 suites   3098 green   0 red   0 unhappy   13 owed      run dff8aee
+163 suites   3098 green   0 red   0 unhappy   13 owed      run ea979fe
 ```
 
 ---
@@ -16,9 +16,8 @@
 
 ### Dependencies to settle
 
-**3 to-dos of yours: an agent says one thing has to land before another. Yes makes it count in the order below; no is kept, so it is not proposed again.**
+**2 to-dos of yours: an agent says one thing has to land before another. Yes makes it count in the order below; no is kept, so it is not proposed again.**
 
-- **(G17) waits on (transport/R12)** — join's answer travels back to the browser, after an app can reply, and a reply is the only evidence of being delivered. *Accepting it puts 1 more to-do behind the second.*
 - **(puppets/G4) waits on (puppets/G7)** — `peerOwnerPost()` on the owner's node, after the loopback shim. *Accepting it puts 1 more to-do behind the second.*
 - **(puppets/G7) waits on (puppets/G6)** — the loopback shim, after a puppet's stored owner key, owner-only. *Accepting it puts 1 more to-do behind the second.*
 
@@ -45,7 +44,7 @@
 **⏳ The outbound queue on the agent node.**
 
 - *You answered today*: "Andy: "keep only a few, and count the deletions, as ameasurement for the system to be discussed in a team review." Then: "keep the inbound queues, not the outbound ones...." And on the reason: "there is duplication there.""
-- **Still owed:** Two of the three are done: a refusal waiting cannot fix is dropped by the catalogue and a missing card is kept and retried (6feb3e0, agentsOutbox.js 4 of 4), and the owner card reaches the sending node by the card fetch (780426a). Still owed: the age of the oldest pending row, on this board.
+- **Still owed:** Two of the three are done: a refusal waiting cannot fix is dropped by the catalogue and a missing card is kept and retried (6feb3e0, agentsOutbox.js 4 of 4), and the owner card reaches the sending node by the card fetch, 780426a. Still owed: the age of the oldest pending row, on this board.
 - **Owed by:** wsl-claude, whose file the agents app is
 
 
@@ -124,7 +123,7 @@ a reply carries a body, already unsealed, to the original poster — and reachOw
 | ⏳ | **an app can reply, and a reply is the only evidence of being delivered (transport/R12)** |  | today | `░░░░░░░░░░` 0% |  |
 | ⏳ | **the log must be able to PROVE what it claims (transport/R16)** |  | today | `░░░░░░░░░░` 0% |  |
 
-**How the order was made.** 13 of 13 owed items have no dependency you have accepted, so they are ordered by age alone — 3 proposed ones above wait for your yes or no.
+**How the order was made.** 13 of 13 owed items have no dependency you have accepted, so they are ordered by age alone — 2 proposed ones above wait for your yes or no.
 
 *Percentages are the guesses the declarations carry — `testSupport`:
 "printed as guesses… to be argued with during a design sitting, not to

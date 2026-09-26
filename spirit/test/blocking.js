@@ -218,7 +218,7 @@ module.exports = [
       + 'the outbound ones...." And on the reason: "there is duplication there."',
     owed: 'Two of the three are done: a refusal waiting cannot fix is dropped by the catalogue '
       + 'and a missing card is kept and retried (6feb3e0, agentsOutbox.js 4 of 4), and the owner '
-      + 'card reaches the sending node by the card fetch (780426a). Still owed: the age of the '
+      + 'card reaches the sending node by the card fetch, 780426a. Still owed: the age of the '
       + 'oldest pending row, on this board.',
   },
 ];
