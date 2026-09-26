@@ -2753,7 +2753,27 @@ function createRelay(rootDir, deps) {
     }, { answer: answerPartner, from: from, at: String(viaKey || '') }, routerTable.PARTNER);
     if (!opened || !opened.ok) return opened;
 
-    monitorEvent('post', from, target.id, { bytes: body.length, hash: innerHash, via: 'partner' });
+    // ── `bytes` IS BYTES, NOW THAT `held` SITS BESIDE IT ──────────────
+    //
+    // It was `.length`, a count of UTF-16 units under a name that says
+    // bytes, and that was tolerable while nothing could contradict it. It
+    // is not tolerable now: a suite comparing `bytes` against
+    // Buffer.byteLength(held) would find them disagree on any non-ASCII
+    // payload, and the field that looks authoritative would be the wrong
+    // one. Found by spiritos-f6 reading this diff.
+    //
+    // This is the same defect the composer had this morning — `text.length`
+    // against a wire bound counted in bytes — and Andy's own reading of it:
+    // "the PACKAGE_MAX suffers from a problem similar to the HTTP endpoint
+    // issue". A quantity measured in the wrong unit under a name that
+    // claims otherwise. `trafficLog` still has it; that one is his call
+    // because it is a persisted field with readers.
+    // `held` is the string this relay is carrying, handed over unchanged.
+    // monitorEvent blanks it unless DEBUG is on, so the decision lives in
+    // one place and every call site simply says what it has.
+    monitorEvent('post', from, target.id, {
+      bytes: Buffer.byteLength(body, 'utf8'), hash: innerHash, via: 'partner', held: body,
+    });
     return null;
   }
 
@@ -2892,7 +2912,7 @@ function createRelay(rootDir, deps) {
     if (!opened || !opened.ok) return opened;
 
     monitorEvent('post', who.id, String(toToken), {
-      bytes: text.length, hash: innerHash, via: 'partner',
+      bytes: Buffer.byteLength(text, 'utf8'), hash: innerHash, via: 'partner', held: text,
     });
     meterNote(text.length, false);
     // Which partner this went to, so that a reply -- if one comes -- can
@@ -3539,6 +3559,42 @@ function createRelay(rootDir, deps) {
       out = { ok: true, monitoring: monitoring, filter: monitorFilter };
     }
 
+    // ── relay.debug — READ AND SET, OWNER ONLY, IN ONE VERB ───────────
+    //
+    //   Andy, 2026-09-26: "DEBUG is Off by default, returned and set by
+    //   owner-only api" — and, on why it must reach a live box: "when
+    //   spirit-3 shows hickups, rather than taking it down, the owner should
+    //   be able to flip the DEBUG switch remotely and get even more valuable
+    //   data.... for remote diagnosis, that cannot be easily had and brought
+    //   back by ssh."
+    //
+    // ONE VERB AND NOT TWO, so a caller cannot read one thing and set
+    // another: `{ debug: {} }` reports, `{ debug: { on: true|false } }` sets
+    // and reports the state that resulted. A suite can therefore establish
+    // its own precondition instead of trusting that somebody flipped it,
+    // which is what "returned and set" buys.
+    //
+    // NO REFUSAL FOR A LIVE RELAY. The design recommended refusing once the
+    // roll holds members other than the owner; Andy reversed it, because a
+    // relay with members showing hiccups is exactly when this earns its
+    // keep. And his second point retires the risk argument: it is only
+    // AFTER the first claim that this verb can be reached at all, since an
+    // owner verb needs the owner to be a member. The claim is the
+    // precondition, not the hazard.
+    //
+    // The `owner` guard is the same one every verb in this block uses, so a
+    // non-owner is refused `not-owner` by the path below rather than by a
+    // second opinion written here.
+    if (body && body.debug && owner) {
+      // Already proved, exactly as the monitor verb records: this arrived
+      // signed by the owner over bytes that bind sender, recipient and this
+      // text — so a captured `on` cannot be replayed as an `off`.
+      if (Object.prototype.hasOwnProperty.call(body.debug, 'on')) {
+        debugging = !!body.debug.on;
+      }
+      out = { ok: true, debug: debugging };
+    }
+
     // FORGETTING SOMEBODY, by key — and the one verb that is BOTH kinds.
     //
     // The owner may name anybody. Anybody else may name only themselves,
@@ -4163,7 +4219,13 @@ function createRelay(rootDir, deps) {
     // hash — and never the text: a monitor carrying payloads would make
     // the owner's screen a place everybody else's words pass through,
     // which is what 0006 just emptied off this box.
-    monitorEvent('post', who.id, target.id, { bytes: text.length, hash: hash });
+    // EVERY POST SITE HANDS OVER WHAT IT HOLDS, and all three do it the same
+    // way, because a site that forgot would make DEBUG silently partial —
+    // the owner would see some traffic proved and some unexamined, with
+    // nothing saying which.
+    monitorEvent('post', who.id, target.id, {
+      bytes: Buffer.byteLength(text, 'utf8'), hash: hash, held: text,
+    });
     // AND THE METER, counted where the bytes are known and the decision to
     // carry them has been made. Aggregate: `who` is not passed, and there
     // is nowhere in `meterNote` to put it if it were — only whether it
@@ -4418,6 +4480,26 @@ function createRelay(rootDir, deps) {
   // telemetry for an empty room.
   var monitoring = false;
 
+  // ── DEBUG: THE ROW CARRIES WHAT THE RELAY HELD (PROVING-IT-CANNOT-READ)
+  //
+  //   Andy, 2026-09-26: "DEBUG is not persisted. it lives in RAM only" —
+  //   and on the mechanism: "DEBUG is Off by default, returned and set by
+  //   owner-only api".
+  //
+  // RAM ONLY, AND THAT IS A FAIL-SAFE RATHER THAN A LIMITATION. A restart is
+  // the off switch, nothing on disc can leave it on for a box nobody is
+  // watching, and it cannot be set before boot. It is also why relayConfig's
+  // rule survives: configuration is not changed while the relay runs, and
+  // DEBUG is not configuration.
+  //
+  // NOT CLEARED WHEN THE OWNER LEAVES, deliberately, unlike `monitoring`
+  // below. Monitoring stops because there is nobody to send to; DEBUG only
+  // decides what a row CARRIES, and monitorEvent already refuses when the
+  // owner is absent — so nothing leaks while the owner is away, and a
+  // connection that blips does not silently disarm the instrument the owner
+  // is in the middle of using on a sick box.
+  var debugging = false;
+
   // WHAT THIS WATCHER ASKED TO SEE.
   //
   //   Andy: "The monitoring api has filtering-at-the-source options, so
@@ -4530,6 +4612,21 @@ function createRelay(rootDir, deps) {
     if (!presentNow.isPresent(ownerKey)) return false;
     var row = { at: new Date().toISOString(), kind: String(kind || '') };
     if (extra) Object.keys(extra).forEach(function (k) { row[k] = extra[k]; });
+
+    // ── DEBUG CHANGES A VALUE AND NEVER THE FIELD SET ─────────────────
+    //
+    // wsl-claude's first recommendation, made mechanical: if DEBUG decided
+    // WHICH FIELDS EXIST, every later assertion would add one and the flag
+    // would be fifty switches in a year — Andy's "it becomes untestable when
+    // 50 places think it is easy enough to do inline", inside the relay.
+    //
+    // So `held` is ALWAYS on the row. Empty unless DEBUG is on, and then a
+    // BYTE-FOR-BYTE copy of the string this relay is carrying — Andy:
+    // "it may only send byte-for-byte copies of observed items to the
+    // owner." Nothing is re-parsed or re-stringified on the way: a
+    // round trip would reorder keys, and then a test could only assert
+    // "contains", which cannot tell a copy from a truncation.
+    row.held = debugging && extra && typeof extra.held === 'string' ? extra.held : '';
 
     // ── `cause`: WHICH POST CAUSED THIS ──────────────────────────────
     //
