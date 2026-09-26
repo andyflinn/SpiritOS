@@ -2999,7 +2999,11 @@ function createRelay(rootDir, deps) {
     var matched = routes.answer(innerHash, reply.from);
     if (!matched.ok) return false;
     monitorEvent('reply', reply.from, matched.requester || '', {
-      bytes: (reply.text || '').length, hash: innerHash, via: 'partner',
+    // A SIZE IN THIS SYSTEM IS BYTES. Andy, 2026-09-26: "the payload cap is
+    // BYTES. that's the design, and the attitude, of node and relay." It was
+    // .length, a count of UTF-16 units under a name that says bytes, and it
+    // undercounted every non-ASCII payload.
+      bytes: Buffer.byteLength(reply.text || '', 'utf8'), hash: innerHash, via: 'partner',
     });
     // PROVEN, so everybody gets it. `routes.answer` has already checked
     // that the replier is the key the route was opened for, which is what
@@ -4277,7 +4281,11 @@ function createRelay(rootDir, deps) {
       return matched;
     }
     monitorEvent('reply', who.id, matched.requester || '', {
-      bytes: typeof text === 'string' ? text.length : 0, hash: hash,
+    // A SIZE IN THIS SYSTEM IS BYTES. Andy, 2026-09-26: "the payload cap is
+    // BYTES. that's the design, and the attitude, of node and relay." It was
+    // .length, a count of UTF-16 units under a name that says bytes, and it
+    // undercounted every non-ASCII payload.
+      bytes: typeof text === 'string' ? Buffer.byteLength(text, 'utf8') : 0, hash: hash,
     });
 
     // THE ONE ASYMMETRY IN THE WHOLE ARRANGEMENT.
@@ -4498,6 +4506,18 @@ function createRelay(rootDir, deps) {
   // owner is absent — so nothing leaks while the owner is away, and a
   // connection that blips does not silently disarm the instrument the owner
   // is in the middle of using on a sick box.
+  //
+  // wsl-claude, challenging this and arriving at a better reason for it:
+  // PRESENCE FLICKERS DURING EXACTLY THE FAULT BEING DIAGNOSED, so clearing
+  // on absence would disarm the instrument on its own symptom.
+  //
+  // AND WHAT MAKES NOT CLEARING SAFE IS `held` ITSELF, which is why this
+  // paragraph is here rather than in a commit message: a row populated with
+  // the carried bytes ANNOUNCES the instrument, on every event, to the only
+  // party who can see it. An owner cannot leave DEBUG on for weeks without
+  // noticing. So anyone who later adds a quiet mode, or drops `held` from the
+  // row, removes that safety WITHOUT TOUCHING THIS SWITCH — and would then
+  // have to give the switch back its own timeout or clear-on-absence.
   var debugging = false;
 
   // WHAT THIS WATCHER ASKED TO SEE.

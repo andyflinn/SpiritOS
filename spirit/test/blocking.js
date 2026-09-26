@@ -76,28 +76,20 @@
 // settled — it is abandoned, and it should say so.
 
 module.exports = [
-  {
-    asked: '2026-09-26',
-    who: 'claude, found by spiritos-f6 and confirmed by wsl-claude',
-    decision: 'A field named `bytes` that counts characters: rename it, or make it count '
-      + 'bytes and keep the name?',
-    costs: 'Nothing is refused wrongly today — every instance is a reported figure, not a '
-      + 'limit. But anything that ever sizes, budgets or bills from `bytes` inherits an '
-      + 'undercount on every non-ASCII payload, and `bytes` is exactly the field a later '
-      + 'session reaches for. Measured: a traffic row showed 1520 characters against 1522 '
-      + 'UTF-8, and another 2415 against 2416.',
-    why: 'THE THIRD INDEPENDENT PLACE TODAY where .length stands in for a size, and the '
-      + 'first two were both real defects: the composer refused on characters while the '
-      + 'wire counted bytes, and the sealed ceiling had to be derived in escaped bytes. '
-      + 'Andy already named the pattern — "the PACKAGE_MAX suffers from a problem similar '
-      + 'to the HTTP endpoint issue" — so this is that pattern again rather than a typo. '
-      + 'WHERE IT REMAINS: relay.js:3002 (the reply row), relay.js:4280, and trafficLog, '
-      + 'which is the one with persisted readers and therefore the one that is genuinely '
-      + 'his. Three monitor post rows are already fixed, because `held` now sits beside '
-      + 'them and a suite comparing the two would have found them disagree. wsl-claude '
-      + 'asked that the rest be its own row rather than folded into the DEBUG diff, which '
-      + 'is right: a finding buried in a feature is a finding nobody reviews.',
-  },
+  // ANSWERED AND REMOVED. Andy, 2026-09-26: "the payload cap is BYTES. that's
+  // the design, and the attitude, of node and relay." So the name was right
+  // and the value was wrong, everywhere — not just where `held` exposed it.
+  // Fixed at relay.js:3002, :4280 and trafficLog, on top of the three post
+  // rows. Historic traffic rows keep the old count and nothing rewrites them,
+  // because that log is permanent by design.
+  //
+  // And he answered the objection nobody had raised yet: "Kanji is denser in
+  // meaning than roman script." A byte cap gives a Japanese writer fewer
+  // CHARACTERS and comparable MEANING, because a kanji carries what a word
+  // carries rather than what a letter carries — so the character count was
+  // the unfair measure all along. Written into limits.js beside the
+  // derivation, where the next person to meet the limit will look.
+
   // ── A DESIGN WAITING FOR A RULING IS SOMETHING THAT NEEDS HIM ─────────
   //
   // Andy asked "where is the design proposal for the relay testing via the

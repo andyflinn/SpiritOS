@@ -353,7 +353,30 @@ function createTrafficLog(opts) {
     // both sides: relay.js will not send one, and this will not write one.
     if (row.kind !== 'owner' && typeof entry.payload === 'string') {
       row.payload = entry.payload;
-      row.bytes = entry.payload.length;
+      // ── A SIZE IN THIS SYSTEM IS BYTES ────────────────────────────────
+      //
+      //   Andy, 2026-09-26: "the payload cap is BYTES. that's the design,
+      //   and the attitude, of node and relay."
+      //
+      // It was `.length`, a count of UTF-16 units under a name that says
+      // bytes, so it undercounted every non-ASCII payload — measured on real
+      // rows at 1520 against 1522, and 2415 against 2416. Nothing was refused
+      // wrongly, because this is a reported figure rather than a limit, but
+      // `bytes` is exactly the field a later session would size or bill from.
+      //
+      // THE THIRD INDEPENDENT PLACE THE SAME MISTAKE TURNED UP IN ONE DAY:
+      // the composer refused on characters while the wire counted bytes, the
+      // sealed ceiling had to be derived in escaped bytes, and this. Andy's
+      // own reading of the pattern was "the PACKAGE_MAX suffers from a
+      // problem similar to the HTTP endpoint issue" — a quantity measured in
+      // the wrong unit under a name that claims otherwise.
+      //
+      // HISTORIC ROWS CARRY THE OLD COUNT and nothing rewrites them: this log
+      // is permanent by design. A reader comparing a row written before
+      // 2026-09-26 against one written after will find ASCII rows agree and
+      // non-ASCII rows differ by the UTF-8 overhead, which is the honest
+      // state of a field that was wrong and was fixed.
+      row.bytes = Buffer.byteLength(entry.payload, 'utf8');
     }
 
     // THE FACTS AN OWNER EVENT CARRIES. Small, named, and closed: a

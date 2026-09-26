@@ -272,6 +272,27 @@ var SEALED_MAX = 3 * Math.floor((PAYLOAD_MAX - SEAL_ENVELOPE) / 4);
 // measured, at PLAINTEXT_MAX: ASCII seals to 22,049 and fits, newlines to
 // 32,945, quotes and accented to 43,841, CJK to 65,633.
 //
+// ── AND A BYTE CAP IS FAIR, WHICH IS NOT OBVIOUS ─────────────────────
+//
+//   Andy, 2026-09-26: "the payload cap is BYTES. that's the design, and the
+//   attitude, of node and relay." Then, answering the objection to his own
+//   ruling before anybody raised it: "Kanji is denser in meaning than roman
+//   script."
+//
+// THE OBJECTION IS THAT A BYTE CAP PENALISES CJK WRITERS. It plainly does, in
+// characters: 16 KB is about 16,000 letters of English and about 5,500
+// Japanese characters, because each one costs three bytes in UTF-8.
+//
+// HIS ANSWER IS THAT CHARACTERS ARE NOT THE UNIT OF MEANING. A kanji carries
+// roughly what an English word carries, not what a letter carries — so the
+// same byte budget buys comparable MEANING in either script, and it is the
+// character count that was the misleading measure all along. A cap in
+// characters would have been the unfair one, handing an English writer
+// sixteen thousand letters and a Japanese writer sixteen thousand words.
+//
+// Worth having written down because the next person to meet this limit will
+// see the character counts and read them as a bug.
+
 // MEASURED, NOT COUNTED, for the same reason `fitsWrapped` above measures:
 // escaping cost depends on content, so no character count can stand in for
 // it. This is the fork's size, said in the units of the load.
