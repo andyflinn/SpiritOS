@@ -301,7 +301,35 @@ const test = {
         const tag = (there === null && !cost) ? ''
             : ' (' + (there === null ? '' : 'there:' + there) +
               (there !== null && cost ? ' ' : '') + (cost ? 'cost:' + cost : '') + ')';
-        this.comment('AWAITING ' + req + ' [' + unit + ']' + tag + ': ' +
+        // WHAT IT WAITS ON, as its own marker right after the id — never
+        // inside the tag, whose free-text cost has already once made a
+        // requirement vanish from the board (runAll.js, the parser). The
+        // board ranks by it: Andy, 2026-09-27, "lets start with a ranking
+        // and see if that makes the board adapt to progress...". Ids only,
+        // `area/number` as awaiting's own first argument is.
+        const given = est && Array.isArray(est.after) ? est.after : [];
+        const after = given.filter(function (a) { return typeof a === 'string' && /^[^\s{},]+\/[^\s{},]+$/.test(a); });
+        // A MALFORMED ONE IS RED, NOT DROPPED. Dropping it would rank the
+        // board as if the dependency did not exist, and nobody would see why.
+        if (after.length !== given.length) {
+            this.failureCount++;
+            this.comment('FAILURE #' + this.counter + '.' + this.failureCount + ': ' + req +
+                ' declares `after` entries that are not ids of the form area/number: ' +
+                JSON.stringify(given.filter(function (a) { return after.indexOf(a) === -1; })) +
+                ' ' + ICON.ERROR);
+        }
+        const afterTag = after.length ? ' {after:' + after.join(',') + '}' : '';
+        // THE PARAGRAPH HE READS, WHEN IT IS CLOSE AT HAND. Andy, 2026-09-27:
+        // "the five most urgent to-do's for me have a nice english paragraph
+        // explaining, the following items have a title.... so it's not prose
+        // that is composed it's measured urgency". Written here, by whoever
+        // declares the to-do, and placed by the ranking — never composed at
+        // render time. Its own line, one line, so no free text ever rides
+        // inside the AWAITING line the board parses.
+        if (est && typeof est.explain === 'string' && est.explain.trim()) {
+            this.comment('EXPLAIN ' + req + ': ' + est.explain.replace(/\s+/g, ' ').trim());
+        }
+        this.comment('AWAITING ' + req + afterTag + ' [' + unit + ']' + tag + ': ' +
             (note || 'the unit is not there to be tested') + ' ⏳');
     },
 

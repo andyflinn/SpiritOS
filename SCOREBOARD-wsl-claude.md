@@ -7,7 +7,7 @@
 **Nothing is broken, 13 requirements are declared and not built yet, and 2 older questions need a decision from you.**
 
 ```
-162 suites   3086 green   0 red   0 unhappy   13 owed      run fe55e3b
+163 suites   3094 green   0 red   0 unhappy   13 owed      run 571a99c
 ```
 
 ---
@@ -69,27 +69,54 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-**Nothing moved.** Same requirements owed, same tally, since the run at `6feb3e0`.
+**Nothing moved.** Same requirements owed, same tally, since the run at `571a99c`.
 
 ---
 
-## Owed longest
+## Owed — what unblocks most first
 
-| | requirement | owed | there | |
-|---|---|---|---|---|
-| ⏳ | **a card is ordered in time, or an old one never dies (10/R13)** | 3 days | `▓▓▓▓▓░░░░░` 50% |  |
-| ⏳ | **the state the record cannot mark: its own node being down (11/C3)** | 2 days | `▓▓▓▓░░░░░░` 40% |  |
-| ⏳ | **a server reports the box it sits on: four fields, one opinion withheld (G10)** | 2 days | `▓▓▓░░░░░░░` 33% |  |
-| ⏳ | **layer 1 splits by PROMISE, and the stable half is named (public-app-server/G8)** | 2 days | `░░░░░░░░░░` 0% |  |
-| ⏳ | **public-app-server/G17 — no document names this requirement** | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
-| ⏳ | **a response bound exists, and both paths obey it (puppets/G1)** | 1 day | `░░░░░░░░░░` 0% |  |
-| ⏳ | **one shared search: two hooks per collection, the rest inherited (puppets/G2)** | 1 day | `▓▓▓▓░░░░░░` 40% |  |
-| ⏳ | **one suite that makes every api call (puppets/G3)** | 1 day | `░░░░░░░░░░` 0% |  |
-| ⏳ | **`peerOwnerPost()` on the owner's node (puppets/G4)** | 1 day | `░░░░░░░░░░` 0% |  |
-| ⏳ | **a puppet's stored owner key, owner-only (puppets/G6)** | 1 day | `▓▓░░░░░░░░` 20% |  |
-| ⏳ | **the loopback shim (puppets/G7)** | 1 day | `░░░░░░░░░░` 0% |  |
-| ⏳ | **an app can reply, and a reply is the only evidence of being delivered (transport/R12)** | today | `░░░░░░░░░░` 0% |  |
-| ⏳ | **the log must be able to PROVE what it claims (transport/R16)** | today | `░░░░░░░░░░` 0% |  |
+**1. a card is ordered in time, or an old one never dies (10/R13)**
+
+a node can rotate its cipher key and every peer takes the newer card and refuses the old *(No paragraph written for this yet; this is the declaration's own note.)*
+
+*Owed 3 days, about 50% there.*
+
+**2. the state the record cannot mark: its own node being down (11/C3)**
+
+a reader can tell "the relay was quiet" from "this node was not running", and a deliberate stop from a death *(No paragraph written for this yet; this is the declaration's own note.)*
+
+*Owed 2 days, about 40% there.*
+
+**3. a server reports the box it sits on: four fields, one opinion withheld (G10)**
+
+opaque fingerprint, allotment at install, and the box total as measured — and never the opinion that the box is over-committed *(No paragraph written for this yet; this is the declaration's own note.)*
+
+*Owed 2 days, about 33% there.*
+
+**4. layer 1 splits by PROMISE, and the stable half is named (public-app-server/G8)**
+
+the app contract sits in a named half that needs a deprecation path, and box concerns in one that does not — the test being mechanical: if removing it would break an app that never changed, it is in the stable half *(No paragraph written for this yet; this is the declaration's own note.)*
+
+*Owed 2 days, about 0% there.*
+
+**5. join's answer travels back to the browser (G17)**
+
+a reply carries a body, already unsealed, to the original poster — and reachOwner keeps it, so what the master computed reaches the screen *(No paragraph written for this yet; this is the declaration's own note.)*
+
+*Owed 2 days, about 70% there.*
+
+| | then | frees | owed | there | |
+|---|---|---|---|---|---|
+| ⏳ | **a response bound exists, and both paths obey it (puppets/G1)** |  | 1 day | `░░░░░░░░░░` 0% |  |
+| ⏳ | **one shared search: two hooks per collection, the rest inherited (puppets/G2)** |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
+| ⏳ | **one suite that makes every api call (puppets/G3)** |  | 1 day | `░░░░░░░░░░` 0% |  |
+| ⏳ | **`peerOwnerPost()` on the owner's node (puppets/G4)** |  | 1 day | `░░░░░░░░░░` 0% |  |
+| ⏳ | **a puppet's stored owner key, owner-only (puppets/G6)** |  | 1 day | `▓▓░░░░░░░░` 20% |  |
+| ⏳ | **the loopback shim (puppets/G7)** |  | 1 day | `░░░░░░░░░░` 0% |  |
+| ⏳ | **an app can reply, and a reply is the only evidence of being delivered (transport/R12)** |  | today | `░░░░░░░░░░` 0% |  |
+| ⏳ | **the log must be able to PROVE what it claims (transport/R16)** |  | today | `░░░░░░░░░░` 0% |  |
+
+**How the order was made.** 13 of 13 owed items declare no dependency and nothing waits on them, so they are ordered by age alone.
 
 *Percentages are the guesses the declarations carry — `testSupport`:
 "printed as guesses… to be argued with during a design sitting, not to

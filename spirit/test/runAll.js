@@ -57,6 +57,9 @@ const NOT_A_SUITE = [
   // A helper, not a suite: reads a relay's roll off its disc for the suites
   // that inspect it (cycle 3).
   'rollOf.js',
+  // The board's ranking graph. Pure, asserts nothing; boardRankSuite.js is
+  // the suite that holds it to account.
+  'boardRank.js',
   // NOT A SUITE AND DELIBERATELY SO: the rows an agent writes by hand when
   // it stops and waits for Andy. It reports nothing and asserts nothing —
   // the board reads it. Listed here rather than given a startTest, because
@@ -291,6 +294,7 @@ function runOne(file) {
         // say what is waiting and for which requirement.
         waiting: said && w ? Number(w[1]) : 0,
         waitingLines: (out.match(/AWAITING [^\n]*/g) || []),
+        explainLines: (out.match(/EXPLAIN [^\n]*/g) || []),
         // STOOD DOWN (test.standsDown). The suite ran, diagnosed its own
         // environment and declined — not a pass, not a failure, and the
         // reason is lifted out so a green board never quietly means less
@@ -544,7 +548,21 @@ function ageWordsFromDay(day) {
   return days === 1 ? 'yesterday' : days + ' days ago';
 }
 
-function needsYouSection(titles, declaredIds, blockedRows) {
+// ── THE ORDER, FROM WHAT THE TREE DECLARES ───────────────────────────
+// boardRank.js holds the graph and its suite; this only feeds it. Open
+// questions are the blocking rows Andy has not answered, keyed by their
+// text, and what they release is what they `cover`.
+function rankBoard(rows, titles) {
+  return require('./boardRank.js').rank({
+    owed: (rows || []).map(function (r) { return { id: r.id, after: r.after || [] }; }),
+    questions: openBlocks().filter(function (b) { return !b.settled; })
+      .map(function (b) { return { key: String(b.decision || ''), covers: b.covers || [] }; }),
+    isDone: function (id) { const k = requirementFor(titles, id); return !!(k && k.status === 'DONE'); },
+    isKnown: function (id) { return !!requirementFor(titles, id); },
+  });
+}
+
+function needsYouSection(titles, declaredIds, blockedRows, ranking) {
   const out = [];
   // ── A REQUIREMENT ON THE BOARD TWICE IS THE BOARD DISAGREEING WITH
   // ── ITSELF ──────────────────────────────────────────────────────────
@@ -594,10 +612,35 @@ function needsYouSection(titles, declaredIds, blockedRows) {
       ? '**One agent cannot go on until you answer.**'
       : '**' + stopped.length + ' things are stopped until you answer.**');
     out.push('');
-    stopped.forEach(function (b) {
+    // RANKED BY WHAT ANSWERING FREES. Andy, 2026-09-27: "the "What needs
+    // you" section is a de-facto highlight of the (let's say 3) most
+    // blocking issues". Ties keep blocking.js's own order.
+    const place = Object.create(null);
+    const freesOf = Object.create(null);
+    ((ranking && ranking.questions) || []).forEach(function (q, i) {
+      if (place[q.key] === undefined) { place[q.key] = i; freesOf[q.key] = q.count; }
+    });
+    const ordered = stopped.map(function (b, i) { return { b: b, i: i }; })
+      .sort(function (x, y) {
+        const px = place[String(x.b.decision || '')];
+        const py = place[String(y.b.decision || '')];
+        return ((px === undefined ? 1e9 : px) - (py === undefined ? 1e9 : py)) || (x.i - y.i);
+      }).map(function (x) { return x.b; });
+    ordered.forEach(function (b, n) {
       const age = ageWordsFromDay(b.asked);
-      out.push('**⛔ ' + String(b.decision || '(no decision named)') + '**');
+      const top = ordered.length > 3 && n < 3 ? '⭐ ' : '';
+      out.push('**⛔ ' + top + String(b.decision || '(no decision named)') + '**');
       out.push('');
+      // NO QUESTION IDS. Andy: "my question usually are associated with a
+      // team-to-do" — so the question carries the handles of the to-dos it
+      // covers, and those are what he pastes back.
+      const handles = (b.covers || []).map(function (c) { return handleFor(titles, c); });
+      out.push('- *To-do:* ' + (handles.length ? handles.map(function (h) { return '(' + h + ')'; }).join(' ')
+        : '**none named** — this question covers no declared to-do, so nothing can rank it'));
+      const frees = freesOf[String(b.decision || '')];
+      if (typeof frees === 'number') {
+        out.push('- *Answering it frees ' + frees + ' owed item' + (frees === 1 ? '' : 's') + '.*');
+      }
       out.push('- *Asked ' + (age || String(b.asked)) + ' by ' + (b.who || 'an agent') + '.*');
       if (b.costs) out.push('- **What it is holding up:** ' + b.costs);
       if (b.why) out.push('- **Why it is yours:** ' + b.why);
@@ -903,6 +946,14 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
       there: anyThere ? there : null,
       blocked: blockedNote(known),
       at: owedSince(id),
+      // What it waits on, as declared — kept ON THE ROW because --board
+      // replays rows from the run log, and a ranking that only exists on a
+      // full run would change order depending on which command drew it.
+      after: (byReq[id].after || []).slice(),
+      // The declared paragraph, or — until someone writes one — the note the
+      // declaration already carries, which is English and the author's own.
+      explain: byReq[id].explain || '',
+      note: (units[0] && units[0].note) || '',
     };
   });
 
@@ -1013,7 +1064,8 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
   // the helpers above held a second copy; a prose fix then landed on the copy
   // that does not run. One function, two callers, no drift.
   const red = redSection(tally.failing || []);
-  const mine = needsYouSection(titles, nowIds, needing);
+  const ranking = rankBoard(rows, titles);
+  const mine = needsYouSection(titles, nowIds, needing, ranking);
   red.forEach(function (l) { out.push(l); });
   mine.forEach(function (l) { out.push(l); });
   if (!red.length && !mine.length) {
@@ -1048,12 +1100,42 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
 
   out.push('---');
   out.push('');
-  out.push('## Owed longest');
+  // WHAT UNBLOCKS MOST GOES FIRST, and age breaks the ties — so a board
+  // with no dependencies declared reads exactly as the old "owed longest"
+  // did, and the ranking is visible only where the tree gives it a reason.
+  out.push('## Owed — what unblocks most first');
   out.push('');
-  out.push('| | requirement | owed | there | |');
-  out.push('|---|---|---|---|---|');
-  rows.slice().sort(function (a, b) { return (a.at || 1e12) - (b.at || 1e12); })
-    .forEach(function (r) {
+  const byAge = rows.slice().sort(function (a, b) { return (a.at || 1e12) - (b.at || 1e12); });
+  const rankOf = Object.create(null);
+  require('./boardRank.js').rank({
+    owed: byAge.map(function (r) { return { id: r.id, after: r.after || [] }; }),
+  }).order.forEach(function (id, i) { rankOf[id] = i; });
+  byAge.sort(function (a, b) { return rankOf[a.id] - rankOf[b.id]; });
+
+  // THE FIVE CLOSEST AT HAND GET A PARAGRAPH; the rest get a title. The
+  // paragraph is the declaration's own `explain`, or its note until one is
+  // written — and the page says which, so an unexplained to-do in the top
+  // five is visible as a gap rather than dressed up.
+  const CLOSE = 5;
+  const near = byAge.slice(0, CLOSE);
+  const rest = byAge.slice(CLOSE);
+  near.forEach(function (r, i) {
+    const frees = ranking.unblocks[r.id] || 0;
+    out.push('**' + (i + 1) + '. ' + withHandle(r.title, handleFor(titles, r.id)) + '**');
+    out.push('');
+    if (r.explain) out.push(r.explain);
+    else if (r.note) out.push(r.note + ' *(No paragraph written for this yet; this is the declaration\'s own note.)*');
+    else out.push('*Nobody has written what this is for yet.*');
+    out.push('');
+    out.push('*' + (frees ? 'Frees ' + frees + ' other to-do' + (frees === 1 ? '' : 's') + '. ' : '') +
+      'Owed ' + ageWords(r.at) + (r.there === null ? '' : ', about ' + r.there + '% there') + '.*');
+    out.push('');
+  });
+  if (rest.length) {
+    out.push('| | then | frees | owed | there | |');
+    out.push('|---|---|---|---|---|---|');
+  }
+  rest.forEach(function (r) {
       const n = r.there === null ? null : Math.max(0, Math.min(10, Math.round(r.there / 10)));
       const bar = n === null ? '`?`'
         : '`' + '▓'.repeat(n) + '░'.repeat(10 - n) + '` ' + r.there + '%';
@@ -1062,10 +1144,38 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
       // sat since is the thing worth showing him.
       const freed = (!r.blocked && lastBlockedAt[r.id])
         ? 'unblocked by you ' + ageWords(lastBlockedAt[r.id]) + ' ago' : '';
-      out.push('| ⏳ | **' + withHandle(r.title, handleFor(titles, r.id)) + '** | ' + ageWords(r.at) + ' | ' + bar + ' | ' +
+      const frees = ranking.unblocks[r.id] || 0;
+      out.push('| ⏳ | **' + withHandle(r.title, handleFor(titles, r.id)) + '** | ' + (frees ? frees : '') +
+        ' | ' + ageWords(r.at) + ' | ' + bar + ' | ' +
         (r.blocked ? '⛔' : freed) + ' |');
     });
   out.push('');
+  // ── WHAT THE ORDER COULD NOT SEE — printed, never smoothed over ──────
+  const notes = [];
+  if (ranking.unlinked.length) {
+    notes.push(ranking.unlinked.length + ' of ' + rows.length + ' owed items declare no dependency ' +
+      'and nothing waits on them, so they are ordered by age alone.');
+  }
+  ranking.cycles.forEach(function (c) {
+    notes.push('These wait on each other, so none can finish first: ' +
+      c.map(function (id) { return '(' + handleFor(titles, id) + ')'; }).join(' ⇄ ') + '.');
+  });
+  ranking.deadEdges.forEach(function (e) {
+    const what = { done: 'which is DONE — the edge is ignored',
+      unknown: 'which no document defines',
+      unwatched: 'which is open but no test watches it',
+      itself: 'itself' }[e.why] || e.why;
+    notes.push('(' + handleFor(titles, e.from) + ') waits on (' + handleFor(titles, e.to) + '), ' + what + '.');
+  });
+  ranking.undeclared.forEach(function (u) {
+    notes.push('A question to you covers (' + handleFor(titles, u.id) + '), which no test declares, ' +
+      'so answering it cannot be counted.');
+  });
+  if (notes.length) {
+    out.push('**How the order was made.** ' + (notes.length === 1 ? notes[0] : ''));
+    if (notes.length > 1) { out.push(''); notes.forEach(function (n) { out.push('- ' + n); }); }
+    out.push('');
+  }
   out.push('*Percentages are the guesses the declarations carry — `testSupport`:');
   out.push('"printed as guesses… to be argued with during a design sitting, not to');
   out.push('be believed afterwards." Everything else is measured.*');
@@ -1418,6 +1528,15 @@ async function main() {
     const titles = requirementTitles();
     const byReq = Object.create(null);
     waitingAll.forEach(function (r) {
+      // The paragraph a declaration wrote for Andy, kept per requirement.
+      // First one wins: two suites explaining one to-do is a thing to notice
+      // in the source, not to concatenate on his page.
+      (r.explainLines || []).forEach(function (line) {
+        const ex = /^EXPLAIN (\S+): (.*?)\s*(?:\x1b\[[0-9;]*m)?\s*$/.exec(line);
+        if (!ex) return;
+        const rec = (byReq[ex[1]] = byReq[ex[1]] || { units: [], suites: {} });
+        if (!rec.explain) rec.explain = ex[2].trim();
+      });
       r.waitingLines.forEach(function (line) {
         // ── A ROW THIS CANNOT PARSE IS STILL SHOWN ────────────────────
         //
@@ -1436,6 +1555,16 @@ async function main() {
         // So: the tag is matched NON-GREEDILY up to the first "): ",
         // which lets a cost carry parentheses — and anything still
         // unparseable falls through to a rough row rather than silence.
+        // WHAT IT WAITS ON comes out FIRST, before the shapes below are
+        // tried, so the ranking marker can never be the thing that turns a
+        // row UNPARSED — the failure this parser was already rewritten for.
+        const afterMark = /^(AWAITING \S+) \{after:([^}]*)\}/.exec(line);
+        if (afterMark) {
+          const reqId = /^AWAITING (\S+)/.exec(line)[1].trim();
+          line = afterMark[1] + line.slice(afterMark[0].length);
+          const rec = (byReq[reqId] = byReq[reqId] || { units: [], suites: {} });
+          rec.after = (rec.after || []).concat(afterMark[2].split(',').filter(Boolean));
+        }
         let mm = /^AWAITING (\S+)\s*\[([^\]]*)\]\s*\((there:.*?)\):\s*(.*)$/.exec(line);
         if (!mm) mm = /^AWAITING (\S+)\s*\[([^\]]*)\]:\s*(.*)$/.exec(line);
         if (!mm) {
