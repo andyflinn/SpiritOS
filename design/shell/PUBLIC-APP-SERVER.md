@@ -817,6 +817,19 @@ appShellApp carries because a row the owner granted names that route.
 registering a subdomain for their own node is the same exchange. That is
 after alpha.
 
+**The reply is told apart by `re`, which already exists.** Andy, 2026-09-27:
+*"because the appShellApp must post to the owner (via stream) and the reply
+must be distinguishable as a reply by an api.."*. A reply is a packet whose
+envelope carries `re`, the hash of the packet it answers
+(`client/packet.js:15`, encoded :229-230, decoded :322 and :348). appShellApp
+already uses it for grants (`appShellApp.js:158-162`). For the proxy,
+appShellApp posts the visitor's request over its stream and keeps that
+packet's hash with the waiting browser connection. An arrival whose `re`
+matches a waiting hash is that visitor's answer, and a `re` that matches
+nothing is refused (*"where a hash must match"*, transport/R12). **Owed:**
+the table of waiting requests, and a time limit on each entry so a visitor
+whose answer never comes is not held open for ever.
+
 **So every route served, by a node or a puppet, is negotiated and contracted** (Andy: *"so all
 routes served are negotiated and contracted."*, then *"by nodes or puppets"*). No route is served
 without a row the owner granted. A request for a domain with no row is
