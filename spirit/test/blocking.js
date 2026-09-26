@@ -76,6 +76,57 @@
 // settled — it is abandoned, and it should say so.
 
 module.exports = [
+  // ── A DESIGN WAITING FOR A RULING IS SOMETHING THAT NEEDS HIM ─────────
+  //
+  // Andy asked "where is the design proposal for the relay testing via the
+  // monitor stream?" AFTER it was written, linked from design/README.md and
+  // pushed. It had a row on this board the whole time — but the row said the
+  // WORK was owed by wsl-claude, and never that three questions inside it were
+  // owed by HIM. So the board answered a question he was not asking, and the
+  // design sat unread.
+  //
+  // These three are the document's own OPEN section, unchanged, one row each
+  // because rule 4 above is that one row is one decision. They are short
+  // enough to answer in a sitting and nothing in the design moves until they
+  // are.
+  {
+    asked: '2026-09-26',
+    settled: '2026-09-26',
+    who: 'wsl-claude, whose design and whose relay surface',
+    decision: 'How DEBUG is turned on, and whether it survives a relay gaining members.',
+    answer: 'Andy, on why it must work on a live relay: "i disagree, when spirit-3 shows '
+      + 'hickups, rather than taking it down, the owner should be able to flip the DEBUG '
+      + 'switch remotely and get even more valuable data.... for remote diagnosis, that '
+      + 'cannot be easily had and brought back by ssh." Then the mechanism, exactly: '
+      + '"DEBUG is Off by default, returned and set by owner-only api".',
+    owed: 'THE MECHANISM IS DECIDED AND IT IS BOTH DIRECTIONS: an owner-only verb that '
+      + 'RETURNS the state as well as setting it, so the owner — and a suite — can ask '
+      + 'whether it is on instead of assuming. Off by default. No env var and no file, '
+      + 'because both need a restart and a restart is what he is refusing to do to a box '
+      + 'that is misbehaving. NOT dropped when a relay gains members and NOT refused on a '
+      + 'public relay: that was the design recommendation and he reversed it, since a '
+      + 'relay with members showing hiccups is exactly when it earns its keep. '
+      + 'design/relay/PROVING-IT-CANNOT-READ.md is wsl-claude to amend — RECOMMENDED 2 '
+      + 'becomes DECIDED the other way. '
+      + 'AND ONE CLAIM OF MINE WAS WRONG, which the amendment should fix rather than '
+      + 'repeat: I told him DEBUG adds only ciphertext. peerPost.js:725 skips sealing for '
+      + 'card traffic, so a relay in DEBUG streams other members card requests and '
+      + 'replies in plain. Harmless — cards are self-signed and public by design — but '
+      + 'the proof should ENUMERATE what the relay holds unsealed and assert that list, '
+      + 'so it is a test rather than a sentence. spiritos-f6 caught it.',
+  },
+
+
+  {
+    asked: '2026-09-26',
+    who: 'claude, from wsl-claude design',
+    decision: 'Which of the five sealed-post proofs does this instrument retire?',
+    costs: 'Four of the five are unbuildable without it and are listed with reasons rather '
+      + 'than declared, so they are owed and uncounted. Your answer is what lets them '
+      + 'become declarations and appear in the owed list.',
+    why: 'claude reads four as reachable through the stream; wsl-claude has not checked '
+      + 'that and says so. Neither agent should decide which proof counts as answered.',
+  },
   {
     asked: '2026-09-26',
     settled: '2026-09-26',
