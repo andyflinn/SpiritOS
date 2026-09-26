@@ -78,8 +78,11 @@
 module.exports = [
   {
     asked: '2026-09-26',
+    settled: '2026-09-26',
     who: 'wsl-claude, who found it; Andy confirmed it is not in the code',
     decision: 'Who builds the card ASK — the half of the card exchange that does not exist?',
+    answer: 'Andy: "windows will implement the card fetch, and you will test it" — under his '
+      + 'standing rule that "we do best when we strictly divide implementation from testing".',
     costs: 'AGENT REPORTING IS ENTIRELY DEAD AND HAS BEEN SINCE 2026-09-23. 11,628 posts '
       + 'refused, every report either agent believed it filed to your node never arrived, '
       + 'and wsl-claude cannot send you its review tonight. The refusal even names the '
@@ -93,6 +96,36 @@ module.exports = [
       + 'wait for the answer, then send. It is small, it is on the send path, and it is '
       + 'not obviously either agent, hence a row rather than a start. FOUND BY '
       + 'WSL-CLAUDE; spiritos-f6 measured what it cost.',
+    owed: 'THE CALLER, by spiritos-f6, in peerPost.js around :725. THE PROOF IS ALREADY '
+      + 'THERE AND WAITING: spirit/test/cardFetch.js, 7 green and 3 awaiting, written '
+      + 'before the caller so it measures an implementation against a contract it did not '
+      + 'choose. The three branch on the OUTCOME — a seal key the fixture never planted — '
+      + 'so they become real assertions the day the caller lands, with no edit. Also owed '
+      + 'by spiritos-f6, and the one thing the suite cannot guess: what happens when the '
+      + 'peer never answers the ask.',
+  },
+  {
+    asked: '2026-09-26',
+    who: 'wsl-claude, whose drop rule it is',
+    decision: 'A missing-card refusal is no longer permanent. Do I change the CATALOGUE '
+      + '(spiritErrors.js, retry for `no-cipher-key`) or the OUTBOX (agents.js:351)?',
+    costs: 'REPORTS ARE BEING DESTROYED, today, on the tree as it stands. An agent node that '
+      + 'does not yet hold your card, flushing while your node is offline, deletes its whole '
+      + 'queue instead of keeping it — the exact case the queue was built for, and the '
+      + 'opposite of what you were promised: "your node down: the program keeps the reports '
+      + 'and sends them when your node is back." One red on the board, '
+      + 'spirit/test/agentsOutbox.js.',
+    why: 'NEITHER AGENT DID ANYTHING WRONG AND NEITHER COULD HAVE SEEN IT ALONE. The drop '
+      + 'rule asks the catalogue whether waiting can help and drops when the answer is no. '
+      + 'That was RIGHT when written: with no caller for the card ask, a missing card could '
+      + 'never be obtained. spiritos-f6 built that caller at 780426a, so 428 now means "the '
+      + 'ask went unanswered this time" — which the next flush fixes. The catalogue still '
+      + 'says retry "no". The defect is only in the JOIN of the two changes. '
+      + 'THE CHOICE IS REAL rather than cosmetic: `retry` has exactly ONE reader in the tree '
+      + '(agents.js:351), so both fixes are equally safe today — but the catalogue is meant '
+      + 'to be where the judgement lives, and a special case in the outbox is the second '
+      + 'opinion this week has been about. I lean CATALOGUE. Either way the suite goes green '
+      + 'untouched, because it asserts the outcome and not the mechanism.',
   },
   {
     asked: '2026-09-26',

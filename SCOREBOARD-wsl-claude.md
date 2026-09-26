@@ -4,17 +4,50 @@
 
 ## Summary
 
-**Nothing is broken, 13 requirements are declared and not built yet, and 2 older questions need a decision from you.**
+**One test is broken, 13 requirements are declared and not built yet, and 2 THINGS ARE STOPPED waiting for you, with 2 older question(s) behind them, (5 more already ruled and now ours).**
 
 ```
-159 suites   3159 green   0 red   0 unhappy   13 owed      run 1d02767
+161 suites   3074 green   1 red   1 unhappy   13 owed      run 780426a
 ```
+
+---
+
+## What is red
+
+**Something that used to pass now fails.** These are broken, not unfinished — the owed list further down is work nobody has written yet.
+
+**❌ `agentsOutbox.js`** — one check no longer passes.
+
+  - ALL 3 OF 3 REPORTS WERE PERMANENTLY DESTROYED. An agent node that does not yet hold the owner's card, flushing while the owner is offline, deletes its whole …
 
 ---
 
 ## What needs you
 
+### Someone is stopped, waiting for you
+
+**2 things are stopped until you answer.**
+
+**⛔ A missing-card refusal is no longer permanent. Do I change the CATALOGUE (spiritErrors.js, retry for `no-cipher-key`) or the OUTBOX (agents.js:351)?**
+
+- *Asked today by wsl-claude, whose drop rule it is.*
+- **What it is holding up:** REPORTS ARE BEING DESTROYED, today, on the tree as it stands. An agent node that does not yet hold your card, flushing while your node is offline, deletes its whole queue instead of keeping it — the exact case the queue was built for, and the opposite of what you were promised: "your node down: the program keeps the reports and sends them when your node is back." One red on the board, spirit/test/agentsOutbox.js.
+- **Why it is yours:** NEITHER AGENT DID ANYTHING WRONG AND NEITHER COULD HAVE SEEN IT ALONE. The drop rule asks the catalogue whether waiting can help and drops when the answer is no. That was RIGHT when written: with no caller for the card ask, a missing card could never be obtained. spiritos-f6 built that caller at 780426a, so 428 now means "the ask went unanswered this time" — which the next flush fixes. The catalogue still says retry "no". The defect is only in the JOIN of the two changes. THE CHOICE IS REAL rather than cosmetic: `retry` has exactly ONE reader in the tree (agents.js:351), so both fixes are equally safe today — but the catalogue is meant to be where the judgement lives, and a special case in the outbox is the second opinion this week has been about. I lean CATALOGUE. Either way the suite goes green untouched, because it asserts the outcome and not the mechanism.
+
+**⛔ May the relay chooser be extracted from handlePost so the owner-command door shares it, rather than picking its own relay?**
+
+- *Asked today by claude.*
+- **What it is holding up:** puppets/G4, the door, is otherwise stopped. The authority question is settled — "the node handles all the signing. the shell does not worry about that" — and this is the only thing left in it.
+- **Why it is yours:** handlePost spends about 230 lines choosing a relay: relaysNaming, the via override, route hints from the shadow roll, partner-availability ordering. A second handler choosing its own would be a SECOND OPINION ABOUT REACHABILITY, which serverSurface.js:848 warns about in as many words. Extracting it is the only option that does not duplicate judgement — but it is a refactor inside hub.js, and CLAUDE.md says to stop and call a review rather than patch when something needs a hub URL switch. So it is a ruling, not a tidy-up.
+
+
 ### Ruled, and now ours
+
+**⏳ Who builds the card ASK — the half of the card exchange that does not exist?**
+
+- *You answered today*: "Andy: "windows will implement the card fetch, and you will test it" — under his standing rule that "we do best when we strictly divide implementation from testing"."
+- **Still owed:** THE CALLER, by spiritos-f6, in peerPost.js around :725. THE PROOF IS ALREADY THERE AND WAITING: spirit/test/cardFetch.js, 7 green and 3 awaiting, written before the caller so it measures an implementation against a contract it did not choose. The three branch on the OUTCOME — a seal key the fixture never planted — so they become real assertions the day the caller lands, with no edit. Also owed by spiritos-f6, and the one thing the suite cannot guess: what happens when the peer never answers the ask.
+- **Owed by:** wsl-claude, who found it; Andy confirmed it is not in the code
 
 **⏳ How DEBUG is turned on, and whether it survives a relay gaining members.**
 
@@ -69,7 +102,8 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-**Nothing moved.** Same requirements owed, same tally, since the run at `1d02767`.
+- +7 green
+- ✅ **built or withdrawn:** cycle-10/R5
 
 ---
 
