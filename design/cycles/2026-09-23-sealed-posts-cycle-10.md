@@ -802,8 +802,20 @@ breaks posts already sealed to the old key, so:
   shows red when armed and disarms when attention moves
   (`spirit/run/js/client/shell.js:1085`, `index.html:553`). No app builds
   its own confirm. The verb `nodeCard.rotate` is bones and the button is
-  app work, so they land as two pieces. Which screen the button goes on
-  is left to the UI session.
+  app work, so they land as two pieces.
+- **It is part of managing the relay you own.** Andy, 2026-09-26: *"it
+  goes into managing my relay"*. The key rotated is the RELAY's cipher
+  key, which members seal claims and posts to (`relayServer.js:465-467`,
+  `relay.js:3100`). The control is a small section in natterDetails,
+  shown only where `ndBadge.owned` is true (the same gate as
+  `natterDetails.js:770`). Andy: *"natterDetails is a dialog already, so
+  we just put in a little section"*. That section explains the impact
+  before the red button: when to use it, what it costs peers, and that it
+  does not protect the past. The press reaches the relay box as an owner
+  verb, because the key lives there and not on the owner's node.
+  **Still open:** whether a personal node's own cipher key gets a
+  rotation control at all, and where. Info is the precedent for a
+  node-wide setting (DICTIONARY.md, *Public label*).
 
 **Recommended, and agreed ("true"): show the owner the exposure hints,
 above all when debug is on**, so he can tell a key problem from a bug
