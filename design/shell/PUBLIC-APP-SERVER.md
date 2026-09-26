@@ -60,6 +60,12 @@ only needs an appShellApp"*. So:
   grant table, *"only on the owners node"*, appShellApp.js). The lookup
   therefore needs the owner's node up. That is the owner's to keep, under
   the uptime ruling (DEVICES-AND-PORTS.md:154-174).
+- **A member who wants more than one app puts a shell on their subdomain.**
+  Andy, 2026-09-26: *"so members utlimately will have to use a shell on
+  their subdomain, if they want to fan out further"*. One subdomain reaches
+  one intrinsic app on the member's node, and fanning out is the shell's
+  job (`appServer.js:22-28`). So the VPS never needs a second entry per
+  member app.
 - **So basic routing IS alpha.** The front door and pass-through sections
   below are out of scope only beyond what this path needs.
 - **G17, restated for this topology.** The app's answer (for `join`, the
