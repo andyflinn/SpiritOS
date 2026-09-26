@@ -76,7 +76,13 @@ only needs an appShellApp"*. So:
   own. Each place it mirrors the node is a place the later shell will not
   need rewriting. Alpha delivers only the basic version. A proposal that
   gives appShellApp a convenience the node does not have works against
-  this, and should be judged by that.
+  this, and should be judged by that. **And why it is shaped like a node:**
+  *"because appShellApp is associated with a relay-owner, and reflects the
+  wildcard levels of subdomains.... (all out of scope right now)"*. Each
+  level of the wildcard name is one owner's appShellApp fanning to the
+  level below, just as a relay owner's node sits above its members.
+  Recorded as direction only. Nothing past alpha's basic version is in
+  scope.
 - **So basic routing IS alpha.** The front door and pass-through sections
   below are out of scope only beyond what this path needs.
 - **G17, restated for this topology.** The app's answer (for `join`, the
