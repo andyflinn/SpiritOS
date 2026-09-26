@@ -836,6 +836,14 @@ costs one refusal, one ask and one reply per peer, and only when that peer
 next posts. Rotation does not ship without it, or every peer holding the
 old card is stranded.
 
+**And `will-not-open` becomes retry 'after' in the same commit** (wsl-claude,
+2026-09-26). `agents.js:351` drops a queued report on retry 'no'. So after a
+rotation, every report still queued under the old card would be DESTROYED.
+This is the same join as 6feb3e0, arriving through a different refusal.
+Not before the re-ask ships: until then 'no' is honest. The suite must
+also keep the re-ask from becoming a loop: a peer that answers with the
+same old card ends in a refusal, not in a second ask.
+
 **Recommended, and agreed ("true"): show the owner the exposure hints,
 above all when debug is on**, so he can tell a key problem from a bug
 before he rotates. Two hints are computed today and thrown away (verified
