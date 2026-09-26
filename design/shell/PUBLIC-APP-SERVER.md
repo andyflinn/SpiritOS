@@ -354,6 +354,17 @@ across several. The arithmetic belongs to the party holding all the
 reports, which is the owner's node. **No server needs to know its
 siblings exist**, which is what keeps the deferral honest.
 
+**When the interface is built, it is visible on demand, and over-committed
+is a warning only.** Andy, 2026-09-26: *"that must be visible-on-demand in
+a UI"*, then *"over-committed is a "warning" state only."* The owner's node
+groups servers that share a fingerprint and compares their allotments with
+the box total. The owner opens that view when he wants it. An over-committed
+box shows a warning. It is not an error, and nothing is refused or stopped
+because of it: allotting is the owner's, just as uptime is (Andy,
+2026-09-25, *DEVICES-AND-PORTS.md*). The interface itself is still
+deferred. This records its shape so that building it later does not
+reopen the question.
+
 **Deliberately absent: anything about what the server is FOR.** A box
 view carrying app facts is how the general layer acquires its first
 join-shaped wart.
