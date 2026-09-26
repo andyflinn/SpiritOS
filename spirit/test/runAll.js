@@ -57,6 +57,13 @@ const NOT_A_SUITE = [
   // A helper, not a suite: reads a relay's roll off its disc for the suites
   // that inspect it (cycle 3).
   'rollOf.js',
+  // NOT A SUITE AND DELIBERATELY SO: the rows an agent writes by hand when
+  // it stops and waits for Andy. It reports nothing and asserts nothing —
+  // the board reads it. Listed here rather than given a startTest, because
+  // a block is a DECLARATION about the world and not a claim about the
+  // code (see its own header for why the board's "blocked is a join, not a
+  // flag" rule cannot serve this one).
+  'blocking.js',
   // A TOOL, not a suite: rewrites the front page's generated capacity
   // block from the Ubuntu measurement (Andy, 2026-09-23 — "the front page
   // README.md should have a marked block that will be auto-updated with
@@ -366,8 +373,19 @@ function requirementTitles() {
       // it. Taking the last match gave the amendment's heading as the
       // title and no status at all — so the block carrying a Status line
       // is the requirement, and it wins. First in wins a tie.
-      const better = !out[key] || (status && !out[key].status);
-      if (better) out[key] = { title: title, status: status || '?', cycle: cycle };
+      // THE GUARD WAS DEAD. It read `!out[key].status`, and the line below
+      // stores `status || '?'`, so the field was never falsy and the block
+      // carrying a Status line could never win — first in won every tie,
+      // which is the opposite of what the comment above promises. A
+      // requirement whose first block is the amendment was therefore
+      // recorded with no status at all, and a requirement with no status
+      // cannot be reported as OPEN. Compare against the '?' that is
+      // actually stored.
+      const better = !out[key] || (status && out[key].status === '?');
+      // `file` is kept because the board now groups uncounted requirements
+      // by the document that declares them; `cycle` is the bare name and
+      // cannot be clicked.
+      if (better) out[key] = { title: title, status: status || '?', cycle: cycle, file: full };
     }
   });
   return out;
@@ -391,6 +409,213 @@ function requirementFor(titles, ref) {
     return k.endsWith('/' + id) && k.toLowerCase().indexOf(lower) !== -1;
   });
   return hits.length === 1 ? titles[hits[0]] : null;
+}
+
+// ── THE TWO SECTIONS ANDY READS, RENDERED ONCE ───────────────────────
+//
+//   Andy, 2026-09-26: "i see nothing on the board that needs me."
+//
+// He was reading BOARD.md. The sections had been built into SCOREBOARD.md,
+// which is a different file and not the one he keeps open — rule 14 names
+// BOARD.md as that one. So the work was correct and invisible, which is the
+// same outcome as not doing it.
+//
+// His standing rule is that there must never be a second place to look, so
+// these render from one function into both files rather than being written
+// twice and drifting. What is red goes FIRST: a decision he owes can wait a
+// day, something that used to hold and does not cannot.
+function redSection(failing) {
+  const out = [];
+  if (!failing || !failing.length) return out;
+  out.push('## What is red');
+  out.push('');
+  out.push('**Something that used to pass now fails.** These are broken, not ' +
+    'unfinished — the owed list further down is work nobody has written yet.');
+  out.push('');
+  failing.forEach(function (f) {
+    out.push('**❌ `' + f.file + '`** — ' +
+      (f.died ? 'the test stopped without saying why (exit ' + f.code + ')'
+        : f.no === 1 ? 'one check no longer passes'
+        : f.no + ' checks no longer pass') + '.');
+    if (f.lines && f.lines.length) {
+      out.push('');
+      // THE LOG LINE IS NOT A SENTENCE. Andy, 2026-09-26: "it's not in
+      // english." What was printed here was the console's own raw output —
+      // `***   FAILURE #1.1:` in front, a red cross behind, and a JSON blob
+      // cut off mid-string. The reason is the only part that means anything
+      // to a reader, so that is the only part kept.
+      f.lines.forEach(function (l) {
+        const why = String(l)
+          .replace(/^\**\s*/, '')
+          .replace(/^FAILURE\s+#[\d.]+:\s*/, '')
+          .replace(/\s*❌\s*$/, '')
+          .trim();
+        out.push('  - ' + (why.length > 160 ? why.slice(0, 157) + '…' : why));
+      });
+    }
+    out.push('');
+  });
+  out.push('---');
+  out.push('');
+  return out;
+}
+
+// GROUPED BY DOCUMENT, NEVER ENUMERATED, except for a document this cycle
+// cites. Attention is the constraint: a page listing 26 rows fails the same
+// way a silent one does.
+// AN AGENT IS STOPPED AND WAITING ON HIM. Read from `blocking.js`, which is
+// the only declaration on this page an agent writes by hand — see that file
+// for why a join cannot serve here: a block is an EVENT, and nothing in the
+// tree changes when one happens.
+//
+// A missing file is not an error. It means nobody is blocked, which is the
+// normal state and must not be reported as trouble.
+function openBlocks() {
+  try {
+    const rows = require('./blocking.js');
+    return Array.isArray(rows) ? rows : [];
+  } catch (e) { return []; }
+}
+
+function ageWordsFromDay(day) {
+  const t = Date.parse(String(day) + 'T00:00:00Z');
+  if (!t) return '';
+  const days = Math.floor((Date.now() - t) / 86400000);
+  if (days <= 0) return 'today';
+  return days === 1 ? 'yesterday' : days + ' days ago';
+}
+
+function needsYouSection(titles, declaredIds, blockedRows) {
+  const out = [];
+  const uncounted = uncountedOpen(titles, declaredIds);
+  const blocked = blockedRows || [];
+  const stopped = openBlocks();
+  if (!blocked.length && !uncounted.length && !stopped.length) return out;
+  out.push('## What needs you');
+  out.push('');
+
+  // FIRST, AND SEPARATELY FROM THE BACKLOG. Andy, 2026-09-26: "as soon as i
+  // block, the board needs to show it." A requirement that has sat open for
+  // two weeks and an agent that stopped an hour ago are not the same kind of
+  // thing, and putting them in one list buries the one that is costing time
+  // now. The age is printed because a row nobody cleared has to read as
+  // stale rather than as urgent.
+  if (stopped.length) {
+    out.push('### Someone is stopped, waiting for you');
+    out.push('');
+    out.push(stopped.length === 1
+      ? '**One agent cannot go on until you answer.**'
+      : '**' + stopped.length + ' things are stopped until you answer.**');
+    out.push('');
+    stopped.forEach(function (b) {
+      const age = ageWordsFromDay(b.asked);
+      out.push('**⛔ ' + String(b.decision || '(no decision named)') + '**');
+      out.push('');
+      out.push('- *Asked ' + (age || String(b.asked)) + ' by ' + (b.who || 'an agent') + '.*');
+      if (b.costs) out.push('- **What it is holding up:** ' + b.costs);
+      if (b.why) out.push('- **Why it is yours:** ' + b.why);
+      out.push('');
+    });
+    out.push('');
+  }
+
+  blocked.forEach(function (r) {
+    out.push('**⛔ ' + r.title + '** — blocked on ' + r.blocked + '.');
+    out.push('');
+  });
+  if (uncounted.length) {
+    const live = liveDocuments();
+    const byDoc = Object.create(null);
+    uncounted.forEach(function (k) {
+      // The repo root from here, not `REPO` — that one is local to
+      // writeScoreboard, and this renderer serves more than one caller.
+      const f = path.relative(path.join(__dirname, '..', '..'), String(titles[k].file || '?'))
+        .split(path.sep).join('/');
+      (byDoc[f] = byDoc[f] || []).push(k);
+    });
+    // PLAIN ENGLISH, BECAUSE HE ASKED FOR IT. Andy, 2026-09-26: "try english
+    // next time." The first version said "26 requirement(s) say OPEN in a
+    // document and no declaration counts them", which is accurate and tells
+    // him nothing about what to DO. A page he has to translate costs the
+    // attention it was built to save.
+    out.push('### Older questions, no hurry');
+    out.push('');
+    out.push('**' + Object.keys(byDoc).length + ' document(s) still hold a decision ' +
+      'only you can make.** Each one says a requirement is open, and no test is ' +
+      'watching it — so if the work was dropped, nothing will notice.');
+    out.push('');
+    out.push('For each: **is it still wanted, has a later cycle replaced it, or is it ' +
+      'abandoned?** Say which and it either gets a test or gets closed.');
+    out.push('');
+    Object.keys(byDoc).sort().forEach(function (f) {
+      const ids = byDoc[f].map(function (k) { return k.slice(k.lastIndexOf('/') + 1); }).sort();
+      // TITLES, NOT IDS. Andy's standing rule: "report requirements to Andy by
+      // title; the id is the agents' join key". The first version listed
+      // a row of bare numbers, which tells him nothing he can decide
+      // on without opening the file — the exact cost the page exists to save.
+      const named = byDoc[f].map(function (k) { return titles[k].title; });
+      if (live[f]) {
+        // A DOCUMENT THIS CYCLE CITES IS LIVE WORK, not an old question, and
+        // the sentence has to say so or he triages it with the rest.
+        named.forEach(function (t) {
+          out.push('- **' + t + '** — live work in `' + f + '`, and no test is watching it.');
+        });
+      } else {
+        out.push('- In `' + f + '`, ' + (named.length === 1 ? 'one thing is' : named.length + ' things are') +
+          ' still marked open with no test watching:');
+        named.forEach(function (t) { out.push('    - ' + t); });
+      }
+    });
+    out.push('');
+  }
+  out.push('---');
+  out.push('');
+  return out;
+}
+
+// OPEN IN A DOCUMENT AND COUNTED BY NOTHING. One computation, because the
+// headline and the section have to agree: the summary line used to count only
+// `needing` and so printed "nothing waiting on you" directly above a list of
+// 26 things waiting on him.
+//
+// It resolves a declared id the way requirementFor does — case-insensitively,
+// on the tail after the last slash plus a substring match on the tag — so a
+// declaration counts its requirement whatever the document's filename case.
+// Anything left saying OPEN is owed by somebody and on no board at all.
+function uncountedOpen(titles, declaredIds) {
+  const counted = Object.create(null);
+  (declaredIds || []).forEach(function (ref) {
+    const cut = String(ref).lastIndexOf('/');
+    if (cut === -1) return;
+    const tag = String(ref).slice(0, cut).toLowerCase();
+    const id = String(ref).slice(cut + 1).toLowerCase();
+    const hits = Object.keys(titles).filter(function (k) {
+      return k.toLowerCase().endsWith('/' + id) && k.toLowerCase().indexOf(tag) !== -1;
+    });
+    if (hits.length === 1) counted[hits[0]] = true;
+  });
+  return Object.keys(titles).filter(function (k) {
+    return titles[k].status === 'OPEN' && !counted[k];
+  }).sort();
+}
+
+// WHICH DOCUMENTS ARE THIS CYCLE'S. The live `*Pending.js` files cite the
+// documents their requirements come from, so the citations ARE the answer —
+// no list to maintain and nothing to forget to update when a cycle closes.
+// A design with no pending file is not this cycle, which is the point.
+function liveDocuments() {
+  const out = Object.create(null);
+  let names = [];
+  try { names = fs.readdirSync(__dirname); } catch (e) { return out; }
+  names.filter(function (f) { return /Pending\.js$/.test(f); }).forEach(function (f) {
+    let text = '';
+    try { text = fs.readFileSync(path.join(__dirname, f), 'utf8'); }
+    catch (e) { return; }
+    (text.match(/design\/[A-Za-z0-9/._-]*\.md/g) || []).forEach(function (d) {
+      out[d] = true;
+    });
+  });
+  return out;
 }
 
 // ── BOARD.md — THE ONE ANDY KEEPS OPEN (rule 14) ─────────────────────
@@ -578,8 +803,42 @@ function writeScoreboard(byReq, titles, tally) {
   out.push('## Summary');
   out.push('');
   const needing = rows.filter(function (r) { return r.blocked; });
-  out.push('**' + (tally.red ? tally.red + ' red' : 'Green board') + ', ' + rows.length +
-    ' owed, and ' + (needing.length ? needing.length + ' thing(s) waiting on you' : 'nothing waiting on you') + '.**');
+  // THE HEADLINE COUNTED ONLY `needing`, so it said "nothing waiting on you"
+  // directly above a list of 26 things waiting on him. Whatever the section
+  // below prints, this line has to agree with it.
+  // ENGLISH, NOT A TALLY. "5 red, 12 owed, and 26 thing(s) waiting on you"
+  // is four jargon terms and a parenthesised plural. The numbers stay in the
+  // code block below for whoever wants them; this line is a sentence.
+  const open = uncountedOpen(titles, nowIds);
+  const openDocs = Object.create(null);
+  open.forEach(function (k) { openDocs[String(titles[k].file || '?')] = true; });
+  const docCount = Object.keys(openDocs).length;
+  const says = [];
+  says.push(tally.unhappy
+    ? (tally.unhappy === 1 ? 'One test is broken' : tally.unhappy + ' tests are broken')
+    : 'Nothing is broken');
+  says.push(rows.length === 1
+    ? 'one requirement is declared and not built yet'
+    : rows.length + ' requirements are declared and not built yet');
+  // THE STOPPED ONES ARE NAMED FIRST AND SEPARATELY, because they are the
+  // only number on this line that is costing time right now.
+  const stoppedNow = openBlocks().length;
+  const mineCount = needing.length + docCount;
+  if (stoppedNow) {
+    says.push(stoppedNow === 1
+      ? 'and ONE THING IS STOPPED waiting for you'
+      : 'and ' + stoppedNow + ' THINGS ARE STOPPED waiting for you');
+    if (mineCount) {
+      says.push('with ' + mineCount + ' older question(s) behind ' +
+        (mineCount === 1 ? 'it' : 'them'));
+    }
+  } else {
+    says.push(mineCount
+      ? (mineCount === 1 ? 'and one older question needs a decision from you'
+        : 'and ' + mineCount + ' older questions need a decision from you')
+      : 'and nothing is waiting on you');
+  }
+  out.push('**' + says.join(', ') + '.**');
   out.push('');
   out.push('```');
   out.push(tally.suites + ' suites   ' + tally.green + ' green   ' + tally.red + ' red   ' +
@@ -589,21 +848,27 @@ function writeScoreboard(byReq, titles, tally) {
 
   out.push('---');
   out.push('');
-  out.push('## What needs you');
-  out.push('');
-  if (!needing.length) {
-    out.push('*Nothing else needs you.*');
-  } else {
-    needing.forEach(function (r) {
-      out.push('**⛔ ' + r.title + '** — blocked on ' + r.blocked + '.');
-      out.push('');
-    });
-    out.push('*Nothing else needs you.*');
-  }
-  out.push('');
 
-  out.push('---');
-  out.push('');
+  // BOTH SECTIONS COME FROM ONE RENDERER. They were written inline here and
+  // the helpers above held a second copy; a prose fix then landed on the copy
+  // that does not run. One function, two callers, no drift.
+  const red = redSection(tally.failing || []);
+  const mine = needsYouSection(titles, nowIds, needing);
+  red.forEach(function (l) { out.push(l); });
+  mine.forEach(function (l) { out.push(l); });
+  if (!red.length && !mine.length) {
+    // SILENCE SAYS WHAT IT CHECKED. On its own, an absent section is
+    // indistinguishable from a check that looked in the wrong place — which
+    // is exactly what had happened here.
+    out.push('## What needs you');
+    out.push('');
+    out.push('**Nothing.** Nothing is broken, no requirement names you as its ' +
+      'blocker, and every OPEN one in `design/` has a test watching it.');
+    out.push('');
+    out.push('---');
+    out.push('');
+  }
+
   out.push('## What moved');
   out.push('');
   if (!prev) {
@@ -1050,6 +1315,25 @@ async function main() {
     (skipped.length ? ', ' + skipped.length + ' not run' : '') + '\n');
   writeScoreboard(lastBoard.byReq, lastBoard.titles, {
     suites: files.length, green: green, red: red, unhappy: unhappy.length,
+    // THE BOARD GETS THE FAILURES THEMSELVES, not only how many. Andy,
+    // 2026-09-26: "i dont' see any red on the board." It printed `5 red` in
+    // the tally and named nothing, because the failing lines went to the
+    // console and the console scrolls away. Same lines, same order, three
+    // of them per suite — enough to know what broke without making the page
+    // a log.
+    failing: unhappy.map(function (r) {
+      const lines = r.out.split(String.fromCharCode(10)).filter(function (l) {
+        return /FAILURE|Error:|at .*\.js:\d+/.test(l);
+      });
+      return {
+        file: r.file,
+        no: r.no,
+        code: r.code,
+        died: r.no < 0,
+        lines: (lines.length ? lines : r.out.split(String.fromCharCode(10)).slice(-6))
+          .slice(0, 3).map(function (l) { return l.replace(/\s+$/, '').trim(); }),
+      };
+    }),
   });
 
   process.exit(unhappy.length ? 1 : 0);

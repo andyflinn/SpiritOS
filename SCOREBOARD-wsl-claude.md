@@ -4,23 +4,83 @@
 
 ## Summary
 
-**Green board, 12 owed, and nothing waiting on you.**
+**Nothing is broken, 12 requirements are declared and not built yet, and 3 THINGS ARE STOPPED waiting for you, with 6 older question(s) behind them.**
 
 ```
-154 suites   3122 green   0 red   0 unhappy   12 owed      run 318a34f
+154 suites   3122 green   0 red   0 unhappy   12 owed      run 1ccfd57
 ```
 
 ---
 
 ## What needs you
 
-*Nothing else needs you.*
+### Someone is stopped, waiting for you
+
+**3 things are stopped until you answer.**
+
+**⛔ Delete the first-cut extract output that landed in the product tree — spirit/run/input/, spirit/run/output/ and spirit/run/.state/ (14 files, 4.4 MB).**
+
+- *Asked today by claude.*
+- **What it is holding up:** The board cannot go green. Two suites are red only because of these files: the live front door cannot build a lab while untracked files sit under spirit/, and the stands-alone check finds forbidden paths quoted inside the old corpus JSON.
+- **Why it is yours:** Andy has to run it: the agent was refused by its own sandbox, twice, as irreversible local destruction. Not a judgement call — a permission.
+
+**⛔ Whether the limits requirement takes the shape wsl-claude proposed: a derivation stated beside the literal, non-binding, loud when they disagree.**
+
+- *Asked today by claude.*
+- **What it is holding up:** One requirement in this cycle stays open and uncounted. Its harness half already exists in payloadCeiling.js, so the wrong answer means building a second copy of a test that is already green.
+- **Why it is yours:** The alternative — computing the constant — is the silent flag day that was already refused once. Choosing between them is a product decision.
+
+**⛔ Confirm the brains repo is private, then say whether to push it.**
+
+- *Asked today by claude.*
+- **What it is holding up:** Three commits sit unpushed, and the voice corpus is not backed up anywhere while they do.
+- **Why it is yours:** Neither agent has gh. A 404 from the anonymous API says private, but a renamed or deleted repo gives the same 404, and the cost of being wrong is Andy's verbatim typing on a public remote.
+
+
+### Older questions, no hurry
+
+**6 document(s) still hold a decision only you can make.** Each one says a requirement is open, and no test is watching it — so if the work was dropped, nothing will notice.
+
+For each: **is it still wanted, has a later cycle replaced it, or is it abandoned?** Say which and it either gets a test or gets closed.
+
+- In `design/cycles/2026-09-12-app-building-removed.md`, 2 things are still marked open with no test watching:
+    - the specimens outlive their subjects
+    - AI Manager and AI Chat still mount
+- In `design/cycles/2026-09-12-device-and-node-defence.md`, 3 things are still marked open with no test watching:
+    - the relay holds `deviceKey → ownerKey` in RAM, and never publishes it
+    - the pairing and the destination rule land together
+    - the node's front door must learn its own device keys
+- In `design/cycles/2026-09-12-transport-below-the-boundary.md`, 2 things are still marked open with no test watching:
+    - an app can reply, and a reply is the only evidence of being read
+    - the log must be able to PROVE what it claims
+- In `design/cycles/2026-09-23-sealed-posts-cycle-10.md`, 5 things are still marked open with no test watching:
+    - prove the relay cannot read it, by trying to read it
+    - the relay's hash must differ from the endpoints' hash of the words
+    - message LENGTH is public, or it is padded
+    - what the relay streams to a monitor is unreadable, by both belts
+    - suites that INSIST, not suites that demonstrate
+- **certain limits derive from the constant, rather than being written down** — live work in `design/principles/THE-REQUESTER-IS-RESPONSIBLE.md`, and no test is watching it.
+- In `design/shell/PUBLIC-APP-SERVER.md`, 13 things are still marked open with no test watching:
+    - `appServer.js` is a third startup module
+    - no failure-state lever; the states are reachable from outside
+    - app code and app state do not share a directory
+    - the official sample instantiates the template, and IS the acceptance test
+    - an app DECLARES what it takes, in its manifest, and gets nothing it did not ask for
+    - the named interface, so a suite need not guess it
+    - one app, one whitelist, no dispatch
+    - `ask` has one home, and the app server uses it
+    - the shell provides the optional layer, as files
+    - the mode's NAME is decided here; its rendering is not
+    - an app server serves exactly one relay, and learns its owner
+    - the node's role is asked, never cached, and fails CLOSED
+    - strict posture: one enforced half, one declared half
 
 ---
 
 ## What moved
 
-- +2 green
+- +1 green
+- -1 red
 
 ---
 
@@ -29,10 +89,10 @@
 | | requirement | owed | there | |
 |---|---|---|---|---|
 | ⏳ | **a card is ordered in time, or an old one never dies** | 2 days | `▓▓▓▓▓▓▓▓░░` 80% |  |
-| ⏳ | **the state the record cannot mark: its own node being down** | 1 day | `▓▓▓▓░░░░░░` 40% |  |
+| ⏳ | **the state the record cannot mark: its own node being down** | 2 days | `▓▓▓▓░░░░░░` 40% |  |
 | ⏳ | **a server reports the box it sits on: four fields, one opinion withheld** | 1 day | `▓▓▓░░░░░░░` 33% |  |
 | ⏳ | **layer 1 splits by PROMISE, and the stable half is named** | 1 day | `░░░░░░░░░░` 0% |  |
-| ⏳ | **public-app-server/G17 — no document names this requirement** | today | `▓▓▓▓▓▓▓░░░` 70% |  |
+| ⏳ | **public-app-server/G17 — no document names this requirement** | 1 day | `▓▓▓▓▓▓▓░░░` 70% |  |
 | ⏳ | **a response bound exists, and both paths obey it** | today | `░░░░░░░░░░` 0% |  |
 | ⏳ | **one shared search: two hooks per collection, the rest inherited** | today | `▓▓▓▓░░░░░░` 40% |  |
 | ⏳ | **one suite that makes every api call** | today | `░░░░░░░░░░` 0% |  |
