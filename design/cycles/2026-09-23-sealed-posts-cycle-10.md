@@ -836,6 +836,26 @@ costs one refusal, one ask and one reply per peer, and only when that peer
 next posts. Rotation does not ship without it, or every peer holding the
 old card is stranded.
 
+**Remedy one: ask the relay for an accurate card.** Andy, 2026-09-26: *"so
+remedy one: ask the relay for an accurate card?"*, then *"yes"*. On a
+cipher error, the sender first asks the relay for the peer's current card,
+then posts again. This works while the peer is offline. It falls back to
+asking the peer only when the relay has nothing newer. The relay already
+holds every member's card on its row and checks it against the key on
+every read (`relay.js:3154-3156`). It uses those cards only for its own
+sealing: the public roll serves key and label alone (`relay.js:3923-3926`).
+It is safe because a card is signed by its member, so a relay can withhold
+a card or serve an old one but cannot forge one, and the strictly-newer
+rule turns an old one away. **Serving the card changes relay.js and what
+goes on the wire, so it needs a team review (Andy and the reviewer) before
+it is built.**
+
+**The rotating node hands its new card to every relay straight away.**
+Andy, 2026-09-26, quoting it back as the ruling: *"One thing this depends
+on: the rotating node must hand its new card to every relay straight away
+when it rotates."* The handover that fires when a stream opens also fires
+on rotation, so no relay serves the old card until the next reconnect.
+
 **And `will-not-open` becomes retry 'after' in the same commit** (wsl-claude,
 2026-09-26). `agents.js:351` drops a queued report on retry 'no'. So after a
 rotation, every report still queued under the old card would be DESTROYED.
