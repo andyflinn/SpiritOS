@@ -830,6 +830,37 @@ nothing is refused (*"where a hash must match"*, transport/R12). **Owed:**
 the table of waiting requests, and a time limit on each entry so a visitor
 whose answer never comes is not held open for ever.
 
+**THE PATH, as Andy laid it out** (2026-09-27): *"join lives as a
+server-process on owners node. the node forwards a post from the face to
+the app-server-process, and the reply is return to appShellApp via that
+special puppyRely() interface, the appShellApp return that to the
+browser."* And the page itself: *"there will be the lowest layer shell with
+the index.html that the app-process servers the browser on first request."*
+
+```
+browser → appShellApp (VPS) ─packet─→ owner node ─loopback─→ join (app-server process)
+browser ← appShellApp ←─reply, re=hash── puppyReply() ←─ answer ─┘
+```
+
+- **The first request fetches the page** (`GET /` returns `join.html`,
+  `appServer.js:1031`, plus the shared `ask.js`). The page's posts then
+  reach join's one door along the same route. So the node forwards only the
+  two flat things: a file by name, or a body to the door.
+- **`puppyReply()` is the one node-side function** that turns the app
+  process's answer into a reply packet with `re` set to the carried
+  packet's hash. It uses the same two-packet pattern as appShellApp's
+  grant. It is a named function, not a new wire verb, so the hash rule
+  decides everything.
+- **This path does not go through the browser shell**, so it does NOT wait
+  on transport/R12. R12 is the shell discarding handler returns, and this
+  path never enters the shell. A proposed dependency "G17 waits on
+  transport/R12" was withdrawn on this ruling. **`appServer.js:842` is off
+  this path too:** that is an app server reaching out to its owner, and here
+  the node calls in.
+- **Owed:** the VPS entry, the node's forwarder (route row to the app's
+  loopback port), `puppyReply()`, and appShellApp's table of waiting
+  requests with a time limit per entry.
+
 **So every route served, by a node or a puppet, is negotiated and contracted** (Andy: *"so all
 routes served are negotiated and contracted."*, then *"by nodes or puppets"*). No route is served
 without a row the owner granted. A request for a domain with no row is
