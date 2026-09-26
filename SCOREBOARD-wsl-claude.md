@@ -4,11 +4,22 @@
 
 ## Summary
 
-**Nothing is broken, 12 requirements are declared and not built yet, and ONE THING IS STOPPED waiting for you, with 3 older question(s) behind them.**
+**One test is broken, 12 requirements are declared and not built yet, and ONE THING IS STOPPED waiting for you, with 3 older question(s) behind them.**
 
 ```
-154 suites   3122 green   0 red   0 unhappy   12 owed      run 3bb647b   STALE: measured at 3bb647b, tree is now 26cf3c2
+155 suites   3129 green   2 red   1 unhappy   12 owed      run b7b8b53
 ```
+
+---
+
+## What is red
+
+**Something that used to pass now fails.** These are broken, not unfinished — the owed list further down is work nobody has written yet.
+
+**❌ `capacityFresh.js`** — 2 checks no longer pass.
+
+  - ubuntu-24.04-wsl2: measured at a380af2 (2026-09-23), perMemberRowBytes=603 — but capacity moved since:
+  - windows-10.0: measured at 6d7dfa7 (2026-09-23), perMemberRowBytes=603 — but capacity moved since:
 
 ---
 
@@ -57,7 +68,8 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-**Nothing moved.** Same requirements owed, same tally, since the run at `3bb647b`.
+- +7 green
+- +2 red
 
 ---
 

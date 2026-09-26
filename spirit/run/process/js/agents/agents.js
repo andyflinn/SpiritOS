@@ -31,6 +31,9 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+// The closed refusal set, so this file holds no opinion of its own about
+// which failures are permanent (see flushReports).
+const errors = require('../../../js/spiritErrors.js');
 const { execFileSync } = require('child_process');
 
 const APP = 'agents';
@@ -315,16 +318,57 @@ function flushReports(cfg, fetchFn, ownKey) {
   let rows = [];
   try { rows = fs.readFileSync(outboxPath(cfg), 'utf8').split('\n').filter(Boolean); } catch (e) { return Promise.resolve(0); }
   const left = [];
+  const dropped = [];
   let sent = 0;
   return rows.reduce(function (p, row) {
     return p.then(function () {
       let line; try { line = JSON.parse(row).line; } catch (e) { return; }
       return post(cfg, cfg.control, makeEnvelope(cfg.self, 'report', line), fetchFn)
-        .then(function (r) { if (r.status === 200) sent++; else left.push(row); })
+        .then(function (r) {
+          if (r.status === 200) { sent++; return; }
+          // ── A REFUSAL WAITING CANNOT FIX IS NOT STILL OWED ──────────
+          //
+          //   Andy, 2026-09-26: "the agent app is special, a post is
+          //   implicitely coupled with a delete in the sent-log."
+          //
+          // The sent-log is what is STILL OWED, so a row that can never
+          // be delivered does not belong in it. 158 rows became 11,628
+          // refusals because `no cipher key for that peer` — a fact
+          // about the destination — was re-posted on every send exactly
+          // like a 503.
+          //
+          // THE JUDGEMENT IS THE CATALOGUE'S, NOT THIS FILE'S. A second
+          // opinion here about which failures are permanent is the
+          // duplication the whole week has been about.
+          const said = errors.classify(r.status,
+            (r.body && (r.body.error || r.body.message)) || '', r.body || {});
+          // AND "UNKNOWN" IS NOT A VERDICT. Its own note says it
+          // "deliberately claims nothing" — yet it carries retry 'no',
+          // so `retry === 'no'` alone would DISCARD EVERY UNRECOGNISED
+          // FAILURE, silently, including transient ones. Reading silence
+          // as a ruling is how a fix becomes data loss. Drop only when
+          // the catalogue NAMES the code and says waiting will not help.
+          if (said && said.code !== 'unknown' && said.retry === 'no') {
+            dropped.push({ code: said.code, status: r.status });
+            return;
+          }
+          left.push(row);
+        })
         .catch(function () { left.push(row); });
     });
   }, Promise.resolve()).then(function () {
     fs.writeFileSync(outboxPath(cfg), left.map(function (r) { return r + '\n'; }).join(''));
+    // SAID OUT LOUD, because a queue that empties itself quietly is the
+    // same blindness as one that grows quietly. trafficLog already holds
+    // each refusal with its payload, so nothing is lost — but nobody
+    // reads a log they were not told to look at.
+    if (dropped.length) {
+      const by = Object.create(null);
+      dropped.forEach(function (d) { by[d.code] = (by[d.code] || 0) + 1; });
+      console.log('agents: ' + dropped.length + ' pending report(s) dropped as undeliverable — ' +
+        Object.keys(by).map(function (c) { return by[c] + ' x ' + c; }).join(', ') +
+        '. The refusal and its payload are in the traffic log.');
+    }
     return sent;
   });
 }
