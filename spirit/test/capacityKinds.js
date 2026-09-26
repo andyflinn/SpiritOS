@@ -64,6 +64,11 @@ const MEASURED_ON_THIS_BOX = [
   'perStreamKernelBytes',
   'installBytes',
   'installFiles',
+  // How many times this box has published. Caught by the
+  // every-field-is-classified control on its first run — which is the
+  // control doing exactly what it was added for: a figure nobody had
+  // thought about was neither asserted nor excused.
+  'runs',
 ];
 
 // HIS WORDS FOR THEM, not ours, because the published block is his to

@@ -200,18 +200,18 @@ part worth acting on:
 
 | proof | this instrument |
 |---|---|
-| R10 prove the relay cannot read it | **needed** — it is the purpose |
-| R16 what the relay streams is unreadable | **needed** — the row IS the subject |
-| R11 the layering | needed, by consequence: its own note says its proof is R10 |
-| R12 the relay's hash differs from the words' | **NOT NEEDED** |
-| R7 the agents seal like everybody else | **NOT NEEDED** |
+| cycle 10's R10 prove the relay cannot read it | **needed** — it is the purpose |
+| cycle 10's R16 what the relay streams is unreadable | **needed** — the row IS the subject |
+| cycle 10's R11 the layering | needed, by consequence: its own note says its proof is cycle 10's R10 |
+| cycle 10's R12 the relay's hash differs from the words' | **NOT NEEDED** |
+| cycle 10's R7 the agents seal like everybody else | **NOT NEEDED** |
 
-**R12 IS PROVABLE TODAY, WITH DEBUG OFF.** The monitor row already
+**cycle 10's R12 IS PROVABLE TODAY, WITH DEBUG OFF.** The monitor row already
 carries the relay's hash — `relay.js:2756`, `:2894`, `:4166`. A suite
 subscribing as owner can compare it against its own hash of the
 plaintext now, against today's tree.
 
-**R7 NEEDS NO RELAY AT ALL.** Its own note says it "needs measuring
+**cycle 10's R7 NEEDS NO RELAY AT ALL.** Its own note says it "needs measuring
 rather than declaring", and the measurement is in `trafficLog`, which
 records every attempt with its payload.
 
