@@ -796,6 +796,15 @@ breaks posts already sealed to the old key, so:
   becomes a trigger. If a crisis is what sends the owner into debug, the
   crisis is the trigger and debug is how he looks into it.
 
+- **It lives in the owner's UI, behind the are-you-sure mechanism.** Andy,
+  2026-09-26: *"so it must be made available in a portion of the UI with
+  the are-you-sure mechanism"*. That is the shell's two-press button, which
+  shows red when armed and disarms when attention moves
+  (`spirit/run/js/client/shell.js:1085`, `index.html:553`). No app builds
+  its own confirm. The verb `nodeCard.rotate` is bones and the button is
+  app work, so they land as two pieces. Which screen the button goes on
+  is left to the UI session.
+
 **Recommended, and agreed ("true"): show the owner the exposure hints,
 above all when debug is on**, so he can tell a key problem from a bug
 before he rotates. Two hints are computed today and thrown away (verified
