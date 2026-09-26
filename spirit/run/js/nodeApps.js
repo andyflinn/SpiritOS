@@ -329,4 +329,81 @@ function mountAll(opts) {
   return mounted;
 }
 
-module.exports = { mountAll: mountAll, boots: boots, scopedFs: scopedFs, allowsIn: allowsIn };
+// ── THE SWITCH: WHERE A REMOTE PACKET BECOMES LOCAL AUTHORITY (puppets/G5)
+//
+//   Andy, 2026-09-26: "so we must make sure in code, that the signature is
+//   verified in the pupped, else request is refused."
+//
+// ONE FUNCTION AND NO DISPATCH. It answers whether an arrival is a command
+// from this puppet's owner, and nothing else: the loopback dispatch is its own
+// requirement (the shim) and building both together would be two halves
+// agreeing with each other instead of with the design. So this returns the
+// verb and body to run, or a refusal to answer with.
+//
+// ── WHAT IT REFUSES, AND WHY EACH ONE MATTERS ────────────────────────
+//
+// NOT IN PUPPET MODE — Andy's own gate, and the strongest one here because it
+// is not a check on the packet at all: "the owner is never in puppet-mode, to
+// that gate closes automatically." A node with no owner takes no commands, so
+// a forged command arriving at an OWNER is not a command that fails a test; it
+// is not a command. That closes puppet -> owner by construction.
+//
+// NOT FROM THE OWNER — the sender key must be the stored owner key. Necessary
+// and nowhere near sufficient, which is the whole finding wsl-claude brought:
+// a sibling puppet posting through the shared node arrives WITH the owner's
+// key, because that is the only key any puppet can post with.
+//
+// NO COMMAND SIGNATURE, OR A WRONG ONE — the part that actually closes the
+// sibling case. The owner signs `cmd` with its identity key; a puppet holds no
+// owner private key and cannot mint one. ABSENT AND WRONG ARE ONE REFUSAL on
+// purpose: they are the same security event, and two answers would tell a
+// caller which of the two it managed.
+//
+// The recipient key and the envelope id are inside the signed bytes
+// (relayAuth commandMessage), so a command signed for this puppet does not
+// verify at a sibling, and the same signature cannot be lifted onto another
+// envelope. The tag makes a transport signature fail as an inner one by
+// signing different bytes rather than by being noticed.
+function ownerCommandIn(arrival, opts) {
+  const o = opts || {};
+  const ownerKey = String(o.ownerKey || '');
+  const selfKey = String(o.selfKey || '');
+  const decode = o.decode;
+  const auth = o.auth;
+
+  // Andy's mode gate. Absent means nobody: a puppet with no owner established
+  // takes no commands from anyone (the same shape as allow.json).
+  if (!ownerKey) return { ok: false, status: 403, error: 'not a puppet' };
+
+  const from = String((arrival && arrival.from) || '');
+  if (!from || from !== ownerKey) return { ok: false, status: 403, error: 'not the owner' };
+
+  const text = arrival && typeof arrival.text === 'string' ? arrival.text : '';
+  // A COMMAND IS A SYSTEM PACKET: AN ENVELOPE ADDRESSED TO NO APP, and the two
+  // halves of that are asked separately on purpose. `decode` answers
+  // `legacy: false, app: null` for a system packet AND `app: null` for a plain
+  // chat line a peer typed — so testing the app alone would dispatch chat as a
+  // verb. wsl-claude found that in this rule before it was built; `isEnvelope`
+  // is the half that keeps it found.
+  if (!o.isEnvelope || !o.isEnvelope(text)) return { ok: false, status: 400, error: 'not a command' };
+  const info = decode ? decode(text) : null;
+  if (!info || info.app) return { ok: false, status: 400, error: 'not a command' };
+
+  const body = info.body || {};
+  const cmd = typeof body.cmd === 'string' ? body.cmd : '';
+  const sig = typeof body.sig === 'string' ? body.sig : '';
+  if (!cmd || !sig ||
+      !auth.commandSignatureOk(ownerKey, ownerKey, selfKey, info.id, cmd, sig)) {
+    return { ok: false, status: 403, error: 'bad command signature' };
+  }
+
+  let parsed = null;
+  try { parsed = JSON.parse(cmd); }
+  catch (e) { return { ok: false, status: 400, error: 'not a command' }; }
+  if (!parsed || typeof parsed.verb !== 'string' || !parsed.verb) {
+    return { ok: false, status: 400, error: 'not a command' };
+  }
+  return { ok: true, verb: parsed.verb, body: parsed.body || {} };
+}
+
+module.exports = { mountAll: mountAll, boots: boots, scopedFs: scopedFs, allowsIn: allowsIn, ownerCommandIn: ownerCommandIn };

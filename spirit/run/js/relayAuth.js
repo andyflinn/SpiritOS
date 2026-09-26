@@ -197,6 +197,72 @@ function receiptSignatureOk(publicKey, hash, sig, atMs) {
   return false;
 }
 
+// ── WHAT AN OWNER'S COMMAND TO A PUPPET SAYS (puppets/G5) ────────────
+//
+//   Andy, 2026-09-26: "a puppet always routes requests through its owner ...
+//   the puppet is uable to sign any request with the owners signature. and
+//   that signature must exist before the puppet routes the request to
+//   loopback." Then: "so we must make sure in code, that the signature is
+//   verified in the pupped, else request is refused."
+//
+// THE TRANSPORT SIGNATURE CANNOT SERVE. peerPost signs every outgoing post
+// with this same identity key and no caller can withhold it, so a puppet
+// posting through its own node receives the owner's signature for free — and
+// to a SIBLING puppet under that owner, the node key IS the owner key. The
+// forger never signs anything; the router signs for it. That is why what the
+// switch verifies has to be a signature over the COMMAND, made where a puppet
+// has no reach.
+//
+// FOUR THINGS IN THE SIGNED BYTES, and each one closes something (the last
+// three raised by spiritos-f6 before the first cut, which is the cheap moment):
+//
+//   the tag          domain separation. Both signatures come from ONE key, so
+//                    without a tag a transport signature could be presented as
+//                    an inner one wherever the byte strings coincide.
+//   the recipient    a command signed for puppet B, re-posted to sibling C,
+//                    must not verify at C. The owner did sign those bytes.
+//   the envelope id  so the same command cannot be replayed at the same
+//                    recipient either.
+//   the minute       the freshness this file already uses for streams, posts
+//                    and receipts, with the same one-minute window either side.
+//
+// The TEXT is the encoded packet as it travels, not the verb and body before
+// encoding: the thing signed is then the thing that arrives, and nothing can
+// be re-ordered between signing and sending.
+//
+// FIELD ORDER AND TAG FOLLOW postMessage (:135) RATHER THAN THIS AGENT'S FIRST
+// CUT, which put the minute last and tagged it 'owner-command'. wsl-claude was
+// right that a signed format must not fork: every one on this wire is a
+// tagged, structured string with the minute in the same position, and a second
+// shape would be a second convention to remember. The tag doing the domain
+// separation is 'command' against 'post', and the two byte-strings cannot
+// coincide — so a router-made signature presented as an inner one fails
+// BECAUSE IT SIGNS DIFFERENT BYTES, not because anything checks for it.
+function commandMessage(from, to, id, text, atMs) {
+  var NL = String.fromCharCode(10);
+  var minute = Math.floor((atMs == null ? Date.now() : atMs) / 60000);
+  return 'command' + NL + String(from || '') + NL + String(to || '') + NL +
+    minute + NL + String(id || '') + NL + String(text == null ? '' : text);
+}
+
+// RETURNS THE MESSAGE THAT VERIFIED, not a boolean, for the same reason
+// postSignatureFor does: the minute never travels, so it is recovered by
+// trying, and the caller that needs to know WHICH minute was accepted has it
+// without a second pass.
+function commandSignatureFor(publicKey, from, to, id, text, sig, atMs) {
+  if (!publicKey || !sig) return '';
+  var now = atMs == null ? Date.now() : atMs;
+  for (var step = -1; step <= 1; step += 1) {
+    var message = commandMessage(from, to, id, text, now + step * 60000);
+    if (verify(publicKey, message, sig)) return message;
+  }
+  return '';
+}
+
+function commandSignatureOk(publicKey, from, to, id, text, sig, atMs) {
+  return !!commandSignatureFor(publicKey, from, to, id, text, sig, atMs);
+}
+
 // ── WHAT A RELAY SAYS ITS KEYS ARE (cycle 10, R9) ────────────────────
 //
 //   Andy, 2026-09-23: "relay needs a cypher key too, because it has
@@ -606,6 +672,9 @@ module.exports = {
   withSealKey,
   sign,
   verify,
+  commandMessage,
+  commandSignatureFor,
+  commandSignatureOk,
   loadAllow,
   writeAllowKeys,
   loadIdentity,

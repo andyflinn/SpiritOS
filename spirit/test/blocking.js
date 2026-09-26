@@ -79,26 +79,40 @@ module.exports = [
   {
     asked: '2026-09-26',
     settled: '2026-09-26',
+    who: 'wsl-claude, who holds the relay public surface and the harness',
+    decision: 'How to prove the relay cannot read a sealed post, by trying to read it.',
+    answer: 'Andy: "that is what the DEBUG flag is for, in the relay it will stream the '
+      + 'packet it sees, back to the owner node, where the test can examine it." And on '
+      + 'its reach: "this will be a popular approach for assertion in the relay." Then, '
+      + 'of this requirement: "belongson the board with at least a proposal."',
+    owed: 'The channel already exists: relay.js:4604 streams to the owner only, and the '
+      + 'owner node needs no second flag because it is already the subscriber. What is '
+      + 'missing is that the stream says things ABOUT the packet and not the packet. '
+      + 'ONE DOOR, off by default, refusing to start on a public relay. Four of the five '
+      + 'sealed-post proofs wait on it. Design: design/relay/PROVING-IT-CANNOT-READ.md.',
+  },
+  // ANSWERED AND REMOVED. Andy, 2026-09-26: "a puppet always routes requests
+  // through its owner ... the puppet is uable to sign any request with the owners
+  // signature. and that signature must exist before the puppet routes the request
+  // to loopback" — and, on which half decides it: "the second half counts".
+  //
+  // Verified with him: sendPacket (hub.js:2085) only calls router.post, and the
+  // router signs at peerPost.js:756 with the node identity key. No caller supplies
+  // that signature and none can withhold it — which is exactly why it cannot be
+  // the one the switch checks. The shape is now a requirement in
+  // puppetsPending.js: the owner signs the COMMAND, verified before loopback.
+  {
+    asked: '2026-09-26',
+    settled: '2026-09-26',
     who: 'wsl-claude, whose file the agents app is',
     decision: 'The outbound queue on the agent node.',
     answer: 'Andy: "keep only a few, and count the deletions, as ameasurement for the '
       + 'system to be discussed in a team review." Then: "keep the inbound queues, not '
       + 'the outbound ones...." And on the reason: "there is duplication there."',
-    owed: 'ANDY HAS GIVEN THE SHAPE, 2026-09-26: "the agent app is special, a post is '
-      + 'implicitely coupled with a delete in the sent-log." IT IS ALREADY THE CODE '
-      + 'SHAPE — agents.js:323 keeps only non-200 rows and rewrites the file, so a '
-      + 'delivered post does remove itself. I said twice that it never deletes and both '
-      + 'times I was wrong; wsl-claude caught it in the code. THE 158 WERE THEREFORE '
-      + 'NEVER DELIVERED, not delivered-and-retained: every one was refused no-seal-key '
-      + 'because the sending node holds no card for the owner. So the sent-log is not a '
-      + 'duplicate of trafficLog after all — the log says what was ATTEMPTED, for good, '
-      + 'and the sent-log says what is STILL OWED and empties itself. What is owed: '
-      + '(1) A REFUSAL THAT WAITING CANNOT FIX MUST BE DEAD-LETTERED rather than '
-      + 're-posted on every send. no-seal-key is a fact about the destination, not a '
-      + 'transient, and retrying it turned 158 rows into 11,628 refusals. '
-      + '(2) The sending node needs the owner card, which is the open 1a/1b choice. '
-      + '(3) Optional, and Andy liked the direction: the age of the oldest pending row '
-      + 'on the board, so a stuck channel is visible at a glance instead of after three '
-      + 'days.',
+    owed: 'The delete-on-success is already there (agents.js:323) — I said twice that it '
+      + 'was not and wsl-claude found it in the code. So the 158 were never delivered, not '
+      + 'retained. What is owed: dead-letter a refusal waiting cannot fix, instead of '
+      + 're-posting it on every send; get the owner card onto the sending node; and put the '
+      + 'age of the oldest pending row on this board.',
   },
 ];

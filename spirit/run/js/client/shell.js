@@ -2580,7 +2580,7 @@
   // needs a reload to be discovered, same as you'd already expect for
   // a new process manifest.
   //
-  // The id is derived from scriptPath's own folder ("app/aiChat"), not
+  // The id is derived from scriptPath's own folder (for example "app/natter"), not
   // read from manifest.id — an app's manifest can no longer claim to be
   // whatever id it likes; its identity is the one fact the shell already
   // observed directly via the fs-watcher. manifest.id, if a manifest still

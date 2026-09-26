@@ -2161,12 +2161,42 @@ function createHub(rootDir) {
   // nothing receives this. That is correct rather than incomplete — a
   // sender built against a receiver written the same hour is two halves
   // agreeing with each other instead of with the design.
-  function peerOwnerPost(router, relayUrl, toKey, verb, body) {
+  function peerOwnerPost(rootDir, router, relayUrl, toKey, verb, body) {
     const named = String(verb || '');
     if (!named) return Promise.resolve({ ok: false, status: 400, error: 'verb required' });
     if (!toKey) return Promise.resolve({ ok: false, status: 400, error: 'to required' });
 
-    const made = packet.encode('', Object.assign({ verb: named }, body || {}));
+    // ── THE OWNER SIGNS THE COMMAND, AND THAT IS WHAT THE PUPPET CHECKS ──
+    //
+    //   Andy, 2026-09-26: "the puppet is uable to sign any request with the
+    //   owners signature. and that signature must exist before the puppet
+    //   routes the request to loopback." — "the second half counts." — "so we
+    //   must make sure in code, that the signature is verified in the pupped,
+    //   else request is refused."
+    //
+    // WHY THE TRANSPORT SIGNATURE WILL NOT DO. peerPost.js:756 signs every
+    // outgoing post with this node's identity key and no caller can withhold
+    // it, so a puppet posting through its own node gets it for free — and to a
+    // SIBLING puppet under the same owner, that node key IS the owner key. The
+    // forger never signs anything; the router signs for it.
+    //
+    // THE SHAPE IS forwardToMine's, ONE LAYER IN (relay.js:2711-2728): a
+    // signed string travels beside its signature and the receiver verifies
+    // rather than trusting the carrier. Here the signed string is `cmd` and it
+    // is carried verbatim, so the verifier signs over the same bytes without
+    // canonicalising anything.
+    //
+    // THE ID IS MINTED FIRST, because it is inside the signed message and
+    // `encode` would otherwise mint it afterwards — binding the signature to
+    // this envelope and no other.
+    const id = packet.randomId();
+    const cmd = JSON.stringify({ verb: named, body: body || {} });
+    const me = auth.loadIdentity(rootDir);
+    if (!me || !me.privateKey) {
+      return Promise.resolve({ ok: false, status: 500, error: 'no identity to sign with' });
+    }
+    const sig = auth.sign(me.privateKey, auth.commandMessage(me.publicKey, toKey, id, cmd));
+    const made = packet.encode('', { cmd: cmd, sig: sig }, { id: id });
     // A REFUSAL IS A VALUE, NOT A THROW, and the sentence is the
     // factory's rather than a second wording of it. THE BOUND IS NOT
     // CHECKED HERE: `encode` bounds what it builds, which is the whole

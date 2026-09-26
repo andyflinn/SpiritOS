@@ -312,7 +312,14 @@ define('bad-signature', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['bad post signature', 'bad claim signature', 'bad hint signature',
     'bad inner signature', 'bad receipt signature', 'bad stream signature',
-    'stream signature must be a header'],
+    'stream signature must be a header', 'bad command signature'],
+  // ONE CODE FOR ABSENT AND FOR WRONG, deliberately (puppets/G5). A command
+  // arriving at a puppet with no owner signature and one arriving with a
+  // forged signature are the SAME SECURITY EVENT, and two codes would tell a
+  // caller which of the two it managed — an oracle worth nothing to an honest
+  // sender and something to a dishonest one. `not-owner` was considered and
+  // reads truthfully, but its texts are about relay ownership and broadening
+  // it would make one code mean two boundaries.
 });
 define('no-such-identity', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
@@ -370,6 +377,52 @@ define('unsealed-post', {
     'cipher key. Refused by the RECEIVER as well as the sender, because ' +
     'a sender-only check is bypassed by not being the sender. Not worth ' +
     'retrying as sent: fetch the card and seal to it.',
+});
+// ── WHAT A PUPPET SAYS TO A COMMAND IT WILL NOT RUN (puppets/G5) ─────
+//
+// THE SWITCH REFUSES THREE WAYS AND THEY ARE NOT ONE REFUSAL. A bad signature
+// is a security event; the two below are not, and collapsing them would make
+// one code mean "someone tried something" and "you are talking to the wrong
+// box" at once.
+//
+//   Andy, 2026-09-26: "the owner is never in puppet-mode, to that gate closes
+//   automatically."
+//
+// `not a puppet` IS THAT GATE, and it is the reason puppet -> owner is closed
+// by construction rather than by a check: a node with no owner established
+// takes no commands from anyone, so a forged command arriving at an OWNER is
+// not a command that failed a test. It is fault 'caller' because the caller
+// addressed the wrong box, and retry 'no' because a node does not acquire an
+// owner by being asked twice.
+define('not-a-puppet', {
+  status: 403, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['not a puppet'],
+  note: 'This node has no owner established, so it takes no owner commands at ' +
+    'all — absent means nobody, the same rule allow.json uses. Nothing is ' +
+    'wrong with the command; it arrived somewhere that does not take them.',
+});
+
+// NOT A SECURITY REFUSAL EITHER, and deliberately separate from the signature
+// one: this says the arrival was never an owner command in the first place.
+// Plain chat decodes with no app exactly as a system packet does, so the
+// envelope and the app are asked separately — a hole caught in the receiver
+// rule before it shipped, and this code is where it stays caught.
+define('not-a-command', {
+  status: 400, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['not a command'],
+  note: 'The arrival is not an owner command: not a packet envelope at all, ' +
+    'or addressed to an app, or carrying no verb. A chat line from the owner ' +
+    'lands here rather than being dispatched.',
+});
+
+// A NODE THAT CANNOT SIGN CANNOT COMMAND, and the fault is this box rather
+// than the caller: the owner asked for something reasonable and the identity
+// it would be signed with could not be read.
+define('no-identity', {
+  status: 500, presence: NONE, retry: 'no', fault: 'node',
+  texts: ['no identity to sign with'],
+  note: 'An owner command must be signed with this node identity key before ' +
+    'it goes out, and the key could not be loaded. Not something the caller did.',
 });
 define('will-not-open', {
   status: 400, presence: NONE, retry: 'no', fault: 'caller',

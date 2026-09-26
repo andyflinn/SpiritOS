@@ -516,3 +516,38 @@ setting to be switched off but the only authority there is.
 
 **G4-G7 ARE UNBLOCKED** by this ruling.
 
+
+### G9 — a sibling puppet is not the owner, and holding the owner's key is not holding the owner's signature
+
+> a puppet always routes requests through its owner, the owner is the only person talking to the puppet (not sure about this) ie, the puppet is uable to sign any request with the owners signature. and that signature must exist before the puppet routes the request to loopback
+
+**Found by wsl-claude before G5 was built, and the second half of Andy's
+sentence is the half that closes it** — his own words when asked which:
+*"the second half counts"*.
+
+`server.js:1335` hands every mounted puppet a `post()` whose `text` is
+RAW and passes it straight to `peerRouter.post`, and `peerPost.js:756`
+signs every outgoing post with the node's own identity key, which no
+caller can withhold. So a puppet composes any envelope it likes and it
+travels **signed by that key** — and to a SIBLING puppet under the same
+owner, the node key IS the owner key. **The forger never signs
+anything; the router signs for it.**
+
+So the sender check is necessary and nowhere near sufficient. What
+closes it is a signature over the COMMAND, made where a puppet has no
+reach, and verified before the packet becomes local authority.
+
+**Verify:** `spirit/test/ownerCommand.js` and
+`spirit/test/puppetsPending.js`.
+**Status:** DONE (2026-09-26). `relayAuth.commandMessage` joins
+`postMessage`'s family — the tag gives domain separation by construction,
+`to` binds the recipient, the envelope `id` is minted before signing so a
+signature cannot be moved, and the minute is recovered by trying one
+either side as every other signed format here does. Registered in
+[decision 0010](../decisions/0010-fix-the-protocol-or-name-the-cheat.md).
+Refused as the existing `bad-signature`: absent and wrong share one code
+on purpose, because two would tell a caller which of the two it managed.
+
+**What is still open, and it is Andy's:** whether a puppet should be able
+to reach a sibling at all. This closes the forgery; it does not decide
+the topology.

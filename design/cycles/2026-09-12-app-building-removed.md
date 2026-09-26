@@ -147,5 +147,25 @@ The standard 0008 sets, made checkable. Both read
 should break — which is exactly the kind of claim that wants a check
 rather than a sentence.
 
+**Where they went, 2026-09-26:** two repositories of their own, on Andy's
+word — *"you make the repos, like with relay chat, all authorized, just get
+them out of here."* Each holds its entry script, its manifest and a README
+saying what it needs; `app/shared/claudeModels.json` travelled with AI
+Manager because it is that app's data. `app/shared/ask.js` STAYED — it is
+used by `appServer.js`, `starter/starter.html` and three suites.
+
+**Nothing had to be unwired**, which is the part worth recording: discovery
+is by manifest, the kernel and the shell never imported either app, and the
+only references were two comments, one untracked `preferences.json` entry
+each, and a single test string. An app leaving this repository costs four
+lines, and that is the property the app model was built for.
+
+**The coupling that survives the split:** AI Chat reads
+`app/shared/aiStatus.json`, which AI Manager writes. Two separately installed
+apps sharing one file path is now their contract rather than an internal
+detail — and it is the miniature of
+[PUBLIC-APP-SERVER](../shell/PUBLIC-APP-SERVER.md)'s open question about app
+code and app state sharing a directory.
+
 **Verify:** not written, and not to be written.
 **Status:** DEFERRED: the two apps leave this repository — Andy, 2026-09-26: *"AI manager and AI chat will be pushed to public repos outside of SpiritOS"*, which replaces his *"stay for now"* above. The check this requirement asked for would assert something the product no longer promises, so there is nothing to build here; their departure is its own work.

@@ -104,16 +104,6 @@ shown rather than hidden.
 
 *Declared in `puppetsPending.js`*
 
-## puppets/G5 — the owner switch in a puppet
-
-`PUPPETS` · status **OPEN**
-
-- **missing:** the owner switch in a puppet — **~0% there**, guess: a sitting
-  
-  checks a packet against the puppet's STORED OWNER KEY and, on a match, unwraps it and processes it as if it were loopback. Andy: "there has to be a switch in an app-node, that checks a request, if it came from it's owner". ON the arrival path, not beside it, so it inherits peerPost.js:1091's replay guard — these are configuration verbs and a replayed one re-executes
-
-*Declared in `puppetsPending.js`*
-
 ## puppets/G6 — a puppet's stored owner key, owner-only
 
 `PUPPETS` · status **OPEN**
@@ -134,6 +124,26 @@ shown rather than hidden.
 
 *Declared in `puppetsPending.js`*
 
+## transport/R12 — an app can reply, and a reply is the only evidence of being delivered
+
+`2026-09-12-transport-below-the-boundary` · status **OPEN**
+
+- **missing:** a handler return value that becomes the reply — **~0% there**, guess: a sitting — the value is the third state of ROUTER.md becoming reachable
+  
+  deliverPackets (client/shell.js) drops what a handler returns, and answerRelay.answer gives back an empty string for anything that is not a device-offer — so an app cannot say "I have it" even to itself. The receipt proves ARRIVAL AND HANDLING and must not claim a human looked: nothing on the wire can prove that, and a mechanism claiming to would be the two checkmarks this requirement exists to refuse
+
+*Declared in `transportPending.js`*
+
+## transport/R16 — the log must be able to PROVE what it claims
+
+`2026-09-12-transport-below-the-boundary` · status **OPEN**
+
+- **missing:** a signature stored beside what it signs — **~0% there**, guess: a sitting, and it decides a deferred database question
+  
+  trafficLog holds peer, hash and payload and no sig, so none of the three promises is provable: "bert sent me this" and "bert received mine" are both unverifiable, and "bert acted on it" is unreachable until this cycle's R12. THE DATABASE DECISION IS BLOCKED ON THIS by Andy's own condition, so it is not a tidiness item
+
+*Declared in `transportPending.js`*
+
 ---
 
-**12 assertion(s) across 12 requirement(s).**
+**13 assertion(s) across 13 requirement(s).**

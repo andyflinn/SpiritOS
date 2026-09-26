@@ -167,7 +167,7 @@ if (!dangling.length) {
   NAMED.lastIndex = 0;
   const hit = NAMED.exec(planted);
   if (hit && hit[1] === 'appBuilder' && !known.appBuilder && SOURCES.length > 5) {
-    test.check('and the scanner catches the exact line that was in aiManager, across ' + SOURCES.length + ' real sources');
+    test.check('and the scanner catches the exact shape it was written for, across ' + SOURCES.length + ' real sources');
   } else {
     test.fail('the scanner failed its own probe (hit=' + JSON.stringify(hit && hit[1]) + ', sources=' + SOURCES.length + ')');
   }

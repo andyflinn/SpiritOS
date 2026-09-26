@@ -159,12 +159,22 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   // switch is where a remote packet becomes local authority, so it is
   // the whole security boundary of this feature.
   const nodeApps = read('spirit/run/js/nodeApps.js');
-  test.awaiting('puppets/G5', 'the owner switch in a puppet', /ownerKey|fromOwner/.test(nodeApps),
-    'checks a packet against the puppet\'s STORED OWNER KEY and, on a match, unwraps it and processes it as if ' +
-    'it were loopback. Andy: "there has to be a switch in an app-node, that checks a request, if it came from ' +
-    'it\'s owner". ON the arrival path, not beside it, so it inherits peerPost.js:1091\'s replay guard — these are ' +
-    'configuration verbs and a replayed one re-executes',
-    { there: 0, cost: 'a sitting' });
+  // ── puppets/G5 IS BUILT, SO THE DECLARATION BECAME AN ASSERTION ──────
+  //
+  // This suite told me so in those words — "puppets/G5 EXISTS NOW. It was
+  // declared as awaiting; write the assertion it was standing in for" — which
+  // is the handover an awaiting declaration exists to force. The behaviour is
+  // asserted in spirit/test/ownerCommand.js, ten checks; what is asserted HERE
+  // is only that the unit exists and is reachable, so this file keeps saying
+  // what is owed and does not become a second copy of that suite.
+  if (typeof require('../run/js/nodeApps').ownerCommandIn === 'function') {
+    test.check('the owner switch exists as a unit — nodeApps.ownerCommandIn, asserted in '
+      + 'ownerCommand.js: the mode gate, no signature, a lifted transport signature, '
+      + 'a sibling-signed command, a replay at a sibling, a signature moved to another '
+      + 'envelope, a stale minute, plain chat and an app packet');
+  } else {
+    test.fail('puppets/G5 regressed: nodeApps no longer exports ownerCommandIn');
+  }
 
   // Named apart from puppets/G5 because it is the thing puppets/G5 checks AGAINST, and
   // because it has its own refusal: a puppet that can write its own
@@ -183,6 +193,99 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
     'unchanged. A handler reaching for req.headers or req.socket fails ALONE and QUIETLY, which is why puppets/G3 covers ' +
     'this and not a per-verb test',
     { there: 0, cost: 'a sitting' });
+}
+
+// ── THE SIBLING-PUPPET DIRECTION, WHICH ANDY'S MODE GATE DOES NOT REACH
+//
+//   Andy, 2026-09-26, closing most of the hole wsl-claude found: "only in
+//   puppet mode can messages be passed as fake loopback, because they come
+//   from the owner, the reverse is not true, the owner is never in
+//   puppet-mode, to that gate closes automatically." Then, of what is left:
+//   "that needs testing".
+//
+// HIS GATE IS STRONGER THAN A CHECK. An owner command is only ever accepted
+// BY a puppet, so a forged packet arriving at the owner is not a command that
+// fails a test — it is not a command at all, because that node takes none.
+// Puppet -> owner is closed by construction.
+//
+// PUPPET -> SIBLING PUPPET IS NOT. Both ends of that are legitimate: the
+// sibling IS in puppet mode, and the node key IS its owner key, so a packet
+// from puppet A is indistinguishable from one from the owner. Tolerable while
+// every puppet is Andy's own code; not once a puppet is third-party, which is
+// his own example — a jpeg tagger taking work from other nodes.
+test.subHeading('A puppet can compose any envelope, which is what makes the sibling case real');
+
+{
+  // MEASURED, NOT ARGUED. The risk rests on one fact about the surface a
+  // puppet is handed, and that fact is checkable today even though the switch
+  // it threatens is not built. If this ever stops being true, the sibling
+  // requirement below stops mattering and should be closed rather than
+  // carried.
+  // Two facts rather than one regex across lines: the puppet's post takes the
+  // packet text, and that text reaches the router unexamined.
+  // NO REGEX. Two literal substrings from the surface itself, so the check
+  // cannot fail on an escape and be read as the hole having closed.
+  const surface = read('spirit/run/js/server.js');
+  const takesText = surface.indexOf('post: function (relayUrl, toKey, text, hints, how)') !== -1;
+  const passesThrough = surface.indexOf('return peerRouter.post(relayUrl, toKey, text, hints, how)') !== -1;
+  const rawText = takesText && passesThrough;
+  if (rawText) {
+    test.check('server.js hands a mounted puppet a post() whose text is RAW and passes it '
+      + 'straight to peerRouter.post — so a puppet composes its own envelope and it '
+      + 'travels signed by THIS node key. That is the whole basis of the sibling case, '
+      + 'and it is a fact rather than a worry');
+  } else {
+    test.fail('the raw-text post surface at server.js:1335 has changed shape — re-read it '
+      + 'and decide whether the sibling requirement below still has a basis');
+  }
+}
+
+// THE REQUIREMENT ITSELF IS AWAITING AND NOT RED, deliberately. There is no
+// switch yet — puppets/G5 is the switch and it is unbuilt — so nothing exists
+// to accept or refuse, and a red assertion here would be asserting against
+// absent code and reporting the absence twice. What is owed is a property the
+// switch must have, and it cannot be met by checking the sender: the sender is
+// correct in the attack.
+// ── ANDY HAS GIVEN THE RULE, AND THE SECOND HALF IS THE LOAD-BEARING HALF
+//
+//   Andy, 2026-09-26: "a puppet always routes requests through its owner, the
+//   owner is the only person talking to the puppet (not sure about this) ie,
+//   the puppet is uable to sign any request with the owners signature. and
+//   that signature must exist before the puppet routes the request to
+//   loopback." Then, asked which part decides it: "the second half counts".
+//
+// SO IT IS THE TIMING, NOT THE CLAIM. "A puppet cannot sign as its owner" is
+// already true of the identity key and already useless on its own, because a
+// puppet posting through its node gets the NODE's transport signature applied
+// on the way out — and to a sibling puppet that node key IS the owner key.
+// The forger never signs anything; the router signs for it.
+//
+// What closes it is that the signature verified BEFORE LOOPBACK must be over
+// the COMMAND, not the transport. peerOwnerPost adds none today: hub.js:2169
+// encodes the packet and hands it to sendPacket, and the only signature on it
+// is the router's. So the owner must sign the command at composition, with the
+// identity key no puppet holds, and the switch must verify that before it
+// dispatches — which is also the only moment at which refusing costs nothing.
+// BUILT THE SAME SITTING IT WAS FOUND, so this is an assertion and not a
+// declaration. The behaviour is in ownerCommand.js; what is asserted here is
+// that the signed format exists and is distinct from the transport one, which
+// is the property the whole requirement rests on.
+{
+  const a = require('../run/js/relayAuth');
+  const owner = a.generateIdentity('o');
+  const target = a.generateIdentity('t');
+  const cmd = 'x';
+  const inner = a.sign(owner.privateKey, a.commandMessage(owner.publicKey, target.publicKey, 'i1', cmd));
+  const transport = a.sign(owner.privateKey, a.postMessage(owner.publicKey, target.publicKey, cmd));
+  const innerOk = a.commandSignatureOk(owner.publicKey, owner.publicKey, target.publicKey, 'i1', cmd, inner);
+  const liftedOk = a.commandSignatureOk(owner.publicKey, owner.publicKey, target.publicKey, 'i1', cmd, transport);
+  if (innerOk && !liftedOk) {
+    test.check('a command signature verifies and a TRANSPORT signature does not — the two '
+      + 'formats are separated by their tag, so a router-made signature cannot be presented '
+      + 'as an owner command by a puppet that has one for free');
+  } else {
+    test.fail('the two signed formats are not separated: inner ' + innerOk + ', lifted ' + liftedOk);
+  }
 }
 
 test.reportSuccessFailureCount();
