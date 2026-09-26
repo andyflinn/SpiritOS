@@ -129,14 +129,25 @@ module.exports = [
 
   {
     asked: '2026-09-26',
-    who: 'claude, from wsl-claude design',
-    decision: 'Which of the five sealed-post proofs does this instrument retire?',
-    costs: 'Four of the five are unbuildable without it and are listed with reasons rather '
-      + 'than declared, so they are owed and uncounted. Your answer is what lets them '
-      + 'become declarations and appear in the owed list.',
-    why: 'claude reads four as reachable through the stream; wsl-claude has not checked '
-      + 'that and says so. Neither agent should decide which proof counts as answered.',
+    settled: '2026-09-26',
+    who: 'wsl-claude, whose design and whose harness',
+    decision: 'Which of the five sealed-post proofs the DEBUG instrument retires.',
+    answer: 'Andy: "answer: none, it only may make proof possible."',
+    owed: 'HE CORRECTED THE VERB, and the question was malformed. AN INSTRUMENT RETIRES '
+      + 'NOTHING — a requirement is discharged by a passing proof, never by the means of '
+      + 'proving it. So all five stay owed and the instrument only unblocks. That also '
+      + 'disposes of my own measurement: I had answered "two directly, one by '
+      + 'consequence", which was the right count of a question nobody should have asked. '
+      + 'WHAT SURVIVES IT AND IS STILL WORTH HAVING: cycle-10 R12, the relay hash '
+      + 'differing from the endpoints hash, NEEDS NO INSTRUMENT AT ALL. monitorEvent '
+      + 'already carries the hash on every post (relay.js:2756, :2981), so it is '
+      + 'buildable today and had been waiting on a blocker it never had — the cost of '
+      + 'listing five items as a group is that one inherits the whole group blocker. '
+      + 'Owed to wsl-claude: the design amendment (all three of its open questions are '
+      + 'now ruled, so it is a specification rather than a proposal) and the proofs '
+      + 'themselves once the instrument exists.',
   },
+
   {
     asked: '2026-09-26',
     settled: '2026-09-26',
@@ -168,6 +179,18 @@ module.exports = [
       'Which of the five sealed-post proofs does this retire? Four look reachable '
         + 'through it; the fifth has not been checked.',
     ],
+    approved: '2026-09-26',
+    approvalNote: 'Andy approved the specification and added two rulings. '
+      + '(1) DEBUG IS ABSOLUTELY READ-ONLY: "it may only send byte-for-byte copies of '
+      + 'observed items to the owner" — no transformation, no summary, nothing the relay '
+      + 'did not observe. Assertable as stated: the row must equal what the relay held. '
+      + '(2) THE SECURITY CONCERN IS INVERTED RATHER THAN MITIGATED. The design worried '
+      + 'DEBUG becomes the way plaintext ships later. Andy: "if plain-text data is '
+      + 'detected on alive-in-the-wild relay, is still can only be streamed to the owner, '
+      + 'thus dispoving that the packets are unreadable.... kind of the point of the '
+      + 'exercise." Plaintext on the stream is not a failure of the safeguard — it is THE '
+      + 'FINDING, delivered to the only party who can act on it, through a gate that '
+      + 'admits nobody else.',
   },
   // ANSWERED AND REMOVED. Andy, 2026-09-26: "a puppet always routes requests
   // through its owner ... the puppet is uable to sign any request with the owners
