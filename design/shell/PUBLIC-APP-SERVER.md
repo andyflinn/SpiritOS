@@ -365,6 +365,27 @@ because of it: allotting is the owner's, just as uptime is (Andy,
 deferred. This records its shape so that building it later does not
 reopen the question.
 
+**The box panel is a sheet.** Andy, 2026-09-26: *"the RAM and DISC
+allotments can be right in the box panel, like an account sheet of rows,
+that must add up to less or equal the the total resources"*, then
+*"spread-sheety..."*. There is one row per component on the box, with RAM
+and disc columns and a total line checked against the box total. Going
+over is the warning above. Each row carries an icon link to that
+component's own screen: natterDetails for a relay, and the app's own UI
+for an app. Being a spreadsheet, it edits in place.
+
+**What this depends on, still open:**
+- **Editing in place needs the `MemoryMax` question ruled** (below, *How
+  remote resource configuration reaches the cap*). The recommended option
+  is a generous cap at install, with the sheet moving only the figure
+  under it. A read-only sheet needs nothing ruled.
+- **A relay row needs the relay to report its box.** G10 covers app
+  servers only. Adding the same fingerprint to a relay is a relay.js
+  change, so it needs a team review.
+- **What "the correct passthough-UI for an app" (Andy's words) names** has
+  not been pinned. The reading so far is the app's own screen, reached
+  through the owner's node.
+
 **Deliberately absent: anything about what the server is FOR.** A box
 view carrying app facts is how the general layer acquires its first
 join-shaped wart.
