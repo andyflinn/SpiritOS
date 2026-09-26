@@ -260,6 +260,22 @@ author added mid-cycle that the design had not asked for. It is the
 record of what the design forgot, and it is worth more than the
 requirements that were right.
 
+**RULED, 2026-09-26/27: C3 stays owed, in this shape.** Andy, asked whether
+his uptime ruling retires it: *"a re-start row documents the downtime?"*,
+*"... the end-of-a-downtime"*, *"and the stopped row can't be guaranteed."*,
+*"... but should be part of "graceful shutdown""*. It does not conflict
+with *"Uptime issues are out of scope"* (DEVICES-AND-PORTS.md:173), because
+it keeps nothing running. It only makes the record honest afterwards.
+- **`started` marks the END of a downtime.** Written at boot, it is the one
+  row that can always be written.
+- **`stopped` is part of the graceful shutdown**, written in the goodbye the
+  node already runs on SIGTERM (`server.js:1853`). It is never guaranteed:
+  a crash, a power cut or a kill writes nothing. **Its absence is the
+  signal.** A `started` with no `stopped` before it is a death, and the
+  start of that gap stays bounded only by the last row written.
+- A periodic "still alive" row would bound a crash more tightly. It was
+  mentioned and NOT adopted.
+
 ## The state before, measured
 
 **wsl-claude asked for the existing suite to be run against the tree
