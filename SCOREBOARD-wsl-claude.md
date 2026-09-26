@@ -7,7 +7,7 @@
 **Nothing is broken, 12 requirements are declared and not built yet, and 3 THINGS ARE STOPPED waiting for you, with 6 older question(s) behind them.**
 
 ```
-154 suites   3122 green   0 red   0 unhappy   12 owed      run 9c22cce
+154 suites   3122 green   0 red   0 unhappy   12 owed      run 9c22cce   STALE: measured at 9c22cce, tree is now bf7b48a
 ```
 
 ---

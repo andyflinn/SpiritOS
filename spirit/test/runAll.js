@@ -718,7 +718,17 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
     } catch (e) { return ''; }
   }
 
-  const commit = git(['rev-parse', '--short', 'HEAD']) || '(no commit)';
+  const head = git(['rev-parse', '--short', 'HEAD']) || '(no commit)';
+  // THE STAMP IS THE COMMIT THAT PRODUCED THE NUMBERS, NOT THE ONE WE ARE
+  // STANDING ON. Andy, 2026-09-26, on how this page refreshes:
+  // "event-driven" — so it is re-rendered whenever an agent changes
+  // something, and the measured half is replayed from the last full run.
+  // Stamping it with HEAD would credit a tally to a commit that never
+  // produced it, which is the same lie as a subset board wearing a full
+  // board's numbers. The first version did exactly that: it replayed the
+  // run at 9c22cce and printed `run bf7b48a`.
+  const commit = (replay && stale) ? stale : head;
+  const isStale = replay && stale && stale !== head;
   const ids = Object.keys(byReq).sort();
 
   // AGE FROM THE TREE, NOT FROM A FIELD ANYBODY MAINTAINS. The first
@@ -845,7 +855,8 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
   out.push('');
   out.push('```');
   out.push(tally.suites + ' suites   ' + tally.green + ' green   ' + tally.red + ' red   ' +
-    tally.unhappy + ' unhappy   ' + rows.length + ' owed      run ' + commit);
+    tally.unhappy + ' unhappy   ' + rows.length + ' owed      run ' + commit +
+    (isStale ? '   STALE: measured at ' + commit + ', tree is now ' + head : ''));
   out.push('```');
   out.push('');
 
