@@ -131,7 +131,18 @@ function createPeerPost(opts) {
   // peer per minute, remembered in RAM only — a card is fetched to make the
   // next post possible, not recorded as a decision, and a restart asking
   // again costs one packet.
-  var askedFor = Object.create(null);
+  // REMEMBER THE PROMISE, NOT THE TIMESTAMP (wsl-claude, 2026-09-26). The first
+  // version kept only a time, so ten CONCURRENT posts to an uncarded peer gave
+  // one ask and one delivery: the other nine saw the throttle, skipped the ask
+  // and refused 428 while the answer was still in flight. Serial callers never
+  // saw it — the outbox flush is serial, which is why a live run delivered 37
+  // of 37 — but a burst would have lost nine posts to a race.
+  //
+  // So a loser AWAITS the ask already in flight and then looks again, which is
+  // what it wanted in the first place. The timestamp still exists, for the
+  // different job of not re-asking a peer that answered nothing.
+  var asking = Object.create(null);
+  var askedAt = Object.create(null);
   var ASK_AGAIN_MS = 60000;
   var noteSeen = opts.noteSeen || null;
   var traffic = opts.traffic || null;
@@ -760,21 +771,25 @@ function createPeerPost(opts) {
         // Nothing to fetch: already sealed-able, or itself an ask, or a router
         // that does not seal (the partner router, relayServer.js:1082).
         if (sealKey || nodeCard.asks(text) || !sealsPosts) return sealKey;
-        var last = askedFor[toKey] || 0;
-        if (Date.now() - last < ASK_AGAIN_MS) return sealKey;
-        askedFor[toKey] = Date.now();
+        // Look again once whatever is in flight has settled. The answer
+        // arrives as a reply and is recorded by the keeper before the ask
+        // resolves, so the second lookup is the point of the whole exercise.
+        function lookAgain() {
+          return Promise.resolve(sealKeyFor ? sealKeyFor(toKey) : '')
+            .catch(function () { return ''; });
+        }
+        // SOMEBODY IS ALREADY ASKING: wait for theirs rather than skipping.
+        if (asking[toKey]) return asking[toKey].then(lookAgain);
+        if (Date.now() - (askedAt[toKey] || 0) < ASK_AGAIN_MS) return sealKey;
+        askedAt[toKey] = Date.now();
         // NO RECURSION, BY CONSTRUCTION RATHER THAN BY A GUARD: this post is
         // a card ask, so `nodeCard.asks` is true of it on the way in and the
         // branch above returns before reaching here.
-        return post(relayUrl, toKey, JSON.stringify({ v: 1, body: { card: true } }))
+        var ask = post(relayUrl, toKey, JSON.stringify({ v: 1, body: { card: true } }))
           .catch(function () { return null; })
-          .then(function () {
-            // Look again. The answer arrives as a reply and is recorded by the
-            // keeper before this resolves, so the second lookup is the point
-            // of the whole exercise.
-            return Promise.resolve(sealKeyFor ? sealKeyFor(toKey) : '')
-              .catch(function () { return ''; });
-          });
+          .then(function (answer) { delete asking[toKey]; return answer; });
+        asking[toKey] = ask;
+        return ask.then(lookAgain);
       })
       .then(function (sealKey) { return sealAndSend(sealKey); });
 

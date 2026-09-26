@@ -76,34 +76,17 @@
 // settled — it is abandoned, and it should say so.
 
 module.exports = [
-  {
-    asked: '2026-09-26',
-    settled: '2026-09-26',
-    who: 'wsl-claude, who found it; Andy confirmed it is not in the code',
-    decision: 'Who builds the card ASK — the half of the card exchange that does not exist?',
-    answer: 'Andy: "windows will implement the card fetch, and you will test it" — under his '
-      + 'standing rule that "we do best when we strictly divide implementation from testing".',
-    costs: 'AGENT REPORTING IS ENTIRELY DEAD AND HAS BEEN SINCE 2026-09-23. 11,628 posts '
-      + 'refused, every report either agent believed it filed to your node never arrived, '
-      + 'and wsl-claude cannot send you its review tonight. The refusal even names the '
-      + 'cure — "ask for their card first" — an action no code performs.',
-    why: 'THE EXCHANGE IS HALF BUILT, which is why nobody noticed for three days. A node '
-      + 'ANSWERS a card request: nodeCard.asks recognises an unsealed packet whose body '
-      + 'carries `card`, and peerPost.js:980 answers it. Nothing ASKS. So the only '
-      + 'unsealed thing allowed on the wire is a path deliberately left open and never '
-      + 'used, and a node that needs a peer seal key has no way to obtain one. The '
-      + 'missing unit is one caller: notice there is no card for a peer, post the ask, '
-      + 'wait for the answer, then send. It is small, it is on the send path, and it is '
-      + 'not obviously either agent, hence a row rather than a start. FOUND BY '
-      + 'WSL-CLAUDE; spiritos-f6 measured what it cost.',
-    owed: 'THE CALLER, by spiritos-f6, in peerPost.js around :725. THE PROOF IS ALREADY '
-      + 'THERE AND WAITING: spirit/test/cardFetch.js, 7 green and 3 awaiting, written '
-      + 'before the caller so it measures an implementation against a contract it did not '
-      + 'choose. The three branch on the OUTCOME — a seal key the fixture never planted — '
-      + 'so they become real assertions the day the caller lands, with no edit. Also owed '
-      + 'by spiritos-f6, and the one thing the suite cannot guess: what happens when the '
-      + 'peer never answers the ask.',
-  },
+  // ANSWERED AND BUILT THE SAME SITTING, and the row should have gone when the
+  // work landed rather than waiting for Andy to say "already decided" — the
+  // third time in one day this board asked him for something already built.
+  // 780426a: the ask has a caller in peerPost.js, the format is
+  // appServer.js:811's, one ask per peer, and on no answer the same 428 as
+  // before. LIVE PASS on spiritos-f6's agent node — one ask, the card
+  // returned, 37 queued reports delivered sealed, outbox drained to zero,
+  // cardVia 'reply' recorded. First reports to reach the owner node since
+  // 2026-09-23. wsl-claude's cardFetch.js is 10/10 green and its three
+  // awaiting assertions flipped with no edit.
+
   {
     asked: '2026-09-26',
     who: 'wsl-claude, whose drop rule it is',
@@ -127,6 +110,17 @@ module.exports = [
       + 'opinion this week has been about. I lean CATALOGUE. Either way the suite goes green '
       + 'untouched, because it asserts the outcome and not the mechanism.',
   },
+  // ANSWERED AND BUILT THE SAME SITTING. It was claude's, and the row should
+  // have gone when the work landed rather than waiting for Andy to say "already
+  // decided" — the THIRD time in one day this board asked him for something
+  // already built. 780426a: the ask has a caller in peerPost.js, the format is
+  // appServer.js:811's, one ask per peer per minute, and on no answer the same
+  // 428 as before. LIVE ACCEPTANCE TEST PASSED on spiritos-f6's agent node —
+  // exactly one ask, the card returned, 37 queued reports delivered sealed and
+  // receipted, outbox drained to zero, cardVia 'reply' recorded. First reports
+  // to reach the owner node since 2026-09-23. wsl-claude's suite is still the
+  // proof; a live pass is evidence and not an assertion.
+
   {
     asked: '2026-09-26',
     who: 'claude',

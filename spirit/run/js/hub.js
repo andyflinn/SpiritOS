@@ -1144,6 +1144,62 @@ function createHub(rootDir) {
   // the foot of server.js, long after createHub runs, and a setter would
   // make this file hold state it has no business holding. Handed in at
   // call time, they are also what lets a suite drive this as a function.
+  // ── WHERE A POST GOES, DECIDED ONCE (puppets/G4) ─────────────────────
+  //
+  //   Andy, 2026-09-26, approving the extraction: "yes, we want that ortho-
+  //   thinggie."
+  //
+  // THIS WAS INSIDE handlePost AND THE CHOICE WAS INTERLEAVED WITH THE SEND,
+  // so a second caller could not reach it without re-deciding. And a second
+  // opinion about reachability is exactly what serverSurface.js:848 refuses:
+  // "peer.post is the only way onto the wire. A second caller is a second
+  // door." An owner command needs a relay for the same reasons a post does —
+  // the same presence, the same `via` rule, the same hints — so it must ask
+  // this rather than guess.
+  //
+  // PURE, AND THAT IS THE WHOLE OF THE CHANGE. It decides and returns; it does
+  // not send, does not touch the response and does not log. Everything it
+  // knows it knew before, in the same order, with the same fallbacks.
+  //
+  // THE ORDER IS LOAD-BEARING and is preserved exactly:
+  //   1. a relay that NAMES the recipient, narrowed by `via` if one was asked
+  //      for. Present means reachable, and presence is what makes this
+  //      answerable rather than a guess.
+  //   2. otherwise, and ONLY when no `via` was named: the first connected
+  //      relay, carrying route hints off the shadow roll. A named `via` that
+  //      does not name the peer is a refusal rather than a fallback, because
+  //      the caller asked to measure one path.
+  //   3. otherwise unreachable, which the caller reports.
+  function chooseRoute(presence, to, via) {
+    var wanted = String(via || '').trim();
+    var where = presence.relaysNaming(to).filter(function (url) {
+      return !wanted || url === wanted;
+    });
+    // Posting to a relay itself needs nothing special here. Its own key is in
+    // the OWNER's roster and in no peer's (relay.streamRoster), so presence
+    // answers for it exactly as for any peer.
+    if (where.length) return { relayUrl: where[0], hints: undefined };
+    if (wanted) return { unreachable: true };
+
+    // ── THE HINTS COME FROM THE SHADOW (0018, cycle R1) ─────────────
+    //
+    //   Andy: "the hints are removed from the users contacts. (let's admit
+    //   it: they [are] not human-readable, in reality)"
+    //
+    // Best-ranked first, which the book could not do: its list was
+    // newest-first and had no idea who had said what.
+    var hints = shadow(rootDir).routes(to)
+      .map(function (r) { return r.at; })
+      .filter(function (at, i, all) { return at && all.indexOf(at) === i; });
+    var connected = Object.keys((presence.detail && presence.detail()) || {});
+    if (!connected.length) return { unreachable: true };
+    // A PARTNER THIS RELAY RECENTLY CALLED UNAVAILABLE GOES LAST (R42).
+    // Reordered, never dropped: the word is "as of", and a send after it goes
+    // stale is the relay's next try.
+    hints = require('./partnerAvailability').shared().order(connected[0], hints);
+    return { relayUrl: connected[0], hints: hints.length ? hints : undefined };
+  }
+
   function handlePost(req, res, readJsonBody, deps) {
     var router = deps && deps.router;
     var presence = deps && deps.presence;
@@ -1187,81 +1243,19 @@ function createHub(rootDir) {
       // a peer reachable two ways is reachable — but a caller may name
       // one, which is how the cost of each path gets measured rather
       // than assumed. An unreachable choice is refused like any other.
-      var wanted = String((body && body.via) || '').trim();
-      var where = presence.relaysNaming(to).filter(function (url) {
-        return !wanted || url === wanted;
-      });
-
-      // Posting to a relay itself needs nothing special here. Its own
-      // key is in the OWNER's roster and in no peer's (relay.streamRoster),
-      // so presence answers for it exactly as for any peer — which is why
-      // the per-recipient roster was the right place for this and a
-      // lookup table in this function was not.
-      // ── NOT ON A RELAY I HOLD: SEND IT WITH ROUTE HINTS (cycle 2) ─────
-      //
-      //   Andy: "the 'routes' associated with a node's foreign contacts
-      //   should be listed in the contacts of a node as relays; they are
-      //   always the ID of the relay it is enrolled at." — "the route
-      //   hints are actually more like an address-prefix, or 'location',
-      //   like a domain in DNS."
-      //
-      // The contact row's `routes` are relay keys. They go to a relay this
-      // node IS connected to, as signed hints beside the packet; that
-      // relay knows which of them it partners with and which are live, so
-      // it chooses (relay.partnerFromHints) — the node does not guess.
-      // The first connected relay, because which one partners with the
-      // hinted relay is the relays' knowledge, not this node's.
-      //
-      // Only when the named `via` was not asked for: a caller measuring one
-      // path must get that path or a refusal.
-      //
-      // AND WITH NO ROUTES, THE RELAY STILL ANSWERS (cycle 3). This node
-      // no longer holds a roster of each relay's members — the relay stopped
-      // serving one (0012 widened) — so "not in my picture" is not "not
-      // there". It posts through its relay and lets the relay say: it
-      // refuses an absent target at once (0006, 503 peer not reachable).
-      if (!where.length && !wanted) {
-        // ── THE HINTS COME FROM THE SHADOW NOW (0018, cycle R1) ─────
-        //
-        //   Andy: "the hints are removed from the users contacts. (let's
-        //   admit it: they [are] not human-readable, in reality)"
-        //
-        // This read `row.routes` — base64 relay keys on a contact row,
-        // eight of them, which nobody has ever read. They were machine
-        // data in a human-readable file, claiming a rule they never
-        // satisfied, AND a second copy: the shadow holds every route a
-        // contact row could hold plus the ones for people who are not
-        // contacts, so the two could disagree and the book was the one
-        // that went stale.
-        //
-        // Best-ranked first, which the book could not do: its list was
-        // newest-first and had no idea who had said what.
-        var hints = shadow(rootDir).routes(to)
-          .map(function (r) { return r.at; })
-          .filter(function (at, i, all) { return at && all.indexOf(at) === i; });
-        var connected = Object.keys((presence.detail && presence.detail()) || {});
-        if (connected.length) {
-          // A PARTNER THIS RELAY RECENTLY CALLED UNAVAILABLE GOES LAST
-          // (R42). Reordered, never dropped: the word is "as of", and a
-          // send after it goes stale is the relay's next try.
-          hints = require('./partnerAvailability').shared().order(connected[0], hints);
-          return sendPacket(router, connected[0], to, text, hints.length ? hints : undefined).then(function (answer) {
-            learnPresence(rootDir, to, answer);
-            res.writeHead(answer.ok ? 200 : (answer.status || 502),
-              { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify(answer));
-          });
-        }
-      }
-
-      if (!where.length) {
-        // Truthfully, and at once. Presence is what makes this
-        // answerable rather than a guess — and it is why that arc had
-        // to come first.
+      // WHERE IT GOES IS chooseRoute's, NOT THIS FUNCTION'S ANY MORE. The
+      // choice used to be interleaved with the send here, so an owner command
+      // could not reach it without re-deciding — and a second opinion about
+      // reachability is what serverSurface.js:848 refuses. Same presence, same
+      // `via` rule, same hints, decided in one place.
+      var route = chooseRoute(presence, to, (body && body.via));
+      if (route.unreachable) {
+        // Truthfully, and at once. Presence is what makes this answerable
+        // rather than a guess — and it is why that arc had to come first.
         fail(res, 503, 'that peer is not reachable right now');
         return;
       }
-      return sendPacket(router, where[0], to, text).then(function (answer) {
+      return sendPacket(router, route.relayUrl, to, text, route.hints).then(function (answer) {
         learnPresence(rootDir, to, answer);
         res.writeHead(answer.ok ? 200 : (answer.status || 502),
           { 'Content-Type': 'application/json; charset=utf-8' });
