@@ -817,6 +817,12 @@ appShellApp carries because a row the owner granted names that route.
 registering a subdomain for their own node is the same exchange. That is
 after alpha.
 
+**So every route served is negotiated and contracted** (Andy: *"so all
+routes served are negotiated and contracted."*). No route is served
+without a row the owner granted. A request for a domain with no row is
+refused at the VPS, and a carried packet naming no row is refused at the
+receiving node. There is no default route and no fallback app.
+
 ---
 
 ### PROPOSED, NOT IN THIS CYCLE — a sweep for forks
