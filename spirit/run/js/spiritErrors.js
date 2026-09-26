@@ -379,6 +379,22 @@ define('will-not-open', {
     'and re-addressed) are deliberately not distinguished: telling them ' +
     'apart is only useful to somebody trying them.',
 });
+// HISTORIC TRAFFIC ROWS CARRY A SECOND NAME FOR THIS, and it is not a
+// second condition. `peerPost.js` logged `code: 'no-seal-key'` while
+// answering the 428 and the sentences declared here, so 11,628 rows between
+// 2026-09-23 and 2026-09-26 name a code this catalogue never had. The
+// emitters now log `no-cipher-key`; anything reading that history has to know
+// the old string meant this entry.
+//
+// AND NOT ONLY THE HISTORY, UNTIL EVERY NODE IS UPDATED (spiritos-f6,
+// 2026-09-26): the agents node runs from its own clone, so it keeps writing
+// `no-seal-key` until this change is committed, pulled there and the node
+// restarted. A reader of the log must accept both names for now — which is
+// the ordinary shape of a rename on a live wire, and the reason the rename
+// went to the LOG string and not to the answer, which never changed. Found by wsl-claude joining the
+// agents outbox against this catalogue and getting `unknown` for the most
+// frequent refusal in the system — and an outbox that reads unknown as
+// "worth retrying" is what turned 158 pending rows into 11,628 refusals.
 define('no-cipher-key', {
   status: 428, presence: NONE, retry: 'no', fault: 'caller',
   // THE SENTENCES AS peerPost.js:748-749 ACTUALLY EMITS THEM. This

@@ -75,7 +75,11 @@ test.subHeading('Too big is refused here, not there');
   // disagreement and made the gap look intentional. One source now
   // (js/limits.js), and this checks the rule rather than the value.
   const huge = packet.encode('relay-chat', 'x'.repeat(packet.MAX_TEXT));
-  if (!huge.ok && /too long/.test(huge.error) && huge.limit === limits.PLAINTEXT_MAX) {
+  // SEALED_MAX, not PLAINTEXT_MAX, since 2026-09-26: the composer refuses on
+  // escaped UTF-8 bytes rather than characters, because the wire counts bytes
+  // after sealing and .length counts UTF-16 units. A packet of 16,384
+  // characters of CJK passed the old check and then could not be sealed.
+  if (!huge.ok && /too long/.test(huge.error) && huge.limit === limits.SEALED_MAX) {
     test.check('an envelope over the limit is refused before the wire');
   } else {
     test.fail('oversize: ' + JSON.stringify(huge).slice(0, 120));
@@ -124,14 +128,19 @@ test.subHeading('One number, in one place');
 // So this checks the property that was missing: that there is only one
 // number, and that everything defers to it rather than copying it.
 {
-  // PLAINTEXT_MAX since cycle 10's R6. An app composes a packet and the
-  // node seals it afterwards, so what the browser pre-refuses is the
-  // plaintext bound — against the wire bound every app would be told it
-  // has 22 KB and be refused at about 16.
-  if (packet.MAX_TEXT === limits.PLAINTEXT_MAX) {
+  // SEALED_MAX since 2026-09-26, and the property under test is unchanged:
+  // ONE NUMBER, and everything defers to it. It was PLAINTEXT_MAX, on the
+  // reasoning that an app composes and the node seals afterwards, so the
+  // browser should pre-refuse the plaintext bound. That reasoning was right
+  // about WHERE and wrong about WHAT: .length counts UTF-16 units and the
+  // wire counts bytes after escaping and sealing, so the check passed
+  // packets that could not then be sealed. SEALED_MAX is DERIVED from
+  // PAYLOAD_MAX in limits.js, so this still asserts one source rather than a
+  // copy — which is the whole point of the check.
+  if (packet.MAX_TEXT === limits.SEALED_MAX) {
     test.check('packet.js takes its limit from js/limits.js rather than holding one');
   } else {
-    test.fail('packet ' + packet.MAX_TEXT + ' vs limits ' + limits.PLAINTEXT_MAX);
+    test.fail('packet ' + packet.MAX_TEXT + ' vs limits ' + limits.SEALED_MAX);
   }
 
   // AND NOBODY ELSE DECLARES ONE. A literal here is how the gap comes

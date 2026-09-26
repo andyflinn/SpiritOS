@@ -71,6 +71,35 @@ var PACKET_VERSION = 1;
 // refused at about 16.
 var PACKET_MAX_TEXT = limits.PLAINTEXT_MAX;
 
+// ── AND THE BOUND THAT ACTUALLY DECIDES ──────────────────────────────
+//
+// SEALED_MAX is derived from PAYLOAD_MAX in limits.js rather than written
+// down beside it (Andy's principle, 2026-09-26: "certain fixed values
+// ("constants") must be derived from underlying constants"). A cached page
+// from before it existed would get `undefined`, and comparing a number
+// against undefined is always false — a silent removal of this check — so
+// it falls back to the older figure rather than to nothing.
+var SEALED_LIMIT = typeof limits.SEALED_MAX === 'number' ? limits.SEALED_MAX : PACKET_MAX_TEXT;
+
+// DUAL TARGET, so no Buffer. See the note at the top of this file: this
+// runs in the browser from a <script> tag as well as under node, and
+// `Buffer` exists in only one of them. TextEncoder is in both; the manual
+// count is for anything older than either.
+function byteLength(s) {
+  var str = String(s);
+  if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(str).length;
+  if (typeof Buffer !== 'undefined') return Buffer.byteLength(str, 'utf8');
+  var n = 0;
+  for (var i = 0; i < str.length; i += 1) {
+    var c = str.charCodeAt(i);
+    if (c < 0x80) n += 1;
+    else if (c < 0x800) n += 2;
+    else if (c >= 0xd800 && c <= 0xdbff) { n += 4; i += 1; }
+    else n += 3;
+  }
+  return n;
+}
+
 // 128 bits. It was 64, from Math.random, and both halves were wrong for
 // what this field is about to become (design/relay/ROUTER.md §6).
 //
@@ -209,12 +238,43 @@ function packetEncode(app, body, opts) {
   }
   if (typeof text !== 'string') return { ok: false, error: 'body is not serialisable' };
 
-  if (text.length > PACKET_MAX_TEXT) {
+  // ── MEASURED IN THE UNIT THAT BINDS, NOT IN CHARACTERS ────────────
+  //
+  // This said `text.length > PACKET_MAX_TEXT`, and that was the whole
+  // defect in one line: the right place, the right refusal code, the wrong
+  // quantity. `.length` counts UTF-16 units; the wire counts bytes after
+  // the node escapes and seals. So 16,384 characters of ordinary French or
+  // Chinese passed here and then could not be sealed, and the sender was
+  // told nothing it could act on.
+  //
+  // Measured at the old ceiling: ASCII seals to 22,049 and fits, newlines
+  // to 32,945, quotes and accented to 43,841, CJK to 65,633, against a
+  // wire bound of 22,528.
+  //
+  //   Andy, 2026-09-26: "that is the requester's problem, if ou want to
+  //   encode in fance unicode or whatever, you better make sure the
+  //   message doesn't pop the limit, if you want to send an elephant, you
+  //   better slice it to pieces first." And: "the restaurant server a meal
+  //   with a fork, it's your problem if you overload the fork. not the
+  //   restaurants."
+  //
+  // The product does not grow to fit the load. But a diner can only avoid
+  // overloading the fork if the fork's size is stated in the units of the
+  // load — so this refuses in bytes and SAYS the byte figures.
+  //
+  // WHY HERE AND NOWHERE ELSE (wsl-claude, 2026-09-26): the composer is
+  // the only place that can refuse before anything is signed or sent. A
+  // second check on the sender's node would be a second opinion about one
+  // fact, and the first thing it would do is disagree with this one at
+  // some boundary. `hub.peerOwnerPost` already passes this error through
+  // unchanged rather than wording it again.
+  var sealedBytes = byteLength(JSON.stringify(text));
+  if (sealedBytes > SEALED_LIMIT) {
     return {
       ok: false,
-      error: 'packet too long: ' + text.length + ' of ' + PACKET_MAX_TEXT,
-      length: text.length,
-      limit: PACKET_MAX_TEXT,
+      error: 'packet too long: ' + sealedBytes + ' sealed bytes of ' + SEALED_LIMIT,
+      length: sealedBytes,
+      limit: SEALED_LIMIT,
     };
   }
   return { ok: true, text: text, envelope: envelope };
@@ -293,7 +353,12 @@ function packetDecorate(message) {
 
 var packetApi = {
   VERSION: PACKET_VERSION,
-  MAX_TEXT: PACKET_MAX_TEXT,
+  // THE BOUND THIS FILE ACTUALLY ENFORCES, not the one it used to. The
+  // suite's rule is that the limit is ASKED FOR and never restated, so this
+  // export has to move when the check moves or the test agrees with the
+  // wrong half of a disagreement — which is exactly what happened when this
+  // said 1024 while the relay said 16384 about the identical string.
+  MAX_TEXT: SEALED_LIMIT,
   ID_BYTES: PACKET_ID_BYTES,
   randomId: packetRandomId,
   encode: packetEncode,

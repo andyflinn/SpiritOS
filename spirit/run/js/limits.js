@@ -221,9 +221,71 @@ function fitsWrappedReply(text, from, sig) {
   }).length <= PAYLOAD_MAX;
 }
 
+// ── THE SEALED CEILING, DERIVED RATHER THAN WRITTEN DOWN ─────────────
+//
+//   Andy, 2026-09-26: "the idea that certain fixed values ("constants")
+//   must be derived from underlying constants. is a design principle.
+//   figure out the correct formula, and test it."
+//
+// PAYLOAD_MAX is UNDERLYING: a chosen ceiling on the wire, and moving it is
+// the flag day the comment above describes. What a composer may hand to
+// `seal` is DERIVED from it, and until now it was not — it was measured by
+// hand once and the ANSWER written down as PLAINTEXT_MAX. That is the break
+// in the chain this principle closes: move one and the other stays put, and
+// nothing goes red.
+//
+// THE GROWTH IS EXACT, and it is exact in ESCAPED UTF-8 BYTES:
+//
+//     wire = 4 * ceil( utf8(JSON.stringify(text)) / 3 ) + SEAL_ENVELOPE
+//
+// Base64 of the ciphertext is the whole of the variable part — GCM adds a
+// 16-byte tag and no block padding — and the rest is the throwaway public
+// key, the nonce, the `{at,text}` wrapper and the JSON around them, which
+// together are constant. Verified against real `seal.seal` output by two
+// agents working independently: 85 cases on one side, 18 plus 2,400
+// algebraic pairs on the other, spanning empty through 20,000 bytes, quote,
+// backslash, newline, tab, accented, CJK, emoji and mixed content, and the
+// base64 boundaries at 1..4 bytes. No case deviates.
+var SEAL_ENVELOPE = 185;
+
+// The largest escaped-UTF-8 packet whose sealed form still fits the wire.
+// `floor` OUTSIDE the multiply, not inside: base64 output is a multiple of
+// four, so dividing first and scaling after is two bytes too generous at one
+// alignment in three. Both agents got that wrong from opposite directions
+// before the arithmetic was checked against real output.
+var SEALED_MAX = 3 * Math.floor((PAYLOAD_MAX - SEAL_ENVELOPE) / 4);
+
+// ── AND THE FORK HAS A STATED SIZE ───────────────────────────────────
+//
+//   Andy, 2026-09-26: "that is the requester's problem, if ou want to
+//   encode in fance unicode or whatever, you better make sure the message
+//   doesn't pop the limit, if you want to send an elephant, you better
+//   slice it to pieces first." And: "the restaurant server a meal with a
+//   fork, it's your problem if you overload the fork. not the restaurants."
+//
+// So the product does NOT grow to fit what a sender piles on, and this is
+// not a forgiving check. What it is instead is a LEGIBLE one: a sender can
+// only take that responsibility if the cap is knowable in the unit that
+// actually binds. PLAINTEXT_MAX counts UTF-16 units; the wire counts bytes
+// after escaping and sealing. A packet of 16,384 characters of ordinary
+// French or Chinese obeys the documented promise and is refused anyway —
+// measured, at PLAINTEXT_MAX: ASCII seals to 22,049 and fits, newlines to
+// 32,945, quotes and accented to 43,841, CJK to 65,633.
+//
+// MEASURED, NOT COUNTED, for the same reason `fitsWrapped` above measures:
+// escaping cost depends on content, so no character count can stand in for
+// it. This is the fork's size, said in the units of the load.
+function fitsSealed(text) {
+  return Buffer.byteLength(JSON.stringify(String(text === undefined ? '' : text)), 'utf8')
+    <= SEALED_MAX;
+}
+
 var limitsApi = {
   PAYLOAD_MAX: PAYLOAD_MAX,
   PLAINTEXT_MAX: PLAINTEXT_MAX,
+  SEAL_ENVELOPE: SEAL_ENVELOPE,
+  SEALED_MAX: SEALED_MAX,
+  fitsSealed: fitsSealed,
   WIRE_OVERHEAD: WIRE_OVERHEAD,
   WIRE_HEADROOM: WIRE_HEADROOM,
   HINTS_PER_POST: HINTS_PER_POST,

@@ -1,6 +1,6 @@
 # 2026-09-12 — the device, and a node defending itself
 
-**Status: OPEN**
+**Status: CLOSED — this cycle's three device-key requirements are deferred by Andy, 2026-09-26.** Everything else in this cycle was built; the three device-key requirements were not, and he has ruled them abandoned for now rather than owed.
 
 Everything agreed between Andy and Claude on 2026-09-12, in the sitting
 that began with Grok's review of [DEVICE.md](../relay/DEVICE.md).
@@ -98,7 +98,7 @@ completion report has to account for them.
 must be tested — the ID in none of: the public census, another peer's
 roster, a presence event, a `deviceIdentityPublic` lookup — **plus** the
 positive half, or it passes against a device nobody can see at all.
-**Status:** OPEN — [DEVICE.md](../relay/DEVICE.md) §2
+**Status:** DEFERRED: abandoned for now — Andy, 2026-09-26: *"device (cellphone interface with password etc. is abandoned for now)"*. Never built, and not superseded on paper either: the device path was rebuilt differently the same day (`f196322`, `26205fe`). DEFERRED rather than a word of its own, because that is the vocabulary `cycleRequirements.js` enforces — see the note to Andy about the missing term for work that leaves rather than waits.
 
 ### R12 — the pairing and the destination rule land together
 Recorded in DEVICE.md and repeated here because a note is not a
@@ -106,7 +106,7 @@ requirement. Building R11 alone removes the accident that currently stops
 a device reaching the router, with nothing underneath it.
 
 **Verify:** not written.
-**Status:** OPEN — blocks on R11
+**Status:** DEFERRED: abandoned for now — Andy, 2026-09-26: *"device (cellphone interface with password etc. is abandoned for now)"*. Never built, and not superseded on paper either: the device path was rebuilt differently the same day (`f196322`, `26205fe`). DEFERRED rather than a word of its own, because that is the vocabulary `cycleRequirements.js` enforces — see the note to Andy about the missing term for work that leaves rather than waits.
 
 ### R13 — the node's front door must learn its own device keys
 `hub.frontDoor` knows contacts+self and accepted relays. A device's
@@ -115,7 +115,7 @@ device posting to its own node. Found by Andy asking whether the relay
 does everything possible.
 
 **Verify:** not written.
-**Status:** OPEN — blocks on R11
+**Status:** DEFERRED: abandoned for now — Andy, 2026-09-26: *"device (cellphone interface with password etc. is abandoned for now)"*. Never built, and not superseded on paper either: the device path was rebuilt differently the same day (`f196322`, `26205fe`). DEFERRED rather than a word of its own, because that is the vocabulary `cycleRequirements.js` enforces — see the note to Andy about the missing term for work that leaves rather than waits.
 
 ### R14 — `send` / `inbox` / `status` are retired
 > I'd rather see apps breaking than apps faking

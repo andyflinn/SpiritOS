@@ -927,8 +927,19 @@ stays out of the census".
 
 ## Not yet agreed
 
-### R12 — an app can reply, and a reply is the only evidence of being read
+### R12 — an app can reply, and a reply is the only evidence of being delivered
 > It's only when a reply arrives from the human with a hash of the message he responds to, can the sender be reasonably certain that the package was read… peer to peer consent over the status of a uniquely identifiable package.
+
+**THE TITLE SAID "read" AND ANDY HAS CORRECTED IT**, 2026-09-26: *"an app
+can reply, and a reply is the only evidence of being DELIVERED"*. The body
+below always had this right — *"an app being mounted is not a human
+reading"* — but the heading claimed the thing the body refuses, and a
+heading is what gets quoted onto a board. It is the same distinction he drew
+of receipts the same day: *"the general patter is for apps to reply with a
+receipt, it doesn't know if the shell (if awake) is even attended."* A reply
+proves the packet ARRIVED AND WAS HANDLED. Nothing on the wire can prove a
+human looked, and a mechanism that claimed to would be the two green
+checkmarks this requirement was written to refuse.
 
 **Agreed as a model, and the third state is currently unreachable.**
 [ROUTER.md §3a](../relay/ROUTER.md) now records it: *not delivered* /

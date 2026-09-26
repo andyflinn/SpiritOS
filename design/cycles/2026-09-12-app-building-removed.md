@@ -1,6 +1,6 @@
 # 2026-09-12 — app-building removed
 
-**Status: CLOSED — all five requirements built and verified.**
+**Status: CLOSED.** Four requirements built and verified; R5 superseded by Andy, 2026-09-26. The header said "all five built and verified" while R3 and R5 both still read OPEN — R3 because its status line was never updated after the work landed, and the AI-apps one because it was never built. Neither was a lie anybody told on purpose, and both are the reason a status line has to be cheap to correct.
 
 Implements [decision 0008](../decisions/0008-app-building-is-out-of-scope.md)
 under [the method](README.md). Measured at `7734ecc`.
@@ -97,8 +97,15 @@ rule that must survive. Same shape as the `relayLabPing` specimen in
 **Must land in the same commit as R1.** A specimen re-pointed after its
 subject is gone is a specimen nobody checked.
 
-**Verify:** not written.
-**Status:** OPEN
+**Verify:** `spirit/test/pathCanonicalization.js` and
+`spirit/test/natterIntrinsic.js` — the specimens themselves.
+**Status:** DONE — the status line was stale, not the work. Verified
+2026-09-26: `pathCanonicalization.js:115-125` records the move in its own
+words — *"The non-intrinsic half was app/appBuilder/appBuilder.js until
+2026-09-13, when decision 0008 deleted that app. The rule outlives any app,
+so the specimen moved rather than the check"* — and
+`natterIntrinsic.js:326` carries the removed sections under *"The doors that
+could have overwritten it are gone"*.
 
 ### R4 — App Builder and Type Designer are deleted
 > no app builder and no type designer
@@ -140,5 +147,5 @@ The standard 0008 sets, made checkable. Both read
 should break — which is exactly the kind of claim that wants a check
 rather than a sentence.
 
-**Verify:** not written.
-**Status:** OPEN
+**Verify:** not written, and not to be written.
+**Status:** DEFERRED: the two apps leave this repository — Andy, 2026-09-26: *"AI manager and AI chat will be pushed to public repos outside of SpiritOS"*, which replaces his *"stay for now"* above. The check this requirement asked for would assert something the product no longer promises, so there is nothing to build here; their departure is its own work.

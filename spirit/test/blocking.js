@@ -56,42 +56,49 @@
 
 'use strict';
 
+// ── AND A THIRD STATE: RULED, NOT BUILT ──────────────────────────────
+//
+//   Andy, 2026-09-26: "ok, it needs an hourglass" — of a decision he had
+//   answered whose code nobody had written yet.
+//
+// A row here used to have two states: on the board, or gone. So the moment
+// he ruled, the item vanished — and the WORK his ruling implied vanished
+// with it. That is the same dishonesty the owed list exists to prevent,
+// arriving through the one section that was meant to be about his
+// attention.
+//
+// So a row may carry `settled`: his answer, quoted, and what is still owed
+// because of it. It stops being something that needs him and becomes
+// something that needs us, and it keeps its place on the page under an
+// hourglass rather than disappearing. It leaves when the work lands.
+//
+// A settled row names `owed` and `who`. If nobody can be named, it is not
+// settled — it is abandoned, and it should say so.
+
 module.exports = [
   {
     asked: '2026-09-26',
-    who: 'claude',
-    // Rule 4: answerable with one command.
-    decision: 'Delete the first-cut extract output that landed in the product tree — '
-      + 'spirit/run/input/, spirit/run/output/ and spirit/run/.state/ (14 files, 4.4 MB).',
-    costs: 'The board cannot go green. Two suites are red only because of these files: '
-      + 'the live front door cannot build a lab while untracked files sit under spirit/, '
-      + 'and the stands-alone check finds forbidden paths quoted inside the old corpus JSON.',
-    why: 'Andy has to run it: the agent was refused by its own sandbox, twice, as '
-      + 'irreversible local destruction. Not a judgement call — a permission.',
-  },
-  // ANSWERED AND REMOVED THE SAME SITTING, which is rule 2 working: Andy,
-  // 2026-09-26, "wsl-claude holds the runAll." The row asking who owns the
-  // harness emitter is gone, not struck through — a board that keeps answered
-  // rows stops being read.
-  {
-    asked: '2026-09-26',
-    who: 'claude',
-    decision: 'Whether the limits requirement takes the shape wsl-claude proposed: a '
-      + 'derivation stated beside the literal, non-binding, loud when they disagree.',
-    costs: 'One requirement in this cycle stays open and uncounted. Its harness half '
-      + 'already exists in payloadCeiling.js, so the wrong answer means building a '
-      + 'second copy of a test that is already green.',
-    why: 'The alternative — computing the constant — is the silent flag day that was '
-      + 'already refused once. Choosing between them is a product decision.',
-  },
-  {
-    asked: '2026-09-26',
-    who: 'claude',
-    decision: 'Confirm the brains repo is private, then say whether to push it.',
-    costs: 'Three commits sit unpushed, and the voice corpus is not backed up anywhere '
-      + 'while they do.',
-    why: 'Neither agent has gh. A 404 from the anonymous API says private, but a '
-      + 'renamed or deleted repo gives the same 404, and the cost of being wrong is '
-      + "Andy's verbatim typing on a public remote.",
+    settled: '2026-09-26',
+    who: 'wsl-claude, whose file the agents app is',
+    decision: 'The outbound queue on the agent node.',
+    answer: 'Andy: "keep only a few, and count the deletions, as ameasurement for the '
+      + 'system to be discussed in a team review." Then: "keep the inbound queues, not '
+      + 'the outbound ones...." And on the reason: "there is duplication there."',
+    owed: 'ANDY HAS GIVEN THE SHAPE, 2026-09-26: "the agent app is special, a post is '
+      + 'implicitely coupled with a delete in the sent-log." IT IS ALREADY THE CODE '
+      + 'SHAPE — agents.js:323 keeps only non-200 rows and rewrites the file, so a '
+      + 'delivered post does remove itself. I said twice that it never deletes and both '
+      + 'times I was wrong; wsl-claude caught it in the code. THE 158 WERE THEREFORE '
+      + 'NEVER DELIVERED, not delivered-and-retained: every one was refused no-seal-key '
+      + 'because the sending node holds no card for the owner. So the sent-log is not a '
+      + 'duplicate of trafficLog after all — the log says what was ATTEMPTED, for good, '
+      + 'and the sent-log says what is STILL OWED and empties itself. What is owed: '
+      + '(1) A REFUSAL THAT WAITING CANNOT FIX MUST BE DEAD-LETTERED rather than '
+      + 're-posted on every send. no-seal-key is a fact about the destination, not a '
+      + 'transient, and retrying it turned 158 rows into 11,628 refusals. '
+      + '(2) The sending node needs the owner card, which is the open 1a/1b choice. '
+      + '(3) Optional, and Andy liked the direction: the age of the oldest pending row '
+      + 'on the board, so a stuck channel is visible at a glance instead of after three '
+      + 'days.',
   },
 ];

@@ -740,7 +740,7 @@ function createPeerPost(opts) {
         // owner's own words, not a stranger's.
         note({
           dir: 'out', kind: 'request', peer: toKey, relay: relayUrl,
-          outcome: 'refused', code: 'no-seal-key', payload: text,
+          outcome: 'refused', code: 'no-cipher-key', payload: text,
         });
         return Promise.resolve({
           ok: false, status: 428, noSealKey: true,
@@ -1380,7 +1380,7 @@ function createPeerPost(opts) {
             // no answer travelled."
             note({
               dir: 'out', kind: 'reply', peer: body.from, relay: relayUrl,
-              hash: hash, outcome: 'refused', code: 'no-seal-key',
+              hash: hash, outcome: 'refused', code: 'no-cipher-key',
             });
             text = '';
             plain = '';

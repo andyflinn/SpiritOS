@@ -448,9 +448,37 @@ answer.
 
 ### G1 — certain limits derive from the constant, rather than being written down
 
-**Status:** OPEN. Nothing built. Andy, 2026-09-25: *"sounds like certain
+**Verify:** `spirit/test/sealedDerivation.js` and
+`spirit/test/payloadCeiling.js`.
+**Status:** DONE (2026-09-26). Andy, 2026-09-25: *"sounds like certain
 limits need derivation from the constant"* — *"gets on the to-do list
-now."*
+now."* — and on 2026-09-26 he made it a rule: *"the idea that certain fixed
+values ("constants") must be derived from underlying constants. is a design
+principle. figure out the correct formula, and test it."*
+
+**What was built.** `SEALED_MAX = 3 * floor((PAYLOAD_MAX - SEAL_ENVELOPE) / 4)`
+in `limits.js`, with `SEAL_ENVELOPE = 185` and a `fitsSealed()` that
+MEASURES rather than counts. `PAYLOAD_MAX` and `PLAINTEXT_MAX` are untouched,
+so the flag day this document blocks is still blocked.
+
+**And it found a shipped defect, which is why the requirement was worth
+having.** The composer refused on `text.length` — UTF-16 units — while the
+wire counts bytes after escaping and sealing. At the old ceiling: ASCII seals
+to 22,049 and fits; newlines 32,945; quotes and accented 43,841; CJK 65,633,
+against a wire bound of 22,528. **A full-size message in any non-ASCII
+language could not be sent, and the refusal looked like the network.**
+`client/packet.js` now refuses in bytes, with `packet-too-long` — the code
+that already existed — and says the byte figures.
+
+**Andy ruled the responsibility, not a bigger ceiling**, 2026-09-26: *"that
+is the requester's problem, if ou want to encode in fance unicode or
+whatever, you better make sure the message doesn't pop the limit, if you want
+to send an elephant, you better slice it to pieces first."* And: *"the
+restaurant server a meal with a fork, it's your problem if you overload the
+fork. not the restaurants."* So the product does not grow to fit the load —
+the fork's size is simply stated in the units of the load. And on why there
+is one check and not two: *"it's becomes untestable when 50 places think it's
+easy enough to do inline."*
 
 `limits.js` holds four literals and two derivations today:
 
