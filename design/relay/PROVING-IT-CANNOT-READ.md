@@ -1,7 +1,7 @@
 # Proving the relay cannot read it, by trying to read it
 
-> **This is a SPECIFICATION, not a proposal.** Every question it opened
-> has been ruled. Nothing below is offered for decision except the one
+> **APPROVED by Andy on 2026-09-26. This is a SPECIFICATION, not a
+> proposal.** Every question it opened has been ruled. Nothing below is offered for decision except the one
 > section marked OPEN, which is empty.
 
 > **Andy, 2026-09-26:** *"testing: 'prove the relay cannot read it, by
@@ -72,6 +72,39 @@ goes to it over the held connection it already keeps
 - **IT IS NOT DROPPED WHEN A RELAY GAINS MEMBERS**, and it is not refused
   on a public relay — both follow from the ruling above, and both are
   the opposite of what this document first recommended.
+
+### APPROVED, 2026-09-26, with two rulings that belong in it
+
+> **Andy:** *"i agree to the following: the relays DEBUG mode is
+> absolutely just READ-ONLY, it may only send byte-for-byte copies of
+> observed items to the owner."*
+
+**READ-ONLY IS A CONSTRAINT ON THE FUTURE, not a description of today.**
+Nothing in this design writes anything; the ruling is what stops the
+next use. A switch that already ships payloads is one small step from
+replaying one, or editing one in flight for a test — and both would
+arrive as reasonable extensions of a thing that was only ever meant to
+copy. BYTE FOR BYTE is the whole licence: observe, copy, send. No
+synthesis, no replay, no alteration.
+
+> **Andy:** the future concern, *"if plain-text data is detected on
+> alive-in-the-wild relay, is still can only be streamed to the owner,
+> thus dispoving that the packets are unreadable"*
+
+**AND THIS INVERTS THE LAST OBJECTION.** The worry was that DEBUG might
+one day carry plaintext. It might — and if it does, THE PLAINTEXT
+REACHES ONLY THE OWNER, AND ITS ARRIVAL IS THE FINDING. Detection is the
+purpose of the instrument, not a breach of it.
+
+So plaintext on the stream is not a failure of the safeguard. It is the
+safeguard working, delivered to the one party who can act on it — which
+removes the last argument for refusing to start.
+
+*wsl-claude's, on what this does to 2b:* the assertion is therefore NOT
+"nothing unsealed ever crosses". It is **"what crosses unsealed is
+exactly the known list"** — cards today — **"and anything else is
+reported rather than hidden"**. Those are different suites, and only the
+second is consistent with his ruling.
 
 ## WHAT WAS RECOMMENDED AND WHAT BECAME OF IT
 
