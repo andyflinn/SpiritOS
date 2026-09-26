@@ -877,9 +877,25 @@ time limit (above) stays owed either way. **And members make the bet
 safer:** *"and member are expected to have lower visitor frequencies, AND
 separate unique routes through relay"*. A member's visitors travel on that
 member's own route. They add little load and do not pile onto the owner's.
-Whether the relay's per-member budget is counted per route or only per
-sending key is for the implementer to confirm against decision 0016
-before relying on it.
+**The mechanism under the bet is already proved** (Andy: *"lets be
+honest, we already proved that throttle in peerPost)()"*): `postQueue.js`,
+`queueUnderLoad.js`, `queueRestart.js`, and the burst fix pinned at
+36f9e19. Delivery is not in question. Only waiting time is. Three limits
+apply to a post the VPS carries (wsl-claude, read from the tree; Andy:
+*"sending key is also throttled."*):
+1. **The VPS node's own queue, per relay:** `postQueue.js:68`,
+   `IN_FLIGHT_PER_RELAY = 1`. This is the one that binds.
+2. **The relay, per sending key:** `router.js:27`,
+   `DEFAULT_PER_REQUESTER = 16`. Every carried post has the VPS key as
+   sender, so all routes share it, but at 16 it does not bind.
+3. **The relay, per target:** `router.js:48`, `DEFAULT_PER_TARGET = 1`.
+   Each member's node has its own slot.
+
+So members' routes are separate for waiting purposes only when they go
+through DIFFERENT relays. On one relay, every visitor to every member takes
+turns through the VPS node's one slot. The suite measures it: two members
+on one relay, one visitor each, fired together, gives at most one in
+flight; on two relays, two.
 
 **So every route served, by a node or a puppet, is negotiated and contracted** (Andy: *"so all
 routes served are negotiated and contracted."*, then *"by nodes or puppets"*). No route is served
