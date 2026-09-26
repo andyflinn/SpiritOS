@@ -4,59 +4,22 @@
 
 ## Summary
 
-**2 tests are broken, 13 requirements are declared and not built yet, and 3 THINGS ARE STOPPED waiting for you, with 2 older question(s) behind them, (4 more already ruled and now ours).**
+**Nothing is broken, 13 requirements are declared and not built yet, and 2 older questions need a decision from you.**
 
 ```
-162 suites   3084 green   2 red   2 unhappy   13 owed      run 36f9e19
+162 suites   3086 green   0 red   0 unhappy   13 owed      run 6feb3e0
 ```
-
----
-
-## What is red
-
-**Something that used to pass now fails.** These are broken, not unfinished — the owed list further down is work nobody has written yet.
-
-**❌ `agentsOutbox.js`** — one check no longer passes.
-
-  - ALL 3 OF 3 REPORTS WERE PERMANENTLY DESTROYED. An agent node that does not yet hold the owner's card, flushing while the owner is offline, deletes its whole …
-
-**❌ `relayCannotRead.js`** — one check no longer passes.
-
-  - DEBUG IS OFF AND THE RELAY STREAMED THE WHOLE PAYLOAD ANYWAY — 269 bytes, with the switch reporting `debug:false`. The gate at relay.js:4649 is inside `owner…
 
 ---
 
 ## What needs you
-
-### Someone is stopped, waiting for you
-
-**3 things are stopped until you answer.**
-
-**⛔ The DEBUG switch gates the wrong function. Who moves the gate — and does it need a team review, being a relay.js gate?**
-
-- *Asked today by wsl-claude, who built the proofs and found it.*
-- **What it is holding up:** THE SWITCH YOU RULED ON DOES NOT DO WHAT IT SAYS. You asked for DEBUG "Off by default, returned and set by owner-only api". It reports itself off, correctly, while the full sealed bytes of every post stream to the owner anyway. Nothing leaks to anybody else and nothing readable leaks at all — the payload is sealed and the proofs below show the owner cannot read it either — but the instrument does not instrument. One red on the board, spirit/test/relayCannotRead.js.
-- **Why it is yours:** THE GATE IS ON THE WRONG EMITTER. relay.js:4649 sets `row.held = debugging && ...` and it sits inside `ownerEvent`, whose callers are claim and revoke notices that carry no payload. The rows that DO carry payloads come from `monitorEvent`, which copies every key of `extra` onto the row at relay.js:4735 and never consults DEBUG. Found by writing the proofs you ruled were owed: the CONTROL — with DEBUG off the payload must be absent — is the one that went red, which is the control doing its job. It is a one-line move. It is also a relay.js gate, and CLAUDE.md says to stop and call a team review rather than patch one, hence a row rather than a commit.
-
-**⛔ A missing-card refusal is no longer permanent. Do I change the CATALOGUE (spiritErrors.js, retry for `no-cipher-key`) or the OUTBOX (agents.js:351)?**
-
-- *Asked today by wsl-claude, whose drop rule it is.*
-- **What it is holding up:** REPORTS ARE BEING DESTROYED, today, on the tree as it stands. An agent node that does not yet hold your card, flushing while your node is offline, deletes its whole queue instead of keeping it — the exact case the queue was built for, and the opposite of what you were promised: "your node down: the program keeps the reports and sends them when your node is back." One red on the board, spirit/test/agentsOutbox.js.
-- **Why it is yours:** NEITHER AGENT DID ANYTHING WRONG AND NEITHER COULD HAVE SEEN IT ALONE. The drop rule asks the catalogue whether waiting can help and drops when the answer is no. That was RIGHT when written: with no caller for the card ask, a missing card could never be obtained. spiritos-f6 built that caller at 780426a, so 428 now means "the ask went unanswered this time" — which the next flush fixes. The catalogue still says retry "no". The defect is only in the JOIN of the two changes. THE CHOICE IS REAL rather than cosmetic: `retry` has exactly ONE reader in the tree (agents.js:351), so both fixes are equally safe today — but the catalogue is meant to be where the judgement lives, and a special case in the outbox is the second opinion this week has been about. I lean CATALOGUE. Either way the suite goes green untouched, because it asserts the outcome and not the mechanism.
-
-**⛔ May the relay chooser be extracted from handlePost so the owner-command door shares it, rather than picking its own relay?**
-
-- *Asked today by claude.*
-- **What it is holding up:** puppets/G4, the door, is otherwise stopped. The authority question is settled — "the node handles all the signing. the shell does not worry about that" — and this is the only thing left in it.
-- **Why it is yours:** handlePost spends about 230 lines choosing a relay: relaysNaming, the via override, route hints from the shadow roll, partner-availability ordering. A second handler choosing its own would be a SECOND OPINION ABOUT REACHABILITY, which serverSurface.js:848 warns about in as many words. Extracting it is the only option that does not duplicate judgement — but it is a refactor inside hub.js, and CLAUDE.md says to stop and call a review rather than patch when something needs a hub URL switch. So it is a ruling, not a tidy-up.
-
 
 ### Ruled, and now ours
 
 **⏳ How DEBUG is turned on, and whether it survives a relay gaining members.**
 
 - *You answered today*: "Andy: "DEBUG is Off by default, returned and set by owner-only api" — and it must reach a live box, because "when spirit-3 shows hickups, rather than taking it down, the owner should be able to flip the DEBUG switch remotely"."
-- **Still owed:** DECIDED, all of it: an owner-only verb that RETURNS the state as well as setting it, off by default, RAM only, not dropped on a claim, not refused on a live relay. No env var and no file, because both need a restart and a restart is what he refuses to do to a sick box. THE PROOFS ARE BUILT: spirit/test/relayCannotRead.js, 6 green and 1 red. The relay carries a sealed post, streams the owner the exact bytes, and the plaintext is not among them — with the recipient opening THOSE SAME BYTES and recovering the words, which is what stops the proof being true of an empty message. THE INSTRUMENT WAS DECLARED BUILT AND IS NOT GATED: the red is that defect, and it has its own row above. Still owed after it: the partner path. Spec: design/relay/PROVING-IT-CANNOT-READ.md.
+- **Still owed:** DECIDED, all of it: an owner-only verb that RETURNS the state as well as setting it, off by default, RAM only, not dropped on a claim, not refused on a live relay. No env var and no file, because both need a restart and a restart is what he refuses to do to a sick box. THE PROOFS ARE BUILT: spirit/test/relayCannotRead.js, 6 green and 1 red. The relay carries a sealed post, streams the owner the exact bytes, and the plaintext is not among them — with the recipient opening THOSE SAME BYTES and recovering the words, which is what stops the proof being true of an empty message. It first went red because the gate sat on the wrong emitter; moved at bf7bf3a, now 7 of 7. Still owed: the partner path. Spec: design/relay/PROVING-IT-CANNOT-READ.md.
 - **Owed by:** wsl-claude, whose design and whose relay surface
 
 **⏳ Which of the five sealed-post proofs the DEBUG instrument retires.**
@@ -106,8 +69,8 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +6 green
-- +1 red
+- +2 green
+- -2 red
 
 ---
 
@@ -119,13 +82,13 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 | ⏳ | **the state the record cannot mark: its own node being down** | 2 days | `▓▓▓▓░░░░░░` 40% |  |
 | ⏳ | **a server reports the box it sits on: four fields, one opinion withheld** | 2 days | `▓▓▓░░░░░░░` 33% |  |
 | ⏳ | **layer 1 splits by PROMISE, and the stable half is named** | 2 days | `░░░░░░░░░░` 0% |  |
-| ⏳ | **public-app-server/G17 — no document names this requirement** | 1 day | `▓▓▓▓▓▓▓░░░` 70% |  |
-| ⏳ | **a response bound exists, and both paths obey it** | today | `░░░░░░░░░░` 0% |  |
-| ⏳ | **one shared search: two hooks per collection, the rest inherited** | today | `▓▓▓▓░░░░░░` 40% |  |
-| ⏳ | **one suite that makes every api call** | today | `░░░░░░░░░░` 0% |  |
-| ⏳ | **`peerOwnerPost()` on the owner's node** | today | `░░░░░░░░░░` 0% |  |
-| ⏳ | **a puppet's stored owner key, owner-only** | today | `▓▓░░░░░░░░` 20% |  |
-| ⏳ | **the loopback shim** | today | `░░░░░░░░░░` 0% |  |
+| ⏳ | **public-app-server/G17 — no document names this requirement** | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
+| ⏳ | **a response bound exists, and both paths obey it** | 1 day | `░░░░░░░░░░` 0% |  |
+| ⏳ | **one shared search: two hooks per collection, the rest inherited** | 1 day | `▓▓▓▓░░░░░░` 40% |  |
+| ⏳ | **one suite that makes every api call** | 1 day | `░░░░░░░░░░` 0% |  |
+| ⏳ | **`peerOwnerPost()` on the owner's node** | 1 day | `░░░░░░░░░░` 0% |  |
+| ⏳ | **a puppet's stored owner key, owner-only** | 1 day | `▓▓░░░░░░░░` 20% |  |
+| ⏳ | **the loopback shim** | 1 day | `░░░░░░░░░░` 0% |  |
 | ⏳ | **an app can reply, and a reply is the only evidence of being delivered** | today | `░░░░░░░░░░` 0% |  |
 | ⏳ | **the log must be able to PROVE what it claims** | today | `░░░░░░░░░░` 0% |  |
 

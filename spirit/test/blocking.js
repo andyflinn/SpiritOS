@@ -87,49 +87,18 @@ module.exports = [
   // 2026-09-23. wsl-claude's cardFetch.js is 10/10 green and its three
   // awaiting assertions flipped with no edit.
 
-  {
-    asked: '2026-09-26',
-    who: 'wsl-claude, who built the proofs and found it',
-    decision: 'The DEBUG switch gates the wrong function. Who moves the gate — and does it '
-      + 'need a team review, being a relay.js gate?',
-    costs: 'THE SWITCH YOU RULED ON DOES NOT DO WHAT IT SAYS. You asked for DEBUG "Off by '
-      + 'default, returned and set by owner-only api". It reports itself off, correctly, '
-      + 'while the full sealed bytes of every post stream to the owner anyway. Nothing leaks '
-      + 'to anybody else and nothing readable leaks at all — the payload is sealed and the '
-      + 'proofs below show the owner cannot read it either — but the instrument does not '
-      + 'instrument. One red on the board, spirit/test/relayCannotRead.js.',
-    why: 'THE GATE IS ON THE WRONG EMITTER. relay.js:4649 sets `row.held = debugging && ...` '
-      + 'and it sits inside `ownerEvent`, whose callers are claim and revoke notices that '
-      + 'carry no payload. The rows that DO carry payloads come from `monitorEvent`, which '
-      + 'copies every key of `extra` onto the row at relay.js:4735 and never consults DEBUG. '
-      + 'Found by writing the proofs you ruled were owed: the CONTROL — with DEBUG off the '
-      + 'payload must be absent — is the one that went red, which is the control doing its '
-      + 'job. It is a one-line move. It is also a relay.js gate, and CLAUDE.md says to stop '
-      + 'and call a team review rather than patch one, hence a row rather than a commit.',
-  },
-  {
-    asked: '2026-09-26',
-    who: 'wsl-claude, whose drop rule it is',
-    decision: 'A missing-card refusal is no longer permanent. Do I change the CATALOGUE '
-      + '(spiritErrors.js, retry for `no-cipher-key`) or the OUTBOX (agents.js:351)?',
-    costs: 'REPORTS ARE BEING DESTROYED, today, on the tree as it stands. An agent node that '
-      + 'does not yet hold your card, flushing while your node is offline, deletes its whole '
-      + 'queue instead of keeping it — the exact case the queue was built for, and the '
-      + 'opposite of what you were promised: "your node down: the program keeps the reports '
-      + 'and sends them when your node is back." One red on the board, '
-      + 'spirit/test/agentsOutbox.js.',
-    why: 'NEITHER AGENT DID ANYTHING WRONG AND NEITHER COULD HAVE SEEN IT ALONE. The drop '
-      + 'rule asks the catalogue whether waiting can help and drops when the answer is no. '
-      + 'That was RIGHT when written: with no caller for the card ask, a missing card could '
-      + 'never be obtained. spiritos-f6 built that caller at 780426a, so 428 now means "the '
-      + 'ask went unanswered this time" — which the next flush fixes. The catalogue still '
-      + 'says retry "no". The defect is only in the JOIN of the two changes. '
-      + 'THE CHOICE IS REAL rather than cosmetic: `retry` has exactly ONE reader in the tree '
-      + '(agents.js:351), so both fixes are equally safe today — but the catalogue is meant '
-      + 'to be where the judgement lives, and a special case in the outbox is the second '
-      + 'opinion this week has been about. I lean CATALOGUE. Either way the suite goes green '
-      + 'untouched, because it asserts the outcome and not the mechanism.',
-  },
+  // ANSWERED AND REMOVED. The DEBUG gate sat in ownerEvent, which carries no
+  // payload, while monitorEvent streamed every sealed post's bytes to the
+  // owner whatever the switch said. Moved at bf7bf3a by claude-windows.
+  // Verified by wsl-claude: spirit/test/relayCannotRead.js is 7 of 7, and
+  // relay.js from before that commit turns its control red again.
+  // ANSWERED AND REMOVED. Andy: "we deleted out-queue, kept inqueue, to see
+  // if it'd fix the no cet car implementation, but now we have get card we
+  // keep outqueue again" — then "u fix. go". Fixed in the CATALOGUE, not in
+  // agents.js: no-cipher-key is retry 'after' at 6feb3e0, because the card
+  // ask has a caller now and the refusal means "not this time". Verified by
+  // wsl-claude: spirit/test/agentsOutbox.js is 4 of 4, and putting 'no'
+  // back destroys all three queued reports again.
   // ANSWERED AND BUILT THE SAME SITTING. It was claude's, and the row should
   // have gone when the work landed rather than waiting for Andy to say "already
   // decided" — the THIRD time in one day this board asked him for something
@@ -190,9 +159,9 @@ module.exports = [
       + 'spirit/test/relayCannotRead.js, 6 green and 1 red. The relay carries a sealed post, '
       + 'streams the owner the exact bytes, and the plaintext is not among them — with the '
       + 'recipient opening THOSE SAME BYTES and recovering the words, which is what stops the '
-      + 'proof being true of an empty message. THE INSTRUMENT WAS DECLARED BUILT AND IS NOT '
-      + 'GATED: the red is that defect, and it has its own row above. Still owed after it: '
-      + 'the partner path. Spec: design/relay/PROVING-IT-CANNOT-READ.md.'
+      + 'proof being true of an empty message. It first went red because the gate sat on '
+      + 'the wrong emitter; moved at bf7bf3a, now 7 of 7. Still owed: the partner path. '
+      + 'Spec: design/relay/PROVING-IT-CANNOT-READ.md.'
   },
 
 
