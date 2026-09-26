@@ -2118,7 +2118,7 @@ function createHub(rootDir) {
   // perfectly well. What it cannot do is be an app AND a system packet at
   // once — so NO PUPPET CAN INTERCEPT OWNER TRAFFIC, which is the
   // property this needs. Every puppet filters on its own name
-  // (`fixList.js:131`, `appShellApp.js:143`) and therefore ignores this
+  // (`fixList.js:131`, `appFaceApp.js:143`) and therefore ignores this
   // automatically.
   //
   // **THE OWNER-KEY COMPARISON AT THE RECEIVER IS THE WHOLE BOUNDARY.**

@@ -47,17 +47,17 @@ only needs an appShellApp"*. So:
 - **An app runs only on its owner's node**, as an app server there. No app
   runs on the VPS. (This withdraws a recommendation made an hour earlier,
   that `join` should run on the public box behind a Caddy block.)
-- **The VPS runs appShellApp and nothing else.** A browser asking for
-  `join.spirit.andyflinn.com` reaches appShellApp, which routes the request
+- **The VPS runs appFaceApp and nothing else.** A browser asking for
+  `join.spirit.andyflinn.com` reaches appFaceApp, which routes the request
   to the node holding that name. That node's app server answers.
 - **One face allotment serves every app, members' apps included.** Andy,
   2026-09-26: *"one face-allotment for all apps, even member apps, which
   are appShellApp, by member-to-subdomain mappings on the owners node"*.
-  The VPS's single appShellApp is the public face for the owner's apps and
+  The VPS's single appFaceApp is the public face for the owner's apps and
   every member's apps alike. There is no per-app process on the VPS and no
   second allotment there. A member's subdomain routes to that member's node
   by the member-to-subdomain mapping, which lives on the OWNER's node (the
-  grant table, *"only on the owners node"*, appShellApp.js). The lookup
+  grant table, *"only on the owners node"*, appFaceApp.js). The lookup
   therefore needs the owner's node up. That is the owner's to keep, under
   the uptime ruling (DEVICES-AND-PORTS.md:154-174).
 - **A member who wants more than one app puts a shell on their subdomain.**
@@ -66,20 +66,20 @@ only needs an appShellApp"*. So:
   one intrinsic app on the member's node, and fanning out is the shell's
   job (`appServer.js:22-28`). So the VPS never needs a second entry per
   member app.
-- **DIRECTION, and the reason for the mirroring: appShellApp becomes a
+- **DIRECTION, and the reason for the mirroring: appFaceApp becomes a
   shell that fans out too.** Andy, 2026-09-26: *"the appShellApp will
   change into a shell that fans out as well, that's why i insist on
   mirroring the node interface at so many points"*. The VPS fans out to
   subdomains the way a personal node's shell fans out to apps. That is why
-  appShellApp takes the node's own interfaces (mounted by nodeApps, packets
+  appFaceApp takes the node's own interfaces (mounted by nodeApps, packets
   through peerPost, *"no system-face special case"*) and never grows its
   own. Each place it mirrors the node is a place the later shell will not
   need rewriting. Alpha delivers only the basic version. A proposal that
-  gives appShellApp a convenience the node does not have works against
+  gives appFaceApp a convenience the node does not have works against
   this, and should be judged by that. **And why it is shaped like a node:**
   *"because appShellApp is associated with a relay-owner, and reflects the
   wildcard levels of subdomains.... (all out of scope right now)"*. Each
-  level of the wildcard name is one owner's appShellApp fanning to the
+  level of the wildcard name is one owner's appFaceApp fanning to the
   level below, just as a relay owner's node sits above its members.
   Recorded as direction only. Nothing past alpha's basic version is in
   scope.
@@ -90,21 +90,21 @@ only needs an appShellApp"*. So:
   `appServer.js:842` throwing the body away is the same defect in its old
   location. appServerBoundary.js:459: *"fatal for join, where the invite IS
   the answer."*
-- **The VPS process that hosts appShellApp is a NODE that mounts it, not an
+- **The VPS process that hosts appFaceApp is a NODE that mounts it, not an
   app server.** wsl-claude, 2026-09-26, checked at the tree. This corrects
-  a recommendation made minutes earlier, which would have run appShellApp
+  a recommendation made minutes earlier, which would have run appFaceApp
   as the app of an app-server process. An app server never EXECUTES app
   code. Its `servable()` (`appServer.js:1030-1034`) hands `<app>.html` and
-  `<app>.js` to the browser as static files. appShellApp only runs when
+  `<app>.js` to the browser as static files. appFaceApp only runs when
   `nodeApps.mountAll` mounts it and hands it its api (`nodeApps.js:303-321`).
   Under the withdrawn shape, the grant exchange would never have run, and
-  `GET /appShellApp.js` would have served its source to anyone. Meanwhile
-  `appShellGrant.js` would have stayed green, because it drives the
+  `GET /appFaceApp.js` would have served its source to anyone. Meanwhile
+  `appFaceGrant.js` would have stayed green, because it drives the
   nodeApps path. The tested door and the used door would have diverged.
   Mounting it on a node is the path the suite already proves, and it needs
   no new loader. **Owed with it:** boot a node shaped like the VPS and
   assert, by what was actually mounted and not by folder text, that
-  appShellApp is mounted and nothing serves its source. **Still open:** what
+  appFaceApp is mounted and nothing serves its source. **Still open:** what
   on the VPS takes the browser's request for a subdomain. A node's HTTP
   refuses anything that is not loopback with a valid Host (`server.js:675`),
   so that is new code either way.
@@ -366,9 +366,9 @@ flow is this: a browser asks for `join.spirit.andyflinn.com`, the name is
 matched to the node holding the wildcard assignment table, and that node
 passes the request through to its local `join`. Recorded so it is not
 re-derived:
-- **Something new catches the request, and it is not appShellApp.**
-  appShellApp stays faceless (*"faceless, no shortcut"*,
-  `appShellGrant.js:96-118`). The new front door asks it by packet who
+- **Something new catches the request, and it is not appFaceApp.**
+  appFaceApp stays faceless (*"faceless, no shortcut"*,
+  `appFaceGrant.js:96-118`). The new front door asks it by packet who
   holds the name. No code today reads the Host header to route
   (`server.js:675` only validates it).
 - **The pass-through is app-agnostic and flat.** It forwards a file by
@@ -788,14 +788,14 @@ answer."* The transport half is done: peerPost unseals a reply into
   reply* (transport/R12). wsl-claude has been asked to confirm the edge.
 
 Under Andy's topology (an app runs only on its owner's node, and the VPS
-routes by appShellApp), the answer travels back along the route the
+routes by appFaceApp), the answer travels back along the route the
 request came in on, to the browser.
 
-**appShellApp signs, as proxy for the visitor.** Andy, 2026-09-27: *"the
+**appFaceApp signs, as proxy for the visitor.** Andy, 2026-09-27: *"the
 appShellApp has to sign (as proxy for all user-interaction with an app, the
 owner node sees appShellApp as carring a package with the domain name
 attached)"*. A browser visitor has no key, so the VPS node carrying
-appShellApp signs the packet. The signature vouches for the ROUTE ("this
+appFaceApp signs the packet. The signature vouches for the ROUTE ("this
 came in on `join.spirit.andyflinn.com`"), never for the person. The
 receiving node uses the attached domain to hand the packet to the right
 app. The answer is an ordinary reply to that packet, and the VPS turns it
@@ -809,9 +809,9 @@ same sitting: *"the route creation is negotiated between app and owner
 (registering a subdomain) the appShellApp is implementing a routing table
 managed by the owner."* So no separate proxy grant is needed. Registering a
 subdomain is the existing grant exchange between app and owner
-(`appShellApp.js`, two packets). The result is a row in a routing table the
-owner manages and appShellApp implements. A node accepts a packet that
-appShellApp carries because a row the owner granted names that route.
+(`appFaceApp.js`, two packets). The result is a row in a routing table the
+owner manages and appFaceApp implements. A node accepts a packet that
+appFaceApp carries because a row the owner granted names that route.
 **The same negotiation runs between a member and the owner, down the road**
 (Andy: *"and between member and owner, down the road."*). A member
 registering a subdomain for their own node is the same exchange. That is
@@ -821,9 +821,9 @@ after alpha.
 *"because the appShellApp must post to the owner (via stream) and the reply
 must be distinguishable as a reply by an api.."*. A reply is a packet whose
 envelope carries `re`, the hash of the packet it answers
-(`client/packet.js:15`, encoded :229-230, decoded :322 and :348). appShellApp
-already uses it for grants (`appShellApp.js:158-162`). For the proxy,
-appShellApp posts the visitor's request over its stream and keeps that
+(`client/packet.js:15`, encoded :229-230, decoded :322 and :348). appFaceApp
+already uses it for grants (`appFaceApp.js:158-162`). For the proxy,
+appFaceApp posts the visitor's request over its stream and keeps that
 packet's hash with the waiting browser connection. An arrival whose `re`
 matches a waiting hash is that visitor's answer, and a `re` that matches
 nothing is refused (*"where a hash must match"*, transport/R12). **Owed:**
@@ -838,8 +838,8 @@ browser."* And the page itself: *"there will be the lowest layer shell with
 the index.html that the app-process servers the browser on first request."*
 
 ```
-browser → appShellApp (VPS) ─packet─→ owner node ─loopback─→ join (app-server process)
-browser ← appShellApp ←─reply, re=hash── puppyReply() ←─ answer ─┘
+browser → appFaceApp (VPS) ─packet─→ owner node ─loopback─→ join (app-server process)
+browser ← appFaceApp ←─reply, re=hash── puppyReply() ←─ answer ─┘
 ```
 
 - **The first request fetches the page** (`GET /` returns `join.html`,
@@ -848,7 +848,7 @@ browser ← appShellApp ←─reply, re=hash── puppyReply() ←─ answer �
   two flat things: a file by name, or a body to the door.
 - **`puppyReply()` is the one node-side function** that turns the app
   process's answer into a reply packet with `re` set to the carried
-  packet's hash. It uses the same two-packet pattern as appShellApp's
+  packet's hash. It uses the same two-packet pattern as appFaceApp's
   grant. It is a named function, not a new wire verb, so the hash rule
   decides everything.
 - **This path does not go through the browser shell**, so it does NOT wait
@@ -858,7 +858,7 @@ browser ← appShellApp ←─reply, re=hash── puppyReply() ←─ answer �
   this path too:** that is an app server reaching out to its owner, and here
   the node calls in.
 - **Owed:** the VPS entry, the node's forwarder (route row to the app's
-  loopback port), `puppyReply()`, and appShellApp's table of waiting
+  loopback port), `puppyReply()`, and appFaceApp's table of waiting
   requests with a time limit per entry.
 
 **The page waits its turn, a bet on low visitor frequency.** Andy,
@@ -871,7 +871,7 @@ request in flight and queues the rest. Across visitors, the VPS node's own
 `postQueue.js` already serialises against decision 0016's one request in
 flight per member, oldest first, and a refused request is requeued ahead
 of newer ones. **Deliberately NOT added:** a cap on how many visitors may
-wait at appShellApp. That was offered and not taken, on the bet above. If
+wait at appFaceApp. That was offered and not taken, on the bet above. If
 measured load proves the bet wrong, that is the lever. The per-request
 time limit (above) stays owed either way. **And members make the bet
 safer:** *"and member are expected to have lower visitor frequencies, AND

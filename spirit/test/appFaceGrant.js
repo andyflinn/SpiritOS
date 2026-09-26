@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/test/appShellGrant.js
+// spirit/test/appFaceGrant.js
 // THE GRANT MECHANISM — the bottom of the public-face vision, asserted
 // before it is built.
 //
@@ -8,7 +8,7 @@
 //   the installation of join into the DNS namespace as well as member
 //   subdomain assignments."
 //   And the two constraints on it, his words: "faceless, no shortcut."
-//   And the minimum: "the appShellApp could implement the bare minimum,
+//   And the minimum: "the appFaceApp could implement the bare minimum,
 //   and this is the no-face negotiation, without any local shell interface
 //   yet or anything."
 //
@@ -43,7 +43,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 
 const REPO = path.join(__dirname, '..', '..');
-const APP_DIR_REL = 'spirit/run/app/appShellApp';
+const APP_DIR_REL = 'spirit/run/app/appFaceApp';
 
 function has(rel) { return fs.existsSync(path.join(REPO, rel)); }
 
@@ -210,7 +210,7 @@ function nodeFor(name, relay) {
 // that a function it imported runs.
 function mountPuppet(owner, relay, listed) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-grant-root-'));
-  const appDir = path.join(root, 'app', 'appShellApp');
+  const appDir = path.join(root, 'app', 'appFaceApp');
   fs.mkdirSync(path.join(root, 'app'), { recursive: true });
   fs.cpSync(path.join(REPO, APP_DIR_REL), appDir, { recursive: true });
   // AND ITS SIBLINGS COME WITH IT. The app requires `../../js/client/
@@ -246,12 +246,12 @@ function askFor(asker, ownerKey, name) {
     const off = asker.arrivals.subscribe(function (message) {
       if (done) return;
       const said = packet.decode(message && message.text);
-      if (!said || said.app !== 'appShellApp') return;
+      if (!said || said.app !== 'appFaceApp') return;
       done = true;
       if (typeof off === 'function') off();
       resolve({ reply: said, message: message });
     });
-    const made = packet.encode('appShellApp', { verb: 'grant', name: name });
+    const made = packet.encode('appFaceApp', { verb: 'grant', name: name });
     asker.P.post('http://relay', ownerKey, made.text).then(function (posted) {
       setTimeout(function () {
         if (done) return;

@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/app/appShellApp/appShellApp.js
+// spirit/run/app/appFaceApp/appFaceApp.js
 // THE GRANT MECHANISM — one verb, no face.
 //
 // ── WHAT THIS IS FOR ─────────────────────────────────────────────────
@@ -26,9 +26,9 @@
 //
 // No page, no stylesheet, no HTTP surface, no control panel. Not an
 // omission to be filled in later — it is what makes the assertions in
-// `spirit/test/appShellGrant.js` honest, because the exchange is the
+// `spirit/test/appFaceGrant.js` honest, because the exchange is the
 // ONLY way to drive this, so a test drives exactly what the installer
-// drives. `appShellGrant.js:96-118` walks this directory and goes red on
+// drives. `appFaceGrant.js:96-118` walks this directory and goes red on
 // an .html, a .css, a `createServer(`, a `.listen(` or a `require('http')`.
 //
 // A control panel is the obvious next convenience. It belongs in a shell
@@ -82,7 +82,7 @@ const DATASET = 'grants.json';
 // node — `nodeApps.js` hands every booted app every admitted arrival
 // and looks at none of them, which is Andy's "nothing in node and relay
 // should know about apps" kept literally.
-const APP = 'appShellApp';
+const APP = 'appFaceApp';
 
 function readGrants(api) {
   const raw = api.fs.read(DATASET);

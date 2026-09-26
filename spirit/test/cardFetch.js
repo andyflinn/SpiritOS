@@ -37,7 +37,7 @@
 // there, which is the check that makes the whole exchange worth anything.
 //
 // A SIXTH TWO-NODE RELAY FIXTURE, AND SAID OUT LOUD: peerPost.js,
-// answerRelay.js, queueRestart.js, appShellGrant.js and monitorWorld.js
+// answerRelay.js, queueRestart.js, appFaceGrant.js and monitorWorld.js
 // each hold one. This differs in the one way that matters — it plants
 // nothing — so sharing would mean giving all five a flag for the state
 // they exist to avoid. Extract when a SECOND suite needs the empty book.

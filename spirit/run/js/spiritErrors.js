@@ -611,10 +611,10 @@ define('name-reserved', { status: 409, texts: ['name reserved by a live invite']
 // but only on the owners node."* — so `retry: 'no'` is the honest
 // answer and the caller must pick another name.
 //
-// Declared here BEFORE `app/appShellApp/` emits it, which is the point:
+// Declared here BEFORE `app/appFaceApp/` emits it, which is the point:
 // a code that lives only in the file that throws it is outside the
 // closed set at the one moment anybody needs to look it up. The
-// subdomain grant is the appShellApp's whole feature (Andy: *"the
+// subdomain grant is the appFaceApp's whole feature (Andy: *"the
 // feature of the appShellApp is: the granting/associating member ID's
 // with wildcard subdomain names. that's all."*), and this is the one
 // refusal that feature can give.

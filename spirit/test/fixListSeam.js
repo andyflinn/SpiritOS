@@ -4,7 +4,7 @@
 // A SILENT PUPPET THAT FILES WHAT IT IS TOLD — asserted from the promise.
 //
 // Written by wsl-claude from the other agent's description of the
-// interface, WITHOUT READING fixList.js, for the reason appShellGrant
+// interface, WITHOUT READING fixList.js, for the reason appFaceGrant
 // was: a suite written from the source cannot disagree with the source.
 //
 // WHAT IS HIS AND NOT ASSERTED, because he said so and he was right to:
@@ -56,7 +56,7 @@ function world(listed) {
   // The app requires the shared envelope from two directories up. A copy
   // with no js/ beside it does not mount at all — and a suite whose every
   // assertion then reads "nothing was filed" blames the app for the
-  // fixture. Learned once, in appShellGrant, at the cost of two wrong guesses.
+  // fixture. Learned once, in appFaceGrant, at the cost of two wrong guesses.
   try {
     fs.symlinkSync(path.join(REPO, 'spirit', 'run', 'js'), path.join(root, 'js'), 'junction');
   } catch (e) {

@@ -94,7 +94,7 @@ face waiting for somebody to supply one — it has none, and a face is a
 thing its master adds on purpose. The seam offers a subscription, a
 scoped filesystem and a way to post, and **nothing that serves**.
 
-Stricter for `appShellApp` alone, where `spirit/test/appShellGrant.js`
+Stricter for `appFaceApp` alone, where `spirit/test/appFaceGrant.js`
 walks the directory and goes red on an `.html`, a `.css`, a
 `createServer(`, a `.listen(` or a `require('http')` — because there,
 the exchange being the only door is what makes the suite's assertions
@@ -197,7 +197,7 @@ compromised VPS leaks no member identities because it never had any.
 **The namespace is flat, and the reason is concrete:** a wildcard
 certificate matches exactly one label. `*.spirit.<domain>` covers
 `alice.spirit.<domain>` and does not cover `alice.app.spirit.<domain>`.
-So `appShellApp` is a **sibling** of the member faces, not above them.
+So `appFaceApp` is a **sibling** of the member faces, not above them.
 The relay's domain is the parent whether it is an apex or itself a
 subdomain; nothing counts depth.
 
@@ -324,7 +324,7 @@ question the node already answers one layer down.
   port... that's for later"*. Allocation **and discovery** — the owner's
   node must learn which port a local puppet landed on, or the proxy has
   nothing to address.
-- **Do `fixList` and `appShellApp` move out of the node into their own
+- **Do `fixList` and `appFaceApp` move out of the node into their own
   processes?** They are in-process mounts today; `--app` is already a
   separate process with a stored owner key. That is a re-shaping, not an
   addition.
@@ -346,10 +346,10 @@ question the node already answers one layer down.
 - `spirit/run/js/nodeApps.js` — the seam: mounts manifests with
   `boots: true`, hands each puppet a subscription, a scoped filesystem,
   `allows(key)` and `post`.
-- `spirit/run/app/appShellApp/` — the grant exchange. One verb, no face,
+- `spirit/run/app/appFaceApp/` — the grant exchange. One verb, no face,
   no reserved list.
 - `spirit/run/app/fixList/` — a silent puppet that never replies.
-- `spirit/test/appShellGrant.js` — the grant driven end to end
+- `spirit/test/appFaceGrant.js` — the grant driven end to end
   (wsl-claude), including a control: an unlisted peer asking for a FREE
   name and getting silence, so the assertions can be seen to fail.
 

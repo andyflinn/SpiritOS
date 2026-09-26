@@ -9,10 +9,10 @@
 // ── SILENT IS THE WHOLE DESIGN, NOT A MISSING FEATURE ────────────────
 //
 // It never answers, never asks, and has no page. That is not a smaller
-// version of the appShellApp — it is a DIFFERENT SHAPE, and the
+// version of the appFaceApp — it is a DIFFERENT SHAPE, and the
 // difference is the point:
 //
-//   appShellApp  arrival -> decide -> POST A REPLY
+//   appFaceApp  arrival -> decide -> POST A REPLY
 //   fixList      arrival -> write
 //
 // The grant needs a reply, and a reply needs a relay to send it through

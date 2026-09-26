@@ -249,6 +249,8 @@ it.
 **Master** — the owner. Not a role an agent may take and not a thing a
 puppet may become.
 
+**appFaceApp** — **appShellApp until 2026-09-27**, `app/appFaceApp/` — The app that grants subdomain names and routes a visitor's request by them. It is a negotiator on the owner's node, holding the routing table the owner manages, and the face on the VPS, which consumes that table and signs as the visitor's proxy. It is mounted by a node, never served by an app server. Andy, asked whether *appFaceApp* was the new name: *"yes. better."* **Andy's quotes from before the rename keep saying `appShellApp`**, because his words are never rewritten. Read the old name in a quote as this app. Renamed before alpha, when nothing had shipped (*"nothing has shipped until alpha"*), so the wire name changed with it.
+
 **Puppet** — **what an app IS.** A thing its master moves: it displays,
 it carries, and it decides only what it was given leave to decide.
 

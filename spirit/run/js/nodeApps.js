@@ -7,7 +7,7 @@
 //
 // Every app until now has been a page: the shell loads it, it talks to
 // the door, and when no browser is open it does not exist. THAT SHAPE
-// CANNOT HOLD A NEGOTIATION. The appShellApp grants subdomain names to
+// CANNOT HOLD A NEGOTIATION. The appFaceApp grants subdomain names to
 // members, and a grant asked for while the owner's browser is shut must
 // still be answered — the owner's node is what is always on, not the
 // owner's screen.
@@ -34,7 +34,7 @@
 //
 // Said as a default because it generalises: every app-puppet starts
 // here, and a face is an option declared later. Said as an absolute for
-// `appShellApp` alone, where `appShellGrant.js` walks the directory and
+// `appFaceApp` alone, where `appFaceGrant.js` walks the directory and
 // goes red on an .html, a .css or anything that listens — because there
 // the exchange being the only door is what makes the suite's assertions
 // honest, and a control panel is the obvious next convenience that
@@ -112,7 +112,7 @@
 // hand today. The screen for it belongs in a SHELL FRAME — the master's
 // own console — and never in the puppet's folder: a puppet with a face
 // for configuring itself is a second door onto its own permissions, and
-// `appShellGrant.js` goes red on a face appearing in that directory for
+// `appFaceGrant.js` goes red on a face appearing in that directory for
 // exactly this class of reason.
 //
 // His "(LATER)" is the whole of the schedule. Nobody should read this
@@ -210,7 +210,7 @@ function allowsIn(appFs, log, name) {
 
 // The app's own folder, and refusing anything that climbs out of it.
 // `path.relative` rather than a prefix test, because a prefix test says
-// yes to `app/appShellAppEvil` for the scope `app/appShellApp`.
+// yes to `app/appFaceAppEvil` for the scope `app/appFaceApp`.
 function scopedFs(dir, opts) {
   // Files inside the app's own folder that the app may READ but never
   // WRITE. See `OWNER-ONLY` below for why the list exists at all.

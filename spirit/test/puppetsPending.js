@@ -34,7 +34,7 @@
 //     He has not ruled, and a row here would say he had.
 //   the maintenance packet reaching every puppet — wsl-claude's, and
 //     his to assert when that interface exists.
-//   whether fixList and appShellApp move into their own processes.
+//   whether fixList and appFaceApp move into their own processes.
 //   how a puppet's owner key is planted, and whether it may change.
 //   the local puppet's port — "that's for later", and later is the whole
 //     of the schedule.

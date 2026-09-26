@@ -7,7 +7,7 @@
 // what cycle 10's R12 needs too: a claimed relay, two members, and the
 // owner holding a stream. A second copy would have been the FIFTH
 // hand-rolled relay fixture in this directory (peerPost.js,
-// answerRelay.js, queueRestart.js, appShellGrant.js each grew their own),
+// answerRelay.js, queueRestart.js, appFaceGrant.js each grew their own),
 // and the week's whole argument is that a job solved twice in two places
 // is the defect the wire probe exists to find.
 //

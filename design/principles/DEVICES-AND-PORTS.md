@@ -290,7 +290,7 @@ is no other way. No UI path to diverge from, no local path to skip.
 ### The interface (G15 — named so a suite need not guess it)
 
 ```
-app: 'appShellApp'
+app: 'appFaceApp'
 body:     { grant: '<name>' }
 answered: { ok: true, name, at }
           { ok: false, code: <declared>, name }
