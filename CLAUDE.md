@@ -58,6 +58,17 @@ Four things worth knowing before touching it:
 - **`claude/FORMAT.md` is the citation spec.** A compiled claim about the
   tree carries `path:line @ commit` **with the quoted text**, so drift is
   detectable rather than merely possible.
+- **The lead logs every turn Andy types, by hand, the same turn:**
+  `node spirit/run/brains/claude/voiceLog.js "<his turn, verbatim>"`. It
+  feeds his voice corpus, `input/andy/voice.jsonl`, which he commits
+  himself. **It is manual on purpose.** A hook was offered and refused:
+  Andy, 2026-09-27: *"your judgement is what protects my brain from
+  pollution"*, and *"it should be a CLAUDE.md thing for the lead"*. The
+  judgement is the point. Log only what he typed, never a notification,
+  an agent's message or a compaction summary. When in doubt, don't add:
+  a turn that is mostly an agent's pasted text stays out. After a
+  compaction, log only turns seen typed live. Nothing reconstructed from
+  a summary goes in. The header of `voiceLog.js` has the full reasoning.
 - **Andy's words are corrected for spelling only.** Lower-case `i`,
   `andy-rule`, trailing `....`, comma splices and run-ons stay — *"sloppy
   keyboardage is part of me"* (2026-09-20). A garbled phrase stays
