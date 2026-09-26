@@ -66,6 +66,17 @@ only needs an appShellApp"*. So:
   one intrinsic app on the member's node, and fanning out is the shell's
   job (`appServer.js:22-28`). So the VPS never needs a second entry per
   member app.
+- **DIRECTION, and the reason for the mirroring: appShellApp becomes a
+  shell that fans out too.** Andy, 2026-09-26: *"the appShellApp will
+  change into a shell that fans out as well, that's why i insist on
+  mirroring the node interface at so many points"*. The VPS fans out to
+  subdomains the way a personal node's shell fans out to apps. That is why
+  appShellApp takes the node's own interfaces (mounted by nodeApps, packets
+  through peerPost, *"no system-face special case"*) and never grows its
+  own. Each place it mirrors the node is a place the later shell will not
+  need rewriting. Alpha delivers only the basic version. A proposal that
+  gives appShellApp a convenience the node does not have works against
+  this, and should be judged by that.
 - **So basic routing IS alpha.** The front door and pass-through sections
   below are out of scope only beyond what this path needs.
 - **G17, restated for this topology.** The app's answer (for `join`, the
