@@ -769,6 +769,28 @@ agreed and gave the reason one level down: *"refused at reach, the
 failure names a runtime symptom and the app author guesses; refused at
 load, it names the member."*
 
+### G17 — join's answer travels back to the browser
+
+**Status:** OPEN, and **ALPHA** (see *ALPHA SCOPE* and *THE ALPHA
+TOPOLOGY* at the head of this file). It was declared on the board before
+any document named it (`appServerBoundary.js:485`). This heading gives it
+a name.
+
+**What alpha needs is for the app's answer to reach the visitor.** For
+`join`, that answer IS the invite. appServerBoundary.js:459: *"Invisible for
+starter, which has nothing to show; fatal for join, where the invite IS the
+answer."* The transport half is done: peerPost unseals a reply into
+`answer.text` (`peerPost.js:363-373`). Two parts are owed:
+- **Stop discarding the body.** `appServer.js:842` returns only the status,
+  `if (a.ok) return { ok: true, status: a.status || 200 };`.
+- **Something on the owner's node that answers with one.** That is the
+  master, and it is the real work. Probably the same unit as *an app can
+  reply* (transport/R12). wsl-claude has been asked to confirm the edge.
+
+Under Andy's topology (an app runs only on its owner's node, and the VPS
+routes by appShellApp), the answer travels back along the route the
+request came in on, to the browser.
+
 ---
 
 ### PROPOSED, NOT IN THIS CYCLE — a sweep for forks
