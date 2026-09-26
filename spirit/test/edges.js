@@ -25,4 +25,11 @@
 
 'use strict';
 
-module.exports = [];
+module.exports = [
+  // Asked, in the form he set that sitting ("these tow functions are needed
+  // by the following to-do's: ... do you accept the implied change in
+  // priorities?"): the stored owner key is needed by the loopback shim, and
+  // through it by peerOwnerPost(). His answer covered both.
+  { from: 'puppets/G7', to: 'puppets/G6', state: 'accepted', said: 'accepted.', at: '2026-09-27' },
+  { from: 'puppets/G4', to: 'puppets/G7', state: 'accepted', said: 'accepted.', at: '2026-09-27' },
+];
