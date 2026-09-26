@@ -448,8 +448,14 @@ define('will-not-open', {
 // agents outbox against this catalogue and getting `unknown` for the most
 // frequent refusal in the system — and an outbox that reads unknown as
 // "worth retrying" is what turned 158 pending rows into 11,628 refusals.
+// RETRY 'after', NOT 'no', SINCE 780426a. It was 'no' while nothing in the
+// tree could obtain a card, which was true then. 780426a gave the card ask a
+// caller, so the refusal now means "the ask went unanswered THIS TIME" and a
+// later post can succeed. 'no' made agents.js:351 destroy a queued report
+// that the next flush would have delivered (spirit/test/agentsOutbox.js, C2).
+// Andy, 2026-09-26: "now we have get card we keep outqueue again".
 define('no-cipher-key', {
-  status: 428, presence: NONE, retry: 'no', fault: 'caller',
+  status: 428, presence: NONE, retry: 'after', fault: 'caller',
   // THE SENTENCES AS peerPost.js:748-749 ACTUALLY EMITS THEM. This
   // held shortened paraphrases of both — 'no cipher key for that
   // peer' and 'cipher key cannot be used' — so `classifyAnswer`
