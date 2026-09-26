@@ -1209,8 +1209,14 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
   // ── WHAT THE ORDER COULD NOT SEE — printed, never smoothed over ──────
   const notes = [];
   if (ranking.unlinked.length) {
-    notes.push(ranking.unlinked.length + ' of ' + rows.length + ' owed items declare no dependency ' +
-      'and nothing waits on them, so they are ordered by age alone.');
+    // ACCEPTED, NOT DECLARED. The first wording said these "declare no
+    // dependency" while three proposals sat in the section above it —
+    // true of the settled graph, false as a sentence.
+    const pending = (ranking.proposed || []).length;
+    notes.push(ranking.unlinked.length + ' of ' + rows.length + ' owed items have no dependency ' +
+      'you have accepted, so they are ordered by age alone' +
+      (pending ? ' — ' + pending + ' proposed one' + (pending === 1 ? '' : 's') +
+        ' above wait' + (pending === 1 ? 's' : '') + ' for your yes or no.' : '.'));
   }
   ranking.cycles.forEach(function (c) {
     notes.push('These wait on each other, so none can finish first: ' +

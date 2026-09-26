@@ -105,7 +105,7 @@ not describe. Run the harness if in doubt.
 
 ## puppets/G6 — a puppet's stored owner key, owner-only
 
-`PUPPETS` · status **DONE**
+`PUPPETS` · status **OPEN**
 
 - **missing:** a puppet's stored owner key, owner-only — **~20% there**, guess: small — the readOnly mechanism exists, the key and its planting do not
   

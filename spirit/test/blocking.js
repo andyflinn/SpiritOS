@@ -188,8 +188,9 @@ module.exports = [
       + 'packet it sees, back to the owner node, where the test can examine it." And on '
       + 'its reach: "this will be a popular approach for assertion in the relay." Then, '
       + 'of this requirement: "belongson the board with at least a proposal."',
-    owed: 'The instrument is built and pushed. What is owed is the proofs: C3 to C8 '
-      + 'against relay.debug, then C9 and C10 on the partner path.',
+    owed: 'The instrument and the proofs are built: spirit/test/relayCannotRead.js, 7 of 7. '
+      + 'Still owed: the same proof on the partner path, where one relay carries a post for '
+      + 'another.',
     approved: '2026-09-26',
     approvalNote: 'Approved, with two rulings. DEBUG IS ABSOLUTELY READ-ONLY: "it may '
       + 'only send byte-for-byte copies of observed items to the owner." And the security '
@@ -215,10 +216,9 @@ module.exports = [
     answer: 'Andy: "keep only a few, and count the deletions, as ameasurement for the '
       + 'system to be discussed in a team review." Then: "keep the inbound queues, not '
       + 'the outbound ones...." And on the reason: "there is duplication there."',
-    owed: 'The delete-on-success is already there (agents.js:323) — I said twice that it '
-      + 'was not and wsl-claude found it in the code. So the 158 were never delivered, not '
-      + 'retained. What is owed: dead-letter a refusal waiting cannot fix, instead of '
-      + 're-posting it on every send; get the owner card onto the sending node; and put the '
-      + 'age of the oldest pending row on this board.',
+    owed: 'Two of the three are done: a refusal waiting cannot fix is dropped by the catalogue '
+      + 'and a missing card is kept and retried (6feb3e0, agentsOutbox.js 4 of 4), and the owner '
+      + 'card reaches the sending node by the card fetch (780426a). Still owed: the age of the '
+      + 'oldest pending row, on this board.',
   },
 ];
