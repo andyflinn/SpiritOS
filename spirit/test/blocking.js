@@ -89,6 +89,26 @@ module.exports = [
 
   {
     asked: '2026-09-26',
+    who: 'wsl-claude, who built the proofs and found it',
+    decision: 'The DEBUG switch gates the wrong function. Who moves the gate — and does it '
+      + 'need a team review, being a relay.js gate?',
+    costs: 'THE SWITCH YOU RULED ON DOES NOT DO WHAT IT SAYS. You asked for DEBUG "Off by '
+      + 'default, returned and set by owner-only api". It reports itself off, correctly, '
+      + 'while the full sealed bytes of every post stream to the owner anyway. Nothing leaks '
+      + 'to anybody else and nothing readable leaks at all — the payload is sealed and the '
+      + 'proofs below show the owner cannot read it either — but the instrument does not '
+      + 'instrument. One red on the board, spirit/test/relayCannotRead.js.',
+    why: 'THE GATE IS ON THE WRONG EMITTER. relay.js:4649 sets `row.held = debugging && ...` '
+      + 'and it sits inside `ownerEvent`, whose callers are claim and revoke notices that '
+      + 'carry no payload. The rows that DO carry payloads come from `monitorEvent`, which '
+      + 'copies every key of `extra` onto the row at relay.js:4735 and never consults DEBUG. '
+      + 'Found by writing the proofs you ruled were owed: the CONTROL — with DEBUG off the '
+      + 'payload must be absent — is the one that went red, which is the control doing its '
+      + 'job. It is a one-line move. It is also a relay.js gate, and CLAUDE.md says to stop '
+      + 'and call a team review rather than patch one, hence a row rather than a commit.',
+  },
+  {
+    asked: '2026-09-26',
     who: 'wsl-claude, whose drop rule it is',
     decision: 'A missing-card refusal is no longer permanent. Do I change the CATALOGUE '
       + '(spiritErrors.js, retry for `no-cipher-key`) or the OUTBOX (agents.js:351)?',
@@ -176,10 +196,13 @@ module.exports = [
     owed: 'DECIDED, all of it: an owner-only verb that RETURNS the state as well as '
       + 'setting it, off by default, RAM only, not dropped on a claim, not refused on a '
       + 'live relay. No env var and no file, because both need a restart and a restart is '
-      + 'what he refuses to do to a sick box. THE INSTRUMENT IS BUILT (relay.debug, the '
-      + '`held` field). What is owed is the proofs that use it, and they are wsl-claude: '
-      + 'C3 to C8 against it, then C9 and C10 on the partner path. '
-      + 'Spec: design/relay/PROVING-IT-CANNOT-READ.md.'
+      + 'what he refuses to do to a sick box. THE PROOFS ARE BUILT: '
+      + 'spirit/test/relayCannotRead.js, 6 green and 1 red. The relay carries a sealed post, '
+      + 'streams the owner the exact bytes, and the plaintext is not among them — with the '
+      + 'recipient opening THOSE SAME BYTES and recovering the words, which is what stops the '
+      + 'proof being true of an empty message. THE INSTRUMENT WAS DECLARED BUILT AND IS NOT '
+      + 'GATED: the red is that defect, and it has its own row above. Still owed after it: '
+      + 'the partner path. Spec: design/relay/PROVING-IT-CANNOT-READ.md.'
   },
 
 

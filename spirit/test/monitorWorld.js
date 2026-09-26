@@ -16,7 +16,7 @@
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
-const { sealFor, sealedPost } = require('./openReply');
+const { sealFor, sealedPost, openBody } = require('./openReply');
 const nodeCard = require('../run/js/nodeCard');
 const auth = require('../run/js/relayAuth');
 const createRelay = require('../run/js/relay');
@@ -99,7 +99,44 @@ function askMonitor(w, who, on, filter) {
       auth.postMessage(asker.publicKey, relayKey, sending)));
 }
 
+// ── THE SAME, FOR THE DEBUG SWITCH ──────────────────────────────────
+//
+// One verb that READS and SETS, so a suite can establish its own
+// precondition instead of trusting that something flipped it — which is
+// what Andy's "returned and set by owner-only api" buys. Omit `on` to
+// read; pass it to set and read the state that resulted.
+//
+// Beside askMonitor rather than inside the suite, because both are the
+// same shape — an owner verb sealed to the relay and signed over the
+// bytes that travel — and a second way of asking would be a second thing
+// to keep right.
+function askDebug(w, who, on) {
+  const packet = JSON.stringify({
+    app: 'relay', v: 1, body: { debug: on === undefined ? {} : { on: !!on } },
+  });
+  const relayKey = w.box.relayPublicKey();
+  const asker = who || w.owner;
+  const sending = sealFor(asker, w.box, packet);
+  return w.box.routePost(asker.publicKey, relayKey, sending,
+    auth.sign(asker.privateKey, auth.postMessage(asker.publicKey, relayKey, sending)));
+}
+
+// AN OWNER VERB'S ANSWER COMES BACK ON THE STREAM, not from routePost —
+// which returns 202 "accepted" and a hash. A suite that reads the return
+// value instead sees `null` and concludes the verb did nothing, which is
+// the wrong answer arrived at honestly; it cost one debugging session.
+function replies(w, who, from) {
+  const asker = who || w.owner;
+  const bag = asker === w.bella ? w.heard.bella : w.heard.andy;
+  return bag.slice(from || 0)
+    .filter(function (m) { return m.event === 'reply' && m.data && m.data.text; })
+    .map(function (m) { return openBody(asker, w.box.relayPublicKey(), m.data.text); })
+    .filter(Boolean);
+}
+
 module.exports = {
+  askDebug: askDebug,
+  replies: replies,
   sinkFor: sinkFor,
   world: world,
   post: post,
