@@ -1313,6 +1313,28 @@ async function main() {
     (waitingTotal ? ', ' + YELLOW + waitingTotal + ' awaiting' + RESET : '') +
     (stoodTotal ? ', ' + stoodTotal + ' stood down' : '') +
     (skipped.length ? ', ' + skipped.length + ' not run' : '') + '\n');
+  // ── A FILTERED RUN MUST NOT WRITE THE BOARD. NOT A PARTIAL ONE ─────
+  //
+  // Measured by spiritos-37 on 2026-09-26: `runAll.js payloadCeiling`
+  // printed "1 suites, 6 green, 0 red" and then rewrote SCOREBOARD.md to
+  // say **Nothing is broken, 0 requirements declared and not built**.
+  // The true state was 154 suites, 12 red, 12 owed.
+  //
+  // A SUBSET CANNOT KNOW THE TALLY, and a board that is sometimes a
+  // subset is worse than one that is sometimes stale: STALE IS VISIBLE
+  // IN THE COMMIT LINE AND A SUBSET LIE IS NOT. Andy has just been told
+  // to expect frequent updates from partial runs — "run the part of the
+  // harness, that verifies you made a positive change" — so this is the
+  // precondition for that rule rather than a tidy-up.
+  //
+  // No warning banner, no partial write. A steering wheel that is
+  // sometimes wrong is worse than one that is sometimes old.
+  if (filter) {
+    console.log('--- board NOT written: this was a filtered run (' + filter + '), and a subset ' +
+      'cannot know the tally. Run without a filter, or `--board` to re-render from the last full run.');
+    process.exit(unhappy.length ? 1 : 0);
+  }
+
   writeScoreboard(lastBoard.byReq, lastBoard.titles, {
     suites: files.length, green: green, red: red, unhappy: unhappy.length,
     // THE BOARD GETS THE FAILURES THEMSELVES, not only how many. Andy,
