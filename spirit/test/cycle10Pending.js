@@ -158,9 +158,11 @@ test.awaiting('cycle-10/R13', 'nodeCard.rotate raising the counter and the seal 
   'a node can rotate its cipher key and every peer takes the newer card and refuses the old',
   // THE GUESS NAMES WHAT IT COUNTS (wsl-claude's amendment): a guess that
   // cannot be checked is the one number on Andy's board nobody can audit.
-  { there: 80, cost: 'three of four parts exist — setCard refuses an older card (contacts.js), ' +
+  { there: 50, cost: 'three of six parts exist — setCard refuses an older card (contacts.js), ' +
       'cardFrom signs from a held identity (nodeCard.js), describe() advances the counter on a ' +
-      'change (nodeCard.js). Missing: the verb that makes a new keypair, and the owner report' });
+      'change (nodeCard.js). Missing: the verb that makes a new keypair, the owner report, and ' +
+      'the sender asking again on will-not-open, which is how peers get the new card — Andy, ' +
+      '2026-09-26: "peers get it on demand. good."' });
 
 // ── WHAT IS OPEN AND NOT DECLARED HERE, AND WHY ──────────────────────
 //

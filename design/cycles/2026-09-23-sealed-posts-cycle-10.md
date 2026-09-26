@@ -822,6 +822,20 @@ breaks posts already sealed to the old key, so:
   button. Andy: *"and from the info-app it should invoke the rotate key
   dialog."* It runs locally, since that key lives on the owner's node.
 
+**Peers get the new card on demand.** Andy, 2026-09-26: *"peers get it on
+demand. good."* Relays already get it: the node hands over its card when a
+stream opens. Peers do NOT get it today. A sender asks for a card only when
+it holds none (`peerPost.js:773-778`). A peer holding the old card seals to
+the old key and is refused with `will-not-open`, which is retry 'no'
+(`spiritErrors.js:427`), and nothing asks again. `setCard` is never called
+with `'roll'`, so the roll is not a second route. **Owed, and part of R13:**
+when a post is refused as `will-not-open`, the sender asks for the card
+again and posts once more. This is safe against a tamperer forcing re-asks,
+because a card is taken only when it is signed and strictly newer. It
+costs one refusal, one ask and one reply per peer, and only when that peer
+next posts. Rotation does not ship without it, or every peer holding the
+old card is stranded.
+
 **Recommended, and agreed ("true"): show the owner the exposure hints,
 above all when debug is on**, so he can tell a key problem from a bug
 before he rotates. Two hints are computed today and thrown away (verified
