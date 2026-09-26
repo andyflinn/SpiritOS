@@ -108,36 +108,17 @@ module.exports = [
     settled: '2026-09-26',
     who: 'wsl-claude, whose design and whose relay surface',
     decision: 'How DEBUG is turned on, and whether it survives a relay gaining members.',
-    answer: 'Andy, on why it must work on a live relay: "i disagree, when spirit-3 shows '
-      + 'hickups, rather than taking it down, the owner should be able to flip the DEBUG '
-      + 'switch remotely and get even more valuable data.... for remote diagnosis, that '
-      + 'cannot be easily had and brought back by ssh." Then the mechanism, exactly: '
-      + '"DEBUG is Off by default, returned and set by owner-only api". And on surviving '
-      + 'a claim: "Yes. because it can be turned off by the owner after a claim, before '
-      + 'and inites go out. 2) it only AFTER first claim that the DEBUG switch can be '
-      + 'remote controlled".',
-    owed: 'THE MECHANISM IS DECIDED AND IT IS BOTH DIRECTIONS: an owner-only verb that '
-      + 'RETURNS the state as well as setting it, so the owner — and a suite — can ask '
-      + 'whether it is on instead of assuming. Off by default. No env var and no file, '
-      + 'because both need a restart and a restart is what he is refusing to do to a box '
-      + 'that is misbehaving. NOT dropped when a relay gains members and NOT refused on a '
-      + 'public relay: that was the design recommendation and he reversed it, since a '
-      + 'relay with members showing hiccups is exactly when it earns its keep. '
-      + 'AND HIS SECOND POINT INVERTS THE RISK ARGUMENT ENTIRELY: it is only after the '
-      + 'first claim that DEBUG can be remote-controlled at all, because an owner verb '
-      + 'needs the owner to be a member. So the claim is not a window in which DEBUG '
-      + 'becomes dangerous — it is the precondition for the feature existing. The '
-      + 'ordering is claim, then remote control, and before that the switch is local '
-      + 'only. The window he does name is a real one and it is HIS to use: after the '
-      + 'first claim and before invites go out, the owner can turn it off. '
-      + 'design/relay/PROVING-IT-CANNOT-READ.md is wsl-claude to amend — RECOMMENDED 2 '
-      + 'becomes DECIDED the other way. '
-      + 'AND ONE CLAIM OF MINE WAS WRONG, which the amendment should fix rather than '
-      + 'repeat: I told him DEBUG adds only ciphertext. peerPost.js:725 skips sealing for '
-      + 'card traffic, so a relay in DEBUG streams other members card requests and '
-      + 'replies in plain. Harmless — cards are self-signed and public by design — but '
-      + 'the proof should ENUMERATE what the relay holds unsealed and assert that list, '
-      + 'so it is a test rather than a sentence. spiritos-f6 caught it.',
+    answer: 'Andy: "DEBUG is Off by default, returned and set by owner-only api" — and '
+      + 'it must reach a live box, because "when spirit-3 shows hickups, rather than '
+      + 'taking it down, the owner should be able to flip the DEBUG switch remotely".',
+    covers: ['cycle-10/R10', 'cycle-10/R16'],
+    owed: 'DECIDED, all of it: an owner-only verb that RETURNS the state as well as '
+      + 'setting it, off by default, RAM only, not dropped on a claim, not refused on a '
+      + 'live relay. No env var and no file, because both need a restart and a restart is '
+      + 'what he refuses to do to a sick box. THE INSTRUMENT IS BUILT (relay.debug, the '
+      + '`held` field). What is owed is the proofs that use it, and they are wsl-claude: '
+      + 'C3 to C8 against it, then C9 and C10 on the partner path. '
+      + 'Spec: design/relay/PROVING-IT-CANNOT-READ.md.'
   },
 
 
@@ -147,19 +128,12 @@ module.exports = [
     who: 'wsl-claude, whose design and whose harness',
     decision: 'Which of the five sealed-post proofs the DEBUG instrument retires.',
     answer: 'Andy: "answer: none, it only may make proof possible."',
-    owed: 'HE CORRECTED THE VERB, and the question was malformed. AN INSTRUMENT RETIRES '
-      + 'NOTHING — a requirement is discharged by a passing proof, never by the means of '
-      + 'proving it. So all five stay owed and the instrument only unblocks. That also '
-      + 'disposes of my own measurement: I had answered "two directly, one by '
-      + 'consequence", which was the right count of a question nobody should have asked. '
-      + 'WHAT SURVIVES IT AND IS STILL WORTH HAVING: cycle-10 R12, the relay hash '
-      + 'differing from the endpoints hash, NEEDS NO INSTRUMENT AT ALL. monitorEvent '
-      + 'already carries the hash on every post (relay.js:2756, :2981), so it is '
-      + 'buildable today and had been waiting on a blocker it never had — the cost of '
-      + 'listing five items as a group is that one inherits the whole group blocker. '
-      + 'Owed to wsl-claude: the design amendment (all three of its open questions are '
-      + 'now ruled, so it is a specification rather than a proposal) and the proofs '
-      + 'themselves once the instrument exists.',
+    owed: 'HE CORRECTED THE VERB and the question was malformed: an instrument retires '
+      + 'nothing, because a requirement is discharged by a passing PROOF and never by the '
+      + 'means of proving it. All five stay owed. What survived the correction: '
+      + 'cycle-10 R12 and R7 needed no instrument at all, and both are now built and '
+      + 'green — they had been waiting on a blocker they never had, which is what a group '
+      + 'of five under one shared reason does to its members.'
   },
 
   {
@@ -171,40 +145,14 @@ module.exports = [
       + 'packet it sees, back to the owner node, where the test can examine it." And on '
       + 'its reach: "this will be a popular approach for assertion in the relay." Then, '
       + 'of this requirement: "belongson the board with at least a proposal."',
-    owed: 'The channel already exists: relay.js:4604 streams to the owner only, and the '
-      + 'owner node needs no second flag because it is already the subscriber. What is '
-      + 'missing is that the stream says things ABOUT the packet and not the packet. '
-      + 'ONE DOOR, off by default, refusing to start on a public relay. Four of the five '
-      + 'sealed-post proofs wait on it. Design: design/relay/PROVING-IT-CANNOT-READ.md.',
-    // THE THREE THE DESIGN LEFT OPEN, and they are his. Added after he
-    // asked "where is the design proposal for the relay testing via the
-    // monitor stream?" — of a document that was written, linked and
-    // named on this board. The row said who would BUILD it, which reads
-    // as nothing-here-for-you, while these three decide whether it can
-    // be built at all. Each is answerable in a sentence.
-    // TWO OF THE THREE ARE ANSWERED. Andy, 2026-09-26: "DEBUG is Off by
-    // default, returned and set by owner-only api" — both directions in
-    // one verb, no restart. And, overruling the document's own
-    // recommendation: "when spirit-3 shows hickups, rather than taking
-    // it down, the owner should be able to flip the DEBUG switch
-    // remotely" — so it is not dropped when a relay gains members and
-    // not refused on a public relay.
-    asks: [
-      'Which of the five sealed-post proofs does this retire? Four look reachable '
-        + 'through it; the fifth has not been checked.',
-    ],
+    owed: 'The instrument is built and pushed. What is owed is the proofs: C3 to C8 '
+      + 'against relay.debug, then C9 and C10 on the partner path.',
     approved: '2026-09-26',
-    approvalNote: 'Andy approved the specification and added two rulings. '
-      + '(1) DEBUG IS ABSOLUTELY READ-ONLY: "it may only send byte-for-byte copies of '
-      + 'observed items to the owner" — no transformation, no summary, nothing the relay '
-      + 'did not observe. Assertable as stated: the row must equal what the relay held. '
-      + '(2) THE SECURITY CONCERN IS INVERTED RATHER THAN MITIGATED. The design worried '
-      + 'DEBUG becomes the way plaintext ships later. Andy: "if plain-text data is '
-      + 'detected on alive-in-the-wild relay, is still can only be streamed to the owner, '
-      + 'thus dispoving that the packets are unreadable.... kind of the point of the '
-      + 'exercise." Plaintext on the stream is not a failure of the safeguard — it is THE '
-      + 'FINDING, delivered to the only party who can act on it, through a gate that '
-      + 'admits nobody else.',
+    approvalNote: 'Approved, with two rulings. DEBUG IS ABSOLUTELY READ-ONLY: "it may '
+      + 'only send byte-for-byte copies of observed items to the owner." And the security '
+      + 'concern is INVERTED rather than mitigated: plaintext reaching the stream is not '
+      + 'a safeguard failing, it is THE FINDING — "thus dispoving that the packets are '
+      + 'unreadable.... kind of the point of the exercise."'
   },
   // ANSWERED AND REMOVED. Andy, 2026-09-26: "a puppet always routes requests
   // through its owner ... the puppet is uable to sign any request with the owners

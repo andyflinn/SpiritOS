@@ -449,9 +449,16 @@ so a remote caller must name the proxy rather than the local verb.
 
 ### G5 — the owner switch in a puppet
 
-**Status:** OPEN. Nothing built. Andy: *"there has to
-be a switch in an app-node, that checks a request, if it came from it's
-owner, and then unwraps and processes it as if it were loopback."*
+**Verify:** `spirit/test/ownerCommand.js` and `spirit/test/puppetsPending.js`.
+**Status:** DONE (2026-09-26). `nodeApps.ownerCommandIn` decides whether an
+arrival is a command from this puppet owner and verifies the signature before
+anything is dispatched; the loopback dispatch is still G7. Ten checks:
+the control, the mode gate, no signature from the owner key, a lifted
+transport signature, a sibling-signed command, a replay at a sibling, a
+signature moved to another envelope, a stale minute, plain chat, an app
+packet. Andy ruled the shape — *"that signature must exist before the puppet
+routes the request to loopback"* — and, on which half decides it, *"the
+second half counts"*. See G9 for the sibling case it closes.
 
 ON the arrival path rather than beside it, so it inherits
 `peerPost.js:1091`'s replay guard. These are configuration verbs and a
@@ -459,9 +466,16 @@ replayed one re-executes.
 
 ### G6 — a puppet's stored owner key, owner-only
 
-**Status:** OPEN. Nothing built. Andy: *"the app must
-know who owns it, it stores the key of it's owner, that's how it knows
-who gets it's contact-managment interface."*
+**Verify:** `spirit/test/ownerCommand.js` and `spirit/test/puppetsPending.js`.
+**Status:** DONE (2026-09-26). `nodeApps.ownerCommandIn` decides whether an
+arrival is a command from this puppet's owner and verifies the signature
+BEFORE anything is dispatched; the loopback dispatch itself is still G7. Ten
+checks: the control, the mode gate, no signature from the owner key, a lifted
+transport signature, a sibling-signed command, a replay at a sibling, a
+signature moved onto another envelope, a stale minute, plain chat, an app
+packet. Andy ruled the shape — *"that signature must exist before the puppet
+routes the request to loopback"* — and, asked which half decided it, *"the
+second half counts"*. G9 is the sibling case this closes.
 
 Read-only to the puppet through the mechanism `allow.json` already uses,
 or a puppet rewrites its owner and takes itself over — the hole closed at
