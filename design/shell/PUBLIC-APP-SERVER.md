@@ -278,6 +278,35 @@ The app contract must hold for ever; box concerns change per deployment.
 the other half does not** — so the test is mechanical: *if removing it
 would break an app that never changed, it is in the stable half.*
 
+**The app server is a process type, and that is a basic.** Andy,
+2026-09-26: *"so the app is a process? process type = server?"*, then *"the
+process type is a basic though"*. An app with a face runs as its own
+process: the third startup mode, beside the personal node and the relay
+(`node js/server.js --app <name>`, `appServer.js:3-12`, loopback only at
+:1371). The owner node does not `require` the app. Code loaded into the
+owner node could read the owner's keys, would sit outside any allotment on
+the box sheet (G10), and would take the node down when it crashed.
+
+**Out of scope until the basics are done** (Andy, the same sitting: *"still
+out-of scope, until some basics ar done"*): the pass-through itself. Andy's
+flow is this: a browser asks for `join.spirit.andyflinn.com`, the name is
+matched to the node holding the wildcard assignment table, and that node
+passes the request through to its local `join`. Recorded so it is not
+re-derived:
+- **Something new catches the request, and it is not appShellApp.**
+  appShellApp stays faceless (*"faceless, no shortcut"*,
+  `appShellGrant.js:96-118`). The new front door asks it by packet who
+  holds the name. No code today reads the Host header to route
+  (`server.js:675` only validates it).
+- **The pass-through is app-agnostic and flat.** It forwards a file by
+  name, or a body to the one door (`POST /api/spirit`, verbs in the body,
+  `appServer.js:1201-1209`), to that app's loopback port, and never looks
+  inside. **Recommended:** introspection is one more verb that lists the
+  declared surface, not an API tree. A flat list stays a closed set (G9),
+  and a tree would need the front door to understand paths.
+- **Open:** whether the owner's node is reachable directly. If it is not,
+  the pass-through rides on the stream it already holds to its relay.
+
 ### G9 — strict posture: one enforced half, one declared half
 
 **Status:** OPEN. Nothing built.
