@@ -76,6 +76,22 @@
 // settled — it is abandoned, and it should say so.
 
 module.exports = [
+  {
+    asked: '2026-09-26',
+    who: 'claude',
+    decision: 'May the relay chooser be extracted from handlePost so the owner-command door '
+      + 'shares it, rather than picking its own relay?',
+    costs: 'puppets/G4, the door, is otherwise stopped. The authority question is settled — '
+      + '"the node handles all the signing. the shell does not worry about that" — and this '
+      + 'is the only thing left in it.',
+    why: 'handlePost spends about 230 lines choosing a relay: relaysNaming, the via '
+      + 'override, route hints from the shadow roll, partner-availability ordering. A '
+      + 'second handler choosing its own would be a SECOND OPINION ABOUT REACHABILITY, '
+      + 'which serverSurface.js:848 warns about in as many words. Extracting it is the '
+      + 'only option that does not duplicate judgement — but it is a refactor inside '
+      + 'hub.js, and CLAUDE.md says to stop and call a review rather than patch when '
+      + 'something needs a hub URL switch. So it is a ruling, not a tidy-up.',
+  },
   // ANSWERED AND REMOVED. Andy, 2026-09-26: "the payload cap is BYTES. that's
   // the design, and the attitude, of node and relay." So the name was right
   // and the value was wrong, everywhere — not just where `held` exposed it.
