@@ -489,7 +489,14 @@ function needsYouSection(titles, declaredIds, blockedRows) {
   const out = [];
   const uncounted = uncountedOpen(titles, declaredIds);
   const blocked = blockedRows || [];
-  const stopped = openBlocks();
+  const allBlocks = openBlocks();
+  // THREE STATES, NOT TWO. Andy, 2026-09-26, of a decision he had already
+  // answered whose code nobody had written: "ok, it needs an hourglass."
+  // A row used to be on the board or gone, so the moment he ruled, the row
+  // vanished AND THE WORK HIS RULING IMPLIED VANISHED WITH IT. A settled
+  // row needs US, not him, and keeps its place until the work lands.
+  const stopped = allBlocks.filter(function (b) { return !b.settled; });
+  const settled = allBlocks.filter(function (b) { return b.settled; });
   if (!blocked.length && !uncounted.length && !stopped.length) return out;
   out.push('## What needs you');
   out.push('');
@@ -514,6 +521,29 @@ function needsYouSection(titles, declaredIds, blockedRows) {
       out.push('- *Asked ' + (age || String(b.asked)) + ' by ' + (b.who || 'an agent') + '.*');
       if (b.costs) out.push('- **What it is holding up:** ' + b.costs);
       if (b.why) out.push('- **Why it is yours:** ' + b.why);
+      out.push('');
+    });
+    out.push('');
+  }
+
+  // RULED, AND NOW OURS. Placed after the stopped rows and before the
+  // older questions on purpose: it is the only part of this section that
+  // is NOT waiting on him, and burying it under the backlog would lose
+  // the thing his answer bought.
+  if (settled.length) {
+    out.push('### Ruled, and now ours');
+    out.push('');
+    settled.forEach(function (b) {
+      const age = ageWordsFromDay(b.settled);
+      out.push('**⏳ ' + String(b.decision || '(no decision named)') + '**');
+      out.push('');
+      out.push('- *You answered ' + (age || String(b.settled)) + '*' +
+        (b.answer ? ': "' + b.answer + '"' : '.'));
+      if (b.owed) out.push('- **Still owed:** ' + b.owed);
+      // A ROW NOBODY CAN BE NAMED FOR IS ABANDONED AND SHOULD SAY SO,
+      // which is blocking.js's own rule and the only way this section
+      // cannot become a place work goes to be forgotten politely.
+      out.push('- **Owed by:** ' + (b.who || 'NOBODY NAMED — this is abandoned unless somebody claims it'));
       out.push('');
     });
     out.push('');

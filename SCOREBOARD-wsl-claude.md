@@ -4,37 +4,23 @@
 
 ## Summary
 
-**Nothing is broken, 12 requirements are declared and not built yet, and 3 THINGS ARE STOPPED waiting for you, with 6 older question(s) behind them.**
+**Nothing is broken, 12 requirements are declared and not built yet, and ONE THING IS STOPPED waiting for you, with 6 older question(s) behind them.**
 
 ```
-154 suites   3122 green   0 red   0 unhappy   12 owed      run 9c22cce   STALE: measured at 9c22cce, tree is now bf7b48a
+154 suites   3122 green   0 red   0 unhappy   12 owed      run 3bb647b
 ```
 
 ---
 
 ## What needs you
 
-### Someone is stopped, waiting for you
+### Ruled, and now ours
 
-**3 things are stopped until you answer.**
+**⏳ The outbound queue on the agent node.**
 
-**⛔ Delete the first-cut extract output that landed in the product tree — spirit/run/input/, spirit/run/output/ and spirit/run/.state/ (14 files, 4.4 MB).**
-
-- *Asked today by claude.*
-- **What it is holding up:** The board cannot go green. Two suites are red only because of these files: the live front door cannot build a lab while untracked files sit under spirit/, and the stands-alone check finds forbidden paths quoted inside the old corpus JSON.
-- **Why it is yours:** Andy has to run it: the agent was refused by its own sandbox, twice, as irreversible local destruction. Not a judgement call — a permission.
-
-**⛔ Whether the limits requirement takes the shape wsl-claude proposed: a derivation stated beside the literal, non-binding, loud when they disagree.**
-
-- *Asked today by claude.*
-- **What it is holding up:** One requirement in this cycle stays open and uncounted. Its harness half already exists in payloadCeiling.js, so the wrong answer means building a second copy of a test that is already green.
-- **Why it is yours:** The alternative — computing the constant — is the silent flag day that was already refused once. Choosing between them is a product decision.
-
-**⛔ Confirm the brains repo is private, then say whether to push it.**
-
-- *Asked today by claude.*
-- **What it is holding up:** Three commits sit unpushed, and the voice corpus is not backed up anywhere while they do.
-- **Why it is yours:** Neither agent has gh. A 404 from the anonymous API says private, but a renamed or deleted repo gives the same 404, and the cost of being wrong is Andy's verbatim typing on a public remote.
+- *You answered today*: "Andy: "keep only a few, and count the deletions, as ameasurement for the system to be discussed in a team review." Then: "keep the inbound queues, not the outbound ones...." And on the reason: "there is duplication there.""
+- **Still owed:** The queue was emptied — 160 rows deleted — but the DUPLICATION is still in the code, so it regrows by one row per send. agents.js:305-327 appends a report row on every send and re-flushes the whole file, while trafficLog.js already records every attempt with its payload, before the wire. Checked: 40 of 40 sampled rows were already in the traffic log. The fix is to delete the outbox concept rather than bound it; a resend, if ever wanted, is derivable from the log. A full copy of the 160 is kept for the team review.
+- **Owed by:** wsl-claude, whose file the agents app is
 
 
 ### Older questions, no hurry
