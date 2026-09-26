@@ -4,10 +4,10 @@
 
 ## Summary
 
-**One test is broken, 13 requirements are declared and not built yet, and 2 THINGS ARE STOPPED waiting for you, with 2 older question(s) behind them, (5 more already ruled and now ours).**
+**One test is broken, 13 requirements are declared and not built yet, and 2 THINGS ARE STOPPED waiting for you, with 2 older question(s) behind them, (4 more already ruled and now ours).**
 
 ```
-161 suites   3077 green   1 red   1 unhappy   13 owed      run 1fa6d04
+161 suites   3078 green   1 red   1 unhappy   13 owed      run af2aae7
 ```
 
 ---
@@ -42,12 +42,6 @@
 
 
 ### Ruled, and now ours
-
-**⏳ Who builds the card ASK — the half of the card exchange that does not exist?**
-
-- *You answered today*: "Andy: "windows will implement the card fetch, and you will test it" — under his standing rule that "we do best when we strictly divide implementation from testing"."
-- **Still owed:** THE CALLER, by spiritos-f6, in peerPost.js around :725. THE PROOF IS ALREADY THERE AND WAITING: spirit/test/cardFetch.js, 7 green and 3 awaiting, written before the caller so it measures an implementation against a contract it did not choose. The three branch on the OUTCOME — a seal key the fixture never planted — so they become real assertions the day the caller lands, with no edit. Also owed by spiritos-f6, and the one thing the suite cannot guess: what happens when the peer never answers the ask.
-- **Owed by:** wsl-claude, who found it; Andy confirmed it is not in the code
 
 **⏳ How DEBUG is turned on, and whether it survives a relay gaining members.**
 
@@ -102,7 +96,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +3 green
+- +1 green
 
 ---
 

@@ -265,23 +265,42 @@ function plantCardOf(holder, subject) {
       + 'a round trip on every message forever', est);
   }
 
-  // ── MEASURED AND NAMED, NOT ASSERTED: THE THROTTLE IS NOT BURST-SAFE ─
+  // ── C8: A BURST TO ONE UNCARDED PEER LOSES NOTHING ─────────────────
   //
-  // Ten posts to an uncarded peer fired CONCURRENTLY give one ask and ONE
-  // delivery: the first sets `askedFor[toKey]`, the other nine skip the
-  // ask, find the key still absent, and refuse 428. The throttle turns
-  // "everybody asks" into "one asks, the rest fail".
+  // MEASURED AS A DEFECT FIRST, THEN ASSERTED. On 780426a the throttle
+  // remembered a TIMESTAMP, so ten concurrent posts to an uncarded peer
+  // gave one ask and ONE delivery: the first caller set `askedFor`, the
+  // other nine skipped the ask, found the key still absent, and refused
+  // 428. It was reported rather than asserted, because the only bursting
+  // caller — the agents outbox — flushes serially and could not reach it.
   //
-  // NOT ASSERTED, BECAUSE IT IS NOT REACHABLE TODAY. The one caller that
-  // bursts is the agents outbox, and it flushes SERIALLY —
-  // `rows.reduce((p, row) => p.then(...))` at agents.js:323 — so row one
-  // fetches the card and the rest find it. That is why spiritos-f6's live
-  // run delivered 37 of 37. A suite asserting a failure no caller can
-  // reach would be asserting a shape, not a behaviour.
-  //
-  // IT IS WRITTEN DOWN BECAUSE THE NEXT CONCURRENT CALLER INHERITS IT,
-  // silently, and the cure is small: have the losers await the in-flight
-  // ask rather than skip it — remember the PROMISE, not the timestamp.
+  // spiritos-f6 fixed it at 742c5c1 by remembering the PROMISE instead of
+  // the timestamp, so the losers await the in-flight ask. Now that there
+  // is behaviour to protect, it is pinned: a timestamp throttle passes
+  // every other check in this file and fails this one.
+  {
+    const relay2 = fakeRelay();
+    const many = nodeFor('burst', relay2);
+    const peer = nodeFor('burst-peer', relay2);
+    const posts = [];
+    for (let i = 1; i <= 10; i += 1) {
+      posts.push(many.P.post('http://relay', peer.id.publicKey, 'report ' + i));
+    }
+    const answers = await Promise.all(posts);
+    const ok = answers.filter(function (a) { return a && a.ok; }).length;
+    const asks = relay2.wire.filter(function (w) {
+      return w.from === many.id.publicKey && nodeCard.asks(w.text);
+    }).length;
+    if (ok === 10 && asks === 1) {
+      test.check('ten posts fired at once to a peer with no card all arrive, on ONE shared ask '
+        + '— the nine that lose the race wait for the ask in flight instead of skipping it '
+        + 'and refusing');
+    } else {
+      test.fail(ok + ' of 10 concurrent posts arrived on ' + asks + ' ask(s). A throttle that '
+        + 'remembers WHEN it asked rather than the ask ITSELF lets the losers past with no '
+        + 'card and refuses them');
+    }
+  }
 
   // ── C3: THE CONTROL — A NODE THAT ALREADY KNOWS ASKS NOTHING ───────
   {
