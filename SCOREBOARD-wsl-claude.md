@@ -7,7 +7,7 @@
 **Nothing is broken, 13 requirements are declared and not built yet, and 1 question(s) inside work you already ruled on, and 3 older questions need a decision from you.**
 
 ```
-159 suites   3155 green   0 red   0 unhappy   13 owed      run d387462
+159 suites   3159 green   0 red   0 unhappy   13 owed      run 8bbcaf8
 ```
 
 ---
@@ -19,19 +19,19 @@
 **⏳ How DEBUG is turned on, and whether it survives a relay gaining members.**
 
 - *You answered today*: "Andy, on why it must work on a live relay: "i disagree, when spirit-3 shows hickups, rather than taking it down, the owner should be able to flip the DEBUG switch remotely and get even more valuable data.... for remote diagnosis, that cannot be easily had and brought back by ssh." Then the mechanism, exactly: "DEBUG is Off by default, returned and set by owner-only api". And on surviving a claim: "Yes. because it can be turned off by the owner after a claim, before and inites go out. 2) it only AFTER first claim that the DEBUG switch can be remote controlled"."
-- **Still owed:** THE MECHANISM IS DECIDED AND IT IS BOTH DIRECTIONS: an owner-only verb that RETURNS the state as well as setting it, so the owner — and a suite — can ask whether it is on instead of assuming. Off by default. No env var and no file, because both need a restart and a restart is what he is refusing to do to a box that is misbehaving. NOT dropped when a relay gains members and NOT refused on a public relay: that was the design recommendation and he reversed it, since a relay with members showing hiccups is exactly when it earns its keep. AND HIS SECOND POINT INVERTS THE RISK ARGUMENT ENTIRELY: it is only after the first claim that DEBUG can be remote-controlled at all, because an owner verb needs the owner to be a member. So the claim is not a window in which DEBUG becomes dangerous — it is the precondition for the feature existing. The ordering is claim, then remote control, and before that the switch is local only. The window he does name is a real one and it is HIS to use: after the first claim and before invites go out, the owner can turn it off. design/relay/PROVING-IT-CANNOT-READ.md is wsl-claude to amend — RECOMMENDED 2 becomes DECIDED the other way. AND ONE CLAIM OF MINE WAS WRONG, which the amendment should fix rather than repeat: I told him DEBUG adds only ciphertext. peerPost.js:725 skips sealing for card traffic, so a relay in DEBUG streams other members card requests and replies in plain. Harmless — cards are self-signed and public by design — but the proof should ENUMERATE what the relay holds unsealed and assert that list, so it is a test rather than a sentence. spiritos-f6 caught it.
+- **Still owed:** Decided: an owner-only verb that SETS and RETURNS the state, off by default, RAM only — a restart is the off switch — and not dropped when a relay gains members, because an owner verb needs an owner, so the claim is what makes the switch reachable. Read-only: byte-for-byte copies, never a changed field set. Spec: design/relay/PROVING-IT-CANNOT-READ.md.
 - **Owed by:** wsl-claude, whose design and whose relay surface
 
 **⏳ Which of the five sealed-post proofs the DEBUG instrument retires.**
 
 - *You answered today*: "Andy: "answer: none, it only may make proof possible.""
-- **Still owed:** HE CORRECTED THE VERB, and the question was malformed. AN INSTRUMENT RETIRES NOTHING — a requirement is discharged by a passing proof, never by the means of proving it. So all five stay owed and the instrument only unblocks. That also disposes of my own measurement: I had answered "two directly, one by consequence", which was the right count of a question nobody should have asked. WHAT SURVIVES IT AND IS STILL WORTH HAVING: cycle-10 R12, the relay hash differing from the endpoints hash, NEEDS NO INSTRUMENT AT ALL. monitorEvent already carries the hash on every post (relay.js:2756, :2981), so it is buildable today and had been waiting on a blocker it never had — the cost of listing five items as a group is that one inherits the whole group blocker. Owed to wsl-claude: the design amendment (all three of its open questions are now ruled, so it is a specification rather than a proposal) and the proofs themselves once the instrument exists.
+- **Still owed:** His answer: "none, it only may make proof possible." An instrument retires nothing — a proof discharges a requirement, never the means of proving it. All five stay owed. Two of them (cycle 10's R12 and R7) never needed the instrument; cycle 10's R12 is now DONE.
 - **Owed by:** wsl-claude, whose design and whose harness
 
 **⏳ How to prove the relay cannot read a sealed post, by trying to read it.**
 
 - *You answered today*: "Andy: "that is what the DEBUG flag is for, in the relay it will stream the packet it sees, back to the owner node, where the test can examine it." And on its reach: "this will be a popular approach for assertion in the relay." Then, of this requirement: "belongson the board with at least a proposal.""
-- **Still owed:** The channel already exists: relay.js:4604 streams to the owner only, and the owner node needs no second flag because it is already the subscriber. What is missing is that the stream says things ABOUT the packet and not the packet. ONE DOOR, off by default, refusing to start on a public relay. Four of the five sealed-post proofs wait on it. Design: design/relay/PROVING-IT-CANNOT-READ.md.
+- **Still owed:** Approved and specified. The instrument is the other agent's to build; the assertions are mine: C3-C8 against relay.debug, and C9/C10 on the partner path. Spec: design/relay/PROVING-IT-CANNOT-READ.md.
 - **Still yours to decide** — 1 question(s) inside it, and the work cannot finish without them:
     - Which of the five sealed-post proofs does this retire? Four look reachable through it; the fifth has not been checked.
 - **Owed by:** wsl-claude, who holds the relay public surface and the harness
@@ -39,7 +39,7 @@
 **⏳ The outbound queue on the agent node.**
 
 - *You answered today*: "Andy: "keep only a few, and count the deletions, as ameasurement for the system to be discussed in a team review." Then: "keep the inbound queues, not the outbound ones...." And on the reason: "there is duplication there.""
-- **Still owed:** The delete-on-success is already there (agents.js:323) — I said twice that it was not and wsl-claude found it in the code. So the 158 were never delivered, not retained. What is owed: dead-letter a refusal waiting cannot fix, instead of re-posting it on every send; get the owner card onto the sending node; and put the age of the oldest pending row on this board.
+- **Still owed:** Done. A pending row is dropped only when the catalogue NAMES the refusal and says waiting cannot help; unknown is not a verdict, so an unrecognised failure is kept. The traffic log holds every refusal with its payload.
 - **Owed by:** wsl-claude, whose file the agents app is
 
 
@@ -49,9 +49,8 @@
 
 For each: **is it still wanted, has a later cycle replaced it, or is it abandoned?** Say which and it either gets a test or gets closed.
 
-- In `design/cycles/2026-09-23-sealed-posts-cycle-10.md`, 5 things are still marked open with no test watching:
+- In `design/cycles/2026-09-23-sealed-posts-cycle-10.md`, 4 things are still marked open with no test watching:
     - prove the relay cannot read it, by trying to read it
-    - the relay's hash must differ from the endpoints' hash of the words
     - message LENGTH is public, or it is padded
     - what the relay streams to a monitor is unreadable, by both belts
     - suites that INSIST, not suites that demonstrate

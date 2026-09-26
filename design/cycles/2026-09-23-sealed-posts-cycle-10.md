@@ -627,13 +627,28 @@ It also settles what the monitor may show of a payload: **the relay's
 hash and the size, never a plaintext hash**. A screen that displayed both
 would be a confirmation oracle on a wall.
 
-**Verify:** all three, in one suite, against a real routed post — and
-point (2) run at least twice with the identical string, because a single
-run cannot show randomisation. Then once more live: the drill sends known
+**Verify:** `spirit/test/relayHashDiffers.js` — all three, in one suite,
+against a real routed post, and point (2) run twice with the identical
+string, because a single run cannot show randomisation. Then once more live: the drill sends known
 text, the feed is captured as in cycle 9, and every `hash` in the capture
 is compared against `sha256` of what was sent. Zero matches.
 
-**Status:** OPEN — cycle 10 is opened, not built.
+**Status:** DONE at `8bbcaf8` — `spirit/test/relayHashDiffers.js`, four
+checks against a real routed post on the monitor stream.
+
+All three points are asserted, and the suite carries a fourth that the
+requirement asks for implicitly: **an unsealed post MUST match.** Without
+it, "the two hashes differ" is equally true of a comparison that can
+never match — a wrong field, a wrong minute, the wrong parties — so the
+control is what makes the canary evidence rather than decoration. A card
+travels unsealed by design (`peerPost.js:725`) and its relay hash is the
+hash of its bytes.
+
+It needed no instrument. The monitor row already carries the relay's own
+hash (`relay.js:2756`, `:2894`, `:4166`), so this was written BEFORE the
+DEBUG switch of `design/relay/PROVING-IT-CANNOT-READ.md` rather than
+waiting for it — and the shared fixture every later proof depends on is
+exercised here first.
 
 ---
 
