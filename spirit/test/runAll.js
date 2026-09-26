@@ -70,6 +70,10 @@ const NOT_A_SUITE = [
   // MEASURES WHEN REQUIRED, so asking it for the kinds starts a
   // measurement.
   'capacityKinds.js',
+  // NOT A SUITE: a claimed relay with the owner watching, extracted from
+  // relayMonitor.js when cycle 10's R12 needed the same world. It
+  // asserts nothing and builds one.
+  'monitorWorld.js',
   // A TOOL, not a suite: rewrites the front page's generated capacity
   // block from the Ubuntu measurement (Andy, 2026-09-23 — "the front page
   // README.md should have a marked block that will be auto-updated with

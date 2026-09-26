@@ -4,21 +4,11 @@
 
 ## Summary
 
-**One test is broken, 13 requirements are declared and not built yet, and 1 question(s) inside work you already ruled on, and 3 older questions need a decision from you.**
+**Nothing is broken, 13 requirements are declared and not built yet, and 1 question(s) inside work you already ruled on, and 3 older questions need a decision from you.**
 
 ```
-157 suites   3146 green   1 red   1 unhappy   13 owed      run f3169f8
+159 suites   3155 green   0 red   0 unhappy   13 owed      run d387462
 ```
-
----
-
-## What is red
-
-**Something that used to pass now fails.** These are broken, not unfinished — the owed list further down is work nobody has written yet.
-
-**❌ `guarantees.js`** — one check no longer passes.
-
-  - the published block and the measurement disagree — run `node spirit/test/publishCapacity.js`: README.md capacity block is OUT OF DATE against ubuntu-24.04-ws…
 
 ---
 
@@ -85,7 +75,8 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-**Nothing moved.** Same requirements owed, same tally, since the run at `f3169f8`.
+- +1 green
+- -1 red
 
 ---
 
