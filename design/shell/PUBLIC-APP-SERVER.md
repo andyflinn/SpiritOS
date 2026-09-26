@@ -50,6 +50,16 @@ only needs an appShellApp"*. So:
 - **The VPS runs appShellApp and nothing else.** A browser asking for
   `join.spirit.andyflinn.com` reaches appShellApp, which routes the request
   to the node holding that name. That node's app server answers.
+- **One face allotment serves every app, members' apps included.** Andy,
+  2026-09-26: *"one face-allotment for all apps, even member apps, which
+  are appShellApp, by member-to-subdomain mappings on the owners node"*.
+  The VPS's single appShellApp is the public face for the owner's apps and
+  every member's apps alike. There is no per-app process on the VPS and no
+  second allotment there. A member's subdomain routes to that member's node
+  by the member-to-subdomain mapping, which lives on the OWNER's node (the
+  grant table, *"only on the owners node"*, appShellApp.js). The lookup
+  therefore needs the owner's node up. That is the owner's to keep, under
+  the uptime ruling (DEVICES-AND-PORTS.md:154-174).
 - **So basic routing IS alpha.** The front door and pass-through sections
   below are out of scope only beyond what this path needs.
 - **G17, restated for this topology.** The app's answer (for `join`, the
