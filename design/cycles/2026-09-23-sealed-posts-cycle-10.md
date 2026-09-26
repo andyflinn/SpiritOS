@@ -813,9 +813,13 @@ breaks posts already sealed to the old key, so:
   before the red button: when to use it, what it costs peers, and that it
   does not protect the past. The press reaches the relay box as an owner
   verb, because the key lives there and not on the owner's node.
-  **Still open:** whether a personal node's own cipher key gets a
-  rotation control at all, and where. Info is the precedent for a
-  node-wide setting (DICTIONARY.md, *Public label*).
+- **A personal node's own cipher key is rotated from the Info app.** Andy,
+  2026-09-26: *"the place would be the info app"*. The node's key is one
+  key across every relay it sits on, and Info already holds the node-wide
+  setting that is posted to every relay (DICTIONARY.md, *Public label*).
+  It gets the same shape: a section that explains the impact, then the
+  red two-press button. It runs locally, since that key lives on the
+  owner's node.
 
 **Recommended, and agreed ("true"): show the owner the exposure hints,
 above all when debug is on**, so he can tell a key problem from a bug
