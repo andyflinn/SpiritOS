@@ -4633,20 +4633,6 @@ function createRelay(rootDir, deps) {
     var row = { at: new Date().toISOString(), kind: String(kind || '') };
     if (extra) Object.keys(extra).forEach(function (k) { row[k] = extra[k]; });
 
-    // ── DEBUG CHANGES A VALUE AND NEVER THE FIELD SET ─────────────────
-    //
-    // wsl-claude's first recommendation, made mechanical: if DEBUG decided
-    // WHICH FIELDS EXIST, every later assertion would add one and the flag
-    // would be fifty switches in a year — Andy's "it becomes untestable when
-    // 50 places think it is easy enough to do inline", inside the relay.
-    //
-    // So `held` is ALWAYS on the row. Empty unless DEBUG is on, and then a
-    // BYTE-FOR-BYTE copy of the string this relay is carrying — Andy:
-    // "it may only send byte-for-byte copies of observed items to the
-    // owner." Nothing is re-parsed or re-stringified on the way: a
-    // round trip would reorder keys, and then a test could only assert
-    // "contains", which cannot tell a copy from a truncation.
-    row.held = debugging && extra && typeof extra.held === 'string' ? extra.held : '';
 
     // ── `cause`: WHICH POST CAUSED THIS ──────────────────────────────
     //
@@ -4733,6 +4719,39 @@ function createRelay(rootDir, deps) {
       to: to || '',
     };
     if (extra) Object.keys(extra).forEach(function (k) { row[k] = extra[k]; });
+
+    // ── DEBUG CHANGES A VALUE AND NEVER THE FIELD SET ─────────────────
+    //
+    // wsl-claude's first recommendation, made mechanical: if DEBUG decided
+    // WHICH FIELDS EXIST, every later assertion would add one and the flag
+    // would be fifty switches in a year — Andy's "it becomes untestable when
+    // 50 places think it is easy enough to do inline", inside the relay.
+    //
+    // So `held` is ALWAYS on the row. Empty unless DEBUG is on, and then a
+    // BYTE-FOR-BYTE copy of the string this relay is carrying — Andy: "it may
+    // only send byte-for-byte copies of observed items to the owner." Nothing
+    // is re-parsed or re-stringified on the way: a round trip would reorder
+    // keys, and then a test could only assert "contains", which cannot tell a
+    // copy from a truncation.
+    //
+    // ── AND IT SPENT ONE COMMIT IN THE WRONG FUNCTION ─────────────────
+    //
+    // It landed in `ownerEvent` instead, whose callers are claim and revoke
+    // notices carrying no payload — so the gate was unreachable and the three
+    // post sites' `held` went onto every monitor row VERBATIM, DEBUG or not.
+    // Not a confidentiality breach: owner-only, monitoring-gated, and sealed.
+    // But the instrument did not instrument, and "off by default" was false of
+    // the behaviour while being true of the verb.
+    //
+    // THE CAUSE IS WORTH MORE THAN THE FIX. Both functions contain the line
+    // above, character for character, and a replace-first put the gate under
+    // the first one. The same mistake put a prose fix on an unused copy of a
+    // renderer earlier the same day. A file with two identical lines has two
+    // places a change can land, and the diff looks right from either.
+    //
+    // Found by wsl-claude, whose relayCannotRead.js caught it as its CONTROL
+    // rather than as an assertion — C3, "DEBUG off means no payload".
+    row.held = debugging && extra && typeof extra.held === 'string' ? extra.held : '';
     // THE FULL REPORT, EVERY TIME SOMETHING HAPPENS (cycle 8). Andy: the
     // owner "receives also the full stat package whenever events occur" —
     // and no coalescing: "if the relay can handle 500 near-simultaneous
