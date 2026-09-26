@@ -296,7 +296,6 @@ function runOne(file) {
         // say what is waiting and for which requirement.
         waiting: said && w ? Number(w[1]) : 0,
         waitingLines: (out.match(/AWAITING [^\n]*/g) || []),
-        explainLines: (out.match(/EXPLAIN [^\n]*/g) || []),
         // STOOD DOWN (test.standsDown). The suite ran, diagnosed its own
         // environment and declined — not a pass, not a failure, and the
         // reason is lifted out so a green board never quietly means less
@@ -580,6 +579,11 @@ function rankBoard(rows, titles) {
   });
   ranking.proposed = settled.proposed;
   ranking.rejectedStill = settled.rejectedStill;
+  // Trees, in AGE order so the positions they print tie the way the owed
+  // table breaks ties.
+  const byAge = (rows || []).slice().sort(function (a, b) { return (a.at || 1e12) - (b.at || 1e12); });
+  ranking.groups = require('./boardRank.js').proposalGroups(
+    byAge.map(function (r) { return { id: r.id, after: r.after || [] }; }), edgeRulings());
   return ranking;
 }
 
@@ -616,7 +620,7 @@ function needsYouSection(titles, declaredIds, blockedRows, ranking) {
   // row needs US, not him, and keeps its place until the work lands.
   const stopped = allBlocks.filter(function (b) { return !b.settled; });
   const settled = allBlocks.filter(function (b) { return b.settled; });
-  const anyProposed = !!(ranking && ranking.proposed && ranking.proposed.length);
+  const anyProposed = !!(ranking && ranking.groups && ranking.groups.length);
   if (!blocked.length && !uncounted.length && !stopped.length && !anyProposed) return out;
   out.push('## What needs you');
   out.push('');
@@ -671,26 +675,50 @@ function needsYouSection(titles, declaredIds, blockedRows, ranking) {
     out.push('');
   }
 
-  // DEPENDENCIES AN AGENT PROPOSED, FOR HIM TO SETTLE. Andy: "in fact
-  // proposed dependencies are issues themselves" — to-dos, in his corrected
-  // word. Ranked by what accepting each would change. The handle is the
-  // pair, so he can paste it back with yes or no.
-  const proposed = (ranking && ranking.proposed) || [];
-  if (proposed.length) {
+  // DEPENDENCIES AN AGENT PROPOSED, FOR HIM TO SETTLE — AS TREES.
+  //
+  //   Andy: "in fact proposed dependencies are issues themselves" (to-dos,
+  //   in his corrected word), and then the shape: "these tow functions are
+  //   needed by the following to-do's: R34, R23, R45, do you accept the
+  //   implied change in priorities?" The "X waits on Y" lines this replaced
+  //   did not make dependencies obvious; drawn as a tree, they did.
+  //
+  // ONE QUESTION PER TREE: proposals that touch are one decision, since
+  // accepting half a chain is not something he was asked.
+  const groups = (ranking && ranking.groups) || [];
+  if (groups.length) {
     out.push('### Dependencies to settle');
     out.push('');
-    out.push('**' + (proposed.length === 1 ? 'One to-do' : proposed.length + ' to-dos') +
-      ' of yours: an agent says one thing has to land before another. Yes makes it count ' +
-      'in the order below; no is kept, so it is not proposed again.**');
+    out.push('**' + (groups.length === 1 ? 'One question' : groups.length + ' questions') +
+      ' for you: an agent says some to-dos have to land before others.** Yes makes it count ' +
+      'in the order below; no is kept, so it is not proposed again.');
     out.push('');
-    proposed.forEach(function (e, n) {
-      const top = proposed.length > 3 && n < 3 ? '⭐ ' : '';
-      out.push('- ' + top + '**(' + handleFor(titles, e.from) + ') waits on (' + handleFor(titles, e.to) + ')** — ' +
-        requirementTitle(titles, e.from) + ', after ' +
-        requirementTitle(titles, e.to) + '. ' +
-        (e.gain ? '*Accepting it puts ' + e.gain + ' more to-do' + (e.gain === 1 ? '' : 's') + ' behind the second.*' : ''));
+    const ord = function (n) { return n + (n % 10 === 1 && n % 100 !== 11 ? 'st' : n % 10 === 2 && n % 100 !== 12 ? 'nd' : n % 10 === 3 && n % 100 !== 13 ? 'rd' : 'th'); };
+    groups.forEach(function (g, gi) {
+      const top = groups.length > 3 && gi < 3 ? '⭐ ' : '';
+      g.tree.forEach(function (root) {
+        out.push('**' + top + (gi + 1) + '. ' + requirementTitle(titles, root.id) + ' (' + handleFor(titles, root.id) + ')** is needed by:');
+        out.push('');
+        (function draw(nodes, depth) {
+          nodes.forEach(function (n) {
+            out.push('    '.repeat(depth) + '- ' + requirementTitle(titles, n.id) + ' (' + handleFor(titles, n.id) + ')' +
+              (n.again ? ' — already above' : ''));
+            if (!n.again) draw(n.under, depth + 1);
+          });
+        }(root.under, 0));
+        out.push('');
+      });
+      // Only the to-dos IN the tree. Everything else shifts down to make
+      // room, and listing each of those is the editorializing he refused.
+      const inTree = Object.create(null);
+      g.edges.forEach(function (e) { inTree[e.from] = true; inTree[e.to] = true; });
+      const moved = g.moves.filter(function (m) { return m.from && m.to && inTree[m.id]; }).map(function (m) {
+        return '(' + handleFor(titles, m.id) + ') from ' + ord(m.from) + ' to ' + ord(m.to);
+      });
+      out.push('**Do you accept the implied change in priorities?**' +
+        (moved.length ? ' ' + moved.join(', ') + '.' : ' Nothing would change place.'));
+      out.push('');
     });
-    out.push('');
   }
 
   // RULED, AND NOW OURS. Placed after the stopped rows and before the
@@ -994,10 +1022,6 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
       // replays rows from the run log, and a ranking that only exists on a
       // full run would change order depending on which command drew it.
       after: (byReq[id].after || []).slice(),
-      // The declared paragraph, or — until someone writes one — the note the
-      // declaration already carries, which is English and the author's own.
-      explain: byReq[id].explain || '',
-      note: (units[0] && units[0].note) || '',
     };
   });
 
@@ -1076,9 +1100,9 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
   // ONE RANKING PER RENDER, computed before the headline so the headline and
   // the sections below it cannot disagree about what is his.
   const ranking = rankBoard(rows, titles);
-  const proposedNow = (ranking.proposed || []).length;
+  const proposedNow = (ranking.groups || []).length;
   if (proposedNow) {
-    says.push('and ' + proposedNow + ' dependenc' + (proposedNow === 1 ? 'y' : 'ies') + ' for you to settle');
+    says.push('and ' + proposedNow + ' dependency question' + (proposedNow === 1 ? '' : 's') + ' for you');
   }
   if (stoppedNow) {
     says.push(stoppedNow === 1
@@ -1168,30 +1192,15 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
   }).order.forEach(function (id, i) { rankOf[id] = i; });
   byAge.sort(function (a, b) { return rankOf[a.id] - rankOf[b.id]; });
 
-  // THE FIVE CLOSEST AT HAND GET A PARAGRAPH; the rest get a title. The
-  // paragraph is the declaration's own `explain`, or its note until one is
-  // written — and the page says which, so an unexplained to-do in the top
-  // five is visible as a gap rather than dressed up.
-  const CLOSE = 5;
-  const near = byAge.slice(0, CLOSE);
-  const rest = byAge.slice(CLOSE);
-  near.forEach(function (r, i) {
-    const frees = ranking.unblocks[r.id] || 0;
-    out.push('**' + (i + 1) + '. ' + withHandle(r.title, handleFor(titles, r.id)) + '**');
-    out.push('');
-    if (r.explain) out.push(r.explain);
-    else if (r.note) out.push(r.note + ' *(No paragraph written for this yet; this is the declaration\'s own note.)*');
-    else out.push('*Nobody has written what this is for yet.*');
-    out.push('');
-    out.push('*' + (frees ? 'Frees ' + frees + ' other to-do' + (frees === 1 ? '' : 's') + '. ' : '') +
-      'Owed ' + ageWords(r.at) + (r.there === null ? '' : ', about ' + r.there + '% there') + '.*');
-    out.push('');
-  });
-  if (rest.length) {
-    out.push('| | then | frees | owed | there | |');
-    out.push('|---|---|---|---|---|---|');
-  }
-  rest.forEach(function (r) {
+  // ONE UNIFORM TABLE, every owed to-do in rank order, same columns for
+  // all. Andy, 2026-09-27: "I'd prefer a uniform table, not the
+  // editorializing format it has now" — which retired the five paragraphs
+  // the top of this table carried for an afternoon.
+  out.push('| # | to-do | frees | owed | there | |');
+  out.push('|---|---|---|---|---|---|');
+  let place = 0;
+  byAge.forEach(function (r) {
+      place += 1;
       const n = r.there === null ? null : Math.max(0, Math.min(10, Math.round(r.there / 10)));
       const bar = n === null ? '`?`'
         : '`' + '▓'.repeat(n) + '░'.repeat(10 - n) + '` ' + r.there + '%';
@@ -1201,7 +1210,7 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
       const freed = (!r.blocked && lastBlockedAt[r.id])
         ? 'unblocked by you ' + ageWords(lastBlockedAt[r.id]) + ' ago' : '';
       const frees = ranking.unblocks[r.id] || 0;
-      out.push('| ⏳ | **' + withHandle(r.title, handleFor(titles, r.id)) + '** | ' + (frees ? frees : '') +
+      out.push('| ' + place + ' | ' + withHandle(r.title, handleFor(titles, r.id)) + ' | ' + (frees ? frees : '') +
         ' | ' + ageWords(r.at) + ' | ' + bar + ' | ' +
         (r.blocked ? '⛔' : freed) + ' |');
     });
@@ -1594,15 +1603,6 @@ async function main() {
     const titles = requirementTitles();
     const byReq = Object.create(null);
     waitingAll.forEach(function (r) {
-      // The paragraph a declaration wrote for Andy, kept per requirement.
-      // First one wins: two suites explaining one to-do is a thing to notice
-      // in the source, not to concatenate on his page.
-      (r.explainLines || []).forEach(function (line) {
-        const ex = /^EXPLAIN (\S+): (.*?)\s*(?:\x1b\[[0-9;]*m)?\s*$/.exec(line);
-        if (!ex) return;
-        const rec = (byReq[ex[1]] = byReq[ex[1]] || { units: [], suites: {} });
-        if (!rec.explain) rec.explain = ex[2].trim();
-      });
       r.waitingLines.forEach(function (line) {
         // ── A ROW THIS CANNOT PARSE IS STILL SHOWN ────────────────────
         //

@@ -175,4 +175,42 @@ test.startTest('The board ranks what unblocks most first, and says what it canno
   }
 }
 
+// ── A CHAIN OF PROPOSALS IS ONE QUESTION, DRAWN AS A TREE ────────────
+{
+  // g4 waits on g7, g7 waits on g6, and an unrelated pair r1 -> r2.
+  const owed = [
+    { id: 'p/g4', after: ['p/g7'] }, { id: 'p/g7', after: ['p/g6'] }, { id: 'p/g6' },
+    { id: 'q/r1', after: ['q/r2'] }, { id: 'q/r2' },
+  ];
+  const groups = board.proposalGroups(owed, []);
+  const chain = groups[0];
+  const drawn = JSON.stringify(chain && chain.tree);
+  if (groups.length === 2 && chain.edges.length === 2 && chain.roots.join() === 'p/g6'
+      && drawn === JSON.stringify([{ id: 'p/g6', under: [{ id: 'p/g7', under: [{ id: 'p/g4', under: [] }] }] }])) {
+    test.check('two proposals that touch are ONE question, rooted at the prerequisite nothing '
+      + 'else waits on, and an unrelated pair is a separate one');
+  } else {
+    test.fail('groups ' + JSON.stringify(groups.map(function (g) { return { roots: g.roots, n: g.edges.length }; }))
+      + ' tree ' + drawn);
+  }
+  const g6 = chain.moves.filter(function (m) { return m.id === 'p/g6'; })[0];
+  if (g6 && g6.from === 3 && g6.to === 1) {
+    test.check('and it shows the implied change: the root prerequisite moves from 3rd to 1st');
+  } else {
+    test.fail('moves ' + JSON.stringify(chain.moves));
+  }
+}
+
+// THE CONTROL: accepted edges are not asked again. Without this, a board
+// re-asking settled questions would pass the grouping check above.
+{
+  const groups = board.proposalGroups([{ id: 'p/a', after: ['p/b'] }, { id: 'p/b' }],
+    [{ from: 'p/a', to: 'p/b', state: 'accepted' }]);
+  if (groups.length === 0) {
+    test.check('with its only dependency accepted, a tree asks nothing');
+  } else {
+    test.fail('still asking ' + JSON.stringify(groups));
+  }
+}
+
 test.reportSuccessFailureCount();

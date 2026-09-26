@@ -319,16 +319,6 @@ const test = {
                 ' ' + ICON.ERROR);
         }
         const afterTag = after.length ? ' {after:' + after.join(',') + '}' : '';
-        // THE PARAGRAPH HE READS, WHEN IT IS CLOSE AT HAND. Andy, 2026-09-27:
-        // "the five most urgent to-do's for me have a nice english paragraph
-        // explaining, the following items have a title.... so it's not prose
-        // that is composed it's measured urgency". Written here, by whoever
-        // declares the to-do, and placed by the ranking — never composed at
-        // render time. Its own line, one line, so no free text ever rides
-        // inside the AWAITING line the board parses.
-        if (est && typeof est.explain === 'string' && est.explain.trim()) {
-            this.comment('EXPLAIN ' + req + ': ' + est.explain.replace(/\s+/g, ' ').trim());
-        }
         this.comment('AWAITING ' + req + afterTag + ' [' + unit + ']' + tag + ': ' +
             (note || 'the unit is not there to be tested') + ' ⏳');
     },

@@ -197,4 +197,68 @@ function settle(owedList, rulings) {
   return { owed: accepted, proposed: proposed, rejectedStill: rejectedStill };
 }
 
-module.exports = { rank: rank, settle: settle };
+// ── ONE QUESTION PER TREE, NOT ONE LINE PER EDGE ─────────────────────
+//
+//   Andy, 2026-09-27: "specify a dependency do-do like this: "these tow
+//   functions are needed by the following to-do's: R34, R23, R45, do you
+//   accept the implied change in priorities?" — and the "X waits on Y"
+//   lines did not make dependencies obvious; drawn as trees, they did.
+//
+// Proposed edges that touch each other form ONE question: accepting part
+// of a chain is not a thing he was asked. Each group answers:
+//   roots   the prerequisites nothing else in the group waits on... in
+//           reverse: the to-dos that must land FIRST, with nothing under them
+//   edges   every proposed edge in the group, which a yes accepts
+//   tree    root -> the to-dos that wait on it -> what waits on those
+//   moves   [{ id, from, to }] positions before and after accepting, for
+//           every to-do whose place would change
+//
+// `owedList` must arrive in age order, so positions tie the way the board
+// breaks ties.
+function proposalGroups(owedList, rulings) {
+  const st = settle(owedList, rulings);
+  const props = st.proposed;
+  if (!props.length) return [];
+
+  // Group proposed edges into connected components.
+  const parent = Object.create(null);
+  function find(x) { while (parent[x] && parent[x] !== x) x = parent[x]; return x; }
+  function join(a, b) { parent[a] = parent[a] || a; parent[b] = parent[b] || b; parent[find(a)] = find(b); }
+  props.forEach(function (e) { join(e.from, e.to); });
+  const groups = Object.create(null);
+  props.forEach(function (e) { (groups[find(e.from)] = groups[find(e.from)] || []).push(e); });
+
+  const before = rank({ owed: st.owed }).order;
+  const posBefore = Object.create(null);
+  before.forEach(function (id, i) { posBefore[id] = i + 1; });
+
+  return Object.keys(groups).map(function (g) {
+    const edges = groups[g];
+    // Dependents of each node over accepted edges plus this group's.
+    const trial = st.owed.map(function (o) {
+      const extra = edges.filter(function (e) { return e.from === o.id; }).map(function (e) { return e.to; });
+      return { id: o.id, after: o.after.concat(extra) };
+    });
+    const waiting = Object.create(null);
+    trial.forEach(function (o) { o.after.forEach(function (t) { (waiting[t] = waiting[t] || []).push(o.id); }); });
+    const inGroup = Object.create(null);
+    edges.forEach(function (e) { inGroup[e.from] = true; inGroup[e.to] = true; });
+    // A root waits on nothing within the group.
+    const roots = Object.keys(inGroup).filter(function (id) {
+      return !edges.some(function (e) { return e.from === id; });
+    });
+    function tree(id, seen) {
+      if (seen[id]) return { id: id, under: [], again: true };
+      const next = Object.assign({}, seen); next[id] = true;
+      return { id: id, under: (waiting[id] || []).map(function (c) { return tree(c, next); }) };
+    }
+    const after = rank({ owed: trial }).order;
+    const moves = [];
+    after.forEach(function (id, i) {
+      if (posBefore[id] !== i + 1) moves.push({ id: id, from: posBefore[id], to: i + 1 });
+    });
+    return { roots: roots, edges: edges, tree: roots.map(function (r) { return tree(r, {}); }), moves: moves };
+  }).sort(function (a, b) { return b.edges.length - a.edges.length; });
+}
+
+module.exports = { rank: rank, settle: settle, proposalGroups: proposalGroups };
