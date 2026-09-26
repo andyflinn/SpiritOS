@@ -7,7 +7,7 @@
 **One test is broken, 13 requirements are declared and not built yet, and 2 THINGS ARE STOPPED waiting for you, with 2 older question(s) behind them, (5 more already ruled and now ours).**
 
 ```
-161 suites   3074 green   1 red   1 unhappy   13 owed      run 780426a
+161 suites   3077 green   1 red   1 unhappy   13 owed      run 1fa6d04
 ```
 
 ---
@@ -102,8 +102,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +7 green
-- ✅ **built or withdrawn:** cycle-10/R5
+- +3 green
 
 ---
 

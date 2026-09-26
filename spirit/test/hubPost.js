@@ -24,7 +24,10 @@
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
-const hub = require('../run/js/hub').createHub(process.cwd());
+const hubMod = require('../run/js/hub');
+const hub = hubMod.createHub(process.cwd());
+const os = require('os');
+const seenPeers = require('../run/js/seenPeers');
 
 test.startTest('hub.handlePost — the router verb, callable without a server');
 
@@ -190,14 +193,138 @@ function run() {
                               } else {
                                 test.fail('got ' + bad.status + ' ' + bad.body);
                               }
-                              noAppNamesTheRing();
-                              test.reportSuccessFailureCount();
+                              return theChooserAttachesHints().then(function () {
+                                noAppNamesTheRing();
+                                test.reportSuccessFailureCount();
+                              });
                             });
                         });
                     });
                 });
             });
         });
+    });
+}
+
+// ---------------------------------------------------------------------
+// THE OTHER HALF OF THE CHOOSER — WHICH HINTS, IN WHICH ORDER.
+// ---------------------------------------------------------------------
+//
+// Written 2026-09-26 as the BEFORE/AFTER CONTROL for extracting the relay
+// chooser out of handlePost, which Andy approved: "yes, we want that
+// ortho- thinggie". spiritos-f6 asked the right question before starting
+// — whether any assertion pins WHICH relay and WHICH hints for a given
+// roll — and the honest answer was no.
+//
+// THE GAP THIS CLOSES. Everything above stubs presence as `relaysNaming`
+// alone, with no `detail()` and no shadow routes. So the hints branch
+// (hub.js:1223, `if (!where.length && !wanted)`) was only ever entered
+// EMPTY — which is why "a peer no relay names is refused at once" passes:
+// with no connected relay it falls through to the 503 below it. The whole
+// second half of the chooser was unexercised, and nothing else in the
+// tree reaches it: hubPost.js is the ONLY suite that calls handlePost,
+// routeHints.js and partnerAvailability.js never touch hub at all,
+// routeStash.js uses only hub.shadow and hintWire.js only hub.relayRequest.
+//
+// So an extraction preserving relaysNaming ordering and `via` — which the
+// checks above do pin — could change hint content, hint ORDER, or the
+// empty case, and the entire harness would stay green.
+//
+// WHAT IT PINS, each one a thing a refactor could silently change:
+//   the relay is `connected[0]`, not one that merely names the peer
+//   the hints are the shadow's routes, best-ranked-first
+//   they arrive as router.post's FOURTH argument (sendPacket, hub.js:2085)
+//   and with no routes that argument is UNDEFINED, not an empty array
+//
+// A NOTE FOR WHOEVER COPIES THIS FIXTURE: the router above captures only
+// three arguments, so a copy of it cannot see hints at all and every
+// assertion here would pass vacuously. This one takes four on purpose.
+function theChooserAttachesHints() {
+  test.subHeading('Choosing a relay when none of them names the peer');
+
+  // Its own root, so the shadow is this suite's and not the checkout's —
+  // `createHub(process.cwd())` above reads the real one.
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hub-hints-'));
+  const onRoot = hubMod.createHub(root);
+  const AT_BETTER = 'RELAYKEY-PROVED';
+  const AT_WORSE = 'RELAYKEY-ARRIVED';
+
+  // Noted WORSE FIRST, so an implementation that simply kept insertion
+  // order would fail the ordering check rather than pass it by luck.
+  const shadow = hubMod.shadow(root);
+  shadow.note(PEER, { at: AT_WORSE, via: 'MINE', rank: seenPeers.ARRIVED });
+  shadow.note(PEER, { at: AT_BETTER, via: 'MINE', rank: seenPeers.PROVED });
+
+  const sent = [];
+  function depsWith(connected) {
+    return {
+      router: {
+        // FOUR arguments. Three is how this check becomes vacuous.
+        post: function (url, to, text, hints) {
+          sent.push({ url: url, to: to, hints: hints });
+          return Promise.resolve({ ok: true, status: 200, hash: 'h9', text: 'ack' });
+        },
+      },
+      presence: {
+        relaysNaming: function () { return []; },
+        detail: function () { return connected; },
+      },
+    };
+  }
+
+  // TWO CONNECTED RELAYS, because with one the check below cannot tell
+  // `connected[0]` from `connected[connected.length - 1]` — and a mutation
+  // test proved it could not: reversing that index left this suite green
+  // until a second relay was added here.
+  const res = fakeRes();
+  return onRoot.handlePost({}, res, bodyOf({ to: PEER, text: 'hello' }),
+    depsWith({ [RELAY_A]: {}, [RELAY_B]: {} }))
+    .then(function () {
+      if (sent.length === 1 && sent[0].url === RELAY_A) {
+        test.check('no relay names the peer, so the packet goes through the FIRST of the two '
+          + 'connected relays — which of them partners with the hinted one is the relays\' '
+          + 'knowledge, not this node\'s');
+      } else {
+        test.fail('posted ' + JSON.stringify(sent));
+      }
+
+      const hints = sent.length ? sent[0].hints : null;
+      if (Array.isArray(hints) && hints.length === 2
+          && hints[0] === AT_BETTER && hints[1] === AT_WORSE) {
+        test.check('and the route hints ride along BEST-RANKED FIRST, proved before arrived — '
+          + 'noted in the opposite order here, so insertion order would fail this');
+      } else {
+        test.fail('hints were ' + JSON.stringify(hints) + ', wanted ['
+          + AT_BETTER + ', ' + AT_WORSE + ']');
+      }
+
+      // ── AND THE EMPTY CASE IS UNDEFINED, NOT [] ──────────────────────
+      //
+      // `hints.length ? hints : undefined` (hub.js:1247). An empty array
+      // would put an empty `hints` field on the wire, which is a claim
+      // that this node knows of no route — different from saying nothing.
+      const bare = hubMod.createHub(fs.mkdtempSync(path.join(os.tmpdir(), 'hub-nohints-')));
+      const seen = [];
+      const res2 = fakeRes();
+      return bare.handlePost({}, res2, bodyOf({ to: 'NOROUTESKEY', text: 'x' }), {
+        router: {
+          post: function (url, to, text, hints) {
+            seen.push({ had: arguments.length, hints: hints });
+            return Promise.resolve({ ok: true, status: 200, hash: 'h', text: '' });
+          },
+        },
+        presence: {
+          relaysNaming: function () { return []; },
+          detail: function () { return { [RELAY_A]: {} }; },
+        },
+      }).then(function () {
+        if (seen.length === 1 && seen[0].hints === undefined) {
+          test.check('with no route known, the hints argument is UNDEFINED rather than an '
+            + 'empty list — saying nothing, not claiming to know of no route');
+        } else {
+          test.fail('expected undefined hints, got ' + JSON.stringify(seen));
+        }
+      });
     });
 }
 
