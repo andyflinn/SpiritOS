@@ -873,7 +873,13 @@ flight per member, oldest first, and a refused request is requeued ahead
 of newer ones. **Deliberately NOT added:** a cap on how many visitors may
 wait at appShellApp. That was offered and not taken, on the bet above. If
 measured load proves the bet wrong, that is the lever. The per-request
-time limit (above) stays owed either way.
+time limit (above) stays owed either way. **And members make the bet
+safer:** *"and member are expected to have lower visitor frequencies, AND
+separate unique routes through relay"*. A member's visitors travel on that
+member's own route. They add little load and do not pile onto the owner's.
+Whether the relay's per-member budget is counted per route or only per
+sending key is for the implementer to confirm against decision 0016
+before relying on it.
 
 **So every route served, by a node or a puppet, is negotiated and contracted** (Andy: *"so all
 routes served are negotiated and contracted."*, then *"by nodes or puppets"*). No route is served
