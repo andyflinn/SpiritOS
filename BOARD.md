@@ -106,7 +106,7 @@ shown rather than hidden.
 
 ## puppets/G6 — a puppet's stored owner key, owner-only
 
-`PUPPETS` · status **OPEN**
+`PUPPETS` · status **DONE**
 
 - **missing:** a puppet's stored owner key, owner-only — **~20% there**, guess: small — the readOnly mechanism exists, the key and its planting do not
   

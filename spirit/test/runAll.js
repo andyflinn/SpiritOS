@@ -497,7 +497,28 @@ function ageWordsFromDay(day) {
 
 function needsYouSection(titles, declaredIds, blockedRows) {
   const out = [];
-  const uncounted = uncountedOpen(titles, declaredIds);
+  // ── A REQUIREMENT ON THE BOARD TWICE IS THE BOARD DISAGREEING WITH
+  // ── ITSELF ──────────────────────────────────────────────────────────
+  //
+  // Andy found "prove the relay cannot read it" listed as a stopped row
+  // AND again under the older questions. Both entries were correct and
+  // together they overstated what is open — the page asking him twice
+  // for one decision.
+  //
+  // A blocking row now names the requirement ids it represents, in
+  // `covers`, and anything covered is left out of the backlog. DERIVED,
+  // NOT REMEMBERED: nobody marks a requirement as already-shown, so
+  // nobody can forget to unmark it when the row goes.
+  // FED THROUGH THE SAME MATCHER, not a second one. `uncountedOpen`
+  // already resolves a reference like `cycle-10/R10` against keys of the
+  // form `2026-09-23-sealed-posts-cycle-10/R10`, fuzzily and in one
+  // place. A first attempt here compared ids exactly, matched nothing,
+  // and would have grown a second spelling of a rule this file already
+  // has — which is the defect the whole week has been about.
+  const covered = openBlocks().reduce(function (all, b) {
+    return all.concat(b.covers || []);
+  }, []);
+  const uncounted = uncountedOpen(titles, (declaredIds || []).concat(covered));
   const blocked = blockedRows || [];
   const allBlocks = openBlocks();
   // THREE STATES, NOT TWO. Andy, 2026-09-26, of a decision he had already

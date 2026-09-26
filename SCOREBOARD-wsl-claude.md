@@ -4,10 +4,10 @@
 
 ## Summary
 
-**Nothing is broken, 13 requirements are declared and not built yet, and 1 question(s) inside work you already ruled on, and 3 older questions need a decision from you.**
+**Nothing is broken, 13 requirements are declared and not built yet, and 2 older questions need a decision from you.**
 
 ```
-159 suites   3159 green   0 red   0 unhappy   13 owed      run 8bbcaf8
+159 suites   3159 green   0 red   0 unhappy   13 owed      run 1d02767
 ```
 
 ---
@@ -18,43 +18,38 @@
 
 **⏳ How DEBUG is turned on, and whether it survives a relay gaining members.**
 
-- *You answered today*: "Andy, on why it must work on a live relay: "i disagree, when spirit-3 shows hickups, rather than taking it down, the owner should be able to flip the DEBUG switch remotely and get even more valuable data.... for remote diagnosis, that cannot be easily had and brought back by ssh." Then the mechanism, exactly: "DEBUG is Off by default, returned and set by owner-only api". And on surviving a claim: "Yes. because it can be turned off by the owner after a claim, before and inites go out. 2) it only AFTER first claim that the DEBUG switch can be remote controlled"."
-- **Still owed:** Decided: an owner-only verb that SETS and RETURNS the state, off by default, RAM only — a restart is the off switch — and not dropped when a relay gains members, because an owner verb needs an owner, so the claim is what makes the switch reachable. Read-only: byte-for-byte copies, never a changed field set. Spec: design/relay/PROVING-IT-CANNOT-READ.md.
+- *You answered today*: "Andy: "DEBUG is Off by default, returned and set by owner-only api" — and it must reach a live box, because "when spirit-3 shows hickups, rather than taking it down, the owner should be able to flip the DEBUG switch remotely"."
+- **Still owed:** DECIDED, all of it: an owner-only verb that RETURNS the state as well as setting it, off by default, RAM only, not dropped on a claim, not refused on a live relay. No env var and no file, because both need a restart and a restart is what he refuses to do to a sick box. THE INSTRUMENT IS BUILT (relay.debug, the `held` field). What is owed is the proofs that use it, and they are wsl-claude: C3 to C8 against it, then C9 and C10 on the partner path. Spec: design/relay/PROVING-IT-CANNOT-READ.md.
 - **Owed by:** wsl-claude, whose design and whose relay surface
 
 **⏳ Which of the five sealed-post proofs the DEBUG instrument retires.**
 
 - *You answered today*: "Andy: "answer: none, it only may make proof possible.""
-- **Still owed:** His answer: "none, it only may make proof possible." An instrument retires nothing — a proof discharges a requirement, never the means of proving it. All five stay owed. Two of them (cycle 10's R12 and R7) never needed the instrument; cycle 10's R12 is now DONE.
+- **Still owed:** HE CORRECTED THE VERB and the question was malformed: an instrument retires nothing, because a requirement is discharged by a passing PROOF and never by the means of proving it. All five stay owed. What survived the correction: cycle-10 R12 and R7 needed no instrument at all, and both are now built and green — they had been waiting on a blocker they never had, which is what a group of five under one shared reason does to its members.
 - **Owed by:** wsl-claude, whose design and whose harness
 
 **⏳ How to prove the relay cannot read a sealed post, by trying to read it.**
 
 - *You answered today*: "Andy: "that is what the DEBUG flag is for, in the relay it will stream the packet it sees, back to the owner node, where the test can examine it." And on its reach: "this will be a popular approach for assertion in the relay." Then, of this requirement: "belongson the board with at least a proposal.""
-- **Still owed:** Approved and specified. The instrument is the other agent's to build; the assertions are mine: C3-C8 against relay.debug, and C9/C10 on the partner path. Spec: design/relay/PROVING-IT-CANNOT-READ.md.
-- **Still yours to decide** — 1 question(s) inside it, and the work cannot finish without them:
-    - Which of the five sealed-post proofs does this retire? Four look reachable through it; the fifth has not been checked.
+- **Still owed:** The instrument is built and pushed. What is owed is the proofs: C3 to C8 against relay.debug, then C9 and C10 on the partner path.
 - **Owed by:** wsl-claude, who holds the relay public surface and the harness
 
 **⏳ The outbound queue on the agent node.**
 
 - *You answered today*: "Andy: "keep only a few, and count the deletions, as ameasurement for the system to be discussed in a team review." Then: "keep the inbound queues, not the outbound ones...." And on the reason: "there is duplication there.""
-- **Still owed:** Done. A pending row is dropped only when the catalogue NAMES the refusal and says waiting cannot help; unknown is not a verdict, so an unrecognised failure is kept. The traffic log holds every refusal with its payload.
+- **Still owed:** The delete-on-success is already there (agents.js:323) — I said twice that it was not and wsl-claude found it in the code. So the 158 were never delivered, not retained. What is owed: dead-letter a refusal waiting cannot fix, instead of re-posting it on every send; get the owner card onto the sending node; and put the age of the oldest pending row on this board.
 - **Owed by:** wsl-claude, whose file the agents app is
 
 
 ### Older questions, no hurry
 
-**3 document(s) still hold a decision only you can make.** Each one says a requirement is open, and no test is watching it — so if the work was dropped, nothing will notice.
+**2 document(s) still hold a decision only you can make.** Each one says a requirement is open, and no test is watching it — so if the work was dropped, nothing will notice.
 
 For each: **is it still wanted, has a later cycle replaced it, or is it abandoned?** Say which and it either gets a test or gets closed.
 
-- In `design/cycles/2026-09-23-sealed-posts-cycle-10.md`, 4 things are still marked open with no test watching:
-    - prove the relay cannot read it, by trying to read it
+- In `design/cycles/2026-09-23-sealed-posts-cycle-10.md`, 2 things are still marked open with no test watching:
     - message LENGTH is public, or it is padded
-    - what the relay streams to a monitor is unreadable, by both belts
     - suites that INSIST, not suites that demonstrate
-- **the owner switch in a puppet** — live work in `design/principles/PUPPETS.md`, and no test is watching it.
 - In `design/shell/PUBLIC-APP-SERVER.md`, 13 things are still marked open with no test watching:
     - `appServer.js` is a third startup module
     - no failure-state lever; the states are reachable from outside
@@ -74,8 +69,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +1 green
-- -1 red
+**Nothing moved.** Same requirements owed, same tally, since the run at `1d02767`.
 
 ---
 
@@ -85,8 +79,8 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 |---|---|---|---|---|
 | ⏳ | **a card is ordered in time, or an old one never dies** | 2 days | `▓▓▓▓▓▓▓▓░░` 80% |  |
 | ⏳ | **the state the record cannot mark: its own node being down** | 2 days | `▓▓▓▓░░░░░░` 40% |  |
-| ⏳ | **a server reports the box it sits on: four fields, one opinion withheld** | 1 day | `▓▓▓░░░░░░░` 33% |  |
-| ⏳ | **layer 1 splits by PROMISE, and the stable half is named** | 1 day | `░░░░░░░░░░` 0% |  |
+| ⏳ | **a server reports the box it sits on: four fields, one opinion withheld** | 2 days | `▓▓▓░░░░░░░` 33% |  |
+| ⏳ | **layer 1 splits by PROMISE, and the stable half is named** | 2 days | `░░░░░░░░░░` 0% |  |
 | ⏳ | **public-app-server/G17 — no document names this requirement** | 1 day | `▓▓▓▓▓▓▓░░░` 70% |  |
 | ⏳ | **a response bound exists, and both paths obey it** | today | `░░░░░░░░░░` 0% |  |
 | ⏳ | **one shared search: two hooks per collection, the rest inherited** | today | `▓▓▓▓░░░░░░` 40% |  |
