@@ -374,6 +374,13 @@ over is the warning above. Each row carries an icon link to that
 component's own screen: natterDetails for a relay, and the app's own UI
 for an app. Being a spreadsheet, it edits in place.
 
+**Each row names its server type; the link is optional.** Andy, 2026-09-26:
+*"so links to the detail panel are optional, it'd be nice to know server
+type... relay, puppy (puppet) etc"*. The type is a fact the component
+reports about itself, such as relay or puppet (DICTIONARY.md, *Puppet*).
+It does not breach the exclusion below: the type says what KIND of server
+occupies the row, not which app it serves or what that app does.
+
 **What this depends on, still open:**
 - **Editing in place needs the `MemoryMax` question ruled** (below, *How
   remote resource configuration reaches the cap*). The recommended option
