@@ -67,10 +67,24 @@ only needs an appShellApp"*. So:
   `appServer.js:842` throwing the body away is the same defect in its old
   location. appServerBoundary.js:459: *"fatal for join, where the invite IS
   the answer."*
-- **Recommended, to keep "faceless" true:** appShellApp runs as the one app
-  of an app-server process on the VPS (`server.js --app appShellApp`). The
-  process supplies the HTTP, and the app folder still has none, so
-  `appShellGrant.js:96-118` stays green. Unconfirmed.
+- **The VPS process that hosts appShellApp is a NODE that mounts it, not an
+  app server.** wsl-claude, 2026-09-26, checked at the tree. This corrects
+  a recommendation made minutes earlier, which would have run appShellApp
+  as the app of an app-server process. An app server never EXECUTES app
+  code. Its `servable()` (`appServer.js:1030-1034`) hands `<app>.html` and
+  `<app>.js` to the browser as static files. appShellApp only runs when
+  `nodeApps.mountAll` mounts it and hands it its api (`nodeApps.js:303-321`).
+  Under the withdrawn shape, the grant exchange would never have run, and
+  `GET /appShellApp.js` would have served its source to anyone. Meanwhile
+  `appShellGrant.js` would have stayed green, because it drives the
+  nodeApps path. The tested door and the used door would have diverged.
+  Mounting it on a node is the path the suite already proves, and it needs
+  no new loader. **Owed with it:** boot a node shaped like the VPS and
+  assert, by what was actually mounted and not by folder text, that
+  appShellApp is mounted and nothing serves its source. **Still open:** what
+  on the VPS takes the browser's request for a subdomain. A node's HTTP
+  refuses anything that is not loopback with a valid Host (`server.js:675`),
+  so that is new code either way.
 
 **Read the two stages below as an agenda, not a board.** Stage 1 is being
 worked. **Stage 2 is not designed** — the requirements listed under it
