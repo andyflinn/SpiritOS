@@ -812,6 +812,10 @@ subdomain is the existing grant exchange between app and owner
 (`appShellApp.js`, two packets). The result is a row in a routing table the
 owner manages and appShellApp implements. A node accepts a packet that
 appShellApp carries because a row the owner granted names that route.
+**The same negotiation runs between a member and the owner, down the road**
+(Andy: *"and between member and owner, down the road."*). A member
+registering a subdomain for their own node is the same exchange. That is
+after alpha.
 
 ---
 
