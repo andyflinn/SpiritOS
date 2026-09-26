@@ -128,4 +128,51 @@ test.startTest('The board ranks what unblocks most first, and says what it canno
   }
 }
 
+// ── A PROPOSED DEPENDENCY WAITS FOR ANDY ─────────────────────────────
+{
+  const owed = [
+    { id: 'x/a' },
+    { id: 'x/b', after: ['x/a'] },            // accepted below
+    { id: 'x/c', after: ['x/a', 'x/b'] },     // c->a proposed, c->b rejected
+  ];
+  const rulings = [
+    { from: 'x/b', to: 'x/a', state: 'accepted' },
+    { from: 'x/c', to: 'x/b', state: 'rejected', said: 'no' },
+  ];
+  const st = board.settle(owed, rulings);
+  const r = board.rank({ owed: st.owed });
+  const kept = st.owed.map(function (o) { return o.id + ':' + o.after.join(','); }).join(' ');
+  if (kept === 'x/a: x/b:x/a x/c:' && r.unblocks['x/a'] === 1) {
+    test.check('only an ACCEPTED dependency shapes the order — the proposed one and the rejected '
+      + 'one count for nothing until he rules');
+  } else {
+    test.fail('kept ' + kept + ', counts ' + JSON.stringify(r.unblocks));
+  }
+  if (st.proposed.length === 1 && st.proposed[0].from === 'x/c' && st.proposed[0].to === 'x/a'
+      && st.proposed[0].gain === 1) {
+    test.check('the unruled dependency is a to-do for him, measured by what accepting it would '
+      + 'change: one more to-do would wait on x/a');
+  } else {
+    test.fail('proposed ' + JSON.stringify(st.proposed));
+  }
+  if (st.rejectedStill.length === 1 && st.rejectedStill[0].to === 'x/b') {
+    test.check('a dependency declared again after he rejected it is reported, so nobody asks '
+      + 'him the same thing twice');
+  } else {
+    test.fail('rejectedStill ' + JSON.stringify(st.rejectedStill));
+  }
+}
+
+// THE CONTROL: with every dependency accepted, nothing is left to propose.
+// Without it, settle() reporting everything as proposed would pass above.
+{
+  const st = board.settle([{ id: 'x/a' }, { id: 'x/b', after: ['x/a'] }],
+    [{ from: 'x/b', to: 'x/a', state: 'accepted' }]);
+  if (st.proposed.length === 0 && st.rejectedStill.length === 0) {
+    test.check('with every dependency ruled on, there is nothing left to ask him');
+  } else {
+    test.fail('still proposing ' + JSON.stringify(st.proposed));
+  }
+}
+
 test.reportSuccessFailureCount();

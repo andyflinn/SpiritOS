@@ -60,6 +60,8 @@ const NOT_A_SUITE = [
   // The board's ranking graph. Pure, asserts nothing; boardRankSuite.js is
   // the suite that holds it to account.
   'boardRank.js',
+  // Andy's rulings on dependencies between to-dos: data, read by the board.
+  'edges.js',
   // NOT A SUITE AND DELIBERATELY SO: the rows an agent writes by hand when
   // it stops and waits for Andy. It reports nothing and asserts nothing —
   // the board reads it. Listed here rather than given a startTest, because
@@ -552,14 +554,33 @@ function ageWordsFromDay(day) {
 // boardRank.js holds the graph and its suite; this only feeds it. Open
 // questions are the blocking rows Andy has not answered, keyed by their
 // text, and what they release is what they `cover`.
+function requirementTitle(titles, id) {
+  const k = requirementFor(titles, id);
+  return k ? k.title : id;
+}
+
+function edgeRulings() {
+  try {
+    const rows = require('./edges.js');
+    return Array.isArray(rows) ? rows : [];
+  } catch (e) { return []; }
+}
+
 function rankBoard(rows, titles) {
-  return require('./boardRank.js').rank({
-    owed: (rows || []).map(function (r) { return { id: r.id, after: r.after || [] }; }),
+  // ONLY WHAT HE ACCEPTED SHAPES THE ORDER; the rest are his to-dos.
+  const settled = require('./boardRank.js').settle(
+    (rows || []).map(function (r) { return { id: r.id, after: r.after || [] }; }),
+    edgeRulings());
+  const ranking = require('./boardRank.js').rank({
+    owed: settled.owed,
     questions: openBlocks().filter(function (b) { return !b.settled; })
       .map(function (b) { return { key: String(b.decision || ''), covers: b.covers || [] }; }),
     isDone: function (id) { const k = requirementFor(titles, id); return !!(k && k.status === 'DONE'); },
     isKnown: function (id) { return !!requirementFor(titles, id); },
   });
+  ranking.proposed = settled.proposed;
+  ranking.rejectedStill = settled.rejectedStill;
+  return ranking;
 }
 
 function needsYouSection(titles, declaredIds, blockedRows, ranking) {
@@ -595,7 +616,8 @@ function needsYouSection(titles, declaredIds, blockedRows, ranking) {
   // row needs US, not him, and keeps its place until the work lands.
   const stopped = allBlocks.filter(function (b) { return !b.settled; });
   const settled = allBlocks.filter(function (b) { return b.settled; });
-  if (!blocked.length && !uncounted.length && !stopped.length) return out;
+  const anyProposed = !!(ranking && ranking.proposed && ranking.proposed.length);
+  if (!blocked.length && !uncounted.length && !stopped.length && !anyProposed) return out;
   out.push('## What needs you');
   out.push('');
 
@@ -645,6 +667,28 @@ function needsYouSection(titles, declaredIds, blockedRows, ranking) {
       if (b.costs) out.push('- **What it is holding up:** ' + b.costs);
       if (b.why) out.push('- **Why it is yours:** ' + b.why);
       out.push('');
+    });
+    out.push('');
+  }
+
+  // DEPENDENCIES AN AGENT PROPOSED, FOR HIM TO SETTLE. Andy: "in fact
+  // proposed dependencies are issues themselves" — to-dos, in his corrected
+  // word. Ranked by what accepting each would change. The handle is the
+  // pair, so he can paste it back with yes or no.
+  const proposed = (ranking && ranking.proposed) || [];
+  if (proposed.length) {
+    out.push('### Dependencies to settle');
+    out.push('');
+    out.push('**' + (proposed.length === 1 ? 'One to-do' : proposed.length + ' to-dos') +
+      ' of yours: an agent says one thing has to land before another. Yes makes it count ' +
+      'in the order below; no is kept, so it is not proposed again.**');
+    out.push('');
+    proposed.forEach(function (e, n) {
+      const top = proposed.length > 3 && n < 3 ? '⭐ ' : '';
+      out.push('- ' + top + '**(' + handleFor(titles, e.from) + ') waits on (' + handleFor(titles, e.to) + ')** — ' +
+        requirementTitle(titles, e.from) + ', after ' +
+        requirementTitle(titles, e.to) + '. ' +
+        (e.gain ? '*Accepting it puts ' + e.gain + ' more to-do' + (e.gain === 1 ? '' : 's') + ' behind the second.*' : ''));
     });
     out.push('');
   }
@@ -1029,6 +1073,13 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
     return n + ((b.settled && b.asks) ? b.asks.length : 0);
   }, 0);
   const mineCount = needing.length + docCount;
+  // ONE RANKING PER RENDER, computed before the headline so the headline and
+  // the sections below it cannot disagree about what is his.
+  const ranking = rankBoard(rows, titles);
+  const proposedNow = (ranking.proposed || []).length;
+  if (proposedNow) {
+    says.push('and ' + proposedNow + ' dependenc' + (proposedNow === 1 ? 'y' : 'ies') + ' for you to settle');
+  }
   if (stoppedNow) {
     says.push(stoppedNow === 1
       ? 'and ONE THING IS STOPPED waiting for you'
@@ -1064,7 +1115,6 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
   // the helpers above held a second copy; a prose fix then landed on the copy
   // that does not run. One function, two callers, no drift.
   const red = redSection(tally.failing || []);
-  const ranking = rankBoard(rows, titles);
   const mine = needsYouSection(titles, nowIds, needing, ranking);
   red.forEach(function (l) { out.push(l); });
   mine.forEach(function (l) { out.push(l); });
@@ -1107,8 +1157,14 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
   out.push('');
   const byAge = rows.slice().sort(function (a, b) { return (a.at || 1e12) - (b.at || 1e12); });
   const rankOf = Object.create(null);
+  // THE SAME SETTLED EDGES THE COUNTS USE. The first version ranked this
+  // table from the raw declarations, so a dependency Andy had not yet
+  // accepted moved a row to the top while its own count read zero — the
+  // order and the number beside it disagreeing, caught on a probe run.
+  // Re-ranked here only so ties fall to age rather than to id.
   require('./boardRank.js').rank({
-    owed: byAge.map(function (r) { return { id: r.id, after: r.after || [] }; }),
+    owed: require('./boardRank.js').settle(
+      byAge.map(function (r) { return { id: r.id, after: r.after || [] }; }), edgeRulings()).owed,
   }).order.forEach(function (id, i) { rankOf[id] = i; });
   byAge.sort(function (a, b) { return rankOf[a.id] - rankOf[b.id]; });
 
@@ -1166,6 +1222,10 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
       unwatched: 'which is open but no test watches it',
       itself: 'itself' }[e.why] || e.why;
     notes.push('(' + handleFor(titles, e.from) + ') waits on (' + handleFor(titles, e.to) + '), ' + what + '.');
+  });
+  (ranking.rejectedStill || []).forEach(function (e) {
+    notes.push('(' + handleFor(titles, e.from) + ') is declared to wait on (' + handleFor(titles, e.to) +
+      ') again, after you said no' + (e.said ? ': "' + e.said + '"' : '') + '. It does not count.');
   });
   ranking.undeclared.forEach(function (u) {
     notes.push('A question to you covers (' + handleFor(titles, u.id) + '), which no test declares, ' +

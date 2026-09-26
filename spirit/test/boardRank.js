@@ -147,4 +147,54 @@ function cyclesIn(owedList, owed) {
   return out;
 }
 
-module.exports = { rank: rank };
+// ── A DEPENDENCY IS PROPOSED UNTIL ANDY SETTLES IT ───────────────────
+//
+//   Andy, 2026-09-27: "you may add dependencies, the regocgnition/
+//   acceptance of which (by andy) might cause different rankings the next
+//   time around" — and "in fact proposed dependencies are issues
+//   themselves", then correcting his own word: they are to-dos.
+//
+// So an `after` an agent declares does not shape the order by itself. It
+// is a TO-DO FOR HIM, and only his `accepted` makes it count. `rulings` is
+// edges.js: [{ from, to, state: 'accepted'|'rejected', said, at }].
+//
+// Answers the owed list with only accepted edges, the proposals ranked by
+// how much accepting each would change — the number of to-dos that would
+// newly wait on its target — and any edge declared again after he
+// rejected it, which is re-proposing what he already said no to.
+function settle(owedList, rulings) {
+  const ruled = Object.create(null);
+  (rulings || []).forEach(function (r) { ruled[r.from + ' ' + r.to] = r; });
+  const owed = Object.create(null);
+  owedList.forEach(function (o) { owed[o.id] = true; });
+
+  const accepted = owedList.map(function (o) {
+    return { id: o.id, after: (o.after || []).filter(function (t) {
+      const r = ruled[o.id + ' ' + t];
+      return r && r.state === 'accepted';
+    }) };
+  });
+  const base = rank({ owed: accepted });
+
+  const proposed = [];
+  const rejectedStill = [];
+  owedList.forEach(function (o) {
+    (o.after || []).forEach(function (t) {
+      const r = ruled[o.id + ' ' + t];
+      if (r && r.state === 'accepted') return;
+      if (r && r.state === 'rejected') { rejectedStill.push({ from: o.id, to: t, said: r.said || '' }); return; }
+      // Only an edge between two owed to-dos is a question worth his time;
+      // one pointing anywhere else is reported by rank() as a dead edge.
+      if (!owed[t] || t === o.id) return;
+      const trial = accepted.map(function (a) {
+        return a.id === o.id ? { id: a.id, after: a.after.concat([t]) } : a;
+      });
+      const gain = rank({ owed: trial }).unblocks[t] - base.unblocks[t];
+      proposed.push({ from: o.id, to: t, gain: gain });
+    });
+  });
+  proposed.sort(function (a, b) { return b.gain - a.gain; });
+  return { owed: accepted, proposed: proposed, rejectedStill: rejectedStill };
+}
+
+module.exports = { rank: rank, settle: settle };

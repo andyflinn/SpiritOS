@@ -7,7 +7,7 @@
 **Nothing is broken, 13 requirements are declared and not built yet, and 2 older questions need a decision from you.**
 
 ```
-163 suites   3094 green   0 red   0 unhappy   13 owed      run 571a99c
+163 suites   3098 green   0 red   0 unhappy   13 owed      run 1402823
 ```
 
 ---
@@ -69,7 +69,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-**Nothing moved.** Same requirements owed, same tally, since the run at `571a99c`.
+- +4 green
 
 ---
 
