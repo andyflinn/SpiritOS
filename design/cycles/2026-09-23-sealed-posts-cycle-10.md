@@ -776,6 +776,51 @@ owner. The ordering that makes a rotation safe is now complete, and so is
 the counter it turns on; nothing yet produces a rotation deliberately.
 Declared in `cycle10Pending.js`, so the harness keeps counting it.
 
+**Decided (Andy, 2026-09-26): rotation is a crisis measure.** He said
+*"so rotation is a crisis.measure and should not be used wastefully"*,
+and *"true"* to the rest. Each rotation costs every peer a re-fetch and
+breaks posts already sealed to the old key, so:
+
+- **The owner triggers it.** It is an owner-only act, and the owner runs
+  it when he believes the key is exposed. It is not automatic: a thief
+  holding our keys could rotate too, so nothing should rotate on the
+  thief's evidence alone.
+- **Restart is not a trigger.** Rotating on every restart would shorten
+  the window in which a copied key works, but it pays the cost every
+  time and does not protect the history, which trafficLog keeps readable
+  (R14). "Rotate on restart, with the key kept in memory only" is a
+  separate design question and has not been opened.
+- **Debug mode is not a trigger.** It streams sealed bytes only, and
+  `spirit/test/relayCannotRead.js` proves the owner cannot open them. If
+  a debug mode ever shows readable text or key material, leaving it
+  becomes a trigger. If a crisis is what sends the owner into debug, the
+  crisis is the trigger and debug is how he looks into it.
+
+**Recommended, and agreed ("true"): show the owner the exposure hints,
+above all when debug is on**, so he can tell a key problem from a bug
+before he rotates. Two hints are computed today and thrown away (verified
+at ce4998a):
+
+- **A relay holds a card for OUR key that is strictly newer than ours.**
+  `relay.js:3538` refuses with `if (held && fresh && !(fresh.at > held.at))`.
+  An EQUAL counter is routine, because the node pushes the same card on
+  every stream open. Only strictly newer means that someone else holds
+  our keys, or that our home was restored from an older backup. The node
+  does not read this reply.
+- **Our own stream is replaced by another connection on our key.**
+  `presence.js:150` returns `replaced: !!(old && old !== sink)`, and the
+  caller at `relay.js:4894` ignores it. Two live copies of one home would
+  keep knocking each other off. A half-dead socket does this once, so the
+  hint needs a rate, not a single event.
+
+Nothing in the tree detects that the home was copied to another box.
+`appServer.js`'s `fingerprint()` is the nearest model, and it exists only
+for app servers.
+
+**Still open:** how a rotation is reported to the owner (the existing owner
+report, or a notice of its own), and the shape of the two hints on his
+screen.
+
 ### R14 — the endpoints keep the words; the relay keeps the envelope
 
 Verified in the tree: peerPost.js:291 writes payload: answer.text into
