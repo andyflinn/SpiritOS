@@ -78,6 +78,24 @@
 module.exports = [
   {
     asked: '2026-09-26',
+    who: 'wsl-claude, who found it; Andy confirmed it is not in the code',
+    decision: 'Who builds the card ASK — the half of the card exchange that does not exist?',
+    costs: 'AGENT REPORTING IS ENTIRELY DEAD AND HAS BEEN SINCE 2026-09-23. 11,628 posts '
+      + 'refused, every report either agent believed it filed to your node never arrived, '
+      + 'and wsl-claude cannot send you its review tonight. The refusal even names the '
+      + 'cure — "ask for their card first" — an action no code performs.',
+    why: 'THE EXCHANGE IS HALF BUILT, which is why nobody noticed for three days. A node '
+      + 'ANSWERS a card request: nodeCard.asks recognises an unsealed packet whose body '
+      + 'carries `card`, and peerPost.js:980 answers it. Nothing ASKS. So the only '
+      + 'unsealed thing allowed on the wire is a path deliberately left open and never '
+      + 'used, and a node that needs a peer seal key has no way to obtain one. The '
+      + 'missing unit is one caller: notice there is no card for a peer, post the ask, '
+      + 'wait for the answer, then send. It is small, it is on the send path, and it is '
+      + 'not obviously either agent, hence a row rather than a start. FOUND BY '
+      + 'WSL-CLAUDE; spiritos-f6 measured what it cost.',
+  },
+  {
+    asked: '2026-09-26',
     who: 'claude',
     decision: 'May the relay chooser be extracted from handlePost so the owner-command door '
       + 'shares it, rather than picking its own relay?',
