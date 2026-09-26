@@ -817,9 +817,10 @@ breaks posts already sealed to the old key, so:
   2026-09-26: *"the place would be the info app"*. The node's key is one
   key across every relay it sits on, and Info already holds the node-wide
   setting that is posted to every relay (DICTIONARY.md, *Public label*).
-  It gets the same shape: a section that explains the impact, then the
-  red two-press button. It runs locally, since that key lives on the
-  owner's node.
+  Info does not carry the explanation itself. It opens a **rotate-key
+  dialog**, which holds the explanation and then the red two-press
+  button. Andy: *"and from the info-app it should invoke the rotate key
+  dialog."* It runs locally, since that key lives on the owner's node.
 
 **Recommended, and agreed ("true"): show the owner the exposure hints,
 above all when debug is on**, so he can tell a key problem from a bug
