@@ -466,16 +466,13 @@ replayed one re-executes.
 
 ### G6 — a puppet's stored owner key, owner-only
 
-**Verify:** `spirit/test/ownerCommand.js` and `spirit/test/puppetsPending.js`.
-**Status:** DONE (2026-09-26). `nodeApps.ownerCommandIn` decides whether an
-arrival is a command from this puppet's owner and verifies the signature
-BEFORE anything is dispatched; the loopback dispatch itself is still G7. Ten
-checks: the control, the mode gate, no signature from the owner key, a lifted
-transport signature, a sibling-signed command, a replay at a sibling, a
-signature moved onto another envelope, a stale minute, plain chat, an app
-packet. Andy ruled the shape — *"that signature must exist before the puppet
-routes the request to loopback"* — and, asked which half decided it, *"the
-second half counts"*. G9 is the sibling case this closes.
+**Verify:** `spirit/test/puppetsPending.js` (`puppets/G6`, awaiting).
+**Status:** OPEN, about 20%. The readOnly mechanism exists; the stored key and
+its planting do not. `puppetsPending.js:183` checks `nodeApps` for
+`OWNER_KEY` or `owner.json` and finds neither. *(Until 2026-09-27 this line
+said DONE: 402dac4 copied G5's status paragraph over G6's. wsl-claude caught
+it because the new board ranking treats a dependency on a DONE item as dead,
+so "G7 waits on G6" would have been silently ignored.)*
 
 Read-only to the puppet through the mechanism `allow.json` already uses,
 or a puppet rewrites its owner and takes itself over — the hole closed at

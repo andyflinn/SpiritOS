@@ -153,7 +153,9 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
     'one function that wraps a node-api call as a signed packet to a puppet. Addressed as a WIRE namespace: ' +
     'verbTable.js:74 makes wire the client\'s failure contract and a namespace is uniformly one or the other, ' +
     'so a remote caller must name the proxy rather than the local verb',
-    { there: 0, cost: 'a sitting' });
+    // PROPOSED (claude, 2026-09-27; order read by wsl-claude): sending
+    // commands that nothing dispatches is inert, so the shim lands first.
+    { there: 0, cost: 'a sitting', after: ['puppets/G7'] });
 
   // The receiving half, and the reason it is its own requirement: the
   // switch is where a remote packet becomes local authority, so it is
@@ -192,7 +194,9 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
     'a readable carrying the unwrapped body and a writable capturing the answer, so server.js:921\'s dispatch runs ' +
     'unchanged. A handler reaching for req.headers or req.socket fails ALONE and QUIETLY, which is why puppets/G3 covers ' +
     'this and not a per-verb test',
-    { there: 0, cost: 'a sitting' });
+    // PROPOSED (claude, 2026-09-27; order read by wsl-claude): dispatching
+    // on loopback while a puppet can rewrite its own owner key is a takeover.
+    { there: 0, cost: 'a sitting', after: ['puppets/G6'] });
 }
 
 // ── THE SIBLING-PUPPET DIRECTION, WHICH ANDY'S MODE GATE DOES NOT REACH

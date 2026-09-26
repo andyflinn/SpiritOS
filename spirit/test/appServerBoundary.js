@@ -487,7 +487,11 @@ test.awaiting('public-app-server/G17', 'the answer body reaching the door', fals
   { there: 70, cost: 'the transport half is DONE and verified by both agents (peerPost.js:363-373 unseals into answer.text before resolving). ' +
     'What is missing is that appServer stops discarding it, and an owner-side program that answers with a body — the second is the master, ' +
     'and it is the unbuilt half of every show. This is declared awaiting rather than red because an assertion needs a master that answers, ' +
-    'and asserting against a fixture owner that answers nothing would test the fixture' });
+    'and asserting against a fixture owner that answers nothing would test the fixture',
+    // PROPOSED (claude, 2026-09-27; wsl-claude: "reads right to me"): join's
+    // invite IS an app's reply, so the master answering waits on an app being
+    // able to reply at all.
+    after: ['transport/R12'] });
 
 // ── G9 — strict posture, and refusals that are walkable ──────────────
 test.subHeading('G9 — every refusal is a member of a declared set, and carries its code');
