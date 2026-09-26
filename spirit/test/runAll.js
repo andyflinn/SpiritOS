@@ -699,7 +699,10 @@ function liveDocuments() {
 // sentence under it is what keeps it honest.
 let lastBoard = { byReq: Object.create(null), titles: Object.create(null) };
 
-function writeScoreboard(byReq, titles, tally) {
+// `preRows` and `stale` are the fast path: --board replays the last full
+// run's rows rather than running 154 suites to learn what it already
+// recorded. See the --board branch in main().
+function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
   const NL = String.fromCharCode(10);
   const REPO = path.join(DIR, '..', '..');
   const box = (function () {
@@ -750,7 +753,7 @@ function writeScoreboard(byReq, titles, tally) {
     return /\bblocked\b/i.test(said) ? 'something not named' : '';
   }
 
-  const rows = ids.map(function (id) {
+  const rows = preRows || ids.map(function (id) {
     const known = requirementFor(titles, id);
     const units = byReq[id].units;
     const there = units.reduce(function (n, u) {
@@ -956,6 +959,13 @@ function writeScoreboard(byReq, titles, tally) {
   // THE ROW IS APPENDED WHATEVER HAPPENED, because "nothing moved" is a
   // measurement too and a gap in the log would read as a run that did
   // not happen.
+  // A RENDER IS NOT A RUN. The first version of --board appended a row
+  // like any other write, so re-rendering the page invented a run that
+  // never happened — and the next "what moved" would have compared
+  // against it and reported nothing, correctly, about the wrong thing.
+  // Caught by reading the log after proving the page, which is the only
+  // reason it did not ship.
+  if (replay) return;
   try {
     fs.appendFileSync(RUNS, JSON.stringify({
       at: Math.floor(Date.now() / 1000), commit: commit, box: box,
@@ -967,8 +977,15 @@ function writeScoreboard(byReq, titles, tally) {
       // His attention is the scarce thing; a requirement he has already
       // paid attention to unblock must not then sit unnoticed.
       blocked: rows.filter(function (r) { return r.blocked; }).map(function (r) { return r.id; }),
+      // THE ROWS THEMSELVES, so --board can replay a full run instead of
+      // re-running it. The owed list comes from `test.awaiting` calls,
+      // which exist only at runtime — storing what ARRIVED is the same
+      // arrival-not-resemblance argument as everywhere else, and it means
+      // there is no second parser over the *Pending.js files to drift.
+      rows: rows,
     }) + NL);
   } catch (e) { /* a log that cannot be written must not fail a run */ }
+  if (stale) console.log('--- board re-rendered from the run at ' + stale + ', no suites run');
   console.log('--- SCOREBOARD-' + box + '.md' + (saysLead ? ' and SCOREBOARD.md' : '') +
     ' rewritten (' + rows.length + ' owed)');
 }
@@ -1053,6 +1070,59 @@ function writeBoard(byReq, titles) {
   } catch (e) {
     console.log('\n--- BOARD.md could not be written: ' + e.message);
   }
+}
+
+// ── --board: THE PAGE IN A SECOND, WITHOUT RUNNING ANYTHING ─────────
+//
+//   Andy, 2026-09-26: "update it frequently, after every single issue
+//   addressed" and "think about how you can supply the scoreboard
+//   quicker." A full run is 104 seconds, so a board that only exists
+//   after one is a board nobody refreshes.
+//
+// THE PAGE HAS TWO HALVES WITH DIFFERENT COSTS. What needs him —
+// blocking.js and every Status in design/ — is on disc and is re-read
+// live, so it is CURRENT. The tally, what is red, and the owed
+// declarations are knowable only from a real run, so they are replayed
+// from the last full row in the runs log and STAMPED WITH ITS COMMIT.
+//
+// It says STALE when that commit is not HEAD, and that is the whole
+// honesty of it: a stale board is visible in the commit line, where a
+// subset board was not. Same argument as the filtered-run guard.
+function boardOnly() {
+  const RUNS = path.join(DIR, 'scoreboard-runs.log');
+  let last = null;
+  try {
+    const lines = fs.readFileSync(RUNS, 'utf8').trim().split(String.fromCharCode(10)).filter(Boolean);
+    for (let i = lines.length - 1; i >= 0 && !last; i -= 1) {
+      let row = null;
+      try { row = JSON.parse(lines[i]); } catch (e) { row = null; }
+      // Only a row that carries its rows can be replayed; older rows
+      // predate that field and are skipped rather than half-rendered.
+      if (row && Array.isArray(row.rows)) last = row;
+    }
+  } catch (e) { last = null; }
+
+  if (!last) {
+    console.log('--- no full run to re-render from. Run the harness once without a filter first.');
+    process.exit(1);
+  }
+
+  let head = '';
+  try {
+    head = require('child_process').execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
+      cwd: path.join(DIR, '..', '..'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
+  } catch (e) { head = ''; }
+
+  // THE STALENESS IS THE COMMIT, NOT THE CLOCK. A board an hour old on an
+  // unchanged tree is current; one a minute old on a changed tree is not.
+  const stale = (head && last.commit && head !== last.commit) ? last.commit : null;
+
+  writeScoreboard(Object.create(null), requirementTitles(), {
+    suites: last.suites, green: last.green, red: last.red, unhappy: last.unhappy,
+    redLines: last.redLines || [],
+  }, last.rows, stale || last.commit, true);
+  process.exit(0);
 }
 
 async function main() {
@@ -1367,4 +1437,5 @@ async function main() {
   process.exit(unhappy.length ? 1 : 0);
 }
 
-main();
+if (args.indexOf('--board') !== -1) boardOnly();
+else main();

@@ -7,7 +7,7 @@
 **Nothing is broken, 12 requirements are declared and not built yet, and 3 THINGS ARE STOPPED waiting for you, with 6 older question(s) behind them.**
 
 ```
-154 suites   3122 green   0 red   0 unhappy   12 owed      run 1ccfd57
+154 suites   3122 green   0 red   0 unhappy   12 owed      run 9c22cce
 ```
 
 ---
@@ -79,8 +79,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +1 green
-- -1 red
+**Nothing moved.** Same requirements owed, same tally, since the run at `9c22cce`.
 
 ---
 
