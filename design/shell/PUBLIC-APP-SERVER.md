@@ -39,11 +39,28 @@ the tree; the numbering is not.
 **ALPHA SCOPE.** Andy, 2026-09-26: *"alpha will only deliver a basic
 appShellApp and join"*. Anything else in this file is after alpha unless a
 later ruling says otherwise. That includes the front door and pass-through
-(above G9), the box sheet (G10), and the rest of stage 2. **Recommended, so
-alpha does not wait on the front door:** `join` runs as its own app server,
-and `join.spirit.andyflinn.com` reaches it through a Caddy block. That is
-the deployment fact `appServer.js:14-20` already says publicness is, not a
-router.
+(above G9), the box sheet (G10), and the rest of stage 2.
+
+**THE ALPHA TOPOLOGY.** Andy, 2026-09-26: *"there is only an app server on
+the app-owners node, the face is routed via appShellApp"*, then *"the VPS
+only needs an appShellApp"*. So:
+- **An app runs only on its owner's node**, as an app server there. No app
+  runs on the VPS. (This withdraws a recommendation made an hour earlier,
+  that `join` should run on the public box behind a Caddy block.)
+- **The VPS runs appShellApp and nothing else.** A browser asking for
+  `join.spirit.andyflinn.com` reaches appShellApp, which routes the request
+  to the node holding that name. That node's app server answers.
+- **So basic routing IS alpha.** The front door and pass-through sections
+  below are out of scope only beyond what this path needs.
+- **G17, restated for this topology.** The app's answer (for `join`, the
+  invite) must travel back along that route to the browser.
+  `appServer.js:842` throwing the body away is the same defect in its old
+  location. appServerBoundary.js:459: *"fatal for join, where the invite IS
+  the answer."*
+- **Recommended, to keep "faceless" true:** appShellApp runs as the one app
+  of an app-server process on the VPS (`server.js --app appShellApp`). The
+  process supplies the HTTP, and the app folder still has none, so
+  `appShellGrant.js:96-118` stays green. Unconfirmed.
 
 **Read the two stages below as an agenda, not a board.** Stage 1 is being
 worked. **Stage 2 is not designed** — the requirements listed under it
