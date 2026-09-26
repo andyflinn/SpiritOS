@@ -151,6 +151,23 @@ module.exports = [
       + 'missing is that the stream says things ABOUT the packet and not the packet. '
       + 'ONE DOOR, off by default, refusing to start on a public relay. Four of the five '
       + 'sealed-post proofs wait on it. Design: design/relay/PROVING-IT-CANNOT-READ.md.',
+    // THE THREE THE DESIGN LEFT OPEN, and they are his. Added after he
+    // asked "where is the design proposal for the relay testing via the
+    // monitor stream?" — of a document that was written, linked and
+    // named on this board. The row said who would BUILD it, which reads
+    // as nothing-here-for-you, while these three decide whether it can
+    // be built at all. Each is answerable in a sentence.
+    // TWO OF THE THREE ARE ANSWERED. Andy, 2026-09-26: "DEBUG is Off by
+    // default, returned and set by owner-only api" — both directions in
+    // one verb, no restart. And, overruling the document's own
+    // recommendation: "when spirit-3 shows hickups, rather than taking
+    // it down, the owner should be able to flip the DEBUG switch
+    // remotely" — so it is not dropped when a relay gains members and
+    // not refused on a public relay.
+    asks: [
+      'Which of the five sealed-post proofs does this retire? Four look reachable '
+        + 'through it; the fifth has not been checked.',
+    ],
   },
   // ANSWERED AND REMOVED. Andy, 2026-09-26: "a puppet always routes requests
   // through its owner ... the puppet is uable to sign any request with the owners

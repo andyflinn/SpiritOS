@@ -4,10 +4,10 @@
 
 ## Summary
 
-**One test is broken, 12 requirements are declared and not built yet, and ONE THING IS STOPPED waiting for you, with 3 older question(s) behind them.**
+**2 tests are broken, 13 requirements are declared and not built yet, and 1 question(s) inside work you already ruled on, and 3 older questions need a decision from you.**
 
 ```
-155 suites   3129 green   2 red   1 unhappy   12 owed      run a95b0d1
+157 suites   3134 green   2 red   2 unhappy   13 owed      run c5b16ed
 ```
 
 ---
@@ -16,10 +16,13 @@
 
 **Something that used to pass now fails.** These are broken, not unfinished — the owed list further down is work nobody has written yet.
 
-**❌ `capacityFresh.js`** — 2 checks no longer pass.
+**❌ `capacityFresh.js`** — one check no longer passes.
 
-  - ubuntu-24.04-wsl2: measured at a380af2 (2026-09-23), perMemberRowBytes=603 — but capacity moved since:
   - windows-10.0: measured at 6d7dfa7 (2026-09-23), perMemberRowBytes=603 — but capacity moved since:
+
+**❌ `shutdownWire.js`** — one check no longer passes.
+
+  - a relay did not come up:     wrote relay-state/config.json (measured: 256 MB RAM, 256 MB disc)
 
 ---
 
@@ -27,10 +30,18 @@
 
 ### Ruled, and now ours
 
+**⏳ How to prove the relay cannot read a sealed post, by trying to read it.**
+
+- *You answered today*: "Andy: "that is what the DEBUG flag is for, in the relay it will stream the packet it sees, back to the owner node, where the test can examine it." And on its reach: "this will be a popular approach for assertion in the relay." Then, of this requirement: "belongson the board with at least a proposal.""
+- **Still owed:** The channel already exists: relay.js:4604 streams to the owner only, and the owner node needs no second flag because it is already the subscriber. What is missing is that the stream says things ABOUT the packet and not the packet. ONE DOOR, off by default, refusing to start on a public relay. Four of the five sealed-post proofs wait on it. Design: design/relay/PROVING-IT-CANNOT-READ.md.
+- **Still yours to decide** — 1 question(s) inside it, and the work cannot finish without them:
+    - Which of the five sealed-post proofs does this retire? Four look reachable through it; the fifth has not been checked.
+- **Owed by:** wsl-claude, who holds the relay public surface and the harness
+
 **⏳ The outbound queue on the agent node.**
 
 - *You answered today*: "Andy: "keep only a few, and count the deletions, as ameasurement for the system to be discussed in a team review." Then: "keep the inbound queues, not the outbound ones...." And on the reason: "there is duplication there.""
-- **Still owed:** ANDY HAS GIVEN THE SHAPE, 2026-09-26: "the agent app is special, a post is implicitely coupled with a delete in the sent-log." IT IS ALREADY THE CODE SHAPE — agents.js:323 keeps only non-200 rows and rewrites the file, so a delivered post does remove itself. I said twice that it never deletes and both times I was wrong; wsl-claude caught it in the code. THE 158 WERE THEREFORE NEVER DELIVERED, not delivered-and-retained: every one was refused no-seal-key because the sending node holds no card for the owner. So the sent-log is not a duplicate of trafficLog after all — the log says what was ATTEMPTED, for good, and the sent-log says what is STILL OWED and empties itself. What is owed: (1) A REFUSAL THAT WAITING CANNOT FIX MUST BE DEAD-LETTERED rather than re-posted on every send. no-seal-key is a fact about the destination, not a transient, and retrying it turned 158 rows into 11,628 refusals. (2) The sending node needs the owner card, which is the open 1a/1b choice. (3) Optional, and Andy liked the direction: the age of the oldest pending row on the board, so a stuck channel is visible at a glance instead of after three days.
+- **Still owed:** The delete-on-success is already there (agents.js:323) — I said twice that it was not and wsl-claude found it in the code. So the 158 were never delivered, not retained. What is owed: dead-letter a refusal waiting cannot fix, instead of re-posting it on every send; get the owner card onto the sending node; and put the age of the oldest pending row on this board.
 - **Owed by:** wsl-claude, whose file the agents app is
 
 
@@ -40,15 +51,13 @@
 
 For each: **is it still wanted, has a later cycle replaced it, or is it abandoned?** Say which and it either gets a test or gets closed.
 
-- In `design/cycles/2026-09-12-transport-below-the-boundary.md`, 2 things are still marked open with no test watching:
-    - an app can reply, and a reply is the only evidence of being delivered
-    - the log must be able to PROVE what it claims
 - In `design/cycles/2026-09-23-sealed-posts-cycle-10.md`, 5 things are still marked open with no test watching:
     - prove the relay cannot read it, by trying to read it
     - the relay's hash must differ from the endpoints' hash of the words
     - message LENGTH is public, or it is padded
     - what the relay streams to a monitor is unreadable, by both belts
     - suites that INSIST, not suites that demonstrate
+- **the owner switch in a puppet** — live work in `design/principles/PUPPETS.md`, and no test is watching it.
 - In `design/shell/PUBLIC-APP-SERVER.md`, 13 things are still marked open with no test watching:
     - `appServer.js` is a third startup module
     - no failure-state lever; the states are reachable from outside
@@ -68,7 +77,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-**Nothing moved.** Same requirements owed, same tally, since the run at `b7b8b53`.
+- -8 green
 
 ---
 
@@ -85,9 +94,10 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 | ⏳ | **one shared search: two hooks per collection, the rest inherited** | today | `▓▓▓▓░░░░░░` 40% |  |
 | ⏳ | **one suite that makes every api call** | today | `░░░░░░░░░░` 0% |  |
 | ⏳ | **`peerOwnerPost()` on the owner's node** | today | `░░░░░░░░░░` 0% |  |
-| ⏳ | **the owner switch in a puppet** | today | `░░░░░░░░░░` 0% |  |
 | ⏳ | **a puppet's stored owner key, owner-only** | today | `▓▓░░░░░░░░` 20% |  |
 | ⏳ | **the loopback shim** | today | `░░░░░░░░░░` 0% |  |
+| ⏳ | **an app can reply, and a reply is the only evidence of being delivered** | today | `░░░░░░░░░░` 0% |  |
+| ⏳ | **the log must be able to PROVE what it claims** | today | `░░░░░░░░░░` 0% |  |
 
 *Percentages are the guesses the declarations carry — `testSupport`:
 "printed as guesses… to be argued with during a design sitting, not to

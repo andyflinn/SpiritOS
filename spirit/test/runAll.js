@@ -64,6 +64,12 @@ const NOT_A_SUITE = [
   // code (see its own header for why the board's "blocked is a join, not a
   // flag" rule cannot serve this one).
   'blocking.js',
+  // A DECLARATION, NOT A SUITE: which capacity figures depend on the box
+  // and which cannot. It asserts nothing — capacityFresh reads it. Its
+  // own header says why it is not inside measureCapacity.js: that file
+  // MEASURES WHEN REQUIRED, so asking it for the kinds starts a
+  // measurement.
+  'capacityKinds.js',
   // A TOOL, not a suite: rewrites the front page's generated capacity
   // block from the Ubuntu measurement (Andy, 2026-09-23 — "the front page
   // README.md should have a marked block that will be auto-updated with
@@ -540,6 +546,21 @@ function needsYouSection(titles, declaredIds, blockedRows) {
       out.push('- *You answered ' + (age || String(b.settled)) + '*' +
         (b.answer ? ': "' + b.answer + '"' : '.'));
       if (b.owed) out.push('- **Still owed:** ' + b.owed);
+      // AND WHAT IS STILL OWED BY HIM INSIDE IT. Andy, 2026-09-26, asked
+      // "where is the design proposal for the relay testing via the
+      // monitor stream?" — of a document that was written, linked from
+      // design/README.md and named on this very board.
+      //
+      // THE BOARD ANNOUNCED A DOCUMENT AND NOT A QUESTION. A settled row
+      // said the work was owed by an agent, which reads as "nothing here
+      // for you", while three decisions inside it were his and nobody's
+      // else. A design waiting on a ruling is invisible if the only
+      // thing the page says about it is who will build it.
+      if (b.asks && b.asks.length) {
+        out.push('- **Still yours to decide** — ' + b.asks.length +
+          ' question(s) inside it, and the work cannot finish without them:');
+        b.asks.forEach(function (q) { out.push('    - ' + q); });
+      }
       // A ROW NOBODY CAN BE NAMED FOR IS ABANDONED AND SHOULD SAY SO,
       // which is blocking.js's own rule and the only way this section
       // cannot become a place work goes to be forgotten politely.
@@ -865,7 +886,21 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
     : rows.length + ' requirements are declared and not built yet');
   // THE STOPPED ONES ARE NAMED FIRST AND SEPARATELY, because they are the
   // only number on this line that is costing time right now.
-  const stoppedNow = openBlocks().length;
+  // THE HEADLINE MUST AGREE WITH THE SECTION BELOW IT. `openBlocks()`
+  // returns every row, settled or not, so this counted ruled-and-owed
+  // work as stopped: it said "5 THINGS ARE STOPPED waiting for you" when
+  // three were stopped and two were already answered. A summary that
+  // overstates what he owes is the same failure as one that hides it —
+  // he reads the headline and stops, and the two numbers disagreeing is
+  // how a page stops being believed.
+  const allNow = openBlocks();
+  const stoppedNow = allNow.filter(function (b) { return !b.settled; }).length;
+  const ruledNow = allNow.filter(function (b) { return b.settled; }).length;
+  // A ruled row may still hold questions that are HIS — see the `asks`
+  // field and the day he asked for a design that was already written.
+  const asksNow = allNow.reduce(function (n, b) {
+    return n + ((b.settled && b.asks) ? b.asks.length : 0);
+  }, 0);
   const mineCount = needing.length + docCount;
   if (stoppedNow) {
     says.push(stoppedNow === 1
@@ -875,6 +910,11 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
       says.push('with ' + mineCount + ' older question(s) behind ' +
         (mineCount === 1 ? 'it' : 'them'));
     }
+  } else if (asksNow) {
+    says.push('and ' + asksNow + ' question(s) inside work you already ruled on');
+  }
+  if (ruledNow && stoppedNow) {
+    says.push('(' + ruledNow + ' more already ruled and now ours)');
   } else {
     says.push(mineCount
       ? (mineCount === 1 ? 'and one older question needs a decision from you'
