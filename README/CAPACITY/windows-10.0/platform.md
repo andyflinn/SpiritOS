@@ -1,15 +1,15 @@
 # windows-10.0
 
-**Measured 2026-09-23, against `6d7dfa7`.**
+**Measured 2026-09-26, against `77e46e4`.**
 
 | | |
 |---|---|
 | platform | win32 10.0.26200 |
 | node | v24.20.0 |
-| harness | **1 red, 1 unhappy** — see `harness.txt` across 145 suites, 74s |
+| harness | **2 red, 1 unhappy** — see `harness.txt` across 157 suites, 104s |
 | per stream, process | **61 KB** |
 | a reachable peer | **579 B** |
-| bare node / relay at rest | 56 MB / 68 MB |
+| bare node / relay at rest | 50 MB / 62 MB |
 
 Both halves were taken in one run, so they describe the same tree.
 
