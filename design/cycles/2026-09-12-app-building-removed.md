@@ -147,7 +147,9 @@ The standard 0008 sets, made checkable. Both read
 should break — which is exactly the kind of claim that wants a check
 rather than a sentence.
 
-**Where they went, 2026-09-26:** two repositories of their own, on Andy's
+**Where they went, 2026-09-26:** [andyflinn/aiChat](https://github.com/andyflinn/aiChat)
+and [andyflinn/aiManager](https://github.com/andyflinn/aiManager), public, the same
+shape as [andyflinn/relayChat](https://github.com/andyflinn/relayChat) before them — on Andy's
 word — *"you make the repos, like with relay chat, all authorized, just get
 them out of here."* Each holds its entry script, its manifest and a README
 saying what it needs; `app/shared/claudeModels.json` travelled with AI
