@@ -36,6 +36,15 @@ otherwise"*), and no packet had said otherwise. It is kept rather than
 deleted because the measurements in it are real and were taken against
 the tree; the numbering is not.
 
+**ALPHA SCOPE.** Andy, 2026-09-26: *"alpha will only deliver a basic
+appShellApp and join"*. Anything else in this file is after alpha unless a
+later ruling says otherwise. That includes the front door and pass-through
+(above G9), the box sheet (G10), and the rest of stage 2. **Recommended, so
+alpha does not wait on the front door:** `join` runs as its own app server,
+and `join.spirit.andyflinn.com` reaches it through a Caddy block. That is
+the deployment fact `appServer.js:14-20` already says publicness is, not a
+router.
+
 **Read the two stages below as an agenda, not a board.** Stage 1 is being
 worked. **Stage 2 is not designed** — the requirements listed under it
 are the alpha plan's shape carried forward for discussion, and several
