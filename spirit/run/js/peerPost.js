@@ -123,6 +123,16 @@ function createPeerPost(opts) {
   // the node's relay keys and none of that belongs in the file that moves
   // packets. Given nothing, nothing is remembered — which is every suite
   // that does not care.
+  // ── WHO WE HAVE ALREADY ASKED FOR A CARD ─────────────────────────────
+  //
+  // Needed because the caller may post to the same peer many times in a
+  // burst: the agents outbox flushes its whole file on every send, and
+  // without this a node with no card would ask once PER ROW. One ask per
+  // peer per minute, remembered in RAM only — a card is fetched to make the
+  // next post possible, not recorded as a decision, and a restart asking
+  // again costs one packet.
+  var askedFor = Object.create(null);
+  var ASK_AGAIN_MS = 60000;
   var noteSeen = opts.noteSeen || null;
   var traffic = opts.traffic || null;
   // NODE-ONLY, AND SO IT IS INJECTED (cycle 10, R3). What to do with a
@@ -722,8 +732,50 @@ function createPeerPost(opts) {
     // key. Resolved here, before anything is registered or queued, so
     // the ordering everything below depends on — register, then forward
     // — is exactly as it was.
+    // ── AND IF THERE IS NO CARD, ASK FOR ONE (found by wsl-claude) ────
+    //
+    // THE CIRCUIT WAS COMPLETE EXCEPT FOR THIS CALL. `nodeCard.asks`
+    // recognises an ask, `answerCard` answers one, `askedCard` marks the
+    // slot, `keepCard` keeps the answer, and server.js:1265 records it with
+    // `cardVia: 'reply'` — whose own comment already says "This is us asking
+    // THEM: our own act, about a key we chose to look up". NOTHING ASKED.
+    //
+    // So the refusal above — "ask for their card first" — named an action no
+    // code performed, and it cost 11,628 refused posts between 2026-09-23 and
+    // 2026-09-26: every report either agent believed it had filed to the owner
+    // node, and one agent's cycle review, which could not be sent at all.
+    //
+    // THE ASK IS NOT A NEW FORMAT. `{ v: 1, body: { card: true } }` is what
+    // appServer.js:811 already posts, and it travels plain because the card is
+    // how you learn the key to seal to — the one countable exception named
+    // twenty lines above.
+    //
+    // IT IS AN ATTEMPT AND NOT A PROMISE. If no card arrives, the original
+    // post still refuses with the same 428 it refused with before: a plaintext
+    // fallback would hand everything to an attacker who can withhold a card,
+    // which is the rule this whole path exists to keep.
     return Promise.resolve(nodeCard.asks(text) ? '' : (sealKeyFor ? sealKeyFor(toKey) : ''))
       .catch(function () { return ''; })
+      .then(function (sealKey) {
+        // Nothing to fetch: already sealed-able, or itself an ask, or a router
+        // that does not seal (the partner router, relayServer.js:1082).
+        if (sealKey || nodeCard.asks(text) || !sealsPosts) return sealKey;
+        var last = askedFor[toKey] || 0;
+        if (Date.now() - last < ASK_AGAIN_MS) return sealKey;
+        askedFor[toKey] = Date.now();
+        // NO RECURSION, BY CONSTRUCTION RATHER THAN BY A GUARD: this post is
+        // a card ask, so `nodeCard.asks` is true of it on the way in and the
+        // branch above returns before reaching here.
+        return post(relayUrl, toKey, JSON.stringify({ v: 1, body: { card: true } }))
+          .catch(function () { return null; })
+          .then(function () {
+            // Look again. The answer arrives as a reply and is recorded by the
+            // keeper before this resolves, so the second lookup is the point
+            // of the whole exercise.
+            return Promise.resolve(sealKeyFor ? sealKeyFor(toKey) : '')
+              .catch(function () { return ''; });
+          });
+      })
       .then(function (sealKey) { return sealAndSend(sealKey); });
 
     function sealAndSend(sealKey) {
