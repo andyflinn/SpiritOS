@@ -4,10 +4,10 @@
 
 ## Summary
 
-**2 tests are broken, 13 requirements are declared and not built yet, and 1 question(s) inside work you already ruled on, and 3 older questions need a decision from you.**
+**One test is broken, 13 requirements are declared and not built yet, and 1 question(s) inside work you already ruled on, and 3 older questions need a decision from you.**
 
 ```
-157 suites   3145 green   2 red   2 unhappy   13 owed      run 7c2fff0
+157 suites   3146 green   1 red   1 unhappy   13 owed      run f3169f8
 ```
 
 ---
@@ -16,13 +16,9 @@
 
 **Something that used to pass now fails.** These are broken, not unfinished — the owed list further down is work nobody has written yet.
 
-**❌ `capacityFresh.js`** — one check no longer passes.
+**❌ `guarantees.js`** — one check no longer passes.
 
-  - windows-10.0: measured at 6d7dfa7 (2026-09-23), perMemberRowBytes=603 — but capacity moved since:
-
-**❌ `cycleCitations.js`** — one check no longer passes.
-
-  - bare R-numbers added — name the cycle beside the number ("gap R13", "cycle 3's R5"):
+  - the published block and the measurement disagree — run `node spirit/test/publishCapacity.js`: README.md capacity block is OUT OF DATE against ubuntu-24.04-ws…
 
 ---
 
@@ -89,7 +85,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +11 green
+**Nothing moved.** Same requirements owed, same tally, since the run at `f3169f8`.
 
 ---
 
