@@ -861,6 +861,20 @@ browser ← appShellApp ←─reply, re=hash── puppyReply() ←─ answer �
   loopback port), `puppyReply()`, and appShellApp's table of waiting
   requests with a time limit per entry.
 
+**The page waits its turn, a bet on low visitor frequency.** Andy,
+2026-09-27: *"the shell-lowest layer in face-mode, may need a
+request-queuer....(so as to not overload the relays transaction-per-member
+limit."*, then *"with the expected visitor freuquency at least the shell is
+capable of waiting its turn. I bet on that working fairly well."* So the
+lowest shell layer in face mode (the page's `ask`, G3's one home) keeps one
+request in flight and queues the rest. Across visitors, the VPS node's own
+`postQueue.js` already serialises against decision 0016's one request in
+flight per member, oldest first, and a refused request is requeued ahead
+of newer ones. **Deliberately NOT added:** a cap on how many visitors may
+wait at appShellApp. That was offered and not taken, on the bet above. If
+measured load proves the bet wrong, that is the lever. The per-request
+time limit (above) stays owed either way.
+
 **So every route served, by a node or a puppet, is negotiated and contracted** (Andy: *"so all
 routes served are negotiated and contracted."*, then *"by nodes or puppets"*). No route is served
 without a row the owner granted. A request for a domain with no row is
