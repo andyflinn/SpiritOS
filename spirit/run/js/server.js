@@ -1369,7 +1369,7 @@ contactBook.syncMarks(ROOT_DIR);
   // app's: `decode` goes in as a value, as ownerCommandIn already takes it.
   {
     const wire = require('./client/packet.js');
-    arrivals.subscribe(require('./nodeApps').puppetDoor({
+    arrivals.witness(require('./nodeApps').puppetDoor({
       rootDir: ROOT_DIR,
       handlerFor: function (verb) { return loopbackVerbs.handlerFor(verb); },
       post: function (relayUrl, toKey, text) { return peerRouter.post(relayUrl, toKey, text); },
@@ -1400,11 +1400,11 @@ contactBook.syncMarks(ROOT_DIR);
       route: function (to) { return presence ? hub.chooseRoute(presence, to) : { unreachable: true }; },
       post: function (relayUrl, toKey, text, hints) { return peerRouter.post(relayUrl, toKey, text, hints); },
     });
-    arrivals.subscribe(ownerPost.onArrival);
+    arrivals.witness(ownerPost.onArrival);
 
     // HIS SERVERS' BOX REPORTS, kept in memory and summed per box (G10).
     boxes = require('./boxes').createBoxes({ rootDir: ROOT_DIR, decode: wire.decode, isEnvelope: wire.isEnvelope });
-    arrivals.subscribe(boxes.onArrival);
+    arrivals.witness(boxes.onArrival);
     peerOwnerPost = function (puppetKey, verb, body) { return ownerPost.send(puppetKey, verb, body); };
   }
 

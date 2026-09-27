@@ -118,6 +118,30 @@ function createArrivals(opts) {
   // browser connection) and there is never a reason to address one.
   var subscribers = [];
 
+  // ── WITNESSES: THE NODE'S OWN LISTENERS, WHICH ARE NOT READERS ────────
+  //
+  // The owner door, peerOwnerPost's reply matcher and the box reports
+  // (server.js) each need to see every arrival. They were subscribers,
+  // and a subscriber that took a packet counted as its delivery, so every
+  // arrival was marked taken within milliseconds with no page open, and
+  // the backlog below never had anything to replay (wsl-claude measured
+  // 200 arrivals, 0 untaken). Worse, each took the whole backlog at
+  // startup. Andy's pages, and Desk's own log (AGENTS-UI.md, "they must
+  // keep their own logs"), lost everything that arrived while no browser
+  // was open.
+  //
+  // So a witness sees each arrival as it lands, is never handed the
+  // backlog, and never counts as the page that took it. Only a page (a
+  // subscriber) marks a row taken.
+  var witnesses = [];
+  function witness(fn) {
+    if (typeof fn !== 'function') return function () {};
+    witnesses.push(fn);
+    return function unwitness() {
+      witnesses = witnesses.filter(function (other) { return other !== fn; });
+    };
+  }
+
   // What the log is still holding for a page that has not opened. Asked
   // for on demand rather than cached: another process could have marked
   // rows, and a stale copy here would replay what somebody already read.
@@ -196,6 +220,10 @@ function createArrivals(opts) {
     // rest or reach back into peerPost — which calls this while it still
     // owes the sender a receipt. A browser's bad handler must not be
     // able to turn an arrival into a refusal.
+    witnesses.slice().forEach(function (fn) {
+      try { fn(message); } catch (e) { /* a witness is not a gate */ }
+    });
+
     var delivered = 0;
     subscribers.slice().forEach(function (fn) {
       try { fn(message); delivered += 1; }
@@ -242,7 +270,7 @@ function createArrivals(opts) {
   // to whoever is there, including nobody.
   function count() { return subscribers.length; }
 
-  return { note: note, subscribe: subscribe, count: count, pending: pending };
+  return { note: note, subscribe: subscribe, witness: witness, count: count, pending: pending };
 }
 
 module.exports = { createArrivals: createArrivals, createFanOut: createFanOut };

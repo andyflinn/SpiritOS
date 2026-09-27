@@ -251,6 +251,38 @@ function landed(log, hash, text, admitted) {
   fs.rmSync(home, { recursive: true, force: true });
 })();
 
+(function aWitnessIsNotAReader() {
+  // THE NODE'S OWN LISTENERS (the owner door, peerOwnerPost's reply
+  // matcher, the box reports) see every arrival but are not pages. As
+  // subscribers they took the backlog at startup and marked every later
+  // arrival taken, so nothing was ever left for a page (wsl-claude:
+  // 200 arrivals, 0 untaken), and Desk's own log missed all of it.
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-witness-'));
+  const log = logAt(home);
+  landed(log, 'w1', packet.encode('agents', { text: 'while the node was down' }).text);
+
+  const arrivals = arrivalsModule.createArrivals({ traffic: logAt(home) });
+  const seen = [];
+  arrivals.witness(function (m) { seen.push(m.hash); });
+  if (seen.length === 0) test.check('a witness is not handed the backlog when it starts watching');
+  else test.fail('the witness took the backlog: ' + JSON.stringify(seen));
+
+  landed(log, 'w2', packet.encode('agents', { text: 'with no page open' }).text);
+  const delivered = arrivals.note({ item: 'i2', hash: 'w2', from: 'PEERKEY', text: packet.encode('agents', { text: 'with no page open' }).text, at: '2026-09-27T06:00:00Z' });
+  if (seen.join(',') === 'w2' && delivered === 0) {
+    test.check('it sees a live arrival, and that arrival is not counted as delivered to anyone');
+  } else {
+    test.fail('witness saw ' + JSON.stringify(seen) + ', delivered ' + delivered);
+  }
+
+  const page = [];
+  arrivals.subscribe(function (m) { page.push(m.hash); });
+  if (page.join(',') === 'w1,w2') test.check('so the first page to open gets both, the old one and the one the witness saw');
+  else test.fail('the page got ' + JSON.stringify(page));
+
+  fs.rmSync(home, { recursive: true, force: true });
+})();
+
 (function aHeldStrangerIsNotBacklog() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlog-held-'));
   const log = logAt(home);
