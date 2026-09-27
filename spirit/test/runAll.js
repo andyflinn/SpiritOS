@@ -63,6 +63,9 @@ const NOT_A_SUITE = [
   // Whether the lead posts the board to Andy's node, decided pure;
   // boardPostSuite.js is the suite.
   'boardPost.js',
+  // Two nodes and a relay with an empty contact book, shared by cardFetch.js
+  // and cardRotation.js. Builds a world; asserts nothing.
+  'cardWorld.js',
   // Andy's rulings on dependencies between to-dos: data, read by the board.
   'edges.js',
   // NOT A SUITE AND DELIBERATELY SO: the rows an agent writes by hand when

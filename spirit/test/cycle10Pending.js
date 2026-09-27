@@ -153,16 +153,19 @@ test.subHeading('And the card the relay would seal to');
 //
 // `cardFrom` exists for exactly this and is commented as built ahead of
 // its caller — Andy: "we're building towards right now."
-test.awaiting('cycle-10/R13', 'nodeCard.rotate raising the counter and the seal key',
-  !!nodeCard.rotate,
-  'a node can rotate its cipher key and every peer takes the newer card and refuses the old',
-  // THE GUESS NAMES WHAT IT COUNTS (wsl-claude's amendment): a guess that
-  // cannot be checked is the one number on Andy's board nobody can audit.
-  { there: 50, cost: 'three of six parts exist — setCard refuses an older card (contacts.js), ' +
-      'cardFrom signs from a held identity (nodeCard.js), describe() advances the counter on a ' +
-      'change (nodeCard.js). Missing: the verb that makes a new keypair, the owner report, and ' +
-      'the sender asking again on will-not-open, which is how peers get the new card — Andy, ' +
-      '2026-09-26: "peers get it on demand. good."' });
+// ── cycle 10's R13 IS BUILT; ITS ASSERTIONS LIVE IN cardRotation.js ──
+//
+// Andy's title: "Get the damn rotate-button into the info app". Built by
+// claude-windows at 0a2a90b; this declaration then went red ("EXISTS NOW")
+// and handed it over, as it exists to. Only reachability here, so this file
+// does not become a second copy of that suite -- which is where the red is
+// while the sender cannot see the peer's will-not-open (see that suite).
+if (typeof nodeCard.rotate === 'function') {
+  test.check('the rotate exists as a unit — nodeCard.rotate, asserted in cardRotation.js: a strictly '
+    + 'rising counter, the old private key gone, history intact, and every peer moving to the new card once');
+} else {
+  test.fail('cycle 10\'s R13 regressed: nodeCard.rotate is gone');
+}
 
 // ── WHAT IS OPEN AND NOT DECLARED HERE, AND WHY ──────────────────────
 //

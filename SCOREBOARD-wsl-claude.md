@@ -4,11 +4,28 @@
 
 ## Summary
 
-**Nothing is broken, 12 requirements are declared and not built yet, and 1 dependency question for you, and 2 older questions need a decision from you.**
+**2 tests are broken, 11 requirements are declared and not built yet, and 1 dependency question for you, and 2 older questions need a decision from you.**
 
 ```
-168 suites   3153 green   0 red   0 unhappy   12 owed      run 088de86
+169 suites   3157 green   6 red   2 unhappy   11 owed      run 3053ca8
 ```
+
+---
+
+## What is red
+
+**Something that used to pass now fails.** These are broken, not unfinished — the owed list further down is work nobody has written yet.
+
+**❌ `capacityFresh.js`** — 2 checks no longer pass.
+
+  - ubuntu-24.04-wsl2: measured at f3169f8 (2026-09-26), perMemberRowBytes=603 — but capacity moved since:
+  - windows-10.0: measured at 77e46e4 (2026-09-26), perMemberRowBytes=603 — but capacity moved since:
+
+**❌ `cardRotation.js`** — 4 checks no longer pass.
+
+  - THE SENDER WAS TOLD IT WAS DELIVERED: its answer reads ok=true status 200, but the peer's refusal is INSIDE answer.text — {"ok":false,"status":400,"error":"t…
+  - old card after rotation: {"ok":false,"why":"not newer","held":1,"offered":1}
+  - burst after rotation: 5 of 5 arrived on 0 ask(s)
 
 ---
 
@@ -22,7 +39,7 @@
 
 - the face door and the puppet group (puppets/G10)
 
-**Do you accept the implied change in priorities?** (G17) from 5th to 1st.
+**Do you accept the implied change in priorities?** (G17) from 4th to 1st.
 
 ### Ruled, and now ours
 
@@ -57,7 +74,8 @@
 
 For each: **is it still wanted, has a later cycle replaced it, or is it abandoned?** Say which and it either gets a test or gets closed.
 
-- In `design/cycles/2026-09-23-sealed-posts-cycle-10.md`, 2 things are still marked open with no test watching:
+- In `design/cycles/2026-09-23-sealed-posts-cycle-10.md`, 3 things are still marked open with no test watching:
+    - Get the damn rotate-button into the info app (10/R13)
     - message LENGTH is public, or it is padded (10/R15)
     - suites that INSIST, not suites that demonstrate (10/R8)
 - In `design/shell/PUBLIC-APP-SERVER.md`, 13 things are still marked open with no test watching:
@@ -79,7 +97,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-**Nothing moved.** Same requirements owed, same tally, since the run at `3b30b1a`.
+**Nothing moved.** Same requirements owed, same tally, since the run at `3053ca8`.
 
 ---
 
@@ -87,22 +105,21 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 | # | handle | to-do | waits on | frees | owed | there | |
 |---|---|---|---|---|---|---|---|
-| 1 | 10/R13 | Get the damn rotate-button into the info app |  |  | 3 days | `▓▓▓▓▓░░░░░` 50% |  |
-| 2 | 11/C3 | the state the record cannot mark: its own node being down |  |  | 3 days | `▓▓▓▓░░░░░░` 40% |  |
-| 3 | public-app-server/G10 | a server reports the box it sits on: four fields, one opinion withheld |  |  | 2 days | `▓▓▓░░░░░░░` 33% |  |
-| 4 | public-app-server/G8 | layer 1 splits by PROMISE, and the stable half is named |  |  | 2 days | `░░░░░░░░░░` 0% |  |
-| 5 | G17 | join's answer travels back to the browser |  |  | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
-| 6 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 7 | puppets/G2 | one shared search: two hooks per collection, the rest inherited |  |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
-| 8 | puppets/G3 | one suite that makes every api call |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 9 | puppets/G4 | `peerOwnerPost()` on the owner's node | puppets/G7 |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 10 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | today | `░░░░░░░░░░` 0% |  |
-| 11 | transport/R16 | the log must be able to PROVE what it claims |  |  | today | `░░░░░░░░░░` 0% |  |
-| 12 | puppets/G10 | the face door and the puppet group | G14 (proposed), G17 (proposed) |  | today | `░░░░░░░░░░` 0% |  |
+| 1 | 11/C3 | the state the record cannot mark: its own node being down |  |  | 3 days | `▓▓▓▓░░░░░░` 40% |  |
+| 2 | public-app-server/G10 | a server reports the box it sits on: four fields, one opinion withheld |  |  | 2 days | `▓▓▓░░░░░░░` 33% |  |
+| 3 | public-app-server/G8 | layer 1 splits by PROMISE, and the stable half is named |  |  | 2 days | `░░░░░░░░░░` 0% |  |
+| 4 | G17 | join's answer travels back to the browser |  |  | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
+| 5 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 6 | puppets/G2 | one shared search: two hooks per collection, the rest inherited |  |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
+| 7 | puppets/G3 | one suite that makes every api call |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 8 | puppets/G4 | `peerOwnerPost()` on the owner's node | puppets/G7 |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 9 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | today | `░░░░░░░░░░` 0% |  |
+| 10 | transport/R16 | the log must be able to PROVE what it claims |  |  | today | `░░░░░░░░░░` 0% |  |
+| 11 | puppets/G10 | the face door and the puppet group | G14 (proposed), G17 (proposed) |  | today | `░░░░░░░░░░` 0% |  |
 
 **How the order was made.** 
 
-- 12 of 12 owed items have no dependency you have accepted, so they are ordered by age alone — 1 proposed one above waits for your yes or no.
+- 11 of 11 owed items have no dependency you have accepted, so they are ordered by age alone — 1 proposed one above waits for your yes or no.
 - (puppets/G4) waits on (puppets/G7), which is DONE — the edge is ignored.
 
 *Percentages are the guesses the declarations carry — `testSupport`:
