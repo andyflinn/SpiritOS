@@ -33,6 +33,16 @@ not describe. Run the harness if in doubt.
 
 *Declared in `appServerBoundary.js`*
 
+## public-app-server/G18 — the app process serves its owner node over a named pipe, not a TCP port
+
+`PUBLIC-APP-SERVER` · status **OPEN**
+
+- **missing:** the app process listening on a named pipe — **~0% there**, guess: a sitting
+  
+  the app process opens no TCP port; it serves its owner node through a named pipe (a Unix socket on Linux), and the owner node forwards to it
+
+*Declared in `appServerBoundary.js`*
+
 ## public-app-server/G8 — layer 1 splits by PROMISE, and the stable half is named
 
 `PUBLIC-APP-SERVER` · status **OPEN**
@@ -105,4 +115,4 @@ not describe. Run the harness if in doubt.
 
 ---
 
-**9 assertion(s) across 9 requirement(s).**
+**10 assertion(s) across 10 requirement(s).**

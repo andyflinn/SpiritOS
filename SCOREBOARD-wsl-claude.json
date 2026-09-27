@@ -1,13 +1,13 @@
 {
   "box": "wsl-claude",
-  "commit": "a45c07b",
+  "commit": "7cee249",
   "stale": false,
-  "head": "a45c07b",
+  "head": "7cee249",
   "measured": {
     "suites": 170,
-    "green": 3179,
-    "red": 1,
-    "unhappy": 1
+    "green": 3180,
+    "red": 0,
+    "unhappy": 0
   },
   "rows": [
     {
@@ -126,6 +126,18 @@
         }
       ],
       "owedSince": "2026-09-27",
+      "there": 0,
+      "blocked": ""
+    },
+    {
+      "kind": "to-do",
+      "id": "public-app-server/G18",
+      "handle": "G18",
+      "title": "the app process serves its owner node over a named pipe, not a TCP port",
+      "rank": 10,
+      "frees": 0,
+      "waitsOn": [],
+      "owedSince": null,
       "there": 0,
       "blocked": ""
     },

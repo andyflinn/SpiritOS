@@ -554,6 +554,27 @@ test.subHeading('G10 — four fields about the box, and the opinion that is deli
 // WHAT WOULD BRING IT BACK is a different requirement and would need
 // saying out loud: a box asserting a name about ITSELF, so a figure in a
 // report carries the box's own word rather than the reader's.
+// ── G18 — THE APP PROCESS SERVES ITS OWNER NODE OVER A NAMED PIPE ─────
+//
+//   Andy, 2026-09-27: "processes use named pipes to serve requests from the
+//   puppets.... and that mechanism needs a spot on the board sometime soon".
+//
+// Declared, not built. The probe is the name AGREED with claude-windows,
+// appServer.pipePathFor(rootDir, appName), not a guessed one and not a
+// behaviour: a behaviour probe would have to start a server just to learn
+// the unit exists, and a Windows named pipe is not a file under the root,
+// so it would never flip on that box. The behaviour -- no TCP port, reached
+// through the pipe, the owner node forwarding to it -- is what the real
+// assertions check once this goes red and hands it over.
+test.awaiting('public-app-server/G18', 'the app process listening on a named pipe',
+  (function () {
+    try { return typeof require('../run/js/appServer').pipePathFor === 'function'; }
+    catch (e) { return false; }
+  }()),
+  'the app process opens no TCP port; it serves its owner node through a named pipe (a Unix socket on '
+  + 'Linux), and the owner node forwards to it',
+  { there: 0, cost: 'a sitting' });
+
 // THE PROBE WAS `false`, so this could never flip and hand the unit over --
 // found by claude-windows, who found the server half already built. It now
 // names the verb AGREED for the owner's side, owner.boxes: the moment the
