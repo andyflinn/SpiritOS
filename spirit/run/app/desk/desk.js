@@ -192,22 +192,30 @@ function deskMusings() {
 }
 
 // ONE recipient, so one row in his record per line: nothing to fold.
+// ONE SEND PER BOX AT A TIME. Andy's half-typed line reached the lead EIGHT
+// times in 1.6 s: eight distinct posts from this page, because a held or
+// repeated Enter fired again before the first send had cleared the box. So
+// key auto-repeat is ignored, and a box with a send in flight sends nothing
+// more until it settles.
+var deskSending = Object.create(null);
 function deskSend(kind, boxId, errId) {
   var box = document.getElementById(boxId);
   var said = box ? String(box.value || '').trim() : '';
   var err = document.getElementById(errId);
-  if (!said) return;
+  if (!said || deskSending[boxId]) return;
   if (!deskLead) { if (err) err.textContent = 'No lead known yet.'; return; }
   // A MUSING SAYS WHAT IT IS. Andy: "\"note to self: \" should be a prefix in
   // the musings chat: I just typed that myself, and it highlights for your
   // compilers, what i usually would type into md files". Added once, and
   // never twice when he types it himself.
   if (kind === 'musing' && !/^note to self:/i.test(said)) said = 'note to self: ' + said;
+  deskSending[boxId] = true;
   deskApi.peerPost('agents', deskLead.key, { from: 'andy', kind: kind, text: said }).then(function () {
+    deskSending[boxId] = false;
     box.value = '';
     if (err) err.textContent = '';
     return deskLoadNew();
-  }).catch(function (e) { if (err) err.textContent = 'Not sent: ' + e.message; });
+  }).catch(function (e) { deskSending[boxId] = false; if (err) err.textContent = 'Not sent: ' + e.message; });
 }
 
 // A ROW OPENS ITS OWN DIALOG. Andy: "we need a DeskDetails immediately,
@@ -325,7 +333,7 @@ spirit.shell.activateApp({
     show('list');
     function onEnter(id, go) {
       document.getElementById(id).addEventListener('keydown', function (e) {
-        if (e.key !== 'Enter') return;
+        if (e.key !== 'Enter' || e.repeat) return;
         e.preventDefault();
         go();
       });

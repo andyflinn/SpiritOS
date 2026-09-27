@@ -262,9 +262,15 @@ function ddValue(id) {
 // Only what was sent is cleared, and only after it went.
 function ddClear(id) { var el = document.getElementById(id); if (el) el.value = ''; }
 
+// ONE SEND PER BOX AT A TIME. Andy's half-typed line reached the lead EIGHT
+// times in 1.6 s: eight distinct posts from this page, because a held or
+// repeated Enter fired again before the first send had cleared the box. So
+// key auto-repeat is ignored, and a box with a send in flight sends nothing
+// more until it settles.
+var ddSending = false;
 function ddSend(kind, text, fieldId) {
   var said = String(text || '').trim();
-  if (!said || !ddId) return Promise.resolve();
+  if (!said || !ddId || ddSending) return Promise.resolve();
   var names = Object.keys(ddAgents).filter(function (n) {
     return Date.now() - ddAgents[n].at < DD_RECENT_MS;
   });
@@ -274,10 +280,13 @@ function ddSend(kind, text, fieldId) {
     return Promise.resolve();
   }
   var body = { from: 'andy', kind: kind, text: said, todo: ddId };
+  ddSending = true;
   return Promise.all(names.map(function (n) { return ddApi.peerPost('agents', ddAgents[n].key, body); })).then(function () {
+    ddSending = false;
     if (fieldId) ddClear(fieldId);
     return ddLoad();
   }).catch(function (e) {
+    ddSending = false;
     ddNote = 'Not sent: ' + e.message;
     ddDraw();
   });
@@ -306,7 +315,7 @@ spirit.shell.activateApp({
       if (id === 'dd-say-send') { ddSend('note', ddValue('dd-say'), 'dd-say'); }
     });
     document.getElementById('dd-body').addEventListener('keydown', function (event) {
-      if (event.key !== 'Enter') return;
+      if (event.key !== 'Enter' || event.repeat) return;
       var id = event.target && event.target.id;
       if (id === 'dd-say') { event.preventDefault(); ddSend('note', ddValue('dd-say'), 'dd-say'); }
       else if (id === 'dd-name') {
