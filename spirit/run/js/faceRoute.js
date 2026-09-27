@@ -47,32 +47,48 @@ function nameOf(host, faceDomain) {
 var ROUTE_MS = 60 * 60 * 1000;
 var NONE_MS = 60 * 1000;
 
-function routeMessage(ownerKey, name, to, until) {
+// The face's own key is signed in too (wsl-claude): a route is good only
+// in the hands of the puppet it was given to, so a copy drives nothing.
+function routeMessage(ownerKey, name, to, until, faceKey) {
   var NL = String.fromCharCode(10);
   return 'face-route' + NL + String(ownerKey || '') + NL + String(name || '') + NL +
-    String(to || '') + NL + String(Number(until) || 0);
+    String(to || '') + NL + String(Number(until) || 0) + NL + String(faceKey || '');
 }
 
 // The owner node's answer. `rows` is its grant table ({ name: { to } });
 // `owner` is { publicKey, privateKey }; `sign(privateKey, message)` is
 // relayAuth's. Mine, a signed route, or no such route; never a guess.
-function answerRoute(rows, name, owner, sign, nowMs) {
+function answerRoute(rows, name, owner, sign, nowMs, faceKey) {
   var n = String(name || '');
   var row = rows && Object.prototype.hasOwnProperty.call(rows, n) ? rows[n] : null;
   if (!row || !row.to) return { route: 'none', name: n };
   if (owner && row.to === owner.publicKey) return { route: 'mine', name: n };
   var until = (nowMs == null ? Date.now() : nowMs) + ROUTE_MS;
+  var face = String(faceKey || '');
   return {
-    route: 'to', name: n, to: row.to, until: until,
-    sig: sign(owner.privateKey, routeMessage(owner.publicKey, n, row.to, until)),
+    route: 'to', name: n, to: row.to, until: until, face: face,
+    sig: sign(owner.privateKey, routeMessage(owner.publicKey, n, row.to, until, face)),
   };
 }
 
-// The slot owner's check on a route a puppet forwarded to it.
-function routeIsSigned(route, ownerKey, verify) {
+// The slot owner's check on a route a puppet forwarded to it. Four things,
+// each closing a hole wsl-claude found in the signature-only first draft:
+// the owner signed it; it has not expired (an old route for a name taken
+// back must not replay); it points at THIS node (a route for joe shown to
+// bob is no route); and the one presenting it is the face it was given to.
+// `at`: { selfKey, fromKey, now }. With no `at` only the signature is
+// checked, which is what the puppet does on receipt (it is the face).
+function routeIsSigned(route, ownerKey, verify, at) {
   if (!route || route.route !== 'to' || !route.sig) return false;
-  try { return !!verify(ownerKey, routeMessage(ownerKey, route.name, route.to, route.until), route.sig); }
-  catch (e) { return false; }
+  var ok = false;
+  try { ok = !!verify(ownerKey, routeMessage(ownerKey, route.name, route.to, route.until, route.face), route.sig); }
+  catch (e) { ok = false; }
+  if (!ok || !at) return ok;
+  var now = typeof at.now === 'number' ? at.now : Date.now();
+  if (!(Number(route.until) > now)) return false;
+  if (route.to !== at.selfKey) return false;
+  if (route.face !== at.fromKey) return false;
+  return true;
 }
 
 // ── THE PUPPET'S MEMORY OF ROUTES, IN RAM ────────────────────────────
