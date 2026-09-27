@@ -148,9 +148,12 @@ function decide(api, name, asker) {
 // Two roles, one file, told apart by what the node hands this app:
 //
 //   ON THE OWNER'S NODE (it holds grants.json): answers 'route?' from
-//   anyone, "mine" when the host's name is granted to this node, "none"
-//   otherwise, and answers 'serve' for a name it owns with the agreed stub,
-//   501 last-leg-not-built, naming itself. The last leg, handing the
+//   anyone with the truth from the row, "the owner of join is <key>", or
+//   "none", and judges nothing about itself. Andy, asked what api.self()
+//   was for: "so what's an api.self for then?" Nothing, it turned out: the
+//   puppet knows its own owner's key and makes the comparison. It answers
+//   'serve' for a granted name with the agreed stub, 501
+//   last-leg-not-built, naming the row's key. The last leg, handing the
 //   request to the app's process, waits for the server-process design.
 //
 //   ON THE VPS PUPPET (the node hands it api.face): claims the visitors,
@@ -188,18 +191,14 @@ function replyTo(api, message, body) {
     .catch(function (e) { api.log(APP + ': an answer could not be posted: ' + ((e && e.message) || e)); });
 }
 
-// The owner's side: which name a host is, and whether this node owns it.
+// The owner's side: which name a host is, and who holds it, from the row.
 function ownerOf(api, host) {
   const name = faceRoute.nameOf(host, faceDomainOf(api));
   if (!name) return { route: 'none', name: '' };
   const rows = readGrants(api) || {};
-  const self = typeof api.self === 'function' ? api.self() : '';
   const row = Object.prototype.hasOwnProperty.call(rows, name) ? rows[name] : null;
-  if (row && self && row.to === self) return { route: 'mine', name: name };
-  // Granted elsewhere, or to nobody: for step 1 both answer "not the owner".
-  // The signed redirect to a member's own node needs the node to sign on
-  // this app's behalf, and waits for the first member face.
-  return { route: 'none', name: name };
+  if (!row || !row.to) return { route: 'none', name: name };
+  return { route: 'owner', name: name, to: row.to };
 }
 
 function ownerRole(api, message, body) {
@@ -209,9 +208,10 @@ function ownerRole(api, message, body) {
   }
   if (body.verb === 'serve') {
     const o = ownerOf(api, body.host);
-    const self = typeof api.self === 'function' ? api.self() : '';
-    const answer = o.route === 'mine'
-      ? { status: 501, body: { ok: false, code: 'last-leg-not-built', name: o.name, node: self } }
+    // A puppet forwards 'serve' here only for a name whose row names its
+    // owner, so the row's key is this node's own.
+    const answer = o.route === 'owner'
+      ? { status: 501, body: { ok: false, code: 'last-leg-not-built', name: o.name, node: o.to } }
       : { status: 404, body: { ok: false, code: 'no-such-route', name: o.name } };
     replyTo(api, message, Object.assign({ verb: 'served' }, answer));
     return true;
@@ -264,7 +264,15 @@ function puppetRole(api) {
     const route = known ? Promise.resolve(known) : ask(owner, { verb: 'route?', host: req.host }, ROUTE_WAIT_MS).then(function (a) {
       if (a.refused) return { refused: a.refused };
       if (a.timedOut) return { timedOut: true };
-      cache.take(a.body, a.from, a.re, a.hash, req.host);
+      // "The owner of this name is <key>": the puppet compares it with its
+      // own owner. Its owner's name is served by its owner ("mine"); a name
+      // held by any other key is the signed-redirect case, not built yet.
+      let said = a.body;
+      if (said && said.route === 'owner') {
+        if (said.to !== owner) return { refused: 'redirects to another node are not built yet' };
+        said = { route: 'mine', name: said.name };
+      }
+      cache.take(said, a.from, a.re, a.hash, req.host);
       return cache.lookup(req.host) || { refused: 'the owner gave no usable route' };
     });
     return route.then(function (r) {
