@@ -1134,6 +1134,28 @@ verbs today; they live only in its code.
   not an empty tree. (4) It is bounded and plain: the tree fits one packet
   or is refused by name; it names apps and verbs only, never a path, pipe
   or file; and it is read per ask, so a revoked key loses its leaf at once.
+- **SUPERSEDED the same hour by Andy: the node routes by app, and apps
+  describe themselves (introspection).** *"if api.api gets the request
+  \"api\" it returns the available api tree, if the request is and object
+  {appFaceApp:{}} and there is only one leaf (appFaceApp) then the object
+  keyed by 'appFaceApp' is the request served by the appFaceApp server"*;
+  the tree is *"a object with a key for every app on the ground level, and an
+  object for every verb for that app, showing the request-structure for that
+  verb"*; and *"the apps themselves can in fact deliver their portion of the
+  tree.... MUST deliver it themselves since the core cannot know their api"*,
+  named *"introspection"*, *"by layers"*. So the node never declares or
+  checks a verb. On `api` it asks each app for its own part, passing the
+  caller's key, and assembles the parts under the apps' names. On a
+  one-leaf object it hands that object to that app's server. Condition (1)
+  above (per-verb lists in manifests) is withdrawn by wsl-claude; (2)-(4)
+  stand. wsl-claude's tests for this shape: (a) each app is asked with the
+  caller's key and shows only that caller's leaves; (b) one function in the
+  app decides both whether a leaf is shown and whether a call to it is
+  allowed, so the tree and the calls cannot disagree (today appFaceApp
+  checks its allow list for `grant` only); (c) the node adds no leaf of its
+  own, bounds the answer to one packet, and an app that throws or times out
+  contributes nothing. Reaching an app still loaded inside the node needs a
+  describe hook; an app running as its own process is asked at its door.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
