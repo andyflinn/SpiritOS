@@ -1257,6 +1257,11 @@ verbs today; they live only in its code.
   with no handler answers "under construction". Adding a contact is a
   loopback verb on the member's own node, so the client needs the same door
   access as grantFace.
+  wsl-claude adds two: the client acquires the face's key before accepting it
+  (`contact.accept` answers 404 "no row for that key" on a node that has
+  never seen it, `hub.js:1731`, as face-owner.js found), tested from a
+  member node with no row for the face; and when the owner names a
+  different face, the client drops the old one.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
