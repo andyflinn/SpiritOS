@@ -170,7 +170,17 @@ var deskAfter = 0;
 function deskLoadNew() {
   return deskApi.verb('node.history', { after: deskAfter, limit: DESK_PAGE }).then(function (r) {
     var body = r && r.body;
-    if (!body || !body.ok) return;
+    // A REFUSAL IS SAID, NEVER DRAWN AS AN EMPTY BOARD. A node older than
+    // node.history answers "unknown verb", and a page that swallowed that
+    // told Andy no board had arrived while five sat in his log.
+    if (!body || !body.ok) {
+      deskError = 'This node could not hand over its record: ' +
+        ((body && body.error) || (r && r.status) || 'no answer') +
+        '. A node started before node.history (a660e43) needs a restart.';
+      deskDraw();
+      return;
+    }
+    deskError = '';
     body.rows.forEach(function (row) { var m = deskDecode(row); if (m) deskFold(m); });
     deskAfter = body.next;
     deskDraw();
