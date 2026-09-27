@@ -126,7 +126,7 @@ test.subHeading('one return bound, both paths');
   const shared = hub.filter(function (k) { return /bounded|truncat|partial/i.test(k); });
   test.awaiting('puppets/G2', 'the shared bound-and-flag helper', shared.length > 0,
     'one helper that fills an answer to the bound and sets `more`, used by every verb that returns a collection. ' +
-    '`peer.search` already returns { rows, more } (hub.js:2091) — the right shape with the wrong unit, ' +
+    '`peer.search` already returns { rows, more } (hub.js:2242 at dd0f1ad) — the right shape with the wrong unit, ' +
     'bounding rows scanned rather than bytes',
     { there: 40, cost: 'a sitting — the shape exists, the unit and the sharing do not' });
 
