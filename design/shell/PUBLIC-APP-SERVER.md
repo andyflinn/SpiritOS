@@ -1474,6 +1474,36 @@ Unix socket file on Linux, never a loopback TCP port.
   port for it; a second user on the box cannot open the pipe.
 ---
 
+### G19 — A member's app answers through the face
+
+**Status:** OPEN. Opened 2026-09-27 when G17 closed (Andy: *"ok. aoff to the
+team chat. this R is closed."*), with his edit of the draft in Team.
+
+**The requirement.** A visitor's request for a name the owner granted to a
+MEMBER node reaches that member's app, and the reply comes back through the
+same face. The owner's node answers where a name lives and forwards nothing
+it understands; no route question ever goes to a member.
+
+**Its design** is *MEMBER APPS* under G17 above: grantFace, consent in
+layers, the face asking on a cache miss, `api` introspection, the member's
+shell client, and the datasets keyed by face.
+
+**Broken down (proposed 2026-09-28, awaiting Andy's Go!), each blocked by
+the one before:**
+
+| R | what | blocked by |
+|---|---|---|
+| R1 | The process spec written (`design/node/PROCESSES.md`) and the server process type completed: a server job gets `SPIRIT_JOB_ID` and `SPIRIT_CALLBACK_URL`; `spirit.core.ask` works from a process; a serving app's own code runs as its job; a server job can be stopped from the jobs app | — |
+| R2 | Passthrough: a packet for a serving app goes down its pipe, and the answer returns signed by the node | R1 |
+| R3 | grantFace: grant, faceKey, the route answers, `grants.json` (canonical), the face's contact sync by owner command | R2 |
+| R4 | The `api` verb, introspection by layers (needs Andy's yes on the verb) | R3 |
+| R5 | The member's shell client | R4 |
+
+Outside the chain: the `face-install` rerun on spirit-3 (Andy's), and the
+`relayRequest` deadline.
+
+---
+
 ### PROPOSED, NOT IN THIS CYCLE — a sweep for forks
 
 **Andy, 2026-09-24, during the build:** *"can the tree be swept
