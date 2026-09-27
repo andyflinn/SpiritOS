@@ -23,8 +23,8 @@
 //
 // ── WHAT THE FACE SEES, AND NOTHING MORE (wsl-claude's review, e) ─────
 //
-// { host, method, path, body }. No raw headers, no socket, no client
-// address, no X-Forwarded-For: CLAUDE.md keeps Caddy's forwarded address
+// { host, method, path, body, type }. No raw headers but the content
+// type, no socket, no client address, no X-Forwarded-For: CLAUDE.md keeps Caddy's forwarded address
 // out of review fixes, and a face that never receives it cannot come to
 // depend on it.
 //
@@ -110,6 +110,11 @@ function createPuppetPost(opts) {
         method: String(req.method || ''),
         path: String(req.url || ''),
         body: Buffer.concat(chunks).toString('utf8'),
+        // THE ONE HEADER THAT CROSSES, each way: the content type, so a page
+        // arrives as a page and a verb's POST as json. Andy's go on "exactly
+        // ONE header" (2026-09-27, G17). Still no cookies, no auth, no
+        // forwarded address.
+        type: String(req.headers['content-type'] || ''),
       };
       let settled = false;
       const timer = setTimeout(function () {

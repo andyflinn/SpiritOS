@@ -235,6 +235,83 @@ module.exports = function installJobs(spirit, port) {
     return job;
   }
 
+  // ── THE THIRD KIND: A PROCESS THE NODE KEEPS RUNNING ─────────────────
+  //
+  // public-app-server/G17, the last leg. Andy: "i expect them to run in the
+  // SpiritOS-proccess subsystem". 'permanent' lives inside the node and
+  // 'process' runs and ends; a 'server' is spawned like a process and
+  // started again when it exits, so a visitor never has to be the one who
+  // notices it died. The wait doubles from RESTART_MIN_MS to RESTART_MAX_MS
+  // while it keeps dying, and starts over once a run lasted a minute.
+  //
+  // Started by the node itself at boot (appServers.js), never through the
+  // jobs.create verb: the loopback door gains nothing (Andy, 2026-09-27).
+  // cancelJob stops it for good.
+  const RESTART_MIN_MS = 1000;
+  const RESTART_MAX_MS = 60000;
+  const STEADY_MS = 60000;
+  function startServerJob(command, args, options) {
+    options = options || {};
+    const spawn = options.spawn || child_process.spawn;
+    const job = createJob('server', options.type || command, {
+      command: command,
+      args: args || [],
+      restarts: 0,
+      exitCode: null,
+    });
+    let child = null;
+    let stopped = false;
+    let wait = RESTART_MIN_MS;
+    let timer = null;
+
+    function run() {
+      timer = null;
+      if (stopped) return;
+      const startedAt = Date.now();
+      try {
+        // AN IPC CHANNEL, so the server exits when this node does: a node
+        // killed outright leaves no orphan holding its pipe (appServer.js,
+        // fromArgv, 'disconnect'). Its output goes to this job's log.
+        child = spawn(command, args || [], { cwd: options.cwd, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+      } catch (e) {
+        updateJob(job.id, { status: 'failed', data: { error: String(e) } });
+        return;
+      }
+      updateJob(job.id, { status: 'running', data: { pid: child.pid } });
+      [child.stdout, child.stderr].forEach(function (stream) {
+        if (!stream) return;
+        stream.setEncoding('utf8');
+        stream.on('data', function (text) {
+          String(text).split(/\r?\n/).forEach(function (line) { if (line) appendLog(job, line); });
+        });
+      });
+      child.on('error', function (err) { appendLog(job, 'could not start: ' + String(err)); });
+      child.on('exit', function (code) {
+        child = null;
+        if (stopped) return;
+        if (Date.now() - startedAt >= STEADY_MS) wait = RESTART_MIN_MS;
+        const current = getJob(job.id);
+        updateJob(job.id, {
+          // 'pending', not a new status: a job in a status that is neither
+          // live nor terminal could never be deleted (jobsLifecycle.js).
+          status: 'pending',
+          data: { exitCode: code, restarts: ((current && current.data.restarts) || 0) + 1 },
+          logMessage: 'exited with code ' + code + ', starting again in ' + Math.round(wait / 1000) + 's',
+        });
+        timer = setTimeout(run, wait);
+        wait = Math.min(wait * 2, RESTART_MAX_MS);
+      });
+    }
+
+    job._stop = function () {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      if (child) child.kill();
+    };
+    run();
+    return job;
+  }
+
   function startStatsJob(options) {
     options = options || {};
     const intervalMs = options.intervalMs || DEFAULT_STATS_INTERVAL_MS;
@@ -320,6 +397,7 @@ module.exports = function installJobs(spirit, port) {
     deleteJob: deleteJob,
     startFsWatcherJob: startFsWatcherJob,
     startProcessJob: startProcessJob,
+    startServerJob: startServerJob,
     startStatsJob: startStatsJob,
   };
 

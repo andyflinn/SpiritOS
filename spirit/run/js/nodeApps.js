@@ -330,6 +330,7 @@ function mountAll(opts) {
   const arrivals = opts && opts.arrivals;
   const post = opts && opts.post;
   const face = opts && opts.face;
+  const servers = opts && opts.servers;
   const log = (opts && opts.log) || function () {};
   const appsDir = path.join(rootDir, 'app');
 
@@ -390,6 +391,17 @@ function mountAll(opts) {
         // mistake a node without a face for one that has it.
         face: face && typeof face.claim === 'function'
           ? function (handler) { return face.claim(name, handler); }
+          : undefined,
+        // THE HOP TO AN APP SERVER ON THIS BOX (appServers.js, G17's last
+        // leg): toLocalApp(name, { method, path, body, type }) answers
+        // { status, body, type }, named refusals included. A booted app may
+        // not reach for http itself (appFaceGrant.js), so the node makes
+        // this one hop for it. A node verb by Andy's own gate: "i explicitly
+        // permit the two new/proposed interfaces/api' for communication
+        // from node to appserver" (2026-09-27, Desk, G17). Absent on a node
+        // that starts no app servers.
+        toLocalApp: servers && typeof servers.toLocalApp === 'function'
+          ? function (faceName, request) { return servers.toLocalApp(faceName, request); }
           : undefined,
         log: log,
       });

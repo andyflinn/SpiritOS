@@ -43,7 +43,7 @@ function home(label) {
   ['appFaceApp.js', 'appFaceApp.json'].forEach(function (f) {
     fs.copyFileSync(path.join(RUN, 'app', 'appFaceApp', f), path.join(app, f));
   });
-  fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'dir');
+  fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
   return { root: root, app: app };
 }
 

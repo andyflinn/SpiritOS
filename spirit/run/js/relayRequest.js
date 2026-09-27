@@ -87,7 +87,64 @@ function relayRequest(relayUrl, method, pathname, bodyObj, extraHeaders) {
   });
 }
 
+// ── THE OWNER NODE'S ONE HOP TO AN APP SERVER ON ITS OWN BOX ─────────
+//
+// public-app-server/G17, the last leg. Andy, 2026-09-27, on where the node
+// reaches its app servers from: the recommendation "(a)" was THIS file, so
+// the oneDoor tally does not move ("go."), and "i explicitly permit the two
+// new/proposed interfaces/api' for communication from node to appserver".
+//
+// A named pipe on Windows, a socket file elsewhere, never a port (G18): a
+// pipe is reachable only by this user, and no other program on the box can
+// knock on the app's door past the node.
+//
+// Answers { status, text, type } or { refused: <code> }, and never throws:
+//   app-not-running      nothing listens on the pipe
+//   app-did-not-answer   it did not finish within timeoutMs
+//   app-answer-too-large the answer outgrew answerMax, cut unread
+// Only the content type crosses, each way (Andy's go on "exactly ONE
+// header"): no cookies, no auth, no forwarded address.
+function pipeRequest(pipePath, method, pathname, bodyText, opts) {
+  var o = opts || {};
+  var timeoutMs = Number(o.timeoutMs) > 0 ? Number(o.timeoutMs) : 10000;
+  var answerMax = Number(o.answerMax) > 0 ? Number(o.answerMax) : Infinity;
+  return new Promise(function (resolve) {
+    var done = false;
+    function finish(answer) { if (!done) { done = true; resolve(answer); } }
+    var payload = bodyText == null ? '' : String(bodyText);
+    var headers = { 'Content-Length': Buffer.byteLength(payload), 'Host': 'localhost' };
+    if (o.type) headers['Content-Type'] = String(o.type);
+    var lib = http;
+    var req = lib.request({
+      socketPath: String(pipePath || ''),
+      path: String(pathname || '/'),
+      method: String(method || 'GET').toUpperCase(),
+      headers: headers,
+    }, function (res) {
+      var chunks = [];
+      var size = 0;
+      res.on('data', function (c) {
+        if (done) return;
+        size += c.length;
+        if (size > answerMax) { finish({ refused: 'app-answer-too-large' }); req.destroy(); return; }
+        chunks.push(c);
+      });
+      res.on('end', function () {
+        finish({
+          status: res.statusCode,
+          text: Buffer.concat(chunks).toString('utf8'),
+          type: String(res.headers['content-type'] || ''),
+        });
+      });
+    });
+    req.setTimeout(timeoutMs, function () { finish({ refused: 'app-did-not-answer' }); req.destroy(); });
+    req.on('error', function () { finish({ refused: 'app-not-running' }); });
+    req.end(payload);
+  });
+}
+
 module.exports = {
+  pipeRequest: pipeRequest,
   relayRequest: relayRequest,
   assertRelayUrl: assertRelayUrl,
   isLoopbackHost: isLoopbackHost,

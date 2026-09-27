@@ -638,6 +638,37 @@ define('answer-too-large', {
     'waiting out its wait for no-reply-from-puppet. The cure is a narrower question: ' +
     'a search, never a list.',
 });
+// ── THE LAST LEG: THE OWNER NODE'S HOP TO AN APP SERVER (appServers.js) ──
+//
+// public-app-server/G17. Each names the link that failed, so a visitor at the
+// far end of the face reads which one, never a hang.
+define('app-not-served', {
+  status: 404, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['no app on this node serves that name'],
+  note: 'No manifest on the owner\'s box names this face ("face": "<name>"), though ' +
+    'the name is granted to it.',
+});
+define('app-request-too-large', {
+  status: 413, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['request too large for the app server'],
+  note: 'Over BODY_MAX, refused before the app\'s door, unsent.',
+});
+define('app-not-running', {
+  status: 503, presence: NONE, retry: 'after', fault: 'target',
+  texts: ['the app server is not running'],
+  note: 'Nothing answers on its pipe. The node starts it again when it exits (a ' +
+    '\'server\' job), so this is a moment, not a state.',
+});
+define('app-did-not-answer', {
+  status: 504, presence: NONE, retry: 'after', fault: 'target',
+  texts: ['the app server did not answer in time'],
+  note: 'Its door took longer than DOOR_WAIT_MS, which nests inside the face\'s own waits.',
+});
+define('app-answer-too-large', {
+  status: 502, presence: NONE, retry: 'no', fault: 'target',
+  texts: ['the app server\'s answer is too large to travel'],
+  note: 'The answer rides back to the face in one sealed packet. Refused by name, never cut.',
+});
 define('handler-failed', {
   status: 500, presence: NONE, retry: 'no', fault: 'target',
   texts: ['the handler failed'],

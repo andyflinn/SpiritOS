@@ -141,6 +141,15 @@ his words, which keeps the harness red until the verb is gone.
 - `relay.record` — before the rule (2026-09-27)
 - `relay.search` — Andy, 2026-09-27: "the verb changes changing list fetches to a search(labe) and geKey(key) pair are approved." (Desk, puppets/G2)
 
+**Inside the node, not on this door.** A booted app (`nodeApps.js`) is
+handed an api of its own, and it is the node's interface too, so the same
+rule covers it. One call was added there, and none here:
+- `api.toLocalApp(name, { method, path, body, type })` — the node's one
+  hop to an app server on its own box (`appServers.js`). Andy, 2026-09-27:
+  "i explicitly permit the two new/proposed interfaces/api' for
+  communication from node to appserver", and "Go. and two verbs approved."
+  (Desk, public-app-server/G17)
+
 ---
 
 ## The limits a caller meets
@@ -174,7 +183,7 @@ figure you can compute instead of estimate.
 
 ## The errors
 
-**89 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
+**94 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
 each carries more than a sentence:
 
 | | |

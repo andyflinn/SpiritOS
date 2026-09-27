@@ -152,9 +152,10 @@ function decide(api, name, asker) {
 //   "none", and judges nothing about itself. Andy, asked what api.self()
 //   was for: "so what's an api.self for then?" Nothing, it turned out: the
 //   puppet knows its own owner's key and makes the comparison. It answers
-//   'serve' for a granted name with the agreed stub, 501
-//   last-leg-not-built, naming the row's key. The last leg, handing the
-//   request to the app's process, waits for the server-process design.
+//   'serve' for a granted name by handing the request to the app server
+//   that serves it on this box (api.toLocalApp, appServers.js: G17's last
+//   leg), and replies with that app's own answer. A node that starts no
+//   app servers still answers the step-1 stub, 501 last-leg-not-built.
 //
 //   ON THE VPS PUPPET (the node hands it api.face): claims the visitors,
 //   asks its owner once per host, keeps the answer in RAM (faceRoute's
@@ -184,8 +185,14 @@ function faceDomainOf(api) {
   } catch (e) { return ''; }
 }
 
-function replyTo(api, message, body) {
-  const made = packet.encode(APP, body, { re: message.hash });
+// appServerReply, Andy's name for the answer's way back: a second packet to
+// the asker, carrying the question's hash. An answer too big for one packet
+// becomes a small refusal by name, so the visitor is not left to time out.
+function appServerReply(api, message, body) {
+  let made = packet.encode(APP, body, { re: message.hash });
+  if ((!made || !made.text) && body && body.verb === 'served') {
+    made = packet.encode(APP, { verb: 'served', status: 502, body: { ok: false, code: 'app-answer-too-large' } }, { re: message.hash });
+  }
   if (!made || !made.text) { api.log(APP + ': an answer could not be packed: ' + ((made && made.error) || '')); return; }
   Promise.resolve(api.post('', message.fromKey, made.text, null, null))
     .catch(function (e) { api.log(APP + ': an answer could not be posted: ' + ((e && e.message) || e)); });
@@ -203,17 +210,31 @@ function ownerOf(api, host) {
 
 function ownerRole(api, message, body) {
   if (body.verb === 'route?') {
-    replyTo(api, message, Object.assign({ verb: 'route' }, ownerOf(api, body.host)));
+    appServerReply(api, message, Object.assign({ verb: 'route' }, ownerOf(api, body.host)));
     return true;
   }
   if (body.verb === 'serve') {
     const o = ownerOf(api, body.host);
     // A puppet forwards 'serve' here only for a name whose row names its
     // owner, so the row's key is this node's own.
-    const answer = o.route === 'owner'
-      ? { status: 501, body: { ok: false, code: 'last-leg-not-built', name: o.name, node: o.to } }
-      : { status: 404, body: { ok: false, code: 'no-such-route', name: o.name } };
-    replyTo(api, message, Object.assign({ verb: 'served' }, answer));
+    if (o.route !== 'owner') {
+      appServerReply(api, message, { verb: 'served', status: 404, body: { ok: false, code: 'no-such-route', name: o.name } });
+      return true;
+    }
+    if (typeof api.toLocalApp !== 'function') {
+      appServerReply(api, message, { verb: 'served', status: 501, body: { ok: false, code: 'last-leg-not-built', name: o.name, node: o.to } });
+      return true;
+    }
+    // THE LAST LEG. The app's own answer, status, body and content type,
+    // or the node's refusal by name (app-not-served, app-not-running, ...).
+    Promise.resolve(api.toLocalApp(o.name, { method: body.method, path: body.path, body: body.body, type: body.type }))
+      .then(function (a) {
+        const r = a || {};
+        appServerReply(api, message, { verb: 'served', status: r.status, body: r.body, type: r.type });
+      }, function (e) {
+        api.log(APP + ': the app server hop failed: ' + ((e && e.message) || e));
+        appServerReply(api, message, { verb: 'served', status: 503, body: { ok: false, code: 'app-not-running', name: o.name } });
+      });
     return true;
   }
   return false;
@@ -244,8 +265,9 @@ function puppetRole(api) {
     return true;
   }
 
-  // Post a body to a key and wait for the one answer carrying its hash.
-  function ask(to, body, ms) {
+  // appServerPost, Andy's name for the request's way out: post a body to a
+  // key and wait for the one answer carrying its hash.
+  function appServerPost(to, body, ms) {
     const made = packet.encode(APP, body);
     if (!made || !made.text) return Promise.resolve({ refused: 'could not be packed' });
     return Promise.resolve(api.post('', to, made.text, null, POST_PATIENCE)).then(function (sent) {
@@ -285,7 +307,7 @@ function puppetRole(api) {
       api.log(APP + ': new-name budget spent, not asking the owner about ' + String(host).slice(0, 80));
       return Promise.resolve({ none: true });
     }
-    return ask(owner, { verb: 'route?', host: host }, ROUTE_WAIT_MS).then(function (a) {
+    return appServerPost(owner, { verb: 'route?', host: host }, ROUTE_WAIT_MS).then(function (a) {
       if (a.refused) return { refused: a.refused };
       if (a.timedOut) return { timedOut: true };
       // "The owner of this name is <key>", and the puppet forwards there,
@@ -331,12 +353,13 @@ function puppetRole(api) {
       if (r.none) return { status: 404, body: { ok: false, code: 'no-such-route' } };
       // mine: the owner node owns it; a signed route: its owner does.
       const target = r.mine ? owner : r.to;
-      return ask(target, { verb: 'serve', host: req.host, method: req.method, path: req.path, body: req.body }, SERVE_WAIT_MS)
+      return appServerPost(target, { verb: 'serve', host: req.host, method: req.method, path: req.path, body: req.body, type: req.type }, SERVE_WAIT_MS)
         .then(function (a) {
           if (a.refused) { cache.drop(req.host); return { status: 502, body: { ok: false, code: 'owner-unreachable', why: String(a.refused) } }; }
           if (a.timedOut) return { status: 504, body: { ok: false, code: 'owner-did-not-answer' } };
           if (a.from !== target || !a.body || a.body.verb !== 'served') return { status: 502, body: { ok: false, code: 'bad-answer' } };
-          return { status: Number(a.body.status) || 200, body: a.body.body };
+          return { status: Number(a.body.status) || 200, body: a.body.body,
+            type: typeof a.body.type === 'string' && a.body.type ? a.body.type : undefined };
         });
     });
   });

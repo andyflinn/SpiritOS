@@ -213,6 +213,13 @@ function mountPuppet(owner, relay, listed) {
   const appDir = path.join(root, 'app', 'appFaceApp');
   fs.mkdirSync(path.join(root, 'app'), { recursive: true });
   fs.cpSync(path.join(REPO, APP_DIR_REL), appDir, { recursive: true });
+  // THE CODE, NOT THE LIVE STATE. On a checkout that is somebody's node the
+  // folder also holds that node's grants.json and face-domain.json (both
+  // gitignored), and a copied 'join' grant made the first ask here answer
+  // name-already-granted (seen on Andy's box, 2026-09-27, after face-owner.js).
+  ['grants.json', 'face-domain.json'].forEach(function (f) {
+    fs.rmSync(path.join(appDir, f), { force: true });
+  });
   // AND ITS SIBLINGS COME WITH IT. The app requires `../../js/client/
   // packet.js` — the shared envelope, which is the whole point of the
   // conversion — so a copied app with no `js/` beside it does not mount

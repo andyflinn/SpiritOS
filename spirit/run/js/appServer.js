@@ -916,6 +916,11 @@ function create(opts) {
   const rootDir = o.rootDir || ROOT_DIR;
   const appName = String(o.appName || '');
   const port = Number(o.port) || 0;
+  // A PIPE PATH INSTEAD OF A PORT (public-app-server/G18, built with G17's
+  // last leg): a named pipe on Windows, a socket file elsewhere. The owner
+  // node that started this process names it and reaches it there; nothing
+  // else on the box can (appServers.js). Absent means the port, as before.
+  const pipe = typeof o.pipe === 'string' ? o.pipe : '';
 
   if (!appName) throw new Error('appServer.create needs an appName');
 
@@ -1391,6 +1396,21 @@ function create(opts) {
       // which is why one refuses above and the other does not.
       bind();
       server = http.createServer(handle);
+      if (pipe) {
+        // A socket file left by a process that died holds the name, and
+        // listen fails on it. A Windows pipe vanishes with its owner.
+        if (process.platform !== 'win32') { try { fs.unlinkSync(pipe); } catch (e) { /* none */ } }
+        server.on('error', function (e) {
+          // The node that started this restarts it; a clear line is all
+          // the operator needs to see why.
+          console.error('App server for "' + appName + '" could not listen on ' + pipe + ': ' + ((e && e.code) || e));
+          process.exit(1);
+        });
+        server.listen(pipe, function () {
+          if (typeof cb === 'function') cb(null, pipe);
+        });
+        return server;
+      }
       // LOOPBACK ONLY. Publicness is Caddy's, a whitelist's and a DNS
       // record's — never this process's.
       server.listen(port, '127.0.0.1', function () {
@@ -1417,6 +1437,7 @@ function fromArgv(argv) {
   const appName = at('--app');
   const port = Number(common.portFromArgs(args)) || 0;
   const relay = at('--relay');
+  const pipe = at('--pipe');
 
   // ── THE INVITE DOES NOT COME FROM ARGV, AND THAT WAS A DEFECT ───────
   //
@@ -1444,7 +1465,14 @@ function fromArgv(argv) {
     process.exit(1);
   }
 
-  const h = create({ rootDir: ROOT_DIR, appName: appName, port: port, relay: relay });
+  // STARTED BY A NODE, IT ENDS WITH THAT NODE. The node's 'server' job
+  // spawns this with an IPC channel (jobs.startServerJob), which closes when
+  // the node dies however it dies, so no orphan keeps holding the pipe.
+  if (typeof process.send === 'function') {
+    process.on('disconnect', function () { process.exit(0); });
+  }
+
+  const h = create({ rootDir: ROOT_DIR, appName: appName, port: port, pipe: pipe, relay: relay });
   const s = h.state();
 
   // ── THE OPERATOR GETS A CODE, NOT A STACK TRACE ─────────────────────
@@ -1466,7 +1494,8 @@ function fromArgv(argv) {
   return h;
 
   function started(err, bound) {
-    console.log('App server for "' + appName + '" listening on http://127.0.0.1:' + bound);
+    console.log('App server for "' + appName + '" listening on ' +
+      (pipe ? 'the pipe ' + bound : 'http://127.0.0.1:' + bound));
     console.log('    relay: ' + (s.relay || 'none configured yet (--relay <url> at first start)'));
     console.log('    state: ' + s.stateDir);
     if (s.unbound) {

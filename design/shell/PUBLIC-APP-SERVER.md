@@ -907,9 +907,9 @@ browser ← appFaceApp ←─reply, re=hash── appServerReply() ←─ answer
   transport/R12" was withdrawn on this ruling. **`appServer.js:842` is off
   this path too:** that is an app server reaching out to its owner, and here
   the node calls in.
-- **Owed:** the VPS entry, the node's forwarder (route row to the app's
-  loopback port), `appServerReply()`, and appFaceApp's `appServerPost()` with its table of waiting
-  requests with a time limit per entry.
+- **Built:** all of it. The VPS entry (`puppetPost.js`), `appServerPost()`
+  and `appServerReply()` in appFaceApp, and the node's forwarder, which is
+  *THE LAST LEG* below. It reaches the app over a pipe, not a loopback port.
 
 **THE ROUTE, RULED 2026-09-27** (Andy, in Desk under G17, "go."). It
 supersedes THE PATH's "the node forwards a post from the face to the
@@ -984,6 +984,48 @@ refusal until it has a page); whether the grant table's keeper keeps the
 name appFaceApp, since today it is appFaceApp's faceless half on the owner
 node.
 
+**THE LAST LEG, RULED AND BUILT 2026-09-27.** Andy's order was *"step 1)
+build and prove the route from browser to owner-of-subdomain, and back 2)
+design the last leg. 3) implement the last leg"*. Step 1 was proven live on
+spirit-3 the same day: `join.face.spirit.andyflinn.com` answered 501
+last-leg-not-built naming his node's key. His scope for step 3: *"right now
+we're only about to prove that we can connect any wild-card domain to a
+server process"*. His rulings, in Desk under G17: *"the go is officail. also:
+i explicitly permit the two new/proposed interfaces/api' for communication
+from node to appserver"*, then *"Go. and two verbs approved."*
+- **Which app serves a name:** its own manifest, `"face": "hello"`. The node
+  reads its own manifests, and `grants.json` stays `{ to }`. A second app
+  naming the same face is not started, and the log says which
+  (`appServers.js`, `readFaces`).
+- **The server process:** a third job kind, `'server'`, beside `'permanent'`
+  and `'process'` (`jobs.startServerJob`). The node starts one per such
+  manifest at boot and starts it again when it exits, with the wait doubling
+  from 1 s to 60 s. Its heap is capped (128 MB). It is today's `appServer.js`
+  (`node js/server.js --app <name> --pipe <path>`). It is started over an IPC
+  channel, so it exits when its node dies and no orphan keeps the pipe.
+  **None on a puppet** (`relay-state/puppet.json`): app servers live on the
+  owner's box, so the VPS face node never runs one.
+- **The node's loopback door gains nothing.** `jobs.create` is untouched,
+  because the node starts servers itself. The one new surface is
+  `api.toLocalApp(name, { method, path, body, type })` on the api handed to
+  booted apps, answering `{ status, body, type }`. appFaceApp may not reach
+  for http (`appFaceGrant.js`), so the node makes this one hop for it,
+  through `relayRequest.pipeRequest`, the one outbound door (Andy's "(a)";
+  the oneDoor tally does not move).
+- **One header crosses, each way: the content type.** A page arrives as a
+  page, and a verb's POST as json. No cookies, no auth, no forwarded
+  address. Text only; binary files wait.
+- **Refusals by name** (`spiritErrors.js`): `app-not-served` 404,
+  `app-request-too-large` 413, `app-not-running` 503, `app-did-not-answer`
+  504 (the door's 12 s nests inside appFaceApp's 18 s, which nests inside
+  puppetPost's 30 s), and `app-answer-too-large` 502. The answer must fit one
+  sealed packet, half of `SEALED_MAX`.
+- **The proof app is `app/faceProof`** (not `app/hello`: G13 keeps that sample name ruled out beside `app/starter`), a page and one verb (`app.state`), face
+  `hello`. It is proven on a pipe by `spirit/test/appServers.js`; the route,
+  browser to owner and back, by `faceRouteWorld.js`.
+- **Not designed, on purpose:** a local face for an app server, and `join`
+  itself (Andy: *"that's acceptable and expected"*).
+
 **The page waits its turn, a bet on low visitor frequency.** Andy,
 2026-09-27: *"the shell-lowest layer in face-mode, may need a
 request-queuer....(so as to not overload the relays transaction-per-member
@@ -1055,7 +1097,10 @@ visitor gets 502 `face-answer-too-large`, never a page cut off partway.
 
 ### G18 — the app process serves its owner node over a named pipe, not a TCP port
 
-**Status:** OPEN. Nothing built. Andy, 2026-09-27, in Desk: *"hat's missing
+**Status:** BUILT with G17's last leg, 2026-09-27 (*THE LAST LEG*, under
+G17). The app server listens on the pipe the node names (`--pipe`): a named
+pipe on Windows carrying a hash of the checkout, so two nodes on one box
+never share one, and `app-state/<name>/door.sock` elsewhere. Andy, 2026-09-27, in Desk: *"hat's missing
 here is the fact that processes use named pipes to serve requests from the
 puppets.... and that mechanism needs a spot on the board sometime soon"*.
 Earlier the same night: *"question, should the app connect via named pipe,

@@ -32,7 +32,8 @@ const nodeApps = require('../run/js/nodeApps.js');
 function ask(port, method, reqPath, body, host) {
   return new Promise(function (resolve) {
     const req = http.request({ host: '127.0.0.1', port: port, method: method, path: reqPath,
-      headers: { Host: host || 'join.spirit.example', 'X-Forwarded-For': '203.0.113.9', Cookie: 'secret=1' } },
+      headers: { Host: host || 'join.spirit.example', 'X-Forwarded-For': '203.0.113.9', Cookie: 'secret=1',
+        'Content-Type': 'application/json' } },
     function (res) {
       let text = '';
       res.on('data', function (c) { text += c; });
@@ -74,7 +75,10 @@ test.subHeading('Switched on by relay-state/face.json, and nothing else');
 })();
 
 function servesTheFace() {
-  test.subHeading('A request reaches the face as four fields, and its answer goes back');
+  // FIVE since G17's last leg: the content type is the one header that
+  // crosses (Andy's go on "exactly ONE header", 2026-09-27). The cookie and
+  // the forwarded address sent above must still not arrive.
+  test.subHeading('A request reaches the face as five fields, and its answer goes back');
   return started().then(function (s) {
     let seen = null;
     s.face.claim('appFaceApp', function (req) {
@@ -84,10 +88,10 @@ function servesTheFace() {
     if (s.server.address().address === '127.0.0.1') test.check('it listens on loopback only');
     else test.fail('bound to ' + s.server.address().address);
     return ask(s.port, 'POST', '/join?x=1', '{"name":"bert"}').then(function (r) {
-      if (seen && Object.keys(seen).sort().join(',') === 'body,host,method,path' &&
+      if (seen && Object.keys(seen).sort().join(',') === 'body,host,method,path,type' &&
           seen.host === 'join.spirit.example' && seen.method === 'POST' && seen.path === '/join?x=1' &&
-          seen.body === '{"name":"bert"}') {
-        test.check('the face sees exactly host, method, path and body: no headers, no forwarded address');
+          seen.body === '{"name":"bert"}' && seen.type === 'application/json') {
+        test.check('the face sees exactly host, method, path, body and the content type: no other header, no forwarded address');
       } else {
         test.fail('the face saw ' + JSON.stringify(seen));
       }

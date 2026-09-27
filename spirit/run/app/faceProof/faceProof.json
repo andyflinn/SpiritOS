@@ -1,0 +1,16 @@
+{
+  "name": "Face proof",
+  "description": "The last leg's proof: a page and one verb, served to the world through the face.",
+  "icon": "GLOBE",
+  "hidden": true,
+  "intrinsic": false,
+  "owner": "system",
+
+  "face": "hello",
+
+  "surface": ["verb"],
+  "utilities": [],
+  "posture": "strict",
+
+  "refusals": {}
+}
