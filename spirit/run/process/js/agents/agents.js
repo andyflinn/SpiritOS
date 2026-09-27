@@ -38,7 +38,26 @@ const limits = require('../../../js/limits.js');
 const { execFileSync } = require('child_process');
 
 const APP = 'agents';
-const KINDS = ['note', 'ask', 'answer', 'report', 'halt', 'resume', 'blocked', 'board'];
+const KINDS = ['note', 'ask', 'answer', 'report', 'halt', 'resume', 'blocked', 'board', 'explain', 'annotation'];
+
+// ── `explain` AND `annotation` — THE TWO THINGS DESK SHOWS ABOVE THE CHAT ─
+//
+//   Andy, 2026-09-27, on the details of a row: "i don't want to see a
+//   history, i want to se every agents comment slot (if it is filled)
+//   Also. as soon as i click on details, and no english explanation is
+//   visible, it implies that one is requested."
+//
+//   explain     an agent's plain-English blurb for a row; Desk shows the
+//               newest at the top. The agent holding the row writes it when
+//               his node sends an `ask` beginning "explain".
+//   annotation  an agent's ONE comment slot on a row; the newest from each
+//               agent wins, and superseded ones stay in the log. Andy: "one
+//               slot for annotations, if all are filled, listen" and "you
+//               may revise you annotation when your viewpoint changes".
+//
+// BOTH BELONG TO A ROW, so both are refused without a `todo`: a blurb for
+// no row is a message nobody can place.
+const NEEDS_TODO = ['explain', 'annotation'];
 
 // ── `board` — THE SCOREBOARD, AS DATA, FOR ANDY'S DESK ───────────────
 //
@@ -159,6 +178,9 @@ function makeEnvelope(from, kind, text, re, idFn, block, todo) {
   if (KINDS.indexOf(kind) === -1) throw new Error('unknown kind: ' + kind);
   if (todo !== undefined && todo !== null && todo !== '' && !TODO_ID.test(String(todo))) {
     throw new Error('todo must be a full to-do id like cycle-10/R13, not ' + JSON.stringify(todo));
+  }
+  if (NEEDS_TODO.indexOf(kind) !== -1 && !todo) {
+    throw new Error('a ' + kind + ' belongs to a row — give it --todo <full id>');
   }
   // ── AND NOTHING EMPTY LEAVES (cycle 10's R19) ───────────────────────
   //
@@ -601,6 +623,12 @@ function listen(cfg, onLine, fetchFn) {
           // dependencies)".
           if (b.kind === 'answer' && /^dependency\//.test(String(b.todo || ''))) {
             onLine('AGENTS DECISION ' + (b.from || '?') + ' ' + String(b.text || '').trim() + ' on ' + b.todo);
+          }
+          // HIS REQUEST FOR AN EXPLANATION, as its own line: the agent holding
+          // the row answers it with kind `explain`, and it is the one line
+          // that asks for writing rather than for work.
+          if (b.kind === 'ask' && b.todo && /^\s*explain/i.test(String(b.text || ''))) {
+            onLine('AGENTS EXPLAIN-REQUEST ' + (b.from || '?') + ' on ' + b.todo);
           }
           let said = b.kind === 'blocked' ? blockLine(env) : String(b.text || '').replace(/\s+/g, ' ');
           if (b.kind === 'board') {

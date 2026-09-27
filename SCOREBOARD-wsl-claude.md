@@ -7,7 +7,7 @@
 **Nothing is broken, 13 requirements are declared and not built yet, and 2 older questions need a decision from you.**
 
 ```
-166 suites   3130 green   0 red   0 unhappy   13 owed      run 195d4a6
+166 suites   3132 green   0 red   0 unhappy   13 owed      run 97a4343
 ```
 
 ---
@@ -69,20 +69,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +3130 green
-- ⏳ **newly owed:** cycle-10/R13
-- ⏳ **newly owed:** cycle-11/C3
-- ⏳ **newly owed:** public-app-server/G10
-- ⏳ **newly owed:** public-app-server/G17
-- ⏳ **newly owed:** public-app-server/G8
-- ⏳ **newly owed:** puppets/G1
-- ⏳ **newly owed:** puppets/G2
-- ⏳ **newly owed:** puppets/G3
-- ⏳ **newly owed:** puppets/G4
-- ⏳ **newly owed:** puppets/G6
-- ⏳ **newly owed:** puppets/G7
-- ⏳ **newly owed:** transport/R12
-- ⏳ **newly owed:** transport/R16
+- +2 green
 
 ---
 

@@ -144,6 +144,24 @@ function door() {
     }
   }
 
+  // ── EXPLAIN AND ANNOTATION BELONG TO A ROW ─────────────────────────
+  {
+    const fetchFn = door();
+    const bare = await agents.send(cfgFor(home()), 'control', 'explain', 'a blurb for nothing', '', { fetch: fetchFn });
+    const bareA = await agents.send(cfgFor(home()), 'control', 'annotation', 'a comment for nothing', '', { fetch: fetchFn });
+    const good = await agents.send(cfgFor(home()), 'control', 'explain', 'what this row means, in plain words', '',
+      { fetch: fetchFn, todo: 'puppets/G6' });
+    if (!bare.ok && /belongs to a row/.test(bare.error) && !bareA.ok && /belongs to a row/.test(bareA.error)
+        && good.ok && fetchFn.posts.length === 1 && fetchFn.posts[0].env.body.kind === 'explain'
+        && fetchFn.posts[0].env.body.todo === 'puppets/G6') {
+      test.check('an explain or annotation with no row is refused before sending, and one WITH a row '
+        + 'goes, once, as itself');
+    } else {
+      test.fail('bare ' + JSON.stringify(bare) + ' / ' + JSON.stringify(bareA) + ', good ' + JSON.stringify(good)
+        + ', posts ' + fetchFn.posts.length);
+    }
+  }
+
   // ── HIS DECISION ON A DEPENDENCY IS A LINE THE LEAD CANNOT MISS ────
   //
   //   Andy: "a re-shuffeling of the board triggers a reload of the board.
@@ -161,6 +179,8 @@ function door() {
       packet(CONTROL, agents.makeEnvelope('andy', 'answer', 'accepted.', null, null, null, dep)),
       packet(PEER, agents.makeEnvelope('claude-windows', 'note', 'my view on this row', null, null, null, 'cycle-10/R13')),
       packet(CONTROL, agents.makeEnvelope('lead', 'board', JSON.stringify({ rows: [{}, {}, {}] }))),
+      packet(CONTROL, agents.makeEnvelope('andy', 'ask', 'explain please', null, null, null, 'puppets/G6')),
+      packet(CONTROL, agents.makeEnvelope('andy', 'ask', 'is this done?', null, null, null, 'puppets/G6')),
     ];
     const enc = new TextEncoder();
     let i = 0;
@@ -188,6 +208,13 @@ function door() {
       test.check('an agent\'s note under a to-do prints with its todo and is NOT a decision');
     } else {
       test.fail('note line missing or wrong: ' + JSON.stringify(out));
+    }
+    const explainReq = out.filter(function (l) { return /^AGENTS EXPLAIN-REQUEST /.test(l); });
+    if (explainReq.length === 1 && explainReq[0] === 'AGENTS EXPLAIN-REQUEST andy on puppets/G6') {
+      test.check('his "explain" ask prints its own EXPLAIN-REQUEST line naming the row, and his other '
+        + 'ask on the same row does not — so the line means exactly one thing');
+    } else {
+      test.fail('explain-request lines: ' + JSON.stringify(explainReq));
     }
     if (out.some(function (l) { return / board: the scoreboard, 3 rows$/.test(l); })) {
       test.check('a board arriving is one line, "the scoreboard, 3 rows", not kilobytes of JSON');
