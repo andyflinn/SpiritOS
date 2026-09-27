@@ -4,21 +4,11 @@
 
 ## Summary
 
-**One test is broken, 13 requirements are declared and not built yet, and 2 older questions need a decision from you.**
+**Nothing is broken, 13 requirements are declared and not built yet, and 2 older questions need a decision from you.**
 
 ```
-166 suites   3129 green   1 red   1 unhappy   13 owed      run 3e1cf4e
+166 suites   3130 green   0 red   0 unhappy   13 owed      run 195d4a6
 ```
-
----
-
-## What is red
-
-**Something that used to pass now fails.** These are broken, not unfinished — the owed list further down is work nobody has written yet.
-
-**❌ `cardFetch.js`** — one check no longer passes.
-
-  - a busy target made the card fetch give up: 428 no cipher key for that peer — ask for their card first after 1 ask(s). Busy means wait (0016), and an ordinary…
 
 ---
 
@@ -79,7 +69,20 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +1 green
+- +3130 green
+- ⏳ **newly owed:** cycle-10/R13
+- ⏳ **newly owed:** cycle-11/C3
+- ⏳ **newly owed:** public-app-server/G10
+- ⏳ **newly owed:** public-app-server/G17
+- ⏳ **newly owed:** public-app-server/G8
+- ⏳ **newly owed:** puppets/G1
+- ⏳ **newly owed:** puppets/G2
+- ⏳ **newly owed:** puppets/G3
+- ⏳ **newly owed:** puppets/G4
+- ⏳ **newly owed:** puppets/G6
+- ⏳ **newly owed:** puppets/G7
+- ⏳ **newly owed:** transport/R12
+- ⏳ **newly owed:** transport/R16
 
 ---
 
