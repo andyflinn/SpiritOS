@@ -33,7 +33,8 @@ Design only. Nothing here is built.
   stays gated on the owed list. This app joins Info, Natter and Contacts
   as an app that must survive the overhaul.
 - **A real app, and outside alpha.** Andy: *"an it will be a REAL app"*,
-  and *"it does something ouside of the scope of alpha"*. It is a working
+  and *"it does something ouside of the scope of alpha"*, *"that is useful
+  to at least 1 human and more than one agent-instance"*. It is a working
   tool with a purpose of its own, not a sample. It is not part of alpha,
   and alpha does not wait on it. It lives in `app/<name>/` with a
   manifest, like Info (`app/info/info.json`). It uses the app contract
