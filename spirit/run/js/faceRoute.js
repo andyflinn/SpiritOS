@@ -76,14 +76,17 @@ function answerRoute(rows, name, owner, sign, nowMs, faceKey) {
 // the owner signed it; it has not expired (an old route for a name taken
 // back must not replay); it points at THIS node (a route for joe shown to
 // bob is no route); and the one presenting it is the face it was given to.
-// `at`: { selfKey, fromKey, now }. With no `at` only the signature is
-// checked, which is what the puppet does on receipt (it is the face).
-function routeIsSigned(route, ownerKey, verify, at) {
+// `at`: { selfKey, fromKey, now }, and REQUIRED: a check called without it
+// fails closed rather than quietly falling back to the signature alone
+// (wsl-claude). The puppet, which is the face, uses routeSignatureHolds.
+function routeSignatureHolds(route, ownerKey, verify) {
   if (!route || route.route !== 'to' || !route.sig) return false;
-  var ok = false;
-  try { ok = !!verify(ownerKey, routeMessage(ownerKey, route.name, route.to, route.until, route.face), route.sig); }
-  catch (e) { ok = false; }
-  if (!ok || !at) return ok;
+  try { return !!verify(ownerKey, routeMessage(ownerKey, route.name, route.to, route.until, route.face), route.sig); }
+  catch (e) { return false; }
+}
+function routeIsSigned(route, ownerKey, verify, at) {
+  if (!at || !at.selfKey || !at.fromKey) return false;
+  if (!routeSignatureHolds(route, ownerKey, verify)) return false;
   var now = typeof at.now === 'number' ? at.now : Date.now();
   if (!(Number(route.until) > now)) return false;
   if (route.to !== at.selfKey) return false;
@@ -112,7 +115,7 @@ function createRouteCache(opts) {
     if (!name) return false;
     if (answer.route === 'none') { held[name] = { none: true, until: now() + NONE_MS }; return true; }
     if (answer.route === 'mine') { held[name] = { mine: true, until: now() + ROUTE_MS }; return true; }
-    if (answer.route !== 'to' || !routeIsSigned(answer, o.ownerKey, o.verify)) return false;
+    if (answer.route !== 'to' || !routeSignatureHolds(answer, o.ownerKey, o.verify)) return false;
     // Never longer than an hour from now, whatever the answer claims.
     var until = Math.min(Number(answer.until) || 0, now() + ROUTE_MS);
     if (until <= now()) return false;
@@ -136,5 +139,6 @@ function createRouteCache(opts) {
 
 module.exports = {
   nameOf: nameOf, answerRoute: answerRoute, routeIsSigned: routeIsSigned,
+  routeSignatureHolds: routeSignatureHolds,
   createRouteCache: createRouteCache, ROUTE_MS: ROUTE_MS, NONE_MS: NONE_MS,
 };
