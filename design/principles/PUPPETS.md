@@ -445,6 +445,61 @@ the partial flag and the field names are inherited. Neither hook exists
 requirement. The full statement, with what is measured about the
 existing example, is in `THE-REQUESTER-IS-RESPONSIBLE.md`.
 
+**The design, ruled 2026-09-27** (in Desk under this row; written up by
+wsl-claude on Andy's "go."). Citations at `6637c75`.
+
+*Decided:*
+1. **A list is a search.** *"there are no (complete) lists, only
+   searches"* (DICTIONARY, *List*). Each collection verb becomes
+   `search(label)`, which returns *"an array of key/label couples"*,
+   and `get(key)` (*"and get(key) i agree with"*) for the rest of an
+   object: *"the rest of the data can be had with lazy-fetches by key...."*.
+   The default search is `"*"`. Each replaced list verb is killed:
+   *"replace the getList interface flat-out , with \"search\" and KILL
+   the replaced verb"*.
+2. **The bucket never scans.** *"i doubt that bucket scans itself,
+   that's a can of worms ... the priority sequence can only be known by
+   the user of bucket.js"*. The collection walks its own data in its
+   own priority order and hands objects to the bucket. It stops at
+   `MAX_SEARCHED_ITEMS` (*"you may name the limit however you want"*;
+   today that limit is `searchMemoryRows`, `nodeSettings.js:60`
+   `const DEFAULT_SEARCH_MEMORY_ROWS = 1000;`, used only by peer search
+   at `hub.js:2242`).
+3. **Two hooks, and the bucket holds only pairs.**
+   `getLabelStringFromIncomingObject()` and `extractKeyAndLabelFromRow()`:
+   *"the bucket first checks if the incoming object is even viable, if
+   it is then it creates a key,label object to join the bucket, inserted
+   in a prioritized fashion."*
+4. **No exemption.** Added contacts are fed first on a contact search,
+   which *"gives them only first consideration for the result return,
+   but are flushed like any other low quality match when the bucket
+   overflows"*. Today they are exempt: `nodeStore.js:676`
+   `const rows = q.recallChosen.all().concat(` reads every chosen row
+   before counting strangers. That changes.
+5. **Bytes only.** *"the cap IS measure in bytes only"*, and
+   *"the getResult() call on the bucket is what creates the byte-limited
+   json result"*. The call exists as `serialize(map, maxBytes)`
+   (`bucket.js:147`), has no caller, and counts characters, not bytes:
+   `bucket.js:156` `if (JSON.stringify(next).length > ceiling)`. It
+   becomes `getResult()`, counting UTF-8 bytes.
+6. **`more` tells the whole truth.** It is true when the bucket turned
+   an object away, when `getResult()` cut to fit, AND when the walk
+   stopped at `MAX_SEARCHED_ITEMS` with objects left unchecked (wsl-claude,
+   accepted as part of the design Andy called *"fairly clean"*).
+7. **The work, in Andy's four parts:** complete `bucket.js`; move every
+   node and relay collection verb onto it; give every shell app a search
+   box over its list; adapt the suites, including G3's every-verb suite.
+   A collection's verb and the apps that call it change in one commit,
+   so no app is left calling a verb that is gone.
+8. **Out of scope: `node.history`.** *"node.history is hidden from both
+   peerPost() and the nodes interface. it follows different rules."* It
+   was removed from the node's interface on 2026-09-27 (`32fa339`).
+
+*Open:*
+- **What hook 1 matches against.** The 2026-09-25 ruling above has the
+  searchable text as title AND description; hook 1 returns *"the label"*.
+  If it is only ever the label, hook 2 alone would do. Not yet answered.
+
 ### G3 — one suite that makes every api call
 
 **Status:** OPEN. Nothing built. Andy's own instrument, ruled earlier and
