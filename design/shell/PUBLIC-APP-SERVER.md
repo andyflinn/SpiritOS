@@ -1184,6 +1184,14 @@ verbs today; they live only in its code.
 - **Its wire is peerPost.** Andy: *"peerPost('api')"*, and *"peerPost is the
   wire to the api introspection, NOT the face"*. A member asks `api`, and
   calls a leaf, with an ordinary packet to the owner's node.
+- **The member's whole path, in Andy's words.** *"peerPost ask
+  ownerNode('api') the reply is {grantFace:{verb:{},verb{}}}"*, then *"the
+  member then uses that interface to obtain a domain element. then,
+  miraculously, gets requests via the appFaceApp puppet."* So: the member
+  asks `api`, calls `{ grantFace: { grant: { name } } }`, stores the name it
+  was granted, and from then on the face forwards that name's visitors to it.
+  grantFace, running on the owner's box, has meanwhile told the face by
+  owner command to admit that member.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
