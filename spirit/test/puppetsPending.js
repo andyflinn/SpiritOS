@@ -121,25 +121,19 @@ test.subHeading('one return bound, both paths');
   // own :127 against its :146. The nameable unit is the shared helper
   // every collection verb answers through, because a per-verb
   // implementation is the duplication the probe exists to catch.
-  // PROBED ON THE AGREED NAME, not a guess: Andy, 2026-09-27, "the
-  // getResult() call on the bucket is what creates the byte-limited json
-  // result" (PUPPETS.md G2, decided 5). It was probing hub.js exports for
-  // bounded/truncat/partial, words the design never used, so it could
-  // not have flipped when the work landed.
-  // The names are claude-windows', sent before landing: searchBucket.js (its own
-  // layer beside peerSearch, so bucket.js stays free of requires) exports
-  // createSearch(opts), and a search answers getResult().
-  let getResult = false;
-  try {
-    const bucket = require(path.join(REPO, 'spirit/run/js/searchBucket.js'));
-    const s = typeof bucket.createSearch === 'function' ? bucket.createSearch({}) : null;
-    getResult = !!s && typeof s.getResult === 'function';
-  } catch (e) { getResult = false; }
-  test.awaiting('puppets/G2', 'createSearch(opts).getResult(), cut in bytes', getResult,
-    'one bucket every collection search feeds, holding key/label pairs, answered through getResult() cut to the ' +
-    'byte cap with `more` telling the truth. bucket.js already has serialize(map, maxBytes) (bucket.js:147 at ' +
-    '6637c75) with no caller, counting characters rather than bytes',
-    { there: 40, cost: 'a sitting — the shape exists, the unit and the sharing do not' });
+  // SLICE 1 IS BUILT: searchBucket.js, createSearch(opts).getResult(),
+  // at ff22e8c, asserted by sharedSearch.js. What G2 still owes is the rest
+  // of Andy's order: "replace the getList interface flat-out , with
+  // \"search\" and KILL the replaced verb". So the probe is now that no
+  // verb in server.js is called *.list. everyVerb.js's LISTS_TODAY names
+  // every verb that still ANSWERS with a list, which is the finer count.
+  const listVerbs = [...fs.readFileSync(path.join(REPO, 'spirit/run/js/server.js'), 'utf8')
+    .matchAll(/^ {4}'([a-z]+\.list)':/gm)].map(function (m) { return m[1]; });
+  test.awaiting('puppets/G2', 'no list verb left: each is search + get', listVerbs.length === 0,
+    'still claimed: ' + (listVerbs.join(', ') || 'none') + '. Each becomes search(label) giving key/label ' +
+    'pairs through searchBucket.js, plus get(key), and the list verb dies in the same commit as the apps ' +
+    'that call it',
+    { there: 50, cost: 'a sitting per collection, after Andy\'s yes on the verb list' });
 
   // puppets/G3, ANDY'S OWN INSTRUMENT ("then you need only one suite that
   // makes every api call"), is no longer owed: spirit/test/everyVerb.js is

@@ -1,11 +1,11 @@
 {
   "box": "wsl-claude",
-  "commit": "dab9fec",
+  "commit": "5fa98c6",
   "stale": false,
-  "head": "dab9fec",
+  "head": "5fa98c6",
   "measured": {
-    "suites": 173,
-    "green": 3330,
+    "suites": 175,
+    "green": 3346,
     "red": 0,
     "unhappy": 0
   },
@@ -43,19 +43,7 @@
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-25",
-      "there": 40,
-      "blocked": ""
-    },
-    {
-      "kind": "to-do",
-      "id": "puppets/G3",
-      "handle": "puppets/G3",
-      "title": "one suite that makes every api call",
-      "rank": 4,
-      "frees": 0,
-      "waitsOn": [],
-      "owedSince": "2026-09-25",
-      "there": 0,
+      "there": 50,
       "blocked": ""
     },
     {
@@ -63,7 +51,7 @@
       "id": "transport/R12",
       "handle": "transport/R12",
       "title": "an app can reply, and a reply is the only evidence of being delivered",
-      "rank": 5,
+      "rank": 4,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-26",
@@ -75,7 +63,7 @@
       "id": "transport/R16",
       "handle": "transport/R16",
       "title": "the log must be able to PROVE what it claims",
-      "rank": 6,
+      "rank": 5,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-26",
@@ -87,7 +75,7 @@
       "id": "puppets/G10",
       "handle": "puppets/G10",
       "title": "the face door and the puppet group",
-      "rank": 7,
+      "rank": 6,
       "frees": 0,
       "waitsOn": [
         {
@@ -110,7 +98,7 @@
       "id": "public-app-server/G18",
       "handle": "G18",
       "title": "the app process serves its owner node over a named pipe, not a TCP port",
-      "rank": 8,
+      "rank": 7,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-27",
