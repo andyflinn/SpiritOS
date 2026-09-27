@@ -1212,6 +1212,11 @@ verbs today; they live only in its code.
   explicitly forwarded via named pipe, by the owner-node"*. So grantFace takes
   no peer requests of its own. Everything reaches it through its node over
   its pipe (`api.toLocalApp`), and everything leaves through its node.
+  Andy: *"and those request can only come from verified members with
+  signature that the owner node automatically checks"*. Already how
+  peerPost works: every arrival's signature is checked, and the front door
+  admits only known keys, before the node forwards anything down the pipe.
+  The app's allow list is the second gate.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
