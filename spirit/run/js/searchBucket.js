@@ -92,7 +92,9 @@ function createSearch(opts) {
       examined += 1;
       var pair = keyAndLabel(obj);
       if (!pair || pair.key == null) return true;
-      matchingText = String(labelString(obj) == null ? '' : labelString(obj));
+      // Called once: a hook may be costly or read a store (wsl-claude).
+      var text = labelString(obj);
+      matchingText = text == null ? '' : String(text);
       graded.offer({ key: String(pair.key), label: String(pair.label == null ? '' : pair.label) });
       return true;
     },
