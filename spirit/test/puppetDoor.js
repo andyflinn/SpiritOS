@@ -63,6 +63,12 @@ function world(puppetJson) {
     'contact.headers': function (req, res) { ran.push('contact.headers'); res.end(String(req.headers.host)); },
     // Fails LATER, in its promise, as a handler reading its body would.
     'contact.later': function () { ran.push('contact.later'); return Promise.reject(new Error('failed after reading')); },
+    // Answers more than a packet can carry, as jobs.list does (42,570 bytes).
+    'contact.huge': function (req, res) {
+      ran.push('contact.huge');
+      res.writeHead(200);
+      res.end(JSON.stringify({ ok: true, rows: 'x'.repeat(40000) }));
+    },
   };
   const door = nodeApps.puppetDoor({
     rootDir: root,
@@ -217,6 +223,30 @@ function world(puppetJson) {
       test.fail('a handler failing in its promise: ' + (escaped ? escaped + ' rejection(s) ESCAPED the door, '
         + 'which in a real node stops the process for one bad command' : 'nothing escaped')
         + '; the owner got ' + JSON.stringify(b || 'no answer at all'));
+    }
+  }
+
+  // ── AN ANSWER TOO BIG FOR A PACKET IS REFUSED BY NAME, NOT DROPPED ──
+  //
+  // packet.encode refuses an oversize body, and reply() used to return on
+  // that refusal and send nothing, so the owner waited out the whole timeout
+  // and was told "no reply from puppet". Agreed with claude-windows,
+  // 2026-09-28: {ok:false, status:413, code:'answer-too-large', verb, bytes}.
+  {
+    const w = world(OWNED);
+    await w.arrive(owner.publicKey, command('contact.huge', {}));
+    const b = w.sent[0] && w.sent[0].reply.body;
+    const fine = world(OWNED);
+    await fine.arrive(owner.publicKey, command('contact.list', { of: 'small' }));
+    const ok = fine.sent[0] && fine.sent[0].reply.body;
+    if (b && b.ok === false && b.status === 413 && b.code === 'answer-too-large' && b.verb === 'contact.huge'
+        && b.bytes > 40000 && w.ran.join() === 'contact.huge' && ok && ok.ok) {
+      test.check('an answer too big for a packet reaches the owner as answer-too-large, naming the verb and its '
+        + b.bytes + ' bytes, instead of silence; a small answer still arrives whole');
+    } else {
+      test.fail('AN OVERSIZE ANSWER WAS ' + (w.sent.length ? 'answered as ' + JSON.stringify(b) : 'DROPPED: nothing '
+        + 'was sent back, so the owner times out with no-reply-from-puppet and never learns why')
+        + '. The handler ran: ' + JSON.stringify(w.ran));
     }
   }
 
