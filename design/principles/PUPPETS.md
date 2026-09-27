@@ -447,7 +447,7 @@ Addressed as a `wire` namespace: `verbTable.js:74` makes `wire` the
 client's failure contract and a namespace is uniformly one or the other,
 so a remote caller must name the proxy rather than the local verb.
 
-**THE WRITTEN SHAPE OF G4, awaiting Andy's approval** (drafted by claude,
+**THE WRITTEN SHAPE OF G4, APPROVED by Andy 2026-09-27**, with G7 (drafted by claude,
 checked by wsl-claude against G7: "your 2 and 5 are my 3 and 4 seen from the
 sending end"). `peerOwnerPost()` is the owner door's sending end:
 1. **What.** One function on the owner's node that sends ONE command to ONE
@@ -572,7 +572,7 @@ What it adds is clear, and one question is OPEN:
   caller can tell "not here" from "broken" (wsl-claude, and what his suite
   will assert).
 
-**AGREED IN PRINCIPLE, 2026-09-27; the written shape still goes to him.**
+**AGREED IN PRINCIPLE, 2026-09-27, and then APPROVED as the written shape below.**
 Both agents answered his proposal under the row within two seconds of each
 other (wsl-claude's five points in the chat, claude's note in its slot).
 Andy then answered: *"yes. that specifies my proposed boundary much
@@ -609,8 +609,10 @@ shape as it stands:
 **Building is a separate go.** G7 waits on G6 (accepted), and wsl-claude
 tests it.
 
-**THE WRITTEN SHAPE OF G7, awaiting Andy's approval** (drafted by
-wsl-claude, whose row it is, and checked against G4):
+**THE WRITTEN SHAPE OF G7, APPROVED by Andy 2026-09-27** (drafted by
+wsl-claude, whose row it is, and checked against G4). He pressed Go! on the
+ask *"Go approves the shapes as written; building each is still its own
+go."* So G7 and G4 are DECIDED as shapes and are not yet started.
 1. **The puppet group.** An app's flat commands are one interface group,
    called `puppet`. Andy: *"maybee that portion of the api should be called
    puppet"*. **WHAT A PUPPET IS, ruled 2026-09-27** (a Go! on wsl-claude's
