@@ -181,6 +181,13 @@ const TALLY = {
   // is contained in what was authorised. If he reads this and disagrees,
   // it is one line and the reasoning is here rather than in a commit.
   'js/appServer.js': 1,
+  // THE FACE'S ENTRY POINT ON THE VPS PUPPET NODE (public-app-server/G17,
+  // slice 1): http.createServer once, on loopback, for Caddy. RESTING ON
+  // ANDY'S "go." ON THAT SLICE, 2026-09-27, whose whole content is this
+  // listener, and said so rather than assumed, as appServer.js above. A
+  // listener that cannot listen is not one. If he reads this and
+  // disagrees, it is one line.
+  'js/puppetPost.js': 1,
 
   // AGENT.md: unused, do not assume it is loaded, do not delete.
   'js/client/browser.js': 1,
@@ -198,6 +205,10 @@ const TALLY = {
   // there is no verb for "what does a visitor see" — the whole of G11 is
   // about what that page says in four states.
   'test/appServerBoundary.js': 3,
+  // The face is reached by a browser over HTTP and by nothing else, so its
+  // suite must be a browser: one request helper and the listener it starts
+  // (G17 slice 1, as serverSurface.js does for the node's door).
+  'test/puppetPost.js': 2,
   // THE WORLD BUILDER, counted for the first time (cycle 2). Three, and
   // each is a public route with no verb behind it: POST /api/relay/claim
   // is how a stranger joins a relay, GET /api/relay/key is the liveness

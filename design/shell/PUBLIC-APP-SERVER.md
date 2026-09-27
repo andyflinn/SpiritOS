@@ -942,8 +942,9 @@ refused at the VPS, and a carried packet naming no row is refused at the
 receiving node. There is no default route and no fallback app.
 
 
-**THE ENTRY POINT ON THE VPS, proposed 2026-09-27 in Desk and awaiting Andy's
-Go!:** a listener on the VPS puppet node that exists only for face traffic.
+**THE ENTRY POINT ON THE VPS, BUILT 2026-09-27 on Andy's "go."** (his title
+for G17: *"confirm the reply path from app-server-process back to the
+browser"*; `spirit/run/js/puppetPost.js`, `spirit/test/puppetPost.js`): a listener on the VPS puppet node that exists only for face traffic.
 Caddy terminates the browser's HTTPS and forwards to it, and it hands each
 request to appFaceApp and nothing else. The node's own door stays
 loopback-only (`server.js:675`), so a visitor never reaches the node's verbs.
@@ -953,6 +954,19 @@ lowest-level shell function is called?"* The page's lowest layer calls
 `puppetPost()`, and the listener that answers it on the VPS carries the same
 name, so both ends of the one wire read as one thing. It is his mirroring
 rule applied to a single call.
+
+What slice 1 is, as built and reviewed by wsl-claude: `relay-state/face.json`,
+`{ "port": n }`, switches it on, so every other node has no face. It listens
+on loopback only. The one node app that claims it (`api.face(handler)`,
+handed only on a node with a face) gets `{ host, method, path, body }` and
+nothing else: no headers, no socket, no forwarded address. A face that hangs
+gets 504, one that fails gets 502, and the next request is served. A body
+over BODY_MAX is refused by name before the face runs. A second app cannot
+claim it, and the same app may claim again after a remount.
+
+**Open, Andy's call (asked 2026-09-27):** whether the face's answer to the
+browser is capped by MAX_PAYLOAD, or exempt because it never becomes a
+packet. Recommended: capped, one rule without exceptions.
 
 ### G18 — the app process serves its owner node over a named pipe, not a TCP port
 

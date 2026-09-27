@@ -1350,9 +1350,22 @@ contactBook.syncMarks(ROOT_DIR);
   //
   // A page app is untouched: `boots` is opt-in and absent on every
   // manifest that exists today.
+  // ── THE FACE (public-app-server/G17, slice 1) ──────────────────────
+  //
+  // Only where relay-state/face.json names a port, which is the VPS puppet
+  // node alone: a listener on loopback for Caddy, handing visitors'
+  // requests to the node app that claims them (puppetPost.js). Its own
+  // port, apart from this node's door, so a visitor never reaches a verb.
+  const faceConfig = require('./puppetPost').faceConfigIn(ROOT_DIR);
+  const face = faceConfig
+    ? require('./puppetPost').createPuppetPost({ log: function (line) { console.log(line); } })
+    : null;
+  if (face) face.listen(faceConfig.port);
+
   require('./nodeApps').mountAll({
     rootDir: ROOT_DIR,
     arrivals: arrivals,
+    face: face,
     post: function (relayUrl, toKey, text, hints, how) {
       return peerRouter.post(relayUrl, toKey, text, hints, how);
     },
