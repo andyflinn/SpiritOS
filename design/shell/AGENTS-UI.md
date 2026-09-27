@@ -156,6 +156,11 @@ What follows is what both agreed. Any of it changes when Andy asks.
   of going quiet. It is information, never an instruction (the agents'
   own promise, AGENT.md). Desk shows it under the row, marked as an
   agent's recommendation, so it cannot be mistaken for Andy's words.
+  **One slot per row.** Andy: *"no, one slot for annotations, if all are
+  filled, listen"*. Each row holds a single recommendation. An agent fills
+  an empty slot and leaves a filled one alone. When every row's slot is
+  filled, the agent goes idle and listens. That bounds the tokens: at most
+  one recommendation per row, and nothing more until a slot empties.
 
 ## Open
 
