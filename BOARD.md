@@ -103,16 +103,6 @@ not describe. Run the harness if in doubt.
 
 *Declared in `puppetsPending.js`*
 
-## puppets/G6 — a puppet's stored owner key, owner-only
-
-`PUPPETS` · status **OPEN**
-
-- **missing:** a puppet's stored owner key, owner-only — **~20% there**, guess: small — the readOnly mechanism exists, the key and its planting do not
-  
-  Andy: "the app must know who owns it, it stores the key of it's owner". Read-only to the puppet through the same mechanism allow.json uses, or a puppet rewrites its owner and takes itself over
-
-*Declared in `puppetsPending.js`*
-
 ## puppets/G7 — the loopback shim
 
 `PUPPETS` · status **OPEN**
@@ -145,4 +135,4 @@ not describe. Run the harness if in doubt.
 
 ---
 
-**13 assertion(s) across 13 requirement(s).**
+**12 assertion(s) across 12 requirement(s).**

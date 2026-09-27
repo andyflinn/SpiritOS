@@ -178,14 +178,21 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
     test.fail('puppets/G5 regressed: nodeApps no longer exports ownerCommandIn');
   }
 
-  // Named apart from puppets/G5 because it is the thing puppets/G5 checks AGAINST, and
-  // because it has its own refusal: a puppet that can write its own
-  // owner key owns itself, which is strictly worse than the allow.json
-  // hole already closed.
-  test.awaiting('puppets/G6', 'a puppet\'s stored owner key, owner-only', /OWNER_KEY|owner\.json/.test(nodeApps),
-    'Andy: "the app must know who owns it, it stores the key of it\'s owner". Read-only to the puppet through the ' +
-    'same mechanism allow.json uses, or a puppet rewrites its owner and takes itself over',
-    { there: 20, cost: 'small — the readOnly mechanism exists, the key and its planting do not' });
+  // ── puppets/G6 IS BUILT, SO THE DECLARATION BECAME AN ASSERTION ──────
+  //
+  // Andy's title: "Lock puppet out of Self-Ownership". Built by
+  // claude-windows at edbadff; this suite then said "puppets/G6 EXISTS NOW
+  // ... write the assertion it was standing in for", and it was written:
+  // spirit/test/puppetOwner.js, eight checks, mutation-tested against the
+  // read-only list. As with G5, only reachability is asserted here, so this
+  // file keeps saying what is owed and does not become a second copy.
+  if (typeof require('../run/js/nodeApps').ownerIn === 'function' && /owner\.json/.test(nodeApps)) {
+    test.check('the owner lock exists as a unit — nodeApps.ownerIn and owner.json, asserted in '
+      + 'puppetOwner.js: read through api.owner(), every write spelling refused, no self-planting, '
+      + 'an owner edit seen at once, anything not a key means nobody');
+  } else {
+    test.fail('puppets/G6 regressed: nodeApps no longer has ownerIn and owner.json');
+  }
 
   // The shim, separately, because it is the part most likely to rot:
   // handlers take real (req, res) and peekVerb reads the verb off the

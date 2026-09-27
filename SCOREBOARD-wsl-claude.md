@@ -4,10 +4,10 @@
 
 ## Summary
 
-**Nothing is broken, 13 requirements are declared and not built yet, and 2 older questions need a decision from you.**
+**Nothing is broken, 12 requirements are declared and not built yet, and 3 older questions need a decision from you.**
 
 ```
-166 suites   3132 green   0 red   0 unhappy   13 owed      run 97a4343
+167 suites   3141 green   0 red   0 unhappy   12 owed      run d66c790
 ```
 
 ---
@@ -43,13 +43,14 @@
 
 ### Older questions, no hurry
 
-**2 document(s) still hold a decision only you can make.** Each one says a requirement is open, and no test is watching it — so if the work was dropped, nothing will notice.
+**3 document(s) still hold a decision only you can make.** Each one says a requirement is open, and no test is watching it — so if the work was dropped, nothing will notice.
 
 For each: **is it still wanted, has a later cycle replaced it, or is it abandoned?** Say which and it either gets a test or gets closed.
 
 - In `design/cycles/2026-09-23-sealed-posts-cycle-10.md`, 2 things are still marked open with no test watching:
     - message LENGTH is public, or it is padded (10/R15)
     - suites that INSIST, not suites that demonstrate (10/R8)
+- **Lock puppet out of Self-Ownership (puppets/G6)** — live work in `design/principles/PUPPETS.md`, and no test is watching it.
 - In `design/shell/PUBLIC-APP-SERVER.md`, 13 things are still marked open with no test watching:
     - `appServer.js` is a third startup module (public-app-server/G1)
     - no failure-state lever; the states are reachable from outside (G11)
@@ -69,7 +70,8 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +2 green
+- +9 green
+- ✅ **built or withdrawn:** puppets/G6
 
 ---
 
@@ -77,21 +79,23 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 | # | handle | to-do | waits on | frees | owed | there | |
 |---|---|---|---|---|---|---|---|
-| 1 | puppets/G6 | a puppet's stored owner key, owner-only |  | 2 | 1 day | `▓▓░░░░░░░░` 20% |  |
-| 2 | puppets/G7 | the loopback shim | puppets/G6 | 1 | 1 day | `░░░░░░░░░░` 0% |  |
-| 3 | 10/R13 | a card is ordered in time, or an old one never dies |  |  | 3 days | `▓▓▓▓▓░░░░░` 50% |  |
-| 4 | 11/C3 | the state the record cannot mark: its own node being down |  |  | 3 days | `▓▓▓▓░░░░░░` 40% |  |
-| 5 | G10 | a server reports the box it sits on: four fields, one opinion withheld |  |  | 2 days | `▓▓▓░░░░░░░` 33% |  |
-| 6 | public-app-server/G8 | layer 1 splits by PROMISE, and the stable half is named |  |  | 2 days | `░░░░░░░░░░` 0% |  |
-| 7 | G17 | join's answer travels back to the browser |  |  | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
-| 8 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 9 | puppets/G2 | one shared search: two hooks per collection, the rest inherited |  |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
-| 10 | puppets/G3 | one suite that makes every api call |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 11 | puppets/G4 | `peerOwnerPost()` on the owner's node | puppets/G7 |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 12 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | today | `░░░░░░░░░░` 0% |  |
-| 13 | transport/R16 | the log must be able to PROVE what it claims |  |  | today | `░░░░░░░░░░` 0% |  |
+| 1 | puppets/G7 | the loopback shim | puppets/G6 | 1 | 1 day | `░░░░░░░░░░` 0% |  |
+| 2 | 10/R13 | a card is ordered in time, or an old one never dies |  |  | 3 days | `▓▓▓▓▓░░░░░` 50% |  |
+| 3 | 11/C3 | the state the record cannot mark: its own node being down |  |  | 3 days | `▓▓▓▓░░░░░░` 40% |  |
+| 4 | G10 | a server reports the box it sits on: four fields, one opinion withheld |  |  | 2 days | `▓▓▓░░░░░░░` 33% |  |
+| 5 | public-app-server/G8 | layer 1 splits by PROMISE, and the stable half is named |  |  | 2 days | `░░░░░░░░░░` 0% |  |
+| 6 | G17 | join's answer travels back to the browser |  |  | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
+| 7 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 8 | puppets/G2 | one shared search: two hooks per collection, the rest inherited |  |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
+| 9 | puppets/G3 | one suite that makes every api call |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 10 | puppets/G4 | `peerOwnerPost()` on the owner's node | puppets/G7 |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 11 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | today | `░░░░░░░░░░` 0% |  |
+| 12 | transport/R16 | the log must be able to PROVE what it claims |  |  | today | `░░░░░░░░░░` 0% |  |
 
-**How the order was made.** 10 of 13 owed items have no dependency you have accepted, so they are ordered by age alone.
+**How the order was made.** 
+
+- 10 of 12 owed items have no dependency you have accepted, so they are ordered by age alone.
+- (puppets/G7) waits on (puppets/G6), which is open but no test watches it.
 
 *Percentages are the guesses the declarations carry — `testSupport`:
 "printed as guesses… to be argued with during a design sitting, not to
