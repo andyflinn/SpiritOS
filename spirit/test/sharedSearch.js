@@ -59,6 +59,35 @@ if (typeof bucket.createSearch !== 'function') {
     }
   }
 
+  // ── '*' IS THE CALLER'S SCAN, CUT BY THE LIMITERS ──────────────────
+  //
+  //   Andy: "and \"*\" as search argument returns the callers scan, cut off
+  //   by the buckets limiter?" Yes, and pinned here. Offered in an order
+  //   that is neither alphabetical nor reversed, so no other rule could
+  //   produce it.
+  {
+    const order = ['m', 'c', 'x', 'a', 'q'];
+    const whole = search({});
+    order.forEach(function (k) { whole.offer(obj(k, 'label-' + k)); });
+    const all = whole.getResult();
+    const byBytes = search({ maxBytes: 70 });
+    order.forEach(function (k) { byBytes.offer(obj(k, 'label-' + k)); });
+    const cutB = byBytes.getResult();
+    const byWalk = search({ maxSearchedItems: 3 });
+    order.forEach(function (k) { byWalk.offer(obj(k, 'label-' + k)); });
+    const cutW = byWalk.getResult();
+    const keys = function (r) { return r.items.map(function (i) { return i.key; }).join(''); };
+    if (keys(all) === 'mcxaq' && all.more === false
+        && cutB.items.length > 0 && 'mcxaq'.indexOf(keys(cutB)) === 0 && keys(cutB).length < 5 && cutB.more === true
+        && keys(cutW) === 'mcx' && cutW.more === true) {
+      test.check('"*" answers the objects in the caller\'s own scan order, unchanged; cut at the byte cap or at '
+        + 'the walk limit, it is the front of that order with more=true');
+    } else {
+      test.fail('"*" order: whole ' + keys(all) + ' more ' + all.more + '; byte cut ' + keys(cutB) + ' more '
+        + cutB.more + '; walk cut ' + keys(cutW) + ' more ' + cutW.more);
+    }
+  }
+
   // ── HOOK 1 MATCHES THE DESCRIPTION; THE PAIR KEEPS ONLY THE LABEL ───
   {
     const s = search({ query: 'plumber' });
