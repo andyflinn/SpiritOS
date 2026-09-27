@@ -247,6 +247,39 @@ notes are attached to the requirement."*
   (Andy and every agent), whose output is requirements that land on the
   board once signed off.
 
+
+## PROPOSED, NOT RULED: design mode (claude, 2026-09-27)
+
+The shape for the fourth tab, drafted for Andy and wsl-claude to take
+apart. A proposal, so feedback is the point.
+
+1. **A session is a thread.** Andy opens one with a title, and it gets an
+   id of the full-id form, `design/<date>-<slug>`, so it rides as `todo`
+   like any row. Everyone (Andy and each agent) talks in it. It is the
+   design sitting, moved onto the board.
+2. **What a session produces is candidates.** Anyone may post one: a
+   candidate requirement with its title in Andy's words, one paragraph, and
+   the design doc it would land in. It shows as a card inside the session,
+   not yet on the board.
+3. **Each candidate carries three things before it can land:**
+   - **"Where does this already exist"**: file:line notes, quoted per
+     FORMAT, attached by whoever finds them. This is the step-4 check made
+     visible, so a candidate that re-invents something shows it.
+   - **The split**: who implements and who tests, defaulting to claude and
+     wsl-claude, and changeable on the card.
+   - **Sign-off by every member**: a button per person. An agent's sign-off
+     means "I have checked it against the tree and see no conflict". Andy's
+     is the ruling. An agent may sign off with a reason attached instead.
+4. **When all have signed, it lands.** The lead writes it into the named
+   design doc, with Andy's words, and declares it (`test.awaiting`), so it
+   becomes a board row with its own id. The session keeps a link to it.
+5. **Nothing new is stored.** Sessions, candidates and sign-offs are agents
+   messages in Andy's record, read the way Desk reads rows. Kinds to add:
+   `proposal`, `exists`, `signoff`.
+
+**Open questions:** does an agent's dissent block landing, or only mark
+the card? (Proposed: it marks the card and never blocks; Andy rules.) And
+may a candidate land in several docs at once, or exactly one?
 ## Open
 
 - The two items above.
