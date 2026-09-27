@@ -200,6 +200,65 @@ async function wholeRoute() {
   app.close();
 }
 
+// G18, Andy 2026-09-27: "processes use named pipes to serve requests from
+// the puppets". Its declaration (appServerBoundary.js) probed a name that
+// was built elsewhere (appServers.pipePathFor, not appServer's), so it
+// could never flip; this is the assertion it was waiting to hand over. A
+// real app server, started the way the node starts it (--app --pipe), is
+// asked over its pipe, and the kernel's own socket table is read for any
+// TCP listener that process holds. Linux only: /proc is the witness, and a
+// Windows run says so rather than passing blind.
+async function noTcpPort() {
+  test.subHeading('G18: an app server started on a pipe holds no TCP port');
+  if (process.platform !== 'linux') {
+    test.check('(skipped off Linux: the socket table is read from /proc, which ' + process.platform + ' has not)');
+    return;
+  }
+  const childProcess = require('child_process');
+  const root = path.join(scratch, 'g18');
+  ['faceProof', 'shared'].forEach(function (d) {
+    fs.cpSync(path.join(RUN, 'app', d), path.join(root, 'app', d), { recursive: true });
+  });
+  fs.mkdirSync(path.join(root, 'process'), { recursive: true });
+  fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
+  const pipe = appServers.pipePathFor(root, 'faceProof');
+  fs.mkdirSync(path.dirname(pipe), { recursive: true });
+  const child = childProcess.spawn(process.execPath, [path.join('js', 'server.js'), '--app', 'faceProof', '--pipe', pipe],
+    { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  let page = null;
+  for (let n = 0; n < 40; n++) {
+    page = await relayRequest.pipeRequest(pipe, 'GET', '/', '', { timeoutMs: 2000 });
+    if (page && page.status === 200) break;
+    await new Promise(function (r) { setTimeout(r, 250); });
+  }
+  function listeningInodes() {
+    const inodes = {};
+    ['/proc/net/tcp', '/proc/net/tcp6'].forEach(function (f) {
+      let rows = [];
+      try { rows = fs.readFileSync(f, 'utf8').split('\n').slice(1); } catch (e) { rows = []; }
+      rows.forEach(function (row) {
+        const c = row.trim().split(/\s+/);
+        if (c[3] === '0A') inodes[c[9]] = true;   // st 0A is LISTEN; column 9 is the inode
+      });
+    });
+    return inodes;
+  }
+  const listening = listeningInodes();
+  let held = [];
+  try {
+    held = fs.readdirSync('/proc/' + child.pid + '/fd').map(function (fd) {
+      try { return fs.readlinkSync('/proc/' + child.pid + '/fd/' + fd); } catch (e) { return ''; }
+    }).map(function (l) { const m = /^socket:\[(\d+)\]$/.exec(l); return m ? m[1] : ''; })
+      .filter(function (i) { return i && listening[i]; });
+  } catch (e) { held = ['(could not read /proc/' + child.pid + '/fd)']; }
+  if (page && page.status === 200 && held.length === 0) {
+    test.check('the app server answers GET / over its pipe, and the kernel shows it listening on no TCP port');
+  } else {
+    test.fail('over the pipe: ' + (page && (page.status || page.refused)) + '; TCP listeners held: ' + JSON.stringify(held));
+  }
+  child.kill();
+}
+
 function mentions(value, needle) {
   return JSON.stringify(value === undefined ? null : value).indexOf(JSON.stringify(needle).slice(1, -1)) !== -1;
 }
@@ -300,6 +359,9 @@ function mentions(value, needle) {
 
   // ── (f) THE WHOLE ROUTE, BROWSER TO APP SERVER AND BACK ───────────────
   await wholeRoute();
+
+  // ── (h) G18: THE APP PROCESS OPENS NO TCP PORT ────────────────────────
+  await noTcpPort();
 
   // ── (g) THE NODE KNOWS APPS, NOT FACES ────────────────────────────────
   //

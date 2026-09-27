@@ -4,10 +4,10 @@
 
 ## Summary
 
-**Nothing is broken, 8 requirements are declared and not built yet, and 3 older questions need a decision from you.**
+**Nothing is broken, 7 requirements are declared and not built yet, and 3 older questions need a decision from you.**
 
 ```
-182 suites   3433 green   0 red   0 unhappy   8 owed      run 5310ba7
+182 suites   3434 green   0 red   0 unhappy   7 owed      run 3b4133e
 ```
 
 ---
@@ -71,8 +71,8 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +1 green
-- -1 red
+- +7 green
+- ✅ **built or withdrawn:** public-app-server/G18
 
 ---
 
@@ -86,10 +86,9 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 | 4 | puppets/G2 | Generalizing the search approach to serving collections |  |  | 2 days | `▓▓▓▓▓░░░░░` 50% |  |
 | 5 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | 1 day | `░░░░░░░░░░` 0% |  |
 | 6 | puppets/G10 | the face door and the puppet group | G17 |  | today | `░░░░░░░░░░` 0% |  |
-| 7 | G18 | the app process serves its owner node over a named pipe, not a TCP port |  |  | today | `░░░░░░░░░░` 0% |  |
-| 8 | transport/R19 | the database decision, deferred until the log can prove its promises | transport/R16 |  | today | `░░░░░░░░░░` 0% |  |
+| 7 | transport/R19 | the database decision, deferred until the log can prove its promises | transport/R16 |  | today | `░░░░░░░░░░` 0% |  |
 
-**How the order was made.** 4 of 8 owed items have no dependency you have accepted, so they are ordered by age alone.
+**How the order was made.** 3 of 7 owed items have no dependency you have accepted, so they are ordered by age alone.
 
 *Percentages are the guesses the declarations carry — `testSupport`:
 "printed as guesses… to be argued with during a design sitting, not to

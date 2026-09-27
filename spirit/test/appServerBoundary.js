@@ -578,21 +578,12 @@ test.subHeading('G10 — four fields about the box, and the opinion that is deli
 //   Andy, 2026-09-27: "processes use named pipes to serve requests from the
 //   puppets.... and that mechanism needs a spot on the board sometime soon".
 //
-// Declared, not built. The probe is the name AGREED with claude-windows,
-// appServer.pipePathFor(rootDir, appName), not a guessed one and not a
-// behaviour: a behaviour probe would have to start a server just to learn
-// the unit exists, and a Windows named pipe is not a file under the root,
-// so it would never flip on that box. The behaviour -- no TCP port, reached
-// through the pipe, the owner node forwarding to it -- is what the real
-// assertions check once this goes red and hands it over.
-test.awaiting('public-app-server/G18', 'the app process listening on a named pipe',
-  (function () {
-    try { return typeof require('../run/js/appServer').pipePathFor === 'function'; }
-    catch (e) { return false; }
-  }()),
-  'the app process opens no TCP port; it serves its owner node through a named pipe (a Unix socket on '
-  + 'Linux), and the owner node forwards to it',
-  { there: 0, cost: 'a sitting' });
+// BUILT (62e2b96, claude-windows: appServer --pipe, appServers.pipePathFor)
+// and ASSERTED in faceLastLeg.js (h): a real app server started with --pipe
+// answers over its pipe, and the kernel's socket table shows it holding no
+// TCP listener (mutation: a planted listener turns it red). The declaration
+// that stood here probed appServer.pipePathFor, a name that was built in
+// appServers.js instead, so it could never have flipped; removed.
 
 // THE PROBE WAS `false`, so this could never flip and hand the unit over --
 // found by claude-windows, who found the server half already built. It now

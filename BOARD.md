@@ -15,7 +15,7 @@ not describe. Run the harness if in doubt.
 
 ## public-app-server/G17 — join's answer travels back to the browser
 
-`PUBLIC-APP-SERVER` · status **OPEN**
+`PUBLIC-APP-SERVER` · status **CLOSED**
 
 - **missing:** a member keeps the names granted to it, on disk (MINE_FILE in appFaceApp) — **~0% there**, guess: a sitting, with the introductions
   
@@ -25,16 +25,6 @@ not describe. Run the harness if in doubt.
   a reply carries a body, already unsealed, to the original poster — and reachOwner keeps it, so what the master computed reaches the screen
 
 *Declared in `memberFacePending.js`, `appServerBoundary.js`*
-
-## public-app-server/G18 — the app process serves its owner node over a named pipe, not a TCP port
-
-`PUBLIC-APP-SERVER` · status **BUILT**
-
-- **missing:** the app process listening on a named pipe — **~0% there**, guess: a sitting
-  
-  the app process opens no TCP port; it serves its owner node through a named pipe (a Unix socket on Linux), and the owner node forwards to it
-
-*Declared in `appServerBoundary.js`*
 
 ## puppets/G1 — a response bound exists, and both paths obey it
 
@@ -98,4 +88,4 @@ not describe. Run the harness if in doubt.
 
 ---
 
-**9 assertion(s) across 8 requirement(s).**
+**8 assertion(s) across 7 requirement(s).**

@@ -1,11 +1,11 @@
 {
   "box": "wsl-claude",
-  "commit": "5310ba7",
+  "commit": "3b4133e",
   "stale": false,
-  "head": "5310ba7",
+  "head": "3b4133e",
   "measured": {
     "suites": 182,
-    "green": 3433,
+    "green": 3434,
     "red": 0,
     "unhappy": 0
   },
@@ -90,22 +90,10 @@
     },
     {
       "kind": "to-do",
-      "id": "public-app-server/G18",
-      "handle": "G18",
-      "title": "the app process serves its owner node over a named pipe, not a TCP port",
-      "rank": 7,
-      "frees": 0,
-      "waitsOn": [],
-      "owedSince": "2026-09-27",
-      "there": 0,
-      "blocked": ""
-    },
-    {
-      "kind": "to-do",
       "id": "transport/R19",
       "handle": "transport/R19",
       "title": "the database decision, deferred until the log can prove its promises",
-      "rank": 8,
+      "rank": 7,
       "frees": 0,
       "waitsOn": [
         {
