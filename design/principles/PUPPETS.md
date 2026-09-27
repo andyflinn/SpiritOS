@@ -500,6 +500,34 @@ answer, so `server.js:921`'s dispatch runs unchanged. A handler reaching
 for `req.headers` or `req.socket` fails ALONE and QUIETLY, which is why
 G3 covers this rather than a per-verb test.
 
+**PROPOSED, NOT RULED: the app's own verbs in a group of their own, and a
+channel for the face.** Andy, 2026-09-27, in Desk under this row:
+*"Doesn't the puppet exist to provide a mirror of the app inteface, outside
+of the node interface. it could be carried, by a blank app group.... to
+isolate it from the standard node interface groups. also, that is the flat
+set of verbs, that will be transmitted to the app-handler-process-server
+living on the ownders box"*, then, asked whether that replaces the node
+remote control: *"yes, but ther is that channel that connects the face to
+the in-process-server on the owner box, and that is puppet specific. It is
+my proposal, not a ruling"*.
+
+Read by both agents as TWO things beside each other, not one replacing the
+other:
+1. **The owner's remote control over the puppet's node groups stays**
+   (G4, *"proxies the entire node api ... configuration, contactList maybe
+   even relayList"*, and the Grant access / Publish to relay labels).
+2. **The app's own flat verbs get a blank group of their own**, walled off
+   from the node's groups, and that set is what reaches the app-server
+   process on the owner's box. The **face-to-process channel** is specific
+   to the puppet. It reads as the G17 route (PUBLIC-APP-SERVER.md, *THE
+   PATH*: appFaceApp to the owner node, then loopback to the app process,
+   then `puppyReply()`).
+
+If it is ruled, G7 changes from *"`server.js:921`'s dispatch runs
+unchanged"* to dispatching into the app's group, and the node's groups
+stay reachable only through (1). **G7 and G4 stay unbuilt until Andy
+approves a written shape.** G6 is unaffected.
+
 ### G8 — may a puppet be commanded: the owner anything, others nothing
 
 **Status: RULED, 2026-09-25.**
