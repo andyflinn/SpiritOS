@@ -47,6 +47,11 @@ var deskLabel = Object.create(null);
 // HIS LAST DECISION ON A ROW. Andy: "the list should display my decision
 // (go,accept)". The newest of go / no / accepted / rejected he sent.
 var deskDecision = Object.create(null);
+// A GO! ON THE LIST ITSELF. Andy: "gimme a go button right on the list, if
+// it really just implementation of something agreed upon during a design
+// session". An agent that is ready asks under the row (kind ask), and the
+// row carries Go! until he answers it. The newest open ask per full id.
+var deskOpenAsk = Object.create(null);
 var DESK_DECISIONS = { 'go.': 'go', 'no.': 'no', 'accepted.': 'accepted', 'rejected.': 'rejected' };
 
 // One history row -> one agents message, or null when it is not one.
@@ -89,6 +94,8 @@ function deskFold(msg) {
   if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && /^retitle:\s*/.test(msg.text)) {
     deskLabel[msg.todo] = msg.text.replace(/^retitle:\s*/, '');
   }
+  if (msg.todo && !msg.reported && msg.dir === 'in' && msg.kind === 'ask' && msg.peer) deskOpenAsk[msg.todo] = msg;
+  if (msg.todo && msg.dir === 'out' && msg.kind === 'answer') delete deskOpenAsk[msg.todo];
   if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && DESK_DECISIONS[msg.text]) {
     deskDecision[msg.todo] = DESK_DECISIONS[msg.text];
   }
@@ -116,7 +123,9 @@ function deskTable() {
       '<td title="' + deskEsc(row.title) + '">' + deskEsc(deskLabel[row.id] || row.title) +
         ' <span class="job-manifest-note">(' + deskEsc(row.handle) + ')</span></td>' +
       '<td>' + deskEsc(deskTaken[row.id] || '') + '</td>' +
-      '<td>' + deskEsc(deskDecision[row.id] || '') + '</td>' +
+      '<td>' + (deskOpenAsk[row.id]
+        ? '<button type="button" data-go="' + deskEsc(row.id) + '" title="' + deskEsc(deskOpenAsk[row.id].text) + '">Go!</button>'
+        : deskEsc(deskDecision[row.id] || '')) + '</td>' +
       '<td>' + deskEsc(row.frees == null ? '' : row.frees) + '</td>' +
       '<td>' + deskEsc(waits) + '</td>' +
       '<td>' + deskEsc(row.there == null ? '' : row.there + '%') + '</td>' +
@@ -154,7 +163,13 @@ function deskLeadChat() {
   if (!lines.length) return '<div class="job-manifest-note">Nothing said yet.</div>';
   return lines.map(function (m) {
     var who = m.dir === 'out' ? 'you' : m.from;
-    return '<div><b>' + deskEsc(who) + '</b> <span class="job-manifest-note">' + deskEsc(m.at) +
+    // Andy: "in this chat, could you change the appearance of your messages
+    // from mine a bit?" His lines sit to the right and quieter; the lead's
+    // carry a rule down their left edge.
+    var look = m.dir === 'out'
+      ? ' style="text-align:right;opacity:0.8"'
+      : ' style="border-left:3px solid currentColor;padding-left:8px;margin:4px 0"';
+    return '<div' + look + '><b>' + deskEsc(who) + '</b> <span class="job-manifest-note">' + deskEsc(m.at) +
       '</span> ' + deskEsc(m.text) + '</div>';
   }).join('');
 }
@@ -206,6 +221,18 @@ function deskDraw() {
   if (musings) musings.innerHTML = deskMusings();
   el.innerHTML = (deskError ? '<div class="job-start-error">' + deskEsc(deskError) + '</div>' : '') +
     deskTable();
+  Array.prototype.forEach.call(el.querySelectorAll('button[data-go]'), function (b) {
+    b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var id = b.getAttribute('data-go');
+      var ask = deskOpenAsk[id];
+      if (!ask) return;
+      b.disabled = true;
+      deskApi.peerPost('agents', ask.peer, { from: 'andy', kind: 'answer', text: 'go.', todo: id })
+        .then(function () { return deskLoadNew(); })
+        .catch(function (err) { b.disabled = false; deskError = 'Go! not sent: ' + err.message; deskDraw(); });
+    });
+  });
   Array.prototype.forEach.call(el.querySelectorAll('tr[data-id]'), function (tr) {
     tr.addEventListener('click', function () {
       var id = tr.getAttribute('data-id');
