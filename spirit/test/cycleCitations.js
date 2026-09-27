@@ -152,15 +152,6 @@ function ambiguousIds() {
   return out;
 }
 
-function trackedOnly(list) {
-  let tracked = null;
-  try {
-    tracked = new Set(require('child_process').execSync('git ls-files', { cwd: REPO, encoding: 'utf8' })
-      .split(/\r?\n/).filter(Boolean));
-  } catch (e) { return list; }
-  return list.filter(function (f) { return tracked.has(f); });
-}
-
 function walk(rel, into) {
   const abs = path.join(REPO, rel);
   let st;
@@ -201,14 +192,9 @@ function bareIn(file, ambiguous) {
 
 function count() {
   const ambiguous = ambiguousIds();
-  const walked = [];
-  ROOTS.forEach(function (r) { walk(r, walked); });
-  FILES.forEach(function (f) { if (fs.existsSync(path.join(REPO, f))) walked.push(f); });
-  // TRACKED FILES ONLY. The walk reads the disk, so on a checkout that is
-  // somebody's node it also read their gitignored data: Desk's own chat
-  // log (app/desk/log-*.json) went red the moment a conversation typed
-  // "R1 of G19" (2026-09-28). A person's words are not the tree.
-  const files = trackedOnly(walked);
+  const files = [];
+  ROOTS.forEach(function (r) { walk(r, files); });
+  FILES.forEach(function (f) { if (fs.existsSync(path.join(REPO, f))) files.push(f); });
   const found = {};
   files.forEach(function (f) {
     if (f === 'spirit/test/cycleCitations.js') return;

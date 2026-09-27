@@ -902,11 +902,6 @@ function reachOwner(rootDir, appName, state, body) {
     .catch(function () { return { ok: false, code: 'app-owner-asleep', status: 0 }; });
 }
 
-// How much of a reply the monitor shows, in debug mode only.
-const DEBUG_PAYLOAD_MAX = 2048;
-// How much of an error reply the monitor always shows.
-const ERROR_TEXT_MAX = 300;
-
 function roleOf(state) {
   return {
     nodeIsPublicApp: true,
@@ -1182,57 +1177,6 @@ function create(opts) {
     const pathname = common.parseRequestPath
       ? common.parseRequestPath(req).pathname
       : String(req.url || '').split('?')[0];
-
-    // EVERY REQUEST TO THE MONITOR. Andy, 2026-09-28: "server apps must send
-    // incoming requests to the monitor", and "server processes must send
-    // their replies to the monitor when retuning the reply to the node". A
-    // server started by its node has its stdout read into its job's log line
-    // by line (jobs.startServerJob), so one line per exchange is the
-    // monitor's feed: the request (method, path) and the reply (status,
-    // size). No visitor detail: there is none here to give (puppetPost
-    // passes none).
-    // ONE LINE, NEVER THE BODY (wsl-claude): a reply is often a member's own
-    // content, and whole bodies would put it in a log that grows per visit.
-    // THE PAYLOAD ONLY IN DEBUG MODE. Andy: "the payload need to be only in
-    // the monitor in debug mode". SPIRIT_DEBUG=1 is set for this server alone
-    // when its manifest says "verbose": true (appServers.js; never
-    // node-wide), and then the reply's first DEBUG_PAYLOAD_MAX bytes follow
-    // the line.
-    if (pipe) {
-      const began = Date.now();
-      const debug = process.env.SPIRIT_DEBUG === '1';
-      const kept = [];
-      let keptBytes = 0;
-      // Counted as written: a streamed page never sets Content-Length, so the
-      // header alone left pages without a size (wsl-claude).
-      let sentBytes = 0;
-      // Kept always, shown only in debug mode or for an error: Andy, "and the
-      // error text should be in the monitor if the reply is an error".
-      {
-        const write = res.write.bind(res);
-        const end = res.end.bind(res);
-        const keep = function (chunk) {
-          if (chunk == null) return;
-          const b = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk));
-          sentBytes += b.length;
-          if (keptBytes >= DEBUG_PAYLOAD_MAX) return;
-          const part = b.subarray(0, DEBUG_PAYLOAD_MAX - keptBytes);
-          kept.push(part);
-          keptBytes += part.length;
-        };
-        res.write = function (chunk) { keep(chunk); return write.apply(null, arguments); };
-        res.end = function (chunk) { if (typeof chunk !== 'function') keep(chunk); return end.apply(null, arguments); };
-      }
-      res.on('finish', function () {
-        const size = res.getHeader('Content-Length') || sentBytes;
-        const type = String(res.getHeader('Content-Type') || '').split(';')[0];
-        console.log(req.method + ' ' + pathname + ' -> ' + res.statusCode +
-          (type ? ' ' + type : '') + (size ? ' ' + size + 'B' : '') + ' ' + (Date.now() - began) + 'ms');
-        const text = kept.length ? Buffer.concat(kept).toString('utf8').replace(/\s+/g, ' ') : '';
-        if (debug && text) console.log('  payload: ' + text);
-        else if (res.statusCode >= 400 && text) console.log('  error: ' + text.slice(0, ERROR_TEXT_MAX));
-      });
-    }
 
     // THE APP CONTRACT IS CHECKED BEFORE ANYTHING IS SERVED, not at the
     // moment an app reaches for something. Refused at load the message
@@ -1529,11 +1473,6 @@ function fromArgv(argv) {
   }
 
   const h = create({ rootDir: ROOT_DIR, appName: appName, port: port, pipe: pipe, relay: relay });
-  // THE SHUTDOWN VERB (public-app-server/G19.1): stop taking requests and
-  // close the pipe, then the kernel exits. See spirit.core.server.onShutdown.
-  require('./kernel').core.server.onShutdown(function () {
-    return new Promise(function (resolve) { h.stop(resolve); });
-  });
   const s = h.state();
 
   // ── THE OPERATOR GETS A CODE, NOT A STACK TRACE ─────────────────────

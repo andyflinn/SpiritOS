@@ -77,19 +77,6 @@ function servesOf(manifest) {
   return !!(manifest && manifest.serves === true);
 }
 
-// AN APP'S OWN SERVER CODE (public-app-server/G19.1). Andy, 2026-09-28:
-// grantFace "is a faceless spirit app, responding to HTTP equivalent
-// requests", "it's lives while the node lives, because it is a server, as
-// defined in the manifes". So a manifest may name one file in its own
-// folder, "server": "grantFace.server.js", and the node runs that as the
-// app's server job instead of the stock one. One plain file name: nothing
-// that climbs out of the app's folder.
-const SERVER_FILE_RE = /^[A-Za-z0-9_-][A-Za-z0-9._-]*\.js$/;
-function serverFileOf(manifest) {
-  const f = manifest && manifest.server;
-  return typeof f === 'string' && SERVER_FILE_RE.test(f) && f.indexOf('..') === -1 ? f : '';
-}
-
 // THE NODE NAMES THE PIPE, and hands it to the process it starts, so it
 // always knows where to knock and the app never chooses. A socket file in
 // the app's own state folder off Windows (gitignored, file permissions). A
@@ -104,33 +91,15 @@ function pipePathFor(rootDir, appName, platform) {
   return path.join(rootDir, 'app-state', appName, 'door.sock');
 }
 
-// Every app that runs a server, by folder order: the ones whose manifest
-// says "serves": true (the stock server) or names "server": "<file>" (its
-// own code). Answers names; readServerRows answers what to start for each.
-function readServerRows(rootDir) {
+// Every app whose manifest says it serves, by folder order.
+function readServers(rootDir) {
   let names = [];
   try { names = fs.readdirSync(path.join(rootDir, 'app')).sort(); } catch (e) { return []; }
-  const rows = [];
-  names.forEach(function (app) {
-    if (!APP_RE.test(app)) return;
-    let manifest = null;
-    try { manifest = JSON.parse(fs.readFileSync(path.join(rootDir, 'app', app, app + '.json'), 'utf8')); }
-    catch (e) { return; }
-    const own = serverFileOf(manifest);
-    // ITS OWN DEBUG MODE, AND ONLY ITS OWN. Andy: "the process might need its
-    // own debug more, (essentially --verbose)", and "prolly shouldn't be
-    // node-wide, that might cause a flood of extra stuff and printouts".
-    // "verbose": true turns SPIRIT_DEBUG on for this server alone, and the
-    // launcher sets it explicitly either way, so a node-wide value never
-    // leaks into a server that did not ask.
-    const verbose = !!(manifest && manifest.verbose === true);
-    if (own) rows.push({ app: app, own: own, verbose: verbose });
-    else if (servesOf(manifest)) rows.push({ app: app, own: '', verbose: verbose });
+  return names.filter(function (app) {
+    if (!APP_RE.test(app)) return false;
+    try { return servesOf(JSON.parse(fs.readFileSync(path.join(rootDir, 'app', app, app + '.json'), 'utf8'))); }
+    catch (e) { return false; }
   });
-  return rows;
-}
-function readServers(rootDir) {
-  return readServerRows(rootDir).map(function (r) { return r.app; });
 }
 
 function refusal(code, app) {
@@ -155,24 +124,16 @@ function createAppServers(opts) {
 
   function startAll() {
     if (isPuppet()) { log('app servers: this node is a puppet, so it starts none'); return []; }
-    return readServerRows(rootDir).map(function (r) {
-      const app = r.app;
+    return readServers(rootDir).map(function (app) {
       const pipe = pipePathFor(rootDir, app, platform);
       if (platform !== 'win32') {
         try { fs.mkdirSync(path.dirname(pipe), { recursive: true }); } catch (e) { /* the server says why */ }
       }
-      const row = { app: app, pipe: pipe, job: null, own: !!r.own };
+      const row = { app: app, pipe: pipe, job: null };
       if (typeof o.startServerJob === 'function') {
-        // Its own code, told where it lives and which pipe is its door; or
-        // the stock server for an app with a page and no code of its own.
-        const args = r.own
-          ? ['--max-old-space-size=' + RAM_MB, path.join('app', app, r.own)]
-          : ['--max-old-space-size=' + RAM_MB, path.join('js', 'server.js'), '--app', app, '--pipe', pipe];
-        row.job = o.startServerJob(o.execPath || process.execPath, args, {
-          cwd: rootDir,
-          type: 'app-server:' + app,
-          env: { SPIRIT_APP: app, SPIRIT_PIPE: pipe, SPIRIT_DEBUG: r.verbose ? '1' : '' },
-        });
+        row.job = o.startServerJob(o.execPath || process.execPath,
+          ['--max-old-space-size=' + RAM_MB, path.join('js', 'server.js'), '--app', app, '--pipe', pipe],
+          { cwd: rootDir, type: 'app-server:' + app });
       }
       table[app] = row;
       log('app server: ' + app);
@@ -198,59 +159,9 @@ function createAppServers(opts) {
     });
   }
 
-  // ── THE PASSTHROUGH (public-app-server/G19.2) ─────────────────────────
-  //
-  // Andy, 2026-09-28: "grantFace gets requests only when their explicitly
-  // forwarded via named pipe, by the owner-node", "and those request can
-  // only come from verified members with signature that the owner node
-  // automatically checks", and "appFaceApps owner doesn't understant
-  // appFaceApp nor grantFace". So: an admitted packet addressed to an app
-  // that runs its OWN server code goes down that app's pipe unread, as
-  //   POST /   { from, body }
-  // who asks, and what. Nothing else: the hash, the re and the relay are
-  // this node's bookkeeping for the reply, and an app has no use for them
-  // (Andy: "why the hell woul an app need all that stupid information?").
-  // and whatever JSON the app answers becomes this node's reply packet to
-  // the sender, for the same app, carrying re = the packet's hash, signed by
-  // this node because this node posts it. An empty answer sends nothing.
-  //
-  // o: { decode, encode, post(relayUrl, toKey, text), isMember(key), log }.
-  // Answers true when the packet was one of these, false for any other.
-  function passthrough(message, o) {
-    const info = message && typeof message.text === 'string' ? o.decode(message.text) : null;
-    if (!info || !info.app || info.legacy) return false;
-    const row = Object.prototype.hasOwnProperty.call(table, info.app) ? table[info.app] : null;
-    if (!row || !row.own) return false;
-    const from = String(message.fromKey || message.from || '');
-    // THE FIRST LAYER OF CONSENT IS THE NODE'S: only a key in its contact
-    // list reaches an app's pipe, whatever the stranger setting says.
-    if (!from || !o.isMember(from)) { log('passthrough: ' + info.app + ' refused a key not in the contacts'); return true; }
-    const payload = JSON.stringify({ from: from, body: info.body });
-    const reply = function (body) {
-      let made = o.encode(info.app, body, { re: message.hash });
-      if (!made || !made.text) made = o.encode(info.app, { ok: false, code: 'app-answer-too-large' }, { re: message.hash });
-      if (!made || !made.text) return;
-      Promise.resolve(o.post(message.relay || '', from, made.text)).catch(function (e) {
-        log('passthrough: the answer from ' + info.app + ' could not be sent: ' + ((e && e.message) || e));
-      });
-    };
-    Promise.resolve(request(row.pipe, 'POST', '/', payload, {
-      type: 'application/json', timeoutMs: DOOR_WAIT_MS, answerMax: ANSWER_MAX,
-    })).then(function (a) {
-      if (!a || a.refused) { reply({ ok: false, code: (a && a.refused) || 'app-not-running', app: info.app }); return; }
-      if (!a.text) return;
-      let body = null;
-      try { body = JSON.parse(a.text); } catch (e) { body = null; }
-      if (body === null) { reply({ ok: false, code: 'app-answer-not-json', app: info.app }); return; }
-      reply(body);
-    });
-    return true;
-  }
-
   return {
     startAll: startAll,
     toLocalApp: toLocalApp,
-    passthrough: passthrough,
     apps: function () { return Object.keys(table); },
   };
 }
@@ -259,7 +170,6 @@ module.exports = {
   createAppServers: createAppServers,
   pipePathFor: pipePathFor,
   servesOf: servesOf,
-  serverFileOf: serverFileOf,
   readServers: readServers,
   DOOR_WAIT_MS: DOOR_WAIT_MS,
   ANSWER_MAX: ANSWER_MAX,

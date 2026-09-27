@@ -29,11 +29,6 @@ This directory contains the vision, principles, and architecture decisions for *
   absent means nobody; membership is the channel and the grant is the
   face. Fourteen decided, two recommended, six open — kept apart so a
   recommendation is not cited as a ruling.
-- [Processes — what a node runs besides itself](principles/PROCESSES.md)
-  — **the spec**, 2026-09-28 (public-app-server/G19.1): three kinds of
-  job (permanent, process, server), the contract a spawned process gets
-  (its job id, its node's door, the spirit object with `spirit.core.ask`),
-  and how an app's manifest makes the node run its server.
 - [A shape that crosses is made by a factory](principles/A-SHAPE-THAT-CROSSES.md)
   — **the rule**, 2026-09-25: any object passed around, posted or
   received comes from a factory that validates in itself, carries

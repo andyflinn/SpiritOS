@@ -7,7 +7,7 @@
 **Nothing is broken, 7 requirements are declared and not built yet, and 3 older questions need a decision from you.**
 
 ```
-184 suites   3450 green   0 red   0 unhappy   7 owed      run f5fd7d8
+182 suites   3434 green   0 red   0 unhappy   7 owed      run 3b4133e
 ```
 
 ---
@@ -53,7 +53,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
     - suites that INSIST, not suites that demonstrate (10/R8)
 - **one suite that makes every api call (puppets/G3)** — live work in `design/principles/PUPPETS.md`, and no test is watching it.
 - **`peerOwnerPost()` on the owner's node (puppets/G4)** — live work in `design/principles/PUPPETS.md`, and no test is watching it.
-- **`faceServer.js` is a third startup module (public-app-server/G1)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
+- **`appServer.js` is a third startup module (public-app-server/G1)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
 - **a server reports the box it sits on: four fields, one opinion withheld (public-app-server/G10)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
 - **no failure-state lever; the states are reachable from outside (G11)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
 - **app code and app state do not share a directory (G12)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
@@ -71,7 +71,8 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +6 green
+- +7 green
+- ✅ **built or withdrawn:** public-app-server/G18
 
 ---
 
@@ -79,18 +80,15 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 | # | handle | to-do | waits on | frees | owed | there | |
 |---|---|---|---|---|---|---|---|
-| 1 | transport/R16 | the log must be able to PROVE what it claims |  | 1 | 1 day | `░░░░░░░░░░` 0% |  |
-| 2 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 2 days | `░░░░░░░░░░` 0% |  |
-| 3 | puppets/G2 | Generalizing the search approach to serving collections |  |  | 2 days | `▓▓▓▓▓░░░░░` 50% |  |
-| 4 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 5 | puppets/G10 | the face door and the puppet group | G17 |  | today | `░░░░░░░░░░` 0% |  |
-| 6 | transport/R19 | the database decision, deferred until the log can prove its promises | transport/R16 |  | today | `░░░░░░░░░░` 0% |  |
-| 7 | G19 | A member's app answers through the face |  |  | today | `░░░░░░░░░░` 0% |  |
+| 1 | G17 | join's answer travels back to the browser |  | 1 | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
+| 2 | transport/R16 | the log must be able to PROVE what it claims |  | 1 | 1 day | `░░░░░░░░░░` 0% |  |
+| 3 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 2 days | `░░░░░░░░░░` 0% |  |
+| 4 | puppets/G2 | Generalizing the search approach to serving collections |  |  | 2 days | `▓▓▓▓▓░░░░░` 50% |  |
+| 5 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 6 | puppets/G10 | the face door and the puppet group | G17 |  | today | `░░░░░░░░░░` 0% |  |
+| 7 | transport/R19 | the database decision, deferred until the log can prove its promises | transport/R16 |  | today | `░░░░░░░░░░` 0% |  |
 
-**How the order was made.** 
-
-- 5 of 7 owed items have no dependency you have accepted, so they are ordered by age alone.
-- (puppets/G10) waits on (G17), which is open but no test watches it.
+**How the order was made.** 3 of 7 owed items have no dependency you have accepted, so they are ordered by age alone.
 
 *Percentages are the guesses the declarations carry — `testSupport`:
 "printed as guesses… to be argued with during a design sitting, not to

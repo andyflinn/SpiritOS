@@ -13,21 +13,18 @@ not describe. Run the harness if in doubt.
 
 ---
 
-## public-app-server/G19 — A member's app answers through the face
+## public-app-server/G17 — join's answer travels back to the browser
 
-`PUBLIC-APP-SERVER` · status **OPEN**
+`PUBLIC-APP-SERVER` · status **CLOSED**
 
-- **missing:** G19.3 grantFace, a faceless server app (app/grantFace) — **~0% there**, guess: a sitting
+- **missing:** a member keeps the names granted to it, on disk (MINE_FILE in appFaceApp) — **~0% there**, guess: a sitting, with the introductions
   
-  owns grants.json (canonical, keyed by face domain and name), answers grant, faceKey and the face's route question, and on every change syncs the face's contact list by owner command over loopback. Blocked by G19.2
-- **missing:** G19.4 the api verb: introspection by layers — **~0% there**, guess: a sitting
+  Andy: "the members to store their own subdomain on disc". A granted reply is written down where the member's appFaceApp reads it, so a serve for that name reaches its app server instead of 404 no-such-route
+- **missing:** the answer body reaching the door — **~70% there**, guess: the transport half is DONE and verified by both agents (peerPost.js:363-373 unseals into answer.text before resolving). What is missing is that appServer stops discarding it, and an owner-side program that answers with a body — the second is the master, and it is the unbuilt half of every show. This is declared awaiting rather than red because an assertion needs a master that answers, and asserting against a fixture owner that answers nothing would test the fixture
   
-  a caller in the owner's contacts asks "api" and gets the tree of apps it may use, each verb as { description, request, reply }, gathered from the apps themselves; a one-leaf object is a call. Andy's yes on the verb: "go." (Desk, G17, 2026-09-28). Blocked by G19.3
-- **missing:** G19.5 the member's shell client (app/grantFaceClient) — **~0% there**, guess: a sitting
-  
-  a shell page on the member's node: asks api over peerPost, negotiates a name, stores its grants keyed by face and name with the fs api, and admits the face's key taken from the owner-signed reply. Blocked by G19.4
+  a reply carries a body, already unsealed, to the original poster — and reachOwner keeps it, so what the master computed reaches the screen
 
-*Declared in `memberFacePending.js`*
+*Declared in `memberFacePending.js`, `appServerBoundary.js`*
 
 ## puppets/G1 — a response bound exists, and both paths obey it
 
@@ -91,4 +88,4 @@ not describe. Run the harness if in doubt.
 
 ---
 
-**9 assertion(s) across 7 requirement(s).**
+**8 assertion(s) across 7 requirement(s).**

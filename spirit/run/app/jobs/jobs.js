@@ -44,9 +44,7 @@ function formatLogEntries(job) {
 function renderJobRow(job) {
   var icon = STATUS_ICON[job.status] || '';
   var isTerminal = TERMINAL_STATUSES.indexOf(job.status) !== -1;
-  // A server runs for as long as the node does and is started again when it
-  // exits, so Cancel is the one way to stop it (public-app-server/G19.1).
-  var canCancel = (job.kind === 'process' || job.kind === 'server') && !isTerminal;
+  var canCancel = job.kind === 'process' && !isTerminal;
   var isExpanded = job.id === expandedJobId;
 
   var actionHtml = canCancel

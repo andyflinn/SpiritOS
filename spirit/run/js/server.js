@@ -1422,24 +1422,6 @@ contactBook.syncMarks(ROOT_DIR);
       log: function (line) { console.log(line); },
     }));
 
-    // ── THE PASSTHROUGH TO AN APP'S OWN SERVER (public-app-server/G19.2) ──
-    //
-    // A packet addressed to an app that runs its own server code goes down
-    // that app's pipe unread, and its answer returns as this node's reply
-    // (appServers.passthrough). The node reads the envelope's app name and
-    // nothing inside. Only keys in this node's contact list get through:
-    // hub.frontDoor's 'known', checked here and not left to the stranger
-    // setting (Andy: introspection "requires a member to be in the owners
-    // contact list").
-    arrivals.witness(function (message) {
-      appServers.passthrough(message, {
-        decode: wire.decode,
-        encode: wire.encode,
-        post: function (relayUrl, toKey, text) { return peerRouter.post(relayUrl, toKey, text); },
-        isMember: function (key) { return require('./hub').frontDoor(ROOT_DIR, key) === 'known'; },
-      });
-    });
-
     // ── peerOwnerPost: THE OWNER DOOR'S SENDING END (puppets/G4) ─────
     //
     // This node signing a command for one of its puppets and waiting for
@@ -2072,22 +2054,11 @@ function markRecord(kind) {
     // The relay half of this goodbye — its members' streams —
     // is relayServer.js since cycle 0. Same sayGoingAway, same three seconds.
     console.log(`${signal} — told ${told} stream(s) to come back in 3s`);
-    // ITS SERVERS GO FIRST, ASKED. Andy, 2026-09-28: "on node-shutdown
-    // servers must sent a shutdown request to all server processes". Each
-    // gets the shutdown verb and a few seconds to finish (jobs.stopServers);
-    // the node leaves after them, or after SERVERS_GRACE_MS whatever happens.
-    const SERVERS_GRACE_MS = 3000;
-    const serversGone = Promise.race([
-      Promise.resolve(jobs.stopServers ? jobs.stopServers(SERVERS_GRACE_MS) : null).catch(function () {}),
-      new Promise(function (resolve) { setTimeout(resolve, SERVERS_GRACE_MS + 500); }),
-    ]);
-    serversGone.then(function () {
-      // The sockets are closed by sayGoingAway, so what is left is this
-      // process. Exit rather than waiting for the default handler, which
-      // would race the writes just made.
-      try { server.close(); } catch (e) { /* not listening */ }
-      process.exit(0);
-    });
+    // The sockets are closed by sayGoingAway, so what is left is this
+    // process. Exit rather than waiting for the default handler, which
+    // would race the writes just made.
+    try { server.close(); } catch (e) { /* not listening */ }
+    process.exit(0);
   };
   process.on('SIGTERM', function () { goodbye('SIGTERM'); });
   process.on('SIGINT', function () { goodbye('SIGINT'); });

@@ -664,12 +664,6 @@ define('app-did-not-answer', {
   texts: ['the app server did not answer in time'],
   note: 'Its door took longer than DOOR_WAIT_MS, which nests inside the face\'s own waits.',
 });
-define('app-answer-not-json', {
-  status: 502, presence: NONE, retry: 'no', fault: 'target',
-  texts: ['the app server answered something that is not json'],
-  note: 'A packet passed through to an app\'s own server (G19.2) must be answered with a JSON body, ' +
-    'which becomes the node\'s reply packet; anything else is refused by name.',
-});
 define('app-answer-too-large', {
   status: 502, presence: NONE, retry: 'no', fault: 'target',
   texts: ['the app server\'s answer is too large to travel'],

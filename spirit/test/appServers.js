@@ -14,8 +14,6 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const childProcess = require('child_process');
-// One for the suite: the stand-in servers below are HTTP on a pipe (oneDoor counts it once).
-const http = require('http');
 const test = require('./testSupport.js');
 const appServers = require('../run/js/appServers.js');
 const limits = require('../run/js/limits.js');
@@ -96,25 +94,6 @@ test.subHeading('None on a puppet, one server job per serving app elsewhere');
   } else {
     test.fail('started: ' + JSON.stringify(started));
   }
-  // AN APP'S OWN SERVER CODE (G19.1): "server": "<file>" runs that file from
-  // the app's folder, told its app and its pipe; a name that could leave the
-  // folder is not a server.
-  const ownRoot = tempRoot({ grantish: { server: 'grantish.server.js' }, sneaky: { server: '../../x.js' } });
-  const ownStarted = [];
-  appServers.createAppServers({
-    rootDir: ownRoot, platform: 'linux', log: function () {},
-    startServerJob: function (cmd, args, opts) { ownStarted.push({ args: args, opts: opts }); return {}; },
-  }).startAll();
-  const own = ownStarted[0];
-  if (ownStarted.length === 1 && own.args[own.args.length - 1] === path.join('app', 'grantish', 'grantish.server.js') &&
-      own.opts.env && own.opts.env.SPIRIT_APP === 'grantish' &&
-      own.opts.env.SPIRIT_PIPE === path.join(ownRoot, 'app-state', 'grantish', 'door.sock')) {
-    test.check('"server": "<file>" runs the app\'s own code from its folder, told SPIRIT_APP and SPIRIT_PIPE; "../../x.js" starts nothing');
-  } else {
-    test.fail('own server code: ' + JSON.stringify(ownStarted));
-  }
-  fs.rmSync(ownRoot, { recursive: true, force: true });
-
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(root, 'relay-state', 'puppet.json'), '{}');
   const onPuppet = [];
@@ -241,6 +220,7 @@ function aRealHop() {
 // outruns the door's wait and breaks the nesting under appFaceApp's.
 function aTrickleIsCutOff() {
   test.subHeading('A slow app is cut off at the deadline, however it trickles');
+  const http = require('http');
   const pipe = appServers.pipePathFor(fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-trickle-')), 'trickle');
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
   const server = http.createServer(function (req, res) {
@@ -265,96 +245,7 @@ function aTrickleIsCutOff() {
   });
 }
 
-// THE PASSTHROUGH (G19.2). A member's packet for an app with its own server
-// goes down that app's pipe unread, and the app's JSON answer comes back as
-// the node's reply packet with re = the packet's hash. A key outside the
-// contacts never reaches the pipe; an app with no code of its own is not
-// passed to; a dead server and a non-JSON answer are refused by name.
-function thePassthrough() {
-  test.subHeading('The passthrough: a member\'s packet reaches an app\'s own server, and its answer comes back');
-  const packet = require('../run/js/client/packet.js');
-  const root = tempRoot({ owned: { server: 'owned.server.js' }, pagey: { serves: true } });
-  const s = appServers.createAppServers({ rootDir: root, log: function () {}, startServerJob: function () { return {}; } });
-  s.startAll();
-  const pipe = appServers.pipePathFor(root, 'owned');
-  if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
-  const heard = [];
-  let answerWith = function (body) { return JSON.stringify({ ok: true, echo: body.body }); };
-  const server = http.createServer(function (req, res) {
-    let text = '';
-    req.on('data', function (c) { text += c; });
-    req.on('end', function () {
-      let body = null;
-      try { body = JSON.parse(text); } catch (e) { body = null; }
-      heard.push(body);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(answerWith(body));
-    });
-  });
-  const posted = [];
-  const opts = {
-    decode: packet.decode,
-    encode: packet.encode,
-    post: function (relayUrl, toKey, text) { posted.push({ relayUrl: relayUrl, toKey: toKey, text: text }); return Promise.resolve({ ok: true }); },
-    isMember: function (key) { return key === 'MEMBER'; },
-  };
-  function arrive(app, body, from, hash) {
-    const made = packet.encode(app, body);
-    return { text: made.text, fromKey: from, hash: hash, relay: 'https://relay.example' };
-  }
-  return new Promise(function (resolve) { server.listen(pipe, resolve); }).then(function () {
-    const took = s.passthrough(arrive('owned', { verb: 'grant', name: 'hello' }, 'MEMBER', 'h1'), opts);
-    return waitMs(600).then(function () {
-      const got = posted[0] ? packet.decode(posted[0].text) : null;
-      if (took === true && heard.length === 1 && heard[0].from === 'MEMBER' && Object.keys(heard[0]).sort().join(',') === 'body,from' &&
-          heard[0].body && heard[0].body.name === 'hello' && got && got.app === 'owned' && got.re === 'h1' &&
-          got.body && got.body.ok === true && got.body.echo && got.body.echo.name === 'hello' &&
-          posted[0].toKey === 'MEMBER' && posted[0].relayUrl === 'https://relay.example') {
-        test.check('down the pipe as { from, body } and nothing else, and back as a reply packet for the same app with re = its hash, via the relay it came on');
-      } else {
-        test.fail('passthrough: ' + JSON.stringify({ took: took, heard: heard, got: got }).slice(0, 300));
-      }
-      heard.length = 0; posted.length = 0;
-      const stranger = s.passthrough(arrive('owned', { verb: 'grant' }, 'STRANGER', 'h2'), opts);
-      const paged = s.passthrough(arrive('pagey', { verb: 'x' }, 'MEMBER', 'h3'), opts);
-      const other = s.passthrough(arrive('nobody', { verb: 'x' }, 'MEMBER', 'h4'), opts);
-      return waitMs(300).then(function () {
-        if (stranger === true && paged === false && other === false && heard.length === 0 && posted.length === 0) {
-          test.check('a key outside the contacts never reaches the pipe; an app with no code of its own, or no server, is not passed to');
-        } else {
-          test.fail('gates: ' + JSON.stringify({ stranger: stranger, paged: paged, other: other, heard: heard.length, posted: posted.length }));
-        }
-        answerWith = function () { return 'not json'; };
-        s.passthrough(arrive('owned', { verb: 'grant' }, 'MEMBER', 'h5'), opts);
-        return waitMs(600);
-      });
-    }).then(function () {
-      const got = posted[0] ? packet.decode(posted[0].text) : null;
-      if (got && got.body && got.body.code === 'app-answer-not-json' && got.re === 'h5') {
-        test.check('an answer that is not JSON is refused by name, to the sender');
-      } else {
-        test.fail('not-json: ' + JSON.stringify(got));
-      }
-      posted.length = 0;
-      return new Promise(function (resolve) { server.close(resolve); });
-    }).then(function () {
-      s.passthrough(arrive('owned', { verb: 'grant' }, 'MEMBER', 'h6'), opts);
-      return waitMs(800);
-    }).then(function () {
-      const got = posted[0] ? packet.decode(posted[0].text) : null;
-      if (got && got.body && got.body.code === 'app-not-running' && got.re === 'h6') {
-        test.check('with nothing on the pipe, the sender hears app-not-running, not silence');
-      } else {
-        test.fail('dead server: ' + JSON.stringify(got));
-      }
-      try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* reclaimed later */ }
-    });
-  });
-}
-function waitMs(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
-
 refusalsByName()
-  .then(thePassthrough)
   .then(aTrickleIsCutOff)
   .then(aRealHop)
   .then(function () { test.reportSuccessFailureCount(); })

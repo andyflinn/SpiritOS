@@ -542,130 +542,6 @@ if (isNode()) {
     return { stale: true, newRecord: { mtimeMs: currentMtimeMs, contentHash: currentHash } };
   };
 
-  // ── A PROCESS'S ONE MOUTH ONTO ITS NODE (public-app-server/G19.1) ──
-  //
-  // The node hands every process it spawns its door's address,
-  // SPIRIT_CALLBACK_URL (jobs.js). This posts one verb there and answers
-  // { status, text }. It is the single outbound call in this half of the
-  // file: report() below and spirit.core.ask share it, so the oneDoor tally
-  // does not move.
-  function postToDoor(payload) {
-    const url = process.env.SPIRIT_CALLBACK_URL;
-    if (!url) return Promise.reject(new Error('no SPIRIT_CALLBACK_URL: this process was not started by a node'));
-    return new Promise((resolve, reject) => {
-      const body = JSON.stringify(payload);
-      const req = http.request(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
-      }, res => {
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => resolve({ status: res.statusCode, text: data }));
-      });
-      req.on('error', reject);
-      req.end(body);
-    });
-  }
-
-  // ── spirit.core.ask, OUTSIDE A PAGE ──────────────────────────────────
-  //
-  // Andy, 2026-09-28, in Team: "the server is a normal loopback client of
-  // the node interface, it can reach anything a local browser can", and
-  // "the server is in fact given the same lowest layer node-client
-  // interface that is the shell has at its lowest layer". So a process gets
-  // the page's ask, with the page's answer shape, aimed at the address the
-  // node handed it instead of a page-relative '/api/spirit'. The browser
-  // half below replaces it in a page.
-  spirit.core.ask = function (verb, args) {
-    const payload = { verb: String(verb) };
-    if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
-    return postToDoor(payload).then(function (r) {
-      let body = null;
-      try { body = JSON.parse(r.text); } catch (e) { body = null; }
-      return { status: r.status, text: r.text, body: body };
-    });
-  };
-
-  // ── A SERVER'S SIDE OF SHUTDOWN (public-app-server/G19.1) ─────────────
-  //
-  // Andy: "a server process must implement a shutdown verb". Its node sends
-  // { verb: 'shutdown' } over the IPC channel it was started with
-  // (jobs.startServerJob), never over the pipe visitors come down. A server
-  // registers what it must tidy with spirit.core.server.onShutdown(fn); on
-  // the verb every hook runs (a promise is waited for, at most
-  // SHUTDOWN_HOOK_MS), and the process exits. A server that registers
-  // nothing still exits on the verb, which is the whole of the contract.
-  const SHUTDOWN_HOOK_MS = 4000;
-  const shutdownHooks = [];
-  spirit.core.server = {
-    onShutdown: function (fn) { if (typeof fn === 'function') shutdownHooks.push(fn); },
-  };
-  // ── AN APP'S OWN SERVER, LISTENING (public-app-server/G19.3) ──────────
-  //
-  // spirit.core.server.listen(handler) listens on the pipe the node named
-  // (SPIRIT_PIPE) and hands each request its node passes through to
-  // handler({ from, body }): who asks (the signed sender) and what (the
-  // packet's own body). Nothing of the node's bookkeeping. What the handler answers (an object,
-  // or a promise of one) goes back as JSON and becomes the node's reply
-  // packet; null answers nothing. So an app writes its verbs and never an
-  // HTTP server of its own, and every exchange lands in the monitor the way
-  // PROCESSES.md asks: one line, the error text always, the payload only
-  // with SPIRIT_DEBUG=1 (its manifest's "verbose": true).
-  const SERVER_BODY_MAX = 65536;
-  const SERVER_TEXT_MAX = 300;
-  const SERVER_DEBUG_MAX = 2048;
-  spirit.core.server.listen = function (handler) {
-    const pipe = process.env.SPIRIT_PIPE;
-    if (!pipe) throw new Error('spirit.core.server.listen: no SPIRIT_PIPE, so this process was not started as a server by a node');
-    if (process.platform !== 'win32') { try { fs.unlinkSync(pipe); } catch (e) { /* none left */ } }
-    const debug = process.env.SPIRIT_DEBUG === '1';
-    const server = http.createServer(function (req, res) {
-      const began = Date.now();
-      let size = 0;
-      const chunks = [];
-      let over = false;
-      req.on('data', function (c) {
-        size += c.length;
-        if (size > SERVER_BODY_MAX) { over = true; req.destroy(); return; }
-        chunks.push(c);
-      });
-      req.on('end', function () {
-        const send = function (status, answer, verb, from) {
-          const text = answer == null ? '' : JSON.stringify(answer);
-          res.writeHead(status, text ? { 'Content-Type': 'application/json; charset=utf-8' } : {});
-          res.end(text);
-          console.log(String(verb || '?') + ' from ' + String(from || '?').slice(-8) + ' -> ' + status + ' ' +
-            Buffer.byteLength(text) + 'B ' + (Date.now() - began) + 'ms');
-          if (debug && text) console.log('  payload: ' + text.slice(0, SERVER_DEBUG_MAX));
-          else if (status >= 400 && text) console.log('  error: ' + text.slice(0, SERVER_TEXT_MAX));
-        };
-        if (over) { send(413, { ok: false, code: 'app-request-too-large' }); return; }
-        let req0 = null;
-        try { req0 = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (e) { req0 = null; }
-        if (!req0 || typeof req0 !== 'object') { send(400, { ok: false, code: 'bad-request', why: 'not json' }); return; }
-        const verb = req0.body && req0.body.verb;
-        let pending;
-        try { pending = Promise.resolve(handler(req0)); } catch (e) { pending = Promise.reject(e); }
-        pending.then(function (answer) { send(200, answer == null ? null : answer, verb, req0.from); },
-          function (e) { send(500, { ok: false, code: 'handler-failed', why: String((e && e.message) || e) }, verb, req0.from); });
-      });
-    });
-    server.listen(pipe);
-    spirit.core.server.onShutdown(function () { return new Promise(function (resolve) { server.close(function () { resolve(); }); }); });
-    return server;
-  };
-
-  if (typeof process.send === 'function') {
-    process.on('message', function (m) {
-      if (!m || m.verb !== 'shutdown') return;
-      const all = Promise.all(shutdownHooks.map(function (fn) {
-        try { return Promise.resolve(fn()).catch(function () {}); } catch (e) { return Promise.resolve(); }
-      }));
-      const cap = new Promise(function (resolve) { setTimeout(resolve, SHUTDOWN_HOOK_MS); });
-      Promise.race([all, cap]).then(function () { process.exit(0); });
-    });
-  }
-
   // spirit.core.jobs: the external caller's API for the jobs subsystem
   // (distinct from spirit.core.node.jobs, the server's own registry,
   // installed separately by jobs.js only inside the server process).
@@ -691,11 +567,30 @@ if (isNode()) {
     // function rather than every job ever written.
     report(patch) {
       const jobId = process.env.SPIRIT_JOB_ID;
-      if (!jobId || !process.env.SPIRIT_CALLBACK_URL) {
+      const url = process.env.SPIRIT_CALLBACK_URL;
+      if (!jobId || !url) {
         return Promise.reject(new Error('spirit.core.jobs.report() called outside a spawned job context (SPIRIT_JOB_ID/SPIRIT_CALLBACK_URL unset)'));
       }
-      return postToDoor(Object.assign({ verb: 'jobs.update', id: jobId }, patch)).then(function (r) {
-        try { return r.text ? JSON.parse(r.text) : null; } catch (err) { return null; }
+      return new Promise((resolve, reject) => {
+        const body = JSON.stringify(
+          Object.assign({ verb: 'jobs.update', id: jobId }, patch)
+        );
+        const req = http.request(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+        }, res => {
+          let data = '';
+          res.on('data', chunk => data += chunk);
+          res.on('end', () => {
+            try {
+              resolve(data ? JSON.parse(data) : null);
+            } catch (err) {
+              resolve(null);
+            }
+          });
+        });
+        req.on('error', reject);
+        req.end(body);
       });
     },
     log(message) {
