@@ -188,6 +188,62 @@ if (typeof bucket.createSearch !== 'function') {
     }
   }
 
+  // ── THE MATCHING CONCEPTS, THROUGH THE SEARCH EVERY COLLECTION USES ─
+  //
+  //   Andy, 2026-09-28: "the matching capability sits in bucket.js and we'll
+  //   have to test that to see that it can support all those matching
+  //   concepts properly". (It is gradedSearch.js, reached through
+  //   searchBucket.createSearch.) The list is claude-windows', agreed.
+  //   A leading './' is fs.search's to drop, and is tested there.
+  function keysFor(query, labels) {
+    const s = bucket.createSearch({
+      query: query,
+      getLabelStringFromIncomingObject: function (l) { return l; },
+      extractKeyAndLabelFromRow: function (l) { return { key: l, label: l }; },
+    });
+    labels.forEach(function (l) { s.offer(l); });
+    return s.getResult().items.map(function (i) { return i.key; });
+  }
+  {
+    const tree = keysFor('app/desk/*', ['app/desk/a.js', 'app/desk/sub/b.js', 'app/deskX/c.js']);
+    const one = keysFor('app/desk/?.js', ['app/desk/a.js', 'app/desk/ab.js']);
+    if (tree.join() === 'app/desk/a.js,app/desk/sub/b.js' && one.join() === 'app/desk/a.js') {
+      test.check('a path pattern takes in the folder and its subfolders but not a sibling that merely starts '
+        + 'alike (app/desk/* skips app/deskX/), and ? is exactly one character');
+    } else {
+      test.fail('path patterns: app/desk/* gave ' + JSON.stringify(tree) + ', app/desk/?.js gave ' + JSON.stringify(one));
+    }
+  }
+  {
+    const plain = keysFor('BERT', ['bert']);
+    const glob = keysFor('APP/DESK/*', ['app/desk/a.js']);
+    const wide = keysFor('ZÜRICH', ['Zürich']);
+    if (plain.length === 1 && glob.length === 1 && wide.length === 1) {
+      test.check('matching ignores case: in words, in patterns, and in non-ASCII letters (ZÜRICH finds Zürich)');
+    } else {
+      test.fail('case: BERT ' + JSON.stringify(plain) + ', APP/DESK/* ' + JSON.stringify(glob) + ', ZÜRICH '
+        + JSON.stringify(wide));
+    }
+  }
+  {
+    // Offered worst first, so the order out cannot be the order in.
+    const ranked = keysFor('bert', ['albert', 'bertha', 'bert']);
+    if (ranked.join() === 'bert,bertha,albert') {
+      test.check('an exact name ranks above a prefix, which ranks above a match mid-word, whatever order they '
+        + 'were offered in (equals: see "fed first" above)');
+    } else {
+      test.fail('ranking: ' + JSON.stringify(ranked));
+    }
+  }
+  {
+    const words = keysFor('ann marie', ['anna-marie', 'ann marie', 'marie ann']);
+    if (words[0] === 'ann marie' && words.indexOf('marie ann') !== -1) {
+      test.check('several words: the exact phrase first, and the same words in another order still found');
+    } else {
+      test.fail('several words: ' + JSON.stringify(words));
+    }
+  }
+
   // ── THE LIMIT IS ONE NUMBER ─────────────────────────────────────────
   if (bucket.MAX_SEARCHED_ITEMS === 1000) {
     test.check('MAX_SEARCHED_ITEMS is exported, 1000, today\'s searchMemoryRows default');
