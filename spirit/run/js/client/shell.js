@@ -1906,15 +1906,38 @@
     // its own identity — proven identity (the shell knows what it just
     // injected), not claimed identity (the script stating an id).
     if (appEntry._scriptPath && !appEntry._activated) {
-      pendingActivationId = id;
-      var script = document.createElement('script');
-      script.src = '/' + appEntry._scriptPath;
-      script.onload = function () { switchTo(id, params); };
-      document.body.appendChild(script);
+      loadAppScript(id, function () { switchTo(id, params); });
       return;
     }
 
     switchTo(id, params);
+  }
+
+  // ONE LOAD PER SCRIPT, however many callers want it. A listening app's
+  // script starts loading at page load (mountListeners); a person who
+  // opens that app before it finishes must wait for the same load, not
+  // inject a second copy that would mount twice.
+  //
+  // The shell stamps the tag it injects with the app's id, and
+  // activateApp reads the stamp off document.currentScript. The identity
+  // is still the shell's own (it wrote the stamp), and now two loads in
+  // flight at once cannot hand each other's behaviour to the wrong app,
+  // which a single pendingActivationId slot could.
+  function loadAppScript(id, done) {
+    var appEntry = apps[id];
+    if (appEntry._activated) { done(); return; }
+    if (appEntry._loading) { appEntry._loading.push(done); return; }
+    appEntry._loading = [done];
+    pendingActivationId = id;
+    var script = document.createElement('script');
+    script.src = '/' + appEntry._scriptPath;
+    if (script.setAttribute) script.setAttribute('data-app-id', id);
+    script.onload = function () {
+      var waiting = apps[id] ? (apps[id]._loading || []) : [];
+      if (apps[id]) apps[id]._loading = null;
+      waiting.forEach(function (fn) { fn(); });
+    };
+    document.body.appendChild(script);
   }
 
   // Set by launchApp immediately before injecting a dynamic app's script,
@@ -1932,7 +1955,9 @@
   // activate lifecycle and is only ever used by static apps); it calls
   // this instead.
   function activateApp(behavior) {
-    var id = pendingActivationId;
+    var current = (typeof document !== 'undefined' && document.currentScript) || null;
+    var stamped = current && current.getAttribute ? current.getAttribute('data-app-id') : null;
+    var id = stamped || pendingActivationId;
     if (!id || !apps[id]) return; // called outside a pending script load — nothing to attach to
     apps[id].mount = behavior.mount;
     // Optional, and a dialog defines none of it: the shell does not tick
@@ -1941,7 +1966,7 @@
     apps[id].loadFile = behavior.loadFile; // optional — only apps that care which file they're opened against define this
     apps[id].open = behavior.open;         // dialogs only — called on every entry
     apps[id]._activated = true;
-    pendingActivationId = null;
+    if (pendingActivationId === id) pendingActivationId = null;
   }
 
   // One entry per open dialog: its resolve, waiting for the screen to
@@ -2016,10 +2041,48 @@
   // without every peer's stored traffic becoming unreadable.
   var packetHandlers = Object.create(null);
 
+  // ── HELD FOR AN APP THAT LISTENS, UNTIL IT DOES ────────────────────────
+  //
+  //   Andy, 2026-09-27, on Desk: "they must keep their own logs". An app
+  //   that keeps its own log has to hear every packet, and the node counts
+  //   a packet delivered once any page takes it (arrivals.js), so a packet
+  //   that reached this page before the app had mounted was gone for good.
+  //   That includes the backlog the node replays when the page opens.
+  //
+  // So a manifest may say `"listens": ["agents"]`. The shell mounts that
+  // app hidden at page load (mountListeners), and until its handler
+  // subscribes, a packet for a listed name is held here instead of being
+  // dropped. Bounded: past HELD_MAX per name the oldest goes first, so a
+  // listener whose script never loads cannot grow the page without end.
+  var heldForListener = Object.create(null);
+  var HELD_MAX = 500;
+
+  function someAppListensFor(name) {
+    return Object.keys(apps).some(function (id) {
+      var l = apps[id] && apps[id].listens;
+      return !!(l && l.indexOf(name) !== -1);
+    });
+  }
+
+  function holdForListener(name, message) {
+    if (!someAppListensFor(name)) return false;
+    var held = heldForListener[name] = heldForListener[name] || [];
+    held.push(message);
+    if (held.length > HELD_MAX) held.shift();
+    return true;
+  }
+
   function onPacketFor(appId, handler) {
     if (typeof handler !== 'function' || !appId) return function () {};
     var name = String(appId);
     (packetHandlers[name] = packetHandlers[name] || []).push(handler);
+    // What was held for this name goes to the first handler that asks,
+    // in arrival order, once.
+    var held = heldForListener[name];
+    if (held && held.length) {
+      delete heldForListener[name];
+      deliverPackets(held);
+    }
     return function off() {
       packetHandlers[name] = (packetHandlers[name] || []).filter(function (fn) { return fn !== handler; });
     };
@@ -2177,7 +2240,13 @@
       }
 
       var listeners = packetHandlers[info.app] || [];
-      if (!listeners.length) return; // nobody home: dropped on purpose
+      if (!listeners.length) {
+        // HELD, ONLY FOR A NAME AN APP DECLARED IT LISTENS FOR, until that
+        // app's handler subscribes (onPacketFor hands them over). Anything
+        // else is still dropped on purpose.
+        if (holdForListener(info.app, message)) routed.push(message);
+        return;
+      }
       routed.push(message);
       listeners.slice().forEach(function (fn) { fn(info.body, message); });
     });
@@ -2624,6 +2693,12 @@
       // the file it was showing and steps out of its own way; a dialog
       // can only return.
       type: manifest.type || 'app',
+      // THE PACKET NAMES THIS APP MUST NOT MISS (see mountListeners). A
+      // list of wire names, because the packet name is not the app id.
+      listens: Array.isArray(manifest.listens)
+        ? manifest.listens.filter(function (n) { return typeof n === 'string' && n; })
+        : [],
+      _loading: existing && existing._loading,
       mount: (existing && existing._activated)
         ? existing.mount
         : function (container) { container.textContent = 'Loading ' + manifest.name + '…'; },
@@ -2746,6 +2821,29 @@
   // that it does not wait for a snapshot that may never come.
   declareIntrinsicApps();
 
+  // ── AN APP THAT LISTENS IS MOUNTED AT PAGE LOAD, HIDDEN ──────────────
+  //
+  // The other half of heldForListener: its script is loaded and mount()
+  // runs into a hidden pane now, so its onPacket is armed without anybody
+  // opening it. Opening it later only shows the pane it already has.
+  // Idempotent, so every snapshot may call it for apps discovered late.
+  function mountListeners() {
+    Object.keys(apps).forEach(function (id) {
+      var app = apps[id];
+      if (!app || !app.listens || !app.listens.length || !app._scriptPath || app._el) return;
+      loadAppScript(id, function () {
+        var ready = apps[id];
+        if (!ready || ready._el) return;
+        ready._el = document.createElement('div');
+        ready._el.className = 'app-pane';
+        ready._el.hidden = true;
+        contentEl.appendChild(ready._el);
+        ready.mount(ready._el, buildApiFor(ready), null);
+      });
+    });
+  }
+  mountListeners();
+
   // First paint: the tab says which node this is before anything is
   // opened.
   paintWindowTitle('');
@@ -2760,6 +2858,7 @@
       jobsById.clear();
       jobs.forEach(function (job) { jobsById.set(job.id, job); });
       discoverDynamicApps(jobs);
+      mountListeners();
       pruneStalePreferences();
       notifyFileSubscribers();
       notifyJobSubscribers(null);

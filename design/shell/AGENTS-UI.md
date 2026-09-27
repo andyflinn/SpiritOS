@@ -114,10 +114,14 @@ What follows is what both agreed. Any of it changes when Andy asks.
    - **Each agent** logs its own sends and arrivals in
      `relay-state/agents-log.jsonl` and reads nothing of the node's
      (wsl-claude, 2a3c493).
-   - **The price, accepted:** nothing from before a log existed. A packet
-     that reaches a page where Desk is not mounted is dropped by the shell,
-     and the node counts it delivered. Whether Desk mounts at page load is
-     Andy's to rule (Open).
+   - **The price, accepted:** nothing from before a log existed.
+   - **Desk mounts at page load** (Andy, 2026-09-27: *"lets do it all"*).
+     Its manifest says `"listens": ["agents"]`. The shell loads it into a
+     hidden pane at page load, and holds a packet for a listed name until
+     the app subscribes (at most 500 per name). Without this, a packet that
+     reached a page where Desk was never opened was dropped by the shell,
+     while the node counted it delivered. It is a shell manifest field, not
+     a node verb (`test/listeningApp.js`).
    - `node.history` and `trafficLog.history` are removed.
 
    **A slot empties** when Andy answers under the row, or the row leaves
@@ -284,10 +288,6 @@ apart. A proposal, so feedback is the point.
 **Still Andy's:** whether to build it.
 ## Open
 
-- **Does Desk mount at page load?** (asked of Andy, 2026-09-27.) Without
-  it, agents packets that reach a page where Desk was never opened are
-  lost to Desk. It is a shell manifest flag, not a node verb. wsl-claude
-  will check that the handler is registered before the backlog arrives.
 - **Bound the logs** (both agents, 2026-09-27). `agents-log.jsonl` grows
   forever, and Desk rewrites its whole `log.json` on every arrival. Neither
   goes out, so MAX_PAYLOAD does not bind them. They need a bound of their

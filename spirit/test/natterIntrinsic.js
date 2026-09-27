@@ -207,8 +207,12 @@ function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysR
     saved: saved,
     snapshot: snapshot,
     // Entry scripts are injected into document.body — one appended child
-    // per script the shell decided to fetch.
-    scripts: doc.body.children,
+    // per script the shell decided to fetch. Desk's is left out: it
+    // declares `listens`, so the shell fetches it at page load whatever is
+    // opened (test/listeningApp.js), and this suite is about Natter's.
+    get scripts() {
+      return doc.body.children.filter(function (c) { return !/app\/desk\//.test(String(c.src || '')); });
+    },
     // For the first-run checks: fire a relay-presence job carrying an
     // exact log, so "connected then lost" can be driven rather than
     // approximated.

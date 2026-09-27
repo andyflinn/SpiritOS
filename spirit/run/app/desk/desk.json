@@ -4,5 +4,8 @@
   "icon": "THREAD",
   "hidden": false,
   "intrinsic": true,
-  "owner": "system"
+  "owner": "system",
+  "listens": [
+    "agents"
+  ]
 }
