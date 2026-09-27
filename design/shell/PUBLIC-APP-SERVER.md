@@ -1352,6 +1352,10 @@ verbs today; they live only in its code.
   routing within it). No pushed route table, and no restart gap. What
   grantFace pushes by owner command is permission only: the face's contact
   list.
+  And the owner's node reads none of it: *"appFaceApps owner doesn't
+  understant appFaceApp nor grantFace"*. The face's question is a packet
+  addressed to grantFace; the node forwards it down grantFace's pipe by the
+  packet's app name, and returns the answer signed, without looking inside.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
