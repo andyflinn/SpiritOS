@@ -40,6 +40,10 @@ var deskTaken = Object.create(null);
 // HIS NAME FOR A ROW, when he has given one. Andy: "I like that i get to
 // relable the issue with my own words". The newest `retitle:` he sent.
 var deskLabel = Object.create(null);
+// HIS LAST DECISION ON A ROW. Andy: "the list should display my decision
+// (go,accept)". The newest of go / no / accepted / rejected he sent.
+var deskDecision = Object.create(null);
+var DESK_DECISIONS = { 'go.': 'go', 'no.': 'no', 'accepted.': 'accepted', 'rejected.': 'rejected' };
 
 // One history row -> one agents message, or null when it is not one.
 function deskDecode(row) {
@@ -81,6 +85,9 @@ function deskFold(msg) {
   if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && /^retitle:\s*/.test(msg.text)) {
     deskLabel[msg.todo] = msg.text.replace(/^retitle:\s*/, '');
   }
+  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && DESK_DECISIONS[msg.text]) {
+    deskDecision[msg.todo] = DESK_DECISIONS[msg.text];
+  }
   if (msg.kind === 'board') {
     try {
       var b = JSON.parse(msg.text);
@@ -96,7 +103,7 @@ function deskTable() {
     return '<div class="job-manifest-note">No board has reached this node yet. The lead ' +
       'posts one whenever its test run changes it.</div>';
   }
-  var head = '<tr><th>#</th><th>to-do</th><th>with</th><th>frees</th><th>waits on</th><th>there</th><th>owed since</th></tr>';
+  var head = '<tr><th>#</th><th>to-do</th><th>with</th><th>your decision</th><th>frees</th><th>waits on</th><th>there</th><th>owed since</th></tr>';
   var body = deskBoard.rows.map(function (row) {
     var waits = (row.waitsOn || []).map(function (w) { return typeof w === 'string' ? w : (w.id || ''); }).join(', ');
     return '<tr data-id="' + deskEsc(row.id) + '" style="cursor:pointer">' +
@@ -104,6 +111,7 @@ function deskTable() {
       '<td title="' + deskEsc(row.title) + '">' + deskEsc(deskLabel[row.id] || row.title) +
         ' <span class="job-manifest-note">(' + deskEsc(row.handle) + ')</span></td>' +
       '<td>' + deskEsc(deskTaken[row.id] || '') + '</td>' +
+      '<td>' + deskEsc(deskDecision[row.id] || '') + '</td>' +
       '<td>' + deskEsc(row.frees == null ? '' : row.frees) + '</td>' +
       '<td>' + deskEsc(waits) + '</td>' +
       '<td>' + deskEsc(row.there == null ? '' : row.there + '%') + '</td>' +

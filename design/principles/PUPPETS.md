@@ -464,10 +464,11 @@ ON the arrival path rather than beside it, so it inherits
 `peerPost.js:1091`'s replay guard. These are configuration verbs and a
 replayed one re-executes.
 
-### G6 — Lock the puppet out of Self-Ownership
+### G6 — Lock puppet out of Self-Ownership
 
-*Andy's title, given in Desk on 2026-09-27 ("retitle: Lock the puppet out of
-Self-Ownership"). It was "a puppet's stored owner key, owner-only".*
+*Andy's title, given in Desk on 2026-09-27 and trimmed there the same hour
+("Lock puppet out of Self-Ownership"). It was "a puppet's stored owner key,
+owner-only".*
 
 **Verify:** `spirit/test/puppetsPending.js` (`puppets/G6`, awaiting).
 **Status:** OPEN, about 20%. The readOnly mechanism exists; the stored key and
@@ -476,6 +477,15 @@ its planting do not. `puppetsPending.js:183` checks `nodeApps` for
 said DONE: 402dac4 copied G5's status paragraph over G6's. wsl-claude caught
 it because the new board ranking treats a dependency on a DONE item as dead,
 so "G7 waits on G6" would have been silently ignored.)*
+
+**Built at edbadff:** `owner.json` in the app's folder, listed read-only to
+the puppet beside `allow.json` (`nodeApps.js`, `ownerIn`, handed over as
+`api.owner()`). **The lock guards the door a puppet is given, and nothing
+more.** Andy, 2026-09-27, in Desk: *"within loopback, trust is the
+responsibility of the box-owner"*. Code he chose to run on his own box can
+reach the file by other means (a `require` of `fs`), and that is his trust
+to extend. So there is no static check for it, and it is not a hole to
+reopen.
 
 Read-only to the puppet through the mechanism `allow.json` already uses,
 or a puppet rewrites its owner and takes itself over — the hole closed at
