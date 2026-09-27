@@ -69,7 +69,7 @@ function world(listed) {
   let deliver = null;
   const mounted = nodeApps.mountAll({
     rootDir: root,
-    arrivals: { subscribe: function (fn) { deliver = fn; return function () {}; } },
+    arrivals: { witness: function (fn) { deliver = fn; return function () {}; } },
     post: function () { return Promise.resolve({ ok: true }); },
     log: function (m) { lines.push(String(m)); },
   });

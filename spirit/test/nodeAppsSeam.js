@@ -80,7 +80,7 @@ function world() {
   const lines = [];
   const mounted = nodeApps.mountAll({
     rootDir: root,
-    arrivals: { subscribe: function () { return function () {}; } },
+    arrivals: { witness: function () { return function () {}; } },
     post: function () { return Promise.resolve({ ok: true }); },
     log: function (m) { lines.push(String(m)); },
   });

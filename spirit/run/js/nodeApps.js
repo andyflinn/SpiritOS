@@ -329,6 +329,7 @@ function mountAll(opts) {
   const rootDir = String((opts && opts.rootDir) || '');
   const arrivals = opts && opts.arrivals;
   const post = opts && opts.post;
+  const face = opts && opts.face;
   const log = (opts && opts.log) || function () {};
   const appsDir = path.join(rootDir, 'app');
 
@@ -367,17 +368,29 @@ function mountAll(opts) {
         // WHO OWNS IT, read-only to it: the owner's key, or '' for none.
         // WHO OWNS THIS PUPPET: the node's, one for all its apps (puppetIn).
         owner: function () { return puppet().owner; },
-        // The same seam a page subscribes through (arrivals.js:137).
         // Every booted app sees every admitted arrival; none of them is
         // routed to, which is what keeps the node ignorant of payloads.
-        subscribe: arrivals && typeof arrivals.subscribe === 'function'
-          ? arrivals.subscribe
+        // AS A WITNESS, NOT A READER (arrivals.witness). A booted app is not
+        // a page: as a subscriber it took the backlog at boot and marked
+        // every arrival taken 2 ms after it landed, so a page that opened
+        // later was handed nothing (wsl-claude, live, on fixList and
+        // appFaceApp).
+        subscribe: arrivals && typeof arrivals.witness === 'function'
+          ? arrivals.witness
           : function () { return function () {}; },
         // Reply-as-packet. Signature is peerPost's own
         // (relayUrl, toKey, text, hints, how) so nothing is re-spelled
         // here — a second spelling of an existing interface is the thing
         // the wire probe exists to catch.
         post: typeof post === 'function' ? post : null,
+        // THE FACE, only on a node that has one (relay-state/face.json;
+        // puppetPost.js, public-app-server/G17). face(handler) claims the
+        // visitors' requests for this app: the same app may claim again, any
+        // other app is refused. Absent on every other node, so an app cannot
+        // mistake a node without a face for one that has it.
+        face: face && typeof face.claim === 'function'
+          ? function (handler) { return face.claim(name, handler); }
+          : undefined,
         log: log,
       });
       mounted.push(name);

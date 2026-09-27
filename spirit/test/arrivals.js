@@ -283,6 +283,33 @@ function landed(log, hash, text, admitted) {
   fs.rmSync(home, { recursive: true, force: true });
 })();
 
+(function aBootedAppIsAWitnessToo() {
+  // Found live by wsl-claude after the fix above: fixList and appFaceApp,
+  // booted node apps, reached arrivals through nodeApps' api.subscribe and
+  // marked each arrival taken 2 ms after it landed, with no page open.
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-witness-app-'));
+  const dir = path.join(home, 'app', 'watcher');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'watcher.json'), JSON.stringify({ name: 'watcher', boots: true }));
+  fs.writeFileSync(path.join(dir, 'watcher.js'),
+    'module.exports = { mount: function (api) { api.subscribe(function (m) { (global.__watched = global.__watched || []).push(m.hash); }); } };');
+  const log = logAt(home);
+  const arrivals = arrivalsModule.createArrivals({ traffic: logAt(home) });
+  require('../run/js/nodeApps.js').mountAll({ rootDir: home, arrivals: arrivals });
+  const text = packet.encode('agents', { text: 'nobody is looking' }).text;
+  landed(log, 'b1', text);
+  arrivals.note({ item: 'i1', hash: 'b1', from: 'PEERKEY', text: text, at: '2026-09-27T06:10:00Z' });
+  const page = [];
+  arrivals.subscribe(function (m) { page.push(m.hash); });
+  if ((global.__watched || []).join(',') === 'b1' && page.join(',') === 'b1') {
+    test.check('a booted app sees the arrival, and it is still waiting for the first page that opens');
+  } else {
+    test.fail('app saw ' + JSON.stringify(global.__watched) + ', page got ' + JSON.stringify(page));
+  }
+  delete global.__watched;
+  fs.rmSync(home, { recursive: true, force: true });
+})();
+
 (function aHeldStrangerIsNotBacklog() {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlog-held-'));
   const log = logAt(home);
