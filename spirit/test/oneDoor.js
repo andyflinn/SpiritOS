@@ -180,11 +180,11 @@ const TALLY = {
   // and a server that cannot listen is not a server, so the one socket
   // is contained in what was authorised. If he reads this and disagrees,
   // it is one line and the reasoning is here rather than in a commit.
-  'js/appServer.js': 1,
+  'js/faceServer.js': 1,
   // THE FACE'S ENTRY POINT ON THE VPS PUPPET NODE (public-app-server/G17,
   // slice 1): http.createServer once, on loopback, for Caddy. RESTING ON
   // ANDY'S "go." ON THAT SLICE, 2026-09-27, whose whole content is this
-  // listener, and said so rather than assumed, as appServer.js above. A
+  // listener, and said so rather than assumed, as faceServer.js above. A
   // listener that cannot listen is not one. If he reads this and
   // disagrees, it is one line.
   'js/puppetPost.js': 1,

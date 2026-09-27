@@ -202,7 +202,7 @@ async function wholeRoute() {
 
 // G18, Andy 2026-09-27: "processes use named pipes to serve requests from
 // the puppets". Its declaration (appServerBoundary.js) probed a name that
-// was built elsewhere (appServers.pipePathFor, not appServer's), so it
+// was built elsewhere (appServers.pipePathFor, not faceServer's), so it
 // could never flip; this is the assertion it was waiting to hand over. A
 // real app server, started the way the node starts it (--app --pipe), is
 // asked over its pipe, and the kernel's own socket table is read for any
@@ -371,8 +371,14 @@ function mentions(value, needle) {
   //   Code lines only: a comment may tell the history.
   test.subHeading('The node\'s app-server code has no face vocabulary');
   const faceWords = ['js/appServers.js', 'js/jobs.js'].filter(function (rel) {
-    const code = fs.readFileSync(path.join(RUN, rel), 'utf8').split('\n')
-      .map(function (line) { return line.replace(/\/\/.*$/, ''); }).join('\n');
+    // /\r?\n/: on a Windows checkout every line ends in \r, and `.*$` then
+    // never reached the end, so no comment was stripped. 'interface' and
+    // 'surface' are not a face (both found on Windows, 2026-09-27), and are
+    // removed rather than excluded by \b, which would let camelCase such as
+    // readFaces slip past (wsl-claude).
+    const code = fs.readFileSync(path.join(RUN, rel), 'utf8').split(/\r?\n/)
+      .map(function (line) { return line.replace(/\/\/.*$/, ''); }).join('\n')
+      .replace(/\b(inter|sur)face/gi, '');
     return /face/i.test(code);
   });
   if (faceWords.length === 0) {

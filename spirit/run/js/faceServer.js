@@ -1,6 +1,6 @@
 'use strict';
 
-// spirit/run/js/appServer.js
+// spirit/run/js/faceServer.js
 // A NODE THAT SERVES ONE APP, AND NOTHING ELSE.
 //
 // The third startup module, beside `server.js` (a personal node) and
@@ -922,7 +922,7 @@ function create(opts) {
   // else on the box can (appServers.js). Absent means the port, as before.
   const pipe = typeof o.pipe === 'string' ? o.pipe : '';
 
-  if (!appName) throw new Error('appServer.create needs an appName');
+  if (!appName) throw new Error('faceServer.create needs an appName');
 
   const manifest = readJson(manifestPath(rootDir, appName));
   const contract = contractOf(manifest);

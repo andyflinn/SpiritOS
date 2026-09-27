@@ -21,7 +21,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 const packet = require('../run/js/client/packet');
 const boxes = require('../run/js/boxes');
-const appServer = require('../run/js/appServer');
+const faceServer = require('../run/js/faceServer');
 
 test.startTest('His boxes add up from his own servers, and over-committed is only ever a warning');
 
@@ -143,12 +143,12 @@ function box(fp, allotted, total, label) {
 // ── THE SERVER'S SIDE: FOUR FIELDS, NO OPINION, NOTHING READABLE ──────
 {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-boxreport-'));
-  const r = appServer.boxReport(root, 'starter');
+  const r = faceServer.boxReport(root, 'starter');
   const keys = Object.keys(r).sort().join(',');
   const fp = String(r.fingerprint || '');
   const ips = [].concat.apply([], Object.values(os.networkInterfaces())).map(function (i) { return i.address; });
   const readable = fp.indexOf(os.hostname()) !== -1 || ips.some(function (ip) { return ip && fp.indexOf(ip) !== -1; });
-  const again = appServer.boxReport(fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-boxreport-')), 'other').fingerprint;
+  const again = faceServer.boxReport(fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-boxreport-')), 'other').fingerprint;
   if (keys === 'allottedMB,boxLabel,boxTotalMB,fingerprint' && fp && !readable && again === fp) {
     test.check('a server reports exactly four facts about its box -- no opinion, no verdict -- and its '
       + 'fingerprint names this box the same way twice while carrying no hostname or address');

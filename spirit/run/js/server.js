@@ -27,11 +27,11 @@ if (process.argv.slice(2).includes('--relay')) {
 // block and a DNS record and the same module on loopback is the same
 // module (design/shell/PUBLIC-APP-SERVER.md).
 //
-// `fromArgv` is the only thing in appServer.js that reads arguments, and
+// `fromArgv` is the only thing in faceServer.js that reads arguments, and
 // requiring that file starts nothing — which is what lets a suite drive
 // the module instead of a command line.
 if (process.argv.slice(2).includes('--app')) {
-  require('./appServer').fromArgv(process.argv);
+  require('./faceServer').fromArgv(process.argv);
   return;
 }
 

@@ -290,7 +290,7 @@ if (isNode()) {
     if (canonical.endsWith(SIDECAR_SUFFIX)) return false;
     // AT ANY DEPTH, not only the node's own: every app server keeps its
     // identity at app-state/<name>/relay-state/identity.json
-    // (appServer.js:614), and a top-level-only check served that private
+    // (faceServer.js:614), and a top-level-only check served that private
     // key to any shell app and to the static route (wsl-claude found it,
     // 2026-09-27; Andy's "go." on the fix).
     if (canonical.split('/').indexOf('relay-state') !== -1) return false;

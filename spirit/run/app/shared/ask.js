@@ -15,7 +15,7 @@
 // ── THE SAME DOOR ON BOTH HOSTS, WHICH IS WHY ONE FILE CAN WORK ─────
 //
 // The node's own server answers `POST /api/spirit` (`server.js:921`) and
-// so does the app server (`appServer.js`, the door). An app hosted by the
+// so does the app server (`faceServer.js`, the door). An app hosted by the
 // shell and the same app served by a public app server therefore speak to
 // the same path, and this file needs no idea which one it is on. That is
 // the layering claim made good rather than argued: the app contract does

@@ -270,7 +270,7 @@ module.exports = function installJobs(spirit, port) {
       const startedAt = Date.now();
       try {
         // AN IPC CHANNEL, so the server exits when this node does: a node
-        // killed outright leaves no orphan holding its pipe (appServer.js,
+        // killed outright leaves no orphan holding its pipe (faceServer.js,
         // fromArgv, 'disconnect'). Its output goes to this job's log.
         child = spawn(command, args || [], { cwd: options.cwd, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
       } catch (e) {

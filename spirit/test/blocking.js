@@ -80,7 +80,7 @@ module.exports = [
   // work landed rather than waiting for Andy to say "already decided" — the
   // third time in one day this board asked him for something already built.
   // 780426a: the ask has a caller in peerPost.js, the format is
-  // appServer.js:811's, one ask per peer, and on no answer the same 428 as
+  // faceServer.js:811's, one ask per peer, and on no answer the same 428 as
   // before. LIVE PASS on spiritos-f6's agent node — one ask, the card
   // returned, 37 queued reports delivered sealed, outbox drained to zero,
   // cardVia 'reply' recorded. First reports to reach the owner node since
@@ -103,7 +103,7 @@ module.exports = [
   // have gone when the work landed rather than waiting for Andy to say "already
   // decided" — the THIRD time in one day this board asked him for something
   // already built. 780426a: the ask has a caller in peerPost.js, the format is
-  // appServer.js:811's, one ask per peer per minute, and on no answer the same
+  // faceServer.js:811's, one ask per peer per minute, and on no answer the same
   // 428 as before. LIVE ACCEPTANCE TEST PASSED on spiritos-f6's agent node —
   // exactly one ask, the card returned, 37 queued reports delivered sealed and
   // receipted, outbox drained to zero, cardVia 'reply' recorded. First reports

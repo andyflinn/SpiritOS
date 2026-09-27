@@ -13,7 +13,7 @@ offerable at all."*
 | `tokens.css` | `tokens` | colours, spacing and faces as custom properties, and the dark answer as a redefinition of the same names |
 | `elements.css` | `elements` | opt-in classes that READ tokens with fallbacks, so they render without them |
 
-`dialogs` is the third name in the vocabulary (`appServer.js`,
+`dialogs` is the third name in the vocabulary (`faceServer.js`,
 `UTILITIES`) and **is not provided yet**. It is listed there because the
 grant is a contract decision and the file is a deployment fact — an app
 may declare it, and will be granted nothing until this folder offers it.

@@ -189,7 +189,7 @@ No member code runs on the container. Data crosses, not code — decision
 > it...."*
 
 The appShell posts to exactly one key, its own owner
-(`spirit/run/js/appServer.js:774` `reachOwner`, `:202` *"THE FIRST BIND
+(`spirit/run/js/faceServer.js:774` `reachOwner`, `:202` *"THE FIRST BIND
 IS FINAL"*). The first URL element travels **in** the post as data, not
 as an address. So the public box holds no member keys at all: a
 compromised VPS leaks no member identities because it never had any.
@@ -341,7 +341,7 @@ question the node already answers one layer down.
   separate process with a stored owner key. That is a re-shaping, not an
   addition.
 - **How a puppet's owner key is planted, and whether it can change.**
-  `appServer.js:202`'s first-bind-is-final is the shape; planting the key
+  `faceServer.js:202`'s first-bind-is-final is the shape; planting the key
   at install removes the unclaimed window entirely, which is the move
   Andy already described for relay invites on a VPS.
 - **A maintenance packet is delivered to every puppet**, including the one

@@ -64,7 +64,7 @@ only needs an appShellApp"*. So:
   Andy, 2026-09-26: *"so members utlimately will have to use a shell on
   their subdomain, if they want to fan out further"*. One subdomain reaches
   one intrinsic app on the member's node, and fanning out is the shell's
-  job (`appServer.js:22-28`). So the VPS never needs a second entry per
+  job (`faceServer.js:22-28`). So the VPS never needs a second entry per
   member app.
 - **DIRECTION, and the reason for the mirroring: appFaceApp becomes a
   shell that fans out too.** Andy, 2026-09-26: *"the appShellApp will
@@ -87,14 +87,14 @@ only needs an appShellApp"*. So:
   below are out of scope only beyond what this path needs.
 - **G17, restated for this topology.** The app's answer (for `join`, the
   invite) must travel back along that route to the browser.
-  `appServer.js:842` throwing the body away is the same defect in its old
+  `faceServer.js:842` throwing the body away is the same defect in its old
   location. appServerBoundary.js:459: *"fatal for join, where the invite IS
   the answer."*
 - **The VPS process that hosts appFaceApp is a NODE that mounts it, not an
   app server.** wsl-claude, 2026-09-26, checked at the tree. This corrects
   a recommendation made minutes earlier, which would have run appFaceApp
   as the app of an app-server process. An app server never EXECUTES app
-  code. Its `servable()` (`appServer.js:1030-1034`) hands `<app>.html` and
+  code. Its `servable()` (`faceServer.js:1030-1034`) hands `<app>.html` and
   `<app>.js` to the browser as static files. appFaceApp only runs when
   `nodeApps.mountAll` mounts it and hands it its api (`nodeApps.js:303-321`).
   Under the withdrawn shape, the grant exchange would never have run, and
@@ -249,7 +249,7 @@ stops being the user the abstraction was fitted to: it becomes the
 
 ---
 
-### G1 — `appServer.js` is a third startup module
+### G1 — `faceServer.js` is a third startup module
 
 **Status:** OPEN. Nothing built.
 
@@ -291,7 +291,7 @@ one app's business, and stage 2's.
 ### G5 — the mode's NAME is decided here; its rendering is not
 
 **RULED 2026-09-24: the mode is `--app`, and the module is
-`appServer.js`.** Andy: *"1 agreed."* It names what the process IS
+`faceServer.js`.** Andy: *"1 agreed."* It names what the process IS
 — one app, no dispatch — rather than where it sits, because
 publicness is a deployment fact. A builder no longer stops on line
 one of the first file.
@@ -371,7 +371,7 @@ would break an app that never changed, it is in the stable half.*
 2026-09-26: *"so the app is a process? process type = server?"*, then *"the
 process type is a basic though"*. An app with a face runs as its own
 process: the third startup mode, beside the personal node and the relay
-(`node js/server.js --app <name>`, `appServer.js:3-12`, loopback only at
+(`node js/server.js --app <name>`, `faceServer.js:3-12`, loopback only at
 :1371). The owner node does not `require` the app. Code loaded into the
 owner node could read the owner's keys, would sit outside any allotment on
 the box sheet (G10), and would take the node down when it crashed.
@@ -389,7 +389,7 @@ re-derived:
   (`server.js:675` only validates it).
 - **The pass-through is app-agnostic and flat.** It forwards a file by
   name, or a body to the one door (`POST /api/spirit`, verbs in the body,
-  `appServer.js:1201-1209`), to that app's loopback port, and never looks
+  `faceServer.js:1201-1209`), to that app's loopback port, and never looks
   inside. **Recommended:** introspection is one more verb that lists the
   declared surface, not an API tree. A flat list stays a closed set (G9),
   and a tree would need the front door to understand paths.
@@ -620,7 +620,7 @@ of taste.
 ### G14 — an app DECLARES what it takes, in its manifest, and gets nothing it did not ask for
 
 **Status:** DONE (2026-09-24, `ac0c283`): `contractOf`, `SURFACE_MEMBERS`, absent-means-nothing and
-`checkContract` in `appServer.js:84-160`, refusing an undeclared member at load
+`checkContract` in `faceServer.js:84-160`, refusing an undeclared member at load
 (`app-surface-undeclared`); asserted in `appServerBoundary.js:729-740`. This line said
 OPEN until 2026-09-27, when wsl-claude found the tree and the doc disagreeing.
 **This closes wsl-claude's readiness
@@ -727,11 +727,11 @@ command line, where it would otherwise be trivially bypassed.
 
 #### 2. The seam a suite drives
 
-`appServer.js` **exports and does not self-start.** Requiring it does
+`faceServer.js` **exports and does not self-start.** Requiring it does
 nothing:
 
 ```js
-const app = require('./appServer');
+const app = require('./faceServer');
 const h = app.create({ rootDir, appName, port, relay, invite, inviteLabel });
 h.start(); h.stop(); h.state();                            // create: no listen
 ```
@@ -756,7 +756,7 @@ a guess with a date on it.
 
 Both are first-start-only, like `--relay`, and for the same reason.
 
-`server.js` dispatches with `require('./appServer').fromArgv(process.argv)`
+`server.js` dispatches with `require('./faceServer').fromArgv(process.argv)`
 before any node code is required, exactly as `--relay` does
 (`server.js:13-16`). **The split is cycle 0's** — startup separate from
 logic — with one module rather than two because there is far less of it
@@ -831,7 +831,7 @@ ALPHA TOPOLOGY* at the head of this file).
 starter, which has nothing to show; fatal for join, where the invite IS the
 answer."* The transport half is done: peerPost unseals a reply into
 `answer.text` (`peerPost.js:363-373`). Two parts are owed:
-- **Stop discarding the body.** `appServer.js:842` returns only the status,
+- **Stop discarding the body.** `faceServer.js:842` returns only the status,
   `if (a.ok) return { ok: true, status: a.status || 200 };`.
 - **Something on the owner's node that answers with one.** That is the
   master, and it is the real work. Probably the same unit as *an app can
@@ -895,7 +895,7 @@ browser ← appFaceApp ←─reply, re=hash── appServerReply() ←─ answer
 ```
 
 - **The first request fetches the page** (`GET /` returns `join.html`,
-  `appServer.js:1031`, plus the shared `ask.js`). The page's posts then
+  `faceServer.js:1031`, plus the shared `ask.js`). The page's posts then
   reach join's one door along the same route. So the node forwards only the
   two flat things: a file by name, or a body to the door.
 - **THE NAMES, RULED.** Andy, 2026-09-27, "go." on: `appServerPost()` for the
@@ -912,7 +912,7 @@ browser ← appFaceApp ←─reply, re=hash── appServerReply() ←─ answer
 - **This path does not go through the browser shell**, so it does NOT wait
   on transport/R12. R12 is the shell discarding handler returns, and this
   path never enters the shell. A proposed dependency "G17 waits on
-  transport/R12" was withdrawn on this ruling. **`appServer.js:842` is off
+  transport/R12" was withdrawn on this ruling. **`faceServer.js:842` is off
   this path too:** that is an app server reaching out to its owner, and here
   the node calls in.
 - **Built:** all of it. The VPS entry (`puppetPost.js`), `appServerPost()`
@@ -970,9 +970,9 @@ supersedes PUPPETS.md §10's flat namespace (see there).
   node's key, so the boot route answers "mine" and the owner node hands
   the request to the app's process locally. This keeps his ruling that an
   app server is *"a slave to it's owner"*, which receives nothing
-  (`appServer.js:692`, onArrival ABSENT); a route to the app server's own
+  (`faceServer.js:692`, onArrival ABSENT); a route to the app server's own
   key could never be answered. The app's door is found on the same disk,
-  from `app-state/<name>/` (`appServer.js:65`) or G18's pipe per name,
+  from `app-state/<name>/` (`faceServer.js:65`) or G18's pipe per name,
   and never travels: the G10 box report stays its ruled four fields
   (wsl-claude's review). A member with a node of their own gets the signed
   redirect.
@@ -1015,7 +1015,7 @@ from node to appserver"*, then *"Go. and two verbs approved."*
 - **The server process:** a third job kind, `'server'`, beside `'permanent'`
   and `'process'` (`jobs.startServerJob`). The node starts one per such
   serving app at boot and starts it again when it exits, with the wait doubling
-  from 1 s to 60 s. Its heap is capped (128 MB). It is today's `appServer.js`
+  from 1 s to 60 s. Its heap is capped (128 MB). It is today's `faceServer.js`
   (`node js/server.js --app <name> --pipe <path>`). It is started over an IPC
   channel, so it exits when its node dies and no orphan keeps the pipe.
   **None on a puppet** (`relay-state/puppet.json`): app servers live on the
@@ -1293,10 +1293,10 @@ verbs today; they live only in its code.
   server asks its relay. It gets a requirement of its own. It must not change
   how a relay gets its owner: first claim and pending-owner are decided
   (AGENT.md).
-- **appServer is to be named faceServer (ruled, rename not yet done).** Andy:
+- **faceServer is to be named faceServer (ruled, rename not yet done).** Andy:
   *"lets face it. the only thing it actually does is giving face, while
   being the owners puppet"*; *"should a printing puppet come along, it will
-  be printServer and not called or launched by appServer"*; and *"it doesn't
+  be printServer and not called or launched by faceServer"*; and *"it doesn't
   pick its own contacts, it doesn't set its own resource boundaries, it
   doesn't store it's own routes, it doesn't control its own file system ...
   it enherits the plumbing from node. ... it doesn't serve apps. it only
@@ -1403,7 +1403,7 @@ Unix socket file on Linux, never a loopback TCP port.
   file system with file permissions, reachable only by the node's user,
   and invisible to a port scan. That is the "separate namespace".
 - **What changes:** the app server's `listen(port, '127.0.0.1')`
-  (`appServer.js:1371`) and its `--port` flag take a pipe path; the owner
+  (`faceServer.js:1371`) and its `--port` flag take a pipe path; the owner
   node's forwarder names a pipe where it named a port; and the suites that
   open ports. The page and the door are unchanged, because Node's HTTP
   server listens on a path as it does on a port.
@@ -1526,7 +1526,7 @@ are implementation and stay out.
 publicness is not an architectural axis, **the mode must not be named for
 publicness.** It should name what the process *is* — one app, no dispatch
 — not where it sits. So `--app` or `--appserver` rather than `--public`,
-and **`publicAppServer.js` becomes `appServer.js`.** The same module on
+and **`publicAppServer.js` becomes `faceServer.js`.** The same module on
 loopback is the same module, which is the open question answering itself.
 
 ### 4. The failure-state lever is WITHDRAWN, and the replacement is better
@@ -2058,7 +2058,7 @@ inherit a far larger job than its own.
 > so the reasoning that settled them stays visible:
 >
 > - *Is `public` the architectural axis?* **No** — it is deployment, and
->   the module became `appServer.js`.
+>   the module became `faceServer.js`.
 > - *Where do shared UI elements live?* **The shell provides them, as
 >   files**, with elements and style adoption separately optional.
 > - *Dialogs are a rule, not a widget.* **The rule travels with the
@@ -2293,7 +2293,7 @@ not fail.** It has a relay, no owner, and nothing wrong.
 > rather than deleted because the reasoning inside each item is still
 > good. The WORDING here predates five reconciliations and is wrong in
 > at least four places: S1 names `publicAppServer.js` (now
-> `appServer.js`), S2 frames the module by publicness (not an axis),
+> `faceServer.js`), S2 frames the module by publicness (not an axis),
 > S4 and S5 are each half out of scope, and **S8 is out of scope
 > entirely**. Where the two lists differ, the list above holds.
 

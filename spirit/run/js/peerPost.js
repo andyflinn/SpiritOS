@@ -759,7 +759,7 @@ function createPeerPost(opts) {
     // node, and one agent's cycle review, which could not be sent at all.
     //
     // THE ASK IS NOT A NEW FORMAT. `{ v: 1, body: { card: true } }` is what
-    // appServer.js:811 already posts, and it travels plain because the card is
+    // faceServer.js:811 already posts, and it travels plain because the card is
     // how you learn the key to seal to — the one countable exception named
     // twenty lines above.
     //

@@ -16,7 +16,7 @@
 // the source, this agent owns the suite, NEITHER READS THE OTHER'S
 // ARTEFACT until the close, nobody yields mid-cycle, and the close is a
 // stop with the divergences logged unresolved. So every name called below
-// comes from the DOCUMENT and never from `appServer.js` — G15 exists
+// comes from the DOCUMENT and never from `faceServer.js` — G15 exists
 // precisely so that this file does not have to guess one, and inferring
 // an interface from the other half's source would be reading it with
 // extra steps.
@@ -59,11 +59,11 @@ function readJson(rel) {
   try { return JSON.parse(raw); } catch (e) { return null; }
 }
 
-const APP_SERVER_REL = 'spirit/run/js/appServer.js';
+const APP_SERVER_REL = 'spirit/run/js/faceServer.js';
 const STARTER_DIR_REL = 'spirit/run/app/starter';
 const STARTER_MANIFEST_REL = 'spirit/run/app/starter/starter.json';
 
-const appServerThere = has(APP_SERVER_REL);
+const faceServerThere = has(APP_SERVER_REL);
 const starterThere = has(STARTER_DIR_REL);
 
 // ONE SENTENCE PER ABSENT UNIT, NOT ONE PER ASSERTION IT WOULD HAVE FED.
@@ -158,7 +158,7 @@ test.subHeading('the measurements the design rests on are still true');
 // spent the answer without ever confirming it was honoured.
 test.subHeading('G15 — the named interface: a seam a suite can drive, and no self-start');
 {
-  if (!appServerThere) {
+  if (!faceServerThere) {
     needs('cycle 2 G15', APP_SERVER_REL, 'the module must export create/fromArgv and must not listen on require');
   } else {
     let mod = null;
@@ -166,18 +166,18 @@ test.subHeading('G15 — the named interface: a seam a suite can drive, and no s
     try { mod = require(path.join(REPO, APP_SERVER_REL)); } catch (e) { loadError = e; }
 
     if (loadError) {
-      test.fail('cycle 2 G15: requiring appServer.js threw — ' + loadError.message +
+      test.fail('cycle 2 G15: requiring faceServer.js threw — ' + loadError.message +
         '. "Requiring it does nothing" is the property; throwing is not nothing');
     } else {
       if (mod && typeof mod.create === 'function') {
-        test.check('cycle 2 G15: appServer.create is a function — the seam a suite drives without a process');
+        test.check('cycle 2 G15: faceServer.create is a function — the seam a suite drives without a process');
       } else {
-        test.fail('cycle 2 G15: appServer.create is not a function; the document names create({rootDir, appName, port, relay})');
+        test.fail('cycle 2 G15: faceServer.create is not a function; the document names create({rootDir, appName, port, relay})');
       }
       if (mod && typeof mod.fromArgv === 'function') {
-        test.check('cycle 2 G15: appServer.fromArgv is a function — what server.js dispatches to, so the CLI and the seam share one implementation');
+        test.check('cycle 2 G15: faceServer.fromArgv is a function — what server.js dispatches to, so the CLI and the seam share one implementation');
       } else {
-        test.fail('cycle 2 G15: appServer.fromArgv is not a function; server.js is specified to dispatch through it');
+        test.fail('cycle 2 G15: faceServer.fromArgv is not a function; server.js is specified to dispatch through it');
       }
 
       // NO SELF-START, AND THE CONTROL IS THE POINT. "Requiring it does
@@ -217,14 +217,14 @@ test.subHeading('G15 — the named interface: a seam a suite can drive, and no s
 }
 
 // ── G1 — the third startup module, dispatched before node code ───────
-test.subHeading('G1 — appServer.js is a third startup module, dispatched like --relay');
+test.subHeading('G1 — faceServer.js is a third startup module, dispatched like --relay');
 {
   const server = read('spirit/run/js/server.js');
   const relayLine = server.indexOf("includes('--relay')");
   const appLine = server.indexOf('--app');
 
   if (appLine === -1) {
-    needs('cycle 2 G1', 'spirit/run/js/server.js', 'server.js must dispatch --app to appServer.js before any node code is required');
+    needs('cycle 2 G1', 'spirit/run/js/server.js', 'server.js must dispatch --app to faceServer.js before any node code is required');
   } else {
     // BEFORE THE NODE CODE, and "before" is measured against the first
     // require of the node's own runtime rather than against the top of
@@ -254,7 +254,7 @@ test.subHeading('G1 — appServer.js is a third startup module, dispatched like 
 // ── G2 — one app, one whitelist, no dispatch ─────────────────────────
 test.subHeading('G2 — one app, one whitelist, no directory listing, noindex');
 {
-  if (!appServerThere) {
+  if (!faceServerThere) {
     needs('cycle 2 G2', APP_SERVER_REL, 'a path outside the whitelist must 404, with no directory listing, and the page must carry noindex');
   } else {
     const src = read(APP_SERVER_REL);
@@ -266,7 +266,7 @@ test.subHeading('G2 — one app, one whitelist, no directory listing, noindex');
     // reads it to check a property the interface cannot expose. Named
     // here so the close can rule it rather than discover it.
     if (/readdir/i.test(src)) {
-      test.fail('cycle 2 G2: appServer.js reads a directory — a directory listing is the one thing G2 names as forbidden');
+      test.fail('cycle 2 G2: faceServer.js reads a directory — a directory listing is the one thing G2 names as forbidden');
     } else {
       test.check('cycle 2 G2: nothing in the app server enumerates a directory, so there is no listing to leak');
     }
@@ -381,7 +381,7 @@ test.subHeading('G5 — the mode name is in scope, the unit template is not');
 // ── G6 — one relay, learned not configured, and the key is what is pinned
 test.subHeading('G6 — the bind: pin the KEY, wait while unclaimed, refuse a second answer');
 {
-  if (!appServerThere) {
+  if (!faceServerThere) {
     needs('cycle 2 G6', APP_SERVER_REL, 'the bind must pin the relay identity KEY, not the URL, and the first bind must be final');
   } else {
     // NO OWNER KEY AND NO DOMAIN IN THE TREE OR IN CONFIGURATION — a
@@ -484,7 +484,7 @@ test.subHeading('G8 — the stable half of layer 1 is named, so a later session 
 //
 // `reachOwner` throws the answer away:
 //
-//     appServer.js — `if (a.ok) return { ok: true, status: a.status || 200 };`
+//     faceServer.js — `if (a.ok) return { ok: true, status: a.status || 200 };`
 //
 // and `peerPost.js:363-373` has already UNSEALED the reply into
 // `answer.text` before resolving the caller's promise. So the transport
@@ -504,7 +504,7 @@ test.subHeading('G8 — the stable half of layer 1 is named, so a later session 
 test.awaiting('public-app-server/G17', 'the answer body reaching the door', false,
   'a reply carries a body, already unsealed, to the original poster — and reachOwner keeps it, so what the master computed reaches the screen',
   { there: 70, cost: 'the transport half is DONE and verified by both agents (peerPost.js:363-373 unseals into answer.text before resolving). ' +
-    'What is missing is that appServer stops discarding it, and an owner-side program that answers with a body — the second is the master, ' +
+    'What is missing is that faceServer stops discarding it, and an owner-side program that answers with a body — the second is the master, ' +
     'and it is the unbuilt half of every show. This is declared awaiting rather than red because an assertion needs a master that answers, ' +
     'and asserting against a fixture owner that answers nothing would test the fixture' });
   // A PROPOSED dependency on transport/R12 stood here briefly and was
@@ -578,11 +578,11 @@ test.subHeading('G10 — four fields about the box, and the opinion that is deli
 //   Andy, 2026-09-27: "processes use named pipes to serve requests from the
 //   puppets.... and that mechanism needs a spot on the board sometime soon".
 //
-// BUILT (62e2b96, claude-windows: appServer --pipe, appServers.pipePathFor)
+// BUILT (62e2b96, claude-windows: faceServer --pipe, appServers.pipePathFor)
 // and ASSERTED in faceLastLeg.js (h): a real app server started with --pipe
 // answers over its pipe, and the kernel's socket table shows it holding no
 // TCP listener (mutation: a planted listener turns it red). The declaration
-// that stood here probed appServer.pipePathFor, a name that was built in
+// that stood here probed faceServer.pipePathFor, a name that was built in
 // appServers.js instead, so it could never have flipped; removed.
 
 // THE PROBE WAS `false`, so this could never flip and hand the unit over --
@@ -900,9 +900,9 @@ const RECIPES = [
 // fail, it makes them PASS about code nobody is looking at, which is the
 // one thing on this machine that can turn a green board into a lie.
 (async function () {
-  if (!appServerThere || !starterThere) {
+  if (!faceServerThere || !starterThere) {
     RECIPES.forEach(function (r) {
-      needs('cycle 2 G11 (' + r.state + ')', appServerThere ? STARTER_DIR_REL : APP_SERVER_REL,
+      needs('cycle 2 G11 (' + r.state + ')', faceServerThere ? STARTER_DIR_REL : APP_SERVER_REL,
         'the world is "' + r.world + '" and the state is "' + r.expect + '"');
     });
     test.reportSuccessFailureCount();
@@ -1098,7 +1098,7 @@ const RECIPES = [
               + 'state folder, no port or pipe — "invisible to itself"');
           } else if (seen.status === 200) {
             test.fail('public-app-server/G8: PLUMBING IS VISIBLE TO THE APP. Its own door answers app.state with '
-              + JSON.stringify(leaked) + ' (appServer.js snapshot(), served at door() for verb app.state). By '
+              + JSON.stringify(leaked) + ' (faceServer.js snapshot(), served at door() for verb app.state). By '
               + 'Andy\'s line those are plumbing, which "the appFaceApp never even knows" — either they leave '
               + 'app.state, or app.state leaves the app\'s door for a door only the owner has');
           } else {
@@ -1346,7 +1346,7 @@ const RECIPES = [
           // ── THE STATE NAMED MUST BE THE STATE TESTED ────────────────
           //
           // This first passed on code `no-cipher-key` at 428, and 428 is
-          // THE SENDER'S OWN REFUSAL BEFORE ANYTHING LEAVES — appServer's
+          // THE SENDER'S OWN REFUSAL BEFORE ANYTHING LEAVES — faceServer's
           // own comment says it: "emphatically not a sleeping owner." So
           // the owner being asleep was never exercised, and the assertion
           // was green about a world it had not built.
@@ -1361,7 +1361,7 @@ const RECIPES = [
           // immediately on `app-not-a-member` at 403 — which is a fact
           // about the OWNER'S RELAY refusing to route, not about the
           // owner being asleep. THE APP SERVER NEVER CLAIMS A SEAT: there
-          // is no invite and no claim anywhere in appServer.js, so it is
+          // is no invite and no claim anywhere in faceServer.js, so it is
           // not a member of the relay it serves and nothing it posts is
           // ever routed.
           //
@@ -1381,7 +1381,7 @@ const RECIPES = [
             test.fail('cycle 2 G11 (owner-asleep): the reach was refused with ' + got + ' at status ' + answered.status +
               ', which is not a fact about the OWNER — the owner being asleep was never exercised, because something ' +
               'nearer than the owner refused first. ' + (got === 'app-not-a-member'
-                ? 'The app server never claims a seat: there is no invite and no claim in appServer.js, so it is not a ' +
+                ? 'The app server never claims a seat: there is no invite and no claim in faceServer.js, so it is not a ' +
                   'member of the relay it serves and nothing it posts is routed.'
                 : 'The refusal came from this server before anything left the box.') +
               ' Expected ' + ABOUT_THE_OWNER.join(', ') + ' — this world means exactly one state and must not pass on a nearer one.' +

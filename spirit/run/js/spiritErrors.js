@@ -750,7 +750,7 @@ define('bad-request', {
 
 // ── AN APP SERVER'S OWN REFUSALS (cycle 2) ──────────────────────
 //
-// Seven, and they are here rather than in appServer.js for the reason
+// Seven, and they are here rather than in faceServer.js for the reason
 // this catalogue exists at all: a refusal an app emits must be a MEMBER
 // of a declared set, and nothing outside a set may be sent. A set kept
 // beside the code that emits it is a list; a set kept here is walkable,

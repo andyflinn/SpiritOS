@@ -3,7 +3,7 @@
 // THE OWNER'S VIEW OF HIS BOXES — public-app-server/G10, the node's half.
 //
 // Each of his app servers reports four facts about the box it sits on
-// (appServer.boxReport: boxLabel, fingerprint, allottedMB, boxTotalMB) and
+// (faceServer.boxReport: boxLabel, fingerprint, allottedMB, boxTotalMB) and
 // never an opinion. The arithmetic is here, on the one node that holds
 // every report:
 //

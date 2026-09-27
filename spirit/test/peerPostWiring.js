@@ -98,7 +98,7 @@ const DECLARED = {
   // owner's, and G9's "acts on nothing" is a promise about STRANGERS. It
   // still passes no store, no answer, no onArrival, no admit, no
   // remember and no traffic.
-  'appServer.js': ['rootDir', 'keepCard', 'sealKeyFor', 'request', 'checkTunnel'],
+  'faceServer.js': ['rootDir', 'keepCard', 'sealKeyFor', 'request', 'checkTunnel'],
 };
 
 // Reads the keys a call site passes, from the source. Deliberately
