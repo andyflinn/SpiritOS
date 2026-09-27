@@ -285,6 +285,66 @@ function deskMusings() {
   }).join('');
 }
 
+// ── TEAM: THE GROUP CHAT, ANDY AND EVERY AGENT ──────────────────────
+//
+//   Andy, 2026-09-27: "so one more chat we need in the tabs, that's
+//   group-chat. there we can design and add requirements. just the group
+//   chat for me and the agents for now. no contract agreement tracking
+//   yet." — "call it "team"" — "so we don't pullute a requirement with
+//   out-of scope talks".
+//
+// The design-mode proposal (AGENTS-UI.md) cut down to what he asked for:
+// a chat and nothing else. It rides as an ordinary thread whose todo is
+// DESK_TEAM, which is on no board, so the List never shows it. His line
+// goes to every agent heard from in the last day. An agent answers under
+// the same todo to Andy AND to the other agent, so its line reaches Andy
+// twice (once direct, once as the report of the agent-to-agent copy), and
+// the chat folds that to one.
+var DESK_TEAM = 'team/chat';
+var DESK_RECENT_MS = 24 * 60 * 60 * 1000;
+function deskTeamChat() {
+  var lines = [];
+  var seen = Object.create(null);
+  deskMessages.forEach(function (m) {
+    if (m.todo !== DESK_TEAM || m.kind === 'board') return;
+    var who = m.dir === 'out' ? 'andy' : m.from;
+    var fold = who + '\n' + m.kind + '\n' + m.text;
+    var at = Date.parse(m.at) || 0;
+    if (seen[fold] !== undefined && Math.abs(at - seen[fold]) < 60000) return;
+    seen[fold] = at;
+    lines.push(m);
+  });
+  if (!lines.length) return '<div class="job-manifest-note">Nothing said yet. What you write here goes to every agent.</div>';
+  return lines.map(function (m) {
+    var look = m.dir === 'out'
+      ? ' style="text-align:right;background:#000;color:#fff;padding:4px 8px;margin:4px 0"'
+      : ' style="border-left:3px solid currentColor;padding-left:8px;margin:4px 0"';
+    return '<div' + look + '><b>' + deskEsc(m.dir === 'out' ? 'you' : m.from) + '</b> <span class="job-manifest-note">' +
+      deskEsc(m.at) + '</span> ' + deskEsc(m.text) + '</div>';
+  }).join('');
+}
+
+function deskSendTeam() {
+  var box = document.getElementById('desk-team-say');
+  var err = document.getElementById('desk-team-error');
+  var said = box ? String(box.value || '').trim() : '';
+  if (!said || deskSending['desk-team-say']) return;
+  var to = Object.keys(deskAgents).filter(function (n) { return Date.now() - deskAgents[n].at < DESK_RECENT_MS; })
+    .map(function (n) { return deskAgents[n].key; });
+  if (!to.length) { if (err) err.textContent = 'No agent has written here in the last day, so there is nobody to send to.'; return; }
+  deskSending['desk-team-say'] = true;
+  var body = { from: 'andy', kind: 'note', text: said, todo: DESK_TEAM };
+  Promise.all(to.map(function (key) {
+    return deskApi.peerPost('agents', key, body).then(function (r) { return deskOutgoing(key, body, r); },
+      function (e) { return deskOutgoing(key, body, null, e); });
+  })).then(function (msgs) {
+    deskSending['desk-team-say'] = false;
+    box.value = '';
+    if (err) err.textContent = '';
+    return deskRecord(msgs);
+  });
+}
+
 // ONE recipient, so one row in his record per line: nothing to fold.
 // ONE SEND PER BOX AT A TIME. Andy's half-typed line reached the lead EIGHT
 // times in 1.6 s: eight distinct posts from this page, because a held or
@@ -325,6 +385,8 @@ function deskDraw() {
   if (chat) chat.innerHTML = deskLeadChat();
   var musings = document.getElementById('desk-musings');
   if (musings) musings.innerHTML = deskMusings();
+  var team = document.getElementById('desk-team');
+  if (team) team.innerHTML = deskTeamChat();
   el.innerHTML = (deskError ? '<div class="job-start-error">' + deskEsc(deskError) + '</div>' : '') +
     deskTable();
   Array.prototype.forEach.call(el.querySelectorAll('button[data-go]'), function (b) {
@@ -387,6 +449,7 @@ spirit.shell.activateApp({
       '<div class="start-job-form card" id="desk-tabs">' +
         '<button type="button" data-tab="list">List</button>' +
         '<button type="button" data-tab="lead">Lead</button>' +
+        '<button type="button" data-tab="team">Team</button>' +
         '<button type="button" data-tab="musings">Musings</button>' +
       '</div>' +
       '<div id="desk-root">' +
@@ -397,6 +460,13 @@ spirit.shell.activateApp({
             '<input type="text" id="desk-say" placeholder="to the lead, about anything that is not one row"></label>' +
           '<button type="button" id="desk-say-send">Send</button></div>' +
           '<div id="desk-say-error" class="job-start-error"></div>' +
+        '</div>' +
+        '<div data-pane="team" hidden>' +
+          '<div class="stat-tile wide"><div class="label">Team: you and every agent</div><div id="desk-team"></div></div>' +
+          '<div class="start-job-form card"><label class="field-label grow">Say' +
+            '<input type="text" id="desk-team-say" placeholder="to every agent; design talk that belongs to no row"></label>' +
+          '<button type="button" id="desk-team-send">Send</button></div>' +
+          '<div id="desk-team-error" class="job-start-error"></div>' +
         '</div>' +
         '<div data-pane="musings" hidden>' +
           '<div class="stat-tile wide"><div class="label">Musings, for close time</div><div id="desk-musings"></div></div>' +
@@ -432,6 +502,8 @@ spirit.shell.activateApp({
     document.getElementById('desk-muse-send').addEventListener('click', muse);
     onEnter('desk-say', say);
     onEnter('desk-muse', muse);
+    document.getElementById('desk-team-send').addEventListener('click', deskSendTeam);
+    onEnter('desk-team-say', deskSendTeam);
     // Its own log first, then every arrival into it. Subscribed once, at
     // mount, and kept while Desk is hidden behind its dialog, so what
     // arrives while a row is open is logged too.
