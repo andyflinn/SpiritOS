@@ -569,6 +569,29 @@ define('not-owner', {
   texts: ['not the owner', 'no owner key on this relay', 'the owner cannot be removed',
     'this relay already has an owner', 'owner invite required'],
 });
+// ── THE OWNER DOOR INTO A PUPPET (puppets/G7) ─────────────────────
+//
+// Answers to a command its owner signed, sent back to the owner only.
+// A stranger gets nothing at all, so none of these tells anyone that a
+// node is a puppet (nodeApps.puppetDoor).
+define('not-carried-here', {
+  status: 403, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['not carried by this puppet'],
+  note: 'The verb is real, and this puppet does not carry its group. Andy: "not ' +
+    'every group is supported in every context/environment". Said by name so a caller ' +
+    'can tell "not here" from "broken".',
+});
+define('no-such-verb', {
+  status: 400, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['no such verb'],
+  note: 'The group is carried, and nothing in it answers this name.',
+});
+define('handler-failed', {
+  status: 500, presence: NONE, retry: 'no', fault: 'target',
+  texts: ['the handler failed'],
+  note: 'A carried handler threw inside the shim, for example by reaching for ' +
+    'req.headers, which a command has none of (G3). That command fails ALONE.',
+});
 define('not-target', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['not the target of that request'],

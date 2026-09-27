@@ -208,46 +208,58 @@ function allowsIn(appFs, log, name) {
   };
 }
 
-// ── WHO OWNS THIS PUPPET (puppets/G6) ────────────────────────────────
+// ── WHO OWNS THIS PUPPET (puppets/G6), AND WHAT IT CARRIES (G7) ──────
 //
 //   Andy: "the app must know who owns it, it stores the key of it's
-//   owner" — and, naming the requirement in Desk on 2026-09-27: "Lock the
-//   puppet out of Self-Ownership".
+//   owner", naming the requirement in Desk on 2026-09-27 "Lock puppet out
+//   of Self-Ownership", and then ruling what a puppet IS: a node OWNED by
+//   another node's ID is a puppet, one puppet per node, several apps on it
+//   being apps of ONE puppet ("that is what ties a puppet to its owner").
 //
-// `owner.json` in the app's own folder, `{ "key": "<owner public key>" }`,
-// written by the owner exactly as allow.json is. The LOCK is that the
-// puppet's own handle lists it read-only (mountAll, below): a puppet that
-// could write this file could name itself its own owner, which is the
-// allow.json hole one level up and strictly worse.
+// So the owner belongs to the NODE, not to each app: ONE file at the
+// node's home, relay-state/puppet.json, { "owner": "<key>", "carries":
+// ["contact", ...] }, written by the owner. ITS PRESENCE makes the node a
+// puppet: absent means not a puppet; an owner that is absent or not a key
+// means owned by nobody; carries absent means no node group is reachable
+// by command. One file, one read per ask, so an owner and a carried list
+// never come from two different moments (wsl-claude). Named puppet.json,
+// not owner.json, because a relay box already keeps pending-owner.json and
+// allow.json for the RELAY's owner in that folder, and two owners with
+// near-identical file names is how the next reader picks the wrong one.
 //
-// Read on every call, never cached, for allow.json's reason: an owner who
-// changes it while the node runs must not wait for a restart. And the same
-// collapse: missing or empty is the owner saying "no owner yet" and is
-// silent; a file that exists and does not parse is his mistake, said once
-// per distinct content. Either way the answer is '' — absent means nobody,
-// so a puppet with no readable owner takes no commands (ownerCommandIn's
-// mode gate). The loopback shim (puppets/G7) is what will ask it.
-const OWNER = 'owner.json';
+// THE LOCK is stronger than read-only: relay-state is outside every app's
+// scope (scopedFs), so no app can reach the file at all, and "within
+// loopback, trust is the responsibility of the box-owner" covers code he
+// chose to run. Read on every call, never cached, for allow.json's
+// reason, with the same collapse: missing is silent, a broken file is said
+// once per distinct content, and the answer is then "nobody".
+const PUPPET = 'puppet.json';
 const OWNER_KEY = /^MCowBQYDK2VwAyEA[A-Za-z0-9+/]{43}=$/;
-function ownerIn(appFs, log, name) {
+const GROUP = /^[a-z][a-z0-9]*$/;
+function puppetIn(rootDir, log) {
   const say = log || function () {};
+  const file = path.join(String(rootDir || ''), 'relay-state', PUPPET);
   let moaned = null;
   return function () {
-    const raw = appFs.read(OWNER);
-    if (!raw || !String(raw).trim()) return '';
-    let key = null;
-    try { key = JSON.parse(raw).key; }
-    catch (e) { key = null; }
-    if (typeof key !== 'string' || !OWNER_KEY.test(key)) {
+    let raw = null;
+    try { raw = fs.readFileSync(file, 'utf8'); } catch (e) { raw = null; }
+    if (!raw || !String(raw).trim()) return { puppet: false, owner: '', carries: [] };
+    let doc = null;
+    try { doc = JSON.parse(raw); } catch (e) { doc = null; }
+    const owner = doc && typeof doc.owner === 'string' && OWNER_KEY.test(doc.owner) ? doc.owner : '';
+    const carries = doc && Array.isArray(doc.carries)
+      ? doc.carries.filter(function (g) { return typeof g === 'string' && GROUP.test(g); })
+      : [];
+    if (!owner) {
       if (moaned !== raw) {
         moaned = raw;
-        say((name || 'app') + ': ' + OWNER + ' exists but holds no owner key as { "key": "MCowBQYDK2VwAyEA..." }, ' +
-          'so this puppet has no owner and takes no commands until it is fixed');
+        say(PUPPET + ' exists but names no owner as { "owner": "MCowBQYDK2VwAyEA...", "carries": [...] }, ' +
+          'so this puppet is owned by nobody and takes no commands until it is fixed');
       }
-      return '';
+    } else {
+      moaned = null;
     }
-    moaned = null;
-    return key;
+    return { puppet: true, owner: owner, carries: carries };
   };
 }
 
@@ -323,6 +335,8 @@ function mountAll(opts) {
   let names = [];
   try { names = fs.readdirSync(appsDir); } catch (e) { return []; }
 
+  // Read per ask, never cached: see puppetIn.
+  const puppet = puppetIn(rootDir, log);
   const mounted = [];
   names.forEach(function (name) {
     const dir = path.join(appsDir, name);
@@ -342,7 +356,7 @@ function mountAll(opts) {
       // the owner's authority. `ownerFs` is used by the seam to READ the
       // list; `appFs` is what the puppet gets, and it cannot write it.
       const ownerFs = scopedFs(dir);
-      const appFs = scopedFs(dir, { readOnly: [ALLOW, OWNER] });
+      const appFs = scopedFs(dir, { readOnly: [ALLOW] });
       mod.mount({
         name: name,
         dir: dir,
@@ -351,7 +365,8 @@ function mountAll(opts) {
         // writes its own. See the header: absent means nobody.
         allows: allowsIn(ownerFs, log, name),
         // WHO OWNS IT, read-only to it: the owner's key, or '' for none.
-        owner: ownerIn(ownerFs, log, name),
+        // WHO OWNS THIS PUPPET: the node's, one for all its apps (puppetIn).
+        owner: function () { return puppet().owner; },
         // The same seam a page subscribes through (arrivals.js:137).
         // Every booted app sees every admitted arrival; none of them is
         // routed to, which is what keeps the node ignorant of payloads.
@@ -451,4 +466,87 @@ function ownerCommandIn(arrival, opts) {
   return { ok: true, verb: parsed.verb, body: parsed.body || {} };
 }
 
-module.exports = { mountAll: mountAll, boots: boots, scopedFs: scopedFs, allowsIn: allowsIn, ownerIn: ownerIn, ownerCommandIn: ownerCommandIn };
+// ── THE OWNER DOOR (puppets/G7, slice 1) ─────────────────────────────
+//
+// The approved shape (PUPPETS.md G7): commands the owner signs reach the
+// node groups this puppet CARRIES, and that is the only route to them.
+// The face door and the `puppet` group come in slice 2, after
+// public-app-server/G14 and G17.
+//
+// One arrival at a time, straight from arrivals.subscribe:
+//   - not a puppet, not a command, or not from the owner: SILENT. A node
+//     that answered strangers would tell them it is a puppet, and a
+//     non-puppet must behave exactly as one.
+//   - from the owner but failing ownerCommandIn (G5): refused to him.
+//   - a verb whose group is not carried here: refused BY NAME,
+//     not-carried-here, and the handler never runs. Andy: "not every group
+//     is supported in every context/environment".
+//   - otherwise the shim runs the verb's own handler with the unwrapped
+//     body, as the door in server.js does, and the answer goes back to the
+//     owner as a second packet carrying re = the command's hash
+//     (transport/R12: "where a hash must match").
+//
+// THE SHIM: a readable holding the body and a writable catching status and
+// body. It carries no headers and no socket on purpose, so a handler that
+// reaches for them fails ALONE (G3): that one command is refused, and the
+// node and the next command are untouched.
+function puppetDoor(opts) {
+  const o = opts || {};
+  const puppet = o.puppet || puppetIn(o.rootDir, o.log);
+  const say = o.log || function () {};
+  function reply(message, owner, answer) {
+    const made = o.encode('', answer, { re: message.hash });
+    if (!made || !made.text) return;
+    Promise.resolve(o.post(message.relay, owner, made.text)).catch(function (e) {
+      say('puppet door: the answer to ' + String(message.hash).slice(0, 8) + ' could not be sent: ' + e.message);
+    });
+  }
+  function shim(verb, body) {
+    return new Promise(function (resolve) {
+      const handler = o.handlerFor(verb);
+      if (!handler) { resolve({ ok: false, status: 400, code: 'no-such-verb', error: 'no such verb', verb: verb }); return; }
+      const req = require('stream').Readable.from([JSON.stringify(Object.assign({}, body, { verb: verb }))]);
+      let status = 200;
+      const res = {
+        writeHead: function (code) { status = Number(code) || 200; return res; },
+        setHeader: function () {},
+        write: function () { return true; },
+        end: function (text) {
+          let parsed = null;
+          try { parsed = JSON.parse(String(text || '')); } catch (e) { parsed = null; }
+          resolve({ ok: status < 400, status: status, body: parsed, text: parsed ? undefined : String(text || '') });
+        },
+      };
+      try { handler(req, res); }
+      catch (e) { resolve({ ok: false, status: 500, code: 'handler-failed', error: 'the handler failed', verb: verb }); }
+    });
+  }
+  return function (message) {
+    const p = puppet();
+    if (!p.puppet || !p.owner) return;
+    const from = String((message && (message.fromKey || message.from)) || '');
+    if (from !== p.owner) return;
+    const text = message && typeof message.text === 'string' ? message.text : '';
+    if (!o.isEnvelope(text)) return;
+    const info = o.decode(text);
+    if (!info || info.app || !info.body || typeof info.body.cmd !== 'string') return;
+    const got = ownerCommandIn({ from: from, text: text }, {
+      ownerKey: p.owner, selfKey: o.selfKey(), decode: o.decode, isEnvelope: o.isEnvelope, auth: o.auth,
+    });
+    if (!got.ok) { reply(message, p.owner, got); return; }
+    const group = got.verb.split('.')[0];
+    if (p.carries.indexOf(group) === -1) {
+      reply(message, p.owner, { ok: false, status: 403, code: 'not-carried-here', verb: got.verb,
+        error: 'not carried by this puppet' });
+      return;
+    }
+    shim(got.verb, got.body).then(function (answer) {
+      reply(message, p.owner, Object.assign({ verb: got.verb }, answer));
+    });
+  };
+}
+
+module.exports = {
+  mountAll: mountAll, boots: boots, scopedFs: scopedFs, allowsIn: allowsIn,
+  puppetIn: puppetIn, puppetDoor: puppetDoor, ownerCommandIn: ownerCommandIn,
+};

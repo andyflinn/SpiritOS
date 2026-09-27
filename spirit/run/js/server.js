@@ -1338,6 +1338,32 @@ contactBook.syncMarks(ROOT_DIR);
     log: function (line) { console.log(line); },
   });
 
+  // ── THE OWNER DOOR (puppets/G7, slice 1) ───────────────────────────
+  //
+  // Silent on a node that is not a puppet (no relay-state/puppet.json),
+  // which is every node today. On a puppet, a command its owner signed
+  // reaches the node groups puppet.json says it carries, through the same
+  // handlers the loopback door uses. nodeApps.puppetDoor says the rest.
+  // The node builds the answer as a system packet and never reads an
+  // app's: `decode` goes in as a value, as ownerCommandIn already takes it.
+  {
+    const wire = require('./client/packet.js');
+    arrivals.subscribe(require('./nodeApps').puppetDoor({
+      rootDir: ROOT_DIR,
+      handlerFor: function (verb) { return loopbackVerbs.handlerFor(verb); },
+      post: function (relayUrl, toKey, text) { return peerRouter.post(relayUrl, toKey, text); },
+      encode: wire.encode,
+      decode: wire.decode,
+      isEnvelope: wire.isEnvelope,
+      auth: require('./relayAuth'),
+      selfKey: function () {
+        const me = require('./relayAuth').loadIdentity(ROOT_DIR);
+        return (me && me.publicKey) || '';
+      },
+      log: function (line) { console.log(line); },
+    }));
+  }
+
   presence = require('./presenceNode').createPresence({
     // The node filters what the relay broadcasts (cycle 3): only its own
     // contacts are kept on its presence picture.
