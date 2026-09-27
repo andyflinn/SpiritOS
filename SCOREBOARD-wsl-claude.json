@@ -1,8 +1,8 @@
 {
   "box": "wsl-claude",
-  "commit": "29e4f06",
+  "commit": "48d189f",
   "stale": false,
-  "head": "29e4f06",
+  "head": "48d189f",
   "measured": {
     "suites": 175,
     "green": 3368,
@@ -119,7 +119,7 @@
           "accepted": true
         }
       ],
-      "owedSince": null,
+      "owedSince": "2026-09-27",
       "there": 0,
       "blocked": ""
     },

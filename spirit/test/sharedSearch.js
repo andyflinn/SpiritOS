@@ -289,6 +289,22 @@ if (typeof bucket.createSearch !== 'function') {
     }
   }
   {
+    // ACCENTS FOLDED, on Andy's "go." to: "Go = fold them, so zurich and
+    // Zürich find each other". Only accents: ß is a separate rule he was
+    // asked about and did not take, so it stays a letter of its own.
+    const plainFindsAccent = keysFor('zurich', ['Zürich']);
+    const accentFindsPlain = keysFor('Zürich', ['zurich']);
+    const e = keysFor('cafe', ['café']);
+    const sharpS = keysFor('strasse', ['straße']);
+    if (plainFindsAccent.length === 1 && accentFindsPlain.length === 1 && e.length === 1 && sharpS.length === 0) {
+      test.check('accents are folded both ways (zurich finds Zürich, Zürich finds zurich, cafe finds café), '
+        + 'and ß is left alone (strasse does not find straße)');
+    } else {
+      test.fail('accents: zurich->Zürich ' + JSON.stringify(plainFindsAccent) + ', Zürich->zurich '
+        + JSON.stringify(accentFindsPlain) + ', cafe->café ' + JSON.stringify(e) + ', strasse->straße ' + JSON.stringify(sharpS));
+    }
+  }
+  {
     // Offered worst first, so the order out cannot be the order in.
     const ranked = keysFor('bert', ['albert', 'bertha', 'bert']);
     if (ranked.join() === 'bert,bertha,albert') {

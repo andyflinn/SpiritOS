@@ -7,7 +7,7 @@
 **Nothing is broken, 8 requirements are declared and not built yet, and 1 dependency question for you, and 3 older questions need a decision from you.**
 
 ```
-175 suites   3368 green   0 red   0 unhappy   8 owed      run 29e4f06
+175 suites   3368 green   0 red   0 unhappy   8 owed      run 48d189f
 ```
 
 ---
@@ -83,15 +83,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +3365 green
-- ⏳ **newly owed:** public-app-server/G17
-- ⏳ **newly owed:** public-app-server/G18
-- ⏳ **newly owed:** puppets/G1
-- ⏳ **newly owed:** puppets/G10
-- ⏳ **newly owed:** puppets/G2
-- ⏳ **newly owed:** transport/R12
-- ⏳ **newly owed:** transport/R16
-- ⏳ **newly owed:** transport/R19
+**Nothing moved.** Same requirements owed, same tally, since the run at `29e4f06`.
 
 ---
 
@@ -106,7 +98,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 | 5 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | 1 day | `░░░░░░░░░░` 0% |  |
 | 6 | puppets/G10 | the face door and the puppet group | G14 (proposed), G17 (proposed) |  | today | `░░░░░░░░░░` 0% |  |
 | 7 | G18 | the app process serves its owner node over a named pipe, not a TCP port |  |  | today | `░░░░░░░░░░` 0% |  |
-| 8 | transport/R19 | the database decision, deferred until the log can prove its promises | transport/R16 |  | ? | `░░░░░░░░░░` 0% |  |
+| 8 | transport/R19 | the database decision, deferred until the log can prove its promises | transport/R16 |  | today | `░░░░░░░░░░` 0% |  |
 
 **How the order was made.** 6 of 8 owed items have no dependency you have accepted, so they are ordered by age alone — 1 proposed one above waits for your yes or no.
 
