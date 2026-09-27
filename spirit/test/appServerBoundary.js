@@ -581,13 +581,13 @@ test.awaiting('public-app-server/G18', 'the app process listening on a named pip
 // owner node answers it, this goes red and asks for its assertions.
 // Andy: "go." on building the node half (2026-09-27), and "over-committed is
 // a \"warning\" state only."
-test.awaiting('public-app-server/G10', 'the three box fields in the owner report',
-  /'owner\.boxes'/.test(fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8')),
-  'opaque fingerprint, allotment at install, and the box total as measured — and never the opinion that the box is over-committed',
-  { there: 33, cost: 'the box total is free (measure already produces it) and the owner report exists; the fingerprint is the new part. ' +
-    'THE INGREDIENTS OF THE FINGERPRINT ARE DELIBERATELY NOT DECLARED — they are contents, they want measuring on both ' +
-    'platforms first, and that measurement is this agent to make once the MemoryMax and unit-counting questions are ruled: a number measured ' +
-    'inside an unruled container gets quoted after the container changes' });
+if (/'owner\.boxes'/.test(fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8'))
+    && typeof require('../run/js/boxes').createBoxes === 'function') {
+  test.check('public-app-server/G10: the owner\'s half exists -- boxes.createBoxes, answered as owner.boxes, '
+    + 'asserted in boxesSuite.js: only his listed servers count, summed per box, a warning only when over');
+} else {
+  test.fail('public-app-server/G10 regressed: owner.boxes or boxes.createBoxes is gone');
+}
 
 // ── G12 — app code and app state do not share a directory ────────────
 test.subHeading('G12 — app state lives beside the node state, never inside the app folder');

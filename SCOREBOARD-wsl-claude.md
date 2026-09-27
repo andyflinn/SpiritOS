@@ -4,11 +4,25 @@
 
 ## Summary
 
-**Nothing is broken, 10 requirements are declared and not built yet, and 1 dependency question for you, and 3 older questions need a decision from you.**
+**2 tests are broken, 9 requirements are declared and not built yet, and 1 dependency question for you, and 3 older questions need a decision from you.**
 
 ```
-170 suites   3180 green   0 red   0 unhappy   10 owed      run 7cee249
+171 suites   3186 green   2 red   2 unhappy   9 owed      run 8ccc194
 ```
+
+---
+
+## What is red
+
+**Something that used to pass now fails.** These are broken, not unfinished — the owed list further down is work nobody has written yet.
+
+**❌ `boxesSuite.js`** — one check no longer passes.
+
+  - a REMOVED server still counts: servers ["A","B"], allotted 1200, warning true. servers.json is checked only when a report ARRIVES, so a key he removes keeps …
+
+**❌ `cycleCitations.js`** — one check no longer passes.
+
+  - bare R-numbers added — name the cycle beside the number ("gap R13", "cycle 3's R5"):
 
 ---
 
@@ -22,7 +36,7 @@
 
 - the face door and the puppet group (puppets/G10)
 
-**Do you accept the implied change in priorities?** (G17) from 3rd to 1st.
+**Do you accept the implied change in priorities?** (G17) from 2nd to 1st.
 
 ### Ruled, and now ours
 
@@ -62,8 +76,9 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
     - message LENGTH is public, or it is padded (10/R15)
     - suites that INSIST, not suites that demonstrate (10/R8)
 - **`peerOwnerPost()` on the owner's node (puppets/G4)** — live work in `design/principles/PUPPETS.md`, and no test is watching it.
-- In `design/shell/PUBLIC-APP-SERVER.md`, 13 things are still marked open with no test watching:
+- In `design/shell/PUBLIC-APP-SERVER.md`, 14 things are still marked open with no test watching:
     - `appServer.js` is a third startup module (public-app-server/G1)
+    - a server reports the box it sits on: four fields, one opinion withheld (public-app-server/G10)
     - no failure-state lever; the states are reachable from outside (G11)
     - app code and app state do not share a directory (G12)
     - the official sample instantiates the template, and IS the acceptance test (G13)
@@ -81,9 +96,9 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +1 green
-- -1 red
-- ⏳ **newly owed:** public-app-server/G18
+- +6 green
+- +2 red
+- ✅ **built or withdrawn:** public-app-server/G10
 
 ---
 
@@ -91,18 +106,17 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 | # | handle | to-do | waits on | frees | owed | there | |
 |---|---|---|---|---|---|---|---|
-| 1 | public-app-server/G10 | a server reports the box it sits on: four fields, one opinion withheld |  |  | 2 days | `▓▓▓░░░░░░░` 33% |  |
-| 2 | public-app-server/G8 | layer 1 splits by PROMISE, and the stable half is named |  |  | 2 days | `░░░░░░░░░░` 0% |  |
-| 3 | G17 | join's answer travels back to the browser |  |  | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
-| 4 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 5 | puppets/G2 | one shared search: two hooks per collection, the rest inherited |  |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
-| 6 | puppets/G3 | one suite that makes every api call |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 7 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | today | `░░░░░░░░░░` 0% |  |
-| 8 | transport/R16 | the log must be able to PROVE what it claims |  |  | today | `░░░░░░░░░░` 0% |  |
-| 9 | puppets/G10 | the face door and the puppet group | G14 (proposed), G17 (proposed) |  | today | `░░░░░░░░░░` 0% |  |
-| 10 | G18 | the app process serves its owner node over a named pipe, not a TCP port |  |  | ? | `░░░░░░░░░░` 0% |  |
+| 1 | public-app-server/G8 | layer 1 splits by PROMISE, and the stable half is named |  |  | 2 days | `░░░░░░░░░░` 0% |  |
+| 2 | G17 | join's answer travels back to the browser |  |  | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
+| 3 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 4 | puppets/G2 | one shared search: two hooks per collection, the rest inherited |  |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
+| 5 | puppets/G3 | one suite that makes every api call |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 6 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | today | `░░░░░░░░░░` 0% |  |
+| 7 | transport/R16 | the log must be able to PROVE what it claims |  |  | today | `░░░░░░░░░░` 0% |  |
+| 8 | puppets/G10 | the face door and the puppet group | G14 (proposed), G17 (proposed) |  | today | `░░░░░░░░░░` 0% |  |
+| 9 | G18 | the app process serves its owner node over a named pipe, not a TCP port |  |  | today | `░░░░░░░░░░` 0% |  |
 
-**How the order was made.** 10 of 10 owed items have no dependency you have accepted, so they are ordered by age alone — 1 proposed one above waits for your yes or no.
+**How the order was made.** 9 of 9 owed items have no dependency you have accepted, so they are ordered by age alone — 1 proposed one above waits for your yes or no.
 
 *Percentages are the guesses the declarations carry — `testSupport`:
 "printed as guesses… to be argued with during a design sitting, not to
