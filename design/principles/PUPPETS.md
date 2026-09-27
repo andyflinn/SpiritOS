@@ -534,7 +534,10 @@ What it adds is clear, and one question is OPEN:
   orthogonal node api, and the app's group sits beside it. But a given
   context (a puppet, a VPS face, a personal node) supports only some
   groups, so the set reachable in a context is declared per context, not
-  assumed whole. The whole proposal is still not ruled.
+  assumed whole. A group a context does not support REFUSES with a named
+  code from `spiritErrors`, never silence and never a generic failure, so a
+  caller can tell "not here" from "broken" (wsl-claude, and what his suite
+  will assert). The whole proposal is still not ruled.
 
 If it is ruled, G7 changes from *"`server.js:921`'s dispatch runs
 unchanged"* to dispatching into the app's group, beside the node's groups
