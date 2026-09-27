@@ -155,4 +155,18 @@ function createSearch(opts) {
   };
 }
 
-module.exports = { createSearch: createSearch, MAX_SEARCHED_ITEMS: MAX_SEARCHED_ITEMS };
+// ── ONE ENTRY, THE OTHER HALF OF A SEARCH (X.get) ───────────────────
+//
+// A search answers pairs, and get(key) fetches the rest of one entry. That
+// answer goes out too, so it is bounded the same way (Andy: "Everything,
+// everywhere that goes out, is bounded by MAX_PAYLOAD"). One entry cannot
+// be cut sensibly, so an entry too big for the answer is refused by name,
+// with its size, and the caller asks something narrower.
+function boundedGet(answer, maxBytes) {
+  var cap = typeof maxBytes === 'number' && maxBytes > 0 ? Math.floor(maxBytes) : limits.PLAINTEXT_MAX;
+  var bytes = utf8Bytes(JSON.stringify(answer));
+  if (bytes <= cap) return answer;
+  return { ok: false, status: 413, code: 'answer-too-large', bytes: bytes, error: 'answer too large for a packet' };
+}
+
+module.exports = { createSearch: createSearch, boundedGet: boundedGet, MAX_SEARCHED_ITEMS: MAX_SEARCHED_ITEMS };

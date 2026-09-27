@@ -1653,7 +1653,8 @@ contactBook.syncMarks(ROOT_DIR);
   // write relay-state, and the static route cannot serve it. Andy: "a
   // client api (loopback) that allows that internal list to be
   // maintained." For agents first; the shell's manager is deferred.
-  //   proxy.list                       the list as it stands
+  //   proxy.search { q? }                     key/label pairs, and whether the gate is open
+  //   proxy.get    { key }                    one entry
   //   proxy.allow  { host, key?, methods? }   add or replace one entry
   //   proxy.remove { host, key? }             take one entry out
   //   proxy.close  {} | { key } | { host }    close the gate, a key, a site
@@ -1663,7 +1664,10 @@ contactBook.syncMarks(ROOT_DIR);
       readJsonBody(rq).then((body) => {
         const out = work(body || {});
         rs.writeHead(out.status || (out.ok ? 200 : 400), { 'Content-Type': 'application/json; charset=utf-8' });
-        rs.end(JSON.stringify(out.ok ? { ok: true, list: out.list } : { error: out.error }));
+        // The work's own answer, without its status, which is the HTTP one.
+        const answer = {};
+        Object.keys(out).forEach(function (k) { if (k !== 'status') answer[k] = out[k]; });
+        rs.end(JSON.stringify(out.ok ? answer : { error: out.error, code: out.code, bytes: out.bytes }));
       }).catch(() => {
         rs.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
         rs.end('Invalid JSON body');
@@ -1671,7 +1675,11 @@ contactBook.syncMarks(ROOT_DIR);
     };
   }
   loopbackVerbs.claim('proxy', 'server.js', {
-    'proxy.list': proxyVerb(function () { return { ok: true, status: 200, list: proxyList.load(ROOT_DIR) }; }),
+    // proxy.list is gone: a list is a search (puppets/G2). Andy, 2026-09-27:
+    // "the verb changes changing list fetches to a search(labe) and
+    // geKey(key) pair are approved", and "get is fine".
+    'proxy.search': proxyVerb(function (b) { return proxyList.search(ROOT_DIR, b); }),
+    'proxy.get': proxyVerb(function (b) { return proxyList.get(ROOT_DIR, b); }),
     'proxy.allow': proxyVerb(function (b) { return proxyList.allow(ROOT_DIR, b); }),
     'proxy.remove': proxyVerb(function (b) { return proxyList.remove(ROOT_DIR, b); }),
     'proxy.close': proxyVerb(function (b) { return proxyList.close(ROOT_DIR, b); }),

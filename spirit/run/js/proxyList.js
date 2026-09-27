@@ -133,7 +133,9 @@ function allow(rootDir, args) {
   list.entries = list.entries.filter(function (e) { return !same(e, c.entry); });
   list.entries.push(c.entry);
   save(rootDir, list);
-  return { ok: true, status: 200, list: list };
+  // THE ENTRY IT WROTE, NOT THE WHOLE LIST (puppets/G2): no verb answers
+  // with a list any more; a caller that wants the rest searches.
+  return { ok: true, status: 200, entry: c.entry };
 }
 
 function remove(rootDir, args) {
@@ -145,7 +147,7 @@ function remove(rootDir, args) {
   list.entries = list.entries.filter(function (e) { return !same(e, c.entry); });
   if (list.entries.length === before) return { ok: false, status: 404, error: 'no such entry' };
   save(rootDir, list);
-  return { ok: true, status: 200, list: list };
+  return { ok: true, status: 200, removed: c.entry };
 }
 
 // Close or open: the whole gate ({}), every entry for one key ({ key }),
@@ -155,26 +157,67 @@ function setOpen(rootDir, args, open) {
   const a = args || {};
   const list = load(rootDir);
   if (list.broken && open) return { ok: false, status: 409, error: list.broken };
-  if (list.broken) return { ok: true, status: 200, list: list };
+  if (list.broken) return { ok: true, status: 200, open: false, changed: 0, broken: list.broken };
+  var changed = 0;
   if (!a.key && !a.host) {
     list.open = open;
+    changed = 1;
   } else if (a.key && !a.host) {
     if (!KEY_NAME.test(String(a.key))) return { ok: false, status: 400, error: 'key: an environment variable name' };
     const hit = list.entries.filter(function (e) { return e.key === a.key; });
     if (!hit.length) return { ok: false, status: 404, error: 'no entry names ' + a.key };
     hit.forEach(function (e) { if (open) delete e.open; else e.open = false; });
+    changed = hit.length;
   } else {
     const c = clean({ host: a.host, key: a.key });
     if (c.error) return { ok: false, status: 400, error: c.error };
     const hit = list.entries.filter(function (e) {
       return e.host === c.entry.host && (!c.entry.key || e.key === c.entry.key);
     });
-    if (hit.length) hit.forEach(function (e) { if (open) delete e.open; else e.open = false; });
-    else if (!open) list.entries.push({ host: c.entry.host, open: false });
+    if (hit.length) { hit.forEach(function (e) { if (open) delete e.open; else e.open = false; }); changed = hit.length; }
+    else if (!open) { list.entries.push({ host: c.entry.host, open: false }); changed = 1; }
     else return { ok: false, status: 404, error: 'nothing closed for ' + c.entry.host };
   }
   save(rootDir, list);
-  return { ok: true, status: 200, list: list };
+  // How many entries it changed, and the gate's own state: never the list.
+  return { ok: true, status: 200, open: list.open !== false, changed: changed };
+}
+
+// ── THE LIST, SEARCHED (puppets/G2) ───────────────────────────────────
+//
+//   Andy, 2026-09-27: "the verb changes changing list fetches to a
+//   search(labe) and geKey(key) pair are approved."
+//
+// proxy.list is gone. An entry's key is its host and, when it has one,
+// its key name ("api.x.com" or "api.x.com|X_KEY"), which is what
+// same() already treats as identity. The label is what a person reads.
+// The gate's own open/closed state is one fact, not a row, so it rides
+// beside the pairs.
+function keyOf(e) { return e.host + (e.key ? '|' + e.key : ''); }
+function labelOf(e) { return e.host + (e.key ? ' (' + e.key + ')' : '') + (e.open === false ? ' — closed' : ''); }
+
+function search(rootDir, args) {
+  var a = args || {};
+  var list = load(rootDir);
+  var s = require('./searchBucket').createSearch({
+    query: a.q,
+    getLabelStringFromIncomingObject: function (e) { return labelOf(e) + ' ' + (e.methods || []).join(' '); },
+    extractKeyAndLabelFromRow: function (e) { return { key: keyOf(e), label: labelOf(e) }; },
+  });
+  for (var i = 0; i < list.entries.length; i += 1) { if (!s.offer(list.entries[i])) break; }
+  var r = s.getResult();
+  var out = { ok: true, status: 200, items: r.items, more: r.more, open: list.open !== false };
+  if (list.broken) out.broken = list.broken;
+  return out;
+}
+
+function get(rootDir, args) {
+  var key = String((args && args.key) || '');
+  if (!key) return { ok: false, status: 400, error: 'key required' };
+  var list = load(rootDir);
+  var hit = list.entries.filter(function (e) { return keyOf(e) === key; })[0];
+  if (!hit) return { ok: false, status: 404, error: 'no such entry' };
+  return require('./searchBucket').boundedGet({ ok: true, status: 200, key: key, entry: hit });
 }
 
 // ── THE GATE, ASKED BEFORE A CALL LEAVES ──────────────────────────────
@@ -212,4 +255,5 @@ module.exports = {
   close: function (rootDir, args) { return setOpen(rootDir, args, false); },
   open: function (rootDir, args) { return setOpen(rootDir, args, true); },
   gate: gate, openEntries: openEntries,
+  search: search, get: get, keyOf: keyOf,
 };

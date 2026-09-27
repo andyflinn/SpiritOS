@@ -65,7 +65,7 @@ the only way a default survives contact with people in a hurry.
 
 ## What can be asked
 
-**39 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
+**40 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
 
 **Each verb carries its authority.** Andy, 2026-09-27: *"that's a boundary
 crossed that requires peer review AND my approval"* — and, on his own yes:
@@ -125,9 +125,10 @@ his words, which keeps the harness red until the verb is gone.
 **`proxy.*`** — reaching the outside world, by the owner's leave
 - `proxy.allow` — before the rule (2026-09-27)
 - `proxy.close` — before the rule (2026-09-27)
-- `proxy.list` — before the rule (2026-09-27)
+- `proxy.get` — Andy, 2026-09-27: "the verb changes changing list fetches to a search(labe) and geKey(key) pair are approved." (Desk, puppets/G2)
 - `proxy.open` — before the rule (2026-09-27)
 - `proxy.remove` — before the rule (2026-09-27)
+- `proxy.search` — Andy, 2026-09-27: "the verb changes changing list fetches to a search(labe) and geKey(key) pair are approved." (Desk, puppets/G2)
 
 **`relay.*`** — this node's relationship with a relay
 - `relay.claim` — before the rule (2026-09-27)

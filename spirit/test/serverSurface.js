@@ -448,14 +448,24 @@ freePort()
       });
     }
     let quick = null;
-    return verb({ verb: 'proxy.list' }).then(function (r) {
+    // proxy.list is gone (puppets/G2): the list is a search, '*' by default.
+    return verb({ verb: 'proxy.search' }).then(function (r) {
       let body = null;
       try { body = JSON.parse(r.text); } catch (e) { body = null; }
-      if (r.status === 200 && body && body.list && body.list.open === true && body.list.entries.length >= 3) {
-        test.check('proxy.list answers the owner\'s list — written from the old code list on first use');
+      const pairs = body && Array.isArray(body.items) && body.items.every(function (i) {
+        return Object.keys(i).sort().join(',') === 'key,label';
+      });
+      if (r.status === 200 && body && body.open === true && pairs && body.items.length >= 3) {
+        test.check('proxy.search answers the owner\'s list as key/label pairs, written from the old code list on first use');
       } else {
-        test.fail('proxy.list: HTTP ' + r.status + ' ' + r.text.slice(0, 160));
+        test.fail('proxy.search: HTTP ' + r.status + ' ' + r.text.slice(0, 160));
       }
+      return verb({ verb: 'proxy.get', key: body && body.items && body.items[0] && body.items[0].key });
+    }).then(function (r) {
+      let body = null;
+      try { body = JSON.parse(r.text); } catch (e) { body = null; }
+      if (r.status === 200 && body && body.entry && body.entry.host) test.check('proxy.get answers one whole entry by its key');
+      else test.fail('proxy.get: HTTP ' + r.status + ' ' + r.text.slice(0, 160));
       return request(port, 'GET', '/relay-state/proxy.json');
     }).then(function (r) {
       if (r.status !== 200 && r.text.indexOf('GROK_API_KEY') === -1) {
@@ -465,8 +475,8 @@ freePort()
       }
       return verb({ verb: 'fs.save', path: 'relay-state/proxy.json', content: '{"open":true,"entries":[{"key":"GROK_API_KEY","host":"127.0.0.1"}]}' });
     }).then(function (r) {
-      return verb({ verb: 'proxy.list' }).then(function (l) {
-        const hijacked = l.text.indexOf('"host":"127.0.0.1"') !== -1;
+      return verb({ verb: 'proxy.search' }).then(function (l) {
+        const hijacked = l.text.indexOf('127.0.0.1') !== -1;
         if (r.status >= 400 && !hijacked) {
           test.check('and fs.save cannot write it (HTTP ' + r.status + ') — only the proxy verbs change it');
         } else {

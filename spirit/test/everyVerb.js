@@ -52,7 +52,7 @@ const VERBS = [...serverSrc.matchAll(/^ {4}'([a-z]+\.[a-zA-Z]+)':/gm)].map(funct
 // answers with an array must be ADDED to it knowingly. Either way this
 // suite goes red until the list says what is true.
 const LISTS_TODAY = [
-  'jobs.list', 'owner.boxes', 'peer.list', 'peer.search', 'proxy.close', 'proxy.list', 'proxy.open',
+  'jobs.list', 'owner.boxes', 'peer.list', 'peer.search',
   'relay.record', 'relay.status',
 ];
 
@@ -102,8 +102,15 @@ function carriesList(text) {
   try { j = JSON.parse(text); } catch (e) { return false; }
   if (Array.isArray(j)) return true;
   if (!j || typeof j !== 'object') return false;
+  // A SEARCH IS NOT A LIST (puppets/G2): { items: [{key, label}], more }
+  // from the shared search is bounded and truthful by construction. Any
+  // other array beside it still counts.
+  const isPairs = Array.isArray(j.items) && typeof j.more === 'boolean' && j.items.every(function (i) {
+    return i && typeof i === 'object' && Object.keys(i).sort().join(',') === 'key,label';
+  });
   return Object.keys(j).some(function (k) {
     const v = j[k];
+    if (k === 'items' && isPairs) return false;
     if (Array.isArray(v)) return true;
     return !!v && typeof v === 'object' && Object.keys(v).some(function (k2) { return Array.isArray(v[k2]); });
   });
