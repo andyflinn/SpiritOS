@@ -872,6 +872,8 @@ nothing is refused (*"where a hash must match"*, transport/R12). **Owed:**
 the table of waiting requests, and a time limit on each entry so a visitor
 whose answer never comes is not held open for ever.
 
+**The round trip, step by step** — every step with the code that does it today and what is owed: [FACE-ROUND-TRIP.md](FACE-ROUND-TRIP.md).
+
 **THE PATH, as Andy laid it out** (2026-09-27): *"join lives as a
 server-process on owners node. the node forwards a post from the face to
 the app-server-process, and the reply is return to appShellApp via that
