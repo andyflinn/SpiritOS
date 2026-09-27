@@ -619,7 +619,11 @@ of taste.
 
 ### G14 — an app DECLARES what it takes, in its manifest, and gets nothing it did not ask for
 
-**Status:** OPEN. Nothing built. **This closes wsl-claude's readiness
+**Status:** DONE (2026-09-24, `ac0c283`): `contractOf`, `SURFACE_MEMBERS`, absent-means-nothing and
+`checkContract` in `appServer.js:84-160`, refusing an undeclared member at load
+(`app-surface-undeclared`); asserted in `appServerBoundary.js:729-740`. This line said
+OPEN until 2026-09-27, when wsl-claude found the tree and the doc disagreeing.
+**This closes wsl-claude's readiness
 finding 1**, raised at the sign-off and the only one still standing when
 the build opened: *"G2 offers files, G3 gives `ask` one home, G4 makes
 elements and tokens separately optional — and NOTHING SAYS HOW AN APP
