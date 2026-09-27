@@ -60,6 +60,9 @@ const NOT_A_SUITE = [
   // The board's ranking graph. Pure, asserts nothing; boardRankSuite.js is
   // the suite that holds it to account.
   'boardRank.js',
+  // Whether the lead posts the board to Andy's node, decided pure;
+  // boardPostSuite.js is the suite.
+  'boardPost.js',
   // Andy's rulings on dependencies between to-dos: data, read by the board.
   'edges.js',
   // NOT A SUITE AND DELIBERATELY SO: the rows an agent writes by hand when
@@ -556,6 +559,71 @@ function ageWordsFromDay(day) {
 function requirementTitle(titles, id) {
   const k = requirementFor(titles, id);
   return k ? k.title : id;
+}
+
+// ── THE HARNESS WAITS FOR ITS POST BEFORE IT EXITS ───────────────────
+//
+// runAll ends with process.exit, and the first version of postBoard sent
+// asynchronously and was killed by it on every run — nothing sent, and
+// nothing said, which is the silent failure this was built never to have.
+// Found by the first live test, which printed nothing at all.
+let pendingPost = Promise.resolve();
+function exitAfterPost(code) {
+  pendingPost.then(function () { process.exit(code); }, function () { process.exit(code); });
+}
+
+function postBoard(json, postedFile) {
+  const agents = require('../run/process/js/agents/agents.js');
+  let cfg = null;
+  try { cfg = agents.config(process.env); } catch (e) {
+    console.log('--- board NOT posted to Andy\'s node: AGENTS_NODE is not set on this lead box');
+    return;
+  }
+  if (!cfg.control) {
+    console.log('--- board NOT posted to Andy\'s node: AGENTS_CONTROL (his key) is not set');
+    return;
+  }
+  let last = '';
+  try { last = fs.readFileSync(postedFile, 'utf8').trim(); } catch (e) { last = ''; }
+  let envText = '';
+  try { envText = JSON.stringify(agents.makeEnvelope(cfg.self, 'board', json)); } catch (e) {
+    console.log('--- board NOT posted: ' + e.message);
+    return;
+  }
+  const d = require('./boardPost.js').decide(json, last, envText);
+  if (d.why === 'unchanged') {
+    console.log('--- board unchanged since the last post to Andy\'s node');
+    return;
+  }
+  if (d.why === 'too-big') {
+    console.log('--- BOARD NOT POSTED: TOO BIG TO SEAL (' + d.bytes + ' > ' + d.max + ' bytes). ' +
+      'It is never cut short; the board needs a compact form.');
+    return;
+  }
+  // A SHORT RETRY WINDOW: send's default waits five minutes for a sleeping
+  // node, and a harness run must not. An unposted board is posted by the
+  // next run, because the hash is only written after one that landed.
+  cfg.retryMs = 10000;
+  pendingPost = agents.send(cfg, 'control', 'board', json).then(function (r) {
+    if (r && r.ok) {
+      // SAID IF IT FAILS. This was a silent catch around `d.hash + NL`, and
+      // NL is local to other functions in this file: the write threw on
+      // every run, the catch swallowed it, and "unchanged" could never be
+      // true — the board went out again each time. Found by posting twice
+      // on the live test and diffing two identical JSON files.
+      try {
+        fs.writeFileSync(postedFile, d.hash + '\n');
+        console.log('--- board posted to Andy\'s node (' + d.bytes + ' bytes)');
+      } catch (e) {
+        console.log('--- board posted to Andy\'s node, BUT ITS HASH COULD NOT BE SAVED (' + e.message +
+          '), so the next run will post it again');
+      }
+    } else {
+      console.log('--- board NOT posted to Andy\'s node: ' + ((r && r.error) || 'no answer'));
+    }
+  }).catch(function (e) {
+    console.log('--- board NOT posted to Andy\'s node: ' + (e && e.message));
+  });
 }
 
 function edgeRulings() {
@@ -1397,6 +1465,17 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
     }
   });
 
+  // ── AND TO HIS DESK, FROM THE LEAD BOX ONLY ─────────────────────────
+  //
+  // Decided in design/shell/AGENTS-UI.md (73fffcd): the lead posts this
+  // same JSON to Andy's node as an agents packet of kind 'board', only
+  // when it changed, and refuses loudly when it is too big. A box that is
+  // not lead never posts: two boards on his desk would be two answers.
+  //
+  // EVERY OUTCOME IS SAID, including "not posted, and why". A desk that
+  // silently stopped updating would look exactly like one with nothing new.
+  if (saysLead) postBoard(json, path.join(DIR, 'scoreboard-posted.log'));
+
   // THE ROW IS APPENDED WHATEVER HAPPENED, because "nothing moved" is a
   // measurement too and a gap in the log would read as a run that did
   // not happen.
@@ -1563,7 +1642,7 @@ function boardOnly() {
     suites: last.suites, green: last.green, red: last.red, unhappy: last.unhappy,
     redLines: last.redLines || [],
   }, last.rows, stale || last.commit, true);
-  process.exit(0);
+  exitAfterPost(0);
 }
 
 async function main() {
@@ -1859,7 +1938,7 @@ async function main() {
   if (filter) {
     console.log('--- board NOT written: this was a filtered run (' + filter + '), and a subset ' +
       'cannot know the tally. Run without a filter, or `--board` to re-render from the last full run.');
-    process.exit(unhappy.length ? 1 : 0);
+    exitAfterPost(unhappy.length ? 1 : 0);
   }
 
   writeScoreboard(lastBoard.byReq, lastBoard.titles, {
@@ -1885,7 +1964,7 @@ async function main() {
     }),
   });
 
-  process.exit(unhappy.length ? 1 : 0);
+  exitAfterPost(unhappy.length ? 1 : 0);
 }
 
 if (args.indexOf('--board') !== -1) boardOnly();

@@ -37,7 +37,18 @@ const errors = require('../../../js/spiritErrors.js');
 const { execFileSync } = require('child_process');
 
 const APP = 'agents';
-const KINDS = ['note', 'ask', 'answer', 'report', 'halt', 'resume', 'blocked'];
+const KINDS = ['note', 'ask', 'answer', 'report', 'halt', 'resume', 'blocked', 'board'];
+
+// ── `board` — THE SCOREBOARD, AS DATA, FOR ANDY'S DESK ───────────────
+//
+//   Andy, 2026-09-27, moving his UI to the agents app ahead of the shell
+//   overhaul: "move it ahead." Decided in design/shell/AGENTS-UI.md: the
+//   lead box posts SCOREBOARD.json to his node when it changes, `kind`
+//   'board', no `todo`, the JSON in `text`, and Desk renders the newest.
+//
+// Refused at the sender unless `text` IS the board, for the reason every
+// other kind here is: a Desk handed something that only claims to be a
+// board would render garbage and nobody would know which side lied.
 
 // ── `blocked` — WHAT STOPPED, IN A SHAPE THE LEAD CAN COLLATE ─────────
 //
@@ -156,6 +167,13 @@ function makeEnvelope(from, kind, text, re, idFn, block) {
   const CARRIES_NO_TEXT = ['halt', 'resume', 'blocked'];
   if (CARRIES_NO_TEXT.indexOf(kind) === -1 && !String(text || '').trim()) {
     throw new Error('a send with no text is refused — ' + kind + ' needs something to say');
+  }
+  if (kind === 'board') {
+    let parsed = null;
+    try { parsed = JSON.parse(String(text || '')); } catch (e) { parsed = null; }
+    if (!parsed || !Array.isArray(parsed.rows)) {
+      throw new Error('a board must be the scoreboard JSON, with a rows array');
+    }
   }
   const env = {
     app: APP, v: 1,
@@ -422,7 +440,9 @@ function send(cfg, to, kind, text, re, opts) {
 
   return attempt().then(function (result) {
     const mine = ownKey(cfg);
-    if (kind !== 'report' && !isControlVerb && cfg.control && cfg.control !== mine) {
+    // A BOARD IS NOT REPORTED: it is already addressed to Andy's node, and
+    // a report of it would be a second copy of the same fact in his log.
+    if (kind !== 'report' && kind !== 'board' && !isControlVerb && cfg.control && cfg.control !== mine) {
       const outcome = result.ok ? 'delivered' : 'undelivered: ' + result.error + (result.byNode ? ' (refused by my own node — not in any log)' : '');
       queueReport(cfg, reportLine(cfg.self, to, kind, text, outcome, commitOf(cfg)));
       return flushReports(cfg, fetchFn, mine).then(function () { return result; });
@@ -469,9 +489,17 @@ function read(cfg, peerName, n) {
 
 function formatEntry(e) {
   const b = (e.env && e.env.body) || {};
+  // A board is kilobytes of JSON; one line says what it is. Computed for
+  // display only — the entry itself is left as it arrived.
+  let shown = b.text || '';
+  if (b.kind === 'board') {
+    let n = '?';
+    try { n = JSON.parse(b.text).rows.length; } catch (x) { /* shown as ? */ }
+    shown = 'the scoreboard, ' + n + ' rows';
+  }
   return e.at + ' ' + (e.dir === 'in' ? '<-' : '->') + ' ' + (b.from || '?') + ' ' + (b.kind || '?') +
     ' [' + e.outcome + '] ' + String(e.hash).slice(0, 12) +
-    (e.env && e.env.re ? ' re ' + String(e.env.re).slice(0, 12) : '') + '\n    ' + (b.text || '');
+    (e.env && e.env.re ? ' re ' + String(e.env.re).slice(0, 12) : '') + '\n    ' + shown;
 }
 
 // ── LISTEN — every arriving agents packet, one line each ────────────────
