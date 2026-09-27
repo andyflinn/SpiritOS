@@ -218,6 +218,25 @@ What follows is what both agreed. Any of it changes when Andy asks.
   kind `ask` under the row, which draws Go!/No. It never writes "say Go!"
   in prose.
 
+## Asked for next, 2026-09-27
+
+Andy, in Desk: *"ah, and a measurements tab here. relay-streams/MB for known
+platforms, and think about group design mode for this whole app, this is
+where new requirements are signed of on, by all team members, and the
+implement/test slipt is decided on, and a where does this already exist
+notes are attached to the requirement."*
+
+- **A Measurements tab.** Relay streams per MB, and the other capacity
+  figures, for every platform measured (`README/CAPACITY/<platform>/`).
+  They reach his node the way the board does, as data the lead posts when
+  they change, and not by the page reading the repository.
+- **Design mode, to think about, not yet designed.** Desk becomes where a
+  NEW requirement is signed off by every team member. The implement/test
+  split is decided and recorded on it, and "where does this already exist"
+  notes (the file and line an agent found) are attached to the
+  requirement. This is the design sitting's work, moved onto the board. It
+  needs a written shape before anything is built.
+
 ## Open
 
-- Nothing. Each change from here is Andy's alteration.
+- The two items above.

@@ -167,7 +167,10 @@ function deskLeadChat() {
     // from mine a bit?" His lines sit to the right and quieter; the lead's
     // carry a rule down their left edge.
     var look = m.dir === 'out'
-      ? ' style="text-align:right;opacity:0.8"'
+      // Andy: "a differen background color (black) for my lines ... if mine had
+      // black background all across, then i could see all you responses as a
+      // block. similar in the details chat."
+      ? ' style="text-align:right;background:#000;color:#fff;padding:4px 8px;margin:4px 0"'
       : ' style="border-left:3px solid currentColor;padding-left:8px;margin:4px 0"';
     return '<div' + look + '><b>' + deskEsc(who) + '</b> <span class="job-manifest-note">' + deskEsc(m.at) +
       '</span> ' + deskEsc(m.text) + '</div>';

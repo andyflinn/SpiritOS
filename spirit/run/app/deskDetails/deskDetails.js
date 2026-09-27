@@ -200,7 +200,12 @@ function ddChatHtml() {
     var who = m.dir === 'out' ? 'you' : m.from;
     var failed = m.dir === 'out' && m.outcome && m.outcome !== 'sent' && m.outcome !== 'delivered'
       ? ' <span class="job-start-error">(' + ddEsc(m.outcome) + ')</span>' : '';
-    return '<div><b>' + ddEsc(who) + '</b> <span class="job-manifest-note">' + ddEsc(m.at) + '</span>' +
+    // His lines black and full width, the agents' plain, as in Desk's lead
+    // chat: "similar in the details chat."
+    var look = m.dir === 'out'
+      ? ' style="text-align:right;background:#000;color:#fff;padding:4px 8px;margin:4px 0"'
+      : ' style="border-left:3px solid currentColor;padding-left:8px;margin:4px 0"';
+    return '<div' + look + '><b>' + ddEsc(who) + '</b> <span class="job-manifest-note">' + ddEsc(m.at) + '</span>' +
       failed + ' ' + ddEsc(m.text) + '</div>';
   }).join('');
 }
