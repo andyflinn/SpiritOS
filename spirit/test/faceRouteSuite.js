@@ -202,4 +202,37 @@ function cacheAt(clock) {
   }
 }
 
+// ── THE OWNER'S PLAIN ANSWER: "THE OWNER OF THIS NAME IS <KEY>" ─────────
+//
+//   Andy: "the owner, of appFaceApp simple responds with the key of the
+//   subdomain owner, or an error", and of the face comparing keys: "why on
+//   earth would the appFaceApp actually need that knowledge for?". Since
+//   7d75563 the face takes route 'owner' on the owner's word and the
+//   question's hash, and forwards to that key, whoever it is. Filed under
+//   the name it ASKED about (storeAs), so an answer naming another name
+//   cannot plant a route for it.
+{
+  const clock = { t: T0 };
+  const c = cacheAt(clock);
+  const answer = { route: 'owner', name: 'join', to: joe.publicKey };
+  const fromStranger = c.take(answer, stranger.publicKey, 'Q', 'Q', 'join');
+  const wrongHash = c.take(answer, owner.publicKey, 'Q2', 'Q', 'join');
+  const noKey = c.take({ route: 'owner', name: 'join' }, owner.publicKey, 'Q', 'Q', 'join');
+  const planted = c.take({ route: 'owner', name: 'other', to: stranger.publicKey }, owner.publicKey, 'P', 'P', 'join');
+  const plantedOther = c.lookup('other');
+  const kept = c.lookup('join');
+  clock.t = T0 + fr.ROUTE_MS;
+  const later = c.lookup('join');
+  if (!fromStranger && !wrongHash && !noKey && planted && plantedOther === null && kept && kept.to === stranger.publicKey
+      && later === null) {
+    test.check('the owner\'s plain "owner is <key>" answer is kept only from the owner\'s key with the question\'s hash '
+      + 'and a key in it, filed under the name that was asked (an answer naming "other" plants nothing for "other"), '
+      + 'and lasts an hour');
+  } else {
+    test.fail('owner route: stranger ' + fromStranger + ', wrong hash ' + wrongHash + ', no key ' + noKey + ', filed '
+      + planted + ', planted for other ' + JSON.stringify(plantedOther) + ', kept ' + JSON.stringify(kept)
+      + ', after an hour ' + JSON.stringify(later));
+  }
+}
+
 test.reportSuccessFailureCount();
