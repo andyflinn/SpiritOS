@@ -1068,6 +1068,17 @@ exist.**
   hash as `re` and comes from that key, so it is let in. Nothing else is,
   and no contact list changes. It is a rule in `hub.frontDoor`, which is
   core, so it waits for wsl-claude's review and Andy's yes on the rule.
+  **wsl-claude's review, 2026-09-27: sound, on five conditions**, checked at
+  7558faa. (1) The order is already right: signature, open, replay index,
+  and only then the door (`peerPost.js:1093`, `:1166`, `:1252`, `:1289`), so
+  `re` is readable there. (2) No record exists to check: `waiting[hash]`
+  lives only until the receipt (`:360`). So a core table is needed, filled
+  when a post is made with an explicit option (`expectAnswer: ms`, capped):
+  `{ hash -> toKey, app, until }`. (3) It is one-shot: consumed by the first
+  admitted answer. (4) The scope is this packet only: no contact row is
+  written, and it is delivered only to the app that asked. (5) It covers
+  gap 3 only. The `expectAnswer` option changes `peer.post`, and so
+  `api.post`, which is the node's interface, so it needs Andy's yes on it.
 - **The member admits the face** because its own agreement named it (Andy:
   *"the third box trusts the agreement it made"*). The `granted` reply
   carries the face's key. For the first proof, the member's operator
