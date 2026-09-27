@@ -110,7 +110,12 @@ async function monitorLines(debug) {
   const missing = await relayRequest.pipeRequest(pipe, 'GET', '/no-such-file.txt', '', { timeoutMs: 2000 });
   await sleep(300);
   child.kill();
-  fs.rmSync(root, { recursive: true, force: true });
+  // On Windows a process's working folder is locked until it has exited, and
+  // kill() returns before that: removing the folder at once was EPERM. Wait
+  // for the exit, and never fail the suite on cleanup (runAll reclaims temp
+  // homes).
+  await new Promise(function (resolve) { if (child.exitCode !== null) resolve(); else child.once('exit', resolve); setTimeout(resolve, 2000); });
+  try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* reclaimed later */ }
   return { lines: out.slice(before).split(/\r?\n/).filter(Boolean), ok: ok, missing: missing };
 }
 

@@ -8,7 +8,7 @@
 // remaining wrinkles as we go." The steps, each blocked by the one before:
 //
 //   G19.1  the process spec and the server process type  processServerPending.js
-//   G19.2  passthrough to a serving app's pipe             here
+//   G19.2  passthrough to a serving app's pipe             built, appServers.js
 //   G19.3  grantFace                                       here
 //   G19.4  the 'api' verb                                  here
 //   G19.5  the member's shell client                       here
@@ -35,11 +35,8 @@ function exists(rel) {
 
 test.startTest('A member\'s app answers through the face (G19), what is still owed');
 
-test.awaiting('public-app-server/G19', 'G19.2 passthrough: a packet for a serving app goes down its pipe (appServers.passthrough)',
-  /function passthrough\b/.test(source('js/appServers.js')),
-  'a peer\'s packet addressed to an app that runs a server is handed down that app\'s pipe unread, and its answer ' +
-  'goes back as the node\'s own reply, signed with the node\'s key. Blocked by G19.1',
-  { there: 0, cost: 'a sitting' });
+// G19.2, the passthrough, is BUILT (appServers.passthrough) and asserted in
+// appServers.js ("The passthrough"): its declaration stood here and is retired.
 
 test.awaiting('public-app-server/G19', 'G19.3 grantFace, a faceless server app (app/grantFace)',
   exists('app/grantFace/grantFace.json'),

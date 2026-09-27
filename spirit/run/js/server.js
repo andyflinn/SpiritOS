@@ -1422,6 +1422,24 @@ contactBook.syncMarks(ROOT_DIR);
       log: function (line) { console.log(line); },
     }));
 
+    // ── THE PASSTHROUGH TO AN APP'S OWN SERVER (public-app-server/G19.2) ──
+    //
+    // A packet addressed to an app that runs its own server code goes down
+    // that app's pipe unread, and its answer returns as this node's reply
+    // (appServers.passthrough). The node reads the envelope's app name and
+    // nothing inside. Only keys in this node's contact list get through:
+    // hub.frontDoor's 'known', checked here and not left to the stranger
+    // setting (Andy: introspection "requires a member to be in the owners
+    // contact list").
+    arrivals.witness(function (message) {
+      appServers.passthrough(message, {
+        decode: wire.decode,
+        encode: wire.encode,
+        post: function (relayUrl, toKey, text) { return peerRouter.post(relayUrl, toKey, text); },
+        isMember: function (key) { return require('./hub').frontDoor(ROOT_DIR, key) === 'known'; },
+      });
+    });
+
     // ── peerOwnerPost: THE OWNER DOOR'S SENDING END (puppets/G4) ─────
     //
     // This node signing a command for one of its puppets and waiting for

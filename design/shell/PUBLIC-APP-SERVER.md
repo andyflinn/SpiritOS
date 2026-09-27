@@ -1493,8 +1493,8 @@ the one before:**
 
 | step | what | blocked by |
 |---|---|---|
-| G19.1 | The process spec written (`design/principles/PROCESSES.md`) and the server process type completed: a server job gets `SPIRIT_JOB_ID` and `SPIRIT_CALLBACK_URL`; `spirit.core.ask` works from a process; a serving app's own code runs as its job; a server job can be stopped from the jobs app | — |
-| G19.2 | Passthrough: a packet for a serving app goes down its pipe, and the answer returns signed by the node | G19.1 |
+| G19.1 | **BUILT** (1e3703a). The process spec written (`design/principles/PROCESSES.md`) and the server process type completed: a server job gets `SPIRIT_JOB_ID` and `SPIRIT_CALLBACK_URL`; `spirit.core.ask` works from a process; a serving app's own code runs as its job; a server job can be stopped from the jobs app | — |
+| G19.2 | **BUILT.** Passthrough: a packet for an app with its own server code goes down its pipe unread, as `POST /` `{ from, hash, re, body }`, and its JSON answer returns as the node's reply packet (re = the hash), signed by the node; only keys in the contact list reach the pipe (`appServers.passthrough`) | G19.1 |
 | G19.3 | grantFace: grant, faceKey, the route answers, `grants.json` (canonical), the face's contact sync by owner command | G19.2 |
 | G19.4 | The `api` verb, introspection by layers. Andy's yes on the verb: "go." on the ask "Is this your yes on 'api'?" (Desk, G17, 2026-09-28); wsl-claude's review is recorded under G17 | G19.3 |
 | G19.5 | The member's shell client | G19.4 |

@@ -1203,14 +1203,19 @@ function create(opts) {
       const debug = process.env.SPIRIT_DEBUG === '1';
       const kept = [];
       let keptBytes = 0;
+      // Counted as written: a streamed page never sets Content-Length, so the
+      // header alone left pages without a size (wsl-claude).
+      let sentBytes = 0;
       // Kept always, shown only in debug mode or for an error: Andy, "and the
       // error text should be in the monitor if the reply is an error".
       {
         const write = res.write.bind(res);
         const end = res.end.bind(res);
         const keep = function (chunk) {
-          if (chunk == null || keptBytes >= DEBUG_PAYLOAD_MAX) return;
+          if (chunk == null) return;
           const b = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk));
+          sentBytes += b.length;
+          if (keptBytes >= DEBUG_PAYLOAD_MAX) return;
           const part = b.subarray(0, DEBUG_PAYLOAD_MAX - keptBytes);
           kept.push(part);
           keptBytes += part.length;
@@ -1219,7 +1224,7 @@ function create(opts) {
         res.end = function (chunk) { if (typeof chunk !== 'function') keep(chunk); return end.apply(null, arguments); };
       }
       res.on('finish', function () {
-        const size = res.getHeader('Content-Length');
+        const size = res.getHeader('Content-Length') || sentBytes;
         const type = String(res.getHeader('Content-Type') || '').split(';')[0];
         console.log(req.method + ' ' + pathname + ' -> ' + res.statusCode +
           (type ? ' ' + type : '') + (size ? ' ' + size + 'B' : '') + ' ' + (Date.now() - began) + 'ms');

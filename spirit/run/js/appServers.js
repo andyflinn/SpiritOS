@@ -161,7 +161,7 @@ function createAppServers(opts) {
       if (platform !== 'win32') {
         try { fs.mkdirSync(path.dirname(pipe), { recursive: true }); } catch (e) { /* the server says why */ }
       }
-      const row = { app: app, pipe: pipe, job: null };
+      const row = { app: app, pipe: pipe, job: null, own: !!r.own };
       if (typeof o.startServerJob === 'function') {
         // Its own code, told where it lives and which pipe is its door; or
         // the stock server for an app with a page and no code of its own.
@@ -198,9 +198,56 @@ function createAppServers(opts) {
     });
   }
 
+  // ── THE PASSTHROUGH (public-app-server/G19.2) ─────────────────────────
+  //
+  // Andy, 2026-09-28: "grantFace gets requests only when their explicitly
+  // forwarded via named pipe, by the owner-node", "and those request can
+  // only come from verified members with signature that the owner node
+  // automatically checks", and "appFaceApps owner doesn't understant
+  // appFaceApp nor grantFace". So: an admitted packet addressed to an app
+  // that runs its OWN server code goes down that app's pipe unread, as
+  //   POST /   { from, hash, re, body }
+  // and whatever JSON the app answers becomes this node's reply packet to
+  // the sender, for the same app, carrying re = the packet's hash, signed by
+  // this node because this node posts it. An empty answer sends nothing.
+  //
+  // o: { decode, encode, post(relayUrl, toKey, text), isMember(key), log }.
+  // Answers true when the packet was one of these, false for any other.
+  function passthrough(message, o) {
+    const info = message && typeof message.text === 'string' ? o.decode(message.text) : null;
+    if (!info || !info.app || info.legacy) return false;
+    const row = Object.prototype.hasOwnProperty.call(table, info.app) ? table[info.app] : null;
+    if (!row || !row.own) return false;
+    const from = String(message.fromKey || message.from || '');
+    // THE FIRST LAYER OF CONSENT IS THE NODE'S: only a key in its contact
+    // list reaches an app's pipe, whatever the stranger setting says.
+    if (!from || !o.isMember(from)) { log('passthrough: ' + info.app + ' refused a key not in the contacts'); return true; }
+    const payload = JSON.stringify({ from: from, hash: String(message.hash || ''), re: info.re || '', body: info.body });
+    const reply = function (body) {
+      let made = o.encode(info.app, body, { re: message.hash });
+      if (!made || !made.text) made = o.encode(info.app, { ok: false, code: 'app-answer-too-large' }, { re: message.hash });
+      if (!made || !made.text) return;
+      Promise.resolve(o.post(message.relay || '', from, made.text)).catch(function (e) {
+        log('passthrough: the answer from ' + info.app + ' could not be sent: ' + ((e && e.message) || e));
+      });
+    };
+    Promise.resolve(request(row.pipe, 'POST', '/', payload, {
+      type: 'application/json', timeoutMs: DOOR_WAIT_MS, answerMax: ANSWER_MAX,
+    })).then(function (a) {
+      if (!a || a.refused) { reply({ ok: false, code: (a && a.refused) || 'app-not-running', app: info.app }); return; }
+      if (!a.text) return;
+      let body = null;
+      try { body = JSON.parse(a.text); } catch (e) { body = null; }
+      if (body === null) { reply({ ok: false, code: 'app-answer-not-json', app: info.app }); return; }
+      reply(body);
+    });
+    return true;
+  }
+
   return {
     startAll: startAll,
     toLocalApp: toLocalApp,
+    passthrough: passthrough,
     apps: function () { return Object.keys(table); },
   };
 }
