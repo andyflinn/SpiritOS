@@ -17,3 +17,4 @@ The lines before 2026-09-27's first automatic one were backfilled once from wsl-
 | 2026-09-27 | public-app-server/G8 | layer 1 splits by PROMISE, and the stable half is named | 31a5220 | appServerBoundary.js |
 | 2026-09-27 | puppets/G3 | one suite that makes every api call | ad0b289 | everyVerb.js, oneDoor.js |
 | 2026-09-27 | public-app-server/G18 | the app process serves its owner node over a named pipe, not a TCP port | 3b4133e | **no test names it: built, or dropped?** |
+| 2026-09-27 | public-app-server/G19 | A member's app answers through the face | 1e3703a | processServer.js, serverJobs.js |

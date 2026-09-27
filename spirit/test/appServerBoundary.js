@@ -501,12 +501,16 @@ test.subHeading('G8 — the stable half of layer 1 is named, so a later session 
 // the owner-side program — the master — is unbuilt. The fixture's owner
 // node is a plain node that answers nothing. So the unit that is missing
 // is named and the count carries it until somebody builds both halves.
-test.awaiting('public-app-server/G17', 'the answer body reaching the door', false,
-  'a reply carries a body, already unsealed, to the original poster — and reachOwner keeps it, so what the master computed reaches the screen',
-  { there: 70, cost: 'the transport half is DONE and verified by both agents (peerPost.js:363-373 unseals into answer.text before resolving). ' +
-    'What is missing is that faceServer stops discarding it, and an owner-side program that answers with a body — the second is the master, ' +
-    'and it is the unbuilt half of every show. This is declared awaiting rather than red because an assertion needs a master that answers, ' +
-    'and asserting against a fixture owner that answers nothing would test the fixture' });
+// SUPERSEDED, AND REMOVED RATHER THAN LEFT ON A CLOSED REQUIREMENT
+// (wsl-claude, 2026-09-28). The declaration that stood here waited for the
+// face server to keep the body of an answer from its OWN relay seat. The
+// design moved past that seat: the face server is "an io-device" that
+// "only serves face" (Andy, 2026-09-27), reached by its owner node over a
+// pipe and never answering on the relay. A body reaching the browser is
+// proven on that path by faceLastLeg.js (the whole route, a page typed
+// text/html and a POST's json, both back through the face). G17 closed
+// with that proof. Its probe was the literal `false`, so it could never
+// have flipped either.
   // A PROPOSED dependency on transport/R12 stood here briefly and was
   // WITHDRAWN on Andy's path (PUBLIC-APP-SERVER.md, G17, THE PATH): the
   // node forwards to join's app-server process and replies through
