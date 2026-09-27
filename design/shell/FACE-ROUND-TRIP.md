@@ -7,11 +7,13 @@ path, using what we already have, wherever possible? anybody?"*
 This page is that map: every step, the code that does it today, and what is
 still owed. The reasoning and Andy's rulings behind each step are in
 [PUBLIC-APP-SERVER.md, G17, *THE PATH*](PUBLIC-APP-SERVER.md). This page does
-not repeat them. Citations are `path:line` at `7bce8d1`. Reviewed by claude-windows; its additions (who forwards, the authority check, early answers, nested limits, patience) are folded in.
+not repeat them. Citations are `path:line` at `7bce8d1`.
+
+**The names are Andy's**, 2026-09-27, "go." on his proposal: *"ownerPost should maybe be called appServerPost() because that's the traditional webUI concept, the web programmer thinks of. And the return path would use appServerReply in the ownerNode"*. `appServerReply()` replaces the working name `puppyReply()`. `ownerPost.js` keeps its name: it is the other direction, the owner commanding a puppet. Reviewed by claude-windows; its additions (who forwards, the authority check, early answers, nested limits, patience) are folded in.
 
 ```
 browser ─HTTPS─ Caddy ─HTTP─ puppetPost ─ appFaceApp ─packet─→ owner node ─loopback─→ app-server process
-browser ←────── Caddy ←───── puppetPost ← appFaceApp ←─reply, re=hash── puppyReply() ←── answer ──┘
+browser ←────── Caddy ←───── puppetPost ← appFaceApp ←─reply, re=hash── appServerReply() ←── answer ──┘
                   (VPS puppet node)                          (owner's box)
 ```
 
@@ -22,7 +24,7 @@ browser ←────── Caddy ←───── puppetPost ← appFaceApp
 | 1 | The browser asks `join.spirit.andyflinn.com`. Caddy ends the TLS and forwards plain HTTP on loopback. | Caddy, on the VPS | exists, outside the tree |
 | 2 | **puppetPost** takes it: on only where `relay-state/face.json` names a port, loopback only, body capped at BODY_MAX. It hands the one claimed face `{host, method, path, body}` and nothing else. | `spirit/run/js/puppetPost.js:20` (face.json), `:45` `const FACE_BIND = '127.0.0.1';`, `:65` `function claim(appName, fn) {` | **built**, verified (d1bf284) |
 | 3 | **appFaceApp** claims the face and looks the host up in the routing table the owner granted (a subdomain is registered by the existing grant exchange). | grants: `spirit/run/app/appFaceApp/appFaceApp.js:109` `function decide(api, name, asker) {`; claiming: nothing calls `api.face(` yet (the hook is `spirit/run/js/nodeApps.js:391`) | **owed**: the claim, and the table lookup by host |
-| 4 | appFaceApp posts the request to the owner as an ordinary `peerPost`, signing for the route (never for the person), and keeps the packet's hash with the open browser request, with a time limit. It posts WITH a patience, so a busy owner node does not bounce a visitor: `api.post` is the node's own router and takes `{ patienceMs }` directly, with no verb change. If the scheduler refuses or gives up, puppetPost answers 429 by name. | `api.post` exists (`nodeApps.js`); the reply marker `re` exists (`spirit/run/js/client/packet.js:15`) | **owed**: the waiting table, its time limit, and the patience |
+| 4 | **appServerPost()**: appFaceApp posts the request to the owner as an ordinary `peerPost`, signing for the route (never for the person), and keeps the packet's hash with the open browser request, with a time limit. It posts WITH a patience, so a busy owner node does not bounce a visitor: `api.post` is the node's own router and takes `{ patienceMs }` directly, with no verb change. If the scheduler refuses or gives up, puppetPost answers 429 by name. | `api.post` exists (`nodeApps.js`); the reply marker `re` exists (`spirit/run/js/client/packet.js:15`) | **owed**: the waiting table, its time limit, and the patience |
 
 ## Across: the owner's box
 
@@ -30,7 +32,7 @@ browser ←────── Caddy ←───── puppetPost ← appFaceApp
 |---|---|---|---|
 | 5 | A **booted node app on the owner's node**, appFaceApp's counterpart, witnesses the packet. It is not node core, since *"nothing in node and relay should know about apps"*. It accepts it ONLY if it comes from the owner's own puppet's key AND names a host the grant table routes to one of the owner's apps. That check is why the step exists: without it any node could drive the owner's app process by posting. It then hands the app portion to the app-server process: a file by name, or a body to its door. | the app-server process listens on loopback: `spirit/run/js/appServer.js:1396` `server.listen(port, '127.0.0.1', function () {` | **owed**: the forwarding app, and its two-part check. The pipe instead of a port is G18. |
 | 6 | The app-server process answers. On the first request it serves the page, and later posts go to its one door. | `appServer.js:1031` `if (pathname === '/' \|\| pathname === '/index.html') return own(appName + '.html');` | **built**: the answer is the HTTP response of the process's own door, which the forwarder reads directly. (`appServer.js:842`, which drops a body, is NOT on this path: it is `reachOwner`, the app server posting OUT to its owner over the relay. G17's section says so too.) |
-| 7 | **puppyReply()** turns that answer into a reply packet whose `re` is the carried packet's hash, and posts it back. It is a named function, not a new wire verb. | the same two-packet pattern as the grant: `appFaceApp.js:162` `const made = packet.encode(APP, Object.assign({ verb: 'granted' }, answer), { re: message.hash });` | **owed** |
+| 7 | **appServerReply()** turns that answer into a reply packet whose `re` is the carried packet's hash, and posts it back to the request's sender, the puppet, whose key every arriving packet carries. It is a named function, not a new wire verb. | the same two-packet pattern as the grant: `appFaceApp.js:162` `const made = packet.encode(APP, Object.assign({ verb: 'granted' }, answer), { re: message.hash });` | **owed** |
 
 ## Back: the answer to the browser
 
@@ -52,7 +54,7 @@ browser ←────── Caddy ←───── puppetPost ← appFaceApp
 **Owed (steps 3, 4, 5, 7 and 9), and all of it is G17's remaining slices; G10 builds on them:**
 - **appFaceApp:** claim the face, look up the route, post, and keep a waiting table with a time limit;
 - **the owner's box:** a booted forwarding app, accepting only its own puppet's key and a granted host;
-- **puppyReply():** the reply carrying the request's hash.
+- **appServerReply():** the reply carrying the request's hash.
 
 **Reused rather than invented:**
 - `peerPost` for both directions;
