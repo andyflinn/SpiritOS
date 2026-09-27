@@ -306,11 +306,11 @@ function thePassthrough() {
     const took = s.passthrough(arrive('owned', { verb: 'grant', name: 'hello' }, 'MEMBER', 'h1'), opts);
     return waitMs(600).then(function () {
       const got = posted[0] ? packet.decode(posted[0].text) : null;
-      if (took === true && heard.length === 1 && heard[0].from === 'MEMBER' && heard[0].hash === 'h1' &&
+      if (took === true && heard.length === 1 && heard[0].from === 'MEMBER' && heard[0].hash === 'h1' && heard[0].relay === 'https://relay.example' &&
           heard[0].body && heard[0].body.name === 'hello' && got && got.app === 'owned' && got.re === 'h1' &&
           got.body && got.body.ok === true && got.body.echo && got.body.echo.name === 'hello' &&
           posted[0].toKey === 'MEMBER' && posted[0].relayUrl === 'https://relay.example') {
-        test.check('down the pipe as { from, hash, re, body }, and back as a reply packet for the same app with re = its hash, via the relay it came on');
+        test.check('down the pipe as { from, hash, re, relay, body }, and back as a reply packet for the same app with re = its hash, via the relay it came on');
       } else {
         test.fail('passthrough: ' + JSON.stringify({ took: took, heard: heard, got: got }).slice(0, 300));
       }

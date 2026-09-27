@@ -90,7 +90,59 @@ new Promise(function (resolve) { door.listen(0, '127.0.0.1', resolve); }).then(f
       test.fail('stdout did not reach the job log: ' + JSON.stringify(lines).slice(0, 300));
     }
 
-    test.subHeading('The shutdown verb: asked for, then enforced');
+    test.subHeading('An app\'s own server listens with spirit.core.server.listen');
+    const listener = path.join(dir, 'listener.js');
+    fs.writeFileSync(listener, [
+      "const spirit = require(" + JSON.stringify(KERNEL) + ");",
+      "spirit.core.server.listen(function (req) {",
+      "  if (req.body && req.body.verb === 'boom') throw new Error('it broke');",
+      "  if (req.body && req.body.verb === 'quiet') return null;",
+      "  return { ok: true, heard: req.body, from: req.from, relay: req.relay };",
+      "});",
+    ].join('\n'));
+    const pipe = require('../run/js/appServers.js').pipePathFor(dir, 'listener');
+    if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
+    const lj = jobs.startServerJob(process.execPath, [listener], { cwd: os.tmpdir(), type: 'app-server:listener', env: { SPIRIT_PIPE: pipe } });
+    const pr = require('../run/js/relayRequest.js').pipeRequest;
+    const ask = function (body) {
+      return pr(pipe, 'POST', '/', JSON.stringify({ from: 'MEMBERKEY', hash: 'h', re: '', relay: 'r', body: body }), { type: 'application/json', timeoutMs: 3000 });
+    };
+    function askWhenUp(tries) {
+      return ask({ verb: 'hello', x: 2 }).then(function (a) {
+        if (!a.refused || tries <= 0) return a;
+        return new Promise(function (r) { setTimeout(r, 200); }).then(function () { return askWhenUp(tries - 1); });
+      });
+    }
+    return askWhenUp(30).then(function (a) {
+      let said = null;
+      try { said = JSON.parse(a.text); } catch (e) { said = null; }
+      if (a.status === 200 && said && said.heard && said.heard.x === 2 && said.from === 'MEMBERKEY' && said.relay === 'r') {
+        test.check('the handler gets { from, relay, body } and its answer goes back as JSON');
+      } else {
+        test.fail('listen: ' + JSON.stringify(a).slice(0, 200));
+      }
+      return Promise.all([ask({ verb: 'boom' }), ask({ verb: 'quiet' })]);
+    }).then(function (both) {
+      const boom = both[0], quiet = both[1];
+      let b = null;
+      try { b = JSON.parse(boom.text); } catch (e) { b = null; }
+      if (boom.status === 500 && b && b.code === 'handler-failed' && quiet.status === 200 && quiet.text === '') {
+        test.check('a handler that throws is 500 handler-failed by name; one that answers null sends nothing back');
+      } else {
+        test.fail('boom/quiet: ' + JSON.stringify(both).slice(0, 200));
+      }
+      return new Promise(function (r) { setTimeout(r, 300); });
+    }).then(function () {
+      const lines = (jobs.getJob(lj.id).log || []).map(function (e) { return e.message; });
+      const helloLine = lines.some(function (l) { return /^hello from MEMBERKE\S* -> 200 \d+B \d+ms$/.test(l) || /^hello from .* -> 200/.test(l); });
+      const errorLine = lines.some(function (l) { return /^\s*error: .*handler-failed/.test(l); });
+      const noPayload = !lines.some(function (l) { return /payload:/.test(l); });
+      if (helloLine && errorLine && noPayload) {
+        test.check('every exchange is one monitor line, an error\'s text follows, and no payload without verbose');
+      } else {
+        test.fail('monitor lines: ' + JSON.stringify(lines).slice(0, 300));
+      }
+      test.subHeading('The shutdown verb: asked for, then enforced');
     const stubbornJob = jobs.startServerJob(process.execPath, [stubborn], { cwd: os.tmpdir(), type: 'app-server:stubborn' });
     return waitFor(function () { return jobs.getJob(stubbornJob.id).status === 'running'; }, 3000).then(function () {
       const began = Date.now();
@@ -107,6 +159,7 @@ new Promise(function (resolve) { door.listen(0, '127.0.0.1', resolve); }).then(f
           test.fail('stopServers: ' + JSON.stringify({ a: a, b: b, took: took }));
         }
       });
+    });
     });
   });
 }).then(function () {

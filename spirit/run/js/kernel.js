@@ -600,6 +600,61 @@ if (isNode()) {
   spirit.core.server = {
     onShutdown: function (fn) { if (typeof fn === 'function') shutdownHooks.push(fn); },
   };
+  // ── AN APP'S OWN SERVER, LISTENING (public-app-server/G19.3) ──────────
+  //
+  // spirit.core.server.listen(handler) listens on the pipe the node named
+  // (SPIRIT_PIPE) and hands each request its node passes through to
+  // handler({ from, hash, re, relay, body }), where body is the packet's own
+  // body and from the signed sender. What the handler answers (an object,
+  // or a promise of one) goes back as JSON and becomes the node's reply
+  // packet; null answers nothing. So an app writes its verbs and never an
+  // HTTP server of its own, and every exchange lands in the monitor the way
+  // PROCESSES.md asks: one line, the error text always, the payload only
+  // with SPIRIT_DEBUG=1 (its manifest's "verbose": true).
+  const SERVER_BODY_MAX = 65536;
+  const SERVER_TEXT_MAX = 300;
+  const SERVER_DEBUG_MAX = 2048;
+  spirit.core.server.listen = function (handler) {
+    const pipe = process.env.SPIRIT_PIPE;
+    if (!pipe) throw new Error('spirit.core.server.listen: no SPIRIT_PIPE, so this process was not started as a server by a node');
+    if (process.platform !== 'win32') { try { fs.unlinkSync(pipe); } catch (e) { /* none left */ } }
+    const debug = process.env.SPIRIT_DEBUG === '1';
+    const server = http.createServer(function (req, res) {
+      const began = Date.now();
+      let size = 0;
+      const chunks = [];
+      let over = false;
+      req.on('data', function (c) {
+        size += c.length;
+        if (size > SERVER_BODY_MAX) { over = true; req.destroy(); return; }
+        chunks.push(c);
+      });
+      req.on('end', function () {
+        const send = function (status, answer, verb, from) {
+          const text = answer == null ? '' : JSON.stringify(answer);
+          res.writeHead(status, text ? { 'Content-Type': 'application/json; charset=utf-8' } : {});
+          res.end(text);
+          console.log(String(verb || '?') + ' from ' + String(from || '?').slice(-8) + ' -> ' + status + ' ' +
+            Buffer.byteLength(text) + 'B ' + (Date.now() - began) + 'ms');
+          if (debug && text) console.log('  payload: ' + text.slice(0, SERVER_DEBUG_MAX));
+          else if (status >= 400 && text) console.log('  error: ' + text.slice(0, SERVER_TEXT_MAX));
+        };
+        if (over) { send(413, { ok: false, code: 'app-request-too-large' }); return; }
+        let req0 = null;
+        try { req0 = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (e) { req0 = null; }
+        if (!req0 || typeof req0 !== 'object') { send(400, { ok: false, code: 'bad-request', why: 'not json' }); return; }
+        const verb = req0.body && req0.body.verb;
+        let pending;
+        try { pending = Promise.resolve(handler(req0)); } catch (e) { pending = Promise.reject(e); }
+        pending.then(function (answer) { send(200, answer == null ? null : answer, verb, req0.from); },
+          function (e) { send(500, { ok: false, code: 'handler-failed', why: String((e && e.message) || e) }, verb, req0.from); });
+      });
+    });
+    server.listen(pipe);
+    spirit.core.server.onShutdown(function () { return new Promise(function (resolve) { server.close(function () { resolve(); }); }); });
+    return server;
+  };
+
   if (typeof process.send === 'function') {
     process.on('message', function (m) {
       if (!m || m.verb !== 'shutdown') return;
