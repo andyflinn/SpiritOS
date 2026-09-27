@@ -15,6 +15,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const spirit = require('../run/js/kernel.js');
+const hubModule = require('../run/js/hub.js');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
 const APP_SCRIPT = path.join(RUN_DIR, 'app', 'contacts', 'contacts.js');
@@ -138,6 +139,27 @@ function mountApp(options) {
         status: 200,
         text: function () { return Promise.resolve(body); },
         json: function () { return Promise.resolve(JSON.parse(body)); },
+      });
+    }
+    // THE BOOK IS SEARCHED (puppets/G2): contact.search and contact.get,
+    // answered by the node's own label and search (hub.searchPeople), so
+    // this fake says exactly what the node would.
+    if (verb === 'contact.search' || verb === 'contact.get') {
+      const sent = JSON.parse((init && init.body) || '{}');
+      const people = opts.people || [];
+      let answer;
+      if (verb === 'contact.search') {
+        const r = hubModule.searchPeople(people, sent.q);
+        answer = { ok: true, items: r.items, more: r.more, selfTail: opts.selfTail || null };
+      } else {
+        const person = people.filter(function (p) { return p.publicKey === sent.key; })[0];
+        answer = person ? { ok: true, key: sent.key, person: person } : { ok: false, error: 'not in the book' };
+      }
+      const t = JSON.stringify(answer);
+      return Promise.resolve({
+        status: answer.ok ? 200 : 404,
+        text: function () { return Promise.resolve(t); },
+        json: function () { return Promise.resolve(JSON.parse(t)); },
       });
     }
     if (verb === 'peer.acquire') status = opts.contactStatus || 201;
@@ -547,8 +569,10 @@ function listsTheBook() {
     // height") — the mark column is empty on most rows, and a
     // content-sized one would be a few pixels wide until somebody is
     // held, then shift every name in the table sideways.
-    if (rows.indexOf('<td class="icon-cell">' + ICONS.NO + '</td><td class="label-cell">dave</td>') !== -1 &&
-        rows.indexOf('<td class="icon-cell">' + ICONS.WAITING + '</td><td class="label-cell">carol</td>') !== -1 &&
+    // The state rides in the label as a word now (puppets/G2, Andy's go),
+    // drawn muted beside the name, and the mark still reads off it.
+    if (rows.indexOf('<td class="icon-cell">' + ICONS.NO + '</td><td class="label-cell">dave <span class="muted">— blocked</span></td>') !== -1 &&
+        rows.indexOf('<td class="icon-cell">' + ICONS.WAITING + '</td><td class="label-cell">carol <span class="muted">— waiting</span></td>') !== -1 &&
         rows.indexOf(ICONS.ROLODEX) === -1) {
       test.check('and refused wears the plain no here, where the rolodex would point at itself');
     } else {
@@ -631,7 +655,7 @@ function listsTheBook() {
     // set one, theirs otherwise. Bert has been renamed, so his cell shows
     // MINE; carol has not, so hers shows HERS — one column, neither blank.
     if (rows.indexOf('<td class="label-cell">Bertie</td>') !== -1 &&
-        rows.indexOf('<td class="label-cell">carol</td>') !== -1 &&
+        rows.indexOf('<td class="label-cell">carol <span class="muted">— waiting</span></td>') !== -1 &&
         rows.indexOf('<td class="label-cell">bert</td>') === -1) {
       test.check('one name column: mine for them where I chose one, theirs where I did not');
     } else {

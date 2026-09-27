@@ -70,11 +70,12 @@ function cdStatus(text) {
 // is open changes unanswered inbound. The key is the only part of a row
 // that cannot change.
 function cdLoad() {
-  return cdPost('peer.list', null)
+  // ONE PERSON, BY KEY (puppets/G2): contact.get, where this used to read
+  // the whole book to keep one row of it.
+  return cdPost('contact.get', { key: cdKey })
     .then(function (r) { return JSON.parse(r.text); })
     .then(function (data) {
-      var people = (data && data.people) || [];
-      cdPerson = people.filter(function (p) { return p.publicKey === cdKey; })[0] || null;
+      cdPerson = (data && data.ok && data.person) || null;
       cdRender();
     })
     .catch(function (e) { cdStatus('could not read the book: ' + e.message); });

@@ -614,7 +614,8 @@ freePort()
       // the reachability check below is the whole of what keeps it
       // honest.
       ['POST', '/api/spirit', { verb: 'peer.post' }],
-      ['POST', '/api/spirit', { verb: 'peer.list' }],
+      ['POST', '/api/spirit', { verb: 'contact.search' }],
+      ['POST', '/api/spirit', { verb: 'contact.get', key: 'nobody' }],
       ['POST', '/api/spirit', { verb: 'peer.acquire', publicKey: 'NOPE' }],
       ['POST', '/api/spirit', { verb: 'peer.search', q: 'zz' }],
       // Every loopback verb, at the one door. `net.fetch` is left out on
@@ -914,7 +915,7 @@ freePort()
 
     const over = 'x'.repeat(limits.BODY_MAX + 1024);
 
-    return request(port, 'POST', '/api/spirit', { verb: 'peer.list', pad: over })
+    return request(port, 'POST', '/api/spirit', { verb: 'contact.search', pad: over })
       .then(function (r) {
         if (r.status === 413) {
           test.check('an oversized POST is answered 413, not parsed');
@@ -949,7 +950,7 @@ freePort()
           });
           req.on('error', function (e) { resolve({ status: 0, error: e.code || String(e) }); });
           req.setTimeout(8000, function () { req.destroy(new Error('timeout')); });
-          req.write('{"verb":"peer.list","pad":"');
+          req.write('{"verb":"contact.search","pad":"');
           req.write(over);
           req.write('"}');
           req.end();

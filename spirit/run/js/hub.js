@@ -398,6 +398,35 @@ function bytesHeldByPeer(rootDir) {
 // allowed to return a roster." What a contact is doing now is the
 // presence table's (presenceNode.js), fed by broadcasts and searches;
 // who owns a relay is allow.json's, never a row's.
+// ── THE BOOK'S LABEL AND ITS SEARCH, PURE (contact.search, puppets/G2) ─
+//
+// Module level and exported so a suite's fake node answers with exactly
+// what the node would, not a copy of it. The label is what the Contacts
+// table showed: the name I gave them or theirs, the key's ending where
+// two read alike or there is no name, and the state as a word (Andy's
+// go: 'Bert — blocked').
+var CONTACT_STATE = { blocked: ' — blocked', held: ' — waiting' };
+function contactLabel(p) {
+  var name = String(p.myLabel || '').trim() || String(p.publicLabel || '').trim();
+  var tail = p.tail ? '…' + p.tail : '';
+  var label = name ? (p.ambiguous && tail ? name + ' ' + tail : name) : (tail || '(no name)');
+  if (p.blocked) label += CONTACT_STATE.blocked;
+  else if (p.held) label += CONTACT_STATE.held;
+  return label;
+}
+function searchPeople(people, q) {
+  var s = require('./searchBucket').createSearch({
+    query: q,
+    // The name as I wrote it and as they did, and the state word.
+    getLabelStringFromIncomingObject: function (p) {
+      return contactLabel(p) + ' ' + String(p.publicLabel || '') + ' ' + String(p.myLabel || '');
+    },
+    extractKeyAndLabelFromRow: function (p) { return { key: p.publicKey, label: contactLabel(p) }; },
+  });
+  for (var i = 0; i < (people || []).length; i += 1) { if (!s.offer(people[i])) break; }
+  return s.getResult();
+}
+
 function buildPeople(rootDir) {
 
   var id = auth.loadIdentity(rootDir);
@@ -1521,6 +1550,37 @@ function createHub(rootDir) {
         people: buildPeople(rootDir),
       }));
     });
+  }
+
+  // ── contact.search / contact.get: THE BOOK, SEARCHED (puppets/G2) ──
+  //
+  //   Andy, 2026-09-27: "the verb changes changing list fetches to a
+  //   search(labe) and geKey(key) pair are approved"; for the marks, "go."
+  //   on putting the state in the label ('Bert — blocked'); and "the
+  //   search box below searches all available relays. the box on top,
+  //   should not."
+  //
+  // peer.list answered the whole book at once. contact.search walks the
+  // same book (buildPeople, sorted by caption, which is the scan order)
+  // and answers key/label pairs; it never asks a relay. The label is what
+  // the table showed: the name, the key's ending where two names read
+  // alike or there is no name, and the state as a word, so searching
+  // 'blocked' or 'waiting' finds exactly those people.
+  function contactSearch(body) {
+    var r = searchPeople(buildPeople(rootDir), body && body.q);
+    var self = auth.loadIdentity(rootDir);
+    return { ok: true, status: 200, items: r.items, more: r.more,
+      // One fact beside the pairs, never a row: what to tell somebody
+      // adding you (the page's "your key ends …").
+      selfTail: self && self.publicKey ? keyTail(self.publicKey) : null };
+  }
+
+  function contactGet(body) {
+    var key = String((body && body.key) || '');
+    if (!key) return { ok: false, status: 400, error: 'key required' };
+    var person = buildPeople(rootDir).filter(function (p) { return p.publicKey === key; })[0];
+    if (!person) return { ok: false, status: 404, error: 'not in the book' };
+    return require('./searchBucket').boundedGet({ ok: true, status: 200, key: key, person: person });
   }
 
   // ── peer.find STOOD HERE (handleHandle / findHandle), DELETED ──────
@@ -2785,6 +2845,8 @@ function createHub(rootDir) {
     handlePartnerCheck: handlePartnerCheck,
     handleSearch: handleSearch,
     handleWho: handleWho,
+    contactSearch: contactSearch,
+    contactGet: contactGet,
     handleContact: handleContact,
     handlePeer: handlePeer,
     // handleInvite, handleRemovePeer, handleRename and handleRevoke were
@@ -2819,6 +2881,8 @@ module.exports = {
   // This is the one they were proven on.
   sealedClaim: sealedClaim,
   buildPeople: buildPeople,
+  contactLabel: contactLabel,
+  searchPeople: searchPeople,
   // The node's own judgement about who it will hear from, exported for
   // the same reason relayRequest is: peerPost needs it and must not grow
   // a second answer to the same question.

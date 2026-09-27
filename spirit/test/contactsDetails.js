@@ -120,6 +120,19 @@ function mountDialog(options) {
       });
     }
 
+    // ONE PERSON BY KEY (puppets/G2): the dialog asks contact.get, and the
+    // answer reads the same mutable book, so a decision still shows on the
+    // next read.
+    if (sentVerb === 'contact.get') {
+      const want = JSON.parse(String((init && init.body) || '{}')).key;
+      const person = people.filter(function (p) { return p.publicKey === want; })[0];
+      const got = JSON.stringify(person ? { ok: true, key: want, person: person } : { ok: false, error: 'not in the book' });
+      return Promise.resolve({
+        status: person ? 200 : 404,
+        text: function () { return Promise.resolve(got); },
+        json: function () { return Promise.resolve(JSON.parse(got)); },
+      });
+    }
     const text = JSON.stringify({ people: people, selfTail: null, matches: [] });
     return Promise.resolve({
       status: status,
@@ -274,7 +287,12 @@ function settle() {
 function posted(app, prefix) {
   return app.log
     .map(function (c) { try { return JSON.parse(c.body); } catch (e) { return null; } })
-    .filter(function (b) { return b && String(b.verb || '').indexOf(prefix) === 0; });
+    // A READ IS NOT A DECISION: contact.get and contact.search (puppets/G2)
+    // share the namespace with the verbs that change the book, and this
+    // counts only the changes.
+    .filter(function (b) {
+      return b && String(b.verb || '').indexOf(prefix) === 0 && b.verb !== 'contact.get' && b.verb !== 'contact.search';
+    });
 }
 
 function bert(extra) {

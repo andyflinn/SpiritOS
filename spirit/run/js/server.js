@@ -1897,6 +1897,10 @@ contactBook.syncMarks(ROOT_DIR);
   // does. The if-chain is gone: an unknown verb is now refused by a
   // table that knows every verb this node answers.
   loopbackVerbs.claim('contact', 'hub.js', {
+    // The book, searched: peer.list is gone (puppets/G2). Never asks a
+    // relay; that is peer.search's job.
+    'contact.search': proxyVerb(function (b) { return hub.contactSearch(b); }),
+    'contact.get': proxyVerb(function (b) { return hub.contactGet(b); }),
     'contact.block': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'block'); },
     'contact.unblock': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'unblock'); },
     'contact.accept': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'accept'); },
@@ -1915,8 +1919,9 @@ contactBook.syncMarks(ROOT_DIR);
   // reason the flag is on the namespace.
   //
   //   peer.post     the only thing on this node that reaches router.post
-  //   peer.list     the relay's roll, captioned by this node's book
-  //   peer.find     the keys behind one spoken handle
+  //   peer.search   who is out there, across every relay (peer.list went
+  //                 to contact.search, the book on this disk, and peer.find
+  //                 went before it)
   //   peer.acquire  a human confirmed one of those keys
   //
   // WHY THESE ARE NOT `contact.*` even though a person doing them is
@@ -1939,7 +1944,6 @@ contactBook.syncMarks(ROOT_DIR);
     'peer.post': function (rq, rs) {
       hub.handlePost(rq, rs, readJsonBody, { router: peerRouter, presence: presence });
     },
-    'peer.list': function (rq, rs) { hub.handleWho(rq, rs); },
     'peer.acquire': function (rq, rs) { hub.handleContact(rq, rs, readJsonBody); },
     // Ask every relay who matches, rather than downloading every
     // roll to find out. See hub.handleSearch.

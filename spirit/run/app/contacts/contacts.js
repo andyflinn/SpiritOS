@@ -82,7 +82,16 @@ var CONTACTS_UNKNOWN_LABELS = {
   },
 };
 
+// THE BOOK AS SEARCHED, NOT AS LISTED (puppets/G2). Andy: "all list
+// displays in the UI now must be topped by a search input bar, which will
+// add to the list and prime it with "*" at the beginning". So the table
+// shows the union of every book search run so far, in the order each key
+// first appeared, each row a {publicKey, label} pair from contact.search.
+// "*" is the first; each search he types adds its rows. The book is never
+// asked for whole: past the answer's cap, contactsBookMore says so.
 var contactsPeople = [];
+var contactsBookQueries = ['*'];
+var contactsBookMore = false;
 // Search results — see contactsSearchSeen. Not a standing list: a
 // thousand-member relay makes that unreadable and expensive both.
 var contactsSeen = [];
@@ -195,32 +204,8 @@ function contactsStatus(text) {
 // old pair worth keeping. `ambiguous` is the node's own verdict
 // (buildPeople), not a second opinion formed here, so the table and the To
 // list can never disagree about which rows need it.
-function contactsNameCell(person) {
-  // NOT `caption`, which is the node's resolved answer and falls back to
-  // the WHOLE KEY for somebody who claimed no handle (contactBook.labelForKey).
-  // Forty-four characters in a name column is exactly what the old
-  // two-column version was careful to avoid, and it would have walked
-  // straight back in.
-  var name = contactsEscapeHtml(
-    String(person.myLabel || '').trim() || String(person.publicLabel || '').trim()
-  );
-  var tail = contactsEscapeHtml(person.tail || '');
-
-  // NOBODY EVER CLAIMED A WORD. The ending is all there is, and it names
-  // them better than a blank does.
-  if (!name) {
-    return tail
-      ? '<span class="muted">\u2026' + tail + '</span>'
-      : '<span class="muted">(no name)</span>';
-  }
-
-  if (!person.ambiguous || !tail) return name;
-
-  // TWO ROWS READ ALIKE. Muted, because the ending is the disambiguator
-  // rather than part of what they are called \u2014 and in one column, with no
-  // second name beside it, the eye needs the two told apart.
-  return name + ' <span class="muted">\u2026' + tail + '</span>';
-}
+// contactsNameCell STOOD HERE: the name cell is the node's label now
+// (contact.search, puppets/G2).
 
 // One row per key.
 //
@@ -336,10 +321,18 @@ function contactsSeenMarkTitle(c) {
 // reading `memberOf` off the row — a roster's word, gone 2026-09-19 (see
 // hub.js where reconcileMembers stood).
 
+// The state rides in the label as a word (Andy's go: "Bert — blocked"),
+// so the mark is read off the label's end.
+var CONTACTS_STATE_BLOCKED = ' — blocked';
+var CONTACTS_STATE_WAITING = ' — waiting';
+function contactsEndsWith(text, end) {
+  return text.length >= end.length && text.slice(text.length - end.length) === end;
+}
 function contactsRowHtml(person) {
+  var label = String(person.label || '');
   var mark = '';
-  if (person.blocked) mark = contactsIcon.NO;
-  else if (person.held) mark = contactsIcon.WAITING;
+  if (contactsEndsWith(label, CONTACTS_STATE_BLOCKED)) mark = contactsIcon.NO;
+  else if (contactsEndsWith(label, CONTACTS_STATE_WAITING)) mark = contactsIcon.WAITING;
 
   return '<tr class="job-row" data-contact-row="' + contactsEscapeHtml(person.publicKey) + '">' +
     '<td class="icon-cell" title="' +
@@ -364,8 +357,29 @@ function contactsRowHtml(person) {
     // — mine for them if I set one, theirs otherwise (contactBook.labelForKey).
     // The ending still rides on it where two rows read alike, which is
     // the only thing that made two columns worth having.
-    '<td class="label-cell">' + contactsNameCell(person) + '</td>' +
+    // THE NAME IS THE NODE'S LABEL NOW: contact.search builds it the way
+    // contactsNameCell did here (name, the ending where two read alike or
+    // there is no name) plus the state word.
+    '<td class="label-cell">' + contactsLabelHtml(label) + '</td>' +
     '</tr>';
+}
+
+// The label drawn the way the name cell always was: the name plain, and
+// what only tells rows apart (the key's ending, the state word) muted.
+function contactsLabelHtml(label) {
+  var state = '';
+  [CONTACTS_STATE_BLOCKED, CONTACTS_STATE_WAITING].forEach(function (end) {
+    if (!state && contactsEndsWith(label, end)) { state = end.trim(); label = label.slice(0, label.length - end.length); }
+  });
+  var name = label;
+  var tail = '';
+  var cut = label.lastIndexOf(' …');
+  if (label.charAt(0) === '…') { name = ''; tail = label; }
+  else if (cut !== -1) { name = label.slice(0, cut); tail = label.slice(cut + 1); }
+  var html = name === '(no name)' ? '<span class="muted">(no name)</span>' : contactsEscapeHtml(name);
+  if (tail) html += (html ? ' ' : '') + '<span class="muted">' + contactsEscapeHtml(tail) + '</span>';
+  if (state) html += ' <span class="muted">' + contactsEscapeHtml(state) + '</span>';
+  return html;
 }
 
 function contactsRender() {
@@ -377,10 +391,13 @@ function contactsRender() {
   // inside a pane this table's repaints cannot reach.
 
   if (!contactsPeople.length) {
-    tbody.innerHTML = '<tr><td colspan="5">(nobody yet — add someone by handle below)</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5">(nobody found — search the network below to add someone)</td></tr>';
     return;
   }
-  tbody.innerHTML = contactsPeople.map(contactsRowHtml).join('');
+  tbody.innerHTML = contactsPeople.map(contactsRowHtml).join('') +
+    (contactsBookMore
+      ? '<tr><td colspan="5" class="muted">More in your book than fits one answer. Search above to add them.</td></tr>'
+      : '');
 }
 
 function contactsPaintSelf() {
@@ -391,15 +408,44 @@ function contactsPaintSelf() {
     : '';
 }
 
+// Every book search run so far, again, merged by key in first-seen order,
+// so a block or an accept repaints what is on screen and nothing more.
 function contactsRefresh() {
-  return contactsAsk('peer.list')
-    .then(function (data) {
-      contactsPeople = (data && data.people) || [];
-      contactsSelfTail = (data && data.selfTail) || '';
+  // A SEARCH TAKES A MOMENT, and says so. Andy: "searches may have to show
+  // some kind of spinners in the ui".
+  contactsStatus('Searching your contacts…');
+  return Promise.all(contactsBookQueries.map(function (q) { return contactsAsk('contact.search', { q: q }); }))
+    .then(function (answers) {
+      var seen = Object.create(null);
+      var rows = [];
+      var more = false;
+      answers.forEach(function (data) {
+        if (!data || !data.ok) return;
+        if (data.selfTail) contactsSelfTail = data.selfTail;
+        if (data.more) more = true;
+        (data.items || []).forEach(function (i) {
+          if (seen[i.key]) return;
+          seen[i.key] = true;
+          rows.push({ publicKey: i.key, label: i.label });
+        });
+      });
+      contactsPeople = rows;
+      contactsBookMore = more;
+      contactsStatus('');
       contactsRender();
       contactsPaintSelf();
     })
     .catch(function (e) { contactsStatus('could not read the book: ' + e.message); });
+}
+
+// The bar on top: what he types is added to what is shown.
+function contactsSearchBook() {
+  var el = document.getElementById('contacts-book-q');
+  var q = el ? String(el.value || '').trim() : '';
+  if (!q) return;
+  if (contactsBookQueries.indexOf(q) === -1) contactsBookQueries.push(q);
+  if (el) el.value = '';
+  contactsRefresh();
 }
 
 // ── EVERYBODY VISIBLE AND NOT YET KNOWN ──────────────────────────────
@@ -967,6 +1013,12 @@ spirit.shell.activateApp({
       // dot, a lock or a hold, and a one-word heading over a glyph is a
       // word read on every pass to learn nothing. What each means rides on
       // its own cell's title, where the question is actually asked.
+      // THE BOOK'S OWN SEARCH, on top. Andy: "the search box below searches
+      // all available relays. the box on top, should not." It searches only
+      // this node's book, and what it finds is added to the table.
+      '<div class="start-job-form card"><label class="field-label grow">Search your contacts' +
+        '<input type="text" id="contacts-book-q" placeholder="a name, or blocked, or waiting"></label>' +
+        '<button type="button" id="contacts-book-go">Search</button></div>' +
       '<table class="jobs-table"><thead><tr>' +
         '<th class="icon-cell"></th>' +
         '<th class="icon-cell"></th>' +
@@ -1028,7 +1080,10 @@ spirit.shell.activateApp({
         // is on is the node's problem — it is how the search is answered
         // and where the confirm is checked, and neither is a question a
         // person came here with.
-        '<summary id="contacts-seen-summary">Find someone</summary>' +
+        // "on the network", which is not "on your relays": Andy, 2026-09-27,
+        // "the search box below should indicate that it searches the
+        // "network"", beside the book's own box on top, which does not.
+        '<summary id="contacts-seen-summary">Find someone on the network</summary>' +
         '<div class="start-job-form">' +
           '<input type="text" id="contacts-seen-q" placeholder="their name, or part of it">' +
           '<button type="button" id="contacts-seen-go">Search</button>' +
@@ -1135,6 +1190,10 @@ spirit.shell.activateApp({
         });
     });
 
+    document.getElementById('contacts-book-go').addEventListener('click', contactsSearchBook);
+    document.getElementById('contacts-book-q').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.repeat) { e.preventDefault(); contactsSearchBook(); }
+    });
     contactsRefresh();
     contactsWatchPresence();
   },

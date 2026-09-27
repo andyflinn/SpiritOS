@@ -344,6 +344,11 @@ define('job-not-found', {
   texts: ['job not found'],
   note: 'jobs.get named a key no job has now: it may have been deleted since the search that found it (puppets/G2).',
 });
+define('contact-not-in-book', {
+  status: 404, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['not in the book'],
+  note: 'contact.get named a key the book on this node does not hold: forgotten since the search that found it, or never chosen (puppets/G2).',
+});
 define('proxy-no-entry', {
   status: 404, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['no such entry'], prefixes: ['no entry names', 'nothing closed for'],

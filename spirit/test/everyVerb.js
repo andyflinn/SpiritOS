@@ -62,7 +62,7 @@ const VERBS = [...serverSrc.matchAll(/^ {4}'([a-z]+\.[a-zA-Z]+)':/gm)].map(funct
 // answers with an array must be ADDED to it knowingly. Either way this
 // suite goes red until the list says what is true.
 const LISTS_TODAY = [
-  'owner.boxes', 'peer.list', 'peer.search',
+  'owner.boxes', 'peer.search',
   'relay.record', 'relay.status',
 ];
 

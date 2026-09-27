@@ -65,7 +65,7 @@ the only way a default survives contact with people in a hurry.
 
 ## What can be asked
 
-**42 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
+**43 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
 
 **Each verb carries its authority.** Andy, 2026-09-27: *"that's a boundary
 crossed that requires peer review AND my approval"* — and, on his own yes:
@@ -80,7 +80,9 @@ his words, which keeps the harness red until the verb is gone.
 - `contact.accept` — before the rule (2026-09-27)
 - `contact.block` — before the rule (2026-09-27)
 - `contact.forget` — before the rule (2026-09-27)
+- `contact.get` — Andy, 2026-09-27: "the verb changes changing list fetches to a search(labe) and geKey(key) pair are approved." (Desk, puppets/G2)
 - `contact.label` — before the rule (2026-09-27)
+- `contact.search` — Andy, 2026-09-27: "the verb changes changing list fetches to a search(labe) and geKey(key) pair are approved." (Desk, puppets/G2)
 - `contact.senders` — before the rule (2026-09-27)
 - `contact.setSenders` — before the rule (2026-09-27)
 - `contact.unblock` — before the rule (2026-09-27)
@@ -120,7 +122,6 @@ his words, which keeps the harness red until the verb is gone.
 
 **`peer.*`** — talking to other people
 - `peer.acquire` — before the rule (2026-09-27)
-- `peer.list` — before the rule (2026-09-27)
 - `peer.post` — before the rule (2026-09-27)
 - `peer.search` — before the rule (2026-09-27)
 
@@ -171,7 +172,7 @@ figure you can compute instead of estimate.
 
 ## The errors
 
-**86 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
+**87 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
 each carries more than a sentence:
 
 | | |
