@@ -1163,6 +1163,11 @@ verbs today; they live only in its code.
   and the shape of what to send and what comes back. The description may be
   as short as a label (Andy: *"or at least a label-length summary"*), so a
   verb always has something a list can show.
+  The two shapes are named for the wire, not for a function: Andy, *"or call
+  input and output, reqest and reply and reply could even be \"text/html\""*.
+  So the entry is `{ <verb>: { description, request, reply } }`, and `reply`
+  may be a content type instead of a shape, e.g. `"text/html"` for a verb
+  that answers a page.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
