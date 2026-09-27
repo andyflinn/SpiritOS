@@ -525,7 +525,12 @@ or a puppet rewrites its owner and takes itself over — the hole closed at
 
 ### G7 — the loopback shim
 
-**Status:** OPEN. Nothing built.
+**Status:** DONE (2026-09-27): the OWNER DOOR, built at 3feddc5 and f389d3d,
+verified by `spirit/test/puppetDoor.js` (wsl-claude). What remained of the
+approved shape, the face door and the `puppet` group, is split out as G10.
+Andy asked why G7 still topped his list after it was verified, and ruled:
+*"with verification is should dissappear."* So a verified slice is DONE,
+and what is left is its own to-do.
 
 A readable carrying the unwrapped body and a writable capturing the
 answer, so `server.js:921`'s dispatch runs unchanged. A handler reaching
@@ -663,6 +668,16 @@ through neither.
 
 So G7 no longer means *"`server.js:921`'s dispatch runs unchanged"*. It
 dispatches into the app's group, beside the node groups the context carries.
+
+### G10 — the face door and the puppet group
+
+**Status:** OPEN. Split from G7 on 2026-09-27, when the owner door was
+verified. It is the rest of G7's approved shape: points 1 and 2 (the
+`puppet` group declared in the manifest; the face door that hands only
+the app portion on, unread, and sees nothing of the node's groups), with
+the verify lines that belong to them. **It waits on** public-app-server/G14
+(the manifest declaring what an app takes) and public-app-server/G17 (join's
+route through appFaceApp). Those are proposed as dependencies for Andy.
 
 ### G8 — may a puppet be commanded: the owner anything, others nothing
 
