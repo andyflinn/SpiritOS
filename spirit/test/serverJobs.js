@@ -119,21 +119,82 @@ async function monitorLines(debug) {
   return { lines: out.slice(before).split(/\r?\n/).filter(Boolean), ok: ok, missing: missing };
 }
 
+// ── THE PASSTHROUGH'S REFUSALS (G19.2, f5fd7d8) ──────────────────────
+//
+// appServers.js asserts the hop, not-JSON and not-running. These are the
+// other two ways a server app fails a member, and the stranger's case:
+//   - an answer over the pipe's cap, and an app that never answers, reach
+//     the SENDER by name, carrying re = its packet's hash;
+//   - a key outside the contacts hears NOTHING. A refusal would tell a
+//     stranger which apps this node runs.
+// Driven through createAppServers' request seam, so no socket is opened.
+async function passthroughRefusals() {
+  test.subHeading('A server app\'s failures reach the member by name, and a stranger hears nothing');
+  const packet = require('../run/js/client/packet');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-pass-'));
+  fs.mkdirSync(path.join(root, 'app', 'probe'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'app', 'probe', 'probe.json'), JSON.stringify({ server: 'srv.js' }));
+  fs.writeFileSync(path.join(root, 'app', 'probe', 'srv.js'), '');
+  let answer = null;
+  let knocked = 0;
+  const servers = appServers.createAppServers({
+    rootDir: root, log: function () {}, startServerJob: function () { return {}; },
+    request: function () { knocked++; return Promise.resolve(answer); },
+  });
+  servers.startAll();
+  const posts = [];
+  const o = {
+    decode: packet.decode, encode: packet.encode, log: function () {},
+    post: function (relay, to, text) { posts.push({ to: to, info: packet.decode(text) }); return Promise.resolve({ ok: true }); },
+    isMember: function (k) { return k === 'MEMBER'; },
+  };
+  function send(from, hash) {
+    return servers.passthrough({ text: packet.encode('probe', { verb: 'x' }).text, fromKey: from, hash: hash, relay: 'r' }, o);
+  }
+
+  const results = [];
+  for (const code of ['app-answer-too-large', 'app-did-not-answer']) {
+    answer = { refused: code };
+    posts.length = 0;
+    send('MEMBER', 'h-' + code);
+    await sleep(20);
+    const p = posts[0];
+    results.push(!!p && p.to === 'MEMBER' && p.info && p.info.re === 'h-' + code && p.info.body && p.info.body.code === code);
+  }
+  if (results.every(Boolean)) {
+    test.check('an answer over the cap and an app that never answers reach the member by name, with re = its packet\'s hash');
+  } else {
+    test.fail('named refusals to the member: ' + JSON.stringify(results));
+  }
+
+  posts.length = 0;
+  knocked = 0;
+  answer = { status: 200, text: '{"ok":true}' };
+  const handled = send('STRANGER', 'h-stranger');
+  await sleep(20);
+  if (handled === true && knocked === 0 && posts.length === 0) {
+    test.check('a key outside the contacts is taken and dropped: the pipe is never knocked and nothing is sent back');
+  } else {
+    test.fail('a stranger: handled ' + handled + ', knocked ' + knocked + ', replies ' + posts.length);
+  }
+  fs.rmSync(root, { recursive: true, force: true });
+}
+
 (async function () {
   await cancelledMeansGone();
+  await passthroughRefusals();
 
   test.subHeading('The monitor line: one per exchange, the body never, the error text always');
   const plain = await monitorLines(false);
-  const pageLine = plain.lines.filter(function (l) { return /^GET \/ -> 200 text\/html (\d+B )?\d+ms$/.test(l); });
+  const pageLine = plain.lines.filter(function (l) { return /^GET \/ -> 200 text\/html \d+B \d+ms$/.test(l); });
   const payloads = plain.lines.filter(function (l) { return /^\s+payload:/.test(l); });
   const pageText = (plain.ok && plain.ok.text) || '';
   const leaked = pageText && plain.lines.some(function (l) { return l.indexOf(pageText.replace(/\s+/g, ' ').slice(0, 40)) !== -1; });
   if (plain.ok && plain.ok.status === 200 && pageLine.length === 1 && payloads.length === 0 && !leaked) {
-    // The size is optional here ON PURPOSE, and owed: faceServer takes it from
-    // Content-Length, which a streamed page does not set, so a page's line
-    // carries no size (reported to claude-windows 2026-09-28). Tightened to
-    // require it once the size is counted from the bytes written.
-    test.check('a served page is ONE line (method, path, status, type, time), and its body is not in the monitor');
+    // The size is REQUIRED: it once came from Content-Length, which a streamed
+    // page never sets (wsl-claude's finding), and is now counted as written
+    // (f5fd7d8).
+    test.check('a served page is ONE line (method, path, status, type, size, time), and its body is not in the monitor');
   } else {
     test.fail('monitor lines for GET /: ' + JSON.stringify(plain.lines));
   }

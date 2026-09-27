@@ -17,9 +17,6 @@ not describe. Run the harness if in doubt.
 
 `PUBLIC-APP-SERVER` · status **OPEN**
 
-- **missing:** G19.2 passthrough: a packet for a serving app goes down its pipe (appServers.passthrough) — **~0% there**, guess: a sitting
-  
-  a peer's packet addressed to an app that runs a server is handed down that app's pipe unread, and its answer goes back as the node's own reply, signed with the node's key. Blocked by G19.1
 - **missing:** G19.3 grantFace, a faceless server app (app/grantFace) — **~0% there**, guess: a sitting
   
   owns grants.json (canonical, keyed by face domain and name), answers grant, faceKey and the face's route question, and on every change syncs the face's contact list by owner command over loopback. Blocked by G19.2
@@ -94,4 +91,4 @@ not describe. Run the harness if in doubt.
 
 ---
 
-**10 assertion(s) across 7 requirement(s).**
+**9 assertion(s) across 7 requirement(s).**
