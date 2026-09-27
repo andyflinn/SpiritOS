@@ -456,7 +456,7 @@ sending end"). `peerOwnerPost()` is the owner door's sending end:
    envelope id inside the signed bytes), wrapped as a system packet
    addressed to no app, and posted through the one relay chooser (742c5c1).
    The node signs, and the shell holds no key.
-2. **Reach.** The verb may be in `app:<name>` or in a node group the puppet
+2. **Reach.** The verb may be in the `puppet` group or in a node group the puppet
    carries (G7.4). It never assumes the whole node api. An uncarried group
    comes back refused by name, and the caller is handed that refusal, not a
    network failure.
@@ -601,7 +601,8 @@ shape as it stands:
 3. **Each context declares the node groups it carries.** A group it does
    not carry refuses with a NAMED code from `spiritErrors`, so a caller can
    tell "not here" from "broken".
-4. **App groups are prefixed `app:<name>`**, so an app can never collide
+4. **The app's group is called `puppet`**, offered by the puppet's node at
+   its own ID (G7.1 below; it replaced `app:<name>`), so it can never collide
    with a node group (`verbTable.js:97-98` already refuses a double claim).
 5. **All of it provable without a server.**
 
@@ -610,11 +611,24 @@ tests it.
 
 **THE WRITTEN SHAPE OF G7, awaiting Andy's approval** (drafted by
 wsl-claude, whose row it is, and checked against G4):
-1. **The app group.** An app's flat commands are one group, `app:<name>`,
-   declared ONCE in its manifest (public-app-server/G14). The prefix means
-   it can never take a node group's name (`verbTable.js:97-98` refuses a
-   double claim).
-2. **The face door sees only the app group.** appFaceApp wraps the visitor's
+1. **The puppet group.** An app's flat commands are one interface group,
+   called `puppet`. Andy: *"maybee that portion of the api should be called
+   puppet"*. **WHAT A PUPPET IS, ruled 2026-09-27** (a Go! on wsl-claude's
+   one model, after *"the node sees the puppets ID, puppet is only an
+   interface group. specific to that puppet ID"*, *"the identity of a puppet
+   is it's ID"*, *"of course every node has its own ID"*, *"no, a puppet is
+   owned by an owner ID"*, *"and it has an ID of its own"*, *"that is what
+   ties a puppet to its owner."*, *"that's why we had to lock puppets out of
+   self-ownership"*): every node has its own ID; a node OWNED by another
+   node's ID is a puppet; `puppet` is the group that node offers, reached
+   at its own node ID. There is one puppet per node and no new key. Several
+   apps booted on one node are apps of ONE puppet. The owner ID is the tie
+   (G6 locks it).
+   It is declared ONCE in the app's manifest (public-app-server/G14).
+   `puppet` is not a node group's name (the node groups are contact, device,
+   fs, jobs, net, node, peer, proxy, relay), and `verbTable.js:97-98` refuses
+   a double claim.
+2. **The face door sees only the puppet group.** appFaceApp wraps the visitor's
    request in a standard package, trusted by the route Andy granted (G17).
    The owner node removes ONLY that carrier layer (the domain and the route
    it rode) and hands the app's packet to the app's handler UNREAD. The node
