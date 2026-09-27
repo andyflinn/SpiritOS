@@ -187,7 +187,7 @@ fix."* A caller handed 50 contacts and a "there are more" flag can ask a
 narrower question; a caller handed `answer-too-large` can do nothing.
 
 **The vocabulary already exists.** `peer.search` returns `{ rows, more }`
-(`spirit/run/js/hub.js:2091`) — the one verb where the question is
+(`spirit/run/js/hub.js:2242`) — the one verb where the question is
 obviously vague already answers this way. What is wrong there is the
 UNIT, not the shape: it caps `searchMemoryRows` (default 1000, a row
 count) rather than bytes, and a thousand rows at 259 bytes is ~259 KB,
@@ -317,7 +317,7 @@ written; one verb was never held to it.
 The replacement needs nothing invented, and this document already names
 it: *"Search. Already built this way, which is why it is the replacement
 everything else collapses into."* `peer.search` returns
-`{ rows, more }` (`spirit/run/js/hub.js:2091`) — bounded, ranked,
+`{ rows, more }` (`spirit/run/js/hub.js:2242`) — bounded, ranked,
 truthful about being partial. `jobs` and `processes` take the same
 shape, and a long description becomes a thing you search rather than a
 thing you are handed.
@@ -387,7 +387,7 @@ the work**, and after it `jobs` and `processes` supply a scan and an
 extractor rather than a search.
 
 **And one inconsistency is already inside the single example.**
-`hub.js:2091` returns `{ rows, more }` internally while `:2390` emits
+`hub.js:2242` returns `{ rows, more }` internally while `:2541` emits
 `{ q, matches, more }` on the wire — the same thing under two names.
 *Worth removing when G2 lands, and NOT the 1024-versus-16384 class: that
 scar was two independent measurements of one string disagreeing, with

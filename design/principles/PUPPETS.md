@@ -428,7 +428,7 @@ and no caller may assume one.
 ### G2 — one shared search: two hooks per collection, the rest inherited
 
 **Status:** OPEN. Nothing built, but the shape exists: `peer.search`
-already returns `{ rows, more }` (`spirit/run/js/hub.js:2091`) with the
+already returns `{ rows, more }` (`spirit/run/js/hub.js:2242`) with the
 right shape and the wrong unit, bounding rows scanned rather than bytes.
 
 Shared rather than per-verb, because a per-verb implementation is the
