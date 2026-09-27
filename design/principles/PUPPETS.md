@@ -639,6 +639,8 @@ wsl-claude, whose row it is, and checked against G4):
 **Verify:** a face request for a node verb answers exactly as an unknown
 verb does; a face request for an app verb is answered; the owner node
 forwards the app portion byte for byte and `nodeKnowsNoApps` stays green;
+appFaceApp's code, like the node's, may encode an app packet but never decode
+one, so BOTH ends of the face door are app-blind;
 an owner-signed command reaches a carried group, and is refused by name for
 one not carried; an unsigned or wrongly signed command is refused (G5); a
 verb in the manifest answers through both doors, and one absent from it
