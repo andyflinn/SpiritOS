@@ -911,6 +911,58 @@ browser ← appFaceApp ←─reply, re=hash── appServerReply() ←─ answer
   loopback port), `appServerReply()`, and appFaceApp's `appServerPost()` with its table of waiting
   requests with a time limit per entry.
 
+**THE ROUTE, RULED 2026-09-27** (Andy, in Desk under G17, "go."). It
+supersedes THE PATH's "the node forwards a post from the face to the
+app-server-process" for every name that is not the owner's own, and it
+supersedes PUPPETS.md §10's flat namespace (see there).
+
+- **The face domain.** A setting on the owner node, default
+  `face.spirit.<relay domain>`, changeable. Andy: *"i now think that face is
+  a more appropriate name: e.... join.face.spirit... or the *.face.spirit.
+  the face segment is what exactly represent the job of appFaceApp"*, and
+  *"agreed: changeable"*. Apps and users both live under it: *"make all
+  other apps and users negotiate their spot in the wildcard space"*.
+- **DNS and Caddy, by hand, once.** `face.spirit.<domain>` and
+  `*.face.spirit.<domain>` point at the VPS; one Caddy block serves both,
+  with the wildcard certificate by DNS challenge, and forwards to puppetPost
+  keeping the Host header. Caddy knows nothing about names.
+- **A name is negotiated, and that is the whole grant.** join, or joe, asks
+  for its segment by the signed two-packet exchange, node to node through a
+  relay. Andy: *"the grant is at that point already implicit, by the signed
+  packet exchange negotiating the slot"*. The row it leaves is
+  `{ <name>: { to: <key of the slot's owner> } }`, kept only on the owner
+  node.
+- **The boot route.** Andy: *"so the owner.node.ID is the boot-route, for
+  every other name segment"*. The puppet knows one route from the start,
+  its owner (`relay-state/puppet.json`). A host it has no route for is
+  asked there, and the owner answers one of three, as a reply signed by its
+  key and carrying the question's hash:
+  - **mine**: the owner serves the request itself (join on its own box);
+  - **`{ name, to: <key>, until: <time> }`**: *"it's like an HTTP redirect
+    then the node gives the puppet a signed reply, allowing the appFaceApp
+    to cache that route in RAM for future use"*;
+  - **no such route**: refused by name.
+- **The puppet's route cache.** RAM only: *"at restart, the dance starts
+  anew"*. A route is taken only when signed by the key in puppet.json and
+  matching the question's hash, ownerPost's rule, so no other node can pull
+  a name's visitors to itself. A route lives until its `until` (an hour) and
+  is dropped the moment its target refuses. A "no such route" is kept a
+  minute, so an unknown name cannot make the puppet ask on every hit.
+- **Direct after the boot route.** With a route cached, the puppet posts the
+  visitor's request (`appServerPost()`) straight to the slot owner's key,
+  carrying the owner's signed route so that node can check a face it was
+  pointed at sent it. The answer comes back to the puppet with `re` = the
+  request's hash (`appServerReply()`). *"if it gets properly serviced there
+  is a separate question."*
+- **Only the owner node matches a name.** The VPS matches nothing; it asks
+  and caches (decision 0018: the route cache belongs to the machine).
+
+**Open:** which DNS provider holds the domain (it picks Caddy's DNS module);
+what answers the bare `face.spirit.<domain>`, which no grant names (a named
+refusal until it has a page); whether the grant table's keeper keeps the
+name appFaceApp, since today it is appFaceApp's faceless half on the owner
+node.
+
 **The page waits its turn, a bet on low visitor frequency.** Andy,
 2026-09-27: *"the shell-lowest layer in face-mode, may need a
 request-queuer....(so as to not overload the relays transaction-per-member

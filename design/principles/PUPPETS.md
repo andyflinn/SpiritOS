@@ -194,6 +194,18 @@ IS FINAL"*). The first URL element travels **in** the post as data, not
 as an address. So the public box holds no member keys at all: a
 compromised VPS leaks no member identities because it never had any.
 
+**SUPERSEDED 2026-09-27, the paragraph below.** Andy, in Desk under
+public-app-server/G17, "go." on a face domain one level down: *"the face
+segment is what exactly represent the job of appFaceApp"*, and *"make all
+other apps and users negotiate their spot in the wildcard space"*. So apps
+and members both live under `*.face.spirit.<domain>` (the setting's
+default, changeable), one wildcard certificate as before, one label deeper,
+and the owner node is the boot route that says who owns each name
+(PUBLIC-APP-SERVER.md, G17, *THE ROUTE*). The flat `*.spirit.<domain>` and
+"appFaceApp is a sibling of the member faces" below no longer hold. What
+still holds: one wildcard certificate matches one label, so a further
+level costs a further certificate.
+
 **The namespace is flat, and the reason is concrete:** a wildcard
 certificate matches exactly one label. `*.spirit.<domain>` covers
 `alice.spirit.<domain>` and does not cover `alice.app.spirit.<domain>`.
