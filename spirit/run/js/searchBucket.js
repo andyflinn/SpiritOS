@@ -83,19 +83,46 @@ function createSearch(opts) {
   var examined = 0;
   var walkStopped = false;
 
+  // ── "*" STOPS THE WALK WHEN THE ANSWER IS FULL ──────────────────────
+  //
+  //   Andy, 2026-09-27: "the caller should understand that in the case of
+  //   "*" he must not scan beyond the buckets limit?"
+  //
+  // The caller need not understand it: offer() says so. Under a query of
+  // only '*', every object grades the same (checked: six unlike labels,
+  // one quality), so the answer is the scan order and nothing offered
+  // later can take a place from anything offered earlier. Once the pairs
+  // offered fill the byte cap, the next one could never be sent, and the
+  // walk is told to stop, with `more` set. Any other query ranks, so a
+  // later object may still win a place, and the walk goes on to its limit.
+  var everything = /^\*+$/.test(query.trim());
+  var frameBytes = utf8Bytes(JSON.stringify({ items: [], more: false }));
+  var usedByOrder = frameBytes;
+  var keysByOrder = Object.create(null);
+  var answerFull = false;
+
   return {
     // True while the caller may go on walking. The object that is answered
     // false was NOT examined, and it is what proves the walk left
     // something behind.
     offer: function (obj) {
-      if (examined >= maxSearched) { walkStopped = true; return false; }
+      if (examined >= maxSearched || answerFull) { walkStopped = true; return false; }
       examined += 1;
       var pair = keyAndLabel(obj);
       if (!pair || pair.key == null) return true;
       // Called once: a hook may be costly or read a store (wsl-claude).
       var text = labelString(obj);
       matchingText = text == null ? '' : String(text);
-      graded.offer({ key: String(pair.key), label: String(pair.label == null ? '' : pair.label) });
+      var held = { key: String(pair.key), label: String(pair.label == null ? '' : pair.label) };
+      if (everything && !keysByOrder[held.key]) {
+        var cost = utf8Bytes(JSON.stringify(held)) + (usedByOrder > frameBytes ? 1 : 0);
+        // It will not be sent, so it was not examined: the contract of a
+        // false answer, the same as at the walk limit.
+        if (usedByOrder + cost > maxBytes) { answerFull = true; walkStopped = true; examined -= 1; return false; }
+        usedByOrder += cost;
+        keysByOrder[held.key] = true;
+      }
+      graded.offer(held);
       return true;
     },
 
