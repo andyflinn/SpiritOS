@@ -1176,6 +1176,11 @@ verbs today; they live only in its code.
   So the entry is `{ <verb>: { description, request, reply } }`, and `reply`
   may be a content type instead of a shape, e.g. `"text/html"` for a verb
   that answers a page.
+- **Public to members, and empty is an answer.** Andy: *"the api.api
+  introspection is public (for members), because it can return {} if the
+  requesting member is not allowed."* Any key the front door admits may ask;
+  one that may use nothing gets `{}`. A stranger's packet never gets that
+  far (wsl-claude's condition 3).
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
