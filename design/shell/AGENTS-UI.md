@@ -74,23 +74,46 @@ Design only. Nothing here is built.
 4. **Replies:** an agent answers with the same full id, so the reply lands
    under the same row.
 
+## Decided by the agents, as Andy delegated
+
+Andy, 2026-09-27: *"all up to you two, i will simply request alterations and
+those will be implemented (or not)"*. claude proposed and wsl-claude amended.
+What follows is what both agreed. Any of it changes when Andy asks.
+
+1. **The full id rides in a new body field, `todo`.** `re` keeps its one
+   meaning. The sender checks it is a FULL id (area/number, the rule
+   `testSupport` applies to `after`), so a pasted short handle is resolved
+   before sending and never travels as a key.
+2. **Threads come from the log, with no new store.** Desk pages through its
+   node's log with `since` and `limit` and filters by `body.todo`
+   ITSELF. **The node never grows a filter on `todo`.** Its log read is
+   contained on purpose (`hub.js:1278`: *"no filter on `packet.app`,
+   ever"*), and the same ruling covers a new field. A thread therefore
+   shows only what touched Andy's node. Agent-to-agent traffic is not in
+   it, which is right, since the thread is HIS conversation.
+3. **The board is posted, not shared by path.** The lead's checkout is
+   not the one Andy's node runs from, so a shared file would work only by
+   coincidence of machine. The lead posts the board JSON to Andy's node as
+   an agents packet of kind `board`, only when it changed, and Desk
+   renders the newest one. 13 rows are about 4 KB against a 16384-byte
+   limit, so roughly 50 rows fit. Beyond that runAll emits a compact form,
+   and a board that still does not fit refuses loudly. It never truncates.
+4. **The name is Desk** (`app/desk/`). Nothing under `app/` or `run/js`
+   uses the word, and `agents` would collide with the process app.
+5. **Taking a row.** Before working a row, an agent posts `taking` with
+   `todo` to Andy AND to the other agent. Andy's node is his, and no
+   agent can read its log, so a claim sent only there would be invisible to
+   the other agent. The claim lapses when 30 minutes pass with no reply
+   under the row. Time alone decides this, because "went idle" is never
+   sent anywhere and cannot be observed. When two claims collide, the
+   earliest timestamp wins, then the name.
+6. **Voice by courier, from sent rows only.** The page never touches the
+   vault. The lead's `voiceLog.js` courier takes Andy's text only from
+   rows his node SENT (outbound, from his key) that carry `todo`, never
+   from arrivals. An agent's reply quoting him arrives on his node too,
+   and logging it would put our paraphrase in his voice, which is the
+   pollution *"your judgement is what protects my brain"* guards against.
+
 ## Open
 
-- **Where the full id rides in the envelope.** A new body field such as
-  `todo`, or inside `re`? `re` already means "the hash of the message this
-  answers", so reusing it would give it two meanings. A new field is
-  recommended.
-- **Where the threads live.** The recommendation is that the traffic logs
-  already on each node are the record, and the app renders a row's thread
-  from Andy's node's log filtered by full id. Nothing new is persisted,
-  in line with *"all inputs to a discussion will be logged."*
-- **How the board data reaches the page.** The board is written in the
-  repository root on the lead's box. A page reads only through the shell
-  API, which does not serve the repository root today.
-- **How Andy's text reaches `voice.jsonl`.** It lives in the vault, which
-  the node does not know exists (`brains/README.md`: *"This is not a
-  SpiritOS feature"*). So writing it from a page is a new route across
-  that fence, and it needs a ruling.
-- **The app's name.**
-- **Which agent takes a row.** "Any agent may" needs a rule for two agents
-  taking the same row at once.
+- Nothing. Each change from here is Andy's alteration.
