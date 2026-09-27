@@ -42,7 +42,6 @@ test.startTest('The transport cycle, what is still owed');
 const shell = read('spirit/run/js/client/shell.js');
 const answerRelay = read('spirit/run/js/answerRelay.js');
 const trafficLog = read('spirit/run/js/trafficLog.js');
-const peerPost = read('spirit/run/js/peerPost.js');
 
 test.subHeading('the transport cycle R12 — an app can reply, and a reply is the only evidence of being delivered');
 
@@ -92,11 +91,19 @@ test.subHeading('the transport cycle R16 — the log must be able to PROVE what 
 // decision 0006 removed that on purpose, so the node's own log is the only
 // record left.
 {
-  // Absence measured on the log's own writer rather than on a comment: does
-  // any traffic row carry a signature at all?
-  const storesSig = /\bsig\b\s*:/.test(trafficLog) || /sig:\s*(?:sig|signature)/.test(peerPost);
+  // Absence measured on the LOG'S OWN WRITER: does trafficLog ever put a
+  // signature into a row?
+  //
+  // FIXED 2026-09-28 (wsl-claude, explaining R16 to Andy). This read
+  // `!(... || /sig:\s*(?:sig|signature)/.test(peerPost))` and passed it as
+  // `available`. Two faults. It matched peerPost.js:918, the OUTGOING post
+  // body `{ ..., sig: sig }`, which is sending a signature rather than
+  // storing one; and it was inverted, so the day trafficLog did store one
+  // this would have stayed awaiting for ever instead of saying EXISTS NOW.
+  // It read "awaiting" only because of the wrong match.
+  const storesSig = /\bsig\s*:/.test(trafficLog);
   test.awaiting('transport/R16', 'a signature stored beside what it signs',
-    !storesSig,
+    storesSig,
     'trafficLog holds peer, hash and payload and no sig, so none of the three promises is '
     + 'provable: "bert sent me this" and "bert received mine" are both unverifiable, and '
     + '"bert acted on it" is unreachable until this cycle\'s R12. THE DATABASE DECISION IS '
