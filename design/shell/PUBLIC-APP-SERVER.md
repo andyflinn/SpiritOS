@@ -957,6 +957,18 @@ supersedes PUPPETS.md §10's flat namespace (see there).
 - **Only the owner node matches a name.** The VPS matches nothing; it asks
   and caches (decision 0018: the route cache belongs to the machine).
 
+- **An app on the owner's box is the owner's name.** Andy, 2026-09-27,
+  "go." on: apps on the owner's box have their names granted to the owner
+  node's key, so the boot route answers "mine" and the owner node hands
+  the request to the app's process locally. This keeps his ruling that an
+  app server is *"a slave to it's owner"*, which receives nothing
+  (`appServer.js:692`, onArrival ABSENT); a route to the app server's own
+  key could never be answered. The app's door is found on the same disk,
+  from `app-state/<name>/` (`appServer.js:65`) or G18's pipe per name,
+  and never travels: the G10 box report stays its ruled four fields
+  (wsl-claude's review). A member with a node of their own gets the signed
+  redirect.
+
 **Open:** which DNS provider holds the domain (it picks Caddy's DNS module);
 what answers the bare `face.spirit.<domain>`, which no grant names (a named
 refusal until it has a page); whether the grant table's keeper keeps the
