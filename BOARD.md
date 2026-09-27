@@ -17,11 +17,14 @@ not describe. Run the harness if in doubt.
 
 `PUBLIC-APP-SERVER` · status **OPEN**
 
+- **missing:** a member keeps the names granted to it, on disk (MINE_FILE in appFaceApp) — **~0% there**, guess: a sitting, with the introductions
+  
+  Andy: "the members to store their own subdomain on disc". A granted reply is written down where the member's appFaceApp reads it, so a serve for that name reaches its app server instead of 404 no-such-route
 - **missing:** the answer body reaching the door — **~70% there**, guess: the transport half is DONE and verified by both agents (peerPost.js:363-373 unseals into answer.text before resolving). What is missing is that appServer stops discarding it, and an owner-side program that answers with a body — the second is the master, and it is the unbuilt half of every show. This is declared awaiting rather than red because an assertion needs a master that answers, and asserting against a fixture owner that answers nothing would test the fixture
   
   a reply carries a body, already unsealed, to the original poster — and reachOwner keeps it, so what the master computed reaches the screen
 
-*Declared in `appServerBoundary.js`*
+*Declared in `memberFacePending.js`, `appServerBoundary.js`*
 
 ## public-app-server/G18 — the app process serves its owner node over a named pipe, not a TCP port
 
@@ -95,4 +98,4 @@ not describe. Run the harness if in doubt.
 
 ---
 
-**8 assertion(s) across 8 requirement(s).**
+**9 assertion(s) across 8 requirement(s).**

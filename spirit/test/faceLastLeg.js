@@ -38,12 +38,12 @@ test.startTest('The last leg holds its limits against real sockets (G17)');
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-lastleg-'));
 
-// A root with one app serving the face 'hello', its pipe where the node
+// A root with one app that runs a server (serves: true), its pipe where the node
 // would put it. `serve` is the fake app's handler.
 function world(serve) {
   const root = path.join(scratch, 'root-' + Math.random().toString(36).slice(2, 8));
   fs.mkdirSync(path.join(root, 'app', 'faceProof'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'app', 'faceProof', 'faceProof.json'), JSON.stringify({ face: 'hello' }));
+  fs.writeFileSync(path.join(root, 'app', 'faceProof', 'faceProof.json'), JSON.stringify({ serves: true }));
   const pipe = appServers.pipePathFor(root, 'faceProof');
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
   const seen = [];
@@ -110,12 +110,13 @@ async function wholeRoute() {
     };
   }
 
-  // THE OWNER: the grant for 'hello', and an app whose manifest serves it.
+  // THE OWNER: the grant for 'hello' naming the app that serves it (appFaceApp's
+  // own row, 5310ba7), and that app's manifest saying it runs a server.
   const owner = home('owner');
   fs.writeFileSync(path.join(owner.app, 'face-domain.json'), JSON.stringify({ faceDomain: FACE_DOMAIN }));
-  fs.writeFileSync(path.join(owner.app, 'grants.json'), JSON.stringify({ names: { hello: { to: ownerId.publicKey } } }));
+  fs.writeFileSync(path.join(owner.app, 'grants.json'), JSON.stringify({ names: { hello: { to: ownerId.publicKey, app: 'faceProof' } } }));
   fs.mkdirSync(path.join(owner.root, 'app', 'faceProof'), { recursive: true });
-  fs.writeFileSync(path.join(owner.root, 'app', 'faceProof', 'faceProof.json'), JSON.stringify({ face: 'hello' }));
+  fs.writeFileSync(path.join(owner.root, 'app', 'faceProof', 'faceProof.json'), JSON.stringify({ serves: true }));
   const servers = appServers.createAppServers({ rootDir: owner.root, log: function () {}, startServerJob: function () { return {}; } });
   servers.startAll();
   const pipe = appServers.pipePathFor(owner.root, 'faceProof');
@@ -208,7 +209,7 @@ function mentions(value, needle) {
   test.subHeading('An unknown name and an oversize request never reach a pipe');
   const w = await world(function (req, res) { res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('hi'); });
   const unknown = await w.servers.toLocalApp('nobody', { method: 'GET', path: '/' });
-  const big = await w.servers.toLocalApp('hello', { method: 'POST', path: '/', body: 'x'.repeat(limits.BODY_MAX + 1) });
+  const big = await w.servers.toLocalApp('faceProof', { method: 'POST', path: '/', body: 'x'.repeat(limits.BODY_MAX + 1) });
   if (unknown.status === 404 && unknown.body.code === 'app-not-served'
       && big.status === 413 && big.body.code === 'app-request-too-large'
       && w.knocks() === 0 && w.seen.length === 0) {
@@ -245,7 +246,7 @@ function mentions(value, needle) {
     res.writeHead(200, { 'Content-Type': 'text/html' });
     res.end('y'.repeat(appServers.ANSWER_MAX + 1));
   });
-  const tooBig = await huge.servers.toLocalApp('hello', { method: 'GET', path: '/' });
+  const tooBig = await huge.servers.toLocalApp('faceProof', { method: 'GET', path: '/' });
   if (tooBig.status === 502 && tooBig.body && tooBig.body.code === 'app-answer-too-large') {
     test.check('an answer one byte over ANSWER_MAX is app-answer-too-large, 502, never a page cut short');
   } else {
@@ -255,7 +256,7 @@ function mentions(value, needle) {
 
   // ── (d) ONLY THE CONTENT TYPE CROSSES ─────────────────────────────────
   test.subHeading('The content type crosses both ways, and nothing else the visitor sent');
-  const typed = await w.servers.toLocalApp('hello', {
+  const typed = await w.servers.toLocalApp('faceProof', {
     method: 'POST', path: '/api/spirit', body: '{"verb":"app.state"}', type: 'application/json',
     headers: { cookie: 'session=secret', 'x-forwarded-for': '203.0.113.9', authorization: 'Bearer t' },
     cookie: 'session=secret',
@@ -283,7 +284,7 @@ function mentions(value, needle) {
   const answers = [
     typed,
     tooBig,
-    await dead.servers.toLocalApp('hello', { method: 'GET', path: '/' }),
+    await dead.servers.toLocalApp('faceProof', { method: 'GET', path: '/' }),
     await w.servers.toLocalApp('nobody', { method: 'GET', path: '/' }),
   ];
   const leaked = answers.filter(function (a) {
@@ -299,6 +300,24 @@ function mentions(value, needle) {
 
   // ── (f) THE WHOLE ROUTE, BROWSER TO APP SERVER AND BACK ───────────────
   await wholeRoute();
+
+  // ── (g) THE NODE KNOWS APPS, NOT FACES ────────────────────────────────
+  //
+  //   Andy, 2026-09-27: "the core only knows about puppets (nodes owned by
+  //   nodes, not people). the face-name/app-or-member table must be owned
+  //   by appFaceApp, not by the puppet-infrastructure." Built as 5310ba7.
+  //   Code lines only: a comment may tell the history.
+  test.subHeading('The node\'s app-server code has no face vocabulary');
+  const faceWords = ['js/appServers.js', 'js/jobs.js'].filter(function (rel) {
+    const code = fs.readFileSync(path.join(RUN, rel), 'utf8').split('\n')
+      .map(function (line) { return line.replace(/\/\/.*$/, ''); }).join('\n');
+    return /face/i.test(code);
+  });
+  if (faceWords.length === 0) {
+    test.check('appServers.js and jobs.js name apps and servers, never a face: which app answers a name is appFaceApp\'s table');
+  } else {
+    test.fail('face vocabulary in the node\'s code: ' + faceWords.join(', '));
+  }
 
   fs.rmSync(scratch, { recursive: true, force: true });
   test.reportSuccessFailureCount();
