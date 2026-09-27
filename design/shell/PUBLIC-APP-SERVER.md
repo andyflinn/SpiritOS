@@ -1496,7 +1496,7 @@ the one before:**
 | R1 | The process spec written (`design/node/PROCESSES.md`) and the server process type completed: a server job gets `SPIRIT_JOB_ID` and `SPIRIT_CALLBACK_URL`; `spirit.core.ask` works from a process; a serving app's own code runs as its job; a server job can be stopped from the jobs app | — |
 | R2 | Passthrough: a packet for a serving app goes down its pipe, and the answer returns signed by the node | R1 |
 | R3 | grantFace: grant, faceKey, the route answers, `grants.json` (canonical), the face's contact sync by owner command | R2 |
-| R4 | The `api` verb, introspection by layers (needs Andy's yes on the verb) | R3 |
+| R4 | The `api` verb, introspection by layers. Andy's yes on the verb: "go." on the ask "Is this your yes on 'api'?" (Desk, G17, 2026-09-28); wsl-claude's review is recorded under G17 | R3 |
 | R5 | The member's shell client | R4 |
 
 Outside the chain: the `face-install` rerun on spirit-3 (Andy's), and the
