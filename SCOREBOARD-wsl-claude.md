@@ -7,7 +7,7 @@
 **Nothing is broken, 8 requirements are declared and not built yet, and 1 dependency question for you, and 3 older questions need a decision from you.**
 
 ```
-171 suites   3297 green   0 red   0 unhappy   8 owed      run 32fa339
+173 suites   3329 green   0 red   0 unhappy   8 owed      run d1bf284
 ```
 
 ---
@@ -82,7 +82,11 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +7 green
+- +3323 green
+- ⏳ **newly owed:** public-app-server/G17
+- ⏳ **newly owed:** public-app-server/G18
+- ⏳ **newly owed:** transport/R12
+- ⏳ **newly owed:** transport/R16
 
 ---
 
