@@ -7,7 +7,7 @@
 **Nothing is broken, 12 requirements are declared and not built yet, and 1 dependency question for you, and 2 older questions need a decision from you.**
 
 ```
-168 suites   3153 green   0 red   0 unhappy   12 owed      run 3b30b1a
+168 suites   3153 green   0 red   0 unhappy   12 owed      run 088de86
 ```
 
 ---
@@ -79,10 +79,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +5 green
-- -2 red
-- ✅ **built or withdrawn:** puppets/G7
-- ⏳ **newly owed:** puppets/G10
+**Nothing moved.** Same requirements owed, same tally, since the run at `3b30b1a`.
 
 ---
 
@@ -90,7 +87,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 | # | handle | to-do | waits on | frees | owed | there | |
 |---|---|---|---|---|---|---|---|
-| 1 | 10/R13 | a card is ordered in time, or an old one never dies |  |  | 3 days | `▓▓▓▓▓░░░░░` 50% |  |
+| 1 | 10/R13 | Get the damn rotate-button into the info app |  |  | 3 days | `▓▓▓▓▓░░░░░` 50% |  |
 | 2 | 11/C3 | the state the record cannot mark: its own node being down |  |  | 3 days | `▓▓▓▓░░░░░░` 40% |  |
 | 3 | public-app-server/G10 | a server reports the box it sits on: four fields, one opinion withheld |  |  | 2 days | `▓▓▓░░░░░░░` 33% |  |
 | 4 | public-app-server/G8 | layer 1 splits by PROMISE, and the stable half is named |  |  | 2 days | `░░░░░░░░░░` 0% |  |
@@ -101,7 +98,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 | 9 | puppets/G4 | `peerOwnerPost()` on the owner's node | puppets/G7 |  | 1 day | `░░░░░░░░░░` 0% |  |
 | 10 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | today | `░░░░░░░░░░` 0% |  |
 | 11 | transport/R16 | the log must be able to PROVE what it claims |  |  | today | `░░░░░░░░░░` 0% |  |
-| 12 | puppets/G10 | the face door and the puppet group | G14 (proposed), G17 (proposed) |  | ? | `░░░░░░░░░░` 0% |  |
+| 12 | puppets/G10 | the face door and the puppet group | G14 (proposed), G17 (proposed) |  | today | `░░░░░░░░░░` 0% |  |
 
 **How the order was made.** 
 

@@ -1,8 +1,8 @@
 {
   "box": "wsl-claude",
-  "commit": "3b30b1a",
+  "commit": "088de86",
   "stale": false,
-  "head": "3b30b1a",
+  "head": "088de86",
   "measured": {
     "suites": 168,
     "green": 3153,
@@ -14,7 +14,7 @@
       "kind": "to-do",
       "id": "cycle-10/R13",
       "handle": "10/R13",
-      "title": "a card is ordered in time, or an old one never dies",
+      "title": "Get the damn rotate-button into the info app",
       "rank": 1,
       "frees": 0,
       "waitsOn": [],
@@ -167,7 +167,7 @@
           "accepted": false
         }
       ],
-      "owedSince": null,
+      "owedSince": "2026-09-27",
       "there": 0,
       "blocked": ""
     },

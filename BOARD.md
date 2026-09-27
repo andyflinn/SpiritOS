@@ -13,7 +13,7 @@ not describe. Run the harness if in doubt.
 
 ---
 
-## cycle-10/R13 — a card is ordered in time, or an old one never dies
+## cycle-10/R13 — Get the damn rotate-button into the info app
 
 `2026-09-23-sealed-posts-cycle-10` · status **OPEN**
 
