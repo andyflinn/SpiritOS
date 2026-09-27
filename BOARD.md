@@ -17,30 +17,15 @@ not describe. Run the harness if in doubt.
 
 `PUBLIC-APP-SERVER` · status **OPEN**
 
-- **missing:** appServerPost and appServerReply in appFaceApp — **~0% there**, guess: a sitting
-  
-  the visitor's request posted straight to the slot owner's key with the owner's signed route, and the answer back with re = the request's hash, matched to the open browser request (with the early-answer store)
-- **missing:** toLocalApp in js/appServers.js, handed to booted apps by nodeApps — **~0% there**, guess: a sitting
-  
-  the node hands a booted app's request to a local app server's door; the app never sees an address
-- **missing:** startServerJob in jobs.js (kind 'server', restarts on exit) — **~0% there**, guess: a sitting
-  
-  the node starts and keeps an app server process, so it knows the door locally
-- **missing:** the owner's serve answered by the app server, not the 501 stub — **~0% there**, guess: with the two above
-  
-  appFaceApp's ownerRole hands serve to toLocalApp; faceRouteWorld (a) moves from the 501 to the app's own answer
-- **missing:** a named 503 when the app server is not running — **~0% there**, guess: with the two above
-  
-  a dead or unstarted process is answered by name at once, not left to the 18 s wait
 - **missing:** the answer body reaching the door — **~70% there**, guess: the transport half is DONE and verified by both agents (peerPost.js:363-373 unseals into answer.text before resolving). What is missing is that appServer stops discarding it, and an owner-side program that answers with a body — the second is the master, and it is the unbuilt half of every show. This is declared awaiting rather than red because an assertion needs a master that answers, and asserting against a fixture owner that answers nothing would test the fixture
   
   a reply carries a body, already unsealed, to the original poster — and reachOwner keeps it, so what the master computed reaches the screen
 
-*Declared in `faceRoutePending.js`, `appServerBoundary.js`*
+*Declared in `appServerBoundary.js`*
 
 ## public-app-server/G18 — the app process serves its owner node over a named pipe, not a TCP port
 
-`PUBLIC-APP-SERVER` · status **OPEN**
+`PUBLIC-APP-SERVER` · status **BUILT**
 
 - **missing:** the app process listening on a named pipe — **~0% there**, guess: a sitting
   
@@ -110,4 +95,4 @@ not describe. Run the harness if in doubt.
 
 ---
 
-**13 assertion(s) across 8 requirement(s).**
+**8 assertion(s) across 8 requirement(s).**

@@ -223,6 +223,15 @@ const TALLY = {
   // this box's door", and said so rather than assumed. If he reads this and
   // disagrees, it is one line. The number may only fall.
   'test/everyVerb.js': 2,
+  // THE LAST LEG, HELD TO ITS LIMITS (G17): TWO, for faceRouteWorld's
+  // reason, one step further in. An app server is reached over a pipe by
+  // HTTP and by nothing else, so the fake app on that pipe must be an HTTP
+  // server, and the browser at the front one request helper. RESTING ON
+  // ANDY'S "the go is officail. also: i explicitly permit the two
+  // new/proposed interfaces/api' for communication from node to appserver",
+  // 2026-09-27, and said so rather than assumed. If he reads this and
+  // disagrees, it is one line. The number may only fall.
+  'test/faceLastLeg.js': 2,
   // THE WORLD BUILDER, counted for the first time (cycle 2). Three, and
   // each is a public route with no verb behind it: POST /api/relay/claim
   // is how a stranger joins a relay, GET /api/relay/key is the liveness

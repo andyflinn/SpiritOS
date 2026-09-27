@@ -31,61 +31,23 @@ function source(rel) {
 
 test.startTest('The face route (G17), what is still owed');
 
-const face = source('app/appFaceApp/appFaceApp.js');
 
 // faceRoute.nameOf, answerRoute and createRouteCache are BUILT (67af809) and
 // asserted in faceRouteSuite.js, with mutations: the three declarations that
 // stood here flipped to EXISTS NOW as the handover and are removed.
 
-test.awaiting('public-app-server/G17', 'appServerPost and appServerReply in appFaceApp',
-  /function appServerPost\b/.test(face) && /function appServerReply\b/.test(face),
-  'the visitor\'s request posted straight to the slot owner\'s key with the owner\'s signed route, and the answer ' +
-  'back with re = the request\'s hash, matched to the open browser request (with the early-answer store)',
-  { there: 0, cost: 'a sitting' });
-
-// ── THE LAST LEG: THE OWNER'S NODE TO THE APP'S SERVER PROCESS ─────────
+// appServerPost / appServerReply, and the last leg's four pieces (toLocalApp,
+// startServerJob, serve through the app server, app-not-running) are BUILT
+// (62e2b96, claude-windows, on Andy's "the go is officail") and flipped to
+// EXISTS NOW as the handover. Asserted in appServers.js (claude-windows'
+// pieces) and faceLastLeg.js (the agreed limits against real sockets, and
+// the whole route browser -> face -> owner -> app server -> back), with
+// mutations; the five declarations that stood here are removed.
 //
-//   Andy, 2026-09-27, under G17: "the go is officail. also: i explicitly
-//   permit the two new/proposed interfaces/api' for communication from node
-//   to appserver." claude-windows builds; these are the handover. The names
-//   are claude-windows' (17:34, under G17): jobs.js startServerJob (kind
-//   'server'), a new js/appServers.js holding toLocalApp and the named
-//   refusals, and nodeApps.js handing api.toLocalApp to booted apps.
-//
-// What the assertions will hold, once each goes red:
-//   - only an app whose manifest declares it gets toLocalApp at all (absent,
-//     not refusing), and only for a name the owner's grants route to 'mine';
-//   - the request is capped at BODY_MAX before the door is touched, and the
-//     answer at the face cap, each refused by name;
-//   - the door's timeout is shorter than appFaceApp's SERVE_WAIT_MS (18 s),
-//     which is shorter than puppetPost's FACE_WAIT_MS (30 s): the limits nest;
-//   - a server process that is not running answers a named 503, never a hang;
-//   - no port, pipe or path to the process ever appears in a packet;
-//   - only the content type crosses, each way, and bodies are text.
-
-const nodeApps = source('js/nodeApps.js');
-const jobs = source('js/jobs.js');
-const appServers = source('js/appServers.js');
-
-test.awaiting('public-app-server/G17', 'toLocalApp in js/appServers.js, handed to booted apps by nodeApps',
-  /\btoLocalApp\b/.test(appServers) && /\btoLocalApp\b/.test(nodeApps),
-  'the node hands a booted app\'s request to a local app server\'s door; the app never sees an address',
-  { there: 0, cost: 'a sitting' });
-
-test.awaiting('public-app-server/G17', 'startServerJob in jobs.js (kind \'server\', restarts on exit)',
-  /function startServerJob\b/.test(jobs),
-  'the node starts and keeps an app server process, so it knows the door locally',
-  { there: 0, cost: 'a sitting' });
-
-test.awaiting('public-app-server/G17', 'the owner\'s serve answered by the app server, not the 501 stub',
-  face !== '' && !/last-leg-not-built/.test(face),
-  'appFaceApp\'s ownerRole hands serve to toLocalApp; faceRouteWorld (a) moves from the 501 to the app\'s own answer',
-  { there: 0, cost: 'with the two above' });
-
-test.awaiting('public-app-server/G17', 'a named 503 when the app server is not running',
-  /app-not-running/.test(appServers),
-  'a dead or unstarted process is answered by name at once, not left to the 18 s wait',
-  { there: 0, cost: 'with the two above' });
+// STILL OWED, and declared when its design has Andy's yes: the same route
+// for a MEMBER's app. Run on 2026-09-27, the face already forwards serve to
+// the member the grant names; the member answers 404 no-such-route, name '',
+// because it holds neither face-domain.json nor the grant.
 
 test.reportSuccessFailureCount();
 
