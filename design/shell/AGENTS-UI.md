@@ -277,9 +277,29 @@ apart. A proposal, so feedback is the point.
    messages in Andy's record, read the way Desk reads rows. Kinds to add:
    `proposal`, `exists`, `signoff`.
 
-**Open questions:** does an agent's dissent block landing, or only mark
-the card? (Proposed: it marks the card and never blocks; Andy rules.) And
-may a candidate land in several docs at once, or exactly one?
+**wsl-claude's amendments, all taken (2026-09-27):**
+- **Ids:** `design/<date>-<slug>` already passes TODO_ID, so a session rides
+  as `todo` unchanged. But neither Desk nor the ranking may treat a
+  `design/` todo as a board row.
+- **Kinds:** all three need a todo. A candidate's id IS its message hash;
+  `exists` and `signoff` point at it with `re`, which keeps re's one
+  meaning, and no new field is needed.
+- **A sign-off binds the TEXT.** An edited candidate is a new proposal with
+  a new hash, and every sign-off on the old one is void, so a different
+  wording can never land on his signature.
+- **Members are fixed when the session opens**, named in its opening
+  message, so "every member" is not a moving target.
+- **Dissent marks and never blocks.** A candidate lands when Andy has
+  signed and each agent has either signed or dissented with a reason.
+  Andy's sign-off alone is the ruling.
+- **One doc.** One requirement is one id from one doc's area; other docs
+  link to it.
+- **Landing is two commits:** the lead writes the doc text with Andy's
+  words, and the tester the card names writes the declaration, because it
+  is a probe whose names later flip it. The card shows landed only when
+  both exist.
+
+**Still Andy's:** whether to build it.
 ## Open
 
 - The two items above.
