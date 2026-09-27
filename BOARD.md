@@ -13,16 +13,6 @@ not describe. Run the harness if in doubt.
 
 ---
 
-## cycle-11/C3 — the state the record cannot mark: its own node being down
-
-`2026-09-23-relay-record-cycle-11` · status **?**
-
-- **missing:** the reader that tells a death from a restart — **~60% there**, guess: the writing half is built (b736cc2); one reader over since() is left
-  
-  record.gaps(relay) names each gap in the record as a DEATH (a started with no stopped before it) or a RESTART (stopped, then started), and never reads the interval as evidence about the relay
-
-*Declared in `relayRecord.js`*
-
 ## public-app-server/G10 — a server reports the box it sits on: four fields, one opinion withheld
 
 `PUBLIC-APP-SERVER` · status **OPEN**
@@ -125,4 +115,4 @@ not describe. Run the harness if in doubt.
 
 ---
 
-**11 assertion(s) across 11 requirement(s).**
+**10 assertion(s) across 10 requirement(s).**

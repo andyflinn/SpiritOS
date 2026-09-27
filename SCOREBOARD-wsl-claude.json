@@ -1,33 +1,21 @@
 {
   "box": "wsl-claude",
-  "commit": "29f7fa1",
+  "commit": "ca4646b",
   "stale": false,
-  "head": "29f7fa1",
+  "head": "ca4646b",
   "measured": {
     "suites": 169,
-    "green": 3165,
-    "red": 4,
+    "green": 3170,
+    "red": 2,
     "unhappy": 1
   },
   "rows": [
     {
       "kind": "to-do",
-      "id": "cycle-11/C3",
-      "handle": "11/C3",
-      "title": "the state the record cannot mark: its own node being down",
-      "rank": 1,
-      "frees": 0,
-      "waitsOn": [],
-      "owedSince": "2026-09-23",
-      "there": 60,
-      "blocked": ""
-    },
-    {
-      "kind": "to-do",
       "id": "public-app-server/G10",
       "handle": "public-app-server/G10",
       "title": "a server reports the box it sits on: four fields, one opinion withheld",
-      "rank": 2,
+      "rank": 1,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-24",
@@ -39,7 +27,7 @@
       "id": "public-app-server/G8",
       "handle": "public-app-server/G8",
       "title": "layer 1 splits by PROMISE, and the stable half is named",
-      "rank": 3,
+      "rank": 2,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-24",
@@ -51,7 +39,7 @@
       "id": "public-app-server/G17",
       "handle": "G17",
       "title": "join's answer travels back to the browser",
-      "rank": 4,
+      "rank": 3,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-24",
@@ -63,7 +51,7 @@
       "id": "puppets/G1",
       "handle": "puppets/G1",
       "title": "a response bound exists, and both paths obey it",
-      "rank": 5,
+      "rank": 4,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-25",
@@ -75,7 +63,7 @@
       "id": "puppets/G2",
       "handle": "puppets/G2",
       "title": "one shared search: two hooks per collection, the rest inherited",
-      "rank": 6,
+      "rank": 5,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-25",
@@ -87,7 +75,7 @@
       "id": "puppets/G3",
       "handle": "puppets/G3",
       "title": "one suite that makes every api call",
-      "rank": 7,
+      "rank": 6,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-25",
@@ -99,7 +87,7 @@
       "id": "puppets/G4",
       "handle": "puppets/G4",
       "title": "`peerOwnerPost()` on the owner's node",
-      "rank": 8,
+      "rank": 7,
       "frees": 0,
       "waitsOn": [
         {
@@ -117,7 +105,7 @@
       "id": "transport/R12",
       "handle": "transport/R12",
       "title": "an app can reply, and a reply is the only evidence of being delivered",
-      "rank": 9,
+      "rank": 8,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-26",
@@ -129,7 +117,7 @@
       "id": "transport/R16",
       "handle": "transport/R16",
       "title": "the log must be able to PROVE what it claims",
-      "rank": 10,
+      "rank": 9,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-26",
@@ -141,7 +129,7 @@
       "id": "puppets/G10",
       "handle": "puppets/G10",
       "title": "the face door and the puppet group",
-      "rank": 11,
+      "rank": 10,
       "frees": 0,
       "waitsOn": [
         {
@@ -187,7 +175,7 @@
       "moves": [
         {
           "id": "public-app-server/G17",
-          "from": 4,
+          "from": 3,
           "to": 1
         }
       ]

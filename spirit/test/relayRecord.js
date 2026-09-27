@@ -379,14 +379,43 @@ test.subHeading('cycle 11 R2 — the node process writes the record, and nothing
     test.fail('cycle-11/C3: server.js does not mark started at boot and stopped in the goodbye');
   }
 
-  // THE READER, STILL OWED. Probe on the name agreed with claude-windows,
-  // record.gaps, not a guessed one (G7's probe named identifiers nobody
-  // wrote and so never went red).
-  test.awaiting('cycle-11/C3', 'the reader that tells a death from a restart',
-    typeof w.store.record.gaps === 'function',
-    'record.gaps(relay) names each gap in the record as a DEATH (a started with no stopped before it) or '
-    + 'a RESTART (stopped, then started), and never reads the interval as evidence about the relay',
-    { there: 60, cost: 'the writing half is built (b736cc2); one reader over since() is left' });
+  // THE READER, built by claude-windows at 728760a under the name agreed for
+  // the probe, record.gaps -- which is why that probe went red the moment it
+  // existed, as G7's guessed names never did. gaps(relay, from, limit) gives
+  // [{ kind: 'restart' | 'death', from, to }].
+  function gapsOf(rows) {
+    const g = home();
+    rows.forEach(function (r) { g.store.record.edge(RELAY, r[0], r[1]); });
+    const got = g.store.record.gaps(RELAY, 0, 50).map(function (x) { return x.kind + '@' + x.from + '-' + x.to; });
+    closeAndRemove(g);
+    return got.join(' ');
+  }
+
+  const restart = gapsOf([['open', 100], ['stopped', 200], ['started', 300]]);
+  const death = gapsOf([['open', 100], ['close', 150], ['started', 300]]);
+  if (restart === 'restart@200-300' && death === 'death@150-300') {
+    test.check('cycle-11/C3: record.gaps reads stopped-then-started as a RESTART, from the stop to the '
+      + 'start, and a started with no stopped before it as a DEATH, from the last row the node wrote — the '
+      + 'two sentences Andy\'s ruling separates');
+  } else {
+    test.fail('cycle-11/C3: gaps gave restart case "' + restart + '", death case "' + death + '"');
+  }
+
+  const firstBoot = gapsOf([['started', 100], ['open', 150]]);
+  const neverStarted = gapsOf([['open', 100], ['close', 200], ['open', 300]]);
+  if (firstBoot === '' && neverStarted === '') {
+    test.check('cycle-11/C3: a node\'s very first start is no gap, and a record of only opens and closes '
+      + 'has none — so a gap is found only where the node itself left a mark');
+  } else {
+    test.fail('cycle-11/C3: first boot gave "' + firstBoot + '", opens and closes gave "' + neverStarted + '"');
+  }
+
+  const twoDeaths = gapsOf([['started', 100], ['open', 110], ['started', 200], ['stopped', 250], ['started', 300]]);
+  if (twoDeaths === 'death@110-200 restart@250-300') {
+    test.check('cycle-11/C3: across several boots each gap is read on its own — a death, then a restart');
+  } else {
+    test.fail('cycle-11/C3: several boots gave "' + twoDeaths + '", wanted death@110-200 restart@250-300');
+  }
   closeAndRemove(w);
 }
 test.reportSuccessFailureCount();
