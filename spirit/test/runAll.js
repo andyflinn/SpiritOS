@@ -260,6 +260,21 @@ function sweepReportedHomes() {
   return gone;
 }
 
+// How long a suite may run. 180 s by default; SPIRIT_SUITE_TIMEOUT_MS lowers
+// it, which is how the kill below is proved without waiting three minutes.
+const SUITE_TIMEOUT_MS = Number(process.env.SPIRIT_SUITE_TIMEOUT_MS) > 0
+  ? Number(process.env.SPIRIT_SUITE_TIMEOUT_MS) : 180000;
+
+function killTree(child) {
+  if (process.platform === 'win32') {
+    try { require('child_process').execFileSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' }); }
+    catch (e) { try { child.kill(); } catch (x) { /* already gone */ } }
+    return;
+  }
+  try { process.kill(-child.pid, 'SIGKILL'); }
+  catch (e) { try { child.kill('SIGKILL'); } catch (x) { /* already gone */ } }
+}
+
 function runOne(file) {
   return new Promise(function (done) {
     const started = Date.now();
@@ -270,6 +285,10 @@ function runOne(file) {
       // still holds the SQLite handle at its own exit, so the removal has
       // to happen out here, after it is dead.
       env: Object.assign({}, process.env, { SPIRIT_TMP_LOG: TMP_LOG }),
+      // ITS OWN PROCESS GROUP, so a timed-out suite can be killed together
+      // with whatever it started (see killTree). Not on Windows, which has
+      // no process groups and is handled by taskkill /T instead.
+      detached: process.platform !== 'win32',
     });
     let out = '';
     child.stdout.on('data', function (d) { out += d; });
@@ -278,7 +297,14 @@ function runOne(file) {
     // A suite that hangs is a suite that fails. Left alone one of these
     // waits out a 66-second rendezvous hold and then the next one does
     // too, and the run looks broken rather than red.
-    const killer = setTimeout(function () { child.kill(); }, 180000);
+    //
+    // AND WITH EVERYTHING IT STARTED. child.kill() ended the suite alone, so
+    // a suite killed here left its relay running and holding its port --
+    // found when queueUnderLoad timed out in a full run and every later run
+    // of it failed with "port 48783 is held by a DIFFERENT relay", an orphan
+    // adopted by init. One timeout became a red that looked like a bug.
+    let timedOut = false;
+    const killer = setTimeout(function () { timedOut = true; killTree(child); }, SUITE_TIMEOUT_MS);
 
     child.on('close', function (code) {
       clearTimeout(killer);
@@ -313,6 +339,8 @@ function runOne(file) {
         // one that ran and passed, not the same.
         no: said ? (b ? Number(b[1]) : 0) : -1,
         code: code,
+        // Killed by the harness's clock, not a suite that stopped on its own.
+        timedOut: timedOut,
         out: out,
       });
     });
@@ -504,7 +532,9 @@ function redSection(failing) {
   out.push('');
   failing.forEach(function (f) {
     out.push('**❌ `' + f.file + '`** — ' +
-      (f.died ? 'the test stopped without saying why (exit ' + f.code + ')'
+      (f.died && f.timedOut ? 'the test ran past ' + Math.round(SUITE_TIMEOUT_MS / 1000) + ' s and was '
+        + 'stopped by the harness, together with everything it had started'
+        : f.died ? 'the test stopped without saying why (exit ' + f.code + ')'
         : f.no === 1 ? 'one check no longer passes'
         : f.no + ' checks no longer pass') + '.');
     if (f.lines && f.lines.length) {
@@ -1962,6 +1992,7 @@ async function main() {
         no: r.no,
         code: r.code,
         died: r.no < 0,
+        timedOut: !!r.timedOut,
         lines: (lines.length ? lines : r.out.split(String.fromCharCode(10)).slice(-6))
           .slice(0, 3).map(function (l) { return l.replace(/\s+$/, '').trim(); }),
       };

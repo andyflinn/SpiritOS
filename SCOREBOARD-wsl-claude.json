@@ -1,12 +1,12 @@
 {
   "box": "wsl-claude",
-  "commit": "aecabba",
+  "commit": "caf22a0",
   "stale": false,
-  "head": "aecabba",
+  "head": "caf22a0",
   "measured": {
-    "suites": 169,
-    "green": 3170,
-    "red": 2,
+    "suites": 170,
+    "green": 3179,
+    "red": 1,
     "unhappy": 1
   },
   "rows": [
@@ -84,28 +84,10 @@
     },
     {
       "kind": "to-do",
-      "id": "puppets/G4",
-      "handle": "puppets/G4",
-      "title": "`peerOwnerPost()` on the owner's node",
-      "rank": 7,
-      "frees": 0,
-      "waitsOn": [
-        {
-          "id": "puppets/G7",
-          "handle": "puppets/G7",
-          "accepted": true
-        }
-      ],
-      "owedSince": "2026-09-25",
-      "there": 0,
-      "blocked": ""
-    },
-    {
-      "kind": "to-do",
       "id": "transport/R12",
       "handle": "transport/R12",
       "title": "an app can reply, and a reply is the only evidence of being delivered",
-      "rank": 8,
+      "rank": 7,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-26",
@@ -117,7 +99,7 @@
       "id": "transport/R16",
       "handle": "transport/R16",
       "title": "the log must be able to PROVE what it claims",
-      "rank": 9,
+      "rank": 8,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-26",
@@ -129,7 +111,7 @@
       "id": "puppets/G10",
       "handle": "puppets/G10",
       "title": "the face door and the puppet group",
-      "rank": 10,
+      "rank": 9,
       "frees": 0,
       "waitsOn": [
         {

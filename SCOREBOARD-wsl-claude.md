@@ -4,10 +4,10 @@
 
 ## Summary
 
-**One test is broken, 10 requirements are declared and not built yet, and 1 dependency question for you, and 2 older questions need a decision from you.**
+**One test is broken, 9 requirements are declared and not built yet, and 1 dependency question for you, and 3 older questions need a decision from you.**
 
 ```
-169 suites   3170 green   2 red   1 unhappy   10 owed      run aecabba
+170 suites   3179 green   1 red   1 unhappy   9 owed      run caf22a0
 ```
 
 ---
@@ -16,10 +16,9 @@
 
 **Something that used to pass now fails.** These are broken, not unfinished — the owed list further down is work nobody has written yet.
 
-**❌ `capacityFresh.js`** — 2 checks no longer pass.
+**❌ `ownerPost.js`** — one check no longer passes.
 
-  - ubuntu-24.04-wsl2: measured at 3053ca8 (2026-09-27), perMemberRowBytes=603 — but capacity moved since:
-  - windows-10.0: measured at b736cc2 (2026-09-27), perMemberRowBytes=603 — but capacity moved since:
+  - THE ANSWER ARRIVED FIRST AND WAS LOST: {"ok":false,"status":504,"code":"no-reply-from-puppet","error":"the puppet did not answer in time","hash":"CMD1"}. sen…
 
 ---
 
@@ -64,7 +63,7 @@
 
 ### Older questions, no hurry
 
-**2 document(s) still hold a decision only you can make.** Each one says a requirement is open, and no test is watching it — so if the work was dropped, nothing will notice.
+**3 document(s) still hold a decision only you can make.** Each one says a requirement is open, and no test is watching it — so if the work was dropped, nothing will notice.
 
 For each: **is it still wanted, has a later cycle replaced it, or is it abandoned?** Say which and it either gets a test or gets closed.
 
@@ -72,13 +71,15 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
     - Get the damn rotate-button into the info app (10/R13)
     - message LENGTH is public, or it is padded (10/R15)
     - suites that INSIST, not suites that demonstrate (10/R8)
-- In `design/shell/PUBLIC-APP-SERVER.md`, 13 things are still marked open with no test watching:
+- **`peerOwnerPost()` on the owner's node (puppets/G4)** — live work in `design/principles/PUPPETS.md`, and no test is watching it.
+- In `design/shell/PUBLIC-APP-SERVER.md`, 14 things are still marked open with no test watching:
     - `appServer.js` is a third startup module (public-app-server/G1)
     - no failure-state lever; the states are reachable from outside (G11)
     - app code and app state do not share a directory (G12)
     - the official sample instantiates the template, and IS the acceptance test (G13)
     - an app DECLARES what it takes, in its manifest, and gets nothing it did not ask for (G14)
     - the named interface, so a suite need not guess it (G15)
+    - the app process serves its owner node over a named pipe, not a TCP port (G18)
     - one app, one whitelist, no dispatch (public-app-server/G2)
     - `ask` has one home, and the app server uses it (public-app-server/G3)
     - the shell provides the optional layer, as files (public-app-server/G4)
@@ -91,7 +92,17 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-**Nothing moved.** Same requirements owed, same tally, since the run at `ca4646b`.
+- +3179 green
+- +1 red
+- ⏳ **newly owed:** public-app-server/G10
+- ⏳ **newly owed:** public-app-server/G17
+- ⏳ **newly owed:** public-app-server/G8
+- ⏳ **newly owed:** puppets/G1
+- ⏳ **newly owed:** puppets/G10
+- ⏳ **newly owed:** puppets/G2
+- ⏳ **newly owed:** puppets/G3
+- ⏳ **newly owed:** transport/R12
+- ⏳ **newly owed:** transport/R16
 
 ---
 
@@ -105,15 +116,11 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 | 4 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
 | 5 | puppets/G2 | one shared search: two hooks per collection, the rest inherited |  |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
 | 6 | puppets/G3 | one suite that makes every api call |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 7 | puppets/G4 | `peerOwnerPost()` on the owner's node | puppets/G7 |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 8 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | today | `░░░░░░░░░░` 0% |  |
-| 9 | transport/R16 | the log must be able to PROVE what it claims |  |  | today | `░░░░░░░░░░` 0% |  |
-| 10 | puppets/G10 | the face door and the puppet group | G14 (proposed), G17 (proposed) |  | today | `░░░░░░░░░░` 0% |  |
+| 7 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | today | `░░░░░░░░░░` 0% |  |
+| 8 | transport/R16 | the log must be able to PROVE what it claims |  |  | today | `░░░░░░░░░░` 0% |  |
+| 9 | puppets/G10 | the face door and the puppet group | G14 (proposed), G17 (proposed) |  | today | `░░░░░░░░░░` 0% |  |
 
-**How the order was made.** 
-
-- 10 of 10 owed items have no dependency you have accepted, so they are ordered by age alone — 1 proposed one above waits for your yes or no.
-- (puppets/G4) waits on (puppets/G7), which is DONE — the edge is ignored.
+**How the order was made.** 9 of 9 owed items have no dependency you have accepted, so they are ordered by age alone — 1 proposed one above waits for your yes or no.
 
 *Percentages are the guesses the declarations carry — `testSupport`:
 "printed as guesses… to be argued with during a design sitting, not to

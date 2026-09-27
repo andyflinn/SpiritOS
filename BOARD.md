@@ -83,16 +83,6 @@ not describe. Run the harness if in doubt.
 
 *Declared in `puppetsPending.js`*
 
-## puppets/G4 — `peerOwnerPost()` on the owner's node
-
-`PUPPETS` · status **OPEN**
-
-- **missing:** peerOwnerPost on the node — **~0% there**, guess: a sitting
-  
-  one function that wraps a node-api call as a signed packet to a puppet. Addressed as a WIRE namespace: verbTable.js:74 makes wire the client's failure contract and a namespace is uniformly one or the other, so a remote caller must name the proxy rather than the local verb
-
-*Declared in `puppetsPending.js`*
-
 ## transport/R12 — an app can reply, and a reply is the only evidence of being delivered
 
 `2026-09-12-transport-below-the-boundary` · status **OPEN**
@@ -115,4 +105,4 @@ not describe. Run the harness if in doubt.
 
 ---
 
-**10 assertion(s) across 10 requirement(s).**
+**9 assertion(s) across 9 requirement(s).**

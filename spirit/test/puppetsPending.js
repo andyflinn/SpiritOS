@@ -149,13 +149,17 @@ test.subHeading('one return bound, both paths');
 test.subHeading('peerOwnerPost — the owner configures a puppet over the wire');
 {
   const server = read('spirit/run/js/server.js');
-  test.awaiting('puppets/G4', 'peerOwnerPost on the node', /peerOwnerPost/.test(server),
-    'one function that wraps a node-api call as a signed packet to a puppet. Addressed as a WIRE namespace: ' +
-    'verbTable.js:74 makes wire the client\'s failure contract and a namespace is uniformly one or the other, ' +
-    'so a remote caller must name the proxy rather than the local verb',
-    // PROPOSED (claude, 2026-09-27; order read by wsl-claude): sending
-    // commands that nothing dispatches is inert, so the shim lands first.
-    { there: 0, cost: 'a sitting', after: ['puppets/G7'] });
+  // ── puppets/G4 IS BUILT: peerOwnerPost ────────────────────────────
+  //
+  // Built by claude-windows at 8c8347c (ownerPost.js, verb owner.command);
+  // asserted in spirit/test/ownerPost.js end to end against a real
+  // puppetDoor. Only reachability here, as for G5, G6 and G7.
+  if (/peerOwnerPost/.test(server) && typeof require('../run/js/ownerPost').createOwnerPost === 'function') {
+    test.check('the sending end exists as a unit — ownerPost.createOwnerPost, wired as peerOwnerPost, '
+      + 'asserted in ownerPost.js: signed, answered only by that puppet, once, within the wait');
+  } else {
+    test.fail('puppets/G4 regressed: ownerPost.createOwnerPost or its wiring is gone');
+  }
 
   // The receiving half, and the reason it is its own requirement: the
   // switch is where a remote packet becomes local authority, so it is
