@@ -572,9 +572,39 @@ function createTrafficLog(opts) {
   var HISTORY_ROWS = 200;
   var HISTORY_ROWS_MAX = 500;
   var HISTORY_BYTES = 256 * 1024;
+  // One row a reader may be handed: admitted inbound, or this node's own
+  // outbound request. Held, ignored and owner rows never qualify.
+  function inHistory(row) {
+    if (!row || row.kind === 'owner') return false;
+    return (row.dir === 'out' && row.kind === 'request') || (row.dir === 'in' && !!row.admitted);
+  }
+
   function history(opts) {
     var o = opts || {};
     var rows = historyOf(rootDir);
+    // ── ONE ROW BY HASH: the random access after the first search ────────
+    //
+    //   Andy: "the initial load is a "search" highest-priority,
+    //   conceptually, and that's ok ... a lot of the traffic is random
+    //   access on rows."
+    //
+    // The same filter as a page, so it is never a back door around it
+    // (wsl-claude): the hash of a held, ignored or owner row answers
+    // EXACTLY as an unknown hash does, and the lookup cannot tell anyone
+    // that something was held.
+    if (typeof o.hash === 'string' && o.hash) {
+      var one = null;
+      rows.forEach(function (row) {
+        if (!row || row.hash !== o.hash || !inHistory(row)) return;
+        if (!one) {
+          one = { at: row.at, dir: row.dir, kind: row.kind, peer: row.peer, hash: row.hash, outcome: row.outcome };
+        } else {
+          one.outcome = row.outcome;
+        }
+        if (row.payload !== undefined && one.payload === undefined) one.payload = row.payload;
+      });
+      return { rows: one ? [one] : [] };
+    }
     var after = Number(o.after);
     var start = Number.isInteger(after) && after > 0 ? Math.min(after, rows.length) : 0;
     var limit = Number(o.limit) > 0 ? Math.min(Math.floor(Number(o.limit)), HISTORY_ROWS_MAX) : HISTORY_ROWS;
@@ -584,10 +614,7 @@ function createTrafficLog(opts) {
     var i = start;
     for (; i < rows.length; i += 1) {
       var row = rows[i];
-      if (!row || row.kind === 'owner') continue;
-      var mine = row.dir === 'out' && row.kind === 'request';
-      var admitted = row.dir === 'in' && row.admitted;
-      if (!mine && !admitted) continue;
+      if (!inHistory(row)) continue;
       var seen = row.hash ? byHashInPage[row.hash] : null;
       if (seen) {
         seen.outcome = row.outcome;

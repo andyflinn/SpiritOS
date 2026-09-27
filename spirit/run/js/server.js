@@ -1675,7 +1675,7 @@ contactBook.syncMarks(ROOT_DIR);
     // the log is on this disk.
     'node.history': function (rq, rs) {
       readJsonBody(rq).then(function (body) {
-        var page = trafficLog.history({ after: body && body.after, limit: body && body.limit });
+        var page = trafficLog.history({ after: body && body.after, limit: body && body.limit, hash: body && body.hash });
         rs.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         rs.end(JSON.stringify(Object.assign({ ok: true }, page)));
       }).catch(function () {
