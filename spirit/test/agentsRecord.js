@@ -128,5 +128,57 @@ function door() {
     }
   }
 
+  // ── HIS DECISION ON A DEPENDENCY IS A LINE THE LEAD CANNOT MISS ────
+  //
+  //   Andy: "a re-shuffeling of the board triggers a reload of the board.
+  //   (mostly cause by accepting dependencies)". The lead acts on his
+  //   accept by writing edges.js and re-running; its listener is how it
+  //   hears the press. Same fake stream as agentsApp.js's listen check.
+  {
+    const cfg = cfgFor(home());
+    const dep = require('./boardRank.js').dependencyId([{ from: 'puppets/G7', to: 'puppets/G6' }]);
+    const packet = function (from, env) {
+      return 'event: packet\ndata: ' + JSON.stringify({ from: from, text: JSON.stringify(env) }) + '\n\n';
+    };
+    const chunks = [
+      'event: snapshot\ndata: {}\n\n',
+      packet(CONTROL, agents.makeEnvelope('andy', 'answer', 'accepted.', null, null, null, dep)),
+      packet(PEER, agents.makeEnvelope('claude-windows', 'note', 'my view on this row', null, null, null, 'cycle-10/R13')),
+      packet(CONTROL, agents.makeEnvelope('lead', 'board', JSON.stringify({ rows: [{}, {}, {}] }))),
+    ];
+    const enc = new TextEncoder();
+    let i = 0;
+    const fakeFetch = function () {
+      return Promise.resolve({ body: { getReader: function () {
+        return { read: function () {
+          return Promise.resolve(i < chunks.length ? { done: false, value: enc.encode(chunks[i++]) } : { done: true });
+        } };
+      } } });
+    };
+    const out = [];
+    await agents.listen(cfg, function (l) { out.push(l); }, fakeFetch);
+    const decisions = out.filter(function (l) { return /^AGENTS DECISION /.test(l); });
+    if (decisions.length === 1 && decisions[0] === 'AGENTS DECISION andy accepted. on ' + dep) {
+      test.check('his accept on a dependency prints as its own DECISION line, naming the row — the '
+        + 'press the lead has to act on');
+    } else {
+      test.fail('decision lines: ' + JSON.stringify(decisions) + ' of ' + JSON.stringify(out));
+    }
+    // THE CONTROL: an agent's note under an ordinary to-do is not a
+    // decision, or every line would be one and the lead would learn to
+    // skim them.
+    const note = out.filter(function (l) { return / note todo cycle-10\/R13: my view on this row$/.test(l); });
+    if (note.length === 1) {
+      test.check('an agent\'s note under a to-do prints with its todo and is NOT a decision');
+    } else {
+      test.fail('note line missing or wrong: ' + JSON.stringify(out));
+    }
+    if (out.some(function (l) { return / board: the scoreboard, 3 rows$/.test(l); })) {
+      test.check('a board arriving is one line, "the scoreboard, 3 rows", not kilobytes of JSON');
+    } else {
+      test.fail('board line: ' + JSON.stringify(out));
+    }
+  }
+
   test.reportSuccessFailureCount();
 }());

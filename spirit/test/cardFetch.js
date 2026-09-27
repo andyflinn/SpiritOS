@@ -68,16 +68,25 @@ test.startTest('A node with no card asks for one before it posts');
 // So the relay records `wire` — every body handed to it — and that is the
 // only surface these assertions read. A local log cannot make a suite
 // claim something crossed a network.
-function fakeRelay() {
+function fakeRelay(opts) {
   const routes = routerTable.createRouter({});
   const streams = Object.create(null);
   const wire = [];
+  // How many card asks to turn away as BUSY first, the way the real relay
+  // does when the target already has a request in flight (0016's one per
+  // target): 503 with busy and retryAfterMs, which says "wait", not "no".
+  let busyAsks = (opts && opts.busyAsks) || 0;
   return {
     wire: wire,
     listen: function (key, onEvent) { streams[key] = onEvent; },
     request: function (url, method, pathname, body) {
       wire.push({ pathname: pathname, from: (body && body.from) || '', to: (body && body.to) || '',
         text: String((body && body.text) || '') });
+      if (/\/api\/relay\/post$/.test(pathname) && busyAsks > 0 && nodeCard.asks(String(body.text || ''))) {
+        busyAsks -= 1;
+        return Promise.resolve({ status: 503,
+          text: JSON.stringify({ error: 'target is busy', busy: true, retryAfterMs: 50 }) });
+      }
       if (/\/api\/relay\/post$/.test(pathname)) {
         const verified = auth.postSignatureFor(body.from, body.from, body.to, body.text, body.sig);
         if (!verified) return Promise.resolve({ status: 403, text: '{"error":"bad sig"}' });
@@ -383,6 +392,37 @@ function plantCardOf(holder, subject) {
         + ') rather than waiting forever or dropping it quietly');
     } else {
       test.fail('posting to an unreachable peer did not refuse cleanly: ' + JSON.stringify(r));
+    }
+  }
+
+  // ── C9: A BUSY TARGET IS A WAIT, NOT A REFUSAL ─────────────────────
+  //
+  // FOUND LIVE, 2026-09-27, by this suite's author on his own node: the
+  // card ask to Andy's node was refused 503 target-busy by the relay —
+  // his node was already taking a request, as it often is with two agents
+  // and Desk posting to it — and the fetch gave up at once: no key, so the
+  // message was refused no-cipher-key 100 ms later instead of waiting the
+  // relay's retryAfterMs. The same ask a minute later was answered. An
+  // ordinary post already re-queues on busy (peerPost.js, queue.busy); the
+  // ask is the one post that does not.
+  //
+  // Nothing was lost — no-cipher-key is retry 'after' and the reports
+  // stayed queued — but a direct message to him failed outright.
+  {
+    const relay2 = fakeRelay({ busyAsks: 1 });
+    const sender = nodeFor('busy-asker', relay2);
+    const peer = nodeFor('busy-peer', relay2);
+    const r = await sender.P.post('http://relay', peer.id.publicKey, 'arrives after the target frees up');
+    const asks = relay2.wire.filter(function (w) {
+      return w.from === sender.id.publicKey && nodeCard.asks(w.text);
+    }).length;
+    if (r && r.ok && sender.sealKeyHeldFor(peer.id.publicKey)) {
+      test.check('a card ask turned away as BUSY is asked again after the relay\'s retryAfterMs, and '
+        + 'the message arrives — ' + asks + ' asks on the wire');
+    } else {
+      test.fail('a busy target made the card fetch give up: ' + (r && r.status) + ' ' + (r && r.error)
+        + ' after ' + asks + ' ask(s). Busy means wait (0016), and an ordinary post already '
+        + 're-queues on it; the card ask does not, so a message to a peer who is merely busy fails');
     }
   }
 

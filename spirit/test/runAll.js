@@ -671,7 +671,8 @@ function rankBoard(rows, titles) {
 // is queued. Three kinds:
 //   to-do        an owed requirement; rank is its place in the table
 //   dependency   proposed dependencies that touch, asked as one question;
-//                id is its edges, sorted, so a grown tree is a new question
+//                id is a short hash of its edges, so a grown tree is a new
+//                question — and every id here is a valid `todo`
 //   question     an open row in blocking.js; id from the to-dos it covers
 function boardData(rows, titles, ranking) {
   const byId = Object.create(null);
@@ -704,7 +705,7 @@ function boardData(rows, titles, ranking) {
     g.edges.forEach(function (e) { inTree[e.from] = true; inTree[e.to] = true; });
     out.push({
       kind: 'dependency',
-      id: 'dependency/' + g.edges.map(function (e) { return e.from + '>' + e.to; }).sort().join(','),
+      id: require('./boardRank.js').dependencyId(g.edges),
       handle: g.roots.map(function (x) { return handleFor(titles, x); }).join(' + '),
       title: g.roots.map(function (x) { return requirementTitle(titles, x); }).join(', ') + ' — is needed first',
       rank: i + 1,
@@ -723,7 +724,7 @@ function boardData(rows, titles, ranking) {
     const at = qPlace[String(b.decision || '')] || {};
     out.push({
       kind: 'question',
-      id: 'question/' + (covers.length ? covers.slice().sort().join('+') : String(b.asked || '') + '#' + i),
+      id: require('./boardRank.js').questionId(covers, String(b.asked || '') + '#' + String(b.decision || '')),
       handle: covers.map(function (c) { return handleFor(titles, c); }).join(' + '),
       title: String(b.decision || ''),
       rank: at.rank || null,

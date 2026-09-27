@@ -589,10 +589,24 @@ function listen(cfg, onLine, fetchFn) {
           // its listener can lift blocks straight into Andy's digest
           // without reading prose for them. Everything else keeps the
           // conversational shape it has always had.
+          // A DECISION FROM ANDY ON A DEPENDENCY IS ITS OWN LINE, so the lead
+          // watching its listener cannot read past it: his accept or reject
+          // is what makes the board re-rank. Andy: "a re-shuffeling of the
+          // board triggers a reload of the board. (mostly cause by accepting
+          // dependencies)".
+          if (b.kind === 'answer' && /^dependency\//.test(String(b.todo || ''))) {
+            onLine('AGENTS DECISION ' + (b.from || '?') + ' ' + String(b.text || '').trim() + ' on ' + b.todo);
+          }
+          let said = b.kind === 'blocked' ? blockLine(env) : String(b.text || '').replace(/\s+/g, ' ');
+          if (b.kind === 'board') {
+            let n = '?';
+            try { n = JSON.parse(b.text).rows.length; } catch (x) { /* shown as ? */ }
+            said = 'the scoreboard, ' + n + ' rows';
+          }
           onLine('AGENTS ' + (b.from || '?') + ' ' + (b.kind || '?') +
             (env.re ? ' re ' + String(env.re).slice(0, 12) : '') +
-            (control ? ' [' + control + ']' : '') + ': ' +
-            (b.kind === 'blocked' ? blockLine(env) : String(b.text || '').replace(/\s+/g, ' ')));
+            (b.todo ? ' todo ' + b.todo : '') +
+            (control ? ' [' + control + ']' : '') + ': ' + said);
         }
         return pump();
       });
@@ -606,6 +620,7 @@ module.exports = {
   makeEnvelope: makeEnvelope, halted: halted, obeyControl: obeyControl,
   send: send, conversation: conversation, read: read, formatEntry: formatEntry,
   reportOf: reportOf, reportFits: reportFits, flushReports: flushReports, listen: listen,
+  TODO_ID: TODO_ID,
   KINDS: KINDS, NEEDS: NEEDS, WHO: WHO, STATES: STATES, blockLine: blockLine,
 };
 

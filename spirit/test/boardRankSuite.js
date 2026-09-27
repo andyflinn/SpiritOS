@@ -213,4 +213,39 @@ test.startTest('The board ranks what unblocks most first, and says what it canno
   }
 }
 
+// ── EVERY ROW ID IS A TODO THE MESSAGES WILL CARRY ───────────────────
+//
+// The board mints ids and agents.js refuses any `todo` that is not one
+// area/number pair. The first dependency and question ids broke that, so
+// nobody could reply under those rows — found in Desk, not by a test.
+// Now the two files are held to one rule here.
+{
+  const TODO_ID = require('../run/process/js/agents/agents.js').TODO_ID;
+  const dep = board.dependencyId([{ from: 'puppets/G7', to: 'puppets/G6' }, { from: 'puppets/G4', to: 'puppets/G7' }]);
+  const depSwapped = board.dependencyId([{ from: 'puppets/G4', to: 'puppets/G7' }, { from: 'puppets/G7', to: 'puppets/G6' }]);
+  const depGrown = board.dependencyId([{ from: 'puppets/G7', to: 'puppets/G6' }, { from: 'puppets/G4', to: 'puppets/G7' },
+    { from: 'puppets/G3', to: 'puppets/G4' }]);
+  const q = board.questionId(['puppets/G3', 'cycle-10/R13']);
+  const qEmpty = board.questionId([], '2026-09-27#some decision');
+  const all = [dep, q, qEmpty, 'cycle-10/R13', 'public-app-server/G17'];
+  if (all.every(function (id) { return TODO_ID.test(id); })) {
+    test.check('every kind of row id — to-do, dependency, question — passes the todo rule agents.js '
+      + 'enforces, so a reply can be filed under any row on the board');
+  } else {
+    test.fail('ids refused as todo: ' + all.filter(function (id) { return !TODO_ID.test(id); }).join(', '));
+  }
+  if (dep === depSwapped && dep !== depGrown) {
+    test.check('a dependency\'s id is the same for the same edges in any order, and NEW when the tree '
+      + 'grows — so an accept pressed on the tree he saw is never applied to a different one');
+  } else {
+    test.fail('dependency ids: same=' + (dep === depSwapped) + ', grown differs=' + (dep !== depGrown));
+  }
+  // THE CONTROL: the rule is not a regex that accepts anything.
+  if (!TODO_ID.test('dependency/puppets/G7>puppets/G6') && !TODO_ID.test('G10')) {
+    test.check('and the rule does refuse the old spelled-out form and a bare handle');
+  } else {
+    test.fail('TODO_ID accepts what it must refuse');
+  }
+}
+
 test.reportSuccessFailureCount();

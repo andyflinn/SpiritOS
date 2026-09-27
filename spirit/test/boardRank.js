@@ -261,4 +261,28 @@ function proposalGroups(owedList, rulings) {
   }).sort(function (a, b) { return b.edges.length - a.edges.length; });
 }
 
-module.exports = { rank: rank, settle: settle, proposalGroups: proposalGroups };
+// ── IDS FOR THE ROWS THAT ARE NOT TO-DOS ─────────────────────────────
+//
+// A row's id is its thread key, and messages carry it as `todo`, which
+// agents.js refuses unless it is ONE area/number pair. The first ids here
+// spelled out their content — 'dependency/puppets/G7>puppets/G6,...',
+// 'question/puppets/G3' — and every one of them failed that rule, so no
+// agent could reply under a dependency or a question. Found by claude-
+// windows building Desk; boardRankSuite now holds the two files to one rule.
+//
+// A SHORT HASH OF WHAT THE ROW ASKS: the same tree gives the same id, and
+// a tree that grew is a NEW question with a new id — so an accept pressed
+// on the tree he saw can never be applied to a different one.
+function shortHash(parts) {
+  return require('crypto').createHash('sha256').update(parts.slice().sort().join('\n')).digest('hex').slice(0, 12);
+}
+function dependencyId(edges) {
+  return 'dependency/' + shortHash((edges || []).map(function (e) { return e.from + '>' + e.to; }));
+}
+function questionId(covers, fallback) {
+  const list = (covers || []).length ? covers : [String(fallback || '')];
+  return 'question/' + shortHash(list);
+}
+
+module.exports = { rank: rank, settle: settle, proposalGroups: proposalGroups,
+  dependencyId: dependencyId, questionId: questionId };
