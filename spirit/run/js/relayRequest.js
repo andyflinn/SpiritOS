@@ -110,7 +110,8 @@ function pipeRequest(pipePath, method, pathname, bodyText, opts) {
   var answerMax = Number(o.answerMax) > 0 ? Number(o.answerMax) : Infinity;
   return new Promise(function (resolve) {
     var done = false;
-    function finish(answer) { if (!done) { done = true; resolve(answer); } }
+    var deadline = null;
+    function finish(answer) { if (!done) { done = true; clearTimeout(deadline); resolve(answer); } }
     var payload = bodyText == null ? '' : String(bodyText);
     var headers = { 'Content-Length': Buffer.byteLength(payload), 'Host': 'localhost' };
     if (o.type) headers['Content-Type'] = String(o.type);
@@ -137,7 +138,11 @@ function pipeRequest(pipePath, method, pathname, bodyText, opts) {
         });
       });
     });
-    req.setTimeout(timeoutMs, function () { finish({ refused: 'app-did-not-answer' }); req.destroy(); });
+    // A DEADLINE, NOT AN IDLE TIMER. req.setTimeout fires only on silence,
+    // so an app sending a byte every 300 ms never tripped it, outran the
+    // door's wait and broke the nesting under appFaceApp's (wsl-claude's
+    // finding on 62e2b96, reproduced at 3 s against a 1 s limit).
+    deadline = setTimeout(function () { finish({ refused: 'app-did-not-answer' }); req.destroy(); }, timeoutMs);
     req.on('error', function () { finish({ refused: 'app-not-running' }); });
     req.end(payload);
   });

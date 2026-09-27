@@ -142,8 +142,19 @@ function refusalsByName() {
 // pipe, and asked the three things a visitor's browser asks.
 function aRealHop() {
   test.subHeading('A real app server on a pipe: its page, its script, and a verb');
+  // ITS OWN RUN FOLDER, NOT THE CHECKOUT'S. The pipe name comes from the
+  // root, and on a checkout that is somebody's node that node already serves
+  // faceProof on it: the first version of this asked Andy's live server and
+  // passed for the wrong reason, which showed only when the test's own
+  // server ended and the page still came back.
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-hop-'));
+  ['faceProof', 'shared'].forEach(function (d) {
+    fs.cpSync(path.join(RUN, 'app', d), path.join(root, 'app', d), { recursive: true });
+  });
+  fs.mkdirSync(path.join(root, 'process'), { recursive: true });
+  fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
   const s = appServers.createAppServers({
-    rootDir: RUN, log: function () {},
+    rootDir: root, log: function () {},
     startServerJob: function (cmd, args, opts) {
       const child = childProcess.spawn(cmd, args, { cwd: opts.cwd, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
       hop.child = child;
@@ -200,7 +211,38 @@ function aRealHop() {
   });
 }
 
+// A DEADLINE, NOT AN IDLE TIMER (wsl-claude's finding on 62e2b96): an app
+// that sends a byte every 100 ms must still be cut off at the limit, or it
+// outruns the door's wait and breaks the nesting under appFaceApp's.
+function aTrickleIsCutOff() {
+  test.subHeading('A slow app is cut off at the deadline, however it trickles');
+  const http = require('http');
+  const pipe = appServers.pipePathFor(fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-trickle-')), 'trickle');
+  if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
+  const server = http.createServer(function (req, res) {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    const t = setInterval(function () { res.write('x'); }, 100);
+    res.on('close', function () { clearInterval(t); });
+  });
+  return new Promise(function (resolve) { server.listen(pipe, resolve); }).then(function () {
+    const began = Date.now();
+    // A GUARD OF ITS OWN, so a missing deadline fails here by name rather
+    // than hanging the suite until the harness kills it.
+    const guard = new Promise(function (resolve) { setTimeout(function () { resolve({ hung: true }); }, 3000); });
+    return Promise.race([
+      require('../run/js/relayRequest.js').pipeRequest(pipe, 'GET', '/', '', { timeoutMs: 500 }),
+      guard,
+    ]).then(function (r) {
+      const took = Date.now() - began;
+      if (r.refused === 'app-did-not-answer' && took < 1500) test.check('refused as app-did-not-answer after ' + took + ' ms, against a 500 ms limit');
+      else test.fail('a trickling app came back ' + JSON.stringify(r).slice(0, 120) + ' after ' + took + ' ms');
+      return new Promise(function (resolve) { server.close(resolve); if (server.closeAllConnections) server.closeAllConnections(); });
+    });
+  });
+}
+
 refusalsByName()
+  .then(aTrickleIsCutOff)
   .then(aRealHop)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (e) {
