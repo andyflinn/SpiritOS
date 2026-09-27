@@ -1208,6 +1208,10 @@ verbs today; they live only in its code.
   only from that reply (`from` is the owner, `re` is its own question), never
   from a packet claiming to be the face, and only for the face the owner
   names now.
+  And the other direction: Andy, *"grantFace gets requests only when their
+  explicitly forwarded via named pipe, by the owner-node"*. So grantFace takes
+  no peer requests of its own. Everything reaches it through its node over
+  its pipe (`api.toLocalApp`), and everything leaves through its node.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
