@@ -69,7 +69,12 @@ function createBoxes(opts) {
   // the sum is over. Equal is not over.
   function list() {
     const byBox = Object.create(null);
+    // HIS LIST IS READ WHEN HE LOOKS, TOO (wsl-claude): a server he takes off
+    // servers.json must leave the view at once, or its last report keeps its
+    // allotment in the sum and can show a warning he cannot clear by editing
+    // his own list. A report from a key no longer his is forgotten here.
     Object.keys(latest).forEach(function (key) {
+      if (!mine(key)) { delete latest[key]; return; }
       const r = latest[key];
       const fp = r.box.fingerprint || '';
       if (!byBox[fp]) byBox[fp] = { fingerprint: fp, boxLabel: '', boxTotalMB: null, allottedMB: 0, servers: [] };
