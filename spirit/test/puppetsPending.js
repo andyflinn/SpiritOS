@@ -89,7 +89,6 @@ function read(rel) {
   try { return fs.readFileSync(path.join(REPO, rel), 'utf8'); }
   catch (e) { return ''; }
 }
-function has(rel) { return fs.existsSync(path.join(REPO, rel)); }
 
 // Asked of the module rather than of the file, where a module will
 // answer: an export that exists is the unit, and a comment mentioning it
@@ -127,11 +126,12 @@ test.subHeading('one return bound, both paths');
   // result" (PUPPETS.md G2, decided 5). It was probing hub.js exports for
   // bounded/truncat/partial, words the design never used, so it could
   // not have flipped when the work landed.
-  // The names are claude-windows', sent before landing: bucket.js exports
+  // The names are claude-windows', sent before landing: searchBucket.js (its own
+  // layer beside peerSearch, so bucket.js stays free of requires) exports
   // createSearch(opts), and a search answers getResult().
   let getResult = false;
   try {
-    const bucket = require(path.join(REPO, 'spirit/run/js/bucket.js'));
+    const bucket = require(path.join(REPO, 'spirit/run/js/searchBucket.js'));
     const s = typeof bucket.createSearch === 'function' ? bucket.createSearch({}) : null;
     getResult = !!s && typeof s.getResult === 'function';
   } catch (e) { getResult = false; }
@@ -141,15 +141,10 @@ test.subHeading('one return bound, both paths');
     '6637c75) with no caller, counting characters rather than bytes',
     { there: 40, cost: 'a sitting — the shape exists, the unit and the sharing do not' });
 
-  // ANDY'S OWN INSTRUMENT, ruled for a different job and doing two.
-  // Named separately because it is what turns "every verb" from a
-  // sentence into a number: the suite walks the verb table, so a sixth
-  // collection verb announces itself.
-  test.awaiting('puppets/G3', 'one suite that makes every api call', has('spirit/test/everyVerb.js'),
-    'Andy: "then you need only one suite that makes every api call." It answers two questions at once — ' +
-    'whether every answer is under the bound, and whether the owner-proxy shim is complete. ' +
-    'Walking the verb table is what stops either becoming a hand-counted list',
-    { there: 0, cost: 'a sitting' });
+  // puppets/G3, ANDY'S OWN INSTRUMENT ("then you need only one suite that
+  // makes every api call"), is no longer owed: spirit/test/everyVerb.js is
+  // it, on his "go." of 2026-09-28. Its bound check waits on G1's number,
+  // which G1 above still declares.
 }
 
 // ── peerOwnerPost ────────────────────────────────────────────────────

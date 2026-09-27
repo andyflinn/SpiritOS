@@ -698,6 +698,12 @@ freePort()
       ['POST', '/api/spirit', { verb: 'contact.setSenders', policy: 'silent' }],
       // And the door's own refusal, which must be an answer rather than a
       // throw: a verb nobody claimed.
+      // Never called anywhere in this file until 2026-09-28: the check
+      // below only saw claims written as `function`, and these two are
+      // claimed through proxyVerb(...). An empty host is refused, so
+      // nothing on the list changes.
+      ['POST', '/api/spirit', { verb: 'proxy.allow', host: '' }],
+      ['POST', '/api/spirit', { verb: 'proxy.remove', host: '' }],
       ['POST', '/api/spirit', { verb: 'nope.thing' }],
     ];
 
@@ -771,13 +777,19 @@ freePort()
       // the register.
       const serverSrc = fs.readFileSync(path.join(nodeRoot, 'js', 'server.js'), 'utf8');
       const claimed = [];
-      const claimRe = /^\s*'([a-z]+\.[a-zA-Z]+)':\s*function/gm;
+      // EVERY CLAIM, WHATEVER ITS VALUE. This matched only `': function`,
+      // so a verb claimed as `proxyVerb(...)` or `handleCreateJob` was
+      // invisible here, and proxy.allow and proxy.remove were never called
+      // while this said "the sweep names every verb" (wsl-claude, writing
+      // everyVerb.js). doorContract.js's pattern.
+      const claimRe = /^ {4}'([a-z]+\.[a-zA-Z]+)':/gm;
       let m;
       while ((m = claimRe.exec(serverSrc)) !== null) claimed.push(m[1]);
 
-      const named = LOOPBACK_CALLS
-        .map(function (row) { return (row[2] && row[2].verb) || ''; })
-        .filter(Boolean);
+      // Named ANYWHERE in this suite: the proxy verbs are driven by their
+      // own cases above, with arguments, rather than by the bare sweep.
+      const ownSrc = fs.readFileSync(__filename, 'utf8');
+      const named = [...ownSrc.matchAll(/verb: '([a-z]+\.[a-zA-Z]+)'/g)].map(function (x) { return x[1]; });
       const unnamed = claimed.filter(function (v) {
         return named.indexOf(v) === -1 && v !== 'net.fetch';
       });

@@ -209,6 +209,14 @@ const TALLY = {
   // suite must be a browser: one request helper and the listener it starts
   // (G17 slice 1, as serverSurface.js does for the node's door).
   'test/puppetPost.js': 2,
+  // ONE SUITE THAT MAKES EVERY API CALL (puppets/G3): TWO, AND A DECISION
+  // RATHER THAN AN ENTRY, for doorWalk's reason. It measures the LOOPBACK
+  // DOOR over real HTTP (a free-port probe and one request helper), which
+  // peerPost cannot reach. RESTING ON ANDY'S "go." ON G3, 2026-09-28, whose
+  // shape was "starts a real node and calls every command once, through
+  // this box's door", and said so rather than assumed. If he reads this and
+  // disagrees, it is one line. The number may only fall.
+  'test/everyVerb.js': 2,
   // THE WORLD BUILDER, counted for the first time (cycle 2). Three, and
   // each is a public route with no verb behind it: POST /api/relay/claim
   // is how a stranger joins a relay, GET /api/relay/key is the liveness
