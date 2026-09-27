@@ -573,10 +573,20 @@ function open(query, opts) {
   // MEASURED ONCE PER ROW, not once per comparison. A bucket compares a
   // row O(log k) times on the way to its seat, and the token signals run a
   // longest-run search.
+  //
+  // SCAN ORDER, WHEN THE CALLER'S WALK IS THE PRIORITY (puppets/G2). Andy:
+  // results are "subject primarily to the seach string, second to the scan
+  // order", and "the priority sequence can only be known by the user of
+  // bucket.js". So with opts.scanOrder, two equal matches keep the order
+  // they were offered in, rather than the alphabet's. Peer search, which
+  // merges sources whose order it must not believe, leaves it off.
+  var scanOrder = opts.scanOrder === true;
+  var offeredSoFar = 0;
   function compareScored(a, b) {
     var qa = a.q === undefined ? (a.q = graded(a)) : a.q;
     var qb = b.q === undefined ? (b.q = graded(b)) : b.q;
     if (qa !== qb) return qb - qa;
+    if (scanOrder && a.seq !== b.seq) return a.seq - b.seq;
     var byText = a.text.localeCompare(b.text);
     if (byText !== 0) return byText;
     return String(a.id).localeCompare(String(b.id));
@@ -602,6 +612,7 @@ function open(query, opts) {
         // text is the fallback when it does not.
         id: opts.id ? opts.id(item) : text,
         text: text,
+        seq: offeredSoFar++,
         textTokens: tokens(text),
         rank: r,
         queryTokens: queryTokens,

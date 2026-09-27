@@ -113,6 +113,9 @@ test.subHeading('It stands alone');
     ['bucket.js', []],
     ['gradedSearch.js', ['bucket']],
     ['peerSearch.js', ['gradedSearch']],
+    // The collection search (puppets/G2) sits beside peerSearch, on
+    // gradedSearch, plus limits for its default byte cap.
+    ['searchBucket.js', ['gradedSearch', 'limits']],
   ];
   const wrong = stack.filter(function (layer) {
     return requiresOf(layer[0]).join(',') !== layer[1].join(',');
