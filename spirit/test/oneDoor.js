@@ -209,6 +209,12 @@ const TALLY = {
   // suite must be a browser: one request helper and the listener it starts
   // (G17 slice 1, as serverSurface.js does for the node's door).
   'test/puppetPost.js': 2,
+  // THE FACE ROUTE END TO END (G17 step 1): TWO, for puppetPost.js's reason.
+  // The face is reached by a browser over HTTP and by nothing else, so the
+  // world that proves the route must be a browser: one request helper, and
+  // puppetPost's own listen. RESTING ON ANDY'S "step 1) build and prove the
+  // route from browser to owner-of-subdomain, and back", 2026-09-27.
+  'test/faceRouteWorld.js': 2,
   // ONE SUITE THAT MAKES EVERY API CALL (puppets/G3): TWO, AND A DECISION
   // RATHER THAN AN ENTRY, for doorWalk's reason. It measures the LOOPBACK
   // DOOR over real HTTP (a free-port probe and one request helper), which
