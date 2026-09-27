@@ -1156,6 +1156,11 @@ verbs today; they live only in its code.
   own, bounds the answer to one packet, and an app that throws or times out
   contributes nothing. Reaching an app still loaded inside the node needs a
   describe hook; an app running as its own process is asked at its door.
+- **Each verb's entry has one format.** Andy: *"the introspection return can
+  even follow a format for a verb {verb{description:\"descrption
+  text\",input:{},output:{}}}"*. So an app's part of the tree is
+  `{ <verb>: { description, input, output } }`: a sentence for a person,
+  and the shape of what to send and what comes back.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
