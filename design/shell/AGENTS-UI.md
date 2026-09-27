@@ -142,6 +142,21 @@ What follows is what both agreed. Any of it changes when Andy asks.
    and logging it would put our paraphrase in his voice, which is the
    pollution *"your judgement is what protects my brain"* guards against.
 
+## Andy's additions, 2026-09-27
+
+- **Approval buttons for dependency to-dos.** *"i get aproval buttons for
+  dependency-reordering."* A dependency to-do's row carries accept and
+  reject buttons. A press is sent as a packet with the row's full id.
+  The lead writes the ruling into `spirit/test/edges.js` with his words,
+  because a page cannot write the repository. The next board then shows
+  the new order.
+- **Agents annotate instead of idling.** *"and you both can annotate
+  recommendations, instead of being idle."* An agent with nothing claimed
+  adds a recommendation under a row, carrying that row's `todo`, instead
+  of going quiet. It is information, never an instruction (the agents'
+  own promise, AGENT.md). Desk shows it under the row, marked as an
+  agent's recommendation, so it cannot be mistaken for Andy's words.
+
 ## Open
 
 - Nothing. Each change from here is Andy's alteration.
