@@ -503,13 +503,12 @@ replayed one re-executes.
 ("Lock puppet out of Self-Ownership"). It was "a puppet's stored owner key,
 owner-only".*
 
-**Verify:** `spirit/test/puppetsPending.js` (`puppets/G6`, awaiting).
-**Status:** OPEN, about 20%. The readOnly mechanism exists; the stored key and
-its planting do not. `puppetsPending.js:183` checks `nodeApps` for
-`OWNER_KEY` or `owner.json` and finds neither. *(Until 2026-09-27 this line
-said DONE: 402dac4 copied G5's status paragraph over G6's. wsl-claude caught
-it because the new board ranking treats a dependency on a DONE item as dead,
-so "G7 waits on G6" would have been silently ignored.)*
+**Verify:** `spirit/test/puppetOwner.js` (8 checks, wsl-claude).
+**Status:** DONE (2026-09-27). Built at edbadff, verified by `puppetOwner.js`. Its
+mutation test takes `owner.json` off the read-only list, and then all four
+spellings get through and a puppet can plant itself as its own owner; the
+suite catches both. *(Until 2026-09-27 this line wrongly said DONE,
+because 402dac4 had copied G5's status over it. It was OPEN until then.)*
 
 **Built at edbadff:** `owner.json` in the app's folder, listed read-only to
 the puppet beside `allow.json` (`nodeApps.js`, `ownerIn`, handed over as
