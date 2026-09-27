@@ -258,20 +258,74 @@ function puppetRole(api) {
     }, function (e) { return { refused: (e && e.message) || String(e) }; });
   }
 
-  api.face(function (req) {
+  // ── A BUDGET FOR NAMES NEVER SEEN (wsl-claude) ──────────────────────
+  //
+  // Every made-up <random>.face.spirit host, from a visitor or from Caddy
+  // asking before a certificate, would otherwise be one question to the
+  // owner over the relay; the minute's negative cache never hits a name
+  // that does not repeat. So at most NEW_NAMES_PER_MINUTE questions about
+  // hosts the cache does not hold; past that, "no such route" without
+  // asking, and a line in the log. Cached hosts cost nothing.
+  const NEW_NAMES_PER_MINUTE = 20;
+  let asked = [];
+  function mayAskAboutNewName() {
+    const now = Date.now();
+    asked = asked.filter(function (t) { return now - t < 60000; });
+    if (asked.length >= NEW_NAMES_PER_MINUTE) return false;
+    asked.push(now);
+    return true;
+  }
+
+  // Where a host's requests go, from the cache or by asking the owner once.
+  function resolve(host) {
     const owner = api.owner();
-    const known = cache.lookup(req.host);
-    const route = known ? Promise.resolve(known) : ask(owner, { verb: 'route?', host: req.host }, ROUTE_WAIT_MS).then(function (a) {
+    const known = cache.lookup(host);
+    if (known) return Promise.resolve(known);
+    if (!mayAskAboutNewName()) {
+      api.log(APP + ': new-name budget spent, not asking the owner about ' + String(host).slice(0, 80));
+      return Promise.resolve({ none: true });
+    }
+    return ask(owner, { verb: 'route?', host: host }, ROUTE_WAIT_MS).then(function (a) {
       if (a.refused) return { refused: a.refused };
       if (a.timedOut) return { timedOut: true };
       // "The owner of this name is <key>", and the puppet forwards there,
       // whoever it is. Andy: "why on earth would the appFaceApp actually
       // need that knowledge for?" It doesn't: whether to trust a visitor is
       // the receiving node's decision, not the face's.
-      cache.take(a.body, a.from, a.re, a.hash, req.host);
-      return cache.lookup(req.host) || { refused: 'the owner gave no usable route' };
+      cache.take(a.body, a.from, a.re, a.hash, host);
+      return cache.lookup(host) || { refused: 'the owner gave no usable route' };
     });
-    return route.then(function (r) {
+  }
+
+  // ── CADDY'S QUESTION BEFORE A CERTIFICATE ───────────────────────────
+  //
+  // On-demand TLS (Andy's "yes" on wsl-claude's ask; the DreamHost DNS
+  // module will not build, so no wildcard certificate): before Caddy takes
+  // on a name it asks GET /.well-known/spirit-name?domain=<host> on this
+  // listener, and only a granted name gets a certificate. ANSWERED ONLY ON
+  // LOOPBACK, the address Caddy's ask uses: a public request keeps its own
+  // Host, so the same path from the internet is an ordinary visit and never
+  // a free directory of granted names (wsl-claude).
+  const ASK_PATH = '/.well-known/spirit-name';
+  function isLoopbackHost(host) {
+    return /^(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i.test(String(host || ''));
+  }
+  function askedDomain(path) {
+    const q = String(path || '').split('?')[1] || '';
+    const m = /(?:^|&)domain=([^&]*)/.exec(q);
+    try { return m ? decodeURIComponent(m[1]) : ''; } catch (e) { return ''; }
+  }
+
+  api.face(function (req) {
+    if (isLoopbackHost(req.host) && String(req.path || '').split('?')[0] === ASK_PATH) {
+      const domain = askedDomain(req.path);
+      if (!domain) return { status: 404, body: '' };
+      return resolve(domain).then(function (r) {
+        return { status: (r.to || r.mine) ? 200 : 404, body: '' };
+      });
+    }
+    const owner = api.owner();
+    return resolve(req.host).then(function (r) {
       if (r.refused) return { status: 502, body: { ok: false, code: 'owner-unreachable', why: String(r.refused) } };
       if (r.timedOut) return { status: 504, body: { ok: false, code: 'owner-did-not-answer' } };
       if (r.none) return { status: 404, body: { ok: false, code: 'no-such-route' } };
