@@ -208,6 +208,49 @@ function allowsIn(appFs, log, name) {
   };
 }
 
+// ── WHO OWNS THIS PUPPET (puppets/G6) ────────────────────────────────
+//
+//   Andy: "the app must know who owns it, it stores the key of it's
+//   owner" — and, naming the requirement in Desk on 2026-09-27: "Lock the
+//   puppet out of Self-Ownership".
+//
+// `owner.json` in the app's own folder, `{ "key": "<owner public key>" }`,
+// written by the owner exactly as allow.json is. The LOCK is that the
+// puppet's own handle lists it read-only (mountAll, below): a puppet that
+// could write this file could name itself its own owner, which is the
+// allow.json hole one level up and strictly worse.
+//
+// Read on every call, never cached, for allow.json's reason: an owner who
+// changes it while the node runs must not wait for a restart. And the same
+// collapse: missing or empty is the owner saying "no owner yet" and is
+// silent; a file that exists and does not parse is his mistake, said once
+// per distinct content. Either way the answer is '' — absent means nobody,
+// so a puppet with no readable owner takes no commands (ownerCommandIn's
+// mode gate). The loopback shim (puppets/G7) is what will ask it.
+const OWNER = 'owner.json';
+const OWNER_KEY = /^MCowBQYDK2VwAyEA[A-Za-z0-9+/]{43}=$/;
+function ownerIn(appFs, log, name) {
+  const say = log || function () {};
+  let moaned = null;
+  return function () {
+    const raw = appFs.read(OWNER);
+    if (!raw || !String(raw).trim()) return '';
+    let key = null;
+    try { key = JSON.parse(raw).key; }
+    catch (e) { key = null; }
+    if (typeof key !== 'string' || !OWNER_KEY.test(key)) {
+      if (moaned !== raw) {
+        moaned = raw;
+        say((name || 'app') + ': ' + OWNER + ' exists but holds no owner key as { "key": "MCowBQYDK2VwAyEA..." }, ' +
+          'so this puppet has no owner and takes no commands until it is fixed');
+      }
+      return '';
+    }
+    moaned = null;
+    return key;
+  };
+}
+
 // The app's own folder, and refusing anything that climbs out of it.
 // `path.relative` rather than a prefix test, because a prefix test says
 // yes to `app/appFaceAppEvil` for the scope `app/appFaceApp`.
@@ -299,7 +342,7 @@ function mountAll(opts) {
       // the owner's authority. `ownerFs` is used by the seam to READ the
       // list; `appFs` is what the puppet gets, and it cannot write it.
       const ownerFs = scopedFs(dir);
-      const appFs = scopedFs(dir, { readOnly: [ALLOW] });
+      const appFs = scopedFs(dir, { readOnly: [ALLOW, OWNER] });
       mod.mount({
         name: name,
         dir: dir,
@@ -307,6 +350,8 @@ function mountAll(opts) {
         // WHO MAY USE THIS APP — handed over already built, so no app
         // writes its own. See the header: absent means nobody.
         allows: allowsIn(ownerFs, log, name),
+        // WHO OWNS IT, read-only to it: the owner's key, or '' for none.
+        owner: ownerIn(ownerFs, log, name),
         // The same seam a page subscribes through (arrivals.js:137).
         // Every booted app sees every admitted arrival; none of them is
         // routed to, which is what keeps the node ignorant of payloads.
@@ -406,4 +451,4 @@ function ownerCommandIn(arrival, opts) {
   return { ok: true, verb: parsed.verb, body: parsed.body || {} };
 }
 
-module.exports = { mountAll: mountAll, boots: boots, scopedFs: scopedFs, allowsIn: allowsIn, ownerCommandIn: ownerCommandIn };
+module.exports = { mountAll: mountAll, boots: boots, scopedFs: scopedFs, allowsIn: allowsIn, ownerIn: ownerIn, ownerCommandIn: ownerCommandIn };
