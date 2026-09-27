@@ -710,7 +710,7 @@ freePort()
       ['POST', '/api/spirit', { verb: 'contact.setSenders', policy: 'silent' }],
       // And the door's own refusal, which must be an answer rather than a
       // throw: a verb nobody claimed.
-      // Never called anywhere in this file until 2026-09-28: the check
+      // Never called anywhere in this file until 2026-09-27: the check
       // below only saw claims written as `function`, and these two are
       // claimed through proxyVerb(...). An empty host is refused, so
       // nothing on the list changes.

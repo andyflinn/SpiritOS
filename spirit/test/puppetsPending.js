@@ -137,7 +137,7 @@ test.subHeading('one return bound, both paths');
 
   // puppets/G3, ANDY'S OWN INSTRUMENT ("then you need only one suite that
   // makes every api call"), is no longer owed: spirit/test/everyVerb.js is
-  // it, on his "go." of 2026-09-28. Its bound check waits on G1's number,
+  // it, on his "go." of 2026-09-27. Its bound check waits on G1's number,
   // which G1 above still declares.
 }
 

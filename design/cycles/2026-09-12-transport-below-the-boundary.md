@@ -793,6 +793,29 @@ enough — and the argument is what was asked for.
 The last two are not done. They are what this panel argued for, and they
 are the reason it was proposed.
 
+### R19 — the database decision, deferred until the log can prove its promises
+> database decision deferred until proof that the system in itself can verify its promises.
+
+**Status:** OPEN, waiting on R16. Added 2026-09-27 on Andy's "go." to
+making every deferred decision its own row, so it cannot sink out of
+sight again: R16 sat for two weeks ranked by age, because nothing on the
+board said this decision was waiting on it.
+
+**The direction, Andy's, 2026-09-27:** the traffic log *"belongs into the
+database, which also allows log access to be optimized"*. Today it is
+`relay-state/traffic.jsonl`, one append-only file that every read scans
+whole (`spirit/run/js/trafficLog.js:108`), beside `node.db`.
+
+**What R16 changed since this was deferred:** sealing (cycle 10, 2026-09-23)
+moved what is signed to the SEALED text (`peerPost.js:900-901`), while the
+log keeps the opened text (`:980`). So a provable row holds the signature
+and the sealed text it covers, not the signature alone.
+
+**Open:** the table's shape (a core persist shape: peer review, then
+Andy's yes), and importing the existing file once.
+
+
+
 ### R17 — a relay streams its activity only while somebody watches
 > The relay needs an api startMonitorStream() and stopMonitorStream(), triggered by this new panel opening and closing. (visibility at shell-scope)
 

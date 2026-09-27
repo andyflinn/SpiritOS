@@ -212,7 +212,7 @@ const TALLY = {
   // ONE SUITE THAT MAKES EVERY API CALL (puppets/G3): TWO, AND A DECISION
   // RATHER THAN AN ENTRY, for doorWalk's reason. It measures the LOOPBACK
   // DOOR over real HTTP (a free-port probe and one request helper), which
-  // peerPost cannot reach. RESTING ON ANDY'S "go." ON G3, 2026-09-28, whose
+  // peerPost cannot reach. RESTING ON ANDY'S "go." ON G3, 2026-09-27, whose
   // shape was "starts a real node and calls every command once, through
   // this box's door", and said so rather than assumed. If he reads this and
   // disagrees, it is one line. The number may only fall.

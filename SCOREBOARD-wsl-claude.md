@@ -4,10 +4,10 @@
 
 ## Summary
 
-**Nothing is broken, 7 requirements are declared and not built yet, and 1 dependency question for you, and 3 older questions need a decision from you.**
+**Nothing is broken, 8 requirements are declared and not built yet, and 1 dependency question for you, and 3 older questions need a decision from you.**
 
 ```
-175 suites   3360 green   0 red   0 unhappy   7 owed      run f7f7ece
+175 suites   3368 green   0 red   0 unhappy   8 owed      run 29e4f06
 ```
 
 ---
@@ -22,7 +22,7 @@
 
 - the face door and the puppet group (puppets/G10)
 
-**Do you accept the implied change in priorities?** Nothing would change place.
+**Do you accept the implied change in priorities?** (G17) from 2nd to 1st.
 
 ### Ruled, and now ours
 
@@ -83,7 +83,15 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +14 green
+- +3365 green
+- ⏳ **newly owed:** public-app-server/G17
+- ⏳ **newly owed:** public-app-server/G18
+- ⏳ **newly owed:** puppets/G1
+- ⏳ **newly owed:** puppets/G10
+- ⏳ **newly owed:** puppets/G2
+- ⏳ **newly owed:** transport/R12
+- ⏳ **newly owed:** transport/R16
+- ⏳ **newly owed:** transport/R19
 
 ---
 
@@ -91,15 +99,16 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 | # | handle | to-do | waits on | frees | owed | there | |
 |---|---|---|---|---|---|---|---|
-| 1 | G17 | join's answer travels back to the browser |  |  | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
-| 2 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 3 | puppets/G2 | Generalizing the search approach to serving collections |  |  | 1 day | `▓▓▓▓▓░░░░░` 50% |  |
-| 4 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 5 | transport/R16 | the log must be able to PROVE what it claims |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 1 | transport/R16 | the log must be able to PROVE what it claims |  | 1 | 1 day | `░░░░░░░░░░` 0% |  |
+| 2 | G17 | join's answer travels back to the browser |  |  | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
+| 3 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 4 | puppets/G2 | Generalizing the search approach to serving collections |  |  | 1 day | `▓▓▓▓▓░░░░░` 50% |  |
+| 5 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | 1 day | `░░░░░░░░░░` 0% |  |
 | 6 | puppets/G10 | the face door and the puppet group | G14 (proposed), G17 (proposed) |  | today | `░░░░░░░░░░` 0% |  |
 | 7 | G18 | the app process serves its owner node over a named pipe, not a TCP port |  |  | today | `░░░░░░░░░░` 0% |  |
+| 8 | transport/R19 | the database decision, deferred until the log can prove its promises | transport/R16 |  | ? | `░░░░░░░░░░` 0% |  |
 
-**How the order was made.** 7 of 7 owed items have no dependency you have accepted, so they are ordered by age alone — 1 proposed one above waits for your yes or no.
+**How the order was made.** 6 of 8 owed items have no dependency you have accepted, so they are ordered by age alone — 1 proposed one above waits for your yes or no.
 
 *Percentages are the guesses the declarations carry — `testSupport`:
 "printed as guesses… to be argued with during a design sitting, not to

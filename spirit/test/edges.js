@@ -32,4 +32,8 @@ module.exports = [
   // through it by peerOwnerPost(). His answer covered both.
   { from: 'puppets/G7', to: 'puppets/G6', state: 'accepted', said: 'accepted.', at: '2026-09-27' },
   { from: 'puppets/G4', to: 'puppets/G7', state: 'accepted', said: 'accepted.', at: '2026-09-27' },
+  // Asked under transport/R16: every deferred decision becomes a row waiting
+  // on what meets its condition, "the database move is the first
+  // ('transport/R16' frees it)". His answer covered the rule and this edge.
+  { from: 'transport/R19', to: 'transport/R16', state: 'accepted', said: 'go.', at: '2026-09-27' },
 ];

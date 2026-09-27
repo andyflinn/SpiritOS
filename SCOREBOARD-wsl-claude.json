@@ -1,21 +1,33 @@
 {
   "box": "wsl-claude",
-  "commit": "f7f7ece",
+  "commit": "29e4f06",
   "stale": false,
-  "head": "f7f7ece",
+  "head": "29e4f06",
   "measured": {
     "suites": 175,
-    "green": 3360,
+    "green": 3368,
     "red": 0,
     "unhappy": 0
   },
   "rows": [
     {
       "kind": "to-do",
+      "id": "transport/R16",
+      "handle": "transport/R16",
+      "title": "the log must be able to PROVE what it claims",
+      "rank": 1,
+      "frees": 1,
+      "waitsOn": [],
+      "owedSince": "2026-09-26",
+      "there": 0,
+      "blocked": ""
+    },
+    {
+      "kind": "to-do",
       "id": "public-app-server/G17",
       "handle": "G17",
       "title": "join's answer travels back to the browser",
-      "rank": 1,
+      "rank": 2,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-24",
@@ -27,7 +39,7 @@
       "id": "puppets/G1",
       "handle": "puppets/G1",
       "title": "a response bound exists, and both paths obey it",
-      "rank": 2,
+      "rank": 3,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-25",
@@ -39,7 +51,7 @@
       "id": "puppets/G2",
       "handle": "puppets/G2",
       "title": "Generalizing the search approach to serving collections",
-      "rank": 3,
+      "rank": 4,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-25",
@@ -51,18 +63,6 @@
       "id": "transport/R12",
       "handle": "transport/R12",
       "title": "an app can reply, and a reply is the only evidence of being delivered",
-      "rank": 4,
-      "frees": 0,
-      "waitsOn": [],
-      "owedSince": "2026-09-26",
-      "there": 0,
-      "blocked": ""
-    },
-    {
-      "kind": "to-do",
-      "id": "transport/R16",
-      "handle": "transport/R16",
-      "title": "the log must be able to PROVE what it claims",
       "rank": 5,
       "frees": 0,
       "waitsOn": [],
@@ -106,6 +106,24 @@
       "blocked": ""
     },
     {
+      "kind": "to-do",
+      "id": "transport/R19",
+      "handle": "transport/R19",
+      "title": "the database decision, deferred until the log can prove its promises",
+      "rank": 8,
+      "frees": 0,
+      "waitsOn": [
+        {
+          "id": "transport/R16",
+          "handle": "transport/R16",
+          "accepted": true
+        }
+      ],
+      "owedSince": null,
+      "there": 0,
+      "blocked": ""
+    },
+    {
       "kind": "dependency",
       "id": "dependency/17a6f422963f",
       "handle": "G17",
@@ -130,7 +148,13 @@
           ]
         }
       ],
-      "moves": []
+      "moves": [
+        {
+          "id": "public-app-server/G17",
+          "from": 2,
+          "to": 1
+        }
+      ]
     }
   ]
 }

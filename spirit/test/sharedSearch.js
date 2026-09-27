@@ -248,7 +248,7 @@ if (typeof bucket.createSearch !== 'function') {
 
   // ── THE MATCHING CONCEPTS, THROUGH THE SEARCH EVERY COLLECTION USES ─
   //
-  //   Andy, 2026-09-28: "the matching capability sits in bucket.js and we'll
+  //   Andy, 2026-09-27: "the matching capability sits in bucket.js and we'll
   //   have to test that to see that it can support all those matching
   //   concepts properly". (It is gradedSearch.js, reached through
   //   searchBucket.createSearch.) The list is claude-windows', agreed.

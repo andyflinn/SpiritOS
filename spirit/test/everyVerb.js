@@ -4,7 +4,7 @@
 // ONE SUITE THAT MAKES EVERY API CALL (puppets/G3).
 //
 //   Andy: "then you need only one suite that makes every api call." And,
-//   on this shape, 2026-09-28: "go."
+//   on this shape, 2026-09-27: "go."
 //
 // The list of verbs is READ FROM server.js's claim blocks, never typed
 // here. That is the point: serverSurface.js keeps a hand list, and its own

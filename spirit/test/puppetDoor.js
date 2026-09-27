@@ -231,7 +231,7 @@ function world(puppetJson) {
   // packet.encode refuses an oversize body, and reply() used to return on
   // that refusal and send nothing, so the owner waited out the whole timeout
   // and was told "no reply from puppet". Agreed with claude-windows,
-  // 2026-09-28: {ok:false, status:413, code:'answer-too-large', verb, bytes}.
+  // 2026-09-27: {ok:false, status:413, code:'answer-too-large', verb, bytes}.
   {
     const w = world(OWNED);
     await w.arrive(owner.publicKey, command('contact.huge', {}));
