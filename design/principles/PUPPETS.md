@@ -464,7 +464,10 @@ ON the arrival path rather than beside it, so it inherits
 `peerPost.js:1091`'s replay guard. These are configuration verbs and a
 replayed one re-executes.
 
-### G6 — a puppet's stored owner key, owner-only
+### G6 — Lock the puppet out of Self-Ownership
+
+*Andy's title, given in Desk on 2026-09-27 ("retitle: Lock the puppet out of
+Self-Ownership"). It was "a puppet's stored owner key, owner-only".*
 
 **Verify:** `spirit/test/puppetsPending.js` (`puppets/G6`, awaiting).
 **Status:** OPEN, about 20%. The readOnly mechanism exists; the stored key and

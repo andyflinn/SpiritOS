@@ -79,6 +79,12 @@ function ddRead(list) {
     if (m.reported) return;
     if (m.kind === 'note' && /^taking(\s|$)/.test(m.text)) return;
     if (m.kind === 'board' || m.kind === 'report') return;
+    // ONE LINE PER THING ANDY SAID. Andy: "I still get multibple echoes of
+    // what appears in there". What he sends goes once per agent, so the
+    // record holds a copy per recipient; the chat shows the first.
+    var prev = st.chat[st.chat.length - 1];
+    if (andy && prev && prev.dir === 'out' && prev.kind === m.kind && prev.text === m.text &&
+      Math.abs((Date.parse(m.at) || 0) - (Date.parse(prev.at) || 0)) < 60000) return;
     st.chat.push(m);
     // A question from an agent is open until Andy answers after it.
     if (!andy && m.kind === 'ask') st.openAsk = m;
