@@ -1342,6 +1342,16 @@ verbs today; they live only in its code.
   list is on disc and only governs permissions."* After a face restart the
   table is empty until the next push (open: a start-up "I'm up" to the owner,
   a timed re-push, or both).
+  **REVISED the same hour by Andy: the face learns routes lazily.** *"after
+  boot, the first request from a browser arrives, it asks its owner for the
+  route (it might actually be an access to grantFace app, who holds those
+  routes (you were right!), if a route is returned, appFaceApp caches it in
+  ram and then re-uses it on subsequent post from that subdomain."* So
+  `route?` stays, answered by grantFace through the owner node, and cached in
+  the face's RAM with today's expiry (an hour, so a name taken back stops
+  routing within it). No pushed route table, and no restart gap. What
+  grantFace pushes by owner command is permission only: the face's contact
+  list.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
