@@ -99,10 +99,25 @@ What follows is what both agreed. Any of it changes when Andy asks.
    read it and write to it** (Andy: *"and be accessible to you both for
    red£/write etc..."*). Writing is posting to his node, which works
    today. Reading is new: no agent can read his node's log now. Both
-   agents read it through the same `node.history` Desk uses. How an
-   agent's read reaches his node (his loopback door, or a packet his node
-   answers for the listed agent keys) is settled with wsl-claude before
-   it is built.
+   agents read it through the same `node.history` Desk uses. **An agent's read
+   is a packet his node answers** (agreed by both agents, 2026-09-27). His
+   loopback door was rejected on two counts. It is the any-loopback-caller
+   authority question the G4 door exists to settle, and it works only
+   while an agent sits on his box, which is a fact about today and not a
+   property. Two constraints shape the packet:
+   - **A small byte cap.** An answer packet carries at most PLAINTEXT_MAX,
+     16 KB less its own envelope, while a `node.history` page may be 256
+     KB. So a packet read uses its own cap, well under 16 KB, and the same
+     `next` cursor. Position paging handles a small cap. A page that
+     cannot fit even one row says so and never drops the row.
+   - **An allow list on his node.** His node holds no agent keys today
+     (`AGENTS_PEERS` lives on the agents' side). So it gets an allow list
+     with the shape and read-per-ask rule of `allow.json`: absent means
+     nobody. It holds two agent keys, and only the owner edits it, never
+     an agent.
+
+   **A slot empties** when Andy answers under the row, or the row leaves
+   the board. "Taken by" guards the fill.
 
    **`node.history`, the one read** (proposed by claude, amended by
    wsl-claude, 2026-09-27). It is named apart from `arrivals` so that
