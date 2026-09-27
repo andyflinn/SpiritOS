@@ -7,7 +7,7 @@
 **Nothing is broken, 8 requirements are declared and not built yet, and 3 older questions need a decision from you.**
 
 ```
-176 suites   3380 green   0 red   0 unhappy   8 owed      run 222ec54
+178 suites   3386 green   0 red   0 unhappy   8 owed      run 67af809
 ```
 
 ---
@@ -53,26 +53,25 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
     - suites that INSIST, not suites that demonstrate (10/R8)
 - **one suite that makes every api call (puppets/G3)** — live work in `design/principles/PUPPETS.md`, and no test is watching it.
 - **`peerOwnerPost()` on the owner's node (puppets/G4)** — live work in `design/principles/PUPPETS.md`, and no test is watching it.
-- In `design/shell/PUBLIC-APP-SERVER.md`, 13 things are still marked open with no test watching:
-    - `appServer.js` is a third startup module (public-app-server/G1)
-    - a server reports the box it sits on: four fields, one opinion withheld (public-app-server/G10)
-    - no failure-state lever; the states are reachable from outside (G11)
-    - app code and app state do not share a directory (G12)
-    - the official sample instantiates the template, and IS the acceptance test (G13)
-    - the named interface, so a suite need not guess it (G15)
-    - one app, one whitelist, no dispatch (public-app-server/G2)
-    - `ask` has one home, and the app server uses it (public-app-server/G3)
-    - the shell provides the optional layer, as files (public-app-server/G4)
-    - the mode's NAME is decided here; its rendering is not (public-app-server/G5)
-    - an app server serves exactly one relay, and learns its owner (public-app-server/G6)
-    - the node's role is asked, never cached, and fails CLOSED (public-app-server/G7)
-    - strict posture: one enforced half, one declared half (public-app-server/G9)
+- **`appServer.js` is a third startup module (public-app-server/G1)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
+- **a server reports the box it sits on: four fields, one opinion withheld (public-app-server/G10)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
+- **no failure-state lever; the states are reachable from outside (G11)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
+- **app code and app state do not share a directory (G12)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
+- **the official sample instantiates the template, and IS the acceptance test (G13)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
+- **the named interface, so a suite need not guess it (G15)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
+- **one app, one whitelist, no dispatch (public-app-server/G2)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
+- **`ask` has one home, and the app server uses it (public-app-server/G3)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
+- **the shell provides the optional layer, as files (public-app-server/G4)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
+- **the mode's NAME is decided here; its rendering is not (public-app-server/G5)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
+- **an app server serves exactly one relay, and learns its owner (public-app-server/G6)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
+- **the node's role is asked, never cached, and fails CLOSED (public-app-server/G7)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
+- **strict posture: one enforced half, one declared half (public-app-server/G9)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
 
 ---
 
 ## What moved
 
-- +11 green
+**Nothing moved.** Same requirements owed, same tally, since the run at `67af809`.
 
 ---
 

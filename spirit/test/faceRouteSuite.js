@@ -1,0 +1,154 @@
+'use strict';
+
+// spirit/test/faceRouteSuite.js
+// WHERE A FACE NAME LIVES: THE NAME IN A HOST, THE OWNER'S SIGNED ANSWER,
+// AND THE PUPPET'S ROUTES IN RAM (public-app-server/G17, THE ROUTE).
+//
+//   Andy, 2026-09-27: "so the owner.node.ID is the boot-route, for every
+//   other name segment", "it's like an HTTP redirect then the node gives the
+//   puppet a signed reply, allowing the appFaceApp to cache that route in RAM
+//   for future use", and "at restart, the dance starts anew....".
+//
+// Built by claude-windows at 67af809 (spirit/run/js/faceRoute.js), against
+// the names declared at 2223a36. Real keys from relayAuth; a fake clock, so
+// "an hour" and "a minute" are tested without waiting for them.
+
+const test = require('./testSupport.js');
+const auth = require('../run/js/relayAuth');
+const fr = require('../run/js/faceRoute');
+
+test.startTest('A face name routes to the node that holds it, on the owner\'s signed word only');
+
+const owner = auth.generateIdentity('owner');
+const joe = auth.generateIdentity('joe');
+const stranger = auth.generateIdentity('stranger');
+const FACE = 'face.spirit.example';
+
+// ── THE NAME IN A HOST ────────────────────────────────────────────────
+{
+  const cases = [
+    ['join.face.spirit.example', 'join'], ['JOIN.Face.Spirit.Example', 'join'], ['join.face.spirit.example:443', 'join'],
+    ['join.face.spirit.example.', 'join'], ['face.spirit.example', null], ['a.b.face.spirit.example', null],
+    ['join.face.spirit.other', null], ['evilface.spirit.example', null], ['-x.face.spirit.example', null], ['', null],
+  ];
+  const wrong = cases.filter(function (c) { return fr.nameOf(c[0], FACE) !== c[1]; });
+  if (!wrong.length) {
+    test.check('the name is the one label before the face domain, case and port and trailing dot ignored; the bare '
+      + 'face domain, two labels, another domain, a look-alike suffix and a malformed label are no name');
+  } else {
+    test.fail('nameOf got wrong: ' + wrong.map(function (c) { return JSON.stringify(c[0]) + ' -> ' + JSON.stringify(fr.nameOf(c[0], FACE)); }).join(', '));
+  }
+}
+
+// ── THE OWNER'S ANSWER: MINE, A SIGNED ROUTE, OR NONE ─────────────────
+const rows = { join: { to: owner.publicKey }, joe: { to: joe.publicKey } };
+const T0 = 1000000;
+{
+  const mine = fr.answerRoute(rows, 'join', owner, auth.sign, T0);
+  const to = fr.answerRoute(rows, 'joe', owner, auth.sign, T0);
+  const none = fr.answerRoute(rows, 'nobody', owner, auth.sign, T0);
+  const inherited = fr.answerRoute(rows, 'toString', owner, auth.sign, T0);
+  if (mine.route === 'mine' && to.route === 'to' && to.to === joe.publicKey && to.until === T0 + fr.ROUTE_MS
+      && fr.routeIsSigned(to, owner.publicKey, auth.verify) && none.route === 'none' && inherited.route === 'none') {
+    test.check('the owner answers "mine" for its own name, a route signed by its key for joe\'s, valid an hour, and '
+      + '"none" for a name it never granted, including one that only an object\'s prototype has (toString)');
+  } else {
+    test.fail('answers: mine ' + JSON.stringify(mine) + ', to ' + JSON.stringify(to && { route: to.route, until: to.until })
+      + ', none ' + JSON.stringify(none) + ', toString ' + JSON.stringify(inherited));
+  }
+}
+
+// ── A ROUTE THAT IS NOT THE OWNER'S WORD IS NOT A ROUTE ──────────────
+{
+  const good = fr.answerRoute(rows, 'joe', owner, auth.sign, T0);
+  const redirected = Object.assign({}, good, { to: stranger.publicKey });
+  const longer = Object.assign({}, good, { until: good.until + 1 });
+  const byStranger = fr.answerRoute(rows, 'joe', stranger, auth.sign, T0);
+  const holds = fr.routeIsSigned(good, owner.publicKey, auth.verify);
+  const refused = [
+    ['to changed', redirected], ['until changed', longer], ['signed by another key', byStranger],
+  ].filter(function (c) { return fr.routeIsSigned(c[1], owner.publicKey, auth.verify); });
+  if (holds && !refused.length) {
+    test.check('a route verifies only as the owner signed it: changing where it points or how long it lasts, or '
+      + 'signing it with another key, breaks it');
+  } else {
+    test.fail('routeIsSigned: good ' + holds + '; accepted anyway: ' + refused.map(function (c) { return c[0]; }).join(', '));
+  }
+}
+
+// ── THE PUPPET'S CACHE TAKES ONLY THE OWNER'S ANSWER TO ITS QUESTION ──
+function cacheAt(clock) {
+  return fr.createRouteCache({ ownerKey: owner.publicKey, verify: auth.verify, now: function () { return clock.t; } });
+}
+{
+  const clock = { t: T0 };
+  const c = cacheAt(clock);
+  const answer = fr.answerRoute(rows, 'joe', owner, auth.sign, T0);
+  const forged = Object.assign({}, answer, { to: stranger.publicKey });
+  const fromStranger = c.take(answer, stranger.publicKey, 'Q1', 'Q1');
+  const wrongHash = c.take(answer, owner.publicKey, 'Q2', 'Q1');
+  const noHash = c.take(answer, owner.publicKey, undefined, undefined);
+  const forgedTaken = c.take(forged, owner.publicKey, 'Q1', 'Q1');
+  const before = c.lookup('joe');
+  const taken = c.take(answer, owner.publicKey, 'Q1', 'Q1');
+  const after = c.lookup('joe');
+  if (!fromStranger && !wrongHash && !noHash && !forgedTaken && before === null && taken && after && after.to === joe.publicKey) {
+    test.check('the cache refuses a route from another node, one answering a different question or none, and one '
+      + 'whose target was changed after signing; the owner\'s signed answer to its own question is kept');
+  } else {
+    test.fail('take: stranger ' + fromStranger + ', wrong hash ' + wrongHash + ', no hash ' + noHash + ', forged '
+      + forgedTaken + ', before ' + JSON.stringify(before) + ', good ' + taken + ', after ' + JSON.stringify(after));
+  }
+}
+
+// ── AN HOUR, NEVER LONGER; DROPPED WHEN THE TARGET REFUSES ────────────
+{
+  const clock = { t: T0 };
+  const c = cacheAt(clock);
+  c.take(fr.answerRoute(rows, 'joe', owner, auth.sign, T0), owner.publicKey, 'Q', 'Q');
+  clock.t = T0 + fr.ROUTE_MS - 1;
+  const justBefore = c.lookup('joe');
+  clock.t = T0 + fr.ROUTE_MS;
+  const at = c.lookup('joe');
+  // A route the owner signed for ten hours is still kept only one.
+  const clock2 = { t: T0 };
+  const c2 = cacheAt(clock2);
+  c2.take(fr.answerRoute(rows, 'joe', owner, auth.sign, T0 + 9 * fr.ROUTE_MS), owner.publicKey, 'Q', 'Q');
+  clock2.t = T0 + fr.ROUTE_MS;
+  const capped = c2.lookup('joe');
+  // The target refused: ask again.
+  const clock3 = { t: T0 };
+  const c3 = cacheAt(clock3);
+  c3.take(fr.answerRoute(rows, 'joe', owner, auth.sign, T0), owner.publicKey, 'Q', 'Q');
+  c3.drop('joe');
+  const dropped = c3.lookup('joe');
+  if (justBefore && justBefore.to && at === null && capped === null && dropped === null) {
+    test.check('a route lives until its hour is up and not a millisecond past it, is never kept longer than an hour '
+      + 'whatever it claims, and is forgotten the moment its target refuses');
+  } else {
+    test.fail('lifetimes: 1 ms before ' + JSON.stringify(justBefore) + ', at the hour ' + JSON.stringify(at)
+      + ', a 10 h claim after 1 h ' + JSON.stringify(capped) + ', after drop ' + JSON.stringify(dropped));
+  }
+}
+
+// ── "NO SUCH ROUTE" FOR A MINUTE; "MINE" KEPT; A RESTART FORGETS ──────
+{
+  const clock = { t: T0 };
+  const c = cacheAt(clock);
+  c.take(fr.answerRoute(rows, 'nobody', owner, auth.sign, T0), owner.publicKey, 'Q', 'Q');
+  c.take(fr.answerRoute(rows, 'join', owner, auth.sign, T0), owner.publicKey, 'R', 'R');
+  const noneNow = c.lookup('nobody');
+  const mineNow = c.lookup('join');
+  clock.t = T0 + fr.NONE_MS;
+  const noneAfter = c.lookup('nobody');
+  const restarted = cacheAt({ t: T0 }).lookup('join');
+  if (noneNow && noneNow.none && mineNow && mineNow.mine && noneAfter === null && restarted === null) {
+    test.check('"no such route" is remembered for one minute and then asked again, "mine" is remembered, and a new '
+      + 'cache (a restart) knows nothing: "at restart, the dance starts anew"');
+  } else {
+    test.fail('none now ' + JSON.stringify(noneNow) + ', mine ' + JSON.stringify(mineNow) + ', none after a minute '
+      + JSON.stringify(noneAfter) + ', after restart ' + JSON.stringify(restarted));
+  }
+}
+
+test.reportSuccessFailureCount();
