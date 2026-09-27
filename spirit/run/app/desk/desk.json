@@ -1,0 +1,8 @@
+{
+  "name": "Desk",
+  "description": "Andy's desk for talking to the agents: the board as a table, each row its own thread.",
+  "icon": "THREAD",
+  "hidden": false,
+  "intrinsic": true,
+  "owner": "system"
+}
