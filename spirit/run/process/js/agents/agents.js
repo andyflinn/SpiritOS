@@ -34,6 +34,7 @@ const crypto = require('crypto');
 // The closed refusal set, so this file holds no opinion of its own about
 // which failures are permanent (see flushReports).
 const errors = require('../../../js/spiritErrors.js');
+const limits = require('../../../js/limits.js');
 const { execFileSync } = require('child_process');
 
 const APP = 'agents';
@@ -146,8 +147,19 @@ function resolvePeer(cfg, to) {
 }
 
 // ── THE ENVELOPE — protocol v1 ─────────────────────────────────────────
-function makeEnvelope(from, kind, text, re, idFn, block) {
+// ── `todo` — WHICH ROW OF THE BOARD THIS MESSAGE BELONGS TO ─────────
+//
+// Decided in design/shell/AGENTS-UI.md: the FULL id (area/number, e.g.
+// cycle-10/R13), never a short handle — a handle is the shortest form
+// unique TODAY and can lengthen, and a thread keyed on it would lose its
+// row. `re` keeps its one meaning. Refused here if it is not a full id.
+const TODO_ID = /^[^\s{},\/]+\/[^\s{},\/]+$/;
+
+function makeEnvelope(from, kind, text, re, idFn, block, todo) {
   if (KINDS.indexOf(kind) === -1) throw new Error('unknown kind: ' + kind);
+  if (todo !== undefined && todo !== null && todo !== '' && !TODO_ID.test(String(todo))) {
+    throw new Error('todo must be a full to-do id like cycle-10/R13, not ' + JSON.stringify(todo));
+  }
   // ── AND NOTHING EMPTY LEAVES (cycle 10's R19) ───────────────────────
   //
   // Found by being committed: wsl-claude piped a cleared scratchpad into a
@@ -181,6 +193,7 @@ function makeEnvelope(from, kind, text, re, idFn, block) {
     body: { from: String(from), kind: kind, text: String(text || '') },
   };
   if (re) env.re = String(re);
+  if (todo) env.body.todo = String(todo);
   if (kind === 'blocked') {
     // REFUSED AT THE SENDER, not tidied there. A block with a `needs` or a
     // `who` nobody can read would be sorted into the wrong pile of Andy's
@@ -312,13 +325,43 @@ function commitOf(cfg) {
   } catch (e) { return '?'; }
 }
 
-// ── REPORTS — one line each, to the node Andy keeps ────────────────────
+// ── REPORTS — THE WHOLE MESSAGE, TO THE NODE ANDY KEEPS ────────────────
 //
-// Plain words: who to whom, what kind, the start of what was said, and
-// how it ended. The full message stays in the logs, found by its hash.
-function reportLine(self, toName, kind, text, outcome, commit) {
-  const gist = String(text || '').replace(/\s+/g, ' ').slice(0, 100);
-  return self + ' -> ' + toName + ', ' + kind + ': "' + gist + '" — ' + outcome + ' (at ' + commit + ')';
+//   Andy, 2026-09-27: "yeah, my node should contain the overall record of
+//   our activities."
+//
+// A report was a 100-character gist in prose, with "the full message stays
+// in the logs" — the SENDER's logs, which is exactly where his record was
+// not. It is now the message itself, as data, so his node holds what we
+// said to each other and Desk can show it under the row it belongs to.
+// `outcome` keeps its old wording ("delivered", "undelivered: <why>").
+function reportOf(self, toName, toKey, env, outcome, hash, commit) {
+  const b = env.body || {};
+  return JSON.stringify({
+    v: 1, from: String(self), to: String(toName), toKey: String(toKey || ''),
+    kind: b.kind, text: b.text || '', todo: b.todo || null,
+    re: env.re || null, id: env.id, hash: hash || null,
+    outcome: String(outcome), commit: String(commit),
+  });
+}
+
+// WHAT A REPORT OF THIS MESSAGE WOULD WEIGH, before anything is sent. The
+// report carries the whole text escaped once more inside its envelope, so
+// a message near the limit makes a report that cannot travel. That is
+// refused HERE, at the sender, with the numbers: nothing reaches a peer
+// that could not also reach Andy's record, and nothing is cut to fit.
+//
+// MEASURED AGAINST THE COMPOSER'S LIMIT, limits.PLAINTEXT_MAX — "what a
+// composer may BUILD" — and nothing below the node. The report's text is
+// measured ESCAPED, so it is held to the stricter of the two: whatever
+// passes here passes the node's own check, and this file keeps no opinion
+// about what the node does to a packet afterwards (sealedLayering.js).
+const REPORT_PROBE_OUTCOME = 'undelivered: ' + 'x'.repeat(240);
+function reportFits(cfg, toName, toKey, env) {
+  const probe = makeEnvelope(cfg.self, 'report',
+    reportOf(cfg.self, toName, toKey, env, REPORT_PROBE_OUTCOME, 'f'.repeat(64), 'ffffffff'));
+  const bytes = Buffer.byteLength(JSON.stringify(JSON.stringify(probe)), 'utf8');
+  return { fits: bytes <= limits.PLAINTEXT_MAX, bytes: bytes };
 }
 
 function outboxPath(cfg) { return path.join(cfg.root, 'relay-state', 'agents-outbox.jsonl'); }
@@ -421,7 +464,23 @@ function send(cfg, to, kind, text, re, opts) {
   }
   if (!toKey) return Promise.resolve({ ok: false, error: 'no key for ' + to });
 
-  const env = makeEnvelope(cfg.self, kind, text, re, null, o.block);
+  // A REFUSAL IS AN ANSWER, NOT A THROW. makeEnvelope refuses by throwing,
+  // and send used to let that escape — so a bad `todo` or a malformed
+  // `blocked` crashed the caller instead of being told no, and a caller
+  // awaiting the promise never heard anything at all. Found by the suite
+  // that tests the todo refusal: it stopped mid-run with no summary.
+  let env;
+  try { env = makeEnvelope(cfg.self, kind, text, re, null, o.block, o.todo); }
+  catch (e) { return Promise.resolve({ ok: false, error: e.message, refused: true }); }
+  const mine0 = ownKey(cfg);
+  const reported = kind !== 'report' && kind !== 'board' && !isControlVerb && cfg.control && cfg.control !== mine0;
+  if (reported) {
+    const f = reportFits(cfg, to, toKey, env);
+    if (!f.fits) {
+      return Promise.resolve({ ok: false, error: 'too long to be recorded on Andy\'s node (its report would be ' +
+        f.bytes + ' bytes, over ' + limits.PLAINTEXT_MAX + ') — split it into shorter messages', tooLong: true });
+    }
+  }
   const deadline = now() + cfg.retryMs;
   let wait = 5000;
 
@@ -442,9 +501,9 @@ function send(cfg, to, kind, text, re, opts) {
     const mine = ownKey(cfg);
     // A BOARD IS NOT REPORTED: it is already addressed to Andy's node, and
     // a report of it would be a second copy of the same fact in his log.
-    if (kind !== 'report' && kind !== 'board' && !isControlVerb && cfg.control && cfg.control !== mine) {
+    if (reported) {
       const outcome = result.ok ? 'delivered' : 'undelivered: ' + result.error + (result.byNode ? ' (refused by my own node — not in any log)' : '');
-      queueReport(cfg, reportLine(cfg.self, to, kind, text, outcome, commitOf(cfg)));
+      queueReport(cfg, reportOf(cfg.self, to, toKey, env, outcome, result.hash, commitOf(cfg)));
       return flushReports(cfg, fetchFn, mine).then(function () { return result; });
     }
     return result;
@@ -546,13 +605,13 @@ module.exports = {
   config: config, parsePeers: parsePeers, resolvePeer: resolvePeer,
   makeEnvelope: makeEnvelope, halted: halted, obeyControl: obeyControl,
   send: send, conversation: conversation, read: read, formatEntry: formatEntry,
-  reportLine: reportLine, flushReports: flushReports, listen: listen,
+  reportOf: reportOf, reportFits: reportFits, flushReports: flushReports, listen: listen,
   KINDS: KINDS, NEEDS: NEEDS, WHO: WHO, STATES: STATES, blockLine: blockLine,
 };
 
 // ── THE COMMAND LINE ────────────────────────────────────────────────────
 //
-//   node agents.js send <to> <note|ask|answer> <text…> [--re <hash>]
+//   node agents.js send <to> <note|ask|answer> <text…> [--re <hash>] [--todo <area/number>]
 //   node agents.js blocked <to> <needs> <who> [--state <s>] <what…>
 //   node agents.js chatter <to> [n] [--every <ms>]   a batch, to watch
 //   node agents.js halt <to> [reason…]      (Andy's node only)
@@ -564,12 +623,20 @@ if (require.main === module) {
   const cfg = config();
   const argv = process.argv.slice(2);
   const cmd = argv[0];
-  const reAt = argv.indexOf('--re');
-  const re = reAt !== -1 ? argv[reAt + 1] : '';
-  const rest = reAt !== -1 ? argv.slice(0, reAt) : argv;
+  // FLAGS COME OUT WHEREVER THEY SIT, not only at the end.
+  function flag(name) {
+    const at = argv.indexOf(name);
+    if (at === -1) return '';
+    const v = argv[at + 1] || '';
+    argv.splice(at, 2);
+    return v;
+  }
+  const re = flag('--re');
+  const todo = flag('--todo');
+  const rest = argv;
   const done = function (r) { console.log(JSON.stringify(r)); process.exit(r && r.ok ? 0 : 1); };
   if (cmd === 'send') {
-    send(cfg, rest[1], rest[2], rest.slice(3).join(' '), re).then(done, function (e) { done({ ok: false, error: e.message }); });
+    send(cfg, rest[1], rest[2], rest.slice(3).join(' '), re, { todo: todo }).then(done, function (e) { done({ ok: false, error: e.message }); });
   } else if (cmd === 'blocked') {
     // node agents.js blocked <to> <needs> <who> [--state s] <what…>
     //
@@ -635,7 +702,7 @@ if (require.main === module) {
     console.log(h ? 'HALTED since ' + h.at + (h.text ? ' — ' + h.text : '') : 'running');
   } else {
     console.log([
-      'usage: agents.js send <to> <note|ask|answer> <text> [--re hash]',
+      'usage: agents.js send <to> <note|ask|answer> <text> [--re hash] [--todo area/number]',
       '       agents.js blocked <to> <' + NEEDS.join('|') + '> <' + WHO.join('|') + '>' +
         ' [--state ' + STATES.join('|') + '] <what, in one sentence for Andy>',
       '       agents.js chatter <to> [n=30] [--every ms=300]   a batch, for the monitor',
