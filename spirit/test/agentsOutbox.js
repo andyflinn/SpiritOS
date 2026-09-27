@@ -150,5 +150,40 @@ function flushAgainst(status, errText, n) {
     }
   }
 
+  // ── A REFUSAL INSIDE A 200 IS STILL A REFUSAL ────────────────────────
+  //
+  // The node answers 200 when a reply ARRIVES; the peer's verdict is inside
+  // it. If Andy's node rotates its key, every queued report comes back
+  // "this did not open for me" inside a 200. Counted as sent, it would be
+  // deleted -- the lost-reports bug a third time. Found through
+  // cardRotation.js, where peerPost had the same blind spot.
+  {
+    const inside = JSON.stringify({ v: 1, body: { ok: false, status: 400, error: 'this did not open for me' } });
+    const q = withQueue(3);
+    const fetchIn = function () {
+      return Promise.resolve({ status: 200,
+        text: function () { return Promise.resolve(JSON.stringify({ hash: 'H', text: inside })); } });
+    };
+    const sent = await agents.flushReports(q.cfg, fetchIn, 'OWNKEY');
+    if (sent === 0 && q.left() === 3) {
+      test.check('a report refused INSIDE a 200 — "this did not open for me" after his node rotates — is '
+        + 'not counted as sent, and all three stay queued for the next flush');
+    } else {
+      test.fail('a refusal inside a 200: sent ' + sent + ', kept ' + q.left() + ' of 3');
+    }
+    // THE CONTROL: a plain 200 receipt still empties the queue.
+    const q2 = withQueue(2);
+    const fetchOk = function () {
+      return Promise.resolve({ status: 200,
+        text: function () { return Promise.resolve(JSON.stringify({ hash: 'H', receipt: true })); } });
+    };
+    const sent2 = await agents.flushReports(q2.cfg, fetchOk, 'OWNKEY');
+    if (sent2 === 2 && q2.left() === 0) {
+      test.check('and a plain receipt still counts as sent and leaves the queue');
+    } else {
+      test.fail('a plain receipt: sent ' + sent2 + ', left ' + q2.left());
+    }
+  }
+
   test.reportSuccessFailureCount();
 }());

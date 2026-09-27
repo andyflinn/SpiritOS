@@ -422,7 +422,15 @@ function flushReports(cfg, fetchFn, ownKey) {
       let line; try { line = JSON.parse(row).line; } catch (e) { return; }
       return post(cfg, cfg.control, makeEnvelope(cfg.self, 'report', line), fetchFn)
         .then(function (r) {
-          if (r.status === 200) { sent++; return; }
+          // A 200 is a reply ARRIVING; the verdict is inside it (see send). If
+          // Andy's node rotates its key, every queued report comes back "this
+          // did not open for me" inside a 200 -- and would have been counted
+          // as sent and deleted.
+          if (r.status === 200) {
+            const verdict = peerVerdict(r.body && r.body.text);
+            if (!verdict || verdict.ok !== false) { sent++; return; }
+            r = { status: Number(verdict.status) || 400, body: { error: verdict.error || 'refused' } };
+          }
           // ── A REFUSAL WAITING CANNOT FIX IS NOT STILL OWED ──────────
           //
           //   Andy, 2026-09-26: "the agent app is special, a post is
@@ -482,6 +490,16 @@ function ownKey(cfg) {
 // one attempt (R40 is outside the core). A refusal by THIS node — a 4xx —
 // is returned at once and said out loud: the node's log keeps no row for
 // it, so this is the only place it is visible.
+// The peer's reply, as it wrote it: `{ v, body: { ok, status, error } }`.
+// Anything unparseable is not a verdict, and a plain receipt has none.
+function peerVerdict(text) {
+  if (typeof text !== 'string' || !text) return null;
+  try {
+    const said = JSON.parse(text);
+    return said && said.body && typeof said.body === 'object' && 'ok' in said.body ? said.body : null;
+  } catch (e) { return null; }
+}
+
 function send(cfg, to, kind, text, re, opts) {
   const o = opts || {};
   const fetchFn = o.fetch;
@@ -527,7 +545,19 @@ function send(cfg, to, kind, text, re, opts) {
 
   function attempt() {
     return post(cfg, toKey, env, fetchFn).then(function (r) {
-      if (r.status === 200) return { ok: true, status: 200, hash: r.body.hash, receipt: !!r.body.receipt };
+      // A 200 MEANS A REPLY ARRIVED, NOT THAT THE PEER TOOK THE MESSAGE. The
+      // peer's own verdict is the body of its reply, in r.body.text; one that
+      // says ok:false -- "this did not open for me", after it rotated its key
+      // -- was being reported "delivered". Found by cardRotation.js, where
+      // peerPost's staleCard had the same blind spot one layer down.
+      if (r.status === 200) {
+        const verdict = peerVerdict(r.body && r.body.text);
+        if (verdict && verdict.ok === false) {
+          return { ok: false, status: Number(verdict.status) || 400, hash: r.body.hash,
+            error: verdict.error || 'refused by the peer', byPeer: true };
+        }
+        return { ok: true, status: 200, hash: r.body.hash, receipt: !!r.body.receipt };
+      }
       if (r.status === 503 && now() + wait <= deadline) {
         return sleep(wait).then(function () { wait = Math.min(wait * 2, 60000); return attempt(); });
       }

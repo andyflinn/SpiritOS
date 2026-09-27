@@ -162,6 +162,42 @@ function door() {
     }
   }
 
+  // ── A REPLY THAT REFUSES IS NOT A DELIVERY ─────────────────────────
+  //
+  // The node answers 200 when a reply ARRIVED. The peer's verdict is inside
+  // it. After a peer rotates its key, that verdict is "this did not open for
+  // me" -- and it was being reported as delivered.
+  {
+    const posts = [];
+    const fetchFn = function (url, init) {
+      const body = JSON.parse(init.body);
+      posts.push({ to: body.to, env: JSON.parse(body.text) });
+      const refused = body.to === PEER;
+      const answer = refused
+        ? { hash: 'H' + posts.length, text: JSON.stringify({ v: 1, body: { ok: false, status: 400, error: 'this did not open for me' } }) }
+        : { hash: 'H' + posts.length, receipt: true };
+      return Promise.resolve({ status: 200, text: function () { return Promise.resolve(JSON.stringify(answer)); } });
+    };
+    fetchFn.posts = posts;
+    const r = await agents.send(cfgFor(home()), 'claude-windows', 'note', 'sealed to a key that was rotated away', '', { fetch: fetchFn });
+    const rep = posts.filter(function (p) { return p.to === CONTROL; })[0];
+    let data = null;
+    try { data = JSON.parse(rep.env.body.text); } catch (e) { data = null; }
+    if (!r.ok && /did not open/.test(r.error) && data && /^undelivered: this did not open for me/.test(data.outcome)) {
+      test.check('a reply whose body says ok:false is a refusal, not a delivery — and the report to Andy '
+        + 'says "undelivered: this did not open for me", not "delivered"');
+    } else {
+      test.fail('a refusing reply gave ' + JSON.stringify(r) + ', report outcome ' + JSON.stringify(data && data.outcome));
+    }
+    // THE CONTROL: a plain receipt is still a delivery.
+    const ok = await agents.send(cfgFor(home()), 'control', 'answer', 'a plain answer', '', { fetch: fetchFn });
+    if (ok.ok) {
+      test.check('and a reply with no verdict in it, a plain receipt, is still a delivery');
+    } else {
+      test.fail('a plain receipt was refused: ' + JSON.stringify(ok));
+    }
+  }
+
   // ── HIS DECISION ON A DEPENDENCY IS A LINE THE LEAD CANNOT MISS ────
   //
   //   Andy: "a re-shuffeling of the board triggers a reload of the board.
