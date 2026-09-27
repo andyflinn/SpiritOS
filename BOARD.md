@@ -20,10 +20,10 @@ not describe. Run the harness if in doubt.
 - **missing:** appServerPost and appServerReply in appFaceApp — **~0% there**, guess: a sitting
   
   the visitor's request posted straight to the slot owner's key with the owner's signed route, and the answer back with re = the request's hash, matched to the open browser request (with the early-answer store)
-- **missing:** api.toLocalApp in nodeApps — **~0% there**, guess: a sitting
+- **missing:** toLocalApp in js/appServers.js, handed to booted apps by nodeApps — **~0% there**, guess: a sitting
   
   the node hands a booted app's request to a local app server's door; the app never sees an address
-- **missing:** a long-running server job kind in jobs.js — **~0% there**, guess: a sitting
+- **missing:** startServerJob in jobs.js (kind 'server', restarts on exit) — **~0% there**, guess: a sitting
   
   the node starts and keeps an app server process, so it knows the door locally
 - **missing:** the owner's serve answered by the app server, not the 501 stub — **~0% there**, guess: with the two above

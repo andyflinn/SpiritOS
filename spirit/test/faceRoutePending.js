@@ -47,9 +47,10 @@ test.awaiting('public-app-server/G17', 'appServerPost and appServerReply in appF
 //
 //   Andy, 2026-09-27, under G17: "the go is officail. also: i explicitly
 //   permit the two new/proposed interfaces/api' for communication from node
-//   to appserver." claude-windows builds; these are the handover. Each
-//   probe is loose on purpose (the names are not fixed yet) and is
-//   tightened to the real name when the piece lands.
+//   to appserver." claude-windows builds; these are the handover. The names
+//   are claude-windows' (17:34, under G17): jobs.js startServerJob (kind
+//   'server'), a new js/appServers.js holding toLocalApp and the named
+//   refusals, and nodeApps.js handing api.toLocalApp to booted apps.
 //
 // What the assertions will hold, once each goes red:
 //   - only an app whose manifest declares it gets toLocalApp at all (absent,
@@ -64,14 +65,15 @@ test.awaiting('public-app-server/G17', 'appServerPost and appServerReply in appF
 
 const nodeApps = source('js/nodeApps.js');
 const jobs = source('js/jobs.js');
+const appServers = source('js/appServers.js');
 
-test.awaiting('public-app-server/G17', 'api.toLocalApp in nodeApps',
-  /toLocalApp/.test(nodeApps),
+test.awaiting('public-app-server/G17', 'toLocalApp in js/appServers.js, handed to booted apps by nodeApps',
+  /\btoLocalApp\b/.test(appServers) && /\btoLocalApp\b/.test(nodeApps),
   'the node hands a booted app\'s request to a local app server\'s door; the app never sees an address',
   { there: 0, cost: 'a sitting' });
 
-test.awaiting('public-app-server/G17', 'a long-running server job kind in jobs.js',
-  /['"]server['"]/.test(jobs),
+test.awaiting('public-app-server/G17', 'startServerJob in jobs.js (kind \'server\', restarts on exit)',
+  /function startServerJob\b/.test(jobs),
   'the node starts and keeps an app server process, so it knows the door locally',
   { there: 0, cost: 'a sitting' });
 
@@ -81,7 +83,7 @@ test.awaiting('public-app-server/G17', 'the owner\'s serve answered by the app s
   { there: 0, cost: 'with the two above' });
 
 test.awaiting('public-app-server/G17', 'a named 503 when the app server is not running',
-  /app-not-running/.test(face) || /app-not-running/.test(nodeApps),
+  /app-not-running/.test(appServers),
   'a dead or unstarted process is answered by name at once, not left to the 18 s wait',
   { there: 0, cost: 'with the two above' });
 
