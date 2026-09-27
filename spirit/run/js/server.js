@@ -154,6 +154,8 @@ jobs.startFsWatcherJob(ROOT_DIR);
 let presence = null;
 // Set once the router exists (see ownerPost.js); owner.command calls it.
 let peerOwnerPost = null;
+// The owner's view of his boxes (boxes.js, public-app-server/G10), in memory.
+let boxes = null;
 let peerRouter = null;
 
 // ── WHAT THE LOOPBACK CLIENT DOOR CAN BE ASKED ───────────────────────
@@ -1399,6 +1401,10 @@ contactBook.syncMarks(ROOT_DIR);
       post: function (relayUrl, toKey, text, hints) { return peerRouter.post(relayUrl, toKey, text, hints); },
     });
     arrivals.subscribe(ownerPost.onArrival);
+
+    // HIS SERVERS' BOX REPORTS, kept in memory and summed per box (G10).
+    boxes = require('./boxes').createBoxes({ rootDir: ROOT_DIR, decode: wire.decode, isEnvelope: wire.isEnvelope });
+    arrivals.subscribe(boxes.onArrival);
     peerOwnerPost = function (puppetKey, verb, body) { return ownerPost.send(puppetKey, verb, body); };
   }
 
@@ -1778,6 +1784,17 @@ contactBook.syncMarks(ROOT_DIR);
   // waits for the one answer with that command's hash. WIRE, because the
   // puppet can be unreachable, and a wire verb says so (verbTable.js).
   loopbackVerbs.claim('owner', 'ownerPost.js', {
+    // WHAT HIS BOXES CARRY, grouped by box, on demand (G10). Andy: "that
+    // must be visible-on-demand in a UI", and over-committed is a warning.
+    'owner.boxes': function (rq, rs) {
+      readJsonBody(rq).then(function () {
+        rs.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        rs.end(JSON.stringify({ ok: true, boxes: boxes ? boxes.list() : [] }));
+      }).catch(function () {
+        rs.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        rs.end(JSON.stringify({ ok: false, error: 'Invalid JSON body' }));
+      });
+    },
     'owner.command': function (rq, rs) {
       readJsonBody(rq).then(function (body) {
         if (!peerOwnerPost) {

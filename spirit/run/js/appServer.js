@@ -1304,6 +1304,13 @@ function create(opts) {
       state.ownerKey = seen.ownerKey;
       state.ownerLabel = seen.ownerLabel;
       state.lastBind = { ok: true, first: p.first, relayKey: p.key, unbound: !seen.ownerKey };
+      // TELL THE OWNER WHICH BOX THIS IS (public-app-server/G10): the four
+      // facts, as a system packet his node reads (boxes.js). Fire and forget;
+      // the next bind says it again, and his node keeps it in memory only.
+      if (state.ownerKey) {
+        Promise.resolve(reachOwner(rootDir, appName, state, { v: 1, body: { box: boxReport(rootDir, appName) } }))
+          .catch(function () { /* the owner may be asleep; the next bind reports again */ });
+      }
       return state.lastBind;
     });
   }

@@ -653,6 +653,7 @@ freePort()
       ['POST', '/api/spirit', { verb: 'node.rotateCipher' }],
       // A command for a puppet nobody is connected to: refused as
       // unreachable, which is the wire verb's honest answer here.
+      ['POST', '/api/spirit', { verb: 'owner.boxes' }],
       ['POST', '/api/spirit', { verb: 'owner.command', to: 'MCowBQYDK2VwAyEA' + 'A'.repeat(43) + '=', command: 'contact.list' }],
       // A url on no Natter list, so this is refused before any network is
       // touched — the ReferenceError was at the CALL, which happens
