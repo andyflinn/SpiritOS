@@ -122,12 +122,20 @@ test.subHeading('one return bound, both paths');
   // own :127 against its :146. The nameable unit is the shared helper
   // every collection verb answers through, because a per-verb
   // implementation is the duplication the probe exists to catch.
-  const hub = exports_('spirit/run/js/hub.js');
-  const shared = hub.filter(function (k) { return /bounded|truncat|partial/i.test(k); });
-  test.awaiting('puppets/G2', 'the shared bound-and-flag helper', shared.length > 0,
-    'one helper that fills an answer to the bound and sets `more`, used by every verb that returns a collection. ' +
-    '`peer.search` already returns { rows, more } (hub.js:2242 at dd0f1ad) — the right shape with the wrong unit, ' +
-    'bounding rows scanned rather than bytes',
+  // PROBED ON THE AGREED NAME, not a guess: Andy, 2026-09-27, "the
+  // getResult() call on the bucket is what creates the byte-limited json
+  // result" (PUPPETS.md G2, decided 5). It was probing hub.js exports for
+  // bounded/truncat/partial, words the design never used, so it could
+  // not have flipped when the work landed.
+  let getResult = false;
+  try {
+    const b = require(path.join(REPO, 'spirit/run/js/bucket.js')).createBucket(1, function () { return 0; });
+    getResult = !!b && typeof b.getResult === 'function';
+  } catch (e) { getResult = false; }
+  test.awaiting('puppets/G2', 'the bucket\'s getResult(), cut in bytes', getResult,
+    'one bucket every collection search feeds, holding key/label pairs, answered through getResult() cut to the ' +
+    'byte cap with `more` telling the truth. bucket.js already has serialize(map, maxBytes) (bucket.js:147 at ' +
+    '6637c75) with no caller, counting characters rather than bytes',
     { there: 40, cost: 'a sitting — the shape exists, the unit and the sharing do not' });
 
   // ANDY'S OWN INSTRUMENT, ruled for a different job and doing two.
