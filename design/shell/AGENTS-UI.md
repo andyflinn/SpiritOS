@@ -161,6 +161,10 @@ What follows is what both agreed. Any of it changes when Andy asks.
   an empty slot and leaves a filled one alone. When every row's slot is
   filled, the agent goes idle and listens. That bounds the tokens: at most
   one recommendation per row, and nothing more until a slot empties.
+  **The author may revise it.** Andy: *"you may revise you annotation when
+  your viewpoint changes"*. A revision replaces the slot's content and
+  never adds a second slot. Only the agent who wrote it revises it, and
+  only because its view changed, not to keep busy.
 
 ## Open
 
