@@ -1,0 +1,30 @@
+[Unit]
+Description=SpiritOS face node (the puppet that serves *.face.<domain>)
+After=network.target
+Documentation=https://github.com/andyflinn/SpiritOS
+
+[Service]
+Type=simple
+# One-operator host. root is spirit. No second Unix user (bash/ONE-OPERATOR.md).
+#
+# A NODE, NOT A RELAY: no --relay. It is the "VPS puppet node" of
+# design/shell/PUBLIC-APP-SERVER.md, G17: its own clone, its own
+# relay-state and key, owned by Andy's node through relay-state/puppet.json,
+# and its face switched on by relay-state/face.json. Its door listens on
+# 127.0.0.1 only (server.js BIND_HOST), and so does the face (puppetPost.js
+# FACE_BIND); Caddy is the only thing that reaches the face from outside.
+WorkingDirectory=__RUN_DIR__
+ExecStart=/usr/bin/node js/server.js --port __PORT__
+Restart=always
+RestartSec=3
+Environment=PORT=__PORT__
+
+# The cap is written by bash/install-units, as for the relay. This node
+# holds no mailbox; the cap only stops a runaway from taking the box.
+MemoryMax=__MEMORY_MAX__
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

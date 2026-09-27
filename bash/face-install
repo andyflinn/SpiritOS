@@ -1,0 +1,164 @@
+#!/bin/bash
+# Put the FACE NODE on this box, at /root/face/SpiritOS, beside the relay.
+#
+#   Andy, 2026-09-27: "make me the appropriate scripts in ./bash/ to get that
+#   sorted out", and "yes" to the relay plus one face node on this box.
+#
+# The face node is the "VPS puppet node" of design/shell/PUBLIC-APP-SERVER.md,
+# G17 (THE ROUTE): a small SpiritOS node, OWNED by Andy's own node, whose one
+# job is to take browser requests for *.face.<domain> (puppetPost, fed by
+# Caddy) and forward them to whichever node holds the name (appFaceApp).
+#
+# A second CLONE, like bash/lab-install's second relay, and for the same
+# reason: its own spirit/run/relay-state, its own key, its own port and unit.
+# A node and the relay must never share one relay-state (identity.json alone
+# would make them the same party). It is not a second Unix user: root is
+# still spirit (bash/ONE-OPERATOR.md).
+#
+# Run it from the MAIN clone, as root. Idempotent: run it again after a push
+# and it updates the face node rather than complaining.
+#
+#   /root/SpiritOS/bash/face-install <OWNER_KEY> [INVITE]
+#
+#   OWNER_KEY  Andy's node's public key (MCow...). The face obeys only it.
+#   INVITE     an invite token from the relay's owner, for the face node's
+#              first join. Needed once; leave it out on later runs.
+source "$(dirname "$0")/lib.sh"
+need_root
+
+FACE_DIR="${SPIRIT_FACE_DIR:-/root/face/SpiritOS}"
+FACE_UNIT="${SPIRIT_FACE_UNIT:-spirit-face}"
+FACE_NODE_PORT="${SPIRIT_FACE_NODE_PORT:-65433}"   # the face node's own door, loopback only
+FACE_PORT="${SPIRIT_FACE_PORT:-65434}"             # puppetPost, where Caddy sends visitors
+FACE_DOMAIN="${SPIRIT_FACE_DOMAIN:-face.$DOMAIN}"
+ORIGIN="${SPIRIT_FACE_ORIGIN:-https://github.com/andyflinn/SpiritOS.git}"
+OWNER_KEY="${1:-${SPIRIT_FACE_OWNER:-}}"
+INVITE="${2:-${SPIRIT_FACE_INVITE:-}}"
+
+# ── THE GUARDS: EACH IS A WAY THIS COULD EAT THE LIVE RELAY ──────────
+if [ "$FACE_DIR" = "$REPO_ROOT" ]; then
+  if [ -f "$REPO_ROOT/.env" ]; then
+    die "this IS a second clone — run ${CLONE_DIR}/bash/face-install instead (works from any directory)"
+  fi
+  die "face dir is this clone ($REPO_ROOT) — that would put the face node over the live relay"
+fi
+[ "$FACE_UNIT" != "$UNIT_NAME" ] || die "face unit is '$UNIT_NAME', the live unit — set SPIRIT_FACE_UNIT"
+[ "$FACE_UNIT" != "spirit-lab" ] || die "face unit is 'spirit-lab', the lab's unit — set SPIRIT_FACE_UNIT"
+for p in "$NODE_PORT" 65431 65432 65420; do
+  [ "$FACE_NODE_PORT" != "$p" ] || die "face node port $FACE_NODE_PORT is taken ($p) — set SPIRIT_FACE_NODE_PORT"
+  [ "$FACE_PORT" != "$p" ] || die "face port $FACE_PORT is taken ($p) — set SPIRIT_FACE_PORT"
+done
+[ "$FACE_PORT" != "$FACE_NODE_PORT" ] || die "the face and the face node's door need two ports"
+case "$OWNER_KEY" in
+  MCow*) ;;
+  *) die "give Andy's node public key (MCow...) as the first argument: the face obeys only its owner" ;;
+esac
+
+say "face node"
+echo "    dir:          $FACE_DIR"
+echo "    unit:         $FACE_UNIT"
+echo "    node door:    127.0.0.1:$FACE_NODE_PORT"
+echo "    face (Caddy): 127.0.0.1:$FACE_PORT"
+echo "    face domain:  $FACE_DOMAIN and *.$FACE_DOMAIN"
+echo "    owner:        ${OWNER_KEY:0:24}..."
+
+if [ -d "$FACE_DIR/.git" ]; then
+  say "clone exists — updating from origin"
+  cd "$FACE_DIR" || die "cannot enter $FACE_DIR"
+  git fetch origin
+  git reset --hard origin/master
+  ok "at $(git rev-parse --short HEAD)"
+else
+  say "clone $ORIGIN"
+  mkdir -p "$(dirname "$FACE_DIR")"
+  git clone "$ORIGIN" "$FACE_DIR"
+  cd "$FACE_DIR" || die "cannot enter $FACE_DIR"
+  ok "cloned at $(git rev-parse --short HEAD)"
+fi
+
+# ── .env SAYS WHAT THIS CLONE IS (read by lib.sh; never source it) ───
+#
+# SPIRIT_UNIT_TEMPLATE picks bash/systemd/spirit-face.service, a NODE unit
+# (no --relay). SPIRIT_RELAY_PORT is lib.sh's name for "this clone's port",
+# which for this clone is the node's door. It follows master, like the lab:
+# the face route (G17) is new work and arrives the moment it is pushed.
+say "write $FACE_DIR/.env"
+cat > "$FACE_DIR/.env" <<ENV
+# Read automatically by bash/lib.sh — do NOT source this by hand.
+export SPIRIT_RELAY_DOMAIN=$DOMAIN
+export SPIRIT_RELAY_PORT=$FACE_NODE_PORT
+export SPIRIT_UNIT_NAME=$FACE_UNIT
+export SPIRIT_UNIT_TEMPLATE=spirit-face
+export SPIRIT_TRACK=master
+ENV
+chmod 600 "$FACE_DIR/.env"
+
+# ── WHAT MAKES IT A FACE, AND WHOSE ─────────────────────────────────
+#
+# face.json switches puppetPost on (puppetPost.js faceConfigIn: absent means
+# no face). puppet.json names the only key this node obeys (nodeApps.puppetIn);
+# 'carries' is empty: the owner commands nothing on it yet but the face.
+STATE="$FACE_DIR/spirit/run/relay-state"
+mkdir -p "$STATE"
+chmod 700 "$STATE"
+say "write face.json and puppet.json"
+printf '{ "port": %s }\n' "$FACE_PORT" > "$STATE/face.json"
+printf '{ "owner": "%s", "carries": [] }\n' "$OWNER_KEY" > "$STATE/puppet.json"
+chmod 600 "$STATE/face.json" "$STATE/puppet.json"
+ok "face on 127.0.0.1:$FACE_PORT, owned by ${OWNER_KEY:0:24}..."
+
+say "install unit $FACE_UNIT"
+( cd "$FACE_DIR" && ./bash/install-units ) || die "install-units failed for the face node"
+say "restart and enable"
+( cd "$FACE_DIR" && ./bash/restart && ./bash/boot-on ) || die "the face node did not start — see above"
+
+DOOR="http://127.0.0.1:$FACE_NODE_PORT"
+verb() { curl -fsS --max-time 20 -H 'Content-Type: application/json' -d "$1" "$DOOR/api/spirit"; }
+for i in $(seq 1 30); do curl -fsS --max-time 2 "$DOOR/" >/dev/null 2>&1 && break; sleep 1; done
+curl -fsS --max-time 2 "$DOOR/" >/dev/null 2>&1 || die "the face node's door $DOOR does not answer"
+ok "face node answering on $DOOR"
+
+# ── ITS FIRST JOIN NEEDS AN INVITE FROM THE RELAY'S OWNER ───────────
+#
+# The face node must be a member of this relay to reach its owner at all.
+# Only the relay's owner can mint the invite, so this cannot be done for
+# him; with none given, it says what to run next.
+if [ -n "$INVITE" ]; then
+  say "join https://$DOMAIN as 'face'"
+  if OUT=$(verb "{\"verb\":\"relay.claim\",\"url\":\"https://$DOMAIN\",\"name\":\"face\",\"invite\":\"$INVITE\",\"inviteLabel\":\"face\"}" 2>&1); then
+    ok "joined: $OUT"
+  else
+    warn "the join was refused: $OUT"
+    echo "    an invite is used once; if this is a re-run, leave the invite out."
+  fi
+else
+  warn "no invite given: the face node is running but is not a member of https://$DOMAIN yet"
+  echo "    mint an invite for 'face' on your relay, then run:"
+  echo "      $REPO_ROOT/bash/face-install $OWNER_KEY <INVITE>"
+fi
+
+# ── IT LISTENS TO ITS OWNER, AND THE OWNER MUST LISTEN TO IT ────────
+if OUT=$(verb "{\"verb\":\"contact.accept\",\"publicKey\":\"$OWNER_KEY\"}" 2>&1); then
+  ok "the face node accepts its owner as a contact"
+else
+  warn "could not accept the owner as a contact yet: $OUT"
+  echo "    (normal before the first join; run this script again after it)"
+fi
+FACE_KEY=$(node -e 'try{process.stdout.write(require(process.argv[1]).publicKey||"")}catch(e){}' "$STATE/identity.json" 2>/dev/null)
+if [ -n "$FACE_KEY" ]; then
+  say "ON YOUR OWN NODE, accept this key as a contact (the face node):"
+  echo "      $FACE_KEY"
+else
+  warn "the face node has no key yet: it gets one when it first joins the relay"
+fi
+
+say "caddy site for $FACE_DOMAIN"
+( SPIRIT_FACE_DOMAIN="$FACE_DOMAIN" SPIRIT_FACE_PORT="$FACE_PORT" "$REPO_ROOT/bash/face-tls" ) || {
+  warn "face-tls did not finish — the face node runs, but visitors cannot reach it yet"
+  echo "    follow what it printed, then: $REPO_ROOT/bash/face-tls"
+  exit 1
+}
+
+ok "face node is up"
+echo "    test:   curl -sS https://join.$FACE_DOMAIN/   (expect your node's answer)"
+echo "    manage: cd $FACE_DIR && ./bash/status"

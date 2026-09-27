@@ -1,0 +1,95 @@
+#!/bin/bash
+# Caddy serves face.<domain> and *.face.<domain> and proxies them to the
+# face node's puppetPost, with a certificate per name fetched ON DEMAND.
+#
+#   Andy, 2026-09-27: "make me the appropriate scripts in ./bash/", and
+#   "yes" to on-demand certificates instead of a DreamHost key.
+#
+# WHY ON DEMAND, NOT A WILDCARD: a wildcard certificate needs Caddy to write
+# a DNS record at DreamHost, and Caddy's build service refuses to build the
+# DreamHost plug-in today ("unable to fulfill download request", every
+# version tried, while the Cloudflare plug-in builds). On demand needs no
+# DNS access at all: the DNS records *.face.<domain> already point here,
+# and Caddy fetches a certificate for each name the first time it is
+# visited, AFTER asking the face node whether the name is real
+# (GET /.well-known/spirit-name?domain=<name>, answered 200 or 404 by
+# appFaceApp, and only on loopback). So only names the owner granted ever
+# get a certificate, and a scanner's random names get none.
+#
+# Same rule as bash/tls: one file per domain under /etc/caddy/sites/, and
+# the main Caddyfile is the operator's. This only READS it, and says what
+# to add when the global on_demand_tls block is missing.
+source "$(dirname "$0")/lib.sh"
+need_root
+have caddy || die "caddy is not installed — run ./bash/tls first"
+
+FACE_DOMAIN="${SPIRIT_FACE_DOMAIN:-face.$DOMAIN}"
+FACE_PORT="${SPIRIT_FACE_PORT:-65434}"
+SITES_DIR=/etc/caddy/sites
+SITE_FILE="$SITES_DIR/$FACE_DOMAIN.caddy"
+ASK_URL="http://127.0.0.1:$FACE_PORT/.well-known/spirit-name"
+
+mkdir -p "$SITES_DIR"
+say "write $SITE_FILE for $FACE_DOMAIN and *.$FACE_DOMAIN -> 127.0.0.1:$FACE_PORT"
+cat > "$SITE_FILE" <<SITE
+# Written by bash/face-tls. The face node's puppetPost, for every name
+# under $FACE_DOMAIN. reverse_proxy keeps the visitor's Host header, which is
+# how appFaceApp knows which name was asked for.
+$FACE_DOMAIN, *.$FACE_DOMAIN {
+	tls {
+		on_demand
+	}
+	encode gzip
+	reverse_proxy 127.0.0.1:$FACE_PORT
+}
+SITE
+chmod 644 "$SITE_FILE"
+
+# ── THE ASK IS GLOBAL, AND THE GLOBAL BLOCK IS THE OPERATOR'S ────────
+#
+# Caddy refuses on-demand certificates with nothing to ask: without it,
+# anyone could make this box request certificates for any name pointing
+# here and burn the domain's Let's Encrypt limits. The ask lives in the
+# main file's global options, which this never writes.
+MAIN=/etc/caddy/Caddyfile
+if [ ! -f "$MAIN" ] || ! grep -q 'import sites/' "$MAIN"; then
+  warn "$MAIN does not import $SITES_DIR — run ./bash/tls first, it explains how"
+  exit 1
+fi
+if ! grep -q "on_demand_tls" "$MAIN" || ! grep -q "$ASK_URL" "$MAIN"; then
+  warn "$MAIN has no global on_demand_tls block asking the face node"
+  echo
+  echo "    Add this at the VERY TOP of $MAIN (a global block must come first),"
+  echo "    above the import line. If a global { } block is already there, put"
+  echo "    the on_demand_tls part inside it instead:"
+  echo
+  echo "      {"
+  echo "      	on_demand_tls {"
+  echo "      		ask $ASK_URL"
+  echo "      	}"
+  echo "      }"
+  echo
+  echo "    Then check and reload:"
+  echo "      caddy validate --config $MAIN --adapter caddyfile"
+  echo "      systemctl reload caddy"
+  echo
+  echo "    and rerun this script. Nothing was reloaded, so what is serving now keeps serving."
+  exit 1
+fi
+
+if ! caddy validate --config "$MAIN" --adapter caddyfile >/dev/null 2>&1; then
+  die "caddy rejects the config after writing $SITE_FILE — not reloading. Run: caddy validate --config $MAIN --adapter caddyfile"
+fi
+systemctl reload caddy || systemctl restart caddy
+ok "caddy serving $FACE_DOMAIN and *.$FACE_DOMAIN, certificates on demand"
+
+# ── WHAT CADDY WILL HEAR WHEN IT ASKS ────────────────────────────────
+ANSWER=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$ASK_URL?domain=join.$FACE_DOMAIN" || true)
+case "$ANSWER" in
+  200) ok "the face node says join.$FACE_DOMAIN is a real name: its certificate will be issued on the first visit" ;;
+  404) warn "the face node says join.$FACE_DOMAIN is NOT a name (404)."
+       echo "    Its owner has no grant row for 'join', or has not answered. Check on your own node:"
+       echo "    app/appFaceApp/grants.json and face-domain.json (see bash/FACE.md)." ;;
+  *)   warn "the face node did not answer the name check ($ANSWER): is $FACE_PORT its face port, and is it running?" ;;
+esac
+echo "    test: curl -sS https://join.$FACE_DOMAIN/"

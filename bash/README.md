@@ -6,8 +6,11 @@ This folder is what you run after SSH onto the public box
 It is **not** labMaster. labMaster stays on the coordinator laptop
 (`http://127.0.0.1:65420`) and only ever spawns local lab nodes.
 
-The public relay is a small machine (about 1 GB RAM). It runs one
-Node process (`--relay`) behind Caddy. Nothing else.
+The public relay is a small machine (about 1 GB RAM). It runs the relay
+(`--relay`) behind Caddy, and, since 2026-09-27, ONE face node beside it
+(`/root/face/SpiritOS`, unit `spirit-face`, see [FACE.md](FACE.md)). Nothing
+else. Andy's "yes" to the relay plus one face node on this box, and
+nothing more.
 
 ```
 ssh root@194.37.81.237
@@ -18,7 +21,8 @@ cd /opt/spirit-os
 ## Never on this box
 
 - `node spirit/test/labMaster/labMaster.js`
-- personal-node mode (`node js/server.js` without `--relay`)
+- personal-node mode (`node js/server.js` without `--relay`), except the
+  one face node that `./bash/face-install` puts in its own clone
 - Jobs, App Builder, LM Studio, the desktop shell
 - extra Node processes “just to check”
 
@@ -47,6 +51,8 @@ labMaster. Kill it.
 | `./bash/cron-remove` | Take that cron line out. |
 | `./bash/firewall` | Publish 22, 80, 443. Do not publish 65430. |
 | `./bash/tls` | Install Caddy + site file for `$SPIRIT_RELAY_DOMAIN`. |
+| `./bash/face-install` | The face node: its own clone, owned by your node, serving `*.face.<domain>`. Idempotent. See [FACE.md](FACE.md). |
+| `./bash/face-tls` | Caddy site for `face.<domain>` and `*.face.<domain>`, certificates on demand. Run by `face-install`. |
 | `./bash/http-to-https` | Move Node off public :80 onto localhost :65430, enable TLS + redirect. |
 | `./bash/logs` | Last 100 lines of the relay unit. |
 
