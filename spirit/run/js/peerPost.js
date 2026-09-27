@@ -795,14 +795,37 @@ function createPeerPost(opts) {
     // stands: no second ask, no loop. will-not-open is retry 'after' in
     // the same change (spiritErrors.js), so a queued report of this message
     // is kept and not destroyed (wsl-claude's join finding).
-    function staleCard(answer, sealKey) {
-      if (!sealKey || nodeCard.asks(text) || !sealsPosts || !answer || answer.ok) return false;
-      return answer.code === 'will-not-open' || /this did not open for me/.test(String(answer.error || ''));
+    // THE REFUSAL ARRIVES AS A REPLY, NOT AS A FAILED POST. wsl-claude,
+    // testing this (cardRotation.js): the peer that cannot open answers
+    // {"ok":false,"status":400,"error":"this did not open for me"} INSIDE the
+    // reply body, so the post itself resolves ok:true, status 200. Reading
+    // only the top level never fired: no ask, the message lost, and the
+    // sender told it was delivered. So the body is read too.
+    function refusalIn(answer) {
+      if (!answer) return null;
+      if (!answer.ok) return answer;
+      let parsed = null;
+      try { parsed = JSON.parse(String(answer.text || '')); } catch (e) { parsed = null; }
+      const inner = parsed && parsed.body && typeof parsed.body === 'object' ? parsed.body : parsed;
+      return inner && inner.ok === false ? inner : null;
     }
-    function askAgain(refusal, oldKey) {
+    function staleCard(answer, sealKey) {
+      if (!sealKey || nodeCard.asks(text) || !sealsPosts) return false;
+      const said = refusalIn(answer);
+      if (!said) return false;
+      return said.code === 'will-not-open' || /this did not open for me/.test(String(said.error || ''));
+    }
+    function askAgain(answer, oldKey) {
       return fetchCard(true, oldKey).then(function (fresh) {
-        if (!fresh || fresh === oldKey) return refusal;
-        return sealAndSend(fresh);
+        if (fresh && fresh !== oldKey) return sealAndSend(fresh);
+        // NO NEWER CARD, SO THE MESSAGE DID NOT ARRIVE, and the caller is told
+        // so at the top level, where "delivered" is decided. Handing back the
+        // reply as it came would say ok:true about a message nobody could read.
+        const said = refusalIn(answer) || {};
+        return {
+          ok: false, status: Number(said.status) || 400, code: 'will-not-open',
+          error: 'this did not open for me', hash: answer && answer.hash,
+        };
       });
     }
 

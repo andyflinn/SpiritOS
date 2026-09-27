@@ -392,6 +392,12 @@ function rotate(rootDir) {
   const pair = require('crypto').generateKeyPairSync('x25519');
   id.sealPublicKey = pair.publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
   id.sealPrivateKey = pair.privateKey.export({ type: 'pkcs8', format: 'der' }).toString('base64');
+  // STRICTLY NEWER THAN ANYTHING ALREADY HANDED OUT. A node that never wrote
+  // its counter publishes its card as 1 (cardFields' default), and `advance`
+  // counted from 0, so the rotated card was ALSO 1 and every peer refused it
+  // as not newer. Found by wsl-claude's cardRotation.js burst case. Starting
+  // from at least 1 makes the rotated card at least 2.
+  id.cardAt = Math.max(Number(id.cardAt) || 0, 1);
   try { auth.saveIdentity(rootDir, id); }
   catch (e) { return { ok: false, status: 500, code: 'rotate-not-saved', error: 'the new cipher key could not be saved' }; }
   const fields = verify(describe(rootDir));
