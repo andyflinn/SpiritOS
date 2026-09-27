@@ -1134,6 +1134,11 @@ contactBook.syncMarks(ROOT_DIR);
   // node must have before anybody can ask it anything.
   try { require('./relayAuth').ensureIdentity(ROOT_DIR, ''); }
   catch (e) { /* a node with no identity yet is answered by the claim path */ }
+  // THE END OF A DOWNTIME (cycle-11/C3). Andy: "a re-start row documents the
+  // downtime?", "... the end-of-a-downtime". Everything between the last
+  // row and this one reads "this node was not running", not "nothing
+  // happened". Written for every relay the record already knows.
+  markRecord('started');
   try { nodeCard.ensureDescription(ROOT_DIR); }
   catch (e) { /* a caption must never be the reason a node will not boot */ }
 
@@ -1904,11 +1909,25 @@ contactBook.syncMarks(ROOT_DIR);
 // The two books differ — a registry keyed by identity, a Set of page
 // responses — and what gets said to them does not, which is why
 // sayGoingAway takes sinks rather than being a method on either.
+// The node's own started/stopped rows, one per relay the record knows.
+// The record is a witness, never a participant, so a failure is swallowed.
+function markRecord(kind) {
+  try {
+    const rec = require('./nodeStore').open(ROOT_DIR).record;
+    rec.relays().forEach(function (url) { rec.edge(url, kind, null, ''); });
+  } catch (e) { /* as recordEdge */ }
+}
+
 {
   let leaving = false;
   const goodbye = function (signal) {
     if (leaving) return;
     leaving = true;
+    // THE START OF A DELIBERATE ONE (cycle-11/C3). Andy: "and the stopped row
+    // can't be guaranteed.", "... but should be part of \"graceful shutdown\"".
+    // A crash writes nothing, and that absence is the signal: a started
+    // with no stopped before it is a death.
+    markRecord('stopped');
     let told = 0;
     // The browser's EventSource honours `retry:` natively, so telling the
     // page costs no client code at all.

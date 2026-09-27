@@ -895,9 +895,14 @@ function open(rootDir, opts) {
       // NOT truncated to the minute: an edge is an instant and two of
       // them in one minute is a flap, which is exactly the thing worth
       // seeing.
+      // FOUR KINDS SINCE cycle-11/C3: the stream's open and close, and the
+      // NODE's own started and stopped, the one state the record could not
+      // mark because the node is what writes it. Anything else is still a
+      // close, as before.
       edge: function (relay, kind, now, why) {
+        const known = kind === 'open' || kind === 'started' || kind === 'stopped';
         q.recPut.run(String(relay || ''), now == null ? Date.now() : now,
-          kind === 'open' ? 'open' : 'close', 0, 0, 0, 0, 0,
+          known ? kind : 'close', 0, 0, 0, 0, 0,
           JSON.stringify(why ? { why: String(why) } : {}));
       },
 
