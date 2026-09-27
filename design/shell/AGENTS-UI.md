@@ -88,9 +88,14 @@ What follows is what both agreed. Any of it changes when Andy asks.
    node's log with `since` and `limit` and filters by `body.todo`
    ITSELF. **The node never grows a filter on `todo`.** Its log read is
    contained on purpose (`hub.js:1278`: *"no filter on `packet.app`,
-   ever"*), and the same ruling covers a new field. A thread therefore
-   shows only what touched Andy's node. Agent-to-agent traffic is not in
-   it, which is right, since the thread is HIS conversation.
+   ever"*), and the same ruling covers a new field. **And Andy's node holds
+   the WHOLE record** (Andy, 2026-09-27: *"yeah, my node should contain the
+   overall record of our activities."*). Today it receives only a one-line
+   report per agent-to-agent message: who, to whom, the kind, and the first
+   100 characters (`agents.js:296-303`). The full text lives only in the
+   agents' logs. So the report carries the whole message instead: from,
+   to, kind, text, `todo`, `re` and hash. Desk can then show the agents'
+   own discussion of a row under that row too.
 3. **The board is posted, not shared by path.** The lead's checkout is
    not the one Andy's node runs from, so a shared file would work only by
    coincidence of machine. The lead posts the board JSON to Andy's node as
