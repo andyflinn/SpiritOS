@@ -93,6 +93,14 @@ here.
 
 ## You do not
 
+- **Add, change or remove a verb in the node's interface without peer
+  review AND Andy's approval.** Andy, 2026-09-27, after claude had added
+  `node.history` to the node's verb table for the Desk app: *"so you hacked
+  the interface for a mere little app? that's OUTRAGEOUS!"* and *"that's a
+  boundary crossed that requires peer review AND my approval"*. A Go! on a
+  build is not approval of a verb it adds: name the verb in the shape, have
+  the other agent review it, and get his yes on the verb itself.
+
 - Open invites, Relay Chat chrome, or Caddy `X-Forwarded-For` in the same commit as a review fix
 - Re-propose `User=spirit` or `/opt`
 - Run labMaster against spirit-3
