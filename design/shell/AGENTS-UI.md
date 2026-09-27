@@ -235,7 +235,11 @@ notes are attached to the requirement."*
   split is decided and recorded on it, and "where does this already exist"
   notes (the file and line an agent found) are attached to the
   requirement. This is the design sitting's work, moved onto the board. It
-  needs a written shape before anything is built.
+  needs a written shape before anything is built. Andy, the same hour: *"Design sessions
+  are goup chats that produce requirements, warrants a tab, in all
+  likelihood"*. So design mode is a fourth tab: one group conversation
+  (Andy and every agent), whose output is requirements that land on the
+  board once signed off.
 
 ## Open
 
