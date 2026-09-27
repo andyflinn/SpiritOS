@@ -209,12 +209,12 @@ let said = '';
 
   {
     const gone = [];
-    for (const v of ['jobs.list', 'proxy.list']) {
+    for (const v of ['jobs.list', 'proxy.list', 'peer.list', 'owner.boxes']) {
       const r = await ask({ verb: v });
       if (!/no such verb/.test(r.text)) gone.push(v + ' answered ' + r.status);
     }
     if (!gone.length) {
-      test.check('jobs.list and proxy.list are gone ("KILL the replaced verb"): each is now no-such-verb');
+      test.check('jobs.list, proxy.list, peer.list and owner.boxes are gone ("KILL the replaced verb"): each is now no-such-verb');
     } else {
       test.fail('a replaced list verb still answers: ' + gone.join(', '));
     }
