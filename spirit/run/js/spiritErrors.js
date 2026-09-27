@@ -344,6 +344,11 @@ define('job-not-found', {
   texts: ['job not found'],
   note: 'jobs.get named a key no job has now: it may have been deleted since the search that found it (puppets/G2).',
 });
+define('no-such-relay', {
+  status: 404, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['no such relay'],
+  note: 'relay.get named a url that is not in relays.json: removed since the search that found it, or never added (puppets/G2).',
+});
 define('no-such-box', {
   status: 404, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['no such box'],

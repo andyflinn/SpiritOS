@@ -269,7 +269,9 @@ function ndBody() { return document.getElementById('nd-body'); }
 // So: always ask.
 function ndLoad() {
   ndAsked = false;
-  return ndAsk('relay.status', { name: ndLabel || '' })
+// relay.status is gone (puppets/G2): the page kernel's relays.status
+  // asks relay.search and relay.get and hands back the same shape.
+  return spirit.core.relays.status(ndLabel || '').then(function (r) { return r && r.body; })
     .then(function (data) {
       ndAsked = true;
       var rows = (data && data.rows) || [];

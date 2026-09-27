@@ -136,6 +136,7 @@ function mountApp(options) {
       // The browser's one mouth onto the node (AGENT.md, Comms).
       // shell.js asks here; kernel.js supplies it in a real page.
       ask: test.browserAsk(fakeFetch),
+      relays: test.browserRelays(test.browserAsk(fakeFetch)),
       util: { escapeHtml: spirit.core.util.escapeHtml },
       const: { ICON: spirit.core.const.ICON },
     },

@@ -382,7 +382,9 @@ function natterOpenRelay(api, container, relays, url) {
 // by itself.
 function natterProbe(api, container, relays) {
   var label = natterMyName || '';
-  return api.verb('relay.status', { name: label })
+// relay.status is gone (puppets/G2): the page kernel's relays.status
+  // asks relay.search and relay.get and hands back the same shape.
+  return spirit.core.relays.status(label)
     .then(function (r) { return r.body; })
     .then(function (data) {
       var rows = (data && data.rows) || [];

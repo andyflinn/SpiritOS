@@ -807,6 +807,48 @@ if (isNode()) {
   // spirit.core.jobs: browser-side API for the jobs subsystem — wraps
   // EventSource for live updates and XHR for the request/response calls,
   // so a page never has to hand-roll either.
+  // ── HIS RELAYS AS A SCREEN WANTS THEM (puppets/G2) ──────────────────
+  //
+  // relay.status, which answered every relay whole, is gone: the node
+  // answers relay.search (key/label pairs) and relay.get (one relay). A
+  // screen that shows every relay he has, which is a handful, asks the
+  // search with '*' and then gets each one, and this puts the answers back
+  // into the shape those screens were written against, so each changes one
+  // call and not its drawing. The node probes once for the search and the
+  // gets together. `more` rides along: past one answer's cap the screen is
+  // told there are relays it is not showing.
+  spirit.core.relays = {
+    status: function (name) {
+      return spirit.core.ask('relay.search', { q: '*', name: name || '' }).then(function (found) {
+        var s = found && found.body;
+        if (!s || !s.ok) return found;
+        return Promise.all((s.items || []).map(function (i) {
+          return spirit.core.ask('relay.get', { key: i.key }).then(function (g) { return g && g.body; });
+        })).then(function (gets) {
+          var rows = [];
+          var relayStatus = {};
+          gets.forEach(function (g) {
+            if (!g || !g.ok) return;
+            rows.push(g.relay);
+            if (g.report) relayStatus[g.key] = g.report;
+          });
+          var body = {
+              name: s.name,
+              rows: rows,
+              ownedUrls: rows.filter(function (r) { return r.owned; }).map(function (r) { return r.url; }),
+              claimedUrls: rows.filter(function (r) { return r.owned || r.claimed; }).map(function (r) { return r.url; }),
+              mustPick: !!s.mustPick,
+              relayStatus: relayStatus,
+              more: !!s.more,
+          };
+          // The shape spirit.core.ask answers with, text included, since
+          // some screens parse the text themselves.
+          return { status: 200, text: JSON.stringify(body), body: body };
+        });
+      });
+    },
+  };
+
   spirit.core.jobs = {
     subscribe: function(handlers) {
       handlers = handlers || {};

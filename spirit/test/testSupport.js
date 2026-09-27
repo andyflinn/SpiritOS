@@ -347,6 +347,17 @@ const test = {
     // suites hand shell.js a fake `fetch` as a Function() argument and
     // intercept there, so an `ask` closing over the real global would ask
     // the network and assert against a door nobody uses.
+    // THE PAGE KERNEL'S relays.status, for a suite that fakes the kernel
+    // (puppets/G2). The real one (kernel.js) asks relay.search and then
+    // relay.get per relay and puts the answers back into the old shape;
+    // that assembly is proven in relaySearch.js. A screen's suite is about
+    // the screen, so this answers the same shape from the suite's own
+    // fixture, which still speaks the old verb name inside the fake.
+    browserRelays: function (ask) {
+        return {
+            status: function (name) { return ask('relay.status', { name: name || '' }); },
+        };
+    },
     browserAsk: function (fetchImpl) {
         return function (verb, args) {
             const payload = { verb: String(verb) };

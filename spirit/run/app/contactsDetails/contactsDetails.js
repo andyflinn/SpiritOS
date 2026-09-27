@@ -275,7 +275,9 @@ function cdRender() {
 // A relay is addressed by key like any other peer (removePeer rides the
 // ordinary post, natterDetails does the same) — no new verb.
 function cdReleaseSeats() {
-  return cdPost('relay.status', {}).then(function (r) {
+// relay.status is gone (puppets/G2): the page kernel's relays.status
+  // asks relay.search and relay.get and hands back the same shape.
+  return spirit.core.relays.status('').then(function (r) {
     var rows = (r.body && r.body.rows) || [];
     var keyFor = Object.create(null);
     var seats = [];

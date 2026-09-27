@@ -670,7 +670,8 @@ freePort()
       // touched — the ReferenceError was at the CALL, which happens
       // either way.
       ['POST', '/api/spirit', { verb: 'relay.claim', url: 'https://not-on-the-list.example', name: 'x' }],
-      ['POST', '/api/spirit', { verb: 'relay.status', name: 'x' }],
+      ['POST', '/api/spirit', { verb: 'relay.search', name: 'x' }],
+      ['POST', '/api/spirit', { verb: 'relay.get', key: 'https://nowhere.invalid' }],
       // cycle 11's R6. Reads what the node already wrote as reports
       // arrived; reaches no network, so unlike its neighbour it cannot
       // time out. With no relay named it answers the list of relays that

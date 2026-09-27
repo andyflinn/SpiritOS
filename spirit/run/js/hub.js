@@ -2772,6 +2772,63 @@ function createHub(rootDir) {
       .then(function (body) { statusFor(res, (body && body.name) || '', deps); });
   }
 
+  // ── relay.search / relay.get: HIS RELAYS, SEARCHED (puppets/G2) ──────
+  //
+  //   Andy, 2026-09-27, "go." on: "key = the relay's url, label = its name
+  //   plus what's true of it, e.g. 'spirit-3 — yours, online', 'lab —
+  //   member, offline'", and relay.get {url} answering one relay's full
+  //   status.
+  //
+  // relay.status answered every relay whole. The probe it ran asks every
+  // relay in relays.json for its key; a search and the handful of gets a
+  // screen then makes share ONE probe, kept for PROBE_FRESH_MS, so a page
+  // painting three relays does not probe each of them four times.
+  var PROBE_FRESH_MS = 3000;
+  var probeCache = null;
+  function relaySummary() {
+    if (probeCache && Date.now() - probeCache.at < PROBE_FRESH_MS) return probeCache.promise;
+    var me = auth.loadIdentity(rootDir);
+    var p = ownerBadge.probe(rootDir, function (url, method, pathname) {
+      return relayRequest(url, method, pathname, null);
+    }, me && me.publicKey);
+    probeCache = { at: Date.now(), promise: p };
+    p.catch(function () { if (probeCache && probeCache.promise === p) probeCache = null; });
+    return p;
+  }
+  function relayLabel(row) {
+    var who = row.owned ? 'yours' : (row.claimed ? 'member' : 'not joined');
+    var up = row.status === 200 ? 'online' : 'offline';
+    return (row.label || row.url) + ' — ' + who + ', ' + up;
+  }
+
+  function relaySearch(body) {
+    return relaySummary().then(function (summary) {
+      var s = require('./searchBucket').createSearch({
+        query: body && body.q,
+        getLabelStringFromIncomingObject: function (r) { return relayLabel(r) + ' ' + r.url; },
+        extractKeyAndLabelFromRow: function (r) { return { key: r.url, label: relayLabel(r) }; },
+      });
+      for (var i = 0; i < summary.rows.length; i += 1) { if (!s.offer(summary.rows[i])) break; }
+      var r = s.getResult();
+      // One fact about this node, never a row: it owns more than one relay
+      // and has to pick which one it is known by.
+      return { ok: true, status: 200, items: r.items, more: r.more, mustPick: !!summary.mustPick,
+        name: String((body && body.name) || '') };
+    });
+  }
+
+  function relayGet(body, deps) {
+    var key = String((body && body.key) || '');
+    if (!key) return Promise.resolve({ ok: false, status: 400, error: 'key required' });
+    return relaySummary().then(function (summary) {
+      var row = summary.rows.filter(function (r) { return r.url === key; })[0];
+      if (!row) return { ok: false, status: 404, error: 'no such relay' };
+      var reports = (deps && deps.presence && deps.presence.relayStatus) ? deps.presence.relayStatus() : {};
+      return require('./searchBucket').boundedGet({ ok: true, status: 200, key: key, relay: row,
+        report: reports[key] || null });
+    });
+  }
+
   function statusFor(res, name, deps) {
     // THE KEY, and since R3 it is the only thing probe asks with.
     //
@@ -2841,6 +2898,8 @@ function createHub(rootDir) {
     // peerOwnerPost (ownerPost.js) rather than decided twice.
     chooseRoute: chooseRoute,
     handleStatus: handleStatus,
+    relaySearch: relaySearch,
+    relayGet: relayGet,
     handleRecord: handleRecord,
     handlePartnerCheck: handlePartnerCheck,
     handleSearch: handleSearch,

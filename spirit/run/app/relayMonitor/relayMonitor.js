@@ -492,7 +492,8 @@
       }
 
       function load() {
-        return api.verb('relay.status', { name: '' })
+        // relay.status is gone (puppets/G2): see spirit.core.relays.status.
+        return spirit.core.relays.status('')
           .then(function (r) {
             var data = rmAnswerOf(r);
             rows = (data && data.rows) || [];

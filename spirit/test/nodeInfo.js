@@ -165,7 +165,8 @@ function mountApp(home, relays) {
   };
 
   let behavior = null;
-  const shellSpirit = { shell: { activateApp: function (b) { behavior = b; } } };
+  const shellSpirit = { shell: { activateApp: function (b) { behavior = b; } },
+    core: { relays: test.browserRelays(function (v, a) { return api.verb(v, a); }) } };
   const src = fs.readFileSync(APP_SCRIPT, 'utf8');
   // The browser's copy of the rule, which is the same file the node
   // requires — that is the whole point of labelRule being isomorphic.
@@ -824,7 +825,8 @@ function noTick() {
   const home = tmpHome('quiet');
   const doc = fakeDocument();
   let behavior = null;
-  const shellSpirit = { shell: { activateApp: function (b) { behavior = b; } } };
+  const shellSpirit = { shell: { activateApp: function (b) { behavior = b; } },
+    core: { relays: test.browserRelays(function (v, a) { return api.verb(v, a); }) } };
   const src = fs.readFileSync(APP_SCRIPT, 'utf8');
   new Function('spirit', 'document', 'window', src)(
     shellSpirit, doc, { spiritLabelRule: labelRule }

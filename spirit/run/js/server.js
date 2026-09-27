@@ -1662,13 +1662,19 @@ contactBook.syncMarks(ROOT_DIR);
   function proxyVerb(work) {
     return function (rq, rs) {
       readJsonBody(rq).then((body) => {
-        const out = work(body || {});
-        rs.writeHead(out.status || (out.ok ? 200 : 400), { 'Content-Type': 'application/json; charset=utf-8' });
-        // The work's own answer, without its status, which is the HTTP one.
-        const answer = {};
-        Object.keys(out).forEach(function (k) { if (k !== 'status') answer[k] = out[k]; });
-        rs.end(JSON.stringify(out.ok ? answer : { error: out.error, code: out.code, bytes: out.bytes }));
-      }).catch(() => {
+        // Work may answer now or later (relay.search probes its relays).
+        return Promise.resolve(work(body || {})).then(function (out) {
+          rs.writeHead(out.status || (out.ok ? 200 : 400), { 'Content-Type': 'application/json; charset=utf-8' });
+          // The work's own answer, without its status, which is the HTTP one.
+          const answer = {};
+          Object.keys(out).forEach(function (k) { if (k !== 'status') answer[k] = out[k]; });
+          rs.end(JSON.stringify(out.ok ? answer : { error: out.error, code: out.code, bytes: out.bytes }));
+        }, function (err) {
+          // A probe that failed outright is the far side's, not a bad body.
+          rs.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+          rs.end(JSON.stringify({ error: String((err && err.message) || err) }));
+        });
+      }, () => {
         rs.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
         rs.end('Invalid JSON body');
       });
@@ -1869,9 +1875,10 @@ contactBook.syncMarks(ROOT_DIR);
     // `relay.roster` STOOD HERE — the public roll of a relay this node
     // is not on, "what a partnership makes visible". Deleted 2026-09-17
     // with the only screen that drew it; see the tombstone in hub.js.
-    'relay.status': function (rq, rs) {
-      hub.handleStatus(rq, rs, readJsonBody, { presence: presence });
-    },
+    // relay.status is gone: a list is a search (puppets/G2). One probe
+    // serves a search and the gets that follow it (hub.js, PROBE_FRESH_MS).
+    'relay.search': proxyVerb(function (b) { return hub.relaySearch(b); }),
+    'relay.get': proxyVerb(function (b) { return hub.relayGet(b, { presence: presence }); }),
     // WHAT A RELAY HAS SAID OVER TIME, beside what it says now —
     // cycle 11's R6. `relay.status` probes; this reads what was already
     // written as the reports arrived, so it reaches no network at all —
