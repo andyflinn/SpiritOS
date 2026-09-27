@@ -236,6 +236,9 @@ function ddDraw() {
   var title = document.getElementById('dd-title');
   if (!title) return;
   var label = ddState && ddState.label;
+  // HIS NAME IS THE DIALOG'S TITLE TOO. Andy: "if i re-label the item, the
+  // (a) title of the Details display should change".
+  ddApi.setScreenTitle(label || (ddRow ? ddRow.title : ddId));
   title.innerHTML = ddEsc(label || (ddRow ? ddRow.title : ddId)) + ' <span class="job-manifest-note">(' +
     ddEsc(ddRow && ddRow.handle ? ddRow.handle : ddId) + ')</span>';
   document.getElementById('dd-blurb').innerHTML = ddBlurbHtml();

@@ -209,7 +209,11 @@ function deskDraw() {
   Array.prototype.forEach.call(el.querySelectorAll('tr[data-id]'), function (tr) {
     tr.addEventListener('click', function () {
       var id = tr.getAttribute('data-id');
-      deskApi.callDialog('app/deskDetails', { id: id, row: deskRowOf(id) });
+      // Read the record again when the dialog closes: what he did in it
+      // (a new name, a decision) left as HIS post, and only arrivals wake
+      // this page. Andy: "if i re-label the item ... the title in the list
+      // should change."
+      deskApi.callDialog('app/deskDetails', { id: id, row: deskRowOf(id) }).then(function () { return deskLoadNew(); });
     });
   });
 }
