@@ -903,6 +903,33 @@ without a row the owner granted. A request for a domain with no row is
 refused at the VPS, and a carried packet naming no row is refused at the
 receiving node. There is no default route and no fallback app.
 
+
+### G18 — the app process serves its owner node over a named pipe, not a TCP port
+
+**Status:** OPEN. Nothing built. Andy, 2026-09-27, in Desk: *"hat's missing
+here is the fact that processes use named pipes to serve requests from the
+puppets.... and that mechanism needs a spot on the board sometime soon"*.
+Earlier the same night: *"question, should the app connect via named pipe,
+so we don't exhaust our TCP/IP port budget?"* and *"which gives that
+connection a separate namespace"*.
+
+**The shape discussed:** an app with a face runs as its own app-server
+process on its owner's box (see *THE PATH* under G17), and the owner node
+forwards to it. That forward goes over a **named pipe** on Windows, or a
+Unix socket file on Linux, never a loopback TCP port.
+- **Why, and it is not the port budget.** Loopback has about 64,000 ports,
+  and memory runs out first. What a pipe changes is WHO CAN CONNECT: a
+  loopback port answers every program on the box, so any local process
+  could call the app's door past the owner node. A pipe is a name in the
+  file system with file permissions, reachable only by the node's user,
+  and invisible to a port scan. That is the "separate namespace".
+- **What changes:** the app server's `listen(port, '127.0.0.1')`
+  (`appServer.js:1371`) and its `--port` flag take a pipe path; the owner
+  node's forwarder names a pipe where it named a port; and the suites that
+  open ports. The page and the door are unchanged, because Node's HTTP
+  server listens on a path as it does on a port.
+- **Verify:** the app process answers on its pipe; nothing listens on a TCP
+  port for it; a second user on the box cannot open the pipe.
 ---
 
 ### PROPOSED, NOT IN THIS CYCLE — a sweep for forks
