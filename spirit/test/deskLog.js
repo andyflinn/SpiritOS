@@ -81,6 +81,8 @@ function load(script, doc) {
   return behavior;
 }
 
+// One counter for every mount: two tabs on one node never get the same hash.
+let outHash = 0;
 function mountDesk(opts) {
   const doc = fakeDocument();
   const behavior = load(DESK, doc);
@@ -88,7 +90,6 @@ function mountDesk(opts) {
   const posts = [];
   const verbs = [];
   const dialogs = [];
-  let hash = 0;
   const api = {
     fs: fakeFs(opts.files),
     escapeHtml: spirit.core.util.escapeHtml,
@@ -97,8 +98,8 @@ function mountDesk(opts) {
     peerPost: function (app, to, body) {
       posts.push({ app: app, to: to, body: body });
       if (opts.refuse) return Promise.resolve({ ok: false, status: 428, hash: '', error: 'no cipher key' });
-      hash += 1;
-      return Promise.resolve({ ok: true, status: 200, hash: 'h-out-' + hash });
+      outHash += 1;
+      return Promise.resolve({ ok: true, status: 200, hash: 'h-out-' + outHash });
     },
     callDialog: function (id, params) {
       return new Promise(function (resolve) { dialogs.push({ id: id, params: params, resolve: resolve }); });
@@ -287,7 +288,87 @@ function dialogSendsComeBack() {
   });
 }
 
+function voiceHoldsWhatHeTyped() {
+  test.subHeading('voice.jsonl in Desk\'s folder holds what he typed, and nothing else');
+  const files = {};
+  const desk = mountDesk({ files: files });
+  desk.arrive({ from: 'claude-windows', kind: 'board', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
+  desk.arrive({ from: 'claude-windows', kind: 'ask', text: 'go?', todo: 'puppets/G2' }, { hash: 'h-in-3', fromKey: LEAD, sentAt: '2026-09-27T05:03:00Z' });
+  return settle().then(function () {
+    desk.doc.getElementById('desk-say').value = 'typed by andy';
+    desk.doc.getElementById('desk-say-send').fire('click');
+    return settle();
+  }).then(function () {
+    // What a dialog returned: one line sent to two agents, a new name, a Go!.
+    const sent = [
+      { key: 'd1', at: '2026-09-27T05:04:00Z', dir: 'out', peer: LEAD, outcome: 'sent', from: 'andy', kind: 'note', text: 'from the row', todo: 'puppets/G2' },
+      { key: 'd2', at: '2026-09-27T05:04:00Z', dir: 'out', peer: WSL, outcome: 'sent', from: 'andy', kind: 'note', text: 'from the row', todo: 'puppets/G2' },
+      { key: 'd3', at: '2026-09-27T05:05:00Z', dir: 'out', peer: WSL, outcome: 'sent', from: 'andy', kind: 'answer', text: 'retitle: My Name', todo: 'puppets/G2' },
+      { key: 'd4', at: '2026-09-27T05:06:00Z', dir: 'out', peer: WSL, outcome: 'sent', from: 'andy', kind: 'answer', text: 'go.', todo: 'puppets/G2' },
+      { key: 'd5', at: '2026-09-27T05:06:00Z', dir: 'out', peer: WSL, outcome: 'sent', from: 'andy', kind: 'ask', text: 'explain this to me: what is it, and why is it where it is?', todo: 'puppets/G2' },
+    ];
+    const rows = desk.doc.getElementById('desk-top').queried['tr[data-id]'] || [];
+    if (!rows.length) { test.fail('no row to open'); return null; }
+    rows[0].fire('click');
+    desk.dialogs[desk.dialogs.length - 1].resolve({ sent: sent });
+    return settle().then(function () {
+      // The same result again (a second close) writes nothing twice.
+      rows[0].fire('click');
+      desk.dialogs[desk.dialogs.length - 1].resolve({ sent: sent });
+      return settle();
+    });
+  }).then(function () {
+    const lines = String(files['voice.jsonl'] || '').split('\n').filter(Boolean).map(function (l) { return JSON.parse(l); });
+    const texts = lines.map(function (l) { return l.text; });
+    if (texts.join(' | ') === 'typed by andy | from the row | My Name') {
+      test.check('his typed line, the row line once, and his new name; no Go!, no explain request, no agent text');
+    } else {
+      test.fail('voice.jsonl holds ' + JSON.stringify(texts));
+    }
+    if (lines.every(function (l) { return Object.keys(l).join(',') === 'text,day' && /^\d{4}-\d\d-\d\d$/.test(l.day); })) {
+      test.check('each row is the vault\'s shape, {text, day}, stamped by the day and never finer');
+    } else {
+      test.fail('voice rows: ' + JSON.stringify(lines));
+    }
+    // He took the file: the next line starts it again.
+    delete files['voice.jsonl'];
+    desk.doc.getElementById('desk-say').value = 'after he moved it';
+    desk.doc.getElementById('desk-say-send').fire('click');
+    return settle();
+  }).then(function () {
+    if (files['voice.jsonl'] === JSON.stringify({ text: 'after he moved it', day: new Date().toISOString().slice(0, 10) }) + '\n') {
+      test.check('a file he has moved away is started again with only the new line');
+    } else {
+      test.fail('after removal voice.jsonl is ' + JSON.stringify(files['voice.jsonl']));
+    }
+  });
+}
+
+function twoTabsKeepBoth() {
+  test.subHeading('Two Desk tabs do not drop each other\'s lines');
+  const files = {};
+  const a = mountDesk({ files: files });
+  const b = mountDesk({ files: files });
+  a.arrive({ from: 'claude-windows', kind: 'board', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
+  b.arrive({ from: 'claude-windows', kind: 'board', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
+  return settle().then(function () {
+    a.doc.getElementById('desk-say').value = 'from tab a';
+    a.doc.getElementById('desk-say-send').fire('click');
+    return settle();
+  }).then(function () {
+    b.doc.getElementById('desk-say').value = 'from tab b';
+    b.doc.getElementById('desk-say-send').fire('click');
+    return settle();
+  }).then(function () {
+    const texts = (logged(files) || []).filter(function (r) { return r.dir === 'out'; }).map(function (r) { return r.text; }).sort();
+    if (texts.join(',') === 'from tab a,from tab b') test.check('the file keeps both tabs\' lines');
+    else test.fail('after two tabs the log holds ' + JSON.stringify(texts));
+  });
+}
+
 arrivalsAndSendsAreLogged()
+  .then(voiceHoldsWhatHeTyped)
+  .then(twoTabsKeepBoth)
   .then(failedSendsStayApart)
   .then(brokenLogIsKept)
   .then(dialogSendsComeBack)

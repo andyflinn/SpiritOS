@@ -95,57 +95,33 @@ What follows is what both agreed. Any of it changes when Andy asks.
    100 characters (`agents.js:296-303`). The full text lives only in the
    agents' logs. So the report carries the whole message instead: from,
    to, kind, text, `todo`, `re` and hash. Desk can then show the agents'
-   own discussion of a row under that row too. **And both agents can
-   read it and write to it** (Andy: *"and be accessible to you both for
-   red£/write etc..."*). Writing is posting to his node, which works
-   today. Reading is new: no agent can read his node's log now. Both
-   agents read it through the same `node.history` Desk uses. **An agent's read
-   is a packet his node answers** (agreed by both agents, 2026-09-27). His
-   loopback door was rejected on two counts. It is the any-loopback-caller
-   authority question the G4 door exists to settle, and it works only
-   while an agent sits on his box, which is a fact about today and not a
-   property. Two constraints shape the packet:
-   - **A small byte cap.** An answer packet carries at most PLAINTEXT_MAX,
-     16 KB less its own envelope, while a `node.history` page may be 256
-     KB. So a packet read uses its own cap, well under 16 KB, and the same
-     `next` cursor. Position paging handles a small cap. A page that
-     cannot fit even one row says so and never drops the row.
-   - **An allow list on his node.** His node holds no agent keys today
-     (`AGENTS_PEERS` lives on the agents' side). So it gets an allow list
-     with the shape and read-per-ask rule of `allow.json`: absent means
-     nobody. It holds two agent keys, and only the owner edits it, never
-     an agent.
+   own discussion of a row under that row too.
+
+   **Every party keeps its own log. There is no shared read of his
+   node's record.** SUPERSEDED what stood here: a node verb, `node.history`,
+   that handed his whole record to Desk, and later to the agents by packet.
+   Claude added it to the node's verb table for this one app, without
+   review. Andy, 2026-09-27: *"so you hacked the interface for a mere
+   little app? that's OUTRAGEOUS!"*, *"that's a boundary crossed that
+   requires peer review AND my approval"*, then *"they must keep their own
+   logs"* and *"after correcting agents and desk, we will remove the new
+   verb."* So:
+   - **Desk** logs what reaches it through `onPacket`, and every line he
+     sends, into `log.json` in its own folder (`api.fs`). It asks the
+     node for no record. DeskDetails gets its row's thread from Desk and
+     returns what it sent as its dialog result. A save re-reads the file
+     and merges by key first, so two Desk tabs keep each other's lines.
+   - **Each agent** logs its own sends and arrivals in
+     `relay-state/agents-log.jsonl` and reads nothing of the node's
+     (wsl-claude, 2a3c493).
+   - **The price, accepted:** nothing from before a log existed. A packet
+     that reaches a page where Desk is not mounted is dropped by the shell,
+     and the node counts it delivered. Whether Desk mounts at page load is
+     Andy's to rule (Open).
+   - `node.history` and `trafficLog.history` are removed.
 
    **A slot empties** when Andy answers under the row, or the row leaves
    the board. "Taken by" guards the fill.
-
-   **The load pattern.** Andy: *"the initial load is a "search"
-   highest-priority, conceptually, and that's ok, we work within the frame
-   work, a lot of the traffic is random access on rows."* So the first read
-   pages through the whole record once: that is the search, and it may be
-   large. After it, a reader follows the cursor for new rows and reaches
-   single rows by hash. Reading one row by `hash` is the one narrowed read
-   the node has always allowed (`hub.js:1278`: *"since and limit, or one
-   row by hash, and nothing else"*; `trafficLog.byHash`). **The index from
-   a board row's `todo` to its hashes lives with the reader** (Desk, or an
-   agent), built during that first search, never in the node. That keeps
-   the no-filter rule while making row access random.
-
-   **`node.history`, the one read** (proposed by claude, amended by
-   wsl-claude, 2026-09-27). It is named apart from `arrivals` so that
-   `trafficLog.js:434-436` stays true of arrivals. It returns admitted
-   inbound rows plus this node's own outbound rows, and NEVER held or
-   ignored ones. There is NO filter on `app` or `todo`. Each row is
-   `at, dir, peer, hash, outcome, payload`, paired by hash so that one
-   message is one row with its last outcome; a refused post shows as
-   refused. **It pages by position, not by time.** Time paging loses rows
-   inside a single millisecond: wsl-claude measured 3 of 5, and
-   `arrivals` has the same flaw today. Each page returns a cursor that the
-   next call hands back. **A response is capped by bytes** as well as rows:
-   500 rows of up to 16 KB each would be 8 MB. The verb's comment carries
-   the note that it hands every app's plaintext to any caller. That is fine
-   while every page on a node is the owner's own. Once apps are
-   installable (G14), history must be something an app declares.
 3. **The board is posted, not shared by path.** The lead's checkout is
    not the one Andy's node runs from, so a shared file would work only by
    coincidence of machine. The lead posts the board JSON to Andy's node as
@@ -168,12 +144,18 @@ What follows is what both agreed. Any of it changes when Andy asks.
    the wrong line and missed the other claim). An agent claims, waits a few
    seconds, reads every claim on the row, and answers only if its own
    timestamp is the earliest.
-6. **Voice by courier, from sent rows only.** The page never touches the
-   vault. The lead's `voiceLog.js` courier takes Andy's text only from
-   rows his node SENT (outbound, from his key) that carry `todo`, never
-   from arrivals. An agent's reply quoting him arrives on his node too,
-   and logging it would put our paraphrase in his voice, which is the
-   pollution *"your judgement is what protects my brain"* guards against.
+6. **Voice: Desk writes his typed lines into its own folder, and he moves
+   them.** SUPERSEDED: a courier from his node's sent rows into the vault.
+   Andy, 2026-09-27: *"that hook into my voice.jsonl is a hack and will
+   have to be removed if the agents app is ever to ship"*, *"it's a
+   dependence on a private repo"*, then *"I'll live with an alternative
+   way, by copying the json.l file manualy to my brain input, and deleting
+   the one in the app folder"*. So Desk appends each line he TYPED (lead
+   chat, musings, a row's chat, a new name) to `voice.jsonl` beside its
+   log, in the vault's `{text, day}` shape. A file he has moved is started
+   again. Button presses and the explain request a dialog sends are not
+   his words, so they stay out, and so does everything an agent wrote. The
+   lead no longer logs Desk lines by hand (CLAUDE.md).
 
 ## Andy's additions, 2026-09-27
 
@@ -302,4 +284,12 @@ apart. A proposal, so feedback is the point.
 **Still Andy's:** whether to build it.
 ## Open
 
+- **Does Desk mount at page load?** (asked of Andy, 2026-09-27.) Without
+  it, agents packets that reach a page where Desk was never opened are
+  lost to Desk. It is a shell manifest flag, not a node verb. wsl-claude
+  will check that the handler is registered before the backlog arrives.
+- **Bound the logs** (both agents, 2026-09-27). `agents-log.jsonl` grows
+  forever, and Desk rewrites its whole `log.json` on every arrival. Neither
+  goes out, so MAX_PAYLOAD does not bind them. They need a bound of their
+  own.
 - The two items above.

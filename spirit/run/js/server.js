@@ -1765,16 +1765,6 @@ contactBook.syncMarks(ROOT_DIR);
         rs.end(JSON.stringify({ ok: false, error: 'Invalid JSON body' }));
       });
     },
-    'node.history': function (rq, rs) {
-      readJsonBody(rq).then(function (body) {
-        var page = trafficLog.history({ after: body && body.after, limit: body && body.limit, hash: body && body.hash });
-        rs.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        rs.end(JSON.stringify(Object.assign({ ok: true }, page)));
-      }).catch(function () {
-        rs.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-        rs.end(JSON.stringify({ ok: false, error: 'Invalid JSON body' }));
-      });
-    },
   }, { wire: false });
 
   // ── owner.command: A COMMAND FOR ONE OF THIS NODE'S PUPPETS (puppets/G4)

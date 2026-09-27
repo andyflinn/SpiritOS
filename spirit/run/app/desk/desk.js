@@ -18,7 +18,8 @@
 //   review AND my approval", then "they must keep their own logs" and
 //   "after correcting agents and desk, we will remove the new verb."
 //
-// So Desk asks the node for nothing but what every app has. What passed
+// So Desk asks the node for no record, and for nothing beyond what every
+// app has (onPacket, peerPost, its own folder). What passed
 // before this log existed, or while no Desk was mounted in an open page,
 // is not in it. That is the price of the ruling, not a bug to fix by
 // reaching into the node's record again.
@@ -108,17 +109,69 @@ function deskOutgoing(to, body, r, e) {
 // not append, so two saves in flight could land out of order and the
 // older list would win.
 var deskSaving = Promise.resolve();
+//
+// MERGED BEFORE IT IS WRITTEN (wsl-claude's review): two Desk tabs each
+// hold a list, and a plain rewrite would let the last save drop the other
+// tab's lines. So a save first folds in whatever the file holds that this
+// page does not.
 function deskSave() {
   if (deskReadOnly) return deskSaving;
   deskSaving = deskSaving.then(function () {
+    deskLoadLog();
+    if (deskReadOnly) return null;
     return deskApi.fs.saveFile(DESK_LOG, JSON.stringify(deskMessages));
   }).catch(function (e) { deskError = 'Desk could not write its log: ' + e.message; deskDraw(); });
   return deskSaving;
 }
 
-// Into the log and onto the screen.
+// ── WHAT ANDY TYPED, FOR HIS VAULT, IN THIS APP'S OWN FOLDER ──────────
+//
+//   Andy, 2026-09-27: "that hook into my voice.jsonl is a hack and will
+//   have to be removed if the agents app is ever to ship" — "it's a
+//   dependence on a private repo" — and then "I'll live with an
+//   alternative way, by copying the json.l file manualy to my brain
+//   input, and deleting the one in the app folder".
+//
+// So Desk never touches the vault. It appends each line he TYPED to
+// `voice.jsonl` here, in the vault's row shape ({text, day}, the day and
+// never finer), and he moves the file himself. A file he has taken is
+// simply started again. Button presses (Go!, No, Accept, Reject) and the
+// explain request a dialog sends on opening are not his words, so they
+// stay out.
+var DESK_VOICE = 'voice.jsonl';
+var DESK_TYPED = /^(note|musing)$/;
+function deskVoiceText(m) {
+  if (!m || m.dir !== 'out') return '';
+  if (DESK_TYPED.test(m.kind)) return m.text;
+  if (m.kind === 'answer' && /^retitle:\s*/.test(m.text)) return m.text.replace(/^retitle:\s*/, '');
+  return '';
+}
+function deskVoice(msgs) {
+  // One line per thing he typed: a dialog line goes once per agent, so
+  // the copies are dropped here.
+  var seen = Object.create(null);
+  var lines = [];
+  msgs.forEach(function (m) {
+    var t = deskVoiceText(m);
+    if (!t || seen[m.kind + '\n' + t]) return;
+    seen[m.kind + '\n' + t] = true;
+    lines.push(JSON.stringify({ text: t, day: String(m.at || new Date().toISOString()).slice(0, 10) }));
+  });
+  if (!lines.length) return;
+  deskSaving = deskSaving.then(function () {
+    var held = '';
+    try { held = deskApi.fs.loadFile(DESK_VOICE) || ''; } catch (e) { held = ''; }
+    if (held && held.charAt(held.length - 1) !== '\n') held += '\n';
+    return deskApi.fs.saveFile(DESK_VOICE, held + lines.join('\n') + '\n');
+  }).catch(function (e) { deskError = 'Desk could not write ' + DESK_VOICE + ': ' + e.message; deskDraw(); });
+}
+
+// Into the log and onto the screen. Only what is new to the log reaches
+// his voice file, so a replay writes nothing twice.
 function deskRecord(msgs) {
-  msgs.forEach(function (m) { if (m) deskFold(m); });
+  var fresh = msgs.filter(function (m) { return m && m.key && !deskByHash[m.key]; });
+  fresh.forEach(deskFold);
+  deskVoice(fresh);
   deskDraw();
   return deskSave();
 }

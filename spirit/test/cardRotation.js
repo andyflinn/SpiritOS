@@ -84,7 +84,7 @@ function everyFileUnder(dir) {
     log.note({ dir: 'in', kind: 'request', peer: 'P', hash: 'before-rotation', outcome: 'delivered',
       admitted: true, payload: 'words received before the key changed' });
     nodeCard.rotate(n.home);
-    const got = log.history({}).rows.filter(function (r) { return r.hash === 'before-rotation'; })[0];
+    const got = log.read().filter(function (r) { return r.hash === 'before-rotation'; })[0];
     if (got && got.payload === 'words received before the key changed') {
       test.check('a message received before the rotation still reads in history afterwards — messages '
         + 'are kept opened, so discarding the old key loses nothing already received');

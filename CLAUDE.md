@@ -75,6 +75,14 @@ Four things worth knowing before touching it:
   want to do."* So a turn typed to the agent that is not the lead is not
   logged. There is no per-agent file, and the stamp never gets finer than
   the day. The header of `voiceLog.js` has the full reasoning.
+  **What he types in Desk is not logged by hand.** Desk writes those lines
+  itself, into `spirit/run/app/desk/voice.jsonl` in its own folder, and he
+  moves that file into his vault himself. Andy, 2026-09-27: *"that hook
+  into my voice.jsonl is a hack and will have to be removed if the agents
+  app is ever to ship"*, then *"I'll live with an alternative way, by
+  copying the json.l file manualy to my brain input, and deleting the one
+  in the app folder"*. Logging a Desk line by hand as well would double it.
+  No app writes into the vault.
 - **Andy's words are corrected for spelling only.** Lower-case `i`,
   `andy-rule`, trailing `....`, comma splices and run-ons stay — *"sloppy
   keyboardage is part of me"* (2026-09-20). A garbled phrase stays

@@ -65,7 +65,7 @@ the only way a default survives contact with people in a hurry.
 
 ## What can be asked
 
-**40 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
+**39 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
 
 **`contact.*`** — who this node knows, and what it calls them
 - `contact.accept`
@@ -103,7 +103,6 @@ the only way a default survives contact with people in a hurry.
 
 **`node.*`** — this node's own identity as strangers see it
 - `node.card`
-- `node.history`
 - `node.rotateCipher`
 - `node.setDescription`
 - `node.setName`
