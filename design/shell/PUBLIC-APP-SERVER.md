@@ -1266,10 +1266,13 @@ verbs today; they live only in its code.
   allows multliple relays per personal node, and implicitly multliple
   face-providers, so we be carefull how the personal nodes grantFace dataset
   looks...."* Proposed (awaiting his Go!): the member's dataset is a list of
-  grants, one row each, `{ owner, face, domain, name, app, at }`, keyed by
-  owner plus name. A request is matched to its row by the face that
-  forwarded it. A replaced face changes only its owner's rows. The owner's
-  own grants.json stays keyed by name, since one owner has one face domain.
+  grants, one row each, `{ owner, face, domain, name, app, at }`. **Keyed by
+  face plus name**, not owner: Andy, *"and the owner may own several relay
+  and face providers, too."* A request is matched to its row by the face
+  that forwarded it. A replaced face changes only its own rows. The owner's
+  side changes the same way: grantFace keys its grants by face domain plus
+  name, and face-domain.json becomes a list of the owner's faces (domain and
+  face key each). Today's single face is a list of one.
   wsl-claude's tests: two providers at once, each face admitted only for its
   own names; replacing one provider's face leaves the other untouched;
   freeing a name at one provider leaves the other's grants alone.
