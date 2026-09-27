@@ -813,10 +813,18 @@ load, it names the member."*
 
 ### G17 — join's answer travels back to the browser
 
-**Status:** OPEN, and **ALPHA** (see *ALPHA SCOPE* and *THE ALPHA
-TOPOLOGY* at the head of this file). It was declared on the board before
-any document named it (`appServerBoundary.js:485`). This heading gives it
-a name.
+**Status:** CLOSED 2026-09-27. Andy, in Desk: *"ok. aoff to the team chat.
+this R is closed."* Met for the owner's own apps: a visitor's request for
+a name granted to the owner's node reaches that app's server on his box, and
+the reply comes back through the face, live
+(`hello.face.spirit.andyflinn.com`, with tests in faceRouteWorld.js,
+faceLastLeg.js and appServers.js). `join` itself is not built: faceProof
+stands in for it. Routing to the apps of MEMBERS is not met, and moves to a
+requirement of its own; its design so far is *MEMBER APPS* below.
+
+It was declared on the board before any document named it
+(`appServerBoundary.js:485`), and it was ALPHA (see *ALPHA SCOPE* and *THE
+ALPHA TOPOLOGY* at the head of this file).
 
 **What alpha needs is for the app's answer to reach the visitor.** For
 `join`, that answer IS the invite. appServerBoundary.js:459: *"Invisible for
