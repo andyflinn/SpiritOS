@@ -969,7 +969,7 @@ supersedes PUPPETS.md §10's flat namespace (see there).
   (wsl-claude's review). A member with a node of their own gets the signed
   redirect.
 
-**Parked, not in scope (Andy, 2026-09-27: "it's not needed to reach that 3rd
+**SUPERSEDED 2026-09-27 by *MEMBER APPS* below, which Andy unparked the same day.** **Parked, not in scope (Andy, 2026-09-27: "it's not needed to reach that 3rd
 face user..."):** a member with a node of their own serving a face. Whether
 that node trusts face requests by construction or refuses any not carried
 by the owner's appFaceApp key was asked and not ruled. Nothing is built for
@@ -1025,6 +1025,60 @@ from node to appserver"*, then *"Go. and two verbs approved."*
   browser to owner and back, by `faceRouteWorld.js`.
 - **Not designed, on purpose:** a local face for an app server, and `join`
   itself (Andy: *"that's acceptable and expected"*).
+
+**MEMBER APPS: UNPARKED 2026-09-27, DESIGN, NOT BUILT.** Andy, once the last
+leg worked for his own node: *"how about proving that this works for
+member-apps as well as owner apps? right now we're only seeing the route to
+my own node."* A member here is another node holding a name the owner
+granted, such as the agents' node.
+
+*Decided (Andy, in Desk under G17):*
+- **No route question ever goes to a member.** *"a route ask should never
+  happen to a member who is not the owner.... when the owner names the
+  member the subdomain belongs to, then that is an extension of the grant
+  to the appFacaApp puppet to route request from that subdomain to the
+  respective member ID."* Built already: the face asks only `api.owner()`
+  (appFaceApp `resolve`).
+- **Members store their own subdomain on disk.** *"so the mechanist still
+  needs, the members to store their own subdomain on disc"*.
+
+*The three gaps, checked against the tree at 51d8de5:*
+1. **The member does not know the name is its own.** Its appFaceApp reads
+   the host against its own `grants.json` and `face-domain.json`, which a
+   member does not have, and answers 404 `no-such-route`. wsl-claude
+   reproduced this in a run: three nodes, with the relay faked. Fix, in app
+   scope and ruled above: the member keeps the names its `granted` replies
+   gave it, and the face passes on the name the owner's route answer
+   carried. The face still reads nothing out of a host.
+2. **The member's node holds the face's requests.** The face is a stranger
+   to it; `hub.frontDoor` (`hub.js:778`) admits only its listen set and the
+   relays it accepted, so the packet is held and never reaches an app.
+3. **The face holds the member's answers,** for the same reason: its
+   listen set is its owner.
+
+*Recommended for 2 and 3, and it touches the front door, so it waits for
+Andy's yes on the shape:* **the grant introduces them, with verbs that
+exist.**
+- **The face admits the member** because the owner says so, which is Andy's
+  "extension of the grant". When the owner's appFaceApp grants a name to a
+  member, it commands its face `contact.accept <member key>` through the
+  owner door (`nodeApps.puppetDoor`). The face then has to carry the
+  `contact` group: `puppet.json` `"carries": ["contact"]`, where
+  `face-install` writes `[]` today. That changes what the puppet obeys, and
+  it is Andy's to rule.
+- **The member admits the face** because its own agreement named it (Andy:
+  *"the third box trusts the agreement it made"*). The `granted` reply
+  carries the face's key. For the first proof, the member's operator
+  accepts that key once, the way `face-owner.js` does on the owner's box, so
+  no verb is added. Accepting it automatically needs a booted app to add a
+  contact, which is a new node verb, and that goes under the gate.
+- **The proof:** the agents' node asks for a name, holds `faceProof` under
+  it, and a visitor gets its page through the live face. wsl-claude's
+  three-node run is the suite.
+
+*Open:* whether the face should admit a member for everything or only for
+answers to requests it forwarded there. The tree has only whole-key
+admission today.
 
 **The page waits its turn, a bet on low visitor frequency.** Andy,
 2026-09-27: *"the shell-lowest layer in face-mode, may need a
