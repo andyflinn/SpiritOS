@@ -629,7 +629,9 @@ freePort()
       // handed — necessarily, since a partner's relay is somewhere this
       // node has never been. See the note on it below for what believing
       // this sentence cost.
-      ['POST', '/api/spirit', { verb: 'jobs.list' }],
+      ['POST', '/api/spirit', { verb: 'jobs.search' }],
+      ['POST', '/api/spirit', { verb: 'jobs.get', key: 'job_1' }],
+      ['POST', '/api/spirit', { verb: 'fs.search', q: 'app/*' }],
       ['POST', '/api/spirit', { verb: 'jobs.create' }],
       ['POST', '/api/spirit', { verb: 'jobs.update' }],
       ['POST', '/api/spirit', { verb: 'jobs.cancel' }],

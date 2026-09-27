@@ -339,6 +339,11 @@ define('proxy-list-broken', {
   note: 'relay-state/proxy.json cannot be read, so the gate is closed ' +
     'rather than open. The owner repairs the file.',
 });
+define('job-not-found', {
+  status: 404, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['job not found'],
+  note: 'jobs.get named a key no job has now: it may have been deleted since the search that found it (puppets/G2).',
+});
 define('proxy-no-entry', {
   status: 404, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['no such entry'], prefixes: ['no entry names', 'nothing closed for'],
@@ -693,7 +698,7 @@ define('bad-request', {
     'not a lever name', 'partner relay key required', 'partner relay url required',
     'pick a relay url', 'that is the peer’s own key, not their relay’s',
     'that is this relay', 'Invalid JSON body', 'bad body',
-    'publicKey and url required', 'publicKey required', 'that key is this node', 'key required'],
+    'publicKey and url required', 'publicKey required', 'that key is this node', 'key required', 'path outside the run folder'],
   prefixes: ['policy must be one of:'],
 });
 

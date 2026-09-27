@@ -1462,14 +1462,21 @@ const server = http.createServer(function (req, res) {
     const child = children[n.id];
     const alive = !!(child && child.exitCode == null) || portHasListener(n.port);
     if (!alive) return Promise.resolve([n.id, null]);
-      return fetch('http://127.0.0.1:' + n.port + '/api/spirit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ verb: 'jobs.list' }),
-      })
-        .then(function (res) { return res.json(); })
-        .then(function (jobs) {
-          const job = (jobs || []).filter(function (j) { return j.type === 'relay-presence'; })[0];
+      // jobs.list is gone (puppets/G2): find the presence job by search,
+      // then read it whole with jobs.get.
+      const ask = function (body) {
+        return fetch('http://127.0.0.1:' + n.port + '/api/spirit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }).then(function (res) { return res.json(); });
+      };
+      return ask({ verb: 'jobs.search', q: 'relay-presence' })
+        .then(function (found) {
+          const hit = ((found && found.items) || []).filter(function (i) { return i.label.split(' (')[0] === 'relay-presence'; })[0];
+          return hit ? ask({ verb: 'jobs.get', key: hit.key }).then(function (g) { return (g && g.job) || null; }) : null;
+        })
+        .then(function (job) {
           if (!job) return [n.id, null];
           // The log is the record of what happened; the last line about
           // each URL is its current state.

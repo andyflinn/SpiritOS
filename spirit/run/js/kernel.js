@@ -780,19 +780,23 @@ if (isNode()) {
       // listing, never expand what's visible. Async (unlike loadFile),
       // since it goes over the same /api/jobs fetch every other scan of
       // this data already uses.
+      // jobs.list is gone (puppets/G2): the app's own folder is a file
+      // search now, '**' so it reaches every depth once '*' stops at a
+      // folder. Bounded like every answer; a folder too big for one answer
+      // comes back partial, and an app that needs less asks narrower.
       scanDirectory: function() {
-        return spirit.core.ask('jobs.list', null)
-          .then(function (res) { return res.body || []; })
-          .then(function (jobs) {
-            var fsWatcher = jobs.filter(function (j) { return j.type === 'fs-watcher'; })[0];
-            var all = (fsWatcher && fsWatcher.data && fsWatcher.data.files) || [];
-            return all
-              .filter(function (f) { return f.relativePath.indexOf(appRoot) === 0; })
-              .map(function (f) {
+        return spirit.core.ask('fs.search', { q: appRoot + '**' })
+          .then(function (res) { return (res.body && res.body.items) || []; })
+          .then(function (items) {
+            return items
+              .filter(function (i) { return i.key.indexOf(appRoot) === 0 && i.key !== appRoot; })
+              .map(function (i) {
+                var folder = i.key.charAt(i.key.length - 1) === '/';
+                var rel = i.key.slice(appRoot.length, folder ? -1 : undefined);
                 return {
-                  name: f.name,
-                  kind: f.kind,
-                  relativePath: f.relativePath.slice(appRoot.length),
+                  name: rel.slice(rel.lastIndexOf('/') + 1),
+                  kind: folder ? 'folder' : 'file',
+                  relativePath: rel,
                 };
               });
           });
@@ -864,21 +868,13 @@ if (isNode()) {
         xhr.send(JSON.stringify(Object.assign({ verb: 'jobs.create' }, options || {})));
       });
     },
-    list: function() {
-      return new Promise(function(resolve, reject) {
-        let xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/spirit', true);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.onreadystatechange = function() {
-          if (xhr.readyState !== 4) return;
-          if (xhr.status === 200) {
-            resolve(JSON.parse(xhr.responseText));
-          } else {
-            reject(new Error('failed to list jobs: ' + xhr.status));
-          }
-        };
-        xhr.send(JSON.stringify({ verb: 'jobs.list' }));
-      });
+    // jobs.list is gone (puppets/G2): search(q) answers key/label pairs,
+    // get(key) one job.
+    search: function(q) {
+      return spirit.core.ask('jobs.search', { q: q == null ? '*' : q }).then(function (res) { return res.body; });
+    },
+    get: function(key) {
+      return spirit.core.ask('jobs.get', { key: key }).then(function (res) { return res.body; });
     },
     cancel: function(id) {
       return new Promise(function(resolve, reject) {

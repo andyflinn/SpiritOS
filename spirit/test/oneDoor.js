@@ -76,7 +76,7 @@ const TALLY = {
   // kernel.js is the other side of the same rule rather than an exception
   // to it — but FOURTEEN is not a design, it is a drawer. It has a number
   // now and the number may only fall.
-  'js/kernel.js': 14,
+  'js/kernel.js': 13,
 
   // THE SAME RULE FOR AN APP SERVED WITHOUT A SHELL — a new line, and so
   // an exception. GRANTED BY ANDY 2026-09-24, asked for out loud as this

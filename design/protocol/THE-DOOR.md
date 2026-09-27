@@ -65,7 +65,7 @@ the only way a default survives contact with people in a hurry.
 
 ## What can be asked
 
-**40 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
+**42 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
 
 **Each verb carries its authority.** Andy, 2026-09-27: *"that's a boundary
 crossed that requires peer review AND my approval"* — and, on his own yes:
@@ -94,13 +94,15 @@ his words, which keeps the harness red until the verb is gone.
 - `fs.annotations` — before the rule (2026-09-27)
 - `fs.delete` — before the rule (2026-09-27)
 - `fs.save` — before the rule (2026-09-27)
+- `fs.search` — Andy, 2026-09-27: "the verb changes changing list fetches to a search(labe) and geKey(key) pair are approved." (Desk, puppets/G2)
 - `fs.stat` — before the rule (2026-09-27)
 
 **`jobs.*`** — background work
 - `jobs.cancel` — before the rule (2026-09-27)
 - `jobs.create` — before the rule (2026-09-27)
 - `jobs.delete` — before the rule (2026-09-27)
-- `jobs.list` — before the rule (2026-09-27)
+- `jobs.get` — Andy, 2026-09-27: "the verb changes changing list fetches to a search(labe) and geKey(key) pair are approved." (Desk, puppets/G2)
+- `jobs.search` — Andy, 2026-09-27: "the verb changes changing list fetches to a search(labe) and geKey(key) pair are approved." (Desk, puppets/G2)
 - `jobs.update` — before the rule (2026-09-27)
 
 **`net.*`** — one fetch, through the proxy gate
@@ -169,7 +171,7 @@ figure you can compute instead of estimate.
 
 ## The errors
 
-**85 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
+**86 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
 each carries more than a sentence:
 
 | | |

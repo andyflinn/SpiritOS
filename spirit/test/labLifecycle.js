@@ -237,7 +237,7 @@ async function run() {
   let avatarUp = false;
   try {
     await waitUntil(async function () {
-      const probe = await hub(AVATAR_PORT, 'POST', '/api/spirit', { verb: 'jobs.list' });
+      const probe = await hub(AVATAR_PORT, 'POST', '/api/spirit', { verb: 'jobs.search' });
       return probe.status === 200;
     }, 10000, 'avatar on ' + AVATAR_PORT);
     avatarUp = true;
@@ -248,8 +248,9 @@ async function run() {
     // The avatar booted with no identity — a fresh clone of the tree, the
     // way a new node arrives. Before claiming it should have no presence
     // job, because there is nobody to be present AS.
-    const before = await hub(AVATAR_PORT, 'POST', '/api/spirit', { verb: 'jobs.list' });
-    const beforeKinds = ((before.body || []).map(function (j) { return j.type; }));
+    // jobs.list is gone (puppets/G2): a job's label is "<type> (<status>)".
+    const before = await hub(AVATAR_PORT, 'POST', '/api/spirit', { verb: 'jobs.search' });
+    const beforeKinds = (((before.body && before.body.items) || []).map(function (j) { return j.label.split(' (')[0]; }));
 
     if (beforeKinds.indexOf('relay-presence') === -1) {
       test.check('a node with no key holds no presence — there is nobody to be present as');
@@ -294,8 +295,8 @@ async function run() {
     let connected = false;
     try {
       await waitUntil(async function () {
-        const after = await hub(AVATAR_PORT, 'POST', '/api/spirit', { verb: 'jobs.list' });
-        return ((after.body || []).some(function (j) { return j.type === 'relay-presence'; }));
+        const after = await hub(AVATAR_PORT, 'POST', '/api/spirit', { verb: 'jobs.search', q: 'relay-presence' });
+        return (((after.body && after.body.items) || []).some(function (j) { return j.label.split(' (')[0] === 'relay-presence'; }));
       }, 8000, 'presence after claim');
       connected = true;
     } catch (e) { connected = false; }

@@ -1687,11 +1687,12 @@ contactBook.syncMarks(ROOT_DIR);
     // LOCAL: the owner's own list, on this node's disk.
   }, { wire: false });
 
+  // jobs.list is gone: a list is a search (puppets/G2, nodeSearches.js).
+  // proxyVerb is the plain body-in, answer-out wrapper, whatever the group.
+  const nodeSearches = require('./nodeSearches').createNodeSearches({ jobs: jobs, rootDir: ROOT_DIR, fsPath: fsPath });
   loopbackVerbs.claim('jobs', 'server.js', {
-    'jobs.list': function (rq, rs) {
-      rs.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-      rs.end(JSON.stringify(jobs.listJobs()));
-    },
+    'jobs.search': proxyVerb(function (b) { return nodeSearches.jobsSearch(b); }),
+    'jobs.get': proxyVerb(function (b) { return nodeSearches.jobsGet(b); }),
     'jobs.create': handleCreateJob,
     'jobs.update': handleJobUpdate,
     'jobs.cancel': handleCancelJob,
@@ -1706,6 +1707,8 @@ contactBook.syncMarks(ROOT_DIR);
   // reached with it. serverSurface's traversal checks are untouched and
   // still red-green the same way.
   loopbackVerbs.claim('fs', 'server.js', {
+    // The node's files by path (puppets/G2). fs.stat stays the "get".
+    'fs.search': proxyVerb(function (b) { return nodeSearches.fsSearch(b); }),
     'fs.stat': handleFsStat,
     'fs.annotations': handleFsAnnotations,
     'fs.save': handleFsSave,

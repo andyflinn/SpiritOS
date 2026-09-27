@@ -325,13 +325,16 @@ async function preflight(s) {
   // column will be white for everybody and the demonstration would be a
   // twenty-minute way to discover the node is running old code.
   try {
-    const res = await fetch(WORK_URL + '/api/spirit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ verb: 'jobs.list' }),
-    });
-    const jobs = await res.json();
-    const job = (jobs || []).filter(function (j) { return j.type === 'relay-presence'; })[0];
+    // jobs.list is gone (puppets/G2): search for the presence job, then get it.
+    const ask = async function (body) {
+      const r = await fetch(WORK_URL + '/api/spirit', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      });
+      return r.json();
+    };
+    const found = await ask({ verb: 'jobs.search', q: 'relay-presence' });
+    const hit = ((found && found.items) || []).filter(function (i) { return i.label.split(' (')[0] === 'relay-presence'; })[0];
+    const job = hit ? ((await ask({ verb: 'jobs.get', key: hit.key })).job || null) : null;
     if (!job) {
       console.log('');
       console.log('  Your node publishes no relay-presence job, so every dot would be white.');
