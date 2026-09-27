@@ -118,6 +118,16 @@ function createRouteCache(opts) {
     if (!name) return false;
     if (answer.route === 'none') { held[name] = { none: true, until: now() + NONE_MS }; return true; }
     if (answer.route === 'mine') { held[name] = { mine: true, until: now() + ROUTE_MS }; return true; }
+    // THE OWNER'S PLAIN ANSWER, "the owner of this name is <key>" (Andy:
+    // "the owner, of appFaceApp simple responds with the key of the
+    // subdomain owner, or an error"). Taken on the owner's word and the
+    // question's hash; the face forwards there whoever it is, and the
+    // receiving node decides whether to trust a visitor.
+    if (answer.route === 'owner') {
+      if (!answer.to) return false;
+      held[name] = { to: String(answer.to), route: answer, until: now() + ROUTE_MS };
+      return true;
+    }
     if (answer.route !== 'to' || !routeSignatureHolds(answer, o.ownerKey, o.verify)) return false;
     // Never longer than an hour from now, whatever the answer claims.
     var until = Math.min(Number(answer.until) || 0, now() + ROUTE_MS);

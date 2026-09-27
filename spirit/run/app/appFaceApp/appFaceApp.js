@@ -264,15 +264,11 @@ function puppetRole(api) {
     const route = known ? Promise.resolve(known) : ask(owner, { verb: 'route?', host: req.host }, ROUTE_WAIT_MS).then(function (a) {
       if (a.refused) return { refused: a.refused };
       if (a.timedOut) return { timedOut: true };
-      // "The owner of this name is <key>": the puppet compares it with its
-      // own owner. Its owner's name is served by its owner ("mine"); a name
-      // held by any other key is the signed-redirect case, not built yet.
-      let said = a.body;
-      if (said && said.route === 'owner') {
-        if (said.to !== owner) return { refused: 'redirects to another node are not built yet' };
-        said = { route: 'mine', name: said.name };
-      }
-      cache.take(said, a.from, a.re, a.hash, req.host);
+      // "The owner of this name is <key>", and the puppet forwards there,
+      // whoever it is. Andy: "why on earth would the appFaceApp actually
+      // need that knowledge for?" It doesn't: whether to trust a visitor is
+      // the receiving node's decision, not the face's.
+      cache.take(a.body, a.from, a.re, a.hash, req.host);
       return cache.lookup(req.host) || { refused: 'the owner gave no usable route' };
     });
     return route.then(function (r) {
