@@ -410,6 +410,15 @@ The argument and its measurements are in
 [`THE-REQUESTER-IS-RESPONSIBLE.md`](THE-REQUESTER-IS-RESPONSIBLE.md),
 *The enforcement point*. Nothing in `limits.js` bounds a response today.
 
+**No paging: search, and the bucket.** Andy, 2026-09-27, in Desk: *"all the
+same rules apply, list-subsets can be retrieved by search, as always. and
+the bucket-toolset is available everywhere."* A list longer than the cap
+answers with what fits, bounded by the bucket (`bucket.js`) with its
+partial flag, and the requester narrows by searching (G2's shared search:
+a scan by key and an extractor per collection). That is the requester
+being responsible, never a page cursor handed out by the answerer. (claude's
+explanation under the row had said "paging", which was wrong.)
+
 ### G2 — one shared search: two hooks per collection, the rest inherited
 
 **Status:** OPEN. Nothing built, but the shape exists: `peer.search`
