@@ -358,6 +358,8 @@ function deskDrawTabs() {
     b.style.textDecoration = on ? 'underline' : 'none';
     b.setAttribute('aria-selected', on ? 'true' : 'false');
   });
+  var end = document.getElementById('desk-end-design');
+  if (end) end.hidden = !(deskDesignOn() && deskTab === 'team');
 }
 
 // ── DESIGN MODE, AND THE DESIGN SESSION'S BOARD ─────────────────────
@@ -632,8 +634,6 @@ function deskDraw() {
   var design = deskDesignOn();
   var banner = document.getElementById('desk-design');
   if (banner) banner.hidden = !design;
-  var end = document.getElementById('desk-end-design');
-  if (end) end.hidden = !design;
   // A chat on screen is being seen as it arrives.
   if (deskTab === 'lead' || deskTab === 'team') deskMarkChatSeen(deskTab);
   deskDrawTabs();
@@ -730,6 +730,12 @@ spirit.shell.activateApp({
         '<button type="button" data-tab="lead">Lead</button>' +
         '<button type="button" data-tab="team">Team</button>' +
         '<button type="button" data-tab="musings">Musings</button>' +
+        // AT THE END OF THE TAB ROW, ONLY ON TEAM, AND LOOMING. Andy: "put the
+        // end design mode button at the end of the tab-button-row, only
+        // visible while in teh team tab. and make the button a different
+        // color, so it loooms over the proceedings".
+        '<button type="button" id="desk-end-design" hidden style="margin-left:auto;background:#c00;color:#fff;' +
+          'font-weight:bold;border:2px solid #600">End design mode</button>' +
       '</div>' +
       '<div id="desk-root">' +
         '<div data-pane="list"><div id="desk-top"></div></div>' +
@@ -742,7 +748,6 @@ spirit.shell.activateApp({
         '</div>' +
         '<div data-pane="team" hidden>' +
           '<div id="desk-session"></div>' +
-          '<div class="start-job-form card"><button type="button" id="desk-end-design" hidden>End design mode</button></div>' +
           '<div class="start-job-form card"><label class="field-label grow">Say' +
             '<input type="text" id="desk-team-say" placeholder="to every agent; design talk that belongs to no row"></label>' +
           '<button type="button" id="desk-team-send">Send</button></div>' +
