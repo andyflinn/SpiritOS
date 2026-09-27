@@ -343,20 +343,50 @@ test.subHeading('cycle 11 R2 — the node process writes the record, and nothing
 // should be stated where the edges are documented, or the two kinds of
 // gap will be read alike again by whoever arrives next.
 //
-// Declared rather than built: the code is one line in the node’s boot
-// beside the seal-key migration, and one in the goodbye beside
-// presence.goingAway — but writing it is the builder’s half of this
-// cycle’s agreement, and this is the assertion that says what it must do.
+// BUILT BY claude-windows AT b736cc2, the writing half: record.edge takes
+// 'started' and 'stopped', the node marks 'started' at boot beside
+// ensureIdentity and 'stopped' first thing in its goodbye. Andy: "a re-start
+// row documents the downtime?" / "... the end-of-a-downtime" / "and the
+// stopped row can't be guaranteed." / "... but should be part of \"graceful
+// shutdown\"".
+//
+// THE READING HALF IS NOT BUILT, and stays declared below, because it is
+// what his ruling was FOR: a started with no stopped before it is a death,
+// a stopped then started is a deliberate absence. Rows alone let nobody
+// tell the two apart; only a reader does.
 {
   const w = home();
-  const kinds = [];
-  try { w.store.record.edge(RELAY, 'started', 1000); } catch (e) { /* not built */ }
-  w.store.record.since(RELAY, 0, 10).forEach(function (r) { kinds.push(r.kind); });
-  const hasStarted = kinds.indexOf('started') !== -1;
-  test.awaiting('cycle-11/C3', 'a started row at node boot and a stopped row in its goodbye',
-    hasStarted,
-    'a reader can tell "the relay was quiet" from "this node was not running", and a deliberate stop from a death',
-    { there: 40, cost: 'MEASURED WHILE DECLARING IT, not guessed: record.edge coerces any kind that is not open to close, so the two row kinds do not exist yet — that is one line there. Then the call at boot (server.js, beside ensureIdentity), the call in the goodbye (beside presence.goingAway), the reader in series treating them as moments, and this assertion becoming real' });
+  w.store.record.edge(RELAY, 'stopped', 1000);
+  w.store.record.edge(RELAY, 'started', 2000);
+  w.store.record.edge(RELAY, 'something-else', 3000);
+  const kinds = w.store.record.since(RELAY, 0, 10).map(function (r) { return r.kind; });
+  if (kinds.join() === 'stopped,started,close') {
+    test.check('cycle-11/C3: the record stores the node\'s own stopped and started as themselves, in order, '
+      + 'and any other kind still becomes a close — the pair a reader needs, and nothing it does not');
+  } else {
+    test.fail('cycle-11/C3: record kinds were ' + JSON.stringify(kinds) + ', wanted stopped, started, close');
+  }
+
+  // WRITTEN WHERE THE RULING SAYS: at boot, and in the graceful goodbye.
+  const src = fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8')
+    .replace(/\/\/[^\n]*/g, '');
+  const bye = src.indexOf('const goodbye = function');
+  const byeBody = bye === -1 ? '' : src.slice(bye, src.indexOf('};', bye));
+  if (/markRecord\('started'\)/.test(src) && /markRecord\('stopped'\)/.test(byeBody)) {
+    test.check('cycle-11/C3: the node marks started at boot and stopped inside its goodbye — a crash '
+      + 'writes nothing, and that absence is the signal');
+  } else {
+    test.fail('cycle-11/C3: server.js does not mark started at boot and stopped in the goodbye');
+  }
+
+  // THE READER, STILL OWED. Probe on the name agreed with claude-windows,
+  // record.gaps, not a guessed one (G7's probe named identifiers nobody
+  // wrote and so never went red).
+  test.awaiting('cycle-11/C3', 'the reader that tells a death from a restart',
+    typeof w.store.record.gaps === 'function',
+    'record.gaps(relay) names each gap in the record as a DEATH (a started with no stopped before it) or '
+    + 'a RESTART (stopped, then started), and never reads the interval as evidence about the relay',
+    { there: 60, cost: 'the writing half is built (b736cc2); one reader over since() is left' });
   closeAndRemove(w);
 }
 test.reportSuccessFailureCount();
