@@ -7,7 +7,7 @@
 **Nothing is broken, 8 requirements are declared and not built yet, and 1 dependency question for you, and 3 older questions need a decision from you.**
 
 ```
-171 suites   3189 green   0 red   0 unhappy   8 owed      run 31a5220
+171 suites   3288 green   0 red   0 unhappy   8 owed      run 0ec2cab
 ```
 
 ---
@@ -82,14 +82,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +3138 green
-- -1 red
-- ⏳ **newly owed:** puppets/G1
-- ⏳ **newly owed:** puppets/G10
-- ⏳ **newly owed:** puppets/G2
-- ⏳ **newly owed:** puppets/G3
-- ⏳ **newly owed:** transport/R12
-- ⏳ **newly owed:** transport/R16
+- +6 green
 
 ---
 
