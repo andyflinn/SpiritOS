@@ -223,4 +223,55 @@ function hashes(rows) { return rows.map(function (r) { return r.hash; }); }
   }
 }
 
+// ── ONE ROW BY HASH — AND NO BACK DOOR ───────────────────────────────
+//
+//   Andy, 2026-09-27: "the initial load is a "search" highest-priority,
+//   conceptually, and that's ok, we work within the frame work, a lot of
+//   the traffic is random access on rows."
+//
+// So Desk fetches single rows by hash (b098407). The condition it was
+// agreed on: a lookup applies the SAME filter as the page. Otherwise a
+// page that hides a held packet sits beside a lookup that hands it over.
+// And a held hash answers exactly as an unknown one does, so the lookup
+// cannot be used to learn that something was held.
+{
+  const log = logWith([
+    inbound('adm', 'an admitted message'),
+    inbound('held', 'held for a human decision', { admitted: false }),
+    inbound('ign', 'ignored at the door', { admitted: false, outcome: 'ignored' }),
+    { dir: 'in', kind: 'owner', peer: 'RELAY', hash: 'own', outcome: 'delivered', event: 'claimed' },
+    outbound('retried', 'went on the third try', 'queued'),
+    outbound('retried', 'went on the third try', 'refused'),
+    outbound('retried', 'went on the third try', 'sent'),
+  ]);
+  const one = function (h) { return log.history({ hash: h }); };
+  const page = log.history({}).rows.filter(function (r) { return r.hash === 'adm'; })[0];
+
+  const adm = one('adm');
+  if (adm.rows.length === 1 && page && JSON.stringify(adm.rows[0]) === JSON.stringify(page)) {
+    test.check('one row by hash is the SAME row the page gives, field for field');
+  } else {
+    test.fail('by hash ' + JSON.stringify(adm) + ' vs page ' + JSON.stringify(page));
+  }
+
+  const ret = one('retried');
+  if (ret.rows.length === 1 && ret.rows[0].outcome === 'sent') {
+    test.check('by hash, a message queued, refused and then sent is one row with its LAST outcome');
+  } else {
+    test.fail('by hash of the retried post: ' + JSON.stringify(ret));
+  }
+
+  const unknown = JSON.stringify(one('never-existed'));
+  const hidden = ['held', 'ign', 'own'].map(function (h) { return JSON.stringify(one(h)); });
+  if (hidden.every(function (x) { return x === unknown; }) && JSON.parse(unknown).rows.length === 0) {
+    test.check('a held, an ignored and an owner-event hash each answer EXACTLY as an unknown hash '
+      + 'does — no back door around the page, and no way to learn that something was held');
+  } else {
+    test.fail('unknown gives ' + unknown + '; held, ignored, owner give ' + hidden.join(' | '));
+  }
+  // The control is the first check above: the same lookup DOES return an
+  // admitted row, so the empty answers here are the filter, not a lookup
+  // that finds nothing at all.
+}
+
 test.reportSuccessFailureCount();
