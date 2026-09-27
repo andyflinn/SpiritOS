@@ -473,7 +473,12 @@ function send(cfg, to, kind, text, re, opts) {
   try { env = makeEnvelope(cfg.self, kind, text, re, null, o.block, o.todo); }
   catch (e) { return Promise.resolve({ ok: false, error: e.message, refused: true }); }
   const mine0 = ownKey(cfg);
-  const reported = kind !== 'report' && kind !== 'board' && !isControlVerb && cfg.control && cfg.control !== mine0;
+  // NOT WHEN THE MESSAGE IS ALREADY HIS. A message sent TO Andy's node is in
+  // his record as itself; a report of it made a second copy of every answer
+  // he was sent, and Desk showed both. Found by claude-windows reading his
+  // own 00:56:06 answer twice in one thread.
+  const reported = kind !== 'report' && kind !== 'board' && !isControlVerb && cfg.control &&
+    cfg.control !== mine0 && toKey !== cfg.control;
   if (reported) {
     const f = reportFits(cfg, to, toKey, env);
     if (!f.fits) {

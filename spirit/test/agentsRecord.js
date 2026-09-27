@@ -128,6 +128,22 @@ function door() {
     }
   }
 
+  // ── A MESSAGE TO ANDY IS NOT ALSO REPORTED TO ANDY ─────────────────
+  //
+  // His record would hold it twice — once as itself, once as a report of
+  // itself — and Desk showed both in one thread.
+  {
+    const fetchFn = door();
+    const r = await agents.send(cfgFor(home()), 'control', 'answer', 'an answer to him', '',
+      { fetch: fetchFn, todo: 'cycle-10/R13' });
+    const toHim = fetchFn.posts.filter(function (p) { return p.to === CONTROL; });
+    if (r.ok && toHim.length === 1 && toHim[0].env.body.kind === 'answer') {
+      test.check('a message sent TO Andy\'s node is posted once, as itself — no second copy as a report');
+    } else {
+      test.fail('to control: ' + JSON.stringify(toHim.map(function (p) { return p.env.body.kind; })));
+    }
+  }
+
   // ── HIS DECISION ON A DEPENDENCY IS A LINE THE LEAD CANNOT MISS ────
   //
   //   Andy: "a re-shuffeling of the board triggers a reload of the board.
