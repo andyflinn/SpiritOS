@@ -566,9 +566,12 @@ function edgeRulings() {
 }
 
 function rankBoard(rows, titles) {
+  // IN AGE ORDER, so ties in the ranking fall to age and `ranking.order`
+  // is the ONE order the page and the data both use.
+  const aged = (rows || []).slice().sort(function (a, b) { return (a.at || 1e12) - (b.at || 1e12); });
   // ONLY WHAT HE ACCEPTED SHAPES THE ORDER; the rest are his to-dos.
   const settled = require('./boardRank.js').settle(
-    (rows || []).map(function (r) { return { id: r.id, after: r.after || [] }; }),
+    aged.map(function (r) { return { id: r.id, after: r.after || [] }; }),
     edgeRulings());
   const ranking = require('./boardRank.js').rank({
     owed: settled.owed,
@@ -579,12 +582,90 @@ function rankBoard(rows, titles) {
   });
   ranking.proposed = settled.proposed;
   ranking.rejectedStill = settled.rejectedStill;
-  // Trees, in AGE order so the positions they print tie the way the owed
-  // table breaks ties.
-  const byAge = (rows || []).slice().sort(function (a, b) { return (a.at || 1e12) - (b.at || 1e12); });
   ranking.groups = require('./boardRank.js').proposalGroups(
-    byAge.map(function (r) { return { id: r.id, after: r.after || [] }; }), edgeRulings());
+    aged.map(function (r) { return { id: r.id, after: r.after || [] }; }), edgeRulings());
   return ranking;
+}
+
+// ── THE BOARD AS DATA ────────────────────────────────────────────────
+//
+//   Andy, 2026-09-27: "the uniform table will make the move into a shell
+//   app easier", and then "move it ahead" — his UI to the agents app
+//   comes before the shell overhaul.
+//
+// Every row the page shows him, as fields rather than prose, so a shell
+// app renders the SAME rows without parsing Markdown. The page's owed
+// table is drawn FROM these rows, so the two cannot drift.
+//
+// `id` IS THE THREAD KEY and never changes. `handle` is the shortest
+// unique form TODAY and may lengthen when another document defines the
+// same number — display and paste only, resolved to `id` when his input
+// is queued. Three kinds:
+//   to-do        an owed requirement; rank is its place in the table
+//   dependency   proposed dependencies that touch, asked as one question;
+//                id is its edges, sorted, so a grown tree is a new question
+//   question     an open row in blocking.js; id from the to-dos it covers
+function boardData(rows, titles, ranking) {
+  const byId = Object.create(null);
+  (rows || []).forEach(function (r) { byId[r.id] = r; });
+  const accepted = Object.create(null);
+  edgeRulings().forEach(function (e) { if (e.state === 'accepted') accepted[e.from + ' ' + e.to] = true; });
+  const out = [];
+
+  ranking.order.forEach(function (id, i) {
+    const r = byId[id];
+    if (!r) return;
+    out.push({
+      kind: 'to-do',
+      id: id,
+      handle: handleFor(titles, id),
+      title: r.title,
+      rank: i + 1,
+      frees: ranking.unblocks[id] || 0,
+      waitsOn: (r.after || []).map(function (t) {
+        return { id: t, handle: handleFor(titles, t), accepted: !!accepted[id + ' ' + t] };
+      }),
+      owedSince: r.at ? new Date(r.at * 1000).toISOString().slice(0, 10) : null,
+      there: r.there === null || r.there === undefined ? null : r.there,
+      blocked: r.blocked || '',
+    });
+  });
+
+  (ranking.groups || []).forEach(function (g, i) {
+    const inTree = Object.create(null);
+    g.edges.forEach(function (e) { inTree[e.from] = true; inTree[e.to] = true; });
+    out.push({
+      kind: 'dependency',
+      id: 'dependency/' + g.edges.map(function (e) { return e.from + '>' + e.to; }).sort().join(','),
+      handle: g.roots.map(function (x) { return handleFor(titles, x); }).join(' + '),
+      title: g.roots.map(function (x) { return requirementTitle(titles, x); }).join(', ') + ' — is needed first',
+      rank: i + 1,
+      edges: g.edges.map(function (e) {
+        return { from: e.from, to: e.to, fromHandle: handleFor(titles, e.from), toHandle: handleFor(titles, e.to) };
+      }),
+      tree: g.tree,
+      moves: g.moves.filter(function (m) { return inTree[m.id]; }),
+    });
+  });
+
+  const qPlace = Object.create(null);
+  (ranking.questions || []).forEach(function (q, i) { qPlace[q.key] = { rank: i + 1, frees: q.count }; });
+  openBlocks().filter(function (b) { return !b.settled; }).forEach(function (b, i) {
+    const covers = b.covers || [];
+    const at = qPlace[String(b.decision || '')] || {};
+    out.push({
+      kind: 'question',
+      id: 'question/' + (covers.length ? covers.slice().sort().join('+') : String(b.asked || '') + '#' + i),
+      handle: covers.map(function (c) { return handleFor(titles, c); }).join(' + '),
+      title: String(b.decision || ''),
+      rank: at.rank || null,
+      frees: at.frees || 0,
+      covers: covers,
+      asked: b.asked || null,
+      who: b.who || '',
+    });
+  });
+  return out;
 }
 
 function needsYouSection(titles, declaredIds, blockedRows, ranking) {
@@ -1179,25 +1260,23 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
   // did, and the ranking is visible only where the tree gives it a reason.
   out.push('## Owed — what unblocks most first');
   out.push('');
-  const byAge = rows.slice().sort(function (a, b) { return (a.at || 1e12) - (b.at || 1e12); });
-  const rankOf = Object.create(null);
-  // THE SAME SETTLED EDGES THE COUNTS USE. The first version ranked this
-  // table from the raw declarations, so a dependency Andy had not yet
-  // accepted moved a row to the top while its own count read zero — the
-  // order and the number beside it disagreeing, caught on a probe run.
-  // Re-ranked here only so ties fall to age rather than to id.
-  require('./boardRank.js').rank({
-    owed: require('./boardRank.js').settle(
-      byAge.map(function (r) { return { id: r.id, after: r.after || [] }; }), edgeRulings()).owed,
-  }).order.forEach(function (id, i) { rankOf[id] = i; });
-  byAge.sort(function (a, b) { return rankOf[a.id] - rankOf[b.id]; });
-
+  // DRAWN FROM THE DATA ROWS, so the page and SCOREBOARD-<box>.json are
+  // one list rendered twice and cannot disagree about order or counts.
+  const data = boardData(rows, titles, ranking);
+  const rowById = Object.create(null);
+  rows.forEach(function (r) { rowById[r.id] = r; });
+  const byAge = data.filter(function (d) { return d.kind === 'to-do'; })
+    .map(function (d) { return rowById[d.id]; });
   // ONE UNIFORM TABLE, every owed to-do in rank order, same columns for
   // all. Andy, 2026-09-27: "I'd prefer a uniform table, not the
   // editorializing format it has now" — which retired the five paragraphs
   // the top of this table carried for an afternoon.
-  out.push('| # | to-do | frees | owed | there | |');
-  out.push('|---|---|---|---|---|---|');
+  // COLUMNS ARE THE DATA'S FIELDS: the handle apart from the title, and
+  // what it waits on, so the page reads as the rows the JSON carries.
+  out.push('| # | handle | to-do | waits on | frees | owed | there | |');
+  out.push('|---|---|---|---|---|---|---|---|');
+  const dataById = Object.create(null);
+  data.forEach(function (d) { dataById[d.id] = d; });
   let place = 0;
   byAge.forEach(function (r) {
       place += 1;
@@ -1210,7 +1289,10 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
       const freed = (!r.blocked && lastBlockedAt[r.id])
         ? 'unblocked by you ' + ageWords(lastBlockedAt[r.id]) + ' ago' : '';
       const frees = ranking.unblocks[r.id] || 0;
-      out.push('| ' + place + ' | ' + withHandle(r.title, handleFor(titles, r.id)) + ' | ' + (frees ? frees : '') +
+      const waits = ((dataById[r.id] || {}).waitsOn || []).map(function (w) {
+        return w.handle + (w.accepted ? '' : ' (proposed)');
+      }).join(', ');
+      out.push('| ' + place + ' | ' + handleFor(titles, r.id) + ' | ' + r.title + ' | ' + waits + ' | ' + (frees ? frees : '') +
         ' | ' + ageWords(r.at) + ' | ' + bar + ' | ' +
         (r.blocked ? '⛔' : freed) + ' |');
     });
@@ -1295,6 +1377,23 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
     try { before = fs.readFileSync(target, 'utf8'); } catch (e) { before = null; }
     if (before === null || LF(before) !== text) {
       try { fs.writeFileSync(target, text); } catch (e) { /* said below */ }
+    }
+  });
+
+  // THE SAME ROWS AS DATA, beside each page, same name, `.json`. Written
+  // only when it changes, like the page, so a render that moves nothing
+  // leaves nothing to commit.
+  const json = JSON.stringify({
+    box: box, commit: commit, stale: !!isStale, head: head,
+    measured: { suites: tally.suites, green: tally.green, red: tally.red, unhappy: tally.unhappy },
+    rows: data,
+  }, null, 2) + NL;
+  targets.forEach(function (target) {
+    const jt = target.replace(/\.md$/, '.json');
+    let before = null;
+    try { before = fs.readFileSync(jt, 'utf8'); } catch (e) { before = null; }
+    if (before !== json) {
+      try { fs.writeFileSync(jt, json); } catch (e) { /* the page is the fallback */ }
     }
   });
 

@@ -7,7 +7,7 @@
 **Nothing is broken, 13 requirements are declared and not built yet, and 2 older questions need a decision from you.**
 
 ```
-163 suites   3101 green   0 red   0 unhappy   13 owed      run 5105355
+163 suites   3101 green   0 red   0 unhappy   13 owed      run 1f2f075
 ```
 
 ---
@@ -18,25 +18,25 @@
 
 **⏳ How DEBUG is turned on, and whether it survives a relay gaining members.**
 
-- *You answered today*: "Andy: "DEBUG is Off by default, returned and set by owner-only api" — and it must reach a live box, because "when spirit-3 shows hickups, rather than taking it down, the owner should be able to flip the DEBUG switch remotely"."
+- *You answered yesterday*: "Andy: "DEBUG is Off by default, returned and set by owner-only api" — and it must reach a live box, because "when spirit-3 shows hickups, rather than taking it down, the owner should be able to flip the DEBUG switch remotely"."
 - **Still owed:** DECIDED, all of it: an owner-only verb that RETURNS the state as well as setting it, off by default, RAM only, not dropped on a claim, not refused on a live relay. No env var and no file, because both need a restart and a restart is what he refuses to do to a sick box. THE PROOFS ARE BUILT: spirit/test/relayCannotRead.js, 6 green and 1 red. The relay carries a sealed post, streams the owner the exact bytes, and the plaintext is not among them — with the recipient opening THOSE SAME BYTES and recovering the words, which is what stops the proof being true of an empty message. It first went red because the gate sat on the wrong emitter; moved at bf7bf3a, now 7 of 7. Still owed: the partner path. Spec: design/relay/PROVING-IT-CANNOT-READ.md.
 - **Owed by:** wsl-claude, whose design and whose relay surface
 
 **⏳ Which of the five sealed-post proofs the DEBUG instrument retires.**
 
-- *You answered today*: "Andy: "answer: none, it only may make proof possible.""
+- *You answered yesterday*: "Andy: "answer: none, it only may make proof possible.""
 - **Still owed:** HE CORRECTED THE VERB and the question was malformed: an instrument retires nothing, because a requirement is discharged by a passing PROOF and never by the means of proving it. All five stay owed. What survived the correction: cycle-10 R12 and R7 needed no instrument at all, and both are now built and green — they had been waiting on a blocker they never had, which is what a group of five under one shared reason does to its members.
 - **Owed by:** wsl-claude, whose design and whose harness
 
 **⏳ How to prove the relay cannot read a sealed post, by trying to read it.**
 
-- *You answered today*: "Andy: "that is what the DEBUG flag is for, in the relay it will stream the packet it sees, back to the owner node, where the test can examine it." And on its reach: "this will be a popular approach for assertion in the relay." Then, of this requirement: "belongson the board with at least a proposal.""
+- *You answered yesterday*: "Andy: "that is what the DEBUG flag is for, in the relay it will stream the packet it sees, back to the owner node, where the test can examine it." And on its reach: "this will be a popular approach for assertion in the relay." Then, of this requirement: "belongson the board with at least a proposal.""
 - **Still owed:** The instrument and the proofs are built: spirit/test/relayCannotRead.js, 7 of 7. Still owed: the same proof on the partner path, where one relay carries a post for another.
 - **Owed by:** wsl-claude, who holds the relay public surface and the harness
 
 **⏳ The outbound queue on the agent node.**
 
-- *You answered today*: "Andy: "keep only a few, and count the deletions, as ameasurement for the system to be discussed in a team review." Then: "keep the inbound queues, not the outbound ones...." And on the reason: "there is duplication there.""
+- *You answered yesterday*: "Andy: "keep only a few, and count the deletions, as ameasurement for the system to be discussed in a team review." Then: "keep the inbound queues, not the outbound ones...." And on the reason: "there is duplication there.""
 - **Still owed:** Two of the three are done: a refusal waiting cannot fix is dropped by the catalogue and a missing card is kept and retried (6feb3e0, agentsOutbox.js 4 of 4), and the owner card reaches the sending node by the card fetch, 780426a. Still owed: the age of the oldest pending row, on this board.
 - **Owed by:** wsl-claude, whose file the agents app is
 
@@ -69,28 +69,27 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +7 green
-- -5 red
+**Nothing moved.** Same requirements owed, same tally, since the run at `5105355`.
 
 ---
 
 ## Owed — what unblocks most first
 
-| # | to-do | frees | owed | there | |
-|---|---|---|---|---|---|
-| 1 | a puppet's stored owner key, owner-only (puppets/G6) | 2 | 1 day | `▓▓░░░░░░░░` 20% |  |
-| 2 | the loopback shim (puppets/G7) | 1 | 1 day | `░░░░░░░░░░` 0% |  |
-| 3 | a card is ordered in time, or an old one never dies (10/R13) |  | 3 days | `▓▓▓▓▓░░░░░` 50% |  |
-| 4 | the state the record cannot mark: its own node being down (11/C3) |  | 3 days | `▓▓▓▓░░░░░░` 40% |  |
-| 5 | a server reports the box it sits on: four fields, one opinion withheld (G10) |  | 2 days | `▓▓▓░░░░░░░` 33% |  |
-| 6 | layer 1 splits by PROMISE, and the stable half is named (public-app-server/G8) |  | 2 days | `░░░░░░░░░░` 0% |  |
-| 7 | join's answer travels back to the browser (G17) |  | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
-| 8 | a response bound exists, and both paths obey it (puppets/G1) |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 9 | one shared search: two hooks per collection, the rest inherited (puppets/G2) |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
-| 10 | one suite that makes every api call (puppets/G3) |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 11 | `peerOwnerPost()` on the owner's node (puppets/G4) |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 12 | an app can reply, and a reply is the only evidence of being delivered (transport/R12) |  | today | `░░░░░░░░░░` 0% |  |
-| 13 | the log must be able to PROVE what it claims (transport/R16) |  | today | `░░░░░░░░░░` 0% |  |
+| # | handle | to-do | waits on | frees | owed | there | |
+|---|---|---|---|---|---|---|---|
+| 1 | puppets/G6 | a puppet's stored owner key, owner-only |  | 2 | 1 day | `▓▓░░░░░░░░` 20% |  |
+| 2 | puppets/G7 | the loopback shim | puppets/G6 | 1 | 1 day | `░░░░░░░░░░` 0% |  |
+| 3 | 10/R13 | a card is ordered in time, or an old one never dies |  |  | 3 days | `▓▓▓▓▓░░░░░` 50% |  |
+| 4 | 11/C3 | the state the record cannot mark: its own node being down |  |  | 3 days | `▓▓▓▓░░░░░░` 40% |  |
+| 5 | G10 | a server reports the box it sits on: four fields, one opinion withheld |  |  | 2 days | `▓▓▓░░░░░░░` 33% |  |
+| 6 | public-app-server/G8 | layer 1 splits by PROMISE, and the stable half is named |  |  | 2 days | `░░░░░░░░░░` 0% |  |
+| 7 | G17 | join's answer travels back to the browser |  |  | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
+| 8 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 9 | puppets/G2 | one shared search: two hooks per collection, the rest inherited |  |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
+| 10 | puppets/G3 | one suite that makes every api call |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 11 | puppets/G4 | `peerOwnerPost()` on the owner's node | puppets/G7 |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 12 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | today | `░░░░░░░░░░` 0% |  |
+| 13 | transport/R16 | the log must be able to PROVE what it claims |  |  | today | `░░░░░░░░░░` 0% |  |
 
 **How the order was made.** 10 of 13 owed items have no dependency you have accepted, so they are ordered by age alone.
 

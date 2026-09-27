@@ -1,0 +1,182 @@
+{
+  "box": "wsl-claude",
+  "commit": "1f2f075",
+  "stale": false,
+  "head": "1f2f075",
+  "measured": {
+    "suites": 163,
+    "green": 3101,
+    "red": 0,
+    "unhappy": 0
+  },
+  "rows": [
+    {
+      "kind": "to-do",
+      "id": "puppets/G6",
+      "handle": "puppets/G6",
+      "title": "a puppet's stored owner key, owner-only",
+      "rank": 1,
+      "frees": 2,
+      "waitsOn": [],
+      "owedSince": "2026-09-25",
+      "there": 20,
+      "blocked": ""
+    },
+    {
+      "kind": "to-do",
+      "id": "puppets/G7",
+      "handle": "puppets/G7",
+      "title": "the loopback shim",
+      "rank": 2,
+      "frees": 1,
+      "waitsOn": [
+        {
+          "id": "puppets/G6",
+          "handle": "puppets/G6",
+          "accepted": true
+        }
+      ],
+      "owedSince": "2026-09-25",
+      "there": 0,
+      "blocked": ""
+    },
+    {
+      "kind": "to-do",
+      "id": "cycle-10/R13",
+      "handle": "10/R13",
+      "title": "a card is ordered in time, or an old one never dies",
+      "rank": 3,
+      "frees": 0,
+      "waitsOn": [],
+      "owedSince": "2026-09-23",
+      "there": 50,
+      "blocked": ""
+    },
+    {
+      "kind": "to-do",
+      "id": "cycle-11/C3",
+      "handle": "11/C3",
+      "title": "the state the record cannot mark: its own node being down",
+      "rank": 4,
+      "frees": 0,
+      "waitsOn": [],
+      "owedSince": "2026-09-23",
+      "there": 40,
+      "blocked": ""
+    },
+    {
+      "kind": "to-do",
+      "id": "public-app-server/G10",
+      "handle": "G10",
+      "title": "a server reports the box it sits on: four fields, one opinion withheld",
+      "rank": 5,
+      "frees": 0,
+      "waitsOn": [],
+      "owedSince": "2026-09-24",
+      "there": 33,
+      "blocked": ""
+    },
+    {
+      "kind": "to-do",
+      "id": "public-app-server/G8",
+      "handle": "public-app-server/G8",
+      "title": "layer 1 splits by PROMISE, and the stable half is named",
+      "rank": 6,
+      "frees": 0,
+      "waitsOn": [],
+      "owedSince": "2026-09-24",
+      "there": 0,
+      "blocked": ""
+    },
+    {
+      "kind": "to-do",
+      "id": "public-app-server/G17",
+      "handle": "G17",
+      "title": "join's answer travels back to the browser",
+      "rank": 7,
+      "frees": 0,
+      "waitsOn": [],
+      "owedSince": "2026-09-24",
+      "there": 70,
+      "blocked": ""
+    },
+    {
+      "kind": "to-do",
+      "id": "puppets/G1",
+      "handle": "puppets/G1",
+      "title": "a response bound exists, and both paths obey it",
+      "rank": 8,
+      "frees": 0,
+      "waitsOn": [],
+      "owedSince": "2026-09-25",
+      "there": 0,
+      "blocked": ""
+    },
+    {
+      "kind": "to-do",
+      "id": "puppets/G2",
+      "handle": "puppets/G2",
+      "title": "one shared search: two hooks per collection, the rest inherited",
+      "rank": 9,
+      "frees": 0,
+      "waitsOn": [],
+      "owedSince": "2026-09-25",
+      "there": 40,
+      "blocked": ""
+    },
+    {
+      "kind": "to-do",
+      "id": "puppets/G3",
+      "handle": "puppets/G3",
+      "title": "one suite that makes every api call",
+      "rank": 10,
+      "frees": 0,
+      "waitsOn": [],
+      "owedSince": "2026-09-25",
+      "there": 0,
+      "blocked": ""
+    },
+    {
+      "kind": "to-do",
+      "id": "puppets/G4",
+      "handle": "puppets/G4",
+      "title": "`peerOwnerPost()` on the owner's node",
+      "rank": 11,
+      "frees": 0,
+      "waitsOn": [
+        {
+          "id": "puppets/G7",
+          "handle": "puppets/G7",
+          "accepted": true
+        }
+      ],
+      "owedSince": "2026-09-25",
+      "there": 0,
+      "blocked": ""
+    },
+    {
+      "kind": "to-do",
+      "id": "transport/R12",
+      "handle": "transport/R12",
+      "title": "an app can reply, and a reply is the only evidence of being delivered",
+      "rank": 12,
+      "frees": 0,
+      "waitsOn": [],
+      "owedSince": "2026-09-26",
+      "there": 0,
+      "blocked": ""
+    },
+    {
+      "kind": "to-do",
+      "id": "transport/R16",
+      "handle": "transport/R16",
+      "title": "the log must be able to PROVE what it claims",
+      "rank": 13,
+      "frees": 0,
+      "waitsOn": [],
+      "owedSince": "2026-09-26",
+      "there": 0,
+      "blocked": ""
+    }
+  ]
+}
