@@ -1117,6 +1117,26 @@ is a general node verb, so building it needs peer review and his yes on the
 verb. wsl-claude's facts: what a key may use is already computable from each
 booted app's `allow.json` (`nodeApps.js:169-207`), but no app declares its
 verbs today; they live only in its code.
+- **One verb both finds and calls.** Andy: *"the app, api's if the caller
+  sends on object to that verb, and it contains input-data on a leaf,
+  that's an ap-api-call"*. `api` with no input answers the tree; `api` with
+  `{ app: { verb: input } }` calls that verb and answers its result.
+- **wsl-claude's peer review (at 9aebc49): yes to the shape, on four
+  conditions.** (1) The gate is the node's, per verb: each manifest
+  declares its verbs and who may call each (e.g. `grant: 'allowed'`,
+  `serve: 'contacts'`). The node enforces that before any delivery, and
+  `api` answers exactly that table, so discovery and dispatch have one
+  truth. Today appFaceApp checks its allow list for `grant` only
+  (`appFaceApp.js:406-413`). An undeclared verb is neither listed nor
+  delivered. (2) It is a peer verb, answered by the node like the card; the
+  caller is the signed `fromKey`. On loopback the caller is the box owner.
+  (3) The front door still comes first: a stranger gets no answer at all,
+  not an empty tree. (4) It is bounded and plain: the tree fits one packet
+  or is refused by name; it names apps and verbs only, never a path, pipe
+  or file; and it is read per ask, so a revoked key loses its leaf at once.
+- **Open (claude):** one leaf per call, a batch being a separate design.
+  A call needs the app's answer back, and today a handler's return value is
+  dropped (transport/R12), so the call half depends on R12.
 
 *Open:* whether the face should admit a member for everything or only for
 answers to requests it forwarded there. The tree has only whole-key
