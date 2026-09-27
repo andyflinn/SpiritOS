@@ -67,13 +67,21 @@ import sites/*.caddy
 then `caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile`,
 `systemctl reload caddy`, and `/root/face/SpiritOS/bash/face-tls`.
 
-**4. On your node:**
-- **Accept the face node's key as a contact**, the one step 2 printed. Your
-  node has to let it in, or its questions never reach appFaceApp.
-- **Put two files in your node's `spirit/run/app/appFaceApp/`:**
-  - `face-domain.json`: `{ "faceDomain": "face.spirit.andyflinn.com" }`
-  - `grants.json`, the name `join` given to your own node, merged with any
-    names already in it: `{ "names": { "join": { "to": "<YOUR_NODE_KEY>" } } }`
+**4. On your own box**, where your node runs, from your SpiritOS checkout, with
+the face node's key that step 2 printed:
+
+```
+node bash/face-owner.js <FACE_NODE_KEY>
+```
+
+It talks to your node on `http://127.0.0.1:65432` (`--node` for another
+port), using only doors your node already has:
+- it lets the face node in (`peer.acquire`, then `contact.accept`);
+- it writes `app/appFaceApp/face-domain.json` (`face.spirit.andyflinn.com`);
+- it grants `join` to your own node's key in `app/appFaceApp/grants.json`.
+
+The grant is merged into whatever is already granted, never replaced. If
+`join` already belongs to another key, it refuses and changes nothing.
 
 **5. Test**, from anywhere:
 

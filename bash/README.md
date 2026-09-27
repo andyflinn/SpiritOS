@@ -53,6 +53,7 @@ labMaster. Kill it.
 | `./bash/tls` | Install Caddy + site file for `$SPIRIT_RELAY_DOMAIN`. |
 | `./bash/face-install` | The face node: its own clone, owned by your node, serving `*.face.<domain>`. Idempotent. See [FACE.md](FACE.md). |
 | `./bash/face-tls` | Caddy site for `face.<domain>` and `*.face.<domain>`, certificates on demand. Run by `face-install`. |
+| `node bash/face-owner.js` | Run on the OWNER's box, not here: lets the face node in and grants `join`, through the node's own door. See [FACE.md](FACE.md). |
 | `./bash/http-to-https` | Move Node off public :80 onto localhost :65430, enable TLS + redirect. |
 | `./bash/logs` | Last 100 lines of the relay unit. |
 

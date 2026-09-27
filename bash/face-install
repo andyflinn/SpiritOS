@@ -179,11 +179,17 @@ else
 fi
 
 # ── IT LISTENS TO ITS OWNER, AND THE OWNER MUST LISTEN TO IT ────────
-if OUT=$(verb "{\"verb\":\"contact.accept\",\"publicKey\":\"$OWNER_KEY\"}" 2>&1); then
+# ACQUIRE, THEN ACCEPT. contact.accept only works on a key the node already
+# has a row for (contacts.js accept: no row, no accept, and the door says
+# 404 'no row for that key'). A fresh face node has never seen its owner,
+# so it first looks the key up on the relay (peer.acquire), which writes
+# the row, and then accepts it.
+if OUT=$(verb "{\"verb\":\"peer.acquire\",\"publicKey\":\"$OWNER_KEY\"}" 2>&1) \
+   && OUT=$(verb "{\"verb\":\"contact.accept\",\"publicKey\":\"$OWNER_KEY\"}" 2>&1); then
   ok "the face node accepts its owner as a contact"
 else
   warn "could not accept the owner as a contact yet: $OUT"
-  echo "    (normal before the first join; run this script again after it)"
+  echo "    (normal before the first join, or while your node is off; run this script again)"
 fi
 FACE_KEY=$(node -e 'try{process.stdout.write(require(process.argv[1]).publicKey||"")}catch(e){}' "$STATE/identity.json" 2>/dev/null)
 if [ -n "$FACE_KEY" ]; then
