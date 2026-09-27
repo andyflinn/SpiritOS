@@ -67,64 +67,73 @@ the only way a default survives contact with people in a hurry.
 
 **39 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
 
+**Each verb carries its authority.** Andy, 2026-09-27: *"that's a boundary
+crossed that requires peer review AND my approval"* — and, on his own yes:
+*"my Yes's may be dumb, too, and revoked later on."* So every line ends with
+one of three: his dated words approving the verb; `before the rule
+(2026-09-27)`, which only verbs in the table on that date may carry and which
+means nobody has looked yet, not that he said yes; or `revoked, <date>:` with
+his words, which keeps the harness red until the verb is gone.
+`test/doorContract.js` enforces it.
+
 **`contact.*`** — who this node knows, and what it calls them
-- `contact.accept`
-- `contact.block`
-- `contact.forget`
-- `contact.label`
-- `contact.senders`
-- `contact.setSenders`
-- `contact.unblock`
+- `contact.accept` — before the rule (2026-09-27)
+- `contact.block` — before the rule (2026-09-27)
+- `contact.forget` — before the rule (2026-09-27)
+- `contact.label` — before the rule (2026-09-27)
+- `contact.senders` — before the rule (2026-09-27)
+- `contact.setSenders` — before the rule (2026-09-27)
+- `contact.unblock` — before the rule (2026-09-27)
 
 **`device.*`** — a second machine of your own
-- `device.info`
-- `device.rotate`
+- `device.info` — before the rule (2026-09-27)
+- `device.rotate` — before the rule (2026-09-27)
 
 **`fs.*`** — files, inside this node's own tree
-- `fs.annotate`
-- `fs.annotations`
-- `fs.delete`
-- `fs.save`
-- `fs.stat`
+- `fs.annotate` — before the rule (2026-09-27)
+- `fs.annotations` — before the rule (2026-09-27)
+- `fs.delete` — before the rule (2026-09-27)
+- `fs.save` — before the rule (2026-09-27)
+- `fs.stat` — before the rule (2026-09-27)
 
 **`jobs.*`** — background work
-- `jobs.cancel`
-- `jobs.create`
-- `jobs.delete`
-- `jobs.list`
-- `jobs.update`
+- `jobs.cancel` — before the rule (2026-09-27)
+- `jobs.create` — before the rule (2026-09-27)
+- `jobs.delete` — before the rule (2026-09-27)
+- `jobs.list` — before the rule (2026-09-27)
+- `jobs.update` — before the rule (2026-09-27)
 
 **`net.*`** — one fetch, through the proxy gate
-- `net.fetch`
+- `net.fetch` — before the rule (2026-09-27)
 
 **`owner.*`** — commanding one of this node's puppets
-- `owner.boxes`
-- `owner.command`
+- `owner.boxes` — Andy, 2026-09-27: "go." (keep the three verbs added without approval, Desk under puppets/G10)
+- `owner.command` — Andy, 2026-09-27: "go." (keep the three verbs added without approval, Desk under puppets/G10)
 
 **`node.*`** — this node's own identity as strangers see it
-- `node.card`
-- `node.rotateCipher`
-- `node.setDescription`
-- `node.setName`
+- `node.card` — before the rule (2026-09-27)
+- `node.rotateCipher` — Andy, 2026-09-27: "go." (keep the three verbs added without approval, Desk under puppets/G10)
+- `node.setDescription` — before the rule (2026-09-27)
+- `node.setName` — before the rule (2026-09-27)
 
 **`peer.*`** — talking to other people
-- `peer.acquire`
-- `peer.list`
-- `peer.post`
-- `peer.search`
+- `peer.acquire` — before the rule (2026-09-27)
+- `peer.list` — before the rule (2026-09-27)
+- `peer.post` — before the rule (2026-09-27)
+- `peer.search` — before the rule (2026-09-27)
 
 **`proxy.*`** — reaching the outside world, by the owner's leave
-- `proxy.allow`
-- `proxy.close`
-- `proxy.list`
-- `proxy.open`
-- `proxy.remove`
+- `proxy.allow` — before the rule (2026-09-27)
+- `proxy.close` — before the rule (2026-09-27)
+- `proxy.list` — before the rule (2026-09-27)
+- `proxy.open` — before the rule (2026-09-27)
+- `proxy.remove` — before the rule (2026-09-27)
 
 **`relay.*`** — this node's relationship with a relay
-- `relay.claim`
-- `relay.partnerCheck`
-- `relay.record`
-- `relay.status`
+- `relay.claim` — before the rule (2026-09-27)
+- `relay.partnerCheck` — before the rule (2026-09-27)
+- `relay.record` — before the rule (2026-09-27)
+- `relay.status` — before the rule (2026-09-27)
 
 ---
 

@@ -55,7 +55,10 @@ test.subHeading('Every verb the door answers is on the page, and nothing else is
 
 {
   const real = [...server.matchAll(/^ {4}'([a-z]+\.[a-zA-Z]+)':/gm)].map(function (m) { return m[1]; });
-  const listed = [...page.matchAll(/^- `([a-z]+\.[a-zA-Z]+)`$/gm)].map(function (m) { return m[1]; });
+  // A verb line may carry its authority after ' — ' (THE-DOOR, "Each verb
+  // carries its authority"); what that authority must be is wsl-claude's
+  // enforcement, below.
+  const listed = [...page.matchAll(/^- `([a-z]+\.[a-zA-Z]+)`(?: — .+)?$/gm)].map(function (m) { return m[1]; });
 
   const missing = real.filter(function (v) { return listed.indexOf(v) === -1; });
   const phantom = listed.filter(function (v) { return real.indexOf(v) === -1; });
