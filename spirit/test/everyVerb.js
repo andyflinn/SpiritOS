@@ -63,7 +63,6 @@ const VERBS = [...serverSrc.matchAll(/^ {4}'([a-z]+\.[a-zA-Z]+)':/gm)].map(funct
 // suite goes red until the list says what is true.
 const LISTS_TODAY = [
   'peer.search',
-  'relay.record',
 ];
 
 function freePort() {

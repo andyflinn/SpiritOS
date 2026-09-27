@@ -66,6 +66,30 @@ const fs = require('fs');
 const path = require('path');
 
 let sqlite = null;
+
+// ONE RECORD ROW AS relay.record ANSWERS IT: a report's figures, or an
+// edge ('started', 'stopped', ...) as `was`. Shared by series (oldest first
+// from a start) and window (newest first, puppets/G2).
+function seriesRow(r) {
+  if (r.kind !== 'report') return { at: r.at, was: r.kind };
+  let seats = null;
+  try { seats = (JSON.parse(r.rest || '{}') || {}).seats || null; }
+  catch (e) { seats = null; }
+  return {
+    at: r.at,
+    members: r.members,
+    connected: r.connected,
+    allowance: r.allowance,
+    routes: r.routes,
+    rssMB: r.rssMB,
+    // cycle 11's R7: the seat figures are the series every
+    // tightening lever reads from, so they cross as answers
+    // rather than being dug out of `rest` by a caller.
+    free: seats && typeof seats.free === 'number' ? seats.free : null,
+    outstanding: seats && typeof seats.outstanding === 'number' ? seats.outstanding : null,
+  };
+}
+
 function driver() {
   if (!sqlite) sqlite = require('node:sqlite');
   return sqlite;
@@ -457,6 +481,10 @@ function open(rootDir, opts) {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`),
     recSince: db.prepare(`SELECT * FROM relay_record
       WHERE relay = ? AND at >= ? ORDER BY at ASC LIMIT ?`),
+    // Newest first, within a window: relay.record reads what fits from the
+    // present backwards (puppets/G2), where recSince reads from a start.
+    recWindow: db.prepare(`SELECT * FROM relay_record
+      WHERE relay = ? AND at >= ? AND at <= ? ORDER BY at DESC LIMIT ?`),
     recCount: db.prepare('SELECT COUNT(*) AS n FROM relay_record'),
     recLastAt: db.prepare(`SELECT MAX(at) AS at FROM relay_record
       WHERE relay = ? AND kind = 'report'`),
@@ -930,25 +958,13 @@ function open(rootDir, opts) {
       // closed at 14:02" is an answer too, and without it the curve has
       // gaps a reader cannot interpret (cycle 11's R3).
       series: function (relay, from, limit) {
-        return this.since(relay, from, limit).map(function (r) {
-          if (r.kind !== 'report') return { at: r.at, was: r.kind };
-          let seats = null;
-          try { seats = (JSON.parse(r.rest || '{}') || {}).seats || null; }
-          catch (e) { seats = null; }
-          return {
-            at: r.at,
-            members: r.members,
-            connected: r.connected,
-            allowance: r.allowance,
-            routes: r.routes,
-            rssMB: r.rssMB,
-            // cycle 11's R7: the seat figures are the series every
-            // tightening lever reads from, so they cross as answers
-            // rather than being dug out of `rest` by a caller.
-            free: seats && typeof seats.free === 'number' ? seats.free : null,
-            outstanding: seats && typeof seats.outstanding === 'number' ? seats.outstanding : null,
-          };
-        });
+        return this.since(relay, from, limit).map(seriesRow);
+      },
+      // The same rows, newest first, between two times (puppets/G2).
+      window: function (relay, from, to, limit) {
+        return q.recWindow.all(String(relay || ''), Number(from) || 0,
+          Number(to) > 0 ? Number(to) : Number.MAX_SAFE_INTEGER,
+          Number(limit) > 0 ? Number(limit) : 5000).map(seriesRow);
       },
 
       // ── THE GAPS, AND WHICH KIND EACH IS (cycle-11/C3) ────────────────

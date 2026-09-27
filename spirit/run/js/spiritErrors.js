@@ -713,7 +713,7 @@ define('bad-request', {
     'not a lever name', 'partner relay key required', 'partner relay url required',
     'pick a relay url', 'that is the peer’s own key, not their relay’s',
     'that is this relay', 'Invalid JSON body', 'bad body',
-    'publicKey and url required', 'publicKey required', 'that key is this node', 'key required', 'path outside the run folder'],
+    'publicKey and url required', 'publicKey required', 'that key is this node', 'key required', 'path outside the run folder', 'relay required'],
   prefixes: ['policy must be one of:'],
 });
 

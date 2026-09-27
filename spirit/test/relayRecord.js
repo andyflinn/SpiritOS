@@ -418,4 +418,51 @@ test.subHeading('cycle 11 R2 — the node process writes the record, and nothing
   }
   closeAndRemove(w);
 }
-test.reportSuccessFailureCount();
+// ── relay.record: A WINDOW, NEWEST FIRST, CUT IN BYTES (puppets/G2) ──
+//
+//   Andy, 2026-09-27: the G2 verb changes, including relay.record's series
+//   no longer paging. The hub's handler answers the NEWEST rows in the
+//   window that fit one answer, in time order, and says more.
+function askRecord(dir, body) {
+  const hub = require('../run/js/hub').createHub(dir);
+  return new Promise(function (resolve) {
+    let status = 0;
+    hub.handleRecord({}, {
+      writeHead: function (s) { status = s; },
+      end: function (t) { resolve({ status: status, body: JSON.parse(t) }); },
+    }, function () { return Promise.resolve(body); }, { rootDir: dir });
+  });
+}
+(function windowIsBounded() {
+  test.subHeading('relay.record: the newest rows of a window that fit, never a page');
+  const w = home();
+  // Minute-aligned: the store files a report under its whole minute.
+  const base = Math.floor((Date.now() - 2 * DAY) / MIN) * MIN;
+  // A day of minute rows is far more than one answer carries.
+  for (let i = 0; i < 1440; i += 1) w.store.record.put(RELAY, report(10 + (i % 5)), base + i * MIN);
+  const limits = require('../run/js/limits');
+  return askRecord(w.dir, { relay: RELAY, from: base, to: base + DAY }).then(function (r) {
+    const s = r.body.series || [];
+    const bytes = Buffer.byteLength(JSON.stringify(r.body), 'utf8');
+    const ascending = s.every(function (row, i) { return i === 0 || row.at > s[i - 1].at; });
+    const newestKept = s.length && s[s.length - 1].at === base + 1439 * MIN;
+    if (r.status === 200 && r.body.more === true && s.length > 0 && s.length < 1440 && bytes <= limits.PLAINTEXT_MAX
+        && ascending && newestKept) {
+      test.check('a day of minute rows answers the newest ' + s.length + ' that fit (' + bytes + ' bytes), in time order, with more');
+    } else {
+      test.fail('window: status ' + r.status + ', ' + s.length + ' rows, ' + bytes + ' bytes, more ' + r.body.more
+        + ', ascending ' + ascending + ', newest kept ' + newestKept);
+    }
+    return askRecord(w.dir, { relay: RELAY, from: base + 1430 * MIN, to: base + DAY });
+  }).then(function (r) {
+    if (r.body.more === false && r.body.series.length === 10) test.check('a narrow window answers all of itself, and more is false');
+    else test.fail('narrow window: ' + r.body.series.length + ' rows, more ' + r.body.more);
+    return askRecord(w.dir, {});
+  }).then(function (r) {
+    if (r.status === 400 && /relay required/.test(JSON.stringify(r.body))) test.check('no relay named is refused by name: the list of relays is relay.search');
+    else test.fail('no relay: ' + r.status + ' ' + JSON.stringify(r.body));
+    closeAndRemove(w);
+  });
+}())
+  .then(function () { test.reportSuccessFailureCount(); })
+  .catch(function (err) { test.fail('relayRecord threw: ' + ((err && err.stack) || err)); test.reportSuccessFailureCount(); });

@@ -2742,24 +2742,43 @@ function createHub(rootDir) {
       .then(function (body) {
         const rootDir = (deps && deps.rootDir) || '';
         const relay = String((body && body.relay) || '');
+        // ── A WINDOW, NEWEST FIRST, CUT IN BYTES (puppets/G2) ─────────
+        //
+        //   Andy, 2026-09-27: "the verb changes changing list fetches to a
+        //   search(labe) and geKey(key) pair are approved", including:
+        //   relay.record's list of relays folds into relay.search, and its
+        //   series (from + limit) stops paging.
+        //
+        // So a relay must be named (relay.search finds them), and the
+        // question is a window: from, to. The answer is the NEWEST rows in
+        // it that fit one answer, in time order, and `more` says older
+        // rows in the window were left out. The caller narrows the window;
+        // nothing hands out a cursor.
         const from = Number(body && body.from) || (Date.now() - 24 * 60 * 60 * 1000);
-        const limit = Number(body && body.limit) || 2000;
+        const to = Number(body && body.to) || Date.now();
+        if (!relay) return fail(res, 400, 'relay required');
         let store = null;
         try { store = require('./nodeStore').open(rootDir); }
         catch (e) { return fail(res, 503, 'no record on this node'); }
 
-        // A caller with no relay named gets the list of relays that have
-        // a history, which is the one question that has to be answerable
-        // before any other can be asked.
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        if (!relay) {
-          return res.end(JSON.stringify({ ok: true, relays: store.record.relays() }));
+        const WINDOW_ROWS = 5000;
+        const newest = store.record.window(relay, from, to, WINDOW_ROWS);
+        const cap = require('./limits').PLAINTEXT_MAX;
+        const frame = Buffer.byteLength(JSON.stringify({ ok: true, relay: relay, from: from, to: to, series: [], more: false }), 'utf8');
+        let used = frame;
+        const kept = [];
+        let cut = false;
+        for (let i = 0; i < newest.length; i += 1) {
+          const cost = Buffer.byteLength(JSON.stringify(newest[i]), 'utf8') + (kept.length ? 1 : 0);
+          if (used + cost > cap) { cut = true; break; }
+          used += cost;
+          kept.push(newest[i]);
         }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         return res.end(JSON.stringify({
-          ok: true,
-          relay: relay,
-          from: from,
-          series: store.record.series(relay, from, limit),
+          ok: true, relay: relay, from: from, to: to,
+          series: kept.reverse(),
+          more: cut || newest.length === WINDOW_ROWS,
         }));
       })
       .catch(function (err) { fail(res, 500, String((err && err.message) || err)); });
