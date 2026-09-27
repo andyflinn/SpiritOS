@@ -511,21 +511,25 @@ remote control: *"yes, but ther is that channel that connects the face to
 the in-process-server on the owner box, and that is puppet specific. It is
 my proposal, not a ruling"*.
 
-Read by both agents as TWO things beside each other, not one replacing the
-other:
-1. **The owner's remote control over the puppet's node groups stays**
-   (G4, *"proxies the entire node api ... configuration, contactList maybe
-   even relayList"*, and the Grant access / Publish to relay labels).
-2. **The app's own flat verbs get a blank group of their own**, walled off
-   from the node's groups, and that set is what reaches the app-server
-   process on the owner's box. The **face-to-process channel** is specific
-   to the puppet. It reads as the G17 route (PUBLIC-APP-SERVER.md, *THE
-   PATH*: appFaceApp to the owner node, then loopback to the app process,
-   then `puppyReply()`).
+What it adds is clear, and one question is OPEN:
+- **Clear:** the app's own flat verbs get a blank group of their own,
+  walled off from the node's groups, and that set is what reaches the
+  app-server process on the owner's box. The **face-to-process channel**
+  is specific to the puppet. It reads as the G17 route (PUBLIC-APP-SERVER.md,
+  *THE PATH*: appFaceApp to the owner node, then loopback to the app
+  process, then `puppyReply()`).
+- **OPEN: does it REPLACE the owner's remote control over the puppet's
+  node groups, or sit BESIDE it?** That remote control is G4 (*"proxies the
+  entire node api ... configuration, contactList maybe even relayList"*)
+  and the Grant access / Publish to relay labels. He was asked exactly
+  this, and his answer begins *"yes"*, which points to REPLACES. The
+  *"but"* adds the face channel and does not say the node remote control
+  stays. (claude first wrote this as "beside", attributed to both agents.
+  wsl-claude never held that reading, and it is withdrawn.)
 
 If it is ruled, G7 changes from *"`server.js:921`'s dispatch runs
-unchanged"* to dispatching into the app's group, and the node's groups
-stay reachable only through (1). **G7 and G4 stay unbuilt until Andy
+unchanged"* to dispatching into the app's group. Whether the node's
+groups stay reachable at all is the open question above. **G7 and G4 stay unbuilt until Andy
 approves a written shape.** G6 is unaffected.
 
 ### G8 — may a puppet be commanded: the owner anything, others nothing
