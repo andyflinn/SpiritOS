@@ -3,195 +3,183 @@
 
 labMaster: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/home/andy/SpiritOS-agent-wsl-claude), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up. — the lab suites will say so themselves
 
-  ok  agentNodeRows.js             7 ✅                        133ms
-  ok  agentsApp.js                25 ✅                        112ms
-  ok  agentsOutbox.js              4 ✅                        115ms
-  ok  agentsRecord.js             14 ✅                        124ms
-  ok  agentsSeal.js                8 ✅                        100ms
-  ok  answerRelay.js              23 ✅                        224ms
-  ok  appFaceGrant.js              8 ✅                       2636ms
-  ok  appReferences.js             4 ✅                         97ms
-  ok  appServerBoundary.js        32 ✅          3 ⏳   1 ⏭     296ms
-  ok  armedButtons.js              8 ✅                         94ms
-  ok  arrivals.js                 19 ✅                        408ms
-  ok  boardPostSuite.js            4 ✅                        101ms
-  ok  boardRankSuite.js           18 ✅                         84ms
-  ok  boundedByTime.js            10 ✅                       5572ms
-  ok  bucket.js                   16 ✅                        141ms
-  ok  budgetChain.js              14 ✅                       1898ms
-  ok  buildStamp.js                9 ✅                        163ms
-FAIL  capacityFresh.js             3 ✅   2 ❌                 144ms
-  ok  cardFetch.js                12 ✅                       2292ms
-FAIL  cardRotation.js              5 ✅   4 ❌                1452ms
-  ok  chosenMarks.js              11 ✅                      49599ms
-  ok  circularity.js               1 ✅                        100ms
-  ok  clientLayer.js              17 ✅                        429ms
-  ok  contactCard.js              17 ✅                        653ms
-  ok  contacts.js                 89 ✅                        645ms
-  ok  contactsDetails.js          52 ✅                        101ms
-  ok  cycle10Pending.js            1 ✅                        142ms
-  ok  cycleA.js                   28 ✅                       2537ms
-  ok  cycleCitations.js            3 ✅                        271ms
-  ok  cycleRequirements.js       160 ✅                        155ms
-  ok  deprecations.js             12 ✅                        136ms
-  ok  deviceAccount.js             8 ✅                        122ms
-  ok  deviceAuth.js               13 ✅                        151ms
-  ok  deviceDisplace.js            8 ✅                        421ms
-  ok  deviceEnrol.js              40 ✅                       3139ms
-  ok  deviceInbox.js               8 ✅                        414ms
+  ok  agentNodeRows.js             7 ✅                        135ms
+  ok  agentsApp.js                25 ✅                        138ms
+  ok  agentsOutbox.js              6 ✅                        140ms
+  ok  agentsRecord.js             16 ✅                        143ms
+  ok  agentsSeal.js                8 ✅                        108ms
+  ok  answerRelay.js              23 ✅                        215ms
+  ok  appFaceGrant.js              8 ✅                       2634ms
+  ok  appReferences.js             4 ✅                         81ms
+  ok  appServerBoundary.js        32 ✅          3 ⏳   1 ⏭     247ms
+  ok  armedButtons.js              8 ✅                         77ms
+  ok  arrivals.js                 19 ✅                        400ms
+  ok  boardPostSuite.js            4 ✅                         86ms
+  ok  boardRankSuite.js           18 ✅                         65ms
+  ok  boundedByTime.js            10 ✅                       5586ms
+  ok  bucket.js                   16 ✅                        140ms
+  ok  budgetChain.js              14 ✅                       1765ms
+  ok  buildStamp.js                9 ✅                        195ms
+FAIL  capacityFresh.js             3 ✅   2 ❌                 133ms
+  ok  cardFetch.js                12 ✅                       2126ms
+  ok  cardRotation.js              9 ✅                       1389ms
+  ok  chosenMarks.js              11 ✅                      37672ms
+  ok  circularity.js               1 ✅                        117ms
+  ok  clientLayer.js              17 ✅                        409ms
+  ok  contactCard.js              17 ✅                        710ms
+  ok  contacts.js                 89 ✅                        591ms
+  ok  contactsDetails.js          52 ✅                        140ms
+  ok  cycle10Pending.js            1 ✅                        113ms
+  ok  cycleA.js                   28 ✅                       2661ms
+  ok  cycleCitations.js            3 ✅                        255ms
+  ok  cycleRequirements.js       160 ✅                        124ms
+  ok  deprecations.js             12 ✅                         71ms
+  ok  deviceAccount.js             8 ✅                         63ms
+  ok  deviceAuth.js               13 ✅                        126ms
+  ok  deviceDisplace.js            8 ✅                        384ms
+  ok  deviceEnrol.js              40 ✅                       3270ms
+  ok  deviceInbox.js               8 ✅                        442ms
   ok  devicePeers.js              28 ✅                      15611ms
-  ok  discBound.js                 9 ✅                       1755ms
-  ok  discFull.js                 12 ✅                        415ms
-  ok  diskClient.js               10 ✅                        965ms
-  ok  doorContract.js             10 ✅                         95ms
-  ok  envSecrets.js                6 ✅                         64ms
-  ok  firstOwner.js               14 ✅                        726ms
-  ok  fixListSeam.js               8 ✅                         94ms
-  ok  fixedAllowance.js            6 ✅                       1169ms
-  ok  frontDoor.js                18 ✅                       6326ms
-  ok  fsWatcherQuiet.js            5 ✅                       3683ms
-  ok  grokReview.js               14 ✅                        138ms
-  ok  guarantees.js               11 ✅                       1360ms
-  ok  harnessRetry.js              4 ✅                         85ms
-  ok  hintWire.js                 10 ✅                       5528ms
-  ok  hostHardening.js            57 ✅                        140ms
-  ok  htmlEscaping.js             29 ✅                        102ms
-  ok  hubPost.js                  13 ✅                       1349ms
-  ok  iconIndex.js                31 ✅                         71ms
-  ok  identityPerception.js       26 ✅                       3504ms
-  ok  inviteLock.js                5 ✅                       1068ms
-  ok  inviteMint.js               21 ✅                       3037ms
-  ok  inviteRedeem.js              8 ✅                        636ms
-  ok  inviteSpeakable.js          15 ✅                       1801ms
-  ok  invites.js                  26 ✅                       3625ms
-  ok  jobCallback.js               6 ✅                        538ms
-  ok  jobsLifecycle.js             7 ✅                        147ms
-  ok  keyPermissions.js            4 ✅                        105ms
-  ok  labLifecycle.js              0 ✅                1 ⏭     276ms
-  ok  labPanel.js                 14 ✅                         88ms
-  ok  labPersistence.js            0 ✅                1 ⏭     343ms
-  ok  labRefusals.js               0 ✅                1 ⏭     304ms
-  ok  labRelaySurface.js           0 ✅                1 ⏭     187ms
-  ok  labServableStatic.js         0 ✅                1 ⏭     130ms
-  ok  labelIsOwned.js             22 ✅                       3775ms
-  ok  labelShape.js               20 ✅                       2885ms
-  ok  lever.js                    26 ✅                         78ms
-  ok  liveFanOut.js               10 ✅                        963ms
-  ok  liveFrontDoor.js             0 ✅                1 ⏭     319ms
-  ok  memberBroadcast.js           6 ✅                       1354ms
-  ok  memberCard.js                8 ✅                        763ms
-  ok  monitorApp.js               38 ✅                         95ms
-  ok  natterBind.js               35 ✅                        114ms
-  ok  natterDetails.js            84 ✅                        141ms
-  ok  natterIntrinsic.js         233 ✅                        342ms
-  ok  natterLast.js               28 ✅                         91ms
-  ok  nodeAppsSeam.js             12 ✅                         73ms
-  ok  nodeCardSigned.js           13 ✅                        135ms
-  ok  nodeHistory.js              11 ✅                        123ms
-  ok  nodeInfo.js                 58 ✅                        183ms
-  ok  nodeKnowsNoApps.js           2 ✅                         97ms
-  ok  nodeSettings.js             11 ✅                        537ms
-  ok  nodeStore.js                32 ✅                      17776ms
-  ok  oneDeclaration.js            2 ✅                        117ms
-  ok  oneDoor.js                  10 ✅                        392ms
-  ok  ownerCommand.js             10 ✅                        186ms
-  ok  ownerLog.js                 48 ✅                       5474ms
-  ok  ownerToken.js                8 ✅                       1622ms
-  ok  packet.js                   34 ✅                        245ms
-  ok  partnerAvailability.js      10 ✅                        545ms
-  ok  partnerGate.js              12 ✅                       1424ms
-  ok  partnerTunnel.js            26 ✅                       3802ms
-  ok  partnerWire.js              10 ✅                       3514ms
-  ok  pathCanonicalization.js     90 ✅                         71ms
-  ok  pathJail.js                 13 ✅                         93ms
-  ok  payloadCeiling.js            6 ✅                        736ms
-  ok  peerFile.js                 16 ✅                        255ms
-  ok  peerPost.js                 49 ✅                       1892ms
-  ok  peerPostWiring.js            3 ✅                         91ms
-  ok  peerSearch.js               49 ✅                        124ms
-  ok  peerStats.js                20 ✅                        157ms
-  ok  postQueue.js                28 ✅                        101ms
-  ok  presenceLearned.js           7 ✅                       1935ms
-  ok  presenceNode.js             42 ✅                        812ms
-  ok  presenceStream.js           25 ✅                        795ms
-  ok  presenceWire.js             15 ✅                       6915ms
-  ok  protocolSurface.js          13 ✅                        116ms
-  ok  proxyList.js                12 ✅                         90ms
-  ok  puppetDoor.js                9 ✅                        556ms
-  ok  puppetOwner.js               8 ✅                         96ms
-  ok  puppetsPending.js            5 ✅          5 ⏳           108ms
-  ok  queueRestart.js              9 ✅                       2214ms
-  ok  queueUnderLoad.js            6 ✅                      10468ms
-  ok  refusalCodes.js              5 ✅                        842ms
-  ok  relayCannotRead.js           7 ✅                        558ms
-  ok  relayCompact.js              6 ✅                        528ms
-  ok  relayConfig.js              20 ✅                         61ms
-  ok  relayConfigWire.js          13 ✅                      16644ms
-  ok  relayGates.js               11 ✅                       1171ms
-  ok  relayHashDiffers.js          4 ✅                       1526ms
-  ok  relayKeyDoor.js             14 ✅                      19069ms
-  ok  relayKeys.js                18 ✅                        138ms
-  ok  relayLimits.js              24 ✅                         74ms
-  ok  relayLimitsTool.js          12 ✅                         94ms
-  ok  relayMeter.js               27 ✅                       2023ms
-  ok  relayMonitor.js             23 ✅                       6006ms
-  ok  relayOwnerContacts.js        8 ✅                       2092ms
-  ok  relayReconfigure.js         22 ✅                       5908ms
-  ok  relayRecord.js              21 ✅          1 ⏳          4121ms
-  ok  relaySeats.js                8 ✅                       2075ms
-  ok  relayStatus.js              15 ✅                        559ms
-  ok  relayStore.js               26 ✅                       1118ms
-  ok  removePeer.js               18 ✅                       1807ms
-  ok  replayIndex.js               9 ✅                       2421ms
-  ok  rollNarrow.js                8 ✅                        114ms
-  ok  routeHints.js               18 ✅                       2140ms
-  ok  routeStash.js               11 ✅                       2376ms
-  ok  router.js                   29 ✅                         86ms
-  ok  routerPost.js               19 ✅                        800ms
-  ok  runStandsAlone.js            3 ✅                        107ms
-  ok  seal.js                     15 ✅                        101ms
-  ok  sealKeys.js                 12 ✅                        118ms
-  ok  sealedDerivation.js          9 ✅                        230ms
-  ok  sealedLayering.js            6 ✅                        953ms
-  ok  searchMemory.js             13 ✅                       4976ms
-  ok  seenPeers.js                14 ✅                      34428ms
-  ok  servableAssets.js           84 ✅                        142ms
-  ok  serverSurface.js            34 ✅                      12245ms
-  ok  shutdownWire.js              9 ✅                       5271ms
-  ok  spiritErrors.js             15 ✅                        144ms
-  ok  stalledReader.js            12 ✅                       2240ms
-  ok  storeImport.js               9 ✅                        495ms
-  ok  storeOwnership.js           12 ✅                        304ms
-  ok  streamSig.js                20 ✅                       1038ms
-  ok  targetBusy.js                7 ✅                       2497ms
-  ok  trafficLog.js               22 ✅                        161ms
-  ok  transportPending.js          0 ✅          2 ⏳            61ms
-  ok  vaultGuardBattery.js        17 ✅                        931ms
-  ok  verbTable.js                13 ✅                         72ms
-  ok  worldBuilder.js             22 ✅                       3025ms
-  ok  writableRoots.js            13 ✅                         66ms
-  ok  wslDesktop.js               10 ✅                         89ms
-  ok  visualScenarios.js           8 ✅                       3041ms
+  ok  discBound.js                 9 ✅                       1947ms
+  ok  discFull.js                 12 ✅                        485ms
+  ok  diskClient.js               10 ✅                        997ms
+  ok  doorContract.js             10 ✅                        150ms
+  ok  envSecrets.js                6 ✅                         58ms
+  ok  firstOwner.js               14 ✅                        668ms
+  ok  fixListSeam.js               8 ✅                        114ms
+  ok  fixedAllowance.js            6 ✅                        868ms
+  ok  frontDoor.js                18 ✅                       4037ms
+  ok  fsWatcherQuiet.js            5 ✅                       3722ms
+  ok  grokReview.js               14 ✅                        116ms
+  ok  guarantees.js               11 ✅                       1104ms
+  ok  harnessRetry.js              4 ✅                        104ms
+  ok  hintWire.js                 10 ✅                       4929ms
+  ok  hostHardening.js            57 ✅                        148ms
+  ok  htmlEscaping.js             29 ✅                        117ms
+  ok  hubPost.js                  13 ✅                       1003ms
+  ok  iconIndex.js                31 ✅                        109ms
+  ok  identityPerception.js       26 ✅                       1944ms
+  ok  inviteLock.js                5 ✅                        518ms
+  ok  inviteMint.js               21 ✅                       1995ms
+  ok  inviteRedeem.js              8 ✅                        513ms
+  ok  inviteSpeakable.js          15 ✅                       1343ms
+  ok  invites.js                  26 ✅                       1947ms
+  ok  jobCallback.js               6 ✅                        643ms
+  ok  jobsLifecycle.js             7 ✅                        146ms
+  ok  keyPermissions.js            4 ✅                        136ms
+  ok  labLifecycle.js              0 ✅                1 ⏭     328ms
+  ok  labPanel.js                 14 ✅                         78ms
+  ok  labPersistence.js            0 ✅                1 ⏭     198ms
+  ok  labRefusals.js               0 ✅                1 ⏭     284ms
+  ok  labRelaySurface.js           0 ✅                1 ⏭     130ms
+  ok  labServableStatic.js         0 ✅                1 ⏭     141ms
+  ok  labelIsOwned.js             22 ✅                       2278ms
+  ok  labelShape.js               20 ✅                       1682ms
+  ok  lever.js                    26 ✅                         98ms
+  ok  liveFanOut.js               10 ✅                        706ms
+  ok  liveFrontDoor.js             0 ✅                1 ⏭     339ms
+  ok  memberBroadcast.js           6 ✅                        826ms
+  ok  memberCard.js                8 ✅                        673ms
+  ok  monitorApp.js               38 ✅                        115ms
+  ok  natterBind.js               35 ✅                        109ms
+  ok  natterDetails.js            84 ✅                        195ms
+  ok  natterIntrinsic.js         233 ✅                        315ms
+  ok  natterLast.js               28 ✅                        107ms
+  ok  nodeAppsSeam.js             12 ✅                         82ms
+  ok  nodeCardSigned.js           13 ✅                        129ms
+  ok  nodeHistory.js              11 ✅                         93ms
+  ok  nodeInfo.js                 58 ✅                        144ms
+  ok  nodeKnowsNoApps.js           2 ✅                         82ms
+  ok  nodeSettings.js             11 ✅                        431ms
+  ok  nodeStore.js                32 ✅                      13435ms
+  ok  oneDeclaration.js            2 ✅                        128ms
+  ok  oneDoor.js                  10 ✅                        310ms
+  ok  ownerCommand.js             10 ✅                         97ms
+  ok  ownerLog.js                 48 ✅                       3834ms
+  ok  ownerToken.js                8 ✅                       1360ms
+  ok  packet.js                   34 ✅                        175ms
+  ok  partnerAvailability.js      10 ✅                        485ms
+  ok  partnerGate.js              12 ✅                       1181ms
+  ok  partnerTunnel.js            26 ✅                       2631ms
+  ok  partnerWire.js              10 ✅                       2732ms
+  ok  pathCanonicalization.js     90 ✅                        146ms
+  ok  pathJail.js                 13 ✅                        125ms
+  ok  payloadCeiling.js            6 ✅                        469ms
+  ok  peerFile.js                 16 ✅                        208ms
+  ok  peerPost.js                 49 ✅                       1945ms
+  ok  peerPostWiring.js            3 ✅                        122ms
+  ok  peerSearch.js               49 ✅                        149ms
+  ok  peerStats.js                20 ✅                        163ms
+  ok  postQueue.js                28 ✅                         62ms
+  ok  presenceLearned.js           7 ✅                       1619ms
+  ok  presenceNode.js             42 ✅                        794ms
+  ok  presenceStream.js           25 ✅                        688ms
+  ok  presenceWire.js             15 ✅                       6871ms
+  ok  protocolSurface.js          13 ✅                        101ms
+  ok  proxyList.js                12 ✅                        138ms
+  ok  puppetDoor.js                9 ✅                        613ms
+  ok  puppetOwner.js               8 ✅                        150ms
+  ok  puppetsPending.js            5 ✅          5 ⏳           169ms
+  ok  queueRestart.js              9 ✅                       2069ms
+  ok  queueUnderLoad.js            6 ✅                      10471ms
+  ok  refusalCodes.js              5 ✅                       1070ms
+  ok  relayCannotRead.js           7 ✅                        592ms
+  ok  relayCompact.js              6 ✅                        545ms
+  ok  relayConfig.js              20 ✅                        100ms
+  ok  relayConfigWire.js          13 ✅                      16684ms
+  ok  relayGates.js               11 ✅                       1104ms
+  ok  relayHashDiffers.js          4 ✅                       1485ms
+  ok  relayKeyDoor.js             14 ✅                      15586ms
+  ok  relayKeys.js                18 ✅                        201ms
+  ok  relayLimits.js              24 ✅                        109ms
+  ok  relayLimitsTool.js          12 ✅                        113ms
+  ok  relayMeter.js               27 ✅                       1876ms
+  ok  relayMonitor.js             23 ✅                       4033ms
+  ok  relayOwnerContacts.js        8 ✅                       1360ms
+  ok  relayReconfigure.js         22 ✅                       4890ms
+  ok  relayRecord.js              26 ✅                       5697ms
+  ok  relaySeats.js                8 ✅                       2045ms
+  ok  relayStatus.js              15 ✅                        510ms
+  ok  relayStore.js               26 ✅                       1034ms
+  ok  removePeer.js               18 ✅                       1687ms
+  ok  replayIndex.js               9 ✅                       2008ms
+  ok  rollNarrow.js                8 ✅                        166ms
+  ok  routeHints.js               18 ✅                       1993ms
+  ok  routeStash.js               11 ✅                       2242ms
+  ok  router.js                   29 ✅                        116ms
+  ok  routerPost.js               19 ✅                        725ms
+  ok  runStandsAlone.js            3 ✅                        153ms
+  ok  seal.js                     15 ✅                        173ms
+  ok  sealKeys.js                 12 ✅                        138ms
+  ok  sealedDerivation.js          9 ✅                        249ms
+  ok  sealedLayering.js            6 ✅                        990ms
+  ok  searchMemory.js             13 ✅                       4426ms
+  ok  seenPeers.js                14 ✅                      16150ms
+  ok  servableAssets.js           84 ✅                        131ms
+  ok  serverSurface.js            34 ✅                      12150ms
+  ok  shutdownWire.js              9 ✅                       5239ms
+  ok  spiritErrors.js             15 ✅                        125ms
+  ok  stalledReader.js            12 ✅                       2243ms
+  ok  storeImport.js               9 ✅                        434ms
+  ok  storeOwnership.js           12 ✅                        254ms
+  ok  streamSig.js                20 ✅                        862ms
+  ok  targetBusy.js                7 ✅                       2508ms
+  ok  trafficLog.js               22 ✅                        209ms
+  ok  transportPending.js          0 ✅          2 ⏳           108ms
+  ok  vaultGuardBattery.js        17 ✅                       1346ms
+  ok  verbTable.js                13 ✅                        111ms
+  ok  worldBuilder.js             22 ✅                       3123ms
+  ok  writableRoots.js            13 ✅                        121ms
+  ok  wslDesktop.js               10 ✅                        125ms
+  ok  visualScenarios.js           8 ✅                        997ms
 
 --- RED: something that used to hold does not. These are unmet assertions or suites that died — not the awaiting group below, which is work nobody has written yet.
 
 --- capacityFresh.js
-    ***   FAILURE #1.1: ubuntu-24.04-wsl2: measured at f3169f8 (2026-09-26), perMemberRowBytes=603 — but capacity moved since:
-    ***   FAILURE #1.2: windows-10.0: measured at 77e46e4 (2026-09-26), perMemberRowBytes=603 — but capacity moved since:
+    ***   FAILURE #1.1: ubuntu-24.04-wsl2: measured at 3053ca8 (2026-09-27), perMemberRowBytes=603 — but capacity moved since:
+    ***   FAILURE #1.2: windows-10.0: measured at b736cc2 (2026-09-27), perMemberRowBytes=603 — but capacity moved since:
 
---- cardRotation.js
-    ***   FAILURE #1.1: THE SENDER WAS TOLD IT WAS DELIVERED: its answer reads ok=true status 200, but the peer's refusal is INSIDE answer.text — {"ok":false,"status":400,"error":"this did not open for me"}. staleCard reads answer.ok/code/error at the top level, which belong to the transport ("a reply arrived"), so the re-ask never fires: 0 asks, 1 post, new key held false. The checks below that depend on the re-ask fail for this one reason ❌
-    ***   FAILURE #1.2: old card after rotation: {"ok":false,"why":"not newer","held":1,"offered":1} ❌
-    ***   FAILURE #1.3: burst after rotation: 5 of 5 arrived on 0 ask(s) ❌
-    ***   FAILURE #1.4: same-card answer: ok=true, asks 0 — unexpected outcome {"ok":true,"status":200,"hash":"eb082b35f9cc6b4230aa1f6e8db680ed5867ec114f2818064aa3bd9eaacb83bb","from":"MCowBQYDK2VwAyEA9/QJGArhGXIxYKl27Qi2GuPk6oR23UaYNo8nXdewcrE=","text":"{\"v\":1,\"body\":{\"ok\":false,\"status\":400,\"error\":\"this did not open for me\"}}","sig":"Tj0HRAHKv/Q6WgpUko+WG7zC100eW6CykRpJLZ505Y1dsNKMTQNaWBKEMylcqR9/3oOf9WHymTtSL/zbSlpPDg==","receipt":true} ❌
-
---- declared, not built yet: 11 assertion(s) across 11 requirement(s)
-
-    cycle-11/C3  the state the record cannot mark: its own node being down
-          2026-09-23-relay-record-cycle-11 · status ?
-          missing: a started row at node boot and a stopped row in its goodbye   ~40% there, guess: MEASURED WHILE DECLARING IT, not guessed: record.edge coerces any kind that is not open to close, so the two row kinds do not exist yet — that is one line there. Then the call at boot (server.js, beside ensureIdentity), the call in the goodbye (beside presence.goingAway), the reader in series treating them as moments, and this assertion becoming real
-                   a reader can tell "the relay was quiet" from "this node was not running", and a deliberate stop from a death
-          declared in relayRecord.js
+--- declared, not built yet: 10 assertion(s) across 10 requirement(s)
 
     public-app-server/G10  a server reports the box it sits on: four fields, one opinion withheld
           PUBLIC-APP-SERVER · status OPEN
@@ -258,17 +246,17 @@ FAIL  cardRotation.js              5 ✅   4 ❌                1452ms
     appServerBoundary.js
       STOOD DOWN: cycle 2 G11: labMaster is not this checkout's (the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/home/andy/SpiritOS-agent-wsl-claude), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.), so the four states cannot be built here. Standing down rather than reporting a result about a tree nobody is looking at
 
-    labLifecycle.js
-      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/home/andy/SpiritOS-agent-wsl-claude), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
-
     labPersistence.js
       STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/home/andy/SpiritOS-agent-wsl-claude), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
 
-    labRefusals.js
+    labLifecycle.js
       STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/home/andy/SpiritOS-agent-wsl-claude), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
 
     labRelaySurface.js
       STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not this checkout — run your own: LAB_MASTER_PORT=45420, or stop theirs — the harness starts its own when none is up.
+
+    labRefusals.js
+      STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/home/andy/SpiritOS-agent-wsl-claude), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
 
     labServableStatic.js
       STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not this checkout — run your own: LAB_MASTER_PORT=45420, or stop theirs — the harness starts its own when none is up.
@@ -276,6 +264,6 @@ FAIL  cardRotation.js              5 ✅   4 ❌                1452ms
     liveFrontDoor.js
       STOOD DOWN: the labMaster on 65420 copies from /home/andy/SpiritOS, not from this checkout (/home/andy/SpiritOS-agent-wsl-claude), so a lab suite here would test the wrong tree. Run your own: LAB_MASTER_PORT=45420 (any free port outside 65400-65429), or stop theirs — the harness starts its own when none is up.
 
-169 suites, 3157 green, 6 red, 2 unhappy, 11 awaiting, 7 stood down
+169 suites, 3170 green, 2 red, 1 unhappy, 10 awaiting, 7 stood down
 
---- SCOREBOARD-wsl-claude.md rewritten (11 owed)
+--- SCOREBOARD-wsl-claude.md rewritten (10 owed)

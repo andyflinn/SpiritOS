@@ -7,7 +7,7 @@
 **One test is broken, 10 requirements are declared and not built yet, and 1 dependency question for you, and 2 older questions need a decision from you.**
 
 ```
-169 suites   3170 green   2 red   1 unhappy   10 owed      run ca4646b
+169 suites   3170 green   2 red   1 unhappy   10 owed      run aecabba
 ```
 
 ---
@@ -91,9 +91,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +5 green
-- -2 red
-- ✅ **built or withdrawn:** cycle-11/C3
+**Nothing moved.** Same requirements owed, same tally, since the run at `ca4646b`.
 
 ---
 
