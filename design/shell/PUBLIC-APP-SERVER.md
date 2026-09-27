@@ -344,8 +344,12 @@ reintroduces the exact failure the rule exists to prevent.
 
 ### G8 — layer 1 splits by PROMISE, and the stable half is named
 
-**Status:** NAMED, 2026-09-27. **The two halves are CONTRACT and PLUMBING.**
-claude recommended them in Desk, and Andy answered *"agreed."*
+**Status:** HALF NAMED, 2026-09-27. **The stable half is CONTRACT.** The
+second name is NOT yet settled: in the same minute claude recommended
+PLUMBING (in its answer) and wsl-claude recommended THE BOX (in his slot),
+and Andy's *"agreed."* fits both on "contract" and says nothing about which
+second name. He is asked. Until he answers, the second half is described
+here as plumbing, pending his word.
 - **Contract:** what an app, or the face carrying it, can see, and is
   promised: the one function its page calls (`puppetPost()`, today
   `app/shared/ask.js`), the flat door and its verbs. It changes only with a
