@@ -40,6 +40,16 @@ const root = setupRelayFakes().andy;
 fs.writeFileSync(path.join(root, 'app', 'natter', 'relays.json'),
   JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
 
+// For fs.search's gate: a private file the search must never name, and a
+// link inside a servable folder pointing at it, which the walk must not follow.
+fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+fs.writeFileSync(path.join(root, 'relay-state', 'secret-probe.json'), '{}');
+let linked = true;
+// The fakes' folder is reused between runs, so an old link is removed first.
+try { fs.unlinkSync(path.join(root, 'app', 'desk', 'linkout')); } catch (e) { /* none yet */ }
+try { fs.symlinkSync(path.join(root, 'relay-state'), path.join(root, 'app', 'desk', 'linkout')); }
+catch (e) { linked = false; }
+
 const serverSrc = fs.readFileSync(path.join(root, 'js', 'server.js'), 'utf8');
 // doorContract.js's pattern: every claim line, whatever its value is.
 const VERBS = [...serverSrc.matchAll(/^ {4}'([a-z]+\.[a-zA-Z]+)':/gm)].map(function (m) { return m[1]; });
@@ -186,6 +196,94 @@ let said = '';
     test.check('and the node is still serving after every verb has been called');
   } else {
     test.fail('the node stopped answering after the sweep: ' + said.trim().split('\n').slice(-6).join(' | '));
+  }
+
+  // ── EACH LIST THAT BECAME A SEARCH (puppets/G2, slice 2) ────────────
+  //
+  // Andy approved it: "the verb changes changing list fetches to a
+  // search(labe) and geKey(key) pair are approved", and "get is fine".
+  // The checks agreed with claude-windows before each collection moved.
+  const ask = function (body) { return call(port, 'POST', '/api/spirit', body); };
+  const json = function (r) { try { return JSON.parse(r.text); } catch (e) { return null; } };
+  const keysOf = function (r) { const j = json(r); return j && Array.isArray(j.items) ? j.items.map(function (i) { return i.key; }) : null; };
+
+  {
+    const gone = [];
+    for (const v of ['jobs.list', 'proxy.list']) {
+      const r = await ask({ verb: v });
+      if (!/no such verb/.test(r.text)) gone.push(v + ' answered ' + r.status);
+    }
+    if (!gone.length) {
+      test.check('jobs.list and proxy.list are gone ("KILL the replaced verb"): each is now no-such-verb');
+    } else {
+      test.fail('a replaced list verb still answers: ' + gone.join(', '));
+    }
+  }
+
+  // Andy: "/media/*.jpg" is "understood as equal to \"./media/*.jpg\" and
+  // equal to \"media/*.jpg\"", and "a leading \"../\" is illegal in SpiritOS".
+  {
+    const forms = ['app/desk/*', './app/desk/*', '/app/desk/*', '//app/desk/*', 'app/../app/desk/*'];
+    const answers = [];
+    for (const q of forms) answers.push(keysOf(await ask({ verb: 'fs.search', q: q })));
+    const first = JSON.stringify(answers[0]);
+    const same = answers.every(function (a) { return JSON.stringify(a) === first; });
+    const found = answers[0] && answers[0].indexOf('app/desk/desk.js') !== -1;
+    if (same && found) {
+      test.check('fs.search reads app/desk/*, ./app/desk/*, /app/desk/*, //app/desk/* and app/../app/desk/* as '
+        + 'one pattern, and finds app/desk/desk.js with it');
+    } else {
+      test.fail('path forms differ: ' + forms.map(function (f, i) { return f + ' -> ' + JSON.stringify(answers[i]); }).join('; '));
+    }
+  }
+  {
+    const refused = [];
+    for (const q of ['../*', 'x/../../*']) {
+      const r = await ask({ verb: 'fs.search', q: q });
+      if (!(r.status === 400 && /outside the run folder/.test(r.text))) refused.push(q + ' -> ' + r.status + ' ' + r.text);
+    }
+    if (!refused.length) {
+      test.check('a pattern that climbs out of the run folder is refused by name ("path outside the run folder"), '
+        + 'not answered as an empty search');
+    } else {
+      test.fail('climbing out was not refused by name: ' + refused.join('; '));
+    }
+  }
+  {
+    const secret = keysOf(await ask({ verb: 'fs.search', q: '*secret-probe*' }));
+    // Targeted patterns, not '*': a '*' walk stops once its answer is full,
+    // so a leak further down the tree would never be looked at.
+    const viaLink = keysOf(await ask({ verb: 'fs.search', q: '*linkout*' })) || ['(no answer)'];
+    const leaks = keysOf(await ask({ verb: 'fs.search', q: 'relay-state/*' })) || ['(no answer)'];
+    if (secret && secret.length === 0 && !leaks.length && (!linked || !viaLink.length)) {
+      test.check('fs.search never names a file under relay-state, by name or by folder pattern'
+        + (linked ? ', and a link inside app/ pointing there is not followed' : ' (no symlink on this box to test)'));
+    } else {
+      test.fail('fs.search leaked: secret ' + JSON.stringify(secret) + ', relay-state ' + JSON.stringify(leaks)
+        + ', through the link ' + JSON.stringify(viaLink));
+    }
+  }
+  {
+    const jobs = json(await ask({ verb: 'jobs.search' }));
+    const watcher = jobs && jobs.items && jobs.items.filter(function (i) { return /fs-watcher/.test(i.label); })[0];
+    const got = watcher ? await ask({ verb: 'jobs.get', key: watcher.key }) : null;
+    const cap = typeof limits.RESPONSE_MAX === 'number' ? limits.RESPONSE_MAX : limits.PLAINTEXT_MAX;
+    if (watcher && got && got.status === 200 && got.bytes <= cap) {
+      test.check('jobs.get on the file-watcher answers ' + got.bytes + ' bytes, within the ' + cap + '-byte cap; it '
+        + 'was 41,940 inside jobs.list, and its file list is fs.search now');
+    } else {
+      test.fail('jobs.get on the watcher: ' + (got ? got.status + ', ' + got.bytes + ' bytes' : 'no watcher found in jobs.search'));
+    }
+  }
+  {
+    const closed = json(await ask({ verb: 'proxy.close' }));
+    const opened = json(await ask({ verb: 'proxy.open' }));
+    const lists = [closed, opened].filter(function (j) { return j && Object.keys(j).some(function (k) { return Array.isArray(j[k]) || (j[k] && typeof j[k] === 'object'); }); });
+    if (closed && closed.ok && opened && opened.ok && !lists.length) {
+      test.check('proxy.close and proxy.open answer only what changed, never the whole list');
+    } else {
+      test.fail('proxy switches answered: close ' + JSON.stringify(closed) + ', open ' + JSON.stringify(opened));
+    }
   }
 
   // ── LISTS, UNTIL THEY ARE SEARCHES ──────────────────────────────────
