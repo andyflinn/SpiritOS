@@ -1227,8 +1227,14 @@ verbs today; they live only in its code.
   hand), and only then can it introspect or ask grantFace for a name. The
   stranger setting is not a way in: a key the owner has not accepted gets
   no answer from `api`, whatever that setting says.**
-  Andy's name for it: *"that is exactly consent based access."*, and *"with multiple layers of consent"*: the owner's contact list, then each
-  app's allow list, then the app's own answer to that caller.
+  Andy's name for it: *"that is exactly consent based access."*, and *"with multiple layers of consent"*, which he
+  listed: *"1) consent to allow member on the relay, 2) consent to allow
+  introspection 3) consent to grantFace access"*. Each is its own gate, and
+  none implies the next: (1) the owner lets the member onto his relay (an
+  invite he mints); (2) his node has the member in its contact list, so the
+  front door admits it and `api` answers it; (3) the member is on
+  grantFace's `allow.json`, which the owner writes and the app can only
+  read (`nodeApps.js`, OWNER-ONLY).
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
