@@ -7,7 +7,7 @@
 **One test is broken, 9 requirements are declared and not built yet, and 1 dependency question for you, and 3 older questions need a decision from you.**
 
 ```
-170 suites   3179 green   1 red   1 unhappy   9 owed      run caf22a0
+170 suites   3179 green   1 red   1 unhappy   9 owed      run a45c07b
 ```
 
 ---
@@ -92,17 +92,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +3179 green
-- +1 red
-- ⏳ **newly owed:** public-app-server/G10
-- ⏳ **newly owed:** public-app-server/G17
-- ⏳ **newly owed:** public-app-server/G8
-- ⏳ **newly owed:** puppets/G1
-- ⏳ **newly owed:** puppets/G10
-- ⏳ **newly owed:** puppets/G2
-- ⏳ **newly owed:** puppets/G3
-- ⏳ **newly owed:** transport/R12
-- ⏳ **newly owed:** transport/R16
+**Nothing moved.** Same requirements owed, same tally, since the run at `caf22a0`.
 
 ---
 

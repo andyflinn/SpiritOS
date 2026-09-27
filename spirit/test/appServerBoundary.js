@@ -554,7 +554,14 @@ test.subHeading('G10 — four fields about the box, and the opinion that is deli
 // WHAT WOULD BRING IT BACK is a different requirement and would need
 // saying out loud: a box asserting a name about ITSELF, so a figure in a
 // report carries the box's own word rather than the reader's.
-test.awaiting('public-app-server/G10', 'the three box fields in the owner report', false,
+// THE PROBE WAS `false`, so this could never flip and hand the unit over --
+// found by claude-windows, who found the server half already built. It now
+// names the verb AGREED for the owner's side, owner.boxes: the moment the
+// owner node answers it, this goes red and asks for its assertions.
+// Andy: "go." on building the node half (2026-09-27), and "over-committed is
+// a \"warning\" state only."
+test.awaiting('public-app-server/G10', 'the three box fields in the owner report',
+  /'owner\.boxes'/.test(fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8')),
   'opaque fingerprint, allotment at install, and the box total as measured — and never the opinion that the box is over-committed',
   { there: 33, cost: 'the box total is free (measure already produces it) and the owner report exists; the fingerprint is the new part. ' +
     'THE INGREDIENTS OF THE FINGERPRINT ARE DELIBERATELY NOT DECLARED — they are contents, they want measuring on both ' +
