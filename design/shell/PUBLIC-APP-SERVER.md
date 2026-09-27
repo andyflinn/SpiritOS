@@ -1356,6 +1356,8 @@ verbs today; they live only in its code.
   understant appFaceApp nor grantFace"*. The face's question is a packet
   addressed to grantFace; the node forwards it down grantFace's pipe by the
   packet's app name, and returns the answer signed, without looking inside.
+  In one line (Andy): *"grantFace maintains a DNS-wildcard-subdomain compatible
+  dataset, and appFaceApp accesses it via our generic packet routing"*.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
