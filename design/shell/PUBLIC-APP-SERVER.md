@@ -1283,6 +1283,16 @@ verbs today; they live only in its code.
   (with `owner`), `relay` or `app`. A row caches it, and lists filter by it. A
   puppet is hidden from people lists, never removed from the contact book.
   A card that says nothing reads as `node`.
+- **Next after grantFace: one owner record on every server type.** Andy
+  asked whether the install-time owner key could be *"a lowest level layer
+  where relay and public puppies (like print service by a peer) they
+  owner-key should be stored orthogonally on all VPS puppies/relays"*, and
+  *"that is also cleanup i want to drive"*, *"that will be done after
+  grantFace"*. Today a relay names its owner by the first row of allow.json
+  (`relayAuth.js:650`), a puppet by the key in puppet.json, and an app
+  server asks its relay. It gets a requirement of its own. It must not change
+  how a relay gets its owner: first claim and pending-owner are decided
+  (AGENT.md).
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
