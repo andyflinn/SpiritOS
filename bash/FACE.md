@@ -28,25 +28,27 @@ Nothing else. `status` in each clone reports its own unit.
 
 ## Once, in this order
 
-**1. On your node:** mint an invite for `face` on your relay (Natter, the
-relay's panel, as for any member), and copy your node's public key
-(`MCow...`).
+**1. On your node:** copy your node's public key (`MCow...`). That is all:
+the installer mints the face node's relay invite itself, on the box (your
+*"the VPS creates an invite before installing appFaceApp puppet ... the
+install of appFaceApp, then claims that invite"*).
 
 **2. On spirit-3**, as root, from anywhere. The face node gets its own clone,
 and its installer comes with it:
 
 ```
 git clone https://github.com/andyflinn/SpiritOS.git /root/face/SpiritOS
-/root/face/SpiritOS/bash/face-install <YOUR_NODE_KEY> <INVITE>
+/root/face/SpiritOS/bash/face-install <YOUR_NODE_KEY>
 ```
 
 Not from `/root/SpiritOS`: the live relay's clone follows your **tags**, and
 these scripts are not in a tag yet. Tagging would also restart the relay on
 all of master, which is a separate decision.
 
-It clones `/root/face/SpiritOS`, writes the face node's `face.json` and
-`puppet.json`, installs and starts `spirit-face`, joins the relay with the
-invite, and accepts your node as its contact. Its last lines print **the face
+It writes the face node's `face.json` and `puppet.json` (your key as its
+owner), installs and starts `spirit-face`, mints a one-day invite labelled
+`face` on this box's relay and claims it, and accepts your node as its
+contact. Its last lines print **the face
 node's key**, and they may stop at *"no global on_demand_tls block"*. If they do,
 step 3 is the fix.
 
@@ -96,6 +98,7 @@ and your node's key. A name you never granted gets no certificate at all.
 ## Updating
 
 `face-install` is idempotent. Run `/root/face/SpiritOS/bash/face-install
-<YOUR_NODE_KEY>` again (without the invite) after a push: it pulls
+<YOUR_NODE_KEY>` again after a push (it mints nothing once the face node
+holds a seat): it pulls
 `/root/face/SpiritOS`, restarts `spirit-face`, and if the installer itself
 changed, it reruns as the new one.

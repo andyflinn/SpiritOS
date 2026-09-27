@@ -28,8 +28,11 @@
 # decision. The face clone follows master, so it carries its own installer.
 #
 #   OWNER_KEY  Andy's node's public key (MCow...). The face obeys only it.
-#   INVITE     an invite token from the relay's owner, for the face node's
-#              first join. Needed once; leave it out on later runs.
+#   INVITE     optional. Without it, the first join mints its own invite on
+#              THIS box's relay (Andy: "the VPS creates an invite before
+#              installing appFaceApp puppet on his VPS. the install of
+#              appFaceApp, then claims that invite as part of the install
+#              procedure"). A re-run that finds a seat already mints nothing.
 source "$(dirname "$0")/lib.sh"
 need_root
 
@@ -138,23 +141,41 @@ for i in $(seq 1 30); do curl -fsS --max-time 2 "$DOOR/" >/dev/null 2>&1 && brea
 curl -fsS --max-time 2 "$DOOR/" >/dev/null 2>&1 || die "the face node's door $DOOR does not answer"
 ok "face node answering on $DOOR"
 
-# ── ITS FIRST JOIN NEEDS AN INVITE FROM THE RELAY'S OWNER ───────────
+# ── ITS FIRST JOIN: AN INVITE MINTED ON THIS BOX, THEN CLAIMED ────────
 #
 # The face node must be a member of this relay to reach its owner at all.
-# Only the relay's owner can mint the invite, so this cannot be done for
-# him; with none given, it says what to run next.
-if [ -n "$INVITE" ]; then
-  say "join https://$DOMAIN as 'face'"
-  if OUT=$(verb "{\"verb\":\"relay.claim\",\"url\":\"https://$DOMAIN\",\"name\":\"face\",\"invite\":\"$INVITE\",\"inviteLabel\":\"face\"}" 2>&1); then
+# Root on this box is the relay's operator (bash/ONE-OPERATOR.md), so the
+# installer mints a one-day invite labelled 'face' straight into the live
+# relay's store, with the LIVE clone's own invites.js so the row matches
+# that relay's schema whatever tag it runs, and claims it at once. The same
+# write appServerWorlds.js makes against a running relay. A seat already
+# held for this relay (relay-state/relayKeys.json) means joined: nothing is
+# minted, so a re-run leaves no spare invite behind.
+RELAY_URL="https://$DOMAIN"
+JOINED=$(node -e '
+  try {
+    const rk = require(process.argv[1] + "/js/relayKeys.js");
+    const row = rk.load(process.argv[1])[rk.normalizeUrl(process.argv[2])];
+    process.stdout.write(row && row.seat ? "yes" : "");
+  } catch (e) {}' "$FACE_DIR/spirit/run" "$RELAY_URL" 2>/dev/null)
+if [ "$JOINED" = "yes" ]; then
+  ok "already a member of $RELAY_URL: no invite needed"
+else
+  if [ -z "$INVITE" ]; then
+    say "mint an invite for 'face' on this box's relay ($LIVE_DIR)"
+    INVITE=$(node -e '
+      const inv = require(process.argv[1] + "/js/invites.js");
+      const row = inv.add(process.argv[1], { label: "face", days: 1, invitedBy: "face-install" });
+      process.stdout.write(row.token);' "$LIVE_DIR/spirit/run" 2>&1) || die "could not mint an invite on the live relay: $INVITE"
+    ok "minted (one day, label 'face')"
+  fi
+  say "join $RELAY_URL as 'face'"
+  if OUT=$(verb "{\"verb\":\"relay.claim\",\"url\":\"$RELAY_URL\",\"name\":\"face\",\"invite\":\"$INVITE\",\"inviteLabel\":\"face\"}" 2>&1); then
     ok "joined: $OUT"
   else
     warn "the join was refused: $OUT"
-    echo "    an invite is used once; if this is a re-run, leave the invite out."
+    echo "    an invite is used once. Run this script again: it mints a fresh one."
   fi
-else
-  warn "no invite given: the face node is running but is not a member of https://$DOMAIN yet"
-  echo "    mint an invite for 'face' on your relay, then run:"
-  echo "      $FACE_DIR/bash/face-install $OWNER_KEY <INVITE>"
 fi
 
 # ── IT LISTENS TO ITS OWNER, AND THE OWNER MUST LISTEN TO IT ────────
