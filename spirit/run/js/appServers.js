@@ -206,7 +206,10 @@ function createAppServers(opts) {
   // automatically checks", and "appFaceApps owner doesn't understant
   // appFaceApp nor grantFace". So: an admitted packet addressed to an app
   // that runs its OWN server code goes down that app's pipe unread, as
-  //   POST /   { from, hash, re, relay, body }
+  //   POST /   { from, body }
+  // who asks, and what. Nothing else: the hash, the re and the relay are
+  // this node's bookkeeping for the reply, and an app has no use for them
+  // (Andy: "why the hell woul an app need all that stupid information?").
   // and whatever JSON the app answers becomes this node's reply packet to
   // the sender, for the same app, carrying re = the packet's hash, signed by
   // this node because this node posts it. An empty answer sends nothing.
@@ -222,7 +225,7 @@ function createAppServers(opts) {
     // THE FIRST LAYER OF CONSENT IS THE NODE'S: only a key in its contact
     // list reaches an app's pipe, whatever the stranger setting says.
     if (!from || !o.isMember(from)) { log('passthrough: ' + info.app + ' refused a key not in the contacts'); return true; }
-    const payload = JSON.stringify({ from: from, hash: String(message.hash || ''), re: info.re || '', relay: String(message.relay || ''), body: info.body });
+    const payload = JSON.stringify({ from: from, body: info.body });
     const reply = function (body) {
       let made = o.encode(info.app, body, { re: message.hash });
       if (!made || !made.text) made = o.encode(info.app, { ok: false, code: 'app-answer-too-large' }, { re: message.hash });

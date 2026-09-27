@@ -97,7 +97,7 @@ new Promise(function (resolve) { door.listen(0, '127.0.0.1', resolve); }).then(f
       "spirit.core.server.listen(function (req) {",
       "  if (req.body && req.body.verb === 'boom') throw new Error('it broke');",
       "  if (req.body && req.body.verb === 'quiet') return null;",
-      "  return { ok: true, heard: req.body, from: req.from, relay: req.relay };",
+      "  return { ok: true, heard: req.body, from: req.from, keys: Object.keys(req).sort().join(',') };",
       "});",
     ].join('\n'));
     const pipe = require('../run/js/appServers.js').pipePathFor(dir, 'listener');
@@ -105,7 +105,7 @@ new Promise(function (resolve) { door.listen(0, '127.0.0.1', resolve); }).then(f
     const lj = jobs.startServerJob(process.execPath, [listener], { cwd: os.tmpdir(), type: 'app-server:listener', env: { SPIRIT_PIPE: pipe } });
     const pr = require('../run/js/relayRequest.js').pipeRequest;
     const ask = function (body) {
-      return pr(pipe, 'POST', '/', JSON.stringify({ from: 'MEMBERKEY', hash: 'h', re: '', relay: 'r', body: body }), { type: 'application/json', timeoutMs: 3000 });
+      return pr(pipe, 'POST', '/', JSON.stringify({ from: 'MEMBERKEY', body: body }), { type: 'application/json', timeoutMs: 3000 });
     };
     function askWhenUp(tries) {
       return ask({ verb: 'hello', x: 2 }).then(function (a) {
@@ -116,8 +116,8 @@ new Promise(function (resolve) { door.listen(0, '127.0.0.1', resolve); }).then(f
     return askWhenUp(30).then(function (a) {
       let said = null;
       try { said = JSON.parse(a.text); } catch (e) { said = null; }
-      if (a.status === 200 && said && said.heard && said.heard.x === 2 && said.from === 'MEMBERKEY' && said.relay === 'r') {
-        test.check('the handler gets { from, relay, body } and its answer goes back as JSON');
+      if (a.status === 200 && said && said.heard && said.heard.x === 2 && said.from === 'MEMBERKEY' && said.keys === 'body,from') {
+        test.check('the handler gets { from, body }, who asks and what, and its answer goes back as JSON');
       } else {
         test.fail('listen: ' + JSON.stringify(a).slice(0, 200));
       }

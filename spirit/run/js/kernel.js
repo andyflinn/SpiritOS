@@ -604,8 +604,8 @@ if (isNode()) {
   //
   // spirit.core.server.listen(handler) listens on the pipe the node named
   // (SPIRIT_PIPE) and hands each request its node passes through to
-  // handler({ from, hash, re, relay, body }), where body is the packet's own
-  // body and from the signed sender. What the handler answers (an object,
+  // handler({ from, body }): who asks (the signed sender) and what (the
+  // packet's own body). Nothing of the node's bookkeeping. What the handler answers (an object,
   // or a promise of one) goes back as JSON and becomes the node's reply
   // packet; null answers nothing. So an app writes its verbs and never an
   // HTTP server of its own, and every exchange lands in the monitor the way
