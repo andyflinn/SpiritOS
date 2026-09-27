@@ -152,6 +152,8 @@ jobs.startFsWatcherJob(ROOT_DIR);
 // Held here rather than inside the boot block so a later shutdown path
 // has something to close.
 let presence = null;
+// Set once the router exists (see ownerPost.js); owner.command calls it.
+let peerOwnerPost = null;
 let peerRouter = null;
 
 // ── WHAT THE LOOPBACK CLIENT DOOR CAN BE ASKED ───────────────────────
@@ -1379,6 +1381,25 @@ contactBook.syncMarks(ROOT_DIR);
       },
       log: function (line) { console.log(line); },
     }));
+
+    // ── peerOwnerPost: THE OWNER DOOR'S SENDING END (puppets/G4) ─────
+    //
+    // This node signing a command for one of its puppets and waiting for
+    // the one answer that carries that command's hash. ownerPost.js says
+    // which answers are taken. The route is hub's chooseRoute, the same
+    // choice every post makes.
+    const ownerPost = require('./ownerPost').createOwnerPost({
+      identity: function () { return require('./relayAuth').loadIdentity(ROOT_DIR); },
+      auth: require('./relayAuth'),
+      encode: wire.encode,
+      decode: wire.decode,
+      isEnvelope: wire.isEnvelope,
+      randomId: wire.randomId,
+      route: function (to) { return presence ? hub.chooseRoute(presence, to) : { unreachable: true }; },
+      post: function (relayUrl, toKey, text, hints) { return peerRouter.post(relayUrl, toKey, text, hints); },
+    });
+    arrivals.subscribe(ownerPost.onArrival);
+    peerOwnerPost = function (puppetKey, verb, body) { return ownerPost.send(puppetKey, verb, body); };
   }
 
   presence = require('./presenceNode').createPresence({
@@ -1749,6 +1770,33 @@ contactBook.syncMarks(ROOT_DIR);
       });
     },
   }, { wire: false });
+
+  // ── owner.command: A COMMAND FOR ONE OF THIS NODE'S PUPPETS (puppets/G4)
+  //
+  // { to, verb, body }: the page names the puppet and the verb it would
+  // call locally ("It's a remote control"); peerOwnerPost signs, sends and
+  // waits for the one answer with that command's hash. WIRE, because the
+  // puppet can be unreachable, and a wire verb says so (verbTable.js).
+  loopbackVerbs.claim('owner', 'ownerPost.js', {
+    'owner.command': function (rq, rs) {
+      readJsonBody(rq).then(function (body) {
+        if (!peerOwnerPost) {
+          rs.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8' });
+          rs.end(JSON.stringify({ ok: false, error: 'this node is not connected to a relay' }));
+          return null;
+        }
+        return peerOwnerPost(body && body.to, body && body.command, body && body.body).then(function (said) {
+          const answer = said || { ok: false, status: 503, error: 'peer not reachable' };
+          rs.writeHead(answer.ok === false && answer.status ? answer.status : 200,
+            { 'Content-Type': 'application/json; charset=utf-8' });
+          rs.end(JSON.stringify(answer));
+        });
+      }).catch(function () {
+        rs.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        rs.end(JSON.stringify({ ok: false, error: 'Invalid JSON body' }));
+      });
+    },
+  }, { wire: true });
 
   // ── STAGE 4b — relay (2026-09-15) ──────────────────────────────────
   //

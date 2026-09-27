@@ -586,6 +586,18 @@ define('rotate-not-saved', {
     'that is not on disc would send every peer to seal to a key this node ' +
     'cannot open with after a restart (nodeCard.rotate).',
 });
+define('command-not-packed', {
+  status: 400, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['the command could not be packed'],
+  note: 'peerOwnerPost could not wrap the signed command as a packet, so nothing was sent.',
+});
+define('no-reply-from-puppet', {
+  status: 504, presence: NONE, retry: 'after', fault: 'target',
+  texts: ['the puppet did not answer in time'],
+  note: 'peerOwnerPost sent a signed command and no answer with its hash came back within ' +
+    'the wait. A reply arriving after that is dropped, never handed to whoever asks next ' +
+    '(ownerPost.js).',
+});
 define('not-carried-here', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['not carried by this puppet'],

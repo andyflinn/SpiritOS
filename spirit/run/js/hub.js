@@ -2777,6 +2777,9 @@ function createHub(rootDir) {
     // there were two, listed together so that was visible; R8 deleted the
     // other one and this is what a node has.
     handlePost: handlePost,
+    // The one place that decides where a post goes, shared with
+    // peerOwnerPost (ownerPost.js) rather than decided twice.
+    chooseRoute: chooseRoute,
     handleStatus: handleStatus,
     handleRecord: handleRecord,
     handlePartnerCheck: handlePartnerCheck,
