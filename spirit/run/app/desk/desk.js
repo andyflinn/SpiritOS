@@ -32,9 +32,11 @@ var deskApi = null;
 var deskBoard = null;       // the newest `board` packet's JSON
 var deskMessages = [];      // decoded agents messages, in log order
 var deskByHash = Object.create(null);
-var deskAgents = Object.create(null); // agent name -> public key, learned from arrivals
-var deskOpen = '';          // full id of the row whose thread is open
 var deskError = '';
+// WHICH AGENT HAS A ROW. Andy: "a column for the agent label would be
+// appropriate". Nothing in the tree records it; the claims do, in this
+// node's own record: the newest `taking` note per full id.
+var deskTaken = Object.create(null);
 
 // One history row -> one agents message, or null when it is not one.
 function deskDecode(row) {
@@ -56,7 +58,9 @@ function deskFold(msg) {
   if (held) { held.outcome = msg.outcome; return; }
   deskByHash[msg.hash] = msg;
   deskMessages.push(msg);
-  if (msg.dir === 'in' && msg.from && msg.peer) deskAgents[msg.from] = msg.peer;
+  if (msg.todo && msg.kind === 'note' && /^taking(\s|$)/.test(msg.text) && msg.from) {
+    deskTaken[msg.todo] = msg.from;
+  }
   if (msg.kind === 'board') {
     try {
       var b = JSON.parse(msg.text);
@@ -72,13 +76,13 @@ function deskTable() {
     return '<div class="job-manifest-note">No board has reached this node yet. The lead ' +
       'posts one whenever its test run changes it.</div>';
   }
-  var head = '<tr><th>#</th><th>to-do</th><th>frees</th><th>waits on</th><th>there</th><th>owed since</th></tr>';
+  var head = '<tr><th>#</th><th>to-do</th><th>with</th><th>frees</th><th>waits on</th><th>there</th><th>owed since</th></tr>';
   var body = deskBoard.rows.map(function (row) {
     var waits = (row.waitsOn || []).map(function (w) { return typeof w === 'string' ? w : (w.id || ''); }).join(', ');
-    var open = row.id === deskOpen ? ' class="desk-open"' : '';
-    return '<tr' + open + ' data-id="' + deskEsc(row.id) + '" style="cursor:pointer">' +
+    return '<tr data-id="' + deskEsc(row.id) + '" style="cursor:pointer">' +
       '<td>' + deskEsc(row.rank) + '</td>' +
       '<td>' + deskEsc(row.title) + ' <span class="job-manifest-note">(' + deskEsc(row.handle) + ')</span></td>' +
+      '<td>' + deskEsc(deskTaken[row.id] || '') + '</td>' +
       '<td>' + deskEsc(row.frees == null ? '' : row.frees) + '</td>' +
       '<td>' + deskEsc(waits) + '</td>' +
       '<td>' + deskEsc(row.there == null ? '' : row.there + '%') + '</td>' +
@@ -96,70 +100,21 @@ function deskRowOf(id) {
   return null;
 }
 
-function deskThread() {
-  if (!deskOpen) return '';
-  var row = deskRowOf(deskOpen);
-  var lines = deskMessages.filter(function (m) { return m.todo === deskOpen; }).map(function (m) {
-    var who = m.dir === 'out' ? 'you' : m.from;
-    var failed = m.dir === 'out' && m.outcome && m.outcome !== 'sent' && m.outcome !== 'delivered'
-      ? ' <span class="job-start-error">(' + deskEsc(m.outcome) + ')</span>' : '';
-    return '<div><b>' + deskEsc(who) + '</b> <span class="job-manifest-note">' + deskEsc(m.kind) +
-      ' · ' + deskEsc(m.at) + '</span>' + failed + '<div>' + deskEsc(m.text) + '</div></div>';
-  }).join('');
-  var decide = row && row.kind === 'dependency'
-    ? '<div class="start-job-form card"><button type="button" id="desk-accept">Accept</button>' +
-      '<button type="button" id="desk-reject">Reject</button></div>'
-    : '';
-  return '<div class="stat-tile wide"><div class="label">' + deskEsc(row ? row.title : deskOpen) +
-      ' <span class="job-manifest-note">(' + deskEsc(deskOpen) + ')</span></div>' +
-    (lines || '<div class="job-manifest-note">Nothing said about this row yet.</div>') +
-    decide +
-    '<div class="start-job-form card"><label class="field-label grow">Say' +
-      '<input type="text" id="desk-say" placeholder="to every agent, under this row"></label>' +
-      '<button type="button" id="desk-send">Send</button></div>' +
-    '<div id="desk-send-error" class="job-start-error"></div>' +
-  '</div>';
-}
-
+// A ROW OPENS ITS OWN DIALOG. Andy: "we need a DeskDetails immediately,
+// with inputs specific to the item" — and the inline thread this replaced
+// erased his typing on every arrival ("also my typing gets erased,
+// everytime somebody sends something"). The table holds no input, so a
+// repaint on arrival costs him nothing.
 function deskDraw() {
   var el = document.getElementById('desk-root');
   if (!el) return;
   el.innerHTML = (deskError ? '<div class="job-start-error">' + deskEsc(deskError) + '</div>' : '') +
-    deskTable() + deskThread();
+    deskTable();
   Array.prototype.forEach.call(el.querySelectorAll('tr[data-id]'), function (tr) {
     tr.addEventListener('click', function () {
-      deskOpen = deskOpen === tr.getAttribute('data-id') ? '' : tr.getAttribute('data-id');
-      deskDraw();
+      var id = tr.getAttribute('data-id');
+      deskApi.callDialog('app/deskDetails', { id: id, row: deskRowOf(id) });
     });
-  });
-  var send = document.getElementById('desk-send');
-  if (send) send.addEventListener('click', function () { deskSay('note', document.getElementById('desk-say').value); });
-  var say = document.getElementById('desk-say');
-  if (say) say.addEventListener('keydown', function (e) {
-    if (e.key !== 'Enter') return;
-    e.preventDefault();
-    deskSay('note', say.value);
-  });
-  var accept = document.getElementById('desk-accept');
-  if (accept) accept.addEventListener('click', function () { deskSay('answer', 'accepted.'); });
-  var reject = document.getElementById('desk-reject');
-  if (reject) reject.addEventListener('click', function () { deskSay('answer', 'rejected.'); });
-}
-
-// TO EVERY AGENT THIS NODE HAS HEARD FROM. The row's full id rides as
-// `todo`; the node signs. A post that does not go says so under the row
-// once the record catches up, because the record keeps refusals too.
-function deskSay(kind, text) {
-  var said = String(text || '').trim();
-  var err = document.getElementById('desk-send-error');
-  if (!said || !deskOpen) return;
-  var names = Object.keys(deskAgents);
-  if (!names.length) { if (err) err.textContent = 'No agent has written to this node yet, so there is nobody to send to.'; return; }
-  var body = { from: 'andy', kind: kind, text: said, todo: deskOpen };
-  Promise.all(names.map(function (n) { return deskApi.peerPost('agents', deskAgents[n], body); })).then(function () {
-    return deskLoadNew();
-  }).catch(function (e) {
-    if (err) err.textContent = 'Not sent: ' + e.message;
   });
 }
 
