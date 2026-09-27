@@ -45,6 +45,7 @@ This directory contains the vision, principles, and architecture decisions for *
   not an architectural axis. The argument is in
   [the design](shell/PUBLIC-APP-SERVER.md); this is the diagram.
 - [The public app server — and `join` as its first app](shell/PUBLIC-APP-SERVER.md)
+- [Andy's UI to the agents app](shell/AGENTS-UI.md): a real app, ahead of the shell gate and outside alpha
   — **approved 2026-09-24, nothing built.** Thirteen boundary
   requirements (G1-G13), five reconciliations between the agents and no
   divergences, and the four readiness findings that came from asking the
