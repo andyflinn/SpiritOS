@@ -180,4 +180,26 @@ function cacheAt(clock) {
   }
 }
 
+// ── NO WAY TO GET THE WEAK CHECK BY FORGETTING AN ARGUMENT ─────────────
+//
+// wsl-claude, at 7bc92b7: routeIsSigned without 'at' still answered the
+// signature alone, so a holding-node caller that forgot 'at' would silently
+// get the check that let replayed and copied routes through. Split at
+// 3bef2806: routeSignatureHolds is the cache's signature-only question, and
+// routeIsSigned refuses without selfKey and fromKey.
+{
+  const good = fr.answerRoute(rows, 'joe', owner, auth.sign, T0, face.publicKey);
+  const bare = fr.routeIsSigned(good, owner.publicKey, auth.verify);
+  const halfSelf = fr.routeIsSigned(good, owner.publicKey, auth.verify, { selfKey: joe.publicKey, now: T0 + 1 });
+  const halfFrom = fr.routeIsSigned(good, owner.publicKey, auth.verify, { fromKey: face.publicKey, now: T0 + 1 });
+  const cacheSays = typeof fr.routeSignatureHolds === 'function' && fr.routeSignatureHolds(good, owner.publicKey, auth.verify);
+  if (bare === false && halfSelf === false && halfFrom === false && cacheSays === true) {
+    test.check('the holding node\'s check refuses when it is not told who it is and who presented the route, and the '
+      + 'signature-only question lives apart, as routeSignatureHolds, for the cache');
+  } else {
+    test.fail('without at ' + bare + ', only selfKey ' + halfSelf + ', only fromKey ' + halfFrom
+      + ', routeSignatureHolds ' + cacheSays + '. Forgetting an argument must not buy the weak check');
+  }
+}
+
 test.reportSuccessFailureCount();
