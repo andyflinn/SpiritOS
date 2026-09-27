@@ -400,7 +400,49 @@ function teamGoesToEveryAgent() {
   });
 }
 
+function unseenIsMarked() {
+  test.subHeading('A red * marks what he has not seen, and opening it clears it');
+  // Andy: "... indicating that new stuff has arrived for that item", and
+  // "or use the red "*" do indicate "unseen changes have occured"".
+  const files = {};
+  const first = mountDesk({ files: files });
+  first.arrive({ from: 'claude-windows', kind: 'board', text: BOARD }, { hash: 'u-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
+  first.arrive({ from: 'wsl-claude', kind: 'note', text: 'old news', todo: 'puppets/G2' }, { hash: 'u-2', fromKey: WSL, sentAt: '2026-09-27T05:01:00Z' });
+  return settle().then(function () {
+    // A Desk opening with a log but no seen.json (the first run of this
+    // version) counts all it holds as seen.
+    delete files['seen.json'];
+    const again = mountDesk({ files: files });
+    const star = /title="unseen changes"/;
+    if (!star.test(again.doc.getElementById('desk-top').innerHTML) && files['seen.json']) {
+      test.check('a first open with no seen.json shows nothing as unseen, and records what it holds');
+    } else {
+      test.fail('first open: ' + again.doc.getElementById('desk-top').innerHTML.slice(0, 160));
+    }
+    again.arrive({ from: 'wsl-claude', kind: 'note', text: 'fresh', todo: 'puppets/G2' }, { hash: 'u-3', fromKey: WSL, sentAt: '2026-09-27T05:02:00Z' });
+    return settle().then(function () { return again; });
+  }).then(function (again) {
+    const top = again.doc.getElementById('desk-top');
+    if (/title="unseen changes"/.test(top.innerHTML)) test.check('a new arrival under a row puts a red * on that row');
+    else test.fail('no mark after a new arrival');
+    const rows = top.queried['tr[data-id]'] || [];
+    rows[0].fire('click');
+    again.dialogs[again.dialogs.length - 1].resolve(null);
+    return settle().then(function () {
+      again.arrive({ from: 'claude-windows', kind: 'note', text: 'unrelated' }, { hash: 'u-4', fromKey: LEAD, sentAt: '2026-09-27T05:03:00Z' });
+      return settle();
+    }).then(function () {
+      if (!/title="unseen changes"/.test(top.innerHTML)) test.check('opening the row clears its mark, and it stays clear');
+      else test.fail('the row is still marked after it was opened');
+      const seen = JSON.parse(files['seen.json']);
+      if (seen.rows['puppets/G2'] === Date.parse('2026-09-27T05:02:00Z')) test.check('what was seen is kept in seen.json, by arrival time');
+      else test.fail('seen.json ' + files['seen.json']);
+    });
+  });
+}
+
 arrivalsAndSendsAreLogged()
+  .then(unseenIsMarked)
   .then(teamGoesToEveryAgent)
   .then(voiceHoldsWhatHeTyped)
   .then(twoTabsKeepBoth)

@@ -204,15 +204,108 @@ function deskFold(msg) {
 
 function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
 
+// ── WHAT ANDY HAS NOT SEEN YET ────────────────────────────────────────
+//
+//   Andy, 2026-09-27: "list items in the list should show a red "news" in
+//   a unlabeled column, indicating that new stuff has arrived for that
+//   item, and the list, lead, and team tabls should also show a red "*"
+//   befor the tab title when new activity has taken place that I havent
+//   seen yet. (attention-direction)" — then "or use the red "*" do
+//   indicate "unseen changes have occured"". One mark, everywhere.
+//
+// Seen is kept per row and per chat in `seen.json`, in Desk's own folder,
+// as the arrival time of the newest thing he has looked at: arrival times
+// rather than his clock, so a sender's skew cannot hide anything. A row is
+// seen when he opens it, a chat while its tab is showing. A Desk with no
+// seen.json yet counts all it holds as seen, so the first open is not a
+// wall of red.
+var DESK_SEEN = 'seen.json';
+var DESK_UNSEEN = '<span style="color:#d00;font-weight:bold" title="unseen changes">*</span>';
+var deskSeen = { rows: {}, lead: 0, team: 0 };
+var deskTab = 'list';
+
+function deskIsLeadLine(m) {
+  if (!deskLead) return false;
+  if (m.todo || m.reported || m.kind === 'board' || m.kind === 'report') return false;
+  if (m.kind === 'note' && /^taking(\s|$)/.test(m.text)) return false;
+  return (m.dir === 'out' && m.peer === deskLead.key) || (m.dir === 'in' && m.from === deskLead.name);
+}
+function deskIsTeamLine(m) { return m.todo === DESK_TEAM && m.kind !== 'board'; }
+function deskIsRowLine(id) { return function (m) { return m.todo === id && m.kind !== 'board'; }; }
+
+// The newest arrival (never his own line) that `pred` accepts.
+function deskNewest(pred) {
+  var newest = 0;
+  deskMessages.forEach(function (m) {
+    if (m.dir !== 'in' || !pred(m)) return;
+    var at = Date.parse(m.at) || 0;
+    if (at > newest) newest = at;
+  });
+  return newest;
+}
+function deskRowNews(id) { return deskNewest(deskIsRowLine(id)) > (deskSeen.rows[id] || 0); }
+function deskChatNews(which) {
+  return deskNewest(which === 'lead' ? deskIsLeadLine : deskIsTeamLine) > (deskSeen[which] || 0);
+}
+
+function deskSaveSeen() {
+  try { deskApi.fs.saveFile(DESK_SEEN, JSON.stringify(deskSeen)); } catch (e) { /* only a marker */ }
+}
+function deskMarkRowSeen(id) {
+  var newest = deskNewest(deskIsRowLine(id));
+  if (newest > (deskSeen.rows[id] || 0)) { deskSeen.rows[id] = newest; deskSaveSeen(); }
+}
+function deskMarkChatSeen(which) {
+  var newest = deskNewest(which === 'lead' ? deskIsLeadLine : deskIsTeamLine);
+  if (newest > (deskSeen[which] || 0)) { deskSeen[which] = newest; deskSaveSeen(); }
+}
+
+// Read once at mount, after the log. Absent: all already held is seen.
+function deskLoadSeen() {
+  var raw = null;
+  try { raw = deskApi.fs.loadFile(DESK_SEEN); } catch (e) { raw = null; }
+  var held = null;
+  try { held = raw ? JSON.parse(raw) : null; } catch (e) { held = null; }
+  if (held && typeof held === 'object') {
+    deskSeen = { rows: held.rows && typeof held.rows === 'object' ? held.rows : {}, lead: Number(held.lead) || 0, team: Number(held.team) || 0 };
+    return;
+  }
+  var ids = Object.create(null);
+  deskMessages.forEach(function (m) { if (m.todo && m.todo !== DESK_TEAM) ids[m.todo] = true; });
+  Object.keys(ids).forEach(function (id) { deskSeen.rows[id] = deskNewest(deskIsRowLine(id)); });
+  deskSeen.lead = deskNewest(deskIsLeadLine);
+  deskSeen.team = deskNewest(deskIsTeamLine);
+  deskSaveSeen();
+}
+
+// The tab strip: the one showing is marked, and a red * before a title
+// says something arrived there that he has not seen.
+function deskDrawTabs() {
+  var strip = document.getElementById('desk-tabs');
+  if (!strip || !strip.querySelectorAll) return;
+  var listNews = deskBoard ? deskBoard.rows.some(function (r) { return deskRowNews(r.id); }) : false;
+  var news = { list: listNews, lead: deskChatNews('lead'), team: deskChatNews('team'), musings: false };
+  var names = { list: 'List', lead: 'Lead', team: 'Team', musings: 'Musings' };
+  Array.prototype.forEach.call(strip.querySelectorAll('[data-tab]'), function (b) {
+    var tab = b.getAttribute('data-tab');
+    var on = tab === deskTab;
+    b.innerHTML = (news[tab] ? DESK_UNSEEN + ' ' : '') + deskEsc(names[tab] || tab);
+    b.style.fontWeight = on ? 'bold' : 'normal';
+    b.style.textDecoration = on ? 'underline' : 'none';
+    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+}
+
 function deskTable() {
   if (!deskBoard) {
     return '<div class="job-manifest-note">No board has reached this node yet. The lead ' +
       'posts one whenever its test run changes it.</div>';
   }
-  var head = '<tr><th>#</th><th>to-do</th><th>with</th><th>your decision</th><th>frees</th><th>waits on</th><th>there</th><th>owed since</th></tr>';
+  var head = '<tr><th></th><th>#</th><th>to-do</th><th>with</th><th>your decision</th><th>frees</th><th>waits on</th><th>there</th><th>owed since</th></tr>';
   var body = deskBoard.rows.map(function (row) {
     var waits = (row.waitsOn || []).map(function (w) { return typeof w === 'string' ? w : (w.id || ''); }).join(', ');
     return '<tr data-id="' + deskEsc(row.id) + '" style="cursor:pointer">' +
+      '<td>' + (deskRowNews(row.id) ? DESK_UNSEEN : '') + '</td>' +
       '<td>' + deskEsc(row.rank) + '</td>' +
       '<td title="' + deskEsc(row.title) + '">' + deskEsc(deskLabel[row.id] || row.title) +
         ' <span class="job-manifest-note">(' + deskEsc(row.handle) + ')</span></td>' +
@@ -245,15 +338,7 @@ function deskRowOf(id) {
 // box outside the repainted part so his typing survives.
 function deskLeadChat() {
   if (!deskLead) return '<div class="job-manifest-note">No lead has posted a board here yet, so there is nobody to talk to.</div>';
-  var lines = [];
-  deskMessages.forEach(function (m) {
-    if (m.todo || m.reported || m.kind === 'board' || m.kind === 'report') return;
-    if (m.kind === 'note' && /^taking(\s|$)/.test(m.text)) return;
-    var mine = m.dir === 'out' && m.peer === deskLead.key;
-    var theirs = m.dir === 'in' && m.from === deskLead.name;
-    if (!mine && !theirs) return;
-    lines.push(m);
-  });
+  var lines = deskMessages.filter(deskIsLeadLine);
   if (!lines.length) return '<div class="job-manifest-note">Nothing said yet.</div>';
   return lines.map(function (m) {
     var who = m.dir === 'out' ? 'you' : m.from;
@@ -387,6 +472,9 @@ function deskDraw() {
   if (musings) musings.innerHTML = deskMusings();
   var team = document.getElementById('desk-team');
   if (team) team.innerHTML = deskTeamChat();
+  // A chat on screen is being seen as it arrives.
+  if (deskTab === 'lead' || deskTab === 'team') deskMarkChatSeen(deskTab);
+  deskDrawTabs();
   el.innerHTML = (deskError ? '<div class="job-start-error">' + deskEsc(deskError) + '</div>' : '') +
     deskTable();
   Array.prototype.forEach.call(el.querySelectorAll('button[data-go]'), function (b) {
@@ -411,8 +499,13 @@ function deskDraw() {
       // this log. Andy: "if i re-label the item ... the title in the list
       // should change."
       var thread = deskMessages.filter(function (m) { return m.todo === id; });
+      // Opening a row is seeing it, and so is what arrived while it was open.
+      deskMarkRowSeen(id);
       deskApi.callDialog('app/deskDetails', { id: id, row: deskRowOf(id), thread: thread, agents: deskAgents })
-        .then(function (result) { return deskRecord((result && result.sent) || []); });
+        .then(function (result) {
+          deskMarkRowSeen(id);
+          return deskRecord((result && result.sent) || []);
+        });
     });
   });
 }
@@ -480,12 +573,17 @@ spirit.shell.activateApp({
       Array.prototype.forEach.call(container.querySelectorAll('[data-pane]'), function (p) {
         p.hidden = p.getAttribute('data-pane') !== tab;
       });
-      Array.prototype.forEach.call(container.querySelectorAll('[data-tab]'), function (b) {
-        b.disabled = b.getAttribute('data-tab') === tab;
-      });
+      // HIGHLIGHTED, NOT DISABLED. Andy: "on the desk app, the current tab
+      // should be highlighted." A disabled button read as greyed out.
+      deskTab = tab;
+      if (tab === 'lead' || tab === 'team') deskMarkChatSeen(tab);
+      deskDrawTabs();
     }
     document.getElementById('desk-tabs').addEventListener('click', function (e) {
-      var tab = e.target && e.target.getAttribute && e.target.getAttribute('data-tab');
+      // The click may land on the red * inside the button.
+      var el = e.target;
+      while (el && el !== e.currentTarget && !(el.getAttribute && el.getAttribute('data-tab'))) el = el.parentNode;
+      var tab = el && el.getAttribute && el.getAttribute('data-tab');
       if (tab) show(tab);
     });
     show('list');
@@ -508,6 +606,7 @@ spirit.shell.activateApp({
     // mount, and kept while Desk is hidden behind its dialog, so what
     // arrives while a row is open is logged too.
     deskLoadLog();
+    deskLoadSeen();
     deskDraw();
     deskApi.onPacket('agents', function (body, message) { deskRecord([deskArrival(body, message)]); });
   },

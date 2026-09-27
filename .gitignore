@@ -170,6 +170,8 @@ spirit/run/app/natter/relays.json
 spirit/run/app/desk/log.json
 # And the lines he typed, which he moves into his vault by hand.
 spirit/run/app/desk/voice.jsonl
+# And what he has already seen, for the red * marks.
+spirit/run/app/desk/seen.json
 
 # Written by labMaster (and any future packaging step) so a copied tree
 # can say which commit it came from. Never a checkout, so never tracked.
