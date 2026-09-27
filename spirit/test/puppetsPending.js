@@ -124,15 +124,20 @@ test.subHeading('one return bound, both paths');
   // SLICE 1 IS BUILT: searchBucket.js, createSearch(opts).getResult(),
   // at ff22e8c, asserted by sharedSearch.js. What G2 still owes is the rest
   // of Andy's order: "replace the getList interface flat-out , with
-  // \"search\" and KILL the replaced verb". So the probe is now that no
-  // verb in server.js is called *.list. everyVerb.js's LISTS_TODAY names
-  // every verb that still ANSWERS with a list, which is the finer count.
-  const listVerbs = [...fs.readFileSync(path.join(REPO, 'spirit/run/js/server.js'), 'utf8')
-    .matchAll(/^ {4}'([a-z]+\.list)':/gm)].map(function (m) { return m[1]; });
-  test.awaiting('puppets/G2', 'no list verb left: each is search + get', listVerbs.length === 0,
-    'still claimed: ' + (listVerbs.join(', ') || 'none') + '. Each becomes search(label) giving key/label ' +
-    'pairs through searchBucket.js, plus get(key), and the list verb dies in the same commit as the apps ' +
-    'that call it',
+  // \"search\" and KILL the replaced verb".
+  //
+  // READ FROM everyVerb.js's LISTS_TODAY, not from verb NAMES. It probed for
+  // any '*.list' verb, and flipped at e5b059d when the last one went, while
+  // relay.status, owner.boxes and relay.record still answer lists under
+  // other names (claude-windows' handover). LISTS_TODAY is what a live node
+  // actually answers, checked every run, so G2 is owed until it is empty.
+  const everyVerbSrc = fs.readFileSync(path.join(REPO, 'spirit/test/everyVerb.js'), 'utf8');
+  const listBlock = /const LISTS_TODAY = \[([\s\S]*?)\];/.exec(everyVerbSrc);
+  const stillLists = listBlock ? (listBlock[1].match(/'([a-z]+\.[a-zA-Z]+)'/g) || []).map(function (q) { return q.slice(1, -1); }) : null;
+  test.awaiting('puppets/G2', 'no verb answers with a list: each is search + get', stillLists !== null && stillLists.length === 0,
+    'still answering with a list (everyVerb.js LISTS_TODAY): ' + (stillLists ? stillLists.join(', ') : 'LISTS_TODAY NOT FOUND') +
+    '. Each becomes search(label) giving key/label pairs through searchBucket.js, plus get(key), and the ' +
+    'apps that call it change in the same commit',
     { there: 50, cost: 'a sitting per collection, after Andy\'s yes on the verb list' });
 
   // puppets/G3, ANDY'S OWN INSTRUMENT ("then you need only one suite that

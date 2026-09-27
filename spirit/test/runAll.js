@@ -1127,6 +1127,53 @@ let lastBoard = { byReq: Object.create(null), titles: Object.create(null) };
 // `preRows` and `stale` are the fast path: --board replays the last full
 // run's rows rather than running 154 suites to learn what it already
 // recorded. See the --board branch in main().
+// ── DONE.md: WHAT LEFT THE BOARD, KEPT ───────────────────────────────
+//
+//   Andy, 2026-09-27: "does the \"done\" stuff disappear completely here or
+//   is there a record? (there should be a record)", and "go." on this. A
+//   row that leaves the board showed once as "built since last run" and was
+//   gone; the run log that noticed is ignored by git and stays on one box.
+//
+// So each requirement that leaves gets ONE line, appended in the run where
+// it leaves, never rewritten: when, the id, its title, the commit, and the
+// test files that name it now (the *Pending.js declarations excluded, since
+// those are what it left). A row no test names is marked so: leaving the
+// board is not proof it was built, and the line says which it cannot tell.
+// Dependency and question rows are the board's own, not requirements.
+function recordDone(built, prev, commit, REPO) {
+  const ids = built.filter(function (id) { return !/^(dependency|question)\//.test(id); });
+  if (!ids.length) return;
+  const file = path.join(REPO, 'DONE.md');
+  let text = '';
+  try { text = fs.readFileSync(file, 'utf8'); } catch (e) { text = ''; }
+  if (!text) {
+    text = '# Done\n\n**Appended by `node spirit/test/runAll.js`, one line per requirement in the full run '
+      + 'where it left the board. Never rewritten.** "Named by" lists the test files that mention it now; '
+      + 'a row nobody names left the board without a test saying it was built.\n\n'
+      + '| Left the board | Requirement | Title | Commit | Named by |\n|---|---|---|---|---|\n';
+  }
+  const titleOf = Object.create(null);
+  ((prev && prev.rows) || []).forEach(function (r) { titleOf[r.id] = r.title; });
+  const tests = fs.readdirSync(DIR).filter(function (f) {
+    // The board's own machinery names ids as test data, not as proof.
+    return /\.js$/.test(f) && !/Pending\.js$/.test(f) && !/^(runAll|edges|boardRank|boardRankSuite|boardPost|boardPostSuite)\.js$/.test(f);
+  });
+  const day = new Date().toISOString().slice(0, 10);
+  const lines = [];
+  ids.forEach(function (id) {
+    if (text.indexOf('| ' + id + ' |') !== -1) return;
+    const named = tests.filter(function (f) {
+      try { return fs.readFileSync(path.join(DIR, f), 'utf8').indexOf(id) !== -1; } catch (e) { return false; }
+    });
+    const clean = function (t) { return String(t || '').replace(/\|/g, '/').replace(/\s+/g, ' ').trim(); };
+    lines.push('| ' + day + ' | ' + id + ' | ' + clean(titleOf[id] || '(no title recorded)') + ' | ' + commit + ' | '
+      + (named.length ? named.join(', ') : '**no test names it: built, or dropped?**') + ' |');
+  });
+  if (!lines.length) return;
+  try { fs.writeFileSync(file, text + lines.join('\n') + '\n'); } catch (e) { /* the board still renders */ }
+  console.log('--- DONE.md: ' + lines.length + ' requirement(s) recorded as having left the board');
+}
+
 function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
   const NL = String.fromCharCode(10);
   const REPO = path.join(DIR, '..', '..');
@@ -1232,6 +1279,7 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
   const nowIds = rows.map(function (r) { return r.id; });
   const wasIds = (prev && prev.ids) || [];
   const built = wasIds.filter(function (i) { return nowIds.indexOf(i) === -1; });
+  if (!replay) recordDone(built, prev, commit, REPO);
   const added = nowIds.filter(function (i) { return wasIds.indexOf(i) === -1; });
   const greenMoved = prev ? tally.green - prev.green : 0;
   const redMoved = prev ? tally.red - prev.red : 0;
@@ -1973,6 +2021,12 @@ async function main() {
     console.log('--- board NOT written: this was a filtered run (' + filter + '), and a subset ' +
       'cannot know the tally. Run without a filter, or `--board` to re-render from the last full run.');
     exitAfterPost(unhappy.length ? 1 : 0);
+    // AND STOP HERE. exitAfterPost exits when the pending post settles, so
+    // without this return the run went on and wrote the subset board anyway
+    // ("rewritten (0 owed)") and appended a one-suite run to the log, which
+    // the next full run then compared against. Found building DONE.md, which
+    // would have recorded every row a subset did not run as finished.
+    return;
   }
 
   writeScoreboard(lastBoard.byReq, lastBoard.titles, {
