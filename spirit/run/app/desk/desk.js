@@ -45,6 +45,7 @@ var DESK_PATIENCE = { patienceMs: 60000 };
 
 var deskApi = null;
 var deskBoard = null;       // the newest `board` packet's JSON
+var deskSession = null;     // the newest `session` packet's JSON (the design session's item)
 var deskMessages = [];      // decoded agents messages, in log order
 var deskByHash = Object.create(null);
 var deskError = '';
@@ -250,6 +251,12 @@ function deskFold(msg) {
   if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && DESK_DECISIONS[msg.text]) {
     deskDecision[msg.todo] = DESK_DECISIONS[msg.text];
   }
+  if (msg.kind === 'session' && msg.dir === 'in') {
+    try {
+      var sess = JSON.parse(msg.text);
+      if (sess && sess.goal && Array.isArray(sess.items)) deskSession = sess;
+    } catch (e) { /* a session that does not parse is not a session */ }
+  }
   if (msg.kind === 'board') {
     if (msg.dir === 'in' && msg.peer && msg.from) deskLead = { name: msg.from, key: msg.peer };
     try {
@@ -353,7 +360,85 @@ function deskDrawTabs() {
   });
 }
 
+// ── DESIGN MODE, AND THE DESIGN SESSION'S BOARD ─────────────────────
+//
+//   Andy, 2026-09-28: "when i sent anything to team chat, we're all in
+//   design mode", and "design mode for the Desk app and its detail apps,
+//   can only be ended from within the team tab. Why? so that we can
+//   navigate anywhere in desk and desk detail to observe the effect of the
+//   design session."
+//
+// Read from Desk's own log, so nothing new is stored: it is on when his
+// newest line in Team is newer than his newest "end design mode." there.
+var DESK_END_DESIGN = 'end design mode.';
+function deskDesignOn() {
+  var started = 0, ended = 0;
+  deskMessages.forEach(function (m) {
+    if (m.dir !== 'out' || m.todo !== DESK_TEAM) return;
+    var at = Date.parse(m.at) || 0;
+    if (m.kind === 'answer' && m.text === DESK_END_DESIGN) { if (at > ended) ended = at; }
+    else if (at > started) started = at;
+  });
+  return started > ended;
+}
+
+// THE SESSION'S BOARD. Andy: "the Title item will become the first ond only
+// item on the board. every item in the indentede list below, will become an
+// item that blocks the title item from being complete", "The indentation
+// doesn't nest", and "the goal moves downward because it will become
+// dependent on more and more items being completed". So the list is every
+// required item, then the goal last, blocked by each one still open.
+function deskSessionRows() {
+  if (!deskSession) return [];
+  var items = deskSession.items.map(function (it, i) {
+    return { id: String(it.id || ('item-' + (i + 1))), title: String(it.title || ''), done: !!it.done,
+      blocks: String(deskSession.goal.id), refs: it.refs || [] };
+  });
+  var open = items.filter(function (it) { return !it.done; }).map(function (it) { return it.id; });
+  return items.concat([{ id: String(deskSession.goal.id), title: String(deskSession.goal.title), goal: true,
+    description: String(deskSession.goal.description || ''), done: !!deskSession.goal.done, waitsOn: open }]);
+}
+function deskSessionTable() {
+  var head = '<tr><th></th><th>to-do</th><th>with</th><th>your decision</th><th>blocks</th><th>waits on</th><th>state</th></tr>';
+  var body = deskSessionRows().map(function (row) {
+    return '<tr data-id="' + deskEsc(row.id) + '" style="cursor:pointer' + (row.goal ? ';font-weight:bold' : '') + '">' +
+      '<td>' + (deskRowNews(row.id) ? DESK_UNSEEN : '') + '</td>' +
+      '<td title="' + deskEsc(row.title) + '">' + deskEsc(deskLabel[row.id] || row.title) +
+        ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span></td>' +
+      '<td>' + deskEsc(deskTaken[row.id] || '') + '</td>' +
+      '<td>' + (deskOpenAsk[row.id]
+        ? '<button type="button" data-go="' + deskEsc(row.id) + '" title="' + deskEsc(deskOpenAsk[row.id].text) + '">Go!</button>'
+        : deskEsc(deskDecision[row.id] || '')) + '</td>' +
+      '<td>' + deskEsc(row.blocks || '') + '</td>' +
+      '<td>' + deskEsc((row.waitsOn || []).join(', ')) + '</td>' +
+      '<td>' + (row.done ? 'done' : 'open') + '</td>' +
+    '</tr>';
+  }).join('');
+  return '<div class="job-manifest-note">Design session: ' + deskEsc(deskSession.goal.id) + '</div>' +
+    '<table class="jobs-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+}
+
+// The bubble at the top of Team: the goal and what it waits on, filled by
+// the lead as the chat goes. Blank until the first session arrives.
+function deskSessionBubble() {
+  if (!deskSession) {
+    return '<div class="stat-tile wide"><div class="label">Design session</div>' +
+      '<div class="job-manifest-note">Blank. The lead fills in the goal (id and title), your description, and ' +
+      'the list of what must be done before it is, as we talk.</div></div>';
+  }
+  var g = deskSession.goal;
+  var items = deskSession.items.map(function (it, i) {
+    return '<li>' + (it.done ? '<s>' : '') + deskEsc(it.title) + (it.done ? '</s>' : '') +
+      ' <span class="job-manifest-note">(' + deskEsc(it.id || ('item-' + (i + 1))) + ')</span></li>';
+  }).join('');
+  return '<div class="stat-tile wide"><div class="label">' + deskEsc(g.id) + ' — ' + deskEsc(g.title) + '</div>' +
+    (g.description ? '<div>' + deskEsc(g.description) + '</div>' : '') +
+    (items ? '<ul style="margin:6px 0 0 18px">' + items + '</ul>'
+      : '<div class="job-manifest-note">Nothing required yet.</div>') + '</div>';
+}
+
 function deskTable() {
+  if (deskSession && !deskSession.goal.done) return deskSessionTable();
   if (!deskBoard) {
     return '<div class="job-manifest-note">No board has reached this node yet. The lead ' +
       'posts one whenever its test run changes it.</div>';
@@ -382,6 +467,8 @@ function deskTable() {
 }
 
 function deskRowOf(id) {
+  var sessionRow = deskSessionRows().filter(function (r) { return r.id === id; })[0];
+  if (sessionRow) return sessionRow;
   if (!deskBoard) return null;
   for (var i = 0; i < deskBoard.rows.length; i += 1) if (deskBoard.rows[i].id === id) return deskBoard.rows[i];
   return null;
@@ -470,23 +557,27 @@ function deskTeamChat() {
   }).join('');
 }
 
-function deskSendTeam() {
+function deskSendTeam() { deskTeamPost('note'); }
+// Ending design mode is his decision, said in Team: an `answer` with the
+// fixed words, which Desk reads back (deskDesignOn) and the agents obey.
+function deskEndDesign() { deskTeamPost('answer', DESK_END_DESIGN); }
+function deskTeamPost(kind, fixed) {
   var box = document.getElementById('desk-team-say');
   var err = document.getElementById('desk-team-error');
-  var said = box ? String(box.value || '').trim() : '';
+  var said = fixed || (box ? String(box.value || '').trim() : '');
   if (!said || deskSending['desk-team-say']) return;
   var to = Object.keys(deskAgents).filter(function (n) { return Date.now() - deskAgents[n].at < DESK_RECENT_MS; })
     .map(function (n) { return deskAgents[n].key; });
   if (!to.length) { if (err) err.textContent = 'No agent has written here in the last day, so there is nobody to send to.'; return; }
   deskSending['desk-team-say'] = true;
   if (err) err.textContent = 'Sending…';
-  var body = { from: 'andy', kind: 'note', text: said, todo: DESK_TEAM };
+  var body = { from: 'andy', kind: kind, text: said, todo: DESK_TEAM };
   Promise.all(to.map(function (key) {
     return deskApi.peerPost('agents', key, body, DESK_PATIENCE).then(function (r) { return deskOutgoing(key, body, r); },
       function (e) { return deskOutgoing(key, body, null, e); });
   })).then(function (msgs) {
     deskSending['desk-team-say'] = false;
-    box.value = '';
+    if (!fixed && box) box.value = '';
     if (err) err.textContent = '';
     return deskRecord(msgs);
   });
@@ -536,6 +627,13 @@ function deskDraw() {
   if (musings) musings.innerHTML = deskMusings();
   var team = document.getElementById('desk-team');
   if (team) team.innerHTML = deskTeamChat();
+  var bubble = document.getElementById('desk-session');
+  if (bubble) bubble.innerHTML = deskSessionBubble();
+  var design = deskDesignOn();
+  var banner = document.getElementById('desk-design');
+  if (banner) banner.hidden = !design;
+  var end = document.getElementById('desk-end-design');
+  if (end) end.hidden = !design;
   // A chat on screen is being seen as it arrives.
   if (deskTab === 'lead' || deskTab === 'team') deskMarkChatSeen(deskTab);
   deskDrawTabs();
@@ -570,7 +668,11 @@ function deskDraw() {
       var thread = deskMessages.filter(function (m) { return m.todo === id; });
       // Opening a row is seeing it, and so is what arrived while it was open.
       deskMarkRowSeen(id);
-      deskApi.callDialog('app/deskDetails', { id: id, row: deskRowOf(id), thread: thread, agents: deskAgents })
+      // DESIGN MODE RIDES IN THE CALL. Andy: "you can force the design mode
+      // into the details dialog by paramet calling". The dialog shows it and
+      // cannot end it; only Team can.
+      deskApi.callDialog('app/deskDetails', { id: id, row: deskRowOf(id), thread: thread, agents: deskAgents,
+        designMode: deskDesignOn() })
         .then(function (result) {
           deskMarkRowSeen(id);
           return deskRecord((result && result.sent) || []);
@@ -621,6 +723,8 @@ spirit.shell.activateApp({
     // so a half-typed line in any pane survives a switch. The inputs live
     // outside the repainted parts.
     container.innerHTML =
+      '<div id="desk-design" class="stat-tile wide" style="background:#fff3c4;color:#000" hidden>' +
+        '<b>Design mode.</b> Nothing is built until it ends, and it ends only in the Team tab.</div>' +
       '<div class="start-job-form card" id="desk-tabs">' +
         '<button type="button" data-tab="list">List</button>' +
         '<button type="button" data-tab="lead">Lead</button>' +
@@ -637,6 +741,8 @@ spirit.shell.activateApp({
           '<div class="stat-tile wide"><div class="label">Talk to the lead, newest first</div><div id="desk-chat"></div></div>' +
         '</div>' +
         '<div data-pane="team" hidden>' +
+          '<div id="desk-session"></div>' +
+          '<div class="start-job-form card"><button type="button" id="desk-end-design" hidden>End design mode</button></div>' +
           '<div class="start-job-form card"><label class="field-label grow">Say' +
             '<input type="text" id="desk-team-say" placeholder="to every agent; design talk that belongs to no row"></label>' +
           '<button type="button" id="desk-team-send">Send</button></div>' +
@@ -683,6 +789,7 @@ spirit.shell.activateApp({
     onEnter('desk-say', say);
     onEnter('desk-muse', muse);
     document.getElementById('desk-team-send').addEventListener('click', deskSendTeam);
+    document.getElementById('desk-end-design').addEventListener('click', deskEndDesign);
     onEnter('desk-team-say', deskSendTeam);
     // Its own log first, then every arrival into it. Subscribed once, at
     // mount, and kept while Desk is hidden behind its dialog, so what

@@ -30,6 +30,7 @@
 
 var ddApi = null;
 var ddRow = null;           // the board row, as Desk handed it over
+var ddDesign = false;        // design mode, as Desk passed it in
 var ddId = '';              // its full id — the thread key
 var ddState = null;         // what the record says about this row
 // WHO HEARS ANDY: agents heard from in the last day, newest key per name.
@@ -218,6 +219,11 @@ function ddFrame() {
   var el = document.getElementById('dd-body');
   if (!el) return;
   el.innerHTML =
+    // DESIGN MODE, SHOWN AND NEVER ENDED HERE. Andy: "design mode for the
+    // Desk app and its detail apps, can only be ended from within the team
+    // tab", so this dialog carries no button for it. Desk passes it in.
+    '<div id="dd-design" class="stat-tile wide" style="background:#fff3c4;color:#000"' + (ddDesign ? '' : ' hidden') + '>' +
+      '<b>Design mode.</b> Nothing is built until it ends, and it ends only in the Team tab of Desk.</div>' +
     '<div class="stat-tile wide"><div class="label" id="dd-title"></div><div id="dd-blurb"></div></div>' +
     '<div class="stat-tile wide" id="dd-facts"></div>' +
     '<div class="start-job-form card"><label class="field-label grow">Your name for it' +
@@ -354,6 +360,7 @@ spirit.shell.activateApp({
   // from the last row.
   open: function (params) {
     ddRow = (params && params.row) || null;
+    ddDesign = !!(params && params.designMode);
     ddId = (params && params.id) || (ddRow && ddRow.id) || '';
     ddThread = [];
     ddSeen = Object.create(null);

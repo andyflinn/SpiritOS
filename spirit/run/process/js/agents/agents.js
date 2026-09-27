@@ -38,7 +38,7 @@ const limits = require('../../../js/limits.js');
 const { execFileSync } = require('child_process');
 
 const APP = 'agents';
-const KINDS = ['note', 'ask', 'answer', 'report', 'halt', 'resume', 'blocked', 'board', 'explain', 'annotation', 'musing'];
+const KINDS = ['note', 'ask', 'answer', 'report', 'halt', 'resume', 'blocked', 'board', 'explain', 'annotation', 'musing', 'session'];
 
 // ── `musing` — ANDY'S THOUGHTS FOR THE VOICE LOG ──────────────────────
 //
@@ -215,6 +215,20 @@ function makeEnvelope(from, kind, text, re, idFn, block, todo) {
   const CARRIES_NO_TEXT = ['halt', 'resume', 'blocked'];
   if (CARRIES_NO_TEXT.indexOf(kind) === -1 && !String(text || '').trim()) {
     throw new Error('a send with no text is refused — ' + kind + ' needs something to say');
+  }
+  // THE DESIGN SESSION'S ITEM, filled by the lead as the Team chat goes.
+  // Andy, 2026-09-28: "the team chat will have at the top a blank requirement
+  // bubble. while we chat, lead fills the fields in that requirement. first
+  // line is the ID and the title. blow it is a short discription i define",
+  // then the list of what he requires before it is done, each "an item that
+  // blocks the title item". Refused at the sender unless it has that shape:
+  // { goal: { id, title, description }, items: [ { id, title } ] }.
+  if (kind === 'session') {
+    let parsed = null;
+    try { parsed = JSON.parse(String(text || '')); } catch (e) { parsed = null; }
+    if (!parsed || !parsed.goal || !parsed.goal.id || !parsed.goal.title || !Array.isArray(parsed.items)) {
+      throw new Error('a session must be JSON: { goal: { id, title, description }, items: [ { id, title } ] }');
+    }
   }
   if (kind === 'board') {
     let parsed = null;
