@@ -1227,7 +1227,8 @@ verbs today; they live only in its code.
   hand), and only then can it introspect or ask grantFace for a name. The
   stranger setting is not a way in: a key the owner has not accepted gets
   no answer from `api`, whatever that setting says.**
-  Andy's name for it: *"that is exactly consent based access."*
+  Andy's name for it: *"that is exactly consent based access.", *"with multiple layers of consent"*: the owner's contact list, then each
+  app's allow list, then the app's own answer to that caller.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
