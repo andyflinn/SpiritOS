@@ -1219,8 +1219,14 @@ verbs today; they live only in its code.
   The app's allow list is the second gate. *Caveat (wsl-claude): "members
   only" holds by the DEFAULT stranger setting ('silent', `hub.js:713-718`),
   not by construction. An owner who switches it to 'acquire' lets any signed
-  stranger reach the node. Recommended (claude): the `api` dispatch checks
-  the listen set itself, so it never leans on that preference.*
+  stranger reach the node.* **Ruled (Andy: *"say so in the design. and
+  explain there, that it requires a member to be in the owners contact list
+  before introspection works for that member"*): `api`, both the tree and a
+  call, works only for a key already in the owner node's contact list. A
+  member is added there first (the relay roll, an invite, or the owner by
+  hand), and only then can it introspect or ask grantFace for a name. The
+  stranger setting is not a way in: a key the owner has not accepted gets
+  no answer from `api`, whatever that setting says.**
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
