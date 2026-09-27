@@ -1123,6 +1123,24 @@ function create(opts) {
     };
   }
 
+  // ── WHAT THE APP SEES OF ITSELF: THE CONTRACT, NEVER THE PLUMBING ──
+  //
+  // public-app-server/G8, named by Andy: CONTRACT (what an app can see and
+  // is promised) and PLUMBING ("it's in the puppet, on the box and in the
+  // server process", "it's all the pipes"), and the line is visibility:
+  // "the appFaceApp never even knows. it's invisible to itself." wsl-claude's
+  // G8 test found app.state handing the app its port, its folder on disc and
+  // the box report. Those are plumbing, so the door drops them. The full
+  // view stays on the handle's state(), which is in-process: the operator's
+  // and the suites', never the app's. The box report reaches the owner by
+  // its own route (G10).
+  const PLUMBING = ['port', 'stateDir', 'box'];
+  function contractView(full) {
+    const out = {};
+    Object.keys(full).forEach(function (k) { if (PLUMBING.indexOf(k) === -1) out[k] = full[k]; });
+    return out;
+  }
+
   // ── THE DOOR'S VERBS, AND THE SURFACE IS WHAT WAS DECLARED ──────────
   //
   // `verb` is the one member the sample declares, and the door hands out
@@ -1134,7 +1152,7 @@ function create(opts) {
     if (contract.surface.indexOf('verb') === -1) {
       return Promise.resolve({ ok: false, code: 'app-surface-undeclared', extra: { app: appName, asked: verb } });
     }
-    if (verb === 'app.state') return Promise.resolve({ ok: true, value: snapshot() });
+    if (verb === 'app.state') return Promise.resolve({ ok: true, value: contractView(snapshot()) });
     if (verb === 'app.reach') {
       // THE ONE OUTWARD ACT, and the thing that makes three of the four
       // failure states producible rather than merely catalogued. It was
