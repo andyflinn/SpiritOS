@@ -533,6 +533,79 @@ function createTrafficLog(opts) {
     return marked;
   }
 
+  // ── THE OWNER'S RECORD, AS HIS PAGES READ IT (`node.history`) ─────────
+  //
+  //   Andy, 2026-09-27: "my node should contain the overall record of our
+  //   activities" — "and be accessible to you both for red£/write etc..."
+  //   (design/shell/AGENTS-UI.md, the Desk app's one read).
+  //
+  // NAMED APART FROM `arrivals` so the rule above stays true of arrivals:
+  // this is the node's own history, not a feed of arrivals. It returns
+  // admitted inbound rows AND this node's own outbound requests, and never
+  // a held or ignored one — those must never reach an app at all.
+  //
+  // NO FILTER ON `app` OR ON ANY BODY FIELD, for the same reason arrivals
+  // has none (hub.js:1278, test/nodeKnowsNoApps.js). The caller sorts.
+  //
+  // BY POSITION, NOT BY TIME. `after` is an index into the log, and every
+  // page returns `next` to hand back. Paging by timestamp loses the rows
+  // that share the millisecond a page ended in — wsl-claude measured 3 of
+  // 5 — and a history missing a message reads as one that never had it.
+  // The log is append-only and marks sit after what they mark, so an
+  // index never moves.
+  //
+  // ONE MESSAGE, ONE ROW, WITH ITS LAST OUTCOME within a page: a post
+  // queued, refused and then sent is one row saying `sent`. A later
+  // outcome for a message an earlier page returned comes back as a row
+  // with the same hash, which the caller folds in by hash. Nothing is
+  // lost and no message is new twice.
+  //
+  // BOUNDED BY BYTES as well as rows: 500 rows of up to 16 KB each would
+  // be 8 MB. A page stops before the cap and says so with `more`.
+  //
+  // AND THE LINE FOR THE DAY IT MATTERS (wsl-claude): this hands every
+  // app's plaintext to any caller. Today every page on a node is its
+  // owner's own, so that is his data shown to him. Once apps are
+  // installable (public-app-server/G14, the manifest declares what it
+  // takes), history must be something an app DECLARES, not something
+  // every page gets.
+  var HISTORY_ROWS = 200;
+  var HISTORY_ROWS_MAX = 500;
+  var HISTORY_BYTES = 256 * 1024;
+  function history(opts) {
+    var o = opts || {};
+    var rows = historyOf(rootDir);
+    var after = Number(o.after);
+    var start = Number.isInteger(after) && after > 0 ? Math.min(after, rows.length) : 0;
+    var limit = Number(o.limit) > 0 ? Math.min(Math.floor(Number(o.limit)), HISTORY_ROWS_MAX) : HISTORY_ROWS;
+    var out = [];
+    var byHashInPage = Object.create(null);
+    var bytes = 0;
+    var i = start;
+    for (; i < rows.length; i += 1) {
+      var row = rows[i];
+      if (!row || row.kind === 'owner') continue;
+      var mine = row.dir === 'out' && row.kind === 'request';
+      var admitted = row.dir === 'in' && row.admitted;
+      if (!mine && !admitted) continue;
+      var seen = row.hash ? byHashInPage[row.hash] : null;
+      if (seen) {
+        seen.outcome = row.outcome;
+        if (row.payload !== undefined && seen.payload === undefined) seen.payload = row.payload;
+        continue;
+      }
+      if (out.length >= limit) break;
+      var item = { at: row.at, dir: row.dir, kind: row.kind, peer: row.peer, hash: row.hash, outcome: row.outcome };
+      if (row.payload !== undefined) item.payload = row.payload;
+      var size = JSON.stringify(item).length;
+      if (out.length && bytes + size > HISTORY_BYTES) break;
+      bytes += size;
+      out.push(item);
+      if (row.hash) byHashInPage[row.hash] = item;
+    }
+    return { rows: out, next: i, more: i < rows.length };
+  }
+
   // The whole history, marks folded in. Nothing is pruned on the way out
   // any more, because nothing is pruned at all.
   function read() {
@@ -549,6 +622,8 @@ function createTrafficLog(opts) {
     ownerEvents: ownerEvents,
     byHash: byHash,
     taken: taken,
+    // The owner's record as his pages read it — see `history` above.
+    history: history,
   };
 }
 

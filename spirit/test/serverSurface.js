@@ -645,6 +645,9 @@ freePort()
       ['POST', '/api/spirit', { verb: 'node.card' }],
       ['POST', '/api/spirit', { verb: 'node.setName' }],
       ['POST', '/api/spirit', { verb: 'node.setDescription', description: 'a node in a test' }],
+      // A page of the owner's record. The test node's log is empty, so the
+      // honest answer is an empty page, not a refusal.
+      ['POST', '/api/spirit', { verb: 'node.history', limit: 5 }],
       // A url on no Natter list, so this is refused before any network is
       // touched — the ReferenceError was at the CALL, which happens
       // either way.

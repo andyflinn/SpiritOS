@@ -1670,6 +1670,19 @@ contactBook.syncMarks(ROOT_DIR);
     'node.setDescription': function (rq, rs) {
       hub.handleNodeDescription(rq, rs, readJsonBody);
     },
+    // THE OWNER'S RECORD, read a page at a time — trafficLog.history says
+    // what is in it, what never is, and why it pages by position. Local:
+    // the log is on this disk.
+    'node.history': function (rq, rs) {
+      readJsonBody(rq).then(function (body) {
+        var page = trafficLog.history({ after: body && body.after, limit: body && body.limit });
+        rs.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        rs.end(JSON.stringify(Object.assign({ ok: true }, page)));
+      }).catch(function () {
+        rs.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        rs.end(JSON.stringify({ ok: false, error: 'Invalid JSON body' }));
+      });
+    },
   }, { wire: false });
 
   // ── STAGE 4b — relay (2026-09-15) ──────────────────────────────────
