@@ -1198,6 +1198,16 @@ verbs today; they live only in its code.
   closes gap 2: the member admits the face because the owner's own app told
   it which key the face is. Admitting it is the member's own act on its own
   node (its contact list, through its own door).
+  It is safe because of the path. Andy: *"if grantFace tells the member the
+  ID of appFaceApp puppet, that reply will automatically be signed by the
+  owner node."* The member's call reaches the owner's node over peerPost, the
+  node hands it to grantFace's server, and the node replies with grantFace's
+  answer as its own packet, signed with the owner's key. **Rule: an app
+  server's answers to peers always leave through its node, never under the
+  app server's own key.** wsl-claude's test: the member takes the face key
+  only from that reply (`from` is the owner, `re` is its own question), never
+  from a packet claiming to be the face, and only for the face the owner
+  names now.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
