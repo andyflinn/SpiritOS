@@ -98,6 +98,12 @@ expectEverySpellingUnservable('relay-state/routingTable.json', 'relay-state/rout
 // stay unreadable.
 expectEverySpellingUnservable('relay-state/mailbox.json', 'relay-state/mailbox.json');
 expectEverySpellingUnservable('relay-state/allow.json', 'relay-state/allow.json');
+// NESTED, TOO. An app server's identity lives at
+// app-state/<name>/relay-state/identity.json (appServer.js:614), and the
+// first version of the gate refused only the top-level folder, so this
+// private key was served to anyone who could ask the node for a file.
+expectEverySpellingUnservable('app-state/<name>/relay-state/identity.json', 'app-state/someApp/relay-state/identity.json');
+expectEverySpellingUnservable('a relay-state folder anywhere', 'app/someApp/relay-state/anything.json');
 
 // ---- Node-only modules stay invisible however they are spelled ----
 test.subHeading('Node-only js/ modules are unreadable in every spelling');
