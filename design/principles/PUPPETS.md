@@ -526,10 +526,19 @@ What it adds is clear, and one question is OPEN:
   *"but"* adds the face channel and does not say the node remote control
   stays. (claude first wrote this as "beside", attributed to both agents.
   wsl-claude never held that reading, and it is withdrawn.)
+  **Answered the same hour: BESIDE, with a limit.** Andy: *"the node api is
+  orthogonal, however: not every group is supported in every
+  context/environment (fineprint: the contract stands, we may modify it
+  when neccessary and must notify you of said changes (EULA 3.6.54)"*. So
+  the owner's remote control over the node's groups stays, as the
+  orthogonal node api, and the app's group sits beside it. But a given
+  context (a puppet, a VPS face, a personal node) supports only some
+  groups, so the set reachable in a context is declared per context, not
+  assumed whole. The whole proposal is still not ruled.
 
 If it is ruled, G7 changes from *"`server.js:921`'s dispatch runs
-unchanged"* to dispatching into the app's group. Whether the node's
-groups stay reachable at all is the open question above. **G7 and G4 stay unbuilt until Andy
+unchanged"* to dispatching into the app's group, beside the node's groups
+that the context supports. **G7 and G4 stay unbuilt until Andy
 approves a written shape.** G6 is unaffected.
 
 ### G8 — may a puppet be commanded: the owner anything, others nothing
