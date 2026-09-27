@@ -193,6 +193,19 @@ What follows is what both agreed. Any of it changes when Andy asks.
   never adds a second slot. Only the agent who wrote it revises it, and
   only because its view changed, not to keep busy.
 
+- **Adding rows by search, later.** Andy: *"i can add-rows in my display
+  using search (later)"*, *"will be neccessary when referencing rows that
+  are not on ma display"*. The board shows the owed to-dos, but Andy may
+  need to reference a row that is not on it: a requirement already done,
+  one from another cycle, or a message. Desk will let him search for it
+  and pin it to his display as a row with its own thread. It is keyed by
+  the full id like any other row. Not in the first build.
+- **An issueDetails dialog, on the horizon.** Andy: *"and you know that i
+  already see an issueDetails dialog on the horizon...  ha ha"*. It is the
+  Details pattern Natter and Contacts already use, applied to a row: the
+  whole thread, the annotation slot and the dependencies in one dialog.
+  Direction only.
+
 ## Open
 
 - Nothing. Each change from here is Andy's alteration.
