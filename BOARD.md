@@ -33,16 +33,6 @@ not describe. Run the harness if in doubt.
 
 *Declared in `appServerBoundary.js`*
 
-## public-app-server/G8 — layer 1 splits by PROMISE, and the stable half is named
-
-`PUBLIC-APP-SERVER` · status **OPEN**
-
-- **missing:** the named stable half of layer 1 — **~0% there**, guess: a naming and a written test, no code; the value is that a later session can place a new thing without re-deriving the philosophy, and this suite deliberately asserts nothing about it because a name this agent invented would BE the divergence rather than find one
-  
-  the app contract sits in a named half that needs a deprecation path, and box concerns in one that does not — the test being mechanical: if removing it would break an app that never changed, it is in the stable half
-
-*Declared in `appServerBoundary.js`*
-
 ## puppets/G1 — a response bound exists, and both paths obey it
 
 `PUPPETS` · status **OPEN**
@@ -105,4 +95,4 @@ not describe. Run the harness if in doubt.
 
 ---
 
-**9 assertion(s) across 9 requirement(s).**
+**8 assertion(s) across 8 requirement(s).**

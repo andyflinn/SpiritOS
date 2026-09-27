@@ -4,25 +4,11 @@
 
 ## Summary
 
-**2 tests are broken, 9 requirements are declared and not built yet, and 1 dependency question for you, and 3 older questions need a decision from you.**
+**Nothing is broken, 8 requirements are declared and not built yet, and 1 dependency question for you, and 3 older questions need a decision from you.**
 
 ```
-171 suites   3186 green   2 red   2 unhappy   9 owed      run 8ccc194
+171 suites   3189 green   0 red   0 unhappy   8 owed      run 31a5220
 ```
-
----
-
-## What is red
-
-**Something that used to pass now fails.** These are broken, not unfinished — the owed list further down is work nobody has written yet.
-
-**❌ `boxesSuite.js`** — one check no longer passes.
-
-  - a REMOVED server still counts: servers ["A","B"], allotted 1200, warning true. servers.json is checked only when a report ARRIVES, so a key he removes keeps …
-
-**❌ `cycleCitations.js`** — one check no longer passes.
-
-  - bare R-numbers added — name the cycle beside the number ("gap R13", "cycle 3's R5"):
 
 ---
 
@@ -36,7 +22,7 @@
 
 - the face door and the puppet group (puppets/G10)
 
-**Do you accept the implied change in priorities?** (G17) from 2nd to 1st.
+**Do you accept the implied change in priorities?** Nothing would change place.
 
 ### Ruled, and now ours
 
@@ -96,9 +82,14 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +6 green
-- +2 red
-- ✅ **built or withdrawn:** public-app-server/G10
+- +3138 green
+- -1 red
+- ⏳ **newly owed:** puppets/G1
+- ⏳ **newly owed:** puppets/G10
+- ⏳ **newly owed:** puppets/G2
+- ⏳ **newly owed:** puppets/G3
+- ⏳ **newly owed:** transport/R12
+- ⏳ **newly owed:** transport/R16
 
 ---
 
@@ -106,17 +97,16 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 | # | handle | to-do | waits on | frees | owed | there | |
 |---|---|---|---|---|---|---|---|
-| 1 | public-app-server/G8 | layer 1 splits by PROMISE, and the stable half is named |  |  | 2 days | `░░░░░░░░░░` 0% |  |
-| 2 | G17 | join's answer travels back to the browser |  |  | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
-| 3 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 4 | puppets/G2 | one shared search: two hooks per collection, the rest inherited |  |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
-| 5 | puppets/G3 | one suite that makes every api call |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 6 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | today | `░░░░░░░░░░` 0% |  |
-| 7 | transport/R16 | the log must be able to PROVE what it claims |  |  | today | `░░░░░░░░░░` 0% |  |
-| 8 | puppets/G10 | the face door and the puppet group | G14 (proposed), G17 (proposed) |  | today | `░░░░░░░░░░` 0% |  |
-| 9 | G18 | the app process serves its owner node over a named pipe, not a TCP port |  |  | today | `░░░░░░░░░░` 0% |  |
+| 1 | G17 | join's answer travels back to the browser |  |  | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
+| 2 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 3 | puppets/G2 | one shared search: two hooks per collection, the rest inherited |  |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
+| 4 | puppets/G3 | one suite that makes every api call |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 5 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | today | `░░░░░░░░░░` 0% |  |
+| 6 | transport/R16 | the log must be able to PROVE what it claims |  |  | today | `░░░░░░░░░░` 0% |  |
+| 7 | puppets/G10 | the face door and the puppet group | G14 (proposed), G17 (proposed) |  | today | `░░░░░░░░░░` 0% |  |
+| 8 | G18 | the app process serves its owner node over a named pipe, not a TCP port |  |  | today | `░░░░░░░░░░` 0% |  |
 
-**How the order was made.** 9 of 9 owed items have no dependency you have accepted, so they are ordered by age alone — 1 proposed one above waits for your yes or no.
+**How the order was made.** 8 of 8 owed items have no dependency you have accepted, so they are ordered by age alone — 1 proposed one above waits for your yes or no.
 
 *Percentages are the guesses the declarations carry — `testSupport`:
 "printed as guesses… to be argued with during a design sitting, not to

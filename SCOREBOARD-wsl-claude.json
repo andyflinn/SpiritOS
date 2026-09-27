@@ -1,33 +1,21 @@
 {
   "box": "wsl-claude",
-  "commit": "8ccc194",
+  "commit": "31a5220",
   "stale": false,
-  "head": "8ccc194",
+  "head": "31a5220",
   "measured": {
     "suites": 171,
-    "green": 3186,
-    "red": 2,
-    "unhappy": 2
+    "green": 3189,
+    "red": 0,
+    "unhappy": 0
   },
   "rows": [
-    {
-      "kind": "to-do",
-      "id": "public-app-server/G8",
-      "handle": "public-app-server/G8",
-      "title": "layer 1 splits by PROMISE, and the stable half is named",
-      "rank": 1,
-      "frees": 0,
-      "waitsOn": [],
-      "owedSince": "2026-09-24",
-      "there": 0,
-      "blocked": ""
-    },
     {
       "kind": "to-do",
       "id": "public-app-server/G17",
       "handle": "G17",
       "title": "join's answer travels back to the browser",
-      "rank": 2,
+      "rank": 1,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-24",
@@ -39,7 +27,7 @@
       "id": "puppets/G1",
       "handle": "puppets/G1",
       "title": "a response bound exists, and both paths obey it",
-      "rank": 3,
+      "rank": 2,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-25",
@@ -51,7 +39,7 @@
       "id": "puppets/G2",
       "handle": "puppets/G2",
       "title": "one shared search: two hooks per collection, the rest inherited",
-      "rank": 4,
+      "rank": 3,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-25",
@@ -63,7 +51,7 @@
       "id": "puppets/G3",
       "handle": "puppets/G3",
       "title": "one suite that makes every api call",
-      "rank": 5,
+      "rank": 4,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-25",
@@ -75,7 +63,7 @@
       "id": "transport/R12",
       "handle": "transport/R12",
       "title": "an app can reply, and a reply is the only evidence of being delivered",
-      "rank": 6,
+      "rank": 5,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-26",
@@ -87,7 +75,7 @@
       "id": "transport/R16",
       "handle": "transport/R16",
       "title": "the log must be able to PROVE what it claims",
-      "rank": 7,
+      "rank": 6,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-26",
@@ -99,7 +87,7 @@
       "id": "puppets/G10",
       "handle": "puppets/G10",
       "title": "the face door and the puppet group",
-      "rank": 8,
+      "rank": 7,
       "frees": 0,
       "waitsOn": [
         {
@@ -122,7 +110,7 @@
       "id": "public-app-server/G18",
       "handle": "G18",
       "title": "the app process serves its owner node over a named pipe, not a TCP port",
-      "rank": 9,
+      "rank": 8,
       "frees": 0,
       "waitsOn": [],
       "owedSince": "2026-09-27",
@@ -154,13 +142,7 @@
           ]
         }
       ],
-      "moves": [
-        {
-          "id": "public-app-server/G17",
-          "from": 2,
-          "to": 1
-        }
-      ]
+      "moves": []
     }
   ]
 }
