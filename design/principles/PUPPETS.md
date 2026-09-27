@@ -447,6 +447,39 @@ Addressed as a `wire` namespace: `verbTable.js:74` makes `wire` the
 client's failure contract and a namespace is uniformly one or the other,
 so a remote caller must name the proxy rather than the local verb.
 
+**THE WRITTEN SHAPE OF G4, awaiting Andy's approval** (drafted by claude,
+checked by wsl-claude against G7: "your 2 and 5 are my 3 and 4 seen from the
+sending end"). `peerOwnerPost()` is the owner door's sending end:
+1. **What.** One function on the owner's node that sends ONE command to ONE
+   of his puppets. `{verb, body}` is signed with his identity key
+   (`relayAuth` `commandMessage`, which puts the recipient key and the
+   envelope id inside the signed bytes), wrapped as a system packet
+   addressed to no app, and posted through the one relay chooser (742c5c1).
+   The node signs, and the shell holds no key.
+2. **Reach.** The verb may be in `app:<name>` or in a node group the puppet
+   carries (G7.4). It never assumes the whole node api. An uncarried group
+   comes back refused by name, and the caller is handed that refusal, not a
+   network failure.
+3. **The answer.** The puppet replies with `re` set to the command's hash.
+   The owner's node accepts ONLY a reply whose hash matches a command it
+   sent (transport/R12, *"where a hash must match"*), and the caller gets
+   `{status, body}`.
+4. **The caller's view.** The same verb it would call locally, plus the
+   puppet's key: there is no puppet api to learn (*"It's a remote
+   control"*). On the wire it is the `wire` namespace (above), so a remote
+   failure keeps the failure contract honest.
+5. **The only route to node groups.** The face door never reaches them
+   (G7.2).
+
+**Verify:** a signed command to a carried group is answered, and one to an
+uncarried group is refused by name. A reply is refused if it carries a
+foreign hash, if it comes from a different puppet than the one the command
+went to, or if it arrives a second time (a reply answers once). A command
+nobody answers comes back as a NAMED timeout within the wait, and a reply
+after that is refused and never handed to the next caller (wsl-claude's
+three). A page cannot mint a command, because it holds no key. Two commands
+in flight each get their own answer. It waits on G7.
+
 ### G5 — the owner switch in a puppet
 
 **Verify:** `spirit/test/ownerCommand.js` and `spirit/test/puppetsPending.js`.
@@ -574,6 +607,42 @@ shape as it stands:
 
 **Building is a separate go.** G7 waits on G6 (accepted), and wsl-claude
 tests it.
+
+**THE WRITTEN SHAPE OF G7, awaiting Andy's approval** (drafted by
+wsl-claude, whose row it is, and checked against G4):
+1. **The app group.** An app's flat commands are one group, `app:<name>`,
+   declared ONCE in its manifest (public-app-server/G14). The prefix means
+   it can never take a node group's name (`verbTable.js:97-98` refuses a
+   double claim).
+2. **The face door sees only the app group.** appFaceApp wraps the visitor's
+   request in a standard package, trusted by the route Andy granted (G17).
+   The owner node removes ONLY that carrier layer (the domain and the route
+   it rode) and hands the app's packet to the app's handler UNREAD. The node
+   may encode an app packet but never decode one (`nodeKnowsNoApps.js`).
+   Andy: *"ah the appFaceApp wraps the face-request into a standart package,
+   which the owner node unpacks und only hands the app portion to the
+   handler"*, and *"correct, the appFaceApp, doesn't know apps, that's
+   funny"*. So the rest of the tree is not refused, it is not there: a face
+   request naming a node verb answers byte for byte as an unknown verb does.
+3. **The owner door.** Commands the owner signs (`ownerCommandIn`, G5,
+   checked against `api.owner()`, G6) may reach the app group AND the node
+   groups this context carries. It is the only route to node groups.
+4. **Carried here, or not.** Each context declares in one place (verbTable's
+   per-namespace declaration) which node groups it carries. An owner command
+   for one it does not carry is refused BY NAME (`not-carried-here`), never
+   silently.
+5. **The shim narrows.** The loopback shim now serves only the owner door:
+   it runs a carried node group's handler with the unwrapped body and
+   catches the answer, with `server.js`'s dispatch unchanged. The face door
+   needs no shim.
+
+**Verify:** a face request for a node verb answers exactly as an unknown
+verb does; a face request for an app verb is answered; the owner node
+forwards the app portion byte for byte and `nodeKnowsNoApps` stays green;
+an owner-signed command reaches a carried group, and is refused by name for
+one not carried; an unsigned or wrongly signed command is refused (G5); a
+verb in the manifest answers through both doors, and one absent from it
+through neither.
 
 So G7 no longer means *"`server.js:921`'s dispatch runs unchanged"*. It
 dispatches into the app's group, beside the node groups the context carries.
