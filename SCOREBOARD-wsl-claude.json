@@ -1,8 +1,8 @@
 {
   "box": "wsl-claude",
-  "commit": "e5b059d",
+  "commit": "2a001c3",
   "stale": false,
-  "head": "e5b059d",
+  "head": "2a001c3",
   "measured": {
     "suites": 175,
     "green": 3369,
@@ -12,26 +12,26 @@
   "rows": [
     {
       "kind": "to-do",
-      "id": "transport/R16",
-      "handle": "transport/R16",
-      "title": "the log must be able to PROVE what it claims",
+      "id": "public-app-server/G17",
+      "handle": "G17",
+      "title": "join's answer travels back to the browser",
       "rank": 1,
       "frees": 1,
       "waitsOn": [],
-      "owedSince": "2026-09-26",
-      "there": 0,
+      "owedSince": "2026-09-24",
+      "there": 70,
       "blocked": ""
     },
     {
       "kind": "to-do",
-      "id": "public-app-server/G17",
-      "handle": "G17",
-      "title": "join's answer travels back to the browser",
+      "id": "transport/R16",
+      "handle": "transport/R16",
+      "title": "the log must be able to PROVE what it claims",
       "rank": 2,
-      "frees": 0,
+      "frees": 1,
       "waitsOn": [],
-      "owedSince": "2026-09-24",
-      "there": 70,
+      "owedSince": "2026-09-26",
+      "there": 0,
       "blocked": ""
     },
     {
@@ -86,7 +86,7 @@
         {
           "id": "public-app-server/G17",
           "handle": "G17",
-          "accepted": false
+          "accepted": true
         }
       ],
       "owedSince": "2026-09-27",
@@ -122,39 +122,6 @@
       "owedSince": "2026-09-27",
       "there": 0,
       "blocked": ""
-    },
-    {
-      "kind": "dependency",
-      "id": "dependency/17a6f422963f",
-      "handle": "G17",
-      "title": "join's answer travels back to the browser — is needed first",
-      "rank": 1,
-      "edges": [
-        {
-          "from": "puppets/G10",
-          "to": "public-app-server/G17",
-          "fromHandle": "puppets/G10",
-          "toHandle": "G17"
-        }
-      ],
-      "tree": [
-        {
-          "id": "public-app-server/G17",
-          "under": [
-            {
-              "id": "puppets/G10",
-              "under": []
-            }
-          ]
-        }
-      ],
-      "moves": [
-        {
-          "id": "public-app-server/G17",
-          "from": 2,
-          "to": 1
-        }
-      ]
     }
   ]
 }

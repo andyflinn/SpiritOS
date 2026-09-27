@@ -36,4 +36,8 @@ module.exports = [
   // on what meets its condition, "the database move is the first
   // ('transport/R16' frees it)". His answer covered the rule and this edge.
   { from: 'transport/R19', to: 'transport/R16', state: 'accepted', said: 'go.', at: '2026-09-27' },
+  // The board's proposal row dependency/17a6f422963f, from G10's declared
+  // `after` (puppetsPending.js): the face door and the puppet group need the
+  // reply path back to the browser first.
+  { from: 'puppets/G10', to: 'public-app-server/G17', state: 'accepted', said: 'accepted.', at: '2026-09-27' },
 ];
