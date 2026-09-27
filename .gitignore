@@ -60,6 +60,8 @@ spirit/currentIssues.md
 # what the previous run granted. Caught by wsl-claude before the first
 # push, 2026-09-25. The app folder still ships its manifest and its .js.
 spirit/run/app/appFaceApp/grants.json
+# Its face domain, written at setup (G17, THE ROUTE): a fact about this box.
+spirit/run/app/appFaceApp/face-domain.json
 
 # The fix list an admitted peer writes to. Same class and the same lab
 # hazard: a fixes.md left by one run would be planted into every node

@@ -1367,6 +1367,18 @@ contactBook.syncMarks(ROOT_DIR);
     arrivals: arrivals,
     face: face,
     post: function (relayUrl, toKey, text, hints, how) {
+      // NO RELAY NAMED MEANS THE NODE CHOOSES, as it does for every page's
+      // post (hub.chooseRoute). A booted app never knows which relay a peer
+      // sits on, and appFaceApp posts with '' for exactly that reason; until
+      // now that went to a relay called '' and failed, which its suite, with
+      // a faked post, could not see.
+      if (!relayUrl) {
+        const route = presence ? hub.chooseRoute(presence, toKey) : { unreachable: true };
+        if (!route || route.unreachable || !route.relayUrl) {
+          return Promise.resolve({ ok: false, status: 503, error: 'that peer is not reachable right now' });
+        }
+        return peerRouter.post(route.relayUrl, toKey, text, hints || route.hints, how);
+      }
       return peerRouter.post(relayUrl, toKey, text, hints, how);
     },
     log: function (line) { console.log(line); },

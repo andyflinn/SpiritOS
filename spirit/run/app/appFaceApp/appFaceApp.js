@@ -137,12 +137,167 @@ function decide(api, name, asker) {
   return { ok: true, name: name, at: at };
 }
 
+
+// ── THE FACE ROUTE: STEP 1 OF ANDY'S THREE (public-app-server/G17) ────
+//
+//   Andy, 2026-09-27: "step 1) build and prove the route from browser to
+//   owner-of-subdomain, and back 2) design the last leg. 3) implement the
+//   last leg". And of what the owner answers: "this the owner of the join
+//   subdomain" or "this is NOT the owner of join".
+//
+// Two roles, one file, told apart by what the node hands this app:
+//
+//   ON THE OWNER'S NODE (it holds grants.json): answers 'route?' from
+//   anyone, "mine" when the host's name is granted to this node, "none"
+//   otherwise, and answers 'serve' for a name it owns with the agreed stub,
+//   501 last-leg-not-built, naming itself. The last leg, handing the
+//   request to the app's process, waits for the server-process design.
+//
+//   ON THE VPS PUPPET (the node hands it api.face): claims the visitors,
+//   asks its owner once per host, keeps the answer in RAM (faceRoute's
+//   cache, "at restart, the dance starts anew"), and forwards each request
+//   (appServerPost) to whoever owns the name, waiting for the answer by
+//   hash (appServerReply).
+//
+// THE VPS MATCHES NOTHING: it never reads a name out of a host. Only the
+// owner's node does, against its face domain (face-domain.json, beside
+// grants.json, written at setup).
+const faceRoute = require('../../js/faceRoute.js');
+const FACE_DOMAIN_FILE = 'face-domain.json';
+// The time limits nest inside puppetPost's FACE_WAIT_MS (30 s), so the
+// visitor hears this app's named answer, not the listener's generic one.
+const ROUTE_WAIT_MS = 8000;
+const SERVE_WAIT_MS = 18000;
+// A reply that lands before its wait is registered is held this long
+// (ownerPost's early-answer store, a207e8c).
+const EARLY_KEEP_MS = 5000;
+// Patience for a busy owner (peer.post's patienceMs): shorter than the waits.
+const POST_PATIENCE = { patienceMs: 6000 };
+
+function faceDomainOf(api) {
+  try {
+    const doc = JSON.parse(api.fs.read(FACE_DOMAIN_FILE) || 'null');
+    return (doc && typeof doc.faceDomain === 'string' && doc.faceDomain) || '';
+  } catch (e) { return ''; }
+}
+
+function replyTo(api, message, body) {
+  const made = packet.encode(APP, body, { re: message.hash });
+  if (!made || !made.text) { api.log(APP + ': an answer could not be packed: ' + ((made && made.error) || '')); return; }
+  Promise.resolve(api.post('', message.fromKey, made.text, null, null))
+    .catch(function (e) { api.log(APP + ': an answer could not be posted: ' + ((e && e.message) || e)); });
+}
+
+// The owner's side: which name a host is, and whether this node owns it.
+function ownerOf(api, host) {
+  const name = faceRoute.nameOf(host, faceDomainOf(api));
+  if (!name) return { route: 'none', name: '' };
+  const rows = readGrants(api) || {};
+  const self = typeof api.self === 'function' ? api.self() : '';
+  const row = Object.prototype.hasOwnProperty.call(rows, name) ? rows[name] : null;
+  if (row && self && row.to === self) return { route: 'mine', name: name };
+  // Granted elsewhere, or to nobody: for step 1 both answer "not the owner".
+  // The signed redirect to a member's own node needs the node to sign on
+  // this app's behalf, and waits for the first member face.
+  return { route: 'none', name: name };
+}
+
+function ownerRole(api, message, body) {
+  if (body.verb === 'route?') {
+    replyTo(api, message, Object.assign({ verb: 'route' }, ownerOf(api, body.host)));
+    return true;
+  }
+  if (body.verb === 'serve') {
+    const o = ownerOf(api, body.host);
+    const self = typeof api.self === 'function' ? api.self() : '';
+    const answer = o.route === 'mine'
+      ? { status: 501, body: { ok: false, code: 'last-leg-not-built', name: o.name, node: self } }
+      : { status: 404, body: { ok: false, code: 'no-such-route', name: o.name } };
+    replyTo(api, message, Object.assign({ verb: 'served' }, answer));
+    return true;
+  }
+  return false;
+}
+
+// The VPS side: ask, remember, forward, wait by hash.
+function puppetRole(api) {
+  const waits = Object.create(null);
+  const early = Object.create(null);
+  // Signed redirects are not taken yet (no node signs them), so the cache
+  // is handed a verify that holds nothing: "mine" and "none" are all it keeps.
+  const cache = faceRoute.createRouteCache({ ownerKey: api.owner(), verify: function () { return false; } });
+
+  function waitFor(hash, ms) {
+    return new Promise(function (resolve) {
+      const got = early[hash];
+      if (got && Date.now() - got.at < EARLY_KEEP_MS) { delete early[hash]; resolve(got.message); return; }
+      const timer = setTimeout(function () { delete waits[hash]; resolve(null); }, ms);
+      waits[hash] = function (message) { clearTimeout(timer); delete waits[hash]; resolve(message); };
+    });
+  }
+
+  function arrived(message, re) {
+    if (!re) return false;
+    if (waits[re]) { waits[re](message); return true; }
+    early[re] = { message: message, at: Date.now() };
+    Object.keys(early).forEach(function (h) { if (Date.now() - early[h].at > EARLY_KEEP_MS) delete early[h]; });
+    return true;
+  }
+
+  // Post a body to a key and wait for the one answer carrying its hash.
+  function ask(to, body, ms) {
+    const made = packet.encode(APP, body);
+    if (!made || !made.text) return Promise.resolve({ refused: 'could not be packed' });
+    return Promise.resolve(api.post('', to, made.text, null, POST_PATIENCE)).then(function (sent) {
+      if (!sent || !sent.ok || !sent.hash) return { refused: (sent && (sent.error || sent.status)) || 'not sent' };
+      return waitFor(sent.hash, ms).then(function (message) {
+        if (!message) return { timedOut: true };
+        const info = packet.decode(message.text);
+        return { from: message.fromKey, re: info && info.re, body: info && info.body, hash: sent.hash };
+      });
+    }, function (e) { return { refused: (e && e.message) || String(e) }; });
+  }
+
+  api.face(function (req) {
+    const owner = api.owner();
+    const known = cache.lookup(req.host);
+    const route = known ? Promise.resolve(known) : ask(owner, { verb: 'route?', host: req.host }, ROUTE_WAIT_MS).then(function (a) {
+      if (a.refused) return { refused: a.refused };
+      if (a.timedOut) return { timedOut: true };
+      cache.take(a.body, a.from, a.re, a.hash, req.host);
+      return cache.lookup(req.host) || { refused: 'the owner gave no usable route' };
+    });
+    return route.then(function (r) {
+      if (r.refused) return { status: 502, body: { ok: false, code: 'owner-unreachable', why: String(r.refused) } };
+      if (r.timedOut) return { status: 504, body: { ok: false, code: 'owner-did-not-answer' } };
+      if (r.none) return { status: 404, body: { ok: false, code: 'no-such-route' } };
+      // mine: the owner node owns it; a signed route: its owner does.
+      const target = r.mine ? owner : r.to;
+      return ask(target, { verb: 'serve', host: req.host, method: req.method, path: req.path, body: req.body }, SERVE_WAIT_MS)
+        .then(function (a) {
+          if (a.refused) { cache.drop(req.host); return { status: 502, body: { ok: false, code: 'owner-unreachable', why: String(a.refused) } }; }
+          if (a.timedOut) return { status: 504, body: { ok: false, code: 'owner-did-not-answer' } };
+          if (a.from !== target || !a.body || a.body.verb !== 'served') return { status: 502, body: { ok: false, code: 'bad-answer' } };
+          return { status: Number(a.body.status) || 200, body: a.body.body };
+        });
+    });
+  });
+
+  return arrived;
+}
+
 function mount(api) {
+  // The VPS role exists only where the node hands this app the face.
+  const puppetArrived = typeof api.face === 'function' ? puppetRole(api) : null;
   api.subscribe(function (message) {
     const ask = packet.decode(message && message.text);
     if (!ask || ask.app !== APP) return;
     const body = ask.body;
-    if (!body || body.verb !== 'grant') return;
+    if (!body) return;
+    // An answer to something this node asked, on the VPS.
+    if (puppetArrived && ask.re && puppetArrived(message, ask.re)) return;
+    if (ownerRole(api, message, body)) return;
+    if (body.verb !== 'grant') return;
 
     // THE APP-OWNER'S GATE (Andy: "app provides 1 function, app-owner
     // manages permission list"). The node's front door has already said

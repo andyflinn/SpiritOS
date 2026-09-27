@@ -106,12 +106,15 @@ function createRouteCache(opts) {
   var now = typeof o.now === 'function' ? o.now : function () { return Date.now(); };
   var held = Object.create(null);
 
-  function take(answer, fromKey, re, askedHash) {
+  // `storeAs`: the key to remember it by. The VPS never knows names, only
+  // hosts ("the VPS matches nothing"), so it keeps a route under the host it
+  // asked about; the signature still covers the name inside the answer.
+  function take(answer, fromKey, re, askedHash, storeAs) {
     // ONLY THE OWNER'S ANSWER TO THIS QUESTION COUNTS (wsl-claude): any
     // other node could otherwise pull a name's visitors to itself.
     if (!answer || !o.ownerKey || fromKey !== o.ownerKey) return false;
     if (!askedHash || re !== askedHash) return false;
-    var name = String(answer.name || '');
+    var name = String(storeAs || answer.name || '');
     if (!name) return false;
     if (answer.route === 'none') { held[name] = { none: true, until: now() + NONE_MS }; return true; }
     if (answer.route === 'mine') { held[name] = { mine: true, until: now() + ROUTE_MS }; return true; }
