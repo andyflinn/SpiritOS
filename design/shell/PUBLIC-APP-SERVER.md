@@ -1078,6 +1078,13 @@ exist.**
   it, and a visitor gets its page through the live face. wsl-claude's
   three-node run is the suite.
 
+**A route the face cannot learn is 404, whatever the reason.** Andy,
+2026-09-27, asked whether an owner that cannot be asked should answer
+502/504 ("try again"): *"404. not found"*, and *"that's the owners problem,
+to keep his box online"*. Every way of not knowing where a name lives is
+404 `no-such-route`, with a `why` in the body for the operator:
+`not-granted`, `owner-unreachable` or `owner-did-not-answer`.
+
 *Open:* whether the face should admit a member for everything or only for
 answers to requests it forwarded there. The tree has only whole-key
 admission today.

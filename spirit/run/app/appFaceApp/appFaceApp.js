@@ -347,16 +347,24 @@ function puppetRole(api) {
       });
     }
     const owner = api.owner();
+    // A ROUTE THIS FACE CANNOT LEARN IS NOT FOUND. Andy, 2026-09-27, in Desk
+    // under G17, asked whether an owner that cannot be asked (asleep, or
+    // silent past the wait) should say 502/504, "try again": "404. not
+    // found". So every way of not knowing where a name lives is one answer,
+    // 404, and only the body's `why` tells an operator which it was.
+    function notFound(why) {
+      return { status: 404, body: { ok: false, code: 'no-such-route', why: why } };
+    }
     return resolve(req.host).then(function (r) {
-      if (r.refused) return { status: 502, body: { ok: false, code: 'owner-unreachable', why: String(r.refused) } };
-      if (r.timedOut) return { status: 504, body: { ok: false, code: 'owner-did-not-answer' } };
-      if (r.none) return { status: 404, body: { ok: false, code: 'no-such-route' } };
+      if (r.refused) return notFound('owner-unreachable');
+      if (r.timedOut) return notFound('owner-did-not-answer');
+      if (r.none) return notFound('not-granted');
       // mine: the owner node owns it; a signed route: its owner does.
       const target = r.mine ? owner : r.to;
       return appServerPost(target, { verb: 'serve', host: req.host, method: req.method, path: req.path, body: req.body, type: req.type }, SERVE_WAIT_MS)
         .then(function (a) {
-          if (a.refused) { cache.drop(req.host); return { status: 502, body: { ok: false, code: 'owner-unreachable', why: String(a.refused) } }; }
-          if (a.timedOut) return { status: 504, body: { ok: false, code: 'owner-did-not-answer' } };
+          if (a.refused) { cache.drop(req.host); return notFound('owner-unreachable'); }
+          if (a.timedOut) return notFound('owner-did-not-answer');
           if (a.from !== target || !a.body || a.body.verb !== 'served') return { status: 502, body: { ok: false, code: 'bad-answer' } };
           return { status: Number(a.body.status) || 200, body: a.body.body,
             type: typeof a.body.type === 'string' && a.body.type ? a.body.type : undefined };
