@@ -1181,6 +1181,9 @@ verbs today; they live only in its code.
   requesting member is not allowed."* Any key the front door admits may ask;
   one that may use nothing gets `{}`. A stranger's packet never gets that
   far (wsl-claude's condition 3).
+- **Its wire is peerPost.** Andy: *"peerPost('api')"*, and *"peerPost is the
+  wire to the api introspection, NOT the face"*. A member asks `api`, and
+  calls a leaf, with an ordinary packet to the owner's node.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
