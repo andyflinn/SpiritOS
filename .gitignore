@@ -168,8 +168,10 @@ spirit/run/app/natter/relays.json
 # by the app in its own folder because "they must keep their own logs".
 # His words, never pushed.
 spirit/run/app/desk/log.json
+spirit/run/app/desk/log-*.json
 # And the lines he typed, which he moves into his vault by hand.
 spirit/run/app/desk/voice.jsonl
+spirit/run/app/desk/voice-*.jsonl
 # And what he has already seen, for the red * marks.
 spirit/run/app/desk/seen.json
 

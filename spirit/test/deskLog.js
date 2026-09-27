@@ -441,7 +441,49 @@ function unseenIsMarked() {
   });
 }
 
+function theLogIsChunked() {
+  test.subHeading('The log is written in chunks, so no save outgrows one request');
+  // Found live: "Desk could not write its log: failed to save file: 413",
+  // the whole log rewritten on every arrival until it passed BODY_MAX.
+  const files = {};
+  const desk = mountDesk({ files: files });
+  const long = 'x'.repeat(400);
+  for (let i = 0; i < 60; i += 1) {
+    desk.arrive({ from: 'wsl-claude', kind: 'note', text: long + i, todo: 'puppets/G2' },
+      { hash: 'c-' + i, fromKey: WSL, sentAt: '2026-09-27T06:00:' + String(i).padStart(2, '0') + 'Z' });
+  }
+  return settle().then(function () { return settle(); }).then(function () {
+    const names = Object.keys(files).filter(function (n) { return /^log(-\d+)?\.json$/.test(n); });
+    const biggest = Math.max.apply(null, names.map(function (n) { return Buffer.byteLength(files[n]); }));
+    const all = [];
+    names.forEach(function (n) { JSON.parse(files[n]).forEach(function (m) { all.push(m.key); }); });
+    if (names.length > 1 && biggest <= 9400 && new Set(all).size === 60 && all.length === 60) {
+      test.check('60 long lines land in ' + names.length + ' files, the biggest ' + biggest + ' bytes, each line exactly once');
+    } else {
+      test.fail('chunks ' + JSON.stringify(names) + ', biggest ' + biggest + ', lines ' + all.length + '/' + new Set(all).size);
+    }
+    // A fresh mount reads every chunk back.
+    const again = mountDesk({ files: files });
+    // The chunk still being written is the highest number; log.json is 0.
+    const numberOf = function (n) { const m = /^log-(\d+)\.json$/.exec(n); return m ? Number(m[1]) : 0; };
+    const lastName = names.slice().sort(function (a, b) { return numberOf(a) - numberOf(b); })[names.length - 1];
+    const sealed = names.filter(function (n) { return n !== lastName; }).map(function (n) { return [n, files[n]]; });
+    again.arrive({ from: 'wsl-claude', kind: 'note', text: 'one more', todo: 'puppets/G2' }, { hash: 'c-new', fromKey: WSL, sentAt: '2026-09-27T06:01:00Z' });
+    return settle().then(function () {
+      const back = [];
+      Object.keys(files).filter(function (n) { return /^log(-\d+)?\.json$/.test(n); })
+        .forEach(function (n) { JSON.parse(files[n]).forEach(function (m) { back.push(m.key); }); });
+      if (back.length === 61 && new Set(back).size === 61) test.check('a remount reads every chunk, and the next line is written once');
+      else test.fail('after remount: ' + back.length + ' lines, ' + new Set(back).size + ' distinct');
+      const untouched = sealed.every(function (pair) { return files[pair[0]] === pair[1]; });
+      if (untouched) test.check('a sealed chunk is never written again');
+      else test.fail('a sealed chunk was rewritten');
+    });
+  });
+}
+
 arrivalsAndSendsAreLogged()
+  .then(theLogIsChunked)
   .then(unseenIsMarked)
   .then(teamGoesToEveryAgent)
   .then(voiceHoldsWhatHeTyped)

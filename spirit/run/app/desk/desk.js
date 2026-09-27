@@ -114,14 +114,58 @@ var deskSaving = Promise.resolve();
 // hold a list, and a plain rewrite would let the last save drop the other
 // tab's lines. So a save first folds in whatever the file holds that this
 // page does not.
+//
+// ── IN CHUNKS, BECAUSE A SAVE IS ONE REQUEST AND A REQUEST IS BOUNDED ──
+//
+// Found live, Andy's Desk, 2026-09-27: "Desk could not write its log:
+// failed to save file: 413". The whole log was rewritten on every
+// arrival, and at 21 KB it no longer fitted in one request (BODY_MAX,
+// 23552 bytes, with the save's own envelope and escaping on top). So the
+// log is a run of files: log.json, then log-1.json, log-2.json, ... Only
+// the LAST is ever rewritten, and a chunk is sealed once it holds about
+// DESK_CHUNK_BYTES; the next line starts the next file. Every save is
+// then small, however long the conversation gets.
+var DESK_CHUNK_BYTES = 9000;
+function deskChunkName(i) { return i === 0 ? DESK_LOG : 'log-' + i + '.json'; }
+var deskLastChunk = 0;                          // the one still being written
+var deskSealedKeys = Object.create(null);       // keys living in earlier chunks
+
+function deskUtf8(text) {
+  var n = 0;
+  for (var i = 0; i < text.length; i += 1) {
+    var c = text.charCodeAt(i);
+    if (c < 0x80) n += 1;
+    else if (c < 0x800) n += 2;
+    else if (c >= 0xd800 && c < 0xdc00) { n += 4; i += 1; }
+    else n += 3;
+  }
+  return n;
+}
+
 function deskSave() {
   if (deskReadOnly) return deskSaving;
   deskSaving = deskSaving.then(function () {
     deskLoadLog();
     if (deskReadOnly) return null;
-    return deskApi.fs.saveFile(DESK_LOG, JSON.stringify(deskMessages));
+    var open = deskMessages.filter(function (m) { return !deskSealedKeys[m.key]; });
+    var writes = Promise.resolve();
+    // Seal full chunks first, oldest lines first, each holding at least
+    // one line, so a single long line still lands somewhere.
+    while (deskUtf8(JSON.stringify(open)) > DESK_CHUNK_BYTES && open.length > 1) {
+      var take = 1;
+      while (take < open.length && deskUtf8(JSON.stringify(open.slice(0, take + 1))) <= DESK_CHUNK_BYTES) take += 1;
+      var sealed = open.slice(0, take);
+      writes = writes.then(deskWriteChunk(deskChunkName(deskLastChunk), JSON.stringify(sealed)));
+      sealed.forEach(function (m) { deskSealedKeys[m.key] = true; });
+      deskLastChunk += 1;
+      open = open.slice(take);
+    }
+    return writes.then(deskWriteChunk(deskChunkName(deskLastChunk), JSON.stringify(open)));
   }).catch(function (e) { deskError = 'Desk could not write its log: ' + e.message; deskDraw(); });
   return deskSaving;
+}
+function deskWriteChunk(name, text) {
+  return function () { return deskApi.fs.saveFile(name, text); };
 }
 
 // ── WHAT ANDY TYPED, FOR HIS VAULT, IN THIS APP'S OWN FOLDER ──────────
@@ -158,11 +202,17 @@ function deskVoice(msgs) {
     lines.push(JSON.stringify({ text: t, day: String(m.at || new Date().toISOString()).slice(0, 10) }));
   });
   if (!lines.length) return;
+  // THE SAME BOUND AS THE LOG: voice.jsonl, then voice-2.jsonl, ... when
+  // one is full. He moves every voice*.jsonl he finds.
   deskSaving = deskSaving.then(function () {
-    var held = '';
-    try { held = deskApi.fs.loadFile(DESK_VOICE) || ''; } catch (e) { held = ''; }
-    if (held && held.charAt(held.length - 1) !== '\n') held += '\n';
-    return deskApi.fs.saveFile(DESK_VOICE, held + lines.join('\n') + '\n');
+    var add = lines.join('\n') + '\n';
+    for (var i = 1; ; i += 1) {
+      var name = i === 1 ? DESK_VOICE : 'voice-' + i + '.jsonl';
+      var held = '';
+      try { held = deskApi.fs.loadFile(name) || ''; } catch (e) { held = ''; }
+      if (held && held.charAt(held.length - 1) !== '\n') held += '\n';
+      if (!held || deskUtf8(held + add) <= DESK_CHUNK_BYTES) return deskApi.fs.saveFile(name, held + add);
+    }
   }).catch(function (e) { deskError = 'Desk could not write ' + DESK_VOICE + ': ' + e.message; deskDraw(); });
 }
 
@@ -513,14 +563,27 @@ function deskDraw() {
 // READ ONCE, AT MOUNT. The log is Desk's own file; a missing one is a Desk
 // that has not heard anything yet, and a broken one is said, not drawn as
 // an empty board.
+//
+// From the chunk still being written onward, until a file is missing: at
+// mount that is every chunk, and before a save it is only what another
+// tab may have added since. Every chunk before the last one found is
+// sealed, and its lines are never written again.
 function deskLoadLog() {
-  var raw = null;
-  try { raw = deskApi.fs.loadFile(DESK_LOG); } catch (e) { raw = null; }
-  if (!raw) return;
-  var held = null;
-  try { held = JSON.parse(raw); } catch (e) { held = null; }
-  if (!Array.isArray(held)) { deskError = 'Desk\'s log (' + DESK_LOG + ') does not parse; it was left as it is.'; deskReadOnly = true; return; }
-  held.forEach(deskFold);
+  for (var i = deskLastChunk; ; i += 1) {
+    var name = deskChunkName(i);
+    var raw = null;
+    try { raw = deskApi.fs.loadFile(name); } catch (e) { raw = null; }
+    if (!raw) return;
+    var held = null;
+    try { held = JSON.parse(raw); } catch (e) { held = null; }
+    if (!Array.isArray(held)) { deskError = 'Desk\'s log (' + name + ') does not parse; it was left as it is.'; deskReadOnly = true; return; }
+    held.forEach(deskFold);
+    var next = null;
+    try { next = deskApi.fs.loadFile(deskChunkName(i + 1)); } catch (e) { next = null; }
+    if (!next) { deskLastChunk = i; return; }
+    // A later chunk exists only once this one was sealed.
+    held.forEach(function (m) { if (m && m.key) deskSealedKeys[m.key] = true; });
+  }
 }
 // A LOG THAT DID NOT PARSE IS NEVER OVERWRITTEN by the next arrival's save.
 var deskReadOnly = false;
