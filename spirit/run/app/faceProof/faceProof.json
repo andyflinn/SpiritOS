@@ -6,7 +6,7 @@
   "intrinsic": false,
   "owner": "system",
 
-  "face": "hello",
+  "serves": true,
 
   "surface": ["verb"],
   "utilities": [],

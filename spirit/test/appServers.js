@@ -8,7 +8,7 @@
 // its script (javascript) and one verb (a POST, json), the way appFaceApp on
 // the owner's node asks it through api.toLocalApp. The whole route, browser
 // to owner and back, is faceRouteWorld.js; the test list agreed for the last
-// leg is wsl-claude's (faceRoutePending.js and what replaces it).
+// leg is wsl-claude's (faceLastLeg.js).
 
 const fs = require('fs');
 const os = require('os');
@@ -49,33 +49,37 @@ test.subHeading('The node names each pipe, and two nodes on one box never share 
   }
 })();
 
-test.subHeading('The manifest says which app serves a name, and nothing else does');
+test.subHeading('An app says it serves, and the node knows it by its own name only');
 (function () {
   const root = tempRoot({
-    alpha: { face: 'hello' },
-    beta: { face: 'hello' },
-    gamma: { face: 'Not A Label' },
-    delta: { boots: true },
-    epsilon: { face: 'shop' },
+    alpha: { serves: true },
+    beta: { serves: 'yes' },
+    gamma: { boots: true },
+    delta: { serves: true, face: 'hello' },
   });
-  const said = [];
-  const faces = appServers.readFaces(root, function (line) { said.push(line); });
-  if (faces.hello === 'alpha' && faces.shop === 'epsilon' && Object.keys(faces).length === 2) {
-    test.check('"face": "<name>" in an app\'s manifest serves that name; no face, or one no visitor could type, serves none');
+  const apps = appServers.readServers(root);
+  if (apps.join(',') === 'alpha,delta') {
+    test.check('"serves": true starts a server; anything else, "yes" included, starts none');
   } else {
-    test.fail('faces read: ' + JSON.stringify(faces));
-  }
-  if (said.some(function (l) { return /beta/.test(l) && /hello/.test(l) && /not started/.test(l); })) {
-    test.check('a second app naming a face already served is not started, and the log says which');
-  } else {
-    test.fail('no line about the second claimant: ' + JSON.stringify(said));
+    test.fail('servers read: ' + JSON.stringify(apps));
   }
   fs.rmSync(root, { recursive: true, force: true });
 })();
 
-test.subHeading('None on a puppet, one server job per face elsewhere');
+// THE NODE HAS NO FACE VOCABULARY. Andy, 2026-09-27: "the core only knows
+// about puppets (nodes owned by nodes, not people). the face-name/app-or-member
+// table must be owned by appFaceApp". The first version read a 'face' field
+// out of every manifest; this keeps it from drifting back.
 (function () {
-  const root = tempRoot({ hello: { face: 'hello' } });
+  const src = fs.readFileSync(path.join(RUN, 'js', 'appServers.js'), 'utf8')
+    .split(/\r?\n/).filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
+  if (!/face/i.test(src)) test.check('appServers.js has no face vocabulary outside its comments');
+  else test.fail('appServers.js code mentions a face: ' + (src.match(/.*face.*/i) || [''])[0].trim());
+})();
+
+test.subHeading('None on a puppet, one server job per serving app elsewhere');
+(function () {
+  const root = tempRoot({ hello: { serves: true } });
   const started = [];
   const s = appServers.createAppServers({
     rootDir: root, platform: 'linux', log: function () {},
@@ -104,7 +108,7 @@ test.subHeading('None on a puppet, one server job per face elsewhere');
 
 function refusalsByName() {
   test.subHeading('Every link that fails says which, by name');
-  const root = tempRoot({ hello: { face: 'hello' } });
+  const root = tempRoot({ hello: { serves: true } });
   let answer = null;
   const s = appServers.createAppServers({
     rootDir: root, platform: 'linux', log: function () {}, startServerJob: function () { return {}; },
@@ -163,12 +167,12 @@ function aRealHop() {
   });
   const hop = { child: null };
   s.startAll();
-  if (s.faces().indexOf('hello') === -1) {
-    test.fail('app/faceProof does not name the face "hello"');
+  if (s.apps().indexOf('faceProof') === -1) {
+    test.fail('app/faceProof does not say "serves": true');
     return Promise.resolve();
   }
   function ready(tries) {
-    return s.toLocalApp('hello', { method: 'GET', path: '/' }).then(function (r) {
+    return s.toLocalApp('faceProof', { method: 'GET', path: '/' }).then(function (r) {
       if (r.status === 200 || tries <= 0) return r;
       return new Promise(function (res) { setTimeout(res, 250); }).then(function () { return ready(tries - 1); });
     });
@@ -179,11 +183,11 @@ function aRealHop() {
     } else {
       test.fail('GET /: ' + JSON.stringify({ status: page.status, type: page.type }));
     }
-    return s.toLocalApp('hello', { method: 'GET', path: '/ask.js' });
+    return s.toLocalApp('faceProof', { method: 'GET', path: '/ask.js' });
   }).then(function (script) {
     if (script.status === 200 && /javascript/.test(script.type)) test.check('GET /ask.js is its script, typed as javascript');
     else test.fail('GET /ask.js: ' + JSON.stringify({ status: script.status, type: script.type }));
-    return s.toLocalApp('hello', { method: 'POST', path: '/api/spirit', body: JSON.stringify({ verb: 'app.state' }), type: 'application/json' });
+    return s.toLocalApp('faceProof', { method: 'POST', path: '/api/spirit', body: JSON.stringify({ verb: 'app.state' }), type: 'application/json' });
   }).then(function (verb) {
     let said = null;
     try { said = JSON.parse(verb.body); } catch (e) { said = null; }
@@ -201,7 +205,7 @@ function aRealHop() {
   }).then(function (ended) {
     if (ended) test.check('an app server exits when the channel to its node closes, so a dead node leaves no orphan on the pipe');
     else { test.fail('the app server outlived its node\'s channel'); hop.child.kill(); }
-    return s.toLocalApp('hello', { method: 'GET', path: '/' });
+    return s.toLocalApp('faceProof', { method: 'GET', path: '/' });
   }).then(function (after) {
     if (after.status === 503 && after.body && after.body.code === 'app-not-running') {
       test.check('with nothing on the pipe, the node answers app-not-running at once');

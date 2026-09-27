@@ -644,9 +644,9 @@ define('answer-too-large', {
 // far end of the face reads which one, never a hang.
 define('app-not-served', {
   status: 404, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['no app on this node serves that name'],
-  note: 'No manifest on the owner\'s box names this face ("face": "<name>"), though ' +
-    'the name is granted to it.',
+  texts: ['no app by that name runs a server here'],
+  note: 'No app on this node by that name says "serves": true in its manifest, so ' +
+    'nothing was started for it.',
 });
 define('app-request-too-large', {
   status: 413, presence: NONE, retry: 'no', fault: 'caller',

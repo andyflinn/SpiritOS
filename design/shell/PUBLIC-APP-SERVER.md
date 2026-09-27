@@ -993,13 +993,20 @@ we're only about to prove that we can connect any wild-card domain to a
 server process"*. His rulings, in Desk under G17: *"the go is officail. also:
 i explicitly permit the two new/proposed interfaces/api' for communication
 from node to appserver"*, then *"Go. and two verbs approved."*
-- **Which app serves a name:** its own manifest, `"face": "hello"`. The node
-  reads its own manifests, and `grants.json` stays `{ to }`. A second app
-  naming the same face is not started, and the log says which
-  (`appServers.js`, `readFaces`).
+- **Which app serves a name: appFaceApp's own table, never the node's.** A
+  grant row names it: `hello: { to: <key>, app: 'faceProof' }`. An app's
+  manifest says only `"serves": true`, and the node knows it by its app
+  name. Andy, 2026-09-27, ruling on wsl-claude's split: *"correct. the core
+  only knows about puppets (nodes owned by nodes, not people). the
+  face-name/app-or-member table must be owned by appFaceApp, not by the
+  puppet-infrastructure."* It was first built with a `"face": "hello"` field
+  that the node read, which put appFaceApp's knowledge into the node;
+  `appServers.js` now fails a check if face vocabulary returns. A granted
+  name with no `app` answers 404 `no-such-route`, why `no-app`.
+  `face-owner.js --app <name>` writes the row's app.
 - **The server process:** a third job kind, `'server'`, beside `'permanent'`
   and `'process'` (`jobs.startServerJob`). The node starts one per such
-  manifest at boot and starts it again when it exits, with the wait doubling
+  serving app at boot and starts it again when it exits, with the wait doubling
   from 1 s to 60 s. Its heap is capped (128 MB). It is today's `appServer.js`
   (`node js/server.js --app <name> --pipe <path>`). It is started over an IPC
   channel, so it exits when its node dies and no orphan keeps the pipe.
@@ -1020,8 +1027,8 @@ from node to appserver"*, then *"Go. and two verbs approved."*
   504 (the door's 12 s nests inside appFaceApp's 18 s, which nests inside
   puppetPost's 30 s), and `app-answer-too-large` 502. The answer must fit one
   sealed packet, half of `SEALED_MAX`.
-- **The proof app is `app/faceProof`** (not `app/hello`: G13 keeps that sample name ruled out beside `app/starter`), a page and one verb (`app.state`), face
-  `hello`. It is proven on a pipe by `spirit/test/appServers.js`; the route,
+- **The proof app is `app/faceProof`** (not `app/hello`: G13 keeps that sample name ruled out beside `app/starter`), a page and one verb (`app.state`),
+  granted the name `hello`. It is proven on a pipe by `spirit/test/appServers.js`; the route,
   browser to owner and back, by `faceRouteWorld.js`.
 - **Not designed, on purpose:** a local face for an app server, and `join`
   itself (Andy: *"that's acceptable and expected"*).

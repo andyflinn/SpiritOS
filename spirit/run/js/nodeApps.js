@@ -393,15 +393,17 @@ function mountAll(opts) {
           ? function (handler) { return face.claim(name, handler); }
           : undefined,
         // THE HOP TO AN APP SERVER ON THIS BOX (appServers.js, G17's last
-        // leg): toLocalApp(name, { method, path, body, type }) answers
-        // { status, body, type }, named refusals included. A booted app may
+        // leg): toLocalApp(appName, { method, path, body, type }) answers
+        // { status, body, type }, named refusals included. BY APP NAME: which
+        // app answers a visitor is appFaceApp's table, never the node's
+        // (Andy: "the core only knows about puppets"). A booted app may
         // not reach for http itself (appFaceGrant.js), so the node makes
         // this one hop for it. A node verb by Andy's own gate: "i explicitly
         // permit the two new/proposed interfaces/api' for communication
         // from node to appserver" (2026-09-27, Desk, G17). Absent on a node
         // that starts no app servers.
         toLocalApp: servers && typeof servers.toLocalApp === 'function'
-          ? function (faceName, request) { return servers.toLocalApp(faceName, request); }
+          ? function (appName, request) { return servers.toLocalApp(appName, request); }
           : undefined,
         log: log,
       });

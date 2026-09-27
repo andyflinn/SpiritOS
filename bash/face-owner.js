@@ -9,7 +9,7 @@
 //   his node's own door, so he types one line on each machine.
 //
 //   node bash/face-owner.js <FACE_NODE_KEY> [--node http://127.0.0.1:65432]
-//                           [--face-domain face.spirit.andyflinn.com] [--name join]
+//                           [--face-domain face.spirit.andyflinn.com] [--name join] [--app faceProof]
 //
 // FACE_NODE_KEY is the key face-install printed at its end. Everything goes
 // through doors this node already has, never a new verb (a new node verb
@@ -34,6 +34,9 @@ function flag(name, fallback) {
 const NODE = String(flag('--node', 'http://127.0.0.1:65432')).replace(/\/+$/, '');
 const FACE_DOMAIN = String(flag('--face-domain', 'face.spirit.andyflinn.com'));
 const NAME = String(flag('--name', 'join'));
+// Which app on this box answers the name: a row's `app` in appFaceApp's own
+// table (the node knows apps by name only). Absent keeps what the row had.
+const APP = String(flag('--app', ''));
 const FACE_KEY = String(args[0] || '').trim();
 
 function say(line) { console.log('==> ' + line); }
@@ -44,6 +47,7 @@ function good(r) { return r && r.status >= 200 && r.status < 300; }
 
 if (!/^MCow/.test(FACE_KEY)) die('give the face node\'s key (MCow...), the one face-install printed at its end');
 if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(NAME)) die('--name must be one DNS label, e.g. join');
+if (APP && !/^[A-Za-z0-9_-]{1,64}$/.test(APP)) die('--app must be an app folder name, e.g. faceProof');
 
 async function verb(body) {
   let res;
@@ -107,14 +111,16 @@ async function verb(body) {
     die('"' + NAME + '" is already granted to another key (' + String(before.to).slice(0, 24)
       + '...). Nothing was changed; free it first if you mean to take it back.');
   }
-  doc.names[NAME] = Object.assign({}, before || {}, { to: self });
+  doc.names[NAME] = Object.assign({}, before || {}, { to: self }, APP ? { app: APP } : {});
   const grantSaved = await verb({
     verb: 'fs.save', path: 'app/appFaceApp/grants.json', content: JSON.stringify(doc, null, 2) + '\n',
   });
   if (!good(grantSaved)) die('could not write grants.json (' + grantSaved.status + ' ' + grantSaved.text + ')');
-  ok('"' + NAME + '" -> your node' + (before ? ' (it already was; kept)' : ''));
+  ok('"' + NAME + '" -> your node' + (APP ? ', answered by the app ' + APP : '') + (before ? ' (it already was; kept)' : ''));
 
   say('done. Test from anywhere:');
   console.log('    curl -sS https://' + NAME + '.' + FACE_DOMAIN + '/');
-  console.log('    expect 501 last-leg-not-built naming your key: the route reached you and came back.');
+  console.log(APP
+    ? '    expect the page of the app ' + APP + ', served from your box.'
+    : '    expect 404 no-such-route, why no-app: the route reached you and came back, and no app answers it yet (--app <name>).');
 }());

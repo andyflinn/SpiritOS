@@ -77,6 +77,13 @@ const packet = require('../../js/client/packet.js');
 
 const NAME_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
 const DATASET = 'grants.json';
+// WHICH APP ON THE HOLDER'S BOX ANSWERS A NAME: a row's optional `app`, the
+// app folder whose server the owner node hands a visitor's request to.
+// THIS TABLE IS APPFACEAPP'S AND NOBODY ELSE'S. Andy, 2026-09-27: "the core
+// only knows about puppets (nodes owned by nodes, not people). the
+// face-name/app-or-member table must be owned by appFaceApp, not by the
+// puppet-infrastructure." The node knows apps by their own names only.
+const APP_RE = /^[A-Za-z0-9_-]{1,64}$/;
 
 // The envelope this app answers to. Read by THIS file, never by the
 // node — `nodeApps.js` hands every booted app every admitted arrival
@@ -106,7 +113,7 @@ function writeGrants(api, names) {
 // The whole of the decision. Separated from the wire so the rule can be
 // read without reading the plumbing, and so a later caller cannot reach
 // the plumbing without passing through the rule.
-function decide(api, name, asker) {
+function decide(api, name, asker, app) {
   if (!NAME_RE.test(String(name || ''))) {
     return { ok: false, code: 'bad-request', name: name, why: 'a name is 1-63 characters of a-z, 0-9 and -, not starting or ending with -' };
   }
@@ -133,6 +140,7 @@ function decide(api, name, asker) {
   }
   const at = new Date().toISOString();
   names[name] = { to: asker, at: at };
+  if (typeof app === 'string' && APP_RE.test(app)) names[name].app = app;
   writeGrants(api, names);
   return { ok: true, name: name, at: at };
 }
@@ -205,12 +213,17 @@ function ownerOf(api, host) {
   const rows = readGrants(api) || {};
   const row = Object.prototype.hasOwnProperty.call(rows, name) ? rows[name] : null;
   if (!row || !row.to) return { route: 'none', name: name };
-  return { route: 'owner', name: name, to: row.to };
+  return { route: 'owner', name: name, to: row.to, app: typeof row.app === 'string' ? row.app : '' };
 }
 
 function ownerRole(api, message, body) {
   if (body.verb === 'route?') {
-    appServerReply(api, message, Object.assign({ verb: 'route' }, ownerOf(api, body.host)));
+    // Where the name lives, and not which app answers it there: that is
+    // this box's business, and the face needs only whom to forward to.
+    const o = ownerOf(api, body.host);
+    appServerReply(api, message, o.route === 'owner'
+      ? { verb: 'route', route: 'owner', name: o.name, to: o.to }
+      : { verb: 'route', route: o.route, name: o.name });
     return true;
   }
   if (body.verb === 'serve') {
@@ -225,9 +238,14 @@ function ownerRole(api, message, body) {
       appServerReply(api, message, { verb: 'served', status: 501, body: { ok: false, code: 'last-leg-not-built', name: o.name, node: o.to } });
       return true;
     }
+    if (!o.app || !APP_RE.test(o.app)) {
+      // Granted, and no app named to answer it on this box.
+      appServerReply(api, message, { verb: 'served', status: 404, body: { ok: false, code: 'no-such-route', name: o.name, why: 'no-app' } });
+      return true;
+    }
     // THE LAST LEG. The app's own answer, status, body and content type,
     // or the node's refusal by name (app-not-served, app-not-running, ...).
-    Promise.resolve(api.toLocalApp(o.name, { method: body.method, path: body.path, body: body.body, type: body.type }))
+    Promise.resolve(api.toLocalApp(o.app, { method: body.method, path: body.path, body: body.body, type: body.type }))
       .then(function (a) {
         const r = a || {};
         appServerReply(api, message, { verb: 'served', status: r.status, body: r.body, type: r.type });
@@ -397,7 +415,7 @@ function mount(api) {
       return;
     }
 
-    const answer = decide(api, body.name, message.fromKey);
+    const answer = decide(api, body.name, message.fromKey, body.app);
 
     // `re` carries the asking packet's hash, which is what makes two
     // packets one exchange. Without it a reply is just another arrival
