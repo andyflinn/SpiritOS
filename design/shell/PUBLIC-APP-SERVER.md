@@ -1241,6 +1241,22 @@ verbs today; they live only in its code.
   carried by the owner's own node or app acting for him (grantFace turning
   his grant into the face's contact), never assumed by a layer on its own.
   What the layers share: *"the owner has to issue grants all along the way"*.
+- **grantFace first, and its client on the member's side.** Andy's case for
+  building grantFace next: *"it's relatively simple and the main logic has
+  already been exercised and proven. 2. we can test-drive the api
+  introspection on that app. 3. we can make sure the app is visible in
+  jobs-(monitor), and when it all works, the browser to app-server-process
+  request loop should continue working just as before"*. And the member's
+  half: *"make sure the client member of grantFace stashes to proper
+  information in its fs. make sure the client member, also puts appFaceApp
+  into contacts, in order to accept browser requests routed by appFaceApp"*.
+  Tests for the client: it stores its name, the owner's key and the face's
+  key in its own folder, and keeps them across a restart; it adds the face's
+  key to its own node's contacts, taken only from the owner-signed reply; a
+  browser request for its name then reaches it through the face, and a name
+  with no handler answers "under construction". Adding a contact is a
+  loopback verb on the member's own node, so the client needs the same door
+  access as grantFace.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
