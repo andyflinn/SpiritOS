@@ -1327,6 +1327,17 @@ verbs today; they live only in its code.
     of the grant.
   The floor this needs: a server process runs the app's own code, with that
   spirit object. faceServer runs none today.
+- **The face never asks; grantFace pushes.** Andy: *"there is no need for
+  appFaceApp to access grantFace, because grantFace keeps appFaceApp in sync
+  with grants.json. appFaceApp has permissible target-node-ID's for browser
+  posts magically updated by grantFace using the owners owner command"*, and
+  *"correct. appFaceApp is a puppet, it behavior is controlled by the owners
+  node."* So the `route?` question, its RAM cache, the new-name budget and the
+  negative cache all go. The face holds a pushed table (name to target key,
+  those keys also its contacts), and Caddy's certificate check reads it. The
+  owner's own `serve` stays. Recommended (claude, not yet ruled): the table
+  is written through one narrow verb on the face's appFaceApp, e.g.
+  `routes.set`, not by giving the owner the face's whole file system.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
