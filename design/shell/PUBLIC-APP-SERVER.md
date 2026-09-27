@@ -520,6 +520,12 @@ occupies the row, not which app it serves or what that app does.
   not been pinned. The reading so far is the app's own screen, reached
   through the owner's node.
 
+**The warning is a guess, and the owner may know better.** Andy, 2026-09-27:
+*"overcommitments is a warning and always a guess. maybe the owner/operator
+knows better, maybe he has a temporary process running on the VPS, to test
+exactly that very thing...."* So nothing ever acts on it, and it is never
+worded as a fact about the box.
+
 **The owner node keeps the box reports in memory, by design, not as a
 stopgap.** Andy, 2026-09-27: *"Maybe unnecessary: ... the date is used on
 he spot to make decisions, and would immediately go stale on disc"*. The
