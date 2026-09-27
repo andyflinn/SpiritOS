@@ -935,7 +935,19 @@ const server = http.createServer((req, res) => {
           res.end(JSON.stringify({ error: 'no such verb: ' + verb }));
           return;
         }
-        run(req, res);
+        // THE SAME TWO FAILURES AS THE PUPPET SHIM (nodeApps.puppetDoor), and the
+        // later one was never caught here either: a handler whose promise
+        // rejects left the caller hanging and, unhandled, stops the process on
+        // Node 24 (wsl-claude). Answered 500 if nothing was sent yet.
+        const failed = function () {
+          if (res.headersSent || res.writableEnded) return;
+          res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ ok: false, code: 'handler-failed', error: 'the handler failed' }));
+        };
+        let ran = null;
+        try { ran = run(req, res); }
+        catch (e) { failed(); return; }
+        if (ran && typeof ran.then === 'function') ran.then(null, failed);
       });
       return;
     }

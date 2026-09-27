@@ -517,8 +517,17 @@ function puppetDoor(opts) {
           resolve({ ok: status < 400, status: status, body: parsed, text: parsed ? undefined : String(text || '') });
         },
       };
-      try { handler(req, res); }
-      catch (e) { resolve({ ok: false, status: 500, code: 'handler-failed', error: 'the handler failed', verb: verb }); }
+      // A HANDLER CAN FAIL TWICE: at once, or later in the promise it returns.
+      // wsl-claude found the second escaping: no answer to the owner, and an
+      // unhandled rejection, which stops a Node 24 process. Both land here,
+      // and resolve settles only once.
+      const failed = function () {
+        resolve({ ok: false, status: 500, code: 'handler-failed', error: 'the handler failed', verb: verb });
+      };
+      let ran = null;
+      try { ran = handler(req, res); }
+      catch (e) { failed(); return; }
+      if (ran && typeof ran.then === 'function') ran.then(null, failed);
     });
   }
   return function (message) {
