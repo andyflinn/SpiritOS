@@ -344,7 +344,19 @@ reintroduces the exact failure the rule exists to prevent.
 
 ### G8 — layer 1 splits by PROMISE, and the stable half is named
 
-**Status:** OPEN. One undivided bucket today.
+**Status:** NAMED, 2026-09-27. **The two halves are CONTRACT and PLUMBING.**
+claude recommended them in Desk, and Andy answered *"agreed."*
+- **Contract:** what an app, or the face carrying it, can see, and is
+  promised: the one function its page calls (`puppetPost()`, today
+  `app/shared/ask.js`), the flat door and its verbs. It changes only with a
+  deprecation path.
+- **Plumbing:** what no app sees and anyone may re-lay: the pipe path, the
+  port, the memory cap, the unit. It changes freely, because something no app
+  can see cannot break an app.
+
+The line between them is his: *"what you call \"the other half\" the
+appFaceApp never even knows. it's invisible to itself."* What remains is the
+written test that sorts a new thing by it (wsl-claude's declaration).
 
 The app contract must hold for ever; box concerns change per deployment.
 **Anything in the stable half needs a deprecation path and anything in
