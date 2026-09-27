@@ -419,6 +419,12 @@ a scan by key and an extractor per collection). That is the requester
 being responsible, never a page cursor handed out by the answerer. (claude's
 explanation under the row had said "paging", which was wrong.)
 
+**THE RULE UNDER IT, in his words:** *"every list is an implied search,
+that's the pattern, is it not?"* and *"there are no (complete) lists, only
+searches"*. So a list verb IS a search with an empty query, through the same
+bucket, cap and partial flag. Nothing in the system promises a complete list,
+and no caller may assume one.
+
 ### G2 — one shared search: two hooks per collection, the rest inherited
 
 **Status:** OPEN. Nothing built, but the shape exists: `peer.search`
