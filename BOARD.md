@@ -13,16 +13,6 @@ not describe. Run the harness if in doubt.
 
 ---
 
-## cycle-11/C3 — the state the record cannot mark: its own node being down
-
-`2026-09-23-relay-record-cycle-11` · status **?**
-
-- **missing:** a started row at node boot and a stopped row in its goodbye — **~40% there**, guess: MEASURED WHILE DECLARING IT, not guessed: record.edge coerces any kind that is not open to close, so the two row kinds do not exist yet — that is one line there. Then the call at boot (server.js, beside ensureIdentity), the call in the goodbye (beside presence.goingAway), the reader in series treating them as moments, and this assertion becoming real
-  
-  a reader can tell "the relay was quiet" from "this node was not running", and a deliberate stop from a death
-
-*Declared in `relayRecord.js`*
-
 ## public-app-server/G10 — a server reports the box it sits on: four fields, one opinion withheld
 
 `PUBLIC-APP-SERVER` · status **OPEN**
@@ -125,4 +115,4 @@ not describe. Run the harness if in doubt.
 
 ---
 
-**11 assertion(s) across 11 requirement(s).**
+**10 assertion(s) across 10 requirement(s).**
