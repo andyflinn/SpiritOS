@@ -238,6 +238,14 @@ const TALLY = {
   // SAME "go" as faceLastLeg's, and said so rather than assumed. If he reads
   // this and disagrees, it is one line. The number may only fall.
   'test/appServers.js': 1,
+  // THE SERVER PROCESS TYPE (G19.1): ONE, a stand-in for the node's door.
+  // The suite proves what a server job does through SPIRIT_CALLBACK_URL,
+  // so something has to answer on that address, and a real node would make
+  // it a world rather than a unit. RESTING ON ANDY'S "ok break it down like
+  // that and we iron out remaining wrinkles as we go." (2026-09-28, Team),
+  // and said so rather than assumed. If he reads this and disagrees, it is
+  // one line. The number may only fall.
+  'test/processServer.js': 1,
   // THE WORLD BUILDER, counted for the first time (cycle 2). Three, and
   // each is a public route with no verb behind it: POST /api/relay/claim
   // is how a stranger joins a relay, GET /api/relay/key is the liveness

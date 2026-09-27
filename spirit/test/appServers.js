@@ -94,6 +94,25 @@ test.subHeading('None on a puppet, one server job per serving app elsewhere');
   } else {
     test.fail('started: ' + JSON.stringify(started));
   }
+  // AN APP'S OWN SERVER CODE (G19.1): "server": "<file>" runs that file from
+  // the app's folder, told its app and its pipe; a name that could leave the
+  // folder is not a server.
+  const ownRoot = tempRoot({ grantish: { server: 'grantish.server.js' }, sneaky: { server: '../../x.js' } });
+  const ownStarted = [];
+  appServers.createAppServers({
+    rootDir: ownRoot, platform: 'linux', log: function () {},
+    startServerJob: function (cmd, args, opts) { ownStarted.push({ args: args, opts: opts }); return {}; },
+  }).startAll();
+  const own = ownStarted[0];
+  if (ownStarted.length === 1 && own.args[own.args.length - 1] === path.join('app', 'grantish', 'grantish.server.js') &&
+      own.opts.env && own.opts.env.SPIRIT_APP === 'grantish' &&
+      own.opts.env.SPIRIT_PIPE === path.join(ownRoot, 'app-state', 'grantish', 'door.sock')) {
+    test.check('"server": "<file>" runs the app\'s own code from its folder, told SPIRIT_APP and SPIRIT_PIPE; "../../x.js" starts nothing');
+  } else {
+    test.fail('own server code: ' + JSON.stringify(ownStarted));
+  }
+  fs.rmSync(ownRoot, { recursive: true, force: true });
+
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(root, 'relay-state', 'puppet.json'), '{}');
   const onPuppet = [];

@@ -250,6 +250,7 @@ module.exports = function installJobs(spirit, port) {
   const RESTART_MIN_MS = 1000;
   const RESTART_MAX_MS = 60000;
   const STEADY_MS = 60000;
+  const SHUTDOWN_GRACE_MS = 5000;
   function startServerJob(command, args, options) {
     options = options || {};
     const spawn = options.spawn || child_process.spawn;
@@ -272,7 +273,18 @@ module.exports = function installJobs(spirit, port) {
         // AN IPC CHANNEL, so the server exits when this node does: a node
         // killed outright leaves no orphan holding its pipe (faceServer.js,
         // fromArgv, 'disconnect'). Its output goes to this job's log.
-        child = spawn(command, args || [], { cwd: options.cwd, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+        // THE SAME CONTRACT AS A PROCESS JOB (public-app-server/G19.1): its
+        // job id and its node's door, so it can log to this job and ask its
+        // node anything a page can (kernel.js, spirit.core.ask outside a
+        // page). options.env adds what one kind of server needs, e.g. its pipe.
+        child = spawn(command, args || [], {
+          cwd: options.cwd,
+          stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+          env: Object.assign({}, process.env, options.env || {}, {
+            SPIRIT_JOB_ID: job.id,
+            SPIRIT_CALLBACK_URL: 'http://localhost:' + port + '/api/spirit',
+          }),
+        });
       } catch (e) {
         updateJob(job.id, { status: 'failed', data: { error: String(e) } });
         return;
@@ -303,13 +315,50 @@ module.exports = function installJobs(spirit, port) {
       });
     }
 
-    job._stop = function () {
+    // ── SHUTDOWN IS ASKED FOR, THEN ENFORCED ─────────────────────────
+    //
+    // Andy, 2026-09-28, in Team: "a server process must implement a
+    // shutdown verb", and "on node-shutdown servers must sent a shutdown
+    // request to all server processes". So stopping a server sends it
+    // { verb: 'shutdown' } over its IPC channel, the node's own line to it
+    // and never the pipe visitors come down, and waits graceMs for it to
+    // finish and exit. Only a server that has not gone by then is killed.
+    // Answers a promise that settles when the child is gone.
+    function shutdown(graceMs) {
       stopped = true;
-      if (timer) clearTimeout(timer);
-      if (child) child.kill();
-    };
+      if (timer) { clearTimeout(timer); timer = null; }
+      const c = child;
+      if (!c) return Promise.resolve();
+      return new Promise(function (resolve) {
+        let done = false;
+        const finish = function () { if (!done) { done = true; resolve(); } };
+        c.once('exit', finish);
+        try {
+          if (c.connected) c.send({ verb: 'shutdown' });
+          else c.kill();
+        } catch (e) { c.kill(); }
+        setTimeout(function () { if (!done) { try { c.kill(); } catch (e) { /* gone */ } finish(); } },
+          Number(graceMs) > 0 ? Number(graceMs) : SHUTDOWN_GRACE_MS);
+      });
+    }
+    job._shutdown = shutdown;
+    job._stop = function () { shutdown(SHUTDOWN_GRACE_MS); };
     run();
     return job;
+  }
+
+  // Every server this node runs, asked to shut down at once; settles when
+  // all are gone (server.js's goodbye, on SIGTERM or SIGINT).
+  function stopServers(graceMs) {
+    const waits = [];
+    jobsMap.forEach(function (j) {
+      if (j.kind === 'server' && typeof j._shutdown === 'function' && !TERMINAL_STATUSES.has(j.status)) {
+        waits.push(j._shutdown(graceMs).then(function () {
+          updateJob(j.id, { status: 'stopped', logMessage: 'stopped with its node' });
+        }));
+      }
+    });
+    return Promise.all(waits);
   }
 
   function startStatsJob(options) {
@@ -398,6 +447,7 @@ module.exports = function installJobs(spirit, port) {
     startFsWatcherJob: startFsWatcherJob,
     startProcessJob: startProcessJob,
     startServerJob: startServerJob,
+    stopServers: stopServers,
     startStatsJob: startStatsJob,
   };
 

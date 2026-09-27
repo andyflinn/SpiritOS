@@ -2054,11 +2054,22 @@ function markRecord(kind) {
     // The relay half of this goodbye — its members' streams —
     // is relayServer.js since cycle 0. Same sayGoingAway, same three seconds.
     console.log(`${signal} — told ${told} stream(s) to come back in 3s`);
-    // The sockets are closed by sayGoingAway, so what is left is this
-    // process. Exit rather than waiting for the default handler, which
-    // would race the writes just made.
-    try { server.close(); } catch (e) { /* not listening */ }
-    process.exit(0);
+    // ITS SERVERS GO FIRST, ASKED. Andy, 2026-09-28: "on node-shutdown
+    // servers must sent a shutdown request to all server processes". Each
+    // gets the shutdown verb and a few seconds to finish (jobs.stopServers);
+    // the node leaves after them, or after SERVERS_GRACE_MS whatever happens.
+    const SERVERS_GRACE_MS = 3000;
+    const serversGone = Promise.race([
+      Promise.resolve(jobs.stopServers ? jobs.stopServers(SERVERS_GRACE_MS) : null).catch(function () {}),
+      new Promise(function (resolve) { setTimeout(resolve, SERVERS_GRACE_MS + 500); }),
+    ]);
+    serversGone.then(function () {
+      // The sockets are closed by sayGoingAway, so what is left is this
+      // process. Exit rather than waiting for the default handler, which
+      // would race the writes just made.
+      try { server.close(); } catch (e) { /* not listening */ }
+      process.exit(0);
+    });
   };
   process.on('SIGTERM', function () { goodbye('SIGTERM'); });
   process.on('SIGINT', function () { goodbye('SIGINT'); });

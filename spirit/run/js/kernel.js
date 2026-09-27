@@ -542,6 +542,75 @@ if (isNode()) {
     return { stale: true, newRecord: { mtimeMs: currentMtimeMs, contentHash: currentHash } };
   };
 
+  // ── A PROCESS'S ONE MOUTH ONTO ITS NODE (public-app-server/G19.1) ──
+  //
+  // The node hands every process it spawns its door's address,
+  // SPIRIT_CALLBACK_URL (jobs.js). This posts one verb there and answers
+  // { status, text }. It is the single outbound call in this half of the
+  // file: report() below and spirit.core.ask share it, so the oneDoor tally
+  // does not move.
+  function postToDoor(payload) {
+    const url = process.env.SPIRIT_CALLBACK_URL;
+    if (!url) return Promise.reject(new Error('no SPIRIT_CALLBACK_URL: this process was not started by a node'));
+    return new Promise((resolve, reject) => {
+      const body = JSON.stringify(payload);
+      const req = http.request(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+      }, res => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => resolve({ status: res.statusCode, text: data }));
+      });
+      req.on('error', reject);
+      req.end(body);
+    });
+  }
+
+  // ── spirit.core.ask, OUTSIDE A PAGE ──────────────────────────────────
+  //
+  // Andy, 2026-09-28, in Team: "the server is a normal loopback client of
+  // the node interface, it can reach anything a local browser can", and
+  // "the server is in fact given the same lowest layer node-client
+  // interface that is the shell has at its lowest layer". So a process gets
+  // the page's ask, with the page's answer shape, aimed at the address the
+  // node handed it instead of a page-relative '/api/spirit'. The browser
+  // half below replaces it in a page.
+  spirit.core.ask = function (verb, args) {
+    const payload = { verb: String(verb) };
+    if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
+    return postToDoor(payload).then(function (r) {
+      let body = null;
+      try { body = JSON.parse(r.text); } catch (e) { body = null; }
+      return { status: r.status, text: r.text, body: body };
+    });
+  };
+
+  // ── A SERVER'S SIDE OF SHUTDOWN (public-app-server/G19.1) ─────────────
+  //
+  // Andy: "a server process must implement a shutdown verb". Its node sends
+  // { verb: 'shutdown' } over the IPC channel it was started with
+  // (jobs.startServerJob), never over the pipe visitors come down. A server
+  // registers what it must tidy with spirit.core.server.onShutdown(fn); on
+  // the verb every hook runs (a promise is waited for, at most
+  // SHUTDOWN_HOOK_MS), and the process exits. A server that registers
+  // nothing still exits on the verb, which is the whole of the contract.
+  const SHUTDOWN_HOOK_MS = 4000;
+  const shutdownHooks = [];
+  spirit.core.server = {
+    onShutdown: function (fn) { if (typeof fn === 'function') shutdownHooks.push(fn); },
+  };
+  if (typeof process.send === 'function') {
+    process.on('message', function (m) {
+      if (!m || m.verb !== 'shutdown') return;
+      const all = Promise.all(shutdownHooks.map(function (fn) {
+        try { return Promise.resolve(fn()).catch(function () {}); } catch (e) { return Promise.resolve(); }
+      }));
+      const cap = new Promise(function (resolve) { setTimeout(resolve, SHUTDOWN_HOOK_MS); });
+      Promise.race([all, cap]).then(function () { process.exit(0); });
+    });
+  }
+
   // spirit.core.jobs: the external caller's API for the jobs subsystem
   // (distinct from spirit.core.node.jobs, the server's own registry,
   // installed separately by jobs.js only inside the server process).
@@ -567,30 +636,11 @@ if (isNode()) {
     // function rather than every job ever written.
     report(patch) {
       const jobId = process.env.SPIRIT_JOB_ID;
-      const url = process.env.SPIRIT_CALLBACK_URL;
-      if (!jobId || !url) {
+      if (!jobId || !process.env.SPIRIT_CALLBACK_URL) {
         return Promise.reject(new Error('spirit.core.jobs.report() called outside a spawned job context (SPIRIT_JOB_ID/SPIRIT_CALLBACK_URL unset)'));
       }
-      return new Promise((resolve, reject) => {
-        const body = JSON.stringify(
-          Object.assign({ verb: 'jobs.update', id: jobId }, patch)
-        );
-        const req = http.request(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
-        }, res => {
-          let data = '';
-          res.on('data', chunk => data += chunk);
-          res.on('end', () => {
-            try {
-              resolve(data ? JSON.parse(data) : null);
-            } catch (err) {
-              resolve(null);
-            }
-          });
-        });
-        req.on('error', reject);
-        req.end(body);
+      return postToDoor(Object.assign({ verb: 'jobs.update', id: jobId }, patch)).then(function (r) {
+        try { return r.text ? JSON.parse(r.text) : null; } catch (err) { return null; }
       });
     },
     log(message) {
