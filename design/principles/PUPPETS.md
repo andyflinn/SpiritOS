@@ -491,14 +491,15 @@ wsl-claude on Andy's "go."). Citations at `6637c75`.
    box over its list; adapt the suites, including G3's every-verb suite.
    A collection's verb and the apps that call it change in one commit,
    so no app is left calling a verb that is gone.
-8. **Out of scope: `node.history`.** *"node.history is hidden from both
+8. **What hook 1 matches.** `getLabelStringFromIncomingObject()` returns
+   the text a search MATCHES against, which may be title and description
+   (the 2026-09-25 ruling stands), while the pair the bucket keeps holds
+   only the label. Andy's "go." on that reading, in Desk, 2026-09-27.
+9. **Out of scope: `node.history`.** *"node.history is hidden from both
    peerPost() and the nodes interface. it follows different rules."* It
    was removed from the node's interface on 2026-09-27 (`32fa339`).
 
-*Open:*
-- **What hook 1 matches against.** The 2026-09-25 ruling above has the
-  searchable text as title AND description; hook 1 returns *"the label"*.
-  If it is only ever the label, hook 2 alone would do. Not yet answered.
+*Open:* nothing.
 
 ### G3 — one suite that makes every api call
 
