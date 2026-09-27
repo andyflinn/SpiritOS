@@ -1103,6 +1103,20 @@ to keep his box online"*. Every way of not knowing where a name lives is
 404 `no-such-route`, with a `why` in the body for the operator:
 `not-granted`, `owner-unreachable` or `owner-did-not-answer`.
 
+**How a peer learns what a node offers it: `api.api`, ruled in shape, not
+built.** Andy, 2026-09-27: *"the problem to solve then is: how does a peer
+know about the silent/public part of that app on the owners box? solution
+brain-storm: api.api. a public function on every node, that discloses api's
+available to the ID that asks."* Then *"the response would be and api tree
+with keys to apps at the bottom, and the value belonging those keys are the
+verbs for that app. (all faceless)"*, *"it can be selectively returned,
+depending on who asks"*, and *"no: the api.api is not specific, it simple
+return a tree accessible to the caller. done"*. Nothing about faces in it: it
+is a general node verb, so building it needs peer review and his yes on the
+verb. wsl-claude's facts: what a key may use is already computable from each
+booted app's `allow.json` (`nodeApps.js:169-207`), but no app declares its
+verbs today; they live only in its code.
+
 *Open:* whether the face should admit a member for everything or only for
 answers to requests it forwarded there. The tree has only whole-key
 admission today.
