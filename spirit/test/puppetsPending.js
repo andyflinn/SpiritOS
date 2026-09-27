@@ -127,12 +127,15 @@ test.subHeading('one return bound, both paths');
   // result" (PUPPETS.md G2, decided 5). It was probing hub.js exports for
   // bounded/truncat/partial, words the design never used, so it could
   // not have flipped when the work landed.
+  // The names are claude-windows', sent before landing: bucket.js exports
+  // createSearch(opts), and a search answers getResult().
   let getResult = false;
   try {
-    const b = require(path.join(REPO, 'spirit/run/js/bucket.js')).createBucket(1, function () { return 0; });
-    getResult = !!b && typeof b.getResult === 'function';
+    const bucket = require(path.join(REPO, 'spirit/run/js/bucket.js'));
+    const s = typeof bucket.createSearch === 'function' ? bucket.createSearch({}) : null;
+    getResult = !!s && typeof s.getResult === 'function';
   } catch (e) { getResult = false; }
-  test.awaiting('puppets/G2', 'the bucket\'s getResult(), cut in bytes', getResult,
+  test.awaiting('puppets/G2', 'createSearch(opts).getResult(), cut in bytes', getResult,
     'one bucket every collection search feeds, holding key/label pairs, answered through getResult() cut to the ' +
     'byte cap with `more` telling the truth. bucket.js already has serialize(map, maxBytes) (bucket.js:147 at ' +
     '6637c75) with no caller, counting characters rather than bytes',
