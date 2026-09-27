@@ -283,6 +283,27 @@ function landed(log, hash, text, admitted) {
   fs.rmSync(home, { recursive: true, force: true });
 })();
 
+(function theBacklogIsNotTheFirstPage() {
+  // Found live by wsl-claude once the witnesses stopped marking everything
+  // taken: the replay read the log's first 200 arrivals, oldest first, so
+  // a node past its 200th arrival could never replay a newer one.
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-backlog-201-'));
+  const log = logAt(home);
+  const text = packet.encode('agents', { text: 'old' }).text;
+  const old = [];
+  for (let i = 0; i < 200; i += 1) {
+    landed(log, 'old' + i, text);
+    old.push('old' + i);
+  }
+  log.taken(old);
+  landed(log, 'newest', packet.encode('agents', { text: 'the one that waits' }).text);
+  const got = [];
+  arrivalsModule.createArrivals({ traffic: logAt(home) }).subscribe(function (m) { got.push(m.hash); });
+  if (got.join(',') === 'newest') test.check('the 201st arrival, untaken, is replayed to the first page that opens');
+  else test.fail('after 200 taken rows the page got ' + JSON.stringify(got.slice(0, 5)) + ' (' + got.length + ')');
+  fs.rmSync(home, { recursive: true, force: true });
+})();
+
 (function aBootedAppIsAWitnessToo() {
   // Found live by wsl-claude after the fix above: fixList and appFaceApp,
   // booted node apps, reached arrivals through nodeApps' api.subscribe and

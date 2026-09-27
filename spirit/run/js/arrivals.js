@@ -145,10 +145,20 @@ function createArrivals(opts) {
   // What the log is still holding for a page that has not opened. Asked
   // for on demand rather than cached: another process could have marked
   // rows, and a stale copy here would replay what somebody already read.
+  //
+  // EVERY UNTAKEN ROW, NOT THE FIRST PAGE. This read `traffic.arrivals({})`,
+  // which is oldest first and cut at 200, so once a node had taken in 200
+  // packets nothing newer could ever be replayed: every long-lived node,
+  // Andy's included (found live by wsl-claude, 573 rows, the newest
+  // returned from two days earlier). It was hidden while the node's own
+  // listeners marked everything taken at once. The same filter arrivals
+  // applies (inbound and admitted), over the whole log, in arrival order.
   function waiting() {
-    if (!traffic || typeof traffic.arrivals !== 'function') return [];
+    if (!traffic || typeof traffic.read !== 'function') return [];
     try {
-      return traffic.arrivals({}).filter(function (row) { return !row.takenAt; });
+      return traffic.read().filter(function (row) {
+        return row && row.dir === 'in' && row.admitted && !row.takenAt;
+      }).sort(function (a, b) { return Date.parse(a.at) - Date.parse(b.at); });
     } catch (e) {
       return [];
     }
