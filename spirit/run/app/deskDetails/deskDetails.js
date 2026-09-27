@@ -184,10 +184,14 @@ function ddDecideHtml() {
     '<button type="button" id="dd-no">No</button></div>';
 }
 
+// NEWEST FIRST, INPUT ON TOP. Andy, 2026-09-28: "i want my input at the top
+// if the chat log, and the log shows the last message at the top, the second
+// last shows second etc... then the most relevant chat entries will be at
+// the top". Every chat in Desk and its dialogs is drawn this way.
 function ddChatHtml() {
   var chat = ddState ? ddState.chat : [];
   if (!chat.length) return '<div class="job-manifest-note">Nothing said about this row yet.</div>';
-  return chat.map(function (m) {
+  return chat.slice().reverse().map(function (m) {
     var who = m.dir === 'out' ? 'you' : m.from;
     var failed = m.dir === 'out' && m.outcome && m.outcome !== 'sent' && m.outcome !== 'delivered'
       ? ' <span class="job-start-error">(' + ddEsc(m.outcome) + ')</span>' : '';
@@ -221,11 +225,11 @@ function ddFrame() {
       '<button type="button" id="dd-name-save">Save</button></div>' +
     '<div id="dd-decide"></div>' +
     '<div id="dd-slots"></div>' +
-    '<div class="stat-tile wide"><div class="label">Chat</div><div id="dd-chat"></div></div>' +
     '<div class="start-job-form card"><label class="field-label grow">Say' +
       '<input type="text" id="dd-say" placeholder="to every agent, under this row"></label>' +
       '<button type="button" id="dd-say-send">Send</button></div>' +
-    '<div id="dd-error" class="job-start-error"></div>';
+    '<div id="dd-error" class="job-start-error"></div>' +
+    '<div class="stat-tile wide"><div class="label">Chat, newest first</div><div id="dd-chat"></div></div>';
 }
 
 function ddDraw() {

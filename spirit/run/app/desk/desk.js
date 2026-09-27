@@ -393,11 +393,15 @@ function deskRowOf(id) {
 // the lead's key, and the lead's untagged lines to him. Board posts, claims
 // and reports are not conversation. Repainted on arrival, with the input
 // box outside the repainted part so his typing survives.
+// NEWEST FIRST, INPUT ON TOP. Andy, 2026-09-28: "i want my input at the top
+// if the chat log, and the log shows the last message at the top, the second
+// last shows second etc... then the most relevant chat entries will be at
+// the top". Every chat in Desk and its dialogs is drawn this way.
 function deskLeadChat() {
   if (!deskLead) return '<div class="job-manifest-note">No lead has posted a board here yet, so there is nobody to talk to.</div>';
   var lines = deskMessages.filter(deskIsLeadLine);
   if (!lines.length) return '<div class="job-manifest-note">Nothing said yet.</div>';
-  return lines.map(function (m) {
+  return lines.slice().reverse().map(function (m) {
     var who = m.dir === 'out' ? 'you' : m.from;
     // Andy: "in this chat, could you change the appearance of your messages
     // from mine a bit?" His lines sit to the right and quieter; the lead's
@@ -422,7 +426,7 @@ function deskLeadChat() {
 function deskMusings() {
   var lines = deskMessages.filter(function (m) { return m.dir === 'out' && m.kind === 'musing'; });
   if (!lines.length) return '<div class="job-manifest-note">Nothing logged yet. What you write here waits for close time; nobody answers it now.</div>';
-  return lines.map(function (m) {
+  return lines.slice().reverse().map(function (m) {
     return '<div><span class="job-manifest-note">' + deskEsc(m.at) + '</span> ' + deskEsc(m.text) + '</div>';
   }).join('');
 }
@@ -457,7 +461,7 @@ function deskTeamChat() {
     lines.push(m);
   });
   if (!lines.length) return '<div class="job-manifest-note">Nothing said yet. What you write here goes to every agent.</div>';
-  return lines.map(function (m) {
+  return lines.slice().reverse().map(function (m) {
     var look = m.dir === 'out'
       ? ' style="text-align:right;background:#000;color:#fff;padding:4px 8px;margin:4px 0"'
       : ' style="border-left:3px solid currentColor;padding-left:8px;margin:4px 0"';
@@ -626,25 +630,25 @@ spirit.shell.activateApp({
       '<div id="desk-root">' +
         '<div data-pane="list"><div id="desk-top"></div></div>' +
         '<div data-pane="lead" hidden>' +
-          '<div class="stat-tile wide"><div class="label">Talk to the lead</div><div id="desk-chat"></div></div>' +
           '<div class="start-job-form card"><label class="field-label grow">Say' +
             '<input type="text" id="desk-say" placeholder="to the lead, about anything that is not one row"></label>' +
           '<button type="button" id="desk-say-send">Send</button></div>' +
           '<div id="desk-say-error" class="job-start-error"></div>' +
+          '<div class="stat-tile wide"><div class="label">Talk to the lead, newest first</div><div id="desk-chat"></div></div>' +
         '</div>' +
         '<div data-pane="team" hidden>' +
-          '<div class="stat-tile wide"><div class="label">Team: you and every agent</div><div id="desk-team"></div></div>' +
           '<div class="start-job-form card"><label class="field-label grow">Say' +
             '<input type="text" id="desk-team-say" placeholder="to every agent; design talk that belongs to no row"></label>' +
           '<button type="button" id="desk-team-send">Send</button></div>' +
           '<div id="desk-team-error" class="job-start-error"></div>' +
+          '<div class="stat-tile wide"><div class="label">Team: you and every agent, newest first</div><div id="desk-team"></div></div>' +
         '</div>' +
         '<div data-pane="musings" hidden>' +
-          '<div class="stat-tile wide"><div class="label">Musings, for close time</div><div id="desk-musings"></div></div>' +
           '<div class="start-job-form card"><label class="field-label grow">Muse' +
             '<input type="text" id="desk-muse" placeholder="a thought for later; nobody answers it now"></label>' +
           '<button type="button" id="desk-muse-send">Log</button></div>' +
           '<div id="desk-muse-error" class="job-start-error"></div>' +
+          '<div class="stat-tile wide"><div class="label">Musings, for close time, newest first</div><div id="desk-musings"></div></div>' +
         '</div>' +
       '</div>';
     function show(tab) {
