@@ -1338,6 +1338,10 @@ verbs today; they live only in its code.
   owner's own `serve` stays. Recommended (claude, not yet ruled): the table
   is written through one narrow verb on the face's appFaceApp, e.g.
   `routes.set`, not by giving the owner the face's whole file system.
+  Andy: *"appFaceApp holds the dns to member ID in memory only, it's contact
+  list is on disc and only governs permissions."* After a face restart the
+  table is empty until the next push (open: a start-up "I'm up" to the owner,
+  a timed re-push, or both).
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
