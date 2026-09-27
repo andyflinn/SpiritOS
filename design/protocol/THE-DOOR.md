@@ -155,7 +155,7 @@ figure you can compute instead of estimate.
 
 ## The errors
 
-**78 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
+**81 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
 each carries more than a sentence:
 
 | | |

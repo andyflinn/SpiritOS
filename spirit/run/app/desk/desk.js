@@ -159,14 +159,28 @@ function deskLeadChat() {
   }).join('');
 }
 
+// ── MUSINGS: HIS THOUGHTS FOR LATER, NOT A CONVERSATION ─────────────
+//
+// Andy: "now i need something that lets me pipe stuff to voice.jsonl
+// bypassing scoreboard issues", "ideas deferred to close-time". So a
+// musing belongs to no row and expects no reply: kind `musing`, sent to
+// the lead, listed here in order, and gone through with him at close.
+function deskMusings() {
+  var lines = deskMessages.filter(function (m) { return m.dir === 'out' && m.kind === 'musing'; });
+  if (!lines.length) return '<div class="job-manifest-note">Nothing logged yet. What you write here waits for close time; nobody answers it now.</div>';
+  return lines.map(function (m) {
+    return '<div><span class="job-manifest-note">' + deskEsc(m.at) + '</span> ' + deskEsc(m.text) + '</div>';
+  }).join('');
+}
+
 // ONE recipient, so one row in his record per line: nothing to fold.
-function deskSayToLead() {
-  var box = document.getElementById('desk-say');
+function deskSend(kind, boxId, errId) {
+  var box = document.getElementById(boxId);
   var said = box ? String(box.value || '').trim() : '';
-  var err = document.getElementById('desk-say-error');
+  var err = document.getElementById(errId);
   if (!said) return;
   if (!deskLead) { if (err) err.textContent = 'No lead known yet.'; return; }
-  deskApi.peerPost('agents', deskLead.key, { from: 'andy', kind: 'note', text: said }).then(function () {
+  deskApi.peerPost('agents', deskLead.key, { from: 'andy', kind: kind, text: said }).then(function () {
     box.value = '';
     if (err) err.textContent = '';
     return deskLoadNew();
@@ -183,6 +197,8 @@ function deskDraw() {
   if (!el) return;
   var chat = document.getElementById('desk-chat');
   if (chat) chat.innerHTML = deskLeadChat();
+  var musings = document.getElementById('desk-musings');
+  if (musings) musings.innerHTML = deskMusings();
   el.innerHTML = (deskError ? '<div class="job-start-error">' + deskEsc(deskError) + '</div>' : '') +
     deskTable();
   Array.prototype.forEach.call(el.querySelectorAll('tr[data-id]'), function (tr) {
@@ -222,19 +238,65 @@ function deskLoadNew() {
 spirit.shell.activateApp({
   mount: function (container, api) {
     deskApi = api;
-    // The input lives outside both repainted parts.
-    container.innerHTML = '<div id="desk-root"><div id="desk-top"></div>' +
-      '<div class="stat-tile wide" style="margin-top:16px"><div class="label">Talk to the lead</div><div id="desk-chat"></div></div>' +
-      '<div class="start-job-form card"><label class="field-label grow">Say' +
-        '<input type="text" id="desk-say" placeholder="to the lead, about anything that is not one row"></label>' +
-      '<button type="button" id="desk-say-send">Send</button></div>' +
-      '<div id="desk-say-error" class="job-start-error"></div></div>';
-    document.getElementById('desk-say-send').addEventListener('click', deskSayToLead);
-    document.getElementById('desk-say').addEventListener('keydown', function (e) {
-      if (e.key !== 'Enter') return;
-      e.preventDefault();
-      deskSayToLead();
+    // ── THREE TABS ─────────────────────────────────────────────────
+    //
+    //   Andy: "could the be, at the top of the window a set of tabs that
+    //   allow me to switch from the list display, to chat with lead, to
+    //   \"log musings\", so the vertical space here doesn't get annoying?"
+    //   and "tabs would be a more standard approach, methinks".
+    //
+    // Switching shows one pane and hides the others; nothing is repainted,
+    // so a half-typed line in any pane survives a switch. The inputs live
+    // outside the repainted parts.
+    container.innerHTML =
+      '<div class="start-job-form card" id="desk-tabs">' +
+        '<button type="button" data-tab="list">List</button>' +
+        '<button type="button" data-tab="lead">Lead</button>' +
+        '<button type="button" data-tab="musings">Musings</button>' +
+      '</div>' +
+      '<div id="desk-root">' +
+        '<div data-pane="list"><div id="desk-top"></div></div>' +
+        '<div data-pane="lead" hidden>' +
+          '<div class="stat-tile wide"><div class="label">Talk to the lead</div><div id="desk-chat"></div></div>' +
+          '<div class="start-job-form card"><label class="field-label grow">Say' +
+            '<input type="text" id="desk-say" placeholder="to the lead, about anything that is not one row"></label>' +
+          '<button type="button" id="desk-say-send">Send</button></div>' +
+          '<div id="desk-say-error" class="job-start-error"></div>' +
+        '</div>' +
+        '<div data-pane="musings" hidden>' +
+          '<div class="stat-tile wide"><div class="label">Musings, for close time</div><div id="desk-musings"></div></div>' +
+          '<div class="start-job-form card"><label class="field-label grow">Muse' +
+            '<input type="text" id="desk-muse" placeholder="a thought for later; nobody answers it now"></label>' +
+          '<button type="button" id="desk-muse-send">Log</button></div>' +
+          '<div id="desk-muse-error" class="job-start-error"></div>' +
+        '</div>' +
+      '</div>';
+    function show(tab) {
+      Array.prototype.forEach.call(container.querySelectorAll('[data-pane]'), function (p) {
+        p.hidden = p.getAttribute('data-pane') !== tab;
+      });
+      Array.prototype.forEach.call(container.querySelectorAll('[data-tab]'), function (b) {
+        b.disabled = b.getAttribute('data-tab') === tab;
+      });
+    }
+    document.getElementById('desk-tabs').addEventListener('click', function (e) {
+      var tab = e.target && e.target.getAttribute && e.target.getAttribute('data-tab');
+      if (tab) show(tab);
     });
+    show('list');
+    function onEnter(id, go) {
+      document.getElementById(id).addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        go();
+      });
+    }
+    function say() { deskSend('note', 'desk-say', 'desk-say-error'); }
+    function muse() { deskSend('musing', 'desk-muse', 'desk-muse-error'); }
+    document.getElementById('desk-say-send').addEventListener('click', say);
+    document.getElementById('desk-muse-send').addEventListener('click', muse);
+    onEnter('desk-say', say);
+    onEnter('desk-muse', muse);
     deskDraw();
     // The first read is the search; after it, `deskAfter` follows the
     // record and a live arrival just asks for what is new.
