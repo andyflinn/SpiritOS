@@ -9,9 +9,14 @@
 //   puppet to its owner."
 //
 // Built by claude-windows at edbadff; this is the tester's suite, written
-// against the agreed shape: owner.json in the app's own folder, read-only
-// to the puppet through the same guard allow.json uses, read on every call,
-// and handed to the app as api.owner().
+// against the agreed shape and read on every call through api.owner().
+//
+// MOVED TO THE NODE AT 3feddc5. First the owner sat in each app's folder,
+// read-only to it. Then Andy ruled what a puppet is: "a node OWNED by another
+// node's ID is a puppet" -- so the owner belongs to the NODE, and all apps
+// of one puppet share it. It now lives in relay-state/puppet.json, as
+// { owner, carries }, which no app can reach at all: the lock is no longer
+// "may read, may not write" but "outside the app's scope entirely".
 //
 // The puppet is mounted by the REAL nodeApps.mountAll from a temporary
 // root, as nodeAppsSeam.js does, so the api under test is the one a puppet
@@ -35,7 +40,7 @@ const auth = require('../run/js/relayAuth');
 
 test.startTest('A puppet can read who owns it and can never change it');
 
-const OWNER = 'owner.json';
+const PUPPET = 'puppet.json';
 
 function world() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-puppet-owner-'));
@@ -45,6 +50,8 @@ function world() {
   fs.writeFileSync(path.join(dir, 'ownedApp.js'),
     'module.exports = { mount: function (api) { global.__ownerApi = api; } };\n');
   const lines = [];
+  const state = path.join(root, 'relay-state');
+  fs.mkdirSync(state, { recursive: true });
   global.__ownerApi = null;
   nodeApps.mountAll({
     rootDir: root,
@@ -53,13 +60,17 @@ function world() {
     log: function (m) { lines.push(String(m)); },
   });
   return { dir: dir, api: global.__ownerApi, lines: lines,
-    plant: function (text) { fs.writeFileSync(path.join(dir, OWNER), text); },
-    unplant: function () { try { fs.unlinkSync(path.join(dir, OWNER)); } catch (e) { /* absent */ } },
-    bytes: function () { try { return fs.readFileSync(path.join(dir, OWNER), 'utf8'); } catch (e) { return null; } } };
+    // The OWNER writes puppet.json; the puppet never does. `plant` takes the
+    // raw text so broken files can be planted too.
+    plant: function (text) { fs.writeFileSync(path.join(state, PUPPET), text); },
+    owned: function (key) { fs.writeFileSync(path.join(state, PUPPET), JSON.stringify({ owner: key, carries: [] })); },
+    unplant: function () { try { fs.unlinkSync(path.join(state, PUPPET)); } catch (e) { /* absent */ } },
+    bytes: function () { try { return fs.readFileSync(path.join(state, PUPPET), 'utf8'); } catch (e) { return null; } } };
 }
 
+// Refused because it is OUTSIDE the app's scope -- the stronger lock.
 function refused(fn) {
-  try { fn(); return false; } catch (e) { return /owner-only/.test(e.message); }
+  try { fn(); return false; } catch (e) { return /outside the app scope|owner-only/.test(e.message); }
 }
 
 const w = world();
@@ -71,7 +82,7 @@ if (!w.api || typeof w.api.owner !== 'function') {
   test.reportSuccessFailureCount();
 } else {
   // ── 1. IT CAN READ WHO OWNS IT ─────────────────────────────────────
-  w.plant(JSON.stringify({ key: KEY }));
+  w.owned(KEY);
   if (w.api.owner() === KEY) {
     test.check('the puppet reads its owner\'s key through api.owner() — the positive, without which '
       + 'every refusal below would pass on a key that simply is not there');
@@ -79,18 +90,25 @@ if (!w.api || typeof w.api.owner !== 'function') {
     test.fail('api.owner() gave ' + JSON.stringify(w.api.owner()) + ', wanted the planted key');
   }
 
-  // ── 2. AND CAN NEVER WRITE IT, HOWEVER IT SPELLS THE NAME ──────────
+  // ── 2. AND CANNOT REACH IT, HOWEVER IT SPELLS THE WAY ──────────────
   {
     const before = w.bytes();
-    const spellings = ['owner.json', './owner.json', 'x/../owner.json', 'OWNER.JSON'];
-    const leaked = spellings.filter(function (s) {
-      return !refused(function () { w.api.fs.write(s, JSON.stringify({ key: KEY2 })); });
+    const ways = ['../../relay-state/puppet.json', '../../relay-state/./puppet.json',
+      'x/../../../relay-state/puppet.json', '../../RELAY-STATE/PUPPET.JSON'];
+    const leaked = ways.filter(function (s) {
+      return !refused(function () { w.api.fs.write(s, JSON.stringify({ owner: KEY2, carries: ['node'] })); });
     });
-    if (!leaked.length && w.bytes() === before) {
-      test.check('every write to its owner file is refused — ' + spellings.join(', ')
-        + ' — and the file is byte-for-byte unchanged');
+    const readable = ways.filter(function (s) {
+      let got = null;
+      try { got = w.api.fs.read(s); } catch (e) { got = null; }
+      return got !== null;
+    });
+    if (!leaked.length && !readable.length && w.bytes() === before) {
+      test.check('the puppet can neither write nor read the node\'s puppet.json by any path — '
+        + ways.join(', ') + ' — and the file is byte-for-byte unchanged');
     } else {
-      test.fail('writes that got through: ' + JSON.stringify(leaked) + '; file now ' + JSON.stringify(w.bytes()));
+      test.fail('writes that got through: ' + JSON.stringify(leaked) + '; reads that got through: '
+        + JSON.stringify(readable) + '; file now ' + JSON.stringify(w.bytes()));
     }
   }
 
@@ -121,24 +139,33 @@ if (!w.api || typeof w.api.owner !== 'function') {
     }
   }
 
-  // ── 4. NO OWNER FILE, AND IT CANNOT PLANT ONE ──────────────────────
+  // ── 4. NO PUPPET FILE, AND IT CANNOT MAKE ONE ──────────────────────
+  //
+  // Writing a look-alike into its OWN folder is allowed -- it is just a
+  // file there -- and must change nothing: only the node's file counts.
   {
     w.unplant();
     const empty = w.api.owner();
-    const planted = !refused(function () { w.api.fs.write('owner.json', JSON.stringify({ key: KEY2 })); });
-    if (empty === '' && !planted && w.bytes() === null) {
-      test.check('with no owner file the puppet is owned by nobody, and it cannot write one — '
-        + 'a puppet cannot make itself the owner on a fresh install');
+    const reached = !refused(function () {
+      w.api.fs.write('../../relay-state/puppet.json', JSON.stringify({ owner: KEY2, carries: [] }));
+    });
+    try { w.api.fs.write('puppet.json', JSON.stringify({ owner: KEY2, carries: [] })); } catch (e) { /* its own file */ }
+    try { w.api.fs.write('owner.json', JSON.stringify({ key: KEY2 })); } catch (e) { /* its own file */ }
+    const after = w.api.owner();
+    if (empty === '' && !reached && after === '' && w.bytes() === null) {
+      test.check('with no puppet.json the node is owned by nobody, the puppet cannot create it, and a '
+        + 'look-alike in its own folder changes nothing — it cannot make itself the owner');
     } else {
-      test.fail('absent owner: api.owner() gave ' + JSON.stringify(empty) + ', self-plant ' + (planted ? 'SUCCEEDED' : 'refused'));
+      test.fail('absent owner: api.owner() ' + JSON.stringify(empty) + ' then ' + JSON.stringify(after)
+        + ', node file reached: ' + reached);
     }
   }
 
   // ── 5. THE OWNER'S CHANGE IS SEEN AT ONCE ──────────────────────────
   {
-    w.plant(JSON.stringify({ key: KEY }));
+    w.owned(KEY);
     const first = w.api.owner();
-    w.plant(JSON.stringify({ key: KEY2 }));
+    w.owned(KEY2);
     const second = w.api.owner();
     if (first === KEY && second === KEY2) {
       test.check('when the owner changes the key, the very next api.owner() returns the new one — read on '
@@ -152,16 +179,16 @@ if (!w.api || typeof w.api.owner !== 'function') {
   {
     const cases = {
       'an empty file': '',
-      'broken JSON': '{"key": ',
-      'a key that is not Ed25519': JSON.stringify({ key: 'not-a-real-key' }),
-      'no key field': JSON.stringify({ owner: KEY }),
+      'broken JSON': '{"owner": ',
+      'a key that is not Ed25519': JSON.stringify({ owner: 'not-a-real-key', carries: [] }),
+      'no owner field': JSON.stringify({ key: KEY, carries: [] }),
     };
     const wrong = Object.keys(cases).filter(function (label) {
       w.plant(cases[label]);
       return w.api.owner() !== '';
     });
     if (!wrong.length) {
-      test.check('an empty file, broken JSON, a non-Ed25519 key and a missing key field each give \'\' — '
+      test.check('an empty file, broken JSON, a non-Ed25519 key and a missing owner field each give \'\' — '
         + 'owned by nobody, never by whatever the file happened to say');
     } else {
       test.fail('these gave an owner anyway: ' + wrong.join(', '));
@@ -170,11 +197,11 @@ if (!w.api || typeof w.api.owner !== 'function') {
 
   // ── 7. A BROKEN FILE IS REPORTED ONCE, NOT ON EVERY READ ───────────
   {
-    w.plant('{"key": broken one');
+    w.plant('{"owner": broken one');
     const at = w.lines.length;
     w.api.owner(); w.api.owner(); w.api.owner();
     const sameContent = w.lines.length - at;
-    w.plant('{"key": broken two');
+    w.plant('{"owner": broken two');
     w.api.owner(); w.api.owner();
     const newContent = w.lines.length - at - sameContent;
     if (sameContent === 1 && newContent === 1) {

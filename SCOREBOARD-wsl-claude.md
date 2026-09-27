@@ -4,11 +4,25 @@
 
 ## Summary
 
-**Nothing is broken, 12 requirements are declared and not built yet, and 3 older questions need a decision from you.**
+**2 tests are broken, 12 requirements are declared and not built yet, and 2 older questions need a decision from you.**
 
 ```
-167 suites   3141 green   0 red   0 unhappy   12 owed      run d66c790
+168 suites   3148 green   2 red   2 unhappy   12 owed      run 3feddc5
 ```
+
+---
+
+## What is red
+
+**Something that used to pass now fails.** These are broken, not unfinished — the owed list further down is work nobody has written yet.
+
+**❌ `doorContract.js`** — one check no longer passes.
+
+  - the page says 78, the catalogue has 81
+
+**❌ `puppetDoor.js`** — one check no longer passes.
+
+  - a handler failing in its promise: 1 rejection(s) ESCAPED the door, which in a real node stops the process for one bad command; the owner got "no answer at all"
 
 ---
 
@@ -43,14 +57,13 @@
 
 ### Older questions, no hurry
 
-**3 document(s) still hold a decision only you can make.** Each one says a requirement is open, and no test is watching it — so if the work was dropped, nothing will notice.
+**2 document(s) still hold a decision only you can make.** Each one says a requirement is open, and no test is watching it — so if the work was dropped, nothing will notice.
 
 For each: **is it still wanted, has a later cycle replaced it, or is it abandoned?** Say which and it either gets a test or gets closed.
 
 - In `design/cycles/2026-09-23-sealed-posts-cycle-10.md`, 2 things are still marked open with no test watching:
     - message LENGTH is public, or it is padded (10/R15)
     - suites that INSIST, not suites that demonstrate (10/R8)
-- **Lock puppet out of Self-Ownership (puppets/G6)** — live work in `design/principles/PUPPETS.md`, and no test is watching it.
 - In `design/shell/PUBLIC-APP-SERVER.md`, 13 things are still marked open with no test watching:
     - `appServer.js` is a third startup module (public-app-server/G1)
     - no failure-state lever; the states are reachable from outside (G11)
@@ -70,8 +83,8 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +9 green
-- ✅ **built or withdrawn:** puppets/G6
+- +7 green
+- +2 red
 
 ---
 
@@ -95,7 +108,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 **How the order was made.** 
 
 - 10 of 12 owed items have no dependency you have accepted, so they are ordered by age alone.
-- (puppets/G7) waits on (puppets/G6), which is open but no test watches it.
+- (puppets/G7) waits on (puppets/G6), which is DONE — the edge is ignored.
 
 *Percentages are the guesses the declarations carry — `testSupport`:
 "printed as guesses… to be argued with during a design sitting, not to
