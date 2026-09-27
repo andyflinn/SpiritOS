@@ -36,6 +36,13 @@
 
 var DESK_LOG = 'log.json';
 
+// A BUSY AGENT IS WAITED FOR, NOT BOUNCED. Andy's line came back
+// "(undelivered: target is busy)" because a post got one attempt. With
+// his go, peer.post takes a patience and the node retries a busy target
+// with backoff; Desk asks for a minute. What the log records is the final
+// outcome, after that minute, never the first refusal.
+var DESK_PATIENCE = { patienceMs: 60000 };
+
 var deskApi = null;
 var deskBoard = null;       // the newest `board` packet's JSON
 var deskMessages = [];      // decoded agents messages, in log order
@@ -468,9 +475,10 @@ function deskSendTeam() {
     .map(function (n) { return deskAgents[n].key; });
   if (!to.length) { if (err) err.textContent = 'No agent has written here in the last day, so there is nobody to send to.'; return; }
   deskSending['desk-team-say'] = true;
+  if (err) err.textContent = 'Sending…';
   var body = { from: 'andy', kind: 'note', text: said, todo: DESK_TEAM };
   Promise.all(to.map(function (key) {
-    return deskApi.peerPost('agents', key, body).then(function (r) { return deskOutgoing(key, body, r); },
+    return deskApi.peerPost('agents', key, body, DESK_PATIENCE).then(function (r) { return deskOutgoing(key, body, r); },
       function (e) { return deskOutgoing(key, body, null, e); });
   })).then(function (msgs) {
     deskSending['desk-team-say'] = false;
@@ -499,8 +507,10 @@ function deskSend(kind, boxId, errId) {
   // never twice when he types it himself.
   if (kind === 'musing' && !/^note to self:/i.test(said)) said = 'note to self: ' + said;
   deskSending[boxId] = true;
+  // It may wait up to a minute for a busy agent, so it says so.
+  if (err) err.textContent = 'Sending…';
   var body = { from: 'andy', kind: kind, text: said };
-  deskApi.peerPost('agents', deskLead.key, body).then(function (r) {
+  deskApi.peerPost('agents', deskLead.key, body, DESK_PATIENCE).then(function (r) {
     deskSending[boxId] = false;
     box.value = '';
     if (err) err.textContent = '';
@@ -535,7 +545,7 @@ function deskDraw() {
       if (!ask) return;
       b.disabled = true;
       var body = { from: 'andy', kind: 'answer', text: 'go.', todo: id };
-      deskApi.peerPost('agents', ask.peer, body)
+      deskApi.peerPost('agents', ask.peer, body, DESK_PATIENCE)
         .then(function (r) {
           // Answering is reacting, so the row's * clears as if opened. Andy:
           // "the red "*" should of course disappear once i reacted to them".

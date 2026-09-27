@@ -1565,7 +1565,11 @@
           // spending a post to be told.
           return Promise.resolve({ status: 400, text: JSON.stringify({ error: made.error }) });
         }
-        return postToNode({ verb: 'peer.post', to: toId, text: made.text });
+        // An app may ask the node to retry a busy target (puppets/G2,
+        // Andy's go on peer.post's optional patienceMs; the node caps it).
+        var ask = { verb: 'peer.post', to: toId, text: made.text };
+        if (opts && Number(opts.patienceMs) > 0) ask.patienceMs = Number(opts.patienceMs);
+        return postToNode(ask);
       },
 
       onPacket: function (packetApp, handler) { return onPacketFor(packetApp, handler); },

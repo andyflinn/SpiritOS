@@ -123,7 +123,7 @@ his words, which keeps the harness red until the verb is gone.
 
 **`peer.*`** — talking to other people
 - `peer.acquire` — before the rule (2026-09-27)
-- `peer.post` — before the rule (2026-09-27)
+- `peer.post` — Andy, 2026-09-27: "go." on its optional `patienceMs` ("capped at 10 minutes, memory only, so a busy agent gets retried"), Desk under puppets/G2
 - `peer.search` — before the rule (2026-09-27)
 
 **`proxy.*`** — reaching the outside world, by the owner's leave

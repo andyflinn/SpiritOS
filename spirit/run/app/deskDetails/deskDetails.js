@@ -288,7 +288,8 @@ function ddSend(kind, text, fieldId) {
   ddSending = true;
   return Promise.all(names.map(function (n) {
     var to = ddAgents[n].key;
-    return ddApi.peerPost('agents', to, body).then(function (r) { return ddOutgoing(to, body, r, null); },
+    // A busy agent is waited for a minute (see desk.js, DESK_PATIENCE).
+    return ddApi.peerPost('agents', to, body, { patienceMs: 60000 }).then(function (r) { return ddOutgoing(to, body, r, null); },
       function (e) { return ddOutgoing(to, body, null, e); });
   })).then(function (msgs) {
     ddSending = false;

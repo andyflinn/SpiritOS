@@ -1284,7 +1284,20 @@ function createHub(rootDir) {
         fail(res, 503, 'that peer is not reachable right now');
         return;
       }
-      return sendPacket(router, route.relayUrl, to, text, route.hints).then(function (answer) {
+      // ── PATIENCE, ASKED FOR BY THE PAGE (puppets/G2) ──────────────
+      //
+      //   Andy, 2026-09-27, "go." on: "peer.post takes an optional
+      //   patienceMs (capped at 10 minutes, memory only), so a busy agent
+      //   gets retried instead of your line coming back undelivered."
+      //
+      // Absent, a post gets one attempt, exactly as before. Given, the
+      // scheduler retries a BUSY target with backoff until it is delivered
+      // or the patience is spent; an unreachable one still fails at once
+      // (peerPost's own rule). Capped here, because the queue is in memory
+      // and a page must not park a post for days.
+      var patience = Number(body && body.patienceMs);
+      var how = patience > 0 ? { patienceMs: Math.min(Math.floor(patience), PATIENCE_MAX_MS) } : undefined;
+      return sendPacket(router, route.relayUrl, to, text, route.hints, how).then(function (answer) {
         learnPresence(rootDir, to, answer);
         res.writeHead(answer.ok ? 200 : (answer.status || 502),
           { 'Content-Type': 'application/json; charset=utf-8' });
@@ -2136,9 +2149,10 @@ function createHub(rootDir) {
   // The rule is about paths, not about verbs — so a second CALLER shares
   // this function rather than reaching past it, and everything that
   // decides how a packet is shaped stays in one place.
-  function sendPacket(router, relayUrl, toKey, text, hints) {
-    return router.post(relayUrl, toKey, text, hints);
+  function sendPacket(router, relayUrl, toKey, text, hints, how) {
+    return router.post(relayUrl, toKey, text, hints, how);
   }
+  var PATIENCE_MAX_MS = 10 * 60 * 1000;
 
   // ── peerOwnerPost — THE OWNER COMMANDS A PUPPET HE OWNS ──────────────
   //

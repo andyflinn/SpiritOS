@@ -193,7 +193,7 @@ function run() {
                               } else {
                                 test.fail('got ' + bad.status + ' ' + bad.body);
                               }
-                              return theChooserAttachesHints().then(function () {
+                              return theChooserAttachesHints().then(patienceReachesTheScheduler).then(function () {
                                 noAppNamesTheRing();
                                 test.reportSuccessFailureCount();
                               });
@@ -371,6 +371,30 @@ function noAppNamesTheRing() {
   } else {
     named.forEach(function (f) { test.fail(f + ' still posts to /api/hub/send'); });
   }
+}
+
+// ── A PAGE MAY ASK FOR PATIENCE (puppets/G2) ──────────────────────────
+//
+//   Andy, 2026-09-27, "go." on: "peer.post takes an optional patienceMs
+//   (capped at 10 minutes, memory only), so a busy agent gets retried
+//   instead of your line coming back undelivered."
+function patienceReachesTheScheduler() {
+  test.subHeading('peer.post hands an asked-for patience to the scheduler, capped');
+  const seen = [];
+  const deps = {
+    router: { post: function (url, to, text, hints, how) { seen.push(how); return Promise.resolve({ ok: true, status: 200, hash: 'h', text: 'ack' }); } },
+    presence: presenceNaming({ [PEER]: [RELAY_A] }),
+  };
+  return hub.handlePost({}, fakeRes(), bodyOf({ to: PEER, text: 'plain' }), deps)
+    .then(function () { return hub.handlePost({}, fakeRes(), bodyOf({ to: PEER, text: 'wait', patienceMs: 60000 }), deps); })
+    .then(function () { return hub.handlePost({}, fakeRes(), bodyOf({ to: PEER, text: 'forever', patienceMs: 99999999 }), deps); })
+    .then(function () {
+      if (seen[0] === undefined && seen[1] && seen[1].patienceMs === 60000 && seen[2] && seen[2].patienceMs === 600000) {
+        test.check('none asked, none given (one attempt, as before); 60 s asked, 60 s given; a day asked, 10 minutes given');
+      } else {
+        test.fail('patience handed on: ' + JSON.stringify(seen));
+      }
+    });
 }
 
 run().catch(function (err) {
