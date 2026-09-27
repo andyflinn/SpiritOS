@@ -55,6 +55,12 @@ function routeMessage(ownerKey, name, to, until, faceKey) {
     String(to || '') + NL + String(Number(until) || 0) + NL + String(faceKey || '');
 }
 
+// NOT ON THE OWNER'S OWN PATH TODAY. appFaceApp's owner answers the plain
+// "the owner of this name is <key>" (route 'owner') and the face forwards
+// there (Andy, 2026-09-27). answerRoute and routeIsSigned are kept, and
+// tested, for the day a member's own node serves a face: a packet from the
+// puppet proves only that the puppet sent it, and this signature is how
+// that node can tell the owner pointed the face at it (wsl-claude).
 // The owner node's answer. `rows` is its grant table ({ name: { to } });
 // `owner` is { publicKey, privateKey }; `sign(privateKey, message)` is
 // relayAuth's. Mine, a signed route, or no such route; never a guess.
