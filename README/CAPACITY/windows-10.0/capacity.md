@@ -1,6 +1,6 @@
 # Capacity on `windows-10.0`
 
-**Measured 2026-09-27, against `b736cc2`.**
+**Measured 2026-09-27, against `8c8347c`.**
 
 | | |
 |---|---|
@@ -8,8 +8,8 @@
 | version | Windows 11 Pro |
 | node | v24.20.0 |
 | cpus / ram | 32 / 130767 MB |
-| measured at | 2026-09-27T02:58:36.044Z |
-| tree | `b736cc2` |
+| measured at | 2026-09-27T03:20:02.319Z |
+| tree | `8c8347c` |
 
 *Read [the conventions](../README.md) before comparing this with
 another platform — the kernel column in particular is not the same
@@ -18,7 +18,7 @@ quantity on two operating systems.*
 ---
 
 
-measured 2026-09-27, against `b736cc2`
+measured 2026-09-27, against `8c8347c`
 on win32, Node v24.20.0
 
 | minimum to run | |
@@ -27,7 +27,7 @@ on win32, Node v24.20.0
 | dependencies | **none** — built-ins only, no `npm install` |
 | RAM, personal node | **84 MB** at rest |
 | RAM, relay | **62 MB** at rest, before any connection |
-| disc, the install | **4316 KB** in 135 files |
+| disc, the install | **4334 KB** in 136 files |
 
 | fixed cost | RSS |
 |---|---|
@@ -39,17 +39,17 @@ on win32, Node v24.20.0
 | streams | RSS | over baseline | per stream |
 |---|---|---|---|
 | 0 | 62 MB | — | — |
-| 100 | 67 MB | 5 MB | 50 KB |
-| 200 | 69 MB | 6 MB | 33 KB |
-| 400 | 85 MB | 22 MB | 57 KB |
-| 800 | 109 MB | 47 MB | 60 KB |
+| 100 | 67 MB | 5 MB | 49 KB |
+| 200 | 70 MB | 8 MB | 41 KB |
+| 400 | 84 MB | 22 MB | 57 KB |
+| 800 | 107 MB | 44 MB | 57 KB |
 
-**~63 KB per held stream in the process**, from the slope of the last segment (the 100→200 segment reads 17 KB, which is the spread to expect).
+**~57 KB per held stream in the process**, from the slope of the last segment (the 100→200 segment reads 34 KB, which is the spread to expect).
 
-**And ~15 KB more in the kernel**, which no RSS figure can see — non-paged pool, system-wide, so every driver on the box is in it. **On loopback both endpoints are local**, so a real relay holding one end per member spends nearer half of it.
+**And ~36 KB more in the kernel**, which no RSS figure can see — non-paged pool, system-wide, so every driver on the box is in it. **On loopback both endpoints are local**, so a real relay holding one end per member spends nearer half of it.
 
-So the figure a ceiling should be derived from is the **total**, ~78 KB — not the process cost alone, or an owner's `ramLimitMB` quietly means something other than what they set.
-`STREAMS_PER_MB = 16` implies 64 KB, so the guess is 2% pessimistic.
+So the figure a ceiling should be derived from is the **total**, ~92 KB — not the process cost alone, or an owner's `ramLimitMB` quietly means something other than what they set.
+`STREAMS_PER_MB = 16` implies 64 KB, so the guess is 11% pessimistic.
 
 | disc | bytes per row |
 |---|---|
@@ -63,7 +63,7 @@ So the figure a ceiling should be derived from is the **total**, ~78 KB — not 
 
 | the two boxes | |
 |---|---|
-| relay, 100 MB RAM | **~616 members connected at once** (38 MB headroom / 63 KB) |
+| relay, 100 MB RAM | **~681 members connected at once** (38 MB headroom / 57 KB) |
 | relay, 1 GB disc | **~1.8M member rows**, or ~0.3M partner rows |
 | node, 1 MB RAM | **not possible** — bare Node.js is 51 MB |
 | node, 10 MB disc | **~18,110 remembered peers** |
