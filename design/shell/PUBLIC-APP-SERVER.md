@@ -1293,6 +1293,15 @@ verbs today; they live only in its code.
   server asks its relay. It gets a requirement of its own. It must not change
   how a relay gets its owner: first claim and pending-owner are decided
   (AGENT.md).
+- **appServer is to be named faceServer (ruled, rename not yet done).** Andy:
+  *"lets face it. the only thing it actually does is giving face, while
+  being the owners puppet"*; *"should a printing puppet come along, it will
+  be printServer and not called or launched by appServer"*; and *"it doesn't
+  pick its own contacts, it doesn't set its own resource boundaries, it
+  doesn't store it's own routes, it doesn't control its own file system ...
+  it enherits the plumbing from node. ... it doesn't serve apps. it only
+  serves face"*. The core's launcher (appServers.js, `"serves": true`, the
+  pipe) stays generic: it starts whatever server an app names.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
