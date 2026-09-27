@@ -229,16 +229,17 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   //
   // The half of G7's approved shape that cannot start yet: visitors through
   // the face reach only the 'puppet' group, and the rest of the tree is not
-  // there for them. It needs an app's declared commands (public-app-server
-  // G14) and join's route (public-app-server G17). The probe is the name
+  // there for them. It needs join's route (public-app-server G17); G14, an
+  // app's declared commands, was also named here and turned out built
+  // (ac0c283, asserted in appServerBoundary.js), so it is dropped. The probe is the name
   // AGREED with claude-windows for slice 2, nodeApps.faceDoor, so it goes
   // red the moment the unit exists and asks for its assertions.
   test.awaiting('puppets/G10', 'the face door and the puppet group',
     typeof require('../run/js/nodeApps').faceDoor === 'function',
     'visitors through the face reach only the puppet group; a face request naming a node verb answers '
     + 'exactly as an unknown verb; both ends of the face door are app-blind',
-    { there: 0, cost: 'a sitting, after its two prerequisites',
-      after: ['public-app-server/G14', 'public-app-server/G17'] });
+    { there: 0, cost: 'a sitting, after its prerequisite',
+      after: ['public-app-server/G17'] });
 }
 
 // ── THE SIBLING-PUPPET DIRECTION, WHICH ANDY'S MODE GATE DOES NOT REACH
