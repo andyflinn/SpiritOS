@@ -37,6 +37,9 @@ var deskError = '';
 // appropriate". Nothing in the tree records it; the claims do, in this
 // node's own record: the newest `taking` note per full id.
 var deskTaken = Object.create(null);
+// HIS NAME FOR A ROW, when he has given one. Andy: "I like that i get to
+// relable the issue with my own words". The newest `retitle:` he sent.
+var deskLabel = Object.create(null);
 
 // One history row -> one agents message, or null when it is not one.
 function deskDecode(row) {
@@ -75,6 +78,9 @@ function deskFold(msg) {
   if (msg.todo && msg.kind === 'note' && /^taking(\s|$)/.test(msg.text) && msg.from) {
     deskTaken[msg.todo] = msg.from;
   }
+  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && /^retitle:\s*/.test(msg.text)) {
+    deskLabel[msg.todo] = msg.text.replace(/^retitle:\s*/, '');
+  }
   if (msg.kind === 'board') {
     try {
       var b = JSON.parse(msg.text);
@@ -95,7 +101,8 @@ function deskTable() {
     var waits = (row.waitsOn || []).map(function (w) { return typeof w === 'string' ? w : (w.id || ''); }).join(', ');
     return '<tr data-id="' + deskEsc(row.id) + '" style="cursor:pointer">' +
       '<td>' + deskEsc(row.rank) + '</td>' +
-      '<td>' + deskEsc(row.title) + ' <span class="job-manifest-note">(' + deskEsc(row.handle) + ')</span></td>' +
+      '<td title="' + deskEsc(row.title) + '">' + deskEsc(deskLabel[row.id] || row.title) +
+        ' <span class="job-manifest-note">(' + deskEsc(row.handle) + ')</span></td>' +
       '<td>' + deskEsc(deskTaken[row.id] || '') + '</td>' +
       '<td>' + deskEsc(row.frees == null ? '' : row.frees) + '</td>' +
       '<td>' + deskEsc(waits) + '</td>' +

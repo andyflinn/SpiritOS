@@ -2,29 +2,43 @@
 // ONE ROW OF THE DESK, AS A DIALOG — design/shell/AGENTS-UI.md.
 //
 //   Andy, 2026-09-27: "we need a DeskDetails immediately, with inputs
-//   specific to the item" — the issueDetails he saw "on the horizon" an
-//   hour earlier, the Details pattern Natter and Contacts already use.
+//   specific to the item" — and then its layout, top to bottom: "1)
+//   english blurb, 2) the summary of fields from the list (as is) 3) my
+//   input for naming it. 4) acceptance buttons or go! buttons when ready
+//   for such simple decisions- 5) a chat log tied to the item that is WAY
+//   less noisy 6) my input to the chat..... if possible refresh only the
+//   chat history, so my typing doesn't get wiped"
 //
-// WHAT FITS WHICH KIND:
-//   to-do       say something; ask for an explanation; propose a title
-//   dependency  Accept or Reject, then say something
-//   question    answer it, then say something
-// Every input leaves as an `agents` packet carrying the row's FULL id as
-// `todo`, to every agent this node has heard from. The node signs.
+// WHAT COMES FROM WHERE, all of it out of this node's own record through
+// node.history, filtered HERE by `body.todo` (the node filters nothing,
+// hub.js:1278):
+//   the blurb      the newest `explain` from an agent, or the board row's
+//                  own `explain` until one arrives
+//   the slots      each agent's newest `annotation`, above the chat — "i
+//                  want to se every agents comment slot (if it is filled)"
+//   his name       his newest `retitle:` answer — "I like that i get to
+//                  relable the issue with my own words"
+//   the chat       only what passed between Andy and an agent: no claims,
+//                  no agent-to-agent reports, no blurbs or slots (those
+//                  have their own places)
 //
-// The thread is read the way Desk reads it: node.history, filtered HERE
-// by `body.todo` — the node filters nothing (hub.js:1278).
+// OPENING IS ASKING. "as soon as i click on details, and no english
+// explanation is visible, it implies that one is requested." So an open
+// with no blurb sends one explain request, once per row.
 
 var ddApi = null;
 var ddRow = null;           // the board row, as Desk handed it over
 var ddId = '';              // its full id — the thread key
-var ddThread = [];
+var ddState = null;         // what the record says about this row
 // WHO HEARS ANDY: agents heard from in the last day, newest key per name.
 // A stand-in until the owner-edited allow list (AGENTS-UI.md) exists. It
 // keeps drill identities from last week out of his conversation.
 var DD_RECENT_MS = 24 * 60 * 60 * 1000;
 var ddAgents = Object.create(null);
 var ddNote = '';
+
+var DD_RETITLE = /^retitle:\s*/;
+var DD_EXPLAIN_ASK = /^explain\b/;
 
 function ddEsc(s) { return ddApi.escapeHtml(String(s == null ? '' : s)); }
 
@@ -33,8 +47,8 @@ function ddDecode(row) {
   var env;
   try { env = JSON.parse(row.payload); } catch (e) { return null; }
   if (!env || env.app !== 'agents' || !env.body) return null;
-  // A report is a whole message between agents (agents.js reportOf), shown
-  // as that message so the agents' own discussion of a row is under it.
+  // A report is a whole message between agents (agents.js reportOf). It
+  // is kept so a claim still counts, and marked so the chat can leave it out.
   if (env.body.kind === 'report') {
     var inner = null;
     try { inner = JSON.parse(env.body.text); } catch (e) { inner = null; }
@@ -42,7 +56,7 @@ function ddDecode(row) {
     return {
       hash: row.hash, at: row.at, dir: row.dir, peer: '', outcome: String(inner.outcome || ''),
       from: String(inner.from || ''), to: String(inner.to || ''), kind: String(inner.kind),
-      text: String(inner.text || ''), todo: inner.todo ? String(inner.todo) : '',
+      text: String(inner.text || ''), todo: inner.todo ? String(inner.todo) : '', reported: true,
     };
   }
   return {
@@ -50,6 +64,28 @@ function ddDecode(row) {
     from: String(env.body.from || ''), kind: String(env.body.kind || ''),
     text: String(env.body.text || ''), todo: env.body.todo ? String(env.body.todo) : '',
   };
+}
+
+// One pass over this row's messages, in order, into what each part shows.
+function ddRead(list) {
+  var st = { explain: '', explainFrom: '', slots: Object.create(null), label: '',
+    asked: false, chat: [], openAsk: null };
+  list.forEach(function (m) {
+    var andy = m.dir === 'out';
+    if (andy && m.kind === 'answer' && DD_RETITLE.test(m.text)) { st.label = m.text.replace(DD_RETITLE, ''); return; }
+    if (andy && m.kind === 'ask' && DD_EXPLAIN_ASK.test(m.text)) { st.asked = true; return; }
+    if (!andy && m.kind === 'explain') { st.explain = m.text; st.explainFrom = m.from; return; }
+    if (!andy && m.kind === 'annotation') { st.slots[m.from] = { text: m.text, at: m.at }; return; }
+    if (m.reported) return;
+    if (m.kind === 'note' && /^taking(\s|$)/.test(m.text)) return;
+    if (m.kind === 'board' || m.kind === 'report') return;
+    st.chat.push(m);
+    // A question from an agent is open until Andy answers after it.
+    if (!andy && m.kind === 'ask') st.openAsk = m;
+    else if (andy && st.openAsk) st.openAsk = null;
+  });
+  if (!st.explain && ddRow && ddRow.explain) { st.explain = ddRow.explain; st.explainFrom = 'the declaration'; }
+  return st;
 }
 
 // The whole record, a page at a time by position, keeping this row's
@@ -60,13 +96,13 @@ function ddLoad() {
   function page(after) {
     return ddApi.verb('node.history', { after: after, limit: 200 }).then(function (r) {
       var body = r && r.body;
-      if (!body || !body.ok) {
-        throw new Error((body && body.error) || (r && r.status) || 'no answer');
-      }
+      if (!body || !body.ok) throw new Error((body && body.error) || (r && r.status) || 'no answer');
       body.rows.forEach(function (row) {
         var m = ddDecode(row);
         if (!m) return;
-        if (m.dir === 'in' && m.from && m.peer) ddAgents[m.from] = { key: m.peer, at: Date.parse(m.at) || 0 };
+        if (m.dir === 'in' && !m.reported && m.from && m.peer) {
+          ddAgents[m.from] = { key: m.peer, at: Date.parse(m.at) || 0 };
+        }
         if (m.todo !== ddId) return;
         if (byHash[m.hash]) { byHash[m.hash].outcome = m.outcome; return; }
         byHash[m.hash] = m;
@@ -77,7 +113,7 @@ function ddLoad() {
     });
   }
   return page(0).then(function () {
-    ddThread = list;
+    ddState = ddRead(list);
     ddNote = '';
     ddDraw();
   }, function (e) {
@@ -86,10 +122,38 @@ function ddLoad() {
   });
 }
 
-function ddFacts() {
+// ── THE PARTS THAT REPAINT ────────────────────────────────────────────
+
+function ddBlurbHtml() {
+  var st = ddState;
+  if (!st) return '<div class="job-manifest-note">Reading…</div>';
+  return st.explain
+    ? '<div>' + ddEsc(st.explain) + '</div><div class="job-manifest-note">— ' + ddEsc(st.explainFrom) + '</div>'
+    : '<div class="job-manifest-note">No explanation yet. One has been asked for, and it will appear here.</div>';
+}
+
+// EACH AGENT'S CURRENT STATEMENT, ABOVE THE CHAT. Andy: "and we still need
+// a spot for your (current) statements/recommendations" — "..above the
+// chat interface". One slot per agent, its newest annotation; an empty
+// slot is not drawn.
+function ddSlotsHtml() {
+  var st = ddState;
+  if (!st) return '';
+  var names = Object.keys(st.slots);
+  if (!names.length) return '';
+  return '<div class="stat-tile wide"><div class="label">What the agents recommend now</div>' +
+    names.map(function (name) {
+      return '<div><b>' + ddEsc(name) + '</b> <span class="job-manifest-note">' + ddEsc(st.slots[name].at) +
+        '</span><div>' + ddEsc(st.slots[name].text) + '</div></div>';
+    }).join('') + '</div>';
+}
+
+function ddFactsHtml() {
   var r = ddRow || {};
   var waits = (r.waitsOn || []).map(function (w) { return typeof w === 'string' ? w : (w.id || ''); }).join(', ');
   var rows = [
+    ['your name', ddState && ddState.label],
+    ['title', r.title],
     ['id', ddId],
     ['kind', r.kind],
     ['rank', r.rank],
@@ -107,98 +171,93 @@ function ddFacts() {
   }).join('') + '</tbody></table>' + (edges ? '<div class="job-manifest-note">' + edges + '</div>' : '');
 }
 
-function ddThreadHtml() {
-  if (!ddThread.length) return '<div class="job-manifest-note">Nothing said about this row yet.</div>';
-  return ddThread.map(function (m) {
-    var who = m.dir === 'out' ? 'you' : (m.to ? m.from + ' → ' + m.to : m.from);
-    var failed = m.dir === 'out' && m.outcome && m.outcome !== 'sent' && m.outcome !== 'delivered'
-      ? ' <span class="job-start-error">(' + ddEsc(m.outcome) + ')</span>' : '';
-    return '<div><b>' + ddEsc(who) + '</b> <span class="job-manifest-note">' + ddEsc(m.kind) +
-      ' · ' + ddEsc(m.at) + '</span>' + failed + '<div>' + ddEsc(m.text) + '</div></div>';
-  }).join('');
+// ACCEPT FOR A DEPENDENCY; GO! WHEN AN AGENT HAS ASKED AND IS WAITING.
+function ddDecideHtml() {
+  if (ddRow && ddRow.kind === 'dependency') {
+    return '<div class="start-job-form card"><button type="button" id="dd-accept">Accept</button>' +
+      '<button type="button" id="dd-reject">Reject</button></div>';
+  }
+  var ask = ddState && ddState.openAsk;
+  if (!ask) return '';
+  return '<div class="job-manifest-note">' + ddEsc(ask.from) + ' asks: ' + ddEsc(ask.text) + '</div>' +
+    '<div class="start-job-form card"><button type="button" id="dd-go">Go!</button>' +
+    '<button type="button" id="dd-no">No</button></div>';
 }
 
-// THE INPUTS THAT FIT THIS KIND, above the general "say" box.
-function ddInputs() {
-  var kind = ddRow && ddRow.kind;
-  var specific = '';
-  if (kind === 'dependency') {
-    specific =
-      '<div class="start-job-form card">' +
-        '<button type="button" id="dd-accept">Accept</button>' +
-        '<button type="button" id="dd-reject">Reject</button>' +
-      '</div>';
-  } else if (kind === 'question') {
-    specific =
-      '<div class="start-job-form card"><label class="field-label grow">Answer' +
-        '<input type="text" id="dd-answer" placeholder="your ruling on this question"></label>' +
-        '<button type="button" id="dd-answer-send">Answer</button></div>';
-  } else {
-    specific =
-      '<div class="start-job-form card">' +
-        '<button type="button" id="dd-explain">Explain this to me</button>' +
-      '</div>' +
-      '<div class="start-job-form card"><label class="field-label grow">Better title' +
-        '<input type="text" id="dd-title" placeholder="what you would call it"></label>' +
-        '<button type="button" id="dd-title-send">Propose</button></div>';
-  }
-  return specific +
-    '<div class="start-job-form card"><label class="field-label grow">Say' +
-      '<input type="text" id="dd-say" placeholder="to every agent, under this row"></label>' +
-      '<button type="button" id="dd-say-send">Send</button></div>';
+function ddChatHtml() {
+  var chat = ddState ? ddState.chat : [];
+  if (!chat.length) return '<div class="job-manifest-note">Nothing said about this row yet.</div>';
+  return chat.map(function (m) {
+    var who = m.dir === 'out' ? 'you' : m.from;
+    var failed = m.dir === 'out' && m.outcome && m.outcome !== 'sent' && m.outcome !== 'delivered'
+      ? ' <span class="job-start-error">(' + ddEsc(m.outcome) + ')</span>' : '';
+    return '<div><b>' + ddEsc(who) + '</b> <span class="job-manifest-note">' + ddEsc(m.at) + '</span>' +
+      failed + ' ' + ddEsc(m.text) + '</div>';
+  }).join('');
 }
 
 // ── A REPAINT NEVER TOUCHES WHAT ANDY IS TYPING ─────────────────────
 //
-//   Andy, on Desk's first hour: "also my typing gets erased, everytime
-//   somebody sends something"
+//   Andy: "also my typing gets erased, everytime somebody sends
+//   something", then "if possible refresh only the chat history, so my
+//   typing doesn't get wiped".
 //
-// A reply arriving reloads the thread, and repainting the whole body took
-// the input boxes with it. So the body is three parts: the facts and the
-// thread are repainted on every load, and the inputs are drawn ONCE per
-// open(), when the row changes and nothing is half-typed yet.
+// The frame is drawn ONCE per open(); the two inputs (3, his name for it;
+// 6, the chat) live in it and are never repainted. Only the parts between
+// them are.
 function ddFrame() {
   var el = document.getElementById('dd-body');
   if (!el) return;
   el.innerHTML =
-    '<div class="stat-tile wide" id="dd-head"></div>' +
-    '<div class="stat-tile wide"><div class="label">Thread</div><div id="dd-thread"></div></div>' +
-    '<div class="stat-tile wide">' + ddInputs() +
-      '<div id="dd-error" class="job-start-error"></div></div>';
+    '<div class="stat-tile wide"><div class="label" id="dd-title"></div><div id="dd-blurb"></div></div>' +
+    '<div class="stat-tile wide" id="dd-facts"></div>' +
+    '<div class="start-job-form card"><label class="field-label grow">Your name for it' +
+      '<input type="text" id="dd-name" placeholder="in your own words"></label>' +
+      '<button type="button" id="dd-name-save">Save</button></div>' +
+    '<div id="dd-decide"></div>' +
+    '<div id="dd-slots"></div>' +
+    '<div class="stat-tile wide"><div class="label">Chat</div><div id="dd-chat"></div></div>' +
+    '<div class="start-job-form card"><label class="field-label grow">Say' +
+      '<input type="text" id="dd-say" placeholder="to every agent, under this row"></label>' +
+      '<button type="button" id="dd-say-send">Send</button></div>' +
+    '<div id="dd-error" class="job-start-error"></div>';
 }
 
 function ddDraw() {
-  var head = document.getElementById('dd-head');
-  if (!head) return;
-  var title = ddRow ? ddRow.title : ddId;
-  head.innerHTML =
-    '<div class="label">' + ddEsc(title) + ' <span class="job-manifest-note">(' +
-      ddEsc(ddRow && ddRow.handle ? ddRow.handle : ddId) + ')</span></div>' + ddFacts();
-  document.getElementById('dd-thread').innerHTML = ddThreadHtml();
+  var title = document.getElementById('dd-title');
+  if (!title) return;
+  var label = ddState && ddState.label;
+  title.innerHTML = ddEsc(label || (ddRow ? ddRow.title : ddId)) + ' <span class="job-manifest-note">(' +
+    ddEsc(ddRow && ddRow.handle ? ddRow.handle : ddId) + ')</span>';
+  document.getElementById('dd-blurb').innerHTML = ddBlurbHtml();
+  document.getElementById('dd-facts').innerHTML = ddFactsHtml();
+  document.getElementById('dd-decide').innerHTML = ddDecideHtml();
+  document.getElementById('dd-slots').innerHTML = ddSlotsHtml();
+  document.getElementById('dd-chat').innerHTML = ddChatHtml();
   document.getElementById('dd-error').textContent = ddNote;
 }
-
-// Only what was sent is cleared, and only after it went.
-function ddClear(id) { var el = document.getElementById(id); if (el) el.value = ''; }
 
 function ddValue(id) {
   var el = document.getElementById(id);
   return el ? String(el.value || '').trim() : '';
 }
 
+// Only what was sent is cleared, and only after it went.
+function ddClear(id) { var el = document.getElementById(id); if (el) el.value = ''; }
+
 function ddSend(kind, text, fieldId) {
   var said = String(text || '').trim();
-  if (!said || !ddId) return;
+  if (!said || !ddId) return Promise.resolve();
   var names = Object.keys(ddAgents).filter(function (n) {
     return Date.now() - ddAgents[n].at < DD_RECENT_MS;
   });
   if (!names.length) {
     ddNote = 'No agent has written to this node in the last day, so there is nobody to send to.';
     ddDraw();
-    return;
+    return Promise.resolve();
   }
   var body = { from: 'andy', kind: kind, text: said, todo: ddId };
-  Promise.all(names.map(function (n) { return ddApi.peerPost('agents', ddAgents[n].key, body); })).then(function () {
+  return Promise.all(names.map(function (n) { return ddApi.peerPost('agents', ddAgents[n].key, body); })).then(function () {
     if (fieldId) ddClear(fieldId);
     return ddLoad();
   }).catch(function (e) {
@@ -207,28 +266,40 @@ function ddSend(kind, text, fieldId) {
   });
 }
 
+// OPENING IS ASKING, once per row: no blurb, and no request already in
+// his record, means this open is the request.
+function ddAskIfUnexplained() {
+  if (!ddState || ddState.explain || ddState.asked) return;
+  ddState.asked = true;
+  ddSend('ask', 'explain this to me: what is it, and why is it where it is?');
+}
+
 spirit.shell.activateApp({
   mount: function (container, api) {
     ddApi = api;
     container.innerHTML = '<div id="dd-body" class="stack"></div>';
-    // Delegated, because the body is repainted after every send.
+    // Delegated, because the parts between the inputs are repainted.
     document.getElementById('dd-body').addEventListener('click', function (event) {
       var id = event.target && event.target.id;
       if (id === 'dd-accept') { ddSend('answer', 'accepted.'); return; }
       if (id === 'dd-reject') { ddSend('answer', 'rejected.'); return; }
-      if (id === 'dd-explain') { ddSend('ask', 'explain this to me: what is it, and why is it where it is?'); return; }
-      if (id === 'dd-title-send') { var t = ddValue('dd-title'); if (t) ddSend('answer', 'retitle: ' + t, 'dd-title'); return; }
-      if (id === 'dd-answer-send') { ddSend('answer', ddValue('dd-answer'), 'dd-answer'); return; }
+      if (id === 'dd-go') { ddSend('answer', 'go.'); return; }
+      if (id === 'dd-no') { ddSend('answer', 'no.'); return; }
+      if (id === 'dd-name-save') { var n = ddValue('dd-name'); if (n) ddSend('answer', 'retitle: ' + n, 'dd-name'); return; }
       if (id === 'dd-say-send') { ddSend('note', ddValue('dd-say'), 'dd-say'); }
     });
     document.getElementById('dd-body').addEventListener('keydown', function (event) {
       if (event.key !== 'Enter') return;
       var id = event.target && event.target.id;
       if (id === 'dd-say') { event.preventDefault(); ddSend('note', ddValue('dd-say'), 'dd-say'); }
-      else if (id === 'dd-answer') { event.preventDefault(); ddSend('answer', ddValue('dd-answer'), 'dd-answer'); }
-      else if (id === 'dd-title') { event.preventDefault(); var t = ddValue('dd-title'); if (t) ddSend('answer', 'retitle: ' + t, 'dd-title'); }
+      else if (id === 'dd-name') {
+        event.preventDefault();
+        var n = ddValue('dd-name');
+        if (n) ddSend('answer', 'retitle: ' + n, 'dd-name');
+      }
     });
-    // A reply arriving while the dialog is open lands in the thread.
+    // A reply arriving while the dialog is open repaints the parts, never
+    // the inputs.
     api.onPacket('agents', function () { if (ddId) ddLoad(); });
   },
 
@@ -236,10 +307,10 @@ spirit.shell.activateApp({
   open: function (params) {
     ddRow = (params && params.row) || null;
     ddId = (params && params.id) || (ddRow && ddRow.id) || '';
-    ddThread = [];
+    ddState = null;
     ddNote = '';
     ddFrame();
     ddDraw();
-    ddLoad();
+    ddLoad().then(ddAskIfUnexplained);
   },
 });
