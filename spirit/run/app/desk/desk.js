@@ -631,6 +631,12 @@ function deskDraw() {
   if (team) team.innerHTML = deskTeamChat();
   var bubble = document.getElementById('desk-session');
   if (bubble) bubble.innerHTML = deskSessionBubble();
+  var goal = document.getElementById('desk-goal');
+  if (goal) {
+    var open = deskSession && !deskSession.goal.done;
+    goal.hidden = !open;
+    goal.textContent = open ? deskSession.goal.title + ' (' + deskSession.goal.id + ')' : '';
+  }
   var design = deskDesignOn();
   var banner = document.getElementById('desk-design');
   if (banner) banner.hidden = !design;
@@ -723,6 +729,11 @@ spirit.shell.activateApp({
     // so a half-typed line in any pane survives a switch. The inputs live
     // outside the repainted parts.
     container.innerHTML =
+      // THE GOAL IS DESK'S TITLE. Andy: "the desk title bar should be synced
+      // to the title of the goal, the game being: bring the goal item back up
+      // to be ever closer to the title bar saying the same." Shown while a
+      // design session's goal is open; the shell's own bar is not Desk's.
+      '<div id="desk-goal" class="stat-tile wide" style="font-size:1.25em;font-weight:bold" hidden></div>' +
       '<div id="desk-design" class="stat-tile wide" style="background:#fff3c4;color:#000" hidden>' +
         '<b>Design mode.</b> Nothing is built until it ends, and it ends only in the Team tab.</div>' +
       '<div class="start-job-form card" id="desk-tabs">' +
