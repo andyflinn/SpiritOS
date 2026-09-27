@@ -13,9 +13,10 @@
 //
 // NOT DECLARED, because the shape waits for Andy's yes (a board that guesses
 // an API has to be rewritten when the design settles):
-//   - the face admitting the member: the owner commanding contact.accept on
-//     its face needs the face to carry the 'contact' group, which widens
-//     what a puppet obeys.
+//   - the face admitting the member's ANSWER: a front-door rule, "an answer
+//     to a question this node asked, from the key it asked, is never a
+//     stranger's packet" (Andy: "the grant is implicit by naming the
+//     route"), awaiting wsl-claude's review and his yes on the rule.
 //   - the member admitting the face: by hand for the first proof, or a new
 //     node verb, which goes under the gate.
 

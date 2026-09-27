@@ -1059,13 +1059,15 @@ granted, such as the agents' node.
 *Recommended for 2 and 3, and it touches the front door, so it waits for
 Andy's yes on the shape:* **the grant introduces them, with verbs that
 exist.**
-- **The face admits the member** because the owner says so, which is Andy's
-  "extension of the grant". When the owner's appFaceApp grants a name to a
-  member, it commands its face `contact.accept <member key>` through the
-  owner door (`nodeApps.puppetDoor`). The face then has to carry the
-  `contact` group: `puppet.json` `"carries": ["contact"]`, where
-  `face-install` writes `[]` today. That changes what the puppet obeys, and
-  it is Andy's to rule.
+- **The face admits the member's answer; no contact is added.** Andy,
+  rejecting a `contact.accept` step: *"Why would this be neccessary?"* and
+  *"the grant is implicit by naming the route, when appFaceApp asks."*
+  Proposed rule for the front door: **an answer to a question this node
+  asked, from the key it asked, is never a stranger's packet.** The face
+  posted `serve` to the key the route named; the reply carries that post's
+  hash as `re` and comes from that key, so it is let in. Nothing else is,
+  and no contact list changes. It is a rule in `hub.frontDoor`, which is
+  core, so it waits for wsl-claude's review and Andy's yes on the rule.
 - **The member admits the face** because its own agreement named it (Andy:
   *"the third box trusts the agreement it made"*). The `granted` reply
   carries the face's key. For the first proof, the member's operator
