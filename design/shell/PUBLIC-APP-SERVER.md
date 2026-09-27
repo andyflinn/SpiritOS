@@ -969,6 +969,15 @@ supersedes PUPPETS.md §10's flat namespace (see there).
   (wsl-claude's review). A member with a node of their own gets the signed
   redirect.
 
+**Parked, not in scope (Andy, 2026-09-27: "it's not needed to reach that 3rd
+face user..."):** a member with a node of their own serving a face. Whether
+that node trusts face requests by construction or refuses any not carried
+by the owner's appFaceApp key was asked and not ruled. Nothing is built for
+it; `faceRoute.answerRoute`/`routeIsSigned` stay as tested pieces only.
+The owner's answer on this path is the plain "the owner of this name is
+<key>" (Andy: "the owner, of appFaceApp simple responds with the key of the
+subdomain owner, or an error"), and the face forwards there, whoever it is.
+
 **Open:** which DNS provider holds the domain (it picks Caddy's DNS module);
 what answers the bare `face.spirit.<domain>`, which no grant names (a named
 refusal until it has a page); whether the grant table's keeper keeps the
