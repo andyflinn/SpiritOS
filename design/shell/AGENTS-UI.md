@@ -119,6 +119,18 @@ What follows is what both agreed. Any of it changes when Andy asks.
    **A slot empties** when Andy answers under the row, or the row leaves
    the board. "Taken by" guards the fill.
 
+   **The load pattern.** Andy: *"the initial load is a "search"
+   highest-priority, conceptually, and that's ok, we work within the frame
+   work, a lot of the traffic is random access on rows."* So the first read
+   pages through the whole record once: that is the search, and it may be
+   large. After it, a reader follows the cursor for new rows and reaches
+   single rows by hash. Reading one row by `hash` is the one narrowed read
+   the node has always allowed (`hub.js:1278`: *"since and limit, or one
+   row by hash, and nothing else"*; `trafficLog.byHash`). **The index from
+   a board row's `todo` to its hashes lives with the reader** (Desk, or an
+   agent), built during that first search, never in the node. That keeps
+   the no-filter rule while making row access random.
+
    **`node.history`, the one read** (proposed by claude, amended by
    wsl-claude, 2026-09-27). It is named apart from `arrivals` so that
    `trafficLog.js:434-436` stays true of arrivals. It returns admitted
