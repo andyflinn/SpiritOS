@@ -88,6 +88,35 @@ if (typeof bucket.createSearch !== 'function') {
     }
   }
 
+  // ── A '*' WALK STOPS WHEN THE ANSWER IS FULL; A RANKED ONE CANNOT ────
+  //
+  //   Andy: "the caller should understand that in the case of \"*\" he must
+  //   not scan beyond the buckets limit?" With '*' nothing outranks what is
+  //   already held, so once the pairs fill the byte cap nothing later can
+  //   get in, and offer() says false (claude-windows, 629f10b). A ranked
+  //   query cannot know that: a better match may still be coming.
+  {
+    const walk = function (query) {
+      const s = search({ query: query, maxBytes: 200 });
+      let stoppedAt = -1;
+      for (let i = 0; i < 1000; i += 1) {
+        if (!s.offer(obj('k' + i, 'label ' + i))) { stoppedAt = i; break; }
+      }
+      return { stoppedAt: stoppedAt, examined: s.examined(), result: s.getResult() };
+    };
+    const star = walk('*');
+    const ranked = walk('label');
+    if (star.stoppedAt > 0 && star.stoppedAt < 20 && star.examined === star.stoppedAt && star.result.more === true
+        && ranked.stoppedAt === -1 && ranked.examined === 1000 && ranked.result.more === true) {
+      test.check('"*" over 1000 objects with a 200-byte cap tells the caller to stop after ' + star.examined
+        + ', with more=true, and the object refused is not examined; a ranked query over the same 1000 walks all '
+        + 'of them, because a better match could still come');
+    } else {
+      test.fail('early stop: "*" stopped at ' + star.stoppedAt + ' having examined ' + star.examined + ' (more '
+        + star.result.more + '); ranked stopped at ' + ranked.stoppedAt + ', examined ' + ranked.examined);
+    }
+  }
+
   // ── HOOK 1 MATCHES THE DESCRIPTION; THE PAIR KEEPS ONLY THE LABEL ───
   {
     const s = search({ query: 'plumber' });
