@@ -41,6 +41,16 @@ function createOwnerPost(opts) {
   const clearT = o.clearTimeout || clearTimeout;
   const waitMs = Number(o.waitMs) > 0 ? Number(o.waitMs) : DEFAULT_WAIT_MS;
   const waiting = Object.create(null);   // command hash -> { puppet, settle }
+  // AN ANSWER CAN BEAT ITS OWN QUESTION'S BOOKKEEPING. wsl-claude, testing
+  // this (a45c07b): the command's post and the puppet's answer are separate
+  // packets on one stream, so the answer can be handled before post()'s
+  // continuation registers the wait. It found no slot and was dropped, and
+  // the owner got no-reply-from-puppet for a command that ran. So an answer
+  // with no slot yet is held here, briefly, and send() looks here first
+  // when it registers. Held answers expire, so a stray one is never kept.
+  const early = Object.create(null);     // command hash -> { from, body, at }
+  const EARLY_MS = Number(o.earlyMs) > 0 ? Number(o.earlyMs) : 5000;
+  const now = o.now || function () { return Date.now(); };
 
   function send(puppetKey, verb, body) {
     const to = String(puppetKey || '');
@@ -72,6 +82,17 @@ function createOwnerPost(opts) {
           puppet: to,
           settle: function (reply) { clearT(timer); resolve(Object.assign({ hash: hash }, reply)); },
         };
+        // The answer may already be here (see `early`). Taken only if it
+        // came from this command's puppet, as a late arrival would be.
+        const held = early[hash];
+        if (held) {
+          delete early[hash];
+          if (held.from === to && now() - held.at <= EARLY_MS) {
+            const slot = waiting[hash];
+            delete waiting[hash];
+            slot.settle(held.body);
+          }
+        }
       });
     });
   }
@@ -84,9 +105,16 @@ function createOwnerPost(opts) {
     if (!text || !o.isEnvelope(text)) return;
     const info = o.decode(text);
     if (!info || info.app || !info.re) return;
-    const slot = waiting[String(info.re)];
-    if (!slot) return;
     const from = String((message && (message.fromKey || message.from)) || '');
+    const slot = waiting[String(info.re)];
+    if (!slot) {
+      // Possibly early: kept for EARLY_MS, and only the first copy.
+      Object.keys(early).forEach(function (h) { if (now() - early[h].at > EARLY_MS) delete early[h]; });
+      if (!early[String(info.re)]) {
+        early[String(info.re)] = { from: from, at: now(), body: info.body && typeof info.body === 'object' ? info.body : {} };
+      }
+      return;
+    }
     if (from !== slot.puppet) return;
     delete waiting[String(info.re)];
     slot.settle(info.body && typeof info.body === 'object' ? info.body : {});
