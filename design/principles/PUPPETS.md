@@ -425,7 +425,10 @@ searches"*. So a list verb IS a search with an empty query, through the same
 bucket, cap and partial flag. Nothing in the system promises a complete list,
 and no caller may assume one.
 
-### G2 — one shared search: two hooks per collection, the rest inherited
+### G2 — Generalizing the search approach to serving collections
+
+*Andy's title, given in Desk on 2026-09-27. It was "one shared search: two
+hooks per collection, the rest inherited".*
 
 **Status:** OPEN. Nothing built, but the shape exists: `peer.search`
 already returns `{ rows, more }` (`spirit/run/js/hub.js:2242`) with the
