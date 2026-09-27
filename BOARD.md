@@ -13,13 +13,22 @@ not describe. Run the harness if in doubt.
 
 ---
 
-## public-app-server/G17 — join's answer travels back to the browser
+## public-app-server/G19 — A member's app answers through the face
 
-`PUBLIC-APP-SERVER` · status **CLOSED**
+`PUBLIC-APP-SERVER` · status **OPEN**
 
-- **missing:** a member keeps the names granted to it, on disk (MINE_FILE in appFaceApp) — **~0% there**, guess: a sitting, with the introductions
+- **missing:** G19.2 passthrough: a packet for a serving app goes down its pipe (appServers.passthrough) — **~0% there**, guess: a sitting
   
-  Andy: "the members to store their own subdomain on disc". A granted reply is written down where the member's appFaceApp reads it, so a serve for that name reaches its app server instead of 404 no-such-route
+  a peer's packet addressed to an app that runs a server is handed down that app's pipe unread, and its answer goes back as the node's own reply, signed with the node's key. Blocked by G19.1
+- **missing:** G19.3 grantFace, a faceless server app (app/grantFace) — **~0% there**, guess: a sitting
+  
+  owns grants.json (canonical, keyed by face domain and name), answers grant, faceKey and the face's route question, and on every change syncs the face's contact list by owner command over loopback. Blocked by G19.2
+- **missing:** G19.4 the api verb: introspection by layers — **~0% there**, guess: a sitting
+  
+  a caller in the owner's contacts asks "api" and gets the tree of apps it may use, each verb as { description, request, reply }, gathered from the apps themselves; a one-leaf object is a call. Andy's yes on the verb: "go." (Desk, G17, 2026-09-28). Blocked by G19.3
+- **missing:** G19.5 the member's shell client (app/grantFaceClient) — **~0% there**, guess: a sitting
+  
+  a shell page on the member's node: asks api over peerPost, negotiates a name, stores its grants keyed by face and name with the fs api, and admits the face's key taken from the owner-signed reply. Blocked by G19.4
 
 *Declared in `memberFacePending.js`*
 
@@ -85,4 +94,4 @@ not describe. Run the harness if in doubt.
 
 ---
 
-**7 assertion(s) across 7 requirement(s).**
+**10 assertion(s) across 7 requirement(s).**

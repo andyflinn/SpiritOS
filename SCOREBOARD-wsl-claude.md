@@ -7,7 +7,7 @@
 **Nothing is broken, 7 requirements are declared and not built yet, and 3 older questions need a decision from you.**
 
 ```
-184 suites   3444 green   0 red   0 unhappy   7 owed      run 1e3703a
+184 suites   3444 green   0 red   0 unhappy   7 owed      run e2cda60
 ```
 
 ---
@@ -59,7 +59,6 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 - **app code and app state do not share a directory (G12)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
 - **the official sample instantiates the template, and IS the acceptance test (G13)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
 - **the named interface, so a suite need not guess it (G15)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
-- **A member's app answers through the face (G19)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
 - **one app, one whitelist, no dispatch (public-app-server/G2)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
 - **`ask` has one home, and the app server uses it (public-app-server/G3)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
 - **the shell provides the optional layer, as files (public-app-server/G4)** — live work in `design/shell/PUBLIC-APP-SERVER.md`, and no test is watching it.
@@ -72,9 +71,8 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +10 green
-- -2 red
-- ✅ **built or withdrawn:** public-app-server/G19
+- ✅ **built or withdrawn:** public-app-server/G17
+- ⏳ **newly owed:** public-app-server/G19
 
 ---
 
@@ -83,14 +81,17 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 | # | handle | to-do | waits on | frees | owed | there | |
 |---|---|---|---|---|---|---|---|
 | 1 | transport/R16 | the log must be able to PROVE what it claims |  | 1 | 1 day | `░░░░░░░░░░` 0% |  |
-| 2 | G17 | join's answer travels back to the browser |  | 1 | today | `░░░░░░░░░░` 0% |  |
-| 3 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 2 days | `░░░░░░░░░░` 0% |  |
-| 4 | puppets/G2 | Generalizing the search approach to serving collections |  |  | 2 days | `▓▓▓▓▓░░░░░` 50% |  |
-| 5 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 6 | puppets/G10 | the face door and the puppet group | G17 |  | today | `░░░░░░░░░░` 0% |  |
-| 7 | transport/R19 | the database decision, deferred until the log can prove its promises | transport/R16 |  | today | `░░░░░░░░░░` 0% |  |
+| 2 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 2 days | `░░░░░░░░░░` 0% |  |
+| 3 | puppets/G2 | Generalizing the search approach to serving collections |  |  | 2 days | `▓▓▓▓▓░░░░░` 50% |  |
+| 4 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 5 | puppets/G10 | the face door and the puppet group | G17 |  | today | `░░░░░░░░░░` 0% |  |
+| 6 | transport/R19 | the database decision, deferred until the log can prove its promises | transport/R16 |  | today | `░░░░░░░░░░` 0% |  |
+| 7 | G19 | A member's app answers through the face |  |  | today | `░░░░░░░░░░` 0% |  |
 
-**How the order was made.** 3 of 7 owed items have no dependency you have accepted, so they are ordered by age alone.
+**How the order was made.** 
+
+- 5 of 7 owed items have no dependency you have accepted, so they are ordered by age alone.
+- (puppets/G10) waits on (G17), which is open but no test watches it.
 
 *Percentages are the guesses the declarations carry — `testSupport`:
 "printed as guesses… to be argued with during a design sitting, not to
