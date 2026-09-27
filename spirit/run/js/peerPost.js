@@ -144,6 +144,8 @@ function createPeerPost(opts) {
   var asking = Object.create(null);
   var askedAt = Object.create(null);
   var ASK_AGAIN_MS = 60000;
+  // How long a card ask keeps trying past a BUSY target — see the ask.
+  var CARD_ASK_PATIENCE_MS = 30000;
   var noteSeen = opts.noteSeen || null;
   var traffic = opts.traffic || null;
   // NODE-ONLY, AND SO IT IS INJECTED (cycle 10, R3). What to do with a
@@ -785,9 +787,29 @@ function createPeerPost(opts) {
         // NO RECURSION, BY CONSTRUCTION RATHER THAN BY A GUARD: this post is
         // a card ask, so `nodeCard.asks` is true of it on the way in and the
         // branch above returns before reaching here.
-        var ask = post(relayUrl, toKey, JSON.stringify({ v: 1, body: { card: true } }))
-          .catch(function () { return null; })
-          .then(function (answer) { delete asking[toKey]; return answer; });
+        // BUSY MEANS WAIT, FOR THE ASK TOO (0016; cardFetch.js C9). A post
+        // gets one attempt by default, and the ask was posted that way, so a
+        // target already taking a request (the relay's one-in-flight per
+        // target) ended the fetch at once, and the message behind it was
+        // refused no-cipher-key 100 ms later. Found live by wsl-claude on
+        // Andy's node, which two agents and Desk now keep busy.
+        //
+        // SO THE ASK IS REPEATED ON BUSY, AND ONLY ON BUSY, after the relay's
+        // own retryAfterMs and for at most CARD_ASK_PATIENCE_MS. Not a queue
+        // patience: that would also retry an UNREACHABLE target, and holding
+        // a message for half a minute while asking an absent peer for a card
+        // gains nothing (the first attempt at this made the unreachable case
+        // hang). Busy says the peer is there; absent says it is not.
+        var askText = JSON.stringify({ v: 1, body: { card: true } });
+        var askStarted = Date.now();
+        function askOnce() {
+          return post(relayUrl, toKey, askText).catch(function () { return null; }).then(function (answer) {
+            var waitMs = answer && answer.busy ? Math.max(Number(answer.retryAfterMs) || 0, 50) : -1;
+            if (waitMs < 0 || Date.now() - askStarted + waitMs > CARD_ASK_PATIENCE_MS) return answer;
+            return new Promise(function (resolve) { setT(resolve, waitMs); }).then(askOnce);
+          });
+        }
+        var ask = askOnce().then(function (answer) { delete asking[toKey]; return answer; });
         asking[toKey] = ask;
         return ask.then(lookAgain);
       })
