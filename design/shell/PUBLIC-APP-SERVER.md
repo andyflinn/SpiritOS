@@ -1235,6 +1235,11 @@ verbs today; they live only in its code.
   front door admits it and `api` answers it; (3) the member is on
   grantFace's `allow.json`, which the owner writes and the app can only
   read (`nodeApps.js`, OWNER-ONLY).
+  *Implied layers* (Andy: *"there are implied layers since the relay is owned
+  by the same key as the appFaceApp puppet...."*): one owner key holds the
+  relay, the face and grantFace, so one consent can stand for another. It is
+  carried by the owner's own node or app acting for him (grantFace turning
+  his grant into the face's contact), never assumed by a layer on its own.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
