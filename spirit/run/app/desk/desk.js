@@ -224,7 +224,7 @@ spirit.shell.activateApp({
     deskApi = api;
     // The input lives outside both repainted parts.
     container.innerHTML = '<div id="desk-root"><div id="desk-top"></div>' +
-      '<div class="stat-tile wide"><div class="label">Talk to the lead</div><div id="desk-chat"></div></div>' +
+      '<div class="stat-tile wide" style="margin-top:16px"><div class="label">Talk to the lead</div><div id="desk-chat"></div></div>' +
       '<div class="start-job-form card"><label class="field-label grow">Say' +
         '<input type="text" id="desk-say" placeholder="to the lead, about anything that is not one row"></label>' +
       '<button type="button" id="desk-say-send">Send</button></div>' +
