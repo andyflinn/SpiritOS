@@ -1192,6 +1192,12 @@ verbs today; they live only in its code.
   was granted, and from then on the face forwards that name's visitors to it.
   grantFace, running on the owner's box, has meanwhile told the face by
   owner command to admit that member.
+- **The member learns the face's key from grantFace.** Andy: *"the grantFace
+  can even have a verb that tells the requester the ID of appFaceApp puppy,
+  so the member can savely allow requests signed by appFaceApp..."* That
+  closes gap 2: the member admits the face because the owner's own app told
+  it which key the face is. Admitting it is the member's own act on its own
+  node (its contact list, through its own door).
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
