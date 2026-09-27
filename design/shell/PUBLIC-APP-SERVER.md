@@ -380,6 +380,15 @@ re-derived:
 - **Open:** whether the owner's node is reachable directly. If it is not,
   the pass-through rides on the stream it already holds to its relay.
 
+**Sharpened by Andy, 2026-09-27, in Desk:** asked about the two halves,
+*"what you call \"the other half\" the appFaceApp never even knows. it's
+invisible to itself."* So the line is VISIBILITY: the stable half is
+everything an app, or the face carrying it, can see (the one function its
+page calls, the flat door, the verbs). The box half is invisible to them:
+the pipe path, the port, the memory cap, the unit. Something no app can see
+cannot break an app when it changes, which is why only the visible half
+needs a deprecation path. The names are still his to give.
+
 ### G9 — strict posture: one enforced half, one declared half
 
 **Status:** OPEN. Nothing built.
