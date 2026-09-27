@@ -648,6 +648,9 @@ freePort()
       // A page of the owner's record. The test node's log is empty, so the
       // honest answer is an empty page, not a refusal.
       ['POST', '/api/spirit', { verb: 'node.history', limit: 5 }],
+      // A test node rotates its own throwaway key: the write is the point,
+      // and the key-less test node refuses it 409, which is also honest.
+      ['POST', '/api/spirit', { verb: 'node.rotateCipher' }],
       // A url on no Natter list, so this is refused before any network is
       // touched — the ReferenceError was at the CALL, which happens
       // either way.

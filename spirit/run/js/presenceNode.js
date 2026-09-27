@@ -513,6 +513,16 @@ function createPresence(opts) {
   return {
     start: start,
     stop: stop,
+    // THE NEW CARD, TO EVERY RELAY AT ONCE. Andy, 2026-09-26: "the rotating
+    // node must hand its new card to every relay straight away when it
+    // rotates." The same handover a stream opening does, fired now for
+    // every open stream, rather than waiting for each to reconnect. Returns
+    // how many relays it went to.
+    handOverCardEverywhere: function () {
+      const urls = Object.keys(streams);
+      urls.forEach(handOverCard);
+      return urls.length;
+    },
     // Which relay to send through. A node on two relays can reach a peer
     // by either, so the caller says nothing and this answers with the
     // ones that currently name that key as present.

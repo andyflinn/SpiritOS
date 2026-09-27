@@ -424,8 +424,13 @@ define('no-identity', {
   note: 'An owner command must be signed with this node identity key before ' +
     'it goes out, and the key could not be loaded. Not something the caller did.',
 });
+// RETRY 'after' SINCE THE RE-ASK (cycle-10/R13): a peer that rotated refuses
+// with this, and the sender now asks for its new card and posts again
+// (peerPost staleCard). As 'no', agents.js would destroy a queued report of
+// such a message, the same join as 6feb3e0 through a different refusal
+// (wsl-claude). Changed in the same commit as the re-ask, as agreed.
 define('will-not-open', {
-  status: 400, presence: NONE, retry: 'no', fault: 'caller',
+  status: 400, presence: NONE, retry: 'after', fault: 'caller',
   texts: ['this did not open for me'],
   note: 'Sealed, but not to this box — or altered on the way. The three ' +
     'causes (wrong key, tampering, a blob lifted from another exchange ' +
@@ -574,6 +579,13 @@ define('not-owner', {
 // Answers to a command its owner signed, sent back to the owner only.
 // A stranger gets nothing at all, so none of these tells anyone that a
 // node is a puppet (nodeApps.puppetDoor).
+define('rotate-not-saved', {
+  status: 500, presence: NONE, retry: 'after', fault: 'node',
+  texts: ['the new cipher key could not be saved'],
+  note: 'A rotation refused before anything was published: a card naming a key ' +
+    'that is not on disc would send every peer to seal to a key this node ' +
+    'cannot open with after a restart (nodeCard.rotate).',
+});
 define('not-carried-here', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['not carried by this puppet'],

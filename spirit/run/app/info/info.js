@@ -439,6 +439,18 @@ spirit.shell.activateApp({
       // Relay Chat footer puts this node's own key ending for the same
       // reason: it is there to be read out when somebody needs it, not
       // to be looked at.
+      // ── ROTATE THE CIPHER KEY (cycle-10/R13) ──────────────────────
+      //
+      //   Andy: "the place would be the info app", "and from the info-app
+      //   it should invoke the rotate key dialog."
+      //
+      // A button that OPENS the dialog. The explanation and the two-press
+      // confirmation live there, never here, so nothing on this screen can
+      // rotate a key by itself.
+      '<div class="start-job-form card">' +
+        '<button type="button" id="info-rotate">Rotate this node\x27s cipher key</button>' +
+      '</div>' +
+
       '<div class="job-manifest-note" id="info-foot">' +
         '<div>This node\'s key. It is the identity — the name above is a caption ' +
           'it wears, and a caption can be changed while this cannot.</div>' +
@@ -466,5 +478,8 @@ spirit.shell.activateApp({
     // blank because a box in another country is slow.
     infoLoad();
     infoLoadRelays();
+    document.getElementById('info-rotate').addEventListener('click', function () {
+      infoApi.callDialog('app/rotateKey', {});
+    });
   },
 });

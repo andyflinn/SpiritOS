@@ -65,7 +65,7 @@ the only way a default survives contact with people in a hurry.
 
 ## What can be asked
 
-**37 verbs, in 9 families.** This list is generated from `server.js` and is exhaustive at the commit above.
+**38 verbs, in 9 families.** This list is generated from `server.js` and is exhaustive at the commit above.
 
 **`contact.*`** — who this node knows, and what it calls them
 - `contact.accept`
@@ -100,6 +100,7 @@ the only way a default survives contact with people in a hurry.
 **`node.*`** — this node's own identity as strangers see it
 - `node.card`
 - `node.history`
+- `node.rotateCipher`
 - `node.setDescription`
 - `node.setName`
 
@@ -155,7 +156,7 @@ figure you can compute instead of estimate.
 
 ## The errors
 
-**81 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
+**82 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
 each carries more than a sentence:
 
 | | |

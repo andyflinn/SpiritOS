@@ -1,0 +1,9 @@
+{
+  "name": "Rotate cipher key",
+  "description": "Make a new cipher key for this node, when you believe the old one has been seen.",
+  "icon": "KEY",
+  "hidden": true,
+  "type": "dialog",
+  "intrinsic": true,
+  "owner": "system"
+}

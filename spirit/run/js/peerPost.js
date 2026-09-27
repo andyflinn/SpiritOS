@@ -773,6 +773,40 @@ function createPeerPost(opts) {
         // Nothing to fetch: already sealed-able, or itself an ask, or a router
         // that does not seal (the partner router, relayServer.js:1082).
         if (sealKey || nodeCard.asks(text) || !sealsPosts) return sealKey;
+        return fetchCard(false, sealKey);
+      })
+      .then(function (sealKey) {
+        return Promise.resolve(sealAndSend(sealKey)).then(function (answer) {
+          return staleCard(answer, sealKey) ? askAgain(answer, sealKey) : answer;
+        });
+      });
+
+    // ── THE PEER ROTATED: ASK ONCE, POST ONCE, NEVER LOOP (cycle-10/R13) ──
+    //
+    //   Andy: "peers get it on demand. good." and "on a cypher error, a get
+    //   cart should be attempted?"
+    //
+    // "This did not open for me" from a peer whose card we hold is the sign
+    // that we sealed to a key it no longer has. So ask for its card now
+    // (past the usual 60 s throttle, since this refusal IS the reason), and
+    // if the card that comes back is strictly newer, the keeper has already
+    // taken it (contacts.setCard), so seal again and post ONCE. The same
+    // or an older card leaves the key unchanged, and then the refusal
+    // stands: no second ask, no loop. will-not-open is retry 'after' in
+    // the same change (spiritErrors.js), so a queued report of this message
+    // is kept and not destroyed (wsl-claude's join finding).
+    function staleCard(answer, sealKey) {
+      if (!sealKey || nodeCard.asks(text) || !sealsPosts || !answer || answer.ok) return false;
+      return answer.code === 'will-not-open' || /this did not open for me/.test(String(answer.error || ''));
+    }
+    function askAgain(refusal, oldKey) {
+      return fetchCard(true, oldKey).then(function (fresh) {
+        if (!fresh || fresh === oldKey) return refusal;
+        return sealAndSend(fresh);
+      });
+    }
+
+    function fetchCard(force, sealKey) {
         // Look again once whatever is in flight has settled. The answer
         // arrives as a reply and is recorded by the keeper before the ask
         // resolves, so the second lookup is the point of the whole exercise.
@@ -782,7 +816,7 @@ function createPeerPost(opts) {
         }
         // SOMEBODY IS ALREADY ASKING: wait for theirs rather than skipping.
         if (asking[toKey]) return asking[toKey].then(lookAgain);
-        if (Date.now() - (askedAt[toKey] || 0) < ASK_AGAIN_MS) return sealKey;
+        if (!force && Date.now() - (askedAt[toKey] || 0) < ASK_AGAIN_MS) return Promise.resolve(sealKey);
         askedAt[toKey] = Date.now();
         // NO RECURSION, BY CONSTRUCTION RATHER THAN BY A GUARD: this post is
         // a card ask, so `nodeCard.asks` is true of it on the way in and the
@@ -812,8 +846,7 @@ function createPeerPost(opts) {
         var ask = askOnce().then(function (answer) { delete asking[toKey]; return answer; });
         asking[toKey] = ask;
         return ask.then(lookAgain);
-      })
-      .then(function (sealKey) { return sealAndSend(sealKey); });
+    }
 
     function sealAndSend(sealKey) {
     var sending = text;

@@ -1711,6 +1711,28 @@ contactBook.syncMarks(ROOT_DIR);
     // THE OWNER'S RECORD, read a page at a time — trafficLog.history says
     // what is in it, what never is, and why it pages by position. Local:
     // the log is on this disk.
+    // ROTATE THIS NODE'S CIPHER KEY (cycle-10/R13): nodeCard.rotate says
+    // what changes and why there is no grace period. Then the new card goes
+    // to every relay at once, and the owner is told in his own record, as
+    // an owner row he can read back. Reached from Info's rotate-key dialog,
+    // behind the shell's two-press button.
+    'node.rotateCipher': function (rq, rs) {
+      readJsonBody(rq).then(function () {
+        const said = require('./nodeCard').rotate(ROOT_DIR);
+        let relays = 0;
+        if (said.ok) {
+          try { relays = presence ? presence.handOverCardEverywhere() : 0; } catch (e) { relays = 0; }
+          try {
+            trafficLog.note({ dir: 'out', kind: 'owner', event: 'cipher-rotated', outcome: 'card ' + said.at });
+          } catch (e) { /* the rotation stands; the record is best effort */ }
+        }
+        rs.writeHead(said.ok ? 200 : said.status, { 'Content-Type': 'application/json; charset=utf-8' });
+        rs.end(JSON.stringify(Object.assign({ relays: relays }, said)));
+      }).catch(function () {
+        rs.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        rs.end(JSON.stringify({ ok: false, error: 'Invalid JSON body' }));
+      });
+    },
     'node.history': function (rq, rs) {
       readJsonBody(rq).then(function (body) {
         var page = trafficLog.history({ after: body && body.after, limit: body && body.limit, hash: body && body.hash });

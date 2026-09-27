@@ -366,8 +366,41 @@ function setDescription(rootDir, text) {
   return { ok: true, status: 200, description: String(saved.description || '') };
 }
 
+// ── ROTATION: A NEW CIPHER KEY, BECAUSE THE OLD ONE MAY BE KNOWN ─────
+//
+//   Andy, 2026-09-26: "so rotation is a crisis.measure and should not be
+//   used wastefully" — and, retitling this requirement in Desk: "Get the
+//   damn rotate-button into the info app".
+//
+// A new X25519 pair replaces the cipher key in identity.json, and the old
+// private key is DISCARDED. No grace period: the old key is presumed
+// stolen, and keeping it to open posts still in flight would keep the
+// thief's window open. The identity key is untouched, so this node is the
+// same node to everyone; only what they seal to changes.
+//
+// THE COUNTER MOVES BY ITSELF: `describe` compares the card's contents,
+// and the cipher key is one of them, so the card it returns is strictly
+// newer, which is what makes every peer take it and refuse the old one
+// (cycle-10/R13's ordering half, contacts.setCard).
+//
+// SAVED FIRST, OR NOT AT ALL. A card naming a key that is not on disc
+// would send every peer to seal to a key this node cannot open with after
+// a restart, so a failed save refuses before anything is published.
+function rotate(rootDir) {
+  const id = auth.loadIdentity(rootDir);
+  if (!id || !id.privateKey) return { ok: false, status: 409, error: 'this node has no key yet' };
+  const pair = require('crypto').generateKeyPairSync('x25519');
+  id.sealPublicKey = pair.publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
+  id.sealPrivateKey = pair.privateKey.export({ type: 'pkcs8', format: 'der' }).toString('base64');
+  try { auth.saveIdentity(rootDir, id); }
+  catch (e) { return { ok: false, status: 500, code: 'rotate-not-saved', error: 'the new cipher key could not be saved' }; }
+  const fields = verify(describe(rootDir));
+  return { ok: true, at: fields ? fields.at : 0 };
+}
+
 module.exports = {
   asks: asks,
+  rotate: rotate,
   describe: describe,
   cardFrom: cardFrom,
   verify: verify,
