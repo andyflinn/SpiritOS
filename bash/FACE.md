@@ -32,11 +32,17 @@ Nothing else. `status` in each clone reports its own unit.
 relay's panel, as for any member), and copy your node's public key
 (`MCow...`).
 
-**2. On spirit-3**, as root, from anywhere:
+**2. On spirit-3**, as root, from anywhere. The face node gets its own clone,
+and its installer comes with it:
 
 ```
-/root/SpiritOS/bash/face-install <YOUR_NODE_KEY> <INVITE>
+git clone https://github.com/andyflinn/SpiritOS.git /root/face/SpiritOS
+/root/face/SpiritOS/bash/face-install <YOUR_NODE_KEY> <INVITE>
 ```
+
+Not from `/root/SpiritOS`: the live relay's clone follows your **tags**, and
+these scripts are not in a tag yet. Tagging would also restart the relay on
+all of master, which is a separate decision.
 
 It clones `/root/face/SpiritOS`, writes the face node's `face.json` and
 `puppet.json`, installs and starts `spirit-face`, joins the relay with the
@@ -57,7 +63,7 @@ import sites/*.caddy
 ```
 
 then `caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile`,
-`systemctl reload caddy`, and `/root/SpiritOS/bash/face-tls`.
+`systemctl reload caddy`, and `/root/face/SpiritOS/bash/face-tls`.
 
 **4. On your node:**
 - **Accept the face node's key as a contact**, the one step 2 printed. Your
@@ -89,5 +95,7 @@ and your node's key. A name you never granted gets no certificate at all.
 
 ## Updating
 
-`face-install` is idempotent. Run it again (without the invite) after a push,
-and it pulls `/root/face/SpiritOS` and restarts `spirit-face`.
+`face-install` is idempotent. Run `/root/face/SpiritOS/bash/face-install
+<YOUR_NODE_KEY>` again (without the invite) after a push: it pulls
+`/root/face/SpiritOS`, restarts `spirit-face`, and if the installer itself
+changed, it reruns as the new one.

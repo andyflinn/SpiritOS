@@ -15,10 +15,17 @@
 # would make them the same party). It is not a second Unix user: root is
 # still spirit (bash/ONE-OPERATOR.md).
 #
-# Run it from the MAIN clone, as root. Idempotent: run it again after a push
-# and it updates the face node rather than complaining.
+# Run it from ITS OWN clone, as root. Idempotent: run it again after a push
+# and it updates the face node rather than complaining. First time:
 #
-#   /root/SpiritOS/bash/face-install <OWNER_KEY> [INVITE]
+#   git clone https://github.com/andyflinn/SpiritOS.git /root/face/SpiritOS
+#   /root/face/SpiritOS/bash/face-install <OWNER_KEY> [INVITE]
+#
+# WHY NOT FROM THE MAIN CLONE, as lab-install is run: the live relay's clone
+# follows Andy's TAGS, not master (lib.sh, SPIRIT_TRACK: "my relay only
+# restarts on my tags"). A script pushed to master is not in it until he
+# tags, and tagging restarts the live relay on all of master: a separate
+# decision. The face clone follows master, so it carries its own installer.
 #
 #   OWNER_KEY  Andy's node's public key (MCow...). The face obeys only it.
 #   INVITE     an invite token from the relay's owner, for the face node's
@@ -36,15 +43,21 @@ OWNER_KEY="${1:-${SPIRIT_FACE_OWNER:-}}"
 INVITE="${2:-${SPIRIT_FACE_INVITE:-}}"
 
 # ── THE GUARDS: EACH IS A WAY THIS COULD EAT THE LIVE RELAY ──────────
-if [ "$FACE_DIR" = "$REPO_ROOT" ]; then
-  if [ -f "$REPO_ROOT/.env" ]; then
-    die "this IS a second clone — run ${CLONE_DIR}/bash/face-install instead (works from any directory)"
-  fi
-  die "face dir is this clone ($REPO_ROOT) — that would put the face node over the live relay"
+#
+# NAMED, NOT READ FROM lib.sh: run inside the face clone, lib.sh's UNIT_NAME
+# and NODE_PORT are the FACE's own (its .env), so guarding against them would
+# refuse every re-run. The live relay is the clone with no .env at
+# CLONE_DIR, its unit spirit-relay, its port 65430.
+LIVE_DIR="$CLONE_DIR"
+LIVE_UNIT="${SPIRIT_LIVE_UNIT:-spirit-relay}"
+LIVE_PORT="${SPIRIT_LIVE_PORT:-65430}"
+[ "$FACE_DIR" != "$LIVE_DIR" ] || die "face dir is the live relay's clone ($LIVE_DIR) — set SPIRIT_FACE_DIR"
+if [ "$REPO_ROOT" = "$LIVE_DIR" ] && [ "$FACE_DIR" = "$REPO_ROOT" ]; then
+  die "this is the live relay's clone — the face node goes in its own: clone $FACE_DIR and run its bash/face-install"
 fi
-[ "$FACE_UNIT" != "$UNIT_NAME" ] || die "face unit is '$UNIT_NAME', the live unit — set SPIRIT_FACE_UNIT"
+[ "$FACE_UNIT" != "$LIVE_UNIT" ] || die "face unit is '$LIVE_UNIT', the live unit — set SPIRIT_FACE_UNIT"
 [ "$FACE_UNIT" != "spirit-lab" ] || die "face unit is 'spirit-lab', the lab's unit — set SPIRIT_FACE_UNIT"
-for p in "$NODE_PORT" 65431 65432 65420; do
+for p in "$LIVE_PORT" 65431 65432 65420; do
   [ "$FACE_NODE_PORT" != "$p" ] || die "face node port $FACE_NODE_PORT is taken ($p) — set SPIRIT_FACE_NODE_PORT"
   [ "$FACE_PORT" != "$p" ] || die "face port $FACE_PORT is taken ($p) — set SPIRIT_FACE_PORT"
 done
@@ -66,8 +79,15 @@ if [ -d "$FACE_DIR/.git" ]; then
   say "clone exists — updating from origin"
   cd "$FACE_DIR" || die "cannot enter $FACE_DIR"
   git fetch origin
+  BEFORE=$(git rev-parse HEAD)
   git reset --hard origin/master
   ok "at $(git rev-parse --short HEAD)"
+  # RUNNING FROM THIS VERY CLONE and the code just moved: start again as the
+  # new copy, so the rest of this run is the script that was just pulled.
+  if [ "$REPO_ROOT" = "$FACE_DIR" ] && [ "$BEFORE" != "$(git rev-parse HEAD)" ] && [ -z "${SPIRIT_FACE_REEXEC:-}" ]; then
+    say "the installer itself changed — running the new one"
+    SPIRIT_FACE_REEXEC=1 exec "$FACE_DIR/bash/face-install" "$@"
+  fi
 else
   say "clone $ORIGIN"
   mkdir -p "$(dirname "$FACE_DIR")"
@@ -134,7 +154,7 @@ if [ -n "$INVITE" ]; then
 else
   warn "no invite given: the face node is running but is not a member of https://$DOMAIN yet"
   echo "    mint an invite for 'face' on your relay, then run:"
-  echo "      $REPO_ROOT/bash/face-install $OWNER_KEY <INVITE>"
+  echo "      $FACE_DIR/bash/face-install $OWNER_KEY <INVITE>"
 fi
 
 # ── IT LISTENS TO ITS OWNER, AND THE OWNER MUST LISTEN TO IT ────────
@@ -153,9 +173,9 @@ else
 fi
 
 say "caddy site for $FACE_DOMAIN"
-( SPIRIT_FACE_DOMAIN="$FACE_DOMAIN" SPIRIT_FACE_PORT="$FACE_PORT" "$REPO_ROOT/bash/face-tls" ) || {
+( SPIRIT_FACE_DOMAIN="$FACE_DOMAIN" SPIRIT_FACE_PORT="$FACE_PORT" "$FACE_DIR/bash/face-tls" ) || {
   warn "face-tls did not finish — the face node runs, but visitors cannot reach it yet"
-  echo "    follow what it printed, then: $REPO_ROOT/bash/face-tls"
+  echo "    follow what it printed, then: $FACE_DIR/bash/face-tls"
   exit 1
 }
 
