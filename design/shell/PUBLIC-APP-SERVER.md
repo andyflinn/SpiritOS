@@ -964,9 +964,9 @@ gets 504, one that fails gets 502, and the next request is served. A body
 over BODY_MAX is refused by name before the face runs. A second app cannot
 claim it, and the same app may claim again after a remount.
 
-**Open, Andy's call (asked 2026-09-27):** whether the face's answer to the
-browser is capped by MAX_PAYLOAD, or exempt because it never becomes a
-packet. Recommended: capped, one rule without exceptions.
+**The answer is capped at MAX_PAYLOAD.** Andy, 2026-09-27, "go." on capping
+it like everything else that goes out. Over the cap, in UTF-8 bytes, the
+visitor gets 502 `face-answer-too-large`, never a page cut off partway.
 
 ### G18 — the app process serves its owner node over a named pipe, not a TCP port
 

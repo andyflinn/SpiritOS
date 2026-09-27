@@ -155,6 +155,28 @@ function refusesBigBodies() {
   });
 }
 
+function capsTheAnswer() {
+  test.subHeading('The answer to the browser is capped too, and refused by name');
+  // Andy, 2026-09-27, "go." on capping the face's answer at MAX_PAYLOAD.
+  return started({ answerMax: 64 }).then(function (s) {
+    s.face.claim('appFaceApp', function (req) {
+      return req.path === '/big' ? { body: 'ü'.repeat(40) } : { body: 'ü'.repeat(20) };
+    });
+    return ask(s.port, 'GET', '/big').then(function (r) {
+      if (r.status === 502 && JSON.parse(r.text).error === 'face-answer-too-large') {
+        test.check('an answer over the cap in UTF-8 bytes (40 characters, 80 bytes) is refused by name, never cut');
+      } else {
+        test.fail('a big answer gave ' + JSON.stringify(r).slice(0, 120));
+      }
+      return ask(s.port, 'GET', '/fits');
+    }).then(function (r) {
+      if (r.status === 200 && r.text === 'ü'.repeat(20)) test.check('one that fits (40 bytes) goes through whole');
+      else test.fail('a fitting answer gave ' + JSON.stringify(r));
+      s.server.close();
+    });
+  });
+}
+
 function oneClaimant() {
   test.subHeading('One app holds the face');
   return started().then(function (s) {
@@ -203,6 +225,7 @@ function onlyWhereThereIsAFace() {
 servesTheFace()
   .then(failsAlone)
   .then(refusesBigBodies)
+  .then(capsTheAnswer)
   .then(oneClaimant)
   .then(onlyWhereThereIsAFace)
   .then(function () { test.reportSuccessFailureCount(); })

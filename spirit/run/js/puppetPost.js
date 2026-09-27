@@ -48,6 +48,12 @@ function createPuppetPost(opts) {
   const o = opts || {};
   const bodyMax = Number(o.bodyMax) > 0 ? Number(o.bodyMax) : require('./limits').BODY_MAX;
   const waitMs = Number(o.waitMs) > 0 ? Number(o.waitMs) : FACE_WAIT_MS;
+  // THE ANSWER IS BOUNDED TOO. Andy, 2026-09-27, "go." on: the face's
+  // answer to the browser is capped at MAX_PAYLOAD like everything else
+  // that goes out ("Everything, everywhere that goes out, is bounded by
+  // MAX_PAYLOAD"). Over it, the visitor gets a refusal by name, never a
+  // page cut off partway.
+  const answerMax = Number(o.answerMax) > 0 ? Number(o.answerMax) : require('./limits').PAYLOAD_MAX;
   const log = o.log || function () {};
 
   // ONE CLAIMANT. The face belongs to the app that claimed it; the same
@@ -68,6 +74,11 @@ function createPuppetPost(opts) {
   function answer(res, status, body, type) {
     if (res.headersSent) return;
     const text = typeof body === 'string' ? body : JSON.stringify(body);
+    if (Buffer.byteLength(text, 'utf8') > answerMax) {
+      res.writeHead(502, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, error: 'face-answer-too-large' }));
+      return;
+    }
     res.writeHead(status, { 'Content-Type': type || 'application/json; charset=utf-8' });
     res.end(text);
   }
