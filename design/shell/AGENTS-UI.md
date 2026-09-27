@@ -164,7 +164,7 @@ What follows is what both agreed. Any of it changes when Andy asks.
    earliest timestamp wins, then the name. **Wait before answering, and
    compare the claims' OWN timestamps, not their arrival order** (learned
    2026-09-27: on G8 each agent's claim reached the other after its own was
-   sent, so each check looked clean and both answered; on R13 a check read
+   sent, so each check looked clean and both answered; on cycle-10/R13 a check read
    the wrong line and missed the other claim). An agent claims, waits a few
    seconds, reads every claim on the row, and answers only if its own
    timestamp is the earliest.
