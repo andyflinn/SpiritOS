@@ -1262,6 +1262,24 @@ verbs today; they live only in its code.
   never seen it, `hub.js:1731`, as face-owner.js found), tested from a
   member node with no row for the face; and when the owner names a
   different face, the client drops the old one.
+- **Many providers, so the client keys by owner.** Andy: *"our architecture
+  allows multliple relays per personal node, and implicitly multliple
+  face-providers, so we be carefull how the personal nodes grantFace dataset
+  looks...."* Proposed (awaiting his Go!): the member's dataset is a list of
+  grants, one row each, `{ owner, face, domain, name, app, at }`, keyed by
+  owner plus name. A request is matched to its row by the face that
+  forwarded it. A replaced face changes only its owner's rows. The owner's
+  own grants.json stays keyed by name, since one owner has one face domain.
+  wsl-claude's tests: two providers at once, each face admitted only for its
+  own names; replacing one provider's face leaves the other untouched;
+  freeing a name at one provider leaves the other's grants alone.
+- **Contact rows say what a key is (proposed, awaiting his yes).** Andy asked
+  whether contact rows should mark puppets, so a people list can leave them
+  out, and *"like in member-type field, it could also help with relay ID's
+  etc.... ?"* Proposed: a signed `kind` on the node card, `node`, `puppet`
+  (with `owner`), `relay` or `app`. A row caches it, and lists filter by it. A
+  puppet is hidden from people lists, never removed from the contact book.
+  A card that says nothing reads as `node`.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
