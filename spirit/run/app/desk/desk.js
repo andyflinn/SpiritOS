@@ -6,10 +6,22 @@
 //   organized, too" — "my input will be queued, any agent can adress
 //   issues in the table, respons to me under that heading".
 //
-// A REAL APP, and only the app contract: the board and every thread come
-// out of this node's own record through `node.history`, and everything
-// Andy writes leaves as an ordinary `agents` packet through `peerPost`.
-// No reach of its own, no store of its own.
+// A REAL APP, and only the app contract: what arrives comes through
+// `onPacket`, everything Andy writes leaves as an ordinary `agents` packet
+// through `peerPost`, and both are kept in Desk's OWN log, `log.json` in
+// its own folder (`api.fs`). The board and every thread are read from it.
+//
+// ── IT KEEPS ITS OWN LOG, BY RULING ───────────────────────────────────
+//
+//   Andy, 2026-09-27, when Desk read his node's record through a node
+//   verb added for it: "that's a boundary crossed that requires peer
+//   review AND my approval", then "they must keep their own logs" and
+//   "after correcting agents and desk, we will remove the new verb."
+//
+// So Desk asks the node for nothing but what every app has. What passed
+// before this log existed, or while no Desk was mounted in an open page,
+// is not in it. That is the price of the ruling, not a bug to fix by
+// reaching into the node's record again.
 //
 // ── THE THREAD KEY IS THE FULL ID ────────────────────────────────────
 //
@@ -17,16 +29,11 @@
 // the handle is the shortest form unique today and can lengthen, which
 // would orphan a thread keyed on it. Andy never types either — the app
 // attaches the id to what he writes, which is what lets his text reach
-// voice.jsonl clean (the lead's courier, never this page).
-//
-// ── THE NODE FILTERS NOTHING; THIS PAGE DOES ─────────────────────────
-//
-// `node.history` hands back rows with no filter on app or body
-// (hub.js:1278). Sorting them into threads by `body.todo` is this page's
-// job, done once on the first read — Andy: "the initial load is a
-// "search" ... a lot of the traffic is random access on rows."
+// voice.jsonl clean. Nothing here writes voice.jsonl, and nothing may:
+// Andy, 2026-09-27, "that hook into my voice.jsonl is a hack and will have
+// to be removed if the agents app is ever to ship."
 
-var DESK_PAGE = 200;
+var DESK_LOG = 'log.json';
 
 var deskApi = null;
 var deskBoard = null;       // the newest `board` packet's JSON
@@ -53,41 +60,75 @@ var deskDecision = Object.create(null);
 // row carries Go! until he answers it. The newest open ask per full id.
 var deskOpenAsk = Object.create(null);
 var DESK_DECISIONS = { 'go.': 'go', 'no.': 'no', 'accepted.': 'accepted', 'rejected.': 'rejected' };
+// WHO HEARS ANDY FROM A ROW'S DIALOG: agents heard from, newest key per
+// name. Handed to DeskDetails, which can read only its own folder.
+var deskAgents = Object.create(null);
 
-// One history row -> one agents message, or null when it is not one.
-function deskDecode(row) {
-  if (!row || typeof row.payload !== 'string') return null;
-  var env;
-  try { env = JSON.parse(row.payload); } catch (e) { return null; }
-  if (!env || env.app !== 'agents' || !env.body) return null;
+// One arrival (onPacket's body and message) -> one agents message, or null
+// when it is not one.
+function deskArrival(body, message) {
+  if (!body || !message) return null;
+  var at = String(message.sentAt || new Date().toISOString());
   // A REPORT CARRIES A WHOLE MESSAGE BETWEEN AGENTS (agents.js reportOf),
   // read here as that message, from its own sender. That is what makes
-  // this node Andy's "overall record of our activities", and it is how
+  // this log Andy's "overall record of our activities", and it is how
   // one agent's `taking`, sent to the other, still reaches the column.
-  if (env.body.kind === 'report') {
+  if (body.kind === 'report') {
     var inner = null;
-    try { inner = JSON.parse(env.body.text); } catch (e) { inner = null; }
+    try { inner = JSON.parse(body.text); } catch (e) { inner = null; }
     if (!inner || inner.v !== 1 || !inner.kind) return null;
     return {
-      hash: row.hash, at: row.at, dir: row.dir, peer: '', outcome: String(inner.outcome || ''),
+      key: String(message.hash || ''), at: at, dir: 'in', peer: '', outcome: String(inner.outcome || ''),
       from: String(inner.from || ''), to: String(inner.to || ''), kind: String(inner.kind),
       text: String(inner.text || ''), todo: inner.todo ? String(inner.todo) : '', reported: true,
     };
   }
   return {
-    hash: row.hash, at: row.at, dir: row.dir, peer: row.peer, outcome: row.outcome,
-    from: String(env.body.from || ''), kind: String(env.body.kind || ''),
-    text: String(env.body.text || ''), todo: env.body.todo ? String(env.body.todo) : '',
+    key: String(message.hash || ''), at: at, dir: 'in', peer: String(message.fromKey || ''), outcome: 'received',
+    from: String(body.from || ''), kind: String(body.kind || ''),
+    text: String(body.text || ''), todo: body.todo ? String(body.todo) : '',
   };
 }
 
-// Folds one message in by hash: a later outcome for a message already
-// held replaces its outcome and nothing else (trafficLog.history).
+// One of Andy's own lines, as it went. Keyed by the hash the node signed
+// it under, or by a key of its own when nothing crossed and there is no
+// hash: folding failed sends by an empty hash would merge them into one.
+var deskOutCount = 0;
+function deskOutgoing(to, body, r, e) {
+  deskOutCount += 1;
+  return {
+    key: (r && r.hash) || ('out-' + Date.now() + '-' + deskOutCount),
+    at: new Date().toISOString(), dir: 'out', peer: String(to || ''),
+    outcome: e ? 'undelivered: ' + e.message : (r && r.ok ? 'sent' : 'undelivered: ' + ((r && (r.error || r.status)) || 'no answer')),
+    from: 'andy', kind: String(body.kind || ''), text: String(body.text || ''), todo: body.todo ? String(body.todo) : '',
+  };
+}
+
+// WRITTEN WHOLE, ONE WRITE AT A TIME. The scoped fs saves a file, it does
+// not append, so two saves in flight could land out of order and the
+// older list would win.
+var deskSaving = Promise.resolve();
+function deskSave() {
+  if (deskReadOnly) return deskSaving;
+  deskSaving = deskSaving.then(function () {
+    return deskApi.fs.saveFile(DESK_LOG, JSON.stringify(deskMessages));
+  }).catch(function (e) { deskError = 'Desk could not write its log: ' + e.message; deskDraw(); });
+  return deskSaving;
+}
+
+// Into the log and onto the screen.
+function deskRecord(msgs) {
+  msgs.forEach(function (m) { if (m) deskFold(m); });
+  deskDraw();
+  return deskSave();
+}
+
+// Folds one message in by its key; one already held is not taken twice.
 function deskFold(msg) {
-  var held = deskByHash[msg.hash];
-  if (held) { held.outcome = msg.outcome; return; }
-  deskByHash[msg.hash] = msg;
+  if (!msg || !msg.key || deskByHash[msg.key]) return;
+  deskByHash[msg.key] = msg;
   deskMessages.push(msg);
+  if (msg.dir === 'in' && !msg.reported && msg.from && msg.peer) deskAgents[msg.from] = { key: msg.peer, at: Date.parse(msg.at) || 0 };
   if (msg.todo && msg.kind === 'note' && /^taking(\s|$)/.test(msg.text) && msg.from) {
     deskTaken[msg.todo] = msg.from;
   }
@@ -210,11 +251,12 @@ function deskSend(kind, boxId, errId) {
   // never twice when he types it himself.
   if (kind === 'musing' && !/^note to self:/i.test(said)) said = 'note to self: ' + said;
   deskSending[boxId] = true;
-  deskApi.peerPost('agents', deskLead.key, { from: 'andy', kind: kind, text: said }).then(function () {
+  var body = { from: 'andy', kind: kind, text: said };
+  deskApi.peerPost('agents', deskLead.key, body).then(function (r) {
     deskSending[boxId] = false;
     box.value = '';
     if (err) err.textContent = '';
-    return deskLoadNew();
+    return deskRecord([deskOutgoing(deskLead.key, body, r)]);
   }).catch(function (e) { deskSending[boxId] = false; if (err) err.textContent = 'Not sent: ' + e.message; });
 }
 
@@ -239,48 +281,41 @@ function deskDraw() {
       var ask = deskOpenAsk[id];
       if (!ask) return;
       b.disabled = true;
-      deskApi.peerPost('agents', ask.peer, { from: 'andy', kind: 'answer', text: 'go.', todo: id })
-        .then(function () { return deskLoadNew(); })
+      var body = { from: 'andy', kind: 'answer', text: 'go.', todo: id };
+      deskApi.peerPost('agents', ask.peer, body)
+        .then(function (r) { return deskRecord([deskOutgoing(ask.peer, body, r)]); })
         .catch(function (err) { b.disabled = false; deskError = 'Go! not sent: ' + err.message; deskDraw(); });
     });
   });
   Array.prototype.forEach.call(el.querySelectorAll('tr[data-id]'), function (tr) {
     tr.addEventListener('click', function () {
       var id = tr.getAttribute('data-id');
-      // Read the record again when the dialog closes: what he did in it
-      // (a new name, a decision) left as HIS post, and only arrivals wake
-      // this page. Andy: "if i re-label the item ... the title in the list
+      // THE DIALOG READS ONLY ITS OWN FOLDER, so Desk hands it this row's
+      // thread and the agents it can talk to, and takes back what Andy
+      // sent from it (a new name, a decision, a line) when it closes, into
+      // this log. Andy: "if i re-label the item ... the title in the list
       // should change."
-      deskApi.callDialog('app/deskDetails', { id: id, row: deskRowOf(id) }).then(function () { return deskLoadNew(); });
+      var thread = deskMessages.filter(function (m) { return m.todo === id; });
+      deskApi.callDialog('app/deskDetails', { id: id, row: deskRowOf(id), thread: thread, agents: deskAgents })
+        .then(function (result) { return deskRecord((result && result.sent) || []); });
     });
   });
 }
 
-// THE SEARCH, THEN THE CURSOR. From position 0 this reads the whole record
-// once, a page at a time; after that `deskAfter` is where the record had
-// got to, so a later call reads only what is new.
-var deskAfter = 0;
-function deskLoadNew() {
-  return deskApi.verb('node.history', { after: deskAfter, limit: DESK_PAGE }).then(function (r) {
-    var body = r && r.body;
-    // A REFUSAL IS SAID, NEVER DRAWN AS AN EMPTY BOARD. A node older than
-    // node.history answers "unknown verb", and a page that swallowed that
-    // told Andy no board had arrived while five sat in his log.
-    if (!body || !body.ok) {
-      deskError = 'This node could not hand over its record: ' +
-        ((body && body.error) || (r && r.status) || 'no answer') +
-        '. A node started before node.history (a660e43) needs a restart.';
-      deskDraw();
-      return;
-    }
-    deskError = '';
-    body.rows.forEach(function (row) { var m = deskDecode(row); if (m) deskFold(m); });
-    deskAfter = body.next;
-    deskDraw();
-    if (body.more) return deskLoadNew();
-    return null;
-  });
+// READ ONCE, AT MOUNT. The log is Desk's own file; a missing one is a Desk
+// that has not heard anything yet, and a broken one is said, not drawn as
+// an empty board.
+function deskLoadLog() {
+  var raw = null;
+  try { raw = deskApi.fs.loadFile(DESK_LOG); } catch (e) { raw = null; }
+  if (!raw) return;
+  var held = null;
+  try { held = JSON.parse(raw); } catch (e) { held = null; }
+  if (!Array.isArray(held)) { deskError = 'Desk\'s log (' + DESK_LOG + ') does not parse; it was left as it is.'; deskReadOnly = true; return; }
+  held.forEach(deskFold);
 }
+// A LOG THAT DID NOT PARSE IS NEVER OVERWRITTEN by the next arrival's save.
+var deskReadOnly = false;
 
 spirit.shell.activateApp({
   mount: function (container, api) {
@@ -344,14 +379,11 @@ spirit.shell.activateApp({
     document.getElementById('desk-muse-send').addEventListener('click', muse);
     onEnter('desk-say', say);
     onEnter('desk-muse', muse);
+    // Its own log first, then every arrival into it. Subscribed once, at
+    // mount, and kept while Desk is hidden behind its dialog, so what
+    // arrives while a row is open is logged too.
+    deskLoadLog();
     deskDraw();
-    // The first read is the search; after it, `deskAfter` follows the
-    // record and a live arrival just asks for what is new.
-    deskLoadNew().then(function () {
-      deskApi.onPacket('agents', function () { deskLoadNew(); });
-    }, function (e) {
-      deskError = 'Could not read this node\'s record: ' + e.message;
-      deskDraw();
-    });
+    deskApi.onPacket('agents', function (body, message) { deskRecord([deskArrival(body, message)]); });
   },
 });

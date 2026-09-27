@@ -9,9 +9,11 @@
 //   less noisy 6) my input to the chat..... if possible refresh only the
 //   chat history, so my typing doesn't get wiped"
 //
-// WHAT COMES FROM WHERE, all of it out of this node's own record through
-// node.history, filtered HERE by `body.todo` (the node filters nothing,
-// hub.js:1278):
+// WHAT COMES FROM WHERE. Desk keeps the log (desk.js, "IT KEEPS ITS OWN
+// LOG, BY RULING") and hands this dialog the row's thread when it opens.
+// What arrives while it is open comes through onPacket, and what Andy sends
+// from here goes back to Desk as the dialog's result. It never asks the
+// node for a record:
 //   the blurb      the newest `explain` from an agent, or the board row's
 //                  own `explain` until one arrives
 //   the slots      each agent's newest `annotation`, above the chat — "i
@@ -42,28 +44,45 @@ var DD_EXPLAIN_ASK = /^explain\b/;
 
 function ddEsc(s) { return ddApi.escapeHtml(String(s == null ? '' : s)); }
 
-function ddDecode(row) {
-  if (!row || typeof row.payload !== 'string') return null;
-  var env;
-  try { env = JSON.parse(row.payload); } catch (e) { return null; }
-  if (!env || env.app !== 'agents' || !env.body) return null;
-  // A report is a whole message between agents (agents.js reportOf). It
-  // is kept so a claim still counts, and marked so the chat can leave it out.
-  if (env.body.kind === 'report') {
+// One arrival -> one agents message, in the shape Desk logs
+// (desk.js deskArrival). A report is a whole message between agents
+// (agents.js reportOf), kept so a claim still counts and marked so the
+// chat can leave it out.
+function ddArrival(body, message) {
+  if (!body || !message) return null;
+  var at = String(message.sentAt || new Date().toISOString());
+  if (body.kind === 'report') {
     var inner = null;
-    try { inner = JSON.parse(env.body.text); } catch (e) { inner = null; }
+    try { inner = JSON.parse(body.text); } catch (e) { inner = null; }
     if (!inner || inner.v !== 1 || !inner.kind) return null;
     return {
-      hash: row.hash, at: row.at, dir: row.dir, peer: '', outcome: String(inner.outcome || ''),
+      key: String(message.hash || ''), at: at, dir: 'in', peer: '', outcome: String(inner.outcome || ''),
       from: String(inner.from || ''), to: String(inner.to || ''), kind: String(inner.kind),
       text: String(inner.text || ''), todo: inner.todo ? String(inner.todo) : '', reported: true,
     };
   }
   return {
-    hash: row.hash, at: row.at, dir: row.dir, peer: row.peer, outcome: row.outcome,
-    from: String(env.body.from || ''), kind: String(env.body.kind || ''),
-    text: String(env.body.text || ''), todo: env.body.todo ? String(env.body.todo) : '',
+    key: String(message.hash || ''), at: at, dir: 'in', peer: String(message.fromKey || ''), outcome: 'received',
+    from: String(body.from || ''), kind: String(body.kind || ''),
+    text: String(body.text || ''), todo: body.todo ? String(body.todo) : '',
   };
+}
+
+// This row's thread, as Desk handed it over plus what came since.
+var ddThread = [];
+var ddSeen = Object.create(null);
+// What Andy sent from this dialog, for Desk to log. Set as it happens
+// (setDialogResult), because the way out is usually Back.
+var ddSent = [];
+var ddOutCount = 0;
+
+function ddTake(m) {
+  if (!m || !m.key || ddSeen[m.key]) return false;
+  ddSeen[m.key] = true;
+  if (m.dir === 'in' && !m.reported && m.from && m.peer) ddAgents[m.from] = { key: m.peer, at: Date.parse(m.at) || 0 };
+  if (m.todo !== ddId) return false;
+  ddThread.push(m);
+  return true;
 }
 
 // One pass over this row's messages, in order, into what each part shows.
@@ -97,38 +116,10 @@ function ddRead(list) {
   return st;
 }
 
-// The whole record, a page at a time by position, keeping this row's
-// messages and learning who the agents are on the way.
+// Re-reads this row's thread into what each part shows.
 function ddLoad() {
-  var byHash = Object.create(null);
-  var list = [];
-  function page(after) {
-    return ddApi.verb('node.history', { after: after, limit: 200 }).then(function (r) {
-      var body = r && r.body;
-      if (!body || !body.ok) throw new Error((body && body.error) || (r && r.status) || 'no answer');
-      body.rows.forEach(function (row) {
-        var m = ddDecode(row);
-        if (!m) return;
-        if (m.dir === 'in' && !m.reported && m.from && m.peer) {
-          ddAgents[m.from] = { key: m.peer, at: Date.parse(m.at) || 0 };
-        }
-        if (m.todo !== ddId) return;
-        if (byHash[m.hash]) { byHash[m.hash].outcome = m.outcome; return; }
-        byHash[m.hash] = m;
-        list.push(m);
-      });
-      if (body.more && body.next > after) return page(body.next);
-      return null;
-    });
-  }
-  return page(0).then(function () {
-    ddState = ddRead(list);
-    ddNote = '';
-    ddDraw();
-  }, function (e) {
-    ddNote = 'This node could not hand over its record: ' + e.message + '.';
-    ddDraw();
-  });
+  ddState = ddRead(ddThread);
+  ddDraw();
 }
 
 // ── THE PARTS THAT REPAINT ────────────────────────────────────────────
@@ -268,6 +259,20 @@ function ddClear(id) { var el = document.getElementById(id); if (el) el.value = 
 // key auto-repeat is ignored, and a box with a send in flight sends nothing
 // more until it settles.
 var ddSending = false;
+
+// One of Andy's lines as it went, in Desk's log shape (desk.js
+// deskOutgoing): keyed by its hash, or by a key of its own when nothing
+// crossed.
+function ddOutgoing(to, body, r, e) {
+  ddOutCount += 1;
+  return {
+    key: (r && r.hash) || ('out-' + Date.now() + '-' + ddOutCount + '-' + String(to).slice(-8)),
+    at: new Date().toISOString(), dir: 'out', peer: String(to || ''),
+    outcome: e ? 'undelivered: ' + e.message : (r && r.ok ? 'sent' : 'undelivered: ' + ((r && (r.error || r.status)) || 'no answer')),
+    from: 'andy', kind: String(body.kind || ''), text: String(body.text || ''), todo: String(body.todo || ''),
+  };
+}
+
 function ddSend(kind, text, fieldId) {
   var said = String(text || '').trim();
   if (!said || !ddId || ddSending) return Promise.resolve();
@@ -281,10 +286,17 @@ function ddSend(kind, text, fieldId) {
   }
   var body = { from: 'andy', kind: kind, text: said, todo: ddId };
   ddSending = true;
-  return Promise.all(names.map(function (n) { return ddApi.peerPost('agents', ddAgents[n].key, body); })).then(function () {
+  return Promise.all(names.map(function (n) {
+    var to = ddAgents[n].key;
+    return ddApi.peerPost('agents', to, body).then(function (r) { return ddOutgoing(to, body, r, null); },
+      function (e) { return ddOutgoing(to, body, null, e); });
+  })).then(function (msgs) {
     ddSending = false;
     if (fieldId) ddClear(fieldId);
-    return ddLoad();
+    ddNote = '';
+    msgs.forEach(function (m) { ddTake(m); ddSent.push(m); });
+    ddApi.setDialogResult({ sent: ddSent.slice() });
+    ddLoad();
   }).catch(function (e) {
     ddSending = false;
     ddNote = 'Not sent: ' + e.message;
@@ -326,17 +338,29 @@ spirit.shell.activateApp({
     });
     // A reply arriving while the dialog is open repaints the parts, never
     // the inputs.
-    api.onPacket('agents', function () { if (ddId) ddLoad(); });
+    // Desk logs the same arrival through its own subscription; this one
+    // only keeps the open row's thread current.
+    api.onPacket('agents', function (body, message) {
+      if (ddTake(ddArrival(body, message))) ddLoad();
+    });
   },
 
-  // Every call: which row this is. Nothing stale from the last row.
+  // Every call: which row this is, and its thread from Desk. Nothing stale
+  // from the last row.
   open: function (params) {
     ddRow = (params && params.row) || null;
     ddId = (params && params.id) || (ddRow && ddRow.id) || '';
+    ddThread = [];
+    ddSeen = Object.create(null);
+    ddSent = [];
+    ddAgents = Object.create(null);
+    var agents = (params && params.agents) || {};
+    Object.keys(agents).forEach(function (n) { ddAgents[n] = agents[n]; });
+    ((params && params.thread) || []).forEach(ddTake);
     ddState = null;
     ddNote = '';
     ddFrame();
-    ddDraw();
-    ddLoad().then(ddAskIfUnexplained);
+    ddLoad();
+    ddAskIfUnexplained();
   },
 });

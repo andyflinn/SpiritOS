@@ -164,6 +164,10 @@ minted.json
 # what an unbound node is, and a list shipped in git was the box
 # pretending to know somewhere it had never been.
 spirit/run/app/natter/relays.json
+# Desk's own log (AGENTS-UI.md): Andy's conversation with the agents, kept
+# by the app in its own folder because "they must keep their own logs".
+# His words, never pushed.
+spirit/run/app/desk/log.json
 
 # Written by labMaster (and any future packaging step) so a copied tree
 # can say which commit it came from. Never a checkout, so never tracked.
