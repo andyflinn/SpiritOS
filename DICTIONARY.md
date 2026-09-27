@@ -118,6 +118,8 @@ Format: **term** — aliases — meaning.
 
 **Handle** — the (ID) in brackets, to-do id — The short id after a to-do's English title on the board, e.g. *a card is ordered in time (10/R13)*. It is the shortest form of the full id that is still unique: five cycles each define an R13, so a bare `R13` names five things. Andy, 2026-09-27: *"a requirement is basically a to-do-id"*, *"my question usually are associated with a team-to-do"*, *"that's why i asked for (IDs)"*, and *"the handle is the means by which the agent extract information/decisions/input from andy"*. So the handle is the join between a to-do, his question about it, and his answer. He pastes it back and the agent knows which to-do the answer settles. A question has no id of its own; it carries the handle of the to-do it is about. The title still leads (he remembers requirements by the sentence that made them); the handle follows it.
 
+**List** — *there is no such thing* — Andy, 2026-09-27: *"there are no (complete) lists, only searches"*, and *"every list is an implied search, that's the pattern"*. Anything that looks like a list is a search with an empty query. It goes through the shared search (`bucket.js`, a scan by key and an extractor per collection), bounded by the one return cap, and marked partial when there is more. The requester narrows it by searching, and nothing pages. No verb promises a complete list and no caller may assume one. Also: *"this question shouldn't be coming back so often"*, which is why this is here and not only in `PUPPETS.md` G1.
+
 **Leash** — Paste to Claude — Short verdict Andy copies. No leash in a Grok reply means nothing is for Claude.
 
 **Bones** — ugly implementation — Behaviour without chrome.
