@@ -167,10 +167,22 @@ function mount(api) {
     // still owed a receipt for the ASK. The ask is receipted either way;
     // it is the grant that would be lost, so it is logged rather than
     // dropped in silence.
+    // A GRANT THAT COULD NOT BE PACKED IS SAID, NOT POSTED AS NOTHING
+    // (wsl-claude's sweep, puppets/G1). It cannot happen today, since a grant
+    // is name-sized, and if it ever does it is logged here rather than
+    // posting an undefined text. The post's own rejection is caught too:
+    // try/catch sees only a synchronous throw.
+    const lost = function (why) {
+      api.log(APP + ': the grant for "' + body.name + '" could not be posted: ' + why);
+    };
+    if (!reply) { lost((made && made.error) || 'it could not be packed'); return; }
     try {
-      if (api.post) api.post('', message.fromKey, reply, null, null);
+      if (api.post) {
+        Promise.resolve(api.post('', message.fromKey, reply, null, null))
+          .catch(function (e) { lost((e && e.message) || e); });
+      }
     } catch (e) {
-      api.log(APP + ': the grant for "' + body.name + '" could not be posted: ' + ((e && e.message) || e));
+      lost((e && e.message) || e);
     }
   });
 }

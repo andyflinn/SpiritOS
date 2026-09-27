@@ -508,8 +508,20 @@ function puppetDoor(opts) {
   const puppet = o.puppet || puppetIn(o.rootDir, o.log);
   const say = o.log || function () {};
   function reply(message, owner, answer) {
-    const made = o.encode('', answer, { re: message.hash });
-    if (!made || !made.text) return;
+    let made = o.encode('', answer, { re: message.hash });
+    // TOO BIG FOR A PACKET IS SAID, NEVER DROPPED (puppets/G1). packet.encode
+    // refuses an answer that cannot travel, and this returned without a
+    // word, so the owner waited out its wait for 'no reply from puppet'
+    // instead of the reason (wsl-claude: jobs.list on a puppet, 42,570
+    // bytes). The refusal names the verb and the size, and always fits.
+    if (!made || !made.text) {
+      const bytes = Buffer.byteLength(JSON.stringify(answer || {}), 'utf8');
+      say('puppet door: the answer to ' + String(message.hash).slice(0, 8) + ' (' + String(answer && answer.verb) +
+        ', ' + bytes + ' bytes) is too large for a packet; refused by name');
+      made = o.encode('', { ok: false, status: 413, code: 'answer-too-large', verb: answer && answer.verb, bytes: bytes,
+        error: 'answer too large for a packet' }, { re: message.hash });
+      if (!made || !made.text) return;
+    }
     Promise.resolve(o.post(message.relay, owner, made.text)).catch(function (e) {
       say('puppet door: the answer to ' + String(message.hash).slice(0, 8) + ' could not be sent: ' + e.message);
     });

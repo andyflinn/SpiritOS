@@ -63,7 +63,8 @@ function createOwnerPost(opts) {
     const cmd = JSON.stringify({ verb: name, body: body || {} });
     const sig = o.auth.sign(me.privateKey, o.auth.commandMessage(me.publicKey, to, id, cmd));
     const made = o.encode('', { cmd: cmd, sig: sig }, { id: id });
-    if (!made || !made.text) return Promise.resolve({ ok: false, status: 400, code: 'command-not-packed', error: 'the command could not be packed' });
+    // The factory's own words, as hub.js passes them (wsl-claude's sweep).
+    if (!made || !made.text) return Promise.resolve({ ok: false, status: 400, code: 'command-not-packed', error: (made && made.error) || 'the command could not be packed' });
 
     const route = o.route(to);
     if (!route || route.unreachable || !route.relayUrl) {

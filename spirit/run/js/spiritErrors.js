@@ -610,6 +610,14 @@ define('no-such-verb', {
   texts: ['no such verb'],
   note: 'The group is carried, and nothing in it answers this name.',
 });
+define('answer-too-large', {
+  status: 413, presence: NONE, retry: 'no', fault: 'target',
+  texts: ['answer too large for a packet'],
+  note: 'A puppet ran the verb and its answer cannot travel as one packet ' +
+    '(puppets/G1). Said by name with the verb and the size, instead of the owner ' +
+    'waiting out its wait for no-reply-from-puppet. The cure is a narrower question: ' +
+    'a search, never a list.',
+});
 define('handler-failed', {
   status: 500, presence: NONE, retry: 'no', fault: 'target',
   texts: ['the handler failed'],
