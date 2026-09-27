@@ -7,7 +7,7 @@
 **Nothing is broken, 8 requirements are declared and not built yet, and 3 older questions need a decision from you.**
 
 ```
-175 suites   3369 green   0 red   0 unhappy   8 owed      run 2a001c3
+176 suites   3380 green   0 red   0 unhappy   8 owed      run 222ec54
 ```
 
 ---
@@ -53,13 +53,12 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
     - suites that INSIST, not suites that demonstrate (10/R8)
 - **one suite that makes every api call (puppets/G3)** — live work in `design/principles/PUPPETS.md`, and no test is watching it.
 - **`peerOwnerPost()` on the owner's node (puppets/G4)** — live work in `design/principles/PUPPETS.md`, and no test is watching it.
-- In `design/shell/PUBLIC-APP-SERVER.md`, 14 things are still marked open with no test watching:
+- In `design/shell/PUBLIC-APP-SERVER.md`, 13 things are still marked open with no test watching:
     - `appServer.js` is a third startup module (public-app-server/G1)
     - a server reports the box it sits on: four fields, one opinion withheld (public-app-server/G10)
     - no failure-state lever; the states are reachable from outside (G11)
     - app code and app state do not share a directory (G12)
     - the official sample instantiates the template, and IS the acceptance test (G13)
-    - an app DECLARES what it takes, in its manifest, and gets nothing it did not ask for (G14)
     - the named interface, so a suite need not guess it (G15)
     - one app, one whitelist, no dispatch (public-app-server/G2)
     - `ask` has one home, and the app server uses it (public-app-server/G3)
@@ -73,7 +72,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-**Nothing moved.** Same requirements owed, same tally, since the run at `e5b059d`.
+- +11 green
 
 ---
 
@@ -83,10 +82,10 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 |---|---|---|---|---|---|---|---|
 | 1 | G17 | join's answer travels back to the browser |  | 1 | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
 | 2 | transport/R16 | the log must be able to PROVE what it claims |  | 1 | 1 day | `░░░░░░░░░░` 0% |  |
-| 3 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 4 | puppets/G2 | Generalizing the search approach to serving collections |  |  | 1 day | `▓▓▓▓▓░░░░░` 50% |  |
+| 3 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 2 days | `░░░░░░░░░░` 0% |  |
+| 4 | puppets/G2 | Generalizing the search approach to serving collections |  |  | 2 days | `▓▓▓▓▓░░░░░` 50% |  |
 | 5 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 6 | puppets/G10 | the face door and the puppet group | G14 (proposed), G17 |  | today | `░░░░░░░░░░` 0% |  |
+| 6 | puppets/G10 | the face door and the puppet group | G17 |  | today | `░░░░░░░░░░` 0% |  |
 | 7 | G18 | the app process serves its owner node over a named pipe, not a TCP port |  |  | today | `░░░░░░░░░░` 0% |  |
 | 8 | transport/R19 | the database decision, deferred until the log can prove its promises | transport/R16 |  | today | `░░░░░░░░░░` 0% |  |
 

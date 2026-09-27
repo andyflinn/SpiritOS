@@ -1,11 +1,11 @@
 {
   "box": "wsl-claude",
-  "commit": "2a001c3",
+  "commit": "222ec54",
   "stale": false,
-  "head": "2a001c3",
+  "head": "222ec54",
   "measured": {
-    "suites": 175,
-    "green": 3369,
+    "suites": 176,
+    "green": 3380,
     "red": 0,
     "unhappy": 0
   },
@@ -78,11 +78,6 @@
       "rank": 6,
       "frees": 0,
       "waitsOn": [
-        {
-          "id": "public-app-server/G14",
-          "handle": "G14",
-          "accepted": false
-        },
         {
           "id": "public-app-server/G17",
           "handle": "G17",
