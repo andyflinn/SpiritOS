@@ -348,6 +348,8 @@ reintroduces the exact failure the rule exists to prevent.
 claude recommended them, wsl-claude withdrew his "the box" in favour of
 plumbing, and Andy answered *"agreed."* and then *"go."* (asked to confirm
 the second name).
+His reason for plumbing: *"plumbing becaue it's in the puppet, on the box
+and in the server process"*. It runs through all three, and none of them shows it.
 - **Contract:** what an app, or the face carrying it, can see, and is
   promised: the one function its page calls (`puppetPost()`, today
   `app/shared/ask.js`), the flat door and its verbs. It changes only with a
