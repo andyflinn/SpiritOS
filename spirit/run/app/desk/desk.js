@@ -33,6 +33,10 @@ var deskBoard = null;       // the newest `board` packet's JSON
 var deskMessages = [];      // decoded agents messages, in log order
 var deskByHash = Object.create(null);
 var deskError = '';
+// THE LEAD, learned from whoever posts the board: only the lead box posts
+// one (runAll, lead = yes). Andy: "below the list in desk i'd like a direct
+// chat to lead". It is also the home for what belongs to no row.
+var deskLead = null;
 // WHICH AGENT HAS A ROW. Andy: "a column for the agent label would be
 // appropriate". Nothing in the tree records it; the claims do, in this
 // node's own record: the newest `taking` note per full id.
@@ -62,7 +66,7 @@ function deskDecode(row) {
     return {
       hash: row.hash, at: row.at, dir: row.dir, peer: '', outcome: String(inner.outcome || ''),
       from: String(inner.from || ''), to: String(inner.to || ''), kind: String(inner.kind),
-      text: String(inner.text || ''), todo: inner.todo ? String(inner.todo) : '',
+      text: String(inner.text || ''), todo: inner.todo ? String(inner.todo) : '', reported: true,
     };
   }
   return {
@@ -89,6 +93,7 @@ function deskFold(msg) {
     deskDecision[msg.todo] = DESK_DECISIONS[msg.text];
   }
   if (msg.kind === 'board') {
+    if (msg.dir === 'in' && msg.peer && msg.from) deskLead = { name: msg.from, key: msg.peer };
     try {
       var b = JSON.parse(msg.text);
       if (b && Array.isArray(b.rows)) deskBoard = b;
@@ -129,14 +134,55 @@ function deskRowOf(id) {
   return null;
 }
 
+// ── THE DIRECT CHAT TO THE LEAD, BELOW THE LIST ─────────────────────
+//
+// What passed between Andy and the lead with NO row: his untagged lines to
+// the lead's key, and the lead's untagged lines to him. Board posts, claims
+// and reports are not conversation. Repainted on arrival, with the input
+// box outside the repainted part so his typing survives.
+function deskLeadChat() {
+  if (!deskLead) return '<div class="job-manifest-note">No lead has posted a board here yet, so there is nobody to talk to.</div>';
+  var lines = [];
+  deskMessages.forEach(function (m) {
+    if (m.todo || m.reported || m.kind === 'board' || m.kind === 'report') return;
+    if (m.kind === 'note' && /^taking(\s|$)/.test(m.text)) return;
+    var mine = m.dir === 'out' && m.peer === deskLead.key;
+    var theirs = m.dir === 'in' && m.from === deskLead.name;
+    if (!mine && !theirs) return;
+    lines.push(m);
+  });
+  if (!lines.length) return '<div class="job-manifest-note">Nothing said yet.</div>';
+  return lines.map(function (m) {
+    var who = m.dir === 'out' ? 'you' : m.from;
+    return '<div><b>' + deskEsc(who) + '</b> <span class="job-manifest-note">' + deskEsc(m.at) +
+      '</span> ' + deskEsc(m.text) + '</div>';
+  }).join('');
+}
+
+// ONE recipient, so one row in his record per line: nothing to fold.
+function deskSayToLead() {
+  var box = document.getElementById('desk-say');
+  var said = box ? String(box.value || '').trim() : '';
+  var err = document.getElementById('desk-say-error');
+  if (!said) return;
+  if (!deskLead) { if (err) err.textContent = 'No lead known yet.'; return; }
+  deskApi.peerPost('agents', deskLead.key, { from: 'andy', kind: 'note', text: said }).then(function () {
+    box.value = '';
+    if (err) err.textContent = '';
+    return deskLoadNew();
+  }).catch(function (e) { if (err) err.textContent = 'Not sent: ' + e.message; });
+}
+
 // A ROW OPENS ITS OWN DIALOG. Andy: "we need a DeskDetails immediately,
 // with inputs specific to the item" — and the inline thread this replaced
 // erased his typing on every arrival ("also my typing gets erased,
 // everytime somebody sends something"). The table holds no input, so a
 // repaint on arrival costs him nothing.
 function deskDraw() {
-  var el = document.getElementById('desk-root');
+  var el = document.getElementById('desk-top');
   if (!el) return;
+  var chat = document.getElementById('desk-chat');
+  if (chat) chat.innerHTML = deskLeadChat();
   el.innerHTML = (deskError ? '<div class="job-start-error">' + deskEsc(deskError) + '</div>' : '') +
     deskTable();
   Array.prototype.forEach.call(el.querySelectorAll('tr[data-id]'), function (tr) {
@@ -176,7 +222,19 @@ function deskLoadNew() {
 spirit.shell.activateApp({
   mount: function (container, api) {
     deskApi = api;
-    container.innerHTML = '<div id="desk-root"></div>';
+    // The input lives outside both repainted parts.
+    container.innerHTML = '<div id="desk-root"><div id="desk-top"></div>' +
+      '<div class="stat-tile wide"><div class="label">Talk to the lead</div><div id="desk-chat"></div></div>' +
+      '<div class="start-job-form card"><label class="field-label grow">Say' +
+        '<input type="text" id="desk-say" placeholder="to the lead, about anything that is not one row"></label>' +
+      '<button type="button" id="desk-say-send">Send</button></div>' +
+      '<div id="desk-say-error" class="job-start-error"></div></div>';
+    document.getElementById('desk-say-send').addEventListener('click', deskSayToLead);
+    document.getElementById('desk-say').addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      deskSayToLead();
+    });
     deskDraw();
     // The first read is the search; after it, `deskAfter` follows the
     // record and a live arrival just asks for what is new.
