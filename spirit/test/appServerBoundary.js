@@ -451,10 +451,29 @@ test.subHeading('G7 — nodeIsOwnerNode and nodeIsPublicApp are derived on deman
 
 // ── G8 — layer 1 splits by promise, and the stable half is NAMED ─────
 test.subHeading('G8 — the stable half of layer 1 is named, so a later session can place a new thing');
-test.awaiting('public-app-server/G8', 'the named stable half of layer 1', false,
-  'the app contract sits in a named half that needs a deprecation path, and box concerns in one that does not — the test being mechanical: if removing it would break an app that never changed, it is in the stable half',
-  { there: 0, cost: 'a naming and a written test, no code; the value is that a later session can place a new thing without re-deriving the philosophy, ' +
-    'and this suite deliberately asserts nothing about it because a name this agent invented would BE the divergence rather than find one' });
+// NAMED BY ANDY, 2026-09-27, and settled at 1d4051b: CONTRACT and PLUMBING.
+// The line between them is his: VISIBILITY. "what you call \"the other half\"
+// the appFaceApp never even knows. it's invisible to itself." What an app
+// or its face can see is contract, changed only with a deprecation path;
+// what it cannot see is plumbing (pipe, port, cap, unit, the box report),
+// free to change. The awaiting said this suite would assert nothing until
+// then "because a name this agent invented would BE the divergence" -- the
+// names are his now, so it asserts them, and the visibility check that
+// sorts things by them runs against a live app server further down.
+{
+  const g8 = (function () {
+    const doc = fs.readFileSync(path.join(__dirname, '..', '..', 'design', 'shell', 'PUBLIC-APP-SERVER.md'), 'utf8');
+    const at = doc.indexOf('### G8 ');
+    const end = doc.indexOf('\n### ', at + 1);
+    return at === -1 ? '' : doc.slice(at, end === -1 ? undefined : end);
+  }());
+  if (/\bCONTRACT\b/.test(g8) && /\bPLUMBING\b/.test(g8)) {
+    test.check('public-app-server/G8: the design names both halves, CONTRACT and PLUMBING, in its G8 section '
+      + '— so a later session places a new thing by one question: can the app see it?');
+  } else {
+    test.fail('public-app-server/G8: the G8 section does not name both CONTRACT and PLUMBING');
+  }
+}
 
 // ── G17 — THE PUPPET SHOWS WHAT ITS MASTER COMPUTED ──────────────────
 //
@@ -1071,6 +1090,30 @@ const RECIPES = [
         await worlds.answering('http://127.0.0.1:' + APP_PORT + '/', 6000);
         const page = await pageOf(APP_PORT);
         const st = h.state();
+
+        // ── G8, SORTED BY VISIBILITY: THE APP SEES NO PLUMBING ─────────
+        //
+        // Asked through the app's OWN door, the way its page asks. Andy:
+        // plumbing is "invisible to itself" -- so nothing an app can reach
+        // may carry the box report, its state folder on disc, or a port.
+        {
+          const seen = await doorOf(APP_PORT, 'app.state');
+          const value = (seen.body && (seen.body.value || seen.body)) || {};
+          const PLUMBING = ['box', 'stateDir', 'port', 'pipe'];
+          const leaked = PLUMBING.filter(function (k) { return Object.prototype.hasOwnProperty.call(value, k); });
+          if (seen.status === 200 && !leaked.length) {
+            test.check('public-app-server/G8: through its own door an app sees no plumbing — no box report, no '
+              + 'state folder, no port or pipe — "invisible to itself"');
+          } else if (seen.status === 200) {
+            test.fail('public-app-server/G8: PLUMBING IS VISIBLE TO THE APP. Its own door answers app.state with '
+              + JSON.stringify(leaked) + ' (appServer.js snapshot(), served at door() for verb app.state). By '
+              + 'Andy\'s line those are plumbing, which "the appFaceApp never even knows" — either they leave '
+              + 'app.state, or app.state leaves the app\'s door for a door only the owner has');
+          } else {
+            test.fail('public-app-server/G8: app.state through the door answered ' + seen.status + ' '
+              + JSON.stringify(seen.body) + ' — the check could not look');
+          }
+        }
 
         if (page.status === 200) {
           test.check('cycle 2 G11 (unbound): against a relay nobody has claimed the app server STARTS and serves a page — ' +
