@@ -628,7 +628,7 @@ What it adds is clear, and one question is OPEN:
   app-server process on the owner's box. The **face-to-process channel**
   is specific to the puppet. It reads as the G17 route (PUBLIC-APP-SERVER.md,
   *THE PATH*: appFaceApp to the owner node, then loopback to the app
-  process, then `puppyReply()`).
+  process, then `appServerReply()`, named 2026-09-27; it was `puppyReply()`).
 - **OPEN: does it REPLACE the owner's remote control over the puppet's
   node groups, or sit BESIDE it?** That remote control is G4 (*"proxies the
   entire node api ... configuration, contactList maybe even relayList"*)

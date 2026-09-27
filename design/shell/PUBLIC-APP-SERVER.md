@@ -882,15 +882,21 @@ browser."* And the page itself: *"there will be the lowest layer shell with
 the index.html that the app-process servers the browser on first request."*
 
 ```
-browser → appFaceApp (VPS) ─packet─→ owner node ─loopback─→ join (app-server process)
-browser ← appFaceApp ←─reply, re=hash── puppyReply() ←─ answer ─┘
+browser → appFaceApp (VPS) ─appServerPost()─→ owner node ─loopback─→ join (app-server process)
+browser ← appFaceApp ←─reply, re=hash── appServerReply() ←─ answer ─┘
 ```
 
 - **The first request fetches the page** (`GET /` returns `join.html`,
   `appServer.js:1031`, plus the shared `ask.js`). The page's posts then
   reach join's one door along the same route. So the node forwards only the
   two flat things: a file by name, or a body to the door.
-- **`puppyReply()` is the one node-side function** that turns the app
+- **THE NAMES, RULED.** Andy, 2026-09-27, "go." on: `appServerPost()` for the
+  visitor's request leaving appFaceApp for the node that runs the app, and
+  `appServerReply()` for the answer coming back, *"because that's the
+  traditional webUI concept, the web programmer thinks of"*. Not
+  `ownerPost`: ownerPost.js is the other direction, the owner commanding its
+  puppet. appServerReply() was called `puppyReply()` until then.
+- **`appServerReply()` is the one node-side function** that turns the app
   process's answer into a reply packet with `re` set to the carried
   packet's hash. It uses the same two-packet pattern as appFaceApp's
   grant. It is a named function, not a new wire verb, so the hash rule
@@ -902,7 +908,7 @@ browser ← appFaceApp ←─reply, re=hash── puppyReply() ←─ answer ─
   this path too:** that is an app server reaching out to its owner, and here
   the node calls in.
 - **Owed:** the VPS entry, the node's forwarder (route row to the app's
-  loopback port), `puppyReply()`, and appFaceApp's table of waiting
+  loopback port), `appServerReply()`, and appFaceApp's `appServerPost()` with its table of waiting
   requests with a time limit per entry.
 
 **The page waits its turn, a bet on low visitor frequency.** Andy,
