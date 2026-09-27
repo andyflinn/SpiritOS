@@ -1302,6 +1302,7 @@ verbs today; they live only in its code.
   it enherits the plumbing from node. ... it doesn't serve apps. it only
   serves face"*. The core's launcher (appServers.js, `"serves": true`, the
   pipe) stays generic: it starts whatever server an app names.
+  What it is, in his words: *"it's a fanned screen"*, *"it's an io-device"*.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
