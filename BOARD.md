@@ -17,11 +17,26 @@ not describe. Run the harness if in doubt.
 
 `PUBLIC-APP-SERVER` · status **OPEN**
 
+- **missing:** appServerPost and appServerReply in appFaceApp — **~0% there**, guess: a sitting
+  
+  the visitor's request posted straight to the slot owner's key with the owner's signed route, and the answer back with re = the request's hash, matched to the open browser request (with the early-answer store)
+- **missing:** api.toLocalApp in nodeApps — **~0% there**, guess: a sitting
+  
+  the node hands a booted app's request to a local app server's door; the app never sees an address
+- **missing:** a long-running server job kind in jobs.js — **~0% there**, guess: a sitting
+  
+  the node starts and keeps an app server process, so it knows the door locally
+- **missing:** the owner's serve answered by the app server, not the 501 stub — **~0% there**, guess: with the two above
+  
+  appFaceApp's ownerRole hands serve to toLocalApp; faceRouteWorld (a) moves from the 501 to the app's own answer
+- **missing:** a named 503 when the app server is not running — **~0% there**, guess: with the two above
+  
+  a dead or unstarted process is answered by name at once, not left to the 18 s wait
 - **missing:** the answer body reaching the door — **~70% there**, guess: the transport half is DONE and verified by both agents (peerPost.js:363-373 unseals into answer.text before resolving). What is missing is that appServer stops discarding it, and an owner-side program that answers with a body — the second is the master, and it is the unbuilt half of every show. This is declared awaiting rather than red because an assertion needs a master that answers, and asserting against a fixture owner that answers nothing would test the fixture
   
   a reply carries a body, already unsealed, to the original poster — and reachOwner keeps it, so what the master computed reaches the screen
 
-*Declared in `appServerBoundary.js`*
+*Declared in `faceRoutePending.js`, `appServerBoundary.js`*
 
 ## public-app-server/G18 — the app process serves its owner node over a named pipe, not a TCP port
 
@@ -47,29 +62,19 @@ not describe. Run the harness if in doubt.
 
 `PUPPETS` · status **OPEN**
 
-- **missing:** the face door and the puppet group — **~0% there**, guess: a sitting, after its two prerequisites
+- **missing:** the face door and the puppet group — **~0% there**, guess: a sitting, after its prerequisite
   
   visitors through the face reach only the puppet group; a face request naming a node verb answers exactly as an unknown verb; both ends of the face door are app-blind
 
 *Declared in `puppetsPending.js`*
 
-## puppets/G2 — one shared search: two hooks per collection, the rest inherited
+## puppets/G2 — Generalizing the search approach to serving collections
 
 `PUPPETS` · status **OPEN**
 
-- **missing:** the shared bound-and-flag helper — **~40% there**, guess: a sitting — the shape exists, the unit and the sharing do not
+- **missing:** no verb answers with a list: each is search + get — **~50% there**, guess: a sitting per collection, after Andy's yes on the verb list
   
-  one helper that fills an answer to the bound and sets `more`, used by every verb that returns a collection. `peer.search` already returns { rows, more } (hub.js:2091) — the right shape with the wrong unit, bounding rows scanned rather than bytes
-
-*Declared in `puppetsPending.js`*
-
-## puppets/G3 — one suite that makes every api call
-
-`PUPPETS` · status **OPEN**
-
-- **missing:** one suite that makes every api call — **~0% there**, guess: a sitting
-  
-  Andy: "then you need only one suite that makes every api call." It answers two questions at once — whether every answer is under the bound, and whether the owner-proxy shim is complete. Walking the verb table is what stops either becoming a hand-counted list
+  still answering with a list (everyVerb.js LISTS_TODAY): peer.search. Each becomes search(label) giving key/label pairs through searchBucket.js, plus get(key), and the apps that call it change in the same commit
 
 *Declared in `puppetsPending.js`*
 
@@ -93,6 +98,16 @@ not describe. Run the harness if in doubt.
 
 *Declared in `transportPending.js`*
 
+## transport/R19 — the database decision, deferred until the log can prove its promises
+
+`2026-09-12-transport-below-the-boundary` · status **OPEN**
+
+- **missing:** the traffic log as a node.db table — **~0% there**, guess: a sitting after R16, with a table shape reviewed and approved first
+  
+  Andy: the log "belongs into the database, which also allows log access to be optimized". Today it is relay-state/traffic.jsonl, read whole on every question (trafficLog.js:108). Waits on transport/R16, because each row must carry its signature and the sealed text that signature covers
+
+*Declared in `transportPending.js`*
+
 ---
 
-**8 assertion(s) across 8 requirement(s).**
+**13 assertion(s) across 8 requirement(s).**
