@@ -951,6 +951,36 @@ function open(rootDir, opts) {
         });
       },
 
+      // ── THE GAPS, AND WHICH KIND EACH IS (cycle-11/C3) ────────────────
+      //
+      //   Andy: "a re-start row documents the downtime?", "...
+      //   the end-of-a-downtime", "and the stopped row can't be guaranteed.",
+      //   "... but should be part of \"graceful shutdown\"".
+      //
+      // Every `started` after the first ends a gap. A `stopped` right
+      // before it makes the gap a RESTART, a deliberate stop with both ends
+      // known. Anything else before it makes it a DEATH, whose start is only
+      // bounded by the last row written, because a crash writes nothing.
+      // The first `started` in the record is a first boot, not a gap.
+      //
+      // Answers about THE NODE, never about the relay: an interval while the
+      // node was down says nothing about what the relay did in it.
+      gaps: function (relay, from, limit) {
+        const out = [];
+        let prev = null;
+        this.since(relay, from, limit).forEach(function (r) {
+          if (r.kind === 'started' && prev) {
+            out.push({
+              kind: prev.kind === 'stopped' ? 'restart' : 'death',
+              from: prev.at,
+              to: r.at,
+            });
+          }
+          prev = r;
+        });
+        return out;
+      },
+
       since: function (relay, from, limit) {
         return q.recSince.all(String(relay || ''), Number(from) || 0,
           Number(limit) > 0 ? Number(limit) : 5000);
