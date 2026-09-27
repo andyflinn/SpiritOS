@@ -88,7 +88,10 @@ function ddRead(list) {
     st.chat.push(m);
     // A question from an agent is open until Andy answers after it.
     if (!andy && m.kind === 'ask') st.openAsk = m;
-    else if (andy && st.openAsk) st.openAsk = null;
+    // Only a DECISION closes it. Andy: "i have no go button on this": he
+    // wrote four notes after an agent's ask, and a note is talk, not an
+    // answer. So only his `answer` kind (go, no, accepted, rejected) does.
+    else if (andy && st.openAsk && m.kind === 'answer') st.openAsk = null;
   });
   if (!st.explain && ddRow && ddRow.explain) { st.explain = ddRow.explain; st.explainFrom = 'the declaration'; }
   return st;
