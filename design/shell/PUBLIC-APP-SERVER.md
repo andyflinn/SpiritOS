@@ -942,6 +942,18 @@ refused at the VPS, and a carried packet naming no row is refused at the
 receiving node. There is no default route and no fallback app.
 
 
+**THE ENTRY POINT ON THE VPS, proposed 2026-09-27 in Desk and awaiting Andy's
+Go!:** a listener on the VPS puppet node that exists only for face traffic.
+Caddy terminates the browser's HTTPS and forwards to it, and it hands each
+request to appFaceApp and nothing else. The node's own door stays
+loopback-only (`server.js:675`), so a visitor never reaches the node's verbs.
+Andy: *"you mean the entypoint on the pupped-node appFaceApp?"*: yes.
+**Named after its caller**, Andy: *"maybe call it the same name as the
+lowest-level shell function is called?"* The page's lowest layer calls
+`puppetPost()`, and the listener that answers it on the VPS carries the same
+name, so both ends of the one wire read as one thing. It is his mirroring
+rule applied to a single call.
+
 ### G18 — the app process serves its owner node over a named pipe, not a TCP port
 
 **Status:** OPEN. Nothing built. Andy, 2026-09-27, in Desk: *"hat's missing
