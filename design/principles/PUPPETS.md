@@ -430,20 +430,68 @@ and no caller may assume one.
 *Andy's title, given in Desk on 2026-09-27. It was "one shared search: two
 hooks per collection, the rest inherited".*
 
-**Status:** OPEN. Nothing built, but the shape exists: `peer.search`
-already returns `{ rows, more }` (`spirit/run/js/hub.js:2242`) with the
-right shape and the wrong unit, bounding rows scanned rather than bytes.
+**Status:** OPEN. Nothing built. **The shape is DECIDED** (Andy, in Desk,
+2026-09-27; this section is its write-up, and a later session builds
+against it without re-deriving it).
 
-Shared rather than per-verb, because a per-verb implementation is the
-duplication the wire probe exists to catch. Bounded-and-truthful rather
-than a refusal — `THE-REQUESTER-IS-RESPONSIBLE.md:127` against its `:146`.
+**THE RULE UNDER IT:** *"there are no (complete) lists, only searches"*, and
+*"Everything, everywhere that goes out, is bounded by MAX_PAYLOAD."*
 
-**Its content, ruled 2026-09-25:** a collection supplies a SCAN BY KEY
-and an EXTRACTOR (Title AND description); matching, ranking, the bound,
-the partial flag and the field names are inherited. Neither hook exists
-— `peer.search` does all five inline — so creating them IS this
-requirement. The full statement, with what is measured about the
-existing example, is in `THE-REQUESTER-IS-RESPONSIBLE.md`.
+**Decided:**
+
+1. **A list verb is replaced by `search`, and the list verb dies.** Andy:
+   *"replace the getList interface flat-out , with "search" and KILL the
+   replaced verb"*. No list verb stays beside its search.
+2. **`search(label)` takes a label, returns key/label pairs.** *"search only
+   takes label as argument. what would the key be good for? and get(key) i
+   agree with"*, and *"the search returns an array of key/label couples."*
+   The default argument is `"*"`: an empty search is the list, through the
+   same path.
+3. **`get(key)` fetches the rest of one object**, lazily, by the key a
+   search returned.
+4. **`bucket.js` holds pairs and never scans.** *"i doubt that bucket scans
+   itself, that's a can of worms ... the priority sequence can only be known
+   by the user of bucket.js"*. The bucket's user walks its own data, in its
+   own priority order, and offers each object to the bucket.
+5. **Two hooks on the bucket**, in his names: `getLabelStringFromIncomingObject()`
+   (the label a search matches) and `extractKeyAndLabelFromRow()` (the pair
+   the bucket keeps).
+6. **The walk is bounded by MAX_SEARCHED_ITEMS.** *"the dataset (a million
+   objects) is searched by a priority sequence with a limit
+   (MAX_SEARCHED_ITEMS)"*. Nothing is exempt, including rows the owner added
+   by hand: *"no "added whatevers" are subject primarily to the seach
+   string, second to the scan order."*
+7. **The answer's order:** first by match against the search string, then by
+   scan order.
+8. **`getResult()` makes the answer, capped in bytes only.** *"the cap IS
+   measure in bytes only. you may name the limit however you want"*, and
+   *"the getResult() call on the bucket is what creates the byte-limited
+   json result"*. The cap is derived from PAYLOAD_MAX, never restated.
+9. **`more` is true when the answer is partial**: the walk stopped at
+   MAX_SEARCHED_ITEMS, or getResult() left pairs out for bytes. The requester
+   narrows by searching. There is no paging and no cursor handed out by the
+   answerer.
+
+**What exists to build on:** `peer.search` already returns `{ rows, more }`
+(`spirit/run/js/hub.js:2242`), bounded by rows scanned rather than bytes, and
+does matching, ranking and the bound inline. `bucket.js` exists with a
+partial flag.
+
+**SUPERSEDED:** the 2026-09-25 wording, *"a collection supplies a SCAN BY KEY
+and an EXTRACTOR ...; matching, ranking, the bound, the partial flag and the
+field names are inherited"*. The scan now belongs to the bucket's user and
+never to the bucket (point 4), and the result is pairs, not rows. The
+reasoning for a shared, truthful bound still stands in
+`THE-REQUESTER-IS-RESPONSIBLE.md`.
+
+**The work, in Andy's count:** the bucket and its two hooks, getResult()
+with the byte cap, each list verb replaced by search plus get and then
+killed, and (*"4, adapt the suites accordingly"*) the suites moved to the
+new verbs.
+
+**Open:** none known (wsl-claude and claude, 2026-09-27). Which list verbs
+exist today, and so what gets killed, is a count for the build, not a
+design question.
 
 **The design, ruled 2026-09-27** (in Desk under this row; written up by
 wsl-claude on Andy's "go."). Citations at `6637c75`.
