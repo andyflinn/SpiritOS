@@ -82,7 +82,10 @@ function createNodeSearches(opts) {
   // The pattern, cleaned as the node cleans a path; null when it climbs out.
   function cleanPattern(q) {
     var raw = q == null ? '' : String(q).trim();
-    if (raw === '' || /^\*+$/.test(raw)) return '*';
+    // An empty search is the whole tree, at every depth: '**' (the shell
+    // rule, gradedSearch). A '*' typed as such means the top level only.
+    if (raw === '') return '**';
+    if (/^\*+$/.test(raw)) return raw;
     var resolved = fsPath(rootDir, raw);
     if (!resolved) return null;
     return path.relative(rootDir, resolved).split(path.sep).join('/') || '*';

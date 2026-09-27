@@ -114,7 +114,9 @@ function createSearch(opts) {
       var text = labelString(obj);
       matchingText = text == null ? '' : String(text);
       var held = { key: String(pair.key), label: String(pair.label == null ? '' : pair.label) };
-      if (everything && !keysByOrder[held.key]) {
+      // Only what matches can take a place: '*' no longer matches a label
+      // with a '/' in it (the shell rule), so a non-match costs nothing.
+      if (everything && !keysByOrder[held.key] && graded.matches(held)) {
         var cost = utf8Bytes(JSON.stringify(held)) + (usedByOrder > frameBytes ? 1 : 0);
         // It will not be sent, so it was not examined: the contract of a
         // false answer, the same as at the walk limit.

@@ -536,7 +536,12 @@ function deskDraw() {
       b.disabled = true;
       var body = { from: 'andy', kind: 'answer', text: 'go.', todo: id };
       deskApi.peerPost('agents', ask.peer, body)
-        .then(function (r) { return deskRecord([deskOutgoing(ask.peer, body, r)]); })
+        .then(function (r) {
+          // Answering is reacting, so the row's * clears as if opened. Andy:
+          // "the red "*" should of course disappear once i reacted to them".
+          deskMarkRowSeen(id);
+          return deskRecord([deskOutgoing(ask.peer, body, r)]);
+        })
         .catch(function (err) { b.disabled = false; deskError = 'Go! not sent: ' + err.message; deskDraw(); });
     });
   });

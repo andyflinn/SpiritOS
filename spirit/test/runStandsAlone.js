@@ -47,6 +47,10 @@ test.startTest('run/ stands alone — the product does not need the harness');
 // It is not ours to hold to this rule and scanning it would only find
 // other people's test fixtures.
 const SKIP_DIRS = ['node_modules'];
+// A RECORD OF CONVERSATION IS NOT CODE. Desk's own log (gitignored, never
+// shipped) holds what Andy and the agents said, and they talk about
+// spirit/test. What they said is not the product reaching for the harness.
+const SKIP_DATA = /[\\/]app[\\/]desk[\\/](log(-\d+)?\.json|seen\.json)$/;
 
 function walk(dir, out) {
   // A DIRECTORY CAN VANISH UNDER A SCAN, and twice on 2026-09-13 one did:
@@ -66,7 +70,8 @@ function walk(dir, out) {
       walk(path.join(dir, entry.name), out);
       return;
     }
-    if (/\.(js|json|html)$/.test(entry.name)) out.push(path.join(dir, entry.name));
+    const full = path.join(dir, entry.name);
+    if (/\.(js|json|html)$/.test(entry.name) && !SKIP_DATA.test(full)) out.push(full);
   });
   return out;
 }

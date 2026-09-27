@@ -263,13 +263,18 @@ if (typeof bucket.createSearch !== 'function') {
     return s.getResult().items.map(function (i) { return i.key; });
   }
   {
-    const tree = keysFor('app/desk/*', ['app/desk/a.js', 'app/desk/sub/b.js', 'app/deskX/c.js']);
-    const one = keysFor('app/desk/?.js', ['app/desk/a.js', 'app/desk/ab.js']);
-    if (tree.join() === 'app/desk/a.js,app/desk/sub/b.js' && one.join() === 'app/desk/a.js') {
-      test.check('a path pattern takes in the folder and its subfolders but not a sibling that merely starts '
-        + 'alike (app/desk/* skips app/deskX/), and ? is exactly one character');
+    // THE SHELL RULE since Andy's "go." (2026-09-27): '*' stays in its
+    // folder, '**' crosses folders, '?' is one character and never a '/'.
+    const labels = ['app/desk/a.js', 'app/desk/sub/b.js', 'app/deskX/c.js'];
+    const level = keysFor('app/desk/*', labels);
+    const tree = keysFor('app/desk/**', labels);
+    const one = keysFor('app/desk/?.js', ['app/desk/a.js', 'app/desk/ab.js', 'app/desk//.js']);
+    if (level.join() === 'app/desk/a.js' && tree.join() === 'app/desk/a.js,app/desk/sub/b.js' && one.join() === 'app/desk/a.js') {
+      test.check('app/desk/* is that folder only, app/desk/** takes in its subfolders, neither reaches a sibling '
+        + 'that merely starts alike (app/deskX/), and ? is exactly one character, never a /');
     } else {
-      test.fail('path patterns: app/desk/* gave ' + JSON.stringify(tree) + ', app/desk/?.js gave ' + JSON.stringify(one));
+      test.fail('path patterns: app/desk/* gave ' + JSON.stringify(level) + ', app/desk/** gave ' + JSON.stringify(tree)
+        + ', app/desk/?.js gave ' + JSON.stringify(one));
     }
   }
   {

@@ -55,44 +55,77 @@ var bucket = require('./bucket');
 //
 //   Andy: "the search must be supporting wildcards etc."
 //
-// `*` any run, `?` one character. NOT compiled to a RegExp: a pattern a
-// stranger supplies, turned into a regex, is catastrophic backtracking
-// waiting to be typed — `*a*a*a*a*b` against a long label is the classic,
-// and it would be a public relay burning CPU on request.
+// NOT compiled to a RegExp: a pattern a stranger supplies, turned into a
+// regex, is catastrophic backtracking waiting to be typed — `*a*a*a*a*b`
+// against a long label is the classic, and it would be a public relay
+// burning CPU on request.
 //
-// So the matcher is the two-pointer one, which backtracks only to the
-// last `*` and is O(label × pattern) with no pathological case. Labels
-// cap at 256 bytes (labelRule), so the worst case is small and knowable
-// rather than merely unlikely.
+// ── THE SHELL'S RULE FOR '*', AND '**' TO CROSS FOLDERS ──────────────
+//
+//   Andy, 2026-09-27, "go." on: "'*' stays within one folder, '**' crosses
+//   folders, so 'media/*.jpg' is that folder only and 'media/**.jpg'
+//   includes subfolders. Names have no '/', so peer and contact search
+//   don't change."
+//
+//   `*`   any run of characters without a '/'
+//   `**`  any run of characters, '/' included
+//   `?`   one character, never a '/'
+//
+// Two kinds of star cannot share the two-pointer matcher that stood here,
+// which only ever backtracks to the last star. So it is a table: one row
+// per pattern position, filled across the label once. O(label x pattern)
+// time, O(label) space, and no input makes it worse than that. Labels cap
+// at 256 bytes (labelRule), so the worst case is small and knowable.
 function globMatches(text, pattern) {
-  var t = 0;
-  var p = 0;
-  var star = -1;
-  var mark = 0;
-  while (t < text.length) {
-    if (p < pattern.length && (pattern[p] === '?' || pattern[p] === text[t])) {
-      t += 1; p += 1;
-    } else if (p < pattern.length && pattern[p] === '*') {
-      star = p; mark = t; p += 1;
-    } else if (star !== -1) {
-      p = star + 1; mark += 1; t = mark;
+  var tokens = [];
+  for (var i = 0; i < pattern.length; i += 1) {
+    var ch = pattern[i];
+    if (ch === '*') {
+      if (pattern[i + 1] === '*') { tokens.push('**'); i += 1; } else tokens.push('*');
+      while (pattern[i + 1] === '*') i += 1;   // '***' is '**'
     } else {
-      return false;
+      tokens.push(ch);
     }
   }
-  while (p < pattern.length && pattern[p] === '*') p += 1;
-  return p === pattern.length;
+  var n = text.length;
+  // prev[t]: the pattern so far matches text[0..t).
+  var prev = new Array(n + 1).fill(false);
+  prev[0] = true;
+  for (var k = 0; k < tokens.length; k += 1) {
+    var tok = tokens[k];
+    var cur = new Array(n + 1).fill(false);
+    if (tok === '*' || tok === '**') {
+      // A star matches nothing (prev[t]) or extends one character further
+      // (cur[t-1]), and a single star may not extend over a '/'.
+      for (var t = 0; t <= n; t += 1) {
+        if (prev[t]) { cur[t] = true; continue; }
+        if (t > 0 && cur[t - 1] && (tok === '**' || text[t - 1] !== '/')) cur[t] = true;
+      }
+    } else {
+      for (var t2 = 1; t2 <= n; t2 += 1) {
+        if (!prev[t2 - 1]) continue;
+        var c = text[t2 - 1];
+        cur[t2] = tok === '?' ? c !== '/' : c === tok;
+      }
+    }
+    prev = cur;
+  }
+  return prev[n];
 }
 
-// ── TOKENS ───────────────────────────────────────────────────────────
+// ── ACCENTS FOLDED, BOTH WAYS ────────────────────────────────────────
 //
-// Split on whitespace and the separators a name actually uses. A person
-// writing "anna-marie" and a person writing "anna marie" mean the same
-// two words, and a matcher that disagrees is describing punctuation.
+//   Andy, 2026-09-27, "go." on: "ü matches u and é matches e, both ways".
 //
-// Lowercased by the callers before they get here, so this does not
-// lowercase again — the query is normalised once per search, not once per
-// row of a million.
+// Canonical decomposition, then the combining marks dropped, on the label
+// and on the query alike: 'Zürich' and 'zurich' meet at 'zurich'. It does
+// NOT make ß into ss or æ into ae; those are letters of their own, not a
+// letter with a mark, and would be a separate rule (wsl-claude).
+function fold(text) {
+  var s = String(text == null ? '' : text).toLowerCase();
+  return typeof s.normalize === 'function' ? s.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : s;
+}
+
 var SEPARATORS = /[\s\-_.,/]/;
 
 function tokens(text) {
@@ -493,8 +526,8 @@ function explain(item, query, opts) {
   opts = opts || {};
   var textOf = opts.text || function (x) { return String(x); };
   var signals = TEXT_SIGNALS.concat(opts.signals || []);
-  var q = String(query == null ? '' : query).toLowerCase();
-  var text = String(textOf(item) || '').toLowerCase();
+  var q = fold(query);
+  var text = fold(textOf(item));
   var qTokens = tokens(q.replace(/[*?]/g, ' '));
   var s = {
     item: item, text: text, textTokens: tokens(text),
@@ -551,7 +584,7 @@ function open(query, opts) {
   var weightTotal = 0;
   signals.forEach(function (sig) { if (sig.weight > 0) weightTotal += sig.weight; });
 
-  var q = String(query == null ? '' : query).toLowerCase();
+  var q = fold(query);
   var queryTokens = tokens(q.replace(/[*?]/g, ' '));
   var literal = q.replace(/[*?]/g, '').length;
   var typed = queryTokens.reduce(function (n, t) { return n + t.length; }, 0);
@@ -600,8 +633,15 @@ function open(query, opts) {
     // A candidate. `tag` is whatever the caller wants to remember about
     // where this one came from; it is carried through untouched and no
     // signal here reads it.
+    // Whether an item would be a candidate at all, by the same rank offer()
+    // uses, without offering it. For a caller deciding what an answer can
+    // still hold (searchBucket's early stop).
+    matches: function (item) {
+      return rank(fold(textOf(item)), q, multi) >= 0;
+    },
+
     offer: function (item, tag) {
-      var text = String(textOf(item) || '').toLowerCase();
+      var text = fold(textOf(item));
       var r = rank(text, q, multi);
       if (r < 0) return false;
       return held.offer({
