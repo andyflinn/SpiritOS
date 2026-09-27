@@ -1223,7 +1223,7 @@ verbs today; they live only in its code.
   explain there, that it requires a member to be in the owners contact list
   before introspection works for that member"*): `api`, both the tree and a
   call, works only for a key already in the owner node's contact list. A
-  member is added there first (the relay roll, an invite, or the owner by
+  member is added there first (an invite, or the owner accepting it by
   hand), and only then can it introspect or ask grantFace for a name. The
   stranger setting is not a way in: a key the owner has not accepted gets
   no answer from `api`, whatever that setting says.**
