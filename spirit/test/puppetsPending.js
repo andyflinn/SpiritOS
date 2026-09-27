@@ -196,16 +196,40 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
     test.fail('puppets/G6 regressed: nodeApps no longer has puppetIn and puppet.json');
   }
 
-  // The shim, separately, because it is the part most likely to rot:
-  // handlers take real (req, res) and peekVerb reads the verb off the
-  // body without consuming it.
-  test.awaiting('puppets/G7', 'the loopback shim', /synthetic|shimReq|asLoopback/.test(nodeApps),
-    'a readable carrying the unwrapped body and a writable capturing the answer, so server.js:921\'s dispatch runs ' +
-    'unchanged. A handler reaching for req.headers or req.socket fails ALONE and QUIETLY, which is why puppets/G3 covers ' +
-    'this and not a per-verb test',
-    // PROPOSED (claude, 2026-09-27; order read by wsl-claude): dispatching
-    // on loopback while a puppet can rewrite its own owner key is a takeover.
-    { there: 0, cost: 'a sitting', after: ['puppets/G6'] });
+  // ── puppets/G7 IS BUILT: THE OWNER DOOR ──────────────────────────────
+  //
+  // Split from its second half at 3b30b1a. Andy, asking why it still led
+  // his list: "with verification is should dissappear", and "but once it
+  // freed all it can free, it's no longer relevant to me". Asserted in
+  // spirit/test/puppetDoor.js, 9 checks, mutation-tested.
+  //
+  // WHY IT NEVER WENT RED ON ITS OWN, unlike G5 and G6: its probe was
+  // /synthetic|shimReq|asLoopback/ -- names GUESSED for an implementation
+  // not yet written, and the one built used none of them. So the
+  // declaration could not see a built, tested door. A probe must name what
+  // was AGREED, which is why G10 below names nodeApps.faceDoor.
+  if (typeof require('../run/js/nodeApps').puppetDoor === 'function') {
+    test.check('the owner door exists as a unit — nodeApps.puppetDoor, asserted in puppetDoor.js: the '
+      + 'owner\'s signed command to a carried group runs and is answered, an uncarried group is refused by '
+      + 'name, strangers get silence, a failing handler fails alone, now or later');
+  } else {
+    test.fail('puppets/G7 regressed: nodeApps no longer exports puppetDoor');
+  }
+
+  // ── puppets/G10: THE FACE DOOR AND THE PUPPET GROUP ─────────────────
+  //
+  // The half of G7's approved shape that cannot start yet: visitors through
+  // the face reach only the 'puppet' group, and the rest of the tree is not
+  // there for them. It needs an app's declared commands (public-app-server
+  // G14) and join's route (public-app-server G17). The probe is the name
+  // AGREED with claude-windows for slice 2, nodeApps.faceDoor, so it goes
+  // red the moment the unit exists and asks for its assertions.
+  test.awaiting('puppets/G10', 'the face door and the puppet group',
+    typeof require('../run/js/nodeApps').faceDoor === 'function',
+    'visitors through the face reach only the puppet group; a face request naming a node verb answers '
+    + 'exactly as an unknown verb; both ends of the face door are app-blind',
+    { there: 0, cost: 'a sitting, after its two prerequisites',
+      after: ['public-app-server/G14', 'public-app-server/G17'] });
 }
 
 // ── THE SIBLING-PUPPET DIRECTION, WHICH ANDY'S MODE GATE DOES NOT REACH

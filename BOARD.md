@@ -73,6 +73,16 @@ not describe. Run the harness if in doubt.
 
 *Declared in `puppetsPending.js`*
 
+## puppets/G10 — the face door and the puppet group
+
+`PUPPETS` · status **OPEN**
+
+- **missing:** the face door and the puppet group — **~0% there**, guess: a sitting, after its two prerequisites
+  
+  visitors through the face reach only the puppet group; a face request naming a node verb answers exactly as an unknown verb; both ends of the face door are app-blind
+
+*Declared in `puppetsPending.js`*
+
 ## puppets/G2 — one shared search: two hooks per collection, the rest inherited
 
 `PUPPETS` · status **OPEN**
@@ -100,16 +110,6 @@ not describe. Run the harness if in doubt.
 - **missing:** peerOwnerPost on the node — **~0% there**, guess: a sitting
   
   one function that wraps a node-api call as a signed packet to a puppet. Addressed as a WIRE namespace: verbTable.js:74 makes wire the client's failure contract and a namespace is uniformly one or the other, so a remote caller must name the proxy rather than the local verb
-
-*Declared in `puppetsPending.js`*
-
-## puppets/G7 — the loopback shim
-
-`PUPPETS` · status **OPEN**
-
-- **missing:** the loopback shim — **~0% there**, guess: a sitting
-  
-  a readable carrying the unwrapped body and a writable capturing the answer, so server.js:921's dispatch runs unchanged. A handler reaching for req.headers or req.socket fails ALONE and QUIETLY, which is why puppets/G3 covers this and not a per-verb test
 
 *Declared in `puppetsPending.js`*
 

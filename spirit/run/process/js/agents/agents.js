@@ -38,7 +38,18 @@ const limits = require('../../../js/limits.js');
 const { execFileSync } = require('child_process');
 
 const APP = 'agents';
-const KINDS = ['note', 'ask', 'answer', 'report', 'halt', 'resume', 'blocked', 'board', 'explain', 'annotation'];
+const KINDS = ['note', 'ask', 'answer', 'report', 'halt', 'resume', 'blocked', 'board', 'explain', 'annotation', 'musing'];
+
+// ── `musing` — ANDY'S THOUGHTS FOR THE VOICE LOG ──────────────────────
+//
+//   Andy, 2026-09-27, on Desk's Musings tab: "pipe stuff to voice.jsonl
+//   bypassing scoreboard issues" and "ideas deferred to close-time".
+//
+// Belongs to NO row and expects no reply, so a musing carrying a `todo` is
+// refused: a thought filed under a to-do would land in that row's chat,
+// which is exactly the noise the tab exists to keep out. The lead's
+// listener prints it as its own line so the voice-log courier cannot miss
+// it -- and only the lead logs his words (CLAUDE.md).
 
 // ── `explain` AND `annotation` — THE TWO THINGS DESK SHOWS ABOVE THE CHAT ─
 //
@@ -181,6 +192,9 @@ function makeEnvelope(from, kind, text, re, idFn, block, todo) {
   }
   if (NEEDS_TODO.indexOf(kind) !== -1 && !todo) {
     throw new Error('a ' + kind + ' belongs to a row — give it --todo <full id>');
+  }
+  if (kind === 'musing' && todo) {
+    throw new Error('a musing belongs to no row — send it without --todo');
   }
   // ── AND NOTHING EMPTY LEAVES (cycle 10's R19) ───────────────────────
   //
@@ -629,6 +643,11 @@ function listen(cfg, onLine, fetchFn) {
           // that asks for writing rather than for work.
           if (b.kind === 'ask' && b.todo && /^\s*explain/i.test(String(b.text || ''))) {
             onLine('AGENTS EXPLAIN-REQUEST ' + (b.from || '?') + ' on ' + b.todo);
+          }
+          // HIS MUSING, as its own line: the lead's courier to voice.jsonl
+          // reads it here, and it needs no answer.
+          if (b.kind === 'musing') {
+            onLine('AGENTS MUSING ' + (b.from || '?') + ': ' + String(b.text || '').replace(/\s+/g, ' '));
           }
           let said = b.kind === 'blocked' ? blockLine(env) : String(b.text || '').replace(/\s+/g, ' ');
           if (b.kind === 'board') {

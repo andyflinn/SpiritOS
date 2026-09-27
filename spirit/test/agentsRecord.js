@@ -181,6 +181,7 @@ function door() {
       packet(CONTROL, agents.makeEnvelope('lead', 'board', JSON.stringify({ rows: [{}, {}, {}] }))),
       packet(CONTROL, agents.makeEnvelope('andy', 'ask', 'explain please', null, null, null, 'puppets/G6')),
       packet(CONTROL, agents.makeEnvelope('andy', 'ask', 'is this done?', null, null, null, 'puppets/G6')),
+      packet(CONTROL, agents.makeEnvelope('andy', 'musing', 'note to self: a thought for later')),
     ];
     const enc = new TextEncoder();
     let i = 0;
@@ -215,6 +216,21 @@ function door() {
         + 'ask on the same row does not — so the line means exactly one thing');
     } else {
       test.fail('explain-request lines: ' + JSON.stringify(explainReq));
+    }
+    const musings = out.filter(function (l) { return /^AGENTS MUSING /.test(l); });
+    if (musings.length === 1 && musings[0] === 'AGENTS MUSING andy: note to self: a thought for later') {
+      test.check('his musing prints as its own MUSING line, whole, for the lead\'s courier to voice.jsonl');
+    } else {
+      test.fail('musing lines: ' + JSON.stringify(musings));
+    }
+    let tagged = null;
+    try { agents.makeEnvelope('andy', 'musing', 'a thought', null, null, null, 'cycle-10/R13'); }
+    catch (e) { tagged = e.message; }
+    if (tagged && /belongs to no row/.test(tagged)) {
+      test.check('a musing filed under a row is refused — it would land in that row\'s chat, the noise '
+        + 'the Musings tab exists to keep out');
+    } else {
+      test.fail('a musing with a todo was accepted');
     }
     if (out.some(function (l) { return / board: the scoreboard, 3 rows$/.test(l); })) {
       test.check('a board arriving is one line, "the scoreboard, 3 rows", not kilobytes of JSON');

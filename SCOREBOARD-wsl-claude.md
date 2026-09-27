@@ -4,29 +4,25 @@
 
 ## Summary
 
-**2 tests are broken, 12 requirements are declared and not built yet, and 2 older questions need a decision from you.**
+**Nothing is broken, 12 requirements are declared and not built yet, and 1 dependency question for you, and 2 older questions need a decision from you.**
 
 ```
-168 suites   3148 green   2 red   2 unhappy   12 owed      run 3feddc5
+168 suites   3153 green   0 red   0 unhappy   12 owed      run 3b30b1a
 ```
-
----
-
-## What is red
-
-**Something that used to pass now fails.** These are broken, not unfinished — the owed list further down is work nobody has written yet.
-
-**❌ `doorContract.js`** — one check no longer passes.
-
-  - the page says 78, the catalogue has 81
-
-**❌ `puppetDoor.js`** — one check no longer passes.
-
-  - a handler failing in its promise: 1 rejection(s) ESCAPED the door, which in a real node stops the process for one bad command; the owner got "no answer at all"
 
 ---
 
 ## What needs you
+
+### Dependencies to settle
+
+**One question for you: an agent says some to-dos have to land before others.** Yes makes it count in the order below; no is kept, so it is not proposed again.
+
+**1. join's answer travels back to the browser (G17)** is needed by:
+
+- the face door and the puppet group (puppets/G10)
+
+**Do you accept the implied change in priorities?** (G17) from 5th to 1st.
 
 ### Ruled, and now ours
 
@@ -83,8 +79,10 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +7 green
-- +2 red
+- +5 green
+- -2 red
+- ✅ **built or withdrawn:** puppets/G7
+- ⏳ **newly owed:** puppets/G10
 
 ---
 
@@ -92,23 +90,23 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 | # | handle | to-do | waits on | frees | owed | there | |
 |---|---|---|---|---|---|---|---|
-| 1 | puppets/G7 | the loopback shim | puppets/G6 | 1 | 1 day | `░░░░░░░░░░` 0% |  |
-| 2 | 10/R13 | a card is ordered in time, or an old one never dies |  |  | 3 days | `▓▓▓▓▓░░░░░` 50% |  |
-| 3 | 11/C3 | the state the record cannot mark: its own node being down |  |  | 3 days | `▓▓▓▓░░░░░░` 40% |  |
-| 4 | G10 | a server reports the box it sits on: four fields, one opinion withheld |  |  | 2 days | `▓▓▓░░░░░░░` 33% |  |
-| 5 | public-app-server/G8 | layer 1 splits by PROMISE, and the stable half is named |  |  | 2 days | `░░░░░░░░░░` 0% |  |
-| 6 | G17 | join's answer travels back to the browser |  |  | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
-| 7 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 8 | puppets/G2 | one shared search: two hooks per collection, the rest inherited |  |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
-| 9 | puppets/G3 | one suite that makes every api call |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 10 | puppets/G4 | `peerOwnerPost()` on the owner's node | puppets/G7 |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 11 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | today | `░░░░░░░░░░` 0% |  |
-| 12 | transport/R16 | the log must be able to PROVE what it claims |  |  | today | `░░░░░░░░░░` 0% |  |
+| 1 | 10/R13 | a card is ordered in time, or an old one never dies |  |  | 3 days | `▓▓▓▓▓░░░░░` 50% |  |
+| 2 | 11/C3 | the state the record cannot mark: its own node being down |  |  | 3 days | `▓▓▓▓░░░░░░` 40% |  |
+| 3 | public-app-server/G10 | a server reports the box it sits on: four fields, one opinion withheld |  |  | 2 days | `▓▓▓░░░░░░░` 33% |  |
+| 4 | public-app-server/G8 | layer 1 splits by PROMISE, and the stable half is named |  |  | 2 days | `░░░░░░░░░░` 0% |  |
+| 5 | G17 | join's answer travels back to the browser |  |  | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
+| 6 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 7 | puppets/G2 | one shared search: two hooks per collection, the rest inherited |  |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
+| 8 | puppets/G3 | one suite that makes every api call |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 9 | puppets/G4 | `peerOwnerPost()` on the owner's node | puppets/G7 |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 10 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | today | `░░░░░░░░░░` 0% |  |
+| 11 | transport/R16 | the log must be able to PROVE what it claims |  |  | today | `░░░░░░░░░░` 0% |  |
+| 12 | puppets/G10 | the face door and the puppet group | G14 (proposed), G17 (proposed) |  | ? | `░░░░░░░░░░` 0% |  |
 
 **How the order was made.** 
 
-- 10 of 12 owed items have no dependency you have accepted, so they are ordered by age alone.
-- (puppets/G7) waits on (puppets/G6), which is DONE — the edge is ignored.
+- 12 of 12 owed items have no dependency you have accepted, so they are ordered by age alone — 1 proposed one above waits for your yes or no.
+- (puppets/G4) waits on (puppets/G7), which is DONE — the edge is ignored.
 
 *Percentages are the guesses the declarations carry — `testSupport`:
 "printed as guesses… to be argued with during a design sitting, not to
