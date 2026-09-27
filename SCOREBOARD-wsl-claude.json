@@ -1,11 +1,11 @@
 {
   "box": "wsl-claude",
-  "commit": "0ec2cab",
+  "commit": "f38cfc5",
   "stale": false,
-  "head": "0ec2cab",
+  "head": "f38cfc5",
   "measured": {
     "suites": 171,
-    "green": 3288,
+    "green": 3290,
     "red": 0,
     "unhappy": 0
   },
@@ -38,7 +38,7 @@
       "kind": "to-do",
       "id": "puppets/G2",
       "handle": "puppets/G2",
-      "title": "one shared search: two hooks per collection, the rest inherited",
+      "title": "Generalizing the search approach to serving collections",
       "rank": 3,
       "frees": 0,
       "waitsOn": [],

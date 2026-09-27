@@ -270,26 +270,41 @@ async function run() {
     }
   }
 
-  test.subHeading('Reading the log pairs a refusal with its attempt');
+  // ── THE AGENTS KEEP THEIR OWN LOG ─────────────────────────────────
+  //
+  //   Andy, 2026-09-27: "they must keep their own logs", and "so your end
+  //   needs to store my messages on their own." Reading the node's
+  //   traffic.jsonl was the node's record doing an app's job.
+  test.subHeading('The agents keep their own log, and read nothing of the node\'s');
 
   {
-    const env = JSON.stringify(agents.makeEnvelope('claude-windows', 'note', 'hello', '', function () { return 'I'; }));
-    const lines = [
-      JSON.stringify({ at: 't1', dir: 'out', kind: 'request', peer: PEER, hash: 'HA', outcome: 'sent', payload: env }),
-      JSON.stringify({ at: 't2', dir: 'out', kind: 'request', peer: PEER, hash: 'HA', outcome: 'refused' }),
-      JSON.stringify({ at: 't3', dir: 'out', kind: 'request', peer: PEER, hash: 'HB', outcome: 'sent', payload: env }),
-      JSON.stringify({ at: 't4', dir: 'in', kind: 'reply', peer: PEER, hash: 'HB', outcome: 'receipted' }),
-      // The mark the node writes when a listener collects a held packet:
-      // same hash, no outcome, and no peer. It must not blank the outcome.
-      JSON.stringify({ at: 't5', mark: 'taken', hash: 'HB' }),
-    ];
-    // Read UNFILTERED, as `read` does with no peer named — which is how the
-    // 'taken' mark blanked a real outcome to "undefined".
-    const conv = agents.conversation(lines, '');
-    if (conv.length === 2 && conv[0].outcome === 'refused' && conv[1].outcome === 'receipted') {
-      test.check('a post the relay refused reads "refused", not "sent" — the second row is not skipped');
+    const H = home();
+    const cfg = cfgFor(H);
+    // A node record planted with a message the agents never saw: if read
+    // opened it, this would show.
+    fs.mkdirSync(path.join(H, 'relay-state'), { recursive: true });
+    fs.writeFileSync(path.join(H, 'relay-state', 'traffic.jsonl'), JSON.stringify({ at: 't0', dir: 'in', kind: 'request',
+      peer: PEER, hash: 'NODE', outcome: 'delivered',
+      payload: JSON.stringify(agents.makeEnvelope('wsl-claude', 'note', 'only in the node record')) }) + '\n');
+    const up = door(function () { return null; });
+    await agents.send(cfg, 'wsl-claude', 'note', 'went', '', { fetch: up });
+    const down = door(function (to) { return to === PEER ? { status: 400, body: { error: 'no' } } : null; });
+    await agents.send(cfg, 'wsl-claude', 'note', 'failed once', '', { fetch: down });
+    await agents.send(cfg, 'wsl-claude', 'note', 'failed twice', '', { fetch: down });
+    const texts = agents.read(cfg, '', 50).map(function (e) { return e.env.body.text + '=' + e.outcome.split(':')[0]; });
+    if (texts.join('|') === 'went=delivered|failed once=undelivered|failed twice=undelivered') {
+      test.check('what the agent sends is in its own log and read back from there — two failed sends, which have '
+        + 'no hash, stay two (keyed by envelope id), and a message only the node\'s record holds is not read');
     } else {
-      test.fail('conversation: ' + JSON.stringify(conv));
+      test.fail('own log read back: ' + JSON.stringify(texts));
+    }
+  }
+  {
+    const src = fs.readFileSync(require.resolve('../run/process/js/agents/agents.js'), 'utf8');
+    if (!/['"]traffic\.jsonl['"]/.test(src)) {
+      test.check('no path in agents.js names the node\'s traffic.jsonl');
+    } else {
+      test.fail('agents.js opens the node\'s record again: a quoted \'traffic.jsonl\' is back in it');
     }
   }
 
@@ -323,6 +338,13 @@ async function run() {
       test.check('two agents packets printed, another app\'s ignored, and Andy\'s halt set the stop mid-stream');
     } else {
       test.fail('listen: ' + JSON.stringify(out));
+    }
+    const heard = agents.read(cfg, '', 10).map(function (e) { return e.dir + ' ' + e.env.body.kind + ' ' + e.env.body.text; });
+    if (heard.join('|') === 'in ask ready?|in halt stop now') {
+      test.check('and what the listener heard, Andy\'s halt included, is in the agents\' own log, and '
+        + 'another app\'s packet is not');
+    } else {
+      test.fail('the listener\'s own log holds: ' + JSON.stringify(heard));
     }
   }
 

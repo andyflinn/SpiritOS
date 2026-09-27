@@ -7,7 +7,7 @@
 **Nothing is broken, 8 requirements are declared and not built yet, and 1 dependency question for you, and 3 older questions need a decision from you.**
 
 ```
-171 suites   3288 green   0 red   0 unhappy   8 owed      run 0ec2cab
+171 suites   3290 green   0 red   0 unhappy   8 owed      run f38cfc5
 ```
 
 ---
@@ -82,7 +82,7 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 
 ## What moved
 
-- +6 green
+- +2 green
 
 ---
 
@@ -92,10 +92,10 @@ For each: **is it still wanted, has a later cycle replaced it, or is it abandone
 |---|---|---|---|---|---|---|---|
 | 1 | G17 | join's answer travels back to the browser |  |  | 2 days | `▓▓▓▓▓▓▓░░░` 70% |  |
 | 2 | puppets/G1 | a response bound exists, and both paths obey it |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 3 | puppets/G2 | one shared search: two hooks per collection, the rest inherited |  |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
+| 3 | puppets/G2 | Generalizing the search approach to serving collections |  |  | 1 day | `▓▓▓▓░░░░░░` 40% |  |
 | 4 | puppets/G3 | one suite that makes every api call |  |  | 1 day | `░░░░░░░░░░` 0% |  |
-| 5 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | today | `░░░░░░░░░░` 0% |  |
-| 6 | transport/R16 | the log must be able to PROVE what it claims |  |  | today | `░░░░░░░░░░` 0% |  |
+| 5 | transport/R12 | an app can reply, and a reply is the only evidence of being delivered |  |  | 1 day | `░░░░░░░░░░` 0% |  |
+| 6 | transport/R16 | the log must be able to PROVE what it claims |  |  | 1 day | `░░░░░░░░░░` 0% |  |
 | 7 | puppets/G10 | the face door and the puppet group | G14 (proposed), G17 (proposed) |  | today | `░░░░░░░░░░` 0% |  |
 | 8 | G18 | the app process serves its owner node over a named pipe, not a TCP port |  |  | today | `░░░░░░░░░░` 0% |  |
 

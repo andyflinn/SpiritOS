@@ -402,6 +402,32 @@ function reportFits(cfg, toName, toKey, env) {
 
 function outboxPath(cfg) { return path.join(cfg.root, 'relay-state', 'agents-outbox.jsonl'); }
 
+// ── THE AGENTS' OWN LOG ─────────────────────────────────────────────────
+//
+//   Andy, 2026-09-27: "they must keep their own logs", then "after
+//   correcting agents and desk, we will remove the new verb" (node.history,
+//   which went into the node's interface for an app, without his approval).
+//
+// So this program writes down what it sends and what its listener hears,
+// and `read` reads that and nothing of the node's. The node's traffic.jsonl
+// is the node's; no path in this file names it (agentsApp.js checks).
+//
+// One row per event: { at, dir, peer, key, hash, env, outcome }. `key` is
+// what the reader folds on: an 'out' row's is the envelope id, because a
+// send that never went has no hash and would otherwise merge with every
+// other failed send (claude-windows' catch); an 'in' row's is its hash.
+//
+// UNBOUNDED, for now: a local file that nothing sends anywhere. Its bound is
+// its own to-do, agreed with claude-windows.
+function logPath(cfg) { return path.join(cfg.root, 'relay-state', 'agents-log.jsonl'); }
+
+function logRow(cfg, row) {
+  try {
+    fs.mkdirSync(path.dirname(logPath(cfg)), { recursive: true });
+    fs.appendFileSync(logPath(cfg), JSON.stringify(row) + '\n');
+  } catch (e) { /* the message went or arrived either way; the log is best effort */ }
+}
+
 // A report that could not land is kept, and sent the next time anything
 // is (the plan: "your node down: the program keeps the reports and sends
 // them when your node is back").
@@ -569,6 +595,10 @@ function send(cfg, to, kind, text, re, opts) {
   }
 
   return attempt().then(function (result) {
+    logRow(cfg, {
+      at: new Date(now()).toISOString(), dir: 'out', peer: toKey, key: env.id, hash: result.hash || null, env: env,
+      outcome: result.ok ? 'delivered' : 'undelivered: ' + (result.error || 'refused'),
+    });
     const mine = ownKey(cfg);
     // A BOARD IS NOT REPORTED: it is already addressed to Andy's node, and
     // a report of it would be a second copy of the same fact in his log.
@@ -581,37 +611,30 @@ function send(cfg, to, kind, text, re, opts) {
   });
 }
 
-// ── READ — the conversation, from the node's own log ────────────────────
+// ── READ — the conversation, from the agents' OWN log ───────────────────
 //
-// A relay's refusal is TWO rows — 'sent', then 'refused' — sharing a hash,
-// and a reader that keeps only rows with a payload shows the first and
-// hides the second (found over this very channel, 2026-09-22). So rows are
-// paired by hash, and the LAST outcome for a hash is the one shown.
+// Rows are folded by `key`, and the LAST outcome for a key is the one
+// shown, so a message recorded twice reads once. It used to read the
+// node's traffic.jsonl, which is the node's record and not this program's.
 function conversation(lines, peerKey) {
-  const byHash = Object.create(null);
+  const byKey = Object.create(null);
   const order = [];
   lines.forEach(function (l) {
     let row; try { row = JSON.parse(l); } catch (e) { return; }
-    if (!row || !row.hash) return;
+    if (!row || !row.key || !row.env || row.env.app !== APP) return;
     if (peerKey && row.peer !== peerKey) return;
-    let entry = byHash[row.hash];
-    if (row.payload) {
-      let env = null; try { env = JSON.parse(row.payload); } catch (e) { env = null; }
-      if (!env || env.app !== APP || row.kind !== 'request') return;
-      if (!entry) { entry = byHash[row.hash] = { hash: row.hash }; order.push(entry); }
-      entry.at = row.at; entry.dir = row.dir; entry.peer = row.peer; entry.env = env;
-    }
-    // Only a row that HAS an outcome may set one: the node also writes a
-    // 'taken' mark under the same hash when a listener collects a held
-    // packet, and that row carries none.
-    if (entry && row.outcome) entry.outcome = row.outcome;
+    let entry = byKey[row.key];
+    if (!entry) { entry = byKey[row.key] = { key: row.key }; order.push(entry); }
+    entry.at = row.at; entry.dir = row.dir; entry.peer = row.peer; entry.env = row.env;
+    entry.hash = row.hash || entry.hash || '';
+    if (row.outcome) entry.outcome = row.outcome;
   });
   return order;
 }
 
 function read(cfg, peerName, n) {
   let lines = [];
-  try { lines = fs.readFileSync(path.join(cfg.root, 'relay-state', 'traffic.jsonl'), 'utf8').split('\n').filter(Boolean); }
+  try { lines = fs.readFileSync(logPath(cfg), 'utf8').split('\n').filter(Boolean); }
   catch (e) { return []; }
   const key = peerName ? resolvePeer(cfg, peerName) : '';
   return conversation(lines, key).slice(-(n || 20));
@@ -651,6 +674,12 @@ function listen(cfg, onLine, fetchFn) {
           let msg; try { msg = JSON.parse(da[1]); } catch (e) { continue; }
           let env = null; try { env = JSON.parse(msg.text); } catch (e) { continue; }
           if (!env || env.app !== APP) continue;
+          // WRITTEN DOWN BEFORE ANYTHING IS DONE WITH IT, Andy's messages
+          // included: "so your end needs to store my messages on their own."
+          logRow(cfg, {
+            at: String(msg.sentAt || msg.at || new Date().toISOString()), dir: 'in', peer: String(msg.from || ''),
+            key: String(msg.hash || env.id || ''), hash: String(msg.hash || ''), env: env, outcome: 'received',
+          });
           // `at` is when this node received it — a replayed packet keeps
           // its own time, which is what lets a stale halt be told apart.
           const control = obeyControl(cfg, msg.from, env, msg.sentAt || msg.at);
