@@ -500,8 +500,8 @@ answer, so `server.js:921`'s dispatch runs unchanged. A handler reaching
 for `req.headers` or `req.socket` fails ALONE and QUIETLY, which is why
 G3 covers this rather than a per-verb test.
 
-**PROPOSED, NOT RULED: the app's own verbs in a group of their own, and a
-channel for the face.** Andy, 2026-09-27, in Desk under this row:
+**The app's own verbs in a group of their own, and a channel for the face:
+proposed by Andy, then decided (below).** Andy, 2026-09-27, in Desk under this row:
 *"Doesn't the puppet exist to provide a mirror of the app inteface, outside
 of the node interface. it could be carried, by a blank app group.... to
 isolate it from the standard node interface groups. also, that is the flat
@@ -539,19 +539,34 @@ What it adds is clear, and one question is OPEN:
   caller can tell "not here" from "broken" (wsl-claude, and what his suite
   will assert).
 
-  **The boundary, made precise, and agreed.** claude's feedback under the
-  row: each context declares the groups it supports in ONE place
-  (verbTable's per-namespace declaration being the natural home), and the
-  two routes into a puppet (the owner's remote control and the face
-  channel) both go through `ownerCommandIn`'s signature rule or an
-  equivalent, never a second, looser check. Andy: *"yes. that specifies my
-  proposed boundary much clearer."* What is agreed is the boundary. The
-  written shape of G7 and G4 still goes to him before either is built.
+**DECIDED: the boundary, 2026-09-27.** Both agents answered his proposal
+under the row within two seconds of each other (wsl-claude's five points in
+the chat, and claude's note in its slot, which his five points contain).
+Andy then answered: *"yes. that specifies my proposed boundary much
+clearer."* The shape he approved:
+1. **The wall.** A visitor's message through the face reaches ONLY the
+   app's group, never a node group. Only owner-signed commands reach node
+   groups (G4), through `ownerCommandIn`'s signature rule, and never a
+   second, looser check.
+   And stronger than refused, invisible. Andy: *"it's like, the face and the
+   apphandler don't even see the rest of the api tree"*. Anything that lists
+   what the face or the app handler can call (the introspection verb
+   recommended for the app door) shows the app's group and nothing else.
+2. **One list of the app's flat commands**, declared in its manifest
+   (public-app-server/G14), read by both carriers: the puppet's mirror, and
+   the app-server process on the owner's box.
+3. **Each context declares the node groups it carries.** A group it does
+   not carry refuses with a NAMED code from `spiritErrors`, so a caller can
+   tell "not here" from "broken".
+4. **App groups are prefixed `app:<name>`**, so an app can never collide
+   with a node group (`verbTable.js:97-98` already refuses a double claim).
+5. **All of it provable without a server.**
 
-If it is ruled, G7 changes from *"`server.js:921`'s dispatch runs
-unchanged"* to dispatching into the app's group, beside the node's groups
-that the context supports. **G7 and G4 stay unbuilt until Andy
-approves a written shape.** G6 is unaffected.
+**Building is a separate go.** G7 waits on G6 (accepted), and wsl-claude
+tests it.
+
+So G7 no longer means *"`server.js:921`'s dispatch runs unchanged"*. It
+dispatches into the app's group, beside the node groups the context carries.
 
 ### G8 — may a puppet be commanded: the owner anything, others nothing
 
