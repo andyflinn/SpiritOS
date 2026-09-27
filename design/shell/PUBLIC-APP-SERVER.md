@@ -1160,7 +1160,9 @@ verbs today; they live only in its code.
   even follow a format for a verb {verb{description:\"descrption
   text\",input:{},output:{}}}"*. So an app's part of the tree is
   `{ <verb>: { description, input, output } }`: a sentence for a person,
-  and the shape of what to send and what comes back.
+  and the shape of what to send and what comes back. The description may be
+  as short as a label (Andy: *"or at least a label-length summary"*), so a
+  verb always has something a list can show.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
