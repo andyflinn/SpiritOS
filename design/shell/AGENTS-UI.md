@@ -206,6 +206,18 @@ What follows is what both agreed. Any of it changes when Andy asks.
   whole thread, the annotation slot and the dependencies in one dialog.
   Direction only.
 
+- **A row's chat holds only that row.** Andy: *"this here chat log must be
+  constraint to messages pertaining to this item (puppets/G6)"*. Agents post
+  under a `todo` only what is about that item. News about Desk itself,
+  replies to his Desk feedback, and anything general go WITHOUT a `todo`.
+  (claude had answered his Desk notes under G6 because they arrived
+  there, and that is what he saw.) Desk has no place yet for untagged
+  messages. That place is owed.
+- **A Go! is always a button.** *"If all that's needed from me is \"Go!\"
+  give me a button for that."* So when an agent wants a go-ahead it sends
+  kind `ask` under the row, which draws Go!/No. It never writes "say Go!"
+  in prose.
+
 ## Open
 
 - Nothing. Each change from here is Andy's alteration.
