@@ -344,6 +344,11 @@ define('job-not-found', {
   texts: ['job not found'],
   note: 'jobs.get named a key no job has now: it may have been deleted since the search that found it (puppets/G2).',
 });
+define('no-such-box', {
+  status: 404, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['no such box'],
+  note: 'owner.boxGet named a fingerprint no current report carries: its servers stopped reporting, or left servers.json (puppets/G2, G10).',
+});
 define('contact-not-in-book', {
   status: 404, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['not in the book'],

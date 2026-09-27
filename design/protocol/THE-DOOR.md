@@ -65,7 +65,7 @@ the only way a default survives contact with people in a hurry.
 
 ## What can be asked
 
-**43 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
+**44 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
 
 **Each verb carries its authority.** Andy, 2026-09-27: *"that's a boundary
 crossed that requires peer review AND my approval"* — and, on his own yes:
@@ -111,7 +111,8 @@ his words, which keeps the harness red until the verb is gone.
 - `net.fetch` — before the rule (2026-09-27)
 
 **`owner.*`** — commanding one of this node's puppets
-- `owner.boxes` — Andy, 2026-09-27: "go." (keep the three verbs added without approval, Desk under puppets/G10)
+- `owner.boxGet` — Andy, 2026-09-27: "the verb changes changing list fetches to a search(labe) and geKey(key) pair are approved." (Desk, puppets/G2)
+- `owner.boxSearch` — Andy, 2026-09-27: "the verb changes changing list fetches to a search(labe) and geKey(key) pair are approved." (Desk, puppets/G2)
 - `owner.command` — Andy, 2026-09-27: "go." (keep the three verbs added without approval, Desk under puppets/G10)
 
 **`node.*`** — this node's own identity as strangers see it
@@ -172,7 +173,7 @@ figure you can compute instead of estimate.
 
 ## The errors
 
-**87 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
+**88 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
 each carries more than a sentence:
 
 | | |

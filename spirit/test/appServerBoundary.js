@@ -600,12 +600,13 @@ test.awaiting('public-app-server/G18', 'the app process listening on a named pip
 // owner node answers it, this goes red and asks for its assertions.
 // Andy: "go." on building the node half (2026-09-27), and "over-committed is
 // a \"warning\" state only."
-if (/'owner\.boxes'/.test(fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8'))
+// owner.boxes became owner.boxSearch + owner.boxGet (puppets/G2).
+if (/'owner\.boxSearch'/.test(fs.readFileSync(path.join(__dirname, '..', 'run', 'js', 'server.js'), 'utf8'))
     && typeof require('../run/js/boxes').createBoxes === 'function') {
   test.check('public-app-server/G10: the owner\'s half exists -- boxes.createBoxes, answered as owner.boxes, '
     + 'asserted in boxesSuite.js: only his listed servers count, summed per box, a warning only when over');
 } else {
-  test.fail('public-app-server/G10 regressed: owner.boxes or boxes.createBoxes is gone');
+  test.fail('public-app-server/G10 regressed: owner.boxSearch or boxes.createBoxes is gone');
 }
 
 // ── G12 — app code and app state do not share a directory ────────────

@@ -91,7 +91,33 @@ function createBoxes(opts) {
     });
   }
 
-  return { onArrival: onArrival, list: list };
+  // ── SEARCHED, NOT LISTED (puppets/G2) ──────────────────────────────
+  //
+  //   Andy, 2026-09-27: "the verb changes changing list fetches to a
+  //   search(labe) and geKey(key) pair are approved", owner.boxes among
+  //   them ("there are no (complete) lists" has no size exemption).
+  //
+  // A box's key is its fingerprint; its label is its name, with the
+  // warning as a word when he has promised it more than it has, so
+  // searching 'over-committed' finds exactly those.
+  function boxLabel(g) {
+    return (g.boxLabel || g.fingerprint || '(unnamed box)') + (g.warning ? ' — over-committed' : '');
+  }
+  function search(q) {
+    const s = require('./searchBucket').createSearch({
+      query: q,
+      getLabelStringFromIncomingObject: function (g) { return boxLabel(g) + ' ' + (g.fingerprint || ''); },
+      extractKeyAndLabelFromRow: function (g) { return { key: g.fingerprint, label: boxLabel(g) }; },
+    });
+    const all = list();
+    for (let i = 0; i < all.length; i += 1) { if (!s.offer(all[i])) break; }
+    return s.getResult();
+  }
+  function get(key) {
+    return list().filter(function (g) { return g.fingerprint === key; })[0] || null;
+  }
+
+  return { onArrival: onArrival, list: list, search: search, get: get };
 }
 
 module.exports = { createBoxes: createBoxes, SERVERS: SERVERS };

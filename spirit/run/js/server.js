@@ -1800,15 +1800,18 @@ contactBook.syncMarks(ROOT_DIR);
   loopbackVerbs.claim('owner', 'ownerPost.js', {
     // WHAT HIS BOXES CARRY, grouped by box, on demand (G10). Andy: "that
     // must be visible-on-demand in a UI", and over-committed is a warning.
-    'owner.boxes': function (rq, rs) {
-      readJsonBody(rq).then(function () {
-        rs.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        rs.end(JSON.stringify({ ok: true, boxes: boxes ? boxes.list() : [] }));
-      }).catch(function () {
-        rs.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-        rs.end(JSON.stringify({ ok: false, error: 'Invalid JSON body' }));
-      });
-    },
+    // owner.boxes is gone: a list is a search (puppets/G2, boxes.js).
+    'owner.boxSearch': proxyVerb(function (b) {
+      const r = boxes ? boxes.search(b && b.q) : { items: [], more: false };
+      return { ok: true, status: 200, items: r.items, more: r.more };
+    }),
+    'owner.boxGet': proxyVerb(function (b) {
+      const key = String((b && b.key) || '');
+      if (!key) return { ok: false, status: 400, error: 'key required' };
+      const box = boxes ? boxes.get(key) : null;
+      if (!box) return { ok: false, status: 404, error: 'no such box' };
+      return require('./searchBucket').boundedGet({ ok: true, status: 200, key: key, box: box });
+    }),
     'owner.command': function (rq, rs) {
       readJsonBody(rq).then(function (body) {
         if (!peerOwnerPost) {
