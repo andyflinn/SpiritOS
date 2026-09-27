@@ -1216,7 +1216,11 @@ verbs today; they live only in its code.
   signature that the owner node automatically checks"*. Already how
   peerPost works: every arrival's signature is checked, and the front door
   admits only known keys, before the node forwards anything down the pipe.
-  The app's allow list is the second gate.
+  The app's allow list is the second gate. *Caveat (wsl-claude): "members
+  only" holds by the DEFAULT stranger setting ('silent', `hub.js:713-718`),
+  not by construction. An owner who switches it to 'acquire' lets any signed
+  stranger reach the node. Recommended (claude): the `api` dispatch checks
+  the listen set itself, so it never leans on that preference.*
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
