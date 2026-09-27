@@ -180,6 +180,11 @@ function deskSend(kind, boxId, errId) {
   var err = document.getElementById(errId);
   if (!said) return;
   if (!deskLead) { if (err) err.textContent = 'No lead known yet.'; return; }
+  // A MUSING SAYS WHAT IT IS. Andy: "\"note to self: \" should be a prefix in
+  // the musings chat: I just typed that myself, and it highlights for your
+  // compilers, what i usually would type into md files". Added once, and
+  // never twice when he types it himself.
+  if (kind === 'musing' && !/^note to self:/i.test(said)) said = 'note to self: ' + said;
   deskApi.peerPost('agents', deskLead.key, { from: 'andy', kind: kind, text: said }).then(function () {
     box.value = '';
     if (err) err.textContent = '';
