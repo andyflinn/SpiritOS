@@ -887,7 +887,12 @@ async function tooLittleTimeIsNotWorthRepeating() {
       });
     },
   });
-  await Q.post('http://relay', target.publicKey, '{"ping":1}', null, { patienceMs: 300 });
+  // TWO SECONDS OF PATIENCE, NOT 300 MS. The assertion is "retried at all",
+  // and 300 ms made it a race against the machine: it failed once in a full
+  // harness run (claude-windows), and of 20 copies run side by side 19
+  // retried 15 times and one only twice, a single scheduling stall from
+  // red. Retries are 20 ms apart, so two seconds cannot be eaten by load.
+  await Q.post('http://relay', target.publicKey, '{"ping":1}', null, { patienceMs: 2000 });
   await new Promise(function (r) { setTimeout(r, 400); });
 
   clearInterval(awake);
