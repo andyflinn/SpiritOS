@@ -537,7 +537,16 @@ What it adds is clear, and one question is OPEN:
   assumed whole. A group a context does not support REFUSES with a named
   code from `spiritErrors`, never silence and never a generic failure, so a
   caller can tell "not here" from "broken" (wsl-claude, and what his suite
-  will assert). The whole proposal is still not ruled.
+  will assert).
+
+  **The boundary, made precise, and agreed.** claude's feedback under the
+  row: each context declares the groups it supports in ONE place
+  (verbTable's per-namespace declaration being the natural home), and the
+  two routes into a puppet (the owner's remote control and the face
+  channel) both go through `ownerCommandIn`'s signature rule or an
+  equivalent, never a second, looser check. Andy: *"yes. that specifies my
+  proposed boundary much clearer."* What is agreed is the boundary. The
+  written shape of G7 and G4 still goes to him before either is built.
 
 If it is ruled, G7 changes from *"`server.js:921`'s dispatch runs
 unchanged"* to dispatching into the app's group, beside the node's groups
