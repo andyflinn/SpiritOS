@@ -1303,6 +1303,30 @@ verbs today; they live only in its code.
   serves face"*. The core's launcher (appServers.js, `"serves": true`, the
   pipe) stays generic: it starts whatever server an app names.
   What it is, in his words: *"it's a fanned screen"*, *"it's an io-device"*.
+- **grantFace, ruled in shape (Andy, in Team).** *"i think it's lives while
+  the node lives, because it is a server, as defined in the manifes. grantFace
+  app owns grants.json, who else needs it on the owners node? 3) the server is
+  a normal loopback client of the node interface, it can reach anything a
+  local browser can. 4) the sync is executed by grantFace, every time a
+  change occurs in grants.json. The sync is executed by owner command on the
+  owners node interface, by loopback. the server is in fact given the same
+  lowest layer node-client interface that is the shell has at its lowest
+  layer. 5) the members client is a simple shell app, it used peerPost to get
+  apis, it uses peerPost to negotiate a place int the grants file, it uses
+  the local fs.api to store it's end of the domain grant."* So:
+  - grantFace runs for as long as the node does, started from its manifest
+    like any serving app.
+  - It alone owns grants.json. The route and serve answers move into it.
+  - It is an ordinary loopback client of its node. It gets the lowest layer
+    the shell has (the spirit object's door call, aimed at its node), and so
+    reaches whatever a local page can, owner.command included.
+  - Whenever grants.json changes, it syncs the face's contacts by owner
+    command.
+  - **The member's client is a shell app, not a process.** It uses peerPost
+    to ask `api` and to negotiate its name, and the fs api to store its side
+    of the grant.
+  The floor this needs: a server process runs the app's own code, with that
+  spirit object. faceServer runs none today.
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
