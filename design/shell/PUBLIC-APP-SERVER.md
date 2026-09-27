@@ -1364,6 +1364,8 @@ verbs today; they live only in its code.
   appFaceApp's contact list."* The sync makes the face's list match: it adds
   a row the face lacks (the face has no row for a key it has never seen,
   `hub.js:1731`), accepts it, and drops the keys of freed names.
+  Deleting rows is deferred: Andy, *"deletions of rows in grants.json will be
+  problematic, but not of concern right now."*
 - **Open (claude):** one leaf per call, a batch being a separate design.
   A call needs the app's answer back, and today a handler's return value is
   dropped (transport/R12), so the call half depends on R12.
