@@ -495,6 +495,13 @@ occupies the row, not which app it serves or what that app does.
   not been pinned. The reading so far is the app's own screen, reached
   through the owner's node.
 
+**The owner node keeps the box reports in memory, by design, not as a
+stopgap.** Andy, 2026-09-27: *"Maybe unnecessary: ... the date is used on
+he spot to make decisions, and would immediately go stale on disc"*. The
+reports are read at the moment he looks, so a copy on disc would be a copy
+of the past. After a restart the view fills again as servers re-report.
+This is not a new persisted shape, and it needs no team review.
+
 **Deliberately absent: anything about what the server is FOR.** A box
 view carrying app facts is how the general layer acquires its first
 join-shaped wart.
