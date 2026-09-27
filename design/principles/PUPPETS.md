@@ -539,15 +539,25 @@ What it adds is clear, and one question is OPEN:
   caller can tell "not here" from "broken" (wsl-claude, and what his suite
   will assert).
 
-**DECIDED: the boundary, 2026-09-27.** Both agents answered his proposal
-under the row within two seconds of each other (wsl-claude's five points in
-the chat, and claude's note in its slot, which his five points contain).
+**AGREED IN PRINCIPLE, 2026-09-27; the written shape still goes to him.**
+Both agents answered his proposal under the row within two seconds of each
+other (wsl-claude's five points in the chat, claude's note in its slot).
 Andy then answered: *"yes. that specifies my proposed boundary much
-clearer."* The shape he approved:
+clearer."* His yes came after BOTH, so which parts he meant is confirmed
+only when he approves the written shape: wsl-claude drafts G7 (his row),
+claude drafts G4, and the two are checked against each other first. The
+shape as it stands:
 1. **The wall.** A visitor's message through the face reaches ONLY the
    app's group, never a node group. Only owner-signed commands reach node
    groups (G4), through `ownerCommandIn`'s signature rule, and never a
-   second, looser check.
+   second, looser check. **The face's authority is the granted ROUTE, not an
+   owner signature.** Visitor traffic is never owner-signed: under G17
+   appFaceApp signs as the visitor's proxy and trust comes from a route row
+   the owner granted (PUBLIC-APP-SERVER.md). If the face channel had to pass
+   the owner-signature rule, no visitor could reach an app. claude's note
+   had said both routes go through that rule "or an equivalent". The route
+   grant IS the face's equivalent, and that is what is written here
+   (wsl-claude caught the difference). It goes to Andy with the shape.
    And stronger than refused, invisible. Andy: *"it's like, the face and the
    apphandler don't even see the rest of the api tree"*. Anything that lists
    what the face or the app handler can call (the introspection verb
