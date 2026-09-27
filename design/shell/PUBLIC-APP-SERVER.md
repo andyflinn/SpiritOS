@@ -1488,7 +1488,7 @@ it understands; no route question ever goes to a member.
 layers, the face asking on a cache miss, `api` introspection, the member's
 shell client, and the datasets keyed by face.
 
-**Broken down (proposed 2026-09-28, awaiting Andy's Go!), each blocked by
+**Broken down, agreed 2026-09-28 (Andy: *"ok break it down like that and we iron out remaining wrinkles as we go."*), each blocked by
 the one before:**
 
 | R | what | blocked by |
