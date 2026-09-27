@@ -19,6 +19,10 @@ var ddApi = null;
 var ddRow = null;           // the board row, as Desk handed it over
 var ddId = '';              // its full id — the thread key
 var ddThread = [];
+// WHO HEARS ANDY: agents heard from in the last day, newest key per name.
+// A stand-in until the owner-edited allow list (AGENTS-UI.md) exists. It
+// keeps drill identities from last week out of his conversation.
+var DD_RECENT_MS = 24 * 60 * 60 * 1000;
 var ddAgents = Object.create(null);
 var ddNote = '';
 
@@ -29,6 +33,18 @@ function ddDecode(row) {
   var env;
   try { env = JSON.parse(row.payload); } catch (e) { return null; }
   if (!env || env.app !== 'agents' || !env.body) return null;
+  // A report is a whole message between agents (agents.js reportOf), shown
+  // as that message so the agents' own discussion of a row is under it.
+  if (env.body.kind === 'report') {
+    var inner = null;
+    try { inner = JSON.parse(env.body.text); } catch (e) { inner = null; }
+    if (!inner || inner.v !== 1 || !inner.kind) return null;
+    return {
+      hash: row.hash, at: row.at, dir: row.dir, peer: '', outcome: String(inner.outcome || ''),
+      from: String(inner.from || ''), to: String(inner.to || ''), kind: String(inner.kind),
+      text: String(inner.text || ''), todo: inner.todo ? String(inner.todo) : '',
+    };
+  }
   return {
     hash: row.hash, at: row.at, dir: row.dir, peer: row.peer, outcome: row.outcome,
     from: String(env.body.from || ''), kind: String(env.body.kind || ''),
@@ -50,7 +66,7 @@ function ddLoad() {
       body.rows.forEach(function (row) {
         var m = ddDecode(row);
         if (!m) return;
-        if (m.dir === 'in' && m.from && m.peer) ddAgents[m.from] = m.peer;
+        if (m.dir === 'in' && m.from && m.peer) ddAgents[m.from] = { key: m.peer, at: Date.parse(m.at) || 0 };
         if (m.todo !== ddId) return;
         if (byHash[m.hash]) { byHash[m.hash].outcome = m.outcome; return; }
         byHash[m.hash] = m;
@@ -94,7 +110,7 @@ function ddFacts() {
 function ddThreadHtml() {
   if (!ddThread.length) return '<div class="job-manifest-note">Nothing said about this row yet.</div>';
   return ddThread.map(function (m) {
-    var who = m.dir === 'out' ? 'you' : m.from;
+    var who = m.dir === 'out' ? 'you' : (m.to ? m.from + ' → ' + m.to : m.from);
     var failed = m.dir === 'out' && m.outcome && m.outcome !== 'sent' && m.outcome !== 'delivered'
       ? ' <span class="job-start-error">(' + ddEsc(m.outcome) + ')</span>' : '';
     return '<div><b>' + ddEsc(who) + '</b> <span class="job-manifest-note">' + ddEsc(m.kind) +
@@ -173,14 +189,16 @@ function ddValue(id) {
 function ddSend(kind, text, fieldId) {
   var said = String(text || '').trim();
   if (!said || !ddId) return;
-  var names = Object.keys(ddAgents);
+  var names = Object.keys(ddAgents).filter(function (n) {
+    return Date.now() - ddAgents[n].at < DD_RECENT_MS;
+  });
   if (!names.length) {
-    ddNote = 'No agent has written to this node yet, so there is nobody to send to.';
+    ddNote = 'No agent has written to this node in the last day, so there is nobody to send to.';
     ddDraw();
     return;
   }
   var body = { from: 'andy', kind: kind, text: said, todo: ddId };
-  Promise.all(names.map(function (n) { return ddApi.peerPost('agents', ddAgents[n], body); })).then(function () {
+  Promise.all(names.map(function (n) { return ddApi.peerPost('agents', ddAgents[n].key, body); })).then(function () {
     if (fieldId) ddClear(fieldId);
     return ddLoad();
   }).catch(function (e) {

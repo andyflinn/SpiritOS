@@ -44,6 +44,20 @@ function deskDecode(row) {
   var env;
   try { env = JSON.parse(row.payload); } catch (e) { return null; }
   if (!env || env.app !== 'agents' || !env.body) return null;
+  // A REPORT CARRIES A WHOLE MESSAGE BETWEEN AGENTS (agents.js reportOf),
+  // read here as that message, from its own sender. That is what makes
+  // this node Andy's "overall record of our activities", and it is how
+  // one agent's `taking`, sent to the other, still reaches the column.
+  if (env.body.kind === 'report') {
+    var inner = null;
+    try { inner = JSON.parse(env.body.text); } catch (e) { inner = null; }
+    if (!inner || inner.v !== 1 || !inner.kind) return null;
+    return {
+      hash: row.hash, at: row.at, dir: row.dir, peer: '', outcome: String(inner.outcome || ''),
+      from: String(inner.from || ''), to: String(inner.to || ''), kind: String(inner.kind),
+      text: String(inner.text || ''), todo: inner.todo ? String(inner.todo) : '',
+    };
+  }
   return {
     hash: row.hash, at: row.at, dir: row.dir, peer: row.peer, outcome: row.outcome,
     from: String(env.body.from || ''), kind: String(env.body.kind || ''),
