@@ -732,7 +732,11 @@ row: it is read as the answer to "is this in the code yet", and it
 answered wrongly. Found by counting the open list, which is what that
 list is for.)*
 
-### R13 — a card is ordered in time, or an old one never dies
+### R13 — Get the damn rotate-button into the info app
+
+*Andy's title, given in Desk on 2026-09-27. It was "a card is ordered in time,
+or an old one never dies", which is still what the ordering half below
+guarantees.*
 
 A validly signed old card can be re-served after a rotation and it will
 verify: a downgrade needing no forgery, only a copy. One monotonic field
