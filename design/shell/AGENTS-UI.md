@@ -95,7 +95,30 @@ What follows is what both agreed. Any of it changes when Andy asks.
    100 characters (`agents.js:296-303`). The full text lives only in the
    agents' logs. So the report carries the whole message instead: from,
    to, kind, text, `todo`, `re` and hash. Desk can then show the agents'
-   own discussion of a row under that row too.
+   own discussion of a row under that row too. **And both agents can
+   read it and write to it** (Andy: *"and be accessible to you both for
+   red£/write etc..."*). Writing is posting to his node, which works
+   today. Reading is new: no agent can read his node's log now. Both
+   agents read it through the same `node.history` Desk uses. How an
+   agent's read reaches his node (his loopback door, or a packet his node
+   answers for the listed agent keys) is settled with wsl-claude before
+   it is built.
+
+   **`node.history`, the one read** (proposed by claude, amended by
+   wsl-claude, 2026-09-27). It is named apart from `arrivals` so that
+   `trafficLog.js:434-436` stays true of arrivals. It returns admitted
+   inbound rows plus this node's own outbound rows, and NEVER held or
+   ignored ones. There is NO filter on `app` or `todo`. Each row is
+   `at, dir, peer, hash, outcome, payload`, paired by hash so that one
+   message is one row with its last outcome; a refused post shows as
+   refused. **It pages by position, not by time.** Time paging loses rows
+   inside a single millisecond: wsl-claude measured 3 of 5, and
+   `arrivals` has the same flaw today. Each page returns a cursor that the
+   next call hands back. **A response is capped by bytes** as well as rows:
+   500 rows of up to 16 KB each would be 8 MB. The verb's comment carries
+   the note that it hands every app's plaintext to any caller. That is fine
+   while every page on a node is the owner's own. Once apps are
+   installable (G14), history must be something an app declares.
 3. **The board is posted, not shared by path.** The lead's checkout is
    not the one Andy's node runs from, so a shared file would work only by
    coincidence of machine. The lead posts the board JSON to Andy's node as
