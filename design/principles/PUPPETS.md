@@ -749,9 +749,11 @@ dispatches into the app's group, beside the node groups the context carries.
 verified. It is the rest of G7's approved shape: points 1 and 2 (the
 `puppet` group declared in the manifest; the face door that hands only
 the app portion on, unread, and sees nothing of the node's groups), with
-the verify lines that belong to them. **It waits on** public-app-server/G14
-(the manifest declaring what an app takes) and public-app-server/G17 (join's
-route through appFaceApp). Those are proposed as dependencies for Andy.
+the verify lines that belong to them. **It waits on** public-app-server/G17
+(join's route through appFaceApp): the dependency Andy accepted on 2026-09-27
+(edges.js, `459a9fd`). The other one proposed, public-app-server/G14 (the
+manifest declaring what an app takes), was already built on 2026-09-24
+(`ac0c283`), so it holds nothing up.
 
 ### G8 — may a puppet be commanded: the owner anything, others nothing
 
