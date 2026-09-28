@@ -800,7 +800,7 @@ spirit.shell.activateApp({
       // to the title of the goal, the game being: bring the goal item back up
       // to be ever closer to the title bar saying the same." Shown while a
       // design session's goal is open; the shell's own bar is not Desk's.
-      '<div id="desk-goal" class="stat-tile wide" style="font-size:1.25em;font-weight:bold" hidden></div>' +
+      '<div id="desk-goal" class="stat-tile wide" style="font-size:1.25em;font-weight:bold;cursor:pointer" title="Open the goal: talk about it under its own id" hidden></div>' +
       '<div id="desk-design" class="stat-tile wide" style="background:#fff3c4;color:#000" hidden>' +
         '<b>Design mode.</b> Nothing is built until it ends, and it ends only in the Team tab.</div>' +
       '<div class="start-job-form card" id="desk-tabs">' +
@@ -879,6 +879,12 @@ spirit.shell.activateApp({
       while (el && el !== e.currentTarget && !(el.getAttribute && el.getAttribute('data-open'))) el = el.parentNode;
       var id = el && el.getAttribute && el.getAttribute('data-open');
       if (id) deskOpenRow(id);
+    });
+    // THE TITLE LINE OPENS THE GOAL. Andy: "if i could also click on the
+    // title to move the discussion to the detail of the requirement, then
+    // our discussion would be logged under that requirement".
+    document.getElementById('desk-goal').addEventListener('click', function () {
+      if (deskSession && !deskSession.goal.done) deskOpenRow(String(deskSession.goal.id));
     });
     onEnter('desk-team-say', deskSendTeam);
     // Its own log first, then every arrival into it. Subscribed once, at
