@@ -48,7 +48,8 @@ var deskBoard = null;       // the newest `board` packet's JSON
 var deskSession = null;     // the board's session: the newest `session` packet's JSON, unless a new design cleared it
 var deskSessionPosted = null, deskSessionAt = 0;
 var deskDone = {};           // item id -> true/false, from Andy's own "done." / "reopen."
-var deskReady = {};          // item id -> true once an agent said READY TO CLOSE under it
+var deskReady = {};          // item id -> true once two agents have each said READY TO CLOSE under it
+var deskReadyBy = {};        // item id -> { agent name: true } for each READY TO CLOSE claim
 var deskClosed = {};         // item id -> true once Andy closed its done line away
 var deskFrom = { done: {}, title: {}, pressed: {} };  // item id -> { at, key } of Andy's answer that set it
 var DESK_READY_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:[\w.\/-]+\s+is\s+)?READY TO CLOSE\b/;
@@ -320,7 +321,14 @@ function deskFold(msg) {
   // A CLAIM, not a mention: the note must open with it ("READY TO CLOSE", or
   // "<id> is READY TO CLOSE", after an optional "<agent>:" or "<agent>,").
   // An explanation that merely names the phrase mid-sentence is not one.
-  if (msg.dir === 'in' && msg.todo && DESK_READY_CLAIM.test(String(msg.text || ''))) deskReady[msg.todo] = true;
+  // BOTH AGENTS, NOT ONE. Andy: "so i get a done button and the two of you
+  // haven't even both tested it yet?", then go. An item is ready to close
+  // only once two different agents have each claimed it.
+  if (msg.dir === 'in' && msg.todo && DESK_READY_CLAIM.test(String(msg.text || ''))) {
+    var by = deskReadyBy[msg.todo] || (deskReadyBy[msg.todo] = {});
+    by[String(msg.from || msg.peer || '')] = true;
+    deskReady[msg.todo] = Object.keys(by).length >= 2;
+  }
   if (msg.dir === 'in' && msg.todo && DESK_VERIFIED_CLAIM.test(String(msg.text || ''))) deskVerified[msg.todo] = true;
   // A VERIFICATION CAN BE WITHDRAWN, and the Go goes with it: a note opening
   // with UNVERIFIED. Found when Andy spotted that G1.3's list claimed a Cancel

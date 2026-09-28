@@ -91,7 +91,7 @@ function ddTake(m) {
 // One pass over this row's messages, in order, into what each part shows.
 function ddRead(list) {
   var st = { explain: '', explainFrom: '', slots: Object.create(null), label: '',
-    asked: false, chat: [], openAsk: null, ready: false };
+    asked: false, chat: [], openAsk: null, ready: false, readyBy: {} };
   list.forEach(function (m) {
     var andy = m.dir === 'out';
     if (andy && m.kind === 'answer' && DD_RETITLE.test(m.text)) { st.label = m.text.replace(DD_RETITLE, ''); return; }
@@ -102,7 +102,11 @@ function ddRead(list) {
     if (m.kind === 'note' && /^taking(\s|$)/.test(m.text)) return;
     // An agent saying the item can be closed, with its evidence.
     // A claim opens the note; a mention mid-sentence is not one (desk.js, DESK_READY_CLAIM).
-    if (!andy && /^(?:[\w.-]+[,:]\s*)?(?:[\w.\/-]+\s+is\s+)?READY TO CLOSE\b/.test(String(m.text || ''))) st.ready = true;
+    // Both agents, not one (desk.js, deskReadyBy).
+    if (!andy && /^(?:[\w.-]+[,:]\s*)?(?:[\w.\/-]+\s+is\s+)?READY TO CLOSE\b/.test(String(m.text || ''))) {
+      st.readyBy[String(m.from || m.peer || '')] = true;
+      st.ready = Object.keys(st.readyBy).length >= 2;
+    }
     if (m.kind === 'board' || m.kind === 'report') return;
     // ONE LINE PER THING ANDY SAID. Andy: "I still get multibple echoes of
     // what appears in there". What he sends goes once per agent, so the
@@ -295,7 +299,7 @@ function ddItemHtml() {
     ? '<button type="button" id="dd-reopen">Reopen</button> <span class="job-manifest-note">Done.</span>'
     : ready
       ? '<button type="button" id="dd-done" style="background:#1a7f37;color:#fff;font-weight:bold">Done</button>' +
-        ' <span class="job-manifest-note">An agent says this is ready to close: read why below.</span>'
+        ' <span class="job-manifest-note">Both agents say this is ready to close: read why below.</span>'
       : '<span class="job-manifest-note">Open: not ready to close yet. Done appears here when an agent says it is, with the evidence.</span>';
   return '<div class="stat-tile wide"><div class="label">' + ddEsc(me.id) + ' — ' + ddEsc(me.title) + '</div>' +
     '<div style="margin:6px 0">' + close + '</div>' +
