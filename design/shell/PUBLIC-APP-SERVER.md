@@ -1491,13 +1491,13 @@ shell client, and the datasets keyed by face.
 **Broken down, agreed 2026-09-28 (Andy: *"ok break it down like that and we iron out remaining wrinkles as we go."*), each blocked by
 the one before:**
 
-| R | what | blocked by |
+| step | what | blocked by |
 |---|---|---|
-| R1 | The process spec written (`design/node/PROCESSES.md`) and the server process type completed: a server job gets `SPIRIT_JOB_ID` and `SPIRIT_CALLBACK_URL`; `spirit.core.ask` works from a process; a serving app's own code runs as its job; a server job can be stopped from the jobs app | — |
-| R2 | Passthrough: a packet for a serving app goes down its pipe, and the answer returns signed by the node | R1 |
-| R3 | grantFace: grant, faceKey, the route answers, `grants.json` (canonical), the face's contact sync by owner command | R2 |
-| R4 | The `api` verb, introspection by layers. Andy's yes on the verb: "go." on the ask "Is this your yes on 'api'?" (Desk, G17, 2026-09-28); wsl-claude's review is recorded under G17 | R3 |
-| R5 | The member's shell client | R4 |
+| G19.1 | The process spec written (`design/node/PROCESSES.md`) and the server process type completed: a server job gets `SPIRIT_JOB_ID` and `SPIRIT_CALLBACK_URL`; `spirit.core.ask` works from a process; a serving app's own code runs as its job; a server job can be stopped from the jobs app | — |
+| G19.2 | Passthrough: a packet for a serving app goes down its pipe, and the answer returns signed by the node | G19.1 |
+| G19.3 | grantFace: grant, faceKey, the route answers, `grants.json` (canonical), the face's contact sync by owner command | G19.2 |
+| G19.4 | The `api` verb, introspection by layers. Andy's yes on the verb: "go." on the ask "Is this your yes on 'api'?" (Desk, G17, 2026-09-28); wsl-claude's review is recorded under G17 | G19.3 |
+| G19.5 | The member's shell client | G19.4 |
 
 Outside the chain: the `face-install` rerun on spirit-3 (Andy's), and the
 `relayRequest` deadline.
