@@ -575,7 +575,8 @@ function deskRulesHtml() {
 }
 
 function deskSessionBubble() {
-  if (!deskSession) {
+  // Blank once its goal is closed, rules and all (deskSessionOpen).
+  if (!deskSessionOpen()) {
     return '<div class="stat-tile wide"><div class="label">Design session</div>' +
       '<div class="job-manifest-note">Blank. The lead fills in the goal (id and title), your description, and ' +
       'the list of what must be done before it is, as we talk.</div></div>';
@@ -604,8 +605,13 @@ function deskTable() {
   // then, when a finished goal brought its rows back: "why are all the lines
   // back again. i made most of them disappear with close". A done goal stays
   // on its own board, closable like any line.
-  if (deskSession) return deskSessionTable();
+  // A CLOSED GOAL TAKES ITS WHOLE SESSION WITH IT, RULES INCLUDED. Andy:
+  // "the rules should also disappear with the requirement they were attached to."
+  if (deskSessionOpen()) return deskSessionTable();
   return '<div class="job-manifest-note">No design session is open. Press Start design mode in the Team tab to begin one.</div>';
+}
+function deskSessionOpen() {
+  return !!deskSession && !deskClosed[String(deskSession.goal.id)];
 }
 
 function deskRowOf(id) {
