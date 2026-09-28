@@ -71,7 +71,10 @@ function snapshot(into) {
     const dst = path.join(into, n);
     if (/\.db$/.test(n)) {
       const db = new DatabaseSync(src, { readOnly: true });
-      try { db.exec("VACUUM INTO '" + dst.replace(/'/g, "''") + "'"); } finally { db.close(); }
+      // node.db runs a rollback journal (nodeStore.js:192): while the node
+      // holds its write lock a reader is refused at once, so wait for it
+      // rather than fail an hourly run now and then (wsl-claude's review).
+      try { db.exec('PRAGMA busy_timeout = 5000'); db.exec("VACUUM INTO '" + dst.replace(/'/g, "''") + "'"); } finally { db.close(); }
     } else {
       fs.copyFileSync(src, dst);
     }
@@ -95,7 +98,25 @@ function prune() {
   return gone.length;
 }
 
+// A run killed half-way never reaches its `finally`, and would leave an
+// UNENCRYPTED copy of relay-state (private key included) in the temp
+// folder. So every run first clears what an earlier one left behind: any
+// spirit-backup-* working folder older than an hour.
+function clearStale() {
+  const tmp = os.tmpdir();
+  let gone = 0;
+  fs.readdirSync(tmp).forEach(function (n) {
+    if (!/^spirit-backup-/.test(n)) return;
+    const p = path.join(tmp, n);
+    try {
+      if (Date.now() - fs.statSync(p).mtimeMs > 60 * 60 * 1000) { fs.rmSync(p, { recursive: true, force: true }); gone += 1; }
+    } catch (e) { /* somebody else's, or already gone */ }
+  });
+  return gone;
+}
+
 function main() {
+  clearStale();
   const pass = readPassphrase();
   if (!fs.existsSync(FROM)) throw new Error('no relay-state at ' + FROM);
   fs.mkdirSync(TO, { recursive: true });
