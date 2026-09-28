@@ -221,9 +221,14 @@ function dialogSendsComeBack() {
   test.subHeading('A row\'s dialog gets its thread from Desk and hands its sends back');
   const files = {};
   const desk = mountDesk({ files: files });
-  desk.arrive({ from: 'claude-windows', kind: 'board', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
+  // RECENT TIMES, NOT FIXED ONES. The dialog sends only to an agent heard
+  // from in the last day (deskDetails.js, DD_RECENT_MS), and it takes that
+  // time from the thread. Fixed 2026-09-27 stamps made this a time bomb: it
+  // went red on its own a day later, with no code changed.
+  const justNow = function (minutesAgo) { return new Date(Date.now() - minutesAgo * 60000).toISOString(); };
+  desk.arrive({ from: 'claude-windows', kind: 'board', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: justNow(3) });
   desk.arrive({ from: 'wsl-claude', kind: 'explain', text: 'what G2 is', todo: 'puppets/G2' },
-    { hash: 'h-in-2', fromKey: WSL, sentAt: '2026-09-27T05:02:00Z' });
+    { hash: 'h-in-2', fromKey: WSL, sentAt: justNow(1) });
   return settle().then(function () {
     // The table's row click, as desk.js binds it.
     const params = { id: 'puppets/G2', row: JSON.parse(BOARD).rows[0],

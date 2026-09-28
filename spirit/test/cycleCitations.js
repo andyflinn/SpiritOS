@@ -208,7 +208,10 @@ function count() {
   // somebody's node it also read their gitignored data: Desk's own chat
   // log (app/desk/log-*.json) went red the moment a conversation typed
   // "R1 of G19" (2026-09-28). A person's words are not the tree.
-  const files = trackedOnly(walked);
+  // NOR DESK'S FOLDER, now that it is tracked (Andy, 2026-09-28: "git
+  // everything in this folder"). It is the conversation, in everyone's own
+  // words, not a document that cites requirements.
+  const files = trackedOnly(walked).filter(function (f) { return f.indexOf('spirit/run/app/desk/') !== 0; });
   const found = {};
   files.forEach(function (f) {
     if (f === 'spirit/test/cycleCitations.js') return;
