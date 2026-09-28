@@ -20,7 +20,7 @@
 
 const fs = require('fs');
 const net = require('net');
-const http = require('http');
+const { relayRequest } = require('../run/js/relayRequest.js');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
@@ -35,18 +35,12 @@ function freePort() {
     const s = net.createServer().listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); });
   });
 }
+// THROUGH THE ONE DOOR (oneDoor.js): the page is asked for over
+// relayRequest, the project's outbound transport, never with http directly.
 function ask(port, method, url) {
-  return new Promise(function (resolve) {
-    const req = http.request({ host: '127.0.0.1', port: port, method: method, path: url, timeout: 2000 }, function (res) {
-      let body = '';
-      res.setEncoding('utf8');
-      res.on('data', function (d) { body += d; });
-      res.on('end', function () { resolve({ status: res.statusCode, body: body }); });
-    });
-    req.on('error', function (e) { resolve({ status: 0, body: '', error: e.code || e.message }); });
-    req.on('timeout', function () { req.destroy(new Error('timeout')); });
-    req.end();
-  });
+  return relayRequest('http://127.0.0.1:' + port, method, url, null)
+    .then(function (r) { return { status: r.status, body: String(r.text || '') }; },
+      function (e) { return { status: 0, body: '', error: e.code || e.message }; });
 }
 function waitUp(port, child) {
   const until = Date.now() + 8000;
