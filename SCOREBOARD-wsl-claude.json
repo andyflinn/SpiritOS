@@ -1,11 +1,11 @@
 {
   "box": "wsl-claude",
-  "commit": "6f976b0",
+  "commit": "29737d1",
   "stale": false,
-  "head": "6f976b0",
+  "head": "29737d1",
   "measured": {
-    "suites": 182,
-    "green": 3434,
+    "suites": 183,
+    "green": 3439,
     "red": 0,
     "unhappy": 0
   },
