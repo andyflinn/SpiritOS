@@ -1,0 +1,47 @@
+'use strict';
+
+// spirit/run/process/js/counterServer/counterServer.js
+// THE TEST SERVER — processes/G1.1.
+//
+//   Andy, 2026-09-28: "the test server will be a dumb web server that
+//   serves one page with a server-side counter, that increments every time
+//   the server serves GET "/" and shows the increased counter on the page.
+//   the page will be assembeled by the server in ram".
+//
+// The counter lives in this process's memory and nowhere else, so it starts
+// at 1 whenever the server really starts again: that is what makes it a
+// probe for the process subsystem (processes/G1). It reads and writes no
+// file and requires nothing but Node's own http.
+//
+// Started as the launch dialog starts a process: its arguments arrive as one
+// JSON string, `node counterServer.js '{"port":P}'`.
+
+const http = require('http');
+
+let args = {};
+try { args = JSON.parse(process.argv[2] || '{}'); } catch (e) { args = {}; }
+const port = Number(args.port);
+
+let count = 0;
+
+function page(n) {
+  return '<!doctype html><html><head><meta charset="utf-8"><title>Counter</title></head>' +
+    '<body><h1>This page has been served ' + n + ' time' + (n === 1 ? '' : 's') + '.</h1></body></html>';
+}
+
+http.createServer(function (req, res) {
+  // Only GET / counts; anything else leaves the counter where it is.
+  if (req.method !== 'GET') {
+    res.writeHead(405, { 'Content-Type': 'text/plain; charset=utf-8', Allow: 'GET' });
+    res.end('only GET\n');
+    return;
+  }
+  if (req.url !== '/') {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('not found\n');
+    return;
+  }
+  count += 1;
+  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+  res.end(page(count));
+}).listen(port, '127.0.0.1');
