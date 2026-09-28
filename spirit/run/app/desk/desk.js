@@ -442,10 +442,12 @@ function deskSessionBubble() {
   }
   var g = deskSession.goal;
   var items = deskSession.items.map(function (it, i) {
-    return '<li>' + (it.done ? '<s>' : '') + deskEsc(it.title) + (it.done ? '</s>' : '') +
+    return '<li data-open="' + deskEsc(it.id || ('item-' + (i + 1))) + '" style="cursor:pointer">' +
+      (it.done ? '<s>' : '') + deskEsc(it.title) + (it.done ? '</s>' : '') +
       ' <span class="job-manifest-note">(' + deskEsc(it.id || ('item-' + (i + 1))) + ')</span></li>';
   }).join('');
-  return '<div class="stat-tile wide"><div class="label">' + deskEsc(g.id) + ' — ' + deskEsc(g.title) + '</div>' +
+  return '<div class="stat-tile wide"><div class="label" data-open="' + deskEsc(g.id) + '" style="cursor:pointer">' +
+    deskEsc(g.id) + ' — ' + deskEsc(g.title) + '</div>' +
     (g.description ? '<div>' + deskEsc(g.description) + '</div>' : '') +
     (items ? '<ul style="margin:6px 0 0 18px">' + items + '</ul>'
       : '<div class="job-manifest-note">Nothing required yet.</div>') + '</div>';
@@ -676,27 +678,30 @@ function deskDraw() {
     });
   });
   Array.prototype.forEach.call(el.querySelectorAll('tr[data-id]'), function (tr) {
-    tr.addEventListener('click', function () {
-      var id = tr.getAttribute('data-id');
-      // THE DIALOG READS ONLY ITS OWN FOLDER, so Desk hands it this row's
-      // thread and the agents it can talk to, and takes back what Andy
-      // sent from it (a new name, a decision, a line) when it closes, into
-      // this log. Andy: "if i re-label the item ... the title in the list
-      // should change."
-      var thread = deskMessages.filter(function (m) { return m.todo === id; });
-      // Opening a row is seeing it, and so is what arrived while it was open.
-      deskMarkRowSeen(id);
-      // DESIGN MODE RIDES IN THE CALL. Andy: "you can force the design mode
-      // into the details dialog by paramet calling". The dialog shows it and
-      // cannot end it; only Team can.
-      deskApi.callDialog('app/deskDetails', { id: id, row: deskRowOf(id), thread: thread, agents: deskAgents,
-        designMode: deskDesignOn(), session: deskSessionRows() })
-        .then(function (result) {
-          deskMarkRowSeen(id);
-          return deskRecord((result && result.sent) || []);
-        });
-    });
+    tr.addEventListener('click', function () { deskOpenRow(tr.getAttribute('data-id')); });
   });
+}
+
+// ONE ROW'S DIALOG, from the List or from the Team bubble. Andy: "i want to
+// be able to click on items in the bubble in team and see the details".
+function deskOpenRow(id) {
+  // THE DIALOG READS ONLY ITS OWN FOLDER, so Desk hands it this row's
+  // thread and the agents it can talk to, and takes back what Andy
+  // sent from it (a new name, a decision, a line) when it closes, into
+  // this log. Andy: "if i re-label the item ... the title in the list
+  // should change."
+  var thread = deskMessages.filter(function (m) { return m.todo === id; });
+  // Opening a row is seeing it, and so is what arrived while it was open.
+  deskMarkRowSeen(id);
+  // DESIGN MODE RIDES IN THE CALL. Andy: "you can force the design mode
+  // into the details dialog by paramet calling". The dialog shows it and
+  // cannot end it; only Team can.
+  deskApi.callDialog('app/deskDetails', { id: id, row: deskRowOf(id), thread: thread, agents: deskAgents,
+    designMode: deskDesignOn(), session: deskSessionRows() })
+    .then(function (result) {
+      deskMarkRowSeen(id);
+      return deskRecord((result && result.sent) || []);
+    });
 }
 
 // READ ONCE, AT MOUNT. The log is Desk's own file; a missing one is a Desk
@@ -818,6 +823,13 @@ spirit.shell.activateApp({
     onEnter('desk-muse', muse);
     document.getElementById('desk-team-send').addEventListener('click', deskSendTeam);
     document.getElementById('desk-end-design').addEventListener('click', deskEndDesign);
+    // The bubble is repainted on every arrival, so one listener on its box.
+    document.getElementById('desk-session').addEventListener('click', function (e) {
+      var el = e.target;
+      while (el && el !== e.currentTarget && !(el.getAttribute && el.getAttribute('data-open'))) el = el.parentNode;
+      var id = el && el.getAttribute && el.getAttribute('data-open');
+      if (id) deskOpenRow(id);
+    });
     onEnter('desk-team-say', deskSendTeam);
     // Its own log first, then every arrival into it. Subscribed once, at
     // mount, and kept while Desk is hidden behind its dialog, so what
