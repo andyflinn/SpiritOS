@@ -603,7 +603,10 @@ function deskSessionBubble() {
       'the list of what must be done before it is, as we talk.</div></div>';
   }
   var g = deskSession.goal;
-  var items = deskSession.items.map(function (it, i) {
+  // A closed line leaves the bubble as it leaves the List (wsl-claude).
+  var items = deskSession.items.filter(function (it, i) {
+    return !deskClosed[String(it.id || ('item-' + (i + 1)))];
+  }).map(function (it, i) {
     return '<li data-open="' + deskEsc(it.id || ('item-' + (i + 1))) + '" style="cursor:pointer">' +
       (deskIsDone(String(it.id || ('item-' + (i + 1))), it.done) ? '<s>' : '') + deskEsc(it.title) +
       (deskIsDone(String(it.id || ('item-' + (i + 1))), it.done) ? '</s>' : '') +
