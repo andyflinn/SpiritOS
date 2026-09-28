@@ -60,6 +60,27 @@
       "key": "8a24c7bf6941cb3ff16f0f5f7fb1e53f4e4707251bfaab14ec09c8bdd61ae741",
       "counts": true,
       "claimed": true
+    },
+    "processes/G1.3": {
+      "pressed": "done.",
+      "at": "2026-09-28T14:06:09.350Z",
+      "key": "2f6652f621fa390d6446e697d9097a9f14abc824de45e2f2c66ed7fce1029613",
+      "counts": true,
+      "claimed": true
+    },
+    "processes/G1.4": {
+      "pressed": "done.",
+      "at": "2026-09-28T14:23:44.532Z",
+      "key": "029ab4e6a0e11615ec64f69c6b87632c9919ea355375b46c81f9ad91a97ace2d",
+      "counts": true,
+      "claimed": true
+    },
+    "processes/G1": {
+      "pressed": "done.",
+      "at": "2026-09-28T14:25:13.415Z",
+      "key": "5fc78b556a9f046e8fd5ecbcf27960e34a5d6b2038bcc13107dc2914193f071f",
+      "counts": true,
+      "claimed": true
     }
   },
   "openQuestions": {
@@ -74,18 +95,6 @@
       "text": "Plain backup, without identity.json: taken, wsl builds it. One more, yes or no: device.json holds a password field. Leave it out too?",
       "at": "2026-09-28T06:48:39.911Z",
       "key": "94abe16d4e09282d42fd6089102ef690d8df3543a77c252b6953a2633ff3e603"
-    },
-    "processes/G1": {
-      "from": "claude-windows",
-      "text": "Added to the goal's description, in your words. Should it also be a rule for this plan, so every item is judged by 'as minimal as possible'?",
-      "at": "2026-09-28T08:55:28.401Z",
-      "key": "126f4ba749cd6bc3a2e63ca043aa59d17196ebcec30a16458249ec728379a2e2"
-    },
-    "processes/G1.4": {
-      "from": "claude-windows",
-      "text": "Build G1.4, the log in its Jobs console? Its list is verified. On Go: tests red first, then the test server prints one line per request; nothing new in Jobs.",
-      "at": "2026-09-28T09:03:09.681Z",
-      "key": "8fb100dd7fb3425e4d06058b8eef7d4e2c30a3a56590d145d766ce3172ce5e4b"
     }
   },
   "titles": {
@@ -107,6 +116,9 @@
     "transport/R19.5",
     "transport/R19",
     "processes/G1.1",
-    "processes/G1.2"
+    "processes/G1.2",
+    "processes/G1.3",
+    "processes/G1.4",
+    "processes/G1"
   ]
 }
