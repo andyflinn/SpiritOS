@@ -88,8 +88,8 @@ function indexes() {
 test.subHeading('T1: all three indexes exist');
 const idx = indexes();
 const onHash = idx.find(function (i) { return /\(\s*"?hash"?\s*\)/i.test(i.sql) && /WHERE/i.test(i.sql); });
-const onOwner = idx.find(function (i) { return /"?at"?/i.test(i.sql) && /WHERE[\s\S]*kind[\s\S]*owner/i.test(i.sql); });
-const onArrivals = idx.find(function (i) { return /"?at"?/i.test(i.sql) && /WHERE[\s\S]*\bdir\b\s*=\s*'in'/i.test(i.sql) && /WHERE[\s\S]*\badmitted\b/i.test(i.sql); });
+const onOwner = idx.find(function (i) { return /\(\s*"?at"?\s*\)/i.test(i.sql) && /WHERE[\s\S]*kind[\s\S]*owner/i.test(i.sql); });
+const onArrivals = idx.find(function (i) { return /\(\s*"?at"?\s*\)/i.test(i.sql) && /WHERE[\s\S]*\bdir\b\s*=\s*'in'/i.test(i.sql) && /WHERE[\s\S]*\badmitted\b/i.test(i.sql); });
 if (onHash && onOwner && onArrivals) {
   test.check('three partial indexes on the log: hash skipping blanks, owner rows by time, admitted arrivals by time');
 } else {
