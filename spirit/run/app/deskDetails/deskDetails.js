@@ -91,7 +91,7 @@ function ddTake(m) {
 // One pass over this row's messages, in order, into what each part shows.
 function ddRead(list) {
   var st = { explain: '', explainFrom: '', slots: Object.create(null), label: '',
-    asked: false, chat: [], openAsk: null };
+    asked: false, chat: [], openAsk: null, ready: false };
   list.forEach(function (m) {
     var andy = m.dir === 'out';
     if (andy && m.kind === 'answer' && DD_RETITLE.test(m.text)) { st.label = m.text.replace(DD_RETITLE, ''); return; }
@@ -100,6 +100,8 @@ function ddRead(list) {
     if (!andy && m.kind === 'annotation') { st.slots[m.from] = { text: m.text, at: m.at }; return; }
     if (m.reported) return;
     if (m.kind === 'note' && /^taking(\s|$)/.test(m.text)) return;
+    // An agent saying the item can be closed, with its evidence.
+    if (!andy && /\bready to close\b/i.test(m.text)) st.ready = true;
     if (m.kind === 'board' || m.kind === 'report') return;
     // ONE LINE PER THING ANDY SAID. Andy: "I still get multibple echoes of
     // what appears in there". What he sends goes once per agent, so the
@@ -181,7 +183,10 @@ function ddDecideHtml() {
       '<button type="button" id="dd-reject">Reject</button></div>';
   }
   var ask = ddState && ddState.openAsk;
-  if (!ask) return '';
+  // A closed item asks nothing (Andy: "this one still shows go button while
+  // market as done").
+  var mine = ddSession.filter(function (r) { return r.id === ddId; })[0];
+  if (!ask || (mine && mine.done)) return '';
   return '<div class="job-manifest-note">' + ddEsc(ask.from) + ' asks: ' + ddEsc(ask.text) + '</div>' +
     '<div class="start-job-form card"><button type="button" id="dd-go">Go!</button>' +
     '<button type="button" id="dd-no">No</button></div>';
@@ -226,14 +231,14 @@ function ddFrame() {
     // tab", so this dialog carries no button for it. Desk passes it in.
     '<div id="dd-design" class="stat-tile wide" style="background:#fff3c4;color:#000"' + (ddDesign ? '' : ' hidden') + '>' +
       '<b>Design mode.</b> Nothing is built until it ends, and it ends only in the Team tab of Desk.</div>' +
-    '<div id="dd-item"></div>' +
-    '<div class="stat-tile wide"><div class="label" id="dd-title"></div><div id="dd-blurb"></div></div>' +
-    // THE NAME SITS UNDER THE TITLE IT CHANGES, far from Say. Andy: "can you
-    // move "Your name for it" just below the title, that way i won keep
-    // typing into the wrong field".
+    // THE NAME FIRST, AT THE VERY TOP, as far from Say as the dialog allows.
+    // Andy: "the "Your name for it" box should go just underneath the Close
+    // button row, far away from my chat input. i still type into the wrong box".
     '<div class="start-job-form card"><label class="field-label grow">Your name for it' +
       '<input type="text" id="dd-name" placeholder="in your own words"></label>' +
       '<button type="button" id="dd-name-save">Save</button></div>' +
+    '<div id="dd-item"></div>' +
+    '<div class="stat-tile wide"><div class="label" id="dd-title"></div><div id="dd-blurb"></div></div>' +
     '<div class="stat-tile wide" id="dd-facts"></div>' +
     '<div id="dd-decide"></div>' +
     '<div id="dd-slots"></div>' +
@@ -271,9 +276,16 @@ function ddItemHtml() {
   // DONE IS HIS BUTTON. Andy: "how do those damn items get closed?", then
   // "let's close that gap." Pressing it sends "done." under this item, and
   // Desk reads his own latest done/reopen as the item's state.
+  // ONLY WHEN THERE IS SOMETHING TO CLOSE. Andy: "if it's not built why give
+  // me a done button?" So Done appears once an agent has said READY TO CLOSE
+  // under this item, with the evidence; before that the state is words.
+  var ready = ddState && ddState.ready;
   var close = me.done
     ? '<button type="button" id="dd-reopen">Reopen</button> <span class="job-manifest-note">Done.</span>'
-    : '<button type="button" id="dd-done" style="background:#1a7f37;color:#fff;font-weight:bold">Done</button>';
+    : ready
+      ? '<button type="button" id="dd-done" style="background:#1a7f37;color:#fff;font-weight:bold">Done</button>' +
+        ' <span class="job-manifest-note">An agent says this is ready to close: read why below.</span>'
+      : '<span class="job-manifest-note">Open: not ready to close yet. Done appears here when an agent says it is, with the evidence.</span>';
   return '<div class="stat-tile wide"><div class="label">' + ddEsc(me.id) + ' — ' + ddEsc(me.title) + '</div>' +
     '<div style="margin:6px 0">' + close + '</div>' +
     (me.description ? '<div>' + ddEsc(me.description) + '</div>' : '') +

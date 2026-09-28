@@ -458,7 +458,9 @@ function deskSessionTable() {
       '<td title="' + deskEsc(row.title) + '">' + deskEsc(deskLabel[row.id] || row.title) +
         ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span></td>' +
       '<td>' + deskEsc(deskTaken[row.id] || '') + '</td>' +
-      '<td>' + (deskOpenAsk[row.id]
+      // A CLOSED ITEM ASKS NOTHING. Andy: "this one still shows go button
+      // while market as done".
+      '<td>' + (deskOpenAsk[row.id] && !row.done
         ? '<button type="button" data-go="' + deskEsc(row.id) + '" title="' + deskEsc(deskOpenAsk[row.id].text) + '">Go!</button>'
         : deskEsc(deskDecision[row.id] || '')) + '</td>' +
       '<td>' + deskEsc((row.blocks || []).join(', ')) + '</td>' +
