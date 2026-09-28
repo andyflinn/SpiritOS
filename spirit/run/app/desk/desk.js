@@ -361,6 +361,9 @@ function deskDrawTabs() {
   });
   var end = document.getElementById('desk-end-design');
   if (end) end.hidden = !(deskDesignOn() && deskTab === 'team');
+  // Its twin, in the same spot while design mode is off.
+  var start = document.getElementById('desk-start-design');
+  if (start) start.hidden = !(!deskDesignOn() && deskTab === 'team');
 }
 
 // ── DESIGN MODE, AND THE DESIGN SESSION'S BOARD ─────────────────────
@@ -815,7 +818,8 @@ spirit.shell.activateApp({
         // color, so it loooms over the proceedings".
         '<button type="button" id="desk-end-design" hidden style="margin-left:auto;background:#c00;color:#fff;' +
           'font-weight:bold;border:2px solid #600">End design mode</button>' +
-        '<button type="button" id="desk-start-design" hidden style="margin-left:auto;font-weight:bold">Start design mode</button>' +
+        '<button type="button" id="desk-start-design" hidden style="margin-left:auto;background:#1a7f37;color:#fff;' +
+          'font-weight:bold;border:2px solid #0b4a1e">Start design mode</button>' +
       '</div>' +
       '<div id="desk-root">' +
         '<div data-pane="list"><div id="desk-top"></div></div>' +
