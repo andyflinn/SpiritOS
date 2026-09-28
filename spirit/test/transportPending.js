@@ -111,21 +111,4 @@ test.subHeading('the transport cycle R16 — the log must be able to PROVE what 
     { there: 0, cost: 'a sitting, and it decides a deferred database question' });
 }
 
-// ── THE DECISION transport/R16 WAS HOLDING UP, AS ITS OWN ROW ────────
-//
-//   Andy, 2026-09-27, "go." on: every decision he defers on a condition
-//   becomes its own board row, waiting on the requirement that meets it.
-//   His words on where it went wrong: "because this was decided and it's
-//   implementation fell through the cracks....". transport/R16 ranked by age because
-//   nothing said this was waiting on it; now the board can see it.
-{
-  const nodeStore = read('spirit/run/js/nodeStore.js');
-  test.awaiting('transport/R19', 'the traffic log as a node.db table',
-    /CREATE TABLE IF NOT EXISTS traffic\b/.test(nodeStore),
-    'Andy: the log "belongs into the database, which also allows log access to be optimized". Today it is '
-    + 'relay-state/traffic.jsonl, read whole on every question (trafficLog.js:108). Waits on transport/R16, because '
-    + 'each row must carry its signature and the sealed text that signature covers',
-    { there: 0, cost: 'a sitting after R16, with a table shape reviewed and approved first', after: ['transport/R16'] });
-}
-
 test.reportSuccessFailureCount();
