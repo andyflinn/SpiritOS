@@ -51,7 +51,14 @@ var deskDone = {};           // item id -> true/false, from Andy's own "done." /
 var deskReady = {};          // item id -> true once an agent said READY TO CLOSE under it
 var deskClosed = {};         // item id -> true once Andy closed its done line away
 var deskFrom = { done: {}, title: {}, pressed: {} };  // item id -> { at, key } of Andy's answer that set it
-var DESK_READY_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:[\w.\/-]+\s+is\s+)?READY TO CLOSE\b/;  // the newest `session` packet as it arrived, and when
+var DESK_READY_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:[\w.\/-]+\s+is\s+)?READY TO CLOSE\b/;
+// NO GO BEFORE WHAT IS ALREADY THERE IS CHECKED. Andy: "The already in place
+// list must be verified before any go button can appear." The check is a
+// note under the item that opens with VERIFIED (or IN PLACE VERIFIED),
+// posted by the agent who did not write the list and naming the commit
+// (wsl-claude's shape, the same as READY TO CLOSE).
+var DESK_VERIFIED_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:IN PLACE )?VERIFIED\b/;
+var deskVerified = {};       // item id -> true once its Already-in-place list was verified  // the newest `session` packet as it arrived, and when
 var deskMessages = [];      // decoded agents messages, in log order
 var deskByHash = Object.create(null);
 var deskError = '';
@@ -313,6 +320,7 @@ function deskFold(msg) {
   // "<id> is READY TO CLOSE", after an optional "<agent>:" or "<agent>,").
   // An explanation that merely names the phrase mid-sentence is not one.
   if (msg.dir === 'in' && msg.todo && DESK_READY_CLAIM.test(String(msg.text || ''))) deskReady[msg.todo] = true;
+  if (msg.dir === 'in' && msg.todo && DESK_VERIFIED_CLAIM.test(String(msg.text || ''))) deskVerified[msg.todo] = true;
   // A line he closed away stays away (his "closed." under it).
   if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && msg.text === 'closed.') deskClosed[msg.todo] = true;
   // His latest press is kept whether or not it counts yet.
@@ -510,6 +518,10 @@ function deskSessionRows() {
       // highlighted section on if and how i can check. same as wsl test
       // requirements should be enumarated under requirements".
       check: String(it.check || ''), tests: Array.isArray(it.tests) ? it.tests.map(String) : [],
+      // WHAT IS ALREADY THERE, so nothing is built twice: [{ what, where }],
+      // `where` being path:line and the text quoted there.
+      inPlace: Array.isArray(it.inPlace) ? it.inPlace : [],
+      verified: !!deskVerified[String(it.id || ('item-' + (i + 1)))],
       blocks: (Array.isArray(it.blocks) ? it.blocks : [it.blocks || goalId]).map(String) };
   });
   var waiting = function (id) {
@@ -536,7 +548,9 @@ function deskSessionTable() {
       '<td>' + deskEsc(deskTaken[row.id] || '') + '</td>' +
       // A CLOSED ITEM ASKS NOTHING. Andy: "this one still shows go button
       // while market as done".
-      '<td>' + (deskOpenAsk[row.id] && !row.done
+      '<td>' + (deskOpenAsk[row.id] && !row.done && !row.goal && !deskVerified[row.id]
+        ? '<span class="job-manifest-note">asks; not verified yet</span>'
+        : deskOpenAsk[row.id] && !row.done
         ? '<button type="button" data-go="' + deskEsc(row.id) + '" title="' + deskEsc(deskOpenAsk[row.id].text) + '">Go!</button>'
         : deskEsc(deskDecision[row.id] || '')) + '</td>' +
       '<td>' + deskEsc((row.blocks || []).join(', ')) + '</td>' +

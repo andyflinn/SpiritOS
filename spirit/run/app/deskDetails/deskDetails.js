@@ -190,6 +190,13 @@ function ddDecideHtml() {
   // market as done").
   var mine = ddSession.filter(function (r) { return r.id === ddId; })[0];
   if (mine && mine.done) return '';
+  // NO GO BEFORE WHAT IS ALREADY THERE IS VERIFIED (desk.js,
+  // DESK_VERIFIED_CLAIM). Andy: "The already in place list must be verified
+  // before any go button can appear."
+  if (ask && mine && !mine.goal && !mine.verified) {
+    return '<div class="job-manifest-note">' + ddEsc(ask.from) + ' asks: ' + ddEsc(ask.text) + '</div>' +
+      '<div class="job-manifest-note"><b>No Go yet:</b> its Already-in-place list has not been verified.</div>';
+  }
   if (!ask) return ddState && ddState.running ? '<div class="job-manifest-note"><b>Status: running.</b> You said go.</div>' : '';
   return '<div class="job-manifest-note">' + ddEsc(ask.from) + ' asks: ' + ddEsc(ask.text) + '</div>' +
     '<div class="start-job-form card"><button type="button" id="dd-go">Go!</button>' +
@@ -298,6 +305,16 @@ function ddItemHtml() {
     // as wsl test requirements should be enumarated under requirements".
     '<div style="margin-top:8px;padding:6px 10px;background:#fff3c4;color:#000;border-radius:6px">' +
       '<b>How you can check:</b> ' + (me.check ? ddEsc(me.check) : 'not stated yet; the agents owe you this line.') + '</div>' +
+    // WHAT IS ALREADY THERE, so nothing is built twice. Andy: "a list per
+    // requirement that names support already in place, as reminder to NOT
+    // re-invent what is already there."
+    (me.goal ? '' : '<div class="label" style="margin-top:8px">Already in place' +
+      (me.verified ? ' (verified)' : ' (not verified yet)') + '</div>' +
+      (me.inPlace && me.inPlace.length
+        ? '<ul style="margin:6px 0 0 18px">' + me.inPlace.map(function (p) {
+            return '<li>' + ddEsc(p.what || '') + (p.where ? ' <span class="job-manifest-note">' + ddEsc(p.where) + '</span>' : '') + '</li>';
+          }).join('') + '</ul>'
+        : '<div class="job-manifest-note">None listed yet.</div>')) +
     '<div class="label" style="margin-top:8px">Proved by these tests</div>' +
     (me.tests && me.tests.length
       ? '<ul style="margin:6px 0 0 18px">' + me.tests.map(function (t) { return '<li>' + ddEsc(t) + '</li>'; }).join('') + '</ul>'
