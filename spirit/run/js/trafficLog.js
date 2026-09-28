@@ -125,7 +125,41 @@ function legacyPath(rootDir) {
 // costs the one row that was being written, never the year behind it.
 // The whole-file rewrite it replaced had the opposite failure — atomic,
 // but all-or-nothing over everything.
+// ── THE TABLE IN node.db (transport/R19.3) ────────────────────────────
+//
+//   Andy, 2026-09-28: "Moving the node log into machine-side database",
+//   and rule 1 of that plan: nothing above trafficLog.js changes.
+//
+// Every new row goes into node.db's `traffic` table, which nodeStore.js
+// owns; this file still decides what a row is and is the only one that
+// reads it. The file (traffic.jsonl) is still READ, first, so a node that
+// has been running keeps its whole history until the migration
+// (transport/R19.5) imports it and retires the file. Nothing writes the
+// file any more unless node.db cannot be opened at all, and then the log
+// keeps working the old way rather than losing rows.
+//
+// `create` is false for reads: asking what the log holds must never be
+// what brings a database into existence.
+function table(rootDir, create) {
+  if (!rootDir) return null;
+  try {
+    var nodeStore = require('./nodeStore.js');
+    if (!nodeStore.available()) return null;
+    if (!create && !fs.existsSync(nodeStore.dbPath(rootDir))) return null;
+    return nodeStore.open(rootDir).traffic;
+  } catch (e) { return null; }
+}
+
 function readAll(rootDir) {
+  var rows = readFile(rootDir);
+  var t = table(rootDir, false);
+  if (t) {
+    try { rows = rows.concat(t.all()); } catch (e) { /* the file's rows still stand */ }
+  }
+  return rows;
+}
+
+function readFile(rootDir) {
   var raw = null;
   try { raw = fs.readFileSync(logPath(rootDir), 'utf8'); }
   catch (e) { raw = null; }
@@ -178,6 +212,9 @@ function historyOf(rootDir) {
 // ONE LINE, APPENDED. No read, no rewrite, no temp file: the cost of
 // writing a packet down does not grow with how many are already there.
 function append(rootDir, row) {
+  // Into the table (transport/R19.3); the file only if node.db can't be had.
+  var t = table(rootDir, true);
+  if (t) { t.add(row); return; }
   var dir = path.dirname(logPath(rootDir));
   try { fs.mkdirSync(dir, { recursive: true }); } catch (e) { /* already there */ }
 
@@ -545,7 +582,11 @@ function createTrafficLog(opts) {
   // log is moving into node.db (transport/R19), where the answer becomes the
   // table's pages. Callers ask the log; only the log knows where it lives.
   function size() {
-    try { return fs.statSync(logPath(rootDir)).size; } catch (e) { return 0; }
+    var n = 0;
+    try { n += fs.statSync(logPath(rootDir)).size; } catch (e) { /* no file: nothing from it */ }
+    var t = table(rootDir, false);
+    if (t) { try { n += t.bytes(); } catch (e) { /* unmeasurable: the file's part stands */ } }
+    return n;
   }
 
   return {

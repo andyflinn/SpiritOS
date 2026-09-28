@@ -6,7 +6,7 @@
 //   Andy, 2026-09-28: "they must be red before wsl pulls the
 //   implementation, and green after he pull the implementation", and "on
 //   go, the tests should be run ASAP against the unmodified production code.
-//   if they are green then, they may be worth less". His go on R19.3 came
+//   if they are green then, they may be worth less". His go on transport/R19.3 came
 //   with that rule, so every check here is red until the table is built.
 //
 //   Decided (Andy: "i agree to the keys as well"): seq INTEGER PRIMARY KEY
@@ -104,5 +104,7 @@ if (expected !== '[]' && got === expected) {
   test.fail(OWED + 'with traffic.jsonl deleted, read() returned ' + (got === '[]' ? 'nothing' : 'different rows'));
 }
 
+// node.db stays open in this process; Windows will not remove an open file.
+require("../run/js/nodeStore.js").open(root).close();
 fs.rmSync(root, { recursive: true, force: true });
 test.reportSuccessFailureCount();

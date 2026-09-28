@@ -108,6 +108,13 @@ function dbPath(rootDir) {
   return path.join(rootDir, 'relay-state', 'node.db');
 }
 
+// The node log's fields, in the order trafficLog.js writes them: the 24 found
+// on Andy's node's traffic.jsonl on 2026-09-28, plus `mark` rows. Anything not
+// named here goes to the `extra` column rather than being dropped.
+const TRAFFIC_COLUMNS = ['at', 'dir', 'kind', 'peer', 'relay', 'hash', 'outcome', 'admitted',
+  'status', 'code', 'ms', 'payload', 'bytes', 'event', 'label', 'invite', 'key', 'why', 'owner',
+  'revoked', 'invitesRevoked', 'expiresAt', 'cause', 'mark'];
+
 // Whether this node can have a store at all. Asked rather than assumed, so
 // the caller can refuse with a sentence instead of a stack trace.
 function available() {
@@ -385,6 +392,33 @@ function open(rootDir, opts) {
     CREATE INDEX IF NOT EXISTS relay_record_when ON relay_record (relay, at);
   `);
 
+  // ── THE NODE LOG (transport/R19.3) ────────────────────────────────────
+  //
+  //   Andy, 2026-09-28: the goal is "Moving the node log into machine-side
+  //   database"; on the table, "i agree to the keys as well".
+  //
+  // trafficLog.js owns what a row MEANS and still is the only reader and
+  // writer; this file owns where it lives, as it does for every table in
+  // node.db. Decided and not to be revisited without him:
+  //   - seq INTEGER PRIMARY KEY AUTOINCREMENT: the order rows were written,
+  //     never reused, not even after the newest row is deleted;
+  //   - a column for every field a row carries, all allowed empty, and
+  //     `extra` for any field this list does not name, so nothing is lost;
+  //   - every row kept ("the log should be permanent. period."), which is
+  //     why it is NOT in the cache cap above: cacheBytes counts only `seen`
+  //     and `seen_routes`, so this table can grow without evicting anyone.
+  //
+  // EACH VALUE IS STORED AS ITS JSON TEXT, NULL when absent, so a row reads
+  // back exactly as it was written (true stays true, 3 stays 3) and a
+  // reader cannot tell a table row from a file row.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS traffic (
+      seq INTEGER PRIMARY KEY AUTOINCREMENT,
+      ${TRAFFIC_COLUMNS.map(function (c) { return '"' + c + '" TEXT'; }).join(',\n      ')},
+      extra TEXT
+    );
+  `);
+
   // ── THE MIGRATION FROM THE MORNING'S SHAPE ───────────────────
   //
   // `node.db` shipped a few hours before this with `at` and `url` on the
@@ -626,8 +660,52 @@ function open(rootDir, opts) {
     return { via: r.via, at: r.at, url: r.url, rank: r.rank, told: r.told };
   }
 
+  const tq = {
+    add: db.prepare('INSERT INTO traffic (' + TRAFFIC_COLUMNS.map(function (c) { return '"' + c + '"'; }).join(', ') +
+      ', extra) VALUES (' + TRAFFIC_COLUMNS.map(function () { return '?'; }).join(', ') + ', ?)'),
+    all: db.prepare('SELECT * FROM traffic ORDER BY seq'),
+    count: db.prepare('SELECT COUNT(*) AS n FROM traffic'),
+    bytes: db.prepare(`SELECT COALESCE(SUM(pgsize), 0) AS n FROM dbstat
+      WHERE name IN (SELECT name FROM sqlite_schema WHERE tbl_name = 'traffic')`),
+  };
+
   const store = {
     path: dbPath(rootDir),
+
+    // THE NODE LOG'S TABLE (transport/R19.3). A row goes in as the object
+    // trafficLog.js built and comes out as the same object, in seq order.
+    traffic: {
+      add: function (row) {
+        const extra = {};
+        Object.keys(row || {}).forEach(function (k) {
+          if (TRAFFIC_COLUMNS.indexOf(k) === -1) extra[k] = row[k];
+        });
+        const vals = TRAFFIC_COLUMNS.map(function (c) {
+          return row && row[c] !== undefined ? JSON.stringify(row[c]) : null;
+        });
+        vals.push(Object.keys(extra).length ? JSON.stringify(extra) : null);
+        return Number(tq.add.run.apply(tq.add, vals).lastInsertRowid);
+      },
+      all: function () {
+        return tq.all.all().map(function (r) {
+          const out = {};
+          TRAFFIC_COLUMNS.forEach(function (c) {
+            if (r[c] !== null && r[c] !== undefined) {
+              try { out[c] = JSON.parse(r[c]); } catch (e) { out[c] = r[c]; }
+            }
+          });
+          if (r.extra) {
+            try {
+              const x = JSON.parse(r.extra);
+              Object.keys(x).forEach(function (k) { out[k] = x[k]; });
+            } catch (e) { /* a damaged extra costs itself only */ }
+          }
+          return out;
+        });
+      },
+      count: function () { return tq.count.get().n; },
+      bytes: function () { return tq.bytes.get().n; },
+    },
 
     seen: {
       get: function (publicKey) { return row(q.get.get(String(publicKey || ''))); },

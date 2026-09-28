@@ -21,6 +21,13 @@ const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
+
+// THE LOG LIVES IN node.db SINCE transport/R19.3, and this process keeps it
+// open; Windows will not remove an open file. So a home is closed, then removed.
+function removeHome(home) {
+  try { require('../run/js/nodeStore.js').open(home).close(); } catch (e) { /* no store: nothing to close */ }
+  fs.rmSync(home, { recursive: true, force: true });
+}
 const { sealedPost } = require('./openReply');
 const auth = require('../run/js/relayAuth');
 const packet = require('../run/js/client/packet');
@@ -248,7 +255,7 @@ function landed(log, hash, text, admitted) {
     test.fail('replayed again after delivery: ' + again.length);
   }
 
-  fs.rmSync(home, { recursive: true, force: true });
+  removeHome(home);
 })();
 
 (function aWitnessIsNotAReader() {
@@ -280,7 +287,7 @@ function landed(log, hash, text, admitted) {
   if (page.join(',') === 'w1,w2') test.check('so the first page to open gets both, the old one and the one the witness saw');
   else test.fail('the page got ' + JSON.stringify(page));
 
-  fs.rmSync(home, { recursive: true, force: true });
+  removeHome(home);
 })();
 
 (function theBacklogIsNotTheFirstPage() {
@@ -301,7 +308,7 @@ function landed(log, hash, text, admitted) {
   arrivalsModule.createArrivals({ traffic: logAt(home) }).subscribe(function (m) { got.push(m.hash); });
   if (got.join(',') === 'newest') test.check('the 201st arrival, untaken, is replayed to the first page that opens');
   else test.fail('after 200 taken rows the page got ' + JSON.stringify(got.slice(0, 5)) + ' (' + got.length + ')');
-  fs.rmSync(home, { recursive: true, force: true });
+  removeHome(home);
 })();
 
 (function aBootedAppIsAWitnessToo() {
@@ -328,7 +335,7 @@ function landed(log, hash, text, admitted) {
     test.fail('app saw ' + JSON.stringify(global.__watched) + ', page got ' + JSON.stringify(page));
   }
   delete global.__watched;
-  fs.rmSync(home, { recursive: true, force: true });
+  removeHome(home);
 })();
 
 (function aHeldStrangerIsNotBacklog() {
@@ -352,7 +359,7 @@ function landed(log, hash, text, admitted) {
     test.fail('replayed: ' + JSON.stringify(got.map(function (m) { return m.hash; })));
   }
 
-  fs.rmSync(home, { recursive: true, force: true });
+  removeHome(home);
 })();
 
 (function undeliveredMailHasNoClock() {
@@ -382,7 +389,7 @@ function landed(log, hash, text, admitted) {
     test.fail('kept: ' + JSON.stringify(got.map(function (m) { return m.hash; })));
   }
 
-  fs.rmSync(home, { recursive: true, force: true });
+  removeHome(home);
 })();
 
 (function abrokenLogIsNotACrash() {
@@ -404,7 +411,7 @@ function landed(log, hash, text, admitted) {
     test.fail('threw=' + threw + ' got=' + got.length);
   }
 
-  fs.rmSync(home, { recursive: true, force: true });
+  removeHome(home);
 })();
 
 // ---------------------------------------------------------------------
