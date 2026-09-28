@@ -66,12 +66,19 @@ the log message that set it.
 
 `counts` is false for a Done pressed before any `READY TO CLOSE` claim.
 
-## How Desk works them out (from the log)
+## How Desk works them out
+
+All four are PERSISTED in `state.json` (above), which Desk rewrites whenever one changes and which is committed with Desk's folder. The log is what they are worked out from:
 
 - **Design mode** — on while Andy's newest `start design mode.` is newer
   than his newest `end design mode.`.
 - **Done** — Andy's latest `done.` / `reopen.` under an item. A `done.`
-  counts only after an agent's note under that item opened with
-  `READY TO CLOSE` (or `<id> is READY TO CLOSE`).
+  counts only after BOTH agents have each posted a note under that item
+  opening with `READY TO CLOSE` (or `<id> is READY TO CLOSE`).
+- **Closed** — Andy's `closed.` under a done line: gone from the List and
+  the Team bubble for good.
+- **Verified** — a note opening `VERIFIED` (or `IN PLACE VERIFIED`) under
+  an item; `UNVERIFIED` or `IN PLACE WITHDRAWN` takes it back. No Go shows
+  on an item until it is verified.
 - **Open question** — an agent's `ask`, until Andy's next `answer` there.
 - **Name** — Andy's latest `retitle:` for the item.
