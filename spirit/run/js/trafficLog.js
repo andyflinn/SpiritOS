@@ -295,8 +295,14 @@ function migrate(rootDir) {
   } catch (e) {
     return false;
   }
+  // THE FIRST FREE NAME, never over an earlier one: if node.db ever failed
+  // after the move and the log fell back to a new traffic.jsonl, that file
+  // is imported later as .imported-2, and the original bytes stay where
+  // they are (wsl-claude).
+  var retired = file + '.imported';
+  for (var n = 2; fs.existsSync(retired); n += 1) retired = file + '.imported-' + n;
   try {
-    fs.renameSync(file, file + '.imported');
+    fs.renameSync(file, retired);
   } catch (e) {
     try { store.transaction(function () { store.traffic.removeAbove(before); }); } catch (e2) { /* the file still answers first */ }
     return false;
