@@ -8,6 +8,7 @@ Desk keeps everything in its own folder, `spirit/run/app/desk/`. Andy,
 | file | what |
 |---|---|
 | `log.json`, `log-1.json`, `log-2.json`, … | The log: every message in and out, in order. A JSON array per file. Only the last file is rewritten; a file is sealed at about 9 KB (`DESK_CHUNK_BYTES`), because a save is one request. |
+| `state.json` | What Desk has decided, rewritten by Desk whenever it changes (below). No agent edits it. |
 | `seen.json` | `{ "rows": { "<item id>": <ms timestamp> } }`: when Andy last opened each item, for the red `*` marks. |
 | `voice.jsonl`, `voice-2.jsonl`, … | Andy's own typed lines, `{text, day}`, one per line. He moves them to his vault by hand. |
 | `desk.js`, `desk.json` | The app and its manifest. |
@@ -49,7 +50,22 @@ Desk keeps everything in its own folder, `spirit/run/app/desk/`. Andy,
 - The newest session is the board. It is hidden once Andy presses
   **Start design mode** after it was posted.
 
-## State Desk derives (never stored)
+## `state.json`
+
+Andy: *"persist … 1) design mode 2) Andy's latest "done"! 3) Open question.
+4) andy's personal titles for items."* Every entry carries `at` and `key`,
+the log message that set it.
+
+```
+{ designMode:    { on, started, ended },
+  done:          { "<id>": { pressed: "done."|"reopen.", at, key, counts, claimed } },
+  openQuestions: { "<id>": { from, text, at, key } },
+  titles:        { "<id>": { title, at, key } } }
+```
+
+`counts` is false for a Done pressed before any `READY TO CLOSE` claim.
+
+## How Desk works them out (from the log)
 
 - **Design mode** — on while Andy's newest `start design mode.` is newer
   than his newest `end design mode.`.

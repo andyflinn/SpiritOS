@@ -49,6 +49,7 @@ var deskSession = null;     // the board's session: the newest `session` packet'
 var deskSessionPosted = null, deskSessionAt = 0;
 var deskDone = {};           // item id -> true/false, from Andy's own "done." / "reopen."
 var deskReady = {};          // item id -> true once an agent said READY TO CLOSE under it
+var deskFrom = { done: {}, title: {}, pressed: {} };  // item id -> { at, key } of Andy's answer that set it
 var DESK_READY_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:[\w.\/-]+\s+is\s+)?READY TO CLOSE\b/;  // the newest `session` packet as it arrived, and when
 var deskMessages = [];      // decoded agents messages, in log order
 var deskByHash = Object.create(null);
@@ -235,7 +236,51 @@ function deskRecord(msgs) {
   fresh.forEach(deskFold);
   deskVoice(fresh);
   deskDraw();
+  deskSaveState();
   return deskSave();
+}
+
+// ── WHAT DESK HAS DECIDED, KEPT AS A FILE ───────────────────────────
+//
+//   Andy, 2026-09-28: "change the desk app, to persist following items:
+//   1) design mode 2) Andy's latest "done"! 3) Open question. 4) andy's
+//   personal titles for items."
+//
+// state.json, in Desk's own folder and so in git: the four things, each
+// with the time and the log key of the message that set it, so any entry
+// can be traced to his own press. Written by Desk only, whenever it
+// changes; no agent edits it. The log stays the record it is drawn from.
+var DESK_STATE = 'state.json';
+var deskStateText = '';
+function deskStateJson() {
+  var d = deskDesignMarks();
+  var done = {}, title = {}, open = {};
+  // His latest Done or Reopen per item, and whether it counts: a Done
+  // counts only after an agent's READY TO CLOSE claim under that item.
+  Object.keys(deskFrom.pressed).forEach(function (id) {
+    var f = deskFrom.pressed[id];
+    done[id] = { pressed: f.text, at: f.at || '', key: f.key || '', counts: deskDone[id] === true, claimed: !!deskReady[id] };
+  });
+  Object.keys(deskLabel).forEach(function (id) {
+    var f = deskFrom.title[id] || {};
+    title[id] = { title: deskLabel[id], at: f.at || '', key: f.key || '' };
+  });
+  Object.keys(deskOpenAsk).forEach(function (id) {
+    var m = deskOpenAsk[id];
+    open[id] = { from: m.from || '', text: m.text || '', at: m.at || '', key: m.key || '' };
+  });
+  return JSON.stringify({
+    designMode: { on: d.started > d.ended,
+      started: d.started ? new Date(d.started).toISOString() : '',
+      ended: d.ended ? new Date(d.ended).toISOString() : '' },
+    done: done, openQuestions: open, titles: title,
+  }, null, 2) + '\n';
+}
+function deskSaveState() {
+  var text = deskStateJson();
+  if (text === deskStateText || deskReadOnly) return;
+  deskStateText = text;
+  try { deskApi.fs.saveFile(DESK_STATE, text); } catch (e) { /* the log still holds it all */ }
 }
 
 // Folds one message in by its key; one already held is not taken twice.
@@ -249,6 +294,7 @@ function deskFold(msg) {
   }
   if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && /^retitle:\s*/.test(msg.text)) {
     deskLabel[msg.todo] = msg.text.replace(/^retitle:\s*/, '');
+    deskFrom.title[msg.todo] = { at: msg.at, key: msg.key };
   }
   if (msg.todo && !msg.reported && msg.dir === 'in' && msg.kind === 'ask' && msg.peer) deskOpenAsk[msg.todo] = msg;
   if (msg.todo && msg.dir === 'out' && msg.kind === 'answer') delete deskOpenAsk[msg.todo];
@@ -266,9 +312,17 @@ function deskFold(msg) {
   // "<id> is READY TO CLOSE", after an optional "<agent>:" or "<agent>,").
   // An explanation that merely names the phrase mid-sentence is not one.
   if (msg.dir === 'in' && msg.todo && DESK_READY_CLAIM.test(String(msg.text || ''))) deskReady[msg.todo] = true;
-  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && msg.text === 'reopen.') deskDone[msg.todo] = false;
+  // His latest press is kept whether or not it counts yet.
+  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && (msg.text === 'done.' || msg.text === 'reopen.')) {
+    deskFrom.pressed[msg.todo] = { text: msg.text, at: msg.at, key: msg.key };
+  }
+  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && msg.text === 'reopen.') {
+    deskDone[msg.todo] = false;
+    deskFrom.done[msg.todo] = { at: msg.at, key: msg.key };
+  }
   if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && msg.text === 'done.' && deskReady[msg.todo]) {
     deskDone[msg.todo] = true;
+    deskFrom.done[msg.todo] = { at: msg.at, key: msg.key };
   }
   if (msg.kind === 'session' && msg.dir === 'in') {
     try {
@@ -932,6 +986,7 @@ spirit.shell.activateApp({
     deskLoadLog();
     deskLoadSeen();
     deskDraw();
+    deskSaveState();
     deskApi.onPacket('agents', function (body, message) { deskRecord([deskArrival(body, message)]); });
   },
 });
