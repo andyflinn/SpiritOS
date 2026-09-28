@@ -441,6 +441,10 @@ function deskSessionRows() {
       // ONE ITEM MAY BLOCK SEVERAL (RUN blocks both grantFace and ACT):
       // `blocks` is a string or a list, and always a list here.
       description: String(it.description || ''), refs: it.refs || [],
+      // HOW HE CAN CHECK IT, AND WHAT PROVES IT. Andy: "there should be a
+      // highlighted section on if and how i can check. same as wsl test
+      // requirements should be enumarated under requirements".
+      check: String(it.check || ''), tests: Array.isArray(it.tests) ? it.tests.map(String) : [],
       blocks: (Array.isArray(it.blocks) ? it.blocks : [it.blocks || goalId]).map(String) };
   });
   var waiting = function (id) {
@@ -448,7 +452,8 @@ function deskSessionRows() {
   };
   items.forEach(function (it) { it.waitsOn = waiting(it.id); });
   return items.concat([{ id: goalId, title: String(deskSession.goal.title), goal: true,
-    description: String(deskSession.goal.description || ''), done: deskIsDone(goalId, deskSession.goal.done), waitsOn: waiting(goalId) }]);
+    description: String(deskSession.goal.description || ''), done: deskIsDone(goalId, deskSession.goal.done), waitsOn: waiting(goalId),
+    check: String(deskSession.goal.check || ''), tests: Array.isArray(deskSession.goal.tests) ? deskSession.goal.tests.map(String) : [] }]);
 }
 function deskIsDone(id, posted) {
   return Object.prototype.hasOwnProperty.call(deskDone, id) ? deskDone[id] : !!posted;

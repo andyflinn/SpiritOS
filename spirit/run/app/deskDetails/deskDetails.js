@@ -289,6 +289,15 @@ function ddItemHtml() {
   return '<div class="stat-tile wide"><div class="label">' + ddEsc(me.id) + ' — ' + ddEsc(me.title) + '</div>' +
     '<div style="margin:6px 0">' + close + '</div>' +
     (me.description ? '<div>' + ddEsc(me.description) + '</div>' : '') +
+    // HOW YOU CAN CHECK, HIGHLIGHTED, AND THE TESTS THAT PROVE IT. Andy:
+    // "there should be a highlighted section on if and how i can check. same
+    // as wsl test requirements should be enumarated under requirements".
+    '<div style="margin-top:8px;padding:6px 10px;background:#fff3c4;color:#000;border-radius:6px">' +
+      '<b>How you can check:</b> ' + (me.check ? ddEsc(me.check) : 'not stated yet; the agents owe you this line.') + '</div>' +
+    '<div class="label" style="margin-top:8px">Proved by these tests</div>' +
+    (me.tests && me.tests.length
+      ? '<ul style="margin:6px 0 0 18px">' + me.tests.map(function (t) { return '<li>' + ddEsc(t) + '</li>'; }).join('') + '</ul>'
+      : '<div class="job-manifest-note">None named yet.</div>') +
     '<div class="label" style="margin-top:8px">Blocked by</div>' +
     (blockedBy ? '<ul style="margin:6px 0 0 18px">' + blockedBy + '</ul>'
       : '<div class="job-manifest-note">Nothing required for this yet. Say what it needs below; the lead adds it once we agree.</div>') +
