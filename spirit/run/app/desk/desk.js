@@ -48,7 +48,8 @@ var deskBoard = null;       // the newest `board` packet's JSON
 var deskSession = null;     // the board's session: the newest `session` packet's JSON, unless a new design cleared it
 var deskSessionPosted = null, deskSessionAt = 0;
 var deskDone = {};           // item id -> true/false, from Andy's own "done." / "reopen."
-var deskReady = {};          // item id -> true once an agent said READY TO CLOSE under it  // the newest `session` packet as it arrived, and when
+var deskReady = {};          // item id -> true once an agent said READY TO CLOSE under it
+var DESK_READY_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:[\w.\/-]+\s+is\s+)?READY TO CLOSE\b/;  // the newest `session` packet as it arrived, and when
 var deskMessages = [];      // decoded agents messages, in log order
 var deskByHash = Object.create(null);
 var deskError = '';
@@ -261,7 +262,10 @@ function deskFold(msg) {
   // AND ONLY AFTER A CLAIM. Andy: "when you claim completeness, that's when
   // i want to see the close button, not before." A "done." counts only if an
   // agent had said READY TO CLOSE under that item first.
-  if (msg.dir === 'in' && msg.todo && /\bready to close\b/i.test(String(msg.text || ''))) deskReady[msg.todo] = true;
+  // A CLAIM, not a mention: the note must open with it ("READY TO CLOSE", or
+  // "<id> is READY TO CLOSE", after an optional "<agent>:" or "<agent>,").
+  // An explanation that merely names the phrase mid-sentence is not one.
+  if (msg.dir === 'in' && msg.todo && DESK_READY_CLAIM.test(String(msg.text || ''))) deskReady[msg.todo] = true;
   if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && msg.text === 'reopen.') deskDone[msg.todo] = false;
   if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && msg.text === 'done.' && deskReady[msg.todo]) {
     deskDone[msg.todo] = true;

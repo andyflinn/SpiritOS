@@ -101,7 +101,8 @@ function ddRead(list) {
     if (m.reported) return;
     if (m.kind === 'note' && /^taking(\s|$)/.test(m.text)) return;
     // An agent saying the item can be closed, with its evidence.
-    if (!andy && /\bready to close\b/i.test(m.text)) st.ready = true;
+    // A claim opens the note; a mention mid-sentence is not one (desk.js, DESK_READY_CLAIM).
+    if (!andy && /^(?:[\w.-]+[,:]\s*)?(?:[\w.\/-]+\s+is\s+)?READY TO CLOSE\b/.test(String(m.text || ''))) st.ready = true;
     if (m.kind === 'board' || m.kind === 'report') return;
     // ONE LINE PER THING ANDY SAID. Andy: "I still get multibple echoes of
     // what appears in there". What he sends goes once per agent, so the
