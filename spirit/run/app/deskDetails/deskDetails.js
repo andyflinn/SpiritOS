@@ -228,10 +228,13 @@ function ddFrame() {
       '<b>Design mode.</b> Nothing is built until it ends, and it ends only in the Team tab of Desk.</div>' +
     '<div id="dd-item"></div>' +
     '<div class="stat-tile wide"><div class="label" id="dd-title"></div><div id="dd-blurb"></div></div>' +
-    '<div class="stat-tile wide" id="dd-facts"></div>' +
+    // THE NAME SITS UNDER THE TITLE IT CHANGES, far from Say. Andy: "can you
+    // move "Your name for it" just below the title, that way i won keep
+    // typing into the wrong field".
     '<div class="start-job-form card"><label class="field-label grow">Your name for it' +
       '<input type="text" id="dd-name" placeholder="in your own words"></label>' +
       '<button type="button" id="dd-name-save">Save</button></div>' +
+    '<div class="stat-tile wide" id="dd-facts"></div>' +
     '<div id="dd-decide"></div>' +
     '<div id="dd-slots"></div>' +
     '<div class="start-job-form card"><label class="field-label grow">Say' +
