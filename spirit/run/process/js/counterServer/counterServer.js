@@ -11,7 +11,7 @@
 // The counter lives in this process's memory and nowhere else, so it starts
 // at 1 whenever the server really starts again: that is what makes it a
 // probe for the process subsystem (processes/G1). It reads and writes no
-// file and requires nothing but Node's own http.
+// file and requires nothing but Node's own http; its log is stdout.
 //
 // Started as the launch dialog starts a process: its arguments arrive as one
 // JSON string, `node counterServer.js '{"port":P}'`.
@@ -65,6 +65,10 @@ http.createServer(function (req, res) {
     return;
   }
   count += 1;
+  // ITS LOG (processes/G1.4): one stdout line per page served. jobs.js
+  // already turns each stdout line into a job log entry, so it reaches the
+  // Jobs console with no new interface.
+  console.log('GET / -> ' + count);
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
   res.end(page(count));
 }).listen(port, '127.0.0.1');

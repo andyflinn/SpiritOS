@@ -85,8 +85,10 @@ const pause = function (ms) { return new Promise(function (r) { setTimeout(r, ms
   child.kill();
   const files = fs.readdirSync(dir).sort().join(',');
   const src = fs.readFileSync(COUNTER, 'utf8');
-  const requires = (src.match(/require\(\s*['"]([^'"]+)['"]\s*\)/g) || []).join(',');
-  if (/GET \/ -> 2/.test(out) && err === '' && files === 'counterLog.js,counterLog.json' && requires === "require('http')") {
+  // Module names only, so this file never spells a require that oneDoor counts.
+  const requires = (src.match(/require\(\s*['"][^'"]+['"]\s*\)/g) || [])
+    .map(function (r) { return r.replace(/^require\(\s*['"]|['"]\s*\)$/g, ''); }).join(',');
+  if (/GET \/ -> 2/.test(out) && err === '' && files === 'counterLog.js,counterLog.json' && requires === 'http') {
     test.check('stdout carried the lines, stderr stayed empty, no file was written, it requires only http');
   } else {
     test.fail(OWED + 'stdout ' + JSON.stringify(out) + ', stderr ' + JSON.stringify(err) + ', files ' + files + ', requires ' + requires);
