@@ -58,7 +58,8 @@ var DESK_READY_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:[\w.\/-]+\s+is\s+)?READY TO CLOSE
 // posted by the agent who did not write the list and naming the commit
 // (wsl-claude's shape, the same as READY TO CLOSE).
 var DESK_VERIFIED_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:IN PLACE )?VERIFIED\b/;
-var deskVerified = {};       // item id -> true once its Already-in-place list was verified  // the newest `session` packet as it arrived, and when
+var deskVerified = {};       // item id -> true once its Already-in-place list was verified
+var DESK_UNVERIFIED_CLAIM = /^(?:[\w.-]+[,:]\s*)?UNVERIFIED\b/;  // the newest `session` packet as it arrived, and when
 var deskMessages = [];      // decoded agents messages, in log order
 var deskByHash = Object.create(null);
 var deskError = '';
@@ -321,6 +322,10 @@ function deskFold(msg) {
   // An explanation that merely names the phrase mid-sentence is not one.
   if (msg.dir === 'in' && msg.todo && DESK_READY_CLAIM.test(String(msg.text || ''))) deskReady[msg.todo] = true;
   if (msg.dir === 'in' && msg.todo && DESK_VERIFIED_CLAIM.test(String(msg.text || ''))) deskVerified[msg.todo] = true;
+  // A VERIFICATION CAN BE WITHDRAWN, and the Go goes with it: a note opening
+  // with UNVERIFIED. Found when Andy spotted that G1.3's list claimed a Cancel
+  // button the Jobs app does not have, after it had been verified.
+  if (msg.dir === 'in' && msg.todo && DESK_UNVERIFIED_CLAIM.test(String(msg.text || ''))) deskVerified[msg.todo] = false;
   // A line he closed away stays away (his "closed." under it).
   if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && msg.text === 'closed.') deskClosed[msg.todo] = true;
   // His latest press is kept whether or not it counts yet.
