@@ -327,6 +327,10 @@ function deskFold(msg) {
     deskDone[msg.todo] = true;
     deskFrom.done[msg.todo] = { at: msg.at, key: msg.key };
   }
+  // THE LEAD IS WHOEVER POSTS THE SESSION. It was learned only from the old
+  // board's packets, which stopped with the old tracking (2026-09-28), and the
+  // Lead chat then had nobody to talk to. The session comes from the lead too.
+  if (msg.kind === 'session' && msg.dir === 'in' && msg.peer && msg.from) deskLead = { name: msg.from, key: msg.peer };
   if (msg.kind === 'session' && msg.dir === 'in') {
     try {
       var sess = JSON.parse(msg.text);
@@ -595,32 +599,13 @@ function deskSessionBubble() {
 }
 
 function deskTable() {
-  if (deskSession && !deskGoalDone()) return deskSessionTable();
-  if (!deskBoard) {
-    return '<div class="job-manifest-note">No board has reached this node yet. The lead ' +
-      'posts one whenever its test run changes it.</div>';
-  }
-  var head = '<tr><th></th><th>#</th><th>to-do</th><th>with</th><th>your decision</th><th>frees</th><th>waits on</th><th>there</th><th>owed since</th></tr>';
-  var body = deskBoard.rows.map(function (row) {
-    var waits = (row.waitsOn || []).map(function (w) { return typeof w === 'string' ? w : (w.id || ''); }).join(', ');
-    return '<tr data-id="' + deskEsc(row.id) + '" style="cursor:pointer">' +
-      '<td>' + (deskRowNews(row.id) ? DESK_UNSEEN : '') + '</td>' +
-      '<td>' + deskEsc(row.rank) + '</td>' +
-      '<td title="' + deskEsc(row.title) + '">' + deskEsc(deskLabel[row.id] || row.title) +
-        ' <span class="job-manifest-note">(' + deskEsc(row.handle) + ')</span></td>' +
-      '<td>' + deskEsc(deskTaken[row.id] || '') + '</td>' +
-      '<td>' + (deskOpenAsk[row.id]
-        ? '<button type="button" data-go="' + deskEsc(row.id) + '" title="' + deskEsc(deskOpenAsk[row.id].text) + '">Go!</button>'
-        : deskEsc(deskDecision[row.id] || '')) + '</td>' +
-      '<td>' + deskEsc(row.frees == null ? '' : row.frees) + '</td>' +
-      '<td>' + deskEsc(waits) + '</td>' +
-      '<td>' + deskEsc(row.there == null ? '' : row.there + '%') + '</td>' +
-      '<td>' + deskEsc(row.owedSince || '') + '</td>' +
-    '</tr>';
-  }).join('');
-  var stale = deskBoard.stale ? ' — measured at ' + deskEsc(deskBoard.commit) + ', behind ' + deskEsc(deskBoard.head) : '';
-  return '<div class="job-manifest-note">Board from ' + deskEsc(deskBoard.box) + stale + '</div>' +
-    '<table class="jobs-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
+  // THE SESSION, DONE OR NOT; NEVER THE OLD BOARD. Andy: "this IS the
+  // official project governance. NOW." and the old tracking is forbidden;
+  // then, when a finished goal brought its rows back: "why are all the lines
+  // back again. i made most of them disappear with close". A done goal stays
+  // on its own board, closable like any line.
+  if (deskSession) return deskSessionTable();
+  return '<div class="job-manifest-note">No design session is open. Press Start design mode in the Team tab to begin one.</div>';
 }
 
 function deskRowOf(id) {

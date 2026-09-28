@@ -121,7 +121,10 @@ function logged(files) {
   try { return JSON.parse(files['log.json']); } catch (e) { return null; }
 }
 
-const BOARD = JSON.stringify({ box: 'wsl', rows: [{ id: 'puppets/G2', handle: 'G2', title: 'Search', rank: 1 }] });
+// A DESIGN SESSION, NOT THE OLD BOARD: Desk's List shows only a session since
+// the old tracking was retired (Andy, 2026-09-28: "this IS the official
+// project governance. NOW."). One item, puppets/G2, as the board had.
+const BOARD = JSON.stringify({ goal: { id: 'puppets/G', title: 'Puppets' }, items: [{ id: 'puppets/G2', title: 'Search' }] });
 
 test.startTest('Desk — its own log, and nothing asked of the node');
 
@@ -141,7 +144,7 @@ function arrivalsAndSendsAreLogged() {
   test.subHeading('An arrival and a sent line land in log.json, and a remount reads them back');
   const files = {};
   const desk = mountDesk({ files: files });
-  desk.arrive({ from: 'claude-windows', kind: 'board', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
+  desk.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
   return settle().then(function () {
     const rows = logged(files) || [];
     if (rows.length === 1 && rows[0].key === 'h-in-1' && rows[0].dir === 'in' && rows[0].peer === LEAD) {
@@ -173,7 +176,7 @@ function arrivalsAndSendsAreLogged() {
       test.fail('remount drew chat ' + chat.slice(0, 120) + ' / top ' + top.slice(0, 120));
     }
     // The same arrival twice (a replay) is one row.
-    again.arrive({ from: 'claude-windows', kind: 'board', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
+    again.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
     return settle();
   }).then(function () {
     const rows = logged(files) || [];
@@ -185,7 +188,7 @@ function arrivalsAndSendsAreLogged() {
 function failedSendsStayApart() {
   test.subHeading('Two sends that never crossed are two rows');
   const files = { 'log.json': JSON.stringify([{ key: 'h-in-1', at: '2026-09-27T05:00:00Z', dir: 'in', peer: LEAD,
-    outcome: 'received', from: 'claude-windows', kind: 'board', text: BOARD, todo: '' }]) };
+    outcome: 'received', from: 'claude-windows', kind: 'session', text: BOARD, todo: '' }]) };
   const desk = mountDesk({ files: files, refuse: true });
   const box = desk.doc.getElementById('desk-say');
   box.value = 'one';
@@ -226,12 +229,12 @@ function dialogSendsComeBack() {
   // time from the thread. Fixed 2026-09-27 stamps made this a time bomb: it
   // went red on its own a day later, with no code changed.
   const justNow = function (minutesAgo) { return new Date(Date.now() - minutesAgo * 60000).toISOString(); };
-  desk.arrive({ from: 'claude-windows', kind: 'board', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: justNow(3) });
+  desk.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: justNow(3) });
   desk.arrive({ from: 'wsl-claude', kind: 'explain', text: 'what G2 is', todo: 'puppets/G2' },
     { hash: 'h-in-2', fromKey: WSL, sentAt: justNow(1) });
   return settle().then(function () {
     // The table's row click, as desk.js binds it.
-    const params = { id: 'puppets/G2', row: JSON.parse(BOARD).rows[0],
+    const params = { id: 'puppets/G2', row: { id: 'puppets/G2', title: 'Search' },
       thread: (logged(files) || []).filter(function (r) { return r.todo === 'puppets/G2'; }),
       agents: { 'wsl-claude': { key: WSL, at: Date.now() } } };
 
@@ -297,7 +300,7 @@ function voiceHoldsWhatHeTyped() {
   test.subHeading('voice.jsonl in Desk\'s folder holds what he typed, and nothing else');
   const files = {};
   const desk = mountDesk({ files: files });
-  desk.arrive({ from: 'claude-windows', kind: 'board', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
+  desk.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
   desk.arrive({ from: 'claude-windows', kind: 'ask', text: 'go?', todo: 'puppets/G2' }, { hash: 'h-in-3', fromKey: LEAD, sentAt: '2026-09-27T05:03:00Z' });
   return settle().then(function () {
     desk.doc.getElementById('desk-say').value = 'typed by andy';
@@ -354,8 +357,8 @@ function twoTabsKeepBoth() {
   const files = {};
   const a = mountDesk({ files: files });
   const b = mountDesk({ files: files });
-  a.arrive({ from: 'claude-windows', kind: 'board', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
-  b.arrive({ from: 'claude-windows', kind: 'board', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
+  a.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
+  b.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
   return settle().then(function () {
     a.doc.getElementById('desk-say').value = 'from tab a';
     a.doc.getElementById('desk-say-send').fire('click');
@@ -376,7 +379,7 @@ function teamGoesToEveryAgent() {
   const files = {};
   const desk = mountDesk({ files: files });
   const now = new Date().toISOString();
-  desk.arrive({ from: 'claude-windows', kind: 'board', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: now });
+  desk.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: now });
   desk.arrive({ from: 'wsl-claude', kind: 'note', text: 'hello', todo: 'puppets/G2' }, { hash: 'h-in-2', fromKey: WSL, sentAt: now });
   return settle().then(function () {
     desk.doc.getElementById('desk-team-say').value = 'design talk';
@@ -411,7 +414,7 @@ function unseenIsMarked() {
   // "or use the red "*" do indicate "unseen changes have occured"".
   const files = {};
   const first = mountDesk({ files: files });
-  first.arrive({ from: 'claude-windows', kind: 'board', text: BOARD }, { hash: 'u-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
+  first.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'u-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
   first.arrive({ from: 'wsl-claude', kind: 'note', text: 'old news', todo: 'puppets/G2' }, { hash: 'u-2', fromKey: WSL, sentAt: '2026-09-27T05:01:00Z' });
   return settle().then(function () {
     // A Desk opening with a log but no seen.json (the first run of this
