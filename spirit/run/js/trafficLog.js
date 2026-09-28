@@ -304,12 +304,44 @@ function createTrafficLog(opts) {
   function highestWritten() {
     var high = 0;
     try {
-      readAll(rootDir).forEach(function (row) {
+      readFile(rootDir).forEach(function (row) {
         var t = row && row.at ? Date.parse(row.at) : 0;
         if (t > high) high = t;
       });
+      // The table's newest row carries its highest stamp (transport/R19.4):
+      // one indexed look, not a read of every row.
+      var tb = table(rootDir, false);
+      var last = tb ? Date.parse(tb.lastAt()) : 0;
+      if (last > high) high = last;
     } catch (e) { /* unreadable: the clock is as good a start as any */ }
     return high;
+  }
+
+  // ── THE READERS ASK THE TABLE THROUGH ITS INDEXES (transport/R19.4) ──
+  //
+  // Each reader that wants a few rows asks node.db for exactly those, by
+  // the partial index made for it, instead of reading every row and
+  // filtering. The file's rows are still merged in, because until the
+  // migration (transport/R19.5) a live node's history is partly there.
+  // The answers are the same as filtering read(): its suite checks both.
+  function sinceIso(ms) { return ms ? new Date(ms).toISOString() : ''; }
+  function byTime(a, b) { return Date.parse(a.at) - Date.parse(b.at); }
+  // Folds `takenAt` onto rows from their marks, as historyOf does.
+  function foldTaken(rows, marks) {
+    return rows.map(function (row) {
+      if (!marks[row.hash]) return row;
+      var out = {};
+      Object.keys(row).forEach(function (k) { out[k] = row[k]; });
+      out.takenAt = marks[row.hash];
+      return out;
+    });
+  }
+  // Every row, file and table, that carries this hash: marks included.
+  function rowsFor(hash, fileRows) {
+    var tb = table(rootDir, false);
+    var fromTable = [];
+    if (tb) { try { fromTable = tb.byHash(hash); } catch (e) { fromTable = []; } }
+    return fileRows.filter(function (r) { return r && r.hash === hash; }).concat(fromTable);
   }
 
   function stamp() {
@@ -485,14 +517,31 @@ function createTrafficLog(opts) {
     var o = opts || {};
     var since = typeof o.since === 'string' ? Date.parse(o.since) : 0;
     var limit = Number(o.limit) > 0 ? Math.min(Number(o.limit), 500) : 200;
-    var rows = historyOf(rootDir).filter(function (row) {
-      if (!row || row.dir !== 'in' || !row.admitted) return false;
+    var fileRows = readFile(rootDir);
+    var marks = takenSet(fileRows);
+    var rows = fileRows.filter(function (row) {
+      if (!row || row.mark || row.dir !== 'in' || !row.admitted) return false;
       if (!since) return true;
       var at = Date.parse(row.at);
       return at > 0 && at > since;
     });
-    rows.sort(function (a, b) { return Date.parse(a.at) - Date.parse(b.at); });
-    return rows.slice(0, limit);
+    var tb = table(rootDir, false);
+    if (tb) {
+      try { rows = rows.concat(tb.arrivals(sinceIso(since), limit)); } catch (e) { /* the file's rows still stand */ }
+    }
+    rows.sort(byTime);
+    rows = rows.slice(0, limit);
+    // Their marks, which since the table may sit there even for a file row:
+    // one look by the hash index per row handed back.
+    if (tb) {
+      rows.forEach(function (row) {
+        if (!row.hash || marks[row.hash]) return;
+        try {
+          tb.byHash(row.hash).forEach(function (m) { if (m.mark === 'taken') marks[row.hash] = m.at || true; });
+        } catch (e) { /* unmarked, then */ }
+      });
+    }
+    return foldTaken(rows, marks);
   }
 
   // WHAT THIS NODE'S OWN RELAYS DID ABOUT THEIR MEMBERSHIP, oldest first.
@@ -516,13 +565,17 @@ function createTrafficLog(opts) {
     var o = opts || {};
     var since = typeof o.since === 'string' ? Date.parse(o.since) : 0;
     var limit = Number(o.limit) > 0 ? Math.min(Number(o.limit), 500) : 200;
-    var rows = historyOf(rootDir).filter(function (row) {
-      if (!row || row.kind !== 'owner') return false;
+    var rows = readFile(rootDir).filter(function (row) {
+      if (!row || row.mark || row.kind !== 'owner') return false;
       if (!since) return true;
       var at = Date.parse(row.at);
       return at > 0 && at > since;
     });
-    rows.sort(function (a, b) { return Date.parse(a.at) - Date.parse(b.at); });
+    var tb = table(rootDir, false);
+    if (tb) {
+      try { rows = rows.concat(tb.owner(sinceIso(since), limit)); } catch (e) { /* the file's rows still stand */ }
+    }
+    rows.sort(byTime);
     return rows.slice(0, limit);
   }
 
@@ -532,10 +585,10 @@ function createTrafficLog(opts) {
   function byHash(hash) {
     var want = String(hash || '');
     if (!want) return null;
-    var rows = historyOf(rootDir).filter(function (row) {
-      return row && row.hash === want;
-    });
-    return rows.length ? rows[rows.length - 1] : null;
+    var all = rowsFor(want, readFile(rootDir));
+    var marks = takenSet(all);
+    var rows = all.filter(function (row) { return row && !row.mark; });
+    return rows.length ? foldTaken([rows[rows.length - 1]], marks)[0] : null;
   }
 
   // MARKED WHEN A LIVE PAGE WAS ACTUALLY HANDED IT. Andy's rule from this
@@ -562,7 +615,11 @@ function createTrafficLog(opts) {
     var at = stamp();
     var marked = 0;
     try {
-      var rows = readAll(rootDir);
+      // Only the rows carrying the wanted hashes, by the hash index
+      // (transport/R19.4), not every row the node ever logged.
+      var fileRows = readFile(rootDir);
+      var rows = [];
+      Object.keys(want).forEach(function (h) { rows = rows.concat(rowsFor(h, fileRows)); });
       var already = takenSet(rows);
       var eligible = Object.create(null);
       rows.forEach(function (row) {

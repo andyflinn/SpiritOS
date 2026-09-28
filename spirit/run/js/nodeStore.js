@@ -433,6 +433,19 @@ function open(rootDir, opts) {
     );
   `);
 
+  // ── ITS INDEXES (transport/R19.4) ─────────────────────────────────────
+  //
+  //   Decided with the keys (Andy: "i agree to the keys as well"): one per
+  //   reader that asks for a few rows, each PARTIAL so it holds only the rows
+  //   that reader can want. read() returns everything, so nothing helps it.
+  //   A partial index is used only by a query that repeats its WHERE, which
+  //   is why the statements below spell those conditions out again.
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS traffic_hash ON traffic (hash) WHERE hash <> '';
+    CREATE INDEX IF NOT EXISTS traffic_owner_at ON traffic (at) WHERE kind = 'owner';
+    CREATE INDEX IF NOT EXISTS traffic_arrivals_at ON traffic (at) WHERE dir = 'in' AND admitted = 1;
+  `);
+
   // ── THE MIGRATION FROM THE MORNING'S SHAPE ───────────────────
   //
   // `node.db` shipped a few hours before this with `at` and `url` on the
@@ -679,9 +692,31 @@ function open(rootDir, opts) {
       ', extra) VALUES (' + TRAFFIC_COLUMNS.map(function () { return '?'; }).join(', ') + ', ?)'),
     all: db.prepare('SELECT * FROM traffic ORDER BY seq'),
     count: db.prepare('SELECT COUNT(*) AS n FROM traffic'),
+    byHash: db.prepare("SELECT * FROM traffic WHERE hash = ? AND hash <> '' ORDER BY seq"),
+    owner: db.prepare("SELECT * FROM traffic WHERE kind = 'owner' AND at > ? ORDER BY at LIMIT ?"),
+    arrivals: db.prepare("SELECT * FROM traffic WHERE dir = 'in' AND admitted = 1 AND at > ? ORDER BY at LIMIT ?"),
+    // The newest row is the one with the highest seq, and its `at` is the
+    // highest written, because trafficLog stamps them in order.
+    lastAt: db.prepare('SELECT at FROM traffic ORDER BY seq DESC LIMIT 1'),
     bytes: db.prepare(`SELECT COALESCE(SUM(pgsize), 0) AS n FROM dbstat
       WHERE name IN (SELECT name FROM sqlite_schema WHERE tbl_name = 'traffic')`),
   };
+
+  // A table row back into the object trafficLog.js wrote.
+  function trafficRow(r) {
+    const out = {};
+    TRAFFIC_COLUMNS.forEach(function (c) {
+      if (r[c] === null || r[c] === undefined) return;
+      out[c] = TRAFFIC_TYPES[c] === 'bool' ? r[c] === 1 : TRAFFIC_TYPES[c] === 'int' ? Number(r[c]) : r[c];
+    });
+    if (r.extra) {
+      try {
+        const x = JSON.parse(r.extra);
+        Object.keys(x).forEach(function (k) { out[k] = x[k]; });
+      } catch (e) { /* a damaged extra costs itself only */ }
+    }
+    return out;
+  }
 
   const store = {
     path: dbPath(rootDir),
@@ -702,22 +737,12 @@ function open(rootDir, opts) {
         vals.push(Object.keys(extra).length ? JSON.stringify(extra) : null);
         return Number(tq.add.run.apply(tq.add, vals).lastInsertRowid);
       },
-      all: function () {
-        return tq.all.all().map(function (r) {
-          const out = {};
-          TRAFFIC_COLUMNS.forEach(function (c) {
-            if (r[c] === null || r[c] === undefined) return;
-            out[c] = TRAFFIC_TYPES[c] === 'bool' ? r[c] === 1 : TRAFFIC_TYPES[c] === 'int' ? Number(r[c]) : r[c];
-          });
-          if (r.extra) {
-            try {
-              const x = JSON.parse(r.extra);
-              Object.keys(x).forEach(function (k) { out[k] = x[k]; });
-            } catch (e) { /* a damaged extra costs itself only */ }
-          }
-          return out;
-        });
-      },
+      all: function () { return tq.all.all().map(trafficRow); },
+      // The indexed reads (transport/R19.4). `since` is an ISO time, '' for all.
+      byHash: function (hash) { return tq.byHash.all(String(hash || '')).map(trafficRow); },
+      owner: function (since, limit) { return tq.owner.all(String(since || ''), Number(limit) || 200).map(trafficRow); },
+      arrivals: function (since, limit) { return tq.arrivals.all(String(since || ''), Number(limit) || 200).map(trafficRow); },
+      lastAt: function () { const r = tq.lastAt.get(); return r ? r.at : ''; },
       count: function () { return tq.count.get().n; },
       bytes: function () { return tq.bytes.get().n; },
     },
