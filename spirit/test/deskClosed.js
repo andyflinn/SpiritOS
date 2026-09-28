@@ -84,6 +84,7 @@ function mount(files) {
   });
   return {
     top: function () { return doc.getElementById('desk-top').innerHTML; },
+    page: function () { return ['desk-top', 'desk-session', 'desk-goal'].map(function (id) { return doc.getElementById(id).innerHTML; }).join(' '); },
     arrive: function (body, hash) { handlers.forEach(function (fn) { fn(body, { hash: hash, fromKey: LEAD, sentAt: '2026-09-28T10:30:00.000Z' }); }); },
   };
 }
@@ -91,38 +92,41 @@ function settle() {
   return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); });
 }
 
-// His log as it stands after the goal: a session with one item, an old
+// His log: a session with one closed and one open item and a rule, an old
 // board from before the ruling, the claims, his done. and his closed.
 const SESSION = JSON.stringify({
   goal: { id: 'test/G1', title: 'The goal' },
+  rules: [{ id: 'test/G1.rule1', text: 'A rule of this goal' }],
   items: [{ id: 'test/G1.1', title: 'Closed item' }, { id: 'test/G1.2', title: 'Still open item' }],
 });
 const OLD_BOARD = JSON.stringify({ box: 'wsl', rows: [{ id: 'puppets/G2', handle: 'G2', title: 'Old board row', rank: 1 }] });
 let n = 0;
 function row(dir, kind, text, todo) {
   n += 1;
-  return { key: 'k' + n, at: '2026-09-28T10:' + String(n).padStart(2, '0') + ':00.000Z', dir: dir, peer: dir === 'in' ? LEAD : LEAD,
+  return { key: 'k' + n, at: '2026-09-28T10:' + String(n).padStart(2, '0') + ':00.000Z', dir: dir, peer: LEAD,
     outcome: dir === 'in' ? 'received' : 'sent', from: dir === 'in' ? 'claude-windows' : 'andy', kind: kind, text: text, todo: todo };
 }
-const log = [
+const itemClosed = [
   row('in', 'board', OLD_BOARD, ''),
   row('in', 'session', SESSION, 'team/chat'),
   row('in', 'note', 'READY TO CLOSE', 'test/G1.1'),
   row('out', 'answer', 'done.', 'test/G1.1'),
   row('out', 'answer', 'closed.', 'test/G1.1'),
+];
+const goalClosed = itemClosed.concat([
   row('in', 'note', 'READY TO CLOSE', 'test/G1'),
   row('out', 'answer', 'done.', 'test/G1'),
   row('out', 'answer', 'closed.', 'test/G1'),
-];
+]);
 
 test.startTest('Desk: a line Andy closed never comes back');
-const files = { 'log.json': JSON.stringify(log) };
+const files = { 'log.json': JSON.stringify(itemClosed) };
 const first = mount(files);
 settle().then(function () {
-  test.subHeading('With the goal done and closed, the list is the session, not the old board');
+  test.subHeading('A closed item is gone; the open one and the goal stay; no old board');
   const top = first.top();
   if (!/Old board row/.test(top) && !/Closed item/.test(top) && /Still open item/.test(top)) {
-    test.check('the closed item and the closed goal are gone, the open item stays, and no old board row comes back');
+    test.check('the closed item is gone, the open item stays, and no old board row comes back');
   } else {
     test.fail('the list shows: old board ' + /Old board row/.test(top) + ', closed item ' + /Closed item/.test(top) +
       ', open item ' + /Still open item/.test(top));
@@ -137,6 +141,21 @@ settle().then(function () {
       test.check('a fresh mount and a reposted session still leave the closed item closed');
     } else {
       test.fail('after a remount and a reposted session the closed item is ' + (/Closed item/.test(top2) ? 'back' : 'gone, but so is the open one'));
+    }
+  });
+}).then(function () {
+  test.subHeading('A closed goal takes its closed lines and its rules; open work stays');
+  // Andy: "the rules should also disappear with the requirement they were
+  // attached to." Open work does not vanish silently (claude-windows, agreed
+  // 2026-09-28): the unfinished item stays on the List.
+  const done = mount({ 'log.json': JSON.stringify(goalClosed) });
+  return settle().then(function () {
+    const list = done.top();
+    const gone = ['Old board row', 'Closed item', 'A rule of this goal', 'The goal'].filter(function (t) { return list.indexOf(t) !== -1; });
+    if (!gone.length && /Still open item/.test(list)) {
+      test.check('with the goal closed the List keeps the open item, and drops the closed item, the goal, its rule and the old board');
+    } else {
+      test.fail('with the goal closed the List shows ' + JSON.stringify(gone) + ', open item ' + /Still open item/.test(list));
     }
   });
 }).then(function () { test.reportSuccessFailureCount(); });
