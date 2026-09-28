@@ -246,18 +246,30 @@ function ddFrame() {
 // required to make that detail happen. this is all in design mode." The
 // same block as Team's bubble, for this item: its title, its description,
 // and every item that blocks it. Items are added by talking, as in Team.
+//
+// TWO LISTS, ONE LAYER EACH, AND EVERY LINE IS A WAY THERE. Andy: "tow
+// lists: blocking and blocked by", each line "number: title", and "if i
+// click on any of those, we close that detail-dialog and navigate to the
+// one clicket". So the tree is walked one step at a time, up or down,
+// and never drawn whole.
+function ddItemLine(r) {
+  return '<li><a href="#" data-open="' + ddEsc(r.id) + '">' + (r.done ? '<s>' : '') +
+    ddEsc(r.id) + ': ' + ddEsc(r.title) + (r.done ? '</s>' : '') + '</a></li>';
+}
 function ddItemHtml() {
   var me = ddSession.filter(function (r) { return r.id === ddId; })[0];
   if (!me) return '';
-  var needs = ddSession.filter(function (r) { return (r.blocks || []).indexOf(ddId) !== -1; }).map(function (r) {
-    return '<li>' + (r.done ? '<s>' : '') + ddEsc(r.title) + (r.done ? '</s>' : '') +
-      ' <span class="job-manifest-note">(' + ddEsc(r.id) + ')</span></li>';
-  }).join('');
+  var byId = {};
+  ddSession.forEach(function (r) { byId[r.id] = r; });
+  var blockedBy = ddSession.filter(function (r) { return (r.blocks || []).indexOf(ddId) !== -1; }).map(ddItemLine).join('');
+  var blocking = (me.blocks || []).map(function (id) { return ddItemLine(byId[id] || { id: id, title: '' }); }).join('');
   return '<div class="stat-tile wide"><div class="label">' + ddEsc(me.id) + ' — ' + ddEsc(me.title) + '</div>' +
     (me.description ? '<div>' + ddEsc(me.description) + '</div>' : '') +
-    (needs ? '<ul style="margin:6px 0 0 18px">' + needs + '</ul>'
+    '<div class="label" style="margin-top:8px">Blocked by</div>' +
+    (blockedBy ? '<ul style="margin:6px 0 0 18px">' + blockedBy + '</ul>'
       : '<div class="job-manifest-note">Nothing required for this yet. Say what it needs below; the lead adds it once we agree.</div>') +
-    (me.blocks && me.blocks.length ? '<div class="job-manifest-note">It blocks ' + ddEsc(me.blocks.join(', ')) + '.</div>' : '') + '</div>';
+    (blocking ? '<div class="label" style="margin-top:8px">Blocking</div><ul style="margin:6px 0 0 18px">' + blocking + '</ul>' : '') +
+    '</div>';
 }
 
 function ddDraw() {
@@ -353,6 +365,13 @@ spirit.shell.activateApp({
     container.innerHTML = '<div id="dd-body" class="stack"></div>';
     // Delegated, because the parts between the inputs are repainted.
     document.getElementById('dd-body').addEventListener('click', function (event) {
+      // Leaving for another item: Desk opens it once this one is closed.
+      var link = event.target && event.target.closest && event.target.closest('[data-open]');
+      if (link) {
+        event.preventDefault();
+        ddApi.closeDialog({ sent: ddSent.slice(), open: link.getAttribute('data-open') });
+        return;
+      }
       var id = event.target && event.target.id;
       if (id === 'dd-accept') { ddSend('answer', 'accepted.'); return; }
       if (id === 'dd-reject') { ddSend('answer', 'rejected.'); return; }

@@ -700,7 +700,10 @@ function deskOpenRow(id) {
     designMode: deskDesignOn(), session: deskSessionRows() })
     .then(function (result) {
       deskMarkRowSeen(id);
-      return deskRecord((result && result.sent) || []);
+      return deskRecord((result && result.sent) || []).then(function () {
+        // A line in its Blocked by / Blocking lists was clicked: go there.
+        if (result && result.open && deskRowOf(result.open)) deskOpenRow(result.open);
+      });
     });
 }
 
