@@ -254,7 +254,8 @@ function ddFrame() {
 // one clicket". So the tree is walked one step at a time, up or down,
 // and never drawn whole.
 function ddItemLine(r) {
-  return '<li><a href="#" data-open="' + ddEsc(r.id) + '">' + (r.done ? '<s>' : '') +
+  // Light blue, Andy: "The links are too dark, to little contrast, make them light blue".
+  return '<li><a href="#" data-open="' + ddEsc(r.id) + '" style="color:#8ab4f8">' + (r.done ? '<s>' : '') +
     ddEsc(r.id) + ': ' + ddEsc(r.title) + (r.done ? '</s>' : '') + '</a></li>';
 }
 function ddItemHtml() {
