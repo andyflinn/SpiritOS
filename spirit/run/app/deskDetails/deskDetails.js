@@ -255,7 +255,7 @@ function ddFrame() {
 // and never drawn whole.
 function ddItemLine(r) {
   // Light blue, Andy: "The links are too dark, to little contrast, make them light blue".
-  return '<li><a href="#" data-open="' + ddEsc(r.id) + '" style="color:#8ab4f8">' + (r.done ? '<s>' : '') +
+  return '<li><a href="#" data-open="' + ddEsc(r.id) + '" style="color:#cfe2ff">' + (r.done ? '<s>' : '') +
     ddEsc(r.id) + ': ' + ddEsc(r.title) + (r.done ? '</s>' : '') + '</a></li>';
 }
 function ddItemHtml() {
