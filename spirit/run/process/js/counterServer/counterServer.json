@@ -1,0 +1,7 @@
+{
+  "label": "Counter Server",
+  "description": "The test server for the process subsystem (processes/G1): one page, a counter kept in memory that goes up by one on every GET /, so it starts again at 1 whenever the server really restarts.",
+  "args": [
+    { "name": "port", "type": "number", "label": "Port", "default": 44444 }
+  ]
+}

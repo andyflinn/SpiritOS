@@ -30,6 +30,14 @@ if (argv[0] && argv[0].trim().charAt(0) === '{') {
 }
 const port = Number(args.port);
 
+// A PORT, OR NO START (processes/G1.2): missing, not a whole number, or
+// outside 1-65535 is refused at once, by name, instead of Node's own crash.
+if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  process.stderr.write('counterServer: no valid port (got ' + JSON.stringify(args.port === undefined ? null : args.port) +
+    '); give one from 1 to 65535, e.g. --port 44444\n');
+  process.exit(2);
+}
+
 let count = 0;
 
 function page(n) {
