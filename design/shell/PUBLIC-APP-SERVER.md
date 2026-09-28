@@ -1164,6 +1164,14 @@ verbs today; they live only in its code.
   own, bounds the answer to one packet, and an app that throws or times out
   contributes nothing. Reaching an app still loaded inside the node needs a
   describe hook; an app running as its own process is asked at its door.
+- **SUPERSEDED IN PART, 2026-09-28, by the Desk goal appPair/G1 (D4-D6).**
+  Apps are NOT asked with the caller's key: *"the app doesn't know anything
+  about the callers either"*, *"only the node knows about the caller"*. So
+  every caller sees the same tree, tests (a) and (b) above are withdrawn,
+  and gating by requester id is deferred, missing on purpose (*"gating by
+  requester id is deferred"*). The node keeps no cache of the tree. The
+  verb entry is `{ request, reply }`, with no description or label (*"the
+  label does nothing for the functionality and could be dropped"*).
 - **Each verb's entry has one format.** Andy: *"the introspection return can
   even follow a format for a verb {verb{description:\"descrption
   text\",input:{},output:{}}}"*. So an app's part of the tree is
