@@ -222,7 +222,8 @@ function makeEnvelope(from, kind, text, re, idFn, block, todo) {
   // line is the ID and the title. blow it is a short discription i define",
   // then the list of what he requires before it is done, each "an item that
   // blocks the title item". Refused at the sender unless it has that shape:
-  // { goal: { id, title, description }, items: [ { id, title } ] }.
+  // { goal: { id, title, description }, items: [ { id, title, blocks? } ] },
+  // where blocks names the item (or the goal, when absent) it must come before.
   if (kind === 'session') {
     let parsed = null;
     try { parsed = JSON.parse(String(text || '')); } catch (e) { parsed = null; }

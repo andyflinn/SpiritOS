@@ -31,6 +31,7 @@
 var ddApi = null;
 var ddRow = null;           // the board row, as Desk handed it over
 var ddDesign = false;        // design mode, as Desk passed it in
+var ddSession = [];          // the design session's rows, as Desk passed them in
 var ddId = '';              // its full id — the thread key
 var ddState = null;         // what the record says about this row
 // WHO HEARS ANDY: agents heard from in the last day, newest key per name.
@@ -224,6 +225,7 @@ function ddFrame() {
     // tab", so this dialog carries no button for it. Desk passes it in.
     '<div id="dd-design" class="stat-tile wide" style="background:#fff3c4;color:#000"' + (ddDesign ? '' : ' hidden') + '>' +
       '<b>Design mode.</b> Nothing is built until it ends, and it ends only in the Team tab of Desk.</div>' +
+    '<div id="dd-item"></div>' +
     '<div class="stat-tile wide"><div class="label" id="dd-title"></div><div id="dd-blurb"></div></div>' +
     '<div class="stat-tile wide" id="dd-facts"></div>' +
     '<div class="start-job-form card"><label class="field-label grow">Your name for it' +
@@ -238,7 +240,29 @@ function ddFrame() {
     '<div class="stat-tile wide"><div class="label">Chat, newest first</div><div id="dd-chat"></div></div>';
 }
 
+// THIS ITEM AS THE TITLE BLOCK, AND WHAT IT NEEDS. Andy: "clicking on an
+// item will ring us to the details dialog, where the detail is the Title
+// item in a similar display block at the top, where we can add items
+// required to make that detail happen. this is all in design mode." The
+// same block as Team's bubble, for this item: its title, its description,
+// and every item that blocks it. Items are added by talking, as in Team.
+function ddItemHtml() {
+  var me = ddSession.filter(function (r) { return r.id === ddId; })[0];
+  if (!me) return '';
+  var needs = ddSession.filter(function (r) { return r.blocks === ddId; }).map(function (r) {
+    return '<li>' + (r.done ? '<s>' : '') + ddEsc(r.title) + (r.done ? '</s>' : '') +
+      ' <span class="job-manifest-note">(' + ddEsc(r.id) + ')</span></li>';
+  }).join('');
+  return '<div class="stat-tile wide"><div class="label">' + ddEsc(me.id) + ' — ' + ddEsc(me.title) + '</div>' +
+    (me.description ? '<div>' + ddEsc(me.description) + '</div>' : '') +
+    (needs ? '<ul style="margin:6px 0 0 18px">' + needs + '</ul>'
+      : '<div class="job-manifest-note">Nothing required for this yet. Say what it needs below; the lead adds it once we agree.</div>') +
+    (me.blocks ? '<div class="job-manifest-note">It blocks ' + ddEsc(me.blocks) + '.</div>' : '') + '</div>';
+}
+
 function ddDraw() {
+  var item = document.getElementById('dd-item');
+  if (item) item.innerHTML = ddItemHtml();
   var title = document.getElementById('dd-title');
   if (!title) return;
   var label = ddState && ddState.label;
@@ -361,6 +385,7 @@ spirit.shell.activateApp({
   open: function (params) {
     ddRow = (params && params.row) || null;
     ddDesign = !!(params && params.designMode);
+    ddSession = (params && Array.isArray(params.session)) ? params.session : [];
     ddId = (params && params.id) || (ddRow && ddRow.id) || '';
     ddThread = [];
     ddSeen = Object.create(null);

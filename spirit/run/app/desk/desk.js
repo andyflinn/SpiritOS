@@ -390,15 +390,24 @@ function deskDesignOn() {
 // doesn't nest", and "the goal moves downward because it will become
 // dependent on more and more items being completed". So the list is every
 // required item, then the goal last, blocked by each one still open.
+// EVERY ITEM MAY HAVE ITS OWN REQUIREMENTS. Andy: "clicking on an item will
+// ring us to the details dialog, where the detail is the Title item in a
+// similar display block at the top, where we can add items required to make
+// that detail happen". So an item names what it blocks (`blocks`, the goal
+// when absent), and an item waits on every open item that blocks it.
 function deskSessionRows() {
   if (!deskSession) return [];
+  var goalId = String(deskSession.goal.id);
   var items = deskSession.items.map(function (it, i) {
     return { id: String(it.id || ('item-' + (i + 1))), title: String(it.title || ''), done: !!it.done,
-      blocks: String(deskSession.goal.id), refs: it.refs || [] };
+      description: String(it.description || ''), blocks: String(it.blocks || goalId), refs: it.refs || [] };
   });
-  var open = items.filter(function (it) { return !it.done; }).map(function (it) { return it.id; });
-  return items.concat([{ id: String(deskSession.goal.id), title: String(deskSession.goal.title), goal: true,
-    description: String(deskSession.goal.description || ''), done: !!deskSession.goal.done, waitsOn: open }]);
+  var waiting = function (id) {
+    return items.filter(function (it) { return !it.done && it.blocks === id; }).map(function (it) { return it.id; });
+  };
+  items.forEach(function (it) { it.waitsOn = waiting(it.id); });
+  return items.concat([{ id: goalId, title: String(deskSession.goal.title), goal: true,
+    description: String(deskSession.goal.description || ''), done: !!deskSession.goal.done, waitsOn: waiting(goalId) }]);
 }
 function deskSessionTable() {
   var head = '<tr><th></th><th>to-do</th><th>with</th><th>your decision</th><th>blocks</th><th>waits on</th><th>state</th></tr>';
@@ -678,7 +687,7 @@ function deskDraw() {
       // into the details dialog by paramet calling". The dialog shows it and
       // cannot end it; only Team can.
       deskApi.callDialog('app/deskDetails', { id: id, row: deskRowOf(id), thread: thread, agents: deskAgents,
-        designMode: deskDesignOn() })
+        designMode: deskDesignOn(), session: deskSessionRows() })
         .then(function (result) {
           deskMarkRowSeen(id);
           return deskRecord((result && result.sent) || []);
