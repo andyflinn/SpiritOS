@@ -253,9 +253,16 @@ module.exports = function installJobs(spirit, port) {
   function startServerJob(command, args, options) {
     options = options || {};
     const spawn = options.spawn || child_process.spawn;
+    // WHO OPERATES IT (processes/G1.3). Andy: 'node' is started with the
+    // node and comes back when it exits; 'user' is started from Processes,
+    // ended with Cancel, and "a manually started/stopped server has already
+    // a restart method", so it does not come back by itself.
+    const operated = options.operated === 'user' ? 'user' : 'node';
+    const restart = operated === 'node';
     const job = createJob('server', options.type || command, {
       command: command,
       args: args || [],
+      operated: operated,
       restarts: 0,
       exitCode: null,
     });
@@ -289,6 +296,14 @@ module.exports = function installJobs(spirit, port) {
       child.on('exit', function (code) {
         child = null;
         if (stopped) return;
+        // A user-operated server that ends by itself stays ended: completed
+        // on a clean exit, failed otherwise, and you start it again.
+        if (!restart) {
+          stopped = true;
+          updateJob(job.id, { status: code === 0 ? 'completed' : 'failed', data: { exitCode: code },
+            logMessage: 'exited with code ' + code });
+          return;
+        }
         if (Date.now() - startedAt >= STEADY_MS) wait = RESTART_MIN_MS;
         const current = getJob(job.id);
         updateJob(job.id, {
@@ -310,6 +325,49 @@ module.exports = function installJobs(spirit, port) {
     };
     run();
     return job;
+  }
+
+  // ── WHAT jobs.create STARTS (processes/G1.3) ──────────────────────────
+  //
+  //   Andy's yes on the verb: "YES it's the only existing user door to
+  //   server launch, so we use it." The request is the same as ever
+  //   (command, args, type); the script's own manifest decides. 'kind':
+  //   'server' with 'operated': 'user' starts a user-operated server job;
+  //   anything else is the one-shot process it always was.
+  function manifestOf(script, cwd) {
+    if (typeof script !== 'string' || !/\.js$/.test(script)) return null;
+    const file = path.resolve(cwd || process.cwd(), script).replace(/\.js$/, '.json');
+    try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return null; }
+  }
+  function startJob(command, args, options) {
+    options = options || {};
+    const m = manifestOf((args || [])[0], options.cwd);
+    if (m && m.kind === 'server' && m.operated === 'user') {
+      return startServerJob(command, args, { type: options.type, cwd: options.cwd, operated: 'user' });
+    }
+    return startProcessJob(command, args, options);
+  }
+
+  // ── THE BOOT'S SCAN OF process/js (processes/G1.3) ────────────────────
+  //
+  // Every process whose manifest says 'kind': 'server', 'operated': 'node'
+  // is started with the node, its arguments the manifest's defaults, and
+  // kept running. User-operated ones are left for the user: a node restart
+  // does not bring them back (Andy: "NO").
+  function startNodeServers(rootDir) {
+    const base = path.join(rootDir, 'process', 'js');
+    let names = [];
+    try { names = fs.readdirSync(base); } catch (e) { return []; }
+    const started = [];
+    names.forEach(function (name) {
+      const script = path.join(base, name, name + '.js');
+      const m = manifestOf(script);
+      if (!m || m.kind !== 'server' || m.operated !== 'node' || !fs.existsSync(script)) return;
+      const values = {};
+      (m.args || []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
+      started.push(startServerJob('node', [script, JSON.stringify(values)], { type: m.label || name, operated: 'node' }));
+    });
+    return started;
   }
 
   function startStatsJob(options) {
@@ -398,6 +456,8 @@ module.exports = function installJobs(spirit, port) {
     startFsWatcherJob: startFsWatcherJob,
     startProcessJob: startProcessJob,
     startServerJob: startServerJob,
+    startJob: startJob,
+    startNodeServers: startNodeServers,
     startStatsJob: startStatsJob,
   };
 

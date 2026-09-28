@@ -45,6 +45,13 @@ function page(n) {
     '<body><h1>This page has been served ' + n + ' time' + (n === 1 ? '' : 's') + '.</h1></body></html>';
 }
 
+// GONE WITH THE NODE (processes/G1.3): started as a server job it has a
+// channel to the node, and when that closes, however the node died, it ends
+// too, so no copy outlives the node.
+if (typeof process.send === 'function') {
+  process.on('disconnect', function () { process.exit(0); });
+}
+
 http.createServer(function (req, res) {
   // Only GET / counts; anything else leaves the counter where it is.
   if (req.method !== 'GET') {

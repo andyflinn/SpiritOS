@@ -44,7 +44,11 @@ function formatLogEntries(job) {
 function renderJobRow(job) {
   var icon = STATUS_ICON[job.status] || '';
   var isTerminal = TERMINAL_STATUSES.indexOf(job.status) !== -1;
-  var canCancel = job.kind === 'process' && !isTerminal;
+  // Cancel for a one-shot process and for a user-operated server; never for
+  // a node-operated one, which lives and dies with the node (Andy: "would
+  // allow cancel for servers - user but not for servers - node").
+  var canCancel = !isTerminal && (job.kind === 'process' ||
+    (job.kind === 'server' && job.data && job.data.operated === 'user'));
   var isExpanded = job.id === expandedJobId;
 
   var actionHtml = canCancel

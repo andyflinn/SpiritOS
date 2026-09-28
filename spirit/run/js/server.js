@@ -295,7 +295,9 @@ function handleSseConnection(req, res) {
 
 function handleCreateJob(req, res) {
   readJsonBody(req).then((body) => {
-    const job = jobs.startProcessJob(body.command, body.args || [], { type: body.type });
+    // The script's manifest decides: a one-shot, or a user-operated server
+    // (processes/G1.3, jobs.startJob). The request is unchanged.
+    const job = jobs.startJob(body.command, body.args || [], { type: body.type });
     res.writeHead(201, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(job));
   }).catch(() => {
@@ -1373,6 +1375,8 @@ contactBook.syncMarks(ROOT_DIR);
     log: function (line) { console.log(line); },
   });
   appServers.startAll();
+  // Node-operated servers in process/js start with the node (processes/G1.3).
+  jobs.startNodeServers(ROOT_DIR);
 
   require('./nodeApps').mountAll({
     rootDir: ROOT_DIR,

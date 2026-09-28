@@ -24,6 +24,7 @@ const vm = require('vm');
 const { spawn } = require('child_process');
 const spirit = require('../run/js/kernel.js');
 const test = require('./testSupport.js');
+const { relayRequest } = require('../run/js/relayRequest.js');
 
 test.startTest('processes/G1.3: node-operated and user-operated servers');
 
@@ -53,14 +54,11 @@ function waitFor(fn, ms) {
     });
   }());
 }
+// Through the node's own request helper, as counterPage.js does (oneDoor.js).
 function count(port) {
-  return new Promise(function (resolve) {
-    require('http').get({ host: '127.0.0.1', port: port, path: '/' }, function (res) {
-      let b = ''; res.on('data', function (d) { b += d; }); res.on('end', function () {
-        const m = b.match(/served (\d+) time/); resolve(m ? Number(m[1]) : null);
-      });
-    }).on('error', function () { resolve(null); });
-  });
+  return relayRequest('http://127.0.0.1:' + port, 'GET', '/', null).then(function (r) {
+    const m = String(r.text || '').match(/served (\d+) time/); return m ? Number(m[1]) : null;
+  }, function () { return null; });
 }
 const pause = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
 
@@ -124,7 +122,8 @@ const has = function (name) { return typeof jobs[name] === 'function'; };
       t2run = await waitFor(function () { return isOpen(userPort).then(function (o) { return !o; }); }, 4000);
     }
   }
-  const ctx = { document: { getElementById: function () { return null; } }, spirit: { shell: { activateApp: function () {} }, core: { const: { ICON: {} } } }, window: {} };
+  const ctx = { document: { getElementById: function () { return null; } }, window: {},
+    spirit: { shell: { activateApp: function () {} }, core: { const: { ICON: {} }, util: { escapeHtml: spirit.core.util.escapeHtml } } } };
   vm.createContext(ctx);
   let canUser = false; let canNode = true;
   try {
