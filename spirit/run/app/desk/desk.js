@@ -400,10 +400,13 @@ function deskSessionRows() {
   var goalId = String(deskSession.goal.id);
   var items = deskSession.items.map(function (it, i) {
     return { id: String(it.id || ('item-' + (i + 1))), title: String(it.title || ''), done: !!it.done,
-      description: String(it.description || ''), blocks: String(it.blocks || goalId), refs: it.refs || [] };
+      // ONE ITEM MAY BLOCK SEVERAL (RUN blocks both grantFace and ACT):
+      // `blocks` is a string or a list, and always a list here.
+      description: String(it.description || ''), refs: it.refs || [],
+      blocks: (Array.isArray(it.blocks) ? it.blocks : [it.blocks || goalId]).map(String) };
   });
   var waiting = function (id) {
-    return items.filter(function (it) { return !it.done && it.blocks === id; }).map(function (it) { return it.id; });
+    return items.filter(function (it) { return !it.done && it.blocks.indexOf(id) !== -1; }).map(function (it) { return it.id; });
   };
   items.forEach(function (it) { it.waitsOn = waiting(it.id); });
   return items.concat([{ id: goalId, title: String(deskSession.goal.title), goal: true,
@@ -420,7 +423,7 @@ function deskSessionTable() {
       '<td>' + (deskOpenAsk[row.id]
         ? '<button type="button" data-go="' + deskEsc(row.id) + '" title="' + deskEsc(deskOpenAsk[row.id].text) + '">Go!</button>'
         : deskEsc(deskDecision[row.id] || '')) + '</td>' +
-      '<td>' + deskEsc(row.blocks || '') + '</td>' +
+      '<td>' + deskEsc((row.blocks || []).join(', ')) + '</td>' +
       '<td>' + deskEsc((row.waitsOn || []).join(', ')) + '</td>' +
       '<td>' + (row.done ? 'done' : 'open') + '</td>' +
     '</tr>';

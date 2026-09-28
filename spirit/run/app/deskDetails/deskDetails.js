@@ -249,7 +249,7 @@ function ddFrame() {
 function ddItemHtml() {
   var me = ddSession.filter(function (r) { return r.id === ddId; })[0];
   if (!me) return '';
-  var needs = ddSession.filter(function (r) { return r.blocks === ddId; }).map(function (r) {
+  var needs = ddSession.filter(function (r) { return (r.blocks || []).indexOf(ddId) !== -1; }).map(function (r) {
     return '<li>' + (r.done ? '<s>' : '') + ddEsc(r.title) + (r.done ? '</s>' : '') +
       ' <span class="job-manifest-note">(' + ddEsc(r.id) + ')</span></li>';
   }).join('');
@@ -257,7 +257,7 @@ function ddItemHtml() {
     (me.description ? '<div>' + ddEsc(me.description) + '</div>' : '') +
     (needs ? '<ul style="margin:6px 0 0 18px">' + needs + '</ul>'
       : '<div class="job-manifest-note">Nothing required for this yet. Say what it needs below; the lead adds it once we agree.</div>') +
-    (me.blocks ? '<div class="job-manifest-note">It blocks ' + ddEsc(me.blocks) + '.</div>' : '') + '</div>';
+    (me.blocks && me.blocks.length ? '<div class="job-manifest-note">It blocks ' + ddEsc(me.blocks.join(', ')) + '.</div>' : '') + '</div>';
 }
 
 function ddDraw() {
