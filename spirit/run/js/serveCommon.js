@@ -19,7 +19,7 @@ const limits = require('./limits.js');
 const MIME_TYPES = spirit.core.const.MIME_TYPES;
 
 // Job spawning (jobs.js's startProcessJob) passes relative script paths
-// like "process/js/lmStudioLoadModel/lmStudioLoadModel.js" straight to
+// like "process/js/imageStats/imageStats.js" straight to
 // child_process.spawn without ever setting an explicit cwd, so it
 // inherits whatever directory THIS process was started from. Every other
 // path in the app is resolved off ROOT_DIR (__dirname-relative, always
