@@ -268,7 +268,14 @@ function ddItemHtml() {
   ddSession.forEach(function (r) { byId[r.id] = r; });
   var blockedBy = ddSession.filter(function (r) { return (r.blocks || []).indexOf(ddId) !== -1; }).map(ddItemLine).join('');
   var blocking = (me.blocks || []).map(function (id) { return ddItemLine(byId[id] || { id: id, title: '' }); }).join('');
+  // DONE IS HIS BUTTON. Andy: "how do those damn items get closed?", then
+  // "let's close that gap." Pressing it sends "done." under this item, and
+  // Desk reads his own latest done/reopen as the item's state.
+  var close = me.done
+    ? '<button type="button" id="dd-reopen">Reopen</button> <span class="job-manifest-note">Done.</span>'
+    : '<button type="button" id="dd-done" style="background:#1a7f37;color:#fff;font-weight:bold">Done</button>';
   return '<div class="stat-tile wide"><div class="label">' + ddEsc(me.id) + ' — ' + ddEsc(me.title) + '</div>' +
+    '<div style="margin:6px 0">' + close + '</div>' +
     (me.description ? '<div>' + ddEsc(me.description) + '</div>' : '') +
     '<div class="label" style="margin-top:8px">Blocked by</div>' +
     (blockedBy ? '<ul style="margin:6px 0 0 18px">' + blockedBy + '</ul>'
@@ -385,6 +392,13 @@ spirit.shell.activateApp({
       if (id === 'dd-accept') { ddSend('answer', 'accepted.'); return; }
       if (id === 'dd-reject') { ddSend('answer', 'rejected.'); return; }
       if (id === 'dd-go') { ddSend('answer', 'go.'); return; }
+      if (id === 'dd-done' || id === 'dd-reopen') {
+        var mine = ddSession.filter(function (r) { return r.id === ddId; })[0];
+        if (mine) mine.done = id === 'dd-done';
+        ddSend('answer', id === 'dd-done' ? 'done.' : 'reopen.');
+        ddDraw();
+        return;
+      }
       if (id === 'dd-no') { ddSend('answer', 'no.'); return; }
       if (id === 'dd-name-save') { var n = ddValue('dd-name'); if (n) ddSend('answer', 'retitle: ' + n, 'dd-name'); return; }
       if (id === 'dd-say-send') { ddSend('note', ddValue('dd-say'), 'dd-say'); }

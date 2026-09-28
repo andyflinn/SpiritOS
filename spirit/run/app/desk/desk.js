@@ -46,7 +46,8 @@ var DESK_PATIENCE = { patienceMs: 60000 };
 var deskApi = null;
 var deskBoard = null;       // the newest `board` packet's JSON
 var deskSession = null;     // the board's session: the newest `session` packet's JSON, unless a new design cleared it
-var deskSessionPosted = null, deskSessionAt = 0;  // the newest `session` packet as it arrived, and when
+var deskSessionPosted = null, deskSessionAt = 0;
+var deskDone = {};           // item id -> true/false, from Andy's own "done." / "reopen."  // the newest `session` packet as it arrived, and when
 var deskMessages = [];      // decoded agents messages, in log order
 var deskByHash = Object.create(null);
 var deskError = '';
@@ -252,6 +253,13 @@ function deskFold(msg) {
   if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && DESK_DECISIONS[msg.text]) {
     deskDecision[msg.todo] = DESK_DECISIONS[msg.text];
   }
+  // HE CLOSES AN ITEM, NOBODY ELSE. Andy: "how do those damn items get
+  // closed?", then "let's close that gap." His own latest "done." or
+  // "reopen." under an item is its state, and a board the lead reposts
+  // never un-closes it (wsl-claude's pitfall).
+  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && (msg.text === 'done.' || msg.text === 'reopen.')) {
+    deskDone[msg.todo] = msg.text === 'done.';
+  }
   if (msg.kind === 'session' && msg.dir === 'in') {
     try {
       var sess = JSON.parse(msg.text);
@@ -423,7 +431,7 @@ function deskSessionRows() {
   if (!deskSession) return [];
   var goalId = String(deskSession.goal.id);
   var items = deskSession.items.map(function (it, i) {
-    return { id: String(it.id || ('item-' + (i + 1))), title: String(it.title || ''), done: !!it.done,
+    return { id: String(it.id || ('item-' + (i + 1))), title: String(it.title || ''), done: deskIsDone(String(it.id || ('item-' + (i + 1))), it.done),
       // ONE ITEM MAY BLOCK SEVERAL (RUN blocks both grantFace and ACT):
       // `blocks` is a string or a list, and always a list here.
       description: String(it.description || ''), refs: it.refs || [],
@@ -434,7 +442,13 @@ function deskSessionRows() {
   };
   items.forEach(function (it) { it.waitsOn = waiting(it.id); });
   return items.concat([{ id: goalId, title: String(deskSession.goal.title), goal: true,
-    description: String(deskSession.goal.description || ''), done: !!deskSession.goal.done, waitsOn: waiting(goalId) }]);
+    description: String(deskSession.goal.description || ''), done: deskIsDone(goalId, deskSession.goal.done), waitsOn: waiting(goalId) }]);
+}
+function deskIsDone(id, posted) {
+  return Object.prototype.hasOwnProperty.call(deskDone, id) ? deskDone[id] : !!posted;
+}
+function deskGoalDone() {
+  return !!deskSession && deskIsDone(String(deskSession.goal.id), deskSession.goal.done);
 }
 function deskSessionTable() {
   var head = '<tr><th></th><th>to-do</th><th>with</th><th>your decision</th><th>blocks</th><th>waits on</th><th>state</th></tr>';
@@ -488,7 +502,8 @@ function deskSessionBubble() {
   var g = deskSession.goal;
   var items = deskSession.items.map(function (it, i) {
     return '<li data-open="' + deskEsc(it.id || ('item-' + (i + 1))) + '" style="cursor:pointer">' +
-      (it.done ? '<s>' : '') + deskEsc(it.title) + (it.done ? '</s>' : '') +
+      (deskIsDone(String(it.id || ('item-' + (i + 1))), it.done) ? '<s>' : '') + deskEsc(it.title) +
+      (deskIsDone(String(it.id || ('item-' + (i + 1))), it.done) ? '</s>' : '') +
       ' <span class="job-manifest-note">(' + deskEsc(it.id || ('item-' + (i + 1))) + ')</span></li>';
   }).join('');
   return '<div class="stat-tile wide"><div class="label" data-open="' + deskEsc(g.id) + '" style="cursor:pointer">' +
@@ -503,7 +518,7 @@ function deskSessionBubble() {
 }
 
 function deskTable() {
-  if (deskSession && !deskSession.goal.done) return deskSessionTable();
+  if (deskSession && !deskGoalDone()) return deskSessionTable();
   if (!deskBoard) {
     return '<div class="job-manifest-note">No board has reached this node yet. The lead ' +
       'posts one whenever its test run changes it.</div>';
@@ -698,7 +713,7 @@ function deskDraw() {
   if (bubble) bubble.innerHTML = deskSessionBubble();
   var goal = document.getElementById('desk-goal');
   if (goal) {
-    var open = deskSession && !deskSession.goal.done;
+    var open = deskSession && !deskGoalDone();
     goal.hidden = !open;
     goal.textContent = open ? deskSession.goal.title + ' (' + deskSession.goal.id + ')' : '';
   }
@@ -891,7 +906,7 @@ spirit.shell.activateApp({
     // title to move the discussion to the detail of the requirement, then
     // our discussion would be logged under that requirement".
     document.getElementById('desk-goal').addEventListener('click', function () {
-      if (deskSession && !deskSession.goal.done) deskOpenRow(String(deskSession.goal.id));
+      if (deskSession && !deskGoalDone()) deskOpenRow(String(deskSession.goal.id));
     });
     onEnter('desk-team-say', deskSendTeam);
     // Its own log first, then every arrival into it. Subscribed once, at
