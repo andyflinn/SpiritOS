@@ -534,7 +534,7 @@ function deskSessionTable() {
         : deskEsc(deskDecision[row.id] || '')) + '</td>' +
       '<td>' + deskEsc((row.blocks || []).join(', ')) + '</td>' +
       '<td>' + deskEsc((row.waitsOn || []).join(', ')) + '</td>' +
-      '<td>' + (row.done ? 'done' : 'open') + '</td>' +
+      '<td>' + (row.done ? 'done' : deskDecision[row.id] === 'go' ? 'running' : 'open') + '</td>' +
     '</tr>';
   }).join('');
   return '<div class="job-manifest-note">Design session: ' + deskEsc(deskSession.goal.id) + '</div>' + deskRulesHtml() +
@@ -802,7 +802,13 @@ function deskDraw() {
       var id = b.getAttribute('data-go');
       var ask = deskOpenAsk[id];
       if (!ask) return;
-      b.disabled = true;
+      // GONE AT ONCE, AND RUNNING. Andy: "when i say go. the go button on the
+      // list and the detail become invisible immeadiately and are marked with
+      // status "running"". Put back only if the send fails.
+      delete deskOpenAsk[id];
+      var before = deskDecision[id];
+      deskDecision[id] = 'go';
+      deskDraw();
       var body = { from: 'andy', kind: 'answer', text: 'go.', todo: id };
       deskApi.peerPost('agents', ask.peer, body, DESK_PATIENCE)
         .then(function (r) {
@@ -811,7 +817,11 @@ function deskDraw() {
           deskMarkRowSeen(id);
           return deskRecord([deskOutgoing(ask.peer, body, r)]);
         })
-        .catch(function (err) { b.disabled = false; deskError = 'Go! not sent: ' + err.message; deskDraw(); });
+        .catch(function (err) {
+          deskOpenAsk[id] = ask;
+          if (before === undefined) delete deskDecision[id]; else deskDecision[id] = before;
+          deskError = 'Go! not sent: ' + err.message; deskDraw();
+        });
     });
   });
   Array.prototype.forEach.call(el.querySelectorAll('tr[data-id]'), function (tr) {

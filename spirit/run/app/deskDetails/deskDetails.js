@@ -117,6 +117,8 @@ function ddRead(list) {
     // wrote four notes after an agent's ask, and a note is talk, not an
     // answer. So only his `answer` kind (go, no, accepted, rejected) does.
     else if (andy && st.openAsk && m.kind === 'answer') st.openAsk = null;
+    // His latest go. or no. says whether it is running.
+    if (andy && m.kind === 'answer' && (m.text === 'go.' || m.text === 'no.')) st.running = m.text === 'go.';
   });
   if (!st.explain && ddRow && ddRow.explain) { st.explain = ddRow.explain; st.explainFrom = 'the declaration'; }
   return st;
@@ -187,7 +189,8 @@ function ddDecideHtml() {
   // A closed item asks nothing (Andy: "this one still shows go button while
   // market as done").
   var mine = ddSession.filter(function (r) { return r.id === ddId; })[0];
-  if (!ask || (mine && mine.done)) return '';
+  if (mine && mine.done) return '';
+  if (!ask) return ddState && ddState.running ? '<div class="job-manifest-note"><b>Status: running.</b> You said go.</div>' : '';
   return '<div class="job-manifest-note">' + ddEsc(ask.from) + ' asks: ' + ddEsc(ask.text) + '</div>' +
     '<div class="start-job-form card"><button type="button" id="dd-go">Go!</button>' +
     '<button type="button" id="dd-no">No</button></div>';
@@ -413,7 +416,13 @@ spirit.shell.activateApp({
       var id = event.target && event.target.id;
       if (id === 'dd-accept') { ddSend('answer', 'accepted.'); return; }
       if (id === 'dd-reject') { ddSend('answer', 'rejected.'); return; }
-      if (id === 'dd-go') { ddSend('answer', 'go.'); return; }
+      // Gone at once, and running (desk.js, the list's Go does the same).
+      if (id === 'dd-go') {
+        if (ddState) { ddState.openAsk = null; ddState.running = true; }
+        ddDraw();
+        ddSend('answer', 'go.');
+        return;
+      }
       if (id === 'dd-done' || id === 'dd-reopen') {
         var mine = ddSession.filter(function (r) { return r.id === ddId; })[0];
         if (mine) mine.done = id === 'dd-done';
