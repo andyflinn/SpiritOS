@@ -371,38 +371,38 @@ function deskDrawTabs() {
 //   navigate anywhere in desk and desk detail to observe the effect of the
 //   design session."
 //
-// Read from Desk's own log, so nothing new is stored: it is on when his
-// newest line in Team is newer than his newest "end design mode." there.
+// STARTED BY A BUTTON, NOT BY TALKING. It was on whenever his newest Team
+// line was newer than his last "end design mode.", so every word he typed
+// in Team after ending it switched it back on and cleared the board. Andy:
+// "the "End design mode" button keeps oming back", then "i guess i need a
+// start design mode button instead." So it is on when his newest "start
+// design mode." in Team is newer than his newest "end design mode.", read
+// from Desk's own log: nothing new is stored.
 var DESK_END_DESIGN = 'end design mode.';
-function deskDesignOn() {
+var DESK_START_DESIGN = 'start design mode.';
+function deskDesignMarks() {
   var started = 0, ended = 0;
   deskMessages.forEach(function (m) {
-    if (m.dir !== 'out' || m.todo !== DESK_TEAM) return;
+    if (m.dir !== 'out' || m.todo !== DESK_TEAM || m.kind !== 'answer') return;
     var at = Date.parse(m.at) || 0;
-    if (m.kind === 'answer' && m.text === DESK_END_DESIGN) { if (at > ended) ended = at; }
-    else if (at > started) started = at;
+    if (m.text === DESK_END_DESIGN && at > ended) ended = at;
+    if (m.text === DESK_START_DESIGN && at > started) started = at;
   });
-  return started > ended;
+  return { started: started, ended: ended };
+}
+function deskDesignOn() {
+  var d = deskDesignMarks();
+  return d.started > d.ended;
 }
 
 // ENDING KEEPS THE BOARD; STARTING CLEARS IT. Andy: "if i End design mode
-// the board stays, if i start a new one the board clears." A design starts
-// with his first Team line after the last end, so a session posted before
-// that line belongs to the design he ended, and a new design shows none
-// until the lead posts its goal.
+// the board stays, if i start a new one the board clears." A session posted
+// before the press of Start belongs to the design he ended, and a new design
+// shows none until the lead posts its goal.
 function deskSessionSync() {
-  var ended = 0, started = 0;
-  deskMessages.forEach(function (m) {
-    if (m.dir === 'out' && m.todo === DESK_TEAM && m.kind === 'answer' && m.text === DESK_END_DESIGN) {
-      ended = Math.max(ended, Date.parse(m.at) || 0);
-    }
-  });
-  deskMessages.forEach(function (m) {
-    if (m.dir !== 'out' || m.todo !== DESK_TEAM || (m.kind === 'answer' && m.text === DESK_END_DESIGN)) return;
-    var at = Date.parse(m.at) || 0;
-    if (at > ended && (!started || at < started)) started = at;
-  });
-  deskSession = (deskSessionPosted && !(started && deskSessionAt < started)) ? deskSessionPosted : null;
+  var d = deskDesignMarks();
+  var cleared = d.started > d.ended && deskSessionAt < d.started;
+  deskSession = (deskSessionPosted && !cleared) ? deskSessionPosted : null;
 }
 
 // THE SESSION'S BOARD. Andy: "the Title item will become the first ond only
@@ -623,6 +623,7 @@ function deskSendTeam() { deskTeamPost('note'); }
 // Ending design mode is his decision, said in Team: an `answer` with the
 // fixed words, which Desk reads back (deskDesignOn) and the agents obey.
 function deskEndDesign() { deskTeamPost('answer', DESK_END_DESIGN); }
+function deskStartDesign() { deskTeamPost('answer', DESK_START_DESIGN); }
 function deskTeamPost(kind, fixed) {
   var box = document.getElementById('desk-team-say');
   var err = document.getElementById('desk-team-error');
@@ -814,6 +815,7 @@ spirit.shell.activateApp({
         // color, so it loooms over the proceedings".
         '<button type="button" id="desk-end-design" hidden style="margin-left:auto;background:#c00;color:#fff;' +
           'font-weight:bold;border:2px solid #600">End design mode</button>' +
+        '<button type="button" id="desk-start-design" hidden style="margin-left:auto;font-weight:bold">Start design mode</button>' +
       '</div>' +
       '<div id="desk-root">' +
         '<div data-pane="list"><div id="desk-top"></div></div>' +
@@ -873,6 +875,7 @@ spirit.shell.activateApp({
     onEnter('desk-muse', muse);
     document.getElementById('desk-team-send').addEventListener('click', deskSendTeam);
     document.getElementById('desk-end-design').addEventListener('click', deskEndDesign);
+    document.getElementById('desk-start-design').addEventListener('click', deskStartDesign);
     // The bubble is repainted on every arrival, so one listener on its box.
     document.getElementById('desk-session').addEventListener('click', function (e) {
       var el = e.target;
