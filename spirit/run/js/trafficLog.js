@@ -539,9 +539,19 @@ function createTrafficLog(opts) {
     return historyOf(rootDir);
   }
 
+  // HOW MANY BYTES THE LOG USES (transport/R19.2). Andy, 2026-09-28: "go."
+  // on the log answering this itself, so nothing outside it has to know it
+  // is a file: measureCapacity used to stat traffic.jsonl directly, and the
+  // log is moving into node.db (transport/R19), where the answer becomes the
+  // table's pages. Callers ask the log; only the log knows where it lives.
+  function size() {
+    try { return fs.statSync(logPath(rootDir)).size; } catch (e) { return 0; }
+  }
+
   return {
     note: note,
     read: read,
+    size: size,
     // The log, read as a table. Keyed by hash, ordered by arrival.
     arrivals: arrivals,
     // The membership half of the same file — see ownerEvents for why it

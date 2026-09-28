@@ -319,9 +319,10 @@ function discPerRow() {
       hash: 'a'.repeat(64), bytes: 240, status: 200,
     });
   }
-  const logFile = path.join(th, 'relay-state', 'traffic.jsonl');
-  out.perLogEntry = fs.existsSync(logFile)
-    ? Math.round(fs.statSync(logFile).size / E) : 0;
+  // ASKED OF THE LOG, NOT WEIGHED ON DISC (transport/R19.2): this statted
+  // traffic.jsonl itself; the log is moving into node.db (transport/R19), so
+  // it now answers its own size, wherever it lives.
+  out.perLogEntry = Math.round(traffic.size() / E);
   try { fs.rmSync(th, { recursive: true, force: true }); } catch (e) { /* held */ }
 
   try { fs.rmSync(rh, { recursive: true, force: true }); } catch (e) { /* held */ }
