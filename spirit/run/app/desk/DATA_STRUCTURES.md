@@ -32,7 +32,7 @@ Desk keeps everything in its own folder, `spirit/run/app/desk/`. Andy,
 |---|---|
 | `note` | talk |
 | `ask` | an agent's question; shows Go/No until Andy answers |
-| `answer` | Andy's decision: `go.`, `no.`, `done.`, `reopen.`, `retitle: <name>`, `start design mode.`, `end design mode.` |
+| `answer` | Andy's decision: `go.`, `no.`, `done.`, `reopen.`, `closed.` (hides a done line), `retitle: <name>`, `start design mode.`, `end design mode.` |
 | `explain` | an agent's explanation of an item |
 | `session` | a design session, as JSON (below) |
 | `board` | the harness's old board, as JSON (retired 2026-09-28) |
@@ -60,7 +60,8 @@ the log message that set it.
 { designMode:    { on, started, ended },
   done:          { "<id>": { pressed: "done."|"reopen.", at, key, counts, claimed } },
   openQuestions: { "<id>": { from, text, at, key } },
-  titles:        { "<id>": { title, at, key } } }
+  titles:        { "<id>": { title, at, key } },
+  closed:        [ "<id>", … ] }
 ```
 
 `counts` is false for a Done pressed before any `READY TO CLOSE` claim.

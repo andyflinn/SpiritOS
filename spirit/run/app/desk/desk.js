@@ -49,6 +49,7 @@ var deskSession = null;     // the board's session: the newest `session` packet'
 var deskSessionPosted = null, deskSessionAt = 0;
 var deskDone = {};           // item id -> true/false, from Andy's own "done." / "reopen."
 var deskReady = {};          // item id -> true once an agent said READY TO CLOSE under it
+var deskClosed = {};         // item id -> true once Andy closed its done line away
 var deskFrom = { done: {}, title: {}, pressed: {} };  // item id -> { at, key } of Andy's answer that set it
 var DESK_READY_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:[\w.\/-]+\s+is\s+)?READY TO CLOSE\b/;  // the newest `session` packet as it arrived, and when
 var deskMessages = [];      // decoded agents messages, in log order
@@ -273,7 +274,7 @@ function deskStateJson() {
     designMode: { on: d.started > d.ended,
       started: d.started ? new Date(d.started).toISOString() : '',
       ended: d.ended ? new Date(d.ended).toISOString() : '' },
-    done: done, openQuestions: open, titles: title,
+    done: done, openQuestions: open, titles: title, closed: Object.keys(deskClosed),
   }, null, 2) + '\n';
 }
 function deskSaveState() {
@@ -312,6 +313,8 @@ function deskFold(msg) {
   // "<id> is READY TO CLOSE", after an optional "<agent>:" or "<agent>,").
   // An explanation that merely names the phrase mid-sentence is not one.
   if (msg.dir === 'in' && msg.todo && DESK_READY_CLAIM.test(String(msg.text || ''))) deskReady[msg.todo] = true;
+  // A line he closed away stays away (his "closed." under it).
+  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && msg.text === 'closed.') deskClosed[msg.todo] = true;
   // His latest press is kept whether or not it counts yet.
   if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && (msg.text === 'done.' || msg.text === 'reopen.')) {
     deskFrom.pressed[msg.todo] = { text: msg.text, at: msg.at, key: msg.key };
@@ -521,7 +524,7 @@ function deskGoalDone() {
 }
 function deskSessionTable() {
   var head = '<tr><th></th><th>to-do</th><th>with</th><th>your decision</th><th>blocks</th><th>waits on</th><th>state</th></tr>';
-  var body = deskSessionRows().map(function (row) {
+  var body = deskSessionRows().filter(function (row) { return !deskClosed[row.id]; }).map(function (row) {
     return '<tr data-id="' + deskEsc(row.id) + '" style="cursor:pointer' + (row.goal ? ';font-weight:bold' : '') + '">' +
       '<td>' + (deskRowNews(row.id) ? DESK_UNSEEN : '') + '</td>' +
       '<td title="' + deskEsc(row.title) + '">' + deskEsc(deskLabel[row.id] || row.title) +
@@ -534,7 +537,10 @@ function deskSessionTable() {
         : deskEsc(deskDecision[row.id] || '')) + '</td>' +
       '<td>' + deskEsc((row.blocks || []).join(', ')) + '</td>' +
       '<td>' + deskEsc((row.waitsOn || []).join(', ')) + '</td>' +
-      '<td>' + (row.done ? 'done' : deskDecision[row.id] === 'go' ? 'running' : 'open') + '</td>' +
+      // A DONE LINE CAN BE CLOSED AWAY. Andy: "done lines in the list should
+      // offer me a close button which will make the line disappear."
+      '<td>' + (row.done ? 'done <button type="button" data-close="' + deskEsc(row.id) + '">Close</button>'
+        : deskDecision[row.id] === 'go' ? 'running' : 'open') + '</td>' +
     '</tr>';
   }).join('');
   return '<div class="job-manifest-note">Design session: ' + deskEsc(deskSession.goal.id) + '</div>' + deskRulesHtml() +
@@ -796,6 +802,26 @@ function deskDraw() {
   deskDrawTabs();
   el.innerHTML = (deskError ? '<div class="job-start-error">' + deskEsc(deskError) + '</div>' : '') +
     deskTable();
+  // CLOSE: the line disappears at once; his "closed." goes to the agents
+  // under that item and into Desk's log, so it stays away after a reload.
+  Array.prototype.forEach.call(el.querySelectorAll('button[data-close]'), function (b) {
+    b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var id = b.getAttribute('data-close');
+      deskClosed[id] = true;
+      deskDraw();
+      var to = Object.keys(deskAgents).filter(function (n) { return Date.now() - deskAgents[n].at < DESK_RECENT_MS; })
+        .map(function (n) { return deskAgents[n].key; });
+      var body = { from: 'andy', kind: 'answer', text: 'closed.', todo: id };
+      Promise.all(to.map(function (key) {
+        return deskApi.peerPost('agents', key, body, DESK_PATIENCE).then(function (r) { return deskOutgoing(key, body, r); },
+          function (err) { return deskOutgoing(key, body, null, err); });
+      })).then(function (msgs) {
+        // Kept in his log even when nobody could be reached: it is his decision.
+        return deskRecord(msgs.length ? msgs : [deskOutgoing('', body, null, new Error('no agent reachable'))]);
+      });
+    });
+  });
   Array.prototype.forEach.call(el.querySelectorAll('button[data-go]'), function (b) {
     b.addEventListener('click', function (e) {
       e.stopPropagation();
