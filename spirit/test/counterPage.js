@@ -113,6 +113,28 @@ if (!fs.existsSync(SCRIPT)) {
           test.fail(OWED + (denied ? 'it touched a file: ' + stderr.trim().slice(0, 160) : 'it did not stay up under the file-free rule'));
         }
       });
+  }).then(function () {
+    // BY HAND, AS ANDY RAN IT. Andy, 2026-09-28: "node .\counterServer.js
+    // --port 44444", and it listened on nothing. A server takes the port on
+    // its command line too, not only as the launch dialog's JSON string.
+    if (child && child.exitCode === null) child.kill();
+    test.subHeading('T4: started by hand with --port P, it answers on P');
+    return freePort().then(function (port) {
+      const byHand = spawn(process.execPath, [SCRIPT, '--port', String(port)], { stdio: ['ignore', 'pipe', 'pipe'] });
+      let err = '';
+      byHand.stderr.setEncoding('utf8');
+      byHand.stderr.on('data', function (d) { err += d; });
+      return waitUp(port, byHand).then(function (up) {
+        return (up ? ask(port, 'GET', '/') : Promise.resolve({ status: 0, body: '' })).then(function (r) {
+          if (up && r.status === 200 && /\d/.test(r.body)) {
+            test.check('node counterServer.js --port ' + port + ' serves the counter page on that port');
+          } else {
+            test.fail(OWED + 'node counterServer.js --port P did not serve on P' + (err ? ': ' + err.trim().split('\n').pop().slice(0, 140) : ''));
+          }
+          if (byHand.exitCode === null) byHand.kill();
+        });
+      });
+    });
   }).catch(function (e) {
     test.fail(OWED + 'the run broke: ' + e.message);
   }).then(function () {
