@@ -32,6 +32,7 @@ var ddApi = null;
 var ddRow = null;           // the board row, as Desk handed it over
 var ddDesign = false;        // design mode, as Desk passed it in
 var ddSession = [];          // the design session's rows, as Desk passed them in
+var ddRules = [];            // the plan's rules, which hold for every item in it
 var ddId = '';              // its full id — the thread key
 var ddState = null;         // what the record says about this row
 // WHO HEARS ANDY: agents heard from in the last day, newest key per name.
@@ -269,6 +270,9 @@ function ddItemHtml() {
     (blockedBy ? '<ul style="margin:6px 0 0 18px">' + blockedBy + '</ul>'
       : '<div class="job-manifest-note">Nothing required for this yet. Say what it needs below; the lead adds it once we agree.</div>') +
     (blocking ? '<div class="label" style="margin-top:8px">Blocking</div><ul style="margin:6px 0 0 18px">' + blocking + '</ul>' : '') +
+    // The plan's rules hold here too (desk.js, deskSessionRules).
+    (ddRules.length ? '<div class="label" style="margin-top:8px">Rules for this plan</div><ul style="margin:6px 0 0 18px">' +
+      ddRules.map(function (r) { return '<li>' + ddEsc(r.id) + ': ' + ddEsc(r.text) + '</li>'; }).join('') + '</ul>' : '') +
     '</div>';
 }
 
@@ -405,6 +409,7 @@ spirit.shell.activateApp({
     ddRow = (params && params.row) || null;
     ddDesign = !!(params && params.designMode);
     ddSession = (params && Array.isArray(params.session)) ? params.session : [];
+    ddRules = (params && Array.isArray(params.rules)) ? params.rules : [];
     ddId = (params && params.id) || (ddRow && ddRow.id) || '';
     ddThread = [];
     ddSeen = Object.create(null);

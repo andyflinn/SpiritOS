@@ -449,12 +449,29 @@ function deskSessionTable() {
       '<td>' + (row.done ? 'done' : 'open') + '</td>' +
     '</tr>';
   }).join('');
-  return '<div class="job-manifest-note">Design session: ' + deskEsc(deskSession.goal.id) + '</div>' +
+  return '<div class="job-manifest-note">Design session: ' + deskEsc(deskSession.goal.id) + '</div>' + deskRulesHtml() +
     '<table class="jobs-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
 }
 
 // The bubble at the top of Team: the goal and what it waits on, filled by
 // the lead as the chat goes. Blank until the first session arrives.
+// THE PLAN'S RULES. Andy, of "nothing above trafficLog.js changes": "that's
+// a rule for this plan, we should find a way to insert it as such". A rule
+// is not an item: nothing is built to close it, and it holds for every item
+// in the session. So it sits under the goal, above the items, and is added
+// the way an item is: argued, then agreed.
+function deskSessionRules() {
+  return (deskSession && Array.isArray(deskSession.rules)) ? deskSession.rules.map(function (r, i) {
+    return typeof r === 'string' ? { id: 'rule-' + (i + 1), text: r } : { id: String(r.id || ('rule-' + (i + 1))), text: String(r.text || '') };
+  }) : [];
+}
+function deskRulesHtml() {
+  var rules = deskSessionRules();
+  if (!rules.length) return '';
+  return '<div class="label" style="margin-top:8px">Rules for this plan</div><ul style="margin:6px 0 0 18px">' +
+    rules.map(function (r) { return '<li>' + deskEsc(r.id) + ': ' + deskEsc(r.text) + '</li>'; }).join('') + '</ul>';
+}
+
 function deskSessionBubble() {
   if (!deskSession) {
     return '<div class="stat-tile wide"><div class="label">Design session</div>' +
@@ -469,7 +486,7 @@ function deskSessionBubble() {
   }).join('');
   return '<div class="stat-tile wide"><div class="label" data-open="' + deskEsc(g.id) + '" style="cursor:pointer">' +
     deskEsc(g.id) + ' — ' + deskEsc(g.title) + '</div>' +
-    (g.description ? '<div>' + deskEsc(g.description) + '</div>' : '') +
+    (g.description ? '<div>' + deskEsc(g.description) + '</div>' : '') + deskRulesHtml() +
     (items ? '<ul style="margin:6px 0 0 18px">' + items + '</ul>'
       : '<div class="job-manifest-note">Nothing required yet.</div>') + '</div>';
 }
@@ -719,7 +736,7 @@ function deskOpenRow(id) {
   // into the details dialog by paramet calling". The dialog shows it and
   // cannot end it; only Team can.
   deskApi.callDialog('app/deskDetails', { id: id, row: deskRowOf(id), thread: thread, agents: deskAgents,
-    designMode: deskDesignOn(), session: deskSessionRows() })
+    designMode: deskDesignOn(), session: deskSessionRows(), rules: deskSessionRules() })
     .then(function (result) {
       deskMarkRowSeen(id);
       return deskRecord((result && result.sent) || []).then(function () {
