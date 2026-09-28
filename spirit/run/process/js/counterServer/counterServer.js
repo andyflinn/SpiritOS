@@ -18,8 +18,16 @@
 
 const http = require('http');
 
+// Two ways in: the launch dialog's one JSON string, or by hand, the usual
+// way, `node counterServer.js --port 44444` (Andy tried exactly that).
 let args = {};
-try { args = JSON.parse(process.argv[2] || '{}'); } catch (e) { args = {}; }
+const argv = process.argv.slice(2);
+if (argv[0] && argv[0].trim().charAt(0) === '{') {
+  try { args = JSON.parse(argv[0]); } catch (e) { args = {}; }
+} else {
+  const at = argv.indexOf('--port');
+  if (at !== -1) args.port = argv[at + 1];
+}
 const port = Number(args.port);
 
 let count = 0;
