@@ -1,0 +1,66 @@
+{"text":"one key by hash should be there anyways, so that the pair of record carrying the same has can be found quickly?","day":"2026-09-28"}
+{"text":"ok, that gives us an important random access optimization","day":"2026-09-28"}
+{"text":"yes there will be a requirement naming the indexes required","day":"2026-09-28"}
+{"text":"so there's a timestamp key as well?","day":"2026-09-28"}
+{"text":"a timestamp cant be a unique key, like hash, but still valuable one?","day":"2026-09-28"}
+{"text":"so to enter a new row, sequence would be read from the end to find the last used sequence number?","day":"2026-09-28"}
+{"text":"sequence will be the key returned by searches?","day":"2026-09-28"}
+{"text":"can we have a clearer separation between rules and requirements?","day":"2026-09-28"}
+{"text":"i meant visually,","day":"2026-09-28"}
+{"text":"Isn't the title of this project (the goal) a requirement?","day":"2026-09-28"}
+{"text":"yes we're already in that detail panel.","day":"2026-09-28"}
+{"text":"no we're not","day":"2026-09-28"}
+{"text":"see, if i could also click on the title to move the discussion to the detail of the requirement, then our discussion would be logged under that requirement,","day":"2026-09-28"}
+{"text":"the idea here is: we want to recall discussions related to a requirement, by navigating the that requirements detail","day":"2026-09-28"}
+{"text":"maybe as soon is i name a goal, the discussion move there?","day":"2026-09-28"}
+{"text":"are we ready to go?","day":"2026-09-28"}
+{"text":"backup goes into D:\\countinn@google.com\\SpiritOS-data-backup\\","day":"2026-09-28"}
+{"text":"i want it synced for extra backup for now","day":"2026-09-28"}
+{"text":"i agree to the keys as well","day":"2026-09-28"}
+{"text":"i though we keep all of them, some simply wont be indexed.","day":"2026-09-28"}
+{"text":"backup the old file to D:\\countinn@google.com\\SpiritOS-data-backup as well","day":"2026-09-28"}
+{"text":"Why is every item on the board still open?","day":"2026-09-28"}
+{"text":"i see nothing demanding my attention here","day":"2026-09-28"}
+{"text":"and the \"End design mode\" button keeps oming back","day":"2026-09-28"}
+{"text":"ah!","day":"2026-09-28"}
+{"text":"i guess i need a start design mode button instead.","day":"2026-09-28"}
+{"text":"g","day":"2026-09-28"}
+{"text":"sorry, i was checking if typing would turn on design mode it didn't. now i cant enter design mode, there's no green \"Start design mode\" button at that spot.","day":"2026-09-28"}
+{"text":"how do those damn items get closed?","day":"2026-09-28"}
+{"text":"let's close that gap. how?","day":"2026-09-28"}
+{"text":"with i can't see an effect, it's hard to decide","day":"2026-09-28"}
+{"text":"this one still shows go button while market as done, Go buttons don't update between list and details,  the \"Your name for it\" box should go just underneath the Close button row, far away from my chat input. i still type into the wrong box","day":"2026-09-28"}
+{"text":"transport/R19 still shows a go button in the list.","day":"2026-09-28"}
+{"text":"if it's not built why give me a done button?","day":"2026-09-28"}
+{"text":"the status and buttons must real-time-update across Details and list","day":"2026-09-28"}
+{"text":"also. i don't want to see other shit when i work on the log file move....","day":"2026-09-28"}
+{"text":"other Rxx's are in disarray even more than R19","day":"2026-09-28"}
+{"text":"i want focus on the task at hand. not other crap mixed in.","day":"2026-09-28"}
+{"text":"is the move of the log file into node.db complete or not?","day":"2026-09-28"}
+{"text":"when you claim completeness, that's when i want to see the close button, not before.","day":"2026-09-28"}
+{"text":"It is okay that desk has hickups, it's also ok for the desk to expose how the tracking system used to be shotty","day":"2026-09-28"}
+{"text":"i see no backup files in D:\\countinn@google.com\\SpiritOS-data-backup","day":"2026-09-28"}
+{"text":"the first think i found i could check.","day":"2026-09-28"}
+{"text":"claude-windows. good observation. in the desk details, there should be a highlighted section on if and how i can check. same as wsl test requirements should be enumarated under requirements","day":"2026-09-28"}
+{"text":"i can't find the test requirements associated with transport/R19, this one, they should be real, separate requirements, listed, and followed [green|red] + time","day":"2026-09-28"}
+{"text":"they must be red before wsl pulls the implementation, and green after he pull the implementation","day":"2026-09-28"}
+{"text":"ie on go, the tests should be run ASAP against the unmodified production code. if they are green then, they may be worth less","day":"2026-09-28"}
+{"text":"why do i see a go button here and on the list?","day":"2026-09-28"}
+{"text":"a go button here as well","day":"2026-09-28"}
+{"text":"all items on the list still show open, even the ones i closed.","day":"2026-09-28"}
+{"text":"either your referenced system for addressing issues/requirements does little to track progress, or the desk and your system run on different datasets. Question: Where is the canonical state of project requirements, progress and and completion ?","day":"2026-09-28"}
+{"text":"let's just fix that.","day":"2026-09-28"}
+{"text":"this app will as of now, be the official state of the project.","day":"2026-09-28"}
+{"text":"so this one is moe strictly organized by issues, related discussions etc...?","day":"2026-09-28"}
+{"text":"hmmm the data from this app is .gitignored.","day":"2026-09-28"}
+{"text":"i was given a sandbox while being under the impression i was given a steering weel.","day":"2026-09-28"}
+{"text":"ho owns this project?","day":"2026-09-28"}
+{"text":"so git everything in this folder. including my foul language and all. all statements are attributed, it is a way more honest log than what would exist otherwise, it has exposed your tracking system OR this one or both as a lie. that is not acceptable.","day":"2026-09-28"}
+{"text":"this one is faster, and wsl can contribute in real time, not while pushing and pulling github.","day":"2026-09-28"}
+{"text":"well. i do not intend to disclose conversions in violation of a TOS agreement either. i indent to abide by that. so what's might be the legal situation?","day":"2026-09-28"}
+{"text":"i understand that you cannot give legal advice. you might communicate your laymans hearsay you heard?","day":"2026-09-28"}
+{"text":"let's say: your honesty has pretty obvious boundaries, and lacks in certain contexts.","day":"2026-09-28"}
+{"text":"in effect, you burn my tokens without my input","day":"2026-09-28"}
+{"text":"I hired you. i asked for short concise english, yet you always backslide. you do not demonstrate a \"machine learning\"","day":"2026-09-28"}
+{"text":"output tokens cost more.","day":"2026-09-28"}
+{"text":"liars: you ACT repentant","day":"2026-09-28"}

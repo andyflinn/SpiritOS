@@ -1,0 +1,67 @@
+{"text":"i can imagine a future where Claude like entities do it your way, because most humans can't hold a concept like the face architecture in their minds at all, but i basically hold these things in my mind around the clock, and want them to collapse into simplicity and elegance over time.","day":"2026-09-28"}
+{"text":"with simplicity i envision an app where i travel and my laptop node controls my home node like a pupped, is sign in with a google or facebook login so my home node knows its me and then it acts like puppet so i can do anything on the road i do at home, a join-like app, generalized can be a panel of options for me to tie my home node into my remote control, by identifying myself to it by and email verification using google facebook sendmail, whatever.","day":"2026-09-28"}
+{"text":"these are about routing complete node interfaces, which is one of my pet-concepts","day":"2026-09-28"}
+{"text":"there is a flood of applications like that. and spirit OS is awesome at it conceptually.","day":"2026-09-28"}
+{"text":"and the proof that it can work is also here allready, thanks to you guys. i always give up after a year or two of binge programming and never got this far yet.","day":"2026-09-28"}
+{"text":"simple application could be designed and deployed within an hour. it's insane.","day":"2026-09-28"}
+{"text":"so i want to fix this desk app to make tout approach more precise. where we can discover dependency scopes and collapse them elegantly. desk is an attempt at automating focus on development scopes at different levels and then reducing the code base with intelligence...","day":"2026-09-28"}
+{"text":"an attempt to formalize concepts of my cognition.","day":"2026-09-28"}
+{"text":"everything is proven to me at this point (not in the clear, itemized full coverage proof) i know this can work. Now i want to improve by cleaning it up. simplifying, the more orthogonality it embodies, the easier i can move human interfaces, or switch desired compute. and storage,","day":"2026-09-28"}
+{"text":"when we were at the phone-device stage, it irked me that i couldn't just pull in the shell and run it on that device.","day":"2026-09-28"}
+{"text":"with the puppet concept i can distribute my storage, compute (tagging batches) everything, same as google does, but p2p.","day":"2026-09-28"}
+{"text":"my new rtx 5060 will be reachable for me anywhere.","day":"2026-09-28"}
+{"text":"there are to major weaknesses i see, streaming and large objects, both kind of connected.","day":"2026-09-28"}
+{"text":"yes. i'm only offering a control surface, but nothing that all cellphone user expect as their due: video calls, spotify-ery....","day":"2026-09-28"}
+{"text":"large file transfers are ideally streams","day":"2026-09-28"}
+{"text":"is there the counterpart to sse, infinite posts?","day":"2026-09-28"}
+{"text":"it' would have to be a multiplexed stream (websockets?) with a max internal packet size","day":"2026-09-28"}
+{"text":"the relay a ticker that synchronizes internal stream packets, among peer streams for fairness","day":"2026-09-28"}
+{"text":"and if multiplexed the would be merge and fan concepts","day":"2026-09-28"}
+{"text":"the relay does the fan thing with its see streams. it would need to do the opposite with with post streams","day":"2026-09-28"}
+{"text":"internally the relay would rotate through in and outgoing connections and real-time route them","day":"2026-09-28"}
+{"text":"then a calculation of memory needs on the relay would only reduce by a factor of lets say 5x which still would be impressive numbers","day":"2026-09-28"}
+{"text":"increase, but the number of member servabe would decrease","day":"2026-09-28"}
+{"text":"well, if every member gets exactly one upstream and one downstream, multiplexed, streaming still would work, and a user sending five streams would simply make those five streams slower by a factor of five","day":"2026-09-28"}
+{"text":"and the whole RAM resource would still need no governor","day":"2026-09-28"}
+{"text":"no need to cap member streams, each member gets only one, the throttle lives there, to more the user multiplexes, the less performance each of his streams get.","day":"2026-09-28"}
+{"text":"the problem is: if one user streams multiplexed than one slow receiver slows down all receivers of that users multiple streams","day":"2026-09-28"}
+{"text":"so the relay streams back corrective messages so the sender can send different number of frames, depending on receiver?","day":"2026-09-28"}
+{"text":"what's the absolute minimum send up to one packet per receiver, and we report when it's out of our door?","day":"2026-09-28"}
+{"text":"it's the how many packets in light per receiver AND number of receivers that impact RAM usage on the relay","day":"2026-09-28"}
+{"text":"the most simple addition would be a file transfer, on fame at the time, bot sender and receiver have only one file transfer channel and one file download channel at once.: predictable RAM usage AND a valuable feature gained at once.","day":"2026-09-28"}
+{"text":"if i  download a large model i go off and do other things, but the job gets done, no complcations, i was even contemplating a file transfer mechanism that simple divides the file into hex encoded chunks (twice the size) but actually works, which is the most important aspect.","day":"2026-09-28"}
+{"text":"does base 64 have to be escaped for json?","day":"2026-09-28"}
+{"text":"base 64 make obviously more sense, a file transfer also needs a hash based verification and re-assembly strategy","day":"2026-09-28"}
+{"text":"and the massage has to carry \"these are 12457 bytes starting at position 4567545","day":"2026-09-28"}
+{"text":"... and a resume can reconcile","day":"2026-09-28"}
+{"text":"and no core changes, and add-on to the files app or a separate little app, but easiest: as part of a chat-app. then all of a suddent chat can have 4 MB jpegs","day":"2026-09-28"}
+{"text":"it makes sense to wait for a chat app until the core is ready...","day":"2026-09-28"}
+{"text":"back to desk. a new accomplishment becomes anchor for a session. from that we diligently build a dependency tree during design, so a design could be, how to migrate the nodes log to the database. and we design not only the code interfaces and interface alterations, but also the final migration sequence, all the risk carrying elements. when that batch is done we pick a new task, design it, that's an ideal working method, in my imagination at least. step one design the collaborative design editr/planner.","day":"2026-09-28"}
+{"text":"what seemed to work: i give chaotic input and you both evaluate dependencies in real time, and measure/compute/limit the scope so we don't attempt to build everything at once.","day":"2026-09-28"}
+{"text":"my idea, desk-detail always carries one layer of is waiting on these, with not a list of numbers only but one line number: title, if i click on any of those, we close that detail-dialog and navigate to the one clicket?","day":"2026-09-28"}
+{"text":"tow lists: blocking and blocked by","day":"2026-09-28"}
+{"text":"lets try that","day":"2026-09-28"}
+{"text":"lets design the move of the node log into the database","day":"2026-09-28"}
+{"text":"i tried to abandon the last design and start a new one","day":"2026-09-28"}
+{"text":"if i End design mode the board stays, if i start a new one the board clears.","day":"2026-09-28"}
+{"text":"we can attach warnings later, so we don't loose to much","day":"2026-09-28"}
+{"text":"Moving the node log into machine-side database","day":"2026-09-28"}
+{"text":"suggestions?","day":"2026-09-28"}
+{"text":"that's a rule for this plan, we should find a way to insert it as such","day":"2026-09-28"}
+{"text":"yes.","day":"2026-09-28"}
+{"text":"somebody added a rule by lonesome executive decision. it's a good rule, so we don't correct that behavior now. i assume rules can be romoved, to.","day":"2026-09-28"}
+{"text":"can anything else get hurt, other than consumers of the log interface, by this move?","day":"2026-09-28"}
+{"text":"i'm ok with that risk, i'd rather rely on backups, and not worry about it","day":"2026-09-28"}
+{"text":"could we add a crude backup to D:\\countinn@google.com\\SpiritOS-data-backup\\ ? to run periodically?","day":"2026-09-28"}
+{"text":"agreed.","day":"2026-09-28"}
+{"text":"it's required to pull this off safely and keep my node safer","day":"2026-09-28"}
+{"text":"the related stale tests must be updated.","day":"2026-09-28"}
+{"text":"anything else?","day":"2026-09-28"}
+{"text":"how will that new table be keyed?","day":"2026-09-28"}
+{"text":"is there a sequence number?","day":"2026-09-28"}
+{"text":"can we derive a unique sequence number?","day":"2026-09-28"}
+{"text":"can hash plus req or reply be made a unique key?","day":"2026-09-28"}
+{"text":"why no hash there?","day":"2026-09-28"}
+{"text":"then we drop those","day":"2026-09-28"}
+{"text":"at some point wouldn't they get flushed/shedded by design?","day":"2026-09-28"}
+{"text":"ah. nice.","day":"2026-09-28"}

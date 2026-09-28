@@ -1,0 +1,68 @@
+{"text":"appFaceApp holds the dns to member ID in memory only, it's contact list is on disc and only governs permissions.","day":"2026-09-27"}
+{"text":"in RAM the route map, on disc: permissions in form of the contact list","day":"2026-09-27"}
+{"text":"after boot, the first request from a browser arrives, it asks its owner for the route (it might actually be an access to grantFace app, who holds those routes (you were right!), if a route is returned, appFaceApp caches it in ram and then re-uses it on subsequent post from that subdomain.","day":"2026-09-27"}
+{"text":"grantFace maintains a DNS-wildcard-subdomain compatible dataset, and appFaceApp accesses it via our generic packet routing","day":"2026-09-27"}
+{"text":"the core doesn't any knowledge of the puppet, nor the grantFace app","day":"2026-09-27"}
+{"text":"can the team agree that this is a design that's doesn require core-adjustments OTHER then the generic passthrough api spec?","day":"2026-09-27"}
+{"text":"agreed. 1) the process spec needs updating, including implementations of those updates. grantFace is a faceless spirit app, responding to HTTP equivalent requests. 2) the proccess spec DOES have a way of finding the owner-nodes api port, that's how the console windows in the jobs app get updated after all, there is a process interface in the node. that's where my requirement came from: the app-Servers must runn in the process-subsystem. look at the code for our image tagging systems to see how processes access node interfaces.","day":"2026-09-27"}
+{"text":"i mean even the fs-watcher and the stats monitor are visible in the jobs monitor, how hard can it be? the proccess subsysten is very clever.","day":"2026-09-27"}
+{"text":"on top of that the shell has an app already where transactions of a server can be watched.... it's cheap.","day":"2026-09-27"}
+{"text":"and test can subscribe to those sse streams, too","day":"2026-09-27"}
+{"text":"..the ones that monitor processes.","day":"2026-09-27"}
+{"text":"any more issues?","day":"2026-09-27"}
+{"text":"answer to: \"grantFace's sync must look a member's key up before accepting it\". No. the key is already verified when the node accepts the request, before dispatching it.","day":"2026-09-27"}
+{"text":"whether face has a row for it. the dataset grans.json is the canonical version of that dataset. upon every modification if that, grantFace uses the owner command of the owners local node, to sync the appFaceApp's contact list.","day":"2026-09-27"}
+{"text":"deletions of rows in grants.json will be problematic, but not of concern right now.","day":"2026-09-27"}
+{"text":"it's foreseen in the crystal ball","day":"2026-09-27"}
+{"text":"is the design of grantFace agreed upon now?","day":"2026-09-27"}
+{"text":"there are internal dependencies in G19. are they already broken down that way?","day":"2026-09-27"}
+{"text":"don't processes also get a spirit object with interfaces on it?","day":"2026-09-27"}
+{"text":"what is 3) spirit.core.ask ??","day":"2026-09-27"}
+{"text":"so R1 of G19 is cleanup process spec with the addition of a server process type?","day":"2026-09-27"}
+{"text":".. and implement that?","day":"2026-09-27"}
+{"text":"ok break it down like that and we iron out remaining wrinkles as we go.","day":"2026-09-27"}
+{"text":"a server process must implement a shutdown verb","day":"2026-09-27"}
+{"text":"on node-shutdown servers must sent a shutdown request to all server processes.","day":"2026-09-27"}
+{"text":"server apps must send incoming requests to the monitor","day":"2026-09-27"}
+{"text":"server processes must send their replies to the monitor when retuning the reply to the node.","day":"2026-09-27"}
+{"text":"the payload need to be only in the monitor in debug mode","day":"2026-09-27"}
+{"text":"and the error text should be in the monitor if the reply is an error","day":"2026-09-27"}
+{"text":"the process might need its own debug more, (essentially --verbose)","day":"2026-09-27"}
+{"text":"prolly shouldn't be node-wide, that might cause a flood of extra stuff and printouts etc...","day":"2026-09-27"}
+{"text":"i see no impact on the board from this discussion.","day":"2026-09-27"}
+{"text":"testing","day":"2026-09-27"}
+{"text":"testibg","day":"2026-09-27"}
+{"text":"hallo?","day":"2026-09-27"}
+{"text":"i want to: refactor our app plugin-model and clean up related components","day":"2026-09-27"}
+{"text":"I want an faceless app that maps wildcard DNS segments to member of my relay or public-face-bearing apps","day":"2026-09-27"}
+{"text":"i'll call it grantFace","day":"2026-09-27"}
+{"text":"suggestions? what has to happen to make that faceless app?","day":"2026-09-27"}
+{"text":"Ah, grantFace MUST run as an real SpiritOS process that can post status messages to the jobs apps foldable terminal","day":"2026-09-27"}
+{"text":"in general terms what needs to happen for that?","day":"2026-09-28"}
+{"text":"Add the need to RUN to the requirements","day":"2026-09-28"}
+{"text":"Grantface can't exist if it can't run so grantFace is dependent on RUN","day":"2026-09-28"}
+{"text":"can the process system handle servers?","day":"2026-09-28"}
+{"text":"is getting to run the server under the process system a goal that can be achieved with small blast radius?","day":"2026-09-28"}
+{"text":"well then we should fix the process system to accomodate servers in general and run the grantFace server in that fashion. should we add it to run?","day":"2026-09-28"}
+{"text":"if i throw out a question i'll accept answers form all team members","day":"2026-09-28"}
+{"text":"the problem is that i insist that grantFace use existing capabilites in the system.","day":"2026-09-28"}
+{"text":"not interested in all that. Im only interested in running the grantFace server as SpiritOS process right now. nothing else. can that be done without the blast radius wsl-claude is hinting at?","day":"2026-09-28"}
+{"text":"i will give the goal only if the scope remains: 1. updating the process subsystem to accomodate servers and 2) running the grantFace app as such a server. and 3) that our dependency graph collapses by at least one node.","day":"2026-09-28"}
+{"text":"can wsl confirm that promise?","day":"2026-09-28"}
+{"text":"does that promise include the autostart autostop when node starts and stops?","day":"2026-09-28"}
+{"text":"so that does include a change in the core?","day":"2026-09-28"}
+{"text":"do processes die when the node dies?","day":"2026-09-28"}
+{"text":"lets say i allow change in the core if it doesn't change the process api of the core?","day":"2026-09-28"}
+{"text":"what the f is a faceServer? in this convo?","day":"2026-09-28"}
+{"text":"out of scope","day":"2026-09-28"}
+{"text":"what level of commit are we at right now?","day":"2026-09-28"}
+{"text":"we're still in design mode as a test of desk. ok?","day":"2026-09-28"}
+{"text":"so far: i get the the most important (newest) messages higher up in the window and i down have to scroll for ages to find them. i want to interactively build a dependency graph, and collapse protions of it with a \"go.\"","day":"2026-09-28"}
+{"text":"what made me stop the last implementation cycle: claude-windows was talking about passing massive amounts of junk to the grantFace server. when the only thing that server has to to is maintain one file on disc that contains (DNS-segment-name / ID-key) tuplets, it doesn't even need to know why, who authorized it or anything, that is all taken care of node-side. so it should be the dumbest table-maintenance program ever. agreed?","day":"2026-09-28"}
+{"text":"grantFace doesn't even have to know what a face is, what appFaceApp is, or that it even exists, correct?","day":"2026-09-28"}
+{"text":"true. it needs to update to make calls to one function command post or whatever to an address its given, but still doesn't need to know about. why or for what purpose","day":"2026-09-28"}
+{"text":"it modifies a contact list somewhere.... that all it knows","day":"2026-09-28"}
+{"text":"i guess. i observed a runaway train. design principles thrown out with complete abandon. i projected overall accumulation of messiness, if i let it go on, then put a stop to it all","day":"2026-09-28"}
+{"text":"i don't assign credit or blame, i only seek improvement of the process. at the beginning i like the desk app, but at that time had no relation anymore to what you guys we're actually doing.","day":"2026-09-28"}
+{"text":"There was a mysterious R19 that didn't move at the bottom of the list that i couldn't possible connect to what i saw in your vscode windows...","day":"2026-09-28"}
+{"text":"i often ask: so is this how it works? why is that necessary? i mean it took me hours to explain the general mechanism for the whole face strategy. and you guys will, after grasping what i want in general, will hack it together just for the proof of a narrow thing, while throwing away all rules in the process. this might be an exaggeration. it irks me when i pursue an idea of mine and then i don't understant what going on.","day":"2026-09-28"}

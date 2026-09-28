@@ -1,0 +1,47 @@
+{"text":"I'm good with 1). 2) The face admits the members replies, because the owner of appFaceApp maintains (keeps in sync) the admission list (contact list of appFaceApp) via owner-command.  The member gets face requests because he asked for them though a negotiation that ends with the member storing his resulting domain-name. by default, if no handler is installed for his domain name, he responds with \"under construction\", or an error. else he dispatches the request using the standard faceless app pattern. 4) appFaceApp is a puppet and has no owner.command it can use. the api verb. : implemented first: the api.api introspection. this can be initially tested with the working proof we now have for browser requests get returnd by a node-resident app-server-process. ?","day":"2026-09-27"}
+{"text":"the api.api introspection is public (for members), because it can return {} if the requesting member is not allowed.","day":"2026-09-27"}
+{"text":"peerPost('api')","day":"2026-09-27"}
+{"text":"NOOOO peerPost is the wire to the api introspection, NOT the face","day":"2026-09-27"}
+{"text":"peerPost ask ownerNode('api') the reply is {grantFace:{verb:{},verb{}}}","day":"2026-09-27"}
+{"text":"the member then uses that interface to obtain a domain element. then, miraculously, gets requests via the appFaceApp puppet.","day":"2026-09-27"}
+{"text":"the grantFace can even have a verb that tells the requester the ID of appFaceApp puppy, so the member can savely allow requests signed by appFaceApp...","day":"2026-09-27"}
+{"text":"if grantFace tells the member the ID of appFaceApp puppet, that reply will automatically be signed by the owner node.","day":"2026-09-27"}
+{"text":"grantFace gets requests only when their explicitly forwarded via named pipe, by the owner-node","day":"2026-09-27"}
+{"text":"and those request can only come from verified members with signature that the owner node automatically checks","day":"2026-09-27"}
+{"text":"say so in the design. and explain there, that it requires a member to be in the owners contact list before introspection works for that member","day":"2026-09-27"}
+{"text":"that is exactly consent based access.","day":"2026-09-27"}
+{"text":"with multiple layers of consent","day":"2026-09-27"}
+{"text":"1) consent to allow member on the relay, 2) consent to allow introspection 3) consent to grantFace access..... ?","day":"2026-09-27"}
+{"text":"there are implied layers since the relay is owned by the same key as the appFaceApp puppet....","day":"2026-09-27"}
+{"text":"one thing in common: the owner has to issue grants all along the way","day":"2026-09-27"}
+{"text":"the good things about implementing grantFace next: it's relatively simple and the main logic has already been exercised and proven. 2. we can test-drive the api introspection on that app. 3. we can make sure the app is visible in jobs-(monitor), and when it all works, the browser to app-server-process request loop should continue working just as before.. feedback?","day":"2026-09-27"}
+{"text":"additional test: make sure the client member of grantFace stashes to proper information in its fs. make sure the client member, also puts appFaceApp into contacts, in order to accept browser requests routed by appFaceApp etc... ?","day":"2026-09-27"}
+{"text":"a Client-side grantFace panel can help guide users through the process and explain why appFaceApp must be a contact. Related question. should shadow-roll rows of contacts identify puppies, so they can be exclided from displayed contact lists like in a chat-app, appFaceApp will not interact with anyone other than route browser-posts to members....?","day":"2026-09-27"}
+{"text":"like in member-type field, it could also help with relay ID's etc.... ?","day":"2026-09-27"}
+{"text":"also: our architecture allows multliple relays per personal node, and implicitly multliple face-providers, so we be carefull how the personal nodes grantFace dataset looks....","day":"2026-09-27"}
+{"text":"and the owner may own several relay and face providers, too.","day":"2026-09-27"}
+{"text":"is there any feedback specifically for the shadow-roll to carry a node-type?","day":"2026-09-27"}
+{"text":"the owner-relay-facePuppet group implies a federated or distributed trust, carried by the owners key?","day":"2026-09-27"}
+{"text":"yes","day":"2026-09-27"}
+{"text":"also, can the VPS method of install-time association of the owners key belong to a lowest level layer where relay and public puppies (like print service by a peer) they owner-key should be stored orthogonally on all VPS puppies/relays? and be disciplined about how ownership of such devices is handled?","day":"2026-09-27"}
+{"text":"sor of like the RAM DISC queries for owners are the same on all server types?","day":"2026-09-27"}
+{"text":"that is also cleanup i want to drive....","day":"2026-09-27"}
+{"text":"that will be done after grantFace","day":"2026-09-27"}
+{"text":"do we all think the api verb will pay for itself?","day":"2026-09-27"}
+{"text":"wsl-claude. agreed. claude-windows: don't we know allready that a slew of apps will be coming, and they'll integrate faster and better if we do the ground work now? this may be a matter of taste in strategy. seeing how easily we make thinks messy (app specific code in the core, roll-your-own-duplicates etc.) i tend to use these cleanup, even if they slow us down right now..... i dislike building things like a bunch of wild west gunslinging cowboys and then have to retrofit a multitude of pieces ever single step along the way..","day":"2026-09-27"}
+{"text":"and i don't care about burning tokens because my time is more valuable. claude-windows: appServer should be called faceServer","day":"2026-09-27"}
+{"text":"true. the core will have no app related junk in it. and appServer.js actually is an app component. and is treated by the core as a generic puppet, in the design at least? no?","day":"2026-09-27"}
+{"text":"a mode of the core-server. that rings true. What else is it good for other than giving face?","day":"2026-09-27"}
+{"text":"and it is controlled like a puppet.","day":"2026-09-27"}
+{"text":"hmmm isn't isolation just a design concept/principle? that doesn't make it DO anything other than giving face. 2. doesn't basically fill the puppet contract? remote controlled by a mirror-interface, operated by the owner? what it actually DOES and provides is still just giving face.","day":"2026-09-27"}
+{"text":"lets face it. the only thing it actually does is giving face, while being the owners puppet. you can go all lawyerly on me, it is still the truth. you keep describing how it does things, plumbing, using the core implementation intensively, i see only one thing that it actually does. in fact, should a printing puppet come along, it will be printServer and not called or launched by appServer.....","day":"2026-09-27"}
+{"text":"it doesn't pick its own contacts, it doesn't set its own resource boundaries, it doesn't store it's own routes, it doesn't control its own file system, its a bit like multiple enheritance, it enherits the plumbing from node. it function/contribution is only 1 thing. calling it appServer implies it actually serves something. it doesn't serve apps. it only serves face","day":"2026-09-27"}
+{"text":"it's a fanned screen","day":"2026-09-27"}
+{"text":"it's an io-device","day":"2026-09-27"}
+{"text":"1 simple question: does it serve applications? more than relay serves applications or more than node servers applications. the one thing that serves most apps today is shell.","day":"2026-09-27"}
+{"text":"thanks. name change agreed upon by team.","day":"2026-09-27"}
+{"text":"so. we want to close on the grantFace app. that's our goal here. do we have an precise enough picture of it?","day":"2026-09-27"}
+{"text":"i think it's lives while the node lives, because it is a server, as defined in the manifes. grantFace app owns grants.json, who else needs it on the owners node? 3) the server is a normal loopback client of the node interface, it can reach anything a local browser can. 4) the sync is executed by grantFace, every time a change occurs in grants.json. The sync is executed by owner command on the owners node interface, by loopback. the server is in fact given the same lowest layer node-client interface that is the shell has at its lowest layer. 5) the members client is a simple shell app, it used peerPost to get apis, it uses peerPost to negotiate a place int the grants file, it uses the local fs.api to store it's end of the domain grant.","day":"2026-09-27"}
+{"text":"2) there is no need for appFaceApp to access grantFace, because grantFace keeps appFaceApp in sync with grants.json. appFaceApp has permissible target-node-ID's for browser posts magically updated by grantFace using the owners owner command.","day":"2026-09-27"}
+{"text":"correct. appFaceApp is a puppet, it behavior is controlled by the owners node.","day":"2026-09-27"}
+{"text":"appFaceApps owner doesn't understant appFaceApp nor grantFace","day":"2026-09-27"}
