@@ -108,12 +108,26 @@ function dbPath(rootDir) {
   return path.join(rootDir, 'relay-state', 'node.db');
 }
 
-// The node log's fields, in the order trafficLog.js writes them: the 24 found
-// on Andy's node's traffic.jsonl on 2026-09-28, plus `mark` rows. Anything not
-// named here goes to the `extra` column rather than being dropped.
-const TRAFFIC_COLUMNS = ['at', 'dir', 'kind', 'peer', 'relay', 'hash', 'outcome', 'admitted',
-  'status', 'code', 'ms', 'payload', 'bytes', 'event', 'label', 'invite', 'key', 'why', 'owner',
-  'revoked', 'invitesRevoked', 'expiresAt', 'cause', 'mark'];
+// The node log's fields, in the order trafficLog.js writes them, each with
+// the type it has held on Andy's node (traffic.jsonl surveyed 2026-09-28):
+// text, a number, or true/false stored as 1/0. Typed, so an index on hash or
+// at holds the plain value and a lookup compares it plainly (wsl-claude,
+// before transport/R19.4). A value that does not have its column's type,
+// and any field not named here, goes to `extra` as JSON: nothing is lost
+// and nothing is reshaped.
+const TRAFFIC_TYPES = {
+  at: 'text', dir: 'text', kind: 'text', peer: 'text', relay: 'text', hash: 'text', outcome: 'text',
+  admitted: 'bool', status: 'int', code: 'text', ms: 'int', payload: 'text', bytes: 'int',
+  event: 'text', label: 'text', invite: 'text', key: 'text', why: 'text', owner: 'bool',
+  revoked: 'int', invitesRevoked: 'int', expiresAt: 'text', cause: 'text', mark: 'text',
+};
+const TRAFFIC_COLUMNS = Object.keys(TRAFFIC_TYPES);
+const SQL_TYPE = { text: 'TEXT', int: 'INTEGER', bool: 'INTEGER' };
+function trafficFits(type, v) {
+  if (type === 'text') return typeof v === 'string';
+  if (type === 'int') return typeof v === 'number' && isFinite(v);
+  return typeof v === 'boolean';
+}
 
 // Whether this node can have a store at all. Asked rather than assumed, so
 // the caller can refuse with a sentence instead of a stack trace.
@@ -408,13 +422,13 @@ function open(rootDir, opts) {
   //     why it is NOT in the cache cap above: cacheBytes counts only `seen`
   //     and `seen_routes`, so this table can grow without evicting anyone.
   //
-  // EACH VALUE IS STORED AS ITS JSON TEXT, NULL when absent, so a row reads
-  // back exactly as it was written (true stays true, 3 stays 3) and a
-  // reader cannot tell a table row from a file row.
+  // EACH VALUE IN ITS OWN TYPE, NULL when absent (TRAFFIC_TYPES above), so a
+  // row reads back exactly as it was written (true stays true, 3 stays 3)
+  // and a reader cannot tell a table row from a file row.
   db.exec(`
     CREATE TABLE IF NOT EXISTS traffic (
       seq INTEGER PRIMARY KEY AUTOINCREMENT,
-      ${TRAFFIC_COLUMNS.map(function (c) { return '"' + c + '" TEXT'; }).join(',\n      ')},
+      ${TRAFFIC_COLUMNS.map(function (c) { return '"' + c + '" ' + SQL_TYPE[TRAFFIC_TYPES[c]]; }).join(',\n      ')},
       extra TEXT
     );
   `);
@@ -678,10 +692,12 @@ function open(rootDir, opts) {
       add: function (row) {
         const extra = {};
         Object.keys(row || {}).forEach(function (k) {
-          if (TRAFFIC_COLUMNS.indexOf(k) === -1) extra[k] = row[k];
+          if (!TRAFFIC_TYPES[k] || !trafficFits(TRAFFIC_TYPES[k], row[k])) extra[k] = row[k];
         });
         const vals = TRAFFIC_COLUMNS.map(function (c) {
-          return row && row[c] !== undefined ? JSON.stringify(row[c]) : null;
+          const v = row ? row[c] : undefined;
+          if (v === undefined || !trafficFits(TRAFFIC_TYPES[c], v)) return null;
+          return TRAFFIC_TYPES[c] === 'bool' ? (v ? 1 : 0) : v;
         });
         vals.push(Object.keys(extra).length ? JSON.stringify(extra) : null);
         return Number(tq.add.run.apply(tq.add, vals).lastInsertRowid);
@@ -690,9 +706,8 @@ function open(rootDir, opts) {
         return tq.all.all().map(function (r) {
           const out = {};
           TRAFFIC_COLUMNS.forEach(function (c) {
-            if (r[c] !== null && r[c] !== undefined) {
-              try { out[c] = JSON.parse(r[c]); } catch (e) { out[c] = r[c]; }
-            }
+            if (r[c] === null || r[c] === undefined) return;
+            out[c] = TRAFFIC_TYPES[c] === 'bool' ? r[c] === 1 : TRAFFIC_TYPES[c] === 'int' ? Number(r[c]) : r[c];
           });
           if (r.extra) {
             try {

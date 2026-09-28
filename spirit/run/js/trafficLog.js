@@ -153,10 +153,20 @@ function table(rootDir, create) {
 function readAll(rootDir) {
   var rows = readFile(rootDir);
   var t = table(rootDir, false);
+  var tableRows = [];
   if (t) {
-    try { rows = rows.concat(t.all()); } catch (e) { /* the file's rows still stand */ }
+    try { tableRows = t.all(); } catch (e) { /* the file's rows still stand */ }
   }
-  return rows;
+  if (!tableRows.length) return rows;
+  if (!rows.length) return tableRows;
+  // BOTH, SO ORDER BY `at`. stamp() makes it unique and increasing across
+  // both stores, so this is the order they were written in, even if node.db
+  // once failed to open and some rows went to the file instead (wsl-claude).
+  // The sort is stable: a batch of marks sharing one stamp keeps its order.
+  return rows.concat(tableRows).sort(function (a, b) {
+    var x = String(a && a.at || ''), y = String(b && b.at || '');
+    return x < y ? -1 : x > y ? 1 : 0;
+  });
 }
 
 function readFile(rootDir) {
