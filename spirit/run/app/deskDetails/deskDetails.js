@@ -271,8 +271,9 @@ function ddItemHtml() {
       : '<div class="job-manifest-note">Nothing required for this yet. Say what it needs below; the lead adds it once we agree.</div>') +
     (blocking ? '<div class="label" style="margin-top:8px">Blocking</div><ul style="margin:6px 0 0 18px">' + blocking + '</ul>' : '') +
     // The plan's rules hold here too (desk.js, deskSessionRules).
-    (ddRules.length ? '<div class="label" style="margin-top:8px">Rules for this plan</div><ul style="margin:6px 0 0 18px">' +
-      ddRules.map(function (r) { return '<li>' + ddEsc(r.id) + ': ' + ddEsc(r.text) + '</li>'; }).join('') + '</ul>' : '') +
+    (ddRules.length ? '<div style="margin-top:8px;padding:6px 10px;border:1px dashed currentColor;border-radius:6px">' +
+      '<div class="label">Rules — hold for every requirement, never done</div><ul style="margin:6px 0 0 18px">' +
+      ddRules.map(function (r) { return '<li>' + ddEsc(r.id) + ': ' + ddEsc(r.text) + '</li>'; }).join('') + '</ul></div>' : '') +
     '</div>';
 }
 

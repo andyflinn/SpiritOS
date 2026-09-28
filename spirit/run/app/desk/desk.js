@@ -468,8 +468,12 @@ function deskSessionRules() {
 function deskRulesHtml() {
   var rules = deskSessionRules();
   if (!rules.length) return '';
-  return '<div class="label" style="margin-top:8px">Rules for this plan</div><ul style="margin:6px 0 0 18px">' +
-    rules.map(function (r) { return '<li>' + deskEsc(r.id) + ': ' + deskEsc(r.text) + '</li>'; }).join('') + '</ul>';
+  // A BOX OF ITS OWN. Andy: "can we have a clearer separation between rules
+  // and requirements?" Rules sit in a dashed frame, named for what they are,
+  // so they never read as more items on the list.
+  return '<div style="margin-top:8px;padding:6px 10px;border:1px dashed currentColor;border-radius:6px">' +
+    '<div class="label">Rules — hold for every requirement, never done</div><ul style="margin:6px 0 0 18px">' +
+    rules.map(function (r) { return '<li>' + deskEsc(r.id) + ': ' + deskEsc(r.text) + '</li>'; }).join('') + '</ul></div>';
 }
 
 function deskSessionBubble() {
@@ -487,6 +491,7 @@ function deskSessionBubble() {
   return '<div class="stat-tile wide"><div class="label" data-open="' + deskEsc(g.id) + '" style="cursor:pointer">' +
     deskEsc(g.id) + ' — ' + deskEsc(g.title) + '</div>' +
     (g.description ? '<div>' + deskEsc(g.description) + '</div>' : '') + deskRulesHtml() +
+    '<div class="label" style="margin-top:8px">Requirements — each blocks the goal until done</div>' +
     (items ? '<ul style="margin:6px 0 0 18px">' + items + '</ul>'
       : '<div class="job-manifest-note">Nothing required yet.</div>') + '</div>';
 }
