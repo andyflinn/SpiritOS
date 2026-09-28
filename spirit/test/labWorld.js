@@ -222,7 +222,11 @@ function createWorld(opts) {
       };
     }
 
-    const missing = buildStamp.missingFromCopy(REPO_ROOT);
+    // Desk's folder is live data that Desk keeps writing (a new log chunk,
+    // a voice file), tracked by Andy's ruling ("git everything in this
+    // folder") but committed when he does. A fake node needs none of it.
+    const missing = buildStamp.missingFromCopy(REPO_ROOT)
+      .filter(function (f) { return f.indexOf('spirit/run/app/desk/') !== 0; });
     if (missing.length) {
       return {
         ok: false,
