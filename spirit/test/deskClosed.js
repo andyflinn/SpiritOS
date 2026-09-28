@@ -1,0 +1,142 @@
+'use strict';
+
+// spirit/test/deskClosed.js
+// A LINE ANDY CLOSED NEVER COMES BACK.
+//
+//   Andy, 2026-09-28: "why are all the lines back again. i made most of
+//   them disappear with close", "the board should empty out", and "what
+//   should be happening all along: the board is being modified,
+//   irrevocable". A closed line has no reopen, by design (claude-windows).
+//
+// Held three ways, each on a fresh mount of the real desk.js from its own
+// log alone: after the goal itself is done and closed (the fallback to the
+// old board, fixed in 74210408), after a remount, and after the lead posts
+// the same session again.
+
+const fs = require('fs');
+const path = require('path');
+const test = require('./testSupport.js');
+const spirit = require('../run/js/kernel.js');
+
+const DESK = path.join(__dirname, '..', 'run', 'app', 'desk', 'desk.js');
+const LEAD = 'MCowBQYDK2VwAyEAleadleadleadleadleadleadleadleadleadl=';
+
+function fakeElement(id) {
+  let html = '';
+  const el = {
+    id: id, value: '', textContent: '', hidden: false, disabled: false, style: {}, listeners: {},
+    addEventListener: function (type, fn) { (el.listeners[type] = el.listeners[type] || []).push(fn); },
+    fire: function (type, event) { (el.listeners[type] || []).forEach(function (fn) { fn(event || {}); }); },
+    // Desk binds its row clicks on `tr[data-id]` after every draw, so the
+    // stub builds those rows from the drawn markup and keeps the newest.
+    queried: {},
+    querySelectorAll: function (sel) {
+      if (sel !== 'tr[data-id]') return [];
+      const rows = (html.match(/<tr data-id="[^"]*"/g) || []).map(function (m) {
+        const row = fakeElement('');
+        const id = m.slice('<tr data-id="'.length, -1);
+        row.getAttribute = function (name) { return name === 'data-id' ? id : null; };
+        return row;
+      });
+      el.queried[sel] = rows;
+      return rows;
+    },
+    getAttribute: function () { return null; },
+  };
+  Object.defineProperty(el, 'innerHTML', {
+    get: function () { return html; },
+    set: function (v) { html = String(v); },
+    enumerable: true,
+  });
+  return el;
+}
+
+function fakeDocument() {
+  const byId = {};
+  return { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
+}
+
+function fakeFs(files) {
+  return {
+    loadFile: function (name) { return Object.prototype.hasOwnProperty.call(files, name) ? files[name] : null; },
+    saveFile: function (name, content) { files[name] = content; return Promise.resolve(); },
+  };
+}
+
+function load(script, doc) {
+  let behavior = null;
+  const shellSpirit = { shell: { activateApp: function (b) { behavior = b; } } };
+  new Function('spirit', 'document', 'window', fs.readFileSync(script, 'utf8'))(shellSpirit, doc, {});
+  return behavior;
+}
+
+function mount(files) {
+  const doc = fakeDocument();
+  const behavior = load(DESK, doc);
+  const handlers = [];
+  behavior.mount(fakeElement('container'), {
+    fs: fakeFs(files),
+    escapeHtml: spirit.core.util.escapeHtml,
+    verb: function () { return Promise.resolve({ status: 200, body: {} }); },
+    onPacket: function (app, fn) { handlers.push(fn); },
+    peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h-out' }); },
+    callDialog: function () { return new Promise(function () {}); },
+  });
+  return {
+    top: function () { return doc.getElementById('desk-top').innerHTML; },
+    arrive: function (body, hash) { handlers.forEach(function (fn) { fn(body, { hash: hash, fromKey: LEAD, sentAt: '2026-09-28T10:30:00.000Z' }); }); },
+  };
+}
+function settle() {
+  return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); });
+}
+
+// His log as it stands after the goal: a session with one item, an old
+// board from before the ruling, the claims, his done. and his closed.
+const SESSION = JSON.stringify({
+  goal: { id: 'test/G1', title: 'The goal' },
+  items: [{ id: 'test/G1.1', title: 'Closed item' }, { id: 'test/G1.2', title: 'Still open item' }],
+});
+const OLD_BOARD = JSON.stringify({ box: 'wsl', rows: [{ id: 'puppets/G2', handle: 'G2', title: 'Old board row', rank: 1 }] });
+let n = 0;
+function row(dir, kind, text, todo) {
+  n += 1;
+  return { key: 'k' + n, at: '2026-09-28T10:' + String(n).padStart(2, '0') + ':00.000Z', dir: dir, peer: dir === 'in' ? LEAD : LEAD,
+    outcome: dir === 'in' ? 'received' : 'sent', from: dir === 'in' ? 'claude-windows' : 'andy', kind: kind, text: text, todo: todo };
+}
+const log = [
+  row('in', 'board', OLD_BOARD, ''),
+  row('in', 'session', SESSION, 'team/chat'),
+  row('in', 'note', 'READY TO CLOSE', 'test/G1.1'),
+  row('out', 'answer', 'done.', 'test/G1.1'),
+  row('out', 'answer', 'closed.', 'test/G1.1'),
+  row('in', 'note', 'READY TO CLOSE', 'test/G1'),
+  row('out', 'answer', 'done.', 'test/G1'),
+  row('out', 'answer', 'closed.', 'test/G1'),
+];
+
+test.startTest('Desk: a line Andy closed never comes back');
+const files = { 'log.json': JSON.stringify(log) };
+const first = mount(files);
+settle().then(function () {
+  test.subHeading('With the goal done and closed, the list is the session, not the old board');
+  const top = first.top();
+  if (!/Old board row/.test(top) && !/Closed item/.test(top) && /Still open item/.test(top)) {
+    test.check('the closed item and the closed goal are gone, the open item stays, and no old board row comes back');
+  } else {
+    test.fail('the list shows: old board ' + /Old board row/.test(top) + ', closed item ' + /Closed item/.test(top) +
+      ', open item ' + /Still open item/.test(top));
+  }
+
+  test.subHeading('After a remount, and after the lead posts the same session again');
+  const again = mount(files);
+  again.arrive({ from: 'claude-windows', kind: 'session', text: SESSION, todo: 'team/chat' }, 'h-session-again');
+  return settle().then(function () {
+    const top2 = again.top();
+    if (!/Closed item/.test(top2) && /Still open item/.test(top2)) {
+      test.check('a fresh mount and a reposted session still leave the closed item closed');
+    } else {
+      test.fail('after a remount and a reposted session the closed item is ' + (/Closed item/.test(top2) ? 'back' : 'gone, but so is the open one'));
+    }
+  });
+}).then(function () { test.reportSuccessFailureCount(); });
