@@ -148,6 +148,27 @@ if (hadRetired && again === want && tableRows(h.home).length === after.length) {
 } else {
   test.fail(OWED + 'after a restart the history differs, rows were imported twice, or the retired file was read');
 }
+
+test.subHeading('T7: a second import never renames over the first one');
+// If node.db ever fails after the move, the log falls back to a NEW
+// traffic.jsonl; the next opening imports that too. It must not rename it
+// over traffic.jsonl.imported, which holds the original bytes (wsl-claude's
+// review of 25a1896; fixed in 711772d).
+const firstRetired = fs.existsSync(retired) ? fs.readFileSync(retired) : null;
+const late = { at: '2026-09-28T10:00:00.000Z', dir: 'in', kind: 'owner', event: 'written-while-the-table-was-down', peer: PEER };
+fs.writeFileSync(h.file, JSON.stringify(late) + '\n');
+const lateBytes = fs.readFileSync(h.file);
+let lateView = '';
+try { lateView = view(h.home); } catch (e) { lateView = ''; }
+const second = fs.readdirSync(path.dirname(h.file)).filter(function (n) {
+  return /^traffic\.jsonl\.imported-\d+$/.test(n) && fs.readFileSync(path.join(path.dirname(h.file), n)).equals(lateBytes);
+});
+const firstKept = firstRetired && fs.readFileSync(retired).equals(firstRetired);
+if (firstKept && second.length === 1 && !fs.existsSync(h.file) && lateView.indexOf('written-while-the-table-was-down') !== -1) {
+  test.check('the later file became ' + second[0] + ', the original traffic.jsonl.imported kept its bytes, and the late row is in the history');
+} else {
+  test.fail(OWED + 'second import: original kept ' + !!firstKept + ', numbered copy ' + JSON.stringify(second) + ', late row read ' + (lateView.indexOf('written-while-the-table-was-down') !== -1));
+}
 done(h.home);
 
 // ── T6: THE WAY BACK ──────────────────────────────────────────────────
