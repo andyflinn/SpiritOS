@@ -565,7 +565,9 @@ function deskSessionRules() {
 }
 function deskRulesHtml() {
   var rules = deskSessionRules();
-  if (!rules.length) return '';
+  // Gone with the goal they belong to. Andy: "the rules should also
+  // disappear with the requirement they were attached to."
+  if (!rules.length || deskClosed[String(deskSession.goal.id)]) return '';
   // A BOX OF ITS OWN. Andy: "can we have a clearer separation between rules
   // and requirements?" Rules sit in a dashed frame, named for what they are,
   // so they never read as more items on the list.
@@ -610,8 +612,11 @@ function deskTable() {
   if (deskSessionOpen()) return deskSessionTable();
   return '<div class="job-manifest-note">No design session is open. Press Start design mode in the Team tab to begin one.</div>';
 }
+// Open while any of its lines is not closed away: a closed goal takes its
+// rules with it, but a line still open is never hidden with it (wsl-claude's
+// deskClosed.js), so unfinished work cannot vanish.
 function deskSessionOpen() {
-  return !!deskSession && !deskClosed[String(deskSession.goal.id)];
+  return !!deskSession && deskSessionRows().some(function (row) { return !deskClosed[row.id]; });
 }
 
 function deskRowOf(id) {
