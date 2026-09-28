@@ -4,6 +4,6 @@
   "kind": "server",
   "operated": "user",
   "args": [
-    { "name": "port", "type": "number", "label": "Port", "default": 44444 }
+    { "name": "port", "type": "number", "label": "Port" }
   ]
 }

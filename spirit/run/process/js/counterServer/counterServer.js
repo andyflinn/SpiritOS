@@ -19,7 +19,7 @@
 const http = require('http');
 
 // Two ways in: the launch dialog's one JSON string, or by hand, the usual
-// way, `node counterServer.js --port 44444` (Andy tried exactly that).
+// way, `node counterServer.js --port <n>` (how Andy first started it).
 let args = {};
 const argv = process.argv.slice(2);
 if (argv[0] && argv[0].trim().charAt(0) === '{') {
@@ -34,7 +34,7 @@ const port = Number(args.port);
 // outside 1-65535 is refused at once, by name, instead of Node's own crash.
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   process.stderr.write('counterServer: no valid port (got ' + JSON.stringify(args.port === undefined ? null : args.port) +
-    '); give one from 1 to 65535, e.g. --port 44444\n');
+    '); give a whole number from 1 to 65535, e.g. --port <n>\n');
   process.exit(2);
 }
 
