@@ -793,28 +793,52 @@ enough — and the argument is what was asked for.
 The last two are not done. They are what this panel argued for, and they
 are the reason it was proposed.
 
-### R19 — the database decision, deferred until the log can prove its promises
+### R19 — the node log moves into node.db
 > database decision deferred until proof that the system in itself can verify its promises.
 
-**Status:** OPEN, waiting on R16. Added 2026-09-27 on Andy's "go." to
-making every deferred decision its own row, so it cannot sink out of
-sight again: R16 sat for two weeks ranked by age, because nothing on the
-board said this decision was waiting on it.
+**Status:** OPEN, a Desk design session (2026-09-28). The goal, Andy's words:
+*"Moving the node log into machine-side database"*. Andy: *"this app will as
+of now, be the official state of the project."* So Desk is where the state is
+shown and decided, and it reads ONE file in the tree:
+`spirit/test/requirements/transport-R19.json` holds the items, their tests
+and their state (open, claimed, done with Andy's words). This section keeps
+only the reasons; the file is the list. Each item's tests are written first,
+run RED against today's tree, and turn GREEN once it is built (Andy: *"they
+must be red before wsl pulls the implementation, and green after"*).
 
 **The direction, Andy's, 2026-09-27:** the traffic log *"belongs into the
 database, which also allows log access to be optimized"*. Today it is
 `relay-state/traffic.jsonl`, one append-only file that every read scans
 whole (`spirit/run/js/trafficLog.js:108`), beside `node.db`.
 
-**What R16 changed since this was deferred:** sealing (cycle 10, 2026-09-23)
-moved what is signed to the SEALED text (`peerPost.js:900-901`), while the
-log keeps the opened text (`:980`). So a provable row holds the signature
-and the sealed text it covers, not the signature alone.
+**Decided (2026-09-28, Andy):**
 
-**Open:** the table's shape (a core persist shape: peer review, then
-Andy's yes), and importing the existing file once.
+- **It no longer waits on R16** (rule 2 below). Rows go in with what they
+  carry today; proof columns come later, and a row that cannot prove itself
+  gets a warning. Added by the lead; Andy: *"it's a good rule, so we don't
+  correct that behavior now"*.
+- **The log goes into node.db, and backups carry the risk.** Andy: *"i'm ok
+  with that risk, i'd rather rely on backups, and not worry about it"*. This
+  retires the rebuild promise at `nodeStore.js:329-331` ("losing node.db
+  costs a rebuild") and cycle 10's written condition on it; R19.5 rewrites both.
+- **Every row is kept.** *"the log should be permanent. period."*
+  (`trafficLog.js:71-73`) stands; rows without a hash are kept too, *"some
+  simply wont be indexed"*.
+- **The key and the indexes.** Andy: *"i agree to the keys as well"*.
 
+**Rules for this plan** (they hold for every item, and are never done):
 
+1. Nothing above `trafficLog.js` changes; `storeOwnership.js` checks it.
+   Andy: *"that's a rule for this plan"*.
+2. The move does not wait for R16.
+
+**Required before R19 is done:** R19.1 the backup, R19.2 the stale tests
+(closed), R19.3 the table, R19.4 the indexes, R19.5 the migration. Their
+wording, checks, tests and state are in the requirements file above, not
+repeated here.
+
+**Deferred:** the restore epoch (`(node key, epoch, seq)`), needed only once
+seq numbers leave the node; searches returning seq (rule 1 keeps the API).
 
 ### R17 — a relay streams its activity only while somebody watches
 > The relay needs an api startMonitorStream() and stopMonitorStream(), triggered by this new panel opening and closing. (visibility at shell-scope)
