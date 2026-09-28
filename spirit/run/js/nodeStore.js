@@ -347,9 +347,13 @@ function open(rootDir, opts) {
   // Not in the envelope, where it would leak and be forgeable. Inside the
   // seal, stamped by `seal()` rather than by each caller.
   //
-  // DERIVED, AND REBUILDABLE: every hash here is also in traffic.jsonl.
-  // Losing node.db costs a rebuild, not the protection — "a derived thing
-  // that cannot be rebuilt is a single point of silent weakening."
+  // DERIVED, AND REBUILDABLE — FROM THE LOG IN THIS SAME FILE, SINCE
+  // transport/R19. Every hash here is also in the node log, and the log now
+  // lives in node.db's `traffic` table, so losing node.db loses both: the
+  // rebuild no longer covers that case. Andy decided it knowingly, 2026-09-28:
+  // "i'm ok with that risk, i'd rather rely on backups, and not worry about
+  // it". A rebuild still restores the index from the table if only the index
+  // is damaged.
   db.exec(`
     CREATE TABLE IF NOT EXISTS replay (
       hash TEXT PRIMARY KEY,
@@ -695,9 +699,12 @@ function open(rootDir, opts) {
     byHash: db.prepare("SELECT * FROM traffic WHERE hash = ? AND hash <> '' ORDER BY seq"),
     owner: db.prepare("SELECT * FROM traffic WHERE kind = 'owner' AND at > ? ORDER BY at LIMIT ?"),
     arrivals: db.prepare("SELECT * FROM traffic WHERE dir = 'in' AND admitted = 1 AND at > ? ORDER BY at LIMIT ?"),
-    // The newest row is the one with the highest seq, and its `at` is the
-    // highest written, because trafficLog stamps them in order.
-    lastAt: db.prepare('SELECT at FROM traffic ORDER BY seq DESC LIMIT 1'),
+    // The highest stamp written. NOT the last seq's: the migration
+    // (transport/R19.5) appends a node's older history after rows it wrote
+    // since, so seq order and time order part there. Read once per process.
+    lastAt: db.prepare('SELECT MAX(at) AS at FROM traffic'),
+    maxSeq: db.prepare('SELECT COALESCE(MAX(seq), 0) AS n FROM traffic'),
+    delAbove: db.prepare('DELETE FROM traffic WHERE seq > ?'),
     bytes: db.prepare(`SELECT COALESCE(SUM(pgsize), 0) AS n FROM dbstat
       WHERE name IN (SELECT name FROM sqlite_schema WHERE tbl_name = 'traffic')`),
   };
@@ -742,7 +749,10 @@ function open(rootDir, opts) {
       byHash: function (hash) { return tq.byHash.all(String(hash || '')).map(trafficRow); },
       owner: function (since, limit) { return tq.owner.all(String(since || ''), Number(limit) || 200).map(trafficRow); },
       arrivals: function (since, limit) { return tq.arrivals.all(String(since || ''), Number(limit) || 200).map(trafficRow); },
-      lastAt: function () { const r = tq.lastAt.get(); return r ? r.at : ''; },
+      lastAt: function () { const r = tq.lastAt.get(); return (r && r.at) || ''; },
+      // For the migration's way back (transport/R19.5).
+      maxSeq: function () { return tq.maxSeq.get().n; },
+      removeAbove: function (seq) { return tq.delAbove.run(Number(seq) || 0).changes; },
       count: function () { return tq.count.get().n; },
       bytes: function () { return tq.bytes.get().n; },
     },
@@ -958,9 +968,10 @@ function open(rootDir, opts) {
       count: function () { return q.rCount.get().n; },
       // ── REBUILT FROM THE LOG, BECAUSE IT IS DERIVED ───────────────
       //
-      // Every hash here is also in traffic.jsonl. Losing node.db must
-      // cost a rebuild and not the protection — "a derived thing that
-      // cannot be rebuilt is a single point of silent weakening."
+      // Every hash here is also in the node log. That once meant losing
+      // node.db cost only a rebuild; since transport/R19 the log is in
+      // node.db too, so a lost node.db takes both, by Andy's decision
+      // (see the replay table above). A damaged index still rebuilds.
       //
       // IT TAKES ROWS RATHER THAN READING THE LOG. The log belongs to
       // trafficLog and this file reads no file it does not own; a store

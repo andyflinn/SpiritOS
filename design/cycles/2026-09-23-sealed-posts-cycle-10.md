@@ -1318,6 +1318,12 @@ is also in `traffic.jsonl`. Lose `node.db` and you lose a rebuild, not
 your replay protection — *"a derived thing that cannot be rebuilt is a
 single point of silent weakening."*
 
+> **Retired 2026-09-28 by transport/R19** (the node log moves into
+> `node.db`). The log now lives in the same file as the index, so losing
+> `node.db` loses both. Andy decided it knowingly: *"i'm ok with that risk,
+> i'd rather rely on backups, and not worry about it"*. A damaged index
+> still rebuilds from the log table.
+
 ### C3 — keep the signed introduction, not only the keys
 
 Relay-signed announcements buy **accountability**, and accountability

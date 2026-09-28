@@ -158,10 +158,11 @@ function readAll(rootDir) {
     try { tableRows = t.all(); } catch (e) { /* the file's rows still stand */ }
   }
   if (!tableRows.length) return rows;
-  if (!rows.length) return tableRows;
-  // BOTH, SO ORDER BY `at`. stamp() makes it unique and increasing across
-  // both stores, so this is the order they were written in, even if node.db
-  // once failed to open and some rows went to the file instead (wsl-claude).
+  // ORDER BY `at`, ALWAYS. stamp() makes it unique and increasing across
+  // both stores, so this is the order rows were written in, even if node.db
+  // once failed to open and some went to the file (wsl-claude), and after the
+  // migration, which appends a node's older history after the rows written
+  // since (transport/R19.5), so seq order is not time order there.
   // The sort is stable: a batch of marks sharing one stamp keeps its order.
   return rows.concat(tableRows).sort(function (a, b) {
     var x = String(a && a.at || ''), y = String(b && b.at || '');
@@ -175,6 +176,11 @@ function readFile(rootDir) {
   catch (e) { raw = null; }
 
   if (raw === null) {
+    // IMPORTED, THEN RETIRED (transport/R19.5): once traffic.jsonl has moved
+    // into the table, the file is gone and so is any reason to fall back to
+    // the shape before it. Reading traffic.json then would bring back rows
+    // the node stopped reading the day traffic.jsonl began.
+    if (fs.existsSync(logPath(rootDir) + '.imported')) return [];
     // The old shape, once. Nothing writes it again.
     try {
       var doc = JSON.parse(fs.readFileSync(legacyPath(rootDir), 'utf8'));
@@ -260,10 +266,50 @@ function append(rootDir, row) {
 // `now` is injectable, the way peerStats takes one. A retention rule
 // stated in hours that could only be tested by waiting hours is a rule
 // that would not be tested.
+// ── THE MIGRATION (transport/R19.5) ───────────────────────────────────
+//
+//   Andy, 2026-09-28: go on transport/R19.5, the last step of "Moving the node
+//   log into machine-side database". Agreed with wsl-claude: rule 1 (nothing
+//   above trafficLog.js changes) means no new export for the node to call,
+//   so it happens here, the first time a log is opened with the file present.
+//
+// ONE TRANSACTION: every line goes in, in file order, or none does. On any
+// failure the table is as it was and the file stays in charge, read as
+// before, and the next opening tries again. Only after the commit is the
+// file renamed traffic.jsonl.imported: kept byte for byte, never read again.
+// If the rename itself fails, the rows just added are taken out again, so
+// the history is never counted twice.
+function migrate(rootDir) {
+  var file = logPath(rootDir);
+  if (!fs.existsSync(file)) return false;
+  var nodeStore;
+  try {
+    nodeStore = require('./nodeStore.js');
+    if (!nodeStore.available()) return false;
+  } catch (e) { return false; }
+  var store = nodeStore.open(rootDir);
+  var rows = readFile(rootDir);
+  var before = store.traffic.maxSeq();
+  try {
+    store.transaction(function () { rows.forEach(function (row) { store.traffic.add(row); }); });
+  } catch (e) {
+    return false;
+  }
+  try {
+    fs.renameSync(file, file + '.imported');
+  } catch (e) {
+    try { store.transaction(function () { store.traffic.removeAbove(before); }); } catch (e2) { /* the file still answers first */ }
+    return false;
+  }
+  return true;
+}
+
 function createTrafficLog(opts) {
   opts = opts || {};
   var rootDir = opts.rootDir;
   var relayMode = !!opts.relayMode;
+  // A relay keeps no log (the gate in note()), so it has nothing to move.
+  if (rootDir && !relayMode) { try { migrate(rootDir); } catch (e) { /* the file stays in charge */ } }
   var clock = typeof opts.now === 'function' ? opts.now : function () { return Date.now(); };
 
   // ── `at` IS A POSITION, SO IT HAS TO BE UNIQUE AND INCREASING ──────
@@ -587,7 +633,8 @@ function createTrafficLog(opts) {
     if (!want) return null;
     var all = rowsFor(want, readFile(rootDir));
     var marks = takenSet(all);
-    var rows = all.filter(function (row) { return row && !row.mark; });
+    // The latest by time, which after the migration is not the latest by seq.
+    var rows = all.filter(function (row) { return row && !row.mark; }).sort(byTime);
     return rows.length ? foldTaken([rows[rows.length - 1]], marks)[0] : null;
   }
 
