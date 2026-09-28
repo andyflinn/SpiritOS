@@ -45,7 +45,8 @@ var DESK_PATIENCE = { patienceMs: 60000 };
 
 var deskApi = null;
 var deskBoard = null;       // the newest `board` packet's JSON
-var deskSession = null;     // the newest `session` packet's JSON (the design session's item)
+var deskSession = null;     // the board's session: the newest `session` packet's JSON, unless a new design cleared it
+var deskSessionPosted = null, deskSessionAt = 0;  // the newest `session` packet as it arrived, and when
 var deskMessages = [];      // decoded agents messages, in log order
 var deskByHash = Object.create(null);
 var deskError = '';
@@ -254,7 +255,7 @@ function deskFold(msg) {
   if (msg.kind === 'session' && msg.dir === 'in') {
     try {
       var sess = JSON.parse(msg.text);
-      if (sess && sess.goal && Array.isArray(sess.items)) deskSession = sess;
+      if (sess && sess.goal && Array.isArray(sess.items)) { deskSessionPosted = sess; deskSessionAt = Date.parse(msg.at) || 0; }
     } catch (e) { /* a session that does not parse is not a session */ }
   }
   if (msg.kind === 'board') {
@@ -382,6 +383,26 @@ function deskDesignOn() {
     else if (at > started) started = at;
   });
   return started > ended;
+}
+
+// ENDING KEEPS THE BOARD; STARTING CLEARS IT. Andy: "if i End design mode
+// the board stays, if i start a new one the board clears." A design starts
+// with his first Team line after the last end, so a session posted before
+// that line belongs to the design he ended, and a new design shows none
+// until the lead posts its goal.
+function deskSessionSync() {
+  var ended = 0, started = 0;
+  deskMessages.forEach(function (m) {
+    if (m.dir === 'out' && m.todo === DESK_TEAM && m.kind === 'answer' && m.text === DESK_END_DESIGN) {
+      ended = Math.max(ended, Date.parse(m.at) || 0);
+    }
+  });
+  deskMessages.forEach(function (m) {
+    if (m.dir !== 'out' || m.todo !== DESK_TEAM || (m.kind === 'answer' && m.text === DESK_END_DESIGN)) return;
+    var at = Date.parse(m.at) || 0;
+    if (at > ended && (!started || at < started)) started = at;
+  });
+  deskSession = (deskSessionPosted && !(started && deskSessionAt < started)) ? deskSessionPosted : null;
 }
 
 // THE SESSION'S BOARD. Andy: "the Title item will become the first ond only
@@ -635,6 +656,7 @@ function deskSend(kind, boxId, errId) {
 // everytime somebody sends something"). The table holds no input, so a
 // repaint on arrival costs him nothing.
 function deskDraw() {
+  deskSessionSync();
   var el = document.getElementById('desk-top');
   if (!el) return;
   var chat = document.getElementById('desk-chat');
