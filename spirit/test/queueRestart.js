@@ -47,11 +47,14 @@ function fakeRelay(answer) {
   };
 }
 
+// THROUGH THE LOG, NOT ITS FILE (transport/R19.2). This read the file
+// traffic.jsonl itself; the log is moving into node.db (transport/R19),
+// and a test that opens the file would then read a file that no longer
+// grows, and pass or fail for the wrong reason. read() answers the same
+// rows wherever they live.
 function logLines(h) {
-  try {
-    return fs.readFileSync(path.join(h, 'relay-state', 'traffic.jsonl'), 'utf8')
-      .split(/\r?\n/).filter(Boolean).map(function (l) { return JSON.parse(l); });
-  } catch (e) { return []; }
+  try { return require('../run/js/trafficLog').createTrafficLog({ rootDir: h }).read(); }
+  catch (e) { return []; }
 }
 
 test.startTest('The post queue outlives the process');

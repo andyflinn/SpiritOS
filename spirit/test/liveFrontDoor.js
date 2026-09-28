@@ -83,15 +83,14 @@ async function hub(port, method, pathname, body) {
 // A malformed line is skipped rather than fatal, the same property
 // trafficLog itself is built on: a torn write at the end of the file
 // costs the row being written, never the history behind it.
+// THROUGH THE LOG, NOT ITS FILE (transport/R19.2). This read traffic.jsonl
+// line by line; the log is moving into node.db (transport/R19), and reading
+// a file that no longer grows is exactly the failure recorded above: checks
+// asserting about a log they never saw. read() answers the same rows
+// wherever they live (torn lines are the log's own business).
 function traffic(home) {
-  try {
-    const raw = fs.readFileSync(path.join(home, 'relay-state', 'traffic.jsonl'), 'utf8');
-    return raw.split(/\r?\n/).map(function (line) {
-      try { return JSON.parse(line); } catch (e) { return null; }
-    }).filter(Boolean);
-  } catch (e) {
-    return [];
-  }
+  try { return require('../run/js/trafficLog').createTrafficLog({ rootDir: home }).read(); }
+  catch (e) { return []; }
 }
 
 function inbound(home, fromKey) {
