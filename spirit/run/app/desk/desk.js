@@ -59,7 +59,7 @@ var DESK_READY_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:[\w.\/-]+\s+is\s+)?READY TO CLOSE
 // (wsl-claude's shape, the same as READY TO CLOSE).
 var DESK_VERIFIED_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:IN PLACE )?VERIFIED\b/;
 var deskVerified = {};       // item id -> true once its Already-in-place list was verified
-var DESK_UNVERIFIED_CLAIM = /^(?:[\w.-]+[,:]\s*)?UNVERIFIED\b/;  // the newest `session` packet as it arrived, and when
+var DESK_UNVERIFIED_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:UNVERIFIED|IN PLACE WITHDRAWN)\b/;  // the newest `session` packet as it arrived, and when
 var deskMessages = [];      // decoded agents messages, in log order
 var deskByHash = Object.create(null);
 var deskError = '';
