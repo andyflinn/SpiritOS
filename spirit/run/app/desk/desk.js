@@ -47,7 +47,8 @@ var deskApi = null;
 var deskBoard = null;       // the newest `board` packet's JSON
 var deskSession = null;     // the board's session: the newest `session` packet's JSON, unless a new design cleared it
 var deskSessionPosted = null, deskSessionAt = 0;
-var deskDone = {};           // item id -> true/false, from Andy's own "done." / "reopen."  // the newest `session` packet as it arrived, and when
+var deskDone = {};           // item id -> true/false, from Andy's own "done." / "reopen."
+var deskReady = {};          // item id -> true once an agent said READY TO CLOSE under it  // the newest `session` packet as it arrived, and when
 var deskMessages = [];      // decoded agents messages, in log order
 var deskByHash = Object.create(null);
 var deskError = '';
@@ -257,8 +258,13 @@ function deskFold(msg) {
   // closed?", then "let's close that gap." His own latest "done." or
   // "reopen." under an item is its state, and a board the lead reposts
   // never un-closes it (wsl-claude's pitfall).
-  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && (msg.text === 'done.' || msg.text === 'reopen.')) {
-    deskDone[msg.todo] = msg.text === 'done.';
+  // AND ONLY AFTER A CLAIM. Andy: "when you claim completeness, that's when
+  // i want to see the close button, not before." A "done." counts only if an
+  // agent had said READY TO CLOSE under that item first.
+  if (msg.dir === 'in' && msg.todo && /\bready to close\b/i.test(String(msg.text || ''))) deskReady[msg.todo] = true;
+  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && msg.text === 'reopen.') deskDone[msg.todo] = false;
+  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && msg.text === 'done.' && deskReady[msg.todo]) {
+    deskDone[msg.todo] = true;
   }
   if (msg.kind === 'session' && msg.dir === 'in') {
     try {
