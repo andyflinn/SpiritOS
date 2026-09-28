@@ -491,7 +491,10 @@ function deskSessionBubble() {
   return '<div class="stat-tile wide"><div class="label" data-open="' + deskEsc(g.id) + '" style="cursor:pointer">' +
     deskEsc(g.id) + ' — ' + deskEsc(g.title) + '</div>' +
     (g.description ? '<div>' + deskEsc(g.description) + '</div>' : '') + deskRulesHtml() +
-    '<div class="label" style="margin-top:8px">Requirements — each blocks the goal until done</div>' +
+    // THE GOAL IS A REQUIREMENT TOO, the root one. Andy: "Isn't the title of
+    // this project (the goal) a requirement?" So the bubble reads like an
+    // item's dialog: the goal as the title block, then what it is blocked by.
+    '<div class="label" style="margin-top:8px">Blocked by</div>' +
     (items ? '<ul style="margin:6px 0 0 18px">' + items + '</ul>'
       : '<div class="job-manifest-note">Nothing required yet.</div>') + '</div>';
 }
