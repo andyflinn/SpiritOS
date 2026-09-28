@@ -1513,39 +1513,26 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
   // between them instead of quietly holding whichever ran last. That is
   // the honest handling of a stated fact that cannot be derived — lead
   // is assigned in conversation and is nowhere in the tree.
-  const targets = [path.join(REPO, 'SCOREBOARD-' + box + '.md')];
   const saysLead = (function () {
     try {
       const said = (require('./tools/box.js').resolve().said) || {};
       return /^(yes|true|1)$/i.test(String(said.lead || '').trim());
     } catch (e) { return false; }
   }());
-  if (saysLead) targets.push(path.join(REPO, 'SCOREBOARD.md'));
 
-  targets.forEach(function (target) {
-    let before = null;
-    try { before = fs.readFileSync(target, 'utf8'); } catch (e) { before = null; }
-    if (before === null || LF(before) !== text) {
-      try { fs.writeFileSync(target, text); } catch (e) { /* said below */ }
-    }
-  });
+  // NO SCOREBOARD FILES, EVER AGAIN. Andy, 2026-09-28: "you will now
+  // delete all ./SCOREBOARD* files from the project, push, and never bring
+  // them back." Desk is the project's governance ("this IS the official
+  // project governance. NOW."), so the run writes no SCOREBOARD page or
+  // JSON anywhere. The text above is still built; nothing puts it on disk.
+  void text; void LF;
 
-  // THE SAME ROWS AS DATA, beside each page, same name, `.json`. Written
-  // only when it changes, like the page, so a render that moves nothing
-  // leaves nothing to commit.
+  // THE SAME ROWS AS DATA, held in memory only (no SCOREBOARD file, above).
   const json = JSON.stringify({
     box: box, commit: commit, stale: !!isStale, head: head,
     measured: { suites: tally.suites, green: tally.green, red: tally.red, unhappy: tally.unhappy },
     rows: data,
   }, null, 2) + NL;
-  targets.forEach(function (target) {
-    const jt = target.replace(/\.md$/, '.json');
-    let before = null;
-    try { before = fs.readFileSync(jt, 'utf8'); } catch (e) { before = null; }
-    if (before !== json) {
-      try { fs.writeFileSync(jt, json); } catch (e) { /* the page is the fallback */ }
-    }
-  });
 
   // ── AND TO HIS DESK, FROM THE LEAD BOX ONLY ─────────────────────────
   //
@@ -1588,8 +1575,7 @@ function writeScoreboard(byReq, titles, tally, preRows, stale, replay) {
     }) + NL);
   } catch (e) { /* a log that cannot be written must not fail a run */ }
   if (stale) console.log('--- board re-rendered from the run at ' + stale + ', no suites run');
-  console.log('--- SCOREBOARD-' + box + '.md' + (saysLead ? ' and SCOREBOARD.md' : '') +
-    ' rewritten (' + rows.length + ' owed)');
+  console.log('--- ' + rows.length + ' owed (no SCOREBOARD file is written)');
 }
 
 function writeBoard(byReq, titles) {
