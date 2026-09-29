@@ -38,7 +38,9 @@ module.exports = function installJobs(spirit, port) {
   events.setMaxListeners(0);
   let nextId = 1;
 
-  function createJob(kind, type, initialData) {
+  // `module`: the module this job is an instance of (slim/G1.5), its path,
+  // 'process/js/<name>'. Absent on the node's own jobs, which are no module's.
+  function createJob(kind, type, initialData, module) {
     const id = 'job_' + (nextId++);
     const now = Date.now();
     const job = {
@@ -51,6 +53,7 @@ module.exports = function installJobs(spirit, port) {
       log: [{ timestamp: now, message: 'job created' }],
       data: initialData || {},
     };
+    if (module) job.module = module;
     jobsMap.set(id, job);
     events.emit('job-updated', job);
     return job;
@@ -199,7 +202,7 @@ module.exports = function installJobs(spirit, port) {
       args: args || [],
       progress: 0,
       exitCode: null,
-    });
+    }, options.module || moduleOf((args || [])[0], options.cwd));
 
     const child = child_process.spawn(command, args || [], {
       env: Object.assign({}, process.env, {
@@ -259,13 +262,16 @@ module.exports = function installJobs(spirit, port) {
     // a restart method", so it does not come back by itself.
     const operated = options.operated === 'user' ? 'user' : 'node';
     const restart = operated === 'node';
+    // A face's script is the node's own server.js, so its module comes in
+    // options.module (appClient.startAll); every other server is read off its
+    // script's path.
     const job = createJob('server', options.type || command, {
       command: command,
       args: args || [],
       operated: operated,
       restarts: 0,
       exitCode: null,
-    });
+    }, options.module || moduleOf((args || [])[0], options.cwd));
     let child = null;
     let stopped = false;
     let wait = RESTART_MIN_MS;
@@ -349,14 +355,27 @@ module.exports = function installJobs(spirit, port) {
   // and no process in another language exists yet. One that does needs its
   // own path form here, in includeList.js and in the viewer's Start Job
   // (claude-windows, reviewing 6501e589).
-  function refuseUnlisted(script, cwd) {
-    if (typeof script !== 'string' || !/\.js$/.test(script)) return;
+  // A script under <root>/process/js/<name>/, read as {root, name}; null for
+  // anything else. The one reading of a script's path, for the include list
+  // (slim/G1.3) and for the module a job is an instance of (slim/G1.5).
+  function processOf(script, cwd) {
+    if (typeof script !== 'string' || !/\.js$/.test(script)) return null;
     const abs = path.resolve(cwd || process.cwd(), script);
     const m = /^(.*)[\/\\]process[\/\\]js[\/\\]([^\/\\]+)[\/\\][^\/\\]+\.js$/.exec(abs);
-    if (!m || require('./includeList').includes(m[1], 'process/js/' + m[2])) return;
-    const e = new Error('process not included on this node: ' + m[2]);
+    return m ? { root: m[1], name: m[2] } : null;
+  }
+  // THE NODE OWNS EVERY MODULE ID, BY PATH (slim/G1.5). Andy: "what we see in
+  // jobs monitor are ID-instances". The id is the include list's own string.
+  function moduleOf(script, cwd) {
+    const p = processOf(script, cwd);
+    return p ? 'process/js/' + p.name : '';
+  }
+  function refuseUnlisted(script, cwd) {
+    const p = processOf(script, cwd);
+    if (!p || require('./includeList').includes(p.root, 'process/js/' + p.name)) return;
+    const e = new Error('process not included on this node: ' + p.name);
     e.refusal = 'process-not-included';
-    e.process = m[2];
+    e.process = p.name;
     throw e;
   }
   function startJob(command, args, options) {

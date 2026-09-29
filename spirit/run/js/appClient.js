@@ -157,7 +157,7 @@ function createAppClient(opts) {
       if (typeof o.startServerJob === 'function') {
         row.job = o.startServerJob(o.execPath || process.execPath,
           ['--max-old-space-size=' + RAM_MB, path.join('js', 'server.js'), '--app', app, '--pipe', pipe],
-          { cwd: rootDir, type: 'app-server:' + app });
+          { cwd: rootDir, type: 'app-server:' + app, module: 'process/js/' + app });
       }
       table[app] = row;
       log('app server: ' + app);

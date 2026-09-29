@@ -60,7 +60,10 @@ function renderJobRow(job) {
   var mainRow = '<tr class="job-row" data-job-row="' + jobsEscapeHtml(job.id) + '">' +
     '<td>' + (isExpanded ? JOBS_ICON.POINTDOWN : JOBS_ICON.POINTRIGHT) + ' ' + icon + ' ' + jobsEscapeHtml(job.status) + '</td>' +
     '<td>' + jobsEscapeHtml(job.id) + '</td>' +
-    '<td>' + jobsEscapeHtml(job.kind) + ' / ' + jobsEscapeHtml(job.type) + '</td>' +
+    // The module it is an instance of, when it is one (slim/G1.5, Andy:
+    // "each Jobs monitor row, names the id it is an instance of").
+    '<td>' + jobsEscapeHtml(job.kind) + ' / ' + jobsEscapeHtml(job.type) +
+      (job.module ? '<br><span class="job-module">' + jobsEscapeHtml(job.module) + '</span>' : '') + '</td>' +
     '<td>' + new Date(job.updatedAt).toLocaleTimeString() + '</td>' +
     '<td>' + actionHtml + '</td>' +
     '</tr>';
