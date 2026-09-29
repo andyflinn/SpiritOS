@@ -355,11 +355,11 @@ test.subHeading('G3 — the one shared ask, and no fourth divergent copy');
 // ── G4 — the optional layer, offered as files ────────────────────────
 test.subHeading('G4 — the shell offers the optional layer as files, separately optional');
 {
-  const shellFolder = has('spirit/run/shell/shell');
+  const shellFolder = has('spirit/run/shell/tokens.css') && has('spirit/run/shell/elements.css');
   if (!shellFolder) {
-    needs('cycle 2 G4', 'spirit/run/shell/shell', 'every clone must carry the folder that offers elements and tokens, whether or not anything launches the shell');
+    needs('cycle 2 G4', 'spirit/run/shell/tokens.css and elements.css', 'every clone must carry the folder that offers elements and tokens, whether or not anything launches the shell');
   } else {
-    test.check('cycle 2 G4: app/shell exists as a FOLDER, so the optional layer is provided by files rather than by a running process');
+    test.check('cycle 2 G4: tokens.css and elements.css sit at shell/ top (slim/G1.1), so the optional layer is provided by files rather than by a running process');
   }
   // The separability is asserted at the manifest, under G14, because that
   // is where it becomes observable: two keys that can be taken apart.

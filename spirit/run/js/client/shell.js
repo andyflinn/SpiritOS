@@ -322,7 +322,7 @@
   function withShellIds(renames) {
     var map = {};
     Object.keys(renames).forEach(function (k) { map[k] = renames[k]; });
-    var LEGACY_APP_PREFIX = 'app' + '/';
+    var LEGACY_APP_PREFIX = 'app/';
     var stored = Object.keys(preferences.appOverrides).concat(Object.keys(preferences.defaultHandlers).map(function (ext) {
       return preferences.defaultHandlers[ext];
     }));
