@@ -638,7 +638,7 @@ define('answer-too-large', {
     'waiting out its wait for no-reply-from-puppet. The cure is a narrower question: ' +
     'a search, never a list.',
 });
-// ── THE LAST LEG: THE OWNER NODE'S HOP TO AN APP SERVER (appServers.js) ──
+// ── THE LAST LEG: THE OWNER NODE'S HOP TO AN APP SERVER (appClient.js) ──
 //
 // public-app-server/G17. Each names the link that failed, so a visitor at the
 // far end of the face reads which one, never a hang.

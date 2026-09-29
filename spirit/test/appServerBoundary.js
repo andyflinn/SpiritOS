@@ -578,12 +578,12 @@ test.subHeading('G10 — four fields about the box, and the opinion that is deli
 //   Andy, 2026-09-27: "processes use named pipes to serve requests from the
 //   puppets.... and that mechanism needs a spot on the board sometime soon".
 //
-// BUILT (62e2b96, claude-windows: faceServer --pipe, appServers.pipePathFor)
+// BUILT (62e2b96, claude-windows: faceServer --pipe, appClient.pipePathFor)
 // and ASSERTED in faceLastLeg.js (h): a real app server started with --pipe
 // answers over its pipe, and the kernel's socket table shows it holding no
 // TCP listener (mutation: a planted listener turns it red). The declaration
 // that stood here probed faceServer.pipePathFor, a name that was built in
-// appServers.js instead, so it could never have flipped; removed.
+// appClient.js instead, so it could never have flipped; removed.
 
 // THE PROBE WAS `false`, so this could never flip and hand the unit over --
 // found by claude-windows, who found the server half already built. It now

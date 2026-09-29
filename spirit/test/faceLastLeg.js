@@ -6,7 +6,7 @@
 //   Andy, 2026-09-27, under G17: "the go is officail. also: i explicitly
 //   permit the two new/proposed interfaces/api' for communication from node
 //   to appserver." claude-windows built it (62e2b96); its own suite,
-//   appServers.js, proves the pieces and one real hop. This one holds the
+//   appClient.js, proves the pieces and one real hop. This one holds the
 //   limits wsl-claude listed before it was built, against REAL sockets
 //   rather than a stubbed request, because a limit proven against a stub
 //   is a limit on the stub:
@@ -27,7 +27,7 @@ const os = require('os');
 const path = require('path');
 const http = require('http');
 const test = require('./testSupport.js');
-const appServers = require('../run/js/appServers.js');
+const appClient = require('../run/js/appClient.js');
 const relayRequest = require('../run/js/relayRequest.js');
 const puppetPost = require('../run/js/puppetPost.js');
 const limits = require('../run/js/limits.js');
@@ -44,7 +44,7 @@ function world(serve) {
   const root = path.join(scratch, 'root-' + Math.random().toString(36).slice(2, 8));
   fs.mkdirSync(path.join(root, 'app', 'faceProof'), { recursive: true });
   fs.writeFileSync(path.join(root, 'app', 'faceProof', 'faceProof.json'), JSON.stringify({ serves: true }));
-  const pipe = appServers.pipePathFor(root, 'faceProof');
+  const pipe = appClient.pipePathFor(root, 'faceProof');
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
   const seen = [];
   const server = http.createServer(function (req, res) {
@@ -52,7 +52,7 @@ function world(serve) {
     serve(req, res);
   });
   let knocked = 0;
-  const servers = appServers.createAppServers({
+  const servers = appClient.createAppClient({
     rootDir: root, log: function () {}, startServerJob: function () { return {}; },
     request: function () { knocked++; return relayRequest.pipeRequest.apply(null, arguments); },
   });
@@ -69,7 +69,7 @@ function world(serve) {
 // the owner's node has app servers, so 'serve' goes through
 // api.toLocalApp to a real socket instead of answering the step-1 stub.
 // Real: puppetPost's listener, appFaceApp mounted twice by the real
-// nodeApps.mountAll, the packet codec, arrivals, appServers and
+// nodeApps.mountAll, the packet codec, arrivals, appClient and
 // pipeRequest. Fake: the relay (a function), and the app (an http server
 // on the socket the node names).
 async function wholeRoute() {
@@ -117,9 +117,9 @@ async function wholeRoute() {
   fs.writeFileSync(path.join(owner.app, 'grants.json'), JSON.stringify({ names: { hello: { to: ownerId.publicKey, app: 'faceProof' } } }));
   fs.mkdirSync(path.join(owner.root, 'app', 'faceProof'), { recursive: true });
   fs.writeFileSync(path.join(owner.root, 'app', 'faceProof', 'faceProof.json'), JSON.stringify({ serves: true }));
-  const servers = appServers.createAppServers({ rootDir: owner.root, log: function () {}, startServerJob: function () { return {}; } });
+  const servers = appClient.createAppClient({ rootDir: owner.root, log: function () {}, startServerJob: function () { return {}; } });
   servers.startAll();
-  const pipe = appServers.pipePathFor(owner.root, 'faceProof');
+  const pipe = appClient.pipePathFor(owner.root, 'faceProof');
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
   const seen = [];
   const app = http.createServer(function (req, res) {
@@ -202,7 +202,7 @@ async function wholeRoute() {
 
 // G18, Andy 2026-09-27: "processes use named pipes to serve requests from
 // the puppets". Its declaration (appServerBoundary.js) probed a name that
-// was built elsewhere (appServers.pipePathFor, not faceServer's), so it
+// was built elsewhere (appClient.pipePathFor, not faceServer's), so it
 // could never flip; this is the assertion it was waiting to hand over. A
 // real app server, started the way the node starts it (--app --pipe), is
 // asked over its pipe, and the kernel's own socket table is read for any
@@ -221,7 +221,7 @@ async function noTcpPort() {
   });
   fs.mkdirSync(path.join(root, 'process'), { recursive: true });
   fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
-  const pipe = appServers.pipePathFor(root, 'faceProof');
+  const pipe = appClient.pipePathFor(root, 'faceProof');
   fs.mkdirSync(path.dirname(pipe), { recursive: true });
   const child = childProcess.spawn(process.execPath, [path.join('js', 'server.js'), '--app', 'faceProof', '--pipe', pipe],
     { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
@@ -281,11 +281,11 @@ function mentions(value, needle) {
   test.subHeading('Each link waits less than the one outside it');
   const faceSource = fs.readFileSync(path.join(RUN, 'app', 'appFaceApp', 'appFaceApp.js'), 'utf8');
   const serveWait = Number((faceSource.match(/const SERVE_WAIT_MS = (\d+);/) || [])[1]);
-  if (serveWait > 0 && appServers.DOOR_WAIT_MS < serveWait && serveWait < puppetPost.FACE_WAIT_MS) {
-    test.check('the hop (' + appServers.DOOR_WAIT_MS + ' ms) < appFaceApp\'s serve (' + serveWait + ' ms) < the face ('
+  if (serveWait > 0 && appClient.DOOR_WAIT_MS < serveWait && serveWait < puppetPost.FACE_WAIT_MS) {
+    test.check('the hop (' + appClient.DOOR_WAIT_MS + ' ms) < appFaceApp\'s serve (' + serveWait + ' ms) < the face ('
       + puppetPost.FACE_WAIT_MS + ' ms): a slow app is named app-did-not-answer, not owner-did-not-answer');
   } else {
-    test.fail('the waits do not nest: hop ' + appServers.DOOR_WAIT_MS + ', serve ' + serveWait + ', face ' + puppetPost.FACE_WAIT_MS);
+    test.fail('the waits do not nest: hop ' + appClient.DOOR_WAIT_MS + ', serve ' + serveWait + ', face ' + puppetPost.FACE_WAIT_MS);
   }
 
   // ── (c) A REAL SILENT SERVER, A REAL OVERSIZE ANSWER ──────────────────
@@ -303,7 +303,7 @@ function mentions(value, needle) {
 
   const huge = await world(function (req, res) {
     res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.end('y'.repeat(appServers.ANSWER_MAX + 1));
+    res.end('y'.repeat(appClient.ANSWER_MAX + 1));
   });
   const tooBig = await huge.servers.toLocalApp('faceProof', { method: 'GET', path: '/' });
   if (tooBig.status === 502 && tooBig.body && tooBig.body.code === 'app-answer-too-large') {
@@ -370,7 +370,7 @@ function mentions(value, needle) {
   //   by appFaceApp, not by the puppet-infrastructure." Built as 5310ba7.
   //   Code lines only: a comment may tell the history.
   test.subHeading('The node\'s app-server code has no face vocabulary');
-  const faceWords = ['js/appServers.js', 'js/jobs.js'].filter(function (rel) {
+  const faceWords = ['js/appClient.js', 'js/jobs.js'].filter(function (rel) {
     // /\r?\n/: on a Windows checkout every line ends in \r, and `.*$` then
     // never reached the end, so no comment was stripped. 'interface' and
     // 'surface' are not a face (both found on Windows, 2026-09-27), and are
@@ -382,7 +382,7 @@ function mentions(value, needle) {
     return /face/i.test(code);
   });
   if (faceWords.length === 0) {
-    test.check('appServers.js and jobs.js name apps and servers, never a face: which app answers a name is appFaceApp\'s table');
+    test.check('appClient.js and jobs.js name apps and servers, never a face: which app answers a name is appFaceApp\'s table');
   } else {
     test.fail('face vocabulary in the node\'s code: ' + faceWords.join(', '));
   }

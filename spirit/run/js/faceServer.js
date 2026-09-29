@@ -919,7 +919,7 @@ function create(opts) {
   // A PIPE PATH INSTEAD OF A PORT (public-app-server/G18, built with G17's
   // last leg): a named pipe on Windows, a socket file elsewhere. The owner
   // node that started this process names it and reaches it there; nothing
-  // else on the box can (appServers.js). Absent means the port, as before.
+  // else on the box can (appClient.js). Absent means the port, as before.
   const pipe = typeof o.pipe === 'string' ? o.pipe : '';
 
   if (!appName) throw new Error('faceServer.create needs an appName');

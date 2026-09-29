@@ -237,7 +237,7 @@ const TALLY = {
   // and an app server is HTTP on that pipe and nothing else. RESTING ON THE
   // SAME "go" as faceLastLeg's, and said so rather than assumed. If he reads
   // this and disagrees, it is one line. The number may only fall.
-  'test/appServers.js': 1,
+  'test/appClient.js': 1,
   // THE WORLD BUILDER, counted for the first time (cycle 2). Three, and
   // each is a public route with no verb behind it: POST /api/relay/claim
   // is how a stranger joins a relay, GET /api/relay/key is the liveness

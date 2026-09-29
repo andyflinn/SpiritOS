@@ -161,7 +161,7 @@ function decide(api, name, asker, app) {
 //   was for: "so what's an api.self for then?" Nothing, it turned out: the
 //   puppet knows its own owner's key and makes the comparison. It answers
 //   'serve' for a granted name by handing the request to the app server
-//   that serves it on this box (api.toLocalApp, appServers.js: G17's last
+//   that serves it on this box (api.toLocalApp, appClient.js: G17's last
 //   leg), and replies with that app's own answer. A node that starts no
 //   app servers still answers the step-1 stub, 501 last-leg-not-built.
 //

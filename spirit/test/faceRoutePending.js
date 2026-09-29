@@ -39,7 +39,7 @@ test.startTest('The face route (G17), what is still owed');
 // appServerPost / appServerReply, and the last leg's four pieces (toLocalApp,
 // startServerJob, serve through the app server, app-not-running) are BUILT
 // (62e2b96, claude-windows, on Andy's "the go is officail") and flipped to
-// EXISTS NOW as the handover. Asserted in appServers.js (claude-windows'
+// EXISTS NOW as the handover. Asserted in appClient.js (claude-windows'
 // pieces) and faceLastLeg.js (the agreed limits against real sockets, and
 // the whole route browser -> face -> owner -> app server -> back), with
 // mutations; the five declarations that stood here are removed.

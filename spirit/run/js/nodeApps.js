@@ -392,7 +392,7 @@ function mountAll(opts) {
         face: face && typeof face.claim === 'function'
           ? function (handler) { return face.claim(name, handler); }
           : undefined,
-        // THE HOP TO AN APP SERVER ON THIS BOX (appServers.js, G17's last
+        // THE HOP TO AN APP SERVER ON THIS BOX (appClient.js, G17's last
         // leg): toLocalApp(appName, { method, path, body, type }) answers
         // { status, body, type }, named refusals included. BY APP NAME: which
         // app answers a visitor is appFaceApp's table, never the node's

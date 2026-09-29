@@ -1367,14 +1367,14 @@ contactBook.syncMarks(ROOT_DIR);
   // ── THE APP SERVERS ON THIS BOX (public-app-server/G17, the last leg) ──
   //
   // One per manifest that names a face, kept running as 'server' jobs, and
-  // none at all on a puppet (appServers.js). Booted apps reach them through
+  // none at all on a puppet (appClient.js). Booted apps reach them through
   // api.toLocalApp, the one new surface, inside the node and not on its door.
-  const appServers = require('./appServers').createAppServers({
+  const appClient = require('./appClient').createAppClient({
     rootDir: ROOT_DIR,
     startServerJob: jobs.startServerJob,
     log: function (line) { console.log(line); },
   });
-  appServers.startAll();
+  appClient.startAll();
   // Node-operated servers in process/js start with the node (processes/G1.3).
   jobs.startNodeServers(ROOT_DIR);
 
@@ -1382,7 +1382,7 @@ contactBook.syncMarks(ROOT_DIR);
     rootDir: ROOT_DIR,
     arrivals: arrivals,
     face: face,
-    servers: appServers,
+    servers: appClient,
     post: function (relayUrl, toKey, text, hints, how) {
       // NO RELAY NAMED MEANS THE NODE CHOOSES, as it does for every page's
       // post (hub.chooseRoute). A booted app never knows which relay a peer

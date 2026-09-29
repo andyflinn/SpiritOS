@@ -1,7 +1,7 @@
 'use strict';
 
-// spirit/test/appServers.js
-// THE LAST LEG'S OWN PIECES — public-app-server/G17 (js/appServers.js).
+// spirit/test/appClient.js
+// THE LAST LEG'S OWN PIECES — public-app-server/G17 (js/appClient.js).
 //
 // Which app serves a name, where its pipe is, the named refusals, and one
 // real hop: a hello app server started on a pipe, asked for its page (html),
@@ -15,7 +15,7 @@ const os = require('os');
 const path = require('path');
 const childProcess = require('child_process');
 const test = require('./testSupport.js');
-const appServers = require('../run/js/appServers.js');
+const appClient = require('../run/js/appClient.js');
 const limits = require('../run/js/limits.js');
 
 const RUN = path.join(__dirname, '..', 'run');
@@ -33,15 +33,15 @@ test.startTest('The last leg: the owner node and the app servers on its box');
 
 test.subHeading('The node names each pipe, and two nodes on one box never share one');
 (function () {
-  const a = appServers.pipePathFor('D:/SpiritOS/spirit/run', 'hello', 'win32');
-  const b = appServers.pipePathFor('D:/SpiritOS-agent-claude/spirit/run', 'hello', 'win32');
-  const again = appServers.pipePathFor('D:/SpiritOS/spirit/run', 'hello', 'win32');
+  const a = appClient.pipePathFor('D:/SpiritOS/spirit/run', 'hello', 'win32');
+  const b = appClient.pipePathFor('D:/SpiritOS-agent-claude/spirit/run', 'hello', 'win32');
+  const again = appClient.pipePathFor('D:/SpiritOS/spirit/run', 'hello', 'win32');
   if (/^\\\\\.\\pipe\\spirit-[0-9a-f]{12}-hello$/.test(a) && a !== b && a === again) {
     test.check('on Windows a named pipe carrying this checkout and the app: two checkouts, two names; one checkout, one name');
   } else {
     test.fail('pipe names: ' + JSON.stringify([a, b, again]));
   }
-  const unix = appServers.pipePathFor('/root/SpiritOS/spirit/run', 'hello', 'linux');
+  const unix = appClient.pipePathFor('/root/SpiritOS/spirit/run', 'hello', 'linux');
   if (unix === path.join('/root/SpiritOS/spirit/run', 'app-state', 'hello', 'door.sock')) {
     test.check('elsewhere a socket file in the app\'s own state folder, which is gitignored');
   } else {
@@ -57,7 +57,7 @@ test.subHeading('An app says it serves, and the node knows it by its own name on
     gamma: { boots: true },
     delta: { serves: true, face: 'hello' },
   });
-  const apps = appServers.readServers(root);
+  const apps = appClient.readServers(root);
   if (apps.join(',') === 'alpha,delta') {
     test.check('"serves": true starts a server; anything else, "yes" included, starts none');
   } else {
@@ -71,17 +71,17 @@ test.subHeading('An app says it serves, and the node knows it by its own name on
 // table must be owned by appFaceApp". The first version read a 'face' field
 // out of every manifest; this keeps it from drifting back.
 (function () {
-  const src = fs.readFileSync(path.join(RUN, 'js', 'appServers.js'), 'utf8')
+  const src = fs.readFileSync(path.join(RUN, 'js', 'appClient.js'), 'utf8')
     .split(/\r?\n/).filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
-  if (!/face/i.test(src)) test.check('appServers.js has no face vocabulary outside its comments');
-  else test.fail('appServers.js code mentions a face: ' + (src.match(/.*face.*/i) || [''])[0].trim());
+  if (!/face/i.test(src)) test.check('appClient.js has no face vocabulary outside its comments');
+  else test.fail('appClient.js code mentions a face: ' + (src.match(/.*face.*/i) || [''])[0].trim());
 })();
 
 test.subHeading('None on a puppet, one server job per serving app elsewhere');
 (function () {
   const root = tempRoot({ hello: { serves: true } });
   const started = [];
-  const s = appServers.createAppServers({
+  const s = appClient.createAppClient({
     rootDir: root, platform: 'linux', log: function () {},
     startServerJob: function (cmd, args, opts) { started.push({ cmd: cmd, args: args, opts: opts }); return {}; },
   });
@@ -97,7 +97,7 @@ test.subHeading('None on a puppet, one server job per serving app elsewhere');
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(root, 'relay-state', 'puppet.json'), '{}');
   const onPuppet = [];
-  appServers.createAppServers({
+  appClient.createAppClient({
     rootDir: root, platform: 'linux', log: function () {},
     startServerJob: function () { onPuppet.push(1); return {}; },
   }).startAll();
@@ -110,7 +110,7 @@ function refusalsByName() {
   test.subHeading('Every link that fails says which, by name');
   const root = tempRoot({ hello: { serves: true } });
   let answer = null;
-  const s = appServers.createAppServers({
+  const s = appClient.createAppClient({
     rootDir: root, platform: 'linux', log: function () {}, startServerJob: function () { return {}; },
     request: function () { return Promise.resolve(answer); },
   });
@@ -157,7 +157,7 @@ function aRealHop() {
   });
   fs.mkdirSync(path.join(root, 'process'), { recursive: true });
   fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
-  const s = appServers.createAppServers({
+  const s = appClient.createAppClient({
     rootDir: root, log: function () {},
     startServerJob: function (cmd, args, opts) {
       const child = childProcess.spawn(cmd, args, { cwd: opts.cwd, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
@@ -221,7 +221,7 @@ function aRealHop() {
 function aTrickleIsCutOff() {
   test.subHeading('A slow app is cut off at the deadline, however it trickles');
   const http = require('http');
-  const pipe = appServers.pipePathFor(fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-trickle-')), 'trickle');
+  const pipe = appClient.pipePathFor(fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-trickle-')), 'trickle');
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
   const server = http.createServer(function (req, res) {
     res.writeHead(200, { 'Content-Type': 'text/plain' });

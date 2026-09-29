@@ -1,7 +1,14 @@
 'use strict';
 
-// spirit/run/js/appServers.js
+// spirit/run/js/appClient.js
 // THE LAST LEG: THE OWNER NODE AND THE APP SERVERS ON ITS OWN BOX.
+//
+// THE CLIENT, NOT THE SERVERS. Named for the servers (the plural) until
+// appPair/G1.1.
+// Andy, 2026-09-28: "we need to rename appServer to appClient. that was a
+// misnomer", because in the face-to-appServer chain the node is the one
+// asking. Its other half, appServer.js, runs inside each app server
+// (appPair/G1.2). api.toLocalApp kept its name ("keep it").
 //
 //   public-app-server/G17. Andy, 2026-09-27, in Desk: "step 1) build and
 //   prove the route from browser to owner-of-subdomain, and back 2) design
@@ -109,7 +116,7 @@ function refusal(code, app) {
 // opts: { rootDir, startServerJob, log, platform, execPath, request }
 // `request` is relayRequest.pipeRequest, a parameter so a suite can drive
 // the hop without a process.
-function createAppServers(opts) {
+function createAppClient(opts) {
   const o = opts || {};
   const rootDir = String(o.rootDir || '');
   const log = o.log || function () {};
@@ -167,7 +174,7 @@ function createAppServers(opts) {
 }
 
 module.exports = {
-  createAppServers: createAppServers,
+  createAppClient: createAppClient,
   pipePathFor: pipePathFor,
   servesOf: servesOf,
   readServers: readServers,

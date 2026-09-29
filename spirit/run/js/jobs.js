@@ -244,7 +244,7 @@ module.exports = function installJobs(spirit, port) {
   // notices it died. The wait doubles from RESTART_MIN_MS to RESTART_MAX_MS
   // while it keeps dying, and starts over once a run lasted a minute.
   //
-  // Started by the node itself at boot (appServers.js), never through the
+  // Started by the node itself at boot (appClient.js), never through the
   // jobs.create verb: the loopback door gains nothing (Andy, 2026-09-27).
   // cancelJob stops it for good.
   const RESTART_MIN_MS = 1000;
