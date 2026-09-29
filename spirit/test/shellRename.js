@@ -55,7 +55,7 @@ function appFolderUses() {
     .split('\n').filter(function (f) { return /\.(js|html)$/.test(f) && f.indexOf('node_modules') === -1 && fs.existsSync(path.join(RUN, f)); });
   const hits = [];
   files.forEach(function (f) {
-    fs.readFileSync(path.join(RUN, f), 'utf8').split('\n').forEach(function (line, i) {
+    fs.readFileSync(path.join(RUN, f), 'utf8').split(/\r?\n/).forEach(function (line, i) {
       const code = line.replace(/^\s*(\/\/|\*).*$/, '').replace(/\s\/\/\s.*$/, '');
       if (!/(["'])app\1|(["'])\/?app\//.test(code)) return;
       if (ALLOWED.some(function (re) { return re.test(code); })) return;
