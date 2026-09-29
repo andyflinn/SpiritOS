@@ -145,7 +145,9 @@ test.startTest('slim/G1.1: app/ becomes shell/, and each node carries its own fi
   test.subHeading('T2: listing shell elements skips the plain files at shell/\'s top');
   const root2 = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-shelllist-'));
   ['tokens.css', 'elements.css', 'README.md'].forEach(function (f) { write(path.join(root2, 'shell', f), '/* ' + f + ' */'); });
-  write(path.join(root2, 'shell', 'hello', 'hello.json'), JSON.stringify({ serves: true }));
+  // A face lives in process/js since slim/G1.4, so the serving list is read
+  // there; the shell's mounted list still skips shell/'s top files.
+  write(path.join(root2, 'process', 'js', 'hello', 'hello.json'), JSON.stringify({ serves: true }));
   write(path.join(root2, 'shell', 'probe', 'probe.json'), JSON.stringify({ boots: true }));
   write(path.join(root2, 'shell', 'probe', 'probe.js'), 'module.exports = { mount: function () {} };');
   let servers = [];
@@ -154,7 +156,7 @@ test.startTest('slim/G1.1: app/ becomes shell/, and each node carries its own fi
   try { servers = require('../run/js/appClient.js').readServers(root2); } catch (e) { broke += 'readServers: ' + e.message + ' '; }
   try { mounted = require('../run/js/nodeApps.js').mountAll({ rootDir: root2 }) || []; } catch (e) { broke += 'mountAll: ' + e.message; }
   if (JSON.stringify(servers) === '["hello"]' && JSON.stringify(mounted) === '["probe"]' && !broke) {
-    test.check('from shell/, the serving list is [hello] and the mounted list [probe]; tokens.css, elements.css and README.md are neither');
+    test.check('the serving list is [hello] (process/js) and the mounted list [probe] (shell/); tokens.css, elements.css and README.md are neither');
   } else test.fail(OWED + 'serving ' + JSON.stringify(servers) + ', mounted ' + JSON.stringify(mounted) + (broke ? ', broke: ' + broke : ''));
   try { fs.rmSync(root2, { recursive: true, force: true }); } catch (e) { /* busy */ }
 
@@ -164,8 +166,9 @@ test.startTest('slim/G1.1: app/ becomes shell/, and each node carries its own fi
   write(path.join(root3, 'shell', 'tokens.css'), '/*TOKENS*/');
   write(path.join(root3, 'shell', 'elements.css'), '/*ELEMENTS*/');
   write(path.join(root3, 'shell', 'README.md'), 'README');
-  write(path.join(root3, 'shell', 'probe', 'probe.json'), JSON.stringify({ posture: 'strict', surface: ['verb'], utilities: ['elements', 'tokens'], serves: true }));
-  write(path.join(root3, 'shell', 'probe', 'probe.html'), '<p>probe</p>');
+  // The face in process/js (slim/G1.4); its granted CSS still from shell/'s top.
+  write(path.join(root3, 'process', 'js', 'probe', 'probe.json'), JSON.stringify({ posture: 'strict', surface: ['verb'], utilities: ['elements', 'tokens'], serves: true }));
+  write(path.join(root3, 'process', 'js', 'probe', 'probe.html'), '<p>probe</p>');
   const faceServer = require('../run/js/faceServer.js');
   const got = {};
   try {
