@@ -165,11 +165,13 @@ settle().then(function () {
   const doneOnly = mount({ 'log/log.json': JSON.stringify([
     row('in', 'session', SESSION, 'team/chat'),
     row('in', 'note', 'READY TO CLOSE', 'test/G1.1'),
+    // Done counts only once two agents have claimed it.
+    Object.assign(row('in', 'note', 'READY TO CLOSE', 'test/G1.1'), { from: 'wsl-claude' }),
     row('out', 'answer', 'done.', 'test/G1.1'),
   ]) });
   return settle().then(function () {
     const cell = (doneOnly.top().match(/<td>[^<]*<button type="button" data-close="test\/G1\.1">Close<\/button><\/td>/) || [''])[0];
     if (cell && !/done/.test(cell.replace(/data-close="[^"]*"/, ''))) test.check('the state cell holds only the Close button');
-    else test.fail('the done row\'s state cell: ' + JSON.stringify(cell || doneOnly.top().slice(0, 300)));
+    else test.fail('the done row: ' + JSON.stringify(cell || (doneOnly.top().match(/<tr data-id="test\/G1\.1"[\s\S]*?<\/tr>/) || ['(not drawn)'])[0]));
   });
 }).then(function () { test.reportSuccessFailureCount(); });
