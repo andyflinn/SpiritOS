@@ -120,7 +120,7 @@ const goalClosed = itemClosed.concat([
 ]);
 
 test.startTest('Desk: a line Andy closed never comes back');
-const files = { 'log.json': JSON.stringify(itemClosed) };
+const files = { 'log/log.json': JSON.stringify(itemClosed) };
 const first = mount(files);
 settle().then(function () {
   test.subHeading('A closed item is gone; the open one and the goal stay; no old board');
@@ -148,7 +148,7 @@ settle().then(function () {
   // Andy: "the rules should also disappear with the requirement they were
   // attached to." Open work does not vanish silently (claude-windows, agreed
   // 2026-09-28): the unfinished item stays on the List.
-  const done = mount({ 'log.json': JSON.stringify(goalClosed) });
+  const done = mount({ 'log/log.json': JSON.stringify(goalClosed) });
   return settle().then(function () {
     const list = done.top();
     const gone = ['Old board row', 'Closed item', 'A rule of this goal', 'The goal'].filter(function (t) { return list.indexOf(t) !== -1; });

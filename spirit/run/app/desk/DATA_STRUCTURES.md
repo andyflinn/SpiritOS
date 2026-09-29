@@ -1,16 +1,16 @@
 # Desk — data structures
 
-Desk keeps everything in its own folder, `spirit/run/app/desk/`. Andy,
+Desk keeps everything in its own folder, `spirit/run/app/desk/`: the log in `log/`, Andy's typed lines in `voice/` (2026-09-29, "can we clean that up"; a `process/js/desk` owning a `desk.db` replaces both later). Andy,
 2026-09-28: *"this IS the official project governance. NOW."*
 
 ## Files
 
 | file | what |
 |---|---|
-| `log.json`, `log-1.json`, `log-2.json`, … | The log: every message in and out, in order. A JSON array per file. Only the last file is rewritten; a file is sealed at about 9 KB (`DESK_CHUNK_BYTES`), because a save is one request. |
+| `log/log.json`, `log/log-1.json`, `log/log-2.json`, … | The log: every message in and out, in order. A JSON array per file. Only the last file is rewritten; a file is sealed at about 9 KB (`DESK_CHUNK_BYTES`), because a save is one request. |
 | `state.json` | What Desk has decided, rewritten by Desk whenever it changes (below). No agent edits it. |
 | `seen.json` | `{ "rows": { "<item id>": <ms timestamp> } }`: when Andy last opened each item, for the red `*` marks. |
-| `voice.jsonl`, `voice-2.jsonl`, … | Andy's own typed lines, `{text, day}`, one per line. He moves them to his vault by hand. |
+| `voice/voice.jsonl`, `voice/voice-2.jsonl`, … | Andy's own typed lines, `{text, day}`, one per line. He moves them to his vault by hand. |
 | `desk.js`, `desk.json` | The app and its manifest. |
 
 ## One log message

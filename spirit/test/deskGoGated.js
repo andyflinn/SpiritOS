@@ -71,7 +71,7 @@ const inDesign = [designStart].concat(base);
 function mount(log) {
   const doc = fakeDocument();
   load(DESK, doc).mount(fakeElement('container'), {
-    fs: { loadFile: function (f) { return f === 'log.json' ? JSON.stringify(log) : null; }, saveFile: function () { return Promise.resolve(); } },
+    fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify(log) : null; }, saveFile: function () { return Promise.resolve(); } },
     escapeHtml: spirit.core.util.escapeHtml,
     verb: function () { return Promise.resolve({ status: 200, body: {} }); },
     onPacket: function () {},

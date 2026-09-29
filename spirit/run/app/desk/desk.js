@@ -34,7 +34,11 @@
 // Andy, 2026-09-27, "that hook into my voice.jsonl is a hack and will have
 // to be removed if the agents app is ever to ship."
 
-var DESK_LOG = 'log.json';
+// IN TWO FOLDERS, NOT LOOSE. Andy, 2026-09-29: 'desk creates a lot of
+// file-clutter, can we clean that up', and on the stopgap until a
+// process/js/desk owns a desk.db: 'that'd be pogress, yes!'. The log's
+// chunks live in log/, his typed lines in voice/.
+var DESK_LOG = 'log/log.json';
 
 // A BUSY AGENT IS WAITED FOR, NOT BOUNCED. Andy's line came back
 // "(undelivered: target is busy)" because a post got one attempt. With
@@ -149,7 +153,7 @@ var deskSaving = Promise.resolve();
 // DESK_CHUNK_BYTES; the next line starts the next file. Every save is
 // then small, however long the conversation gets.
 var DESK_CHUNK_BYTES = 9000;
-function deskChunkName(i) { return i === 0 ? DESK_LOG : 'log-' + i + '.json'; }
+function deskChunkName(i) { return i === 0 ? DESK_LOG : 'log/log-' + i + '.json'; }
 var deskLastChunk = 0;                          // the one still being written
 var deskSealedKeys = Object.create(null);       // keys living in earlier chunks
 
@@ -205,7 +209,7 @@ function deskWriteChunk(name, text) {
 // simply started again. Button presses (Go!, No, Accept, Reject) and the
 // explain request a dialog sends on opening are not his words, so they
 // stay out.
-var DESK_VOICE = 'voice.jsonl';
+var DESK_VOICE = 'voice/voice.jsonl';
 var DESK_TYPED = /^(note|musing)$/;
 function deskVoiceText(m) {
   if (!m || m.dir !== 'out') return '';
@@ -230,7 +234,7 @@ function deskVoice(msgs) {
   deskSaving = deskSaving.then(function () {
     var add = lines.join('\n') + '\n';
     for (var i = 1; ; i += 1) {
-      var name = i === 1 ? DESK_VOICE : 'voice-' + i + '.jsonl';
+      var name = i === 1 ? DESK_VOICE : 'voice/voice-' + i + '.jsonl';
       var held = '';
       try { held = deskApi.fs.loadFile(name) || ''; } catch (e) { held = ''; }
       if (held && held.charAt(held.length - 1) !== '\n') held += '\n';

@@ -50,7 +50,9 @@ const SKIP_DIRS = ['node_modules'];
 // A RECORD OF CONVERSATION IS NOT CODE. Desk's own log (gitignored, never
 // shipped) holds what Andy and the agents said, and they talk about
 // spirit/test. What they said is not the product reaching for the harness.
-const SKIP_DATA = /[\\/]app[\\/]desk[\\/](log(-\d+)?\.json|seen\.json)$/;
+// Since 2026-09-29 the log's chunks and his typed lines live in log/ and
+// voice/ (desk.js, DESK_LOG).
+const SKIP_DATA = /[\\/]app[\\/]desk[\\/](log[\\/]log(-\d+)?\.json|voice[\\/]voice(-\d+)?\.jsonl|seen\.json)$/;
 
 function walk(dir, out) {
   // A DIRECTORY CAN VANISH UNDER A SCAN, and twice on 2026-09-13 one did:

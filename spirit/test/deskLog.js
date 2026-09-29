@@ -118,7 +118,7 @@ function settle() {
 }
 
 function logged(files) {
-  try { return JSON.parse(files['log.json']); } catch (e) { return null; }
+  try { return JSON.parse(files['log/log.json']); } catch (e) { return null; }
 }
 
 // A DESIGN SESSION, NOT THE OLD BOARD: Desk's List shows only a session since
@@ -187,7 +187,7 @@ function arrivalsAndSendsAreLogged() {
 
 function failedSendsStayApart() {
   test.subHeading('Two sends that never crossed are two rows');
-  const files = { 'log.json': JSON.stringify([{ key: 'h-in-1', at: '2026-09-27T05:00:00Z', dir: 'in', peer: LEAD,
+  const files = { 'log/log.json': JSON.stringify([{ key: 'h-in-1', at: '2026-09-27T05:00:00Z', dir: 'in', peer: LEAD,
     outcome: 'received', from: 'claude-windows', kind: 'session', text: BOARD, todo: '' }]) };
   const desk = mountDesk({ files: files, refuse: true });
   const box = desk.doc.getElementById('desk-say');
@@ -209,12 +209,12 @@ function failedSendsStayApart() {
 
 function brokenLogIsKept() {
   test.subHeading('A log that does not parse is never overwritten');
-  const files = { 'log.json': '{not json' };
+  const files = { 'log/log.json': '{not json' };
   const desk = mountDesk({ files: files });
   desk.arrive({ from: 'wsl-claude', kind: 'note', text: 'hi' }, { hash: 'h-in-9', fromKey: WSL, sentAt: '2026-09-27T05:01:00Z' });
   return settle().then(function () {
-    if (files['log.json'] === '{not json') test.check('the unreadable file is left exactly as it was');
-    else test.fail('the broken log was overwritten with ' + files['log.json'].slice(0, 80));
+    if (files['log/log.json'] === '{not json') test.check('the unreadable file is left exactly as it was');
+    else test.fail('the broken log was overwritten with ' + files['log/log.json'].slice(0, 80));
     if (/does not parse/.test(desk.doc.getElementById('desk-top').innerHTML)) test.check('and Desk says so');
     else test.fail('Desk drew no word about the broken log');
   });
@@ -291,7 +291,7 @@ function dialogSendsComeBack() {
     if (back.length === 1 && back[0].dir === 'out' && back[0].text === 'go on') {
       test.check('what he sent from the dialog is in Desk\'s log once it closes');
     } else {
-      test.fail('Desk\'s log after the dialog: ' + files['log.json']);
+      test.fail('Desk\'s log after the dialog: ' + files['log/log.json']);
     }
   });
 }
@@ -326,7 +326,7 @@ function voiceHoldsWhatHeTyped() {
       return settle();
     });
   }).then(function () {
-    const lines = String(files['voice.jsonl'] || '').split('\n').filter(Boolean).map(function (l) { return JSON.parse(l); });
+    const lines = String(files['voice/voice.jsonl'] || '').split('\n').filter(Boolean).map(function (l) { return JSON.parse(l); });
     const texts = lines.map(function (l) { return l.text; });
     if (texts.join(' | ') === 'typed by andy | from the row | My Name') {
       test.check('his typed line, the row line once, and his new name; no Go!, no explain request, no agent text');
@@ -339,15 +339,15 @@ function voiceHoldsWhatHeTyped() {
       test.fail('voice rows: ' + JSON.stringify(lines));
     }
     // He took the file: the next line starts it again.
-    delete files['voice.jsonl'];
+    delete files['voice/voice.jsonl'];
     desk.doc.getElementById('desk-say').value = 'after he moved it';
     desk.doc.getElementById('desk-say-send').fire('click');
     return settle();
   }).then(function () {
-    if (files['voice.jsonl'] === JSON.stringify({ text: 'after he moved it', day: new Date().toISOString().slice(0, 10) }) + '\n') {
+    if (files['voice/voice.jsonl'] === JSON.stringify({ text: 'after he moved it', day: new Date().toISOString().slice(0, 10) }) + '\n') {
       test.check('a file he has moved away is started again with only the new line');
     } else {
-      test.fail('after removal voice.jsonl is ' + JSON.stringify(files['voice.jsonl']));
+      test.fail('after removal voice.jsonl is ' + JSON.stringify(files['voice/voice.jsonl']));
     }
   });
 }
@@ -461,7 +461,7 @@ function theLogIsChunked() {
       { hash: 'c-' + i, fromKey: WSL, sentAt: '2026-09-27T06:00:' + String(i).padStart(2, '0') + 'Z' });
   }
   return settle().then(function () { return settle(); }).then(function () {
-    const names = Object.keys(files).filter(function (n) { return /^log(-\d+)?\.json$/.test(n); });
+    const names = Object.keys(files).filter(function (n) { return /^log\/log(-\d+)?\.json$/.test(n); });
     const biggest = Math.max.apply(null, names.map(function (n) { return Buffer.byteLength(files[n]); }));
     const all = [];
     names.forEach(function (n) { JSON.parse(files[n]).forEach(function (m) { all.push(m.key); }); });
@@ -473,13 +473,13 @@ function theLogIsChunked() {
     // A fresh mount reads every chunk back.
     const again = mountDesk({ files: files });
     // The chunk still being written is the highest number; log.json is 0.
-    const numberOf = function (n) { const m = /^log-(\d+)\.json$/.exec(n); return m ? Number(m[1]) : 0; };
+    const numberOf = function (n) { const m = /^log\/log-(\d+)\.json$/.exec(n); return m ? Number(m[1]) : 0; };
     const lastName = names.slice().sort(function (a, b) { return numberOf(a) - numberOf(b); })[names.length - 1];
     const sealed = names.filter(function (n) { return n !== lastName; }).map(function (n) { return [n, files[n]]; });
     again.arrive({ from: 'wsl-claude', kind: 'note', text: 'one more', todo: 'puppets/G2' }, { hash: 'c-new', fromKey: WSL, sentAt: '2026-09-27T06:01:00Z' });
     return settle().then(function () {
       const back = [];
-      Object.keys(files).filter(function (n) { return /^log(-\d+)?\.json$/.test(n); })
+      Object.keys(files).filter(function (n) { return /^log\/log(-\d+)?\.json$/.test(n); })
         .forEach(function (n) { JSON.parse(files[n]).forEach(function (m) { back.push(m.key); }); });
       if (back.length === 61 && new Set(back).size === 61) test.check('a remount reads every chunk, and the next line is written once');
       else test.fail('after remount: ' + back.length + ' lines, ' + new Set(back).size + ' distinct');

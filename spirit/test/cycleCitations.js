@@ -206,7 +206,7 @@ function count() {
   FILES.forEach(function (f) { if (fs.existsSync(path.join(REPO, f))) walked.push(f); });
   // TRACKED FILES ONLY. The walk reads the disk, so on a checkout that is
   // somebody's node it also read their gitignored data: Desk's own chat
-  // log (app/desk/log-*.json) went red the moment a conversation typed
+  // log (app/desk/log/log-*.json) went red the moment a conversation typed
   // "R1 of G19" (2026-09-28). A person's words are not the tree.
   // NOR DESK'S FOLDER, now that it is tracked (Andy, 2026-09-28: "git
   // everything in this folder"). It is the conversation, in everyone's own
