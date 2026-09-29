@@ -3686,6 +3686,62 @@ async function sliceT9() {
   }
 }
 
-sliceT9().catch(function (e) { test.fail('slim/G1.3 T9 broke: ' + e.message); }).then(function () {
-  test.reportSuccessFailureCount();
-});
+// ── slim/G1.7: THE DESKTOP SHOWS ONLY THE APPS THIS NODE INCLUDES ──────
+//
+// Andy, checking G1.3 on a new node: "the shell still shows, desk and text
+// editor"; then go on making the desktop follow the list, as its own item.
+// The shell already asks config.searchModules at load (G1.3); the desktop
+// and a group's screen follow the same answer, redrawn when it arrives.
+// Intrinsic apps are always shown.
+async function sliceG17() {
+  const EDITOR = 'shell/textEditor/textEditor.js';
+  function withList(names, prefs) {
+    const ask = function (verb) {
+      if (verb === 'config.searchModules') {
+        const body = { items: names.map(function (n) { return { key: n, label: n }; }), more: false };
+        return Promise.resolve({ status: 200, text: JSON.stringify(body), body: body });
+      }
+      return Promise.resolve({ status: 400, text: '{"error":"no such verb"}', body: { error: 'no such verb' } });
+    };
+    return bootShell(prefs || { defaultHandlers: {}, appOverrides: {}, groups: {} },
+      [NATTER_SCRIPT, EDITOR], false, BOUND, undefined, undefined, ask);
+  }
+  async function settled() { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); }
+
+  test.subHeading('slim/G1.7: the desktop shows only included apps; intrinsic ones always');
+  const bare = withList([]);
+  await settled();
+  const bareDesk = desktopLabels(bare);
+  if (bareDesk.indexOf('Text Editor') === -1 && (bareDesk.indexOf('NATter') !== -1 || spiritGroupLabels(bare).indexOf('NATter') !== -1)) {
+    test.check('nothing listed: no Text Editor on the desktop; Natter, intrinsic, still reachable');
+  } else test.fail('OWED by slim/G1.7: nothing listed, the desktop reads ' + bareDesk);
+
+  const listed = withList(['shell/textEditor']);
+  await settled();
+  if (desktopLabels(listed).indexOf('Text Editor') !== -1) test.check('textEditor listed: its icon is on the desktop');
+  else test.fail('OWED by slim/G1.7: textEditor listed, the desktop reads ' + desktopLabels(listed));
+
+  test.subHeading("slim/G1.7: a group's screen shows only its included members");
+  const grouped = { defaultHandlers: {}, appOverrides: { 'shell/textEditor': { group: 'grp_probe' } }, groups: { grp_probe: { name: 'Probe group' } } };
+  function groupGrid(booted) {
+    try { booted.shell.launchApp('grp_probe'); } catch (e) { return 'threw ' + e.message; }
+    const grid = booted.doc.byId['grp_probe-grid'];
+    const content = booted.doc.byId['grp_probe-content'];
+    if (grid) return grid.children.map(function (el) { return el.innerHTML; }).join(' | ');
+    return content ? content.innerHTML : '';
+  }
+  const hiddenMember = withList([], grouped);
+  await settled();
+  const bareGroup = groupGrid(hiddenMember);
+  const shownMember = withList(['shell/textEditor'], grouped);
+  await settled();
+  const listedGroup = groupGrid(shownMember);
+  if (bareGroup.indexOf('Text Editor') === -1 && listedGroup.indexOf('Text Editor') !== -1) {
+    test.check('the group shows textEditor only when it is listed');
+  } else test.fail('OWED by slim/G1.7: group with nothing listed ' + JSON.stringify(bareGroup.slice(0, 120)) + '; listed ' + JSON.stringify(listedGroup.slice(0, 120)));
+}
+
+sliceT9().catch(function (e) { test.fail('slim/G1.3 T9 broke: ' + e.message); })
+  .then(function () { return sliceG17(); })
+  .catch(function (e) { test.fail('slim/G1.7 broke: ' + e.message); })
+  .then(function () { test.reportSuccessFailureCount(); });
