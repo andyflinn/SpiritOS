@@ -219,6 +219,18 @@ settle().then(function () {
     // the always-visible part of the large text fold ar still to small, not
     // Title-style yet", and "the yellow part is not separate from the the
     // large text block, it should be right below the offered Done button".
+    // Andy: "same for this part Done Rename How you can check: ...": in a
+    // dialog, his buttons and the check line stay pinned at the top too.
+    test.subHeading('T13: in a dialog, his buttons and the check line are pinned in one sticky block');
+    const stickyTag = (body.match(/<div[^>]*position:\s*sticky[^>]*>/) || [''])[0];
+    const stickyAt = stickyTag ? body.indexOf(stickyTag) : -1;
+    const nameAt = body.indexOf('id="dd-name-row"');
+    const checkLineAt = body.indexOf('How you can check');
+    const blurbAt = body.indexOf('id="dd-blurb"');
+    if (stickyAt !== -1 && /top:\s*0/.test(stickyTag) && stickyAt < nameAt && nameAt < checkLineAt && checkLineAt < blurbAt) {
+      test.check('one sticky block at top: 0 holds the button row and the check line, above the explanation');
+    } else test.fail(OWED + 'sticky block at ' + stickyAt + ', buttons at ' + nameAt + ', check at ' + checkLineAt + ', explanation at ' + blurbAt);
+
     test.subHeading('T10: the item title in its fold head is title-sized');
     const size = function (html, text) {
       const at = html.indexOf(text);
