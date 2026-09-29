@@ -110,6 +110,27 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); }
   } else {
     test.fail(OWED + (has ? 'packets not for api caused ' + asked.length + ' ask(s) and ' + posted.length + ' post(s)' : 'no js/apiDoor.js'));
   }
+
+  // AN ANSWER IS NEVER A QUESTION. Found by hand on wsl-claude's node,
+  // 2026-09-29: an 'api' asked of itself came back as an 'api' packet with
+  // re, the door took it for a new request, answered it, and the two
+  // answers bounced forever (about 9 log rows a second). Two nodes on the
+  // same code would do it to each other. A packet that carries re is a
+  // reply, and the door leaves it alone.
+  door = world();
+  if (has) {
+    const replyText = packet.encode('api', { ok: false, code: 'bad-request', error: 'x' }, { re: 'H-original' }).text;
+    await Promise.resolve(door({ text: replyText, fromKey: MEMBER, hash: 'H-reply' }));
+    const treeReply = packet.encode('api', TREE, { re: 'H-original-2' }).text;
+    await Promise.resolve(door({ text: treeReply, fromKey: MEMBER, hash: 'H-reply-2' }));
+    await new Promise(function (r) { setTimeout(r, 50); });
+  }
+  test.subHeading('A reply is never answered: a packet of app api that carries re is left alone');
+  if (has && asked.length === 0 && posted.length === 0) {
+    test.check('two api packets carrying re (an error and a tree) from a known sender: nothing asked, nothing posted');
+  } else {
+    test.fail(OWED + (has ? 'a reply caused ' + asked.length + ' ask(s) and ' + posted.length + ' post(s): replies would bounce forever' : 'no js/apiDoor.js'));
+  }
 })().catch(function (e) {
   test.fail(OWED + 'the run broke: ' + e.message);
 }).then(function () { test.reportSuccessFailureCount(); });
