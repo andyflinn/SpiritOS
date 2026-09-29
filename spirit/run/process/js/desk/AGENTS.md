@@ -12,6 +12,10 @@ by claude-windows from Andy's own rulings, slim/G1.8, 2026-09-30; his to edit.
   goes under that new item, never under the one it came up in.
 - The caveats make it into the post. No burning tokens he can't see.
 - Titles lead; an id in brackets beside them is a handle he can paste back.
+- Claims (READY TO CLOSE, IN PLACE VERIFIED, STATUS) go to him, control. A
+  note to the other agent reaches his Desk only as a report, and a report
+  does not count as a claim.
+- Answer him only if the other agent has not, or to correct it.
 
 ## Explanations
 
@@ -25,6 +29,8 @@ by claude-windows from Andy's own rulings, slim/G1.8, 2026-09-30; his to edit.
 
 - An `ask` is a question that ends in his Go! button: one proposal, go = yes.
   A clarifying question is a `note`.
+- A decision of his goes as an `ask`, with his button; never "say X and I
+  will", which leaves him typing.
 - A short yes to a question with several options is asked back, naming the
   option, before anything is built.
 - No Go before the item's in-place list is verified (IN PLACE VERIFIED).
