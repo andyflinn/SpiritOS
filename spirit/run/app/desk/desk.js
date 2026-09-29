@@ -54,6 +54,15 @@ var deskSessionPosted = null, deskSessionAt = 0;
 var deskDone = {};           // item id -> true/false, from Andy's own "done." / "reopen."
 var deskReady = {};          // item id -> true once two agents have each said READY TO CLOSE under it
 var deskReadyBy = {};        // item id -> { agent name: true } for each READY TO CLOSE claim
+var deskStatus = {};         // item id -> the owner's newest one-word status (desk/G1.11)
+var DESK_STATUS = /^STATUS:\s*(\S+)\s*$/;
+// THE ROW'S ICON (desk/G1.11): ERROR wherever Andy blocks ("the ERROR for
+// anything i NEED to deal with", "wherever i block"), CODE on any other item.
+// From the kernel's own set; a Desk mounted without it draws none.
+function deskIcon(name) {
+  var set = (typeof spirit !== 'undefined' && spirit.core && spirit.core.const && spirit.core.const.ICON) || {};
+  return set[name] || '';
+}
 var deskClosed = {};         // item id -> true once Andy closed its done line away
 var deskFrom = { done: {}, title: {}, pressed: {} };  // item id -> { at, key } of Andy's answer that set it
 var DESK_READY_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:[\w.\/-]+\s+is\s+)?READY TO CLOSE\b/;
@@ -328,7 +337,15 @@ function deskFold(msg) {
   // BOTH AGENTS, NOT ONE. Andy: "so i get a done button and the two of you
   // haven't even both tested it yet?", then go. An item is ready to close
   // only once two different agents have each claimed it.
+  // THE OWNER'S ONE WORD (desk/G1.11). Andy: "as long as an item is owned,
+  // the owner should indicate in status a one word description of what's
+  // going on", "all real-time updated". A note 'STATUS: <word>' sets it; a
+  // claim or his done. clears it.
+  var said = DESK_STATUS.exec(String(msg.text || ''));
+  if (msg.dir === 'in' && msg.todo && said) deskStatus[msg.todo] = said[1];
+  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && msg.text === 'done.') delete deskStatus[msg.todo];
   if (msg.dir === 'in' && msg.todo && DESK_READY_CLAIM.test(String(msg.text || ''))) {
+    delete deskStatus[msg.todo];
     var by = deskReadyBy[msg.todo] || (deskReadyBy[msg.todo] = {});
     by[String(msg.from || msg.peer || '')] = true;
     deskReady[msg.todo] = Object.keys(by).length >= 2;
@@ -478,11 +495,14 @@ function deskTabButton(attrs, on, news, label) {
 
 // WHAT WAITS ON HIM, COUNTED ON THE LIST TAB (desk/G1, D7): a Go! he can
 // press, a row both agents claimed ready for his Done, an open point.
+// WHERE HE BLOCKS: one rule for the List's (n) and the row's ERROR icon, so
+// the two can never disagree (desk/G1.11).
+function deskAndyBlocks(row) {
+  if (deskClosed[row.id] || row.done) return false;
+  return deskGoState(row) === 'go' || !!deskReady[row.id] || !!row.open;
+}
 function deskWaitingOnAndy() {
-  return deskSessionRows().filter(function (row) {
-    if (deskClosed[row.id] || row.done) return false;
-    return deskGoState(row) === 'go' || !!deskReady[row.id] || !!row.open;
-  }).length;
+  return deskSessionRows().filter(deskAndyBlocks).length;
 }
 
 // Drawn whole, as markup: List | Team | Musings. The Lead tab moved into
@@ -638,7 +658,7 @@ function deskSessionTable() {
   rows = rows.filter(mine).concat(rows.filter(function (row) { return !mine(row); }));
   var body = rows.map(function (row) {
     return '<tr data-id="' + deskEsc(row.id) + '" style="cursor:pointer' + (row.goal ? ';font-weight:bold' : '') + '">' +
-      '<td>' + (deskRowNews(row.id) ? DESK_UNSEEN : '') + '</td>' +
+      '<td>' + (row.goal ? '' : deskIcon(deskAndyBlocks(row) ? 'ERROR' : 'CODE')) + (deskRowNews(row.id) ? ' ' + DESK_UNSEEN : '') + '</td>' +
       '<td title="' + deskEsc(row.title) + '">' + deskEsc(deskLabel[row.id] || row.title) +
         ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span></td>' +
       '<td>' + deskEsc(deskTaken[row.id] || '') + '</td>' +
@@ -661,6 +681,7 @@ function deskSessionTable() {
       // The button says it; the word beside it went (Andy, 2026-09-29: "don't
       // show "done" anymore").
       '<td>' + (row.done ? '<button type="button" data-close="' + deskEsc(row.id) + '">Close</button>'
+        : deskStatus[row.id] ? '<b>' + deskEsc(deskStatus[row.id]) + '</b>'
         : row.open ? '<b>yours</b>'
         : deskDecision[row.id] === 'go' ? 'running' : 'open') + '</td>' +
     '</tr>';
