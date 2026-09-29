@@ -91,6 +91,13 @@ function plantNode(label, servers) {
   fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
   return run;
 }
+// An app under the node's shell/, intrinsic or not.
+function plantApp(run, name, intrinsic) {
+  const dir = path.join(run, 'shell', name);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, name + '.json'), JSON.stringify({ name: name, intrinsic: !!intrinsic }));
+  fs.writeFileSync(path.join(dir, name + '.js'), '');
+}
 function ran(label, name) { return fs.existsSync(path.join(marks, label + '-' + name)); }
 function boot(run) {
   const js = jobs.startNodeServers(run) || [];
@@ -130,11 +137,16 @@ async function booted(port) {
 (async function () {
   test.subHeading('T1: a node with no include list starts no server process');
   const A = plantNode('a', ['alpha', 'beta']);
+  plantApp(A, 'appy', false);
   const bootA = boot(A);
   await sleep(1500);
   if (!ran('a', 'alpha') && !ran('a', 'beta') && bootA.length === 0) {
     test.check('no list: startNodeServers started nothing, and neither server ran');
   } else test.fail(OWED + 'no list, yet ' + bootA.length + ' started; alpha ran ' + ran('a', 'alpha') + ', beta ran ' + ran('a', 'beta'));
+  // A fresh node is not a live one: its apps are not seeded either.
+  const freshApps = names(A, 'shell');
+  if (Array.isArray(freshApps) && freshApps.indexOf('appy') === -1) test.check('a fresh node seeds no app: appy is not included');
+  else test.fail(OWED + 'a fresh node\'s shell list reads ' + JSON.stringify(freshApps));
 
   test.subHeading('T2: a listed server starts, an unlisted one does not');
   const B = plantNode('b', ['alpha', 'beta']);
@@ -201,6 +213,8 @@ async function booted(port) {
   const C = plantNode('c', ['gamma', 'delta', 'epsilon']);
   fs.mkdirSync(path.join(C, 'relay-state', 'process', 'gamma'), { recursive: true });
   fs.mkdirSync(path.join(C, 'relay-state', 'process', 'delta'), { recursive: true });
+  plantApp(C, 'appx', false);
+  plantApp(C, 'appz', false);
   boot(C);
   const seededUp = await waitFor(function () { return ran('c', 'gamma') && ran('c', 'delta'); }, 4000);
   await sleep(800);
@@ -209,10 +223,20 @@ async function booted(port) {
   const seeded = names(C, 'process');
   if (JSON.stringify(seeded) === JSON.stringify(['delta', 'gamma'])) test.check('the list now names delta and gamma');
   else test.fail(OWED + 'the seeded process list reads ' + JSON.stringify(seeded));
+  // ITS APPS TOO (Andy: "yes. seed them."): every app the live node has is
+  // listed in the same once, so the viewer still offers Open for each.
+  const seededApps = names(C, 'shell');
+  if (Array.isArray(seededApps) && seededApps.indexOf('appx') !== -1 && seededApps.indexOf('appz') !== -1) {
+    test.check('the same seeding lists every app the live node had: appx and appz');
+  } else test.fail(OWED + 'the seeded shell list reads ' + JSON.stringify(seededApps));
   // Once: a folder that appears later is not a reason to include it.
   fs.mkdirSync(path.join(C, 'relay-state', 'process', 'epsilon'), { recursive: true });
+  plantApp(C, 'applater', false);
   boot(C);
   await sleep(1500);
+  const appsAfter = names(C, 'shell');
+  if (Array.isArray(appsAfter) && appsAfter.indexOf('applater') === -1) test.check('seeded once: an app added later is not listed by itself');
+  else test.fail(OWED + 'after a second boot the shell list reads ' + JSON.stringify(appsAfter));
   const after = names(C, 'process');
   if (!ran('c', 'epsilon') && JSON.stringify(after) === JSON.stringify(['delta', 'gamma'])) {
     test.check('seeded once: a later epsilon folder neither lists nor starts epsilon');
