@@ -49,7 +49,7 @@ function ask(pipe, body) {
 function isError(b, code) {
   return !!b && b.ok === false && b.code === code && typeof b.error === 'string' && !!errors.byCode(code);
 }
-function tmpPipe(name) { return appClient.pipePathFor(fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-appserver-')), name); }
+function tmpPipe(name) { const p = appClient.pipePathFor(fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-appserver-')), name); try { fs.mkdirSync(path.dirname(p), { recursive: true }); } catch (e) {} return p; }
 
 (async function () {
   const pipe = tmpPipe('sample');
