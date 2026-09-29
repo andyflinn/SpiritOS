@@ -82,6 +82,11 @@ function checkVerbs(verbs) {
     if (!isPlain(v) || typeof v.handler !== 'function' || !isPlain(v.request) || !('reply' in v)) {
       throw new Error('appServer: verb "' + name + '" needs request (an object), reply and handler');
     }
+    // 'ok' is the reserved reply key (D12): a reply carrying it could pass
+    // for an error.
+    if (isPlain(v.reply) && Object.prototype.hasOwnProperty.call(v.reply, 'ok')) {
+      throw new Error('appServer: verb "' + name + '" declares a reply with the reserved key "ok"');
+    }
   });
 }
 
@@ -99,7 +104,11 @@ function createAppServer(verbs) {
     const args = req[name];
     if (!matches(verbs[name].request, args)) return Promise.resolve(refusal('no-such-argument', { verb: name }));
     return Promise.resolve().then(function () { return verbs[name].handler(args); }).then(function (reply) {
-      return { status: 200, body: reply === undefined ? null : reply };
+      // THE REPLY IS CHECKED TOO (wsl-claude's review; Andy: "go for the
+      // proposed fix"). What arrives is the verb's declared shape or
+      // nothing (D11), so a reply that is not is the verb's failure.
+      if (!matches(verbs[name].reply, reply)) return refusal('handler-failed', { verb: name, why: 'reply does not match its prototype' });
+      return { status: 200, body: reply };
     }, function () { return refusal('handler-failed', { verb: name }); });
   }
 
