@@ -105,6 +105,27 @@ const whys = function (r) { const o = {}; ((r && r.items) || []).forEach(functio
     test.check('go and done answered leave Andy\'s queue; G1.3, now claimed by both, waits on his done; G1.1, now on go, waits on the claims');
   } else test.fail(OWED + 'after answers: andy ' + JSON.stringify(andy2) + ', claude-windows ' + JSON.stringify(cw2));
 
+  // THE GOAL IS A ROW TOO (found claiming G1.5): once both agents claim the
+  // goal itself, it waits on his done like any item.
+  test.subHeading('T5: the goal row waits on Andy once both agents claim it');
+  await call('log.add', { json: line('in', 'claude-windows', 'note', 'READY TO CLOSE', 't/G1') });
+  await call('log.add', { json: line('in', 'wsl-claude', 'note', 'READY TO CLOSE', 't/G1') });
+  const andy3 = await call('pending.get', { who: 'andy' });
+  if (whys(andy3)['t/G1'] === 'done') test.check('t/G1, claimed by both, is in pending(andy) as done');
+  else test.fail(OWED + 'with the goal claimed by both, pending(andy) answered ' + JSON.stringify(andy3).slice(0, 200));
+
+  // A SEARCH SAYS WHEN IT WAS CUT (the list rule: "bounded, ranked and
+  // truthful about being partial"), as log.search does.
+  test.subHeading('T6: pending.get says partial when its answer was cut');
+  const many = [];
+  for (let i = 0; i < 40; i++) many.push({ id: 't/G1.O' + (10 + i), title: 'An open point with a long title ' + 'x'.repeat(260), open: true });
+  await call('log.add', { json: line('in', 'claude-windows', 'session', JSON.stringify({ goal: { id: 't/G1', title: 'Goal' }, rules: [], items: many }), 'team/chat') });
+  const cut = await call('pending.get', { who: 'andy' });
+  const small = await call('pending.get', { who: 'wsl-claude' });
+  if (cut.partial === true && (cut.items || []).length > 0 && (cut.items || []).length < 40 && small.partial === false) {
+    test.check('40 long open points: ' + cut.items.length + ' fit, and partial is true; a short queue says partial false');
+  } else test.fail(OWED + 'pending(andy) over 40 long items: ' + (cut.items || []).length + ' items, partial ' + JSON.stringify(cut.partial) + '; a short queue partial ' + JSON.stringify(small.partial));
+
   kid.kill();
 })().catch(function (e) { test.fail('the run broke: ' + e.message); }).then(function () {
   setTimeout(function () {

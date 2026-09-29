@@ -27,7 +27,7 @@ function create(rows) {
   const calls = [];
   const held = [];
   let holding = null;
-  const fake = { lines: lines, docs: docs, voice: voice, calls: calls, backup: { lastCheck: '', lastCopy: '', lastError: '' } };
+  const fake = { lines: lines, docs: docs, voice: voice, calls: calls, backup: { lastCheck: '', lastCopy: '', lastError: '' }, pending: {} };
 
   function search(a) {
     a = a || {};
@@ -65,7 +65,8 @@ function create(rows) {
     'seen.get': function () { return { json: docs.seen }; },
     'seen.set': function (a) { docs.seen = a.json; return { saved: true }; },
     'voice.add': function (a) { voice.push({ text: a.text, day: a.day }); return { added: true }; },
-    'pending.get': function () { return { items: [] }; },
+    // fake.pending[who]: the items (objects) that wait on that party (desk/G1.5).
+    'pending.get': function (a) { return { items: (fake.pending[a.who] || []).map(function (i) { return JSON.stringify(i); }), partial: false }; },
   };
   const backup = { 'status.get': function () { return Object.assign({}, fake.backup); } };
   const servers = { desk: desk, backup: backup };
