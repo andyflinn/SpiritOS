@@ -154,6 +154,28 @@ async function serverPart(scratch) {
   if (sessions.length === 1 && before.length === 10 && before[0] === old[9].key && before[9] === old[0].key) {
     test.check('kind: session finds the one session; before: finds the 10 older lines, newest first');
   } else test.fail(OWED + 'kind: ' + JSON.stringify(sessions) + ', before ' + cut + ': ' + before.length + ' lines, first ' + before[0]);
+
+  // THE IMPORT GUARDS ANDY'S RECORD (wsl-claude, building G1.4): an old
+  // file never overwrites newer state, and a file that does not parse
+  // deletes nothing.
+  test.subHeading('An old state.json never overwrites the state the server already holds');
+  await stop(kid);
+  plant();
+  fs.writeFileSync(path.join(app, 'state.json'), JSON.stringify({ marker: 'STATE-OLD-FILE' }));
+  kid = await start();
+  const kept = await call('state.get', {});
+  if (/STATE-IMPORTED/.test(kept.json || '') && !/STATE-OLD-FILE/.test(kept.json || '')) test.check('state.get still answers the state it held; the later file did not replace it');
+  else test.fail(OWED + 'after a second state.json: ' + JSON.stringify(kept).slice(0, 120));
+
+  test.subHeading('A log file that does not parse stops the import and deletes nothing');
+  await stop(kid);
+  plant();
+  fs.writeFileSync(path.join(app, 'log', 'log-1.json'), '[{"key": "broken"');
+  kid = await start();
+  const stayed = ['log/log.json', 'log/log-1.json', 'log/log-2.json', 'state.json', 'seen.json', 'voice/voice.jsonl']
+    .filter(function (f) { return fs.existsSync(path.join(app, ...f.split('/'))); });
+  if (stayed.length === 6) test.check('every file is still in app/desk, the broken one included');
+  else test.fail(OWED + 'after a broken log-1.json only ' + JSON.stringify(stayed) + ' are left in app/desk');
   await stop(kid);
 }
 
