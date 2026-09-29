@@ -148,6 +148,33 @@ async function booted(port) {
     else test.fail(OWED + 'alpha ran ' + up + ', beta ran ' + ran('b', 'beta'));
   }
 
+  // A FACE IS A SERVER PROCESS TOO. faceProof ("serves": true) is started by
+  // appClient.startAll, not startNodeServers, and the goal's own check is
+  // "Start a test node: it runs server.js alone" (found reviewing 6501e589).
+  test.subHeading('T1/T2 for faces: appClient.startAll starts only a listed face');
+  const H = plantNode('h', []);
+  ['facea', 'faceb'].forEach(function (name) {
+    const dir = path.join(H, 'process', 'js', name);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, name + '.json'), JSON.stringify({ name: name, serves: true }));
+    fs.writeFileSync(path.join(dir, name + '.js'), '');
+  });
+  const appClient = require('../run/js/appClient.js');
+  function facesStarted() {
+    const handed = [];
+    appClient.createAppClient({ rootDir: H, log: function () {},
+      startServerJob: function (cmd, args) { handed.push(args[args.indexOf('--app') + 1]); return null; } }).startAll();
+    return handed.sort();
+  }
+  const noneListed = facesStarted();
+  if (noneListed.length === 0) test.check('no list: startAll starts no face');
+  else test.fail(OWED + 'no list, yet startAll started ' + JSON.stringify(noneListed));
+  if (add(H, 'process', 'facea')) {
+    const oneListed = facesStarted();
+    if (JSON.stringify(oneListed) === JSON.stringify(['facea'])) test.check('facea listed: startAll starts facea and not faceb');
+    else test.fail(OWED + 'with facea listed, startAll started ' + JSON.stringify(oneListed));
+  } else test.fail(OWED + 'no includeList.add to list a face with');
+
   test.subHeading('T3: an unlisted process never runs, so Jobs never shows it');
   const loneDir = path.join(B, 'process', 'js', 'lone');
   fs.mkdirSync(loneDir, { recursive: true });
