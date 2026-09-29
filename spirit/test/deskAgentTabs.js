@@ -86,7 +86,9 @@ const posted = [];
 const doc = fakeDocument();
 const root = fakeElement('container');
 load(DESK, doc).mount(root, {
-  fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify(log) : null; }, saveFile: function () { return Promise.resolve(); } },
+  // A seen.json that has seen nothing: without one, Desk counts all it holds
+  // as seen on the first open (deskLoadSeen), and no star could ever show.
+  fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify(log) : f === 'seen.json' ? JSON.stringify({ rows: {}, team: 0, agents: {} }) : null; }, saveFile: function () { return Promise.resolve(); } },
   escapeHtml: spirit.core.util.escapeHtml,
   verb: function () { return Promise.resolve({ status: 200, body: {} }); },
   onPacket: function () {},
@@ -112,6 +114,12 @@ settle().then(function () {
       !/data-agent="wsl-claude"[^>]*data-lead="1"/.test(a)) test.check("claude-windows's tab carries the lead mark, wsl-claude's does not");
   else test.fail('lead mark not on the lead\'s tab alone: ' + a.slice(0, 200));
 
+  // Before T3: opening a tab is seeing it.
+  test.subHeading('T6: an agent tab with a line he has not seen shows the red *');
+  const wslTab = (agents.innerHTML.match(/<button[^>]*data-agent="wsl-claude"[^>]*>[\s\S]*?<\/button>/) || [''])[0];
+  if (/title="unseen changes"/.test(wslTab)) test.check('wsl-claude\'s tab shows the unseen star');
+  else test.fail('wsl-claude tab: ' + wslTab);
+
   test.subHeading("T3: a line typed in an agent's tab goes to that agent only");
   clickOn(agents, 'data-agent', 'wsl-claude');
   doc.getElementById('desk-team-say').value = 'for wsl only';
@@ -131,11 +139,6 @@ settle().then(function () {
     const listLabel = (tabs.innerHTML.match(/data-tab="list"[^>]*>([^<]*(?:<[^>]*>[^<]*)*?)<\/button>/) || ['', ''])[1];
     if (/\(1\)/.test(listLabel)) test.check('List shows (1): one row asks Andy');
     else test.fail('List tab label: ' + JSON.stringify(listLabel));
-
-    test.subHeading('T6: an agent tab with a line he has not seen shows the red *');
-    const wslTab = (agents.innerHTML.match(/<button[^>]*data-agent="wsl-claude"[^>]*>[\s\S]*?<\/button>/) || [''])[0];
-    if (/title="unseen changes"/.test(wslTab)) test.check('wsl-claude\'s tab shows the unseen star');
-    else test.fail('wsl-claude tab: ' + wslTab);
 
     test.subHeading('T7: renaming is its own button; the dialog shows no name box until it is pressed');
     const ddDoc = fakeDocument();
