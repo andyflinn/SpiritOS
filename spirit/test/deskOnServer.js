@@ -112,12 +112,24 @@ async function serverPart(scratch) {
     return kid;
   }
   function stop(kid) { return new Promise(function (r) { if (kid.exitCode !== null) return r(); kid.once('exit', r); kid.kill(); }); }
-  const keysOf = function (res) { return (res.lines || []).map(function (l) { try { return JSON.parse(l).key; } catch (e) { return '?'; } }); };
+  const keysOf = function (res) { return (res.items || []).map(function (i) { try { return JSON.parse(i.label).key; } catch (e) { return '?'; } }); };
+  // EVERY PAGE, newest first (slim/G1.2): one answer holds what fits, and
+  // `before` (the oldest line's at) asks for the next until more is false.
+  async function everything() {
+    let res = { items: [], more: false };
+    let before = '';
+    for (let page = 0; page < 20; page++) {
+      const r = await call('log.search', { text: '', todo: '', since: '', kind: '', before: before });
+      res.items = res.items.concat(r.items || []);
+      if (!r.more || !(r.items || []).length) break;
+      before = JSON.parse(r.items[r.items.length - 1].label).at;
+    }
+    return res;
+  }
 
   let kid = await start();
   test.subHeading('T1: every old log row is imported once (count, first, last)');
-  const all = await call('log.search', { text: '', todo: '', since: '', kind: '', before: '' });
-  const got = keysOf(all);
+  const got = keysOf(await everything());
   if (got.length === old.length && got[0] === old[old.length - 1].key && got[got.length - 1] === old[0].key) {
     test.check('all ' + old.length + ' rows from log.json, log-1.json and log-2.json, newest ' + got[0] + ', oldest ' + got[got.length - 1]);
   } else test.fail(OWED + 'log.search holds ' + got.length + ' of ' + old.length + ': ' + JSON.stringify(got.slice(0, 3)) + '…');
@@ -142,7 +154,7 @@ async function serverPart(scratch) {
   await stop(kid);
   plant();
   kid = await start();
-  const again = keysOf(await call('log.search', { text: '', todo: '', since: '', kind: '', before: '' }));
+  const again = keysOf(await everything());
   if (again.length === old.length) test.check('the same files planted and imported again: still ' + old.length + ' rows');
   else test.fail(OWED + 'after a second import: ' + again.length + ' rows');
 

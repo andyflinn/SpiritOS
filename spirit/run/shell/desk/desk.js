@@ -157,13 +157,14 @@ function deskAsk(verb, args) {
     return body;
   });
 }
-// One bounded search; the server answers newest first, 'partial' when cut.
+// One bounded search; the server answers newest first in searchBucket's
+// shape, {items: [{key, label}], more}, a line being its label (slim/G1.2).
 // Every key is sent, as the server matches them exactly (appPair D8).
 function deskSearch(q) {
   return deskAsk('log.search', { text: q.text || '', todo: q.todo || '', since: q.since || '', kind: q.kind || '', before: q.before || '' })
     .then(function (r) {
-      var lines = (r.lines || []).map(function (j) { try { return JSON.parse(j); } catch (e) { return null; } }).filter(Boolean);
-      return { lines: lines, partial: !!r.partial };
+      var lines = (r.items || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
+      return { lines: lines, partial: !!r.more };
     });
 }
 // Lines come newest first; they are folded oldest first, and the whole held
@@ -1147,7 +1148,7 @@ function deskAskQueue() {
   if (!who) { deskQueue = { who: '', items: null, partial: false }; return Promise.resolve(); }
   return deskAsk('pending.get', { who: who }).then(function (r) {
     if (deskAgentTab !== who) return;
-    deskQueue = { who: who, items: (r.items || []).map(function (j) { try { return JSON.parse(j); } catch (e) { return null; } }).filter(Boolean), partial: !!r.partial };
+    deskQueue = { who: who, items: (r.items || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean), partial: !!r.more };
     deskDraw();
   }, function () { /* no queue is shown; the tab still works */ });
 }

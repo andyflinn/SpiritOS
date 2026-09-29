@@ -230,6 +230,13 @@ define('too-big', {
   status: 413, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['too big'],
 });
+// A LINE THE DESK SERVER WILL NOT KEEP (slim/G1.2). Andy: "from now on the
+// MAX_PAYLOAD applies": a line that could never come back in one answer is
+// refused when it arrives, never stored to stall a read later.
+define('line-too-large', {
+  status: 413, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['line too large to come back in one answer'],
+});
 define('too-big-to-tunnel', {
   status: 413, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['too big to tunnel'], prefixes: ['too big to tunnel'],

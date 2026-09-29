@@ -115,7 +115,15 @@ function createAppServer(verbs, opts) {
       // nothing (D11), so a reply that is not is the verb's failure.
       if (!matches(verbs[name].reply, reply)) return refusal('handler-failed', { verb: name, why: 'reply does not match its prototype' });
       return { status: 200, body: reply };
-    }, function () { return refusal('handler-failed', { verb: name }); });
+    }, function (e) {
+      // A DECLARED REFUSAL PASSES THROUGH (slim/G1.2): a handler that throws
+      // {refusal: code}, a code the catalogue knows, is refused by that name
+      // (D12), so an app can say line-too-large rather than handler-failed.
+      // Its own key, not e.code: a system error's code (ENOENT) must never
+      // pass for a refusal. Anything else a handler throws stays handler-failed.
+      if (e && typeof e.refusal === 'string' && errors.byCode(e.refusal)) return refusal(e.refusal, { verb: name });
+      return refusal('handler-failed', { verb: name });
+    });
   }
 
   function claims(httpReq) {

@@ -22,13 +22,15 @@
 // are copied out of its text; the text itself is kept whole.
 //
 // NEVER A LIST (Andy: every list is a search). log.search answers what
-// matches, newest first, cut to fit one answer, and says so with partial.
+// matches, newest first, cut to fit one answer by searchBucket, and says
+// so with more.
 
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../js/appServer.js');
 const appClient = require('../../../js/appClient.js');
+const searchBucket = require('../../../js/searchBucket.js');
 
 const argv = process.argv;
 const at = argv.indexOf('--state');
@@ -56,7 +58,7 @@ const addLine = db.prepare('INSERT OR IGNORE INTO lines (key, at, todo, sender, 
 // kind and before joined with desk/G1.4, so Desk reads what it shows and no
 // more: a todo of '-' means lines under no todo (an agent's direct chat).
 const findLines = db.prepare(
-  "SELECT line FROM lines WHERE (? = '' OR todo = ?) AND (? = '' OR kind = ?) AND (? = '' OR at >= ?) AND (? = '' OR at < ?)" +
+  "SELECT key, line FROM lines WHERE (? = '' OR todo = ?) AND (? = '' OR kind = ?) AND (? = '' OR at >= ?) AND (? = '' OR at < ?)" +
   " AND (? = '' OR body LIKE '%' || ? || '%') ORDER BY at DESC, key DESC"
 );
 const hasKey = db.prepare('SELECT 1 AS n FROM lines WHERE key = ?');
@@ -66,6 +68,21 @@ const putDoc = db.prepare('INSERT INTO docs (name, json) VALUES (?, ?) ON CONFLI
 // One answer must travel back as one packet (appClient.ANSWER_MAX); the
 // wrapper around the lines is small, and this leaves it room.
 const ANSWER_ROOM = appClient.ANSWER_MAX - 512;
+
+// ── ONE MEASURE OF "FITS" (slim/G1.2) ───────────────────────────────
+//
+//   Andy: "Desk must adhere to standards as well. use the bucket.js", and
+//   "from now on the MAX_PAYLOAD applies".
+//
+// A line fits when an answer holding it alone fits the room, measured as
+// searchBucket measures that answer ({items: [{key, label}], more}). The
+// split at start, log.add's refusal and the searches' skip all use this one
+// test: a line the bucket could not send first would stop a read with
+// nothing in it, the stall found on Andy's desk.db (182 such lines).
+function fitsOneAnswer(key, line) {
+  return Buffer.byteLength(JSON.stringify({ items: [{ key: String(key), label: String(line) }], more: false }), 'utf8') <= ANSWER_ROOM;
+}
+function tooLarge() { const e = new Error('line too large to come back in one answer'); e.refusal = 'line-too-large'; return e; }
 
 // ── WHAT DESK KEPT IN ITS OWN FOLDER, IMPORTED ONCE (desk/G1.4) ─────
 //
@@ -131,6 +148,71 @@ function importFromApp() {
   console.log('desk: imported ' + rows.length + ' lines, ' + docs.join(' and ') + (docs.length ? ', ' : '') + voices.length + ' voice files from ' + app + ', and removed them there');
 }
 importFromApp();
+
+// ── THE LINES TOO BIG FOR ONE ANSWER, SPLIT ONCE (slim/G1.2 T3) ──────
+//
+//   Andy: "the 182 too-big lines already stored get split once, so their
+//   history shows again, but from now on the MAX_PAYLOAD applies."
+//
+// Each becomes parts keyed <key>#1, <key>#2 ..., the same line but for its
+// key, its at (a millisecond apart, the last keeping the old one) and a run
+// of its text, each fitting one answer; the text is cut on
+// whole characters (never inside a surrogate pair), so the parts joined in
+// order are the old text. One transaction per line; the old line goes only
+// with its parts in. Nothing new can be too big (log.add refuses it), so a
+// later start finds nothing to do.
+function splitTooLarge() {
+  const big = [];
+  for (const row of db.prepare('SELECT key, line FROM lines').iterate()) {
+    if (!fitsOneAnswer(row.key, row.line)) big.push(row.key);
+  }
+  if (!big.length) return;
+  const getLine = db.prepare('SELECT line FROM lines WHERE key = ?');
+  const dropLine = db.prepare('DELETE FROM lines WHERE key = ?');
+  let parts = 0;
+  big.forEach(function (key) {
+    let m;
+    try { m = parsed(getLine.get(key).line); } catch (e) { console.error('desk: ' + key + ' does not parse; left as it is'); return; }
+    const chars = Array.from(String(m.text || ''));
+    const pieces = [];
+    let at = 0;
+    while (at < chars.length) {
+      // As many characters as fit, found by halving: escaping makes a
+      // character cost one to six bytes, so no count is right for every text.
+      let lo = 1;
+      let hi = chars.length - at;
+      const n = pieces.length + 1;
+      const fits = function (count) {
+        const part = Object.assign({}, m, { key: key + '#' + n, text: chars.slice(at, at + count).join('') });
+        return fitsOneAnswer(part.key, JSON.stringify(part));
+      };
+      if (!fits(1)) { pieces.length = 0; break; }
+      while (lo < hi) { const mid = Math.ceil((lo + hi) / 2); if (fits(mid)) lo = mid; else hi = mid - 1; }
+      pieces.push(chars.slice(at, at + lo).join(''));
+      at += lo;
+    }
+    if (!pieces.length) { console.error('desk: ' + key + ' cannot be split to fit; left as it is'); return; }
+    db.exec('BEGIN');
+    try {
+      // Each part a millisecond before the next, the last at the old time:
+      // parts sharing one at could not be paged (before cuts by at).
+      const when = Date.parse(m.at);
+      pieces.forEach(function (text, i) {
+        const at = isNaN(when) ? m.at : new Date(when - (pieces.length - 1 - i)).toISOString();
+        const part = Object.assign({}, m, { key: key + '#' + (i + 1), at: at, text: text });
+        addLine.run(part.key, String(part.at || ''), String(part.todo || ''), String(part.from || ''), String(part.kind || ''), text, JSON.stringify(part));
+      });
+      dropLine.run(key);
+      db.exec('COMMIT');
+      parts += pieces.length;
+    } catch (e) {
+      db.exec('ROLLBACK');
+      console.error('desk: splitting ' + key + ' failed, left as it is: ' + e.message);
+    }
+  });
+  console.log('desk: split ' + big.length + ' lines too big for one answer into ' + parts + ' parts');
+}
+splitTooLarge();
 
 function parsed(json) {
   const v = JSON.parse(String(json));
@@ -200,6 +282,25 @@ function pending(who) {
   return waits.sort(function (a, b) { return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; }).map(function (w) { return w.item; });
 }
 
+// Offers each object of `walk`, in its order, to one bucket, and answers the
+// bucket's result. One too big to be sent alone is never offered: it would
+// stop the walk with nothing sent (slim/G1.2 T2); skipping it says `more`.
+function walked(walk, pairOf) {
+  const bucket = searchBucket.createSearch({
+    query: '**', maxBytes: ANSWER_ROOM,
+    getLabelStringFromIncomingObject: function (pair) { return pair.label; },
+    extractKeyAndLabelFromRow: function (pair) { return pair; },
+  });
+  let skipped = false;
+  for (const obj of walk) {
+    const pair = pairOf(obj);
+    if (!fitsOneAnswer(pair.key, pair.label)) { skipped = true; continue; }
+    if (!bucket.offer(pair)) break;
+  }
+  const r = bucket.getResult();
+  return { items: r.items, more: r.more || skipped };
+}
+
 function doc(name) { const row = getDoc.get(name); return row ? row.json : '{}'; }
 function saveDoc(name, json) { parsed(json); putDoc.run(name, String(json)); return { saved: true }; }
 
@@ -209,41 +310,28 @@ appServer.serve({
     handler: function (a) {
       const l = parsed(a.json);
       if (typeof l.key !== 'string' || !l.key) throw new Error('a line needs its key');
+      // Refused, never stored to stall a read later (slim/G1.2 T4).
+      if (!fitsOneAnswer(l.key, a.json)) throw tooLarge();
       const r = addLine.run(l.key, String(l.at || ''), String(l.todo || ''), String(l.from || ''), String(l.kind || ''), String(l.text || ''), a.json);
       return { added: r.changes === 1 };
     },
   },
+  // THROUGH THE BUCKET (slim/G1.2 T1): the walk is ours (SQL's filters,
+  // newest first), the cut and `more` are searchBucket's. '**' because a
+  // single '*' never spans a '/' (gradedSearch.js), and every line holds one.
   'log.search': {
-    request: { text: '', todo: '', since: '', kind: '', before: '' }, reply: { lines: [''], partial: false },
+    request: { text: '', todo: '', since: '', kind: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false },
     handler: function (a) {
-      const lines = [];
-      let bytes = 2;
-      let partial = false;
       const todo = a.todo === '-' ? '' : a.todo;
-      for (const row of findLines.iterate(a.todo, todo, a.kind, a.kind, a.since, a.since, a.before, a.before, a.text, a.text)) {
-        const cost = Buffer.byteLength(JSON.stringify(row.line), 'utf8') + 1;
-        if (bytes + cost > ANSWER_ROOM) { partial = true; break; }
-        lines.push(row.line);
-        bytes += cost;
-      }
-      return { lines: lines, partial: partial };
+      const rows = findLines.iterate(a.todo, todo, a.kind, a.kind, a.since, a.since, a.before, a.before, a.text, a.text);
+      return walked(rows, function (row) { return { key: row.key, label: row.line }; });
     },
   },
-  // One party's queue, newest first, cut to fit one answer as log.search is.
+  // One party's queue, newest first, through the same bucket.
   'pending.get': {
-    // Truthful about being cut (T6), as log.search is: the list rule.
-    request: { who: '' }, reply: { items: [''], partial: false },
+    request: { who: '' }, reply: { items: [{ key: '', label: '' }], more: false },
     handler: function (a) {
-      const items = [];
-      let bytes = 2;
-      let partial = false;
-      for (const item of pending(String(a.who))) {
-        const cost = Buffer.byteLength(JSON.stringify(item), 'utf8') + 1;
-        if (bytes + cost > ANSWER_ROOM) { partial = true; break; }
-        items.push(item);
-        bytes += cost;
-      }
-      return { items: items, partial: partial };
+      return walked(pending(String(a.who)), function (item) { return { key: JSON.parse(item).id, label: item }; });
     },
   },
   'state.get': { request: {}, reply: { json: '' }, handler: function () { return { json: doc('state') }; } },

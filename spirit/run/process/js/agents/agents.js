@@ -415,6 +415,23 @@ function reportFits(cfg, toName, toKey, env) {
   return { fits: bytes <= limits.PLAINTEXT_MAX, bytes: bytes };
 }
 
+// WOULD ANDY'S DESK KEEP IT (slim/G1.2 T5)? His desk server refuses a line
+// that could not come back in one answer (line-too-large), after the peer
+// has already said ok. So the sender is told first: the line his Desk would
+// store, in its larger (reported) shape, measured as the desk server
+// measures it (desk.js fitsOneAnswer), against the same room.
+const DESK_ROOM = require('../../../js/appClient.js').ANSWER_MAX - 512;
+function deskLineFits(cfg, toName, env) {
+  const b = (env && env.body) || {};
+  const line = {
+    key: 'f'.repeat(64), at: new Date().toISOString(), dir: 'in', peer: ownKey(cfg) || '', outcome: 'received',
+    from: String(b.from || cfg.self || ''), to: String(toName || ''), kind: String(b.kind || ''),
+    text: String(b.text || ''), todo: b.todo ? String(b.todo) : '', reported: true,
+  };
+  const bytes = Buffer.byteLength(JSON.stringify({ items: [{ key: line.key, label: JSON.stringify(line) }], more: false }), 'utf8');
+  return { fits: bytes <= DESK_ROOM, bytes: bytes };
+}
+
 function outboxPath(cfg) { return path.join(cfg.root, 'relay-state', 'agents-outbox.jsonl'); }
 
 // ── THE AGENTS' OWN LOG ─────────────────────────────────────────────────
@@ -567,6 +584,13 @@ function send(cfg, to, kind, text, re, opts) {
   let env;
   try { env = makeEnvelope(cfg.self, kind, text, re, null, o.block, o.todo); }
   catch (e) { return Promise.resolve({ ok: false, error: e.message, refused: true }); }
+  if (!isControlVerb && kind !== 'report' && kind !== 'board') {
+    const d = deskLineFits(cfg, to, env);
+    if (!d.fits) {
+      return Promise.resolve({ ok: false, error: 'too long for one answer on Andy\'s Desk (its line would be ' +
+        d.bytes + ' bytes, over ' + DESK_ROOM + ') — split it into shorter messages', tooLong: true });
+    }
+  }
   const mine0 = ownKey(cfg);
   // NOT WHEN THE MESSAGE IS ALREADY HIS. A message sent TO Andy's node is in
   // his record as itself; a report of it made a second copy of every answer

@@ -65,8 +65,8 @@ const LOG = [
   line('in', 'claude-windows', 'ask', 'ready: go?', 't/G1.4'),
 ];
 
-const ids = function (r) { return ((r && r.items) || []).map(function (j) { try { return JSON.parse(j).id; } catch (e) { return '?'; } }).sort().join(','); };
-const whys = function (r) { const o = {}; ((r && r.items) || []).forEach(function (j) { try { const x = JSON.parse(j); o[x.id] = x.why; } catch (e) { /* skip */ } }); return o; };
+const ids = function (r) { return ((r && r.items) || []).map(function (i) { const j = i.label; try { return JSON.parse(j).id; } catch (e) { return '?'; } }).sort().join(','); };
+const whys = function (r) { const o = {}; ((r && r.items) || []).forEach(function (i) { const j = i.label; try { const x = JSON.parse(j); o[x.id] = x.why; } catch (e) { /* skip */ } }); return o; };
 
 (async function () {
   const kid = spawn(process.execPath, [SCRIPT, '{}', '--pipe', pipe, '--state', state], { stdio: 'ignore' });
@@ -116,15 +116,21 @@ const whys = function (r) { const o = {}; ((r && r.items) || []).forEach(functio
 
   // A SEARCH SAYS WHEN IT WAS CUT (the list rule: "bounded, ranked and
   // truthful about being partial"), as log.search does.
-  test.subHeading('T6: pending.get says partial when its answer was cut');
+  test.subHeading('T6: pending.get says more when its answer was cut');
   const many = [];
   for (let i = 0; i < 40; i++) many.push({ id: 't/G1.O' + (10 + i), title: 'An open point with a long title ' + 'x'.repeat(260), open: true });
-  await call('log.add', { json: line('in', 'claude-windows', 'session', JSON.stringify({ goal: { id: 't/G1', title: 'Goal' }, rules: [], items: many }), 'team/chat') });
+  // Planted straight into desk.db: since slim/G1.2 log.add refuses a line
+  // this big, but pending.get reads every stored line, and one planted
+  // behind the server's back is exactly what its cut must still hold.
+  const big = JSON.parse(line('in', 'claude-windows', 'session', JSON.stringify({ goal: { id: 't/G1', title: 'Goal' }, rules: [], items: many }), 'team/chat'));
+  const db = new (require('node:sqlite').DatabaseSync)(path.join(state, 'desk.db'));
+  db.prepare('INSERT INTO lines (key, at, todo, sender, kind, body, line) VALUES (?, ?, ?, ?, ?, ?, ?)').run(big.key, big.at, big.todo, big.from, big.kind, big.text, JSON.stringify(big));
+  db.close();
   const cut = await call('pending.get', { who: 'andy' });
   const small = await call('pending.get', { who: 'wsl-claude' });
-  if (cut.partial === true && (cut.items || []).length > 0 && (cut.items || []).length < 40 && small.partial === false) {
-    test.check('40 long open points: ' + cut.items.length + ' fit, and partial is true; a short queue says partial false');
-  } else test.fail(OWED + 'pending(andy) over 40 long items: ' + (cut.items || []).length + ' items, partial ' + JSON.stringify(cut.partial) + '; a short queue partial ' + JSON.stringify(small.partial));
+  if (cut.more === true && (cut.items || []).length > 0 && (cut.items || []).length < 40 && small.more === false) {
+    test.check('40 long open points: ' + cut.items.length + ' fit, and more is true; a short queue says more false');
+  } else test.fail(OWED + 'pending(andy) over 40 long items: ' + (cut.items || []).length + ' items, more ' + JSON.stringify(cut.more) + '; a short queue more ' + JSON.stringify(small.more));
 
   kid.kill();
 })().catch(function (e) { test.fail('the run broke: ' + e.message); }).then(function () {

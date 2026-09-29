@@ -18,7 +18,7 @@
 //     appServer.js; started with --pipe <p> --state <dir> (the node names
 //     both; the server never works out its own folder).
 //   log.add    {json}            -> {added: bool}   (false: key already held)
-//   log.search {text, todo, since} -> {lines: [json], partial: bool}
+//   log.search {text, todo, since, kind, before} -> {items: [{key, label: json}], more: bool} (slim/G1.2)
 //              bounded by bytes under appClient.ANSWER_MAX; '' matches all
 //   state.get  {} -> {json};  state.set {json} -> {saved: true}
 //   seen.get   {} -> {json};  seen.set  {json} -> {saved: true}
@@ -135,13 +135,13 @@ function line(key, todo, text, extra) {
   const byTodo = up ? await call('log.search', { text: '', todo: 'desk/G1.3', since: '', kind: '', before: '' }) : {};
   const byText = up ? await call('log.search', { text: 'second', todo: '', since: '', kind: '', before: '' }) : {};
   const since = up ? await call('log.search', { text: '', todo: '', since: new Date(Date.UTC(2026, 8, 29, 5, 0, 2)).toISOString(), kind: '', before: '' }) : {};
-  const keys = function (r) { return (r.lines || []).map(function (l) { try { return JSON.parse(l).key; } catch (e) { return '?'; } }).sort().join(','); };
-  if (keys(byTodo) === 'k1,k3' && keys(byText) === 'k2' && keys(since) === 'k2,k3' && byTodo.partial === false) {
+  const keys = function (r) { return (r.items || []).map(function (i) { try { return JSON.parse(i.label).key; } catch (e) { return '?'; } }).sort().join(','); };
+  if (keys(byTodo) === 'k1,k3' && keys(byText) === 'k2' && keys(since) === 'k2,k3' && byTodo.more === false) {
     test.check('search by todo, by text, and since: each finds its lines, whole, as JSON text');
   } else {
     test.fail(OWED + 'search found todo ' + keys(byTodo) + ', text ' + keys(byText) + ', since ' + keys(since));
   }
-  const report = (byTodo.lines || []).map(function (l) { try { return JSON.parse(l); } catch (e) { return {}; } }).filter(function (l) { return l.key === 'k1'; })[0];
+  const report = (byTodo.items || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return {}; } }).filter(function (l) { return l.key === 'k1'; })[0];
   if (report && report.reported === true && report.to === 'andy') test.check('a report line comes back with its to and reported');
   else test.fail(OWED + 'k1 came back as ' + JSON.stringify(report));
 
@@ -149,10 +149,10 @@ function line(key, todo, text, extra) {
   if (up) for (let i = 10; i < 30; i++) await call('log.add', { json: line('b' + i, 'desk/big', big) });
   const cut = up ? await call('log.search', { text: '', todo: 'desk/big', since: '', kind: '', before: '' }) : {};
   const bytes = Buffer.byteLength(JSON.stringify(cut), 'utf8');
-  if (cut.partial === true && (cut.lines || []).length > 0 && (cut.lines || []).length < 20 && bytes <= appClient.ANSWER_MAX) {
-    test.check('20 lines over ANSWER_MAX (' + appClient.ANSWER_MAX + ' bytes): ' + cut.lines.length + ' came back, partial, ' + bytes + ' bytes');
+  if (cut.more === true && (cut.items || []).length > 0 && (cut.items || []).length < 20 && bytes <= appClient.ANSWER_MAX) {
+    test.check('20 lines over ANSWER_MAX (' + appClient.ANSWER_MAX + ' bytes): ' + cut.items.length + ' came back, more, ' + bytes + ' bytes');
   } else {
-    test.fail(OWED + 'a search over the bound answered ' + ((cut.lines || []).length) + ' lines, partial ' + cut.partial + ', ' + bytes + ' bytes');
+    test.fail(OWED + 'a search over the bound answered ' + ((cut.items || []).length) + ' lines, more ' + cut.more + ', ' + bytes + ' bytes');
   }
 
   // State, seen, voice.

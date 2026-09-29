@@ -7,7 +7,7 @@
 // (process/js/desk) through jobs.api on the loopback door (D4). A suite that
 // mounts Desk hands it this as `api.verb`, so it answers as the real server
 // does: the same verbs, the same shapes, the same bound (appClient.ANSWER_MAX
-// less 512, newest first, partial when cut), and it records every call so a
+// less 512, newest first, in searchBucket's {items, more}), and it records every call so a
 // suite can see what Desk asked for.
 //
 //   const fake = require('./deskFake.js').create(lines);   // lines: row objects
@@ -17,6 +17,8 @@
 //   fake.backup  -> {lastCheck, lastCopy, lastError}, what backup answers
 
 const appClient = require('../run/js/appClient.js');
+
+const searchBucket = require('../run/js/searchBucket.js');
 
 const ROOM = appClient.ANSWER_MAX - 512;
 
@@ -40,17 +42,24 @@ function create(rows) {
       if (a.text && String(m.text || '').indexOf(a.text) === -1) return false;
       return true;
     }).sort(function (x, y) { return x.at < y.at ? 1 : x.at > y.at ? -1 : (x.key < y.key ? 1 : -1); });
-    const out = [];
-    let bytes = 2;
-    let partial = false;
-    for (const m of hits) {
-      const json = JSON.stringify(m);
-      const cost = Buffer.byteLength(json, 'utf8') + 3;
-      if (bytes + cost > ROOM) { partial = true; break; }
-      out.push(json);
-      bytes += cost;
+    return walked(hits, function (m) { return { key: String(m.key), label: JSON.stringify(m) }; });
+  }
+  // As the real server walks (desk.js walked, slim/G1.2): one searchBucket,
+  // '**', a line too big to be sent alone skipped and said by `more`.
+  function walked(walk, pairOf) {
+    const bucket = searchBucket.createSearch({
+      query: '**', maxBytes: ROOM,
+      getLabelStringFromIncomingObject: function (p) { return p.label; },
+      extractKeyAndLabelFromRow: function (p) { return p; },
+    });
+    let skipped = false;
+    for (const obj of walk) {
+      const p = pairOf(obj);
+      if (Buffer.byteLength(JSON.stringify({ items: [p], more: false }), 'utf8') > ROOM) { skipped = true; continue; }
+      if (!bucket.offer(p)) break;
     }
-    return { lines: out, partial: partial };
+    const r = bucket.getResult();
+    return { items: r.items, more: r.more || skipped };
   }
   const desk = {
     'log.add': function (a) {
@@ -66,7 +75,7 @@ function create(rows) {
     'seen.set': function (a) { docs.seen = a.json; return { saved: true }; },
     'voice.add': function (a) { voice.push({ text: a.text, day: a.day }); return { added: true }; },
     // fake.pending[who]: the items (objects) that wait on that party (desk/G1.5).
-    'pending.get': function (a) { return { items: (fake.pending[a.who] || []).map(function (i) { return JSON.stringify(i); }), partial: false }; },
+    'pending.get': function (a) { return walked(fake.pending[a.who] || [], function (i) { return { key: String(i.id), label: JSON.stringify(i) }; }); },
   };
   const backup = { 'status.get': function () { return Object.assign({}, fake.backup); } };
   const servers = { desk: desk, backup: backup };
