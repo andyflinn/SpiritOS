@@ -1144,7 +1144,6 @@ spirit.shell.activateApp({
       // to the title of the goal, the game being: bring the goal item back up
       // to be ever closer to the title bar saying the same." Shown while a
       // design session's goal is open; the shell's own bar is not Desk's.
-      '<div id="desk-goal" class="stat-tile wide" style="font-size:1.25em;font-weight:bold;cursor:pointer" title="Open the goal: talk about it under its own id" hidden></div>' +
       '<div id="desk-design" class="stat-tile wide" style="background:#fff3c4;color:#000" hidden>' +
         '<b>Design mode.</b> Nothing is built until it ends, and it ends only in the Team tab.</div>' +
       // Drawn by deskDrawTabs.
@@ -1154,6 +1153,10 @@ spirit.shell.activateApp({
       // row under the main one. Opaque, in the shell's own background, so the
       // List does not show through it.
       '<div id="desk-bars" style="position:sticky;top:0;z-index:2;background:#1a1a2e;padding-bottom:4px">' +
+        // The goal line is pinned with the tabs (desk/G1.12). Andy: "this part
+        // of the list page should be attached below the title bar, and not
+        // scroll away."
+        '<div id="desk-goal" class="stat-tile wide" style="font-size:1.25em;font-weight:bold;cursor:pointer" title="Open the goal: talk about it under its own id" hidden></div>' +
         '<div class="start-job-form card" id="desk-tabs"></div>' +
         // The agent row is Team's, so it shows only there (show()).
         '<div class="start-job-form card" id="desk-agent-tabs" hidden></div>' +

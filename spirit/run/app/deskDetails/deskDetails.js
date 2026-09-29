@@ -309,11 +309,16 @@ function ddFrame() {
     // button row, far away from my chat input. i still type into the wrong box".
     // RENAMING IS ITS OWN BUTTON (desk/G1, D7). His lines kept landing in
     // the name box, so no box is drawn until he presses Rename.
+    // HIS BUTTONS AND THE CHECK, PINNED (desk/G1.12). Andy: "same for this
+    // part Done Rename How you can check": they stay below the title bar
+    // while the rest scrolls. Opaque, in the shell's own background.
+    '<div style="position:sticky;top:0;z-index:2;background:#1a1a2e;padding-bottom:2px">' +
     '<div class="start-job-form card" id="dd-name-row"></div>' +
     // HOW HE CAN CHECK, CLOSE TO DONE (desk/G1.12). Andy: "the "how i can
     // check" should be a separate line, outside of the large text", "so how
     // i can check will be close to "Done"".
     ddCheckHtml() +
+    '</div>' +
     // THE EXPLANATION ABOVE THE RECORD (desk/G1.14). Andy: "the text an agent
     // provided to me because he saw me looking at the item, that one belongs
     // into the upper position".
@@ -373,7 +378,7 @@ function ddItemHtml() {
       ? '<span class="job-manifest-note">Both agents say this is ready to close: Done is in the row above; read why below.</span>'
       : '<span class="job-manifest-note">Open: not ready to close yet. Done appears above when both agents say it is, with the evidence.</span>';
   var head = '<div style="display:flex;gap:8px;align-items:baseline"><button type="button" data-fold="item" title="' +
-    (ddFolded ? 'Unfold' : 'Fold') + '">' + (ddFolded ? '▸' : '▾') + '</button><div class="label">' + ddEsc(me.id) + ' — ' + ddEsc(me.title) + '</div></div>' +
+    (ddFolded ? 'Unfold' : 'Fold') + '">' + (ddFolded ? '▸' : '▾') + '</button><div class="label" style="font-size:1.25em;font-weight:bold">' + ddEsc(me.id) + ' — ' + ddEsc(me.title) + '</div></div>' +
     '<div style="margin:6px 0">' + close + '</div>';
   if (ddFolded) return '<div class="stat-tile wide">' + head + '</div>';
   return '<div class="stat-tile wide">' + head +
@@ -452,7 +457,9 @@ function ddDrawNameRow() {
 }
 function ddCheckHtml() {
   var me = ddSession.filter(function (r) { return r.id === ddId; })[0] || ddRow || {};
-  return '<div style="margin:6px 0;padding:6px 10px;background:#fff3c4;color:#000;border-radius:6px">' +
+  // Clear space above and below, so it never reads as part of a box
+  // (Andy: "the yellow part is not separate from the the large text block").
+  return '<div style="margin:12px 0;padding:6px 10px;background:#fff3c4;color:#000;border-radius:6px">' +
     '<b>How you can check:</b> ' + (me.check ? ddEsc(me.check) : 'not stated yet; the agents owe you this line.') + '</div>';
 }
 // His name for it goes, then the box folds back into its button.
