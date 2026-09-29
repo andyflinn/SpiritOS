@@ -760,6 +760,7 @@ module.exports = {
 //   node agents.js listen
 //   node agents.js read [peer] [n]
 //   node agents.js status
+//   node agents.js verb <verb> [arg]        any loopback verb on its own node (desk/G1.13)
 if (require.main === module) {
   const cfg = config();
   const argv = process.argv.slice(2);
@@ -776,7 +777,36 @@ if (require.main === module) {
   const todo = flag('--todo');
   const rest = argv;
   const done = function (r) { console.log(JSON.stringify(r)); process.exit(r && r.ok ? 0 : 1); };
-  if (cmd === 'send') {
+  if (cmd === 'verb') {
+    // ── THE ONE STANDARD WAY IN (desk/G1.13) ─────────────────────────
+    //
+    //   Andy: "agents should use a standard helper script to access the
+    //   loopback api of their node and the resident app-servers, no?"
+    //
+    // node agents.js verb <verb> [arg]: any loopback verb, jobs.api
+    // included, so a node's server processes are reached the same way.
+    // Through nodeFetch, the one reach this file has; no new door. An object
+    // arg is merged into the body; anything else is its 'ask' (JSON when it
+    // parses), so 'verb jobs.api api' asks every server process for api.
+    const body = { verb: String(rest[1] || '') };
+    if (rest.length > 2) {
+      const raw = rest.slice(2).join(' ');
+      let arg = raw;
+      try { arg = JSON.parse(raw); } catch (e) { arg = raw; }
+      if (arg && typeof arg === 'object' && !Array.isArray(arg)) Object.assign(body, arg);
+      else body.ask = arg;
+    }
+    nodeFetch(cfg, '/api/spirit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }).then(function (r) {
+      return r.text().then(function (t) {
+        let out = null;
+        try { out = JSON.parse(t); } catch (e) { out = { error: t }; }
+        console.log(JSON.stringify(out));
+        process.exit(r.status >= 200 && r.status < 300 ? 0 : 1);
+      });
+    }, function (e) { console.log(JSON.stringify({ error: e.message })); process.exit(1); });
+  } else if (cmd === 'send') {
     send(cfg, rest[1], rest[2], rest.slice(3).join(' '), re, { todo: todo }).then(done, function (e) { done({ ok: false, error: e.message }); });
   } else if (cmd === 'blocked') {
     // node agents.js blocked <to> <needs> <who> [--state s] <what…>
@@ -848,6 +878,7 @@ if (require.main === module) {
         ' [--state ' + STATES.join('|') + '] <what, in one sentence for Andy>',
       '       agents.js chatter <to> [n=30] [--every ms=300]   a batch, for the monitor',
       '       agents.js halt <to> | resume <to> | listen | read [peer] [n] | status',
+      '       agents.js verb <verb> [json|ask]   e.g. verb jobs.api api',
     ].join('\n'));
   }
 }
