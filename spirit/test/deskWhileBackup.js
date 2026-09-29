@@ -87,7 +87,10 @@ const kids = [];
     if (!r || r.status !== 200 || !r.body || r.body.added !== true) { failed += 1; if (!firstError) firstError = JSON.stringify(r && r.body).slice(0, 160); }
     await sleep(20);
   }
-  await sleep(1500);
+  // Under a loaded harness a copy of the big record can take seconds: wait
+  // for the second one rather than judging at a fixed moment.
+  for (let i = 0; i < 60 && backupLines.filter(function (l) { return /wrote .*desk\.db/.test(l); }).length < 2; i++) await sleep(250);
+  await sleep(500);
 
   test.subHeading('Every log.add succeeds while the backup copies desk.db');
   const copies = backupLines.filter(function (l) { return /wrote .*desk\.db/.test(l); }).length;
