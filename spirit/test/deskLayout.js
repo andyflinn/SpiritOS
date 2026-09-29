@@ -137,16 +137,8 @@ settle().then(function () {
   if (/Goal/.test(bubble) && !/GOAL-TEXT/.test(bubble) && !/RULE-TEXT/.test(bubble)) test.check('on a first open the top box shows its title line only');
   else test.fail(OWED + 'the bubble on first open: ' + bubble.replace(/\s+/g, ' ').slice(0, 200));
 
-  // Andy, while G1.12 was being built: "this 'Upgrading Desk with deeper
-  // integration onto SpiritOS (desk/G1)' is also a large text block. it
-  // should be foldable."
-  test.subHeading('T8: the goal banner at the top folds too, and starts folded to its id');
-  const banner = doc.getElementById('desk-goal');
-  const shown = banner.innerHTML + ' ' + banner.textContent;
-  if (/data-fold="goal"/.test(shown) && /t\/G1/.test(shown) && !/\bGoal\b/.test(shown.replace(/data-fold="goal"/g, ''))) {
-    test.check('the banner carries a goal fold toggle and, folded, shows the id only');
-  } else test.fail(OWED + 'the goal banner shows ' + JSON.stringify(shown.slice(0, 160)));
-
+  // T8 (the goal banner folding) was dropped by O3's answer: the banner stays
+  // one line, and the goal overview lives only in the goal's dialog (G1.14).
   // Andy: "the red stars should be in a separage first column, the
   // task-type icons in the second column."
   test.subHeading('T9: the unseen star has the first column to itself, the type icon the second');
