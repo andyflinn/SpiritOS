@@ -73,16 +73,23 @@ test.startTest('desk/G1.8: large text boxes fold, in Desk and its dialogs');
 const files = { 'log/log.json': JSON.stringify(log) };
 const doc = mountDesk(files);
 settle().then(function () {
+  // SINCE desk/G1.12 A BOX STARTS FOLDED (Andy: "foldable large text should
+  // collapsed by default"), so this presses it open, then folded again.
   test.subHeading("T1: the box at the top of Desk has a fold toggle, and folded it shows its first line only");
   const bubble = doc.getElementById('desk-session');
+  const first = bubble.innerHTML;
+  clickOn(bubble, 'data-fold', 'session');
   const open = bubble.innerHTML;
   clickOn(bubble, 'data-fold', 'session');
   const folded = bubble.innerHTML;
-  if (/data-fold="session"/.test(open) && /GOAL-DESCRIPTION-TEXT/.test(open) &&
+  if (/data-fold="session"/.test(first) && !/GOAL-DESCRIPTION-TEXT/.test(first) &&
+      /GOAL-DESCRIPTION-TEXT/.test(open) && /ITEM-ONE-TITLE/.test(open) &&
       /The goal title/.test(folded) && /data-fold="session"/.test(folded) &&
       !/GOAL-DESCRIPTION-TEXT/.test(folded) && !/ITEM-ONE-TITLE/.test(folded)) {
-    test.check('open it shows the goal and its items; folded, only the goal line and the toggle');
-  } else test.fail('toggle ' + /data-fold="session"/.test(open) + '; folded bubble: ' + folded.slice(0, 200));
+    test.check('it opens folded; unfolded it shows the goal and its items; folded again, only the goal line and the toggle');
+  } else test.fail('first ' + first.slice(0, 120) + '; open ' + open.slice(0, 120) + '; folded ' + folded.slice(0, 120));
+  // Left open, so T3 sees the one choice that is remembered: his unfold.
+  clickOn(bubble, 'data-fold', 'session');
 
   test.subHeading('T3: the fold survives reopening Desk');
   let seen = {};
@@ -90,8 +97,8 @@ settle().then(function () {
   const again = mountDesk(files);
   return settle().then(function () {
     const b2 = again.getElementById('desk-session').innerHTML;
-    if (seen.folds && seen.folds.session === true && /The goal title/.test(b2) && !/GOAL-DESCRIPTION-TEXT/.test(b2)) {
-      test.check('seen.json holds folds.session, and a fresh Desk opens with the bubble folded');
+    if (seen.folds && seen.folds.session === false && /The goal title/.test(b2) && /GOAL-DESCRIPTION-TEXT/.test(b2)) {
+      test.check('seen.json holds folds.session: false, and a fresh Desk opens with the bubble unfolded as he left it');
     } else test.fail('seen.json folds ' + JSON.stringify(seen.folds) + '; reopened bubble: ' + b2.slice(0, 160));
   });
 }).then(function () {
@@ -107,12 +114,16 @@ settle().then(function () {
     if (dd.open) dd.open({ id: 't/G1.1', row: session[0], thread: [], agents: {}, session: session, rules: [] });
   } catch (e) { /* judged below */ }
   const box = ddDoc.getElementById('dd-item');
+  const firstItem = box.innerHTML;
+  clickOn(ddDoc.getElementById('dd-body'), 'data-fold', 'item');
   const openItem = box.innerHTML;
   clickOn(ddDoc.getElementById('dd-body'), 'data-fold', 'item');
   const foldedItem = box.innerHTML;
+  if (!/ITEM-DESCRIPTION-TEXT/.test(firstItem) && /ITEM-ONE-TITLE/.test(firstItem)) test.check('the item box opens folded (desk/G1.12)');
+  else test.fail('the item box on opening: ' + firstItem.slice(0, 160));
   if (/data-fold="item"/.test(openItem) && /ITEM-DESCRIPTION-TEXT/.test(openItem) &&
       /ITEM-ONE-TITLE/.test(foldedItem) && /Open: not ready to close yet|id="dd-done"|id="dd-reopen"/.test(foldedItem) &&
       !/ITEM-DESCRIPTION-TEXT/.test(foldedItem) && !/ITEM-CHECK-TEXT/.test(foldedItem)) {
-    test.check('folded, the item keeps its title and its Done row, and hides its text, check and tests');
+    test.check('folded, the item keeps its title and its Done row (the words; the button is in the row above since desk/G1.12), and hides its text and tests');
   } else test.fail('toggle ' + /data-fold="item"/.test(openItem) + '; folded item: ' + foldedItem.slice(0, 200));
 }).catch(function (e) { test.fail('the run broke: ' + e.message); }).then(function () { test.reportSuccessFailureCount(); });

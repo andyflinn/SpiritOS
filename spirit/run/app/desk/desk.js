@@ -523,10 +523,14 @@ function deskDrawTabs() {
     // visible while in teh team tab. and make the button a different
     // color, so it loooms over the proceedings".
     '<button type="button" id="desk-end-design"' + (design && deskTab === 'team' ? '' : ' hidden') +
-      ' style="margin-left:auto;background:#c00;color:#fff;font-weight:bold;border:2px solid #600">End design mode</button>' +
+      (deskArmed === 'desk-end-design' ? ' data-armed="1"' : '') +
+      ' style="margin-left:auto;background:#c00;color:#fff;font-weight:bold;border:2px solid #600">End design mode' +
+      (deskArmed === 'desk-end-design' ? ': sure?' : '') + '</button>' +
     // Its twin, in the same spot while design mode is off.
     '<button type="button" id="desk-start-design"' + (!design && deskTab === 'team' ? '' : ' hidden') +
-      ' style="margin-left:auto;background:#1a7f37;color:#fff;font-weight:bold;border:2px solid #0b4a1e">Start design mode</button>';
+      (deskArmed === 'desk-start-design' ? ' data-armed="1"' : '') +
+      ' style="margin-left:auto;background:#1a7f37;color:#fff;font-weight:bold;border:2px solid #0b4a1e">Start design mode' +
+      (deskArmed === 'desk-start-design' ? ': sure?' : '') + '</button>';
 }
 
 // INSIDE TEAM, ONE TAB PER AGENT (desk/G1, D2): All is the team chat, every
@@ -649,6 +653,13 @@ function deskGoState(row) {
   if ((row.waitsOn || []).length || deskDesignOn()) return 'held';
   return 'go';
 }
+// An open item waits on this one (the goal waiting on everything is not
+// counted: every item blocks its goal).
+function deskIsBlocking(row) {
+  return deskSessionRows().some(function (r) {
+    return !r.goal && !r.done && r.id !== row.id && (r.waitsOn || []).indexOf(row.id) !== -1;
+  });
+}
 function deskSessionTable() {
   var head = '<tr><th></th><th>to-do</th><th>with</th><th>your decision</th><th>blocks</th><th>waits on</th><th>state</th></tr>';
   // A PRIORITIZED SLOT (desk/G1 D6): an open point he has not answered sits
@@ -683,6 +694,10 @@ function deskSessionTable() {
       '<td>' + (row.done ? '<button type="button" data-close="' + deskEsc(row.id) + '">Close</button>'
         : deskStatus[row.id] ? '<b>' + deskEsc(deskStatus[row.id]) + '</b>'
         : row.open ? '<b>yours</b>'
+        // BLOCKED AND BLOCKING ARE STATES TOO (desk/G1.12). Andy: "blocking and
+        // blocked, should be statuses as well".
+        : (row.waitsOn || []).length ? 'blocked'
+        : deskIsBlocking(row) ? 'blocking'
         : deskDecision[row.id] === 'go' ? 'running' : 'open') + '</td>' +
     '</tr>';
   }).join('');
@@ -710,14 +725,29 @@ function deskRulesHtml() {
   // A BOX OF ITS OWN. Andy: "can we have a clearer separation between rules
   // and requirements?" Rules sit in a dashed frame, named for what they are,
   // so they never read as more items on the list.
+  // FOLDED TOO, UNTIL HE OPENS IT (desk/G1.12). Andy: "The rules box should
+  // also be foldable".
+  var folded = deskSeen.folds.rules !== false;
   return '<div style="margin-top:8px;padding:6px 10px;border:1px dashed currentColor;border-radius:6px">' +
-    '<div class="label">Rules — hold for every requirement, never done</div><ul style="margin:6px 0 0 18px">' +
-    rules.map(function (r) { return '<li>' + deskEsc(r.id) + ': ' + deskEsc(r.text) + '</li>'; }).join('') + '</ul></div>';
+    '<div style="display:flex;gap:8px;align-items:baseline">' + deskFoldToggle('rules', folded) +
+    '<div class="label">Rules — hold for every requirement, never done (' + rules.length + ')</div></div>' +
+    (folded ? '' : '<ul style="margin:6px 0 0 18px">' +
+      rules.map(function (r) { return '<li>' + deskEsc(r.id) + ': ' + deskEsc(r.text) + '</li>'; }).join('') + '</ul>') + '</div>';
 }
 
 // A box's fold toggle: open it points down, folded it points right.
 function deskFoldToggle(name, folded) {
   return '<button type="button" data-fold="' + name + '" title="' + (folded ? 'Unfold' : 'Fold') + '">' + (folded ? '▸' : '▾') + '</button>';
+}
+// A click on a fold toggle (session or rules) flips it, keeps it in
+// seen.json and redraws. True when it was one.
+function deskToggleFold(e) {
+  var name = e && e.target && e.target.getAttribute && e.target.getAttribute('data-fold');
+  if (name !== 'session' && name !== 'rules') return false;
+  deskSeen.folds[name] = deskSeen.folds[name] === false;
+  deskSaveSeen();
+  deskDraw();
+  return true;
 }
 function deskSessionBubble() {
   // Blank once its goal is closed, rules and all (deskSessionOpen).
@@ -730,7 +760,9 @@ function deskSessionBubble() {
   // FOLDED, ONE LINE (desk/G1.8). Andy: "the large text containers,
   // especially the one at the top, should be foldable, in desk and details."
   // Kept per viewer in seen.json, as what he has seen is.
-  var folded = !!deskSeen.folds.session;
+  // FOLDED UNTIL HE OPENS IT (desk/G1.12). Andy: "foldable large text should
+  // collapsed by default". Only his own unfold is remembered.
+  var folded = deskSeen.folds.session !== false;
   var head = '<div style="display:flex;gap:8px;align-items:baseline">' + deskFoldToggle('session', folded) +
     '<div class="label" data-open="' + deskEsc(g.id) + '" style="cursor:pointer">' + deskEsc(g.id) + ' — ' + deskEsc(g.title) + '</div></div>';
   if (folded) return '<div class="stat-tile wide">' + head + '</div>';
@@ -748,9 +780,8 @@ function deskSessionBubble() {
     // THE GOAL IS A REQUIREMENT TOO, the root one. Andy: "Isn't the title of
     // this project (the goal) a requirement?" So the bubble reads like an
     // item's dialog: the goal as the title block, then what it is blocked by.
-    '<div class="label" style="margin-top:8px">Blocked by</div>' +
-    (items ? '<ul style="margin:6px 0 0 18px">' + items + '</ul>'
-      : '<div class="job-manifest-note">Nothing required yet.</div>') + '</div>';
+    // A group with nothing in it draws nothing (desk/G1.12).
+    (items ? '<div class="label" style="margin-top:8px">Blocked by</div><ul style="margin:6px 0 0 18px">' + items + '</ul>' : '') + '</div>';
 }
 
 function deskTable() {
@@ -903,6 +934,20 @@ function deskSendTeam() {
 }
 // Ending design mode is his decision, said in Team: an `answer` with the
 // fixed words, which Desk reads back (deskDesignOn) and the agents obey.
+// NEITHER BY ACCIDENT (desk/G1.12). Andy: "re-arm both design on and off,
+// neither should be an accident." The first press arms the button and asks
+// "sure?"; only a second press fires it. HIS HARD RULE FOR EVERY ARMED
+// BUTTON (armedButtons.js, AGENT.md): it disarms the moment he clicks
+// anywhere else, through the shell's one mechanism, and it carries
+// data-armed so the shell paints it red.
+var deskArmed = '';
+function deskDisarm() { deskArmed = ''; deskDrawTabs(); }
+function deskArmOrFire(id, fire) {
+  if (deskArmed === id) { deskDisarm(); fire(); return; }
+  deskArmed = id;
+  deskDrawTabs();
+  if (deskApi && deskApi.armUntilElsewhere) deskApi.armUntilElsewhere(deskDisarm);
+}
 function deskEndDesign() { deskTeamPost('answer', DESK_END_DESIGN); }
 function deskStartDesign() { deskTeamPost('answer', DESK_START_DESIGN); }
 function deskTeamPost(kind, fixed) {
@@ -1119,22 +1164,25 @@ spirit.shell.activateApp({
       '<div id="desk-design" class="stat-tile wide" style="background:#fff3c4;color:#000" hidden>' +
         '<b>Design mode.</b> Nothing is built until it ends, and it ends only in the Team tab.</div>' +
       // Drawn by deskDrawTabs.
-      '<div class="start-job-form card" id="desk-tabs"></div>' +
+      // PINNED LIKE THE TITLE BAR (desk/G1.12). Andy: "the tabs should stick
+      // top the top like the title bar".
+      '<div class="start-job-form card" id="desk-tabs" style="position:sticky;top:0;z-index:2"></div>' +
       '<div id="desk-root">' +
         '<div data-pane="list"><div id="desk-top"></div></div>' +
         '<div data-pane="team" hidden>' +
           // Drawn by deskDrawAgentTabs.
-          '<div class="start-job-form card" id="desk-agent-tabs"></div>' +
+          '<div class="start-job-form card" id="desk-agent-tabs" style="position:sticky;top:0;z-index:1"></div>' +
           '<div id="desk-session"></div>' +
           '<div class="start-job-form card"><label class="field-label grow">Say' +
-            '<input type="text" id="desk-team-say" placeholder="to every agent; design talk that belongs to no row"></label>' +
+            // SEVERAL LINES, AND RETURN IS A NEW LINE (desk/G1.12): only Send sends.
+            '<textarea id="desk-team-say" rows="3" placeholder="to every agent; design talk that belongs to no row"></textarea></label>' +
           '<button type="button" id="desk-team-send">Send</button></div>' +
           '<div id="desk-team-error" class="job-start-error"></div>' +
           '<div class="stat-tile wide"><div class="label" id="desk-team-label">Team: you and every agent, newest first</div><div id="desk-team"></div></div>' +
         '</div>' +
         '<div data-pane="musings" hidden>' +
           '<div class="start-job-form card"><label class="field-label grow">Muse' +
-            '<input type="text" id="desk-muse" placeholder="a thought for later; nobody answers it now"></label>' +
+            '<textarea id="desk-muse" rows="3" placeholder="a thought for later; nobody answers it now"></textarea></label>' +
           '<button type="button" id="desk-muse-send">Log</button></div>' +
           '<div id="desk-muse-error" class="job-start-error"></div>' +
           '<div class="stat-tile wide"><div class="label">Musings, for close time, newest first</div><div id="desk-musings"></div></div>' +
@@ -1160,8 +1208,8 @@ spirit.shell.activateApp({
     document.getElementById('desk-tabs').addEventListener('click', function (e) {
       var el = clicked(e, 'data-tab');
       if (!el) return;
-      if (el.id === 'desk-end-design') deskEndDesign();
-      else if (el.id === 'desk-start-design') deskStartDesign();
+      if (el.id === 'desk-end-design') deskArmOrFire(el.id, deskEndDesign);
+      else if (el.id === 'desk-start-design') deskArmOrFire(el.id, deskStartDesign);
       else if (el.getAttribute && el.getAttribute('data-tab')) show(el.getAttribute('data-tab'));
     });
     document.getElementById('desk-agent-tabs').addEventListener('click', function (e) {
@@ -1174,25 +1222,14 @@ spirit.shell.activateApp({
       deskDraw();
     });
     show('list');
-    function onEnter(id, go) {
-      document.getElementById(id).addEventListener('keydown', function (e) {
-        if (e.key !== 'Enter' || e.repeat) return;
-        e.preventDefault();
-        go();
-      });
-    }
+    // The rules box folds in the List as it does in the bubble.
+    document.getElementById('desk-top').addEventListener('click', deskToggleFold);
     function muse() { deskSend('musing', 'desk-muse', 'desk-muse-error'); }
     document.getElementById('desk-muse-send').addEventListener('click', muse);
-    onEnter('desk-muse', muse);
     document.getElementById('desk-team-send').addEventListener('click', deskSendTeam);
     // The bubble is repainted on every arrival, so one listener on its box.
     document.getElementById('desk-session').addEventListener('click', function (e) {
-      if (e.target && e.target.getAttribute && e.target.getAttribute('data-fold') === 'session') {
-        deskSeen.folds.session = !deskSeen.folds.session;
-        deskSaveSeen();
-        deskDraw();
-        return;
-      }
+      if (deskToggleFold(e)) return;
       var el = e.target;
       while (el && el !== e.currentTarget && !(el.getAttribute && el.getAttribute('data-open'))) el = el.parentNode;
       var id = el && el.getAttribute && el.getAttribute('data-open');
@@ -1204,7 +1241,6 @@ spirit.shell.activateApp({
     document.getElementById('desk-goal').addEventListener('click', function () {
       if (deskSession && !deskGoalDone()) deskOpenRow(String(deskSession.goal.id));
     });
-    onEnter('desk-team-say', deskSendTeam);
     // Its own log first, then every arrival into it. Subscribed once, at
     // mount, and kept while Desk is hidden behind its dialog, so what
     // arrives while a row is open is logged too.

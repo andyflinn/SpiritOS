@@ -184,11 +184,26 @@ function ddFactsHtml() {
 }
 
 // ACCEPT FOR A DEPENDENCY; GO! WHEN AN AGENT HAS ASKED AND IS WAITING.
-function ddDecideHtml() {
+// HIS BUTTONS ON ONE LINE, BEFORE RENAME (desk/G1.12). Andy: "all buttons
+// offered to me for Go, Done etc, should be on the same line as "Rename",
+// but before Rename". What explains them stays here, in #dd-decide; the
+// buttons themselves are drawn by ddButtonsHtml into #dd-name-row.
+function ddDecideHtml() { return ddDecide().note; }
+function ddButtonsHtml() {
+  var mine = ddSession.filter(function (r) { return r.id === ddId; })[0];
+  var ready = ddState && ddState.ready;
+  var close = mine && mine.done ? '<button type="button" id="dd-reopen">Reopen</button>'
+    : mine && ready ? '<button type="button" id="dd-done" style="background:#1a7f37;color:#fff;font-weight:bold">Done</button>' : '';
+  return ddDecide().buttons + close;
+}
+function ddDecide() {
   if (ddRow && ddRow.kind === 'dependency') {
-    return '<div class="start-job-form card"><button type="button" id="dd-accept">Accept</button>' +
-      '<button type="button" id="dd-reject">Reject</button></div>';
+    return { note: '', buttons: '<button type="button" id="dd-accept">Accept</button><button type="button" id="dd-reject">Reject</button>' };
   }
+  var r = ddDecideNote();
+  return typeof r === 'string' ? { note: r, buttons: '' } : r;
+}
+function ddDecideNote() {
   var ask = ddState && ddState.openAsk;
   // A closed item asks nothing (Andy: "this one still shows go button while
   // market as done").
@@ -209,9 +224,8 @@ function ddDecideHtml() {
     return '<div class="job-manifest-note">' + ddEsc(ask.from) + ' asks: ' + ddEsc(ask.text) + '</div>' +
       '<div class="job-manifest-note"><b>No Go yet:</b> ' + (waits.length ? 'it waits on ' + ddEsc(waits.join(', ')) : 'design mode is on') + '.</div>';
   }
-  return '<div class="job-manifest-note">' + ddEsc(ask.from) + ' asks: ' + ddEsc(ask.text) + '</div>' +
-    '<div class="start-job-form card"><button type="button" id="dd-go">Go!</button>' +
-    '<button type="button" id="dd-no">No</button></div>';
+  return { note: '<div class="job-manifest-note">' + ddEsc(ask.from) + ' asks: ' + ddEsc(ask.text) + '</div>',
+    buttons: '<button type="button" id="dd-go">Go!</button><button type="button" id="dd-no">No</button>' };
 }
 
 // NEWEST FIRST, INPUT ON TOP. Andy, 2026-09-28: "i want my input at the top
@@ -287,14 +301,21 @@ function ddFrame() {
     // button row, far away from my chat input. i still type into the wrong box".
     // RENAMING IS ITS OWN BUTTON (desk/G1, D7). His lines kept landing in
     // the name box, so no box is drawn until he presses Rename.
-    '<div class="start-job-form card" id="dd-name-row">' + DD_RENAME + '</div>' +
+    '<div class="start-job-form card" id="dd-name-row"></div>' +
+    // HOW HE CAN CHECK, CLOSE TO DONE (desk/G1.12). Andy: "the "how i can
+    // check" should be a separate line, outside of the large text", "so how
+    // i can check will be close to "Done"".
+    ddCheckHtml() +
     '<div id="dd-item"></div>' +
     '<div class="stat-tile wide"><div class="label" id="dd-title"></div><div id="dd-blurb"></div></div>' +
     '<div class="stat-tile wide" id="dd-facts"></div>' +
     '<div id="dd-decide"></div>' +
     '<div id="dd-slots"></div>' +
     '<div class="start-job-form card"><label class="field-label grow">Say' +
-      '<input type="text" id="dd-say" placeholder="to every agent, under this row"></label>' +
+      // SEVERAL LINES, AND RETURN IS A NEW LINE (desk/G1.12). Andy: "This
+      // entry box should let me type with linefeeds, and not post when i hit
+      // return. i want to finish thinking before i bother you".
+      '<textarea id="dd-say" rows="3" placeholder="to every agent, under this row"></textarea></label>' +
       '<button type="button" id="dd-say-send">Send</button></div>' +
     '<div id="dd-error" class="job-start-error"></div>' +
     '<div class="stat-tile wide"><div class="label">Chat, newest first</div><div id="dd-chat"></div></div>';
@@ -319,7 +340,7 @@ function ddItemLine(r) {
 }
 // FOLDED, THE TITLE AND THE DONE ROW (desk/G1.8): the one button he closes
 // with is never hidden (claude-windows' contract, deskFold.js).
-var ddFolded = false;
+var ddFolded = true;  // every foldable box starts folded (desk/G1.12); open() folds it again
 function ddItemHtml() {
   var me = ddSession.filter(function (r) { return r.id === ddId; })[0];
   if (!me) return '';
@@ -334,12 +355,12 @@ function ddItemHtml() {
   // me a done button?" So Done appears once an agent has said READY TO CLOSE
   // under this item, with the evidence; before that the state is words.
   var ready = ddState && ddState.ready;
+  // Its words stay here; its button sits in the row above (ddButtonsHtml).
   var close = me.done
-    ? '<button type="button" id="dd-reopen">Reopen</button> <span class="job-manifest-note">Done.</span>'
+    ? '<span class="job-manifest-note">Done.</span>'
     : ready
-      ? '<button type="button" id="dd-done" style="background:#1a7f37;color:#fff;font-weight:bold">Done</button>' +
-        ' <span class="job-manifest-note">Both agents say this is ready to close: read why below.</span>'
-      : '<span class="job-manifest-note">Open: not ready to close yet. Done appears here when an agent says it is, with the evidence.</span>';
+      ? '<span class="job-manifest-note">Both agents say this is ready to close: Done is in the row above; read why below.</span>'
+      : '<span class="job-manifest-note">Open: not ready to close yet. Done appears above when both agents say it is, with the evidence.</span>';
   var head = '<div style="display:flex;gap:8px;align-items:baseline"><button type="button" data-fold="item" title="' +
     (ddFolded ? 'Unfold' : 'Fold') + '">' + (ddFolded ? '▸' : '▾') + '</button><div class="label">' + ddEsc(me.id) + ' — ' + ddEsc(me.title) + '</div></div>' +
     '<div style="margin:6px 0">' + close + '</div>';
@@ -349,8 +370,7 @@ function ddItemHtml() {
     // HOW YOU CAN CHECK, HIGHLIGHTED, AND THE TESTS THAT PROVE IT. Andy:
     // "there should be a highlighted section on if and how i can check. same
     // as wsl test requirements should be enumarated under requirements".
-    '<div style="margin-top:8px;padding:6px 10px;background:#fff3c4;color:#000;border-radius:6px">' +
-      '<b>How you can check:</b> ' + (me.check ? ddEsc(me.check) : 'not stated yet; the agents owe you this line.') + '</div>' +
+
     // WHAT IS ALREADY THERE, so nothing is built twice. Andy: "a list per
     // requirement that names support already in place, as reminder to NOT
     // re-invent what is already there."
@@ -365,9 +385,9 @@ function ddItemHtml() {
     (me.tests && me.tests.length
       ? '<ul style="margin:6px 0 0 18px">' + me.tests.map(function (t) { return '<li>' + ddEsc(t) + '</li>'; }).join('') + '</ul>'
       : '<div class="job-manifest-note">None named yet.</div>') +
-    '<div class="label" style="margin-top:8px">Blocked by</div>' +
-    (blockedBy ? '<ul style="margin:6px 0 0 18px">' + blockedBy + '</ul>'
-      : '<div class="job-manifest-note">Nothing required for this yet. Say what it needs below; the lead adds it once we agree.</div>') +
+    // A GROUP WITH NOTHING IN IT DRAWS NOTHING (desk/G1.12). Andy: "groups
+    // like blocking should disappear completely."
+    (blockedBy ? '<div class="label" style="margin-top:8px">Blocked by</div><ul style="margin:6px 0 0 18px">' + blockedBy + '</ul>' : '') +
     (blocking ? '<div class="label" style="margin-top:8px">Blocking</div><ul style="margin:6px 0 0 18px">' + blocking + '</ul>' : '') +
     // The plan's rules hold here too (desk.js, deskSessionRules).
     (ddRules.length ? '<div style="margin-top:8px;padding:6px 10px;border:1px dashed currentColor;border-radius:6px">' +
@@ -379,12 +399,15 @@ function ddItemHtml() {
 function ddDraw() {
   var item = document.getElementById('dd-item');
   if (item) item.innerHTML = ddItemHtml();
+  ddDrawNameRow();
   var title = document.getElementById('dd-title');
   if (!title) return;
   var label = ddState && ddState.label;
   // HIS NAME IS THE DIALOG'S TITLE TOO. Andy: "if i re-label the item, the
   // (a) title of the Details display should change".
-  ddApi.setScreenTitle(label || (ddRow ? ddRow.title : ddId));
+  // THE ID FIRST (desk/G1.12). Andy: "the title bar should show the G1.2
+  // tags before the title".
+  ddApi.setScreenTitle(ddId + ' — ' + (label || (ddRow ? ddRow.title : ddId)));
   title.innerHTML = ddEsc(label || (ddRow ? ddRow.title : ddId)) + ' <span class="job-manifest-note">(' +
     ddEsc(ddRow && ddRow.handle ? ddRow.handle : ddId) + ')</span>';
   document.getElementById('dd-blurb').innerHTML = ddBlurbHtml();
@@ -399,12 +422,27 @@ var DD_RENAME = '<button type="button" id="dd-rename">Rename</button>';
 var DD_NAME_BOX = '<label class="field-label grow">Your name for it' +
   '<input type="text" id="dd-name" placeholder="in your own words"></label>' +
   '<button type="button" id="dd-name-save">Save</button>';
+var ddRenaming = false;
 function ddNameRow(open) {
-  var row = document.getElementById('dd-name-row');
-  if (!row) return;
-  row.innerHTML = open ? DD_NAME_BOX : DD_RENAME;
+  ddRenaming = !!open;
+  ddDrawNameRow();
   var box = open && document.getElementById('dd-name');
   if (box && box.focus) box.focus();
+}
+// Redrawn with every draw, so his buttons follow the thread; a name he is
+// typing survives it.
+function ddDrawNameRow() {
+  var row = document.getElementById('dd-name-row');
+  if (!row) return;
+  var typed = ddRenaming ? ddValue('dd-name') : '';
+  row.innerHTML = ddButtonsHtml() + (ddRenaming ? DD_NAME_BOX : DD_RENAME);
+  var box = ddRenaming && typed && document.getElementById('dd-name');
+  if (box) box.value = typed;
+}
+function ddCheckHtml() {
+  var me = ddSession.filter(function (r) { return r.id === ddId; })[0] || ddRow || {};
+  return '<div style="margin:6px 0;padding:6px 10px;background:#fff3c4;color:#000;border-radius:6px">' +
+    '<b>How you can check:</b> ' + (me.check ? ddEsc(me.check) : 'not stated yet; the agents owe you this line.') + '</div>';
 }
 // His name for it goes, then the box folds back into its button.
 function ddRename() {
@@ -523,8 +561,8 @@ spirit.shell.activateApp({
     document.getElementById('dd-body').addEventListener('keydown', function (event) {
       if (event.key !== 'Enter' || event.repeat) return;
       var id = event.target && event.target.id;
-      if (id === 'dd-say') { event.preventDefault(); ddSend('note', ddValue('dd-say'), 'dd-say'); }
-      else if (id === 'dd-name') { event.preventDefault(); ddRename(); }
+      // Return in the say box is a new line; only Send sends (desk/G1.12).
+      if (id === 'dd-name') { event.preventDefault(); ddRename(); }
     });
     // A reply arriving while the dialog is open repaints the parts, never
     // the inputs.
@@ -552,6 +590,8 @@ spirit.shell.activateApp({
     ((params && params.thread) || []).forEach(ddTake);
     ddState = null;
     ddNote = '';
+    ddFolded = true;
+    ddRenaming = false;
     ddFrame();
     ddLoad();
     ddAskIfUnexplained();

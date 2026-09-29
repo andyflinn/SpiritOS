@@ -149,8 +149,9 @@ settle().then(function () {
         fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } } });
       if (dd.open) dd.open({ id: 'test/G1.1', row: { id: 'test/G1.1', title: 'Asks Andy' }, thread: [], agents: {}, session: [], rules: [] });
     } catch (e) { /* drawn below */ }
-    // The dialog draws its frame into #dd-body, not into the container.
-    const html = ddDoc.getElementById('dd-body').innerHTML;
+    // The dialog draws its frame into #dd-body, not into the container; since
+    // desk/G1.12 the Rename row is redrawn into #dd-name-row on every draw.
+    const html = ddDoc.getElementById('dd-body').innerHTML + ddDoc.getElementById('dd-name-row').innerHTML;
     if (!/id="dd-name"/.test(html) && /id="dd-rename"/.test(html)) test.check('no name box on opening, a Rename button instead');
     else test.fail('dialog on opening: name box ' + /id="dd-name"/.test(html) + ', rename button ' + /id="dd-rename"/.test(html));
   });
