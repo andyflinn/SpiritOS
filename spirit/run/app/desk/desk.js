@@ -390,14 +390,20 @@ function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
 // wall of red.
 var DESK_SEEN = 'seen.json';
 var DESK_UNSEEN = '<span style="color:#d00;font-weight:bold" title="unseen changes">*</span>';
-var deskSeen = { rows: {}, lead: 0, team: 0 };
+var deskSeen = { rows: {}, team: 0, agents: {} };
 var deskTab = 'list';
+// WHICH CHAT INSIDE TEAM: '*' for All, else an agent's name (desk/G1, D2).
+var deskAgentTab = '*';
 
-function deskIsLeadLine(m) {
-  if (!deskLead) return false;
-  if (m.todo || m.reported || m.kind === 'board' || m.kind === 'report') return false;
-  if (m.kind === 'note' && /^taking(\s|$)/.test(m.text)) return false;
-  return (m.dir === 'out' && m.peer === deskLead.key) || (m.dir === 'in' && m.from === deskLead.name);
+// What passed between Andy and one agent with NO row: his untagged lines to
+// its key, its untagged lines to him. The lead's is today's Lead chat.
+function deskIsDirectLine(name) {
+  return function (m) {
+    var who = deskAgents[name];
+    if (m.todo || m.reported || m.kind === 'board' || m.kind === 'report') return false;
+    if (m.kind === 'note' && /^taking(\s|$)/.test(m.text)) return false;
+    return (m.dir === 'out' && !!who && m.peer === who.key) || (m.dir === 'in' && m.from === name);
+  };
 }
 function deskIsTeamLine(m) { return m.todo === DESK_TEAM && m.kind !== 'board'; }
 function deskIsRowLine(id) { return function (m) { return m.todo === id && m.kind !== 'board'; }; }
@@ -413,9 +419,10 @@ function deskNewest(pred) {
   return newest;
 }
 function deskRowNews(id) { return deskNewest(deskIsRowLine(id)) > (deskSeen.rows[id] || 0); }
-function deskChatNews(which) {
-  return deskNewest(which === 'lead' ? deskIsLeadLine : deskIsTeamLine) > (deskSeen[which] || 0);
-}
+// A chat is 'team' (All) or an agent's name.
+function deskChatPred(which) { return which === 'team' ? deskIsTeamLine : deskIsDirectLine(which); }
+function deskChatSeenAt(which) { return (which === 'team' ? deskSeen.team : deskSeen.agents[which]) || 0; }
+function deskChatNews(which) { return deskNewest(deskChatPred(which)) > deskChatSeenAt(which); }
 
 function deskSaveSeen() {
   try { deskApi.fs.saveFile(DESK_SEEN, JSON.stringify(deskSeen)); } catch (e) { /* only a marker */ }
@@ -425,9 +432,13 @@ function deskMarkRowSeen(id) {
   if (newest > (deskSeen.rows[id] || 0)) { deskSeen.rows[id] = newest; deskSaveSeen(); }
 }
 function deskMarkChatSeen(which) {
-  var newest = deskNewest(which === 'lead' ? deskIsLeadLine : deskIsTeamLine);
-  if (newest > (deskSeen[which] || 0)) { deskSeen[which] = newest; deskSaveSeen(); }
+  var newest = deskNewest(deskChatPred(which));
+  if (newest <= deskChatSeenAt(which)) return;
+  if (which === 'team') deskSeen.team = newest; else deskSeen.agents[which] = newest;
+  deskSaveSeen();
 }
+// The chat showing inside Team.
+function deskTeamWhich() { return deskAgentTab === '*' ? 'team' : deskAgentTab; }
 
 // Read once at mount, after the log. Absent: all already held is seen.
 function deskLoadSeen() {
@@ -436,38 +447,87 @@ function deskLoadSeen() {
   var held = null;
   try { held = raw ? JSON.parse(raw) : null; } catch (e) { held = null; }
   if (held && typeof held === 'object') {
-    deskSeen = { rows: held.rows && typeof held.rows === 'object' ? held.rows : {}, lead: Number(held.lead) || 0, team: Number(held.team) || 0 };
+    deskSeen = { rows: held.rows && typeof held.rows === 'object' ? held.rows : {}, team: Number(held.team) || 0,
+      agents: held.agents && typeof held.agents === 'object' ? held.agents : null };
+    if (deskSeen.agents) return;
+    // A seen.json from before the agent tabs: the lead keeps its old Lead
+    // mark, and what the others said so far counts as seen.
+    deskSeen.agents = {};
+    Object.keys(deskAgents).forEach(function (n) {
+      deskSeen.agents[n] = deskLead && n === deskLead.name ? Number(held.lead) || 0 : deskNewest(deskIsDirectLine(n));
+    });
+    deskSaveSeen();
     return;
   }
   var ids = Object.create(null);
   deskMessages.forEach(function (m) { if (m.todo && m.todo !== DESK_TEAM) ids[m.todo] = true; });
   Object.keys(ids).forEach(function (id) { deskSeen.rows[id] = deskNewest(deskIsRowLine(id)); });
-  deskSeen.lead = deskNewest(deskIsLeadLine);
+  Object.keys(deskAgents).forEach(function (n) { deskSeen.agents[n] = deskNewest(deskIsDirectLine(n)); });
   deskSeen.team = deskNewest(deskIsTeamLine);
   deskSaveSeen();
 }
 
-// The tab strip: the one showing is marked, and a red * before a title
+// A tab button: the one showing is marked, and a red * before its title
 // says something arrived there that he has not seen.
+function deskTabButton(attrs, on, news, label) {
+  return '<button type="button" ' + attrs + ' aria-selected="' + (on ? 'true' : 'false') + '" style="font-weight:' +
+    (on ? 'bold' : 'normal') + ';text-decoration:' + (on ? 'underline' : 'none') + '">' +
+    (news ? DESK_UNSEEN + ' ' : '') + deskEsc(label) + '</button>';
+}
+
+// WHAT WAITS ON HIM, COUNTED ON THE LIST TAB (desk/G1, D7): a Go! he can
+// press, a row both agents claimed ready for his Done, an open point.
+function deskWaitingOnAndy() {
+  return deskSessionRows().filter(function (row) {
+    if (deskClosed[row.id] || row.done) return false;
+    return deskGoState(row) === 'go' || !!deskReady[row.id] || !!row.open;
+  }).length;
+}
+
+// Drawn whole, as markup: List | Team | Musings. The Lead tab moved into
+// Team as the lead's own tab (desk/G1, D2).
 function deskDrawTabs() {
   var strip = document.getElementById('desk-tabs');
-  if (!strip || !strip.querySelectorAll) return;
+  if (!strip) return;
   var listNews = deskBoard ? deskBoard.rows.some(function (r) { return deskRowNews(r.id); }) : false;
-  var news = { list: listNews, lead: deskChatNews('lead'), team: deskChatNews('team'), musings: false };
-  var names = { list: 'List', lead: 'Lead', team: 'Team', musings: 'Musings' };
-  Array.prototype.forEach.call(strip.querySelectorAll('[data-tab]'), function (b) {
-    var tab = b.getAttribute('data-tab');
-    var on = tab === deskTab;
-    b.innerHTML = (news[tab] ? DESK_UNSEEN + ' ' : '') + deskEsc(names[tab] || tab);
-    b.style.fontWeight = on ? 'bold' : 'normal';
-    b.style.textDecoration = on ? 'underline' : 'none';
-    b.setAttribute('aria-selected', on ? 'true' : 'false');
+  var teamNews = deskChatNews('team') || Object.keys(deskAgents).some(deskChatNews);
+  var waiting = deskWaitingOnAndy();
+  var design = deskDesignOn();
+  strip.innerHTML =
+    deskTabButton('data-tab="list"', deskTab === 'list', listNews, 'List' + (waiting ? ' (' + waiting + ')' : '')) +
+    deskTabButton('data-tab="team"', deskTab === 'team', teamNews, 'Team') +
+    deskTabButton('data-tab="musings"', deskTab === 'musings', false, 'Musings') +
+    // AT THE END OF THE TAB ROW, ONLY ON TEAM, AND LOOMING. Andy: "put the
+    // end design mode button at the end of the tab-button-row, only
+    // visible while in teh team tab. and make the button a different
+    // color, so it loooms over the proceedings".
+    '<button type="button" id="desk-end-design"' + (design && deskTab === 'team' ? '' : ' hidden') +
+      ' style="margin-left:auto;background:#c00;color:#fff;font-weight:bold;border:2px solid #600">End design mode</button>' +
+    // Its twin, in the same spot while design mode is off.
+    '<button type="button" id="desk-start-design"' + (!design && deskTab === 'team' ? '' : ' hidden') +
+      ' style="margin-left:auto;background:#1a7f37;color:#fff;font-weight:bold;border:2px solid #0b4a1e">Start design mode</button>';
+}
+
+// INSIDE TEAM, ONE TAB PER AGENT (desk/G1, D2): All is the team chat, every
+// other tab a channel between Andy and that agent alone, the lead first and
+// marked. Andy: "the top level [lead] tab moves into [team] as
+// [agent-name], karked as lead".
+function deskAgentNames() {
+  var lead = deskLead ? deskLead.name : '';
+  return Object.keys(deskAgents).sort(function (a, b) {
+    if ((a === lead) !== (b === lead)) return a === lead ? -1 : 1;
+    return a < b ? -1 : a > b ? 1 : 0;
   });
-  var end = document.getElementById('desk-end-design');
-  if (end) end.hidden = !(deskDesignOn() && deskTab === 'team');
-  // Its twin, in the same spot while design mode is off.
-  var start = document.getElementById('desk-start-design');
-  if (start) start.hidden = !(!deskDesignOn() && deskTab === 'team');
+}
+function deskDrawAgentTabs() {
+  var strip = document.getElementById('desk-agent-tabs');
+  if (!strip) return;
+  strip.innerHTML = deskTabButton('data-agent="*"', deskAgentTab === '*', deskChatNews('team'), 'All') +
+    deskAgentNames().map(function (n) {
+      var lead = !!deskLead && n === deskLead.name;
+      return deskTabButton('data-agent="' + deskEsc(n) + '"' + (lead ? ' data-lead="1" title="the lead"' : ''),
+        deskAgentTab === n, deskChatNews(n), n + (lead ? ' (lead)' : ''));
+    }).join('');
 }
 
 // ── DESIGN MODE, AND THE DESIGN SESSION'S BOARD ─────────────────────
@@ -560,6 +620,14 @@ function deskIsDone(id, posted) {
 function deskGoalDone() {
   return !!deskSession && deskIsDone(String(deskSession.goal.id), deskSession.goal.done);
 }
+// Where a row's ask stands: '' none, 'unverified', 'held' (blocked or in
+// design mode), or 'go' when his Go! button shows.
+function deskGoState(row) {
+  if (!deskOpenAsk[row.id] || row.done) return '';
+  if (!row.goal && !deskVerified[row.id]) return 'unverified';
+  if ((row.waitsOn || []).length || deskDesignOn()) return 'held';
+  return 'go';
+}
 function deskSessionTable() {
   var head = '<tr><th></th><th>to-do</th><th>with</th><th>your decision</th><th>blocks</th><th>waits on</th><th>state</th></tr>';
   // A PRIORITIZED SLOT (desk/G1 D6): an open point he has not answered sits
@@ -575,14 +643,14 @@ function deskSessionTable() {
       '<td>' + deskEsc(deskTaken[row.id] || '') + '</td>' +
       // A CLOSED ITEM ASKS NOTHING. Andy: "this one still shows go button
       // while market as done".
-      '<td>' + (deskOpenAsk[row.id] && !row.done && !row.goal && !deskVerified[row.id]
+      '<td>' + (deskGoState(row) === 'unverified'
         ? '<span class="job-manifest-note">asks; not verified yet</span>'
         // NO GO! WHILE BLOCKED, NONE IN DESIGN MODE. Andy, 2026-09-29: "Two
         // items in the list show a Go button, even though they're blocked,
         // And we're in design mode". The ask stays; only its button waits.
-        : deskOpenAsk[row.id] && !row.done && ((row.waitsOn || []).length || deskDesignOn())
+        : deskGoState(row) === 'held'
         ? '<span class="job-manifest-note">asks; ' + ((row.waitsOn || []).length ? 'waits on ' + deskEsc(row.waitsOn.join(', ')) : 'design mode') + '</span>'
-        : deskOpenAsk[row.id] && !row.done
+        : deskGoState(row) === 'go'
         ? '<button type="button" data-go="' + deskEsc(row.id) + '" title="' + deskEsc(deskOpenAsk[row.id].text) + '">Go!</button>'
         : deskEsc(deskDecision[row.id] || '')) + '</td>' +
       '<td>' + deskEsc((row.blocks || []).join(', ')) + '</td>' +
@@ -689,9 +757,8 @@ function deskRowOf(id) {
 // if the chat log, and the log shows the last message at the top, the second
 // last shows second etc... then the most relevant chat entries will be at
 // the top". Every chat in Desk and its dialogs is drawn this way.
-function deskLeadChat() {
-  if (!deskLead) return '<div class="job-manifest-note">No lead has posted a board here yet, so there is nobody to talk to.</div>';
-  var lines = deskMessages.filter(deskIsLeadLine);
+function deskDirectChat(name) {
+  var lines = deskMessages.filter(deskIsDirectLine(name));
   if (!lines.length) return '<div class="job-manifest-note">Nothing said yet.</div>';
   return lines.slice().reverse().map(function (m) {
     var who = m.dir === 'out' ? 'you' : m.from;
@@ -762,7 +829,12 @@ function deskTeamChat() {
   }).join('');
 }
 
-function deskSendTeam() { deskTeamPost('note'); }
+// All goes to every agent under the team todo; an agent's tab to that
+// agent alone, with no todo.
+function deskSendTeam() {
+  if (deskAgentTab === '*') deskTeamPost('note');
+  else deskSend('note', 'desk-team-say', 'desk-team-error', deskAgentTab);
+}
 // Ending design mode is his decision, said in Team: an `answer` with the
 // fixed words, which Desk reads back (deskDesignOn) and the agents obey.
 function deskEndDesign() { deskTeamPost('answer', DESK_END_DESIGN); }
@@ -796,12 +868,14 @@ function deskTeamPost(kind, fixed) {
 // key auto-repeat is ignored, and a box with a send in flight sends nothing
 // more until it settles.
 var deskSending = Object.create(null);
-function deskSend(kind, boxId, errId) {
+// To the agent named, or to the lead.
+function deskSend(kind, boxId, errId, name) {
   var box = document.getElementById(boxId);
   var said = box ? String(box.value || '').trim() : '';
   var err = document.getElementById(errId);
   if (!said || deskSending[boxId]) return;
-  if (!deskLead) { if (err) err.textContent = 'No lead known yet.'; return; }
+  var to = name ? deskAgents[name] && deskAgents[name].key : deskLead && deskLead.key;
+  if (!to) { if (err) err.textContent = name ? 'No key known for ' + name + '.' : 'No lead known yet.'; return; }
   // A MUSING SAYS WHAT IT IS. Andy: "\"note to self: \" should be a prefix in
   // the musings chat: I just typed that myself, and it highlights for your
   // compilers, what i usually would type into md files". Added once, and
@@ -811,11 +885,11 @@ function deskSend(kind, boxId, errId) {
   // It may wait up to a minute for a busy agent, so it says so.
   if (err) err.textContent = 'Sending…';
   var body = { from: 'andy', kind: kind, text: said };
-  deskApi.peerPost('agents', deskLead.key, body, DESK_PATIENCE).then(function (r) {
+  deskApi.peerPost('agents', to, body, DESK_PATIENCE).then(function (r) {
     deskSending[boxId] = false;
     box.value = '';
     if (err) err.textContent = '';
-    return deskRecord([deskOutgoing(deskLead.key, body, r)]);
+    return deskRecord([deskOutgoing(to, body, r)]);
   }).catch(function (e) { deskSending[boxId] = false; if (err) err.textContent = 'Not sent: ' + e.message; });
 }
 
@@ -828,12 +902,12 @@ function deskDraw() {
   deskSessionSync();
   var el = document.getElementById('desk-top');
   if (!el) return;
-  var chat = document.getElementById('desk-chat');
-  if (chat) chat.innerHTML = deskLeadChat();
   var musings = document.getElementById('desk-musings');
   if (musings) musings.innerHTML = deskMusings();
   var team = document.getElementById('desk-team');
-  if (team) team.innerHTML = deskTeamChat();
+  if (team) team.innerHTML = deskAgentTab === '*' ? deskTeamChat() : deskDirectChat(deskAgentTab);
+  var label = document.getElementById('desk-team-label');
+  if (label) label.textContent = deskAgentTab === '*' ? 'Team: you and every agent, newest first' : 'You and ' + deskAgentTab + ' alone, newest first';
   var bubble = document.getElementById('desk-session');
   if (bubble) bubble.innerHTML = deskSessionBubble();
   var goal = document.getElementById('desk-goal');
@@ -846,8 +920,9 @@ function deskDraw() {
   var banner = document.getElementById('desk-design');
   if (banner) banner.hidden = !design;
   // A chat on screen is being seen as it arrives.
-  if (deskTab === 'lead' || deskTab === 'team') deskMarkChatSeen(deskTab);
+  if (deskTab === 'team') deskMarkChatSeen(deskTeamWhich());
   deskDrawTabs();
+  deskDrawAgentTabs();
   el.innerHTML = (deskError ? '<div class="job-start-error">' + deskEsc(deskError) + '</div>' : '') +
     deskTable();
   // CLOSE: the line disappears at once; his "closed." goes to the agents
@@ -959,7 +1034,7 @@ var deskReadOnly = false;
 spirit.shell.activateApp({
   mount: function (container, api) {
     deskApi = api;
-    // ── THREE TABS ─────────────────────────────────────────────────
+    // ── THE TABS ───────────────────────────────────────────────────
     //
     //   Andy: "could the be, at the top of the window a set of tabs that
     //   allow me to switch from the list display, to chat with lead, to
@@ -977,36 +1052,19 @@ spirit.shell.activateApp({
       '<div id="desk-goal" class="stat-tile wide" style="font-size:1.25em;font-weight:bold;cursor:pointer" title="Open the goal: talk about it under its own id" hidden></div>' +
       '<div id="desk-design" class="stat-tile wide" style="background:#fff3c4;color:#000" hidden>' +
         '<b>Design mode.</b> Nothing is built until it ends, and it ends only in the Team tab.</div>' +
-      '<div class="start-job-form card" id="desk-tabs">' +
-        '<button type="button" data-tab="list">List</button>' +
-        '<button type="button" data-tab="lead">Lead</button>' +
-        '<button type="button" data-tab="team">Team</button>' +
-        '<button type="button" data-tab="musings">Musings</button>' +
-        // AT THE END OF THE TAB ROW, ONLY ON TEAM, AND LOOMING. Andy: "put the
-        // end design mode button at the end of the tab-button-row, only
-        // visible while in teh team tab. and make the button a different
-        // color, so it loooms over the proceedings".
-        '<button type="button" id="desk-end-design" hidden style="margin-left:auto;background:#c00;color:#fff;' +
-          'font-weight:bold;border:2px solid #600">End design mode</button>' +
-        '<button type="button" id="desk-start-design" hidden style="margin-left:auto;background:#1a7f37;color:#fff;' +
-          'font-weight:bold;border:2px solid #0b4a1e">Start design mode</button>' +
-      '</div>' +
+      // Drawn by deskDrawTabs.
+      '<div class="start-job-form card" id="desk-tabs"></div>' +
       '<div id="desk-root">' +
         '<div data-pane="list"><div id="desk-top"></div></div>' +
-        '<div data-pane="lead" hidden>' +
-          '<div class="start-job-form card"><label class="field-label grow">Say' +
-            '<input type="text" id="desk-say" placeholder="to the lead, about anything that is not one row"></label>' +
-          '<button type="button" id="desk-say-send">Send</button></div>' +
-          '<div id="desk-say-error" class="job-start-error"></div>' +
-          '<div class="stat-tile wide"><div class="label">Talk to the lead, newest first</div><div id="desk-chat"></div></div>' +
-        '</div>' +
         '<div data-pane="team" hidden>' +
+          // Drawn by deskDrawAgentTabs.
+          '<div class="start-job-form card" id="desk-agent-tabs"></div>' +
           '<div id="desk-session"></div>' +
           '<div class="start-job-form card"><label class="field-label grow">Say' +
             '<input type="text" id="desk-team-say" placeholder="to every agent; design talk that belongs to no row"></label>' +
           '<button type="button" id="desk-team-send">Send</button></div>' +
           '<div id="desk-team-error" class="job-start-error"></div>' +
-          '<div class="stat-tile wide"><div class="label">Team: you and every agent, newest first</div><div id="desk-team"></div></div>' +
+          '<div class="stat-tile wide"><div class="label" id="desk-team-label">Team: you and every agent, newest first</div><div id="desk-team"></div></div>' +
         '</div>' +
         '<div data-pane="musings" hidden>' +
           '<div class="start-job-form card"><label class="field-label grow">Muse' +
@@ -1023,15 +1081,31 @@ spirit.shell.activateApp({
       // HIGHLIGHTED, NOT DISABLED. Andy: "on the desk app, the current tab
       // should be highlighted." A disabled button read as greyed out.
       deskTab = tab;
-      if (tab === 'lead' || tab === 'team') deskMarkChatSeen(tab);
+      if (tab === 'team') deskMarkChatSeen(deskTeamWhich());
       deskDrawTabs();
     }
-    document.getElementById('desk-tabs').addEventListener('click', function (e) {
-      // The click may land on the red * inside the button.
+    // The strips are redrawn, so one listener on each, and the click may
+    // land on the red * inside a button.
+    function clicked(e, attr) {
       var el = e.target;
-      while (el && el !== e.currentTarget && !(el.getAttribute && el.getAttribute('data-tab'))) el = el.parentNode;
-      var tab = el && el.getAttribute && el.getAttribute('data-tab');
-      if (tab) show(tab);
+      while (el && el !== e.currentTarget && !(el.getAttribute && el.getAttribute(attr)) && !(el.id)) el = el.parentNode;
+      return el && el !== e.currentTarget ? el : null;
+    }
+    document.getElementById('desk-tabs').addEventListener('click', function (e) {
+      var el = clicked(e, 'data-tab');
+      if (!el) return;
+      if (el.id === 'desk-end-design') deskEndDesign();
+      else if (el.id === 'desk-start-design') deskStartDesign();
+      else if (el.getAttribute && el.getAttribute('data-tab')) show(el.getAttribute('data-tab'));
+    });
+    document.getElementById('desk-agent-tabs').addEventListener('click', function (e) {
+      var el = clicked(e, 'data-agent');
+      var who = el && el.getAttribute && el.getAttribute('data-agent');
+      if (!who) return;
+      deskAgentTab = who;
+      var box = document.getElementById('desk-team-say');
+      if (box) box.placeholder = who === '*' ? 'to every agent; design talk that belongs to no row' : 'to ' + who + ' alone, about anything that is not one row';
+      deskDraw();
     });
     show('list');
     function onEnter(id, go) {
@@ -1041,15 +1115,10 @@ spirit.shell.activateApp({
         go();
       });
     }
-    function say() { deskSend('note', 'desk-say', 'desk-say-error'); }
     function muse() { deskSend('musing', 'desk-muse', 'desk-muse-error'); }
-    document.getElementById('desk-say-send').addEventListener('click', say);
     document.getElementById('desk-muse-send').addEventListener('click', muse);
-    onEnter('desk-say', say);
     onEnter('desk-muse', muse);
     document.getElementById('desk-team-send').addEventListener('click', deskSendTeam);
-    document.getElementById('desk-end-design').addEventListener('click', deskEndDesign);
-    document.getElementById('desk-start-design').addEventListener('click', deskStartDesign);
     // The bubble is repainted on every arrival, so one listener on its box.
     document.getElementById('desk-session').addEventListener('click', function (e) {
       var el = e.target;

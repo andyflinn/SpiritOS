@@ -256,9 +256,9 @@ function ddFrame() {
     // THE NAME FIRST, AT THE VERY TOP, as far from Say as the dialog allows.
     // Andy: "the "Your name for it" box should go just underneath the Close
     // button row, far away from my chat input. i still type into the wrong box".
-    '<div class="start-job-form card"><label class="field-label grow">Your name for it' +
-      '<input type="text" id="dd-name" placeholder="in your own words"></label>' +
-      '<button type="button" id="dd-name-save">Save</button></div>' +
+    // RENAMING IS ITS OWN BUTTON (desk/G1, D7). His lines kept landing in
+    // the name box, so no box is drawn until he presses Rename.
+    '<div class="start-job-form card" id="dd-name-row">' + DD_RENAME + '</div>' +
     '<div id="dd-item"></div>' +
     '<div class="stat-tile wide"><div class="label" id="dd-title"></div><div id="dd-blurb"></div></div>' +
     '<div class="stat-tile wide" id="dd-facts"></div>' +
@@ -360,6 +360,23 @@ function ddDraw() {
   document.getElementById('dd-error').textContent = ddNote;
 }
 
+var DD_RENAME = '<button type="button" id="dd-rename">Rename</button>';
+var DD_NAME_BOX = '<label class="field-label grow">Your name for it' +
+  '<input type="text" id="dd-name" placeholder="in your own words"></label>' +
+  '<button type="button" id="dd-name-save">Save</button>';
+function ddNameRow(open) {
+  var row = document.getElementById('dd-name-row');
+  if (!row) return;
+  row.innerHTML = open ? DD_NAME_BOX : DD_RENAME;
+  var box = open && document.getElementById('dd-name');
+  if (box && box.focus) box.focus();
+}
+// His name for it goes, then the box folds back into its button.
+function ddRename() {
+  var n = ddValue('dd-name');
+  if (n) ddSend('answer', 'retitle: ' + n, 'dd-name').then(function () { ddNameRow(false); });
+}
+
 function ddValue(id) {
   var el = document.getElementById(id);
   return el ? String(el.value || '').trim() : '';
@@ -459,18 +476,15 @@ spirit.shell.activateApp({
         return;
       }
       if (id === 'dd-no') { ddSend('answer', 'no.'); return; }
-      if (id === 'dd-name-save') { var n = ddValue('dd-name'); if (n) ddSend('answer', 'retitle: ' + n, 'dd-name'); return; }
+      if (id === 'dd-rename') { ddNameRow(true); return; }
+      if (id === 'dd-name-save') { ddRename(); return; }
       if (id === 'dd-say-send') { ddSend('note', ddValue('dd-say'), 'dd-say'); }
     });
     document.getElementById('dd-body').addEventListener('keydown', function (event) {
       if (event.key !== 'Enter' || event.repeat) return;
       var id = event.target && event.target.id;
       if (id === 'dd-say') { event.preventDefault(); ddSend('note', ddValue('dd-say'), 'dd-say'); }
-      else if (id === 'dd-name') {
-        event.preventDefault();
-        var n = ddValue('dd-name');
-        if (n) ddSend('answer', 'retitle: ' + n, 'dd-name');
-      }
+      else if (id === 'dd-name') { event.preventDefault(); ddRename(); }
     });
     // A reply arriving while the dialog is open repaints the parts, never
     // the inputs.

@@ -117,6 +117,19 @@ function settle() {
     .then(function () { return new Promise(function (r2) { setImmediate(r2); }); });
 }
 
+// THE LEAD'S CHAT IS THE LEAD'S TAB INSIDE TEAM (desk/G1.2, D2): pick it,
+// then type in Team's box.
+function toLead(desk) {
+  const target = { getAttribute: function (n) { return n === 'data-agent' ? 'claude-windows' : null; }, parentNode: null };
+  const strip = desk.doc.getElementById('desk-agent-tabs');
+  strip.fire('click', { target: target, currentTarget: strip });
+}
+function sayToLead(desk, text) {
+  toLead(desk);
+  desk.doc.getElementById('desk-team-say').value = text;
+  desk.doc.getElementById('desk-team-send').fire('click');
+}
+
 function logged(files) {
   try { return JSON.parse(files['log/log.json']); } catch (e) { return null; }
 }
@@ -152,8 +165,7 @@ function arrivalsAndSendsAreLogged() {
     } else {
       test.fail('after one arrival the log holds ' + JSON.stringify(rows));
     }
-    desk.doc.getElementById('desk-say').value = 'hello lead';
-    desk.doc.getElementById('desk-say-send').fire('click');
+    sayToLead(desk, 'hello lead');
     return settle();
   }).then(function () {
     const rows = logged(files) || [];
@@ -168,7 +180,8 @@ function arrivalsAndSendsAreLogged() {
     else test.fail('verbs asked: ' + desk.verbs.join(', '));
 
     const again = mountDesk({ files: files });
-    const chat = again.doc.getElementById('desk-chat').innerHTML;
+    toLead(again);
+    const chat = again.doc.getElementById('desk-team').innerHTML;
     const top = again.doc.getElementById('desk-top').innerHTML;
     if (/hello lead/.test(chat) && /Search/.test(top)) {
       test.check('a fresh mount draws the board and the chat from the log alone');
@@ -190,12 +203,9 @@ function failedSendsStayApart() {
   const files = { 'log/log.json': JSON.stringify([{ key: 'h-in-1', at: '2026-09-27T05:00:00Z', dir: 'in', peer: LEAD,
     outcome: 'received', from: 'claude-windows', kind: 'session', text: BOARD, todo: '' }]) };
   const desk = mountDesk({ files: files, refuse: true });
-  const box = desk.doc.getElementById('desk-say');
-  box.value = 'one';
-  desk.doc.getElementById('desk-say-send').fire('click');
+  sayToLead(desk, 'one');
   return settle().then(function () {
-    box.value = 'two';
-    desk.doc.getElementById('desk-say-send').fire('click');
+    sayToLead(desk, 'two');
     return settle();
   }).then(function () {
     const out = (logged(files) || []).filter(function (r) { return r.dir === 'out'; });
@@ -303,8 +313,7 @@ function voiceHoldsWhatHeTyped() {
   desk.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
   desk.arrive({ from: 'claude-windows', kind: 'ask', text: 'go?', todo: 'puppets/G2' }, { hash: 'h-in-3', fromKey: LEAD, sentAt: '2026-09-27T05:03:00Z' });
   return settle().then(function () {
-    desk.doc.getElementById('desk-say').value = 'typed by andy';
-    desk.doc.getElementById('desk-say-send').fire('click');
+    sayToLead(desk, 'typed by andy');
     return settle();
   }).then(function () {
     // What a dialog returned: one line sent to two agents, a new name, a Go!.
@@ -340,8 +349,7 @@ function voiceHoldsWhatHeTyped() {
     }
     // He took the file: the next line starts it again.
     delete files['voice/voice.jsonl'];
-    desk.doc.getElementById('desk-say').value = 'after he moved it';
-    desk.doc.getElementById('desk-say-send').fire('click');
+    sayToLead(desk, 'after he moved it');
     return settle();
   }).then(function () {
     if (files['voice/voice.jsonl'] === JSON.stringify({ text: 'after he moved it', day: new Date().toISOString().slice(0, 10) }) + '\n') {
@@ -360,12 +368,10 @@ function twoTabsKeepBoth() {
   a.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
   b.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
   return settle().then(function () {
-    a.doc.getElementById('desk-say').value = 'from tab a';
-    a.doc.getElementById('desk-say-send').fire('click');
+    sayToLead(a, 'from tab a');
     return settle();
   }).then(function () {
-    b.doc.getElementById('desk-say').value = 'from tab b';
-    b.doc.getElementById('desk-say-send').fire('click');
+    sayToLead(b, 'from tab b');
     return settle();
   }).then(function () {
     const texts = (logged(files) || []).filter(function (r) { return r.dir === 'out'; }).map(function (r) { return r.text; }).sort();
