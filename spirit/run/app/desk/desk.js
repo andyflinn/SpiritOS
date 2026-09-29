@@ -1097,11 +1097,17 @@ function deskLoad() {
     deskDraw();
   });
 }
-function deskReadItem(id, before) {
+// ALL OF AN ITEM'S PAGES, THEN ONE FOLD, OLDEST FIRST. Its state depends on
+// order (a done. counts only after both claims), and pages arrive newest
+// first: folding each page as it came folded his done. before claims on an
+// older page, and desk/G1 read "open" after he had pressed Done.
+function deskReadItem(id, before, held) {
+  var got = held || [];
   return deskSearch({ todo: id, before: before }).then(function (r) {
-    deskTake(r.lines);
+    got = got.concat(r.lines);
+    if (r.partial && r.lines.length) return deskReadItem(id, r.lines[r.lines.length - 1].at, got);
+    deskTake(got);
     deskDraw();
-    if (r.partial && r.lines.length) return deskReadItem(id, r.lines[r.lines.length - 1].at);
     return null;
   });
 }
