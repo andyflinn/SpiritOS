@@ -7,37 +7,48 @@
 //   Andy: "keep server slim by default", "every lab node used for testing
 //   will be starting 4 (FOUR!) server processes". His go on slim/G1.3,
 //   2026-09-29. Decided in the item: the node keeps two lists, the server
-//   processes it starts and the shell elements it offers; no list, or not
+//   processes it starts and the shell elements it offers, each named by its
+//   path ("they're all identified by path"); no list, or not
 //   listed: not started, not in the launcher, not in Jobs; intrinsic apps
 //   are always included and can never be excluded ("intrinsic apps must
 //   always be included, never excluded"); Desk is no longer intrinsic
 //   ("desk is no longer intrinsic").
 //
 // THE UNITS THIS ASKS FOR:
-//   - spirit/run/js/includeList.js, the ONE reader of the lists, so where
-//     they are kept is the build's (wsl-claude: node.db or a readable file
-//     under relay-state/, Andy to say):
-//       names(rootDir, kind) -> sorted array of names; kind 'process'|'shell'
-//       add(rootDir, kind, name)  (a suite's setup, T6; no verb adds yet)
+//   - spirit/run/js/includeList.js, the ONE reader of the lists, kept in
+//     relay-state/include.json, a file the owner can read (Andy, "agreed":
+//     it is config he cares about, so not node.db, by 0018):
+//       paths(rootDir) -> sorted array of module paths, as 'process/js/desk',
+//         'shell/textEditor' (intrinsic shell apps always among them)
+//       add(rootDir, path)  (a suite's setup, T6)
 //   - jobs.startNodeServers(rootDir) starts only the listed ones (T1, T2),
 //     and jobs.startJob refuses a script under process/ that is not listed,
 //     so it never runs (T3).
 //
+//   - TWO NEW NODE VERBS, a config group of their own, reviewed by
+//     wsl-claude and named by Andy ("config.searchModules and
+//     config.setModules, so config can have other similar verbs"), both
+//     loopback only:
+//       config.searchModules {query} -> {items: [{key: path, label}], more}
+//       config.setModules {path, on}; on starts a process live (T4),
+//       off takes it off the list and it stops at the next restart.
+//
 // NOT HERE, AND WHY:
-//   - T4 (adding starts it live): no door adds to a list yet. Proposed to
-//     wait for the managers session; Andy to say.
 //   - T9 (the text file viewer offers Start Job / Open app only for what is
-//     included): the page cannot read relay-state/, so it needs a node verb.
-//     Proposed, reviewed by wsl-claude: include.search {query, kind} ->
-//     {items, more}, loopback only. Written once Andy says yes to the verb.
+//     included, and the switch) is in natterIntrinsic.js, whose fake shell
+//     is the one that can drive renderAppOfFile.
 //   - T10's "and the desk server with it" is what T5 gives a live node (its
 //     desk state folder seeds the desk server); only the manifest and the
 //     intrinsic rule are asserted here.
 
 const fs = require('fs');
 const os = require('os');
+const net = require('net');
+const http = require('http');
 const path = require('path');
+const { spawn } = require('child_process');
 const test = require('./testSupport.js');
+const plantRun = require('./plantRun.js');
 
 const OWED = 'OWED by slim/G1.3: ';
 const REPO_RUN = path.join(__dirname, '..', 'run');
@@ -49,8 +60,16 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 let includeList = null;
 try { includeList = require('../run/js/includeList.js'); } catch (e) { includeList = null; }
 function can(fn) { return !!(includeList && typeof includeList[fn] === 'function'); }
-function names(root, kind) { try { return can('names') ? includeList.names(root, kind) : null; } catch (e) { return 'threw ' + e.message; } }
-function add(root, kind, name) { if (!can('add')) return false; includeList.add(root, kind, name); return true; }
+// The suite speaks in names under one prefix; the list holds paths.
+const PREFIX = { process: 'process/js/', shell: 'shell/' };
+function names(root, kind) {
+  if (!can('paths')) return null;
+  let all = null;
+  try { all = includeList.paths(root); } catch (e) { return 'threw ' + e.message; }
+  if (!Array.isArray(all)) return all;
+  return all.filter(function (p) { return p.indexOf(PREFIX[kind]) === 0; }).map(function (p) { return p.slice(PREFIX[kind].length); }).sort();
+}
+function add(root, kind, name) { if (!can('add')) return false; includeList.add(root, PREFIX[kind] + name); return true; }
 
 const jobs = require('../run/js/jobs.js')(require('../run/js/kernel.js'), 65432);
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'include-lists-'));
@@ -83,6 +102,42 @@ async function waitFor(fn, ms) {
   return fn();
 }
 
+// T4's whole node, and its loopback door.
+let node = null;
+function freePort() {
+  return new Promise(function (resolve) {
+    const s = net.createServer();
+    s.listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); });
+  });
+}
+function call(port, body) {
+  return new Promise(function (resolve) {
+    const payload = JSON.stringify(body);
+    const req = http.request({ hostname: '127.0.0.1', port: port, path: '/api/spirit', method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, function (res) {
+      const chunks = [];
+      res.on('data', function (c) { chunks.push(c); });
+      res.on('end', function () {
+        const text = Buffer.concat(chunks).toString('utf8');
+        let parsed = null;
+        try { parsed = JSON.parse(text); } catch (e) { parsed = null; }
+        resolve({ status: res.statusCode, text: text, body: parsed });
+      });
+    });
+    req.on('error', function (e) { resolve({ status: 0, text: String(e.code || e), body: null }); });
+    req.setTimeout(8000, function () { req.destroy(new Error('timeout')); });
+    req.end(payload);
+  });
+}
+async function booted(port) {
+  for (let i = 0; i < 150; i++) {
+    const r = await call(port, { verb: 'app.state' });
+    if (r.status && r.status !== 0) return true;
+    await sleep(200);
+  }
+  return false;
+}
+
 (async function () {
   test.subHeading('T1: a node with no include list starts no server process');
   const A = plantNode('a', ['alpha', 'beta']);
@@ -95,7 +150,7 @@ async function waitFor(fn, ms) {
   test.subHeading('T2: a listed server starts, an unlisted one does not');
   const B = plantNode('b', ['alpha', 'beta']);
   if (!add(B, 'process', 'alpha')) {
-    test.fail(OWED + 'there is no includeList.add(rootDir, kind, name) to list alpha with');
+    test.fail(OWED + 'there is no includeList.add(rootDir, path) to list alpha with');
   } else {
     boot(B);
     const up = await waitFor(function () { return ran('b', 'alpha'); }, 4000);
@@ -179,8 +234,64 @@ async function waitFor(fn, ms) {
     if (Array.isArray(both) && both.indexOf('core') !== -1 && both.indexOf('plain') !== -1) test.check('listing plain adds it beside the intrinsic one');
     else test.fail(OWED + 'after listing plain the shell list reads ' + JSON.stringify(both));
   } else test.fail(OWED + 'no includeList.add to list a shell element with');
+
+  test.subHeading('T4: switching a process on starts it without a restart (config.setModules)');
+  // A WHOLE TREE, COPIED (plantRun), never a link to this checkout: the
+  // node resolves its root from its own file, so a link would write here.
+  const G = path.join(scratch, 'g', 'spirit', 'run');
+  plantRun.plantRunTree(G);
+  fs.rmSync(path.join(G, 'relay-state'), { recursive: true, force: true });
+  fs.mkdirSync(path.join(G, 'relay-state'), { recursive: true });
+  const alphaDir = path.join(G, 'process', 'js', 'alpha');
+  fs.mkdirSync(alphaDir, { recursive: true });
+  fs.writeFileSync(path.join(alphaDir, 'alpha.json'), JSON.stringify({ label: 'alpha', kind: 'server', operated: 'node', args: [] }));
+  fs.writeFileSync(path.join(alphaDir, 'alpha.js'),
+    'require("fs").writeFileSync(' + JSON.stringify(path.join(marks, 'g-alpha')) + ', "ran");\nsetInterval(function () {}, 1000);\n');
+  const port = await freePort();
+  const home = path.join(scratch, 'home');
+  fs.mkdirSync(home, { recursive: true });
+  node = spawn(process.execPath, ['js/server.js', '--port', String(port)], {
+    cwd: G, stdio: ['ignore', 'ignore', 'ignore'], env: Object.assign({}, process.env, { HOME: home, USERPROFILE: home }),
+  });
+  if (!(await booted(port))) {
+    test.fail(OWED + 'the planted node did not come up on ' + port);
+  } else {
+    await sleep(1000);
+    const before = ran('g', 'alpha');
+    const set = await call(port, { verb: 'config.setModules', path: 'process/js/alpha', on: true });
+    const up = await waitFor(function () { return ran('g', 'alpha'); }, 5000);
+    if (!before && set.status === 200 && up) test.check('alpha, not running, ran once switched on, and the node was never restarted');
+    else test.fail(OWED + 'before ' + before + ', config.setModules answered ' + set.status + ' ' + String(set.text).slice(0, 120) + ', alpha ran ' + up);
+
+    // The list is the owner's, so it is a file he can read (Andy: agreed,
+    // relay-state/include.json, not node.db).
+    let file = null;
+    try { file = fs.readFileSync(path.join(G, 'relay-state', 'include.json'), 'utf8'); JSON.parse(file); } catch (e) { file = null; }
+    if (file && file.indexOf('process/js/alpha') !== -1) test.check('relay-state/include.json is readable JSON and names process/js/alpha');
+    else test.fail(OWED + 'relay-state/include.json reads ' + JSON.stringify(file && file.slice(0, 120)));
+
+    test.subHeading('config.searchModules answers what this node includes, as a search');
+    const found = await call(port, { verb: 'config.searchModules', query: '' });
+    const items = found.body && Array.isArray(found.body.items) ? found.body.items : null;
+    const keys = items ? items.map(function (i) { return i && i.key; }) : [];
+    if (found.status === 200 && items && keys.indexOf('process/js/alpha') !== -1 && typeof found.body.more === 'boolean') {
+      test.check('config.searchModules {query: \'\'} -> {items, more}, process/js/alpha among the items');
+    } else test.fail(OWED + 'config.searchModules answered ' + found.status + ' ' + String(found.text).slice(0, 160));
+    const narrow = await call(port, { verb: 'config.searchModules', query: 'zzz-none' });
+    const none = narrow.body && Array.isArray(narrow.body.items) ? narrow.body.items : null;
+    if (narrow.status === 200 && none && none.length === 0) test.check('a query nothing matches finds nothing');
+    else test.fail(OWED + 'a query matching nothing answered ' + narrow.status + ' ' + String(narrow.text).slice(0, 120));
+
+    test.subHeading('Switched off, it leaves the list (and stops at the next restart)');
+    const off = await call(port, { verb: 'config.setModules', path: 'process/js/alpha', on: false });
+    const again = await call(port, { verb: 'config.searchModules', query: '' });
+    const left = again.body && Array.isArray(again.body.items) ? again.body.items.map(function (i) { return i && i.key; }) : null;
+    if (off.status === 200 && left && left.indexOf('process/js/alpha') === -1) test.check('switched off, config.searchModules no longer finds alpha');
+    else test.fail(OWED + 'switched off answered ' + off.status + ', the search then finds ' + JSON.stringify(left));
+  }
 })().catch(function (e) { test.fail('the run broke: ' + e.message); }).then(function () {
   started.forEach(function (j) { try { jobs.cancelJob(j.id); } catch (e) { /* gone */ } });
+  if (node) { try { node.kill(); } catch (e) { /* gone */ } }
   setTimeout(function () {
     try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* busy */ }
     test.reportSuccessFailureCount();

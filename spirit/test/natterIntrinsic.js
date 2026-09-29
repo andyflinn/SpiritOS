@@ -116,7 +116,10 @@ function fakeDocument() {
 // shell: an unbound one shows Natter and nothing else (firstRun), so a
 // fixture that means to test app management must say it has a name. The
 // first-run and window-title sections pass '' on purpose.
-function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysRaw, heldRelay) {
+// `ask`, when given, answers the shell's spirit.core.ask(verb, args) as the
+// kernel does ({status, text, body}); slim/G1.3 T9 drives config.searchModules
+// through it. Without it the mouth stays loud, as below.
+function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysRaw, heldRelay, ask) {
   if (sessionLabel === undefined) sessionLabel = BOUND;
   const doc = fakeDocument();
   const saved = { preferences: null };
@@ -126,7 +129,7 @@ function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysR
       // This fixture drives no verb, so the mouth is present and
       // loud: a suite that starts posting should say so, not quietly
       // reach a global.
-      ask: function () { throw new Error('this fixture hands shell.js no fetch'); },
+      ask: ask || function () { throw new Error('this fixture hands shell.js no fetch'); },
       const: { ICON: spirit.core.const.ICON, MIME: {} },
       util: {
         escapeHtml: spirit.core.util.escapeHtml,
@@ -3620,4 +3623,69 @@ test.subHeading('slim/G1.1 T6: an app/<name> id in preferences carries across to
   }
 }
 
-test.reportSuccessFailureCount();
+// ── slim/G1.3 T9: THE TEXT FILE VIEWER OFFERS ONLY WHAT THE NODE INCLUDES ─
+//
+// Andy: "i will test this with the imageStats process, in fileViewer
+// Launcher, it might have to give me the option to include/exclude a
+// process". The page cannot read relay-state/include.json (fileServable
+// refuses relay-state/), so it asks config.searchModules {query} ->
+// {items: [{key: path, label}], more}, and switches with config.setModules
+// {path, on}: two verbs, loopback only, Andy's yes and names. A module is
+// its path ("they're all identified by path"): 'shell/textEditor'.
+// Intrinsic apps are always included ("intrinsic apps must always be
+// included, never excluded"), whatever the list says.
+async function sliceT9() {
+  test.subHeading('slim/G1.3 T9: Open app is offered only for an included app; intrinsic ones always');
+  const EDITOR = 'shell/textEditor/textEditor.js';
+  function withList(names) {
+    const asked = [];
+    const ask = function (verb, args) {
+      asked.push({ verb: verb, args: args || {} });
+      if (verb === 'config.searchModules') {
+        const items = names.map(function (n) { return { key: n, label: n }; });
+        const body = { items: items, more: false };
+        return Promise.resolve({ status: 200, text: JSON.stringify(body), body: body });
+      }
+      return Promise.resolve({ status: 400, text: '{"error":"no such verb"}', body: { error: 'no such verb' } });
+    };
+    const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
+      [NATTER_SCRIPT, EDITOR], false, BOUND, undefined, undefined, ask);
+    return { booted: booted, asked: asked };
+  }
+  async function settled() { for (let i = 0; i < 20; i++) await new Promise(function (r) { setImmediate(r); }); }
+  function bubble(booted, p) { const box = fakeElement('div'); booted.shell.renderAppOfFile(box, p); return box.innerHTML; }
+
+  const bare = withList([]);
+  await settled();
+  const searched = bare.asked.some(function (a) { return a.verb === 'config.searchModules'; });
+  const editorBare = bubble(bare.booted, EDITOR);
+  const natterBare = bubble(bare.booted, NATTER_SCRIPT);
+  if (searched && editorBare === '' && /id="app-of-file-open"/.test(natterBare)) {
+    test.check('nothing listed: the shell asked config.searchModules; no Open for textEditor, Open for intrinsic Natter');
+  } else {
+    test.fail('OWED by slim/G1.3 T9: asked ' + JSON.stringify(bare.asked.map(function (a) { return a.verb; })) +
+      ', textEditor bubble ' + JSON.stringify(editorBare.slice(0, 60)) + ', natter has Open ' + /app-of-file-open/.test(natterBare));
+  }
+
+  const listed = withList(['shell/textEditor']);
+  await settled();
+  if (/id="app-of-file-open"/.test(bubble(listed.booted, EDITOR))) test.check('textEditor listed: its script offers Open textEditor');
+  else test.fail('OWED by slim/G1.3 T9: textEditor is listed and its script still offers no Open');
+
+  // The process half lives inline in index.html (maybeRenderJobForm), which
+  // no fixture boots, so it is read from source: Start Job asks the node
+  // what it includes, and the switch goes through config.setModules.
+  const html = readRun('index.html');
+  const at = html.indexOf('function maybeRenderJobForm');
+  const form = at === -1 ? '' : html.slice(at, at + 12000);
+  if (/config\.searchModules/.test(form) && /config\.setModules/.test(form)) {
+    test.check('the Start Job form asks config.searchModules and switches with config.setModules');
+  } else {
+    test.fail('OWED by slim/G1.3 T9: maybeRenderJobForm names config.searchModules ' + /config\.searchModules/.test(form) +
+      ', config.setModules ' + /config\.setModules/.test(form));
+  }
+}
+
+sliceT9().catch(function (e) { test.fail('slim/G1.3 T9 broke: ' + e.message); }).then(function () {
+  test.reportSuccessFailureCount();
+});
