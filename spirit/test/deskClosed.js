@@ -158,4 +158,18 @@ settle().then(function () {
       test.fail('with the goal closed the List shows ' + JSON.stringify(gone) + ', open item ' + /Still open item/.test(list));
     }
   });
+}).then(function () {
+  // Andy, 2026-09-29: "when a row is done, and you put the close button,
+  // don't show "done" anymore".
+  test.subHeading('A done row offers Close, and no longer says done');
+  const doneOnly = mount({ 'log/log.json': JSON.stringify([
+    row('in', 'session', SESSION, 'team/chat'),
+    row('in', 'note', 'READY TO CLOSE', 'test/G1.1'),
+    row('out', 'answer', 'done.', 'test/G1.1'),
+  ]) });
+  return settle().then(function () {
+    const cell = (doneOnly.top().match(/<td>[^<]*<button type="button" data-close="test\/G1\.1">Close<\/button><\/td>/) || [''])[0];
+    if (cell && !/done/.test(cell.replace(/data-close="[^"]*"/, ''))) test.check('the state cell holds only the Close button');
+    else test.fail('the done row\'s state cell: ' + JSON.stringify(cell || doneOnly.top().slice(0, 300)));
+  });
 }).then(function () { test.reportSuccessFailureCount(); });

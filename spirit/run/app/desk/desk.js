@@ -579,7 +579,9 @@ function deskSessionTable() {
       '<td>' + deskEsc((row.waitsOn || []).join(', ')) + '</td>' +
       // A DONE LINE CAN BE CLOSED AWAY. Andy: "done lines in the list should
       // offer me a close button which will make the line disappear."
-      '<td>' + (row.done ? 'done <button type="button" data-close="' + deskEsc(row.id) + '">Close</button>'
+      // The button says it; the word beside it went (Andy, 2026-09-29: "don't
+      // show "done" anymore").
+      '<td>' + (row.done ? '<button type="button" data-close="' + deskEsc(row.id) + '">Close</button>'
         : deskDecision[row.id] === 'go' ? 'running' : 'open') + '</td>' +
     '</tr>';
   }).join('');
