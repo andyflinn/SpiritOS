@@ -737,6 +737,22 @@ go."* So G7 and G4 are DECIDED as shapes and are not yet started.
    per-namespace declaration) which node groups it carries. An owner command
    for one it does not carry is refused BY NAME (`not-carried-here`), never
    silently.
+
+   **SUPERSEDED, 2026-09-30 (Andy, team/chat), not built yet.** *"the
+   pupped verb group is the entire node server surface accessible by its
+   owner, as if it was a loopback client"*; *"the known owner is the main
+   thing that makes a puppet a puppet"*; and on the `carries` list in
+   `relay-state/puppet.json`: *"i still think pupped.json is a poor answer
+   to such a "requirement", in hindsight, no blame."* Found in the close of
+   slim/G1: the owner could not reach `jobs.search` on spirit-3's puppet
+   (`not-carried-here`), while anyone with that box's login could edit the
+   list. So the owner door reaches every node group; `puppet.json` names the
+   owner only; what survives of the 2026-09-27 line *"not every group is
+   supported in every context/environment"* is that a group which cannot
+   work in a context refuses by name, declared in code, never in a file on
+   the box. Also found: `jobs.startNodeServers` has no puppet check (only
+   `appClient.startAll` has), so a puppet still starts node-operated
+   servers. Both wait for their own item.
 5. **The shim narrows.** The loopback shim now serves only the owner door:
    it runs a carried node group's handler with the unwrapped body and
    catches the answer, with `server.js`'s dispatch unchanged. The face door
