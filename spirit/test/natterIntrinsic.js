@@ -3592,4 +3592,32 @@ test.subHeading('The device panel holds no live fact, so nothing watches it');
   }
 }
 
+// ── slim/G1.1 T6: AN app/<name> ID CARRIES ACROSS TO shell/<name> ────
+//
+// Found verifying slim/G1.1 (wsl-claude), on Andy's own preferences.json:
+// "defaultHandlers": {".txt": "app/textEditor", ".json": "app/textEditor"}
+// and "appOverrides": {"app/textEditor": {"group": ...}}. Ids follow the
+// folder, so after the rename those keys name no app, and
+// pruneStalePreferences deletes them at the first snapshot: his group and
+// his default handler gone for good. Every app/<name> id is shell/<name>
+// now, whether or not APP_ID_RENAMES lists it.
+test.subHeading('slim/G1.1 T6: an app/<name> id in preferences carries across to shell/<name>');
+{
+  const EDITOR = 'shell/textEditor/textEditor.js';
+  const carried = bootShell({
+    defaultHandlers: { '.txt': 'app/textEditor', '.json': 'app/textEditor' },
+    appOverrides: { 'app/textEditor': { group: 'grp_probe' } },
+    groups: { grp_probe: { name: 'Probe group' } },
+  }, [NATTER_SCRIPT, EDITOR]);
+  const prefs = carried.saved.preferences || {};
+  const over = prefs.appOverrides || {};
+  const handlers = prefs.defaultHandlers || {};
+  if (over['shell/textEditor'] && over['shell/textEditor'].group === 'grp_probe' && over['app/textEditor'] === undefined &&
+      handlers['.txt'] === 'shell/textEditor' && handlers['.json'] === 'shell/textEditor') {
+    test.check('the group and both default handlers now name shell/textEditor, and survived the first snapshot');
+  } else {
+    test.fail('OWED by slim/G1.1 T6: saved ' + JSON.stringify({ appOverrides: over, defaultHandlers: handlers }));
+  }
+}
+
 test.reportSuccessFailureCount();
