@@ -2831,14 +2831,20 @@ function createHub(rootDir) {
   function relayLabel(row) {
     var who = row.owned ? 'yours' : (row.claimed ? 'member' : 'not joined');
     var up = row.status === 200 ? 'online' : 'offline';
-    return (row.label || row.url) + ' — ' + who + ', ' + up;
+    // A relay with no name goes by its host, never its whole url: the
+    // search below matches this label, and since Andy's '*' rule (G2,
+    // 48d189f4) a '*' never spans the '/' of "https://".
+    var name = row.label || String(row.url || '').replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/\/+$/, '');
+    return name + ' — ' + who + ', ' + up;
   }
 
   function relaySearch(body) {
     return relaySummary().then(function (summary) {
       var s = require('./searchBucket').createSearch({
         query: body && body.q,
-        getLabelStringFromIncomingObject: function (r) { return relayLabel(r) + ' ' + r.url; },
+        // The label only (slim/G1.3, Andy's relay display): with the url in
+        // it, '*' matched nothing, and Natter asks for every relay with '*'.
+        getLabelStringFromIncomingObject: function (r) { return relayLabel(r); },
         extractKeyAndLabelFromRow: function (r) { return { key: r.url, label: relayLabel(r) }; },
       });
       for (var i = 0; i < summary.rows.length; i += 1) { if (!s.offer(summary.rows[i])) break; }
