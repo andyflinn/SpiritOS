@@ -630,6 +630,14 @@ define('no-such-verb', {
   texts: ['no such verb'],
   note: 'The group is carried, and nothing in it answers this name.',
 });
+define('no-such-argument', {
+  status: 400, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['no such argument'],
+  note: 'appPair/G1.2. The verb exists, and the arguments do not match its request ' +
+    'prototype: a key missing or extra, or a value of another type (nested objects ' +
+    'the same way). Said by the appServer helper, so the verb never runs and the app ' +
+    'writes no validation (Andy: "intolerance to malformed requests, at every level").',
+});
 define('answer-too-large', {
   status: 413, presence: NONE, retry: 'no', fault: 'target',
   texts: ['answer too large for a packet'],

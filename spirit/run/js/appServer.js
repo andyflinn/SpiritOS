@@ -1,0 +1,171 @@
+'use strict';
+
+// spirit/run/js/appServer.js
+// THE SERVER-SIDE REQUEST ROUTER — appPair/G1.2.
+//
+//   Andy, 2026-09-28: "the appServer is the request-router server-side".
+//   The other half of appClient.js: that one runs in the node and knocks on
+//   an app server's pipe; this one runs INSIDE the app server and answers.
+//
+// An app hands it its verbs and nothing else:
+//
+//   require('.../appServer.js').serve({
+//     greet: { request: { name: '' }, reply: { text: '' },
+//              handler: function (args) { return { text: 'hi ' + args.name }; } },
+//   });
+//
+// DECIDED in the design session (Desk, appPair/G1), not this file's to undo:
+//
+//   'api' answers {verb: {request, reply}}, handlers left out (D3, D10).
+//   A call is {verb: {args}}, one verb (D10). The args are key-matched
+//   against the verb's request prototype: exactly its keys, each value of
+//   the prototype value's type, nested objects the same way. A mismatch is
+//   refused here as no-such-argument and the verb never runs, so an app
+//   writes no validation (Andy: "these are all generic validations the app
+//   doesnt have to do, if appServer supplies those tools uniformly";
+//   "intolerance to malformed requests, at every level").
+//   The reply is the verb's own, no wrapper (D11: "the shape defined by the
+//   server is the shabe that arrives as reply to the caller").
+//   Every error is {ok: false, code, error}, a code spiritErrors knows
+//   (D12: "our error-register should generate them"). So 'ok' can never be
+//   a verb name, and neither can 'api' (D13, D14).
+//   Nothing about the caller reaches a verb: the app knows no callers,
+//   only the node does (D4). Validation is here; authorization is the
+//   node's, and deferred (D9, D5).
+//   The app never names its pipe. The node names it (appClient.pipePathFor)
+//   and hands it over as --pipe; serve() reads it (D15).
+
+const fs = require('fs');
+const http = require('http');
+const errors = require('./spiritErrors');
+const limits = require('./limits');
+
+const RESERVED = ['api', 'ok'];
+const VERB_RE = /^[A-Za-z_][A-Za-z0-9_.-]{0,63}$/;
+
+function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
+
+// Does `value` have the shape of `proto`? Exact keys for an object, the
+// first element's shape for every element of an array, the same typeof
+// for anything else.
+function matches(proto, value) {
+  if (isPlain(proto)) {
+    if (!isPlain(value)) return false;
+    const want = Object.keys(proto).sort();
+    const got = Object.keys(value).sort();
+    if (want.join('\n') !== got.join('\n')) return false;
+    return want.every(function (k) { return matches(proto[k], value[k]); });
+  }
+  if (Array.isArray(proto)) {
+    if (!Array.isArray(value)) return false;
+    return proto.length === 0 || value.every(function (v) { return matches(proto[0], v); });
+  }
+  if (proto === null) return value === null;
+  return typeof value === typeof proto;
+}
+
+// The one error shape (D12), built from the catalogue so no text is
+// invented here.
+function refusal(code, extra) {
+  const e = errors.byCode(code);
+  const out = { ok: false, code: code, error: e ? e.text : code };
+  if (extra) out.extra = extra;
+  return { status: e ? e.status : 500, body: out };
+}
+
+function checkVerbs(verbs) {
+  if (!isPlain(verbs)) throw new Error('appServer: verbs must be an object of {name: {request, reply, handler}}');
+  Object.keys(verbs).forEach(function (name) {
+    if (RESERVED.indexOf(name) !== -1) throw new Error('appServer: "' + name + '" is reserved and cannot be a verb');
+    if (!VERB_RE.test(name)) throw new Error('appServer: "' + name + '" is not a verb name');
+    const v = verbs[name];
+    if (!isPlain(v) || typeof v.handler !== 'function' || !isPlain(v.request) || !('reply' in v)) {
+      throw new Error('appServer: verb "' + name + '" needs request (an object), reply and handler');
+    }
+  });
+}
+
+function createAppServer(verbs) {
+  checkVerbs(verbs);
+  const tree = {};
+  Object.keys(verbs).forEach(function (name) { tree[name] = { request: verbs[name].request, reply: verbs[name].reply }; });
+
+  // One request body, already parsed, to { status, body }.
+  function route(req) {
+    if (req === 'api') return Promise.resolve({ status: 200, body: tree });
+    if (!isPlain(req) || Object.keys(req).length !== 1) return Promise.resolve(refusal('bad-request', { why: 'one verb per call, as {verb: {args}}' }));
+    const name = Object.keys(req)[0];
+    if (!Object.prototype.hasOwnProperty.call(verbs, name)) return Promise.resolve(refusal('no-such-verb', { verb: name }));
+    const args = req[name];
+    if (!matches(verbs[name].request, args)) return Promise.resolve(refusal('no-such-argument', { verb: name }));
+    return Promise.resolve().then(function () { return verbs[name].handler(args); }).then(function (reply) {
+      return { status: 200, body: reply === undefined ? null : reply };
+    }, function () { return refusal('handler-failed', { verb: name }); });
+  }
+
+  function handle(httpReq, res) {
+    const chunks = [];
+    let size = 0;
+    let over = false;
+    httpReq.on('data', function (c) {
+      size += c.length;
+      if (size > limits.BODY_MAX) over = true; else chunks.push(c);
+    });
+    httpReq.on('end', function () {
+      let answer;
+      if (over) answer = Promise.resolve(refusal('app-request-too-large'));
+      else if (httpReq.method !== 'POST') answer = Promise.resolve(refusal('bad-request', { why: 'POST only' }));
+      else {
+        let parsed;
+        let ok = true;
+        try { parsed = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (e) { ok = false; }
+        answer = ok ? route(parsed) : Promise.resolve(refusal('bad-request', { why: 'not JSON' }));
+      }
+      answer.then(function (a) {
+        res.writeHead(a.status, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(a.body));
+      });
+    });
+  }
+
+  let server = null;
+  return {
+    route: route,
+    // Listen on the pipe the node named. A socket file left by a process
+    // that died holds the name off Windows, as faceServer.js found.
+    listen: function (pipe, cb) {
+      if (process.platform !== 'win32') { try { fs.unlinkSync(pipe); } catch (e) { /* none */ } }
+      server = http.createServer(handle);
+      server.listen(pipe, cb);
+      return server;
+    },
+    close: function (cb) { if (server) server.close(cb); else if (cb) cb(); },
+  };
+}
+
+// THE WHOLE OF AN APP SERVER'S START: verbs in, the node's pipe from argv.
+// Started by the node, it ends with the node (processes/G1.3).
+function serve(verbs) {
+  const argv = process.argv;
+  const at = argv.indexOf('--pipe');
+  const pipe = at !== -1 ? argv[at + 1] : '';
+  if (!pipe) {
+    console.error('appServer: no --pipe; the node that starts an app server names its pipe');
+    process.exit(2);
+  }
+  if (typeof process.send === 'function') process.on('disconnect', function () { process.exit(0); });
+  const s = createAppServer(verbs);
+  const srv = s.listen(pipe);
+  srv.on('error', function (e) {
+    console.error('appServer: could not listen on ' + pipe + ': ' + ((e && e.code) || e));
+    process.exit(1);
+  });
+  return s;
+}
+
+module.exports = {
+  createAppServer: createAppServer,
+  serve: serve,
+  matches: matches,
+  RESERVED: RESERVED,
+};

@@ -188,6 +188,13 @@ const TALLY = {
   // listener that cannot listen is not one. If he reads this and
   // disagrees, it is one line.
   'js/puppetPost.js': 1,
+  // THE SERVER-SIDE REQUEST ROUTER (appPair/G1.2): http.createServer once,
+  // on the pipe the node names. RESTING ON ANDY'S "go." ON G1.2, 2026-09-29,
+  // whose whole content is that listener, and told him the same hour
+  // ("say no if you want it done differently"), as faceServer.js above.
+  // It nets to zero at appPair/G1.4, when faceServer's own listener moves
+  // onto this helper and its line goes.
+  'js/appServer.js': 1,
 
   // AGENT.md: unused, do not assume it is loaded, do not delete.
   'js/client/browser.js': 1,
