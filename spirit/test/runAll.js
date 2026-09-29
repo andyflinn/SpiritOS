@@ -114,6 +114,9 @@ const NOT_A_SUITE = [
   // fs.cpSync that took the whole 143 MB tree — media, the brains vault
   // and relay-state's private key with it (2026-09-20).
   'plantRun.js',
+  // A helper, not a suite: a desk server in memory, for the suites that
+  // mount Desk once it keeps nothing in its own folder (desk/G1.4).
+  'deskFake.js',
   // A TOOL, NOT A SUITE. It spawns two servers, enrols 800 members, holds
   // 800 sockets and writes 11,000 rows — a minute of wall clock, and it
   // makes no pass/fail claim: it prints what a box holds
