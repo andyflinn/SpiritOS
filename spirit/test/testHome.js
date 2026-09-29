@@ -62,6 +62,8 @@ test.startTest('A suite never writes into the real home');
   const realCopy = path.join(REAL, '.SpiritOS', 'backups', tag);
   const suiteCopy = path.join(os.homedir(), '.SpiritOS', 'backups', tag);
   const port = await freePort();
+  // It backs up only if it includes the backup (slim/G1.3 T6).
+  require('../run/js/includeList.js').add(run, 'process/js/backup');
   const kid = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: run, stdio: 'ignore' });
   let up = false;
   for (let i = 0; i < 60 && !up; i++) {

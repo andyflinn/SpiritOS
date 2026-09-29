@@ -638,6 +638,10 @@ freePort()
       ['POST', '/api/spirit', { verb: 'jobs.cancel' }],
       ['POST', '/api/spirit', { verb: 'jobs.delete' }],
       ['POST', '/api/spirit', { verb: 'jobs.api', ask: 'api' }],
+      // What this node includes (slim/G1.3). setModules posted with no path,
+      // which it refuses: reachable, and it changes nothing here.
+      ['POST', '/api/spirit', { verb: 'config.searchModules', query: '' }],
+      ['POST', '/api/spirit', { verb: 'config.setModules' }],
       ['POST', '/api/spirit', { verb: 'fs.stat' }],
       ['POST', '/api/spirit', { verb: 'fs.annotations' }],
       ['POST', '/api/spirit', { verb: 'fs.save' }],

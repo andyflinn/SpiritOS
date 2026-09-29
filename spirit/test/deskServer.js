@@ -219,6 +219,8 @@ function line(key, todo, text, extra) {
   // A node runs only from a folder named spirit/run.
   const home = path.join(scratch, 'home', 'spirit', 'run');
   plantRun.plantRunTree(home);
+  // It starts the desk server only if it includes it (slim/G1.3 T6).
+  require('../run/js/includeList.js').add(home, 'process/js/desk');
   const port = await freePort();
   const node = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: home, stdio: ['ignore', 'ignore', 'pipe'] });
   kids.push(node);

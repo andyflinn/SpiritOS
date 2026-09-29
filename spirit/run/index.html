@@ -1421,12 +1421,57 @@
             '<div class="panel-heading">' + escapeHtml(manifest.label || scriptPath) + '</div>' +
             '<div class="start-job-form card">' +
               argsHtml +
-              '<button type="button" id="start-manifest-job">' + ICON.RUN + ' Start Job</button>' +
+              '<button type="button" id="start-manifest-job" style="display:none">' + ICON.RUN + ' Start Job</button>' +
+              '<button type="button" id="job-include-toggle" style="display:none"></button>' +
             '</div>' +
             // Under the row: something to read when it appears, not a
             // control on the line.
             '<div id="job-manifest-note" class="job-manifest-note"></div>' +
             '</div>';
+
+          // ── ONLY WHAT THIS NODE INCLUDES (slim/G1.3 T9) ────────────────
+          //
+          // Andy: "i will test this with the imageStats process, in
+          // fileViewer Launcher, it might have to give me the option to
+          // include/exclude a process". Start Job is offered only for an
+          // included process; the switch beside it asks twice, since a
+          // process change weighs more than an app's (Andy: "re-arm
+          // buttons"). The page cannot read relay-state/include.json, so it
+          // asks config.searchModules, and switches with config.setModules.
+          var modulePath = lang === 'js' ? 'process/js/' + match[2] : '';
+          var included = false;
+          var toggle = document.getElementById('job-include-toggle');
+          var startBtn = document.getElementById('start-manifest-job');
+          var note = document.getElementById('job-manifest-note');
+          function drawInclude() {
+            startBtn.style.display = included ? '' : 'none';
+            toggle.style.display = modulePath ? '' : 'none';
+            toggle.removeAttribute('data-armed');
+            toggle.textContent = included ? 'Exclude from this node' : 'Include on this node';
+          }
+          function askIncluded() {
+            if (!modulePath) return Promise.resolve();
+            return Promise.resolve(spirit.core.ask('config.searchModules', { query: match[2] })).then(function (r) {
+              var items = r && r.body && Array.isArray(r.body.items) ? r.body.items : [];
+              included = items.some(function (i) { return i && i.key === modulePath; });
+              drawInclude();
+            }, function () { included = false; drawInclude(); });
+          }
+          toggle.addEventListener('click', function () {
+            if (!toggle.hasAttribute('data-armed')) {
+              toggle.setAttribute('data-armed', '');
+              toggle.textContent = included ? 'Press again to exclude' : 'Press again to include';
+              return;
+            }
+            var on = !included;
+            Promise.resolve(spirit.core.ask('config.setModules', { path: modulePath, on: on })).then(function (r) {
+              note.textContent = r && r.status === 200
+                ? (on ? 'Included: it runs now if it is a server.' : 'Excluded: it stops at the next restart.')
+                : 'Not changed: ' + ((r && r.text) || 'no answer');
+              return askIncluded();
+            });
+          });
+          askIncluded();
 
           document.getElementById('start-manifest-job').addEventListener('click', function () {
             var values = {};

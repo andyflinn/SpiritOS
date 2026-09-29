@@ -81,9 +81,12 @@ test.startTest('A fixture node the labMaster starts never writes into the real h
   const id = 'homeprobe-' + crypto.randomBytes(3).toString('hex');
   const port = await freePort();
   const made = await master('POST', '/api/nodes', { name: id, type: 'avatar', port: port, kind: 'fixture' });
+  const home = path.join(FIXTURE_ROOT, id, 'spirit', 'run');
+  // It backs up only if it includes the backup (slim/G1.3 T6), listed
+  // before it starts.
+  if (made.status === 200 || made.status === 201) require('../run/js/includeList.js').add(home, 'process/js/backup');
   const started = made.status === 200 || made.status === 201 ? await master('POST', '/api/nodes/' + id + '/start') : made;
   if (started.status !== 200) test.fail('the labMaster would not start the probe: ' + JSON.stringify(started.body));
-  const home = path.join(FIXTURE_ROOT, id, 'spirit', 'run');
   let tag = '';
   for (let i = 0; i < 80 && !tag; i++) {
     await sleep(250);

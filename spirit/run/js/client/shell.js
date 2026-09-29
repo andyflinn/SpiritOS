@@ -2569,10 +2569,36 @@
   // Written into a container and wired here, the way renderOpenWith is:
   // it is one button, and a delegated listener somewhere else would be a
   // second place to look.
+  // ── WHAT THIS NODE INCLUDES (slim/G1.3) ──────────────────────────────
+  //
+  // Asked once, at load: config.searchModules {query: ''} -> {items: [{key:
+  // path}], more}. The page cannot read relay-state/include.json itself
+  // (fileServable refuses relay-state/). Until it answers, nothing but the
+  // intrinsic apps counts as included, which is the slim default anyway.
+  // Intrinsic apps are always included (Andy: "intrinsic apps must always
+  // be included, never excluded").
+  var includedModules = {};
+  function loadIncludedModules() {
+    var asked;
+    try { asked = spirit.core.ask('config.searchModules', { query: '' }); } catch (e) { return; }
+    Promise.resolve(asked).then(function (r) {
+      var items = r && r.body && Array.isArray(r.body.items) ? r.body.items : [];
+      var next = {};
+      items.forEach(function (i) { if (i && typeof i.key === 'string') next[i.key] = true; });
+      includedModules = next;
+    }, function () { /* the node said nothing: the slim default stands */ });
+  }
+  loadIncludedModules();
+  function isIncluded(appId) {
+    var app = apps[appId];
+    return !!(app && app.intrinsic) || !!includedModules[appId];
+  }
+
   function renderAppOfFile(container, path) {
     var found = /^shell\/([^/]+)\/\1\.js$/.exec(String(path || ''));
     var app = found && apps['shell/' + found[1]];
-    if (!app) { container.innerHTML = ''; return; }
+    // Only an app this node includes is offered (slim/G1.3 T9).
+    if (!app || !isIncluded('shell/' + found[1])) { container.innerHTML = ''; return; }
 
     var name = effectiveName(app);
     container.innerHTML = '<div class="stat-tile wide">' +
@@ -2756,7 +2782,7 @@
   // this list cannot promote an app, only hurry one that is already
   // intrinsic. Each of the five adds its line here in the same commit as
   // its move, alongside its APP_ID_RENAMES entry.
-  var INTRINSIC_APP_FOLDERS = ['natter', 'stats', 'jobs', 'apps', 'process-browser', 'files', 'group-manager', 'contacts', 'info', 'desk'];
+  var INTRINSIC_APP_FOLDERS = ['natter', 'stats', 'jobs', 'apps', 'process-browser', 'files', 'group-manager', 'contacts', 'info'];
 
   function declareIntrinsicApps() {
     INTRINSIC_APP_FOLDERS.forEach(function (folder) {

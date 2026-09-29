@@ -49,7 +49,9 @@ function fakeElement(tag) {
   return el;
 }
 
-const DESK_MANIFEST = { name: 'Desk', icon: 'THREAD', hidden: false, intrinsic: true, listens: ['agents'] };
+// Desk is no longer intrinsic (slim/G1.3, Andy: "desk is no longer
+// intrinsic"), so it is found as any app is: in the fs-watcher's list.
+const DESK_MANIFEST = { name: 'Desk', icon: 'THREAD', hidden: false, intrinsic: false, listens: ['agents'] };
 
 function bootShell(manifest) {
   const byId = {};
@@ -85,6 +87,9 @@ function bootShell(manifest) {
   };
   new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(SHELL, 'utf8'))(
     shellSpirit, doc, function () {}, { spiritPacket: packet });
+  subscribers.forEach(function (h) {
+    if (typeof h.onSnapshot === 'function') h.onSnapshot([{ id: 'fs-watcher-1', type: 'fs-watcher', data: { files: [{ kind: 'file', relativePath: 'shell/desk/desk.js' }] } }]);
+  });
   const wired = subscribers.filter(function (h) { return typeof h.onPacket === 'function'; })[0];
   const scripts = function () { return doc.body.children.filter(function (c) { return c.tag === 'script'; }); };
   return {

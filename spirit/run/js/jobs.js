@@ -339,8 +339,25 @@ module.exports = function installJobs(spirit, port) {
     const file = path.resolve(cwd || process.cwd(), script).replace(/\.js$/, '.json');
     try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { return null; }
   }
+  // ── ONLY WHAT THE NODE INCLUDES RUNS (slim/G1.3) ──────────────────
+  //
+  // A script under <root>/process/js/<name>/ belongs to the process <name>,
+  // and runs only if <root>'s process list names it (includeList.js): an
+  // unlisted process never runs, so Jobs never shows it. Refused by name,
+  // process-not-included, before anything is spawned.
+  function refuseUnlisted(script, cwd) {
+    if (typeof script !== 'string' || !/\.js$/.test(script)) return;
+    const abs = path.resolve(cwd || process.cwd(), script);
+    const m = /^(.*)[\/\\]process[\/\\]js[\/\\]([^\/\\]+)[\/\\][^\/\\]+\.js$/.exec(abs);
+    if (!m || require('./includeList').includes(m[1], 'process/js/' + m[2])) return;
+    const e = new Error('process not included on this node: ' + m[2]);
+    e.refusal = 'process-not-included';
+    e.process = m[2];
+    throw e;
+  }
   function startJob(command, args, options) {
     options = options || {};
+    refuseUnlisted((args || [])[0], options.cwd);
     const m = manifestOf((args || [])[0], options.cwd);
     if (m && m.kind === 'server' && m.operated === 'user') {
       return startServerJob(command, args, { type: options.type, cwd: options.cwd, operated: 'user' });
@@ -359,10 +376,19 @@ module.exports = function installJobs(spirit, port) {
   // registered with `client` (appClient) so 'api' and calls reach it. Only
   // process/js gets this (desk/G1 D11, Andy: "THERE ARE NO APP SERVERS!",
   // "you want the support, move to precess/js").
-  function startNodeServers(rootDir, client) {
+  // `only`, a name: start just that one, if listed (config.setModules
+  // switching it on, slim/G1.3 T4), the same way the boot does.
+  function startNodeServers(rootDir, client, only) {
     const base = path.join(rootDir, 'process', 'js');
     let names = [];
     try { names = fs.readdirSync(base); } catch (e) { return []; }
+    // ONLY THE LISTED ONES (slim/G1.3): a node that ran servers before the
+    // lists existed is seeded once from what it ran (includeList.seedOnce);
+    // a fresh node lists nothing and starts nothing.
+    const includeList = require('./includeList');
+    const seeded = includeList.seedOnce(rootDir);
+    if (seeded.length) console.log('include: this node ran ' + seeded.join(', ') + ' before; listed them once');
+    names = names.filter(function (name) { return includeList.includes(rootDir, 'process/js/' + name) && (!only || name === only); });
     const pipePathFor = require('./appClient').pipePathFor;
     // THE NODE'S PUBLIC FACTS, HANDED OVER (desk/G1.7): a server that needs
     // to know whose node it runs on gets --node {name, publicKey}. It never

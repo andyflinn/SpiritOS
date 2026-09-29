@@ -59,6 +59,8 @@ const pause = function (ms) { return new Promise(function (r) { setTimeout(r, ms
   // ── T1 ──────────────────────────────────────────────────────────────
   test.subHeading('T1: each GET / writes one line to the job log, with the new count');
   const port = await freePort();
+  // A test node includes what it runs, for this run (slim/G1.3 T6).
+  require('../run/js/includeList.js').add(root, 'process/js/counterLog');
   const job = jobs.startJob('node', [script, JSON.stringify({ port: port })], { type: 'counterLog' });
   const up = await waitFor(function () { return isOpen(port); });
   const before = up ? jobs.getJob(job.id).log.length : 0;

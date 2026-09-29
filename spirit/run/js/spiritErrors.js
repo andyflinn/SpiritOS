@@ -233,6 +233,13 @@ define('too-big', {
 // A LINE THE DESK SERVER WILL NOT KEEP (slim/G1.2). Andy: "from now on the
 // MAX_PAYLOAD applies": a line that could never come back in one answer is
 // refused when it arrives, never stored to stall a read later.
+// A PROCESS THIS NODE DOES NOT INCLUDE (slim/G1.3). Andy: "keep server
+// slim by default": Start Job on a process the node's list does not name is
+// refused before anything runs.
+define('process-not-included', {
+  status: 403, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['process not included on this node'],
+});
 define('line-too-large', {
   status: 413, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['line too large to come back in one answer'],

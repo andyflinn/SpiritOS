@@ -65,7 +65,7 @@ the only way a default survives contact with people in a hurry.
 
 ## What can be asked
 
-**46 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
+**48 verbs, in 11 families.** This list is generated from `server.js` and is exhaustive at the commit above.
 
 **Each verb carries its authority.** Andy, 2026-09-27: *"that's a boundary
 crossed that requires peer review AND my approval"* — and, on his own yes:
@@ -75,6 +75,10 @@ one of three: his dated words approving the verb; `before the rule
 means nobody has looked yet, not that he said yes; or `revoked, <date>:` with
 his words, which keeps the harness red until the verb is gone.
 `test/doorContract.js` enforces it.
+
+**`config.*`** — what this node includes
+- `config.searchModules` — Andy, 2026-09-29: "mabe config.searchModules and config.setModules, so config can have other similar verbs", peer-reviewed by wsl-claude (Desk, slim/G1.3). Loopback only; a search of this node's include list, `{query}` -> `{items: [{key: path}], more}`.
+- `config.setModules` — Andy, 2026-09-29: "mabe config.searchModules and config.setModules, so config can have other similar verbs", peer-reviewed by wsl-claude (Desk, slim/G1.3). Loopback only; `{path, on}` switches a module on (a process starts now) or off (it stops at the next start).
 
 **`contact.*`** — who this node knows, and what it calls them
 - `contact.accept` — before the rule (2026-09-27)
@@ -192,7 +196,7 @@ figure you can compute instead of estimate.
 
 ## The errors
 
-**96 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
+**97 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
 each carries more than a sentence:
 
 | | |

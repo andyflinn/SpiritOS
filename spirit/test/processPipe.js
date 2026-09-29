@@ -72,6 +72,8 @@ function waitFor(fn, ms) {
   test.subHeading('T1: a node-operated process/js server is started with --pipe, its socket in its state folder');
   const client = appClient.createAppClient({ rootDir: root });
   let booted = [];
+  // A test node includes what it starts, for this run (slim/G1.3 T6).
+  require('../run/js/includeList.js').add(root, 'process/js/pinger');
   try { booted = jobs.startNodeServers(root, client) || []; } catch (e) { test.fail(OWED + 'startNodeServers threw: ' + e.message); }
   const job = booted[0] && jobs.getJob(booted[0].id);
   const args = (job && job.data && job.data.args) || [];
