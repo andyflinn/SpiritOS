@@ -147,6 +147,17 @@ settle().then(function () {
     test.check('the banner carries a goal fold toggle and, folded, shows the id only');
   } else test.fail(OWED + 'the goal banner shows ' + JSON.stringify(shown.slice(0, 160)));
 
+  // Andy: "the red stars should be in a separage first column, the
+  // task-type icons in the second column."
+  test.subHeading('T9: the unseen star has the first column to itself, the type icon the second');
+  const list = doc.getElementById('desk-top').innerHTML;
+  const firstRow = (list.match(/<tr data-id="t\/G1\.2"[\s\S]*?<\/tr>/) || [''])[0];
+  const tds = firstRow.match(/<td[^>]*>[\s\S]*?<\/td>/g) || [];
+  const icons = [kernel.core.const.ICON.ERROR, kernel.core.const.ICON.CODE];
+  const hasIcon = function (c) { return icons.some(function (i) { return c.indexOf(i) !== -1; }); };
+  if (tds.length > 2 && !hasIcon(tds[0]) && hasIcon(tds[1])) test.check('column 1 carries no type icon; column 2 carries it');
+  else test.fail(OWED + 'first two cells ' + JSON.stringify(tds.slice(0, 2)));
+
   test.subHeading('T6: chat boxes take several lines, and Return sends nothing');
   const shell = root.innerHTML;
   const say = doc.getElementById('desk-team-say');
