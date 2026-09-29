@@ -87,6 +87,11 @@ function fakeDocument() {
   const byId = {};
   return { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
 }
+// His click on a block's fold toggle (data-fold="<name>"), as deskExplainTop.js does.
+function clickFold(el, name) {
+  el.fire('click', { target: { id: '', getAttribute: function (n) { return n === 'data-fold' ? name : null; }, closest: function () { return null; }, parentNode: null },
+    currentTarget: el, preventDefault: function () {} });
+}
 function load(script, doc) {
   let b = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(script, 'utf8'))(
@@ -184,19 +189,23 @@ const kids = [];
     ' | Alpha row ' + JSON.stringify(rowOf('Alpha').replace(/\s+/g, ' ').slice(0, 160)));
 
   // ── THE DIALOG ──────────────────────────────────────────────────────
-  function dialog(row, thread) {
+  function dialog(row, thread, acked, extra) {
     const ddoc = fakeDocument();
     const dd = load(DETAILS, ddoc);
     const packets = [];
     const sent = [];
+    const results = [];
     dd.mount(fakeElement('dd'), { escapeHtml: kernel.core.util.escapeHtml, onPacket: function (app, fn) { packets.push(fn); },
-      setScreenTitle: function () {}, setDialogResult: function () {}, closeDialog: function () {},
+      setScreenTitle: function () {}, setDialogResult: function (r) { results.push(r); }, closeDialog: function () {},
       peerPost: function (to, app, body) { sent.push(body); return Promise.resolve({ ok: true }); },
       fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } } });
     const others = { id: 't/G1.1', title: 'Alpha', blocks: ['t/G1'], waitsOn: [], done: false };
-    dd.open({ id: row.id, row: row, agents: { 'claude-windows': LEAD }, session: [row, others], rules: [], thread: thread });
+    const params = { id: row.id, row: row, agents: { 'claude-windows': LEAD }, session: [row, others].concat(extra || []), rules: [], thread: thread };
+    if (acked) params.acked = acked;
+    dd.open(params);
     return {
-      doc: ddoc, sent: sent,
+      doc: ddoc, sent: sent, results: results,
+      acked: function () { const last = results.filter(function (r) { return r && r.acked; }).pop(); return last ? last.acked : null; },
       arrive: function (text, when) {
         packets.forEach(function (fn) { fn({ from: 'claude-windows', kind: 'explain', text: text, todo: row.id }, { hash: 'h-' + when, fromKey: LEAD, sentAt: when }); });
       },
@@ -247,6 +256,73 @@ const kids = [];
     test.check('#dd-links sits between the explanation and the record, folds on its own, and links t/G1.1; the explanation holds no list');
   } else test.fail(OWED + 'links block at ' + pos('id="dd-links"') + ' (blurb ' + pos('id="dd-blurb"') + ', item ' + pos('id="dd-item"') +
     '), holds the link ' + (links5.indexOf('data-open="t/G1.1"') !== -1) + ', folds ' + /data-fold="links"/.test(frame5 + links5));
+
+  // A CHANGED BLOCK OPENS; HIS FOLD IS HIS ACK. Andy: "any changed block
+  // should immediately unfold. then i'll fold it, and that's my ack". The
+  // dialog is handed params.acked (what he folded, per block) and hands back
+  // the whole map in every setDialogResult as result.acked; what it holds is
+  // the dialog's own business. A block whose content is what he acked opens
+  // folded; one he has not acked, or whose content changed since, opens.
+  test.subHeading('D6: a block opens when its content is new to him; folding it is his ack');
+  const ackRow = Object.assign({}, staleRow, { description: 'RECORD-ONE', changedAt: at(1) });
+  const ackThread = [line(2, 'claude-windows', 'explain', 'EXPLAIN-ONE', 't/G1.3')];
+  const shows = function (d) {
+    return { explain: /EXPLAIN-/.test(d.doc.getElementById('dd-blurb').innerHTML),
+      links: d.doc.getElementById('dd-links').innerHTML.indexOf('data-open="t/G1.1"') !== -1,
+      record: /RECORD-/.test(d.doc.getElementById('dd-item').innerHTML) };
+  };
+  const first = dialog(ackRow, ackThread);
+  for (let i = 0; i < 4; i++) await settle();
+  const s1 = shows(first);
+  if (s1.explain && s1.links && s1.record) test.check('first sight: the explanation, the links and the record all open');
+  else test.fail(OWED + 'first sight shows ' + JSON.stringify(s1));
+  ['explain', 'links', 'item'].forEach(function (name) { clickFold(first.doc.getElementById('dd-body'), name); });
+  const acks = first.acked();
+  const again = dialog(ackRow, ackThread, acks || {});
+  for (let i = 0; i < 4; i++) await settle();
+  const s2 = shows(again);
+  if (acks && !s2.explain && !s2.links && !s2.record) test.check('folded, then opened again unchanged: all three stay folded (acked)');
+  else test.fail(OWED + 'acks handed back ' + JSON.stringify(acks) + '; reopened unchanged shows ' + JSON.stringify(s2));
+  const changedRow = Object.assign({}, ackRow, { description: 'RECORD-TWO' });
+  const changedThread = ackThread.concat([line(4, 'claude-windows', 'explain', 'EXPLAIN-TWO', 't/G1.3')]);
+  const third = dialog(changedRow, changedThread, acks || {});
+  for (let i = 0; i < 4; i++) await settle();
+  const s3 = shows(third);
+  if (s3.explain && !s3.links && s3.record) test.check('explanation and record changed: those two open; the unchanged links stay folded');
+  else test.fail(OWED + 'after a change shows ' + JSON.stringify(s3));
+  const moreLinks = dialog(ackRow, ackThread, acks || {}, [{ id: 't/G1.9', title: 'New', blocks: ['t/G1.3'], waitsOn: [], done: false }]);
+  for (let i = 0; i < 4; i++) await settle();
+  if (shows(moreLinks).links) test.check('a new item blocking it: the links block opens');
+  else test.fail(OWED + 'a new blocker did not open the links block');
+
+  test.subHeading('D7: Desk keeps his acks between opens, and hands them back');
+  const ackLog = [line(1, 'claude-windows', 'session', session([A, B, C]), 'team/chat')];
+  const ackFake = require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(ackLog) });
+  const handed = [];
+  const adoc = fakeDocument();
+  load(DESK, adoc).mount(fakeElement('container'), {
+    fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify(ackLog) : null; }, saveFile: function () { return Promise.resolve(); } },
+    escapeHtml: kernel.core.util.escapeHtml, verb: ackFake.verb,
+    onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
+    callDialog: function (name, params) {
+      handed.push(params);
+      return Promise.resolve(handed.length === 1 ? { sent: [], acked: { links: 'ACK-TOKEN' } } : { sent: [] });
+    },
+  });
+  for (let i = 0; i < 6; i++) await settle();
+  const openIt = function () {
+    const box = adoc.getElementById('desk-session');
+    box.fire('click', { target: { getAttribute: function (a) { return a === 'data-open' ? 't/G1.3' : null; }, parentNode: null }, currentTarget: box });
+  };
+  openIt();
+  for (let i = 0; i < 6; i++) await settle();
+  openIt();
+  for (let i = 0; i < 6; i++) await settle();
+  const secondAcked = handed[1] && handed[1].acked;
+  const kept = ackFake.calls.some(function (c) { return c.verb === 'seen.set' && JSON.stringify(c.args).indexOf('ACK-TOKEN') !== -1; });
+  if (secondAcked && JSON.stringify(secondAcked).indexOf('ACK-TOKEN') !== -1 && kept) {
+    test.check('what the dialog acked comes back at the next open of that item, and is saved with seen');
+  } else test.fail(OWED + 'second open handed acked ' + JSON.stringify(secondAcked) + ', saved with seen ' + kept);
 
   test.subHeading('D3: the dialog\'s waits-on fact and its No Go line link each id');
   const d3 = dialog(staleRow, [line(2, 'claude-windows', 'explain', 'E', 't/G1.3'), line(3, 'claude-windows', 'ask', 'ready: go?', 't/G1.3')]);
