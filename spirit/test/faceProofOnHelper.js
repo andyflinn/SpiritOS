@@ -54,6 +54,8 @@ const RUN = path.join(__dirname, '..', 'run');
   }
 
   test.subHeading("T2: api lists faceProof as {}: faceServer's built-in verbs are not its own");
+  // A test node includes what it starts, for this run (slim/G1.3 T6).
+  require('../run/js/includeList.js').add(root, 'process/js/faceProof');
   const client = appClient.createAppClient({ rootDir: root, startServerJob: function () { return null; }, log: function () {} });
   client.startAll();
   const api = typeof client.ask === 'function' ? await client.ask('api') : null;
