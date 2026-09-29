@@ -82,8 +82,12 @@ function sourceFiles() {
     es.forEach(function (e) {
       const r = rel ? rel + '/' + e.name : e.name;
       if (!rel && e.name === OWN) return;
-      if (e.isDirectory()) walk(path.join(dir, e.name), r);
-      else if (e.isFile() && !COMPANION.test(e.name)) out.push(r);
+      // NEVER A KEY (Andy: "don't include my private key in the backup"). A
+      // face keeps its own node identity in a relay-state/ of its own inside
+      // its state folder (slim/G1.4, wsl-claude's finding): no nested
+      // relay-state/ is walked, and no identity.json is copied wherever it is.
+      if (e.isDirectory()) { if (e.name !== 'relay-state') walk(path.join(dir, e.name), r); }
+      else if (e.isFile() && !COMPANION.test(e.name) && e.name !== 'identity.json') out.push(r);
     });
   })(SOURCE, '');
   return out.sort();
