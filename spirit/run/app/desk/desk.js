@@ -209,6 +209,7 @@ function deskRecord(msgs) {
   fresh.forEach(deskFold);
   deskMessages.sort(function (a, b) { return String(a.at) < String(b.at) ? -1 : String(a.at) > String(b.at) ? 1 : 0; });
   deskVoice(fresh);
+  if (deskAgentTab !== '*' && fresh.length) deskAskQueue();
   deskDraw();
   deskSaveState();
   return Promise.all(fresh.map(function (m) { return deskAsk('log.add', { json: JSON.stringify(m) }); }))
@@ -948,6 +949,8 @@ function deskDraw() {
   if (!el) return;
   var musings = document.getElementById('desk-musings');
   if (musings) musings.innerHTML = deskMusings();
+  var queue = document.getElementById('desk-queue');
+  if (queue) queue.innerHTML = deskQueueHtml();
   var backup = document.getElementById('desk-backup');
   if (backup) backup.innerHTML = deskBackupHtml();
   var team = document.getElementById('desk-team');
@@ -1123,6 +1126,31 @@ function deskOlderTeam() {
   }, function () { deskTeamReading = false; });
 }
 
+// ── EACH AGENT'S QUEUE, IN ITS TAB (desk/G1.5, D1) ──────────────────
+//
+//   Andy: "ah, it can visualize job-queues for agents and me. yes." What
+// waits on an agent is pending.get's answer, the same one agents read, so
+// he sees what they see. His own queue is the List (D7): the ERROR icon and
+// List (n). All shows no queue.
+var deskQueue = { who: '', items: null, partial: false };
+function deskAskQueue() {
+  var who = deskAgentTab === '*' ? '' : deskAgentTab;
+  if (!who) { deskQueue = { who: '', items: null, partial: false }; return Promise.resolve(); }
+  return deskAsk('pending.get', { who: who }).then(function (r) {
+    if (deskAgentTab !== who) return;
+    deskQueue = { who: who, items: (r.items || []).map(function (j) { try { return JSON.parse(j); } catch (e) { return null; } }).filter(Boolean), partial: !!r.partial };
+    deskDraw();
+  }, function () { /* no queue is shown; the tab still works */ });
+}
+function deskQueueHtml() {
+  if (!deskQueue.who || deskQueue.who !== deskAgentTab || !deskQueue.items) return '';
+  if (!deskQueue.items.length) return '<div class="job-manifest-note">Nothing waits on ' + deskEsc(deskQueue.who) + '.</div>';
+  return '<div class="label">Waiting on ' + deskEsc(deskQueue.who) + '</div>' + deskQueue.items.map(function (it) {
+    return '<div data-open="' + deskEsc(it.id) + '" style="cursor:pointer">' + deskEsc(it.id) + ' — ' + deskEsc(it.title) +
+      ' <span class="job-manifest-note">(' + deskEsc(it.why) + ')</span></div>';
+  }).join('') + (deskQueue.partial ? '<div class="job-manifest-note">More wait than fit here.</div>' : '');
+}
+
 // ── THE BACKUP, SEEN FROM DESK (desk/G1.7, T7) ───────────────────────
 //
 //   Andy: "how can i trust the copy mechanist when i cant see it working".
@@ -1184,6 +1212,7 @@ spirit.shell.activateApp({
       '<div id="desk-root">' +
         '<div data-pane="list"><div id="desk-backup"></div><div id="desk-top"></div></div>' +
         '<div data-pane="team" hidden>' +
+          '<div id="desk-queue"></div>' +
           '<div id="desk-session"></div>' +
           '<div class="start-job-form card"><label class="field-label grow">Say' +
             // SEVERAL LINES, AND RETURN IS A NEW LINE (desk/G1.12): only Send sends.
@@ -1233,6 +1262,7 @@ spirit.shell.activateApp({
       var who = el && el.getAttribute && el.getAttribute('data-agent');
       if (!who) return;
       deskAgentTab = who;
+      deskAskQueue();
       var box = document.getElementById('desk-team-say');
       if (box) box.placeholder = who === '*' ? 'to every agent; design talk that belongs to no row' : 'to ' + who + ' alone, about anything that is not one row';
       deskDraw();
@@ -1261,6 +1291,13 @@ spirit.shell.activateApp({
     // mount, and kept while Desk is hidden behind its dialog, so what
     // arrives while a row is open is logged too.
     // Scrolled to its top, Team reads the page before (T6).
+    // A queue line opens its row, as the List does.
+    document.getElementById('desk-queue').addEventListener('click', function (e) {
+      var el = e.target;
+      while (el && el !== e.currentTarget && !(el.getAttribute && el.getAttribute('data-open'))) el = el.parentNode;
+      var id = el && el.getAttribute && el.getAttribute('data-open');
+      if (id) deskOpenRow(id);
+    });
     document.getElementById('desk-team').addEventListener('scroll', function (e) {
       var el = e && e.currentTarget;
       if (el && el.scrollTop <= 0) deskOlderTeam();

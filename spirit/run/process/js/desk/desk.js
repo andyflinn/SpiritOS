@@ -176,7 +176,10 @@ function pending(who) {
   }
   if (!session) return [];
   const waits = [];
-  session.items.forEach(function (s) {
+  // THE GOAL IS AN ITEM TOO (desk/G1.5 T5): claimed by both, it waits on
+  // his done like any row.
+  const goal = session.goal && session.goal.id ? [{ id: session.goal.id, title: session.goal.title, done: session.goal.done }] : [];
+  session.items.concat(goal).forEach(function (s) {
     const id = String(s.id || '');
     const it = of(id);
     if (!id || s.done || it.done) return;
@@ -222,17 +225,19 @@ appServer.serve({
   },
   // One party's queue, newest first, cut to fit one answer as log.search is.
   'pending.get': {
-    request: { who: '' }, reply: { items: [''] },
+    // Truthful about being cut (T6), as log.search is: the list rule.
+    request: { who: '' }, reply: { items: [''], partial: false },
     handler: function (a) {
       const items = [];
       let bytes = 2;
+      let partial = false;
       for (const item of pending(String(a.who))) {
         const cost = Buffer.byteLength(JSON.stringify(item), 'utf8') + 1;
-        if (bytes + cost > ANSWER_ROOM) break;
+        if (bytes + cost > ANSWER_ROOM) { partial = true; break; }
         items.push(item);
         bytes += cost;
       }
-      return { items: items };
+      return { items: items, partial: partial };
     },
   },
   'state.get': { request: {}, reply: { json: '' }, handler: function () { return { json: doc('state') }; } },
