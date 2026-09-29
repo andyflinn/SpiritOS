@@ -18,9 +18,12 @@
 //   T2 a stored line too big for the room is skipped: what is older still
 //      comes back, and `more` is true.
 //   T3 at start, every stored line too big for the room is split once into
-//      parts, keys <key>#1, <key>#2 ..., each fitting the room, the same at,
-//      todo, kind and from, whose texts joined in order are the old text; the
-//      old line is gone, and a second start splits nothing more.
+//      parts, keys <key>#1, <key>#2 ..., each fitting the room, with the
+//      same todo, kind and from; part i of n is at the old at minus (n - i)
+//      ms, so they page in order and the last keeps the old time
+//      (wsl-claude); their texts joined in order are the old text; the old
+//      line is gone, and a second start splits nothing more. The parts
+//      together are bigger than one answer, so they are read page by page.
 //   T4 log.add refuses a line too big for the room with a declared error
 //      {ok: false, code: 'line-too-large'}, status 413.
 //   T5 agents.js refuses, before sending anything, a message whose line on
@@ -90,21 +93,35 @@ const kids = [];
   let kid = await start();
 
   test.subHeading('T3: a stored line too big for one answer is split once into parts that fit');
-  const r3 = await call('log.search', Object.assign({}, all, { todo: 't/G1.1' }));
-  const got3 = linesOf(r3).map(function (l) { return JSON.parse(l); });
+  // THE PARTS TOGETHER ARE BIGGER THAN ONE ANSWER (wsl-claude), so T3 reads
+  // every page, before the oldest line so far, as Desk does.
+  async function readAll(todo) {
+    const got = [];
+    let before = '';
+    for (let i = 0; i < 20; i++) {
+      const r = await call('log.search', Object.assign({}, all, { todo: todo, before: before }));
+      const page = linesOf(r).map(function (l) { return JSON.parse(l); });
+      page.forEach(function (m) { got.push(m); });
+      if (!r.more || !page.length) break;
+      before = page[page.length - 1].at;
+    }
+    return got;
+  }
+  const got3 = await readAll('t/G1.1');
   const parts = got3.filter(function (m) { return m.key.indexOf(big.key + '#') === 0; })
     .sort(function (a, b) { return Number(a.key.split('#')[1]) - Number(b.key.split('#')[1]); });
   const joined = parts.map(function (m) { return m.text; }).join('');
-  const fit = parts.every(function (m) { return cost(JSON.stringify(m)) <= ROOM && m.at === big.at && m.todo === big.todo && m.kind === big.kind && m.from === big.from; });
+  const fit = parts.every(function (m) { return cost(JSON.stringify(m)) <= ROOM && m.at <= big.at && m.todo === big.todo && m.kind === big.kind && m.from === big.from; });
   const oldGone = !got3.some(function (m) { return m.key === big.key; });
-  if (parts.length >= 2 && joined === big.text && fit && oldGone) test.check('the big line came back as ' + parts.length + ' parts, each fitting, together its whole text');
-  else test.fail(OWED + parts.length + ' parts, text whole ' + (joined === big.text) + ', each fits ' + fit + ', old line gone ' + oldGone);
+  const inOrder = parts.every(function (m, i) { return i === 0 || parts[i - 1].at < m.at; }) && parts.length && parts[parts.length - 1].at === big.at;
+  if (parts.length >= 2 && joined === big.text && fit && oldGone && inOrder) test.check('the big line came back as ' + parts.length + ' parts, each fitting, together its whole text');
+  else test.fail(OWED + parts.length + ' parts, text whole ' + (joined === big.text) + ', each fits ' + fit + ', old line gone ' + oldGone + ', times in order ending at the old one ' + inOrder);
 
   await stop(kid);
   kid = await start();
-  const r3b = await call('log.search', Object.assign({}, all, { todo: 't/G1.1' }));
-  if (linesOf(r3b).length === linesOf(r3).length && linesOf(r3).length >= 4) test.check('a second start splits nothing more: still ' + linesOf(r3b).length + ' lines');
-  else test.fail(OWED + 'after a second start ' + linesOf(r3b).length + ' lines, before ' + linesOf(r3).length);
+  const got3b = await readAll('t/G1.1');
+  if (got3b.length === got3.length && got3.length >= 4) test.check('a second start splits nothing more: still ' + got3b.length + ' lines');
+  else test.fail(OWED + 'after a second start ' + got3b.length + ' lines, before ' + got3.length);
 
   // ── T2: an oversized line that got in some other way ─────────────────
   test.subHeading('T2: a line too big for one answer never stops a read');
@@ -112,9 +129,9 @@ const kids = [];
   const olderT2 = row('t/G1.2', 'older than the big one');
   const bigT2 = row('t/G1.2', 'Z'.repeat(ROOM + 500));
   const newerT2 = row('t/G1.2', 'newer than the big one');
-  plantRows(path.join(state, 'desk.db'), [olderT2, bigT2, newerT2]);
-  // Planted with the server down, so its start may split it; plant again once up.
+  plantRows(path.join(state, 'desk.db'), [olderT2, newerT2]);
   kid = await start();
+  // Only now, with the server up, so no start splits it (wsl-claude).
   plantRows(path.join(state, 'desk.db'), [bigT2]);
   const r2 = await call('log.search', Object.assign({}, all, { todo: 't/G1.2' }));
   const keys2 = linesOf(r2).map(function (l) { return JSON.parse(l).key; });
