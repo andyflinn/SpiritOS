@@ -51,6 +51,8 @@ test.startTest('slim/G1.4: faceProof moves into process/');
   fs.writeFileSync(path.join(own, 'notes.txt'), 'NOT-FOR-STRANGERS');
   fs.writeFileSync(path.join(own, 'faceProof.js'), '/* SERVER-SCRIPT */');
 
+  // A test node includes what it starts, for this run (slim/G1.3 T6).
+  require('../run/js/includeList.js').add(root, 'process/js/faceProof');
   // Started as the node starts it: whatever startAll hands startServerJob.
   const started = [];
   const client = appClient.createAppClient({ rootDir: root, log: function () {},

@@ -25,6 +25,8 @@ function tempRoot(apps) {
   Object.keys(apps).forEach(function (name) {
     fs.mkdirSync(path.join(root, 'process', 'js', name), { recursive: true });
     fs.writeFileSync(path.join(root, 'process', 'js', name, name + '.json'), JSON.stringify(apps[name]));
+    // A test node includes what it starts, for this run (slim/G1.3 T6).
+    require('../run/js/includeList.js').add(root, 'process/js/' + name);
   });
   return root;
 }
@@ -157,6 +159,7 @@ function aRealHop() {
   fs.cpSync(path.join(RUN, 'shell', 'shared'), path.join(root, 'shell', 'shared'), { recursive: true });
   fs.mkdirSync(path.join(root, 'process'), { recursive: true });
   fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
+  require('../run/js/includeList.js').add(root, 'process/js/faceProof');
   const s = appClient.createAppClient({
     rootDir: root, log: function () {},
     startServerJob: function (cmd, args, opts) {

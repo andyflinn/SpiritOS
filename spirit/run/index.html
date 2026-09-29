@@ -1438,6 +1438,7 @@
           // process change weighs more than an app's (Andy: "re-arm
           // buttons"). The page cannot read relay-state/include.json, so it
           // asks config.searchModules, and switches with config.setModules.
+          // process/js only: no other language's module exists yet (jobs.js).
           var modulePath = lang === 'js' ? 'process/js/' + match[2] : '';
           var included = false;
           var toggle = document.getElementById('job-include-toggle');

@@ -81,7 +81,8 @@ function remove(rootDir, p) { checked(p); write(rootDir, listed(rootDir).filter(
 //
 // A node that has no list yet, but has relay-state/process/<name>/ folders,
 // ran those servers before this rule existed: its list is seeded once from
-// them, so Andy's node keeps desk and backup. A fresh node has no such
+// them, and with every app it has, so Andy's node keeps desk, backup and
+// what his shell showed. A fresh node has no such
 // folders and starts with nothing. Once the list exists (even empty), a
 // folder that appears later is not a reason to include it.
 function seedOnce(rootDir) {
@@ -91,8 +92,15 @@ function seedOnce(rootDir) {
   const ran = es.filter(function (e) { return e.isDirectory() && isPath('process/js/' + e.name); })
     .map(function (e) { return 'process/js/' + e.name; });
   if (!ran.length) return [];
-  write(rootDir, ran);
-  return ran.sort();
+  // ITS APPS TOO (Andy: "yes. seed them."): every app under shell/ with its
+  // manifest, in the same once, so nothing it showed disappears.
+  let apps = [];
+  try { apps = fs.readdirSync(path.join(rootDir, 'shell'), { withFileTypes: true }); } catch (e) { apps = []; }
+  const shown = apps.filter(function (e) {
+    return e.isDirectory() && isPath('shell/' + e.name) && fs.existsSync(path.join(rootDir, 'shell', e.name, e.name + '.json'));
+  }).map(function (e) { return 'shell/' + e.name; });
+  write(rootDir, ran.concat(shown));
+  return ran.concat(shown).sort();
 }
 
 // ── config.searchModules: WHAT THIS NODE INCLUDES, AS A SEARCH ───────

@@ -40,6 +40,8 @@ const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-appapi-'));
 ['alpha', 'beta', 'gamma'].forEach(function (name) {
   fs.mkdirSync(path.join(root, 'process', 'js', name), { recursive: true });
   fs.writeFileSync(path.join(root, 'process', 'js', name, name + '.json'), JSON.stringify({ name: name, serves: true }));
+  // A test node includes what it serves, for this run (slim/G1.3 T6).
+  require('../run/js/includeList.js').add(root, 'process/js/' + name);
 });
 
 function appScript(name, verbsSrc) {

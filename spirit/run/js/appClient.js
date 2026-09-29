@@ -141,7 +141,13 @@ function createAppClient(opts) {
 
   function startAll() {
     if (isPuppet()) { log('app servers: this node is a puppet, so it starts none'); return []; }
-    return readServers(rootDir).map(function (app) {
+    // ONLY A LISTED FACE (slim/G1.3): a face is a server process like any
+    // other, so a node starts one only if relay-state/include.json names it
+    // (includeList.js). Seeded first, as the boot's server scan does, since
+    // either may run first: a live node keeps the faces it ran.
+    const includeList = require('./includeList');
+    includeList.seedOnce(rootDir);
+    return readServers(rootDir).filter(function (app) { return includeList.includes(rootDir, 'process/js/' + app); }).map(function (app) {
       // Its door with every process's, in relay-state/process/<name> (slim/G1.4).
       const pipe = pipePathFor(rootDir, app, platform, 'process');
       if (platform !== 'win32') {

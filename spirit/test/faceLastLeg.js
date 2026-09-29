@@ -52,6 +52,7 @@ function world(serve) {
     serve(req, res);
   });
   let knocked = 0;
+  require('../run/js/includeList.js').add(root, 'process/js/faceProof');
   const servers = appClient.createAppClient({
     rootDir: root, log: function () {}, startServerJob: function () { return {}; },
     request: function () { knocked++; return relayRequest.pipeRequest.apply(null, arguments); },
@@ -117,6 +118,7 @@ async function wholeRoute() {
   fs.writeFileSync(path.join(owner.app, 'grants.json'), JSON.stringify({ names: { hello: { to: ownerId.publicKey, app: 'faceProof' } } }));
   fs.mkdirSync(path.join(owner.root, 'process', 'js', 'faceProof'), { recursive: true });
   fs.writeFileSync(path.join(owner.root, 'process', 'js', 'faceProof', 'faceProof.json'), JSON.stringify({ serves: true }));
+  require('../run/js/includeList.js').add(owner.root, 'process/js/faceProof');
   const servers = appClient.createAppClient({ rootDir: owner.root, log: function () {}, startServerJob: function () { return {}; } });
   servers.startAll();
   const pipe = appClient.pipePathFor(owner.root, 'faceProof', process.platform, 'process');

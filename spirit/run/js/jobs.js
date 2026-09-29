@@ -345,6 +345,10 @@ module.exports = function installJobs(spirit, port) {
   // and runs only if <root>'s process list names it (includeList.js): an
   // unlisted process never runs, so Jobs never shows it. Refused by name,
   // process-not-included, before anything is spawned.
+  // ONLY process/js TODAY: a module is process/js/<name> (includeList.js),
+  // and no process in another language exists yet. One that does needs its
+  // own path form here, in includeList.js and in the viewer's Start Job
+  // (claude-windows, reviewing 6501e589).
   function refuseUnlisted(script, cwd) {
     if (typeof script !== 'string' || !/\.js$/.test(script)) return;
     const abs = path.resolve(cwd || process.cwd(), script);
@@ -387,7 +391,7 @@ module.exports = function installJobs(spirit, port) {
     // a fresh node lists nothing and starts nothing.
     const includeList = require('./includeList');
     const seeded = includeList.seedOnce(rootDir);
-    if (seeded.length) console.log('include: this node ran ' + seeded.join(', ') + ' before; listed them once');
+    if (seeded.length) console.log('include: this node ran servers before; listed once: ' + seeded.join(', '));
     names = names.filter(function (name) { return includeList.includes(rootDir, 'process/js/' + name) && (!only || name === only); });
     const pipePathFor = require('./appClient').pipePathFor;
     // THE NODE'S PUBLIC FACTS, HANDED OVER (desk/G1.7): a server that needs
