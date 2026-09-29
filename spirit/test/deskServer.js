@@ -173,6 +173,10 @@ function line(key, todo, text, extra) {
   const bad = up ? await call('log.add', { json: 'not json' }) : {};
   if (bad.ok === false) test.check('a line that is not JSON is refused, by an error');
   else test.fail(OWED + 'a non-JSON line answered ' + JSON.stringify(bad));
+  // Tightened after the mutation run: a state that is not JSON is refused too.
+  const badState = up ? await call('state.set', { json: 'not json' }) : {};
+  if (badState.ok === false) test.check('a state that is not JSON is refused, by an error');
+  else test.fail(OWED + 'a non-JSON state answered ' + JSON.stringify(badState));
 
   // It survives its own restart: the node brings it back, desk.db holds.
   await stop(kid);
