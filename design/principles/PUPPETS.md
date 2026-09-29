@@ -750,7 +750,12 @@ go."* So G7 and G4 are DECIDED as shapes and are not yet started.
    owner only; what survives of the 2026-09-27 line *"not every group is
    supported in every context/environment"* is that a group which cannot
    work in a context refuses by name, declared in code, never in a file on
-   the box. Also found: `jobs.startNodeServers` has no puppet check (only
+   the box. A puppet's special features are app servers on it, reached the
+   way loopback reaches any: *"now, with the dynamic api extensions for
+   Servers, the owner should be able to access any special features via the
+   loopback jobs.api path"*; which of them run is its include list
+   (slim/G1.3), set by the owner the same way.
+   Also found: `jobs.startNodeServers` has no puppet check (only
    `appClient.startAll` has), so a puppet still starts node-operated
    servers. Both wait for their own item.
 5. **The shim narrows.** The loopback shim now serves only the owner door:
