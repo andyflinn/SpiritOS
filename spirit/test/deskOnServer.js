@@ -85,6 +85,9 @@ async function serverPart(scratch) {
   const old = [];
   for (let i = 0; i < 30; i++) old.push(row(i % 2 ? 'andy' : 'claude-windows', 'note', 'imported line ' + i, 'team/chat'));
   function plant() {
+    // The import removes the emptied log/ and voice/ (T2), so a replant makes them again.
+    fs.mkdirSync(path.join(app, 'log'), { recursive: true });
+    fs.mkdirSync(path.join(app, 'voice'), { recursive: true });
     fs.writeFileSync(path.join(app, 'desk.js'), '// the app\n');
     fs.writeFileSync(path.join(app, 'desk.json'), '{}\n');
     fs.writeFileSync(path.join(app, 'log', 'log.json'), JSON.stringify(old.slice(0, 12)));
