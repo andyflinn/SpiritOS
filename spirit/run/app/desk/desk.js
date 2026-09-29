@@ -1159,7 +1159,7 @@ spirit.shell.activateApp({
         '<div id="desk-goal" class="stat-tile wide" style="font-size:1.25em;font-weight:bold;cursor:pointer" title="Open the goal: talk about it under its own id" hidden></div>' +
         '<div class="start-job-form card" id="desk-tabs"></div>' +
         // The agent row is Team's, so it shows only there (show()).
-        '<div class="start-job-form card" id="desk-agent-tabs" hidden></div>' +
+        '<div class="start-job-form card" id="desk-agent-tabs" style="display:none"></div>' +
       '</div>' +
       '<div id="desk-root">' +
         '<div data-pane="list"><div id="desk-top"></div></div>' +
@@ -1188,7 +1188,9 @@ spirit.shell.activateApp({
       // should be highlighted." A disabled button read as greyed out.
       deskTab = tab;
       var agentRow = document.getElementById('desk-agent-tabs');
-      if (agentRow) agentRow.hidden = tab !== 'team';
+      // BY ITS STYLE, NOT ITS hidden ATTRIBUTE: .start-job-form sets display:
+      // flex (index.html), which overrides [hidden] (Andy saw the row on List).
+      if (agentRow) agentRow.style.display = tab === 'team' ? '' : 'none';
       if (tab === 'team') deskMarkChatSeen(deskTeamWhich());
       deskDrawTabs();
     }
