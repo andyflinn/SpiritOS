@@ -136,12 +136,20 @@ function ddLoad() {
 
 // ── THE PARTS THAT REPAINT ────────────────────────────────────────────
 
+// It folds, and IT OPENS BY ITSELF when an agent fills or changes it
+// (desk/G1.14, Andy: "when it's filled by the agent (changed) it should open
+// automatically"), even after he folded it.
+var ddExplainFolded = false;
+var ddExplainShown = null;
 function ddBlurbHtml() {
   var st = ddState;
   if (!st) return '<div class="job-manifest-note">Reading…</div>';
-  return st.explain
-    ? '<div>' + ddEsc(st.explain) + '</div><div class="job-manifest-note">— ' + ddEsc(st.explainFrom) + '</div>'
-    : '<div class="job-manifest-note">No explanation yet. One has been asked for, and it will appear here.</div>';
+  if (!st.explain) return '<div class="job-manifest-note">No explanation yet. One has been asked for, and it will appear here.</div>';
+  if (st.explain !== ddExplainShown) { ddExplainShown = st.explain; ddExplainFolded = false; }
+  var toggle = '<button type="button" data-fold="explain" title="' + (ddExplainFolded ? 'Unfold' : 'Fold') + '">' +
+    (ddExplainFolded ? '▸' : '▾') + '</button> ';
+  if (ddExplainFolded) return '<div>' + toggle + '<span class="job-manifest-note">explanation by ' + ddEsc(st.explainFrom) + '</span></div>';
+  return '<div>' + toggle + ddLineHtml({ text: st.explain }) + '</div><div class="job-manifest-note">— ' + ddEsc(st.explainFrom) + '</div>';
 }
 
 // EACH AGENT'S CURRENT STATEMENT, ABOVE THE CHAT. Andy: "and we still need
@@ -306,8 +314,11 @@ function ddFrame() {
     // check" should be a separate line, outside of the large text", "so how
     // i can check will be close to "Done"".
     ddCheckHtml() +
-    '<div id="dd-item"></div>' +
+    // THE EXPLANATION ABOVE THE RECORD (desk/G1.14). Andy: "the text an agent
+    // provided to me because he saw me looking at the item, that one belongs
+    // into the upper position".
     '<div class="stat-tile wide"><div class="label" id="dd-title"></div><div id="dd-blurb"></div></div>' +
+    '<div id="dd-item"></div>' +
     '<div class="stat-tile wide" id="dd-facts"></div>' +
     '<div id="dd-decide"></div>' +
     '<div id="dd-slots"></div>' +
@@ -533,6 +544,11 @@ spirit.shell.activateApp({
       }
       if (event.target && event.target.getAttribute && event.target.getAttribute('data-fold') === 'item') {
         ddFolded = !ddFolded;
+        ddDraw();
+        return;
+      }
+      if (event.target && event.target.getAttribute && event.target.getAttribute('data-fold') === 'explain') {
+        ddExplainFolded = !ddExplainFolded;
         ddDraw();
         return;
       }

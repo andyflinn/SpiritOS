@@ -761,31 +761,11 @@ function deskSessionBubble() {
       'the list of what must be done before it is, as we talk.</div></div>';
   }
   var g = deskSession.goal;
-  // FOLDED, ONE LINE (desk/G1.8). Andy: "the large text containers,
-  // especially the one at the top, should be foldable, in desk and details."
-  // Kept per viewer in seen.json, as what he has seen is.
-  // FOLDED UNTIL HE OPENS IT (desk/G1.12). Andy: "foldable large text should
-  // collapsed by default". Only his own unfold is remembered.
-  var folded = deskSeen.folds.session !== false;
-  var head = '<div style="display:flex;gap:8px;align-items:baseline">' + deskFoldToggle('session', folded) +
-    '<div class="label" data-open="' + deskEsc(g.id) + '" style="cursor:pointer">' + deskEsc(g.id) + ' — ' + deskEsc(g.title) + '</div></div>';
-  if (folded) return '<div class="stat-tile wide">' + head + '</div>';
-  // A closed line leaves the bubble as it leaves the List (wsl-claude).
-  var items = deskSession.items.filter(function (it, i) {
-    return !deskClosed[String(it.id || ('item-' + (i + 1)))];
-  }).map(function (it, i) {
-    return '<li data-open="' + deskEsc(it.id || ('item-' + (i + 1))) + '" style="cursor:pointer">' +
-      (deskIsDone(String(it.id || ('item-' + (i + 1))), it.done) ? '<s>' : '') + deskEsc(it.title) +
-      (deskIsDone(String(it.id || ('item-' + (i + 1))), it.done) ? '</s>' : '') +
-      ' <span class="job-manifest-note">(' + deskEsc(it.id || ('item-' + (i + 1))) + ')</span></li>';
-  }).join('');
-  return '<div class="stat-tile wide">' + head +
-    (g.description ? '<div>' + deskEsc(g.description) + '</div>' : '') + deskRulesHtml() +
-    // THE GOAL IS A REQUIREMENT TOO, the root one. Andy: "Isn't the title of
-    // this project (the goal) a requirement?" So the bubble reads like an
-    // item's dialog: the goal as the title block, then what it is blocked by.
-    // A group with nothing in it draws nothing (desk/G1.12).
-    (items ? '<div class="label" style="margin-top:8px">Blocked by</div><ul style="margin:6px 0 0 18px">' + items + '</ul>' : '') + '</div>';
+  // THE GOAL'S TITLE ONLY (desk/G1.14). Andy (O3): "the goal overview i only
+  // want to see in the goal item". Its description, rules and items live in
+  // the goal's own dialog, which this line opens.
+  return '<div class="stat-tile wide"><div class="label" data-open="' + deskEsc(g.id) + '" style="cursor:pointer">' +
+    deskEsc(g.id) + ' — ' + deskEsc(g.title) + '</div></div>';
 }
 
 function deskTable() {

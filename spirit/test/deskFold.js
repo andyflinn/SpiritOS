@@ -73,33 +73,22 @@ test.startTest('desk/G1.8: large text boxes fold, in Desk and its dialogs');
 const files = { 'log/log.json': JSON.stringify(log) };
 const doc = mountDesk(files);
 settle().then(function () {
-  // SINCE desk/G1.12 A BOX STARTS FOLDED (Andy: "foldable large text should
-  // collapsed by default"), so this presses it open, then folded again.
-  test.subHeading("T1: the box at the top of Desk has a fold toggle, and folded it shows its first line only");
-  const bubble = doc.getElementById('desk-session');
-  const first = bubble.innerHTML;
-  clickOn(bubble, 'data-fold', 'session');
-  const open = bubble.innerHTML;
-  clickOn(bubble, 'data-fold', 'session');
-  const folded = bubble.innerHTML;
-  if (/data-fold="session"/.test(first) && !/GOAL-DESCRIPTION-TEXT/.test(first) &&
-      /GOAL-DESCRIPTION-TEXT/.test(open) && /ITEM-ONE-TITLE/.test(open) &&
-      /The goal title/.test(folded) && /data-fold="session"/.test(folded) &&
-      !/GOAL-DESCRIPTION-TEXT/.test(folded) && !/ITEM-ONE-TITLE/.test(folded)) {
-    test.check('it opens folded; unfolded it shows the goal and its items; folded again, only the goal line and the toggle');
-  } else test.fail('first ' + first.slice(0, 120) + '; open ' + open.slice(0, 120) + '; folded ' + folded.slice(0, 120));
-  // Left open, so T3 sees the one choice that is remembered: his unfold.
-  clickOn(bubble, 'data-fold', 'session');
+  // SINCE desk/G1.14 THE TOP OF TEAM IS ONE LINE (Andy, O3: "the goal
+  // overview i only want to see in the goal item"). Nothing there is long
+  // enough to fold, so T1 and T3 hold that instead; the goal's overview and
+  // its fold live in the goal's own dialog (deskExplainTop.js).
+  test.subHeading('T1: the top of Team is the goal line alone, which opens the goal');
+  const bubble = doc.getElementById('desk-session').innerHTML;
+  if (/The goal title/.test(bubble) && /data-open="t\/G1"/.test(bubble) && !/GOAL-DESCRIPTION-TEXT/.test(bubble) && !/ITEM-ONE-TITLE/.test(bubble)) {
+    test.check('one line, the goal id and title, and a click opens the goal');
+  } else test.fail('the top of Team: ' + bubble.slice(0, 160));
 
-  test.subHeading('T3: the fold survives reopening Desk');
-  let seen = {};
-  try { seen = JSON.parse(files['seen.json'] || '{}'); } catch (e) { seen = {}; }
+  test.subHeading('T3: reopening Desk shows the same one line');
   const again = mountDesk(files);
   return settle().then(function () {
     const b2 = again.getElementById('desk-session').innerHTML;
-    if (seen.folds && seen.folds.session === false && /The goal title/.test(b2) && /GOAL-DESCRIPTION-TEXT/.test(b2)) {
-      test.check('seen.json holds folds.session: false, and a fresh Desk opens with the bubble unfolded as he left it');
-    } else test.fail('seen.json folds ' + JSON.stringify(seen.folds) + '; reopened bubble: ' + b2.slice(0, 160));
+    if (/The goal title/.test(b2) && !/GOAL-DESCRIPTION-TEXT/.test(b2)) test.check('a fresh Desk opens with the same goal line, and no overview');
+    else test.fail('reopened: ' + b2.slice(0, 160));
   });
 }).then(function () {
   test.subHeading("T2: a dialog's item text folds the same way, and its Done row stays");
