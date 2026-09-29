@@ -44,8 +44,9 @@ const OWED = 'OWED by desk/G1.3: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DIR = path.join(RUN, 'process', 'js', 'desk');
 const SCRIPT = path.join(DIR, 'desk.js');
-// pending.get joined with desk/G1.5; fresh.get with slim/G1.6.
-const VERBS = ['fresh.get', 'log.add', 'log.search', 'pending.get', 'seen.get', 'seen.set', 'state.get', 'state.set', 'voice.add'];
+// pending.get joined with desk/G1.5; fresh.get with slim/G1.6; AGENTS with
+// slim/G1.8 (its AGENTS.md, which appServer.serve detects).
+const VERBS = ['AGENTS', 'fresh.get', 'log.add', 'log.search', 'pending.get', 'seen.get', 'seen.set', 'state.get', 'state.set', 'voice.add'];
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskserver-'));
 const state = path.join(scratch, 'state');

@@ -193,6 +193,41 @@ function announce(name, pipe, verbs) {
     })).join('\n');
 }
 
+// ── AGENTS: AN APP'S RULES FOR AGENTS, FROM A FILE (slim/G1.8) ────────
+//
+//   Andy, 2026-09-29: "the verb would be upper-case "AGENTS"", "the response
+//   to agents is a file on disc called AGENTS?"; 2026-09-30: "great idea!
+//   than agent participation on an app cen be introduced without changing
+//   code", "i can live with the AGENTS.md auto-detection mechanism in
+//   appServer", "there is a file-size-limit (MAX_PAYLOAD)".
+//
+// An AGENTS.md beside the server's script, there when it starts, gives it
+// the verb AGENTS {} -> {text}: the file, read on every ask, so an edit is
+// the next answer. No file, no verb. An answer that would not fit one
+// answer is refused by name (answer-too-large), never cut. An app that
+// declares AGENTS itself keeps its own.
+const AGENTS_FILE = 'AGENTS.md';
+function withAgents(verbs, script) {
+  const file = path.join(path.dirname(path.resolve(String(script || ''))), AGENTS_FILE);
+  if (Object.prototype.hasOwnProperty.call(verbs, 'AGENTS') || !fs.existsSync(file)) return verbs;
+  const all = Object.assign({}, verbs);
+  all.AGENTS = {
+    request: {}, reply: { text: '' },
+    handler: function () {
+      const text = fs.readFileSync(file, 'utf8');
+      // The bound appClient holds every answer to (read at the ask: appClient
+      // itself requires this file's neighbours).
+      if (Buffer.byteLength(JSON.stringify({ text: text }), 'utf8') > require('./appClient').ANSWER_MAX) {
+        const e = new Error(AGENTS_FILE + ' is too large for one answer');
+        e.refusal = 'answer-too-large';
+        throw e;
+      }
+      return { text: text };
+    },
+  };
+  return all;
+}
+
 // THE WHOLE OF AN APP SERVER'S START: verbs in, the node's pipe from argv.
 // Started by the node, it ends with the node (processes/G1.3).
 function serve(verbs) {
@@ -204,6 +239,7 @@ function serve(verbs) {
     process.exit(2);
   }
   if (typeof process.send === 'function') process.on('disconnect', function () { process.exit(0); });
+  verbs = withAgents(verbs, argv[1]);
   const s = createAppServer(verbs);
   // IT SAYS WHO IT IS, AND WHAT IT ANSWERS. Andy, 2026-09-29: "after
   // starting the listener, it should announce itself with its name, and a
