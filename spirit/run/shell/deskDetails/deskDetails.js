@@ -90,13 +90,13 @@ function ddTake(m) {
 
 // One pass over this row's messages, in order, into what each part shows.
 function ddRead(list) {
-  var st = { explain: '', explainFrom: '', slots: Object.create(null), label: '',
-    asked: false, chat: [], openAsk: null, ready: false, readyBy: {} };
+  var st = { explain: '', explainFrom: '', explainAt: '', slots: Object.create(null), label: '',
+    asked: false, askedAt: '', chat: [], openAsk: null, ready: false, readyBy: {} };
   list.forEach(function (m) {
     var andy = m.dir === 'out';
     if (andy && m.kind === 'answer' && DD_RETITLE.test(m.text)) { st.label = m.text.replace(DD_RETITLE, ''); return; }
-    if (andy && m.kind === 'ask' && DD_EXPLAIN_ASK.test(m.text)) { st.asked = true; return; }
-    if (!andy && m.kind === 'explain') { st.explain = m.text; st.explainFrom = m.from; return; }
+    if (andy && m.kind === 'ask' && DD_EXPLAIN_ASK.test(m.text)) { st.asked = true; st.askedAt = String(m.at || ''); return; }
+    if (!andy && m.kind === 'explain') { st.explain = m.text; st.explainFrom = m.from; st.explainAt = String(m.at || ''); return; }
     if (!andy && m.kind === 'annotation') { st.slots[m.from] = { text: m.text, at: m.at }; return; }
     if (m.reported) return;
     if (m.kind === 'note' && /^taking(\s|$)/.test(m.text)) return;
@@ -141,6 +141,19 @@ function ddLoad() {
 // automatically"), even after he folded it.
 var ddExplainFolded = false;
 var ddExplainShown = null;
+// ── A STALE EXPLANATION (slim/G1.6) ────────────────────────────────
+//
+//   Andy: "no use if these displays go stale", "is this programatically or
+//   do i have to rely on agents to remember?". The row carries changedAt,
+//   when its text last changed (the desk server's fresh.get, which sees
+//   every session): an explanation older than that is marked stale, and the
+//   open asks once for a fresh one.
+function ddStale() {
+  var st = ddState || {};
+  var changed = String((ddRow && ddRow.changedAt) || '');
+  return !!(changed && st.explain && st.explainAt && st.explainAt < changed);
+}
+
 function ddBlurbHtml() {
   var st = ddState;
   if (!st) return '<div class="job-manifest-note">Reading…</div>';
@@ -149,7 +162,9 @@ function ddBlurbHtml() {
   var toggle = '<button type="button" data-fold="explain" title="' + (ddExplainFolded ? 'Unfold' : 'Fold') + '">' +
     (ddExplainFolded ? '▸' : '▾') + '</button> ';
   if (ddExplainFolded) return '<div>' + toggle + '<span class="job-manifest-note">explanation by ' + ddEsc(st.explainFrom) + '</span></div>';
-  return '<div>' + toggle + ddLineHtml({ text: st.explain }) + '</div><div class="job-manifest-note">— ' + ddEsc(st.explainFrom) + '</div>';
+  var stale = ddStale()
+    ? '<div class="job-manifest-note"><b>Stale:</b> the item changed after this was written; a fresh one has been asked for.</div>' : '';
+  return stale + '<div>' + toggle + ddLineHtml({ text: st.explain }) + '</div><div class="job-manifest-note">— ' + ddEsc(st.explainFrom) + '</div>';
 }
 
 // EACH AGENT'S CURRENT STATEMENT, ABOVE THE CHAT. Andy: "and we still need
@@ -168,9 +183,16 @@ function ddSlotsHtml() {
     }).join('') + '</div>';
 }
 
+// Each id a link to its item, as ddItemLine's are (slim/G1.6, Andy: "the
+// blocked and blocks lists link to the respective items").
+function ddLinks(ids) {
+  return (ids || []).map(function (w) { return typeof w === 'string' ? w : (w && w.id) || ''; }).filter(Boolean).map(function (id) {
+    return '<a href="#" data-open="' + ddEsc(id) + '" style="color:#cfe2ff">' + ddEsc(id) + '</a>';
+  }).join(', ');
+}
+
 function ddFactsHtml() {
   var r = ddRow || {};
-  var waits = (r.waitsOn || []).map(function (w) { return typeof w === 'string' ? w : (w.id || ''); }).join(', ');
   var rows = [
     ['your name', ddState && ddState.label],
     ['title', r.title],
@@ -178,16 +200,16 @@ function ddFactsHtml() {
     ['kind', r.kind],
     ['rank', r.rank],
     ['frees', r.frees],
-    ['waits on', waits],
+    ['waits on', { html: ddLinks(r.waitsOn) }],
     ['there', r.there == null ? '' : r.there + '%'],
     ['owed since', r.owedSince],
     ['blocked', r.blocked],
-  ].filter(function (p) { return p[1] !== undefined && p[1] !== null && p[1] !== ''; });
+  ].filter(function (p) { return p[1] !== undefined && p[1] !== null && p[1] !== '' && !(p[1] && p[1].html === ''); });
   var edges = (r.edges || []).map(function (e) {
     return '<div>' + ddEsc(e.fromHandle || e.from) + ' waits on ' + ddEsc(e.toHandle || e.to) + '</div>';
   }).join('');
   return '<table class="jobs-table"><tbody>' + rows.map(function (p) {
-    return '<tr><td>' + ddEsc(p[0]) + '</td><td>' + ddEsc(p[1]) + '</td></tr>';
+    return '<tr><td>' + ddEsc(p[0]) + '</td><td>' + (p[1] && p[1].html !== undefined ? p[1].html : ddEsc(p[1])) + '</td></tr>';
   }).join('') + '</tbody></table>' + (edges ? '<div class="job-manifest-note">' + edges + '</div>' : '');
 }
 
@@ -211,7 +233,29 @@ function ddDecide() {
   var r = ddDecideNote();
   return typeof r === 'string' ? { note: r, buttons: '' } : r;
 }
+// THE LIST'S DECISION, WHEN IT CAME WITH THE ROW (slim/G1.6). Andy: "Why
+// is't the appearance and disappearance of the go button synced between a
+// list item and it's panel?", "they obviously need to work it out from the
+// same data." desk.js hands row.goState (deskGoState): unverified | held |
+// go | none, and the dialog draws Go! from it alone.
+function ddDecideFromList(state) {
+  var ask = ddState && ddState.openAsk;
+  var asks = ask ? '<div class="job-manifest-note">' + ddEsc(ask.from) + ' asks: ' + ddEsc(ask.text) + '</div>' : '';
+  var mine = ddSession.filter(function (r) { return r.id === ddId; })[0];
+  if (state === 'unverified') return asks + '<div class="job-manifest-note"><b>No Go yet:</b> its Already-in-place list has not been verified.</div>';
+  if (state === 'held') {
+    var waits = (mine && mine.waitsOn) || (ddRow && ddRow.waitsOn) || [];
+    return asks + '<div class="job-manifest-note"><b>No Go yet:</b> ' + (waits.length ? 'it waits on ' + ddLinks(waits) : 'design mode is on') + '.</div>';
+  }
+  if (state === 'go') {
+    return { note: asks || '<div class="job-manifest-note">An agent asks for your go.</div>',
+      buttons: '<button type="button" id="dd-go">Go!</button><button type="button" id="dd-no">No</button>' };
+  }
+  return ddState && ddState.running ? '<div class="job-manifest-note"><b>Status: running.</b> You said go.</div>' : '';
+}
+
 function ddDecideNote() {
+  if (ddRow && typeof ddRow.goState === 'string') return ddDecideFromList(ddRow.goState);
   var ask = ddState && ddState.openAsk;
   // A closed item asks nothing (Andy: "this one still shows go button while
   // market as done").
@@ -230,7 +274,7 @@ function ddDecideNote() {
   var waits = (mine && mine.waitsOn) || [];
   if (waits.length || ddDesign) {
     return '<div class="job-manifest-note">' + ddEsc(ask.from) + ' asks: ' + ddEsc(ask.text) + '</div>' +
-      '<div class="job-manifest-note"><b>No Go yet:</b> ' + (waits.length ? 'it waits on ' + ddEsc(waits.join(', ')) : 'design mode is on') + '.</div>';
+      '<div class="job-manifest-note"><b>No Go yet:</b> ' + (waits.length ? 'it waits on ' + ddLinks(waits) : 'design mode is on') + '.</div>';
   }
   return { note: '<div class="job-manifest-note">' + ddEsc(ask.from) + ' asks: ' + ddEsc(ask.text) + '</div>',
     buttons: '<button type="button" id="dd-go">Go!</button><button type="button" id="dd-no">No</button>' };
@@ -533,9 +577,15 @@ function ddSend(kind, text, fieldId) {
 
 // OPENING IS ASKING, once per row: no blurb, and no request already in
 // his record, means this open is the request.
+// A STALE ONE COUNTS AS NONE (slim/G1.6), unless he already asked after the
+// item changed: once per change, never again on every open.
 function ddAskIfUnexplained() {
-  if (!ddState || ddState.explain || ddState.asked) return;
+  if (!ddState) return;
+  var changed = String((ddRow && ddRow.changedAt) || '');
+  if (ddStale()) { if (ddState.askedAt && ddState.askedAt >= changed) return; }
+  else if (ddState.explain || ddState.asked) return;
   ddState.asked = true;
+  ddState.askedAt = new Date().toISOString();
   ddSend('ask', 'explain this to me: what is it, and why is it where it is?');
 }
 

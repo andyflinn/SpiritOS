@@ -148,6 +148,31 @@ function deskOutgoing(to, body, r, e) {
 // door (D4). It reads only what it shows: the newest session, each open
 // item's own lines, a chat's newest page, never the whole log. Desk still
 // folds what it reads (deskFold); the server is storage and bounded search.
+// ── WHAT HAS GONE STALE (slim/G1.6) ─────────────────────────────────
+//
+// The desk server's fresh.get, one entry per item of the newest session:
+// {id, changedAt, updateRequested}. Asked at load and when a session or an
+// answer arrives. A row carries changedAt to its dialog, which marks an
+// older explanation stale; updateRequested shows as 'update?' in the List.
+var deskFresh = {};
+function deskAskFresh() {
+  return deskAsk('fresh.get', {}).then(function (r) {
+    var next = {};
+    ((r && r.items) || []).forEach(function (i) {
+      try { var o = JSON.parse(i.label); if (o && o.id) next[o.id] = o; } catch (e) { /* not one */ }
+    });
+    deskFresh = next;
+    deskDraw();
+  }, function () { /* no answer: nothing is marked */ });
+}
+// Each id a link to its item, as the dialog's are (Andy: "the blocked and
+// blocks lists link to the respective items").
+function deskLinks(ids) {
+  return (ids || []).map(function (id) {
+    return '<a href="#" data-open="' + deskEsc(id) + '">' + deskEsc(id) + '</a>';
+  }).join(', ');
+}
+
 function deskAsk(verb, args) {
   var ask = { desk: {} };
   ask.desk[verb] = args || {};
@@ -217,6 +242,9 @@ function deskRecord(msgs) {
     // THE BACKUP LINE FOLLOWS THE RECORD: read once at load it went stale
     // (Andy: "last check 12:55" while it had copied at 13:26).
     .then(function () { if (fresh.length) return deskAskBackup(); })
+    // ITS OWN MARKS STAY FRESH TOO (slim/G1.6): a new line can change what
+    // is stale, so it is asked again once the lines are kept.
+    .then(function () { if (fresh.length) return deskAskFresh(); })
     .catch(deskWriteError('keep its log'));
 }
 
@@ -583,6 +611,7 @@ function deskSessionRows() {
       // other things depend on". The lead marks it open; it names what it
       // blocks like any item, and it is his to answer.
       open: !!it.open,
+      changedAt: String((deskFresh[String(it.id || '')] || {}).changedAt || ''),
       blocks: (Array.isArray(it.blocks) ? it.blocks : [it.blocks || goalId]).map(String) };
   });
   var waiting = function (id) {
@@ -591,7 +620,8 @@ function deskSessionRows() {
   items.forEach(function (it) { it.waitsOn = waiting(it.id); });
   return items.concat([{ id: goalId, title: String(deskSession.goal.title), goal: true,
     description: String(deskSession.goal.description || ''), done: deskIsDone(goalId, deskSession.goal.done), waitsOn: waiting(goalId),
-    check: String(deskSession.goal.check || ''), tests: Array.isArray(deskSession.goal.tests) ? deskSession.goal.tests.map(String) : [] }]);
+    check: String(deskSession.goal.check || ''), tests: Array.isArray(deskSession.goal.tests) ? deskSession.goal.tests.map(String) : [],
+    changedAt: String((deskFresh[goalId] || {}).changedAt || '') }]);
 }
 function deskIsDone(id, posted) {
   return Object.prototype.hasOwnProperty.call(deskDone, id) ? deskDone[id] : !!posted;
@@ -643,8 +673,8 @@ function deskSessionTable() {
         : deskGoState(row) === 'go'
         ? '<button type="button" data-go="' + deskEsc(row.id) + '" title="' + deskEsc(deskOpenAsk[row.id].text) + '">Go!</button>'
         : deskEsc(deskDecision[row.id] || '')) + '</td>' +
-      '<td>' + deskEsc((row.blocks || []).join(', ')) + '</td>' +
-      '<td>' + deskEsc((row.waitsOn || []).join(', ')) + '</td>' +
+      '<td>' + deskLinks(row.blocks) + '</td>' +
+      '<td>' + deskLinks(row.waitsOn) + '</td>' +
       // A DONE LINE CAN BE CLOSED AWAY. Andy: "done lines in the list should
       // offer me a close button which will make the line disappear."
       // The button says it; the word beside it went (Andy, 2026-09-29: "don't
@@ -656,7 +686,10 @@ function deskSessionTable() {
         // blocked, should be statuses as well".
         : (row.waitsOn || []).length ? 'blocked'
         : deskIsBlocking(row) ? 'blocking'
-        : deskDecision[row.id] === 'go' ? 'running' : 'open') + '</td>' +
+        : deskDecision[row.id] === 'go' ? 'running' : 'open') +
+        // AN UPDATE IS ASKED OF IT (slim/G1.6): a neighbour's status changed
+        // after its newest agent line.
+        (!row.done && deskFresh[row.id] && deskFresh[row.id].updateRequested ? ' <b>update?</b>' : '') + '</td>' +
     '</tr>';
   }).join('');
   return '<div class="job-manifest-note">Design session: ' + deskEsc(deskSession.goal.id) + '</div>' + deskRulesHtml() +
@@ -742,7 +775,10 @@ function deskSessionOpen() {
 
 function deskRowOf(id) {
   var sessionRow = deskSessionRows().filter(function (r) { return r.id === id; })[0];
-  if (sessionRow) return sessionRow;
+  // ONE DECISION FOR THE GO! BUTTON (slim/G1.6). Andy: "they obviously need
+  // to work it out from the same data". The dialog draws Go! from this and
+  // from nothing else.
+  if (sessionRow) { sessionRow.goState = deskGoState(sessionRow) || 'none'; return sessionRow; }
   if (!deskBoard) return null;
   for (var i = 0; i < deskBoard.rows.length; i += 1) if (deskBoard.rows[i].id === id) return deskBoard.rows[i];
   return null;
@@ -1027,7 +1063,12 @@ function deskDraw() {
     });
   });
   Array.prototype.forEach.call(el.querySelectorAll('tr[data-id]'), function (tr) {
-    tr.addEventListener('click', function () { deskOpenRow(tr.getAttribute('data-id')); });
+    tr.addEventListener('click', function (event) {
+      // A link in the row opens its own item, not the row's (slim/G1.6).
+      var link = event && event.target && event.target.closest && event.target.closest('[data-open]');
+      if (link) { if (event.preventDefault) event.preventDefault(); deskOpenRow(link.getAttribute('data-open')); return; }
+      deskOpenRow(tr.getAttribute('data-id'));
+    });
   });
 }
 
@@ -1084,6 +1125,7 @@ function deskLoad() {
       // What he closed, wherever: one bounded search, not every item.
       deskSearch({ kind: 'answer', text: 'closed.' }).then(function (r) { deskTake(r.lines); }),
       deskAskBackup(),
+      deskAskFresh(),
     ];
     deskSessionRows().forEach(function (row) {
       if (deskClosed[row.id]) return;
