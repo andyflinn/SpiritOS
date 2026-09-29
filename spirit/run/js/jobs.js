@@ -368,8 +368,11 @@ module.exports = function installJobs(spirit, port) {
     // to know whose node it runs on gets --node {name, publicKey}. It never
     // opens identity.json, which holds the private keys; nothing private is
     // ever in a server's arguments.
+    // Read here, not through loadIdentity: a fresh node is made nameless
+    // (ensureIdentity(root, '')), loadIdentity answers null without a name,
+    // and a missing --node crash-looped the backup on every fresh lab node.
     let me = null;
-    try { me = require('./relayAuth').loadIdentity(rootDir); } catch (e) { me = null; }
+    try { me = JSON.parse(fs.readFileSync(path.join(rootDir, 'relay-state', 'identity.json'), 'utf8')); } catch (e) { me = null; }
     const nodeArg = me && me.publicKey ? ['--node', JSON.stringify({ name: String(me.name || ''), publicKey: String(me.publicKey) })] : [];
     const started = [];
     names.forEach(function (name) {

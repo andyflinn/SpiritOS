@@ -652,8 +652,21 @@ function startNode(node) {
     } catch (e) { /* a relay that cannot be given one measures for itself */ }
   }
 
+  // A FIXTURE NODE HAS A HOME OF ITS OWN (desk/G1.7). Every node boots a
+  // backup writing into <home>/.SpiritOS/backups/, and this labMaster runs
+  // with whoever started it's real home (on Andy's box, his). So a node under
+  // the fixture root gets HOME and USERPROFILE inside its own folder, wiped
+  // with it. Andy's own node, his lab nodes and the agents' keep the real
+  // home: their backups are real ones.
+  let env = process.env;
+  if (!node.permanent && kindOf(node) === FIXTURE_KIND) {
+    const own = path.resolve(home, '..', '..', 'home');
+    try { fs.mkdirSync(own, { recursive: true }); } catch (e) { /* the node says why */ }
+    env = Object.assign({}, process.env, { HOME: own, USERPROFILE: own });
+  }
   const child = spawn(process.execPath, args, {
     cwd: home,
+    env: env,
     stdio: 'inherit',
   });
   children[node.id] = child;
