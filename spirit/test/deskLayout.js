@@ -124,7 +124,6 @@ settle().then(function () {
   test.subHeading('T12: the goal line is pinned with the tabs, in one sticky block');
   const barsAt = shell.search(/<div[^>]*id="desk-bars"[^>]*position:\s*sticky/);
   const goalAt = shell.indexOf('id="desk-goal"');
-  const tabsAt = shell.indexOf('id="desk-tabs"');
   if (barsAt !== -1 && goalAt > barsAt && goalAt < tabsAt) test.check('#desk-goal sits inside the sticky #desk-bars, above the tabs');
   else test.fail(OWED + 'sticky block at ' + barsAt + ', goal line at ' + goalAt + ', tabs at ' + tabsAt);
 
