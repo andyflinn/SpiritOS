@@ -305,19 +305,16 @@ function walked(walk, pairOf) {
 //
 //   Andy: "no use if these displays go stale", "is this programatically or
 //   do i have to rely on agents to remember?" His go on: when an item's text
-//   changes, Desk marks its explanation stale and asks for a fresh one; when
-//   an item's status changes, Desk puts an update request on the items it
-//   blocks and that block it.
+//   changes, Desk marks its explanation stale and asks for a fresh one.
+//   Update requests on a status change he dropped (2026-09-30): the lists
+//   are Desk's own data and redraw at once, "lots of agent-work that can be
+//   done programatically".
 //
 // Folded here because only this server sees every session (Desk loads the
 // newest). For each item of the newest session, and its goal:
 //   changedAt        the at of the newest session in which its text (title,
 //                    description, check, tests, inPlace) differed from the
 //                    session before, or of the one it first appeared in
-//   updateRequested  a neighbour (an item it blocks, or one blocking it)
-//                    changed status (his go., done., closed., reopen.) after
-//                    this item's newest agent line; a newer one clears it
-const STATUS_WORDS = ['go.', 'done.', 'closed.', 'reopen.'];
 function textOf(it) {
   return JSON.stringify([it.title || '', it.description || '', it.check || '', it.tests || [], it.inPlace || []]);
 }
@@ -325,8 +322,6 @@ function freshness() {
   let session = null;
   const seen = Object.create(null);
   const changedAt = Object.create(null);
-  const agentAt = Object.create(null);
-  const statusAt = Object.create(null);
   for (const row of allLines.iterate()) {
     let m;
     try { m = JSON.parse(row.line); } catch (e) { continue; }
@@ -343,22 +338,13 @@ function freshness() {
         const t = textOf(it);
         if (seen[id] !== t) { seen[id] = t; changedAt[id] = at; }
       });
-      continue;
     }
-    if (!m.todo) continue;
-    if (m.dir === 'in' && m.from && m.from !== 'andy') agentAt[m.todo] = at;
-    if (m.dir === 'out' && m.kind === 'answer' && STATUS_WORDS.indexOf(String(m.text || '')) !== -1) statusAt[m.todo] = at;
   }
   if (!session) return [];
   const items = session.items.concat(session.goal && session.goal.id ? [session.goal] : []);
-  const near = Object.create(null);
-  const link = function (a, b) { (near[a] = near[a] || []).push(b); (near[b] = near[b] || []).push(a); };
-  items.forEach(function (it) { (it.blocks || []).forEach(function (b) { link(String(it.id), String(b)); }); });
   return items.filter(function (it) { return it && it.id; }).map(function (it) {
     const id = String(it.id);
-    const mine = agentAt[id] || '';
-    const asked = (near[id] || []).some(function (n) { return statusAt[n] && statusAt[n] > mine; });
-    return JSON.stringify({ id: id, changedAt: changedAt[id] || '', updateRequested: asked });
+    return JSON.stringify({ id: id, changedAt: changedAt[id] || '' });
   });
 }
 

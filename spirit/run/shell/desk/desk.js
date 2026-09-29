@@ -151,9 +151,8 @@ function deskOutgoing(to, body, r, e) {
 // ── WHAT HAS GONE STALE (slim/G1.6) ─────────────────────────────────
 //
 // The desk server's fresh.get, one entry per item of the newest session:
-// {id, changedAt, updateRequested}. Asked at load and when a session or an
-// answer arrives. A row carries changedAt to its dialog, which marks an
-// older explanation stale; updateRequested shows as 'update?' in the List.
+// {id, changedAt}. Asked at load and after new lines. A row carries
+// changedAt to its dialog, which marks an older explanation stale.
 var deskFresh = {};
 function deskAskFresh() {
   return deskAsk('fresh.get', {}).then(function (r) {
@@ -686,10 +685,7 @@ function deskSessionTable() {
         // blocked, should be statuses as well".
         : (row.waitsOn || []).length ? 'blocked'
         : deskIsBlocking(row) ? 'blocking'
-        : deskDecision[row.id] === 'go' ? 'running' : 'open') +
-        // AN UPDATE IS ASKED OF IT (slim/G1.6): a neighbour's status changed
-        // after its newest agent line.
-        (!row.done && deskFresh[row.id] && deskFresh[row.id].updateRequested ? ' <b>update?</b>' : '') + '</td>' +
+        : deskDecision[row.id] === 'go' ? 'running' : 'open') + '</td>' +
     '</tr>';
   }).join('');
   return '<div class="job-manifest-note">Design session: ' + deskEsc(deskSession.goal.id) + '</div>' + deskRulesHtml() +

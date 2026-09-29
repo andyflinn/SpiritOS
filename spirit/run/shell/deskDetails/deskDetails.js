@@ -370,6 +370,7 @@ function ddFrame() {
     // (index.html), which made his titles small and greyed. Andy: "must be
     // Title style/size as well."
     '<div class="stat-tile wide"><div id="dd-title" style="font-size:1.25em;font-weight:bold"></div><div id="dd-blurb"></div></div>' +
+    '<div id="dd-links"></div>' +
     '<div id="dd-item"></div>' +
     '<div class="stat-tile wide" id="dd-facts"></div>' +
     '<div id="dd-decide"></div>' +
@@ -404,13 +405,33 @@ function ddItemLine(r) {
 // FOLDED, THE TITLE AND THE DONE ROW (desk/G1.8): the one button he closes
 // with is never hidden (claude-windows' contract, deskFold.js).
 var ddFolded = true;  // every foldable box starts folded (desk/G1.12); open() folds it again
-function ddItemHtml() {
-  var me = ddSession.filter(function (r) { return r.id === ddId; })[0];
+// ── BLOCKED BY AND BLOCKING, A BLOCK OF THEIR OWN (slim/G1.6) ────────
+//
+//   Andy: "the lists are Desk's data and update at once; they sit today
+//   inside the folded item record, so they move into a foldable block of
+//   their own beside the explanation". Drawn from the plan at every paint,
+//   never from an agent's words, so they cannot go stale; open by default,
+//   so they show at once. A group with nothing in it draws nothing (desk/G1.12:
+//   "groups like blocking should disappear completely").
+var ddLinksFolded = false;
+function ddLinksHtml() {
+  var me = ddSession.filter(function (r) { return r.id === ddId; })[0] || ddRow;
   if (!me) return '';
   var byId = {};
   ddSession.forEach(function (r) { byId[r.id] = r; });
   var blockedBy = ddSession.filter(function (r) { return (r.blocks || []).indexOf(ddId) !== -1; }).map(ddItemLine).join('');
   var blocking = (me.blocks || []).map(function (id) { return ddItemLine(byId[id] || { id: id, title: '' }); }).join('');
+  if (!blockedBy && !blocking) return '';
+  var toggle = '<button type="button" data-fold="links" title="' + (ddLinksFolded ? 'Unfold' : 'Fold') + '">' + (ddLinksFolded ? '▸' : '▾') + '</button> ';
+  if (ddLinksFolded) return '<div class="stat-tile wide">' + toggle + '<span class="label">Blocked by, blocking</span></div>';
+  return '<div class="stat-tile wide">' + toggle + '<span class="label">Blocked by, blocking</span>' +
+    (blockedBy ? '<div class="label" style="margin-top:8px">Blocked by</div><ul style="margin:6px 0 0 18px">' + blockedBy + '</ul>' : '') +
+    (blocking ? '<div class="label" style="margin-top:8px">Blocking</div><ul style="margin:6px 0 0 18px">' + blocking + '</ul>' : '') + '</div>';
+}
+
+function ddItemHtml() {
+  var me = ddSession.filter(function (r) { return r.id === ddId; })[0];
+  if (!me) return '';
   // DONE IS HIS BUTTON. Andy: "how do those damn items get closed?", then
   // "let's close that gap." Pressing it sends "done." under this item, and
   // Desk reads his own latest done/reopen as the item's state.
@@ -448,10 +469,6 @@ function ddItemHtml() {
     (me.tests && me.tests.length
       ? '<ul style="margin:6px 0 0 18px">' + me.tests.map(function (t) { return '<li>' + ddEsc(t) + '</li>'; }).join('') + '</ul>'
       : '<div class="job-manifest-note">None named yet.</div>') +
-    // A GROUP WITH NOTHING IN IT DRAWS NOTHING (desk/G1.12). Andy: "groups
-    // like blocking should disappear completely."
-    (blockedBy ? '<div class="label" style="margin-top:8px">Blocked by</div><ul style="margin:6px 0 0 18px">' + blockedBy + '</ul>' : '') +
-    (blocking ? '<div class="label" style="margin-top:8px">Blocking</div><ul style="margin:6px 0 0 18px">' + blocking + '</ul>' : '') +
     // The plan's rules hold here too (desk.js, deskSessionRules).
     (ddRules.length ? '<div style="margin-top:8px;padding:6px 10px;border:1px dashed currentColor;border-radius:6px">' +
       '<div class="label">Rules — hold for every requirement, never done</div><ul style="margin:6px 0 0 18px">' +
@@ -474,6 +491,7 @@ function ddDraw() {
   title.innerHTML = ddEsc(label || (ddRow ? ddRow.title : ddId)) + ' <span class="job-manifest-note">(' +
     ddEsc(ddRow && ddRow.handle ? ddRow.handle : ddId) + ')</span>';
   document.getElementById('dd-blurb').innerHTML = ddBlurbHtml();
+  document.getElementById('dd-links').innerHTML = ddLinksHtml();
   document.getElementById('dd-facts').innerHTML = ddFactsHtml();
   document.getElementById('dd-decide').innerHTML = ddDecideHtml();
   document.getElementById('dd-slots').innerHTML = ddSlotsHtml();
@@ -604,6 +622,11 @@ spirit.shell.activateApp({
       }
       if (event.target && event.target.getAttribute && event.target.getAttribute('data-fold') === 'item') {
         ddFolded = !ddFolded;
+        ddDraw();
+        return;
+      }
+      if (event.target && event.target.getAttribute && event.target.getAttribute('data-fold') === 'links') {
+        ddLinksFolded = !ddLinksFolded;
         ddDraw();
         return;
       }

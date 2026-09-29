@@ -115,7 +115,9 @@ test.startTest('desk/G1.14: the explanation on top and opening itself; the goal 
   const goalDlg = dialog('t/G1', ROWS, [row('claude-windows', 'session', SESSION, 't/G1')]);
   await settle();
   clickFold(goalDlg.doc.getElementById('dd-body'), 'item');
-  const goalRecord = goalDlg.doc.getElementById('dd-item').innerHTML;
+  // The goal's items are its "Blocked by" list, which slim/G1.6 moved out of
+  // the record into a block of its own (#dd-links): both count as its dialog.
+  const goalRecord = goalDlg.doc.getElementById('dd-item').innerHTML + goalDlg.doc.getElementById('dd-links').innerHTML;
   if (!/GOAL-OVERVIEW-TEXT/.test(team) && !/ITEM-ONE-TITLE/.test(team) && /GOAL-OVERVIEW-TEXT/.test(goalRecord) && /ITEM-ONE-TITLE/.test(goalRecord)) {
     test.check('Team shows neither the goal\'s description nor its items; the goal\'s dialog shows both');
   } else test.fail(OWED + 'Team bubble ' + team.replace(/\s+/g, ' ').slice(0, 140) + ' | goal record has overview ' + /GOAL-OVERVIEW-TEXT/.test(goalRecord));
