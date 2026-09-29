@@ -60,8 +60,8 @@ function readJson(rel) {
 }
 
 const APP_SERVER_REL = 'spirit/run/js/faceServer.js';
-const STARTER_DIR_REL = 'spirit/run/shell/starter';
-const STARTER_MANIFEST_REL = 'spirit/run/shell/starter/starter.json';
+const STARTER_DIR_REL = 'spirit/run/process/js/starter';
+const STARTER_MANIFEST_REL = 'spirit/run/process/js/starter/starter.json';
 
 const faceServerThere = has(APP_SERVER_REL);
 const starterThere = has(STARTER_DIR_REL);

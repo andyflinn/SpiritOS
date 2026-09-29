@@ -95,6 +95,8 @@ const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
 // app/ BECAME shell/ (slim/G1.1): what this node kept in app/, git did not
 // move; it moves here, once, before anything reads shell/.
 require('./shellMove').moveLeftovers(ROOT_DIR);
+// And a face's state followed it into process/ (slim/G1.4).
+require('./shellMove').moveAppState(ROOT_DIR);
 
 const hub =require('./hub').createHub(ROOT_DIR);
 

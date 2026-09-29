@@ -23,8 +23,8 @@ const RUN = path.join(__dirname, '..', 'run');
 function tempRoot(apps) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-appservers-'));
   Object.keys(apps).forEach(function (name) {
-    fs.mkdirSync(path.join(root, 'shell', name), { recursive: true });
-    fs.writeFileSync(path.join(root, 'shell', name, name + '.json'), JSON.stringify(apps[name]));
+    fs.mkdirSync(path.join(root, 'process', 'js', name), { recursive: true });
+    fs.writeFileSync(path.join(root, 'process', 'js', name, name + '.json'), JSON.stringify(apps[name]));
   });
   return root;
 }
@@ -88,7 +88,7 @@ test.subHeading('None on a puppet, one server job per serving app elsewhere');
   s.startAll();
   const one = started[0];
   if (started.length === 1 && one.args.indexOf('--app') !== -1 && one.args[one.args.indexOf('--app') + 1] === 'hello' &&
-      one.args[one.args.indexOf('--pipe') + 1] === path.join(root, 'app-state', 'hello', 'door.sock') &&
+      one.args[one.args.indexOf('--pipe') + 1] === path.join(root, 'relay-state', 'process', 'hello', 'door.sock') &&
       one.opts.cwd === root && one.args.some(function (a) { return /^--max-old-space-size=\d+$/.test(a); })) {
     test.check('the node starts js/server.js --app hello --pipe <its path>, from its run folder, with its heap capped');
   } else {
@@ -152,9 +152,9 @@ function aRealHop() {
   // passed for the wrong reason, which showed only when the test's own
   // server ended and the page still came back.
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-hop-'));
-  ['faceProof', 'shared'].forEach(function (d) {
-    fs.cpSync(path.join(RUN, 'shell', d), path.join(root, 'shell', d), { recursive: true });
-  });
+  // A face is a process since slim/G1.4; ask.js stays in the shell.
+  fs.cpSync(path.join(RUN, 'process', 'js', 'faceProof'), path.join(root, 'process', 'js', 'faceProof'), { recursive: true });
+  fs.cpSync(path.join(RUN, 'shell', 'shared'), path.join(root, 'shell', 'shared'), { recursive: true });
   fs.mkdirSync(path.join(root, 'process'), { recursive: true });
   fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
   const s = appClient.createAppClient({

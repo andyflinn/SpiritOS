@@ -61,12 +61,14 @@ const ROOT_DIR = path.join(__dirname, '..');
 // persists nothing about a visitor by default. It prevents the one thing
 // that is unrecoverable later: a redeployment silently eating data an app
 // was trusted with.
+// Every process's state lives in relay-state/process/<name> (desk/G1 D5),
+// and a face is a process since slim/G1.4.
 function stateDir(rootDir, appName) {
-  return path.join(rootDir, 'app-state', appName);
+  return path.join(rootDir, 'relay-state', 'process', appName);
 }
 
 function appDir(rootDir, appName) {
-  return path.join(rootDir, 'shell', appName);
+  return path.join(rootDir, 'process', 'js', appName);
 }
 
 // The manifest is `shell/<name>/<name>.json` — the convention the tree
@@ -1035,7 +1037,8 @@ function create(opts) {
     if (pathname === '/' || pathname === '/index.html') return own(appName + '.html');
     const m = /^\/([A-Za-z0-9._-]+)$/.exec(pathname);
     if (!m) return null;
-    if (m[1] === appName + '.html' || m[1] === appName + '.js') return own(m[1]);
+    // Its page only: under process/ a .js is a server's own code (slim/G1.4).
+    if (m[1] === appName + '.html') return own(m[1]);
     if (m[1] === 'ask.js') return path.join(rootDir, 'shell', 'shared', 'ask.js');
     // ── A GRANT THAT SERVES NOTHING IS NOT A GRANT ──────────────────
     //

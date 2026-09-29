@@ -26,12 +26,12 @@ const RUN = path.join(__dirname, '..', 'run');
 
 (async function () {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-faceproof-helper-'));
-  ['faceProof', 'shared'].forEach(function (d) {
-    fs.cpSync(path.join(RUN, 'shell', d), path.join(root, 'shell', d), { recursive: true });
-  });
+  // A face is a process since slim/G1.4; ask.js stays in the shell.
+  fs.cpSync(path.join(RUN, 'process', 'js', 'faceProof'), path.join(root, 'process', 'js', 'faceProof'), { recursive: true });
+  fs.cpSync(path.join(RUN, 'shell', 'shared'), path.join(root, 'shell', 'shared'), { recursive: true });
   fs.mkdirSync(path.join(root, 'process'), { recursive: true });
   fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
-  const pipe = appClient.pipePathFor(root, 'faceProof');
+  const pipe = appClient.pipePathFor(root, 'faceProof', process.platform, 'process');
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
   const child = childProcess.spawn(process.execPath, [path.join('js', 'server.js'), '--app', 'faceProof', '--pipe', pipe],
     { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });

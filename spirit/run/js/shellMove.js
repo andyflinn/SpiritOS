@@ -70,4 +70,40 @@ function moveLeftovers(rootDir, say) {
   return { moved: moved, kept: kept };
 }
 
-module.exports = { moveLeftovers: moveLeftovers, LEGACY_APP_DIR: LEGACY_APP_DIR };
+// A FACE'S STATE FOLLOWS IT INTO process/ (slim/G1.4). A face kept its
+// state, its own identity among it, in app-state/<name>; every process keeps
+// its state in relay-state/process/<name>. Moved once, whole, per face; a
+// folder the new place already holds is kept and said, never merged.
+const LEGACY_APP_STATE_DIR = 'app-state';
+
+function moveAppState(rootDir, say) {
+  const tell = typeof say === 'function' ? say : function (line) { console.log(line); };
+  const from = path.join(rootDir, LEGACY_APP_STATE_DIR);
+  if (!fs.existsSync(from)) return { moved: [], kept: [] };
+  const moved = [];
+  const kept = [];
+  let names = [];
+  try { names = fs.readdirSync(from, { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).map(function (e) { return e.name; }); }
+  catch (e) { names = []; }
+  names.forEach(function (name) {
+    const dest = path.join(rootDir, 'relay-state', 'process', name);
+    if (fs.existsSync(dest)) {
+      kept.push(name);
+      tell('shell: kept app-state/' + name + ' where it is: relay-state/process/' + name + ' already exists');
+      return;
+    }
+    try {
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.renameSync(path.join(from, name), dest);
+      moved.push(name);
+      tell('shell: moved app-state/' + name + ' to relay-state/process/' + name);
+    } catch (e) {
+      kept.push(name);
+      tell('shell: could not move app-state/' + name + ': ' + ((e && e.message) || e));
+    }
+  });
+  removeEmptyDirs(from);
+  return { moved: moved, kept: kept };
+}
+
+module.exports = { moveLeftovers: moveLeftovers, moveAppState: moveAppState, LEGACY_APP_DIR: LEGACY_APP_DIR, LEGACY_APP_STATE_DIR: LEGACY_APP_STATE_DIR };

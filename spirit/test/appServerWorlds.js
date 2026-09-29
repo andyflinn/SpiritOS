@@ -381,7 +381,7 @@ async function otherRelay() {
 // contract uses it: a fixture that invented its own layout would be
 // testing a boundary nobody ships.
 function plantApp(rootDir, name, manifest) {
-  const dir = path.join(rootDir, 'shell', name);
+  const dir = path.join(rootDir, 'process', 'js', name);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, name + '.json'),
     JSON.stringify(Object.assign({ name: name, description: 'a fixture app' }, manifest), null, 2));
@@ -426,9 +426,9 @@ const WRONG_MANIFESTS = {
 // point is that code is replaced and state is not — so this is the real
 // motion rather than a convenience.
 function plantStarter(rootDir, repoRoot) {
-  const from = path.join(repoRoot, 'spirit', 'run', 'shell', 'starter');
+  const from = path.join(repoRoot, 'spirit', 'run', 'process', 'js', 'starter');
   if (!fs.existsSync(from)) return null;
-  const to = path.join(rootDir, 'shell', 'starter');
+  const to = path.join(rootDir, 'process', 'js', 'starter');
   fs.mkdirSync(path.dirname(to), { recursive: true });
   fs.cpSync(from, to, { recursive: true });
   return to;

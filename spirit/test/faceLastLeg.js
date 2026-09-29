@@ -42,9 +42,9 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-lastleg-'));
 // would put it. `serve` is the fake app's handler.
 function world(serve) {
   const root = path.join(scratch, 'root-' + Math.random().toString(36).slice(2, 8));
-  fs.mkdirSync(path.join(root, 'shell', 'faceProof'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'shell', 'faceProof', 'faceProof.json'), JSON.stringify({ serves: true }));
-  const pipe = appClient.pipePathFor(root, 'faceProof');
+  fs.mkdirSync(path.join(root, 'process', 'js', 'faceProof'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'process', 'js', 'faceProof', 'faceProof.json'), JSON.stringify({ serves: true }));
+  const pipe = appClient.pipePathFor(root, 'faceProof', process.platform, 'process');
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
   const seen = [];
   const server = http.createServer(function (req, res) {
@@ -115,11 +115,11 @@ async function wholeRoute() {
   const owner = home('owner');
   fs.writeFileSync(path.join(owner.app, 'face-domain.json'), JSON.stringify({ faceDomain: FACE_DOMAIN }));
   fs.writeFileSync(path.join(owner.app, 'grants.json'), JSON.stringify({ names: { hello: { to: ownerId.publicKey, app: 'faceProof' } } }));
-  fs.mkdirSync(path.join(owner.root, 'shell', 'faceProof'), { recursive: true });
-  fs.writeFileSync(path.join(owner.root, 'shell', 'faceProof', 'faceProof.json'), JSON.stringify({ serves: true }));
+  fs.mkdirSync(path.join(owner.root, 'process', 'js', 'faceProof'), { recursive: true });
+  fs.writeFileSync(path.join(owner.root, 'process', 'js', 'faceProof', 'faceProof.json'), JSON.stringify({ serves: true }));
   const servers = appClient.createAppClient({ rootDir: owner.root, log: function () {}, startServerJob: function () { return {}; } });
   servers.startAll();
-  const pipe = appClient.pipePathFor(owner.root, 'faceProof');
+  const pipe = appClient.pipePathFor(owner.root, 'faceProof', process.platform, 'process');
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
   const seen = [];
   const app = http.createServer(function (req, res) {
@@ -216,12 +216,12 @@ async function noTcpPort() {
   }
   const childProcess = require('child_process');
   const root = path.join(scratch, 'g18');
-  ['faceProof', 'shared'].forEach(function (d) {
-    fs.cpSync(path.join(RUN, 'shell', d), path.join(root, 'shell', d), { recursive: true });
-  });
+  // A face is a process since slim/G1.4; ask.js stays in the shell.
+  fs.cpSync(path.join(RUN, 'process', 'js', 'faceProof'), path.join(root, 'process', 'js', 'faceProof'), { recursive: true });
+  fs.cpSync(path.join(RUN, 'shell', 'shared'), path.join(root, 'shell', 'shared'), { recursive: true });
   fs.mkdirSync(path.join(root, 'process'), { recursive: true });
   fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
-  const pipe = appClient.pipePathFor(root, 'faceProof');
+  const pipe = appClient.pipePathFor(root, 'faceProof', process.platform, 'process');
   fs.mkdirSync(path.dirname(pipe), { recursive: true });
   const child = childProcess.spawn(process.execPath, [path.join('js', 'server.js'), '--app', 'faceProof', '--pipe', pipe],
     { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });

@@ -106,13 +106,15 @@ function pipePathFor(rootDir, appName, platform, kind) {
     : path.join(rootDir, 'app-state', appName, 'door.sock');
 }
 
-// Every app whose manifest says it serves, by folder order.
+// Every face whose manifest says it serves, by folder order. A face is a
+// process since slim/G1.4 (Andy: "faceProof moves"; D11, servers live in
+// process/js), so it is found there and never in shell/.
 function readServers(rootDir) {
   let names = [];
-  try { names = fs.readdirSync(path.join(rootDir, 'shell')).sort(); } catch (e) { return []; }
+  try { names = fs.readdirSync(path.join(rootDir, 'process', 'js')).sort(); } catch (e) { return []; }
   return names.filter(function (app) {
     if (!APP_RE.test(app)) return false;
-    try { return servesOf(JSON.parse(fs.readFileSync(path.join(rootDir, 'shell', app, app + '.json'), 'utf8'))); }
+    try { return servesOf(JSON.parse(fs.readFileSync(path.join(rootDir, 'process', 'js', app, app + '.json'), 'utf8'))); }
     catch (e) { return false; }
   });
 }
@@ -140,7 +142,8 @@ function createAppClient(opts) {
   function startAll() {
     if (isPuppet()) { log('app servers: this node is a puppet, so it starts none'); return []; }
     return readServers(rootDir).map(function (app) {
-      const pipe = pipePathFor(rootDir, app, platform);
+      // Its door with every process's, in relay-state/process/<name> (slim/G1.4).
+      const pipe = pipePathFor(rootDir, app, platform, 'process');
       if (platform !== 'win32') {
         try { fs.mkdirSync(path.dirname(pipe), { recursive: true }); } catch (e) { /* the server says why */ }
       }
