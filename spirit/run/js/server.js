@@ -1376,7 +1376,7 @@ contactBook.syncMarks(ROOT_DIR);
   });
   appClient.startAll();
   // Node-operated servers in process/js start with the node (processes/G1.3).
-  jobs.startNodeServers(ROOT_DIR);
+  jobs.startNodeServers(ROOT_DIR, appClient);
 
   require('./nodeApps').mountAll({
     rootDir: ROOT_DIR,

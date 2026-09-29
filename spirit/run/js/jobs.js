@@ -354,10 +354,16 @@ module.exports = function installJobs(spirit, port) {
   // is started with the node, its arguments the manifest's defaults, and
   // kept running. User-operated ones are left for the user: a node restart
   // does not bring them back (Andy: "NO").
-  function startNodeServers(rootDir) {
+  // THE NODE NAMES ITS PIPE (desk/G1.6, appPair D15): each node-operated
+  // server process starts with --pipe <the name the node chose>, and is
+  // registered with `client` (appClient) so 'api' and calls reach it. Only
+  // process/js gets this (desk/G1 D11, Andy: "THERE ARE NO APP SERVERS!",
+  // "you want the support, move to precess/js").
+  function startNodeServers(rootDir, client) {
     const base = path.join(rootDir, 'process', 'js');
     let names = [];
     try { names = fs.readdirSync(base); } catch (e) { return []; }
+    const pipePathFor = require('./appClient').pipePathFor;
     const started = [];
     names.forEach(function (name) {
       const script = path.join(base, name, name + '.js');
@@ -365,7 +371,12 @@ module.exports = function installJobs(spirit, port) {
       if (!m || m.kind !== 'server' || m.operated !== 'node' || !fs.existsSync(script)) return;
       const values = {};
       (m.args || []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
-      started.push(startServerJob('node', [script, JSON.stringify(values)], { type: m.label || name, operated: 'node' }));
+      const pipe = pipePathFor(rootDir, name, process.platform, 'process');
+      if (process.platform !== 'win32') {
+        try { fs.mkdirSync(path.dirname(pipe), { recursive: true }); } catch (e) { /* the server says why */ }
+      }
+      started.push(startServerJob('node', [script, JSON.stringify(values), '--pipe', pipe], { type: m.label || name, operated: 'node' }));
+      if (client && typeof client.register === 'function') client.register(name, pipe);
     });
     return started;
   }

@@ -91,12 +91,19 @@ function servesOf(manifest) {
 // Windows pipe name is global to the machine, and one box can run two nodes
 // (Andy's and the agents'), so the name carries this checkout: a short hash
 // of its root, or both nodes' faceProof would collide.
-function pipePathFor(rootDir, appName, platform) {
+// kind 'process' (desk/G1.6): a server process in process/js. Its socket
+// sits in its own state folder, relay-state/process/<name>/ (desk/G1 D5:
+// a process's state is part of the node's), and its Windows pipe carries
+// 'process-', so it never equals the legacy app/ pipe of the same name.
+function pipePathFor(rootDir, appName, platform, kind) {
+  const proc = kind === 'process';
   if ((platform || process.platform) === 'win32') {
     const tag = crypto.createHash('sha256').update(path.resolve(String(rootDir))).digest('hex').slice(0, 12);
-    return '\\\\.\\pipe\\spirit-' + tag + '-' + appName;
+    return '\\\\.\\pipe\\spirit-' + tag + '-' + (proc ? 'process-' : '') + appName;
   }
-  return path.join(rootDir, 'app-state', appName, 'door.sock');
+  return proc
+    ? path.join(rootDir, 'relay-state', 'process', appName, 'door.sock')
+    : path.join(rootDir, 'app-state', appName, 'door.sock');
 }
 
 // Every app whose manifest says it serves, by folder order.
@@ -220,6 +227,15 @@ function createAppClient(opts) {
     toLocalApp: toLocalApp,
     ask: ask,
     apps: function () { return Object.keys(table); },
+    // A server process the node started (jobs.startNodeServers), known from
+    // now on by the pipe the node named for it (desk/G1.6, appPair D15).
+    register: function (name, pipe) {
+      const n = String(name || '');
+      if (!APP_RE.test(n) || !pipe) return false;
+      table[n] = { app: n, pipe: String(pipe), job: null };
+      log('server process: ' + n);
+      return true;
+    },
   };
 }
 
