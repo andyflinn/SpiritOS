@@ -42,6 +42,10 @@ function createApiDoor(opts) {
     let info = null;
     try { info = o.decode(message.text); } catch (e) { info = null; }
     if (!info || info.app !== 'api') return;
+    // AN ANSWER IS NEVER ASKED. A packet carrying 're' is a reply, and
+    // answering it made two nodes (or one asking itself) answer each other
+    // forever, about 9 a second (wsl-claude's hand check on a857b52).
+    if (info.re) return;
     if (!o.isKnown(message.fromKey)) return;
     return Promise.resolve(o.servers.ask(info.body)).then(function (r) {
       return reply(message, r ? r.body : null);
