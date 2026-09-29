@@ -34,7 +34,7 @@ const { setupRelayFakes } = require('./setupRelayFakes');
 test.startTest('Every verb the node claims is called, and answers');
 
 const BOOT_TIMEOUT_MS = 10000;
-const root = setupRelayFakes().andy;
+const root = setupRelayFakes('everyVerb').andy;
 // No real relay: relays.json is tracked, so the fakes carry the production
 // list (serverSurface.js explains the cost of forgetting this).
 fs.writeFileSync(path.join(root, 'app', 'natter', 'relays.json'),

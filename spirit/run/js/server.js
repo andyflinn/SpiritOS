@@ -1747,6 +1747,22 @@ contactBook.syncMarks(ROOT_DIR);
     'jobs.update': handleJobUpdate,
     'jobs.cancel': handleCancelJob,
     'jobs.delete': handleDeleteJob,
+    // THE LOCAL WAY TO A SERVER PROCESS (desk/G1 D4, Andy: "it goes into
+    // jobs(.api) for me, that's settled", "because procceses provide dynamic
+    // api"): {verb: 'jobs.api', ask}, ask being 'api' or {name: {verb: args}}.
+    // It answers exactly as a member's packet is answered, through the one
+    // function they share (apiDoor.answer), and the reply is flat (D11).
+    'jobs.api': function (rq, rs) {
+      readJsonBody(rq).then(function (body) {
+        return require('./apiDoor').answer(appClient, body && body.ask);
+      }).then(function (a) {
+        rs.writeHead((a && a.status) || 500, { 'Content-Type': 'application/json; charset=utf-8' });
+        rs.end(JSON.stringify(a ? a.body : null));
+      }, function () {
+        rs.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+        rs.end(JSON.stringify({ ok: false, code: 'bad-request', error: 'Invalid JSON body' }));
+      });
+    },
     // LOCAL: a job is this machine's, whether or not anything is reachable.
   }, { wire: false });
 

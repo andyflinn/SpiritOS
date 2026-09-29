@@ -17,14 +17,19 @@ const REPO_ROOT = path.join(__dirname, '..', '..');
 const FAKES_ROOT = require('./labMaster/labPaths').FIXTURE_ROOT;
 const NODE_NAMES = ['relay', 'andy', 'bert'];
 
-function setupRelayFakes() {
+// OWN COPIES (Andy, 2026-09-29: "test suites need their own copy of node").
+// A suite that boots a node passes its own name, and its homes are
+// <owner>-relay, <owner>-andy, <owner>-bert: two suites running side by side
+// never boot one home, so never share a server process's pipe or desk.db
+// (desk/G1.3). Without a name, the shared homes, as before.
+function setupRelayFakes(owner) {
   const relativePaths = execSync('git ls-files -- spirit ":!spirit/test"', { cwd: REPO_ROOT, encoding: 'utf8' })
     .split('\n')
     .filter(Boolean);
 
   const targets = {};
   NODE_NAMES.forEach((name) => {
-    const targetRoot = path.join(FAKES_ROOT, name);
+    const targetRoot = path.join(FAKES_ROOT, owner ? owner + '-' + name : name);
     relativePaths.forEach((relPath) => {
       const dest = path.join(targetRoot, relPath);
       fs.mkdirSync(path.dirname(dest), { recursive: true });

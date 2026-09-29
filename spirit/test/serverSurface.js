@@ -140,7 +140,7 @@ function startSink(delayMs) {
   });
 }
 
-const nodeRoot = setupRelayFakes().andy;
+const nodeRoot = setupRelayFakes('serverSurface').andy;
 const ENTRY_SCRIPT = path.join(nodeRoot, 'app', 'natter', 'natter.js');
 
 // A relay identity for case 2 to try to steal. relay-state/ is gitignored
@@ -637,6 +637,7 @@ freePort()
       ['POST', '/api/spirit', { verb: 'jobs.update' }],
       ['POST', '/api/spirit', { verb: 'jobs.cancel' }],
       ['POST', '/api/spirit', { verb: 'jobs.delete' }],
+      ['POST', '/api/spirit', { verb: 'jobs.api', ask: 'api' }],
       ['POST', '/api/spirit', { verb: 'fs.stat' }],
       ['POST', '/api/spirit', { verb: 'fs.annotations' }],
       ['POST', '/api/spirit', { verb: 'fs.save' }],

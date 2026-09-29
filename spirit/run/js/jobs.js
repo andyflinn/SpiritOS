@@ -372,10 +372,14 @@ module.exports = function installJobs(spirit, port) {
       const values = {};
       (m.args || []).forEach(function (a) { if (a && a.name) values[a.name] = a.default; });
       const pipe = pipePathFor(rootDir, name, process.platform, 'process');
+      // ITS STATE IS THE NODE'S TO NAME (desk/G1 D5): relay-state/process/<name>/,
+      // handed over as --state, so a process never works out its own folder.
+      const state = path.join(rootDir, 'relay-state', 'process', name);
+      try { fs.mkdirSync(state, { recursive: true }); } catch (e) { /* the server says why */ }
       if (process.platform !== 'win32') {
         try { fs.mkdirSync(path.dirname(pipe), { recursive: true }); } catch (e) { /* the server says why */ }
       }
-      started.push(startServerJob('node', [script, JSON.stringify(values), '--pipe', pipe], { type: m.label || name, operated: 'node' }));
+      started.push(startServerJob('node', [script, JSON.stringify(values), '--pipe', pipe, '--state', state], { type: m.label || name, operated: 'node' }));
       if (client && typeof client.register === 'function') client.register(name, pipe);
     });
     return started;

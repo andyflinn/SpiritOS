@@ -65,7 +65,7 @@ the only way a default survives contact with people in a hurry.
 
 ## What can be asked
 
-**45 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
+**46 verbs, in 10 families.** This list is generated from `server.js` and is exhaustive at the commit above.
 
 **Each verb carries its authority.** Andy, 2026-09-27: *"that's a boundary
 crossed that requires peer review AND my approval"* — and, on his own yes:
@@ -100,6 +100,7 @@ his words, which keeps the harness red until the verb is gone.
 - `fs.stat` — before the rule (2026-09-27)
 
 **`jobs.*`** — background work
+- `jobs.api` — Andy, 2026-09-29: "so it goes into jobs(.api) for me, that's settled", peer-reviewed by wsl-claude (Desk, desk/G1 D4). Loopback only; asks a server process through appClient, as a member's api packet does.
 - `jobs.cancel` — before the rule (2026-09-27)
 - `jobs.create` — before the rule (2026-09-27)
 - `jobs.delete` — before the rule (2026-09-27)

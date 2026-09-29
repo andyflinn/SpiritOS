@@ -20,6 +20,13 @@
 // is the front door's 'known' alone, and a stranger gets no reply at all.
 // Gating by who asks, leaf by leaf, is deferred and missing on purpose (D5).
 
+// THE ONE WAY IN (desk/G1 D4): a member's packet here and the local shell's
+// jobs.api on the loopback door both end in this, so the gating layer that
+// is deferred (appPair D5) has one place to go.
+function answer(servers, ask) {
+  return Promise.resolve(servers.ask(ask));
+}
+
 // opts: { servers: {ask}, post(relay, toKey, text), encode, decode, isKnown(key), log }
 function createApiDoor(opts) {
   const o = opts || {};
@@ -47,7 +54,7 @@ function createApiDoor(opts) {
     // forever, about 9 a second (wsl-claude's hand check on a857b52).
     if (info.re) return;
     if (!o.isKnown(message.fromKey)) return;
-    return Promise.resolve(o.servers.ask(info.body)).then(function (r) {
+    return answer(o.servers, info.body).then(function (r) {
       return reply(message, r ? r.body : null);
     }, function (e) {
       say('api door: ' + e.message);
@@ -55,4 +62,4 @@ function createApiDoor(opts) {
   };
 }
 
-module.exports = { createApiDoor: createApiDoor };
+module.exports = { createApiDoor: createApiDoor, answer: answer };

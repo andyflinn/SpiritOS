@@ -1,0 +1,7 @@
+{
+  "label": "Desk server",
+  "description": "Owns Desk's record, desk.db, in the node's state (relay-state/process/desk/). Started by the node; reached by jobs.api on the loopback door and by an api packet from a known member (desk/G1.3).",
+  "kind": "server",
+  "operated": "node",
+  "args": []
+}
