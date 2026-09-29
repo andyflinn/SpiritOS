@@ -104,11 +104,19 @@ settle().then(function () {
 
   test.subHeading('T1: the tab rows are pinned, and the design button is last');
   const shell = root.innerHTML;
-  const sticky = function (id) { const tag = (shell.match(new RegExp('<div[^>]*id="' + id + '"[^>]*>')) || [''])[0]; return /position:\s*sticky/.test(tag) && /top:\s*0/.test(tag); };
+  // ONE STICKY BLOCK HOLDING BOTH ROWS (claude-windows' review of the build):
+  // two rows each stuck at top 0 slid the agent row under the main one. So
+  // exactly one sticky tag at top 0, and both rows follow it, before any pane.
+  const stickies = shell.match(/<div[^>]*position:\s*sticky[^>]*>/g) || [];
+  const at = stickies.length === 1 && /top:\s*0/.test(stickies[0]) ? shell.indexOf(stickies[0]) : -1;
+  const tabsAt = shell.indexOf('id="desk-tabs"');
+  const agentAt = shell.indexOf('id="desk-agent-tabs"');
+  const paneAt = shell.indexOf('data-pane=');
+  const pinned = at !== -1 && at < tabsAt && tabsAt < agentAt && agentAt < paneAt;
   const buttons = tabs.innerHTML.match(/<button[^>]*>/g) || [];
   const last = buttons[buttons.length - 1] || '';
-  if (sticky('desk-tabs') && sticky('desk-agent-tabs') && /desk-(end|start)-design/.test(last)) test.check('both tab rows are sticky at top: 0, and the design button closes the row');
-  else test.fail(OWED + 'sticky tabs ' + sticky('desk-tabs') + ', agent tabs ' + sticky('desk-agent-tabs') + ', last button ' + last);
+  if (pinned && /desk-(end|start)-design/.test(last)) test.check('one sticky block at top: 0 holds both tab rows, and the design button closes the row');
+  else test.fail(OWED + 'sticky tags ' + JSON.stringify(stickies) + ', rows inside it ' + pinned + ', last button ' + last);
 
   test.subHeading('T2: design mode ends only on the second press');
   posted.length = 0;

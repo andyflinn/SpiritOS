@@ -1169,13 +1169,18 @@ spirit.shell.activateApp({
         '<b>Design mode.</b> Nothing is built until it ends, and it ends only in the Team tab.</div>' +
       // Drawn by deskDrawTabs.
       // PINNED LIKE THE TITLE BAR (desk/G1.12). Andy: "the tabs should stick
-      // top the top like the title bar".
-      '<div class="start-job-form card" id="desk-tabs" style="position:sticky;top:0;z-index:2"></div>' +
+      // top the top like the title bar". ONE sticky block holding both rows
+      // (claude-windows' review): two rows each stuck at top 0 slid the agent
+      // row under the main one. Opaque, in the shell's own background, so the
+      // List does not show through it.
+      '<div id="desk-bars" style="position:sticky;top:0;z-index:2;background:#1a1a2e;padding-bottom:4px">' +
+        '<div class="start-job-form card" id="desk-tabs"></div>' +
+        // The agent row is Team's, so it shows only there (show()).
+        '<div class="start-job-form card" id="desk-agent-tabs" hidden></div>' +
+      '</div>' +
       '<div id="desk-root">' +
         '<div data-pane="list"><div id="desk-top"></div></div>' +
         '<div data-pane="team" hidden>' +
-          // Drawn by deskDrawAgentTabs.
-          '<div class="start-job-form card" id="desk-agent-tabs" style="position:sticky;top:0;z-index:1"></div>' +
           '<div id="desk-session"></div>' +
           '<div class="start-job-form card"><label class="field-label grow">Say' +
             // SEVERAL LINES, AND RETURN IS A NEW LINE (desk/G1.12): only Send sends.
@@ -1199,6 +1204,8 @@ spirit.shell.activateApp({
       // HIGHLIGHTED, NOT DISABLED. Andy: "on the desk app, the current tab
       // should be highlighted." A disabled button read as greyed out.
       deskTab = tab;
+      var agentRow = document.getElementById('desk-agent-tabs');
+      if (agentRow) agentRow.hidden = tab !== 'team';
       if (tab === 'team') deskMarkChatSeen(deskTeamWhich());
       deskDrawTabs();
     }
