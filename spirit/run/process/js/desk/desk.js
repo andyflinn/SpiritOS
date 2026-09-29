@@ -44,8 +44,8 @@ const db = new DatabaseSync(path.join(STATE, 'desk.db'));
 // log: the handler failed": in the default journal a reader copying the file
 // holds it against this writer. In WAL a reader never blocks the writer; the
 // wait covers what is left (a checkpoint). deskWhileBackup.js holds it.
-db.exec('PRAGMA journal_mode=WAL');
 db.exec('PRAGMA busy_timeout=5000');
+db.exec('PRAGMA journal_mode=WAL');
 db.exec(
   'CREATE TABLE IF NOT EXISTS lines (key TEXT PRIMARY KEY, at TEXT, todo TEXT, sender TEXT, kind TEXT, body TEXT, line TEXT NOT NULL);' +
   'CREATE INDEX IF NOT EXISTS lines_at ON lines (at);' +
