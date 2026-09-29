@@ -36,7 +36,6 @@
 // listened on require could not be driven at all. `fromArgv` is the only
 // thing that reads process arguments, and `server.js` calls it.
 
-const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const common = require('./serveCommon');
@@ -1395,25 +1394,29 @@ function create(opts) {
       // MANIFEST IS A DIFFERENT KIND OF WRONG from the relay being down,
       // which is why one refuses above and the other does not.
       bind();
-      server = http.createServer(handle);
+      // THE ONE DOOR IS THE HELPER'S (appPair/G1.4). appServer.js listens,
+      // answers the node's 'api' ({} here: faceProof declares no verb of
+      // its own; app.state is this file's built-in), and hands every other
+      // request, the page and /api/spirit, to `handle` untouched: the
+      // passthrough only, for starters (Andy).
+      const door = require('./appServer').createAppServer({}, { fallback: handle });
       if (pipe) {
-        // A socket file left by a process that died holds the name, and
-        // listen fails on it. A Windows pipe vanishes with its owner.
-        if (process.platform !== 'win32') { try { fs.unlinkSync(pipe); } catch (e) { /* none */ } }
+        // A stale socket file off Windows is cleared by the helper's listen.
+        server = door.listen(pipe, function () {
+          if (typeof cb === 'function') cb(null, pipe);
+        });
         server.on('error', function (e) {
           // The node that started this restarts it; a clear line is all
           // the operator needs to see why.
           console.error('App server for "' + appName + '" could not listen on ' + pipe + ': ' + ((e && e.code) || e));
           process.exit(1);
         });
-        server.listen(pipe, function () {
-          if (typeof cb === 'function') cb(null, pipe);
-        });
         return server;
       }
       // LOOPBACK ONLY. Publicness is Caddy's, a whitelist's and a DNS
-      // record's — never this process's.
-      server.listen(port, '127.0.0.1', function () {
+      // record's — never this process's. The helper binds a number to
+      // 127.0.0.1 and nothing else.
+      server = door.listen(port, function () {
         if (typeof cb === 'function') cb(null, server.address().port);
       });
       if (common.refuseListenError) common.refuseListenError(server, port, 'js/server.js --app ' + appName);

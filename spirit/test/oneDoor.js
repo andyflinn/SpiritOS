@@ -180,7 +180,9 @@ const TALLY = {
   // and a server that cannot listen is not a server, so the one socket
   // is contained in what was authorised. If he reads this and disagrees,
   // it is one line and the reasoning is here rather than in a commit.
-  'js/faceServer.js': 1,
+  // ZERO SINCE appPair/G1.4: faceServer listens through appServer.js, whose
+  // line below is the one socket for every app server now.
+  'js/faceServer.js': 0,
   // THE FACE'S ENTRY POINT ON THE VPS PUPPET NODE (public-app-server/G17,
   // slice 1): http.createServer once, on loopback, for Caddy. RESTING ON
   // ANDY'S "go." ON THAT SLICE, 2026-09-27, whose whole content is this
@@ -192,8 +194,8 @@ const TALLY = {
   // on the pipe the node names. RESTING ON ANDY'S "go." ON G1.2, 2026-09-29,
   // whose whole content is that listener, and told him the same hour
   // ("say no if you want it done differently"), as faceServer.js above.
-  // It nets to zero at appPair/G1.4, when faceServer's own listener moves
-  // onto this helper and its line goes.
+  // It netted to zero at appPair/G1.4: faceServer's own listener moved onto
+  // this helper, and its line went to 0.
   'js/appServer.js': 1,
 
   // AGENT.md: unused, do not assume it is loaded, do not delete.

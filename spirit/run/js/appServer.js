@@ -90,8 +90,13 @@ function checkVerbs(verbs) {
   });
 }
 
-function createAppServer(verbs) {
+// opts.fallback(req, res): THE PASSTHROUGH (appPair/G1.4). An app server
+// that already answers pages and a door of its own (faceServer.js) keeps
+// them: the helper claims only a JSON POST to '/', which is how appClient
+// asks, and hands every other request on untouched.
+function createAppServer(verbs, opts) {
   checkVerbs(verbs);
+  const fallback = opts && typeof opts.fallback === 'function' ? opts.fallback : null;
   const tree = {};
   Object.keys(verbs).forEach(function (name) { tree[name] = { request: verbs[name].request, reply: verbs[name].reply }; });
 
@@ -112,7 +117,13 @@ function createAppServer(verbs) {
     }, function () { return refusal('handler-failed', { verb: name }); });
   }
 
+  function claims(httpReq) {
+    const p = String(httpReq.url || '').split('?')[0];
+    return httpReq.method === 'POST' && p === '/' && /^application\/json\b/i.test(String(httpReq.headers['content-type'] || ''));
+  }
+
   function handle(httpReq, res) {
+    if (fallback && !claims(httpReq)) return fallback(httpReq, res);
     const chunks = [];
     let size = 0;
     let over = false;
@@ -142,10 +153,16 @@ function createAppServer(verbs) {
     route: route,
     // Listen on the pipe the node named. A socket file left by a process
     // that died holds the name off Windows, as faceServer.js found.
-    listen: function (pipe, cb) {
-      if (process.platform !== 'win32') { try { fs.unlinkSync(pipe); } catch (e) { /* none */ } }
+    // A number is a port instead, on loopback only (faceServer's --port):
+    // publicness is never this process's.
+    listen: function (target, cb) {
       server = http.createServer(handle);
-      server.listen(pipe, cb);
+      if (typeof target === 'number') {
+        server.listen(target, '127.0.0.1', cb);
+        return server;
+      }
+      if (process.platform !== 'win32') { try { fs.unlinkSync(target); } catch (e) { /* none */ } }
+      server.listen(target, cb);
       return server;
     },
     close: function (cb) { if (server) server.close(cb); else if (cb) cb(); },
