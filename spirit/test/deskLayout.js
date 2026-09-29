@@ -256,6 +256,16 @@ settle().then(function () {
     if (titleSize >= 1.2) test.check('the item title reads at ' + titleSize + 'em');
     else test.fail(OWED + 'the item title in its fold head is ' + titleSize + 'em, not title-sized');
 
+    // Andy: "the line above the text fold, which reads: Desk layout and
+    // buttons, ... (desk/G1.12) is basically the Title of this here item.
+    // it's still in tiny font, must be Title style/size as well."
+    test.subHeading('T15: the title line above the explanation is title-sized too');
+    const titleTag = (body.match(/<div[^>]*id="dd-title"[^>]*>/) || [''])[0];
+    const tagSize = Number((titleTag.match(/font-size:\s*([\d.]+)em/) || [0, 0])[1]);
+    const lineSize = Math.max(tagSize, size(ddDoc.getElementById('dd-title').innerHTML, 'Second') === 1 ? 0 : size(ddDoc.getElementById('dd-title').innerHTML, 'Second'));
+    if (lineSize >= 1.2) test.check('the title line reads at ' + lineSize + 'em');
+    else test.fail(OWED + 'the title line (#dd-title) is ' + (lineSize || 'the small label size') + ', not title-sized: ' + titleTag);
+
     test.subHeading('T11: the yellow check stands apart, with clear space around it');
     const yellow = (body.match(/<div[^>]*background:#fff3c4[^>]*>(?:(?!<\/div>)[\s\S])*How you can check/) || [''])[0];
     const tag = (yellow.match(/<div[^>]*>/) || [''])[0];
