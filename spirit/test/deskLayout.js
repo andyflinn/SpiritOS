@@ -118,6 +118,16 @@ settle().then(function () {
   if (pinned && /desk-(end|start)-design/.test(last)) test.check('one sticky block at top: 0 holds both tab rows, and the design button closes the row');
   else test.fail(OWED + 'sticky tags ' + JSON.stringify(stickies) + ', rows inside it ' + pinned + ', last button ' + last);
 
+  // Andy: "this part of the list page should be attached below the title
+  // bar, and not scroll away. Upgrading Desk ... (desk/G1) List (1) Team
+  // Musings": the goal line rides in the same pinned block as the tabs.
+  test.subHeading('T12: the goal line is pinned with the tabs, in one sticky block');
+  const barsAt = shell.search(/<div[^>]*id="desk-bars"[^>]*position:\s*sticky/);
+  const goalAt = shell.indexOf('id="desk-goal"');
+  const tabsAt = shell.indexOf('id="desk-tabs"');
+  if (barsAt !== -1 && goalAt > barsAt && goalAt < tabsAt) test.check('#desk-goal sits inside the sticky #desk-bars, above the tabs');
+  else test.fail(OWED + 'sticky block at ' + barsAt + ', goal line at ' + goalAt + ', tabs at ' + tabsAt);
+
   test.subHeading('T2: design mode ends only on the second press');
   posted.length = 0;
   const press = function () { tabs.fire('click', { target: clickTarget(tabs, { id: 'desk-end-design' }), currentTarget: tabs }); };
