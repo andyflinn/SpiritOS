@@ -26,6 +26,7 @@ const crypto = require('crypto');
 const test = require('./testSupport.js');
 const lab = require('./labMaster/ensureMaster.js');
 const { MASTER, FIXTURE_ROOT } = require('./labMaster/labPaths');
+const { relayRequest } = require('../run/js/relayRequest.js');
 
 const OWED = 'OWED by the labMaster (desk/G1.7 finding): ';
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -43,11 +44,12 @@ async function freePort() {
   for (let p = 65400; p <= 65409; p++) if (await isFree(p)) return p;
   return 0;
 }
+// THROUGH THE ONE DOOR (oneDoor.js): relayRequest, never fetch.
 async function master(method, pathname, body) {
-  const res = await fetch(MASTER + pathname, { method: method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+  const r = await relayRequest(MASTER, method, pathname, body || null);
   let b = null;
-  try { b = await res.json(); } catch (e) { b = null; }
-  return { status: res.status, body: b };
+  try { b = JSON.parse(r.text); } catch (e) { b = null; }
+  return { status: r.status, body: b };
 }
 // Every folder under `dir` whose node.json names `tag`'s node, as paths.
 function copiesUnder(dir, tag) {
