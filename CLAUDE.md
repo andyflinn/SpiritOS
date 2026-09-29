@@ -76,8 +76,9 @@ Four things worth knowing before touching it:
   logged. There is no per-agent file, and the stamp never gets finer than
   the day. The header of `voiceLog.js` has the full reasoning.
   **What he types in Desk is not logged by hand.** Desk writes those lines
-  itself, into `spirit/run/app/desk/voice/voice.jsonl` in its own folder, and he
-  moves that file into his vault himself. Andy, 2026-09-27: *"that hook
+  itself, through the desk server, into
+  `spirit/run/relay-state/process/desk/voice.jsonl` (desk/G1.4; never in
+  git), and he moves that file into his vault himself. Andy, 2026-09-27: *"that hook
   into my voice.jsonl is a hack and will have to be removed if the agents
   app is ever to ship"*, then *"I'll live with an alternative way, by
   copying the json.l file manualy to my brain input, and deleting the one
