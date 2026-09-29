@@ -539,6 +539,11 @@ function deskSessionRows() {
       // `where` being path:line and the text quoted there.
       inPlace: Array.isArray(it.inPlace) ? it.inPlace : [],
       verified: !!deskVerified[String(it.id || ('item-' + (i + 1)))],
+      // AN OPEN POINT IS AN ITEM (desk/G1 D6). Andy: "i keep missing my O's
+      // because the don't have a prioritized slot. perceive them as item
+      // other things depend on". The lead marks it open; it names what it
+      // blocks like any item, and it is his to answer.
+      open: !!it.open,
       blocks: (Array.isArray(it.blocks) ? it.blocks : [it.blocks || goalId]).map(String) };
   });
   var waiting = function (id) {
@@ -557,7 +562,12 @@ function deskGoalDone() {
 }
 function deskSessionTable() {
   var head = '<tr><th></th><th>to-do</th><th>with</th><th>your decision</th><th>blocks</th><th>waits on</th><th>state</th></tr>';
-  var body = deskSessionRows().filter(function (row) { return !deskClosed[row.id]; }).map(function (row) {
+  // A PRIORITIZED SLOT (desk/G1 D6): an open point he has not answered sits
+  // above everything else; the rest keep the session's order.
+  var rows = deskSessionRows().filter(function (row) { return !deskClosed[row.id]; });
+  var mine = function (row) { return row.open && !row.done; };
+  rows = rows.filter(mine).concat(rows.filter(function (row) { return !mine(row); }));
+  var body = rows.map(function (row) {
     return '<tr data-id="' + deskEsc(row.id) + '" style="cursor:pointer' + (row.goal ? ';font-weight:bold' : '') + '">' +
       '<td>' + (deskRowNews(row.id) ? DESK_UNSEEN : '') + '</td>' +
       '<td title="' + deskEsc(row.title) + '">' + deskEsc(deskLabel[row.id] || row.title) +
@@ -582,6 +592,7 @@ function deskSessionTable() {
       // The button says it; the word beside it went (Andy, 2026-09-29: "don't
       // show "done" anymore").
       '<td>' + (row.done ? '<button type="button" data-close="' + deskEsc(row.id) + '">Close</button>'
+        : row.open ? '<b>yours</b>'
         : deskDecision[row.id] === 'go' ? 'running' : 'open') + '</td>' +
     '</tr>';
   }).join('');
