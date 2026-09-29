@@ -36,6 +36,7 @@
 //   and hands it over as --pipe; serve() reads it (D15).
 
 const fs = require('fs');
+const path = require('path');
 const http = require('http');
 const errors = require('./spiritErrors');
 const limits = require('./limits');
@@ -169,6 +170,21 @@ function createAppServer(verbs, opts) {
   };
 }
 
+// A prototype as it reads in code: {a: 0, b: 0}, {name: ''}, [''].
+function shape(v) {
+  if (Array.isArray(v)) return '[' + (v.length ? shape(v[0]) : '') + ']';
+  if (isPlain(v)) return '{' + Object.keys(v).map(function (k) { return k + ': ' + shape(v[k]); }).join(', ') + '}';
+  return typeof v === 'string' ? "'" + v + "'" : String(v);
+}
+function announce(name, pipe, verbs) {
+  const names = Object.keys(verbs).sort();
+  const width = names.reduce(function (w, n) { return Math.max(w, n.length); }, 0);
+  return [name + ': listening on ' + pipe + ', ' + names.length + ' verb' + (names.length === 1 ? '' : 's')]
+    .concat(names.map(function (n) {
+      return '  ' + n + ' '.repeat(width - n.length) + '  ' + shape(verbs[n].request) + '  ->  ' + shape(verbs[n].reply);
+    })).join('\n');
+}
+
 // THE WHOLE OF AN APP SERVER'S START: verbs in, the node's pipe from argv.
 // Started by the node, it ends with the node (processes/G1.3).
 function serve(verbs) {
@@ -181,7 +197,11 @@ function serve(verbs) {
   }
   if (typeof process.send === 'function') process.on('disconnect', function () { process.exit(0); });
   const s = createAppServer(verbs);
-  const srv = s.listen(pipe);
+  // IT SAYS WHO IT IS, AND WHAT IT ANSWERS. Andy, 2026-09-29: "after
+  // starting the listener, it should announce itself with its name, and a
+  // nicely formatted overview of it's api." Its stdout is its job's console.
+  const name = path.basename(String(argv[1] || 'server'), '.js');
+  const srv = s.listen(pipe, function () { console.log(announce(name, pipe, verbs)); });
   srv.on('error', function (e) {
     console.error('appServer: could not listen on ' + pipe + ': ' + ((e && e.code) || e));
     process.exit(1);
