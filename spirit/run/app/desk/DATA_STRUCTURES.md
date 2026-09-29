@@ -1,17 +1,29 @@
 # Desk — data structures
 
-Desk keeps everything in its own folder, `spirit/run/app/desk/`: the log in `log/`, Andy's typed lines in `voice/` (2026-09-29, "can we clean that up"; a `process/js/desk` owning a `desk.db` replaces both later). Andy,
-2026-09-28: *"this IS the official project governance. NOW."*
+Desk keeps nothing in its own folder. Since desk/G1.4 its record is the desk
+server's (`process/js/desk`), in the node's state and never in git (desk/G1
+D5: "any appServer state is none of git's business"), and Desk reaches it by
+`jobs.api` on the loopback door (D4). Andy, 2026-09-28: *"this IS the
+official project governance. NOW."*
 
-## Files
+## Where it lives
 
-| file | what |
-|---|---|
-| `log/log.json`, `log/log-1.json`, `log/log-2.json`, … | The log: every message in and out, in order. A JSON array per file. Only the last file is rewritten; a file is sealed at about 9 KB (`DESK_CHUNK_BYTES`), because a save is one request. |
-| `state.json` | What Desk has decided, rewritten by Desk whenever it changes (below). No agent edits it. |
-| `seen.json` | `{ "rows": { "<item id>": <ms timestamp> } }`: when Andy last opened each item, for the red `*` marks. |
-| `voice/voice.jsonl`, `voice/voice-2.jsonl`, … | Andy's own typed lines, `{text, day}`, one per line. He moves them to his vault by hand. |
-| `desk.js`, `desk.json` | The app and its manifest. |
+In `spirit/run/relay-state/process/desk/`, the folder the node hands the desk
+server as `--state`:
+
+| where | what | Desk reaches it by |
+|---|---|---|
+| `desk.db`, table `lines` | The log: every message in and out, one row each, its whole JSON kept, with the columns it is searched by (key, at, todo, from, kind, text). A key is kept once. | `log.add {json}`; `log.search {text, todo, since, kind, before}`, newest first, cut by bytes and `partial` when cut; `todo: '-'` is a line under no todo |
+| `desk.db`, table `docs`, `state` | What Desk has decided (below), as JSON text. | `state.get`, `state.set {json}` |
+| `desk.db`, table `docs`, `seen` | `{ rows, team, agents, folds }`: when Andy last saw each item and chat, for the red `*` marks, and his folds. | `seen.get`, `seen.set {json}` |
+| `voice.jsonl` | Andy's own typed lines, `{text, day}`, one per line, a plain file he moves to his vault by hand. | `voice.add {text, day}` |
+
+Desk reads only what it shows: the newest session, each open item's own
+lines, a chat's newest page (and older pages as he scrolls up). It never
+reads the whole log. What Desk once kept in `app/desk/` (`log/`,
+`voice/`, `state.json`, `seen.json`) the server imports once at start and
+then removes; `desk.js` and `desk.json` (the app and its manifest) and this
+file stay.
 
 ## One log message
 
@@ -50,7 +62,7 @@ Desk keeps everything in its own folder, `spirit/run/app/desk/`: the log in `log
 - The newest session is the board. It is hidden once Andy presses
   **Start design mode** after it was posted.
 
-## `state.json`
+## The state (`state`)
 
 Andy: *"persist … 1) design mode 2) Andy's latest "done"! 3) Open question.
 4) andy's personal titles for items."* Every entry carries `at` and `key`,
@@ -68,7 +80,7 @@ the log message that set it.
 
 ## How Desk works them out
 
-All four are PERSISTED in `state.json` (above), which Desk rewrites whenever one changes and which is committed with Desk's folder. The log is what they are worked out from:
+All four are PERSISTED in the server's `state` (above), which Desk rewrites (`state.set`) whenever one changes. The log is what they are worked out from:
 
 - **Design mode** — on while Andy's newest `start design mode.` is newer
   than his newest `end design mode.`.
