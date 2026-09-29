@@ -205,5 +205,28 @@ settle().then(function () {
     test.subHeading("T5 in the dialog: the item box starts folded, and empty groups draw nothing");
     if (!/ITEM-TEXT/.test(item) && /Second/.test(item) && !/Blocked by/.test(body)) test.check('the item box opens folded, and no Blocked by heading shows for an item nothing blocks');
     else test.fail(OWED + 'item box ' + item.replace(/\s+/g, ' ').slice(0, 160) + ' | Blocked by shown ' + /Blocked by/.test(body));
+
+    // Andy, after looking: "the titles the right of the done button and in
+    // the always-visible part of the large text fold ar still to small, not
+    // Title-style yet", and "the yellow part is not separate from the the
+    // large text block, it should be right below the offered Done button".
+    test.subHeading('T10: the item title in its fold head is title-sized');
+    const size = function (html, text) {
+      const at = html.indexOf(text);
+      if (at === -1) return 0;
+      const before = html.slice(0, at);
+      const m = before.match(/font-size:\s*([\d.]+)em[^>]*>[^<]*$/) || before.match(/font-size:\s*([\d.]+)em(?![\s\S]*font-size)[\s\S]*$/);
+      return m ? Number(m[1]) : 1;
+    };
+    const titleSize = size(item, 'Second');
+    if (titleSize >= 1.2) test.check('the item title reads at ' + titleSize + 'em');
+    else test.fail(OWED + 'the item title in its fold head is ' + titleSize + 'em, not title-sized');
+
+    test.subHeading('T11: the yellow check stands apart, with clear space around it');
+    const yellow = (body.match(/<div[^>]*background:#fff3c4[^>]*>(?:(?!<\/div>)[\s\S])*How you can check/) || [''])[0];
+    const tag = (yellow.match(/<div[^>]*>/) || [''])[0];
+    const margin = (tag.match(/margin:\s*(\d+)px/) || [0, 0])[1];
+    if (Number(margin) >= 12) test.check('the check line keeps ' + margin + 'px clear above and below');
+    else test.fail(OWED + 'the check line has ' + margin + 'px of space around it: ' + tag.slice(0, 120));
   });
 }).catch(function (e) { test.fail('the run broke: ' + e.message); }).then(function () { test.reportSuccessFailureCount(); });
