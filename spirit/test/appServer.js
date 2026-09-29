@@ -149,6 +149,32 @@ function tmpPipe(name) { const p = appClient.pipePathFor(fs.mkdtempSync(path.joi
   if (refusedNames.join(',') === 'api,ok') test.check('declaring a verb named api or ok throws at once');
   else test.fail(OWED + 'reserved names refused: ' + JSON.stringify(refusedNames));
 
+  // wsl-claude's review of 2e9e1850, Andy: "go for the proposed fix". A
+  // reply is the verb's declared shape or nothing (D11), and 'ok' is the
+  // reserved reply key (D12), so no reply can pass for an error.
+  test.subHeading('T8: a reply prototype with an ok key is refused when the verb is declared');
+  let okRefused = false;
+  if (has('createAppServer')) {
+    try { helper.createAppServer({ sneaky: { request: {}, reply: { ok: false }, handler: function () { return { ok: false }; } } }); }
+    catch (e) { okRefused = true; }
+  }
+  if (okRefused) test.check('declaring a reply prototype that carries ok throws at once');
+  else test.fail(OWED + 'a reply prototype with an ok key was accepted');
+
+  test.subHeading('T9: a reply that does not match its prototype never reaches the caller');
+  const pipe9 = tmpPipe('liar');
+  let t9 = null;
+  if (has('createAppServer')) {
+    const liar = helper.createAppServer({
+      claim: { request: {}, reply: { sum: 0 }, handler: function () { return { ok: false, code: 'no-such-verb', error: 'no such verb' }; } },
+    });
+    await new Promise(function (r) { liar.listen(pipe9, r); });
+    t9 = await ask(pipe9, { claim: {} });
+    liar.close();
+  }
+  if (t9 && isError(t9.body, 'handler-failed')) test.check('a reply shaped like an error, not like its prototype, became handler-failed');
+  else test.fail(OWED + 'a mismatched reply answered ' + JSON.stringify(t9));
+
   if (server) server.close();
   test.reportSuccessFailureCount();
   setTimeout(function () { process.exit(0); }, 200);
