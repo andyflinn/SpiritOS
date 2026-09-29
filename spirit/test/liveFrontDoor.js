@@ -678,6 +678,11 @@ async function run() {
     }
 
   } finally {
+    // THIS PROCESS OPENED BRAVO'S node.db to read its log, and Windows will
+    // not remove an open file: the home survived every destroy, and the
+    // next run's bravo booted on the old log (2026-09-29). Closed first,
+    // as arrivals.js's removeHome does.
+    try { const b = W.peer('bravo'); if (b) require('../run/js/nodeStore.js').open(homeOf(b)).close(); } catch (e) { /* no store */ }
     // A lab is deletable, which is the whole reason this runs locally.
     await W.destroy();
   }

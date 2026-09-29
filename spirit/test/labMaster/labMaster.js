@@ -367,8 +367,14 @@ function homeRootFor(id, kind) {
 function wipeHome(id, kind) {
   const target = homeRootFor(id, kind);
   if (!target) return false;
-  try { fs.rmSync(target, { recursive: true, force: true }); }
-  catch (err) { return false; }
+  // A KILLED NODE IS NOT YET A DEAD ONE. stopNode's kill is asynchronous,
+  // and on Windows the dying process still holds relay-state/node.db open
+  // (SQLite since transport/R19), so a single rmSync failed on it and the "new" node
+  // booted on the last run's log: liveFrontDoor read yesterday's arrivals,
+  // every run, 2026-09-29. rmSync retries EBUSY/EPERM itself; a home that
+  // still survives is an error, never a quiet reuse.
+  try { fs.rmSync(target, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 }); }
+  catch (err) { throw new Error('could not wipe ' + id + ' (' + (err.code || err.message) + '); is its old process still running?'); }
   return true;
 }
 
@@ -906,7 +912,8 @@ function handleDelete(node) {
   // so a node created again under the same name inherited the identity,
   // the mailbox and the device slot of the one that was deleted — which
   // is the opposite of what "delete" says.
-  const wiped = wipeHome(node.id, kindOf(node));
+  let wiped = false;
+  try { wiped = wipeHome(node.id, kindOf(node)); } catch (err) { wiped = false; }
   nodes = nodes.filter(function (n) { return n.id !== node.id; });
   saveDesired(nodes);
   return { status: 200, ok: true, id: node.id, wiped: wiped };
