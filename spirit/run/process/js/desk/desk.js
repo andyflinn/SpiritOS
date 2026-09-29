@@ -62,6 +62,66 @@ function parsed(json) {
   if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error('not a JSON object');
   return v;
 }
+// ── WHAT WAITS ON WHOM (desk/G1.5, D1) ─────────────────────────────
+//
+//   Andy: "ah, it can visualize job-queues for agents and me. yes."
+//
+// Worked out from the log alone: the newest session gives the items, the
+// lines under each what happened to it, in time order. The rules are the
+// contract in spirit/test/deskPending.js. Who took what (the tests writer,
+// the builder) is not in the log, so those waits come with take, next goal.
+// A claim is read as Desk reads it (desk.js DESK_READY_CLAIM): a note that
+// opens with READY TO CLOSE, from two different agents before his done.
+// counts (Andy: "so i get a done button and the two of you haven't even
+// both tested it yet?").
+const READY_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:[\w.\/-]+\s+is\s+)?READY TO CLOSE\b/;
+const allLines = db.prepare('SELECT line FROM lines ORDER BY at, key');
+
+function pending(who) {
+  let session = null;
+  const agents = Object.create(null);
+  const items = Object.create(null);
+  const of = function (id) {
+    return items[id] || (items[id] = { asked: false, went: false, claims: {}, ready: {}, done: false, last: '' });
+  };
+  for (const row of allLines.iterate()) {
+    let m;
+    try { m = JSON.parse(row.line); } catch (e) { continue; }
+    const text = String(m.text || '');
+    if (m.dir === 'in' && m.from && m.from !== 'andy') agents[m.from] = true;
+    if (m.dir === 'in' && m.kind === 'session') {
+      try { const s = JSON.parse(text); if (s && Array.isArray(s.items)) session = s; } catch (e) { /* not a session */ }
+      continue;
+    }
+    if (!m.todo) continue;
+    const it = of(m.todo);
+    it.last = String(m.at || it.last);
+    if (m.dir === 'in' && m.kind === 'ask') it.asked = true;
+    if (m.dir === 'in' && READY_CLAIM.test(text)) { it.ready[m.from] = true; if (it.went) it.claims[m.from] = true; }
+    if (m.dir !== 'out' || m.kind !== 'answer') continue;
+    if (text === 'go.' || text === 'no.') it.asked = false;
+    if (text === 'go.') { it.went = true; it.claims = {}; }
+    if (text === 'done.' && Object.keys(it.ready).length >= 2) it.done = true;
+    if (text === 'closed.') it.done = true;
+    if (text === 'reopen.') { it.done = false; it.ready = {}; it.claims = {}; }
+  }
+  if (!session) return [];
+  const waits = [];
+  session.items.forEach(function (s) {
+    const id = String(s.id || '');
+    const it = of(id);
+    if (!id || s.done || it.done) return;
+    let why = '';
+    if (who === 'andy') {
+      why = Object.keys(it.ready).length >= 2 ? 'done' : it.asked ? 'go' : s.open ? 'answer' : '';
+    } else if (agents[who] && it.went && !it.claims[who] && Object.keys(it.ready).length < 2) {
+      why = 'claim';
+    }
+    if (why) waits.push({ at: it.last, item: JSON.stringify({ id: id, title: String(s.title || ''), why: why }) });
+  });
+  return waits.sort(function (a, b) { return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; }).map(function (w) { return w.item; });
+}
+
 function doc(name) { const row = getDoc.get(name); return row ? row.json : '{}'; }
 function saveDoc(name, json) { parsed(json); putDoc.run(name, String(json)); return { saved: true }; }
 
@@ -88,6 +148,21 @@ appServer.serve({
         bytes += cost;
       }
       return { lines: lines, partial: partial };
+    },
+  },
+  // One party's queue, newest first, cut to fit one answer as log.search is.
+  'pending.get': {
+    request: { who: '' }, reply: { items: [''] },
+    handler: function (a) {
+      const items = [];
+      let bytes = 2;
+      for (const item of pending(String(a.who))) {
+        const cost = Buffer.byteLength(JSON.stringify(item), 'utf8') + 1;
+        if (bytes + cost > ANSWER_ROOM) break;
+        items.push(item);
+        bytes += cost;
+      }
+      return { items: items };
     },
   },
   'state.get': { request: {}, reply: { json: '' }, handler: function () { return { json: doc('state') }; } },
