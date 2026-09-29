@@ -218,6 +218,35 @@ function ddDecideHtml() {
 // if the chat log, and the log shows the last message at the top, the second
 // last shows second etc... then the most relevant chat entries will be at
 // the top". Every chat in Desk and its dialogs is drawn this way.
+// A CHAT LINE, DRAWN READABLY (desk/G1.10): the twin of deskLineHtml and
+// deskTime in desk.js; change both or neither. Escaped first, then
+// formatted: line breaks kept, '- ' lines a list, `backquoted` text code,
+// the local HH:MM, a session post one line naming its goal.
+function ddTime(at) {
+  var d = new Date(at);
+  if (isNaN(d.getTime())) return ddEsc(at);
+  var two = function (n) { return (n < 10 ? '0' : '') + n; };
+  return two(d.getHours()) + ':' + two(d.getMinutes());
+}
+function ddLineHtml(m) {
+  if (m && m.kind === 'session') {
+    var g = null;
+    try { g = JSON.parse(String(m.text)).goal; } catch (e) { g = null; }
+    return '<i>the goal record was updated' + (g ? ': ' + ddEsc(g.id) + ' — ' + ddEsc(g.title) : '') + '</i>';
+  }
+  var out = [];
+  var list = [];
+  var flush = function () { if (list.length) { out.push('<ul style="margin:2px 0 2px 18px">' + list.join('') + '</ul>'); list = []; } };
+  String(m && m.text || '').split('\n').forEach(function (raw) {
+    var line = ddEsc(raw).replace(/`([^`]+)`/g, '<code>$1</code>');
+    if (/^- /.test(raw)) { list.push('<li>' + line.slice(2) + '</li>'); return; }
+    flush();
+    out.push(line);
+  });
+  flush();
+  return out.join('<br>').replace(/<br>(<ul)/g, '$1').replace(/(<\/ul>)<br>/g, '$1');
+}
+
 function ddChatHtml() {
   var chat = ddState ? ddState.chat : [];
   if (!chat.length) return '<div class="job-manifest-note">Nothing said about this row yet.</div>';
@@ -230,8 +259,8 @@ function ddChatHtml() {
     var look = m.dir === 'out'
       ? ' style="text-align:right;background:#000;color:#fff;padding:4px 8px;margin:4px 0"'
       : ' style="border-left:3px solid currentColor;padding-left:8px;margin:4px 0"';
-    return '<div' + look + '><b>' + ddEsc(who) + '</b> <span class="job-manifest-note">' + ddEsc(m.at) + '</span>' +
-      failed + ' ' + ddEsc(m.text) + '</div>';
+    return '<div' + look + '><b>' + ddEsc(who) + '</b> <span class="job-manifest-note">' + ddTime(m.at) + '</span>' +
+      failed + ' ' + ddLineHtml(m) + '</div>';
   }).join('');
 }
 

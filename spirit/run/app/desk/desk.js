@@ -757,6 +757,40 @@ function deskRowOf(id) {
 // if the chat log, and the log shows the last message at the top, the second
 // last shows second etc... then the most relevant chat entries will be at
 // the top". Every chat in Desk and its dialogs is drawn this way.
+// ── A CHAT LINE, DRAWN READABLY (desk/G1.10) ────────────────────────
+//
+//   Andy: "it would be nice if the chat log here would show some nicer
+//   formatting", then "yes, that would make it much more readable."
+//
+// Escaped FIRST, then formatted, so a line's text never becomes markup.
+// Line breaks kept; '- ' lines become a list; `backquoted` text is code; the
+// time is the local HH:MM; a session post is one line naming its goal, never
+// its JSON. Its twin is ddLineHtml in deskDetails.js: change both or neither.
+function deskTime(at) {
+  var d = new Date(at);
+  if (isNaN(d.getTime())) return deskEsc(at);
+  var two = function (n) { return (n < 10 ? '0' : '') + n; };
+  return two(d.getHours()) + ':' + two(d.getMinutes());
+}
+function deskLineHtml(m) {
+  if (m && m.kind === 'session') {
+    var g = null;
+    try { g = JSON.parse(String(m.text)).goal; } catch (e) { g = null; }
+    return '<i>the goal record was updated' + (g ? ': ' + deskEsc(g.id) + ' — ' + deskEsc(g.title) : '') + '</i>';
+  }
+  var out = [];
+  var list = [];
+  var flush = function () { if (list.length) { out.push('<ul style="margin:2px 0 2px 18px">' + list.join('') + '</ul>'); list = []; } };
+  String(m && m.text || '').split('\n').forEach(function (raw) {
+    var line = deskEsc(raw).replace(/`([^`]+)`/g, '<code>$1</code>');
+    if (/^- /.test(raw)) { list.push('<li>' + line.slice(2) + '</li>'); return; }
+    flush();
+    out.push(line);
+  });
+  flush();
+  return out.join('<br>').replace(/<br>(<ul)/g, '$1').replace(/(<\/ul>)<br>/g, '$1');
+}
+
 function deskDirectChat(name) {
   var lines = deskMessages.filter(deskIsDirectLine(name));
   if (!lines.length) return '<div class="job-manifest-note">Nothing said yet.</div>';
@@ -771,8 +805,8 @@ function deskDirectChat(name) {
       // block. similar in the details chat."
       ? ' style="text-align:right;background:#000;color:#fff;padding:4px 8px;margin:4px 0"'
       : ' style="border-left:3px solid currentColor;padding-left:8px;margin:4px 0"';
-    return '<div' + look + '><b>' + deskEsc(who) + '</b> <span class="job-manifest-note">' + deskEsc(m.at) +
-      '</span> ' + deskEsc(m.text) + '</div>';
+    return '<div' + look + '><b>' + deskEsc(who) + '</b> <span class="job-manifest-note">' + deskTime(m.at) +
+      '</span> ' + deskLineHtml(m) + '</div>';
   }).join('');
 }
 
@@ -786,7 +820,7 @@ function deskMusings() {
   var lines = deskMessages.filter(function (m) { return m.dir === 'out' && m.kind === 'musing'; });
   if (!lines.length) return '<div class="job-manifest-note">Nothing logged yet. What you write here waits for close time; nobody answers it now.</div>';
   return lines.slice().reverse().map(function (m) {
-    return '<div><span class="job-manifest-note">' + deskEsc(m.at) + '</span> ' + deskEsc(m.text) + '</div>';
+    return '<div><span class="job-manifest-note">' + deskTime(m.at) + '</span> ' + deskLineHtml(m) + '</div>';
   }).join('');
 }
 
@@ -825,7 +859,7 @@ function deskTeamChat() {
       ? ' style="text-align:right;background:#000;color:#fff;padding:4px 8px;margin:4px 0"'
       : ' style="border-left:3px solid currentColor;padding-left:8px;margin:4px 0"';
     return '<div' + look + '><b>' + deskEsc(m.dir === 'out' ? 'you' : m.from) + '</b> <span class="job-manifest-note">' +
-      deskEsc(m.at) + '</span> ' + deskEsc(m.text) + '</div>';
+      deskTime(m.at) + '</span> ' + deskLineHtml(m) + '</div>';
   }).join('');
 }
 
