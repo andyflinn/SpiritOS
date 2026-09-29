@@ -1,0 +1,9 @@
+{
+  "label": "Backup",
+  "description": "Copies every process's state, relay-state/process/, out of the node into <spiritHome>/backups/<node>/, once at start and after each change there. Never the node's keys. One copy of each file; every run says what it wrote in this console (desk/G1.7).",
+  "kind": "server",
+  "operated": "node",
+  "args": [
+    { "name": "quietMs", "default": 5000 }
+  ]
+}

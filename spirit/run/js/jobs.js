@@ -364,6 +364,13 @@ module.exports = function installJobs(spirit, port) {
     let names = [];
     try { names = fs.readdirSync(base); } catch (e) { return []; }
     const pipePathFor = require('./appClient').pipePathFor;
+    // THE NODE'S PUBLIC FACTS, HANDED OVER (desk/G1.7): a server that needs
+    // to know whose node it runs on gets --node {name, publicKey}. It never
+    // opens identity.json, which holds the private keys; nothing private is
+    // ever in a server's arguments.
+    let me = null;
+    try { me = require('./relayAuth').loadIdentity(rootDir); } catch (e) { me = null; }
+    const nodeArg = me && me.publicKey ? ['--node', JSON.stringify({ name: String(me.name || ''), publicKey: String(me.publicKey) })] : [];
     const started = [];
     names.forEach(function (name) {
       const script = path.join(base, name, name + '.js');
@@ -379,7 +386,7 @@ module.exports = function installJobs(spirit, port) {
       if (process.platform !== 'win32') {
         try { fs.mkdirSync(path.dirname(pipe), { recursive: true }); } catch (e) { /* the server says why */ }
       }
-      started.push(startServerJob('node', [script, JSON.stringify(values), '--pipe', pipe, '--state', state], { type: m.label || name, operated: 'node' }));
+      started.push(startServerJob('node', [script, JSON.stringify(values), '--pipe', pipe, '--state', state].concat(nodeArg), { type: m.label || name, operated: 'node' }));
       if (client && typeof client.register === 'function') client.register(name, pipe);
     });
     return started;
