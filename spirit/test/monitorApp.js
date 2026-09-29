@@ -28,7 +28,7 @@ const test = require('./testSupport.js');
 
 // The app's pure half, required directly: report in, rows out, no DOM.
 // That split is what makes this assertable at all.
-const APP = path.join(__dirname, '..', 'run', 'app', 'relayMonitor', 'relayMonitor.js');
+const APP = path.join(__dirname, '..', 'run', 'shell', 'relayMonitor', 'relayMonitor.js');
 const monitor = require(APP);
 
 test.startTest('The Relay Monitor — generic over levers, or it is not generic');

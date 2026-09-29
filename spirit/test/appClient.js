@@ -23,8 +23,8 @@ const RUN = path.join(__dirname, '..', 'run');
 function tempRoot(apps) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-appservers-'));
   Object.keys(apps).forEach(function (name) {
-    fs.mkdirSync(path.join(root, 'app', name), { recursive: true });
-    fs.writeFileSync(path.join(root, 'app', name, name + '.json'), JSON.stringify(apps[name]));
+    fs.mkdirSync(path.join(root, 'shell', name), { recursive: true });
+    fs.writeFileSync(path.join(root, 'shell', name, name + '.json'), JSON.stringify(apps[name]));
   });
   return root;
 }
@@ -153,7 +153,7 @@ function aRealHop() {
   // server ended and the page still came back.
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-hop-'));
   ['faceProof', 'shared'].forEach(function (d) {
-    fs.cpSync(path.join(RUN, 'app', d), path.join(root, 'app', d), { recursive: true });
+    fs.cpSync(path.join(RUN, 'shell', d), path.join(root, 'shell', d), { recursive: true });
   });
   fs.mkdirSync(path.join(root, 'process'), { recursive: true });
   fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
@@ -168,7 +168,7 @@ function aRealHop() {
   const hop = { child: null };
   s.startAll();
   if (s.apps().indexOf('faceProof') === -1) {
-    test.fail('app/faceProof does not say "serves": true');
+    test.fail('shell/faceProof does not say "serves": true');
     return Promise.resolve();
   }
   function ready(tries) {

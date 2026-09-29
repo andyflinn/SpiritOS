@@ -24,14 +24,14 @@ const test = require('./testSupport.js');
 const spirit = require('../run/js/kernel.js');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
-const NATTER_SCRIPT = 'app/natter/natter.js';
+const NATTER_SCRIPT = 'shell/natter/natter.js';
 
 // A node that has claimed a name, which is the ordinary shell. Said
 // explicitly by every fixture that is not about first run: an unbound
 // node shows one app, so a test of app management on one would be
 // inspecting a screen that deliberately has nothing on it.
 const BOUND = 'andy';
-const NATTER_MANIFEST = 'app/natter/natter.json';
+const NATTER_MANIFEST = 'shell/natter/natter.json';
 
 // NEWLINES ARE NORMALISED, and that is not cosmetic. git on this box
 // runs core.autocrlf=true, so a file it checked out arrives with CRLF
@@ -142,13 +142,13 @@ function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysR
           // Natter's file since packet 3: claiming is what that app does,
           // and the shell reads this one path for the window title and
           // the first-run gate alike.
-          if (rel === 'app/natter/session.json') {
+          if (rel === 'shell/natter/session.json') {
             return sessionLabel ? JSON.stringify({ label: sessionLabel, boundAt: '2026-09-07T00:00:00.000Z' }) : null;
           }
           // The shipped seed, unless a test is asking what happens
           // without one. `null` here means the file is gone, which is
           // the case the escape hatch exists for.
-          if (rel === 'app/natter/relays.json' && relaysRaw !== undefined) return relaysRaw;
+          if (rel === 'shell/natter/relays.json' && relaysRaw !== undefined) return relaysRaw;
           try { return readRun(rel); } catch (e) { return null; }
         },
         saveFile: function (rel, content) {
@@ -211,7 +211,7 @@ function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysR
     // declares `listens`, so the shell fetches it at page load whatever is
     // opened (test/listeningApp.js), and this suite is about Natter's.
     get scripts() {
-      return doc.body.children.filter(function (c) { return !/app\/desk\//.test(String(c.src || '')); });
+      return doc.body.children.filter(function (c) { return !/shell\/desk\//.test(String(c.src || '')); });
     },
     // For the first-run checks: fire a relay-presence job carrying an
     // exact log, so "connected then lost" can be driven rather than
@@ -263,11 +263,11 @@ function appById(booted, id) {
 function appManagerRow(app) {
   // Moved out of index.html in CLEANUP-PLAN step 5.3 — it is an app now,
   // and its row renderer moved with it.
-  const src = readRun('app/apps/apps.js');
+  const src = readRun('shell/apps/apps.js');
   const start = src.indexOf('function locationLabel');
   const end = src.indexOf('function renderAppManagerTable');
   if (start === -1 || end === -1 || end < start) {
-    throw new Error('renderAppManagerRow could not be found in app/apps/apps.js — this test needs updating with it');
+    throw new Error('renderAppManagerRow could not be found in shell/apps/apps.js — this test needs updating with it');
   }
   const shellStub = {
     shell: {
@@ -319,7 +319,7 @@ test.startTest('Natter is intrinsic — always in the shell, never overwritten')
 
   // Relay Chat is a normal app and is meant to stay one — this cycle
   // pins Natter only.
-  const rc = manifest('app/textEditor/textEditor.json');
+  const rc = manifest('shell/textEditor/textEditor.json');
   if (!rc.intrinsic) {
     test.check('Relay Chat is not intrinsic');
   } else {
@@ -403,18 +403,18 @@ test.subHeading('The shell always draws it');
   // the check further down about hidden apps needs at least one to exist
   // or it would be asserting something about an empty list.
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/textEditor/textEditor.js',
-      'app/contactsDetails/contactsDetails.js',
-      'app/natterDetails/natterDetails.js'], false, BOUND);
+    [NATTER_SCRIPT, 'shell/textEditor/textEditor.js',
+      'shell/contactsDetails/contactsDetails.js',
+      'shell/natterDetails/natterDetails.js'], false, BOUND);
 
-  const natter = appById(booted, 'app/natter');
+  const natter = appById(booted, 'shell/natter');
   if (natter && natter.intrinsic === true) {
     test.check('the shell reports Natter as intrinsic');
   } else {
     test.fail('listApps: ' + JSON.stringify(booted.shell.listApps()));
   }
 
-  const textEditor = appById(booted, 'app/textEditor');
+  const textEditor = appById(booted, 'shell/textEditor');
   if (textEditor && textEditor.intrinsic === false) {
     test.check('and Relay Chat as an ordinary app');
   } else {
@@ -483,9 +483,9 @@ test.subHeading('And there is no way to take it off');
 
 {
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], false, BOUND);
+    [NATTER_SCRIPT, 'shell/textEditor/textEditor.js'], false, BOUND);
 
-  const refused = booted.shell.setAppOverride('app/natter', { group: 'none' });
+  const refused = booted.shell.setAppOverride('shell/natter', { group: 'none' });
   if (!refused.ok && refused.reason === 'intrinsic-app-group-locked') {
     test.check('setting its Location to None is refused');
   } else {
@@ -495,8 +495,8 @@ test.subHeading('And there is no way to take it off');
   // Not just None — no group at all, including a real user group and a
   // clear-back-to-Desktop, which is the other way out of Spirit.
   const made = booted.shell.createGroup('Andy stuff', '📦');
-  const intoGroup = booted.shell.setAppOverride('app/natter', { group: made.id });
-  const toDesktop = booted.shell.setAppOverride('app/natter', { group: '' });
+  const intoGroup = booted.shell.setAppOverride('shell/natter', { group: made.id });
+  const toDesktop = booted.shell.setAppOverride('shell/natter', { group: '' });
   if (!intoGroup.ok && intoGroup.reason === 'intrinsic-app-group-locked' &&
       !toDesktop.ok && toDesktop.reason === 'intrinsic-app-group-locked') {
     test.check('a user group and a reset to Desktop are refused the same way');
@@ -515,11 +515,11 @@ test.subHeading('And there is no way to take it off');
   // the reload Andy checks: nothing stored can strand it.
   const stale = bootShell({
     defaultHandlers: {},
-    appOverrides: { 'app/natter': { group: 'none' } },
+    appOverrides: { 'shell/natter': { group: 'none' } },
     groups: {},
-  }, [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], false, BOUND);
+  }, [NATTER_SCRIPT, 'shell/textEditor/textEditor.js'], false, BOUND);
 
-  const staleNatter = appById(stale, 'app/natter');
+  const staleNatter = appById(stale, 'shell/natter');
   if (staleNatter.group === stale.shell.SPIRIT_GROUP_ID && spiritGroupLabels(stale).indexOf('NATter') !== -1) {
     test.check('a preferences file that already said "none" is ignored on reload');
   } else {
@@ -528,7 +528,7 @@ test.subHeading('And there is no way to take it off');
 
   // Relay Chat, by contrast, is the operator's to move — otherwise this
   // whole test would pass on a shell where nobody can move anything.
-  const moved = stale.shell.setAppOverride('app/textEditor', { group: 'none' });
+  const moved = stale.shell.setAppOverride('shell/textEditor', { group: 'none' });
   if (moved.ok && desktopLabels(stale).indexOf('Text Editor') === -1) {
     test.check('Relay Chat can still be taken off the desktop');
   } else {
@@ -540,14 +540,14 @@ test.subHeading('Name and icon stay as shipped');
 
 {
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], false, BOUND);
+    [NATTER_SCRIPT, 'shell/textEditor/textEditor.js'], false, BOUND);
 
   // The lock a built-in has had all along, arriving by a different route:
   // theirs is "no _scriptPath", which stops being true the moment the
-  // five in index.html move into app/. Intrinsic is what has to carry it
+  // five in index.html move into shell/. Intrinsic is what has to carry it
   // then, so it has to be true now (CLEANUP-PLAN step 1).
-  const renamed = booted.shell.setAppOverride('app/natter', { name: 'Mailboxes' });
-  const reIconed = booted.shell.setAppOverride('app/natter', { icon: '💀' });
+  const renamed = booted.shell.setAppOverride('shell/natter', { name: 'Mailboxes' });
+  const reIconed = booted.shell.setAppOverride('shell/natter', { icon: '💀' });
   if (!renamed.ok && renamed.reason === 'intrinsic-app-name-locked' &&
       !reIconed.ok && reIconed.reason === 'intrinsic-app-icon-locked') {
     test.check('a custom name and a custom icon are both refused');
@@ -557,15 +557,15 @@ test.subHeading('Name and icon stay as shipped');
 
   // Clearing is a write too — '' means "reset this property", and on an
   // app that has no override to reset it is just another way in.
-  const cleared = booted.shell.setAppOverride('app/natter', { name: '' });
+  const cleared = booted.shell.setAppOverride('shell/natter', { name: '' });
   if (!cleared.ok && cleared.reason === 'intrinsic-app-name-locked') {
     test.check('and so is a reset-to-default');
   } else {
     test.fail('clear: ' + JSON.stringify(cleared));
   }
 
-  const natter = appById(booted, 'app/natter');
-  if (natter.name === 'NATter' && natter.icon === spirit.core.const.ICON[manifest('app/natter/natter.json').icon]) {
+  const natter = appById(booted, 'shell/natter');
+  if (natter.name === 'NATter' && natter.icon === spirit.core.const.ICON[manifest('shell/natter/natter.json').icon]) {
     test.check('the shell still reports the shipped name and icon');
   } else {
     test.fail('after refusals: ' + JSON.stringify(natter));
@@ -575,12 +575,12 @@ test.subHeading('Name and icon stay as shipped');
   // the app was pinned — or edited by hand — must not rename it either.
   const stale = bootShell({
     defaultHandlers: {},
-    appOverrides: { 'app/natter': { name: 'Mailboxes', icon: '💀' } },
+    appOverrides: { 'shell/natter': { name: 'Mailboxes', icon: '💀' } },
     groups: {},
-  }, [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], false, BOUND);
+  }, [NATTER_SCRIPT, 'shell/textEditor/textEditor.js'], false, BOUND);
 
-  const staleNatter = appById(stale, 'app/natter');
-  if (staleNatter.name === 'NATter' && staleNatter.icon === spirit.core.const.ICON[manifest('app/natter/natter.json').icon]) {
+  const staleNatter = appById(stale, 'shell/natter');
+  if (staleNatter.name === 'NATter' && staleNatter.icon === spirit.core.const.ICON[manifest('shell/natter/natter.json').icon]) {
     test.check('a stored name/icon override is ignored on reload');
   } else {
     test.fail('stale override: ' + JSON.stringify(staleNatter));
@@ -594,8 +594,8 @@ test.subHeading('Name and icon stay as shipped');
 
   // Relay Chat is still the operator's to rename — the lock is about
   // being intrinsic, not about being an app.
-  const rcRenamed = stale.shell.setAppOverride('app/textEditor', { name: 'Chat' });
-  if (rcRenamed.ok && appById(stale, 'app/textEditor').name === 'Chat') {
+  const rcRenamed = stale.shell.setAppOverride('shell/textEditor', { name: 'Chat' });
+  if (rcRenamed.ok && appById(stale, 'shell/textEditor').name === 'Chat') {
     test.check('Relay Chat can still be renamed');
   } else {
     test.fail('textEditor rename: ' + JSON.stringify(rcRenamed));
@@ -634,7 +634,7 @@ test.subHeading('The Apps panel offers no control it would refuse');
   // And the panel is otherwise untouched: an ordinary app still gets all
   // three, or this test would pass on a panel that renders nothing.
   const ordinaryRow = appManagerRow({
-    id: 'app/relay-chat',
+    id: 'shell/relay-chat',
     name: 'Relay Chat', defaultName: 'Relay Chat', icon: '📄', defaultIcon: '📄',
     group: null, dynamic: true, intrinsic: false,
   });
@@ -674,7 +674,7 @@ test.subHeading('The Apps panel offers no control it would refuse');
   // cannot pass merely because nothing was supplied. `Dynamic` is the
   // word the dropped column used; the panel explains the lock in a
   // sentence instead.
-  if (ordinaryRow.indexOf('app/relay-chat') === -1 && ordinaryRow.indexOf('>Dynamic<') === -1) {
+  if (ordinaryRow.indexOf('shell/relay-chat') === -1 && ordinaryRow.indexOf('>Dynamic<') === -1) {
     test.check('and neither the id nor the source is anywhere on the row');
   } else {
     test.fail('id or source survived: ' + ordinaryRow);
@@ -706,7 +706,7 @@ test.subHeading('The Spirit grid draws one tile per id');
 
 {
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], false, BOUND);
+    [NATTER_SCRIPT, 'shell/textEditor/textEditor.js'], false, BOUND);
 
   function tiles(ids) {
     const grid = fakeElement('div');
@@ -716,12 +716,12 @@ test.subHeading('The Spirit grid draws one tile per id');
 
   // The shape index.html builds: a fixed member list, union every
   // intrinsic app. Today they do not overlap; as the five move into
-  // app/<name>/ and become intrinsic, they will — and an app in both
+  // shell/<name>/ and become intrinsic, they will — and an app in both
   // halves must not get two tiles.
-  const overlapping = ['app/natter', 'app/textEditor'].concat(booted.shell.listIntrinsicApps());
+  const overlapping = ['shell/natter', 'shell/textEditor'].concat(booted.shell.listIntrinsicApps());
   const drawn = tiles(overlapping);
   const natterTiles = drawn.filter(function (html) { return html.indexOf('NATter') !== -1; });
-  if (overlapping.filter(function (id) { return id === 'app/natter'; }).length === 2 && natterTiles.length === 1) {
+  if (overlapping.filter(function (id) { return id === 'shell/natter'; }).length === 2 && natterTiles.length === 1) {
     test.check('an id named twice in the list draws one tile');
   } else {
     test.fail('list ' + JSON.stringify(overlapping) + ' drew ' + JSON.stringify(drawn));
@@ -739,7 +739,7 @@ test.subHeading('The Spirit grid draws one tile per id');
 
   // First mention wins, so a fixed list keeps its curated order and the
   // intrinsic half only ever appends what is not already there.
-  const ordered = tiles(['app/textEditor', 'app/natter', 'app/textEditor']);
+  const ordered = tiles(['shell/textEditor', 'shell/natter', 'shell/textEditor']);
   if (ordered.length === 2 && ordered[0].indexOf('Text Editor') !== -1 && ordered[1].indexOf('NATter') !== -1) {
     test.check('first mention wins, so the curated order survives');
   } else {
@@ -748,10 +748,10 @@ test.subHeading('The Spirit grid draws one tile per id');
 
   // Unchanged from before: an id nothing has registered is skipped, not
   // drawn as an empty tile and not thrown over.
-  if (tiles(['app/natter', 'not-an-app', 'app/natter']).length === 1) {
+  if (tiles(['shell/natter', 'not-an-app', 'shell/natter']).length === 1) {
     test.check('an unregistered id is still skipped');
   } else {
-    test.fail('unknown id: ' + JSON.stringify(tiles(['app/natter', 'not-an-app', 'app/natter'])));
+    test.fail('unknown id: ' + JSON.stringify(tiles(['shell/natter', 'not-an-app', 'shell/natter'])));
   }
 }
 
@@ -762,7 +762,7 @@ test.subHeading('Spirit is not empty before the first snapshot');
   // that never connects — must still reach Natter, or it cannot be
   // pointed at a mailbox at all. Deferred snapshot is exactly that node.
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], true, BOUND);
+    [NATTER_SCRIPT, 'shell/textEditor/textEditor.js'], true, BOUND);
 
   if (booted.shell.INTRINSIC_APP_FOLDERS.indexOf('natter') !== -1) {
     test.check('natter is on the eager boot list');
@@ -770,7 +770,7 @@ test.subHeading('Spirit is not empty before the first snapshot');
     test.fail('boot list: ' + JSON.stringify(booted.shell.INTRINSIC_APP_FOLDERS));
   }
 
-  const natter = appById(booted, 'app/natter');
+  const natter = appById(booted, 'shell/natter');
   if (natter && natter.intrinsic === true && spiritGroupLabels(booted).indexOf('NATter') !== -1) {
     test.check('it is declared and in the Spirit grid with no snapshot at all');
   } else {
@@ -788,14 +788,14 @@ test.subHeading('Spirit is not empty before the first snapshot');
 
   // Ordinary apps are still the watcher's business — the boot list is a
   // short-cut for the apps that are the node, not a second registry.
-  if (!appById(booted, 'app/textEditor')) {
+  if (!appById(booted, 'shell/textEditor')) {
     test.check('an ordinary app still waits for the snapshot');
   } else {
     test.fail('textEditor declared before the snapshot');
   }
 
-  booted.snapshot([NATTER_SCRIPT, 'app/textEditor/textEditor.js']);
-  if (appById(booted, 'app/textEditor') && spiritGroupLabels(booted).split('NATter').length === 2) {
+  booted.snapshot([NATTER_SCRIPT, 'shell/textEditor/textEditor.js']);
+  if (appById(booted, 'shell/textEditor') && spiritGroupLabels(booted).split('NATter').length === 2) {
     test.check('and when the snapshot arrives, it lands — Natter still once');
   } else {
     test.fail('after snapshot: ' + spiritGroupLabels(booted));
@@ -805,11 +805,11 @@ test.subHeading('Spirit is not empty before the first snapshot');
 test.subHeading('Stats has moved out of index.html');
 
 {
-  const STATS_SCRIPT = 'app/stats/stats.js';
-  const manifest = JSON.parse(readRun('app/stats/stats.json'));
+  const STATS_SCRIPT = 'shell/stats/stats.js';
+  const manifest = JSON.parse(readRun('shell/stats/stats.json'));
 
   if (manifest.intrinsic === true && manifest.owner === 'system') {
-    test.check('app/stats has a manifest, intrinsic and system-owned');
+    test.check('shell/stats has a manifest, intrinsic and system-owned');
   } else {
     test.fail('stats manifest: ' + JSON.stringify(manifest));
   }
@@ -827,8 +827,8 @@ test.subHeading('Stats has moved out of index.html');
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
     [NATTER_SCRIPT, STATS_SCRIPT], true);
 
-  if (booted.shell.APP_ID_RENAMES.stats === 'app/stats') {
-    test.check('the rename map carries stats → app/stats');
+  if (booted.shell.APP_ID_RENAMES.stats === 'shell/stats') {
+    test.check('the rename map carries stats → shell/stats');
   } else {
     test.fail('renames: ' + JSON.stringify(booted.shell.APP_ID_RENAMES));
   }
@@ -839,13 +839,13 @@ test.subHeading('Stats has moved out of index.html');
     test.fail('boot list: ' + JSON.stringify(booted.shell.INTRINSIC_APP_FOLDERS));
   }
 
-  if (spiritMemberIds().indexOf('app/stats') !== -1) {
+  if (spiritMemberIds().indexOf('shell/stats') !== -1) {
     test.check("and the Spirit group names it by its new id");
   } else {
     test.fail("Spirit member list: " + JSON.stringify(spiritMemberIds()));
   }
 
-  const stats = appById(booted, 'app/stats');
+  const stats = appById(booted, 'shell/stats');
   if (stats && stats.intrinsic === true && stats.group === booted.shell.SPIRIT_GROUP_ID) {
     test.check('it is declared before any snapshot, in the Spirit group');
   } else {
@@ -861,8 +861,8 @@ test.subHeading('Stats has moved out of index.html');
 
   // Same locks the rest of the intrinsic set has: it can no longer be
   // renamed by having no script path, so the flag has to carry it.
-  const renamed = booted.shell.setAppOverride('app/stats', { name: 'Vitals' });
-  const moved = booted.shell.setAppOverride('app/stats', { group: 'none' });
+  const renamed = booted.shell.setAppOverride('shell/stats', { name: 'Vitals' });
+  const moved = booted.shell.setAppOverride('shell/stats', { group: 'none' });
   if (!renamed.ok && renamed.reason === 'intrinsic-app-name-locked' &&
       !moved.ok && moved.reason === 'intrinsic-app-group-locked') {
     test.check('and it is locked as an intrinsic app, not as a built-in');
@@ -877,7 +877,7 @@ test.subHeading('Stats has moved out of index.html');
     groups: {},
   }, [NATTER_SCRIPT, STATS_SCRIPT], true);
   const prefs = carried.saved.preferences;
-  if (prefs && prefs.appOverrides['app/stats'] && prefs.appOverrides.stats === undefined) {
+  if (prefs && prefs.appOverrides['shell/stats'] && prefs.appOverrides.stats === undefined) {
     test.check('a stored override under the old id is carried across at boot');
   } else {
     test.fail('carried: ' + JSON.stringify(prefs && prefs.appOverrides));
@@ -886,22 +886,22 @@ test.subHeading('Stats has moved out of index.html');
   // ...and then ignored, because an intrinsic app shows its shipped name.
   // Carrying it still matters: the flag could come off, and a silently
   // deleted preference cannot come back.
-  if (appById(carried, 'app/stats').name === 'Stats') {
+  if (appById(carried, 'shell/stats').name === 'Stats') {
     test.check('though the shipped name is what it shows, being intrinsic');
   } else {
-    test.fail('name: ' + JSON.stringify(appById(carried, 'app/stats')));
+    test.fail('name: ' + JSON.stringify(appById(carried, 'shell/stats')));
   }
 }
 
 test.subHeading('Jobs has moved out of index.html');
 
 {
-  const JOBS_SCRIPT = 'app/jobs/jobs.js';
-  const manifest = JSON.parse(readRun('app/jobs/jobs.json'));
+  const JOBS_SCRIPT = 'shell/jobs/jobs.js';
+  const manifest = JSON.parse(readRun('shell/jobs/jobs.json'));
   const html = readRun('index.html');
 
   if (manifest.intrinsic === true && manifest.owner === 'system') {
-    test.check('app/jobs has a manifest, intrinsic and system-owned');
+    test.check('shell/jobs has a manifest, intrinsic and system-owned');
   } else {
     test.fail('jobs manifest: ' + JSON.stringify(manifest));
   }
@@ -913,9 +913,9 @@ test.subHeading('Jobs has moved out of index.html');
   }
 
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/stats/stats.js', JOBS_SCRIPT], true);
+    [NATTER_SCRIPT, 'shell/stats/stats.js', JOBS_SCRIPT], true);
 
-  if (booted.shell.APP_ID_RENAMES.jobs === 'app/jobs' &&
+  if (booted.shell.APP_ID_RENAMES.jobs === 'shell/jobs' &&
       booted.shell.INTRINSIC_APP_FOLDERS.indexOf('jobs') !== -1) {
     test.check('the rename map and the boot list both carry it');
   } else {
@@ -925,7 +925,7 @@ test.subHeading('Jobs has moved out of index.html');
     }));
   }
 
-  const jobs = appById(booted, 'app/jobs');
+  const jobs = appById(booted, 'shell/jobs');
   const grid = spiritGroupLabels(booted);
   // "Job Monitor", not "Jobs" — it is half of a pair with Job Selector, and
   // the names say which half (Andy: "they are totally a couple"). The split
@@ -940,7 +940,7 @@ test.subHeading('Jobs has moved out of index.html');
   // sites did, and a missed one is a dead tile with no error anywhere:
   // renderAppGroup skips ids it cannot find, and launchApp returns on
   // one it does not know.
-  if (spiritMemberIds().indexOf('app/jobs') !== -1) {
+  if (spiritMemberIds().indexOf('shell/jobs') !== -1) {
     test.check("the Spirit member list names it by its new id");
   } else {
     test.fail('Spirit member list: ' + JSON.stringify(spiritMemberIds()));
@@ -949,14 +949,14 @@ test.subHeading('Jobs has moved out of index.html');
   // The id it names, not how it navigates — the call gained a
   // {replace: true} when starting a job stopped leaving the viewer on
   // the stack behind it.
-  if (html.indexOf("launchApp('app/jobs'") !== -1 && html.indexOf("launchApp('jobs'") === -1) {
+  if (html.indexOf("launchApp('shell/jobs'") !== -1 && html.indexOf("launchApp('jobs'") === -1) {
     test.check("the Process Browser's start-and-watch launch was repointed");
   } else {
     test.fail('index.html still launches the old jobs id');
   }
 
-  const statsSrc = readRun('app/stats/stats.js');
-  if (statsSrc.indexOf("'app/jobs'") !== -1 && statsSrc.indexOf("false, 'jobs'") === -1) {
+  const statsSrc = readRun('shell/stats/stats.js');
+  if (statsSrc.indexOf("'shell/jobs'") !== -1 && statsSrc.indexOf("false, 'jobs'") === -1) {
     test.check("and the Stats app's Active jobs tile points at the new id");
   } else {
     test.fail('stats tile still points at the old jobs id');
@@ -965,7 +965,7 @@ test.subHeading('Jobs has moved out of index.html');
   // Every id the Spirit grid names must resolve to a registered app once
   // discovery has run — the check that would have caught a missed
   // rename, whichever of the five moves next.
-  booted.snapshot([NATTER_SCRIPT, 'app/stats/stats.js', JOBS_SCRIPT]);
+  booted.snapshot([NATTER_SCRIPT, 'shell/stats/stats.js', JOBS_SCRIPT]);
   booted.shell.registerApp({ id: 'process-browser', name: 'Processes', icon: '⚙', hidden: true, mount: function () {}, render: function () {} });
   booted.shell.registerApp({ id: 'app-manager', name: 'Apps', icon: '▦', hidden: true, mount: function () {}, render: function () {} });
   booted.shell.registerApp({ id: 'group-manager', name: 'Groups', icon: '◫', hidden: true, mount: function () {}, render: function () {} });
@@ -990,7 +990,7 @@ test.subHeading('A dialog can only return');
   // the Open-with folder rule was the second kind and was deleted.
   //
   // The doorway is where it goes, and the doorway is the real route:
-  // four of the five launches in app/ already go through api.launchApp,
+  // four of the five launches in shell/ already go through api.launchApp,
   // and buildApiFor's own comment asks for exactly that.
   const shellSrc = readRun('js/client/shell.js');
 
@@ -1016,13 +1016,13 @@ test.subHeading('A dialog can only return');
 
   // Every dialog in the tree, by its own manifest. The rule is only
   // worth having if something checks the apps rather than the shell.
-  const dialogs = fs.readdirSync(path.join(RUN_DIR, 'app')).filter(function (folder) {
-    const manifestPath = path.join(RUN_DIR, 'app', folder, folder + '.json');
+  const dialogs = fs.readdirSync(path.join(RUN_DIR, 'shell')).filter(function (folder) {
+    const manifestPath = path.join(RUN_DIR, 'shell', folder, folder + '.json');
     if (!fs.existsSync(manifestPath)) return false;
     return JSON.parse(fs.readFileSync(manifestPath, 'utf8')).type === 'dialog';
   });
   const launchers = dialogs.filter(function (folder) {
-    return readRun('app/' + folder + '/' + folder + '.js').indexOf('launchApp') !== -1;
+    return readRun('shell/' + folder + '/' + folder + '.js').indexOf('launchApp') !== -1;
   });
   if (dialogs.length > 0 && launchers.length === 0) {
     test.check('and no dialog in the tree reaches for it — ' + dialogs.length + ' checked');
@@ -1034,8 +1034,8 @@ test.subHeading('A dialog can only return');
   // global stays a NAMED exception rather than quietly becoming the way
   // around it. Stats is the one: an intrinsic panel of tiles, each of
   // which is a launch, and it is not a dialog and never will be.
-  const globals = fs.readdirSync(path.join(RUN_DIR, 'app')).filter(function (folder) {
-    const script = path.join(RUN_DIR, 'app', folder, folder + '.js');
+  const globals = fs.readdirSync(path.join(RUN_DIR, 'shell')).filter(function (folder) {
+    const script = path.join(RUN_DIR, 'shell', folder, folder + '.js');
     if (!fs.existsSync(script)) return false;
     // With its open paren. Contacts' own comment explains why it uses
     // the doorway instead, and a check for the bare name reads that
@@ -1133,7 +1133,7 @@ test.subHeading('Back is drawn when there is somewhere behind you, bound or not'
   // paintTitlebarChrome hid Back and Home on `firstRun()` alone, with
   // the reasoning that both land on an empty desktop while unbound.
   // True of Home. Not of Back, and it stopped being true of Back the day
-  // the claim form moved onto app/natterDetails: an unbound node that
+  // the claim form moved onto shell/natterDetails: an unbound node that
   // opened a relay's row got a dialog pushed on top of Natter and no
   // control that could leave it.
   //
@@ -1234,9 +1234,9 @@ test.subHeading('A dialog is called, not launched');
   // code hiding the fact that the shell is doing the work — and the day
   // somebody deletes the renderActive line, a guard would keep the
   // symptom invisible.
-  const guarded = fs.readdirSync(path.join(RUN_DIR, 'app')).filter(function (folder) {
-    const manifestPath = path.join(RUN_DIR, 'app', folder, folder + '.json');
-    const script = path.join(RUN_DIR, 'app', folder, folder + '.js');
+  const guarded = fs.readdirSync(path.join(RUN_DIR, 'shell')).filter(function (folder) {
+    const manifestPath = path.join(RUN_DIR, 'shell', folder, folder + '.json');
+    const script = path.join(RUN_DIR, 'shell', folder, folder + '.js');
     if (!fs.existsSync(manifestPath) || !fs.existsSync(script)) return false;
     if (JSON.parse(fs.readFileSync(manifestPath, 'utf8')).type !== 'dialog') return false;
     return fs.readFileSync(script, 'utf8').indexOf('activeElement') !== -1;
@@ -1311,11 +1311,11 @@ test.subHeading('A screen another app pushes is not something you install');
   // The two hidden apps today are the file launchers: screens Files
   // pushes for one file, with no desktop icon and nothing to install.
   // The details screens Andy is proposing are the same kind of thing.
-  const src = readRun('app/apps/apps.js');
+  const src = readRun('shell/apps/apps.js');
   const start = src.indexOf('function locationLabel');
   const end = src.indexOf('\n// The api the shell hands in at mount');
   if (start === -1 || end === -1 || end < start) {
-    throw new Error('renderAppManagerTable could not be found in app/apps/apps.js — this test needs updating with it');
+    throw new Error('renderAppManagerTable could not be found in shell/apps/apps.js — this test needs updating with it');
   }
 
   const listed = [
@@ -1409,12 +1409,12 @@ test.subHeading('A screen another app pushes is not something you install');
 test.subHeading('Apps has moved out of index.html');
 
 {
-  const APPS_SCRIPT = 'app/apps/apps.js';
-  const manifest = JSON.parse(readRun('app/apps/apps.json'));
+  const APPS_SCRIPT = 'shell/apps/apps.js';
+  const manifest = JSON.parse(readRun('shell/apps/apps.json'));
   const html = readRun('index.html');
 
   if (manifest.intrinsic === true && manifest.owner === 'system') {
-    test.check('app/apps has a manifest, intrinsic and system-owned');
+    test.check('shell/apps has a manifest, intrinsic and system-owned');
   } else {
     test.fail('apps manifest: ' + JSON.stringify(manifest));
   }
@@ -1426,9 +1426,9 @@ test.subHeading('Apps has moved out of index.html');
   }
 
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/stats/stats.js', 'app/jobs/jobs.js', APPS_SCRIPT], true);
+    [NATTER_SCRIPT, 'shell/stats/stats.js', 'shell/jobs/jobs.js', APPS_SCRIPT], true);
 
-  if (booted.shell.APP_ID_RENAMES['app-manager'] === 'app/apps' &&
+  if (booted.shell.APP_ID_RENAMES['app-manager'] === 'shell/apps' &&
       booted.shell.INTRINSIC_APP_FOLDERS.indexOf('apps') !== -1) {
     test.check('the rename map and the boot list both carry it');
   } else {
@@ -1438,7 +1438,7 @@ test.subHeading('Apps has moved out of index.html');
     }));
   }
 
-  const appsApp = appById(booted, 'app/apps');
+  const appsApp = appById(booted, 'shell/apps');
   const grid = spiritGroupLabels(booted);
   if (appsApp && appsApp.intrinsic === true && grid.indexOf('Apps') !== -1) {
     test.check('it is declared before any snapshot and sits in the Spirit grid');
@@ -1449,7 +1449,7 @@ test.subHeading('Apps has moved out of index.html');
   // Its id is not only in the Spirit list this time: the Groups app's
   // empty-state link into Apps lives in shell.js itself.
   const shellSrc = readRun('js/client/shell.js');
-  if (shellSrc.indexOf("launchApp('app/apps')") !== -1 && shellSrc.indexOf("launchApp('app-manager')") === -1) {
+  if (shellSrc.indexOf("launchApp('shell/apps')") !== -1 && shellSrc.indexOf("launchApp('app-manager')") === -1) {
     test.check("the shell's own \"go to Apps\" link was repointed");
   } else {
     test.fail('shell.js still launches the old app-manager id');
@@ -1457,7 +1457,7 @@ test.subHeading('Apps has moved out of index.html');
 
   // Same guard as the last move, which is what makes it worth having:
   // every id the Spirit list names must resolve once discovery has run.
-  booted.snapshot([NATTER_SCRIPT, 'app/stats/stats.js', 'app/jobs/jobs.js', APPS_SCRIPT]);
+  booted.snapshot([NATTER_SCRIPT, 'shell/stats/stats.js', 'shell/jobs/jobs.js', APPS_SCRIPT]);
   ['process-browser', 'group-manager'].forEach(function (id) {
     booted.shell.registerApp({ id: id, name: id, icon: '▦', hidden: true, mount: function () {}, render: function () {} });
   });
@@ -1473,13 +1473,13 @@ test.subHeading('Apps has moved out of index.html');
 test.subHeading('Job Selector has moved out of index.html');
 
 {
-  const PROCESS_SCRIPT = 'app/process-browser/process-browser.js';
-  const MOVED_SCRIPTS = [NATTER_SCRIPT, 'app/stats/stats.js', 'app/jobs/jobs.js', 'app/apps/apps.js', PROCESS_SCRIPT];
-  const manifest = JSON.parse(readRun('app/process-browser/process-browser.json'));
+  const PROCESS_SCRIPT = 'shell/process-browser/process-browser.js';
+  const MOVED_SCRIPTS = [NATTER_SCRIPT, 'shell/stats/stats.js', 'shell/jobs/jobs.js', 'shell/apps/apps.js', PROCESS_SCRIPT];
+  const manifest = JSON.parse(readRun('shell/process-browser/process-browser.json'));
   const html = readRun('index.html');
 
   if (manifest.intrinsic === true && manifest.owner === 'system') {
-    test.check('app/process-browser has a manifest, intrinsic and system-owned');
+    test.check('shell/process-browser has a manifest, intrinsic and system-owned');
   } else {
     test.fail('processes manifest: ' + JSON.stringify(manifest));
   }
@@ -1492,7 +1492,7 @@ test.subHeading('Job Selector has moved out of index.html');
 
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} }, MOVED_SCRIPTS, true);
 
-  if (booted.shell.APP_ID_RENAMES['process-browser'] === 'app/process-browser' &&
+  if (booted.shell.APP_ID_RENAMES['process-browser'] === 'shell/process-browser' &&
       booted.shell.INTRINSIC_APP_FOLDERS.indexOf('process-browser') !== -1) {
     test.check('the rename map and the boot list both carry it');
   } else {
@@ -1502,7 +1502,7 @@ test.subHeading('Job Selector has moved out of index.html');
     }));
   }
 
-  const processes = appById(booted, 'app/process-browser');
+  const processes = appById(booted, 'shell/process-browser');
   const grid = spiritGroupLabels(booted);
   if (processes && processes.intrinsic === true && grid.indexOf('Job Selector') !== -1) {
     test.check('it is declared before any snapshot and sits in the Spirit grid');
@@ -1514,8 +1514,8 @@ test.subHeading('Job Selector has moved out of index.html');
   // "start as a job" and jumps to Jobs. Both of those launches stay on
   // spirit.shell until step 6 — what matters here is that the Job Monitor id
   // they name is the moved one.
-  if (html.indexOf("launchApp('app/jobs'") !== -1) {
-    test.check("the viewer's start-and-watch launch still names app/jobs");
+  if (html.indexOf("launchApp('shell/jobs'") !== -1) {
+    test.check("the viewer's start-and-watch launch still names shell/jobs");
   } else {
     test.fail('the launch into Jobs is missing or misnamed');
   }
@@ -1555,10 +1555,10 @@ test.subHeading('The system-app api surface');
   // honest way to see it is to be mounted: open the tile, let the
   // "script" activate, fire its onload, and keep what mount was given.
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/process-browser/process-browser.js'], true);
+    [NATTER_SCRIPT, 'shell/process-browser/process-browser.js'], true);
 
   let handed = null;
-  booted.shell.launchApp('app/natter');
+  booted.shell.launchApp('shell/natter');
   booted.shell.activateApp({ mount: function (container, api) { handed = api; }, render: function () {} });
   booted.scripts[0].onload();
 
@@ -1581,7 +1581,7 @@ test.subHeading('The system-app api surface');
 
   // readProject reads a file that is not the app's own — the whole
   // reason it exists, since api.fs cannot express it.
-  const read = handed.readProject('app/natter/natter.json');
+  const read = handed.readProject('shell/natter/natter.json');
   if (read && JSON.parse(read).intrinsic === true) {
     test.check("readProject reads a path outside the app's own folder");
   } else {
@@ -1590,16 +1590,16 @@ test.subHeading('The system-app api surface');
 
   // The registry methods are the shell's own, not copies: what
   // setAppOverride refuses through spirit.shell it refuses through api.
-  const refused = handed.setAppOverride('app/natter', { name: 'Mailboxes' });
+  const refused = handed.setAppOverride('shell/natter', { name: 'Mailboxes' });
   if (!refused.ok && refused.reason === 'intrinsic-app-name-locked') {
     test.check('setAppOverride through api honours the same locks');
   } else {
     test.fail('api.setAppOverride: ' + JSON.stringify(refused));
   }
 
-  if (handed.listApps().some(function (a) { return a.id === 'app/natter'; }) &&
+  if (handed.listApps().some(function (a) { return a.id === 'shell/natter'; }) &&
       Array.isArray(handed.listGroups()) &&
-      typeof handed.getAppOverride('app/natter') === 'object') {
+      typeof handed.getAppOverride('shell/natter') === 'object') {
     test.check('listApps, listGroups and getAppOverride answer as the shell does');
   } else {
     test.fail('registry methods disagree with the shell');
@@ -1608,7 +1608,7 @@ test.subHeading('The system-app api surface');
   // And launchApp actually navigates: opening Job Selector through the api
   // fetches its entry script, exactly as a desktop tile would.
   const before = booted.scripts.length;
-  handed.launchApp('app/process-browser');
+  handed.launchApp('shell/process-browser');
   if (booted.scripts.length === before + 1) {
     test.check('launchApp through api opens another app');
   } else {
@@ -1626,7 +1626,7 @@ test.subHeading('A re-declared app keeps the behaviour it loaded');
   // supplies mount/render (through activateApp). Driven here the way the
   // shell drives it, so what is asserted is behaviour and not a poke at
   // the registry.
-  booted.shell.launchApp('app/natter');
+  booted.shell.launchApp('shell/natter');
   const fetched = booted.scripts.length;
   let mountCalls = 0;
   booted.shell.activateApp({ mount: function () { mountCalls++; }, render: function () {} });
@@ -1657,7 +1657,7 @@ test.subHeading('A re-declared app keeps the behaviour it loaded');
     test.fail('mount calls: ' + mountCalls);
   }
 
-  const after = appById(booted, 'app/natter');
+  const after = appById(booted, 'shell/natter');
   if (after.name === 'NATter' && after.intrinsic === true) {
     test.check('while the manifest facts are refreshed from disk');
   } else {
@@ -1685,14 +1685,14 @@ test.subHeading('An app that changes id keeps what the operator customised');
   // only ever grows, one line per move, in that move's own commit — an
   // entry removed later is an operator's preferences silently pruned.
   // Every value is a folder id. The folder need not be the old id —
-  // 'app-manager' became 'app/apps', because 'app-manager' was a poor
+  // 'app-manager' became 'shell/apps', because 'app-manager' was a poor
   // name for a folder and the rename map is exactly what makes that
   // free.
   const renames = empty.shell.APP_ID_RENAMES;
   const wellFormed = Object.keys(renames).every(function (oldId) {
-    return /^app\/[^/]+$/.test(renames[oldId]) && renames[oldId] !== oldId;
+    return /^shell\/[^/]+$/.test(renames[oldId]) && renames[oldId] !== oldId;
   });
-  if (wellFormed && renames.stats === 'app/stats') {
+  if (wellFormed && renames.stats === 'shell/stats') {
     test.check('the rename map names the moved apps, old id to folder id');
   } else {
     test.fail('map: ' + JSON.stringify(renames));
@@ -1705,27 +1705,27 @@ test.subHeading('An app that changes id keeps what the operator customised');
   // call nothing to do, and this must test the mechanism rather than
   // whichever apps happen to have moved by now.
   const booted = bootShell({
-    defaultHandlers: { '.md': 'ledger', '.txt': 'app/textEditor' },
-    appOverrides: { ledger: { icon: '💀', name: 'Tasks' }, 'app/textEditor': { name: 'Chat' } },
+    defaultHandlers: { '.md': 'ledger', '.txt': 'shell/textEditor' },
+    appOverrides: { ledger: { icon: '💀', name: 'Tasks' }, 'shell/textEditor': { name: 'Chat' } },
     groups: {},
-  }, [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], true, BOUND);
+  }, [NATTER_SCRIPT, 'shell/textEditor/textEditor.js'], true, BOUND);
 
-  const moved = booted.shell.migrateAppIds({ ledger: 'app/ledger' });
+  const moved = booted.shell.migrateAppIds({ ledger: 'shell/ledger' });
   const prefs = booted.saved.preferences;
-  if (moved && prefs && prefs.appOverrides['app/ledger'] && prefs.appOverrides['app/ledger'].icon === '💀' &&
+  if (moved && prefs && prefs.appOverrides['shell/ledger'] && prefs.appOverrides['shell/ledger'].icon === '💀' &&
       prefs.appOverrides.ledger === undefined) {
-    test.check("an override moves from 'ledger' to 'app/ledger'");
+    test.check("an override moves from 'ledger' to 'shell/ledger'");
   } else {
     test.fail('overrides: ' + JSON.stringify(prefs && prefs.appOverrides));
   }
 
-  if (prefs.defaultHandlers['.md'] === 'app/ledger') {
+  if (prefs.defaultHandlers['.md'] === 'shell/ledger') {
     test.check('and a default-handler choice pointing at it is repointed');
   } else {
     test.fail('handlers: ' + JSON.stringify(prefs.defaultHandlers));
   }
 
-  if (prefs.appOverrides['app/textEditor'].name === 'Chat' && prefs.defaultHandlers['.txt'] === 'app/textEditor') {
+  if (prefs.appOverrides['shell/textEditor'].name === 'Chat' && prefs.defaultHandlers['.txt'] === 'shell/textEditor') {
     test.check('an id that did not move is untouched');
   } else {
     test.fail('untouched: ' + JSON.stringify(prefs));
@@ -1734,12 +1734,12 @@ test.subHeading('An app that changes id keeps what the operator customised');
   // The point of the whole exercise: what was migrated survives the
   // prune that follows on the next snapshot.
   booted.shell.registerApp({
-    id: 'app/ledger', name: 'Ledger', icon: '⚙️', hidden: true,
+    id: 'shell/ledger', name: 'Ledger', icon: '⚙️', hidden: true,
     mount: function () {}, render: function () {},
   });
-  booted.snapshot([NATTER_SCRIPT, 'app/textEditor/textEditor.js']);
+  booted.snapshot([NATTER_SCRIPT, 'shell/textEditor/textEditor.js']);
   const afterPrune = booted.saved.preferences;
-  if (afterPrune.appOverrides['app/ledger'] && afterPrune.defaultHandlers['.md'] === 'app/ledger') {
+  if (afterPrune.appOverrides['shell/ledger'] && afterPrune.defaultHandlers['.md'] === 'shell/ledger') {
     test.check('and it survives the prune on the next snapshot');
   } else {
     test.fail('after prune: ' + JSON.stringify(afterPrune));
@@ -1749,12 +1749,12 @@ test.subHeading('An app that changes id keeps what the operator customised');
   // intent; re-running the migration must not put the old one back.
   const both = bootShell({
     defaultHandlers: {},
-    appOverrides: { ledger: { name: 'Old' }, 'app/ledger': { name: 'New' } },
+    appOverrides: { ledger: { name: 'Old' }, 'shell/ledger': { name: 'New' } },
     groups: {},
   }, [NATTER_SCRIPT], true);
-  both.shell.migrateAppIds({ ledger: 'app/ledger' });
+  both.shell.migrateAppIds({ ledger: 'shell/ledger' });
   const merged = both.saved.preferences;
-  if (merged.appOverrides['app/ledger'].name === 'New' && merged.appOverrides.ledger === undefined) {
+  if (merged.appOverrides['shell/ledger'].name === 'New' && merged.appOverrides.ledger === undefined) {
     test.check('a newer override under the new id wins, and the old key goes');
   } else {
     test.fail('merge: ' + JSON.stringify(merged.appOverrides));
@@ -1765,7 +1765,7 @@ test.subHeading('Built-ins are locked by having no folder — until they get one
 
 {
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], false, BOUND);
+    [NATTER_SCRIPT, 'shell/textEditor/textEditor.js'], false, BOUND);
 
   // Registered exactly as index.html registers the five: no script path,
   // no manifest, no intrinsic flag.
@@ -1815,7 +1815,7 @@ test.subHeading('The window title names the node, then the screen');
 // dropped (Andy): the favicon is a ghost saying the same thing, and a
 // truncated tab should spend its characters on the half that differs.
 {
-  const scripts = [NATTER_SCRIPT, 'app/textEditor/textEditor.js'];
+  const scripts = [NATTER_SCRIPT, 'shell/textEditor/textEditor.js'];
   const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
 
   function withNotes(booted) {
@@ -1934,7 +1934,7 @@ test.subHeading('An app can subscribe, instead of being broadcast at');
 
   // A different list is.
   booted.shell.launchApp('ledger');
-  booted.snapshot([NATTER_SCRIPT, 'app/textEditor/textEditor.js']);
+  booted.snapshot([NATTER_SCRIPT, 'shell/textEditor/textEditor.js']);
   const lastNotes = seen.notes[seen.notes.length - 1];
   const lastLedger = seen.ledger[seen.ledger.length - 1];
   if (seen.notes.length === 2 && seen.ledger.length === 2) {
@@ -1957,7 +1957,7 @@ test.subHeading('An app can subscribe, instead of being broadcast at');
   // comment explaining why it used to: processFindJob existed only to
   // find the job behind the identity cache, and render() no longer takes
   // the job map at all.
-  const proc = readRun('app/process-browser/process-browser.js');
+  const proc = readRun('shell/process-browser/process-browser.js');
   if (proc.indexOf('api.onFiles(') !== -1 &&
       proc.indexOf('function processFindJob') === -1 &&
       /render: function \(\)/.test(proc)) {
@@ -1971,7 +1971,7 @@ test.subHeading('Open with offers what declared the extension');
 
 // Nothing covered this, which is how it broke in silence: clicking a
 // .txt in media/ opened the read-only viewer with no way out of it, even
-// though app/textEditor declares .txt and media is a writable root.
+// though shell/textEditor declares .txt and media is a writable root.
 //
 // renderOpenWith used to keep only handlers whose own folder the file sat
 // in — a client-side stand-in for a capability nobody had published, and
@@ -1980,12 +1980,12 @@ test.subHeading('Open with offers what declared the extension');
 // by fileWritable when it is attempted.
 {
   const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
-  const booted = bootShell(prefs, [NATTER_SCRIPT, 'app/textEditor/textEditor.js'], false, 'andy');
+  const booted = bootShell(prefs, [NATTER_SCRIPT, 'shell/textEditor/textEditor.js'], false, 'andy');
 
   // The real manifest, so this test fails if textEditor stops declaring
   // the extension rather than passing against a fixture that agrees with
   // itself.
-  const declared = manifest('app/textEditor/textEditor.json').handlesExtensions || [];
+  const declared = manifest('shell/textEditor/textEditor.json').handlesExtensions || [];
   if (declared.indexOf('.txt') !== -1) {
     test.check('the sample handler declares .txt, as this test assumes');
   } else {
@@ -1995,7 +1995,7 @@ test.subHeading('Open with offers what declared the extension');
   // The file Andy clicked.
   const out = fakeElement('div');
   booted.shell.renderOpenWith(out, 'text-file-launcher', 'media/dummy.txt');
-  if (out.innerHTML.indexOf('app/textEditor') !== -1 && out.innerHTML.indexOf('open-with-select') !== -1) {
+  if (out.innerHTML.indexOf('shell/textEditor') !== -1 && out.innerHTML.indexOf('open-with-select') !== -1) {
     test.check('a file outside the handler own folder is still offered to it');
   } else {
     test.fail('media/dummy.txt open-with: ' + out.innerHTML);
@@ -2014,8 +2014,8 @@ test.subHeading('Open with offers what declared the extension');
 
   // The app own folder was never the problem, and still works.
   const inside = fakeElement('div');
-  booted.shell.renderOpenWith(inside, 'text-file-launcher', 'app/textEditor/notes.txt');
-  if (inside.innerHTML.indexOf('app/textEditor') !== -1) {
+  booted.shell.renderOpenWith(inside, 'text-file-launcher', 'shell/textEditor/notes.txt');
+  if (inside.innerHTML.indexOf('shell/textEditor') !== -1) {
     test.check('and a file inside it is offered exactly as before');
   } else {
     test.fail('own-folder open-with: ' + inside.innerHTML);
@@ -2179,7 +2179,7 @@ test.subHeading('Stats counts read like a file bubble, and Chat spaces its two o
 // type, Requests by method, Requests by status class — to the same style
 // as the file info bubble in the launchers. One row type, one voice.
 {
-  const stats = readRun('app/stats/stats.js');
+  const stats = readRun('shell/stats/stats.js');
   if (stats.indexOf('file-info-row') !== -1 && stats.indexOf("join('<br>')") === -1) {
     test.check('a count is a label and a value on one line, not a run-on');
   } else {
@@ -2292,8 +2292,8 @@ test.subHeading('Stats counts read like a file bubble, and Chat spaces its two o
   // object is what the automatic version produced, and it is what a
   // reader sees rather than anything a size check would catch.
   const soloFormApps = [
-    ['app/jobs/jobs.js', 'start-job-form'],
-    ['app/group-manager/group-manager.js', 'group-manager-new-name'],
+    ['shell/jobs/jobs.js', 'start-job-form'],
+    ['shell/group-manager/group-manager.js', 'group-manager-new-name'],
   ];
   const doubled = soloFormApps.filter(function (pair) {
     const src = readRun(pair[0]);
@@ -2410,7 +2410,7 @@ test.subHeading('Natter adds a relay on the shared row');
   // The row is inside its own tile now, under a heading — but it is
   // still the shared row class doing the laying out, and still the
   // shared caption-over-input pair.
-  const natter = readRun('app/natter/natter.js');
+  const natter = readRun('shell/natter/natter.js');
   if (natter.indexOf("'<div class=\"start-job-form\">'") !== -1 &&
       natter.indexOf('<label class="field-label">Private label') !== -1) {
     test.check('the Add line is the shared row, with the shared caption pairs');
@@ -2482,7 +2482,7 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
 // and the rest of the shell waits behind it.
 {
   const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
-  const scripts = [NATTER_SCRIPT, 'app/textEditor/textEditor.js'];
+  const scripts = [NATTER_SCRIPT, 'shell/textEditor/textEditor.js'];
 
   // A FRESH CLONE SHIPS NO RELAY. This asserted the opposite — "the repo
   // ships pointed at the public mailbox" — by reading relays.json off
@@ -2494,7 +2494,7 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
   // every clone is that git does not carry it.
   let tracked = '';
   try {
-    tracked = require('child_process').execSync('git ls-files app/natter/relays.json',
+    tracked = require('child_process').execSync('git ls-files shell/natter/relays.json',
       { cwd: RUN_DIR, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
   } catch (e) { tracked = 'git unavailable'; }
   if (tracked === '') {
@@ -2505,7 +2505,7 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
 
   const fresh = bootShell(prefs, scripts, false, '');
   const listed = fresh.shell.listApps().map(function (a) { return a.id; });
-  if (listed.length === 1 && listed[0] === 'app/natter') {
+  if (listed.length === 1 && listed[0] === 'shell/natter') {
     test.check('an unbound node lists one app, and it is the one that binds');
   } else {
     test.fail('unbound list: ' + JSON.stringify(listed));
@@ -2550,7 +2550,7 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
     { timestamp: 2, message: 'lost https://spirit.andyflinn.com: socket closed' },
   ]);
   const droppedList = dropped.shell.listApps().map(function (a) { return a.id; });
-  if (droppedList.length === 1 && droppedList[0] === 'app/natter') {
+  if (droppedList.length === 1 && droppedList[0] === 'shell/natter') {
     test.check('while a node that CONNECTED and then lost it is first-run again');
   } else {
     test.fail('a dropped relay still counted as held: ' + JSON.stringify(droppedList));
@@ -2580,7 +2580,7 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
   // would have done — the harness cannot execute the injected script, so
   // the title it would then paint is not visible here.
   const autoOpened = fresh.scripts.map(function (script) { return script.src || ''; });
-  if (autoOpened.some(function (src) { return src.indexOf('app/natter/natter.js') !== -1; })) {
+  if (autoOpened.some(function (src) { return src.indexOf('shell/natter/natter.js') !== -1; })) {
     test.check('so the shell opens the binder itself, without being clicked');
   } else {
     test.fail('nothing was opened: ' + JSON.stringify(autoOpened));
@@ -2599,10 +2599,10 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
   // launchApp by id is what viewers and app-to-app jumps run on.
   let opened = false;
   fresh.shell.registerApp({
-    id: 'app/stats-probe', name: 'Probe', icon: '📊', hidden: true,
+    id: 'shell/stats-probe', name: 'Probe', icon: '📊', hidden: true,
     mount: function () { opened = true; }, render: function () {},
   });
-  fresh.shell.launchApp('app/stats-probe');
+  fresh.shell.launchApp('shell/stats-probe');
   if (opened) {
     test.check('and an app that is not shown can still be launched by id');
   } else {
@@ -2612,7 +2612,7 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
   // Bound: the shell it has always been.
   const bound = bootShell(prefs, scripts, false, 'andy');
   const boundList = bound.shell.listApps().map(function (a) { return a.id; });
-  if (boundList.length > 1 && boundList.indexOf('app/textEditor') !== -1) {
+  if (boundList.length > 1 && boundList.indexOf('shell/textEditor') !== -1) {
     test.check('a claimed name gives back the whole shell');
   } else {
     test.fail('bound list: ' + JSON.stringify(boundList));
@@ -2621,7 +2621,7 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
   // And it opens nothing on its own: a node with a name has a desktop to
   // choose from, and choosing is the user's.
   const boundOpened = bound.scripts.map(function (script) { return script.src || ''; });
-  if (!boundOpened.some(function (src) { return src.indexOf('app/natter/natter.js') !== -1; }) &&
+  if (!boundOpened.some(function (src) { return src.indexOf('shell/natter/natter.js') !== -1; }) &&
       bound.doc.byId['app-close'].style.display !== 'none') {
     test.check('a bound node is opened into nothing, and keeps its Back and Home');
   } else {
@@ -2633,7 +2633,7 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
   // in it, so a node with no mailbox listed can add one where it stands.
   const stranded = bootShell(prefs, scripts, false, '', null);
   const strandedList = stranded.shell.listApps().map(function (a) { return a.id; });
-  if (strandedList.length === 1 && strandedList[0] === 'app/natter') {
+  if (strandedList.length === 1 && strandedList[0] === 'shell/natter') {
     test.check('with no mailbox listed it is still Natter, which is where one is added');
   } else {
     test.fail('stranded list: ' + JSON.stringify(strandedList));
@@ -2644,9 +2644,9 @@ test.subHeading('First run: one node, one mailbox, one thing to do');
   // before any snapshot, and whatever the fs-watcher does or does not
   // report. A first run whose one app waited on a watcher would be an
   // empty desktop with no way out of it.
-  const early = bootShell(prefs, ['app/textEditor/textEditor.js'], true, '');
+  const early = bootShell(prefs, ['shell/textEditor/textEditor.js'], true, '');
   const earlyList = early.shell.listApps().map(function (a) { return a.id; });
-  if (earlyList.length === 1 && earlyList[0] === 'app/natter') {
+  if (earlyList.length === 1 && earlyList[0] === 'shell/natter') {
     test.check('and the app it shows is declared at boot, before any snapshot');
   } else {
     test.fail('with the snapshot deferred: ' + JSON.stringify(earlyList));
@@ -2660,9 +2660,9 @@ test.subHeading('Contacts is its own app');
 // reason to open a chat window to add somebody.
 {
   const prefs = { defaultHandlers: {}, appOverrides: {}, groups: {} };
-  const CONTACTS_SCRIPT = 'app/contacts/contacts.js';
+  const CONTACTS_SCRIPT = 'shell/contacts/contacts.js';
 
-  const manifestContacts = manifest('app/contacts/contacts.json');
+  const manifestContacts = manifest('shell/contacts/contacts.json');
   if (manifestContacts.intrinsic === true && manifestContacts.owner === 'system' &&
       manifestContacts.name === 'Contacts') {
     test.check('it ships a manifest that says intrinsic, and who owns it');
@@ -2671,7 +2671,7 @@ test.subHeading('Contacts is its own app');
   }
 
   const early = bootShell(prefs, [NATTER_SCRIPT, CONTACTS_SCRIPT], true, BOUND);
-  const declared = early.shell.listApps().filter(function (a) { return a.id === 'app/contacts'; })[0];
+  const declared = early.shell.listApps().filter(function (a) { return a.id === 'shell/contacts'; })[0];
   if (declared && declared.intrinsic === true && declared.group === 'spirit') {
     test.check('declared eagerly with the snapshot deferred, and in the Spirit group');
   } else {
@@ -2718,7 +2718,7 @@ test.subHeading('A group screen is a place you can go back to');
     defaultHandlers: {},
     appOverrides: {},
     groups: { g1: { name: 'Tools', icon: '🧰' } },
-  }, [NATTER_SCRIPT, 'app/contacts/contacts.js'], false, BOUND);
+  }, [NATTER_SCRIPT, 'shell/contacts/contacts.js'], false, BOUND);
 
   function stack() { return booted.shell.navStackIds().join(' > '); }
 
@@ -2738,12 +2738,12 @@ test.subHeading('A group screen is a place you can go back to');
     test.fail('after opening the group: ' + stack());
   }
 
-  tileFor('app/contacts').fire('click');
+  tileFor('shell/contacts').fire('click');
   // The regression this section exists for. buildAppIcon used to pass
   // {replace: true}, which overwrote the group's own entry — so Spirit
   // vanished the moment you tapped something in it and Back skipped
   // straight home. Three deep, not two.
-  if (stack() === 'desktop > g1 > app/contacts') {
+  if (stack() === 'desktop > g1 > shell/contacts') {
     test.check('and launching from its grid leaves the group underneath, not replaced');
   } else {
     test.fail('after the tile click: ' + stack());
@@ -2767,8 +2767,8 @@ test.subHeading('A group screen is a place you can go back to');
   // deeper than one, and the desktop is only ever visible at exactly
   // one. Asserted so the claim "desktop behaviour is unchanged" is
   // something the harness holds rather than something a comment says.
-  tileFor('app/natter').fire('click');
-  if (stack() === 'desktop > app/natter') {
+  tileFor('shell/natter').fire('click');
+  if (stack() === 'desktop > shell/natter') {
     test.check('and a tile pressed from the desktop still just pushes');
   } else {
     test.fail('from the desktop: ' + stack());
@@ -2777,12 +2777,12 @@ test.subHeading('A group screen is a place you can go back to');
   // Revisiting a screen already on the stack still collapses back to it
   // rather than stacking a duplicate — the other half of launchApp, and
   // the half that has to keep working now that every grid pushes. The
-  // stack is desktop > app/natter here, so opening the group and then
+  // stack is desktop > shell/natter here, so opening the group and then
   // going back to Natter must land on the entry already there rather
   // than making a second one.
   booted.shell.launchApp('g1');
-  booted.shell.launchApp('app/natter');
-  if (stack() === 'desktop > app/natter') {
+  booted.shell.launchApp('shell/natter');
+  if (stack() === 'desktop > shell/natter') {
     test.check('and re-entering a screen already open collapses back to it');
   } else {
     test.fail('after re-entering Natter: ' + stack());
@@ -2894,7 +2894,7 @@ test.subHeading('A path always fits, however narrow the pane');
   // spans do NOT provide this — an element boundary is not a line break
   // opportunity — so if <wbr> ever goes, the path stops folding and
   // nothing else says so.
-  const out = pathValue('spirit/run/app/textEditor/textEditor.js');
+  const out = pathValue('spirit/run/shell/textEditor/textEditor.js');
   if ((out.match(/<wbr>/g) || []).length === 4) {
     test.check('a four-deep path offers a break after each of its slashes');
   } else {
@@ -3069,7 +3069,7 @@ test.subHeading("A file that IS an app says so, and offers the way back");
 
 {
   const booted = bootShell({ defaultHandlers: {}, appOverrides: {}, groups: {} },
-    [NATTER_SCRIPT, 'app/contacts/contacts.js'], false, BOUND);
+    [NATTER_SCRIPT, 'shell/contacts/contacts.js'], false, BOUND);
 
   function bubbleFor(path) {
     const box = fakeElement('div');
@@ -3079,8 +3079,8 @@ test.subHeading("A file that IS an app says so, and offers the way back");
 
   // The entry script of a declared app: its icon, its name, and one way
   // back to it.
-  const natter = bubbleFor('app/natter/natter.js');
-  const app = appById(booted, 'app/natter');
+  const natter = bubbleFor('shell/natter/natter.js');
+  const app = appById(booted, 'shell/natter');
   if (natter.indexOf(app.name) !== -1 && natter.indexOf(app.icon) !== -1 &&
       /id="app-of-file-open"/.test(natter)) {
     test.check('an app entry script shows the app, by the name and icon the desktop shows');
@@ -3100,7 +3100,7 @@ test.subHeading("A file that IS an app says so, and offers the way back");
   // A sibling in the same folder is not the app. The match is the same
   // folder-derived shape declareDynamicApp uses to work out an id, so a
   // helper or a fixture living beside the entry script offers nothing.
-  const sibling = bubbleFor('app/natter/helper.js');
+  const sibling = bubbleFor('shell/natter/helper.js');
   if (sibling === '') {
     test.check('while a sibling file in that folder is not the app, and offers nothing');
   } else {
@@ -3110,7 +3110,7 @@ test.subHeading("A file that IS an app says so, and offers the way back");
   // The registry is asked as well as the path. A folder matching the
   // shape is only an app if the shell declared one from it — a file
   // sitting where an app used to be must offer nothing to open.
-  const gone = bubbleFor('app/ghost/ghost.js');
+  const gone = bubbleFor('shell/ghost/ghost.js');
   if (gone === '') {
     test.check('and a path that looks like an app but is not declared offers nothing');
   } else {
@@ -3129,11 +3129,11 @@ test.subHeading("A file that IS an app says so, and offers the way back");
     const before = booted.shell.navStackIds().join(' > ');
 
     const box = fakeElement('div');
-    booted.shell.renderAppOfFile(box, 'app/natter/natter.js');
+    booted.shell.renderAppOfFile(box, 'shell/natter/natter.js');
     booted.doc.byId['app-of-file-open'].fire('click');
     const after = booted.shell.navStackIds().join(' > ');
 
-    if (before === 'desktop > stack-probe' && after === 'desktop > app/natter') {
+    if (before === 'desktop > stack-probe' && after === 'desktop > shell/natter') {
       test.check('and pressing it puts the app where the viewer was, not on top of it');
     } else {
       test.fail('stack: ' + before + '  ->  ' + after);
@@ -3142,7 +3142,7 @@ test.subHeading("A file that IS an app says so, and offers the way back");
 
   // Nothing else in the tree is mistaken for one — process scripts share
   // the same <name>/<name>.<ext> convention on purpose.
-  const outside = ['process/js/probe/probe.js', 'media/dummy.txt', 'app/natter/natter.json']
+  const outside = ['process/js/probe/probe.js', 'media/dummy.txt', 'shell/natter/natter.json']
     .filter(function (p) { return bubbleFor(p) !== ''; });
   if (outside.length === 0) {
     test.check('nor is a process script, which shares the same naming convention');
@@ -3183,7 +3183,7 @@ test.subHeading('Open with is a form like the others');
 test.subHeading('The Job Selector screen offers one control and one list');
 
 {
-  const src = readRun('app/process-browser/process-browser.js');
+  const src = readRun('shell/process-browser/process-browser.js');
   const css = readRun('index.html');
 
   // The search box is the one control this screen offers, so it sits in a
@@ -3233,7 +3233,7 @@ test.subHeading('The Job Selector screen offers one control and one list');
 test.subHeading('The Jobs screen offers one action and one table');
 
 {
-  const src = readRun('app/jobs/jobs.js');
+  const src = readRun('shell/jobs/jobs.js');
   const css = readRun('index.html');
 
   // The form is the one thing this screen asks you to do, so it sits in
@@ -3324,8 +3324,8 @@ test.subHeading('Sibling folds are one exclusive group, in every app');
     });
   }
 
-  const files = fs.readdirSync(path.join(RUN, 'app'))
-    .map(function (folder) { return ['app/' + folder, path.join(RUN, 'app', folder, folder + '.js')]; })
+  const files = fs.readdirSync(path.join(RUN, 'shell'))
+    .map(function (folder) { return ['shell/' + folder, path.join(RUN, 'shell', folder, folder + '.js')]; })
     .filter(function (pair) { return fs.existsSync(pair[1]); })
     .concat([['js/client/shell.js', path.join(RUN, 'js', 'client', 'shell.js')]]);
 
@@ -3353,7 +3353,7 @@ test.subHeading('Sibling folds are one exclusive group, in every app');
 
   // And the exemptions are real rather than assumed: the tree still
   // builds folds, and they still carry no group.
-  const tree = fs.readFileSync(path.join(RUN, 'app', 'files', 'files.js'), 'utf8');
+  const tree = fs.readFileSync(path.join(RUN, 'shell', 'files', 'files.js'), 'utf8');
   const treeFolds = (tree.match(/['\"]<details[^>]*>/g) || []);
   if (treeFolds.length && treeFolds.every(function (t) { return t.indexOf('name=') === -1; })) {
     test.check('and the Files tree is left alone — a folder is not a panel');
@@ -3364,7 +3364,7 @@ test.subHeading('Sibling folds are one exclusive group, in every app');
 
 test.subHeading('The device panel holds no live fact, so nothing watches it');
 
-// READ FROM app/natterDetails. The panel left the list and became a
+// READ FROM shell/natterDetails. The panel left the list and became a
 // dialog, and these checks followed it — a test that stays behind when
 // its subject moves passes against a file that no longer has the
 // behaviour, which is the loudest kind of quiet.
@@ -3384,7 +3384,7 @@ test.subHeading('The device panel holds no live fact, so nothing watches it');
 // A toggle, a mood, a repaint — each would simply be a panel doing more
 // than it needs to, which is exactly what nobody notices.
 {
-  const natter = readRun('app/natterDetails/natterDetails.js');
+  const natter = readRun('shell/natterDetails/natterDetails.js');
 
   // NOTHING REPEATS. The panel shows a password and an address; neither
   // can change while somebody reads them, so there is nothing for a timer

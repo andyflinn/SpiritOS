@@ -25,7 +25,7 @@ const path = require('path');
 const kernel = require('../run/js/kernel.js');
 const test = require('./testSupport.js');
 
-const DESK = path.join(__dirname, '..', 'run', 'app', 'desk', 'desk.js');
+const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
 const LEAD = 'MCowBQYDK2VwAyEAleadleadleadleadleadleadleadleadleadl=';
 const WSL = 'MCowBQYDK2VwAyEAwslwslwslwslwslwslwslwslwslwslwslwsl=';
 const ICON = kernel.core.const.ICON;

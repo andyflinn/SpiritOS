@@ -121,10 +121,10 @@ expectLoads('js/peerFile.js', 'js/peerFile.js');
 // writable through the generic route — see writableRoots.js for the
 // saveAppScript/saveAppManifest doors that are the only way in.
 test.subHeading('App code, manifests and app data');
-expectLoads('app/natter/natter.js (app entry script)', 'app/natter/natter.js');
-expectNotWritable('app/natter/natter.js (app entry script)', 'app/natter/natter.js');
-expectLoads('app/natter/natter.json (manifest)', 'app/natter/natter.json');
-expectNotWritable('app/natter/natter.json (manifest)', 'app/natter/natter.json');
+expectLoads('shell/natter/natter.js (app entry script)', 'shell/natter/natter.js');
+expectNotWritable('shell/natter/natter.js (app entry script)', 'shell/natter/natter.js');
+expectLoads('shell/natter/natter.json (manifest)', 'shell/natter/natter.json');
+expectNotWritable('shell/natter/natter.json (manifest)', 'shell/natter/natter.json');
 
 // NATter's address book is ordinary scoped app data, written via
 // api.fs.saveFile('relays.json', …) and read by hub.js to find the relay
@@ -137,8 +137,8 @@ expectNotWritable('app/natter/natter.json (manifest)', 'app/natter/natter.json')
 // none — see .gitignore), so loading it passed only on a working copy
 // that happened to hold one, and went red on the first fresh checkout
 // (WSL, 2026-09-19).
-expectServable('app/natter/relays.json (app data)', 'app/natter/relays.json');
-expectWritable('app/natter/relays.json (app data)', 'app/natter/relays.json');
+expectServable('shell/natter/relays.json (app data)', 'shell/natter/relays.json');
+expectWritable('shell/natter/relays.json (app data)', 'shell/natter/relays.json');
 
 // ---- process scripts: readable, never writable ----
 // Job Selector/Job Monitor list them, the Code Viewer shows them; writes are already
@@ -236,7 +236,7 @@ test.subHeading('A refused folder is not listed either');
 
   // The rest of the tree is untouched — this narrows one folder, it does
   // not start hiding things nobody asked to hide.
-  const kept = ['app', 'js', 'index.html'].filter(function (name) { return names.indexOf(name) === -1; });
+  const kept = ['shell', 'js', 'index.html'].filter(function (name) { return names.indexOf(name) === -1; });
   if (kept.length === 0) {
     test.check('and everything else is still listed');
   } else {

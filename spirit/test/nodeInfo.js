@@ -28,7 +28,7 @@ const labelRule = require('../run/js/labelRule');
 const nodeCard = require('../run/js/nodeCard');
 const ownerBadge = require('../run/js/ownerBadge');
 
-const APP_SCRIPT = path.join(__dirname, '..', 'run', 'app', 'info', 'info.js');
+const APP_SCRIPT = path.join(__dirname, '..', 'run', 'shell', 'info', 'info.js');
 
 function tmpHome(name) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-info-'));
@@ -792,7 +792,7 @@ function theFirstRelay() {
   // — which is the exact thing it was written to stop being.
   const mine = [{ label: 'mine', url: 'https://elsewhere.example' }];
   fs.writeFileSync(
-    path.join(home, 'app', 'natter', 'relays.json'),
+    path.join(home, 'shell', 'natter', 'relays.json'),
     JSON.stringify(mine, null, 2)
   );
   const again = ownerBadge.ensureRelays(home);
@@ -807,7 +807,7 @@ function theFirstRelay() {
   // to remove the last public relay (canRemoveRelay), so a node with an
   // empty list got there some other way, and boot quietly deciding for it
   // would be this file overruling something it cannot see the reason for.
-  fs.writeFileSync(path.join(home, 'app', 'natter', 'relays.json'), '[]');
+  fs.writeFileSync(path.join(home, 'shell', 'natter', 'relays.json'), '[]');
   if (ownerBadge.ensureRelays(home).length === 0) {
     test.check('but an emptied list is left empty, because empty is an answer and absent is not');
   } else {

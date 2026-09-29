@@ -268,9 +268,9 @@ async function run() {
     const avatarHome = path.join(
       require('./labMaster/labPaths').FIXTURE_ROOT, AVATAR_NAME, 'spirit', 'run'
     );
-    fs.mkdirSync(path.join(avatarHome, 'app', 'natter'), { recursive: true });
+    fs.mkdirSync(path.join(avatarHome, 'shell', 'natter'), { recursive: true });
     fs.writeFileSync(
-      path.join(avatarHome, 'app', 'natter', 'relays.json'),
+      path.join(avatarHome, 'shell', 'natter', 'relays.json'),
       JSON.stringify([{ label: 'ping', url: 'http://127.0.0.1:' + RELAY_PORT }], null, 2)
     );
 

@@ -590,9 +590,9 @@ async function run() {
   // RECORD now, not of a roll (2026-09-18).
   const ownerBadge = require('../run/js/ownerBadge');
   const nodeHome = world.tmpHome();
-  fs.mkdirSync(path.join(nodeHome, 'app', 'natter'), { recursive: true });
+  fs.mkdirSync(path.join(nodeHome, 'shell', 'natter'), { recursive: true });
   fs.writeFileSync(
-    path.join(nodeHome, 'app', 'natter', 'relays.json'),
+    path.join(nodeHome, 'shell', 'natter', 'relays.json'),
     JSON.stringify([{ label: 'lab', url: 'http://relay' }])
   );
   auth.saveIdentity(nodeHome, johnA);
@@ -649,9 +649,9 @@ async function run() {
   // own: same relay listed, no seat written, nothing claimed.
   const stranger = auth.generateIdentity('nobody');
   const strangerHome = world.tmpHome();
-  fs.mkdirSync(path.join(strangerHome, 'app', 'natter'), { recursive: true });
+  fs.mkdirSync(path.join(strangerHome, 'shell', 'natter'), { recursive: true });
   fs.writeFileSync(
-    path.join(strangerHome, 'app', 'natter', 'relays.json'),
+    path.join(strangerHome, 'shell', 'natter', 'relays.json'),
     JSON.stringify([{ label: 'lab', url: 'http://relay' }])
   );
   auth.saveIdentity(strangerHome, stranger);

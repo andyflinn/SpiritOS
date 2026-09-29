@@ -319,7 +319,7 @@ contacts. Two gates, answering different questions:
 | gate | question | where |
 |---|---|---|
 | the node's front door | may this peer reach this node at all | `peerPost` — verdict `known`/`admit`; a held stranger reaches no app (`arrivals.js:405`) |
-| the puppet's contact list | may this admitted peer use **this** puppet | `app/<name>/allow.json`, read per ask by `nodeApps.js` |
+| the puppet's contact list | may this admitted peer use **this** puppet | `shell/<name>/allow.json`, read per ask by `nodeApps.js` |
 
 **Being on the list IS the permission.** Andy: *"it's implicit permission
 to deposit a request on the owners hard drive."* A puppet asks no second

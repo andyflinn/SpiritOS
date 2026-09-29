@@ -46,7 +46,7 @@
          same thing as being isomorphic.
 
          Relay Chat was its only reader, and Andy: "chatLog.js actually
-         belongs in run/app/relayChat/". THAT HAPPENED ON 2026-09-25 —
+         belongs in run/shell/relayChat/". THAT HAPPENED ON 2026-09-25 —
          the app left for its own repo and chatLog.js went with it, which
          is the same judgement carried to its end rather than a new one.
 
@@ -1446,7 +1446,7 @@
             // Processes, or Files — rather than to the form you have
             // just spent (Andy). The third of three, and all three are a
             // viewer stepping out of its own way.
-            launchApp('app/jobs', null, { replace: true });
+            launchApp('shell/jobs', null, { replace: true });
           });
         }
 
@@ -1568,7 +1568,7 @@
             // move into app/<name>/ and become intrinsic. renderAppGroup
             // draws one tile per id, so this list does not have to know
             // what is already in it.
-            renderAppGroup(grid, ['app/stats', 'app/process-browser', 'app/jobs', 'app/apps', 'app/files', 'app/group-manager', 'app/contacts']
+            renderAppGroup(grid, ['shell/stats', 'shell/process-browser', 'shell/jobs', 'shell/apps', 'shell/files', 'shell/group-manager', 'shell/contacts']
               .concat(spirit.shell.listIntrinsicApps()));
           },
         });

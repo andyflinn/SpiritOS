@@ -42,8 +42,8 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-lastleg-'));
 // would put it. `serve` is the fake app's handler.
 function world(serve) {
   const root = path.join(scratch, 'root-' + Math.random().toString(36).slice(2, 8));
-  fs.mkdirSync(path.join(root, 'app', 'faceProof'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'app', 'faceProof', 'faceProof.json'), JSON.stringify({ serves: true }));
+  fs.mkdirSync(path.join(root, 'shell', 'faceProof'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'shell', 'faceProof', 'faceProof.json'), JSON.stringify({ serves: true }));
   const pipe = appClient.pipePathFor(root, 'faceProof');
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
   const seen = [];
@@ -83,11 +83,11 @@ async function wholeRoute() {
 
   function home(label) {
     const root = path.join(scratch, label);
-    const app = path.join(root, 'app', 'appFaceApp');
+    const app = path.join(root, 'shell', 'appFaceApp');
     fs.mkdirSync(app, { recursive: true });
     fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
     ['appFaceApp.js', 'appFaceApp.json'].forEach(function (f) {
-      fs.copyFileSync(path.join(RUN, 'app', 'appFaceApp', f), path.join(app, f));
+      fs.copyFileSync(path.join(RUN, 'shell', 'appFaceApp', f), path.join(app, f));
     });
     fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
     return { root: root, app: app };
@@ -115,8 +115,8 @@ async function wholeRoute() {
   const owner = home('owner');
   fs.writeFileSync(path.join(owner.app, 'face-domain.json'), JSON.stringify({ faceDomain: FACE_DOMAIN }));
   fs.writeFileSync(path.join(owner.app, 'grants.json'), JSON.stringify({ names: { hello: { to: ownerId.publicKey, app: 'faceProof' } } }));
-  fs.mkdirSync(path.join(owner.root, 'app', 'faceProof'), { recursive: true });
-  fs.writeFileSync(path.join(owner.root, 'app', 'faceProof', 'faceProof.json'), JSON.stringify({ serves: true }));
+  fs.mkdirSync(path.join(owner.root, 'shell', 'faceProof'), { recursive: true });
+  fs.writeFileSync(path.join(owner.root, 'shell', 'faceProof', 'faceProof.json'), JSON.stringify({ serves: true }));
   const servers = appClient.createAppClient({ rootDir: owner.root, log: function () {}, startServerJob: function () { return {}; } });
   servers.startAll();
   const pipe = appClient.pipePathFor(owner.root, 'faceProof');
@@ -217,7 +217,7 @@ async function noTcpPort() {
   const childProcess = require('child_process');
   const root = path.join(scratch, 'g18');
   ['faceProof', 'shared'].forEach(function (d) {
-    fs.cpSync(path.join(RUN, 'app', d), path.join(root, 'app', d), { recursive: true });
+    fs.cpSync(path.join(RUN, 'shell', d), path.join(root, 'shell', d), { recursive: true });
   });
   fs.mkdirSync(path.join(root, 'process'), { recursive: true });
   fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
@@ -279,7 +279,7 @@ function mentions(value, needle) {
 
   // ── (b) THE LIMITS NEST ───────────────────────────────────────────────
   test.subHeading('Each link waits less than the one outside it');
-  const faceSource = fs.readFileSync(path.join(RUN, 'app', 'appFaceApp', 'appFaceApp.js'), 'utf8');
+  const faceSource = fs.readFileSync(path.join(RUN, 'shell', 'appFaceApp', 'appFaceApp.js'), 'utf8');
   const serveWait = Number((faceSource.match(/const SERVE_WAIT_MS = (\d+);/) || [])[1]);
   if (serveWait > 0 && appClient.DOOR_WAIT_MS < serveWait && serveWait < puppetPost.FACE_WAIT_MS) {
     test.check('the hop (' + appClient.DOOR_WAIT_MS + ' ms) < appFaceApp\'s serve (' + serveWait + ' ms) < the face ('

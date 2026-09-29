@@ -23,9 +23,9 @@
 //
 // ── FALSE NEGATIVES ONLY ─────────────────────────────────────────────
 //
-// A folder is matched by an exact literal — 'app/<name>' in a quoted
-// string, or an "app/<name>" key. Anything assembled at runtime
-// ('app/' + folder, which declareIntrinsicApps does) is invisible here.
+// A folder is matched by an exact literal — 'shell/<name>' in a quoted
+// string, or an "shell/<name>" key. Anything assembled at runtime
+// ('shell/' + folder, which declareIntrinsicApps does) is invisible here.
 // That is deliberate: a scanner that guessed at concatenation would
 // invent app names out of string fragments, and one false accusation
 // costs more than several missed ones.
@@ -35,17 +35,17 @@ const path = require('path');
 const test = require('./testSupport.js');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
-const APP_DIR = path.join(RUN_DIR, 'app');
+const APP_DIR = path.join(RUN_DIR, 'shell');
 
 test.startTest('App references — nothing names an app that is not there');
 
 // AN APP IS ITS ENTRY SCRIPT, not its directory — which is the same
 // definition every consumer already uses: discoverDynamicApps looks for
-// app/<name>/<name>.js, and declareIntrinsicApps reads the manifest
+// shell/<name>/<name>.js, and declareIntrinsicApps reads the manifest
 // beside it. A folder with neither registers nothing and appears nowhere.
 //
 // The distinction is not academic. Deleting App Builder removed its code
-// and left app/appBuilder/log.jsonl behind — 264KB of somebody's own
+// and left shell/appBuilder/log.jsonl behind — 264KB of somebody's own
 // generated history, which is theirs and not the repo's to sweep up. A
 // check that counted directories would have called that app "still
 // present" for as long as the data survived, which is a check reporting
@@ -87,13 +87,13 @@ const SOURCES = [
 folders.forEach(function (name) {
   const script = path.join(APP_DIR, name, name + '.js');
   if (fs.existsSync(script)) {
-    SOURCES.push({ label: 'app/' + name + '/' + name + '.js', file: script });
+    SOURCES.push({ label: 'shell/' + name + '/' + name + '.js', file: script });
   }
 });
 
-// 'app/<name>' inside quotes. The quote is what makes this a literal
+// 'shell/<name>' inside quotes. The quote is what makes this a literal
 // rather than a fragment of a concatenation.
-const NAMED = /['"]app\/([A-Za-z0-9_-]+)['"]/g;
+const NAMED = /['"]shell\/([A-Za-z0-9_-]+)['"]/g;
 
 const dangling = [];
 
@@ -109,7 +109,7 @@ SOURCES.forEach(function (source) {
     const name = match[1];
     if (seen[name]) continue;
     seen[name] = true;
-    if (!known[name]) dangling.push(source.label + ' names app/' + name + ', which is not on disk');
+    if (!known[name]) dangling.push(source.label + ' names shell/' + name + ', which is not on disk');
   }
 });
 
@@ -120,7 +120,7 @@ if (!dangling.length) {
 }
 
 // INTRINSIC_APP_FOLDERS is a bare list of folder names rather than
-// 'app/<name>' strings, so the scan above cannot see it — and it is the
+// 'shell/<name>' strings, so the scan above cannot see it — and it is the
 // one list where a missing folder is not merely untidy: declareIntrinsicApps
 // walks it on every boot.
 (function intrinsicFoldersExist() {
@@ -163,7 +163,7 @@ if (!dangling.length) {
 // scanner that reads nothing — a bad regex, an empty source list, a
 // folder listing that came back short.
 (function theScannerWorks() {
-  const planted = "api.addTitlebarLink('app/appBuilder');";
+  const planted = "api.addTitlebarLink('shell/appBuilder');";
   NAMED.lastIndex = 0;
   const hit = NAMED.exec(planted);
   if (hit && hit[1] === 'appBuilder' && !known.appBuilder && SOURCES.length > 5) {

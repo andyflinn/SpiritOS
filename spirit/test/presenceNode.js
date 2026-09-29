@@ -32,7 +32,7 @@ function seatEveryRelay(home, label) {
   let list = [];
   try {
     list = JSON.parse(fs.readFileSync(
-      path.join(home, 'app', 'natter', 'relays.json'), 'utf8'));
+      path.join(home, 'shell', 'natter', 'relays.json'), 'utf8'));
   } catch (e) { list = []; }
   list.forEach(function (row) {
     if (row && row.url) relayKeys.seat(home, row.url, label || 'me');
@@ -601,9 +601,9 @@ async function run() {
     auth.saveIdentity(pinHome, auth.generateIdentity('pinner'));
     // A relay to hold a row on, or the probe finds nothing to connect to
     // and openTo never runs.
-    fs.mkdirSync(path.join(pinHome, 'app', 'natter'), { recursive: true });
+    fs.mkdirSync(path.join(pinHome, 'shell', 'natter'), { recursive: true });
     fs.writeFileSync(
-      path.join(pinHome, 'app', 'natter', 'relays.json'),
+      path.join(pinHome, 'shell', 'natter', 'relays.json'),
       JSON.stringify([{ label: 'one', url: 'http://relay-one' }, { label: 'two', url: 'http://relay-two' }])
     );
     const pinned = [];
@@ -629,9 +629,9 @@ async function run() {
     // unpinned relay simply does not get party standing.
     const deafHome = tmpHome();
     auth.saveIdentity(deafHome, auth.generateIdentity('pinner2'));
-    fs.mkdirSync(path.join(deafHome, 'app', 'natter'), { recursive: true });
+    fs.mkdirSync(path.join(deafHome, 'shell', 'natter'), { recursive: true });
     fs.writeFileSync(
-      path.join(deafHome, 'app', 'natter', 'relays.json'),
+      path.join(deafHome, 'shell', 'natter', 'relays.json'),
       JSON.stringify([{ label: 'deaf', url: 'http://relay-deaf' }])
     );
     const deafOpened = [];
@@ -688,9 +688,9 @@ async function run() {
   auth.saveIdentity(spyHome, auth.generateIdentity('spy'));
   // A relay to hold a row on, or the probe finds nothing to connect to
   // and openTo never runs.
-  fs.mkdirSync(path.join(spyHome, 'app', 'natter'), { recursive: true });
+  fs.mkdirSync(path.join(spyHome, 'shell', 'natter'), { recursive: true });
   fs.writeFileSync(
-    path.join(spyHome, 'app', 'natter', 'relays.json'),
+    path.join(spyHome, 'shell', 'natter', 'relays.json'),
     JSON.stringify([{ label: 'spy-relay', url: 'http://relay' }])
   );
   const spy = presenceNode.createPresence({
@@ -739,9 +739,9 @@ async function run() {
   const jobs = fakeJobs();
 
   // Two relays this node holds a row on, so start() opens a stream to each.
-  fs.mkdirSync(path.join(home, 'app', 'natter'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true });
   fs.writeFileSync(
-    path.join(home, 'app', 'natter', 'relays.json'),
+    path.join(home, 'shell', 'natter', 'relays.json'),
     JSON.stringify([{ label: 'a', url: 'http://a' }, { label: 'b', url: 'http://b' }])
   );
 
@@ -925,9 +925,9 @@ async function run() {
     // node may LEARN, and the two are separate now.
     const home27 = tmpHome();
     auth.saveIdentity(home27, auth.generateIdentity('learner'));
-    fs.mkdirSync(path.join(home27, 'app', 'natter'), { recursive: true });
+    fs.mkdirSync(path.join(home27, 'shell', 'natter'), { recursive: true });
     fs.writeFileSync(
-      path.join(home27, 'app', 'natter', 'relays.json'),
+      path.join(home27, 'shell', 'natter', 'relays.json'),
       JSON.stringify([{ label: 'r', url: 'http://relay-r' }])
     );
 
@@ -997,9 +997,9 @@ async function run() {
     const angryStreams = {};
     const angryHome = tmpHome();
     auth.saveIdentity(angryHome, auth.generateIdentity('angry'));
-    fs.mkdirSync(path.join(angryHome, 'app', 'natter'), { recursive: true });
+    fs.mkdirSync(path.join(angryHome, 'shell', 'natter'), { recursive: true });
     fs.writeFileSync(
-      path.join(angryHome, 'app', 'natter', 'relays.json'),
+      path.join(angryHome, 'shell', 'natter', 'relays.json'),
       JSON.stringify([{ label: 'r', url: 'http://relay-angry' }])
     );
     const A = presenceNode.createPresence({

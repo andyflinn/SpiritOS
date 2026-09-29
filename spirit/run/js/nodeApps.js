@@ -45,11 +45,11 @@
 //   Andy, 2026-09-24: "an orthogonal filesystem interface given to the
 //   mounting (booting) app, where it can treat the fs api like the shell
 //   apps treat it. and [master] supplies the scope:
-//   ./spirit/run/app/<appname>/<appname>.js"
+//   ./spirit/run/shell/<appname>/<appname>.js"
 //
 // So a booted app gets `read`/`write`/`exists` and they resolve inside
 // its own folder and nowhere else. That is the same boundary
-// `kernel.js:176` already draws for a page — `app/` is writable, and an
+// `kernel.js:176` already draws for a page — `shell/` is writable, and an
 // app persists in its own directory — reached by a different door.
 //
 // ── TWO RULES THAT LOOK LIKE ONE, AND ARE NOT ────────────────────────
@@ -121,7 +121,7 @@
 //
 // What this file guarantees in the meantime is what that frame will need
 // when it comes: ONE list shape, in ONE place, per puppet — so the frame
-// reads and writes `app/<name>/allow.json` for every puppet alike and
+// reads and writes `shell/<name>/allow.json` for every puppet alike and
 // needs no per-app knowledge to do it.
 //
 // ── WHAT A BOOTED APP MAY NOT DO ─────────────────────────────────────
@@ -265,7 +265,7 @@ function puppetIn(rootDir, log) {
 
 // The app's own folder, and refusing anything that climbs out of it.
 // `path.relative` rather than a prefix test, because a prefix test says
-// yes to `app/appFaceAppEvil` for the scope `app/appFaceApp`.
+// yes to `shell/appFaceAppEvil` for the scope `shell/appFaceApp`.
 function scopedFs(dir, opts) {
   // Files inside the app's own folder that the app may READ but never
   // WRITE. See `OWNER-ONLY` below for why the list exists at all.
@@ -322,7 +322,7 @@ function scopedFs(dir, opts) {
   };
 }
 
-// `rootDir` is the node's home; `app/` beneath it is where apps live and
+// `rootDir` is the node's home; `shell/` beneath it is where apps live and
 // is writable (kernel.js:176). Returns the mounted names, for the log
 // and for a suite that wants to know the boot happened at all.
 function mountAll(opts) {
@@ -332,7 +332,7 @@ function mountAll(opts) {
   const face = opts && opts.face;
   const servers = opts && opts.servers;
   const log = (opts && opts.log) || function () {};
-  const appsDir = path.join(rootDir, 'app');
+  const appsDir = path.join(rootDir, 'shell');
 
   let names = [];
   try { names = fs.readdirSync(appsDir); } catch (e) { return []; }

@@ -118,7 +118,7 @@ function canRemoveRelay(relays, url) {
 // browser asks for this on every claim.
 function loadRelays(rootDir) {
   var raw;
-  try { raw = fs.readFileSync(path.join(rootDir, 'app', 'natter', 'relays.json'), 'utf8'); }
+  try { raw = fs.readFileSync(path.join(rootDir, 'shell', 'natter', 'relays.json'), 'utf8'); }
   catch (e) { return []; }
   var list;
   try { list = JSON.parse(raw); }
@@ -175,7 +175,7 @@ function configuredUrls(rootDir) {
 var FIRST_RELAY = { label: 'spirit', url: 'https://spirit.andyflinn.com' };
 
 function ensureRelays(rootDir) {
-  var file = path.join(rootDir, 'app', 'natter', 'relays.json');
+  var file = path.join(rootDir, 'shell', 'natter', 'relays.json');
   if (fs.existsSync(file)) return loadRelays(rootDir);
   try {
     fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -380,13 +380,13 @@ function chooseUrl(urls, wanted) {
   var w = normalizeUrl(wanted);
   if (w) {
     if (urls.indexOf(w) === -1) {
-      return { ok: false, status: 403, error: 'url not in app/natter/relays.json' };
+      return { ok: false, status: 403, error: 'url not in shell/natter/relays.json' };
     }
     return { ok: true, url: w };
   }
   if (urls.length === 1) return { ok: true, url: urls[0] };
   if (urls.length === 0) {
-    return { ok: false, status: 503, error: 'no relay url in app/natter/relays.json' };
+    return { ok: false, status: 503, error: 'no relay url in shell/natter/relays.json' };
   }
   return { ok: false, status: 400, error: 'pick a relay url' };
 }

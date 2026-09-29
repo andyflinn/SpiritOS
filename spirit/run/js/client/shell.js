@@ -41,7 +41,7 @@
   // "Bound" is readNodeLabel() below — the same accessor the window
   // title uses, so the two can never disagree about whether this node
   // has a name.
-  var NATTER_ID = 'app/natter';
+  var NATTER_ID = 'shell/natter';
 
   // Whether the first-run rule applies at all.
   //
@@ -207,7 +207,7 @@
   function readNodeLabel() {
     if (nodeLabel) return nodeLabel;
     try {
-      var raw = spirit.core.fs.loadFile('app/natter/session.json');
+      var raw = spirit.core.fs.loadFile('shell/natter/session.json');
       if (raw == null) return '';
       var parsed = JSON.parse(raw);
       nodeLabel = String((parsed && parsed.label) || '').trim();
@@ -254,7 +254,7 @@
   }
 
   // An app's id is its folder once it is a dynamic app: 'jobs' becomes
-  // 'app/jobs' the day Jobs moves into app/jobs/. Everything the operator
+  // 'shell/jobs' the day Jobs moves into app/jobs/. Everything the operator
   // customised is keyed by that id — appOverrides by key, defaultHandlers
   // by value — and pruneStalePreferences (below) deletes every entry
   // naming an app it cannot find, then saves. So on the first load after
@@ -274,12 +274,12 @@
   // bare ids, rewritten to app/… at load.
   // See design/DEPRECATIONS.md (decision 0014).
   var APP_ID_RENAMES = {
-    stats: 'app/stats',
-    jobs: 'app/jobs',
-    'app-manager': 'app/apps',
-    'process-browser': 'app/process-browser',
-    files: 'app/files',
-    'group-manager': 'app/group-manager',
+    stats: 'shell/stats',
+    jobs: 'shell/jobs',
+    'app-manager': 'shell/apps',
+    'process-browser': 'shell/process-browser',
+    files: 'shell/files',
+    'group-manager': 'shell/group-manager',
   };
 
   // Runs at load, which is before any snapshot and therefore before
@@ -1024,7 +1024,7 @@
         container.innerHTML = '<div id="' + groupId + '-content"></div>';
         container.addEventListener('click', function (event) {
           if (event.target.closest('[data-goto-apps]')) {
-            launchApp('app/apps');
+            launchApp('shell/apps');
             return;
           }
           var deleteBtn = event.target.closest('[data-delete-empty-group]');
@@ -1323,7 +1323,7 @@
 
       // Ask a dialog a question and get the answer back.
       //
-      //   api.callDialog('app/contactsDetails', { key: k })
+      //   api.callDialog('shell/contactsDetails', { key: k })
       //      .then(function (result) { ... });
       //
       // A separate verb from launchApp because it is a separate contract,
@@ -1709,7 +1709,7 @@
       },
     };
     if (app._scriptPath) {
-      var folder = app._scriptPath.match(/^app\/([^/]+)\//)[1];
+      var folder = app._scriptPath.match(/^shell\/([^/]+)\//)[1];
       api.fs = spirit.core.fs.createScopedFs(folder);
     }
     return api;
@@ -2483,7 +2483,7 @@
   // stays at full strength, so the eye lands on the part you came for.
   // They are NOT what makes it wrap: an element boundary is not a line
   // break opportunity, so <span>run/</span><span>app/</span> breaks in
-  // exactly the places `run/app/` does, which is nowhere. <wbr> is the
+  // exactly the places `run/shell/` does, which is nowhere. <wbr> is the
   // break opportunity, and the browser prefers those points over any
   // other — so it folds after a slash and only splits a segment if one
   // is longer than the line, which .file-info-value's overflow-wrap
@@ -2552,8 +2552,8 @@
   // it is one button, and a delegated listener somewhere else would be a
   // second place to look.
   function renderAppOfFile(container, path) {
-    var found = /^app\/([^/]+)\/\1\.js$/.exec(String(path || ''));
-    var app = found && apps['app/' + found[1]];
+    var found = /^shell\/([^/]+)\/\1\.js$/.exec(String(path || ''));
+    var app = found && apps['shell/' + found[1]];
     if (!app) { container.innerHTML = ''; return; }
 
     var name = effectiveName(app);
@@ -2653,7 +2653,7 @@
   // needs a reload to be discovered, same as you'd already expect for
   // a new process manifest.
   //
-  // The id is derived from scriptPath's own folder (for example "app/natter"), not
+  // The id is derived from scriptPath's own folder (for example "shell/natter"), not
   // read from manifest.id — an app's manifest can no longer claim to be
   // whatever id it likes; its identity is the one fact the shell already
   // observed directly via the fs-watcher. manifest.id, if a manifest still
@@ -2669,7 +2669,7 @@
   // refuses to write one (kernel.js), so no app and no builder can make
   // itself unremovable.
   function declareDynamicApp(manifest, scriptPath) {
-    var id = 'app/' + scriptPath.match(/^app\/([^/]+)\//)[1];
+    var id = 'shell/' + scriptPath.match(/^shell\/([^/]+)\//)[1];
     var existing = apps[id];
     // Declaring twice is normal now: an intrinsic app is declared at boot
     // from its manifest (declareIntrinsicApps, below) and again when the
@@ -2742,8 +2742,8 @@
 
   function declareIntrinsicApps() {
     INTRINSIC_APP_FOLDERS.forEach(function (folder) {
-      var scriptPath = 'app/' + folder + '/' + folder + '.js';
-      var raw = spirit.core.fs.loadFile('app/' + folder + '/' + folder + '.json');
+      var scriptPath = 'shell/' + folder + '/' + folder + '.js';
+      var raw = spirit.core.fs.loadFile('shell/' + folder + '/' + folder + '.json');
       if (raw == null) return; // no manifest — the watcher will find it, or it is gone
       var manifest;
       try { manifest = JSON.parse(raw); }
@@ -2757,7 +2757,7 @@
     var fsWatcherJob = jobs.find(function (j) { return j.type === 'fs-watcher'; });
     if (!fsWatcherJob || !fsWatcherJob.data || !Array.isArray(fsWatcherJob.data.files)) return;
 
-    var appEntryPattern = /^app\/([^/]+)\/\1\.js$/;
+    var appEntryPattern = /^shell\/([^/]+)\/\1\.js$/;
     fsWatcherJob.data.files.forEach(function (f) {
       if (f.kind !== 'file' || !appEntryPattern.test(f.relativePath)) return;
       var manifestRaw = spirit.core.fs.loadFile(f.relativePath.replace(/\.js$/, '.json'));

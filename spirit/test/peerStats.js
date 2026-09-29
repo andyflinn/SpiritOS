@@ -213,7 +213,7 @@ test.subHeading('One file per peer, where peerFile says and where bytesHeld look
   // hub.js's bytesHeldByPeer walks app/ for the peerfile- prefix and
   // asks peerFile whose it is, so a sidecar counts toward what that
   // contact costs without hub.js being told this module exists.
-  if (rel.length === 3 && rel[0] === 'app' && rel[1] === 'contacts' &&
+  if (rel.length === 3 && rel[0] === 'shell' && rel[1] === 'contacts' &&
       rel[2] === peerFile.fileName(BERT)) {
     test.check('a sidecar is app/contacts/ plus the name peerFile gives it');
   } else {
@@ -256,7 +256,7 @@ test.subHeading('Nothing counted is nothing, not an error');
   // A file somebody edited by hand, or half-written by a crash. It must
   // read as "nothing counted" rather than throw, because the caller is
   // the inbox path and an exception there would stop mail arriving.
-  fs.mkdirSync(path.join(home, 'app', 'contacts'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'shell', 'contacts'), { recursive: true });
   fs.writeFileSync(peerStats.statsPath(home, BERT), '{ not json');
   const salvaged = peerStats.readSummary(home, BERT, NOON);
   if (salvaged.unansweredInbound === 0 && salvaged.inboundPerDay === 0) {

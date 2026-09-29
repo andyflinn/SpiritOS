@@ -141,7 +141,7 @@ function startSink(delayMs) {
 }
 
 const nodeRoot = setupRelayFakes('serverSurface').andy;
-const ENTRY_SCRIPT = path.join(nodeRoot, 'app', 'natter', 'natter.js');
+const ENTRY_SCRIPT = path.join(nodeRoot, 'shell', 'natter', 'natter.js');
 
 // A relay identity for case 2 to try to steal. relay-state/ is gitignored
 // and this node lives in the temp dir, so this never touches the repo.
@@ -181,7 +181,7 @@ fs.writeFileSync(
 // non-empty on purpose: relay.claim below is asserted to refuse a url
 // that is NOT on it, which needs a list to not be on.
 fs.writeFileSync(
-  path.join(nodeRoot, 'app', 'natter', 'relays.json'),
+  path.join(nodeRoot, 'shell', 'natter', 'relays.json'),
   JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]),
   'utf8'
 );
@@ -269,7 +269,7 @@ freePort()
     // opens.
     return request(port, 'POST', '/api/spirit', {
       verb: 'fs.save',
-      path: 'app/natter/serverSurface-probe.json',
+      path: 'shell/natter/serverSurface-probe.json',
       content: '{"written":"by serverSurface, and deleted again below"}',
     }).then(function (ok) {
       if (ok.status >= 200 && ok.status < 300) {
@@ -279,12 +279,12 @@ freePort()
           'refusal below proves nothing — the verb is not wired.' + lastWords());
       }
       return request(port, 'POST', '/api/spirit', {
-        verb: 'fs.delete', path: 'app/natter/serverSurface-probe.json',
+        verb: 'fs.delete', path: 'shell/natter/serverSurface-probe.json',
       });
     }).then(function () {
       return request(port, 'POST', '/api/spirit', {
         verb: 'fs.save',
-        path: 'app/./natter/natter.js',
+        path: 'shell/./natter/natter.js',
         content: '// serverSurface.js probe — must never reach disk',
       });
     }).then(function (r) {
@@ -531,7 +531,7 @@ freePort()
       } else {
         test.fail('big proxy request: HTTP ' + r.status + ', far end saw ' + quick.seen.bytes + ' bytes');
       }
-      return verb({ verb: 'fs.save', path: 'app/natter/too-big.json', content: 'x'.repeat(100000) });
+      return verb({ verb: 'fs.save', path: 'shell/natter/too-big.json', content: 'x'.repeat(100000) });
     }).then(function (r) {
       if (r.status === 413) {
         test.check('and any other verb with 100 KB is still refused 413 — the packet bound stands for them');
@@ -632,7 +632,7 @@ freePort()
       // this sentence cost.
       ['POST', '/api/spirit', { verb: 'jobs.search' }],
       ['POST', '/api/spirit', { verb: 'jobs.get', key: 'job_1' }],
-      ['POST', '/api/spirit', { verb: 'fs.search', q: 'app/*' }],
+      ['POST', '/api/spirit', { verb: 'fs.search', q: 'shell/*' }],
       ['POST', '/api/spirit', { verb: 'jobs.create' }],
       ['POST', '/api/spirit', { verb: 'jobs.update' }],
       ['POST', '/api/spirit', { verb: 'jobs.cancel' }],

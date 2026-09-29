@@ -44,7 +44,7 @@ const PUPPET = 'puppet.json';
 
 function world() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-puppet-owner-'));
-  const dir = path.join(root, 'app', 'ownedApp');
+  const dir = path.join(root, 'shell', 'ownedApp');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'ownedApp.json'), JSON.stringify({ name: 'ownedApp', boots: true }));
   fs.writeFileSync(path.join(dir, 'ownedApp.js'),

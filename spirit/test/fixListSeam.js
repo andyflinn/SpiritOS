@@ -33,7 +33,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 
 const REPO = path.join(__dirname, '..', '..');
-const APP_REL = 'spirit/run/app/fixList';
+const APP_REL = 'spirit/run/shell/fixList';
 
 if (!fs.existsSync(path.join(REPO, APP_REL))) {
   test.fail('fixList: `' + APP_REL + '` is not built yet, so nothing here can run');
@@ -50,8 +50,8 @@ const LISTED = 'LISTED-PEER-KEY';
 
 function world(listed) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-fixlist-'));
-  fs.mkdirSync(path.join(root, 'app'), { recursive: true });
-  const dir = path.join(root, 'app', 'fixList');
+  fs.mkdirSync(path.join(root, 'shell'), { recursive: true });
+  const dir = path.join(root, 'shell', 'fixList');
   fs.cpSync(path.join(REPO, APP_REL), dir, { recursive: true });
   // The app requires the shared envelope from two directories up. A copy
   // with no js/ beside it does not mount at all — and a suite whose every

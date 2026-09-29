@@ -31,7 +31,7 @@ function source(rel) {
 
 test.startTest('Member apps behind the face (G17), what is still owed');
 
-const face = source('app/appFaceApp/appFaceApp.js');
+const face = source('shell/appFaceApp/appFaceApp.js');
 
 test.awaiting('public-app-server/G17', 'a member keeps the names granted to it, on disk (MINE_FILE in appFaceApp)',
   /\bMINE_FILE\b/.test(face),

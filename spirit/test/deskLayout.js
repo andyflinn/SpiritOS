@@ -30,8 +30,8 @@ const path = require('path');
 const test = require('./testSupport.js');
 const kernel = require('../run/js/kernel.js');
 
-const DESK = path.join(__dirname, '..', 'run', 'app', 'desk', 'desk.js');
-const DETAILS = path.join(__dirname, '..', 'run', 'app', 'deskDetails', 'deskDetails.js');
+const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
+const DETAILS = path.join(__dirname, '..', 'run', 'shell', 'deskDetails', 'deskDetails.js');
 const LEAD = 'MCowBQYDK2VwAyEAleadleadleadleadleadleadleadleadleadl=';
 const OWED = 'OWED by desk/G1.12: ';
 

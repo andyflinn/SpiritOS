@@ -45,7 +45,7 @@ preferences.json
 conversation.json
 history.json
 log.jsonl
-spirit/run/app/shared/aiStatus.json
+spirit/run/shell/shared/aiStatus.json
 spirit/currentIssues.md
 
 # The appFaceApp's granted subdomain names — a dataset a running app
@@ -58,16 +58,16 @@ spirit/currentIssues.md
 # ask for the same name is refused" would go green or red depending on
 # what the previous run granted. Caught by wsl-claude before the first
 # push, 2026-09-25. The app folder still ships its manifest and its .js.
-spirit/run/app/appFaceApp/grants.json
+spirit/run/shell/appFaceApp/grants.json
 # Its face domain, written at setup (G17, THE ROUTE): a fact about this box.
-spirit/run/app/appFaceApp/face-domain.json
+spirit/run/shell/appFaceApp/face-domain.json
 
 # The fix list an admitted peer writes to. Same class and the same lab
 # hazard: a fixes.md left by one run would be planted into every node
 # home, so a suite asserting "the request landed" would pass on lines it
 # never wrote. It is also Andy's, in the plain sense — notes people sent
 # him about his own node, which belong on his disc and in no clone.
-spirit/run/app/fixList/fixes.md
+spirit/run/shell/fixList/fixes.md
 
 # Desk's record as Desk once kept it in its own folder (desk/G1.O10, Andy:
 # "yes"). From desk/G1.4 the desk server imports these into desk.db, in
@@ -75,10 +75,10 @@ spirit/run/app/fixList/fixes.md
 # pulled would import Andy's record into its own desk.db, and every planted
 # test node would boot with it. D5: "any appServer state is none of git's
 # business". Past commits still hold them.
-spirit/run/app/desk/log/
-spirit/run/app/desk/voice/
-spirit/run/app/desk/state.json
-spirit/run/app/desk/seen.json
+spirit/run/shell/desk/log/
+spirit/run/shell/desk/voice/
+spirit/run/shell/desk/state.json
+spirit/run/shell/desk/seen.json
 
 # Personal media that ended up in a folder named test/pix rather than real
 # test fixtures — unreferenced by any code or test (verified), 20MB.
@@ -175,7 +175,7 @@ minted.json
 # That is not a loss: an unbound node showing Natter's add-a-relay row is
 # what an unbound node is, and a list shipped in git was the box
 # pretending to know somewhere it had never been.
-spirit/run/app/natter/relays.json
+spirit/run/shell/natter/relays.json
 # Desk's own log (AGENTS-UI.md): Andy's conversation with the agents, kept
 # by the app in its own folder because "they must keep their own logs".
 # His words, never pushed.
@@ -188,14 +188,14 @@ spirit/run/build.json
 # row in front of it, and --down restores from it. Never a committed file —
 # staged once by reflex, it made git ls-files name a path that the teardown
 # had already deleted, and every lab node then failed to build.
-spirit/run/app/natter/relays.json.before-lab
+spirit/run/shell/natter/relays.json.before-lab
 # And the binding, backed up the same way for a better reason: session.json
 # is what firstRun() reads, so a node that loses it opens to Natter alone
 # and behaves like a stranger to itself with its identity, contacts, relays
 # and mail all still there. Ignored for the same hard reason as the line
 # above — missingFromCopy uses --exclude-standard, so an untracked backup
 # refuses every lab build until it is deleted.
-spirit/run/app/natter/session.json.before-lab
+spirit/run/shell/natter/session.json.before-lab
 NEXT_PROMPT.md
 
 # Andy's own project, not a node feature and not a SpiritOS concept: a
@@ -246,3 +246,8 @@ app-state/
 # What one box says about itself (see .spiritbox.example). Machine facts,
 # never shared: the file exists so a box can stop re-typing them.
 .spiritbox
+
+# app/ BECAME shell/ (slim/G1.1). A pulled node keeps its old, untracked
+# files in app/ until its first start moves them (js/shellMove.js); until
+# then none of them is anyone else's business, nor a test fixture's.
+spirit/run/app/

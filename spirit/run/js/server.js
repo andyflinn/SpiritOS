@@ -92,7 +92,11 @@ common.verifyStartupCwd('js/server.js');
 
 const ROOT_DIR = spirit.core.node.const.ROOT_DIR;
 
-const hub = require('./hub').createHub(ROOT_DIR);
+// app/ BECAME shell/ (slim/G1.1): what this node kept in app/, git did not
+// move; it moves here, once, before anything reads shell/.
+require('./shellMove').moveLeftovers(ROOT_DIR);
+
+const hub =require('./hub').createHub(ROOT_DIR);
 
 const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.core.node.const.DEFAULT_SPIRIT_PORT;
 

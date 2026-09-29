@@ -97,7 +97,7 @@ function createNodeSearches(opts) {
     var watcher = jobs.listJobs().filter(function (j) { return j.type === 'fs-watcher'; })[0];
     var files = (watcher && watcher.data && watcher.data.files) || [];
     // A folder reads with its trailing slash, so a person can tell the two
-    // apart and 'app/desk/' finds the folder itself.
+    // apart and 'shell/desk/' finds the folder itself.
     var pathOf = function (f) { return f.relativePath + (f.kind === 'folder' ? '/' : ''); };
     var s = searchBucket.createSearch({
       query: pattern,

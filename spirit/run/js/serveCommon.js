@@ -36,7 +36,7 @@ function verifyStartupCwd(entry) {
   var cwd = process.cwd();
   var errors = [];
 
-  var REQUIRED_DIRS = ['app', 'js', 'process'];
+  var REQUIRED_DIRS = ['shell', 'js', 'process'];
   var missing = REQUIRED_DIRS.filter(function (name) {
     try { return !fs.statSync(path.join(cwd, name)).isDirectory(); }
     catch (err) { return true; }

@@ -109,10 +109,10 @@ function pipePathFor(rootDir, appName, platform, kind) {
 // Every app whose manifest says it serves, by folder order.
 function readServers(rootDir) {
   let names = [];
-  try { names = fs.readdirSync(path.join(rootDir, 'app')).sort(); } catch (e) { return []; }
+  try { names = fs.readdirSync(path.join(rootDir, 'shell')).sort(); } catch (e) { return []; }
   return names.filter(function (app) {
     if (!APP_RE.test(app)) return false;
-    try { return servesOf(JSON.parse(fs.readFileSync(path.join(rootDir, 'app', app, app + '.json'), 'utf8'))); }
+    try { return servesOf(JSON.parse(fs.readFileSync(path.join(rootDir, 'shell', app, app + '.json'), 'utf8'))); }
     catch (e) { return false; }
   });
 }

@@ -226,7 +226,7 @@ function createWorld(opts) {
     // a voice file), tracked by Andy's ruling ("git everything in this
     // folder") but committed when he does. A fake node needs none of it.
     const missing = buildStamp.missingFromCopy(REPO_ROOT)
-      .filter(function (f) { return f.indexOf('spirit/run/app/desk/') !== 0; });
+      .filter(function (f) { return f.indexOf('spirit/run/shell/desk/') !== 0; });
     if (missing.length) {
       return {
         ok: false,
@@ -329,9 +329,9 @@ function createWorld(opts) {
       // because nothing exposes "configure this node's identity and
       // relays" from outside it.
       auth.saveIdentity(node.home, id);
-      fs.mkdirSync(path.join(node.home, 'app', 'natter'), { recursive: true });
+      fs.mkdirSync(path.join(node.home, 'shell', 'natter'), { recursive: true });
       fs.writeFileSync(
-        path.join(node.home, 'app', 'natter', 'relays.json'),
+        path.join(node.home, 'shell', 'natter', 'relays.json'),
         JSON.stringify([{ label: 'lab', url: relay.url }], null, 2)
       );
       // AND THE SEAT (2026-09-18). This lab claims by posting STRAIGHT AT
@@ -354,7 +354,7 @@ function createWorld(opts) {
       // outside itself, so every file that means "bound" has to be
       // written by hand here.
       fs.writeFileSync(
-        path.join(node.home, 'app', 'natter', 'session.json'),
+        path.join(node.home, 'shell', 'natter', 'session.json'),
         JSON.stringify({ label: name, boundAt: new Date().toISOString() }, null, 2)
       );
       // It has to be restarted to read what was just written to it.

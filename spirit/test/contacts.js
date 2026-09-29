@@ -18,7 +18,7 @@ const spirit = require('../run/js/kernel.js');
 const hubModule = require('../run/js/hub.js');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
-const APP_SCRIPT = path.join(RUN_DIR, 'app', 'contacts', 'contacts.js');
+const APP_SCRIPT = path.join(RUN_DIR, 'shell', 'contacts', 'contacts.js');
 
 const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
 const CAROL = 'MCowBQYDK2VwAyEAcarolcarolcarolcarolcarolcarolcaro=';
@@ -713,7 +713,7 @@ function aRowOpensThePerson() {
     // The KEY alone. The dialog re-fetches its row, because the counters
     // move while the screen is open and a row captured at launch would
     // sit there going stale.
-    if (app.called.length === 1 && app.called[0].id === 'app/contactsDetails' &&
+    if (app.called.length === 1 && app.called[0].id === 'shell/contactsDetails' &&
         JSON.stringify(app.called[0].params) === JSON.stringify({ key: CAROL })) {
       test.check('clicking a row calls the dialog for that key and nothing else');
     } else {

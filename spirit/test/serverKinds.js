@@ -31,7 +31,7 @@ test.startTest('processes/G1.3: node-operated and user-operated servers');
 const OWED = 'OWED by processes/G1.3: ';
 const RUN = path.join(__dirname, '..', 'run');
 const COUNTER = path.join(RUN, 'process', 'js', 'counterServer', 'counterServer.js');
-const JOBS_APP = path.join(RUN, 'app', 'jobs', 'jobs.js');
+const JOBS_APP = path.join(RUN, 'shell', 'jobs', 'jobs.js');
 const jobs = require('../run/js/jobs.js')(spirit, 65432);
 
 function freePort() {

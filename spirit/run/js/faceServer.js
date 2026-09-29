@@ -45,7 +45,7 @@ const ROOT_DIR = path.join(__dirname, '..');
 
 // ── WHERE AN APP'S STATE LIVES, AND WHY NOT BESIDE ITS CODE ──────────
 //
-// `app-state/<name>/`, never `app/<name>/`. The convention that code and
+// `app-state/<name>/`, never `shell/<name>/`. The convention that code and
 // data share a folder was written when apps were files inside a private
 // shell; an app served to strangers is **deployed by replacement**, and
 // then the two cannot share:
@@ -66,10 +66,10 @@ function stateDir(rootDir, appName) {
 }
 
 function appDir(rootDir, appName) {
-  return path.join(rootDir, 'app', appName);
+  return path.join(rootDir, 'shell', appName);
 }
 
-// The manifest is `app/<name>/<name>.json` — the convention the tree
+// The manifest is `shell/<name>/<name>.json` — the convention the tree
 // already enforces and protects (`kernel.js`'s MANIFEST_PATTERN, which
 // refuses to let anything write one). Nothing new is invented here.
 function manifestPath(rootDir, appName) {
@@ -130,7 +130,7 @@ const SURFACE_MEMBERS = ['verb'];
 
 // The optional layer (G4), and SEPARATELY optional — taking elements
 // must not bring dialogs along. The files that satisfy these live in
-// `app/shell/`, which every clone carries whether or not anything
+// `shell/`, which every clone carries whether or not anything
 // launches the shell; the vocabulary is here because the grant is a
 // contract decision and the files are a deployment fact.
 const UTILITIES = ['elements', 'tokens', 'dialogs'];
@@ -618,7 +618,7 @@ function claimSeat(rootDir, appName, relayUrl, invite, inviteLabel, known) {
 // permissions for free, which is the difference between a private key
 // and a readable file on a box strangers can reach.
 //
-// It is under `app-state/` rather than `app/` for G12's reason: a
+// It is under `app-state/` rather than `shell/` for G12's reason: a
 // deployment replaces CODE. An identity inside the code folder is an
 // identity a redeployment destroys, and a node that loses its key does
 // not lose a password — it ceases to be that person.
@@ -1026,9 +1026,9 @@ function create(opts) {
   // 404 before anything looks at it. There is still no directory read
   // anywhere in this module.
   //
-  // `app/shared/ask.js` is G3's one home. It is offered to every app
+  // `shell/shared/ask.js` is G3's one home. It is offered to every app
   // because the app contract is mandatory, not optional — the OPTIONAL
-  // layer is `app/shell`'s elements and tokens (G4), and those are
+  // layer is `shell/shell`'s elements and tokens (G4), and those are
   // granted per manifest, not handed out here.
   function servable(pathname) {
     const own = function (f) { return path.join(appDir(rootDir, appName), f); };
@@ -1036,7 +1036,7 @@ function create(opts) {
     const m = /^\/([A-Za-z0-9._-]+)$/.exec(pathname);
     if (!m) return null;
     if (m[1] === appName + '.html' || m[1] === appName + '.js') return own(m[1]);
-    if (m[1] === 'ask.js') return path.join(rootDir, 'app', 'shared', 'ask.js');
+    if (m[1] === 'ask.js') return path.join(rootDir, 'shell', 'shared', 'ask.js');
     // ── A GRANT THAT SERVES NOTHING IS NOT A GRANT ──────────────────
     //
     // The optional layer is offered only to an app that DECLARED it, so
@@ -1045,12 +1045,12 @@ function create(opts) {
     // stylesheet is built to render without it for exactly that reason.
     //
     // Still one named file per entry — G2's rule holds here too, and
-    // app/shell is never a servable folder.
+    // the top of shell/ is never a servable folder.
     const util = { 'elements.css': 'elements', 'tokens.css': 'tokens' }[m[1]];
     if (util) {
       return state.granted.utilities.indexOf(util) === -1
         ? null
-        : path.join(rootDir, 'app', 'shell', m[1]);
+        : path.join(rootDir, 'shell', m[1]);
     }
     if (m[1] === 'favicon.svg') return null;
     return null;
@@ -1491,7 +1491,7 @@ function fromArgv(argv) {
     console.error('Refusing to start "' + appName + '" — ' + (e.code || 'app-refused'));
     console.error('    ' + (e.message || String(e)));
     if (e.members) console.error('    members: ' + e.members.join(', '));
-    console.error('    the manifest is app/' + appName + '/' + appName + '.json');
+    console.error('    the manifest is shell/' + appName + '/' + appName + '.json');
     process.exit(1);
   }
   return h;

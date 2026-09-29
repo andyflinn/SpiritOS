@@ -38,7 +38,7 @@
 // ── WHAT IT CANNOT SEE, PRINTED IN THE OUTPUT AND NOT ONLY HERE ─────
 //
 // IT FINDS FORKS THAT CONVERGE. A fork that bypasses the bottom is
-// invisible to it: the raw `fetch` in `app/starter/starter.html` ran in a
+// invisible to it: the raw `fetch` in `shell/starter/starter.html` ran in a
 // browser, never in node, and was found by a suite READING THE FILE. A
 // ranked list that does not say so reads as "these are all the ways this
 // tree reaches the wire", which is false — and it would quietly retire

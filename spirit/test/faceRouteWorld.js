@@ -37,11 +37,11 @@ const FACE_DOMAIN = 'face.spirit.test';
 // modules), the real js/ beside it for the app's requires.
 function home(label) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-face-' + label + '-'));
-  const app = path.join(root, 'app', 'appFaceApp');
+  const app = path.join(root, 'shell', 'appFaceApp');
   fs.mkdirSync(app, { recursive: true });
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
   ['appFaceApp.js', 'appFaceApp.json'].forEach(function (f) {
-    fs.copyFileSync(path.join(RUN, 'app', 'appFaceApp', f), path.join(app, f));
+    fs.copyFileSync(path.join(RUN, 'shell', 'appFaceApp', f), path.join(app, f));
   });
   fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
   return { root: root, app: app };

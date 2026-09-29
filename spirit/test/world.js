@@ -220,9 +220,9 @@ function assemble(s) {
       if (!who) return null;
       const home = tmpHome(name);
       auth.saveIdentity(home, who.id);
-      fs.mkdirSync(path.join(home, 'app', 'natter'), { recursive: true });
+      fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true });
       fs.writeFileSync(
-        path.join(home, 'app', 'natter', 'relays.json'),
+        path.join(home, 'shell', 'natter', 'relays.json'),
         JSON.stringify((urls || ['http://relay']).map(function (u) {
           return { label: 'lab', url: u };
         }), null, 2)
@@ -230,7 +230,7 @@ function assemble(s) {
       // The file that decides firstRun(). Without it a node with a key,
       // a claim and a relay still believes it has no name.
       fs.writeFileSync(
-        path.join(home, 'app', 'natter', 'session.json'),
+        path.join(home, 'shell', 'natter', 'session.json'),
         JSON.stringify({ label: who.label, boundAt: new Date().toISOString() }, null, 2)
       );
       return home;
@@ -242,9 +242,9 @@ function assemble(s) {
       if (!owner) return null;
       const home = tmpHome('owner');
       auth.saveIdentity(home, owner);
-      fs.mkdirSync(path.join(home, 'app', 'natter'), { recursive: true });
+      fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true });
       fs.writeFileSync(
-        path.join(home, 'app', 'natter', 'relays.json'),
+        path.join(home, 'shell', 'natter', 'relays.json'),
         JSON.stringify((urls || ['http://relay']).map(function (u) {
           return { label: 'lab', url: u };
         }), null, 2)

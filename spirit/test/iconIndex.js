@@ -234,15 +234,15 @@ test.subHeading('No two shipped apps paint the same picture');
     (byGlyph[glyph] = byGlyph[glyph] || []).push(who);
   }
 
-  fs.readdirSync(path.join(RUN_DIR, 'app')).forEach(function (folder) {
-    const manifestPath = path.join(RUN_DIR, 'app', folder, folder + '.json');
+  fs.readdirSync(path.join(RUN_DIR, 'shell')).forEach(function (folder) {
+    const manifestPath = path.join(RUN_DIR, 'shell', folder, folder + '.json');
     if (!fs.existsSync(manifestPath)) return;
     const shipped = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
     if (!shipped.icon) return;
     // A literal is still a mistake whether or not anybody sees it: the
     // manifest names a KEY in the icon table, and one that resolves to
     // nothing paints as FILE either way.
-    if (!ICON[shipped.icon]) literalIcons.push('app/' + folder + ' → ' + JSON.stringify(shipped.icon));
+    if (!ICON[shipped.icon]) literalIcons.push('shell/' + folder + ' → ' + JSON.stringify(shipped.icon));
     // Hidden apps are exempt, and this is the rule rather than an
     // exception to it (Andy): a glyph has to be unique among apps a
     // person PICKS BETWEEN in a gallery. A launcher or a dialog is a
@@ -253,7 +253,7 @@ test.subHeading('No two shipped apps paint the same picture');
     // rolodex Contacts wears, because to anyone looking at it that screen
     // IS Contacts. Two icons there would have said they were two things.
     if (shipped.hidden) return;
-    claim(ICON[shipped.icon] || ICON.FILE, 'app/' + folder + ' (' + shipped.icon + ')');
+    claim(ICON[shipped.icon] || ICON.FILE, 'shell/' + folder + ' (' + shipped.icon + ')');
   });
 
   // The built-ins still registered from index.html, which have no
@@ -345,8 +345,8 @@ test.subHeading('An icon is picked from the pool, never typed');
   // -icon-input is exactly the control that was removed, and re-adding
   // one is exactly the regression.
   [
-    ['app/apps/apps.js', 'the Apps panel'],
-    ['app/group-manager/group-manager.js', 'the Groups panel'],
+    ['shell/apps/apps.js', 'the Apps panel'],
+    ['shell/group-manager/group-manager.js', 'the Groups panel'],
   ].forEach(function (pair) {
     const src = fs.readFileSync(path.join(RUN_DIR, pair[0]), 'utf8');
     const typedIn = src.match(/<input[^>]*id="[a-z-]*icon[a-z-]*"/g) || [];
@@ -364,8 +364,8 @@ test.subHeading('An icon is picked from the pool, never typed');
   // the kind of thing that has no excuse to reach around it (unlike
   // setAppOverride, which no app-scoped api can express).
   [
-    ['app/apps/apps.js', 'the Apps panel'],
-    ['app/group-manager/group-manager.js', 'the Groups panel'],
+    ['shell/apps/apps.js', 'the Apps panel'],
+    ['shell/group-manager/group-manager.js', 'the Groups panel'],
   ].forEach(function (pair) {
     const src = fs.readFileSync(path.join(RUN_DIR, pair[0]), 'utf8');
     if (src.indexOf('spirit.shell.ui') === -1 && /\bui\.elements\.createIconSelector/.test(src)) {

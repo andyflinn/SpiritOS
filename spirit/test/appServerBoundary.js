@@ -60,8 +60,8 @@ function readJson(rel) {
 }
 
 const APP_SERVER_REL = 'spirit/run/js/faceServer.js';
-const STARTER_DIR_REL = 'spirit/run/app/starter';
-const STARTER_MANIFEST_REL = 'spirit/run/app/starter/starter.json';
+const STARTER_DIR_REL = 'spirit/run/shell/starter';
+const STARTER_MANIFEST_REL = 'spirit/run/shell/starter/starter.json';
 
 const faceServerThere = has(APP_SERVER_REL);
 const starterThere = has(STARTER_DIR_REL);
@@ -125,7 +125,7 @@ test.subHeading('the measurements the design rests on are still true');
   // The thing it was actually protecting — that a look does not grow in
   // an app folder where nobody offered it — is still asserted, and a
   // third stylesheet anywhere else still fails this.
-  const OFFERED = ['spirit/run/app/shell/elements.css', 'spirit/run/app/shell/tokens.css'];
+  const OFFERED = ['spirit/run/shell/elements.css', 'spirit/run/shell/tokens.css'];
   const stray = cssFiles.filter(function (p) {
     return OFFERED.indexOf(p.split(path.sep).join('/')) === -1;
   });
@@ -143,7 +143,7 @@ test.subHeading('the measurements the design rests on are still true');
   // inherits rather than invents. If the tree stops enforcing it, G14's
   // "an app is a folder plus a sibling manifest" is standing on nothing.
   const kernel = read('spirit/run/js/kernel.js');
-  if (/MANIFEST_PATTERN\s*=\s*\/\^app\\\/\(\[\^\/\]\+\)\\\/\\1\\\.json\$\//.test(kernel)) {
+  if (/MANIFEST_PATTERN\s*=\s*\/\^shell\\\/\(\[\^\/\]\+\)\\\/\\1\\\.json\$\//.test(kernel)) {
     test.check('kernel.js still enforces app/<name>/<name>.json — the manifest convention G14 and G15 inherit instead of inventing one');
   } else {
     test.fail('kernel.js no longer carries MANIFEST_PATTERN in the form G15 cites; the manifest path convention has moved under the design');
@@ -288,7 +288,7 @@ test.subHeading('G3 — the one shared ask, and no fourth divergent copy');
   // home and no fourth copy", so the suite has to know which file is the
   // home. It is named here, once, and asserted to exist: an exemption
   // for a file that is not there would quietly excuse everything.
-  const HOME = 'spirit/run/app/shared/ask.js';
+  const HOME = 'spirit/run/shell/shared/ask.js';
   const homePath = path.join(REPO, HOME);
   if (fs.existsSync(homePath)) {
     test.check('cycle 2 G3: the one home exists at ' + HOME +
@@ -355,9 +355,9 @@ test.subHeading('G3 — the one shared ask, and no fourth divergent copy');
 // ── G4 — the optional layer, offered as files ────────────────────────
 test.subHeading('G4 — the shell offers the optional layer as files, separately optional');
 {
-  const shellFolder = has('spirit/run/app/shell');
+  const shellFolder = has('spirit/run/shell/shell');
   if (!shellFolder) {
-    needs('cycle 2 G4', 'spirit/run/app/shell', 'every clone must carry the folder that offers elements and tokens, whether or not anything launches the shell');
+    needs('cycle 2 G4', 'spirit/run/shell/shell', 'every clone must carry the folder that offers elements and tokens, whether or not anything launches the shell');
   } else {
     test.check('cycle 2 G4: app/shell exists as a FOLDER, so the optional layer is provided by files rather than by a running process');
   }
@@ -706,12 +706,12 @@ test.subHeading('G13 — the starter is the official sample, and one artefact ow
     }
   }
 
-  // ONE NAME, ONE ARTEFACT. Andy ruled `app/starter/` and the tree already
+  // ONE NAME, ONE ARTEFACT. Andy ruled `shell/starter/` and the tree already
   // holds `process/js/hello/`, a different artefact with a different job.
   // The defect this catches is not a matter of taste: two things called by
   // one name cost a stranger an afternoon, and the stranger is the person
   // the sample exists for.
-  if (!has('spirit/run/app/hello') && !has('spirit/run/app/hallo')) {
+  if (!has('spirit/run/shell/hello') && !has('spirit/run/shell/hallo')) {
     test.check('cycle 2 G13: no second artefact claims the sample name — process/js/hello keeps its own, the app layer has app/starter and nothing else');
   } else {
     test.fail('cycle 2 G13: two artefacts claim the sample name: app/hello or app/hallo exists beside the ruled app/starter');

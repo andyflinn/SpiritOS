@@ -205,7 +205,7 @@ function oneClaimant() {
 function onlyWhereThereIsAFace() {
   test.subHeading('A booted app is handed `face` only on a node that has one');
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-face-mount-'));
-  const dir = path.join(home, 'app', 'faceProbe');
+  const dir = path.join(home, 'shell', 'faceProbe');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'faceProbe.json'), JSON.stringify({ name: 'faceProbe', boots: true }));
   fs.writeFileSync(path.join(dir, 'faceProbe.js'),

@@ -24,7 +24,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 const spirit = require('../run/js/kernel.js');
 
-const APP_DIR = path.join(__dirname, '..', 'run', 'app');
+const APP_DIR = path.join(__dirname, '..', 'run', 'shell');
 const DESK = path.join(APP_DIR, 'desk', 'desk.js');
 const DETAILS = path.join(APP_DIR, 'deskDetails', 'deskDetails.js');
 
@@ -307,7 +307,7 @@ function dialogSendsComeBack() {
     if (!row) { test.fail('Desk drew no clickable row for puppets/G2'); return null; }
     row.fire('click');
     const opened = desk.dialogs[0];
-    if (opened && opened.id === 'app/deskDetails' && opened.params.thread.length === 1 &&
+    if (opened && opened.id === 'shell/deskDetails' && opened.params.thread.length === 1 &&
         opened.params.thread[0].key === 'h-in-2' && opened.params.agents['wsl-claude'].key === WSL) {
       test.check('the row opens its dialog with its own thread and the agents Desk has heard');
     } else {

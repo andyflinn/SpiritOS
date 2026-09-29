@@ -167,13 +167,13 @@ if (isNode()) {
 
   // saveFile/deleteFile are new write capability, so they get a tighter
   // boundary than loadFile: not just "inside ROOT_DIR" but "inside
-  // ROOT_DIR/app/", since that's the only place apps are meant to persist.
+  // ROOT_DIR/shell/", since that's the only place apps are meant to persist.
   // Writable roots for saveFile/deleteFile — app/ (per-app data), media/
   // (tagged assets + their JSON sidecars, added via the OS file browser, not
   // this API), and published/ (flat writing-corpus records written by scanner
   // process scripts, e.g. the WordPress scanner). process/ is deliberately
   // excluded: scripts stay browser-read-only.
-  const WRITABLE_ROOT_NAMES = ['app', 'media', 'published'];
+  const WRITABLE_ROOT_NAMES = ['shell', 'media', 'published'];
 
   // A handful of single, well-known root-level files also need to be
   // writable without opening up the whole ROOT_DIR — currently just
@@ -201,7 +201,7 @@ if (isNode()) {
   // can overwrite ANY app's own script, even though app/ is otherwise a
   // writable root. Its sibling .json manifest is unaffected — only this one
   // filename shape is denied.
-  const APP_ENTRY_SCRIPT_PATTERN = /^app\/([^/]+)\/\1\.js$/;
+  const APP_ENTRY_SCRIPT_PATTERN = /^shell\/([^/]+)\/\1\.js$/;
 
   // Recognizes a dynamically-loaded app's own manifest (app/<name>/<name>.json).
   // Like APP_ENTRY_SCRIPT_PATTERN, protected everywhere, from every tool — a
@@ -216,7 +216,7 @@ if (isNode()) {
   // caller's content. Decision 0008 removed it with app-building, and the
   // refusal now has no exceptions at all: `owner` cannot be claimed from a
   // browser because no browser-reachable path writes a manifest.
-  const MANIFEST_PATTERN = /^app\/([^/]+)\/\1\.json$/;
+  const MANIFEST_PATTERN = /^shell\/([^/]+)\/\1\.json$/;
 
   // The one sidecar per annotated file gets a suffix, never a same-name
   // extension swap — <file>.sidecar.json can never collide with the
@@ -248,13 +248,13 @@ if (isNode()) {
   // one. 'relay-state/identity.json' was denied while
   // './relay-state/identity.json' was not, and both name the same file: on
   // a relay, the Ed25519 PRIVATE KEY. The same gap let
-  // 'app/./natter/natter.js' through a guard that refused
-  // 'app/natter/natter.js'. Every pattern below now runs against this
+  // 'shell/./natter/natter.js' through a guard that refused
+  // 'shell/natter/natter.js'. Every pattern below now runs against this
   // function's OUTPUT, never against the input, so a path gets exactly one
   // verdict no matter how it is spelled.
   //
   // Note this deliberately resolves rather than rejecting dot segments
-  // outright: './index.html' and 'app/./natter/relays.json' are legitimate
+  // outright: './index.html' and 'shell/./natter/relays.json' are legitimate
   // and have to keep working (pathJail.js and pathCanonicalization.js both
   // assert it). Canonicalize, then check — don't blanket-refuse.
   function canonicalPath(filePath) {
@@ -759,9 +759,9 @@ if (isNode()) {
   // its own folder. This is an accident-prevention convenience, not a
   // security boundary: anything in the same page can still reach the raw
   // spirit.core.fs.* functions directly. The real boundary is server-side
-  // (saveFile/deleteFile there reject anything outside ROOT_DIR/app/).
+  // (saveFile/deleteFile there reject anything outside ROOT_DIR/shell/).
   spirit.core.fs.createScopedFs = function(appName) {
-    let appRoot = 'app/' + appName + '/';
+    let appRoot = 'shell/' + appName + '/';
 
     function safeName(filename) {
       if (typeof filename !== 'string' || filename.indexOf('..') !== -1 || filename.charAt(0) === '/') {
@@ -780,7 +780,7 @@ if (isNode()) {
       // (the same data /api/jobs already sends for the Files app and
       // aiChat's media browser), filtered to this app's own files and
       // re-rooted so relativePath matches the bare-filename convention
-      // every other method here uses (no leading "app/<appName>/"). No new
+      // every other method here uses (no leading "shell/<appName>/"). No new
       // route, no new jail logic — it can only ever narrow an already-safe
       // listing, never expand what's visible. Async (unlike loadFile),
       // since it goes over the same /api/jobs fetch every other scan of

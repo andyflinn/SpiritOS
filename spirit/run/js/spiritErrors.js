@@ -261,7 +261,7 @@ define('reply-too-big', {
 
 define('no-relay-url', {
   status: 503, presence: NONE, retry: 'no', fault: 'node',
-  texts: ['no relay url in app/natter/relays.json'],
+  texts: ['no relay url in shell/natter/relays.json'],
 });
 define('not-connected', {
   status: 503, presence: NONE, retry: 'after', fault: 'node',
@@ -693,7 +693,7 @@ define('device-not-now', {
 });
 define('url-not-listed', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['url not in app/natter/relays.json'],
+  texts: ['url not in shell/natter/relays.json'],
 });
 
 // ── INVITES ──────────────────────────────────────────────────────────
@@ -725,7 +725,7 @@ define('name-reserved', { status: 409, texts: ['name reserved by a live invite']
 // but only on the owners node."* — so `retry: 'no'` is the honest
 // answer and the caller must pick another name.
 //
-// Declared here BEFORE `app/appFaceApp/` emits it, which is the point:
+// Declared here BEFORE `shell/appFaceApp/` emits it, which is the point:
 // a code that lives only in the file that throws it is outside the
 // closed set at the one moment anybody needs to look it up. The
 // subdomain grant is the appFaceApp's whole feature (Andy: *"the

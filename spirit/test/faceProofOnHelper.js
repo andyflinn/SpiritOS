@@ -27,7 +27,7 @@ const RUN = path.join(__dirname, '..', 'run');
 (async function () {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-faceproof-helper-'));
   ['faceProof', 'shared'].forEach(function (d) {
-    fs.cpSync(path.join(RUN, 'app', d), path.join(root, 'app', d), { recursive: true });
+    fs.cpSync(path.join(RUN, 'shell', d), path.join(root, 'shell', d), { recursive: true });
   });
   fs.mkdirSync(path.join(root, 'process'), { recursive: true });
   fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');

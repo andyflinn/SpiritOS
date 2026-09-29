@@ -38,8 +38,8 @@ const HELPER = path.join(__dirname, '..', 'run', 'js', 'appServer.js');
 // A node's folder with three serving apps; gamma never starts.
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-appapi-'));
 ['alpha', 'beta', 'gamma'].forEach(function (name) {
-  fs.mkdirSync(path.join(root, 'app', name), { recursive: true });
-  fs.writeFileSync(path.join(root, 'app', name, name + '.json'), JSON.stringify({ name: name, serves: true }));
+  fs.mkdirSync(path.join(root, 'shell', name), { recursive: true });
+  fs.writeFileSync(path.join(root, 'shell', name, name + '.json'), JSON.stringify({ name: name, serves: true }));
 });
 
 function appScript(name, verbsSrc) {

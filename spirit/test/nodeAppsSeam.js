@@ -57,7 +57,7 @@ const nodeApps = require('../run/js/nodeApps');
 // mounting.
 function world() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-seam-'));
-  const apps = path.join(root, 'app');
+  const apps = path.join(root, 'shell');
   fs.mkdirSync(apps, { recursive: true });
 
   function plant(name, body, manifest) {
@@ -260,7 +260,7 @@ if (w.api) {
     try { w.api.fs.write(rel, 'out'); escaped.push(rel); } catch (e) { /* refused */ }
   });
   const landedOutside = fs.existsSync(path.join(w.root, 'escaped.txt')) ||
-    fs.existsSync(path.join(w.root, 'app', 'escaped.txt'));
+    fs.existsSync(path.join(w.root, 'shell', 'escaped.txt'));
   if (!escaped.length && !landedOutside) {
     test.check('seam: a write aimed outside the puppet\'s folder is refused AND nothing appears there — ' +
       'the file system is checked, not just the exception');

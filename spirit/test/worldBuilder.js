@@ -194,7 +194,7 @@ function run() {
     test.fail('owner home identity: ' + JSON.stringify(onNode && onNode.name));
   }
 
-  if (fs.existsSync(path.join(L.nodeHome('bert'), 'app', 'natter', 'session.json'))) {
+  if (fs.existsSync(path.join(L.nodeHome('bert'), 'shell', 'natter', 'session.json'))) {
     test.check('and a peer\'s node has the session file that decides firstRun()');
   } else {
     test.fail('no session.json — the shell would open on Natter');

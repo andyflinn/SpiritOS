@@ -34,7 +34,7 @@ function browserBadge() {
 // The real app file, with the two globals it touches at load time stubbed
 // out. Returns its module-level functions so they can be exercised.
 function loadNatter(win) {
-  const src = fs.readFileSync(path.join(RUN_DIR, 'app', 'natter', 'natter.js'), 'utf8');
+  const src = fs.readFileSync(path.join(RUN_DIR, 'shell', 'natter', 'natter.js'), 'utf8');
   // The page always hands an app the kernel's shared halves; this stub
   // used to give only `shell`, which was enough until the app reached
   // for a mark (ICON.STAR) at load time.
@@ -422,7 +422,7 @@ test.subHeading('A star means owned, and opens what that mailbox says');
   // Nomenclature: the field is captioned with the word the dictionary
   // uses for a caption that never leaves this node, not with an example
   // built from somebody's name.
-  const src = fs.readFileSync(path.join(RUN_DIR, 'app', 'natter', 'natter.js'), 'utf8');
+  const src = fs.readFileSync(path.join(RUN_DIR, 'shell', 'natter', 'natter.js'), 'utf8');
   // The hints, not the whole file: this app names the public mailbox in
   // its own copy now (spirit.andyflinn.com), and a domain is not a
   // person's name standing in for a field label.

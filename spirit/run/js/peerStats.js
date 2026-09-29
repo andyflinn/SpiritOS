@@ -21,7 +21,7 @@ const peerFile = require('./peerFile');
 
 const WINDOW_DAYS = 14;
 const SEEN_CAP = 200;
-const DIR = ['app', 'contacts'];
+const DIR = ['shell', 'contacts'];
 
 function contactsDir(rootDir) {
   return path.join(rootDir, DIR[0], DIR[1]);

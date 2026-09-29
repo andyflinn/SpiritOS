@@ -21,7 +21,7 @@ const kernel = require('../run/js/kernel.js');
 const deskFake = require('./deskFake.js');
 
 const OWED = 'OWED by the desk/G1.4 fold-order finding: ';
-const DESK = path.join(__dirname, '..', 'run', 'app', 'desk', 'desk.js');
+const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
 const LEAD = 'MCowBQYDK2VwAyEAleadleadleadleadleadleadleadleadleadl=';
 const WSL = 'MCowBQYDK2VwAyEAwslwslwslwslwslwslwslwslwslwslwslwslw=';
 

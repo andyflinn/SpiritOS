@@ -316,7 +316,7 @@ function landed(log, hash, text, admitted) {
   // booted node apps, reached arrivals through nodeApps' api.subscribe and
   // marked each arrival taken 2 ms after it landed, with no page open.
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-witness-app-'));
-  const dir = path.join(home, 'app', 'watcher');
+  const dir = path.join(home, 'shell', 'watcher');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, 'watcher.json'), JSON.stringify({ name: 'watcher', boots: true }));
   fs.writeFileSync(path.join(dir, 'watcher.js'),
@@ -555,7 +555,7 @@ function theLastHop() {
       fs: {
         loadFile: function (rel) {
           if (rel === 'preferences.json') return JSON.stringify({ apps: {}, groups: {} });
-          if (rel === 'app/natter/session.json') {
+          if (rel === 'shell/natter/session.json') {
             return JSON.stringify({ label: 'me', boundAt: '2026-09-13T00:00:00.000Z' });
           }
           return null;

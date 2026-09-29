@@ -74,7 +74,7 @@ function plantRunTree(runDir) {
     // the copy is a USE, and the suites run six at a time. `--others`
     // lists untracked files, so another suite's transient probe can be in
     // the listing and gone by the time this reads it — `writableRoots.js`
-    // writes and deletes `app/__writableRootsProbe__.json`, and it took
+    // writes and deletes `shell/__writableRootsProbe__.json`, and it took
     // targetBusy down exactly once (2026-09-21).
     //
     // A file that vanished mid-copy was never part of this fixture, so

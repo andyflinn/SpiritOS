@@ -42,7 +42,7 @@ const TAGS = ['gap', 'governor', 'hints', 'disc', 'labels', 'transport', 'defenc
 // What is scanned: code, tests and the documents that cite requirements.
 // The cycle files themselves are where the numbers are defined, and are
 // read as their own cycle's context.
-const ROOTS = ['spirit/run/js', 'spirit/run/app', 'spirit/run/process', 'spirit/test', 'design', 'README'];
+const ROOTS = ['spirit/run/js', 'spirit/run/shell', 'spirit/run/process', 'spirit/test', 'design', 'README'];
 const FILES = ['AGENT.md', 'CLAUDE.md', 'ANDYS_RULES_FOR_AGENTS.md', 'DICTIONARY.md'];
 // `grok`: design/reviews/grok/ holds Grok's replies VERBATIM — an outside
 // voice's words are quoted, never corrected, so its citations are not ours
@@ -69,10 +69,10 @@ const TALLY = {
   'design/relay/REQUEST-BUDGET.md': 1,
   'design/relay/WHAT-A-NODE-KNOWS.md': 1,
   'design/shell/OBJECT-PRESENTATION.md': 1,
-  'spirit/run/app/contacts/contacts.js': 1,
-  'spirit/run/app/info/info.js': 1,
-  'spirit/run/app/natter/natter.js': 5,
-  'spirit/run/app/natterDetails/natterDetails.js': 7,
+  'spirit/run/shell/contacts/contacts.js': 1,
+  'spirit/run/shell/info/info.js': 1,
+  'spirit/run/shell/natter/natter.js': 5,
+  'spirit/run/shell/natterDetails/natterDetails.js': 7,
   'spirit/run/js/client/shell.js': 2,
   'spirit/run/js/hub.js': 10,
   'spirit/run/js/nodeStore.js': 2,
@@ -211,7 +211,7 @@ function count() {
   // NOR DESK'S FOLDER, now that it is tracked (Andy, 2026-09-28: "git
   // everything in this folder"). It is the conversation, in everyone's own
   // words, not a document that cites requirements.
-  const files = trackedOnly(walked).filter(function (f) { return f.indexOf('spirit/run/app/desk/') !== 0; });
+  const files = trackedOnly(walked).filter(function (f) { return f.indexOf('spirit/run/shell/desk/') !== 0; });
   const found = {};
   files.forEach(function (f) {
     if (f === 'spirit/test/cycleCitations.js') return;

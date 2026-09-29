@@ -14,7 +14,7 @@
 // build; Desk walks and folds, the server is storage plus bounded search):
 //
 //   THE SERVER (process/js/desk/desk.js)
-//   - At start it imports what Desk kept in its own folder, <run>/app/desk/
+//   - At start it imports what Desk kept in its own folder, <run>/shell/desk/
 //     (<run> is --state's great-grandparent: relay-state/process/desk):
 //     every row of log/log*.json into lines, state.json and seen.json into
 //     state and seen, every voice/voice*.jsonl appended to <state>/
@@ -57,7 +57,7 @@ const deskFake = require('./deskFake.js');
 
 const OWED = 'OWED by desk/G1.4: ';
 const SCRIPT = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
-const DESK = path.join(__dirname, '..', 'run', 'app', 'desk', 'desk.js');
+const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
 const LEAD = 'MCowBQYDK2VwAyEAleadleadleadleadleadleadleadleadleadl=';
 const WSL = 'MCowBQYDK2VwAyEAwslwslwslwslwslwslwslwslwslwslwslwslw=';
 
@@ -77,7 +77,7 @@ function row(from, kind, text, todo, extra) {
 // ── THE SERVER ────────────────────────────────────────────────────────
 async function serverPart(scratch) {
   const run = path.join(scratch, 'spirit', 'run');
-  const app = path.join(run, 'app', 'desk');
+  const app = path.join(run, 'shell', 'desk');
   const state = path.join(run, 'relay-state', 'process', 'desk');
   fs.mkdirSync(path.join(app, 'log'), { recursive: true });
   fs.mkdirSync(path.join(app, 'voice'), { recursive: true });
@@ -124,8 +124,8 @@ async function serverPart(scratch) {
 
   test.subHeading('T2: app/desk holds no data files afterwards');
   const left = fs.readdirSync(app).sort();
-  if (JSON.stringify(left) === JSON.stringify(['desk.js', 'desk.json'])) test.check('app/desk holds desk.js and desk.json, nothing else');
-  else test.fail(OWED + 'app/desk still holds ' + JSON.stringify(left));
+  if (JSON.stringify(left) === JSON.stringify(['desk.js', 'desk.json'])) test.check('shell/desk holds desk.js and desk.json, nothing else');
+  else test.fail(OWED + 'shell/desk still holds ' + JSON.stringify(left));
 
   test.subHeading('state.json and seen.json are the server\'s state and seen');
   const st = await call('state.get', {});

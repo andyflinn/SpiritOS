@@ -71,8 +71,8 @@ function bootShell(manifest) {
       fs: {
         loadFile: function (rel) {
           if (rel === 'preferences.json') return JSON.stringify({ apps: {}, groups: {} });
-          if (rel === 'app/natter/session.json') return JSON.stringify({ label: 'me', boundAt: '2026-09-13T00:00:00.000Z' });
-          if (rel === 'app/desk/desk.json') return JSON.stringify(manifest);
+          if (rel === 'shell/natter/session.json') return JSON.stringify({ label: 'me', boundAt: '2026-09-13T00:00:00.000Z' });
+          if (rel === 'shell/desk/desk.json') return JSON.stringify(manifest);
           return null;
         },
         saveFile: function () { return Promise.resolve(); },
@@ -112,7 +112,7 @@ test.subHeading('The script loads at page load, before anyone opens the app');
 (function () {
   const page = bootShell(DESK_MANIFEST);
   const s = page.scripts();
-  if (s.length === 1 && /app\/desk\/desk\.js$/.test(s[0].src) && s[0].getAttribute('data-app-id') === 'app/desk') {
+  if (s.length === 1 && /shell\/desk\/desk\.js$/.test(s[0].src) && s[0].getAttribute('data-app-id') === 'shell/desk') {
     test.check('Desk\'s script was injected at boot, stamped with its id');
   } else {
     test.fail('scripts at boot: ' + JSON.stringify(s.map(function (x) { return x.src; })));
@@ -157,7 +157,7 @@ test.subHeading('What arrives before it mounts is held, then handed over once, i
   else test.fail('after a live arrival the handler got ' + JSON.stringify(got));
 
   // Opening it now shows the pane it already has.
-  page.shell.launchApp('app/desk');
+  page.shell.launchApp('shell/desk');
   if (mounts === 1 && pane.hidden === false && page.scripts().length === 1) test.check('opening it shows that pane: no second script, no second mount');
   else test.fail('open after background mount: mounts ' + mounts + ' hidden ' + pane.hidden + ' scripts ' + page.scripts().length);
 })();
@@ -165,7 +165,7 @@ test.subHeading('What arrives before it mounts is held, then handed over once, i
 test.subHeading('Opened while its script is still loading: one load, one mount');
 (function () {
   const page = bootShell(DESK_MANIFEST);
-  page.shell.launchApp('app/desk');
+  page.shell.launchApp('shell/desk');
   let mounts = 0;
   if (page.scripts().length === 1) test.check('the open waited for the load already in flight');
   else test.fail('opening during the load injected ' + page.scripts().length + ' scripts');

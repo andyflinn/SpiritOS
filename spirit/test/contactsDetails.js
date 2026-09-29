@@ -25,8 +25,8 @@ const test = require('./testSupport.js');
 const spirit = require('../run/js/kernel.js');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
-const APP_SCRIPT = path.join(RUN_DIR, 'app', 'contactsDetails', 'contactsDetails.js');
-const MANIFEST = path.join(RUN_DIR, 'app', 'contactsDetails', 'contactsDetails.json');
+const APP_SCRIPT = path.join(RUN_DIR, 'shell', 'contactsDetails', 'contactsDetails.js');
+const MANIFEST = path.join(RUN_DIR, 'shell', 'contactsDetails', 'contactsDetails.json');
 
 const BERT = 'MCowBQYDK2VwAyEAbertbertbertbertbertbertbertbertbertb=';
 const CAROL = 'MCowBQYDK2VwAyEAcarolcarolcarolcarolcarolcarolcaro=';
@@ -330,7 +330,7 @@ test.subHeading('It is declared a dialog, and it is hidden');
   // It wears its parent's glyph on purpose. To anybody looking at this
   // screen it IS Contacts, and two icons would say they were two things.
   // Legal because a hidden app competes in no gallery (iconIndex).
-  const parent = JSON.parse(fs.readFileSync(path.join(RUN_DIR, 'app', 'contacts', 'contacts.json'), 'utf8'));
+  const parent = JSON.parse(fs.readFileSync(path.join(RUN_DIR, 'shell', 'contacts', 'contacts.json'), 'utf8'));
   if (manifest.icon === parent.icon) {
     test.check('and it wears the rolodex its parent wears, which a hidden app may');
   } else {

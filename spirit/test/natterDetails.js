@@ -28,7 +28,7 @@ const packet = require('../run/js/client/packet.js');
 const deviceAuth = require('../run/js/deviceAuth');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
-const APP_SCRIPT = path.join(RUN_DIR, 'app', 'natterDetails', 'natterDetails.js');
+const APP_SCRIPT = path.join(RUN_DIR, 'shell', 'natterDetails', 'natterDetails.js');
 
 const OWNED = 'https://spirit.example';
 const THEIRS = 'https://someone.example';

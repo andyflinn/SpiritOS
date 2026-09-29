@@ -102,9 +102,9 @@ function buildRelayHome() {
 function nodeFor(id) {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-wire-node-'));
   auth.saveIdentity(home, id);
-  fs.mkdirSync(path.join(home, 'app', 'natter'), { recursive: true });
+  fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true });
   fs.writeFileSync(
-    path.join(home, 'app', 'natter', 'relays.json'),
+    path.join(home, 'shell', 'natter', 'relays.json'),
     JSON.stringify([{ label: 'wire', url: BASE }])
   );
   // AND THE SEAT. The claims above are made straight on the relay object

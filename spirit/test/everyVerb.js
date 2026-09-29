@@ -37,7 +37,7 @@ const BOOT_TIMEOUT_MS = 10000;
 const root = setupRelayFakes('everyVerb').andy;
 // No real relay: relays.json is tracked, so the fakes carry the production
 // list (serverSurface.js explains the cost of forgetting this).
-fs.writeFileSync(path.join(root, 'app', 'natter', 'relays.json'),
+fs.writeFileSync(path.join(root, 'shell', 'natter', 'relays.json'),
   JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
 
 // For fs.search's gate: a private file the search must never name, and a
@@ -46,8 +46,8 @@ fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
 fs.writeFileSync(path.join(root, 'relay-state', 'secret-probe.json'), '{}');
 let linked = true;
 // The fakes' folder is reused between runs, so an old link is removed first.
-try { fs.unlinkSync(path.join(root, 'app', 'desk', 'linkout')); } catch (e) { /* none yet */ }
-try { fs.symlinkSync(path.join(root, 'relay-state'), path.join(root, 'app', 'desk', 'linkout')); }
+try { fs.unlinkSync(path.join(root, 'shell', 'desk', 'linkout')); } catch (e) { /* none yet */ }
+try { fs.symlinkSync(path.join(root, 'relay-state'), path.join(root, 'shell', 'desk', 'linkout')); }
 catch (e) { linked = false; }
 
 const serverSrc = fs.readFileSync(path.join(root, 'js', 'server.js'), 'utf8');
@@ -222,14 +222,14 @@ let said = '';
   // Andy: "/media/*.jpg" is "understood as equal to \"./media/*.jpg\" and
   // equal to \"media/*.jpg\"", and "a leading \"../\" is illegal in SpiritOS".
   {
-    const forms = ['app/desk/*', './app/desk/*', '/app/desk/*', '//app/desk/*', 'app/../app/desk/*'];
+    const forms = ['shell/desk/*', './shell/desk/*', '/shell/desk/*', '//shell/desk/*', 'shell/../shell/desk/*'];
     const answers = [];
     for (const q of forms) answers.push(keysOf(await ask({ verb: 'fs.search', q: q })));
     const first = JSON.stringify(answers[0]);
     const same = answers.every(function (a) { return JSON.stringify(a) === first; });
-    const found = answers[0] && answers[0].indexOf('app/desk/desk.js') !== -1;
+    const found = answers[0] && answers[0].indexOf('shell/desk/desk.js') !== -1;
     if (same && found) {
-      test.check('fs.search reads app/desk/*, ./app/desk/*, /app/desk/*, //app/desk/* and app/../app/desk/* as '
+      test.check('fs.search reads app/desk/*, ./shell/desk/*, /shell/desk/*, //shell/desk/* and app/../shell/desk/* as '
         + 'one pattern, and finds app/desk/desk.js with it');
     } else {
       test.fail('path forms differ: ' + forms.map(function (f, i) { return f + ' -> ' + JSON.stringify(answers[i]); }).join('; '));

@@ -43,7 +43,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 
 const REPO = path.join(__dirname, '..', '..');
-const APP_DIR_REL = 'spirit/run/app/appFaceApp';
+const APP_DIR_REL = 'spirit/run/shell/appFaceApp';
 
 function has(rel) { return fs.existsSync(path.join(REPO, rel)); }
 
@@ -210,8 +210,8 @@ function nodeFor(name, relay) {
 // that a function it imported runs.
 function mountPuppet(owner, relay, listed) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-grant-root-'));
-  const appDir = path.join(root, 'app', 'appFaceApp');
-  fs.mkdirSync(path.join(root, 'app'), { recursive: true });
+  const appDir = path.join(root, 'shell', 'appFaceApp');
+  fs.mkdirSync(path.join(root, 'shell'), { recursive: true });
   fs.cpSync(path.join(REPO, APP_DIR_REL), appDir, { recursive: true });
   // THE CODE, NOT THE LIVE STATE. On a checkout that is somebody's node the
   // folder also holds that node's grants.json and face-domain.json (both

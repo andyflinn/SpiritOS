@@ -97,7 +97,7 @@ if (!offenders.length) {
 // legitimate. The shell and the puppets are entitled to decode, and if
 // none of them reads as decoding, this file is measuring nothing.
 const seers = [];
-[SHELL_DIR, path.join(REPO, 'spirit', 'run', 'app')].forEach(function (root) {
+[SHELL_DIR, path.join(REPO, 'spirit', 'run', 'shell')].forEach(function (root) {
   const stack = [root];
   while (stack.length) {
     const p = stack.pop();

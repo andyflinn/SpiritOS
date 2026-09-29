@@ -17,7 +17,7 @@
 //     nameOf(host, faceDomain)             'join.face.spirit.x' -> 'join'
 //     answerRoute(grants, name, ...)       mine | {to, until} | no such route
 //     createRouteCache(opts)               the puppet's RAM cache
-//   spirit/run/app/appFaceApp/appFaceApp.js
+//   spirit/run/shell/appFaceApp/appFaceApp.js
 //     appServerPost / appServerReply
 
 const fs = require('fs');

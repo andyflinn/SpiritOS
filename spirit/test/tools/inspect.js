@@ -4,7 +4,7 @@
 // ASK THE TREE A QUESTION, WITH A COMMAND THAT NEVER CHANGES.
 //
 // NAMED inspect AND NOT ask, AFTER A VOCABULARY COLLISION. Both agents
-// created an ask.js within minutes: this one, and spirit/run/app/shared/ask.js
+// created an ask.js within minutes: this one, and spirit/run/shell/shared/ask.js
 // — the app's door, ask(verb, args), which is G3's "ask has one home".
 // THAT ONE OWNS THE WORD. `ask` is the product's verb, in the dictionary and
 // in the requirement; this is a dev tool that reads files. A collision in

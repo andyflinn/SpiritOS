@@ -68,7 +68,7 @@ function cleanUpDirectly(label, filePath) {
 }
 
 // ---- the three writable roots ----
-expectWritable('app/ (top-level file)', 'app/__writableRootsProbe__.json');
+expectWritable('shell/ (top-level file)', 'shell/__writableRootsProbe__.json');
 expectWritable('media/ (top-level file)', 'media/__writableRootsProbe__.json');
 expectWritable('published/ (top-level file)', 'published/__writableRootsProbe__.json');
 
@@ -109,13 +109,13 @@ expectForbidden('js/ (the kernel itself)', 'js/__writableRootsProbe__.js');
 // ---- app entry scripts are protected even inside the writable app/ root ----
 expectForbidden(
   'an app entry script (app/<name>/<name>.js)',
-  'app/__writableRootsProbeApp__/__writableRootsProbeApp__.js'
+  'shell/__writableRootsProbeApp__/__writableRootsProbeApp__.js'
 );
 
 // A sibling file in that same (never-created) app folder is NOT an entry
 // script and must still be writable — confirms the protection is scoped to
 // the exact <name>/<name>.js shape, not the whole folder.
-expectWritable('a non-entry-script file in a new app folder', 'app/__writableRootsProbeApp__/data.json');
+expectWritable('a non-entry-script file in a new app folder', 'shell/__writableRootsProbeApp__/data.json');
 
 // ---- THE EXCEPTIONS ARE GONE, AND THAT IS THE STRONGER STATEMENT ----
 //
@@ -142,19 +142,19 @@ expectWritable('a non-entry-script file in a new app folder', 'app/__writableRoo
 // ---- app manifests are protected too, even inside the writable app/ root ----
 expectForbidden(
   'an app manifest (app/<name>/<name>.json)',
-  'app/__writableRootsProbeApp__/__writableRootsProbeApp__.json'
+  'shell/__writableRootsProbeApp__/__writableRootsProbeApp__.json'
 );
 
 // A sibling file in that same folder is NOT a manifest and must still be
 // writable — confirms the protection is scoped to the exact <name>/<name>.json
 // shape, not the whole folder (mirrors the entry-script check above).
-expectWritable('a non-manifest file in a new app folder', 'app/__writableRootsProbeApp__/data.json');
+expectWritable('a non-manifest file in a new app folder', 'shell/__writableRootsProbeApp__/data.json');
 
 
 // deleteFile only removes the file — clean up the now-empty folder it lived
 // in so this test leaves no trace on disk.
 try {
-  fs.rmdirSync(path.join(ROOT_DIR, 'app', '__writableRootsProbeApp__'));
+  fs.rmdirSync(path.join(ROOT_DIR, 'shell', '__writableRootsProbeApp__'));
 } catch (e) { /* already gone or never created — fine either way */ }
 
 // THE RULE, STATED AS IT NOW STANDS. Written as its own check so the

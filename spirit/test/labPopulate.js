@@ -45,8 +45,8 @@ const WORK_RUN = path.join(__dirname, '..', 'run');
 const WORK_PORT = 65432;
 const WORK_URL = 'http://127.0.0.1:' + WORK_PORT;
 const MASTER = require('./labMaster/labPaths').MASTER;
-const RELAYS = path.join(WORK_RUN, 'app', 'natter', 'relays.json');
-const BACKUP = path.join(WORK_RUN, 'app', 'natter', 'relays.json.before-lab');
+const RELAYS = path.join(WORK_RUN, 'shell', 'natter', 'relays.json');
+const BACKUP = path.join(WORK_RUN, 'shell', 'natter', 'relays.json.before-lab');
 
 // THE FILE THAT SAYS THIS NODE KNOWS WHO IT IS, and it is the one that
 // mattered most while being the one nothing protected.
@@ -62,8 +62,8 @@ const BACKUP = path.join(WORK_RUN, 'app', 'natter', 'relays.json.before-lab');
 // so anything that clears a home to lay the tracked tree down takes it.
 // relays.json got a byte-for-byte backup and this did not — and of the
 // two, this is the one whose absence makes the node unusable.
-const SESSION = path.join(WORK_RUN, 'app', 'natter', 'session.json');
-const SESSION_BACKUP = path.join(WORK_RUN, 'app', 'natter', 'session.json.before-lab');
+const SESSION = path.join(WORK_RUN, 'shell', 'natter', 'session.json');
+const SESSION_BACKUP = path.join(WORK_RUN, 'shell', 'natter', 'session.json.before-lab');
 
 
 // THE `lab-` PREFIX IS A SAFETY FEATURE, not a style. These identities
@@ -590,7 +590,7 @@ async function up(scenarioName) {
 
     // And their node learns about it, so it holds a stream there too and
     // shows up in everyone's presence rather than only in a roster.
-    const theirRelays = path.join(peer.node.home, 'app', 'natter', 'relays.json');
+    const theirRelays = path.join(peer.node.home, 'shell', 'natter', 'relays.json');
     let rows = [];
     try { rows = JSON.parse(fs.readFileSync(theirRelays, 'utf8')); } catch (e) { rows = []; }
     if (!rows.some(function (r) { return r && r.url === LIVE_RELAY; })) {

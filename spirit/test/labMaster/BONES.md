@@ -41,7 +41,7 @@ Create:
 | john-b | avatar | 65413 |
 | jim | avatar | 65414 |
 
-Point each avatar `app/natter/relays.json` at `http://127.0.0.1:65410` (loopback HTTP is allowed).
+Point each avatar `shell/natter/relays.json` at `http://127.0.0.1:65410` (loopback HTTP is allowed).
 
 `node install-public-relay.js annie` against the **lab relay home**, not Kamatera.
 

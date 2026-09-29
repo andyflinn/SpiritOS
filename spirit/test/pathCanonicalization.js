@@ -103,7 +103,7 @@ expectEverySpellingUnservable('relay-state/allow.json', 'relay-state/allow.json'
 // first version of the gate refused only the top-level folder, so this
 // private key was served to anyone who could ask the node for a file.
 expectEverySpellingUnservable('app-state/<name>/relay-state/identity.json', 'app-state/someApp/relay-state/identity.json');
-expectEverySpellingUnservable('a relay-state folder anywhere', 'app/someApp/relay-state/anything.json');
+expectEverySpellingUnservable('a relay-state folder anywhere', 'shell/someApp/relay-state/anything.json');
 
 // ---- Node-only modules stay invisible however they are spelled ----
 test.subHeading('Node-only js/ modules are unreadable in every spelling');
@@ -130,11 +130,11 @@ expectEverySpellingUnservable('a media sidecar', 'media/001.jpg.sidecar.json');
 // 2026-09-13, when decision 0008 deleted that app. The rule outlives any
 // app, so the specimen moved rather than the check.
 test.subHeading('App entry scripts stay unwritable in every spelling');
-expectEverySpellingUnwritable('app/natter/natter.js (intrinsic)', 'app/natter/natter.js');
-expectEverySpellingUnwritable('app/textEditor/textEditor.js (not intrinsic)', 'app/textEditor/textEditor.js');
+expectEverySpellingUnwritable('shell/natter/natter.js (intrinsic)', 'shell/natter/natter.js');
+expectEverySpellingUnwritable('shell/textEditor/textEditor.js (not intrinsic)', 'shell/textEditor/textEditor.js');
 
 test.subHeading('App manifests stay unwritable in every spelling');
-expectEverySpellingUnwritable('app/natter/natter.json', 'app/natter/natter.json');
+expectEverySpellingUnwritable('shell/natter/natter.json', 'shell/natter/natter.json');
 
 test.subHeading('Sidecars stay unwritable in every spelling');
 expectEverySpellingUnwritable('a media sidecar', 'media/001.jpg.sidecar.json');
@@ -160,7 +160,7 @@ test.subHeading('Legitimate paths still work in non-canonical spellings');
   // only on a working copy that happened to hold one, and went red on the
   // first fresh checkout (WSL, 2026-09-19). relays.json's writability is
   // asserted below, by path, which needs no file.
-  ['app/./natter/natter.json', 'app/natter/natter.json'],
+  ['shell/./natter/natter.json', 'shell/natter/natter.json'],
 ].forEach(function (pair) {
   const variant = pair[0];
   const canonical = pair[1];
@@ -177,10 +177,10 @@ test.subHeading('Legitimate paths still work in non-canonical spellings');
 
 // app/ data must stay writable in a non-canonical spelling too, for the
 // same reason: relays.json is ordinary app data hub.js depends on.
-if (fileWritable('app/./natter/relays.json') === true) {
-  test.check('"app/./natter/relays.json" is still writable (app data, not an entry script)');
+if (fileWritable('shell/./natter/relays.json') === true) {
+  test.check('"shell/./natter/relays.json" is still writable (app data, not an entry script)');
 } else {
-  test.fail('"app/./natter/relays.json" should still be writable — the write gate is now over-blocking');
+  test.fail('"shell/./natter/relays.json" should still be writable — the write gate is now over-blocking');
 }
 
 test.reportSuccessFailureCount();

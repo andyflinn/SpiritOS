@@ -89,13 +89,13 @@ const TALLY = {
   // is node-side, so the browser needs one door of its own.
   //
   // IT EXISTS TO MAKE THIS NUMBER SMALLER, NOT LARGER. G3 counted four
-  // raw callers and the fourth was in `app/starter` — the sample every
+  // raw callers and the fourth was in `shell/starter` — the sample every
   // stranger copies, where a fork does not add one caller, IT TEACHES
   // THE HABIT. One home means app pages stop writing their own.
   //
   // ONE REACH, AND THE NUMBER MAY ONLY FALL. The moment it is two, this
   // suite fails, which is what makes the grant safe to have given.
-  'app/shared/ask.js': 1,
+  'shell/shared/ask.js': 1,
 
   // THE FORK DETECTOR, which has to touch the wire to watch the wire — a
   // new line, and so an exception. GRANTED BY ANDY 2026-09-25, asked for
@@ -356,7 +356,7 @@ function reachesIn(file) {
 test.startTest('One door — every file, always');
 
 const files = walk(path.join(SPIRIT, 'run', 'js'), 'js/', [])
-  .concat(walk(path.join(SPIRIT, 'run', 'app'), 'app/', []))
+  .concat(walk(path.join(SPIRIT, 'run', 'shell'), 'shell/', []))
   .concat(walk(path.join(SPIRIT, 'test'), 'test/', []))
   // The folders of process/ that are walked: the granted exceptions above.
   .concat(walk(path.join(SPIRIT, 'run', 'process', 'js', 'agents'), 'process/js/agents/', []))
@@ -491,7 +491,7 @@ test.subHeading('peerPost owns the mechanics, and is handed its socket');
   {
     const PRIMITIVES = /createCipheriv|createDecipheriv|diffieHellman|hkdfSync/;
     const owners = [];
-    ['js', 'app', 'process'].forEach(function (rel) {
+    ['js', 'shell', 'process'].forEach(function (rel) {
       walk(path.join(SPIRIT, 'run', rel), rel + '/', []).forEach(function (f) {
         if (PRIMITIVES.test(fs.readFileSync(f.full, 'utf8'))) owners.push(f.rel);
       });

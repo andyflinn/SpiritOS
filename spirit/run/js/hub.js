@@ -348,7 +348,7 @@ function loadRelayUrl(rootDir) {
 //
 // One walk answers every row: buildPeople calls this once, not per peer.
 // Names only — no file is opened, so nothing here can read a message.
-var PEER_FILE_ROOT = 'app';
+var PEER_FILE_ROOT = 'shell';
 var PEER_FILE_DEPTH = 4;
 
 function bytesHeldByPeer(rootDir) {
@@ -628,7 +628,7 @@ function handleMatches(rootDir, peers, handle) {
 // second poller — or a stale tab — would have been a second answer.
 //
 // ONE FILE, AND IT IS THE NODE'S. It was app/contacts/prefs.json, which
-// was wrong twice over (Andy: "app/contacts/prefs.json is the wrong place
+// was wrong twice over (Andy: "shell/contacts/prefs.json is the wrong place
 // for that file, it's a node-global").
 //
 // Wrong as a LOCATION: who this node will hear from is a fact about its
@@ -984,7 +984,7 @@ function createHub(rootDir) {
   function withRelay(res, fn) {
     var url = loadRelayUrl(rootDir);
     if (!url) {
-      fail(res, 503, 'no relay url in app/natter/relays.json');
+      fail(res, 503, 'no relay url in shell/natter/relays.json');
       return;
     }
     try { assertRelayUrl(url); }
@@ -1775,7 +1775,7 @@ function createHub(rootDir) {
       // found is recorded rather than inferred later.
       var wantedUrl = String((body && body.url) || '').trim().replace(/\/+$/, '');
       var target = wantedUrl || loadRelayUrl(rootDir);
-      if (!target) { fail(res, 503, 'no relay url in app/natter/relays.json'); return; }
+      if (!target) { fail(res, 503, 'no relay url in shell/natter/relays.json'); return; }
       try { assertRelayUrl(target); }
       catch (e) { fail(res, 503, String(e.message || e)); return; }
 

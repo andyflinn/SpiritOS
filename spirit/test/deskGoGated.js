@@ -13,7 +13,7 @@ const path = require('path');
 const test = require('./testSupport.js');
 const spirit = require('../run/js/kernel.js');
 
-const RUN = path.join(__dirname, '..', 'run', 'app');
+const RUN = path.join(__dirname, '..', 'run', 'shell');
 const DESK = path.join(RUN, 'desk', 'desk.js');
 const DETAILS = path.join(RUN, 'deskDetails', 'deskDetails.js');
 const LEAD = 'MCowBQYDK2VwAyEAleadleadleadleadleadleadleadleadleadl=';

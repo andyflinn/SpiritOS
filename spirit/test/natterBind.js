@@ -18,7 +18,7 @@ const test = require('./testSupport.js');
 const spirit = require('../run/js/kernel.js');
 
 const RUN_DIR = path.join(__dirname, '..', 'run');
-const APP_SCRIPT = path.join(RUN_DIR, 'app', 'natter', 'natter.js');
+const APP_SCRIPT = path.join(RUN_DIR, 'shell', 'natter', 'natter.js');
 const SEEDED = [{ label: 'spirit', url: 'https://spirit.example' }];
 
 function fakeElement(id) {
@@ -622,7 +622,7 @@ function aRowOpensTheMailbox() {
 
     tbody.fire('click', { target: rowTarget(OWNED) });
     const call = app.called[app.called.length - 1] || {};
-    if (call.id === 'app/natterDetails' && call.params && call.params.url === OWNED) {
+    if (call.id === 'shell/natterDetails' && call.params && call.params.url === OWNED) {
       test.check('and clicking it calls the mailbox screen for THAT url');
     } else {
       test.fail('call: ' + JSON.stringify(call));
@@ -740,7 +740,7 @@ function aRelayNameBeatsTheListsOwnWord() {
     // title cannot disagree about what you just pressed.
     app.doc.getElementById('natter-tbody').fire('click', { target: rowTarget(OWNED) });
     return settle().then(function () {
-      const call = app.called.filter(function (c) { return c.id === 'app/natterDetails'; })[0];
+      const call = app.called.filter(function (c) { return c.id === 'shell/natterDetails'; })[0];
       if (call && call.params && call.params.relayLabel === 'Andy Flinn home relay') {
         test.check('and hands that same name to the relay’s own screen');
       } else {

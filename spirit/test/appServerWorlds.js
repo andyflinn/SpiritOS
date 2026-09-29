@@ -375,13 +375,13 @@ async function otherRelay() {
 // fixture, they are thrown away with it, and they exist only to be wrong
 // in one named way each.
 //
-// AN APP IS A FOLDER PLUS A SIBLING MANIFEST — `app/<name>/<name>.json`,
+// AN APP IS A FOLDER PLUS A SIBLING MANIFEST — `shell/<name>/<name>.json`,
 // which `kernel.js` enforces (MANIFEST_PATTERN) and G15 inherits rather
 // than reinvents. These are built to that shape for the same reason the
 // contract uses it: a fixture that invented its own layout would be
 // testing a boundary nobody ships.
 function plantApp(rootDir, name, manifest) {
-  const dir = path.join(rootDir, 'app', name);
+  const dir = path.join(rootDir, 'shell', name);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, name + '.json'),
     JSON.stringify(Object.assign({ name: name, description: 'a fixture app' }, manifest), null, 2));
@@ -426,9 +426,9 @@ const WRONG_MANIFESTS = {
 // point is that code is replaced and state is not — so this is the real
 // motion rather than a convenience.
 function plantStarter(rootDir, repoRoot) {
-  const from = path.join(repoRoot, 'spirit', 'run', 'app', 'starter');
+  const from = path.join(repoRoot, 'spirit', 'run', 'shell', 'starter');
   if (!fs.existsSync(from)) return null;
-  const to = path.join(rootDir, 'app', 'starter');
+  const to = path.join(rootDir, 'shell', 'starter');
   fs.mkdirSync(path.dirname(to), { recursive: true });
   fs.cpSync(from, to, { recursive: true });
   return to;

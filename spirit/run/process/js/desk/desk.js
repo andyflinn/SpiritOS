@@ -70,7 +70,7 @@ const ANSWER_ROOM = appClient.ANSWER_MAX - 512;
 // ── WHAT DESK KEPT IN ITS OWN FOLDER, IMPORTED ONCE (desk/G1.4) ─────
 //
 //   Andy: "desk creates a lot of file-clutter". D5: its state is this
-//   server's. So at start, what the Desk app kept in <run>/app/desk (<run>
+//   server's. So at start, what the Desk app kept in <run>/shell/desk (<run>
 //   being --state's great-grandparent) comes in, and only then goes: every
 //   row of log/log*.json, state.json and seen.json (taken only while the
 //   server has none, so an old file never overwrites newer state), and every
@@ -79,7 +79,7 @@ const ANSWER_ROOM = appClient.ANSWER_MAX - 512;
 //   desk.db; a file that does not parse stops the import and deletes nothing.
 //   Only those data files go; desk.js, desk.json and anything else stay.
 function importFromApp() {
-  const app = path.join(path.resolve(STATE), '..', '..', '..', 'app', 'desk');
+  const app = path.join(path.resolve(STATE), '..', '..', '..', 'shell', 'desk');
   const logDir = path.join(app, 'log');
   const voiceDir = path.join(app, 'voice');
   const listed = function (dir, re) { try { return fs.readdirSync(dir).filter(function (n) { return re.test(n); }); } catch (e) { return []; } };

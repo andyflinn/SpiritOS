@@ -361,7 +361,7 @@ function noAppNamesTheRing() {
       if (fs.readFileSync(full, 'utf8').indexOf('/api/hub/send') !== -1) named.push(rel);
     });
   }
-  scan(path.join(RUN, 'app'), 4);
+  scan(path.join(RUN, 'shell'), 4);
   scan(path.join(RUN, 'js'), 3);
 
   if (!named.length && looked.length > 20) {

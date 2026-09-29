@@ -172,7 +172,7 @@ test.subHeading('Long enough to be safe, short enough to be written');
 {
   const key = auth.generateIdentity('andy').publicKey;
   // The deepest this project goes on Andy's laptop: a OneDrive clone,
-  // spirit/run/app/relayChat/logs/. Windows' limit is 260.
+  // spirit/run/shell/relayChat/logs/. Windows' limit is 260.
   const deepest = 'C:\\Users\\Andre\\OneDrive\\repo\\SpiritOS\\spirit\\run\\app\\relayChat\\logs\\';
   const full = deepest + peerFile.fileName(key);
   if (full.length < 260) {

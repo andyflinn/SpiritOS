@@ -265,12 +265,12 @@ if (typeof bucket.createSearch !== 'function') {
   {
     // THE SHELL RULE since Andy's "go." (2026-09-27): '*' stays in its
     // folder, '**' crosses folders, '?' is one character and never a '/'.
-    const labels = ['app/desk/a.js', 'app/desk/sub/b.js', 'app/deskX/c.js'];
-    const level = keysFor('app/desk/*', labels);
-    const tree = keysFor('app/desk/**', labels);
-    const one = keysFor('app/desk/?.js', ['app/desk/a.js', 'app/desk/ab.js', 'app/desk//.js']);
-    if (level.join() === 'app/desk/a.js' && tree.join() === 'app/desk/a.js,app/desk/sub/b.js' && one.join() === 'app/desk/a.js') {
-      test.check('app/desk/* is that folder only, app/desk/** takes in its subfolders, neither reaches a sibling '
+    const labels = ['shell/desk/a.js', 'shell/desk/sub/b.js', 'shell/deskX/c.js'];
+    const level = keysFor('shell/desk/*', labels);
+    const tree = keysFor('shell/desk/**', labels);
+    const one = keysFor('shell/desk/?.js', ['shell/desk/a.js', 'shell/desk/ab.js', 'shell/desk//.js']);
+    if (level.join() === 'shell/desk/a.js' && tree.join() === 'shell/desk/a.js,shell/desk/sub/b.js' && one.join() === 'shell/desk/a.js') {
+      test.check('shell/desk/* is that folder only, app/desk/** takes in its subfolders, neither reaches a sibling '
         + 'that merely starts alike (app/deskX/), and ? is exactly one character, never a /');
     } else {
       test.fail('path patterns: app/desk/* gave ' + JSON.stringify(level) + ', app/desk/** gave ' + JSON.stringify(tree)
@@ -279,12 +279,12 @@ if (typeof bucket.createSearch !== 'function') {
   }
   {
     const plain = keysFor('BERT', ['bert']);
-    const glob = keysFor('APP/DESK/*', ['app/desk/a.js']);
+    const glob = keysFor('SHELL/DESK/*', ['shell/desk/a.js']);
     const wide = keysFor('ZÜRICH', ['Zürich']);
     if (plain.length === 1 && glob.length === 1 && wide.length === 1) {
       test.check('matching ignores case: in words, in patterns, and in non-ASCII letters (ZÜRICH finds Zürich)');
     } else {
-      test.fail('case: BERT ' + JSON.stringify(plain) + ', APP/DESK/* ' + JSON.stringify(glob) + ', ZÜRICH '
+      test.fail('case: BERT ' + JSON.stringify(plain) + ', SHELL/DESK/* ' + JSON.stringify(glob) + ', ZÜRICH '
         + JSON.stringify(wide));
     }
   }

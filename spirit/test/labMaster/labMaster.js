@@ -541,16 +541,16 @@ function updateNode(id) {
 // overwrite them. Everything else in a home is code and comes from git.
 const NODE_STATE = [
   path.join('spirit', 'run', 'relay-state'),
-  path.join('spirit', 'run', 'app', 'natter', 'session.json'),
-  path.join('spirit', 'run', 'app', 'natter', 'relays.json'),
-  path.join('spirit', 'run', 'app', 'natter', 'minted.json'),
+  path.join('spirit', 'run', 'shell', 'natter', 'session.json'),
+  path.join('spirit', 'run', 'shell', 'natter', 'relays.json'),
+  path.join('spirit', 'run', 'shell', 'natter', 'minted.json'),
   // relayChat's entry stood here until 2026-09-25, when the app left for
   // its own repo. `carryState` skips what is not there, so it would have
   // gone on being a silent no-op — which is why it wanted removing
   // rather than leaving: a list that tolerates a missing entry is a list
   // nobody notices has gone stale.
-  path.join('spirit', 'run', 'app', 'contacts'),
-  path.join('spirit', 'run', 'app', 'shared'),
+  path.join('spirit', 'run', 'shell', 'contacts'),
+  path.join('spirit', 'run', 'shell', 'shared'),
 ];
 
 function carryState(fromRoot, toRoot) {
@@ -965,8 +965,8 @@ function liveWorldPaths() {
   const run = path.join(WORK_HOME);
   return {
     identity: path.join(run, 'relay-state', 'identity.json'),
-    relays: path.join(run, 'app', 'natter', 'relays.json'),
-    session: path.join(run, 'app', 'natter', 'session.json'),
+    relays: path.join(run, 'shell', 'natter', 'relays.json'),
+    session: path.join(run, 'shell', 'natter', 'session.json'),
     // The home itself, for the seat record — see liveWorldReport.
     home: run,
   };
@@ -1082,7 +1082,7 @@ async function waitForNode(port, ms) {
 // the true one, and re-inventing a label would be this tool deciding
 // somebody's name for them.
 function writeSession(home, label, steps, who) {
-  const dir = path.join(home, 'app', 'natter');
+  const dir = path.join(home, 'shell', 'natter');
   const file = path.join(dir, 'session.json');
   const backup = path.join(dir, 'session.json.before-lab');
   try {
@@ -1170,7 +1170,7 @@ async function liveWorldReport(peerNode, peerName) {
       running: !!peerNode,
       onRelay: !!(peerNode && seatedAt(peerNode.home, LIVE_RELAY)),
       boundInShell: !!(peerNode && (readJson(
-        path.join(peerNode.home, 'app', 'natter', 'session.json'), {}) || {}).label),
+        path.join(peerNode.home, 'shell', 'natter', 'session.json'), {}) || {}).label),
     },
   };
 }
@@ -1340,7 +1340,7 @@ async function buildLiveWorld(body) {
   //
   // A row on spirit-3 and a stream to spirit-3 are different things, and
   // neither is "properly bound" on its own. This is the second.
-  const theirRelays = path.join(peer.home, 'app', 'natter', 'relays.json');
+  const theirRelays = path.join(peer.home, 'shell', 'natter', 'relays.json');
   const theirRows = readJson(theirRelays, []).filter(function (r) { return r && r.url; });
   const theirOthers = theirRows.filter(function (r) { return r.url !== LIVE_RELAY; });
   const theirFirst = theirRows.length > 0 && theirRows[0].url === LIVE_RELAY;
