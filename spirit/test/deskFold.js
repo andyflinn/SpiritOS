@@ -104,11 +104,14 @@ settle().then(function () {
   } catch (e) { /* judged below */ }
   const box = ddDoc.getElementById('dd-item');
   const firstItem = box.innerHTML;
-  clickOn(ddDoc.getElementById('dd-body'), 'data-fold', 'item');
-  const openItem = box.innerHTML;
+  // FIRST SIGHT OPENS since slim/G1.6 (Andy: "any changed block should
+  // immediately unfold. then i'll fold it, and that's my ack"): new to him,
+  // the box is open, the first click folds it, the second opens it again.
   clickOn(ddDoc.getElementById('dd-body'), 'data-fold', 'item');
   const foldedItem = box.innerHTML;
-  if (!/ITEM-DESCRIPTION-TEXT/.test(firstItem) && /ITEM-ONE-TITLE/.test(firstItem)) test.check('the item box opens folded (desk/G1.12)');
+  clickOn(ddDoc.getElementById('dd-body'), 'data-fold', 'item');
+  const openItem = box.innerHTML;
+  if (/ITEM-DESCRIPTION-TEXT/.test(firstItem) && /ITEM-ONE-TITLE/.test(firstItem)) test.check('the item box is open at first sight (slim/G1.6)');
   else test.fail('the item box on opening: ' + firstItem.slice(0, 160));
   if (/data-fold="item"/.test(openItem) && /ITEM-DESCRIPTION-TEXT/.test(openItem) &&
       /ITEM-ONE-TITLE/.test(foldedItem) && /Open: not ready to close yet|id="dd-done"|id="dd-reopen"/.test(foldedItem) &&

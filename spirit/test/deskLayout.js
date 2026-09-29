@@ -224,8 +224,11 @@ settle().then(function () {
       test.check('Go! stands before Rename on one line; How you can check follows it, outside the item box');
     } else test.fail(OWED + 'name row ' + nameRow.slice(0, 160) + ' | check in item box ' + /CHECK-TEXT/.test(item));
 
-    test.subHeading("T5 in the dialog: the item box starts folded, and empty groups draw nothing");
-    if (!/ITEM-TEXT/.test(item) && /Second/.test(item) && !/Blocked by/.test(body)) test.check('the item box opens folded, and no Blocked by heading shows for an item nothing blocks');
+    // FIRST SIGHT OPENS since slim/G1.6 (Andy: "any changed block should
+    // immediately unfold. then i'll fold it, and that's my ack"): new to him,
+    // the item box is open; it folds once he has acked it (deskFresh.js D6).
+    test.subHeading("T5 in the dialog: the item box opens at first sight, and empty groups draw nothing");
+    if (/ITEM-TEXT/.test(item) && /Second/.test(item) && !/Blocked by/.test(body)) test.check('the item box is open at first sight, and no Blocked by heading shows for an item nothing blocks');
     else test.fail(OWED + 'item box ' + item.replace(/\s+/g, ' ').slice(0, 160) + ' | Blocked by shown ' + /Blocked by/.test(body));
 
     // Andy, after looking: "the titles the right of the done button and in

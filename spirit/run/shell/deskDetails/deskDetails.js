@@ -140,7 +140,45 @@ function ddLoad() {
 // (desk/G1.14, Andy: "when it's filled by the agent (changed) it should open
 // automatically"), even after he folded it.
 var ddExplainFolded = false;
-var ddExplainShown = null;
+
+// ── A CHANGED BLOCK OPENS; HIS FOLD IS HIS ACK (slim/G1.6) ───────────
+//
+//   Andy: "any changed block should immediately unfold. then i'll fold it,
+//   and that's my ack", and "you might not need to react to my ack". Each
+//   block (explain, links, item) has a token, a short hash of what it shows.
+//   It opens unless its token is the one he acked; folding it acks what it
+//   shows. Desk keeps the acks per item (with seen) and hands them back as
+//   params.acked; the dialog returns the whole map in every result.
+var ddAcked = {};
+var ddShownToken = {};
+function ddHash(text) {
+  var h = 5381;
+  var str = String(text);
+  for (var i = 0; i < str.length; i += 1) h = ((h * 33) ^ str.charCodeAt(i)) >>> 0;
+  return h.toString(36) + '.' + str.length.toString(36);
+}
+function ddTokens() {
+  var me = ddSession.filter(function (r) { return r.id === ddId; })[0] || ddRow || {};
+  return {
+    explain: ddHash((ddState && ddState.explain) || ''),
+    links: ddHash(ddLinkLists().join('|')),
+    item: ddHash(JSON.stringify([me.title || '', me.description || '', me.check || '', me.tests || [], me.inPlace || []])),
+  };
+}
+function ddSyncFolds() {
+  var t = ddTokens();
+  var set = { explain: function (v) { ddExplainFolded = v; }, links: function (v) { ddLinksFolded = v; }, item: function (v) { ddFolded = v; } };
+  Object.keys(t).forEach(function (name) {
+    if (ddShownToken[name] === t[name]) return;
+    ddShownToken[name] = t[name];
+    set[name](ddAcked[name] === t[name]);
+  });
+}
+// Folding is acking what the block shows; the map goes back with every result.
+function ddAck(name, folded) {
+  if (folded) ddAcked[name] = ddShownToken[name];
+  if (ddApi && typeof ddApi.setDialogResult === 'function') ddApi.setDialogResult({ sent: ddSent.slice(), acked: ddAcked });
+}
 // ── A STALE EXPLANATION (slim/G1.6) ────────────────────────────────
 //
 //   Andy: "no use if these displays go stale", "is this programatically or
@@ -158,7 +196,6 @@ function ddBlurbHtml() {
   var st = ddState;
   if (!st) return '<div class="job-manifest-note">Reading…</div>';
   if (!st.explain) return '<div class="job-manifest-note">No explanation yet. One has been asked for, and it will appear here.</div>';
-  if (st.explain !== ddExplainShown) { ddExplainShown = st.explain; ddExplainFolded = false; }
   var toggle = '<button type="button" data-fold="explain" title="' + (ddExplainFolded ? 'Unfold' : 'Fold') + '">' +
     (ddExplainFolded ? '▸' : '▾') + '</button> ';
   if (ddExplainFolded) return '<div>' + toggle + '<span class="job-manifest-note">explanation by ' + ddEsc(st.explainFrom) + '</span></div>';
@@ -414,13 +451,19 @@ var ddFolded = true;  // every foldable box starts folded (desk/G1.12); open() f
 //   so they show at once. A group with nothing in it draws nothing (desk/G1.12:
 //   "groups like blocking should disappear completely").
 var ddLinksFolded = false;
-function ddLinksHtml() {
+// [blocked-by lines, blocking lines], as HTML list items.
+function ddLinkLists() {
   var me = ddSession.filter(function (r) { return r.id === ddId; })[0] || ddRow;
-  if (!me) return '';
+  if (!me) return ['', ''];
   var byId = {};
   ddSession.forEach(function (r) { byId[r.id] = r; });
-  var blockedBy = ddSession.filter(function (r) { return (r.blocks || []).indexOf(ddId) !== -1; }).map(ddItemLine).join('');
-  var blocking = (me.blocks || []).map(function (id) { return ddItemLine(byId[id] || { id: id, title: '' }); }).join('');
+  return [ddSession.filter(function (r) { return (r.blocks || []).indexOf(ddId) !== -1; }).map(ddItemLine).join(''),
+    (me.blocks || []).map(function (id) { return ddItemLine(byId[id] || { id: id, title: '' }); }).join('')];
+}
+function ddLinksHtml() {
+  var lists = ddLinkLists();
+  var blockedBy = lists[0];
+  var blocking = lists[1];
   if (!blockedBy && !blocking) return '';
   var toggle = '<button type="button" data-fold="links" title="' + (ddLinksFolded ? 'Unfold' : 'Fold') + '">' + (ddLinksFolded ? '▸' : '▾') + '</button> ';
   if (ddLinksFolded) return '<div class="stat-tile wide">' + toggle + '<span class="label">Blocked by, blocking</span></div>';
@@ -477,6 +520,7 @@ function ddItemHtml() {
 }
 
 function ddDraw() {
+  ddSyncFolds();
   var item = document.getElementById('dd-item');
   if (item) item.innerHTML = ddItemHtml();
   ddDrawNameRow();
@@ -584,7 +628,7 @@ function ddSend(kind, text, fieldId) {
     if (fieldId) ddClear(fieldId);
     ddNote = '';
     msgs.forEach(function (m) { ddTake(m); ddSent.push(m); });
-    ddApi.setDialogResult({ sent: ddSent.slice() });
+    ddApi.setDialogResult({ sent: ddSent.slice(), acked: ddAcked });
     ddLoad();
   }).catch(function (e) {
     ddSending = false;
@@ -617,21 +661,24 @@ spirit.shell.activateApp({
       var link = event.target && event.target.closest && event.target.closest('[data-open]');
       if (link) {
         event.preventDefault();
-        ddApi.closeDialog({ sent: ddSent.slice(), open: link.getAttribute('data-open') });
+        ddApi.closeDialog({ sent: ddSent.slice(), acked: ddAcked, open: link.getAttribute('data-open') });
         return;
       }
       if (event.target && event.target.getAttribute && event.target.getAttribute('data-fold') === 'item') {
         ddFolded = !ddFolded;
+        ddAck('item', ddFolded);
         ddDraw();
         return;
       }
       if (event.target && event.target.getAttribute && event.target.getAttribute('data-fold') === 'links') {
         ddLinksFolded = !ddLinksFolded;
+        ddAck('links', ddLinksFolded);
         ddDraw();
         return;
       }
       if (event.target && event.target.getAttribute && event.target.getAttribute('data-fold') === 'explain') {
         ddExplainFolded = !ddExplainFolded;
+        ddAck('explain', ddExplainFolded);
         ddDraw();
         return;
       }
@@ -690,6 +737,11 @@ spirit.shell.activateApp({
     ddState = null;
     ddNote = '';
     ddFolded = true;
+    // What he acked here before (Desk keeps it with seen): a block opens
+    // unless it still shows exactly that.
+    ddAcked = {};
+    Object.keys((params && params.acked) || {}).forEach(function (k) { ddAcked[k] = String(params.acked[k]); });
+    ddShownToken = {};
     ddRenaming = false;
     ddFrame();
     ddLoad();

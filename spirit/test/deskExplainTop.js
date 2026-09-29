@@ -114,7 +114,7 @@ test.startTest('desk/G1.14: the explanation on top and opening itself; the goal 
   const team = doc.getElementById('desk-session').innerHTML;
   const goalDlg = dialog('t/G1', ROWS, [row('claude-windows', 'session', SESSION, 't/G1')]);
   await settle();
-  clickFold(goalDlg.doc.getElementById('dd-body'), 'item');
+  // Open at first sight since slim/G1.6 (a block new to him opens).
   // The goal's items are its "Blocked by" list, which slim/G1.6 moved out of
   // the record into a block of its own (#dd-links): both count as its dialog.
   const goalRecord = goalDlg.doc.getElementById('dd-item').innerHTML + goalDlg.doc.getElementById('dd-links').innerHTML;
@@ -137,8 +137,10 @@ test.startTest('desk/G1.14: the explanation on top and opening itself; the goal 
   test.subHeading('T4: the order: his buttons, the yellow check, the explanation, the folded record');
   const order = [at('id="dd-name-row"'), at('How you can check'), at('id="dd-blurb"'), at('id="dd-item"')];
   const rising = order.every(function (x, i) { return x !== -1 && (i === 0 || x > order[i - 1]); });
-  if (rising && !/ITEM-RECORD-TEXT/.test(d.doc.getElementById('dd-item').innerHTML)) test.check('buttons, check, explanation, record, in that order, the record folded');
-  else test.fail(OWED + 'positions ' + JSON.stringify(order) + ', record folded ' + !/ITEM-RECORD-TEXT/.test(d.doc.getElementById('dd-item').innerHTML));
+  // The record is open at first sight since slim/G1.6 (Andy: "any changed
+  // block should immediately unfold"); it folds once he acks it (deskFresh D6).
+  if (rising && /ITEM-RECORD-TEXT/.test(d.doc.getElementById('dd-item').innerHTML)) test.check('buttons, check, explanation, record, in that order, the record open at first sight');
+  else test.fail(OWED + 'positions ' + JSON.stringify(order) + ', record open ' + /ITEM-RECORD-TEXT/.test(d.doc.getElementById('dd-item').innerHTML));
 
   // ── T3 ──────────────────────────────────────────────────────────────
   test.subHeading('T3: a new or changed explanation shows unfolded, even after he folded the box');

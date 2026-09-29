@@ -389,7 +389,7 @@ function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
 // seen.json yet counts all it holds as seen, so the first open is not a
 // wall of red.
 var DESK_UNSEEN = '<span style="color:#d00;font-weight:bold" title="unseen changes">*</span>';
-var deskSeen = { rows: {}, team: 0, agents: {}, folds: {} };
+var deskSeen = { rows: {}, team: 0, agents: {}, folds: {}, acked: {} };
 var deskTab = 'list';
 // WHICH CHAT INSIDE TEAM: '*' for All, else an agent's name (desk/G1, D2).
 var deskAgentTab = '*';
@@ -447,7 +447,9 @@ function deskLoadSeen(raw) {
   if (held && typeof held === 'object') {
     deskSeen = { rows: held.rows && typeof held.rows === 'object' ? held.rows : {}, team: Number(held.team) || 0,
       agents: held.agents && typeof held.agents === 'object' ? held.agents : null,
-      folds: held.folds && typeof held.folds === 'object' ? held.folds : {} };
+      folds: held.folds && typeof held.folds === 'object' ? held.folds : {},
+      // What he acked in each item's dialog, by folding (slim/G1.6).
+      acked: held.acked && typeof held.acked === 'object' ? held.acked : {} };
     if (deskSeen.agents) return;
     // A seen.json from before the agent tabs: the lead keeps its old Lead
     // mark, and what the others said so far counts as seen.
@@ -1083,8 +1085,16 @@ function deskOpenRow(id) {
   // into the details dialog by paramet calling". The dialog shows it and
   // cannot end it; only Team can.
   deskApi.callDialog('shell/deskDetails', { id: id, row: deskRowOf(id), thread: thread, agents: deskAgents,
-    designMode: deskDesignOn(), session: deskSessionRows(), rules: deskSessionRules() })
+    designMode: deskDesignOn(), session: deskSessionRows(), rules: deskSessionRules(),
+    // HIS ACKS COME BACK (slim/G1.6): a block he folded stays folded while
+    // it shows the same; a changed one opens.
+    acked: (deskSeen.acked && deskSeen.acked[id]) || {} })
     .then(function (result) {
+      if (result && result.acked && typeof result.acked === 'object') {
+        deskSeen.acked = deskSeen.acked || {};
+        deskSeen.acked[id] = result.acked;
+        deskSaveSeen();
+      }
       deskMarkRowSeen(id);
       return deskRecord((result && result.sent) || []).then(function () {
         // A line in its Blocked by / Blocking lists was clicked: go there.
