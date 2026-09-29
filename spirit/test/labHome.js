@@ -40,8 +40,13 @@ function isFree(port) {
     s.listen(port, '127.0.0.1', function () { s.close(function () { resolve(true); }); });
   });
 }
+// Free both ways: no socket on it, and no row of the labMaster's table
+// holding it. A stopped row keeps its port (claude-windows, on Andy's box:
+// jazz, sonny, claude and rock hold 65400-65405 while stopped).
 async function freePort() {
-  for (let p = 65400; p <= 65409; p++) if (await isFree(p)) return p;
+  const listed = await master('GET', '/api/nodes');
+  const held = ((listed.body && listed.body.nodes) || []).map(function (n) { return Number(n.port); });
+  for (let p = 65400; p <= 65409; p++) if (held.indexOf(p) === -1 && await isFree(p)) return p;
   return 0;
 }
 // THROUGH THE ONE DOOR (oneDoor.js): relayRequest, never fetch.
