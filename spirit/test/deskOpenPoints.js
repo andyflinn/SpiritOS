@@ -77,7 +77,7 @@ function mount(files) {
   behavior.mount(fakeElement('container'), {
     fs: fakeFs(files),
     escapeHtml: spirit.core.util.escapeHtml,
-    verb: function () { return Promise.resolve({ status: 200, body: {} }); },
+    verb: require('./deskFake.js').fromFiles(files).verb,
     onPacket: function (app, fn) { handlers.push(fn); },
     peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h-out' }); },
     callDialog: function () { return new Promise(function () {}); },

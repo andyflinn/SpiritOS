@@ -73,7 +73,7 @@ function mount(log) {
   load(DESK, doc).mount(fakeElement('container'), {
     fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify(log) : null; }, saveFile: function () { return Promise.resolve(); } },
     escapeHtml: spirit.core.util.escapeHtml,
-    verb: function () { return Promise.resolve({ status: 200, body: {} }); },
+    verb: require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(log) }).verb,
     onPacket: function () {},
     peerPost: function () { return Promise.resolve({ ok: true }); },
     callDialog: function () { return new Promise(function () {}); },

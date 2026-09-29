@@ -103,7 +103,7 @@ test.startTest('desk/G1.14: the explanation on top and opening itself; the goal 
   load(DESK, doc).mount(fakeElement('container'), {
     fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify([row('claude-windows', 'session', SESSION, 'team/chat')]) : null; },
       saveFile: function () { return Promise.resolve(); } },
-    escapeHtml: kernel.core.util.escapeHtml, verb: function () { return Promise.resolve({ status: 200, body: {} }); },
+    escapeHtml: kernel.core.util.escapeHtml, verb: require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify([row('claude-windows', 'session', SESSION, 'team/chat')]) }).verb,
     onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); }, callDialog: function () { return new Promise(function () {}); },
   });
   await settle();

@@ -86,7 +86,7 @@ new Function('spirit', 'document', 'window', fs.readFileSync(DESK, 'utf8'))(
 behavior.mount(fakeElement('container'), {
   fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify(log) : null; }, saveFile: function () { return Promise.resolve(); } },
   escapeHtml: kernel.core.util.escapeHtml,
-  verb: function () { return Promise.resolve({ status: 200, body: {} }); },
+  verb: require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(log) }).verb,
   onPacket: function (app, fn) { handlers.push(fn); },
   peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h' }); },
   callDialog: function () { return new Promise(function () {}); },

@@ -96,4 +96,26 @@ function create(rows) {
   return fake;
 }
 
-module.exports = { create: create, ROOM: ROOM };
+// THE SUITES WRITTEN BEFORE G1.4 mounted Desk on a folder of files. This
+// builds the fake from such a folder (log/log.json, seen.json, state.json)
+// and keeps the folder in step with every call, so a suite that remounts
+// from it, or reads seen.json back, goes on working unchanged.
+function fromFiles(files) {
+  let rows = [];
+  try { rows = JSON.parse(files['log/log.json'] || '[]'); } catch (e) { rows = []; }
+  const fake = create(rows);
+  if (files['seen.json']) fake.docs.seen = files['seen.json'];
+  if (files['state.json']) fake.docs.state = files['state.json'];
+  const ask = fake.verb;
+  fake.verb = function (name, body) {
+    return ask(name, body).then(function (r) {
+      files['log/log.json'] = JSON.stringify(fake.lines);
+      if (fake.docs.seen) files['seen.json'] = fake.docs.seen;
+      if (fake.docs.state) files['state.json'] = fake.docs.state;
+      return r;
+    });
+  };
+  return fake;
+}
+
+module.exports = { create: create, fromFiles: fromFiles, ROOM: ROOM };

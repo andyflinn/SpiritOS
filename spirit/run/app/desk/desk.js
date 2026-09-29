@@ -34,11 +34,6 @@
 // Andy, 2026-09-27, "that hook into my voice.jsonl is a hack and will have
 // to be removed if the agents app is ever to ship."
 
-// IN TWO FOLDERS, NOT LOOSE. Andy, 2026-09-29: 'desk creates a lot of
-// file-clutter, can we clean that up', and on the stopgap until a
-// process/js/desk owns a desk.db: 'that'd be pogress, yes!'. The log's
-// chunks live in log/, his typed lines in voice/.
-var DESK_LOG = 'log/log.json';
 
 // A BUSY AGENT IS WAITED FOR, NOT BOUNCED. Andy's line came back
 // "(undelivered: target is busy)" because a post got one attempt. With
@@ -141,84 +136,54 @@ function deskOutgoing(to, body, r, e) {
   };
 }
 
-// WRITTEN WHOLE, ONE WRITE AT A TIME. The scoped fs saves a file, it does
-// not append, so two saves in flight could land out of order and the
-// older list would win.
-var deskSaving = Promise.resolve();
+// ── DESK'S RECORD IS THE DESK SERVER'S (desk/G1.4) ──────────────────
 //
-// MERGED BEFORE IT IS WRITTEN (wsl-claude's review): two Desk tabs each
-// hold a list, and a plain rewrite would let the last save drop the other
-// tab's lines. So a save first folds in whatever the file holds that this
-// page does not.
+//   Andy: "desk creates a lot of file-clutter", "SpiritOS list.load rules
+//   are probably vialoated", "lazy-fill of pages seems appropriate", "the
+//   list only loads key/title, and the rest lazy loads".
 //
-// ── IN CHUNKS, BECAUSE A SAVE IS ONE REQUEST AND A REQUEST IS BOUNDED ──
-//
-// Found live, Andy's Desk, 2026-09-27: "Desk could not write its log:
-// failed to save file: 413". The whole log was rewritten on every
-// arrival, and at 21 KB it no longer fitted in one request (BODY_MAX,
-// 23552 bytes, with the save's own envelope and escaping on top). So the
-// log is a run of files: log.json, then log-1.json, log-2.json, ... Only
-// the LAST is ever rewritten, and a chunk is sealed once it holds about
-// DESK_CHUNK_BYTES; the next line starts the next file. Every save is
-// then small, however long the conversation gets.
-var DESK_CHUNK_BYTES = 9000;
-function deskChunkName(i) { return i === 0 ? DESK_LOG : 'log/log-' + i + '.json'; }
-var deskLastChunk = 0;                          // the one still being written
-var deskSealedKeys = Object.create(null);       // keys living in earlier chunks
-
-function deskUtf8(text) {
-  var n = 0;
-  for (var i = 0; i < text.length; i += 1) {
-    var c = text.charCodeAt(i);
-    if (c < 0x80) n += 1;
-    else if (c < 0x800) n += 2;
-    else if (c >= 0xd800 && c < 0xdc00) { n += 4; i += 1; }
-    else n += 3;
-  }
-  return n;
+// DECIDED (desk/G1, D5 and O9), not this file's to undo: Desk keeps nothing
+// in its own folder. Its log, what he typed, and its state and seen live in
+// the desk server (process/js/desk), reached by jobs.api on the loopback
+// door (D4). It reads only what it shows: the newest session, each open
+// item's own lines, a chat's newest page, never the whole log. Desk still
+// folds what it reads (deskFold); the server is storage and bounded search.
+function deskAsk(verb, args) {
+  var ask = { desk: {} };
+  ask.desk[verb] = args || {};
+  return Promise.resolve(deskApi.verb('jobs.api', { ask: ask })).then(function (r) {
+    var body = r && r.body;
+    if (!r || r.status !== 200 || !body || body.ok === false) throw new Error((body && (body.error || body.code)) || 'the desk server did not answer');
+    return body;
+  });
+}
+// One bounded search; the server answers newest first, 'partial' when cut.
+// Every key is sent, as the server matches them exactly (appPair D8).
+function deskSearch(q) {
+  return deskAsk('log.search', { text: q.text || '', todo: q.todo || '', since: q.since || '', kind: q.kind || '', before: q.before || '' })
+    .then(function (r) {
+      var lines = (r.lines || []).map(function (j) { try { return JSON.parse(j); } catch (e) { return null; } }).filter(Boolean);
+      return { lines: lines, partial: !!r.partial };
+    });
+}
+// Lines come newest first; they are folded oldest first, and the whole held
+// record is kept in time order for the chats.
+function deskTake(lines) {
+  lines.slice().reverse().forEach(deskFold);
+  deskMessages.sort(function (a, b) { return String(a.at) < String(b.at) ? -1 : String(a.at) > String(b.at) ? 1 : 0; });
+}
+function deskWriteError(what) {
+  return function (e) { deskError = 'Desk could not ' + what + ': ' + ((e && e.message) || e); deskDraw(); };
 }
 
-function deskSave() {
-  if (deskReadOnly) return deskSaving;
-  deskSaving = deskSaving.then(function () {
-    deskLoadLog();
-    if (deskReadOnly) return null;
-    var open = deskMessages.filter(function (m) { return !deskSealedKeys[m.key]; });
-    var writes = Promise.resolve();
-    // Seal full chunks first, oldest lines first, each holding at least
-    // one line, so a single long line still lands somewhere.
-    while (deskUtf8(JSON.stringify(open)) > DESK_CHUNK_BYTES && open.length > 1) {
-      var take = 1;
-      while (take < open.length && deskUtf8(JSON.stringify(open.slice(0, take + 1))) <= DESK_CHUNK_BYTES) take += 1;
-      var sealed = open.slice(0, take);
-      writes = writes.then(deskWriteChunk(deskChunkName(deskLastChunk), JSON.stringify(sealed)));
-      sealed.forEach(function (m) { deskSealedKeys[m.key] = true; });
-      deskLastChunk += 1;
-      open = open.slice(take);
-    }
-    return writes.then(deskWriteChunk(deskChunkName(deskLastChunk), JSON.stringify(open)));
-  }).catch(function (e) { deskError = 'Desk could not write its log: ' + e.message; deskDraw(); });
-  return deskSaving;
-}
-function deskWriteChunk(name, text) {
-  return function () { return deskApi.fs.saveFile(name, text); };
-}
-
-// ── WHAT ANDY TYPED, FOR HIS VAULT, IN THIS APP'S OWN FOLDER ──────────
+// ── WHAT ANDY TYPED, FOR HIS VAULT ──────────────────────────────────────
 //
-//   Andy, 2026-09-27: "that hook into my voice.jsonl is a hack and will
-//   have to be removed if the agents app is ever to ship" — "it's a
-//   dependence on a private repo" — and then "I'll live with an
-//   alternative way, by copying the json.l file manualy to my brain
-//   input, and deleting the one in the app folder".
-//
-// So Desk never touches the vault. It appends each line he TYPED to
-// `voice.jsonl` here, in the vault's row shape ({text, day}, the day and
-// never finer), and he moves the file himself. A file he has taken is
-// simply started again. Button presses (Go!, No, Accept, Reject) and the
-// explain request a dialog sends on opening are not his words, so they
-// stay out.
-var DESK_VOICE = 'voice/voice.jsonl';
+//   Andy, 2026-09-27: "I'll live with an alternative way, by copying the
+//   json.l file manualy to my brain input". The desk server keeps it as a
+//   plain file in its state folder (D5: relay-state/process/desk/voice.jsonl),
+//   in the vault's row shape ({text, day}, the day and never finer). Button
+//   presses (Go!, No, Accept, Reject) and the explain request a dialog sends
+//   on opening are not his words, so they stay out.
 var DESK_TYPED = /^(note|musing)$/;
 function deskVoiceText(m) {
   if (!m || m.dir !== 'out') return '';
@@ -227,40 +192,27 @@ function deskVoiceText(m) {
   return '';
 }
 function deskVoice(msgs) {
-  // One line per thing he typed: a dialog line goes once per agent, so
-  // the copies are dropped here.
+  // One line per thing he typed: a dialog line goes once per agent.
   var seen = Object.create(null);
-  var lines = [];
   msgs.forEach(function (m) {
     var t = deskVoiceText(m);
     if (!t || seen[m.kind + '\n' + t]) return;
     seen[m.kind + '\n' + t] = true;
-    lines.push(JSON.stringify({ text: t, day: String(m.at || new Date().toISOString()).slice(0, 10) }));
+    deskAsk('voice.add', { text: t, day: String(m.at || new Date().toISOString()).slice(0, 10) }).catch(deskWriteError('keep what you typed'));
   });
-  if (!lines.length) return;
-  // THE SAME BOUND AS THE LOG: voice.jsonl, then voice-2.jsonl, ... when
-  // one is full. He moves every voice*.jsonl he finds.
-  deskSaving = deskSaving.then(function () {
-    var add = lines.join('\n') + '\n';
-    for (var i = 1; ; i += 1) {
-      var name = i === 1 ? DESK_VOICE : 'voice/voice-' + i + '.jsonl';
-      var held = '';
-      try { held = deskApi.fs.loadFile(name) || ''; } catch (e) { held = ''; }
-      if (held && held.charAt(held.length - 1) !== '\n') held += '\n';
-      if (!held || deskUtf8(held + add) <= DESK_CHUNK_BYTES) return deskApi.fs.saveFile(name, held + add);
-    }
-  }).catch(function (e) { deskError = 'Desk could not write ' + DESK_VOICE + ': ' + e.message; deskDraw(); });
 }
 
-// Into the log and onto the screen. Only what is new to the log reaches
-// his voice file, so a replay writes nothing twice.
+// Onto the screen and into the server's log. Only what is new to this page
+// is added, and the server keeps a key once, so a replay writes nothing twice.
 function deskRecord(msgs) {
   var fresh = msgs.filter(function (m) { return m && m.key && !deskByHash[m.key]; });
   fresh.forEach(deskFold);
+  deskMessages.sort(function (a, b) { return String(a.at) < String(b.at) ? -1 : String(a.at) > String(b.at) ? 1 : 0; });
   deskVoice(fresh);
   deskDraw();
   deskSaveState();
-  return deskSave();
+  return Promise.all(fresh.map(function (m) { return deskAsk('log.add', { json: JSON.stringify(m) }); }))
+    .catch(deskWriteError('keep its log'));
 }
 
 // ── WHAT DESK HAS DECIDED, KEPT AS A FILE ───────────────────────────
@@ -269,11 +221,10 @@ function deskRecord(msgs) {
 //   1) design mode 2) Andy's latest "done"! 3) Open question. 4) andy's
 //   personal titles for items."
 //
-// state.json, in Desk's own folder and so in git: the four things, each
+// Kept by the desk server (state.set, desk/G1.4): the four things, each
 // with the time and the log key of the message that set it, so any entry
 // can be traced to his own press. Written by Desk only, whenever it
 // changes; no agent edits it. The log stays the record it is drawn from.
-var DESK_STATE = 'state.json';
 var deskStateText = '';
 function deskStateJson() {
   var d = deskDesignMarks();
@@ -301,9 +252,9 @@ function deskStateJson() {
 }
 function deskSaveState() {
   var text = deskStateJson();
-  if (text === deskStateText || deskReadOnly) return;
+  if (text === deskStateText || !deskLoaded) return;
   deskStateText = text;
-  try { deskApi.fs.saveFile(DESK_STATE, text); } catch (e) { /* the log still holds it all */ }
+  deskAsk('state.set', { json: text }).catch(function () { /* the log still holds it all */ });
 }
 
 // Folds one message in by its key; one already held is not taken twice.
@@ -399,13 +350,12 @@ function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
 //   seen yet. (attention-direction)" — then "or use the red "*" do
 //   indicate "unseen changes have occured"". One mark, everywhere.
 //
-// Seen is kept per row and per chat in `seen.json`, in Desk's own folder,
+// Seen is kept per row and per chat by the desk server (seen.set, G1.4),
 // as the arrival time of the newest thing he has looked at: arrival times
 // rather than his clock, so a sender's skew cannot hide anything. A row is
 // seen when he opens it, a chat while its tab is showing. A Desk with no
 // seen.json yet counts all it holds as seen, so the first open is not a
 // wall of red.
-var DESK_SEEN = 'seen.json';
 var DESK_UNSEEN = '<span style="color:#d00;font-weight:bold" title="unseen changes">*</span>';
 var deskSeen = { rows: {}, team: 0, agents: {}, folds: {} };
 var deskTab = 'list';
@@ -442,7 +392,8 @@ function deskChatSeenAt(which) { return (which === 'team' ? deskSeen.team : desk
 function deskChatNews(which) { return deskNewest(deskChatPred(which)) > deskChatSeenAt(which); }
 
 function deskSaveSeen() {
-  try { deskApi.fs.saveFile(DESK_SEEN, JSON.stringify(deskSeen)); } catch (e) { /* only a marker */ }
+  if (!deskLoaded) return;
+  deskAsk('seen.set', { json: JSON.stringify(deskSeen) }).catch(function () { /* only a marker */ });
 }
 function deskMarkRowSeen(id) {
   var newest = deskNewest(deskIsRowLine(id));
@@ -457,10 +408,8 @@ function deskMarkChatSeen(which) {
 // The chat showing inside Team.
 function deskTeamWhich() { return deskAgentTab === '*' ? 'team' : deskAgentTab; }
 
-// Read once at mount, after the log. Absent: all already held is seen.
-function deskLoadSeen() {
-  var raw = null;
-  try { raw = deskApi.fs.loadFile(DESK_SEEN); } catch (e) { raw = null; }
+// Applied once at mount, after the first reads. Absent: all held is seen.
+function deskLoadSeen(raw) {
   var held = null;
   try { held = raw ? JSON.parse(raw) : null; } catch (e) { held = null; }
   if (held && typeof held === 'object') {
@@ -999,6 +948,8 @@ function deskDraw() {
   if (!el) return;
   var musings = document.getElementById('desk-musings');
   if (musings) musings.innerHTML = deskMusings();
+  var backup = document.getElementById('desk-backup');
+  if (backup) backup.innerHTML = deskBackupHtml();
   var team = document.getElementById('desk-team');
   if (team) team.innerHTML = deskAgentTab === '*' ? deskTeamChat() : deskDirectChat(deskAgentTab);
   var label = document.getElementById('desk-team-label');
@@ -1098,33 +1049,102 @@ function deskOpenRow(id) {
     });
 }
 
-// READ ONCE, AT MOUNT. The log is Desk's own file; a missing one is a Desk
-// that has not heard anything yet, and a broken one is said, not drawn as
-// an empty board.
+// ── READING WHAT IS SHOWN, AND NO MORE (desk/G1.4, O9) ─────────────
 //
-// From the chunk still being written onward, until a file is missing: at
-// mount that is every chunk, and before a save it is only what another
-// tab may have added since. Every chunk before the last one found is
-// sealed, and its lines are never written again.
-function deskLoadLog() {
-  for (var i = deskLastChunk; ; i += 1) {
-    var name = deskChunkName(i);
-    var raw = null;
-    try { raw = deskApi.fs.loadFile(name); } catch (e) { raw = null; }
-    if (!raw) return;
-    var held = null;
-    try { held = JSON.parse(raw); } catch (e) { held = null; }
-    if (!Array.isArray(held)) { deskError = 'Desk\'s log (' + name + ') does not parse; it was left as it is.'; deskReadOnly = true; return; }
-    held.forEach(deskFold);
-    var next = null;
-    try { next = deskApi.fs.loadFile(deskChunkName(i + 1)); } catch (e) { next = null; }
-    if (!next) { deskLastChunk = i; return; }
-    // A later chunk exists only once this one was sealed.
-    held.forEach(function (m) { if (m && m.key) deskSealedKeys[m.key] = true; });
-  }
+//   Andy: "desk loads down the dependency tree ... it skips closed items",
+//   "the list only loads key/title, and the rest lazy loads".
+//
+// First the newest session, and the List is drawn from it at once, id and
+// title. Then each open item's own lines, newest first, a page more only
+// while the server says it cut the answer. An item the newest session no
+// longer names is closed and is never read. The chats read their newest
+// page; Team reads older pages as he scrolls up (deskOlderTeam).
+var deskLoaded = false;
+function deskLoad() {
+  var seenRaw = '';
+  return Promise.all([
+    deskAsk('seen.get', {}).then(function (r) { seenRaw = r.json || ''; }, function () { seenRaw = ''; }),
+    deskSearch({ kind: 'session' }).then(function (r) { deskTake(r.lines.slice(0, 1)); }),
+  ]).then(function () {
+    deskDraw();
+    var reads = [
+      deskSearch({ todo: DESK_TEAM }).then(function (r) { deskTake(r.lines); deskTeamPage(r); }),
+      // Design mode is his start/end answer in Team, which may be older than
+      // Team's newest page.
+      deskSearch({ todo: DESK_TEAM, kind: 'answer' }).then(function (r) { deskTake(r.lines); }),
+      deskSearch({ kind: 'musing' }).then(function (r) { deskTake(r.lines); }),
+      deskSearch({ todo: '-' }).then(function (r) { deskTake(r.lines); }),
+      // What he closed, wherever: one bounded search, not every item.
+      deskSearch({ kind: 'answer', text: 'closed.' }).then(function (r) { deskTake(r.lines); }),
+      deskAskBackup(),
+    ];
+    deskSessionRows().forEach(function (row) {
+      if (deskClosed[row.id]) return;
+      reads.push(deskReadItem(row.id, ''));
+    });
+    return Promise.all(reads.map(function (p) { return p.catch(function (e) { deskError = 'Desk could not read: ' + ((e && e.message) || e); }); }));
+  }).then(function () {
+    deskLoaded = true;
+    deskLoadSeen(seenRaw);
+    deskDraw();
+    deskSaveState();
+  }, function (e) {
+    // No server, no record: said, never drawn as an empty board.
+    deskError = 'Desk could not read its record from the desk server: ' + ((e && e.message) || e);
+    deskDraw();
+  });
 }
-// A LOG THAT DID NOT PARSE IS NEVER OVERWRITTEN by the next arrival's save.
-var deskReadOnly = false;
+function deskReadItem(id, before) {
+  return deskSearch({ todo: id, before: before }).then(function (r) {
+    deskTake(r.lines);
+    deskDraw();
+    if (r.partial && r.lines.length) return deskReadItem(id, r.lines[r.lines.length - 1].at);
+    return null;
+  });
+}
+// OLDER TEAM LINES, AS HE SCROLLS UP (T6): the page before the oldest line
+// of the pages read so far. Not the oldest Team line held: a session post or
+// a design answer read on its own is older, and would skip whole pages.
+var deskTeamOldest = '';
+var deskTeamMore = true;
+var deskTeamReading = false;
+function deskTeamPage(r) {
+  if (r.lines.length) deskTeamOldest = String(r.lines[r.lines.length - 1].at);
+  deskTeamMore = r.partial;
+}
+function deskOlderTeam() {
+  if (deskTeamReading || !deskTeamMore || !deskTeamOldest) return;
+  deskTeamReading = true;
+  deskSearch({ todo: DESK_TEAM, before: deskTeamOldest }).then(function (r) {
+    deskTeamReading = false;
+    deskTake(r.lines);
+    deskTeamPage(r);
+    deskDraw();
+  }, function () { deskTeamReading = false; });
+}
+
+// ── THE BACKUP, SEEN FROM DESK (desk/G1.7, T7) ───────────────────────
+//
+//   Andy: "how can i trust the copy mechanist when i cant see it working".
+// The backup server's status.get: its last check and last copy, marked red
+// when something was closed after the last check.
+var deskBackup = null;
+function deskAskBackup() {
+  return Promise.resolve(deskApi.verb('jobs.api', { ask: { backup: { 'status.get': {} } } })).then(function (r) {
+    deskBackup = r && r.status === 200 && r.body && r.body.ok !== false ? r.body : null;
+    deskDraw();
+  }, function () { deskBackup = null; });
+}
+function deskBackupHtml() {
+  if (!deskBackup) return '';
+  var lastClosed = '';
+  deskMessages.forEach(function (m) { if (m.dir === 'out' && m.kind === 'answer' && m.text === 'closed.' && String(m.at) > lastClosed) lastClosed = String(m.at); });
+  var stale = !!deskBackup.lastCheck && lastClosed > String(deskBackup.lastCheck);
+  return '<div class="' + (stale ? 'job-start-error' : 'job-manifest-note') + '">Backup: last check ' +
+    (deskBackup.lastCheck ? deskTime(deskBackup.lastCheck) : 'never') + ', last copy ' +
+    (deskBackup.lastCopy ? deskTime(deskBackup.lastCopy) : 'never') +
+    (stale ? '; something was closed since the last check' : '') + '</div>';
+}
 
 spirit.shell.activateApp({
   mount: function (container, api) {
@@ -1162,7 +1182,7 @@ spirit.shell.activateApp({
         '<div class="start-job-form card" id="desk-agent-tabs" style="display:none"></div>' +
       '</div>' +
       '<div id="desk-root">' +
-        '<div data-pane="list"><div id="desk-top"></div></div>' +
+        '<div data-pane="list"><div id="desk-backup"></div><div id="desk-top"></div></div>' +
         '<div data-pane="team" hidden>' +
           '<div id="desk-session"></div>' +
           '<div class="start-job-form card"><label class="field-label grow">Say' +
@@ -1240,10 +1260,13 @@ spirit.shell.activateApp({
     // Its own log first, then every arrival into it. Subscribed once, at
     // mount, and kept while Desk is hidden behind its dialog, so what
     // arrives while a row is open is logged too.
-    deskLoadLog();
-    deskLoadSeen();
-    deskDraw();
-    deskSaveState();
+    // Scrolled to its top, Team reads the page before (T6).
+    document.getElementById('desk-team').addEventListener('scroll', function (e) {
+      var el = e && e.currentTarget;
+      if (el && el.scrollTop <= 0) deskOlderTeam();
+    });
     deskApi.onPacket('agents', function (body, message) { deskRecord([deskArrival(body, message)]); });
+    deskDraw();
+    deskLoad();
   },
 });

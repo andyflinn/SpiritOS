@@ -81,6 +81,12 @@ function load(script, doc) {
   return behavior;
 }
 
+// SINCE desk/G1.4 DESK'S RECORD IS THE DESK SERVER'S: a mount gets the
+// in-memory one (deskFake.js), ONE per folder, so two tabs of one node share
+// one server as they do for real. The folder is kept in step with it.
+const deskFake = require('./deskFake.js');
+const fakes = new Map();
+function fakeFor(files) { if (!fakes.has(files)) fakes.set(files, deskFake.fromFiles(files)); return fakes.get(files); }
 // One counter for every mount: two tabs on one node never get the same hash.
 let outHash = 0;
 function mountDesk(opts) {
@@ -93,7 +99,13 @@ function mountDesk(opts) {
   const api = {
     fs: fakeFs(opts.files),
     escapeHtml: spirit.core.util.escapeHtml,
-    verb: function (name) { verbs.push(name); return Promise.resolve({ status: 200, body: { ok: false } }); },
+    // What Desk asks the node for, other than jobs.api, is recorded; a Desk
+    // whose server is down (opts.dead) gets the node's refusal.
+    verb: function (name, body) {
+      if (name !== 'jobs.api') verbs.push(name);
+      if (opts.dead) return Promise.resolve({ status: 503, body: { ok: false, code: 'app-not-running', error: 'the app server is not running' } });
+      return fakeFor(opts.files).verb(name, body);
+    },
     onPacket: function (app, fn) { handlers.push({ app: app, fn: fn }); },
     peerPost: function (app, to, body) {
       posts.push({ app: app, to: to, body: body });
@@ -107,7 +119,7 @@ function mountDesk(opts) {
   };
   behavior.mount(fakeElement('container'), api);
   return {
-    doc: doc, posts: posts, verbs: verbs, dialogs: dialogs, handlers: handlers,
+    doc: doc, posts: posts, verbs: verbs, dialogs: dialogs, handlers: handlers, fake: fakeFor(opts.files),
     arrive: function (body, message) { handlers.forEach(function (h) { if (h.app === 'agents') h.fn(body, message); }); },
   };
 }
@@ -139,17 +151,20 @@ function logged(files) {
 // project governance. NOW."). One item, puppets/G2, as the board had.
 const BOARD = JSON.stringify({ goal: { id: 'puppets/G', title: 'Puppets' }, items: [{ id: 'puppets/G2', title: 'Search' }] });
 
-test.startTest('Desk — its own log, and nothing asked of the node');
+test.startTest('Desk — its record, through the desk server, and nothing else asked of the node');
 
-test.subHeading('Neither app names a node verb');
-
+// SINCE desk/G1.4 Desk reaches its record through jobs.api (D4), and that is
+// the one verb it may name; the node's own history it never asks for.
+test.subHeading('Desk names only jobs.api; its dialog names no verb; neither names node.history');
 [DESK, DETAILS].forEach(function (f) {
   const src = fs.readFileSync(f, 'utf8');
   const code = src.split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
-  if (!/\.verb\(/.test(code) && !/node\.history/.test(code)) {
-    test.check(path.basename(f) + ' calls no verb and never names node.history outside a comment');
+  const named = (code.match(/\.verb\(\s*'([^']*)'/g) || []).map(function (m) { return m.replace(/^\.verb\(\s*'|'$/g, ''); });
+  const allowed = f === DESK ? named.every(function (v) { return v === 'jobs.api'; }) && named.length > 0 : !/\.verb\(/.test(code);
+  if (allowed && !/node\.history/.test(code)) {
+    test.check(path.basename(f) + (f === DESK ? ' names only jobs.api' : ' calls no verb') + ', and never node.history outside a comment');
   } else {
-    test.fail(path.basename(f) + ' still asks the node for something');
+    test.fail(path.basename(f) + ' asks the node for ' + JSON.stringify(named) + (/node\.history/.test(code) ? ' and names node.history' : ''));
   }
 });
 
@@ -176,21 +191,23 @@ function arrivalsAndSendsAreLogged() {
     } else {
       test.fail('posts ' + JSON.stringify(desk.posts) + ' out rows ' + JSON.stringify(out));
     }
-    if (!desk.verbs.length) test.check('the node was asked nothing');
+    if (!desk.verbs.length) test.check('the node was asked nothing but jobs.api');
     else test.fail('verbs asked: ' + desk.verbs.join(', '));
 
     const again = mountDesk({ files: files });
-    toLead(again);
-    const chat = again.doc.getElementById('desk-team').innerHTML;
-    const top = again.doc.getElementById('desk-top').innerHTML;
-    if (/hello lead/.test(chat) && /Search/.test(top)) {
-      test.check('a fresh mount draws the board and the chat from the log alone');
-    } else {
-      test.fail('remount drew chat ' + chat.slice(0, 120) + ' / top ' + top.slice(0, 120));
-    }
-    // The same arrival twice (a replay) is one row.
-    again.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
-    return settle();
+    return settle().then(function () {
+      toLead(again);
+      const chat = again.doc.getElementById('desk-team').innerHTML;
+      const top = again.doc.getElementById('desk-top').innerHTML;
+      if (/hello lead/.test(chat) && /Search/.test(top)) {
+        test.check('a fresh mount draws the board and the chat from the server\'s record alone');
+      } else {
+        test.fail('remount drew chat ' + chat.slice(0, 120) + ' / top ' + top.slice(0, 120));
+      }
+      // The same arrival twice (a replay) is one row.
+      again.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
+      return settle();
+    });
   }).then(function () {
     const rows = logged(files) || [];
     if (rows.filter(function (r) { return r.key === 'h-in-1'; }).length === 1) test.check('a replayed arrival is not logged twice');
@@ -203,8 +220,11 @@ function failedSendsStayApart() {
   const files = { 'log/log.json': JSON.stringify([{ key: 'h-in-1', at: '2026-09-27T05:00:00Z', dir: 'in', peer: LEAD,
     outcome: 'received', from: 'claude-windows', kind: 'session', text: BOARD, todo: '' }]) };
   const desk = mountDesk({ files: files, refuse: true });
-  sayToLead(desk, 'one');
+  // Its record loads from the server first (desk/G1.4), the lead with it.
   return settle().then(function () {
+    sayToLead(desk, 'one');
+    return settle();
+  }).then(function () {
     sayToLead(desk, 'two');
     return settle();
   }).then(function () {
@@ -217,16 +237,15 @@ function failedSendsStayApart() {
   });
 }
 
-function brokenLogIsKept() {
-  test.subHeading('A log that does not parse is never overwritten');
-  const files = { 'log/log.json': '{not json' };
-  const desk = mountDesk({ files: files });
-  desk.arrive({ from: 'wsl-claude', kind: 'note', text: 'hi' }, { hash: 'h-in-9', fromKey: WSL, sentAt: '2026-09-27T05:01:00Z' });
+// A LOG THAT DID NOT PARSE is the server's to refuse now (deskOnServer.js,
+// the import). What Desk still owes: a record it cannot reach is said, and
+// never drawn as an empty board.
+function unreachableIsSaid() {
+  test.subHeading('A Desk whose server does not answer says so');
+  const desk = mountDesk({ files: {}, dead: true });
   return settle().then(function () {
-    if (files['log/log.json'] === '{not json') test.check('the unreadable file is left exactly as it was');
-    else test.fail('the broken log was overwritten with ' + files['log/log.json'].slice(0, 80));
-    if (/does not parse/.test(desk.doc.getElementById('desk-top').innerHTML)) test.check('and Desk says so');
-    else test.fail('Desk drew no word about the broken log');
+    if (/could not read/.test(desk.doc.getElementById('desk-top').innerHTML)) test.check('Desk says it could not read its record');
+    else test.fail('Desk drew ' + desk.doc.getElementById('desk-top').innerHTML.slice(0, 120));
   });
 }
 
@@ -307,7 +326,7 @@ function dialogSendsComeBack() {
 }
 
 function voiceHoldsWhatHeTyped() {
-  test.subHeading('voice.jsonl in Desk\'s folder holds what he typed, and nothing else');
+  test.subHeading('what he typed goes to the desk server\'s voice, and nothing else');
   const files = {};
   const desk = mountDesk({ files: files });
   desk.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
@@ -335,27 +354,19 @@ function voiceHoldsWhatHeTyped() {
       return settle();
     });
   }).then(function () {
-    const lines = String(files['voice/voice.jsonl'] || '').split('\n').filter(Boolean).map(function (l) { return JSON.parse(l); });
+    // Since desk/G1.4 the server keeps it (voice.add), a plain file in its
+    // state folder that he moves himself (deskOnServer.js, T4).
+    const lines = desk.fake.voice;
     const texts = lines.map(function (l) { return l.text; });
     if (texts.join(' | ') === 'typed by andy | from the row | My Name') {
       test.check('his typed line, the row line once, and his new name; no Go!, no explain request, no agent text');
     } else {
-      test.fail('voice.jsonl holds ' + JSON.stringify(texts));
+      test.fail('voice holds ' + JSON.stringify(texts));
     }
     if (lines.every(function (l) { return Object.keys(l).join(',') === 'text,day' && /^\d{4}-\d\d-\d\d$/.test(l.day); })) {
       test.check('each row is the vault\'s shape, {text, day}, stamped by the day and never finer');
     } else {
       test.fail('voice rows: ' + JSON.stringify(lines));
-    }
-    // He took the file: the next line starts it again.
-    delete files['voice/voice.jsonl'];
-    sayToLead(desk, 'after he moved it');
-    return settle();
-  }).then(function () {
-    if (files['voice/voice.jsonl'] === JSON.stringify({ text: 'after he moved it', day: new Date().toISOString().slice(0, 10) }) + '\n') {
-      test.check('a file he has moved away is started again with only the new line');
-    } else {
-      test.fail('after removal voice.jsonl is ' + JSON.stringify(files['voice/voice.jsonl']));
     }
   });
 }
@@ -375,7 +386,7 @@ function twoTabsKeepBoth() {
     return settle();
   }).then(function () {
     const texts = (logged(files) || []).filter(function (r) { return r.dir === 'out'; }).map(function (r) { return r.text; }).sort();
-    if (texts.join(',') === 'from tab a,from tab b') test.check('the file keeps both tabs\' lines');
+    if (texts.join(',') === 'from tab a,from tab b') test.check('the record keeps both tabs\' lines');
     else test.fail('after two tabs the log holds ' + JSON.stringify(texts));
   });
 }
@@ -426,15 +437,18 @@ function unseenIsMarked() {
     // A Desk opening with a log but no seen.json (the first run of this
     // version) counts all it holds as seen.
     delete files['seen.json'];
+    first.fake.docs.seen = '';
     const again = mountDesk({ files: files });
-    const star = /title="unseen changes"/;
-    if (!star.test(again.doc.getElementById('desk-top').innerHTML) && files['seen.json']) {
-      test.check('a first open with no seen.json shows nothing as unseen, and records what it holds');
-    } else {
-      test.fail('first open: ' + again.doc.getElementById('desk-top').innerHTML.slice(0, 160));
-    }
-    again.arrive({ from: 'wsl-claude', kind: 'note', text: 'fresh', todo: 'puppets/G2' }, { hash: 'u-3', fromKey: WSL, sentAt: '2026-09-27T05:02:00Z' });
-    return settle().then(function () { return again; });
+    return settle().then(function () {
+      const star = /title="unseen changes"/;
+      if (!star.test(again.doc.getElementById('desk-top').innerHTML) && files['seen.json']) {
+        test.check('a first open with no seen shows nothing as unseen, and records what it holds');
+      } else {
+        test.fail('first open: ' + again.doc.getElementById('desk-top').innerHTML.slice(0, 160));
+      }
+      again.arrive({ from: 'wsl-claude', kind: 'note', text: 'fresh', todo: 'puppets/G2' }, { hash: 'u-3', fromKey: WSL, sentAt: '2026-09-27T05:02:00Z' });
+      return settle().then(function () { return again; });
+    });
   }).then(function (again) {
     const top = again.doc.getElementById('desk-top');
     if (/title="unseen changes"/.test(top.innerHTML)) test.check('a new arrival under a row puts a red * on that row');
@@ -449,61 +463,23 @@ function unseenIsMarked() {
       if (!/title="unseen changes"/.test(top.innerHTML)) test.check('opening the row clears its mark, and it stays clear');
       else test.fail('the row is still marked after it was opened');
       const seen = JSON.parse(files['seen.json']);
-      if (seen.rows['puppets/G2'] === Date.parse('2026-09-27T05:02:00Z')) test.check('what was seen is kept in seen.json, by arrival time');
+      if (seen.rows['puppets/G2'] === Date.parse('2026-09-27T05:02:00Z')) test.check('what was seen is kept by seen.set, by arrival time');
       else test.fail('seen.json ' + files['seen.json']);
     });
   });
 }
 
-function theLogIsChunked() {
-  test.subHeading('The log is written in chunks, so no save outgrows one request');
-  // Found live: "Desk could not write its log: failed to save file: 413",
-  // the whole log rewritten on every arrival until it passed BODY_MAX.
-  const files = {};
-  const desk = mountDesk({ files: files });
-  const long = 'x'.repeat(400);
-  for (let i = 0; i < 60; i += 1) {
-    desk.arrive({ from: 'wsl-claude', kind: 'note', text: long + i, todo: 'puppets/G2' },
-      { hash: 'c-' + i, fromKey: WSL, sentAt: '2026-09-27T06:00:' + String(i).padStart(2, '0') + 'Z' });
-  }
-  return settle().then(function () { return settle(); }).then(function () {
-    const names = Object.keys(files).filter(function (n) { return /^log\/log(-\d+)?\.json$/.test(n); });
-    const biggest = Math.max.apply(null, names.map(function (n) { return Buffer.byteLength(files[n]); }));
-    const all = [];
-    names.forEach(function (n) { JSON.parse(files[n]).forEach(function (m) { all.push(m.key); }); });
-    if (names.length > 1 && biggest <= 9400 && new Set(all).size === 60 && all.length === 60) {
-      test.check('60 long lines land in ' + names.length + ' files, the biggest ' + biggest + ' bytes, each line exactly once');
-    } else {
-      test.fail('chunks ' + JSON.stringify(names) + ', biggest ' + biggest + ', lines ' + all.length + '/' + new Set(all).size);
-    }
-    // A fresh mount reads every chunk back.
-    const again = mountDesk({ files: files });
-    // The chunk still being written is the highest number; log.json is 0.
-    const numberOf = function (n) { const m = /^log\/log-(\d+)\.json$/.exec(n); return m ? Number(m[1]) : 0; };
-    const lastName = names.slice().sort(function (a, b) { return numberOf(a) - numberOf(b); })[names.length - 1];
-    const sealed = names.filter(function (n) { return n !== lastName; }).map(function (n) { return [n, files[n]]; });
-    again.arrive({ from: 'wsl-claude', kind: 'note', text: 'one more', todo: 'puppets/G2' }, { hash: 'c-new', fromKey: WSL, sentAt: '2026-09-27T06:01:00Z' });
-    return settle().then(function () {
-      const back = [];
-      Object.keys(files).filter(function (n) { return /^log\/log(-\d+)?\.json$/.test(n); })
-        .forEach(function (n) { JSON.parse(files[n]).forEach(function (m) { back.push(m.key); }); });
-      if (back.length === 61 && new Set(back).size === 61) test.check('a remount reads every chunk, and the next line is written once');
-      else test.fail('after remount: ' + back.length + ' lines, ' + new Set(back).size + ' distinct');
-      const untouched = sealed.every(function (pair) { return files[pair[0]] === pair[1]; });
-      if (untouched) test.check('a sealed chunk is never written again');
-      else test.fail('a sealed chunk was rewritten');
-    });
-  });
-}
+// THE LOG IN CHUNKS (Andy's "failed to save file: 413") is gone with the
+// files: the server keeps every line, and a read is bounded by bytes there
+// (deskServer.js, the byte cut; deskOnServer.js, T5b and T6).
 
 arrivalsAndSendsAreLogged()
-  .then(theLogIsChunked)
   .then(unseenIsMarked)
   .then(teamGoesToEveryAgent)
   .then(voiceHoldsWhatHeTyped)
   .then(twoTabsKeepBoth)
   .then(failedSendsStayApart)
-  .then(brokenLogIsKept)
+  .then(unreachableIsSaid)
   .then(dialogSendsComeBack)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {

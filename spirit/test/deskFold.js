@@ -62,7 +62,7 @@ function mountDesk(files) {
     fs: { loadFile: function (f) { return Object.prototype.hasOwnProperty.call(files, f) ? files[f] : null; },
       saveFile: function (f, c) { files[f] = c; return Promise.resolve(); } },
     escapeHtml: spirit.core.util.escapeHtml,
-    verb: function () { return Promise.resolve({ status: 200, body: {} }); },
+    verb: require('./deskFake.js').fromFiles(files).verb,
     onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
     callDialog: function () { return new Promise(function () {}); },
   });

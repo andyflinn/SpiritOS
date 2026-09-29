@@ -84,7 +84,7 @@ const root = fakeElement('container');
 load(DESK, doc).mount(root, {
   fs: { loadFile: function (f) { return Object.prototype.hasOwnProperty.call(files, f) ? files[f] : null; }, saveFile: function (f, c) { files[f] = c; return Promise.resolve(); } },
   escapeHtml: kernel.core.util.escapeHtml,
-  verb: function () { return Promise.resolve({ status: 200, body: {} }); },
+  verb: require('./deskFake.js').fromFiles(files).verb,
   onPacket: function () {},
   peerPost: function (app, key, body) { posted.push(body); return Promise.resolve({ ok: true, status: 200, hash: 'h' + posted.length }); },
   callDialog: function () { return new Promise(function () {}); },

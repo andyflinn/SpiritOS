@@ -128,7 +128,7 @@ test.startTest('desk/G1.10: chat lines drawn readably, in Desk and its dialogs')
     fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify(log) : f === 'seen.json' ? JSON.stringify({ rows: {}, team: 0, agents: {} }) : null; },
       saveFile: function () { return Promise.resolve(); } },
     escapeHtml: spirit.core.util.escapeHtml,
-    verb: function () { return Promise.resolve({ status: 200, body: {} }); },
+    verb: require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(log), 'seen.json': JSON.stringify({ rows: {}, team: 0, agents: {} }) }).verb,
     onPacket: function () {},
     peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h' }); },
     callDialog: function () { return new Promise(function () {}); },

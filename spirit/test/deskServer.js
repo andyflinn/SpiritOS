@@ -132,9 +132,9 @@ function line(key, todo, text, extra) {
     await call('log.add', { json: line('k2', 'desk/G1.4', 'second line') });
     await call('log.add', { json: line('k3', 'desk/G1.3', 'third LINE') });
   }
-  const byTodo = up ? await call('log.search', { text: '', todo: 'desk/G1.3', since: '' }) : {};
-  const byText = up ? await call('log.search', { text: 'second', todo: '', since: '' }) : {};
-  const since = up ? await call('log.search', { text: '', todo: '', since: new Date(Date.UTC(2026, 8, 29, 5, 0, 2)).toISOString() }) : {};
+  const byTodo = up ? await call('log.search', { text: '', todo: 'desk/G1.3', since: '', kind: '', before: '' }) : {};
+  const byText = up ? await call('log.search', { text: 'second', todo: '', since: '', kind: '', before: '' }) : {};
+  const since = up ? await call('log.search', { text: '', todo: '', since: new Date(Date.UTC(2026, 8, 29, 5, 0, 2)).toISOString(), kind: '', before: '' }) : {};
   const keys = function (r) { return (r.lines || []).map(function (l) { try { return JSON.parse(l).key; } catch (e) { return '?'; } }).sort().join(','); };
   if (keys(byTodo) === 'k1,k3' && keys(byText) === 'k2' && keys(since) === 'k2,k3' && byTodo.partial === false) {
     test.check('search by todo, by text, and since: each finds its lines, whole, as JSON text');
@@ -147,7 +147,7 @@ function line(key, todo, text, extra) {
 
   const big = 'x'.repeat(1000);
   if (up) for (let i = 10; i < 30; i++) await call('log.add', { json: line('b' + i, 'desk/big', big) });
-  const cut = up ? await call('log.search', { text: '', todo: 'desk/big', since: '' }) : {};
+  const cut = up ? await call('log.search', { text: '', todo: 'desk/big', since: '', kind: '', before: '' }) : {};
   const bytes = Buffer.byteLength(JSON.stringify(cut), 'utf8');
   if (cut.partial === true && (cut.lines || []).length > 0 && (cut.lines || []).length < 20 && bytes <= appClient.ANSWER_MAX) {
     test.check('20 lines over ANSWER_MAX (' + appClient.ANSWER_MAX + ' bytes): ' + cut.lines.length + ' came back, partial, ' + bytes + ' bytes');
@@ -183,7 +183,7 @@ function line(key, todo, text, extra) {
   await stop(kid);
   kid = start();
   const again = kid ? await waitFor(function () {
-    return call('log.search', { text: 'third', todo: '', since: '' }).then(function (r) { return keys(r) === 'k3'; });
+    return call('log.search', { text: 'third', todo: '', since: '', kind: '', before: '' }).then(function (r) { return keys(r) === 'k3'; });
   }) : false;
   const sAgain = again ? await call('state.get', {}) : {};
   if (again && sAgain.json === JSON.stringify({ decided: { 'desk/G1.3': 'go' } })) test.check('after a restart its lines and state are still there');
