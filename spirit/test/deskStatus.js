@@ -92,14 +92,17 @@ behavior.mount(fakeElement('container'), {
   callDialog: function () { return new Promise(function () {}); },
 });
 
-// The List's rows: id -> { first: first cell, state: last cell }, as text.
+// The List's rows: id -> { first: the type icon's cell, state: last cell },
+// as text. Since desk/G1.12 (Andy: "the red stars should be in a separage
+// first column, the task-type icons in the second column") the icon is the
+// second cell.
 function rows() {
   const out = {};
   const html = doc.getElementById('desk-top').innerHTML;
   (html.match(/<tr data-id="[^"]*"[\s\S]*?<\/tr>/g) || []).forEach(function (tr) {
     const id = tr.match(/data-id="([^"]*)"/)[1];
     const cells = (tr.match(/<td[^>]*>[\s\S]*?<\/td>/g) || []).map(function (c) { return c.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); });
-    out[id] = { first: cells[0] || '', state: cells[cells.length - 1] || '' };
+    out[id] = { first: cells[1] || '', state: cells[cells.length - 1] || '' };
   });
   return out;
 }

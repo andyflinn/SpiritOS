@@ -661,7 +661,7 @@ function deskIsBlocking(row) {
   });
 }
 function deskSessionTable() {
-  var head = '<tr><th></th><th>to-do</th><th>with</th><th>your decision</th><th>blocks</th><th>waits on</th><th>state</th></tr>';
+  var head = '<tr><th></th><th></th><th>to-do</th><th>with</th><th>your decision</th><th>blocks</th><th>waits on</th><th>state</th></tr>';
   // A PRIORITIZED SLOT (desk/G1 D6): an open point he has not answered sits
   // above everything else; the rest keep the session's order.
   var rows = deskSessionRows().filter(function (row) { return !deskClosed[row.id]; });
@@ -669,7 +669,11 @@ function deskSessionTable() {
   rows = rows.filter(mine).concat(rows.filter(function (row) { return !mine(row); }));
   var body = rows.map(function (row) {
     return '<tr data-id="' + deskEsc(row.id) + '" style="cursor:pointer' + (row.goal ? ';font-weight:bold' : '') + '">' +
-      '<td>' + (row.goal ? '' : deskIcon(deskAndyBlocks(row) ? 'ERROR' : 'CODE')) + (deskRowNews(row.id) ? ' ' + DESK_UNSEEN : '') + '</td>' +
+      // THE STAR ALONE, THEN THE TYPE (desk/G1.12). Andy: "the red stars
+      // should be in a separage first column, the task-type icons in the
+      // second column."
+      '<td>' + (deskRowNews(row.id) ? DESK_UNSEEN : '') + '</td>' +
+      '<td>' + (row.goal ? '' : deskIcon(deskAndyBlocks(row) ? 'ERROR' : 'CODE')) + '</td>' +
       '<td title="' + deskEsc(row.title) + '">' + deskEsc(deskLabel[row.id] || row.title) +
         ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span></td>' +
       '<td>' + deskEsc(deskTaken[row.id] || '') + '</td>' +
