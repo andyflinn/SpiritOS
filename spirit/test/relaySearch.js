@@ -121,6 +121,29 @@ const ROWS = [
       test.fail('relayLabel no longer builds the ruled label');
     }
   })
+  .then(function () {
+    // THE REAL SEARCH, NOT THE FAKE ONE. The page kernel asks relay.search
+    // with '*'; every suite above fakes the node's answer, so they stayed
+    // green while the real one answered nothing: it matched label + ' ' +
+    // url, and a single '*' never spans the '/' a url holds (gradedSearch).
+    // Andy saw it as "natter doesn't recognize my relay as alive anymore"
+    // (slim/G1.3, 2026-09-29). An unreachable relay still makes a row
+    // (offline), so no relay has to be up for this.
+    test.subHeading("relay.search {q: '*'} and {q: ''} find his relays (the node's real search)");
+    const os = require('os');
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-relaysearch-'));
+    fs.mkdirSync(path.join(root, 'shell', 'natter'), { recursive: true });
+    fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+    fs.writeFileSync(path.join(root, 'shell', 'natter', 'relays.json'), JSON.stringify([{ label: 'probe', url: 'http://127.0.0.1:9' }]));
+    const hub = require('../run/js/hub.js').createHub(root);
+    return Promise.all(['*', '', 'probe'].map(function (q) { return hub.relaySearch({ q: q, name: '' }); })).then(function (rs) {
+      const keys = rs.map(function (r) { return ((r && r.items) || []).map(function (i) { return i.key; }); });
+      if (keys.every(function (k) { return k.length === 1 && k[0] === 'http://127.0.0.1:9'; })) {
+        test.check("'*', '' and 'probe' each find the one relay, http://127.0.0.1:9");
+      } else test.fail("OWED by slim/G1.3 (Andy's relay display): '*' found " + JSON.stringify(keys[0]) + ", '' found " + JSON.stringify(keys[1]) + ", 'probe' found " + JSON.stringify(keys[2]));
+      try { fs.rmSync(root, { recursive: true, force: true }); } catch (e) { /* busy */ }
+    });
+  })
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('relaySearch threw: ' + ((err && err.stack) || err));
