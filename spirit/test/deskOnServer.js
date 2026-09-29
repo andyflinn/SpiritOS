@@ -21,7 +21,9 @@
 //     voice.jsonl. Then those files are gone from app/desk; desk.js and
 //     desk.json stay. Importing the same rows again adds nothing (T1, T2, T4).
 //   - log.search gains two filters, both '' for any: kind, and before (only
-//     lines older than it). Still newest first, bounded, partial when cut (T6).
+//     lines older than it); every caller sends all five keys (the helper
+//     matches keys exactly, D8). todo '-' means lines with no todo (an
+//     agent's direct chat). Still newest first, bounded, partial when cut (T6).
 //
 //   DESK (app/desk/desk.js), through api.verb('jobs.api', {ask: {desk:
 //   {verb: args}}}) and never api.fs for its record:
@@ -111,7 +113,7 @@ async function serverPart(scratch) {
 
   let kid = await start();
   test.subHeading('T1: every old log row is imported once (count, first, last)');
-  const all = await call('log.search', { text: '', todo: '', since: '' });
+  const all = await call('log.search', { text: '', todo: '', since: '', kind: '', before: '' });
   const got = keysOf(all);
   if (got.length === old.length && got[0] === old[old.length - 1].key && got[got.length - 1] === old[0].key) {
     test.check('all ' + old.length + ' rows from log.json, log-1.json and log-2.json, newest ' + got[0] + ', oldest ' + got[got.length - 1]);
@@ -137,7 +139,7 @@ async function serverPart(scratch) {
   await stop(kid);
   plant();
   kid = await start();
-  const again = keysOf(await call('log.search', { text: '', todo: '', since: '' }));
+  const again = keysOf(await call('log.search', { text: '', todo: '', since: '', kind: '', before: '' }));
   if (again.length === old.length) test.check('the same files planted and imported again: still ' + old.length + ' rows');
   else test.fail(OWED + 'after a second import: ' + again.length + ' rows');
 

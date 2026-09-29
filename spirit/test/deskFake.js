@@ -32,7 +32,8 @@ function create(rows) {
   function search(a) {
     a = a || {};
     const hits = lines.filter(function (m) {
-      if (a.todo && m.todo !== a.todo) return false;
+      // '-' is a line with no todo: an agent's direct chat (wsl-claude, G1.4).
+      if (a.todo === '-') { if (m.todo) return false; } else if (a.todo && m.todo !== a.todo) return false;
       if (a.kind && m.kind !== a.kind) return false;
       if (a.since && !(String(m.at) >= a.since)) return false;
       if (a.before && !(String(m.at) < a.before)) return false;
