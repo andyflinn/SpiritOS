@@ -648,6 +648,7 @@
       var app = apps[id];
       if (app.hidden) return; // built-in, coded hidden — untouched by any of this
       if (hiddenByFirstRun(id)) return; // an unbound node has one thing to do
+      if (!shownByInclusion(id)) return; // not included on this node (slim/G1.7)
       // An intrinsic app is excluded here like any other grouped app —
       // effectiveGroup returns Spirit for it, and that is where its icon
       // is, one tap from the desktop and never at the operator's mercy.
@@ -704,6 +705,8 @@
     // about showing them.
     appIds.filter(function (id) { return !hiddenByFirstRun(id); }).forEach(function (id) {
       if (!apps[id] || drawn[id]) return;
+      // Only what this node includes (slim/G1.7), as on the desktop.
+      if (!shownByInclusion(id)) return;
       // A HIDDEN APP HAS NO ICON HERE EITHER.
       //
       // renderDesktop has always skipped these; this grid did not, and
@@ -2573,11 +2576,12 @@
   //
   // Asked once, at load: config.searchModules {query: ''} -> {items: [{key:
   // path}], more}. The page cannot read relay-state/include.json itself
-  // (fileServable refuses relay-state/). Until it answers, nothing but the
-  // intrinsic apps counts as included, which is the slim default anyway.
+  // (fileServable refuses relay-state/). UNTIL IT ANSWERS, NOTHING IS HIDDEN:
+  // a node that cannot answer (older, or the call failed) must not empty
+  // the desktop; the list applies once the node has said what it includes.
   // Intrinsic apps are always included (Andy: "intrinsic apps must always
   // be included, never excluded").
-  var includedModules = {};
+  var includedModules = null; // null: the node has not answered
   function loadIncludedModules() {
     var asked;
     try { asked = spirit.core.ask('config.searchModules', { query: '' }); } catch (e) { return; }
@@ -2586,12 +2590,23 @@
       var next = {};
       items.forEach(function (i) { if (i && typeof i.key === 'string') next[i.key] = true; });
       includedModules = next;
+      // The answer can come after the first paint: draw again (slim/G1.7).
+      if (typeof renderDesktop === 'function' && typeof desktopEl !== 'undefined' && desktopEl) renderDesktop();
     }, function () { /* the node said nothing: the slim default stands */ });
   }
   loadIncludedModules();
   function isIncluded(appId) {
     var app = apps[appId];
-    return !!(app && app.intrinsic) || !!includedModules[appId];
+    return !includedModules || !!(app && app.intrinsic) || !!includedModules[appId];
+  }
+  // WHAT THE DESKTOP AND A GROUP'S SCREEN SHOW (slim/G1.7). Andy, on a new
+  // node: "the shell still shows, desk and text editor". An app from a
+  // shell/ folder shows only if included; a group, and a built-in with no
+  // folder of its own, are not modules and always show.
+  function shownByInclusion(id) {
+    var app = apps[id];
+    if (!app || app._isGroup || !app._scriptPath) return true;
+    return isIncluded(id);
   }
 
   function renderAppOfFile(container, path) {
