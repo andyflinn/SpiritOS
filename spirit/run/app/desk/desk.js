@@ -213,6 +213,9 @@ function deskRecord(msgs) {
   deskDraw();
   deskSaveState();
   return Promise.all(fresh.map(function (m) { return deskAsk('log.add', { json: JSON.stringify(m) }); }))
+    // THE BACKUP LINE FOLLOWS THE RECORD: read once at load it went stale
+    // (Andy: "last check 12:55" while it had copied at 13:26).
+    .then(function () { if (fresh.length) return deskAskBackup(); })
     .catch(deskWriteError('keep its log'));
 }
 
