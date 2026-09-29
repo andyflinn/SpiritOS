@@ -287,7 +287,7 @@
   // argument so a test can drive it with a non-identity one; production
   // always passes the map above.
   function migrateAppIds(renames) {
-    var map = renames || APP_ID_RENAMES;
+    var map = renames || withShellIds(APP_ID_RENAMES);
     var changed = false;
 
     Object.keys(map).forEach(function (oldId) {
@@ -314,6 +314,24 @@
 
     if (changed) savePreferences();
     return changed;
+  }
+  // app/ BECAME shell/ (slim/G1.1), so every id stored as app/<name> (an
+  // override's key, a default handler) is shell/<name> now. Without this the
+  // stored keys name no app, and pruneStalePreferences deletes his groups
+  // and handlers on the first snapshot (wsl-claude's finding, T6).
+  function withShellIds(renames) {
+    var map = {};
+    Object.keys(renames).forEach(function (k) { map[k] = renames[k]; });
+    var LEGACY_APP_PREFIX = 'app' + '/';
+    var stored = Object.keys(preferences.appOverrides).concat(Object.keys(preferences.defaultHandlers).map(function (ext) {
+      return preferences.defaultHandlers[ext];
+    }));
+    stored.forEach(function (id) {
+      if (typeof id === 'string' && id.indexOf(LEGACY_APP_PREFIX) === 0 && map[id] === undefined) {
+        map[id] = 'shell/' + id.slice(LEGACY_APP_PREFIX.length);
+      }
+    });
+    return map;
   }
 
   migrateAppIds();
