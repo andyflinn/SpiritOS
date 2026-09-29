@@ -268,12 +268,15 @@ async function deskPart() {
   await settleLong();
   const older = fake.searches().filter(function (c) { return (c.args || {}).todo === 'team/chat' && (c.args || {}).before; });
   const after = doc.getElementById('desk-team').innerHTML;
-  if (older.length && older[0].args.before === oldestShown && /TEAMLINE-00/.test(after)) test.check('a search before ' + oldestShown + ' brought the older lines in');
-  else test.fail(OWED + 'after scrolling to the top: ' + older.length + ' searches with before' + (older[0] ? ' (' + older[0].args.before + ', oldest shown ' + oldestShown + ')' : '') + ', oldest line shown ' + /TEAMLINE-00/.test(after));
+  // One scroll brings one page: the line just older than the oldest shown
+  // (wsl-claude: 60 lines are about three pages, so TEAMLINE-00 is further).
+  const nextOlder = fake.lines.filter(function (m) { return m.todo === 'team/chat' && /TEAMLINE-/.test(m.text) && m.at < oldestShown; }).map(function (m) { return m.text.slice(0, 11); }).pop() || 'none';
+  if (older.length && older[0].args.before === oldestShown && team.indexOf(nextOlder) === -1 && after.indexOf(nextOlder) !== -1) test.check('a search before ' + oldestShown + ' brought ' + nextOlder + ', the next older line, in');
+  else test.fail(OWED + 'after scrolling to the top: ' + older.length + ' searches with before' + (older[0] ? ' (' + older[0].args.before + ', oldest shown ' + oldestShown + ')' : '') + ', ' + nextOlder + ' shown ' + (after.indexOf(nextOlder) !== -1));
 
   test.subHeading('T3: what arrives, what he types and what Desk decides go to the server, never to files');
   const before = fake.lines.length;
-  if (doc.arrive) doc.arrive({ from: 'wsl-claude', kind: 'note', text: 'ARRIVED-LINE', todo: 't/G1.3' }, { key: 'arrived-1', peer: WSL, at: new Date().toISOString() });
+  if (doc.arrive) doc.arrive({ from: 'wsl-claude', kind: 'note', text: 'ARRIVED-LINE', todo: 't/G1.3' }, { hash: 'arrived-1', fromKey: WSL, sentAt: new Date().toISOString() });
   const say = doc.getElementById('desk-team-say');
   say.value = 'TYPED-BY-ANDY';
   doc.getElementById('desk-team-send').fire('click', { preventDefault: function () {} });
