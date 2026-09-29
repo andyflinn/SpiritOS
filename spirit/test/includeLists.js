@@ -44,11 +44,11 @@
 const fs = require('fs');
 const os = require('os');
 const net = require('net');
-const http = require('http');
 const path = require('path');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const plantRun = require('./plantRun.js');
+const { relayRequest } = require('../run/js/relayRequest.js');
 
 const OWED = 'OWED by slim/G1.3: ';
 const REPO_RUN = path.join(__dirname, '..', 'run');
@@ -110,24 +110,13 @@ function freePort() {
     s.listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); });
   });
 }
+// Through the node's own request helper, never a reach of its own (oneDoor.js).
 function call(port, body) {
-  return new Promise(function (resolve) {
-    const payload = JSON.stringify(body);
-    const req = http.request({ hostname: '127.0.0.1', port: port, path: '/api/spirit', method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, function (res) {
-      const chunks = [];
-      res.on('data', function (c) { chunks.push(c); });
-      res.on('end', function () {
-        const text = Buffer.concat(chunks).toString('utf8');
-        let parsed = null;
-        try { parsed = JSON.parse(text); } catch (e) { parsed = null; }
-        resolve({ status: res.statusCode, text: text, body: parsed });
-      });
-    });
-    req.on('error', function (e) { resolve({ status: 0, text: String(e.code || e), body: null }); });
-    req.setTimeout(8000, function () { req.destroy(new Error('timeout')); });
-    req.end(payload);
-  });
+  return relayRequest('http://127.0.0.1:' + port, 'POST', '/api/spirit', body).then(function (r) {
+    let parsed = null;
+    try { parsed = JSON.parse(r.text); } catch (e) { parsed = null; }
+    return { status: r.status, text: r.text, body: parsed };
+  }, function (e) { return { status: 0, text: String((e && e.code) || e), body: null }; });
 }
 async function booted(port) {
   for (let i = 0; i < 150; i++) {
