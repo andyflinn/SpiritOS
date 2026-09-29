@@ -78,6 +78,31 @@ let PAD_SPACES = ''; for (let i = 0; i < INDENT_LENGTH; i++) { PAD_SPACES += ' '
   });
 }());
 
+// ── A SUITE HAS A HOME OF ITS OWN (desk/G1.7) ────────────────────────
+//
+// Since desk/G1.7 every node boots a backup server writing into
+// <home>/.SpiritOS/backups/. A full run left six test nodes in Andy's real
+// C:\Users\Andre\.SpiritOS, and four in wsl-claude's. Andy: "test suites
+// need their own copy of node"; the home they write to is part of it.
+//
+// SO HOME IS A TEMP FOLDER HERE, once, for every suite and every node it
+// boots (children inherit the environment). Made by the wrapped mkdtempSync
+// above, so it is removed like any other temp home. The real home is kept
+// as SPIRIT_REAL_HOME for the one suite that needs it (vaultGuardBattery,
+// ~/.claude), and git keeps its real global config, so a suite's git still
+// knows who commits.
+(function ownHome() {
+  const fs = require('fs');
+  const os = require('os');
+  const path = require('path');
+  if (!process.env.SPIRIT_REAL_HOME) process.env.SPIRIT_REAL_HOME = os.homedir();
+  const realGit = path.join(process.env.SPIRIT_REAL_HOME, '.gitconfig');
+  if (!process.env.GIT_CONFIG_GLOBAL && fs.existsSync(realGit)) process.env.GIT_CONFIG_GLOBAL = realGit;
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-home-'));
+  process.env.HOME = home;
+  process.env.USERPROFILE = home;
+}());
+
 const test = {
     ICON: ICON,
     STARS: STARS,

@@ -40,7 +40,9 @@ const { execFileSync } = require('child_process');
 const test = require('./testSupport.js');
 const box = require('./tools/box.js');
 
-const GUARD = path.join(os.homedir(), '.claude', 'hooks', 'vault-guard.js');
+// The real home: testSupport gives every suite a temp one (desk/G1.7), and
+// the guard lives in the account's own ~/.claude.
+const GUARD = path.join(process.env.SPIRIT_REAL_HOME || os.homedir(), '.claude', 'hooks', 'vault-guard.js');
 
 // ── THE BOX THIS RUNS ON, RESOLVED RATHER THAN ASSUMED ──────────────
 //
