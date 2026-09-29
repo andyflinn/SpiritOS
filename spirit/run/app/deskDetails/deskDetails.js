@@ -322,7 +322,7 @@ function ddFrame() {
     // THE EXPLANATION ABOVE THE RECORD (desk/G1.14). Andy: "the text an agent
     // provided to me because he saw me looking at the item, that one belongs
     // into the upper position".
-    '<div class="stat-tile wide"><div class="label" id="dd-title"></div><div id="dd-blurb"></div></div>' +
+    '<div class="stat-tile wide"><div class="label" id="dd-title" style="font-size:1.25em;font-weight:bold"></div><div id="dd-blurb"></div></div>' +
     '<div id="dd-item"></div>' +
     '<div class="stat-tile wide" id="dd-facts"></div>' +
     '<div id="dd-decide"></div>' +
