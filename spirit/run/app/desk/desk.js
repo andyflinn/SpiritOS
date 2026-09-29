@@ -563,6 +563,11 @@ function deskSessionTable() {
       // while market as done".
       '<td>' + (deskOpenAsk[row.id] && !row.done && !row.goal && !deskVerified[row.id]
         ? '<span class="job-manifest-note">asks; not verified yet</span>'
+        // NO GO! WHILE BLOCKED, NONE IN DESIGN MODE. Andy, 2026-09-29: "Two
+        // items in the list show a Go button, even though they're blocked,
+        // And we're in design mode". The ask stays; only its button waits.
+        : deskOpenAsk[row.id] && !row.done && ((row.waitsOn || []).length || deskDesignOn())
+        ? '<span class="job-manifest-note">asks; ' + ((row.waitsOn || []).length ? 'waits on ' + deskEsc(row.waitsOn.join(', ')) : 'design mode') + '</span>'
         : deskOpenAsk[row.id] && !row.done
         ? '<button type="button" data-go="' + deskEsc(row.id) + '" title="' + deskEsc(deskOpenAsk[row.id].text) + '">Go!</button>'
         : deskEsc(deskDecision[row.id] || '')) + '</td>' +

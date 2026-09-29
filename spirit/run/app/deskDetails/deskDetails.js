@@ -202,6 +202,13 @@ function ddDecideHtml() {
       '<div class="job-manifest-note"><b>No Go yet:</b> its Already-in-place list has not been verified.</div>';
   }
   if (!ask) return ddState && ddState.running ? '<div class="job-manifest-note"><b>Status: running.</b> You said go.</div>' : '';
+  // No Go! while the row waits on open work, and none in design mode (Andy,
+  // 2026-09-29; the List holds the same rule, desk.js).
+  var waits = (mine && mine.waitsOn) || [];
+  if (waits.length || ddDesign) {
+    return '<div class="job-manifest-note">' + ddEsc(ask.from) + ' asks: ' + ddEsc(ask.text) + '</div>' +
+      '<div class="job-manifest-note"><b>No Go yet:</b> ' + (waits.length ? 'it waits on ' + ddEsc(waits.join(', ')) : 'design mode is on') + '.</div>';
+  }
   return '<div class="job-manifest-note">' + ddEsc(ask.from) + ' asks: ' + ddEsc(ask.text) + '</div>' +
     '<div class="start-job-form card"><button type="button" id="dd-go">Go!</button>' +
     '<button type="button" id="dd-no">No</button></div>';
