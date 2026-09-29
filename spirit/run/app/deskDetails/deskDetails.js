@@ -317,6 +317,9 @@ function ddItemLine(r) {
   return '<li><a href="#" data-open="' + ddEsc(r.id) + '" style="color:#cfe2ff">' + (r.done ? '<s>' : '') +
     ddEsc(r.id) + ': ' + ddEsc(r.title) + (r.done ? '</s>' : '') + '</a></li>';
 }
+// FOLDED, THE TITLE AND THE DONE ROW (desk/G1.8): the one button he closes
+// with is never hidden (claude-windows' contract, deskFold.js).
+var ddFolded = false;
 function ddItemHtml() {
   var me = ddSession.filter(function (r) { return r.id === ddId; })[0];
   if (!me) return '';
@@ -337,8 +340,11 @@ function ddItemHtml() {
       ? '<button type="button" id="dd-done" style="background:#1a7f37;color:#fff;font-weight:bold">Done</button>' +
         ' <span class="job-manifest-note">Both agents say this is ready to close: read why below.</span>'
       : '<span class="job-manifest-note">Open: not ready to close yet. Done appears here when an agent says it is, with the evidence.</span>';
-  return '<div class="stat-tile wide"><div class="label">' + ddEsc(me.id) + ' — ' + ddEsc(me.title) + '</div>' +
-    '<div style="margin:6px 0">' + close + '</div>' +
+  var head = '<div style="display:flex;gap:8px;align-items:baseline"><button type="button" data-fold="item" title="' +
+    (ddFolded ? 'Unfold' : 'Fold') + '">' + (ddFolded ? '▸' : '▾') + '</button><div class="label">' + ddEsc(me.id) + ' — ' + ddEsc(me.title) + '</div></div>' +
+    '<div style="margin:6px 0">' + close + '</div>';
+  if (ddFolded) return '<div class="stat-tile wide">' + head + '</div>';
+  return '<div class="stat-tile wide">' + head +
     (me.description ? '<div>' + ddEsc(me.description) + '</div>' : '') +
     // HOW YOU CAN CHECK, HIGHLIGHTED, AND THE TESTS THAT PROVE IT. Andy:
     // "there should be a highlighted section on if and how i can check. same
@@ -485,6 +491,11 @@ spirit.shell.activateApp({
       if (link) {
         event.preventDefault();
         ddApi.closeDialog({ sent: ddSent.slice(), open: link.getAttribute('data-open') });
+        return;
+      }
+      if (event.target && event.target.getAttribute && event.target.getAttribute('data-fold') === 'item') {
+        ddFolded = !ddFolded;
+        ddDraw();
         return;
       }
       var id = event.target && event.target.id;

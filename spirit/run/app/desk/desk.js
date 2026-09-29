@@ -390,7 +390,7 @@ function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
 // wall of red.
 var DESK_SEEN = 'seen.json';
 var DESK_UNSEEN = '<span style="color:#d00;font-weight:bold" title="unseen changes">*</span>';
-var deskSeen = { rows: {}, team: 0, agents: {} };
+var deskSeen = { rows: {}, team: 0, agents: {}, folds: {} };
 var deskTab = 'list';
 // WHICH CHAT INSIDE TEAM: '*' for All, else an agent's name (desk/G1, D2).
 var deskAgentTab = '*';
@@ -448,7 +448,8 @@ function deskLoadSeen() {
   try { held = raw ? JSON.parse(raw) : null; } catch (e) { held = null; }
   if (held && typeof held === 'object') {
     deskSeen = { rows: held.rows && typeof held.rows === 'object' ? held.rows : {}, team: Number(held.team) || 0,
-      agents: held.agents && typeof held.agents === 'object' ? held.agents : null };
+      agents: held.agents && typeof held.agents === 'object' ? held.agents : null,
+      folds: held.folds && typeof held.folds === 'object' ? held.folds : {} };
     if (deskSeen.agents) return;
     // A seen.json from before the agent tabs: the lead keeps its old Lead
     // mark, and what the others said so far counts as seen.
@@ -693,6 +694,10 @@ function deskRulesHtml() {
     rules.map(function (r) { return '<li>' + deskEsc(r.id) + ': ' + deskEsc(r.text) + '</li>'; }).join('') + '</ul></div>';
 }
 
+// A box's fold toggle: open it points down, folded it points right.
+function deskFoldToggle(name, folded) {
+  return '<button type="button" data-fold="' + name + '" title="' + (folded ? 'Unfold' : 'Fold') + '">' + (folded ? '▸' : '▾') + '</button>';
+}
 function deskSessionBubble() {
   // Blank once its goal is closed, rules and all (deskSessionOpen).
   if (!deskSessionOpen()) {
@@ -701,6 +706,13 @@ function deskSessionBubble() {
       'the list of what must be done before it is, as we talk.</div></div>';
   }
   var g = deskSession.goal;
+  // FOLDED, ONE LINE (desk/G1.8). Andy: "the large text containers,
+  // especially the one at the top, should be foldable, in desk and details."
+  // Kept per viewer in seen.json, as what he has seen is.
+  var folded = !!deskSeen.folds.session;
+  var head = '<div style="display:flex;gap:8px;align-items:baseline">' + deskFoldToggle('session', folded) +
+    '<div class="label" data-open="' + deskEsc(g.id) + '" style="cursor:pointer">' + deskEsc(g.id) + ' — ' + deskEsc(g.title) + '</div></div>';
+  if (folded) return '<div class="stat-tile wide">' + head + '</div>';
   // A closed line leaves the bubble as it leaves the List (wsl-claude).
   var items = deskSession.items.filter(function (it, i) {
     return !deskClosed[String(it.id || ('item-' + (i + 1)))];
@@ -710,8 +722,7 @@ function deskSessionBubble() {
       (deskIsDone(String(it.id || ('item-' + (i + 1))), it.done) ? '</s>' : '') +
       ' <span class="job-manifest-note">(' + deskEsc(it.id || ('item-' + (i + 1))) + ')</span></li>';
   }).join('');
-  return '<div class="stat-tile wide"><div class="label" data-open="' + deskEsc(g.id) + '" style="cursor:pointer">' +
-    deskEsc(g.id) + ' — ' + deskEsc(g.title) + '</div>' +
+  return '<div class="stat-tile wide">' + head +
     (g.description ? '<div>' + deskEsc(g.description) + '</div>' : '') + deskRulesHtml() +
     // THE GOAL IS A REQUIREMENT TOO, the root one. Andy: "Isn't the title of
     // this project (the goal) a requirement?" So the bubble reads like an
@@ -1155,6 +1166,12 @@ spirit.shell.activateApp({
     document.getElementById('desk-team-send').addEventListener('click', deskSendTeam);
     // The bubble is repainted on every arrival, so one listener on its box.
     document.getElementById('desk-session').addEventListener('click', function (e) {
+      if (e.target && e.target.getAttribute && e.target.getAttribute('data-fold') === 'session') {
+        deskSeen.folds.session = !deskSeen.folds.session;
+        deskSaveSeen();
+        deskDraw();
+        return;
+      }
       var el = e.target;
       while (el && el !== e.currentTarget && !(el.getAttribute && el.getAttribute('data-open'))) el = el.parentNode;
       var id = el && el.getAttribute && el.getAttribute('data-open');
