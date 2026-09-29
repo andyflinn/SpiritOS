@@ -127,6 +127,19 @@ settle().then(function () {
   if (barsAt !== -1 && goalAt > barsAt && goalAt < tabsAt) test.check('#desk-goal sits inside the sticky #desk-bars, above the tabs');
   else test.fail(OWED + 'sticky block at ' + barsAt + ', goal line at ' + goalAt + ', tabs at ' + tabsAt);
 
+  // Andy: "this button row on the main screen [All] [claude-windows (lead)]
+  // [wsl-claude] should only appear when [team] is the active button". The
+  // hidden attribute alone loses to .start-job-form's display:flex
+  // (index.html), so it must be display none, not only hidden.
+  test.subHeading('T14: the agent row is not displayed off Team, and is on Team');
+  const agentRow = doc.getElementById('desk-agent-tabs');
+  const tabTo = function (name) { tabs.fire('click', { target: clickTarget(tabs, { 'data-tab': name }), currentTarget: tabs }); return agentRow.style.display; };
+  const onList = tabTo('list');
+  const onMusings = tabTo('musings');
+  const onTeam = tabTo('team');
+  if (onList === 'none' && onMusings === 'none' && onTeam !== 'none') test.check('List and Musings: display none; Team: shown');
+  else test.fail(OWED + 'display on List ' + JSON.stringify(onList) + ', Musings ' + JSON.stringify(onMusings) + ', Team ' + JSON.stringify(onTeam));
+
   test.subHeading('T2: design mode ends only on the second press');
   posted.length = 0;
   const press = function () { tabs.fire('click', { target: clickTarget(tabs, { id: 'desk-end-design' }), currentTarget: tabs }); };
