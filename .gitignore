@@ -69,6 +69,17 @@ spirit/run/app/appFaceApp/face-domain.json
 # him about his own node, which belong on his disc and in no clone.
 spirit/run/app/fixList/fixes.md
 
+# Desk's record as Desk once kept it in its own folder (desk/G1.O10, Andy:
+# "yes"). From desk/G1.4 the desk server imports these into desk.db, in
+# relay-state/process/desk/, and removes them; tracked, every checkout that
+# pulled would import Andy's record into its own desk.db, and every planted
+# test node would boot with it. D5: "any appServer state is none of git's
+# business". Past commits still hold them.
+spirit/run/app/desk/log/
+spirit/run/app/desk/voice/
+spirit/run/app/desk/state.json
+spirit/run/app/desk/seen.json
+
 # Personal media that ended up in a folder named test/pix rather than real
 # test fixtures — unreferenced by any code or test (verified), 20MB.
 spirit/test/pix
