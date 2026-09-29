@@ -23,12 +23,15 @@
 //     - changedAt: the `at` of the newest session in which the item's text
 //       (title, description, check, tests, inPlace) differs from the session
 //       before, or of the one it first appeared in (S1).
-//     - updateRequested: an item it blocks, or one that blocks it, changed
-//       status (his go., done., closed. or reopen.) after this item's newest
-//       agent line; a newer agent line under it clears it (S2).
-//   DESK (shell/desk/desk.js) asks fresh.get and shows 'update?' in the
-//   state of a row whose updateRequested is true (L1). Its blocks and waits
-//   on cells are links, data-open="<id>", as the dialog's lists are (L2).
+//     - NO update requests (S2): Andy dropped them, 2026-09-30, since the
+//       lists are Desk's data and update at once; only prose an agent wrote
+//       goes stale, and that is changedAt's job.
+//   DESK (shell/desk/desk.js) asks fresh.get, marks no row 'update?' (L1),
+//   and its blocks and waits-on cells are links, data-open="<id>", as the
+//   dialog's lists are (L2).
+//   THE DIALOG draws blocking and blocked-by in a foldable block of their
+//   own, #dd-links (data-fold="links"), between the explanation and the item
+//   record, never inside the explanation (D5).
 //   THE DIALOG (shell/deskDetails) reads row.changedAt:
 //     - an explanation older than it shows 'stale' in #dd-blurb, and the
 //       open sends one explain request, unless he already asked after
@@ -139,25 +142,22 @@ const kids = [];
     test.check('A (words) and B (inPlace) changed at the third session; C, unchanged, dates from its first');
   } else test.fail(OWED + 'fresh.get answered ' + JSON.stringify(f1.raw).slice(0, 240));
 
-  test.subHeading('S2: a status change puts an update request on its neighbours; a newer agent line clears it');
-  const g = f1.by['t/G1'] || {};
-  // A (done at 8) blocks the goal (last agent line at 6) and is blocked by C (last line at 7): both are asked.
-  // B neighbours only the goal, whose status did not change: not asked.
-  if (g.updateRequested === true && c.updateRequested === true && b.updateRequested === false) {
-    test.check('A\'s done asks the goal (it blocks) and C (it blocks A) for an update; B is not asked');
-  } else test.fail(OWED + 'goal ' + g.updateRequested + ', C ' + c.updateRequested + ', B ' + b.updateRequested);
-  const lateGoal = line(9, 'wsl-claude', 'note', 'goal updated', 't/G1');
-  await call('log.add', { json: JSON.stringify(lateGoal) });
-  const f2 = await fresh();
-  if ((f2.by['t/G1'] || {}).updateRequested === false && (f2.by['t/G1.3'] || {}).updateRequested === true) {
-    test.check('an agent line under the goal after the change clears its request; C\'s stays');
-  } else test.fail(OWED + 'after a goal line: goal ' + (f2.by['t/G1'] || {}).updateRequested + ', C ' + (f2.by['t/G1.3'] || {}).updateRequested);
+  // NO UPDATE REQUESTS (Andy, 2026-09-30): what goes stale on a status
+  // change is only lists an agent copied into prose; the lists are Desk's
+  // data, drawn at once ("So there's no reason to queue update requests when
+  // an item closes etc..?", "that would save me lots of agent-work that can
+  // be done programatically"). A's done at 8 asks nothing of anyone.
+  test.subHeading('S2: a status change asks nobody for an update');
+  const asking = Object.keys(f1.by).filter(function (id) { return f1.by[id].updateRequested; });
+  if (Object.keys(f1.by).length && !asking.length) test.check('after A\'s done, no item carries an update request');
+  else test.fail(OWED + 'update requests are gone from G1.6, yet ' + JSON.stringify(asking) + ' carry one');
 
   // ── THE LIST ────────────────────────────────────────────────────────
   const listLog = [line(1, 'claude-windows', 'session', session([A, B, C]), 'team/chat')];
   const fake = require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(listLog) });
+  // Even a server that still answered one: the List draws no 'update?'.
   const answerFresh = { items: [{ key: 't/G1.3', label: JSON.stringify({ id: 't/G1.3', changedAt: at(1), updateRequested: true }) },
-    { key: 't/G1.2', label: JSON.stringify({ id: 't/G1.2', changedAt: at(1), updateRequested: false }) }], more: false };
+    { key: 't/G1.2', label: JSON.stringify({ id: 't/G1.2', changedAt: at(1) }) }], more: false };
   const verb = function (name, body) {
     const ask = body && body.ask && body.ask.desk;
     if (ask && ask['fresh.get']) return Promise.resolve({ status: 200, body: answerFresh });
@@ -173,9 +173,9 @@ const kids = [];
   const list = ['desk-top', 'desk-session', 'desk-goal'].map(function (id) { return doc.getElementById(id).innerHTML; }).join(' ');
   const rowOf = function (title) { return list.split('<tr').filter(function (s) { return s.indexOf(title) !== -1; })[0] || ''; };
 
-  test.subHeading('L1: a row asked for an update says so in the List');
-  if (/update\?/.test(rowOf('Gamma')) && !/update\?/.test(rowOf('Beta'))) test.check('Gamma shows update?, Beta does not');
-  else test.fail(OWED + 'Gamma row ' + JSON.stringify(rowOf('Gamma').replace(/\s+/g, ' ').slice(0, 200)));
+  test.subHeading('L1: the List marks no row for an update');
+  if (!/update\?/.test(list)) test.check('no row shows update?');
+  else test.fail(OWED + 'the List still shows update?: ' + JSON.stringify(rowOf('Gamma').replace(/\s+/g, ' ').slice(0, 200)));
 
   test.subHeading('L2: the List\'s blocks and waits-on cells link to their items');
   if (rowOf('Gamma').indexOf('data-open="t/G1.1"') !== -1 && rowOf('Alpha').indexOf('data-open="t/G1.3"') !== -1) {
@@ -230,6 +230,23 @@ const kids = [];
   const blurb3 = d2.doc.getElementById('dd-blurb').innerHTML + d2.doc.getElementById('dd-title').innerHTML;
   if (/CURRENT-EXPLAIN/.test(blurb3) && !/stale/i.test(blurb3) && explainAsks(d2.sent) === 0) test.check('an explanation newer than the change is not stale, and nothing is asked');
   else test.fail(OWED + 'a current explanation: stale ' + /stale/i.test(blurb3) + ', requests ' + explainAsks(d2.sent));
+
+  // THE LISTS ARE DESK'S, IN A BLOCK OF THEIR OWN (Andy: "so they just need
+  // to be displayed outside of the agent-supplied explanation, and they can
+  // be updated instantly/programmatically?", "two separate foldable
+  // blocks?"). Today they sit inside the folded item record.
+  test.subHeading('D5: blocking and blocked-by are a foldable block of their own, outside the explanation');
+  const d5 = dialog(Object.assign({}, staleRow, { changedAt: at(1) }), [line(2, 'claude-windows', 'explain', 'WHAT-AND-WHY', 't/G1.3')]);
+  for (let i = 0; i < 4; i++) await settle();
+  const frame5 = d5.doc.getElementById('dd-body').innerHTML;
+  const links5 = d5.doc.getElementById('dd-links').innerHTML;
+  const pos = function (s) { return frame5.indexOf(s); };
+  if (pos('id="dd-links"') !== -1 && pos('id="dd-blurb"') < pos('id="dd-links"') && pos('id="dd-links"') < pos('id="dd-item"') &&
+      links5.indexOf('data-open="t/G1.1"') !== -1 && /data-fold="links"/.test(frame5 + links5) &&
+      d5.doc.getElementById('dd-blurb').innerHTML.indexOf('data-open') === -1) {
+    test.check('#dd-links sits between the explanation and the record, folds on its own, and links t/G1.1; the explanation holds no list');
+  } else test.fail(OWED + 'links block at ' + pos('id="dd-links"') + ' (blurb ' + pos('id="dd-blurb"') + ', item ' + pos('id="dd-item"') +
+    '), holds the link ' + (links5.indexOf('data-open="t/G1.1"') !== -1) + ', folds ' + /data-fold="links"/.test(frame5 + links5));
 
   test.subHeading('D3: the dialog\'s waits-on fact and its No Go line link each id');
   const d3 = dialog(staleRow, [line(2, 'claude-windows', 'explain', 'E', 't/G1.3'), line(3, 'claude-windows', 'ask', 'ready: go?', 't/G1.3')]);
