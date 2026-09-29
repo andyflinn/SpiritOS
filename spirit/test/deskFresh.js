@@ -239,6 +239,54 @@ const kids = [];
   if (facts.indexOf('data-open="t/G1.1"') !== -1 && /waits on/.test(decide) && decide.indexOf('data-open="t/G1.1"') !== -1) {
     test.check('both the waits-on fact and "No Go yet: it waits on" link t/G1.1');
   } else test.fail(OWED + 'facts link ' + (facts.indexOf('data-open="t/G1.1"') !== -1) + ', No Go line ' + JSON.stringify(decide.replace(/\s+/g, ' ').slice(0, 160)));
+
+  // ── D4: ONE DECISION FOR THE GO! BUTTON ─────────────────────────────
+  //
+  // Andy, 2026-09-30: "Why is't the appearance and disappearance of the go
+  // button synced between a lit item and it's panel?", then "they obviously
+  // need to work it out from the same data." Shape (wsl-claude): desk.js puts
+  // its own decision on the row it hands the dialog, row.goState
+  // (unverified | held | go | none), and the dialog draws Go! from that and
+  // from nothing else.
+  test.subHeading('D4: the List hands its Go! decision to the dialog with the row');
+  const goLog = [line(1, 'claude-windows', 'session', session([A, B, C]), 'team/chat'),
+    line(2, 'claude-windows', 'note', 'IN PLACE VERIFIED', 't/G1.2'), line(3, 'claude-windows', 'ask', 'ready: go?', 't/G1.2'),
+    line(2, 'claude-windows', 'note', 'IN PLACE VERIFIED', 't/G1.3'), line(3, 'claude-windows', 'ask', 'ready: go?', 't/G1.3')];
+  const opened = [];
+  const gdoc = fakeDocument();
+  load(DESK, gdoc).mount(fakeElement('container'), {
+    fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify(goLog) : null; }, saveFile: function () { return Promise.resolve(); } },
+    escapeHtml: kernel.core.util.escapeHtml, verb: require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(goLog) }).verb,
+    onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
+    callDialog: function (name, params) { opened.push(params); return new Promise(function () {}); },
+  });
+  for (let i = 0; i < 6; i++) await settle();
+  const goList = ['desk-top', 'desk-session', 'desk-goal'].map(function (id) { return gdoc.getElementById(id).innerHTML; }).join(' ');
+  const openRow = function (id) {
+    const box = gdoc.getElementById('desk-session');
+    box.fire('click', { target: { getAttribute: function (a) { return a === 'data-open' ? id : null; }, parentNode: null }, currentTarget: box });
+    return opened[opened.length - 1] || {};
+  };
+  // Beta waits on nothing, is verified and asks: Go! in the List.
+  const listGo = function (id) { return goList.indexOf('data-go="' + id + '"') !== -1; };
+  const pBeta = (openRow('t/G1.2') || {}).row || {};
+  if (listGo('t/G1.2') && pBeta.goState === 'go') test.check('Beta shows Go! in the List, and the dialog is handed goState go');
+  else test.fail(OWED + 'Beta: List Go! ' + listGo('t/G1.2') + ', handed goState ' + JSON.stringify(pBeta.goState));
+
+  function goDialog(goState, thread) {
+    const row = Object.assign({}, { id: 't/G1.2', title: 'Beta', blocks: ['t/G1'], waitsOn: [], verified: true, done: false, changedAt: at(1) }, { goState: goState });
+    const d = dialog(row, thread);
+    return d;
+  }
+  const askThen = [line(2, 'claude-windows', 'explain', 'E', 't/G1.2'), line(3, 'claude-windows', 'ask', 'ready: go?', 't/G1.2'),
+    line(4, 'andy', 'answer', 'retitle: Beta renamed', 't/G1.2')];
+  const dGo = goDialog('go', askThen);
+  const dHeld = goDialog('held', askThen.slice(0, 2));
+  for (let i = 0; i < 4; i++) await settle();
+  const hasGo = function (d) { return /id="dd-go"/.test(d.doc.getElementById('dd-name-row').innerHTML + d.doc.getElementById('dd-decide').innerHTML); };
+  if (hasGo(dGo) && !hasGo(dHeld)) {
+    test.check('goState go draws Go! even after his retitle answer; goState held draws none though the thread has an open ask');
+  } else test.fail(OWED + 'dialog Go! with goState go (after a retitle) ' + hasGo(dGo) + ', with goState held ' + hasGo(dHeld));
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   kids.forEach(function (k) { try { k.kill(); } catch (e) { /* gone */ } });
   setTimeout(function () {
