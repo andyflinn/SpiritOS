@@ -322,7 +322,10 @@ function ddFrame() {
     // THE EXPLANATION ABOVE THE RECORD (desk/G1.14). Andy: "the text an agent
     // provided to me because he saw me looking at the item, that one belongs
     // into the upper position".
-    '<div class="stat-tile wide"><div class="label" id="dd-title" style="font-size:1.25em;font-weight:bold"></div><div id="dd-blurb"></div></div>' +
+    // TITLES ARE NOT LABELS (desk/G1.12): .stat-tile .label is 12px at 0.7 opacity
+    // (index.html), which made his titles small and greyed. Andy: "must be
+    // Title style/size as well."
+    '<div class="stat-tile wide"><div id="dd-title" style="font-size:1.25em;font-weight:bold"></div><div id="dd-blurb"></div></div>' +
     '<div id="dd-item"></div>' +
     '<div class="stat-tile wide" id="dd-facts"></div>' +
     '<div id="dd-decide"></div>' +
@@ -378,7 +381,7 @@ function ddItemHtml() {
       ? '<span class="job-manifest-note">Both agents say this is ready to close: Done is in the row above; read why below.</span>'
       : '<span class="job-manifest-note">Open: not ready to close yet. Done appears above when both agents say it is, with the evidence.</span>';
   var head = '<div style="display:flex;gap:8px;align-items:baseline"><button type="button" data-fold="item" title="' +
-    (ddFolded ? 'Unfold' : 'Fold') + '">' + (ddFolded ? '▸' : '▾') + '</button><div class="label" style="font-size:1.25em;font-weight:bold">' + ddEsc(me.id) + ' — ' + ddEsc(me.title) + '</div></div>' +
+    (ddFolded ? 'Unfold' : 'Fold') + '">' + (ddFolded ? '▸' : '▾') + '</button><div style="font-size:1.25em;font-weight:bold">' + ddEsc(me.id) + ' — ' + ddEsc(me.title) + '</div></div>' +
     '<div style="margin:6px 0">' + close + '</div>';
   if (ddFolded) return '<div class="stat-tile wide">' + head + '</div>';
   return '<div class="stat-tile wide">' + head +
