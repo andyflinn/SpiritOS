@@ -137,6 +137,16 @@ settle().then(function () {
   if (/Goal/.test(bubble) && !/GOAL-TEXT/.test(bubble) && !/RULE-TEXT/.test(bubble)) test.check('on a first open the top box shows its title line only');
   else test.fail(OWED + 'the bubble on first open: ' + bubble.replace(/\s+/g, ' ').slice(0, 200));
 
+  // Andy, while G1.12 was being built: "this 'Upgrading Desk with deeper
+  // integration onto SpiritOS (desk/G1)' is also a large text block. it
+  // should be foldable."
+  test.subHeading('T8: the goal banner at the top folds too, and starts folded to its id');
+  const banner = doc.getElementById('desk-goal');
+  const shown = banner.innerHTML + ' ' + banner.textContent;
+  if (/data-fold="goal"/.test(shown) && /t\/G1/.test(shown) && !/\bGoal\b/.test(shown.replace(/data-fold="goal"/g, ''))) {
+    test.check('the banner carries a goal fold toggle and, folded, shows the id only');
+  } else test.fail(OWED + 'the goal banner shows ' + JSON.stringify(shown.slice(0, 160)));
+
   test.subHeading('T6: chat boxes take several lines, and Return sends nothing');
   const shell = root.innerHTML;
   const say = doc.getElementById('desk-team-say');
