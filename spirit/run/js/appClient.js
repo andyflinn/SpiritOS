@@ -55,6 +55,7 @@ const path = require('path');
 const crypto = require('crypto');
 const relayRequest = require('./relayRequest');
 const limits = require('./limits');
+const errors = require('./spiritErrors');
 
 // An app's folder name, as nodeApps reads it: nothing that could climb out
 // of app/ or name a pipe path.
@@ -166,9 +167,58 @@ function createAppClient(opts) {
     });
   }
 
+  // ── THE NODE'S 'api' (appPair/G1.3) ───────────────────────────────
+  //
+  // DECIDED in the design session (Desk, appPair/G1), not this file's to
+  // undo. Only the node receives 'api' (D2). It asks every app server at
+  // once, each within DOOR_WAIT_MS (D16), keeps no copy (D6), and answers
+  // {app: tree}; an app server that does not answer is its error in the
+  // tree (D14). A call {app: {verb: {args}}} hands {verb: {args}} to that
+  // app and brings back its reply as it came (D10, D11). The node refuses
+  // only what it cannot route, and checks no verb or argument: those are
+  // the app server's (D9). Every error is {ok: false, code, error} from
+  // spiritErrors (D12).
+  function error(code, extra) {
+    const e = errors.byCode(code);
+    const body = { ok: false, code: code, error: e ? e.text : code };
+    if (extra) body.extra = extra;
+    return { status: (e && e.status) || STATUS[code] || 500, body: body };
+  }
+  function knock(row, request_) {
+    return Promise.resolve(request(row.pipe, 'POST', '/', JSON.stringify(request_), {
+      type: 'application/json', timeoutMs: DOOR_WAIT_MS, answerMax: ANSWER_MAX,
+    })).then(function (a) {
+      if (!a || a.refused) return error(a && errors.byCode(a.refused) ? a.refused : 'app-not-running', { app: row.app });
+      let body;
+      try { body = JSON.parse(a.text); } catch (e) { return error('handler-failed', { app: row.app, why: 'not JSON' }); }
+      return { status: a.status, body: body };
+    }, function () { return error('app-not-running', { app: row.app }); });
+  }
+  function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
+
+  function ask(body) {
+    if (body === 'api') {
+      const names = Object.keys(table);
+      return Promise.all(names.map(function (app) {
+        // A branch is what that app server answered, or its error (D14).
+        return knock(table[app], 'api').then(function (r) { return r.body; });
+      })).then(function (parts) {
+        const tree = {};
+        names.forEach(function (app, i) { tree[app] = parts[i]; });
+        return { status: 200, body: tree };
+      });
+    }
+    if (!isPlain(body) || Object.keys(body).length !== 1) return Promise.resolve(error('bad-request', { why: "'api', or one app as {app: {verb: {args}}}" }));
+    const app = Object.keys(body)[0];
+    if (!APP_RE.test(app) || !isPlain(body[app])) return Promise.resolve(error('bad-request', { why: 'an app name, then {verb: {args}}' }));
+    if (!Object.prototype.hasOwnProperty.call(table, app)) return Promise.resolve(error('app-not-served', { app: app }));
+    return knock(table[app], body[app]);
+  }
+
   return {
     startAll: startAll,
     toLocalApp: toLocalApp,
+    ask: ask,
     apps: function () { return Object.keys(table); },
   };
 }

@@ -1426,6 +1426,21 @@ contactBook.syncMarks(ROOT_DIR);
       log: function (line) { console.log(line); },
     }));
 
+    // ── 'api': A KNOWN SENDER ASKS WHAT THIS NODE'S APPS OFFER ────────
+    //
+    // appPair/G1.3, a node verb with Andy's yes on it ("yes to all of wsl
+    // points"). apiDoor.js says the rest; appClient answers it. Only the
+    // front door's 'known' counts, never 'admit': Andy, "why not just an
+    // exemption for aquire?".
+    arrivals.witness(require('./apiDoor').createApiDoor({
+      servers: appClient,
+      post: function (relayUrl, toKey, text) { return peerRouter.post(relayUrl, toKey, text); },
+      encode: wire.encode,
+      decode: wire.decode,
+      isKnown: function (key) { return require('./hub').frontDoor(ROOT_DIR, key) === 'known'; },
+      log: function (line) { console.log(line); },
+    }));
+
     // ── peerOwnerPost: THE OWNER DOOR'S SENDING END (puppets/G4) ─────
     //
     // This node signing a command for one of its puppets and waiting for

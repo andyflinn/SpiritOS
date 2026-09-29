@@ -145,10 +145,18 @@ his words, which keeps the harness red until the verb is gone.
 handed an api of its own, and it is the node's interface too, so the same
 rule covers it. One call was added there, and none here:
 - `api.toLocalApp(name, { method, path, body, type })` — the node's one
-  hop to an app server on its own box (`appServers.js`). Andy, 2026-09-27:
+  hop to an app server on its own box (`appClient.js`, named `appServers.js`
+  until appPair/G1.1). Andy, 2026-09-27:
   "i explicitly permit the two new/proposed interfaces/api' for
   communication from node to appserver", and "Go. and two verbs approved."
   (Desk, public-app-server/G17)
+
+**By packet, not on this door.** A known sender (the front door's `known`,
+never `admit`) asks with an ordinary packet of app `api` (`apiDoor.js`):
+- `api` — `'api'` answers `{app: {verb: {request, reply}}}` from every app
+  server on this box; `{app: {verb: {args}}}` is a call, answered with the
+  verb's own reply. Andy, 2026-09-28: "yes to all of wsl points", on the
+  node's `api` verb over peerPost (Desk, appPair/G1.3).
 
 ---
 
