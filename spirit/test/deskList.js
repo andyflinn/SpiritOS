@@ -160,9 +160,16 @@ test.startTest('desk/G2.6: the List paints only what the desk server says');
   else test.fail(OWED + 'Beta is still on the List after listed: false');
   if (l.searches().length === 1) test.check('no pulling: items.search was asked once, at open');
   else test.fail(OWED + 'items.search was asked again: ' + JSON.stringify(l.searches()));
+  // An item the List does not show (filtered out, or brought back after a close) is the server's to place:
+  // the List asks items.search again rather than adding a row the filters may exclude.
+  const before = l.searches().length;
+  l.publish({ change: 14.5, verb: 'chat.add', item: JSON.parse(label({ id: 't/G1.9', title: 'NOT-ON-THE-LIST' })), listed: true });
+  await settled();
+  if (!/NOT-ON-THE-LIST/.test(l.page()) && l.searches().length === before + 1) test.check('a publish for an item not on the List adds no row; it asks the server again');
+  else test.fail(OWED + 'a publish for an unlisted item: shown ' + /NOT-ON-THE-LIST/.test(l.page()) + ', searches ' + (l.searches().length - before));
   l.publish({ change: 15, verb: 'session.set', item: null });
   await settled();
-  if (l.searches().length === 2) test.check('a published session.set asks items.search again');
+  if (l.searches().length === 3) test.check('a published session.set asks items.search again');
   else test.fail(OWED + 'after a session.set publish items.search was asked ' + l.searches().length + ' times');
 
   test.subHeading('the search bar and the two toggles go to the server');
