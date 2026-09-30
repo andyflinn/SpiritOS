@@ -100,7 +100,7 @@ async function wholeRoute() {
     ['appFaceApp.js', 'appFaceApp.json'].forEach(function (f) {
       fs.copyFileSync(path.join(RUN, 'shell', 'appFaceApp', f), path.join(app, f));
     });
-    fs.symlinkSync(path.join(RUN, 'js'), path.join(root, 'js'), 'junction');
+    fs.cpSync(path.join(RUN, 'js'), path.join(root, 'js'), { recursive: true });
     return { root: root, app: app };
   }
   const ownerId = auth.generateIdentity('owner');
@@ -128,8 +128,24 @@ async function wholeRoute() {
   fs.mkdirSync(path.join(owner.root, 'process', 'js', 'faceProof'), { recursive: true });
   fs.writeFileSync(path.join(owner.root, 'process', 'js', 'faceProof', 'faceProof.json'), JSON.stringify({ serves: true }));
   require('../run/js/includeList.js').add(owner.root, 'process/js/faceProof');
-  const servers = appClient.createAppClient({ rootDir: owner.root, log: function () {}, startServerJob: function () { return {}; } });
+  // cleanup/G1.10: the slot-owner's appFaceAppServer, started for real the way the node starts it.
+  // faceProof stays the fake http server below; only appFaceAppServer is spawned.
+  const SERVER = path.join(RUN, 'process', 'js', 'appFaceAppServer');
+  const children = [];
+  if (fs.existsSync(SERVER)) {
+    fs.cpSync(SERVER, path.join(owner.root, 'process', 'js', 'appFaceAppServer'), { recursive: true });
+    require('../run/js/includeList.js').add(owner.root, 'process/js/appFaceAppServer');
+  }
+  const servers = appClient.createAppClient({ rootDir: owner.root, log: function () {},
+    startServerJob: function (exec, args, opts) {
+      if (args.indexOf('appFaceAppServer') === -1) return {};
+      const kid = require('child_process').spawn(exec, args, { cwd: opts.cwd, stdio: 'ignore' });
+      children.push(kid);
+      return {};
+    } });
   servers.startAll();
+  const asked = [];
+  const recording = { toLocalApp: function (app, req) { asked.push({ app: app, req: req }); return servers.toLocalApp(app, req); } };
   const pipe = appClient.pipePathFor(owner.root, 'faceProof', process.platform, 'process');
   if (process.platform !== 'win32') fs.mkdirSync(path.dirname(pipe), { recursive: true });
   const seen = [];
@@ -150,7 +166,13 @@ async function wholeRoute() {
   await new Promise(function (r) { app.listen(pipe, r); });
   nodes[ownerId.publicKey] = arrivalsMod.createArrivals({});
   nodeApps.mountAll({ rootDir: owner.root, arrivals: nodes[ownerId.publicKey], post: postFrom(ownerId.publicKey),
-    servers: grantFaceStandIn({ hello: ownerId.publicKey }, servers), log: function () {} });
+    servers: grantFaceStandIn({ hello: ownerId.publicKey }, recording), log: function () {} });
+  for (let i = 0; i < 40 && children.length; i++) {
+    const knock = await servers.toLocalApp('appFaceAppServer', { method: 'GET', path: '/' });
+    if (knock.status !== 503) break;
+    await new Promise(function (r2) { setTimeout(r2, 150); });
+  }
+  asked.length = 0;
 
   // THE PUPPET: owned by the owner, with the face.
   const puppet = home('puppet');
@@ -178,10 +200,10 @@ async function wholeRoute() {
     });
   }
 
-  const SERVER = path.join(RUN, 'process', 'js', 'appFaceAppServer');
+  const OWED = 'OWED by cleanup/G1.10: ';
   const page = await browse('GET', '/');
   if (!fs.existsSync(SERVER)) {
-    test.awaiting('cleanup/G1.10', 'process/js/appFaceAppServer', false, 'the page and a POST through the whole route, served by the slot-owner\'s appFaceAppServer');
+    test.fail(OWED + 'no process/js/appFaceAppServer, so the slot-owner has nothing to hand a request to');
   } else if (page.status === 200 && /^text\/html/.test(page.type) && page.text === '<!doctype html><p>hello from the app</p>') {
     test.check('GET hello.' + FACE_DOMAIN + '/ is the app server\'s own page, typed text/html, as the browser needs to render it');
   } else {
@@ -193,8 +215,7 @@ async function wholeRoute() {
   let echoed = null;
   try { echoed = JSON.parse(posted.text); } catch (e) { echoed = null; }
   if (!fs.existsSync(SERVER)) {
-    if (posted.status === 404 && /no-handler/.test(posted.text)) test.check('until G1.10, a granted name is answered 404 no-handler');
-    else test.fail('before G1.10 a granted name should be 404 no-handler: ' + JSON.stringify(posted).slice(0, 200));
+    test.fail(OWED + 'the POST through the whole route: ' + JSON.stringify(posted).slice(0, 160));
   } else if (posted.status === 200 && /^application\/json/.test(posted.type) && echoed && echoed.echo === '{"verb":"app.state"}'
       && last.method === 'POST' && last.url === '/api/spirit' && last.type === 'application/json') {
     test.check('a POST crosses with its body and content type to the app, and the app\'s json answer comes back typed json');
@@ -213,6 +234,18 @@ async function wholeRoute() {
     test.fail('on the wire: ' + served + ' served answers; leaked: ' + JSON.stringify(leaks));
   }
 
+  // The slot name travels with the request to the slot-owner (Andy), and
+  // the request goes to appFaceAppServer, never straight to faceProof.
+  const handed = asked.filter(function (a) { return a.app !== 'grantFace'; });
+  if (handed.length && handed.every(function (a) { return a.app === 'appFaceAppServer'; })
+      && handed.every(function (a) { return JSON.stringify(a.req).indexOf('hello') !== -1; })) {
+    test.check('appFaceApp hands each request to appFaceAppServer, with the slot name hello in it');
+  } else {
+    test.fail(OWED + 'appFaceApp handed requests to ' + JSON.stringify(handed.map(function (a) { return a.app; })) +
+      (handed.length ? ', slot name in them: ' + handed.every(function (a) { return JSON.stringify(a.req).indexOf('hello') !== -1; }) : ''));
+  }
+
+  children.forEach(function (k) { try { k.kill(); } catch (e) { /* gone */ } });
   listener.close();
   app.close();
 }
