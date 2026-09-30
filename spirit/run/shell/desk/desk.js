@@ -663,6 +663,25 @@ function deskTeamPost(kind, fixed) {
 // more until it settles.
 var deskSending = Object.create(null);
 // To the agent named, or to the lead.
+// A MUSING NEEDS NO LEAD (desk/G3.9). Andy: "Why would it require a lead to
+// update my musings?" It goes to the desk server alone, into its log and his
+// voice file (deskRecord); no agent is sent anything.
+function deskMuse() {
+  var box = document.getElementById('desk-muse');
+  var err = document.getElementById('desk-muse-error');
+  var said = box ? String(box.value || '').trim() : '';
+  if (!said || deskSending['desk-muse']) return;
+  // A MUSING SAYS WHAT IT IS. Andy: "\"note to self: \" should be a prefix in
+  // the musings chat". Added once, and never twice when he types it himself.
+  if (!/^note to self:/i.test(said)) said = 'note to self: ' + said;
+  deskSending['desk-muse'] = true;
+  var line = deskOutgoing('', { from: 'andy', kind: 'musing', text: said }, { ok: true });
+  deskRecord([line]).then(function () {
+    deskSending['desk-muse'] = false;
+    box.value = '';
+    if (err) err.textContent = '';
+  }, function (e) { deskSending['desk-muse'] = false; if (err) err.textContent = 'Not kept: ' + ((e && e.message) || e); });
+}
 function deskSend(kind, boxId, errId, name) {
   var box = document.getElementById(boxId);
   var said = box ? String(box.value || '').trim() : '';
@@ -670,11 +689,6 @@ function deskSend(kind, boxId, errId, name) {
   if (!said || deskSending[boxId]) return;
   var to = name ? deskAgents[name] && deskAgents[name].key : deskLead && deskLead.key;
   if (!to) { if (err) err.textContent = name ? 'No key known for ' + name + '.' : 'No lead known yet.'; return; }
-  // A MUSING SAYS WHAT IT IS. Andy: "\"note to self: \" should be a prefix in
-  // the musings chat: I just typed that myself, and it highlights for your
-  // compilers, what i usually would type into md files". Added once, and
-  // never twice when he types it himself.
-  if (kind === 'musing' && !/^note to self:/i.test(said)) said = 'note to self: ' + said;
   deskSending[boxId] = true;
   // It may wait up to a minute for a busy agent, so it says so.
   if (err) err.textContent = 'Sending…';
@@ -961,8 +975,7 @@ spirit.shell.activateApp({
     });
     deskDrawToggles();
     document.getElementById('desk-go-all').addEventListener('click', function () { deskArmOrFire('desk-go-all', deskGoAll); });
-    function muse() { deskSend('musing', 'desk-muse', 'desk-muse-error'); }
-    document.getElementById('desk-muse-send').addEventListener('click', muse);
+    document.getElementById('desk-muse-send').addEventListener('click', deskMuse);
     document.getElementById('desk-team-send').addEventListener('click', deskSendTeam);
     // The bubble is repainted on every arrival, so one listener on its box.
     document.getElementById('desk-session').addEventListener('click', function (e) {
