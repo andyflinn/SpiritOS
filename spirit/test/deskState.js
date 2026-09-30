@@ -105,6 +105,9 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
 
   test.subHeading('Done after one agent\'s claim; Close and Reopen after done; closed leaves the list');
   await call('press', { id: 't/G1.1', what: 'go', by: 'andy' });
+  by = await items();
+  if (btns(by['t/G1.1']) && !btns(by['t/G1.1']).includes('done') && !btns(by['t/G1.1']).includes('go')) test.check('after go and before any claim: neither Go! nor Done');
+  else test.fail(OWED + 'after go, before a claim, Alpha has ' + JSON.stringify(by['t/G1.1']));
   await call('press', { id: 't/G1.1', what: 'claim-done', by: 'wsl-claude' });
   by = await items();
   if (btns(by['t/G1.1']) && btns(by['t/G1.1']).includes('done')) test.check('one agent\'s claim-done offers Done');
