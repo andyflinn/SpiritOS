@@ -76,10 +76,13 @@ const node = net.createServer(function (sock) {
   });
 });
 
+// Its own root, so a halt written here never touches the checkout's agent.
+const ROOT = fs.mkdtempSync(path.join(require('os').tmpdir(), 'spirit-agentsdesk-'));
+fs.mkdirSync(path.join(ROOT, 'relay-state'), { recursive: true });
 function run(args, port) {
   return new Promise(function (resolve) {
     const env = Object.assign({}, process.env, { AGENTS_NODE: 'http://127.0.0.1:' + port, AGENTS_SELF: 'wsl-claude',
-      AGENTS_CONTROL: ANDY, AGENTS_PEERS: 'andy=' + ANDY });
+      AGENTS_CONTROL: ANDY, AGENTS_PEERS: 'andy=' + ANDY, AGENTS_ROOT: ROOT });
     const kid = spawn(process.execPath, [AGENTS].concat(args), { env: env, stdio: ['ignore', 'pipe', 'pipe'] });
     let out = '';
     kid.stdout.on('data', function (b) { out += b; });
@@ -127,6 +130,17 @@ node.listen(0, '127.0.0.1', async function () {
     const refused = lastJson(r.out);
     if (posts.length === 1 && refused && refused.code === 'box-moved' && r.code === 1) test.check('a box-moved answer is printed and exits 1');
     else test.fail(OWED + 'a refusal: posts ' + posts.length + ', printed ' + JSON.stringify(r.out.slice(0, 200)) + ', exit ' + r.code);
+
+    // wsl-claude's review: send() is silent while halted, and a desk write is a post like any other.
+    test.subHeading('halted means silent, for desk writes too');
+    posts.length = 0;
+    reply = { change: 6 };
+    fs.writeFileSync(path.join(ROOT, 'relay-state', 'agents-halt.json'), JSON.stringify({ at: new Date().toISOString(), text: 'test' }));
+    const h = await run(['desk', 'press', '{"id":"t/G1.2","what":"claim-done"}'], port);
+    fs.unlinkSync(path.join(ROOT, 'relay-state', 'agents-halt.json'));
+    const hp = lastJson(h.out);
+    if (!posts.length && hp && hp.halted === true && h.code === 1) test.check('while halted it posts nothing, says halted and exits 1');
+    else test.fail('while halted: posts ' + posts.length + ', printed ' + JSON.stringify(h.out.slice(0, 200)) + ', exit ' + h.code);
 
     test.subHeading('the desk server\'s AGENTS.md tells agents this design');
     const md = fs.readFileSync(AGENTS_MD, 'utf8');

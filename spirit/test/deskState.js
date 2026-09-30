@@ -185,6 +185,16 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   if (starred.star === true && cleared.star === false) test.check('an agent\'s new line stars the item, and Andy\'s seen clears it');
   else test.fail(OWED + 'star before seen ' + starred.star + ', after ' + cleared.star);
 
+  // desk/G1.4: what he types in Desk reaches his voice file, and the desk server writes it (G2.7 review): his
+  // chat line and his new name, never an agent's line.
+  test.subHeading('his chat and his names reach voice.jsonl; an agent\'s line does not');
+  let voice = '';
+  try { voice = fs.readFileSync(path.join(state, 'voice.jsonl'), 'utf8'); } catch (e) { voice = ''; }
+  const said = voice.split('\n').filter(Boolean).map(function (l) { try { return JSON.parse(l).text; } catch (e) { return null; } });
+  if (said.indexOf('a line') !== -1 && said.indexOf('Beta renamed') !== -1 && said.indexOf('agent says') === -1 && said.indexOf('AGENT-RENAME') === -1) {
+    test.check('voice.jsonl holds his chat line and his rename, and neither agent line');
+  } else test.fail('voice.jsonl holds ' + JSON.stringify(said));
+
   test.subHeading('an unknown press is refused by name');
   const odd = await call('press', { id: 't/G1.2', what: 'fly', by: 'andy' });
   if (odd.status === 400 && odd.body && odd.body.code === 'bad-request') test.check('press what:fly answers bad-request');

@@ -392,6 +392,9 @@ function deskAsk(cfg, verb, json, fetchFn) {
   }
   args.by = cfg.self;
   if (!verb) return Promise.reject(new Error('usage: agents.js desk <verb> [json]'));
+  // HALTED MEANS SILENT, as for send(): a desk write is a post like any other.
+  const h = halted(cfg);
+  if (h) return Promise.resolve({ ok: false, halted: true, error: 'halted by Andy at ' + h.at + ' — nothing is sent until he resumes' });
   if (!cfg.control) return Promise.reject(new Error('AGENTS_CONTROL is not set: no node of Andy\'s to ask'));
   const ask = { desk: {} };
   ask.desk[verb] = args;
