@@ -14,12 +14,7 @@
 // build; Desk walks and folds, the server is storage plus bounded search):
 //
 //   THE SERVER (process/js/desk/desk.js)
-//   - At start it imports what Desk kept in its own folder, <run>/shell/desk/
-//     (<run> is --state's great-grandparent: relay-state/process/desk):
-//     every row of log/log*.json into lines, state.json and seen.json into
-//     state and seen, every voice/voice*.jsonl appended to <state>/
-//     voice.jsonl. Then those files are gone from app/desk; desk.js and
-//     desk.json stay. Importing the same rows again adds nothing (T1, T2, T4).
+//   - It never reads Desk's old files in shell/desk (cleanup/G1.6).
 //   - log.search gains two filters, both '' for any: kind, and before (only
 //     lines older than it); every caller sends all five keys (the helper
 //     matches keys exactly, D8). todo '-' means lines with no todo (an
@@ -56,6 +51,7 @@ const appClient = require('../run/js/appClient.js');
 const deskFake = require('./deskFake.js');
 
 const OWED = 'OWED by desk/G1.4: ';
+const G16 = 'OWED by cleanup/G1.6: ';
 const SCRIPT = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
 const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
 const LEAD = 'MCowBQYDK2VwAyEAleadleadleadleadleadleadleadleadleadl=';
@@ -127,36 +123,23 @@ async function serverPart(scratch) {
     return res;
   }
 
-  let kid = await start();
-  test.subHeading('T1: every old log row is imported once (count, first, last)');
+  const kid = await start();
+  test.subHeading('cleanup/G1.6: the server never reads Desk\'s old files in shell/desk');
   const got = keysOf(await everything());
-  if (got.length === old.length && got[0] === old[old.length - 1].key && got[got.length - 1] === old[0].key) {
-    test.check('all ' + old.length + ' rows from log.json, log-1.json and log-2.json, newest ' + got[0] + ', oldest ' + got[got.length - 1]);
-  } else test.fail(OWED + 'log.search holds ' + got.length + ' of ' + old.length + ': ' + JSON.stringify(got.slice(0, 3)) + '…');
-
-  test.subHeading('T2: app/desk holds no data files afterwards');
-  const left = fs.readdirSync(app).sort();
-  if (JSON.stringify(left) === JSON.stringify(['desk.js', 'desk.json'])) test.check('shell/desk holds desk.js and desk.json, nothing else');
-  else test.fail(OWED + 'shell/desk still holds ' + JSON.stringify(left));
-
-  test.subHeading('state.json and seen.json are the server\'s state and seen');
   const st = await call('state.get', {});
   const sn = await call('seen.get', {});
-  if (/STATE-IMPORTED/.test(st.json || '') && /SEEN-IMPORTED/.test(sn.json || '')) test.check('state.get and seen.get answer what the files held');
-  else test.fail(OWED + 'state.get ' + JSON.stringify(st).slice(0, 80) + ', seen.get ' + JSON.stringify(sn).slice(0, 80));
+  const voiceFile = path.join(state, 'voice.jsonl');
+  const imported = got.length || /IMPORTED/.test((st.json || '') + (sn.json || '')) || fs.existsSync(voiceFile);
+  if (!imported) test.check('old log, state, seen and voice files planted; the server started with none of them');
+  else test.fail(G16 + got.length + ' lines, state ' + JSON.stringify(st).slice(0, 60) + ', voice file ' + fs.existsSync(voiceFile));
+  const planted = ['log/log.json', 'log/log-1.json', 'log/log-2.json', 'state.json', 'seen.json', 'voice/voice.jsonl', 'voice/voice-2.jsonl'];
+  const gone = planted.filter(function (f) { return !fs.existsSync(path.join(app, ...f.split('/'))); });
+  if (!gone.length) test.check('and deleted none of them');
+  else test.fail(G16 + 'the server deleted ' + JSON.stringify(gone));
+  if (!/'shell', 'desk'|shell\/desk/.test(fs.readFileSync(SCRIPT, 'utf8'))) test.check('process/js/desk/desk.js no longer names shell/desk');
+  else test.fail(G16 + 'process/js/desk/desk.js still names shell/desk');
 
-  test.subHeading('T4: the voice is a plain file in the desk server\'s state folder');
-  const voice = (function () { try { return fs.readFileSync(path.join(state, 'voice.jsonl'), 'utf8'); } catch (e) { return ''; } })();
-  if (/voice one[\s\S]*voice two/.test(voice)) test.check('<state>/voice.jsonl holds both voice files\' lines, in order');
-  else test.fail(OWED + '<state>/voice.jsonl holds ' + JSON.stringify(voice.slice(0, 120)));
-
-  test.subHeading('T1: importing the same rows again adds nothing');
-  await stop(kid);
-  plant();
-  kid = await start();
-  const again = keysOf(await everything());
-  if (again.length === old.length) test.check('the same files planted and imported again: still ' + old.length + ' rows');
-  else test.fail(OWED + 'after a second import: ' + again.length + ' rows');
+  for (const m of old) await call('log.add', { json: JSON.stringify(m) });
 
   test.subHeading('T6 (server): log.search filters by kind, and by before');
   await call('log.add', { json: JSON.stringify(row('claude-windows', 'session', '{"goal":{"id":"t/G1","title":"G"},"items":[]}', 'team/chat')) });
@@ -167,27 +150,6 @@ async function serverPart(scratch) {
     test.check('kind: session finds the one session; before: finds the 10 older lines, newest first');
   } else test.fail(OWED + 'kind: ' + JSON.stringify(sessions) + ', before ' + cut + ': ' + before.length + ' lines, first ' + before[0]);
 
-  // THE IMPORT GUARDS ANDY'S RECORD (wsl-claude, building G1.4): an old
-  // file never overwrites newer state, and a file that does not parse
-  // deletes nothing.
-  test.subHeading('An old state.json never overwrites the state the server already holds');
-  await stop(kid);
-  plant();
-  fs.writeFileSync(path.join(app, 'state.json'), JSON.stringify({ marker: 'STATE-OLD-FILE' }));
-  kid = await start();
-  const kept = await call('state.get', {});
-  if (/STATE-IMPORTED/.test(kept.json || '') && !/STATE-OLD-FILE/.test(kept.json || '')) test.check('state.get still answers the state it held; the later file did not replace it');
-  else test.fail(OWED + 'after a second state.json: ' + JSON.stringify(kept).slice(0, 120));
-
-  test.subHeading('A log file that does not parse stops the import and deletes nothing');
-  await stop(kid);
-  plant();
-  fs.writeFileSync(path.join(app, 'log', 'log-1.json'), '[{"key": "broken"');
-  kid = await start();
-  const stayed = ['log/log.json', 'log/log-1.json', 'log/log-2.json', 'state.json', 'seen.json', 'voice/voice.jsonl']
-    .filter(function (f) { return fs.existsSync(path.join(app, ...f.split('/'))); });
-  if (stayed.length === 6) test.check('every file is still in app/desk, the broken one included');
-  else test.fail(OWED + 'after a broken log-1.json only ' + JSON.stringify(stayed) + ' are left in app/desk');
   await stop(kid);
 }
 
