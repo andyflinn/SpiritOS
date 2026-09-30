@@ -1029,6 +1029,10 @@ spirit.shell.activateApp({
     // NO PULLING. Andy: "no pulling". The List asks once, then repaints from
     // what the desk server publishes.
     deskApi.onPublished(deskOnPublished);
+    // BACK AFTER A GAP (Andy: "this should work without a hickup"): what was
+    // published or said while the stream was down was never heard, so the
+    // List and the chats are asked for again. Lines already held are not taken twice.
+    if (typeof deskApi.onReconnect === 'function') deskApi.onReconnect(function () { deskSearchItems(); deskLoad(); });
     deskDraw();
     deskSearchItems();
     deskLoad();

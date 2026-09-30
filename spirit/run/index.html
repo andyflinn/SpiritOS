@@ -218,6 +218,8 @@
       /* A DIALOG CLOSES WITH A BLACK X AT THE FAR RIGHT (desk/G3.5). Andy: "when i exit out of i dialog, i don't
          want my mouse pointer to be right on top of the back-button for the app." Light behind it, so the black
          reads on the dialog's dark bar. */
+      /* THE STREAM IS DOWN (Andy: "this should work without a hickup"): said, not silent. */
+      #app-offline { margin-left: auto; color: #fff; background: #b00020; border-radius: 4px; padding: 2px 8px; font-size: 13px; }
       #app-dialog-close { margin-left: auto; cursor: pointer; font-size: 18px; color: #000; background: #c3c3c3; border: none; border-radius: 4px; padding: 2px 8px; }
       #app-content { padding: 16px; }
 
@@ -1350,6 +1352,7 @@
         <button id="app-close" type="button" title="Back">⬅️</button>
         <button id="app-home" type="button" title="Home">🏠</button>
         <div id="app-title"></div>
+        <span id="app-offline" title="This page cannot hear its node right now; it reconnects by itself" hidden>not connected</span>
         <button id="app-dialog-close" type="button" title="Close" style="display:none">✖</button>
       </div>
       <div id="app-content"></div>

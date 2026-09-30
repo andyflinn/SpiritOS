@@ -880,7 +880,29 @@ if (isNode()) {
   spirit.core.jobs = {
     subscribe: function(handlers) {
       handlers = handlers || {};
-      let source = new EventSource('/api/events');
+      // THE STREAM COMES BACK BY ITSELF, AND SAYS WHEN IT IS DOWN. Andy,
+      // 2026-09-30, cut off from both agents after his node restarted:
+      // "this should work without a hickup." A browser retries an
+      // EventSource on its own until the server answers it wrongly (as a
+      // restarting node can); then it is CLOSED for good and a page kept
+      // sending while it heard nothing. So an error is reported, a closed
+      // stream is reopened here, and the first open after being down is
+      // announced, so an app can ask again for what it missed.
+      let source = null;
+      let down = false;
+      let stopped = false;
+      function open() {
+      source = new EventSource('/api/events');
+      source.onopen = function() {
+        if (handlers.onConnection) handlers.onConnection(true);
+        if (down && handlers.onReconnect) handlers.onReconnect();
+        down = false;
+      };
+      source.onerror = function() {
+        if (!down && handlers.onConnection) handlers.onConnection(false);
+        down = true;
+        if (source.readyState === 2 && !stopped) setTimeout(function() { if (!stopped) open(); }, 2000);
+      };
       source.addEventListener('snapshot', function(e) {
         if (handlers.onSnapshot) handlers.onSnapshot(JSON.parse(e.data).jobs);
       });
@@ -920,7 +942,9 @@ if (isNode()) {
       source.addEventListener('relay-event', function(e) {
         if (handlers.onRelayEvent) handlers.onRelayEvent(JSON.parse(e.data));
       });
-      return function unsubscribe() { source.close(); };
+      }
+      open();
+      return function unsubscribe() { stopped = true; source.close(); };
     },
     start: function(options) {
       return new Promise(function(resolve, reject) {

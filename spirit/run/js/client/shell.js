@@ -1614,6 +1614,14 @@
       // onPacket and onRegarding.
       onRelayEvent: function (handler) { return onRelayEventFor(handler); },
 
+      // Called once the page's event stream is back after being down (a node
+      // restart): what arrived in the gap was never heard, so the app asks
+      // again for what it shows. Returns its own unsubscribe.
+      onReconnect: function (handler) {
+        reconnectHandlers.push(handler);
+        return function () { var i = reconnectHandlers.indexOf(handler); if (i !== -1) reconnectHandlers.splice(i, 1); };
+      },
+
       // ── THE CLIENT HALF OF A peerPost (decision 0011) ────────────────
       //
       //   Andy: "it should be a generic client layer, the point will come
@@ -2183,6 +2191,8 @@
   // owner is not the one present), so a node that is merely a member
   // never receives one and has nothing to filter.
   var relayEventHandlers = [];
+  // Apps that asked to hear the event stream come back (api.onReconnect).
+  var reconnectHandlers = [];
 
   function onRelayEventFor(handler) {
     if (typeof handler !== 'function') return function () {};
@@ -3004,5 +3014,17 @@
     // decides what to do with one, and an app that is not on screen must
     // not drag the screen to it.
     onRelayEvent: function (event) { deliverRelayEvent(event); },
+
+    // THE STREAM DOWN IS SAID, AND ITS RETURN IS HANDED ON. Andy, cut off
+    // from both agents after a node restart: "this should work without a
+    // hickup." The kernel reopens the stream; the shell shows it is down and
+    // tells the apps that asked once it is back.
+    onConnection: function (up) {
+      var mark = document.getElementById('app-offline');
+      if (mark) mark.hidden = !!up;
+    },
+    onReconnect: function () {
+      reconnectHandlers.slice().forEach(function (fn) { try { fn(); } catch (e) { /* one app's fault stays its own */ } });
+    },
   });
 })();
