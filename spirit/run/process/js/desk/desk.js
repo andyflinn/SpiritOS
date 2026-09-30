@@ -586,7 +586,17 @@ appServer.serve({
     },
   },
   // What he types is also his voice (desk/G1.4): kept here, once, for his chat and his names.
-  'chat.add': { request: { id: '', text: '', by: '' }, reply: { change: 0 }, handler: function (a) { const c = write('chat.add', a).change; if (a.by === 'andy') addVoice(a.text); return { change: c }; } },
+  'chat.add': {
+    request: { id: '', text: '', by: '' }, reply: { change: 0 },
+    handler: function (a) {
+      // MAX_PAYLOAD AT THE DOOR (desk/G3.3). Andy: "in the db yes, but in the sent messages ther MUST be a MAX_PAYLOAD".
+      // A line that could not come back whole in one answer is refused here, as log.add refuses one; the sender slices it.
+      if (!fitsOneAnswer('0', JSON.stringify({ by: String(a.by), at: new Date().toISOString(), text: String(a.text) }))) throw tooLarge();
+      const c = write('chat.add', a).change;
+      if (a.by === 'andy') addVoice(a.text);
+      return { change: c };
+    },
+  },
   // "rename (you)": Andy's alone.
   'item.rename': { request: { id: '', title: '', by: '' }, reply: { change: 0 }, handler: function (a) { ownerOnly(a); const c = write('item.rename', a).change; addVoice(a.title); return { change: c }; } },
   'item.status': { request: { id: '', word: '', by: '' }, reply: { change: 0 }, handler: function (a) { return { change: write('item.status', a).change }; } },
