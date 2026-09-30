@@ -108,7 +108,8 @@ function createAppServer(verbs, opts) {
     const name = Object.keys(req)[0];
     if (!Object.prototype.hasOwnProperty.call(verbs, name)) return Promise.resolve(refusal('no-such-verb', { verb: name }));
     const args = req[name];
-    if (!matches(verbs[name].request, args)) return Promise.resolve(refusal('no-such-argument', { verb: name }));
+    const fits = typeof verbs[name].accepts === 'function' ? verbs[name].accepts(args) : matches(verbs[name].request, args);
+    if (!fits) return Promise.resolve(refusal('no-such-argument', { verb: name }));
     return Promise.resolve().then(function () { return verbs[name].handler(args); }).then(function (reply) {
       // THE REPLY IS CHECKED TOO (wsl-claude's review; Andy: "go for the
       // proposed fix"). What arrives is the verb's declared shape or
@@ -229,6 +230,20 @@ function publish(obj) {
 // answer is refused by name (answer-too-large), never cut. An app that
 // declares AGENTS itself keeps its own.
 const AGENTS_FILE = 'AGENTS.md';
+// DEBUG (desk/G2.5): "DEBUG auto-verb supplied by appServer is approved." Every server gets it:
+// {} reads, {on: true|false} sets; both answer {debug} with the state that resulted. It flips this
+// process's kernel DEBUG. A member never reaches it (apiDoor refuses it by name).
+function withDebug(verbs) {
+  if (Object.prototype.hasOwnProperty.call(verbs, 'DEBUG')) return verbs;
+  const all = Object.assign({}, verbs);
+  all.DEBUG = {
+    request: { on: false }, reply: { debug: false },
+    accepts: function (a) { return isPlain(a) && (Object.keys(a).length === 0 || (Object.keys(a).length === 1 && typeof a.on === 'boolean')); },
+    handler: function (a) { return { debug: require('./kernel.js').core.util.debug(a.on) }; },
+  };
+  return all;
+}
+
 function withAgents(verbs, script) {
   const file = path.join(path.dirname(path.resolve(String(script || ''))), AGENTS_FILE);
   if (Object.prototype.hasOwnProperty.call(verbs, 'AGENTS') || !fs.existsSync(file)) return verbs;
@@ -261,7 +276,7 @@ function serve(verbs) {
     process.exit(2);
   }
   if (typeof process.send === 'function') process.on('disconnect', function () { process.exit(0); });
-  verbs = withAgents(verbs, argv[1]);
+  verbs = withDebug(withAgents(verbs, argv[1]));
   const s = createAppServer(verbs);
   // IT SAYS WHO IT IS, AND WHAT IT ANSWERS. Andy, 2026-09-29: "after
   // starting the listener, it should announce itself with its name, and a

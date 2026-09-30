@@ -18,7 +18,9 @@ const VERSION = '0.0.1';
 const SPIRIT_NAME = 'SpiritOS';
 
 // constants
-const DEBUG = true;
+// DEBUG (desk/G2.5): one switch per process, off at start, never persisted. Andy: "DEBUG is
+// Off by default, returned and set by owner-only api", "DEBUG is not persisted. it lives in RAM only".
+let DEBUG = false;
 
 // this here is the main spirit object, which contains all the core functionality of the SpiritOS kernel 
 const spirit = {
@@ -28,13 +30,10 @@ const spirit = {
       AUTHOR:AUTHOR,
       COPYRIGHT:COPYRIGHT,
       VERSION:VERSION,
-      KERNEL_DEBUG: DEBUG,
       IS_NODE:isNode(),
       IS_BROWSER:isBrowser(),
     },
-    info: {
-      debug: DEBUG,
-    },
+    info: {},
     // the util object contains utility functions which do not rely
     // on a this context. they can be called directly, like spirit.core.util.isName("foo")
     util: {},
@@ -44,9 +43,12 @@ const spirit = {
 };
 
 
-// use this for old fashioned console.log debugging, which can be turned on and off with the DEBUG constant
+// use this for old fashioned console.log debugging, which can be turned on and off with DEBUG
 let print = spirit.core.util.print = function(str){ if (DEBUG) { console.log(str); }
 }
+// Reads DEBUG, or sets it when given a boolean; answers the state that resulted.
+spirit.core.util.debug = function (on) { if (typeof on === 'boolean') DEBUG = on; return DEBUG; };
+Object.defineProperty(spirit.core.info, 'debug', { get: function () { return DEBUG; }, enumerable: true });
 
 // use this for error messages, which will always be printed to the console
 let error = spirit.core.util.error = function(str){

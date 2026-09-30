@@ -1871,6 +1871,13 @@ contactBook.syncMarks(ROOT_DIR);
   // two verbs bolted onto `device`.
   loopbackVerbs.claim('node', 'hub.js', {
     'node.card': function (rq, rs) { hub.handleNodeCard(rq, rs); },
+    // THE NODE'S OWN DEBUG (desk/G2.5), shaped like relay.debug: {debug: {}} reads,
+    // {debug: {on}} sets; both answer the state that resulted. "node.debug: yes."
+    // RAM only, off at every start (kernel.js).
+    'node.debug': proxyVerb(function (b) {
+      const d = b && b.debug;
+      return { ok: true, debug: spirit.core.util.debug(d && typeof d.on === 'boolean' ? d.on : undefined) };
+    }),
     'node.setName': function (rq, rs) { hub.handleNodeName(rq, rs, readJsonBody); },
     'node.setDescription': function (rq, rs) {
       hub.handleNodeDescription(rq, rs, readJsonBody);

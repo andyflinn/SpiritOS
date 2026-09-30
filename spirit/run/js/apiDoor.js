@@ -28,6 +28,14 @@ function answer(servers, ask) {
 }
 
 // opts: { servers: {ask}, post(relay, toKey, text), encode, decode, isKnown(key), log }
+function asksDebug(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return false;
+  return Object.keys(body).some(function (app) {
+    const v = body[app];
+    return v && typeof v === 'object' && Object.prototype.hasOwnProperty.call(v, 'DEBUG');
+  });
+}
+
 function createApiDoor(opts) {
   const o = opts || {};
   const say = o.log || function () {};
@@ -54,6 +62,9 @@ function createApiDoor(opts) {
     // forever, about 9 a second (wsl-claude's hand check on a857b52).
     if (info.re) return;
     if (!o.isKnown(message.fromKey)) return;
+    // 'DEBUG verb is never allowed through peerPost()' (Andy, desk/G2.5): a member's ask for any
+    // server's DEBUG is refused here, by name, and never passed on. jobs.api (answer) still reaches it.
+    if (asksDebug(info.body)) return reply(message, { ok: false, code: 'not-owner', error: 'DEBUG is for the owner, on loopback only' });
     return answer(o.servers, info.body).then(function (r) {
       return reply(message, r ? r.body : null);
     }, function (e) {

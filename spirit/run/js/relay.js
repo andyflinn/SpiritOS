@@ -3575,9 +3575,9 @@ function createRelay(rootDir, deps) {
       // signed by the owner over bytes that bind sender, recipient and this
       // text — so a captured `on` cannot be replayed as an `off`.
       if (Object.prototype.hasOwnProperty.call(body.debug, 'on')) {
-        debugging = !!body.debug.on;
+        require('./kernel').core.util.debug(!!body.debug.on);
       }
-      out = { ok: true, debug: debugging };
+      out = { ok: true, debug: require('./kernel').core.util.debug() };
     }
 
     // FORGETTING SOMEBODY, by key — and the one verb that is BOTH kinds.
@@ -4499,7 +4499,7 @@ function createRelay(rootDir, deps) {
   // noticing. So anyone who later adds a quiet mode, or drops `held` from the
   // row, removes that safety WITHOUT TOUCHING THIS SWITCH — and would then
   // have to give the switch back its own timeout or clear-on-absence.
-  var debugging = false;
+  // The switch itself is the kernel's DEBUG (desk/G2.5), off at every start.
 
   // WHAT THIS WATCHER ASKED TO SEE.
   //
@@ -4728,7 +4728,7 @@ function createRelay(rootDir, deps) {
     //
     // Found by wsl-claude, whose relayCannotRead.js caught it as its CONTROL
     // rather than as an assertion — C3, "DEBUG off means no payload".
-    row.held = debugging && extra && typeof extra.held === 'string' ? extra.held : '';
+    row.held = require('./kernel').core.util.debug() && extra && typeof extra.held === 'string' ? extra.held : '';
     // THE FULL REPORT, EVERY TIME SOMETHING HAPPENS (cycle 8). Andy: the
     // owner "receives also the full stat package whenever events occur" —
     // and no coalescing: "if the relay can handle 500 near-simultaneous
