@@ -91,6 +91,16 @@ test.subHeading('the relay knows its owner by key: owner.json alone lets the own
   else test.fail(OWED + 'ownerPublic with owner.json: ' + JSON.stringify(named));
 }
 
+test.subHeading('a junk owner.json is no owner, on the relay too');
+{
+  const made = world.build(UNCLAIMED);
+  const home = made.home;
+  plantOwner(home, 'not-a-key');
+  const named = createRelay(home).ownerPublic();
+  if (HAS && auth.loadOwner(home) === '' && named.ownerKey === '') test.check('owner.json naming no Ed25519 key: loadOwner and ownerPublic say no owner');
+  else test.fail(OWED + 'junk owner.json read as ' + JSON.stringify({ loadOwner: HAS ? auth.loadOwner(home) : 'absent', ownerPublic: named }));
+}
+
 test.subHeading('a node is a puppet when owner.json names a key');
 {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-owner-node-'));
@@ -127,7 +137,7 @@ test.subHeading('a node may own itself: owner.json naming its own ID is not a pu
     return lines.some(function (l) { return /is a puppet/.test(l); });
   }
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-owner-self-'));
-  auth.ensureIdentity(root, '');
+  auth.ensureIdentity(root, 'self');
   const self = JSON.parse(fs.readFileSync(path.join(root, 'relay-state', 'identity.json'), 'utf8')).publicKey;
   plantOwner(root, self);
   if (!puppetLine(root)) test.check('owner.json with the node\'s own key: it starts its servers');
