@@ -426,10 +426,13 @@ function deskPress(id, what) {
   }, function (e) { deskError = 'Not pressed: ' + ((e && e.message) || e); deskDraw(); });
 }
 
-var DESK_PRESS_LABEL = { go: 'Go!', done: 'Done', reopen: 'Reopen', close: 'Close', 'bring-back': 'Bring back' };
+var DESK_PRESS_LABEL = { go: 'Go!', done: 'Done', close: 'Close', 'bring-back': 'Bring back' };
+// NOT IN A ROW: Go all sits in the tab bar (desk/G3.4), and Reopen only in the item's dialog (desk/G3.6, Andy:
+// "the Re-Open button should never be shown in the list").
+var DESK_NOT_IN_ROW = ['go-all', 'reopen'];
 function deskRowHtml(row) {
   var goal = row.goal === '';
-  var presses = (row.buttons || []).filter(function (what) { return what !== 'go-all'; }).map(function (what) {
+  var presses = (row.buttons || []).filter(function (what) { return DESK_NOT_IN_ROW.indexOf(what) === -1; }).map(function (what) {
     return '<button type="button" data-press="' + deskEsc(what) + '" data-id="' + deskEsc(row.id) + '">' +
       deskEsc(DESK_PRESS_LABEL[what] || what) + '</button>';
   }).join(' ');
