@@ -46,11 +46,6 @@ const relayAuth = require('../run/js/relayAuth');
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-device-'));
 
-function writeAllow(root, keys) {
-  const dir = path.join(root, 'relay-state');
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, 'allow.json'), JSON.stringify({ keys: keys }, null, 2));
-}
 
 test.startTest('The node holds the device binding, and the relay holds nothing');
 
@@ -131,61 +126,18 @@ if (!deviceAuth.passwordsEqual(first.password, first.password.slice(0, -1)) &&
 }
 
 // ── 2. THE RELAY LEARNS NO DEVICE KEY ────────────────────────────────
-//
-// THIS INVERTS #1.14 AND #1.15, which asserted that loadAllow fills
-// `deviceByName`. It does not, deliberately: a relay holding a credential
-// it never reads is storing something on somebody's behalf, which is what
-// decision 0006 emptied it for.
 
-test.subHeading('And a relay reading its allow list learns none of it');
+test.subHeading('And a relay reading its owner file learns only the owner key');
 
-const oldRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-allow-old-'));
-writeAllow(oldRoot, [{ name: 'andy', publicKey: house.publicKey }]);
-const oldAllow = relayAuth.loadAllow(oldRoot);
-
-if (oldAllow.mode === 'keys' && oldAllow.byName.andy === house.publicKey) {
-  test.check('a row is a name and a house key, and that still loads');
+const pairRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-owner-pair-'));
+fs.mkdirSync(path.join(pairRoot, 'relay-state'), { recursive: true });
+fs.writeFileSync(path.join(pairRoot, 'relay-state', 'owner.json'),
+  JSON.stringify({ owner: house.publicKey, devicePublicKey: phone.publicKey }));
+const read = relayAuth.loadOwner(pairRoot);
+if (read === house.publicKey) {
+  test.check('owner.json yields the house key, and nothing of a device key written beside it');
 } else {
-  test.fail('allow: ' + JSON.stringify(oldAllow));
-}
-
-if (oldAllow.deviceByName === undefined) {
-  test.check('and there is no deviceByName to fill — the field is gone, not empty');
-} else {
-  test.fail('deviceByName is back: ' + JSON.stringify(oldAllow.deviceByName));
-}
-
-// THE MIGRATION IS A DROP, and it is the case that matters: allow.json
-// files written by older code still carry `devicePublicKey`, and they are
-// read by relays running this code. The row is parsed and the device half
-// is thrown away (relayAuth.loadAllow) — so an old file does not quietly
-// re-arm the thing that was removed.
-const pairRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-allow-pair-'));
-writeAllow(pairRoot, [{
-  name: 'andy',
-  publicKey: house.publicKey,
-  devicePublicKey: phone.publicKey,
-}]);
-const pair = relayAuth.loadAllow(pairRoot);
-
-if (JSON.stringify(pair).indexOf(phone.publicKey) === -1) {
-  test.check('and an allow.json written by older code has its device key dropped on read');
-} else {
-  test.fail('the old device key survived the load: ' + JSON.stringify(pair));
-}
-
-// THE PARSER STILL READS THE FIELD, and that is not a leak: parseKeyRow
-// is how the loader gets far enough to discard it, and dropping it at the
-// parser would mean nothing could tell an old row from a new one.
-const parsed = deviceAuth.parseKeyRow({
-  name: 'andy',
-  publicKey: house.publicKey,
-  devicePublicKey: phone.publicKey,
-});
-if (parsed.publicKey === house.publicKey && parsed.devicePublicKey === phone.publicKey) {
-  test.check('the row parser still sees it, which is how the loader knows what to drop');
-} else {
-  test.fail('parseKeyRow: ' + JSON.stringify(parsed));
+  test.fail('loadOwner: ' + JSON.stringify(read));
 }
 
 // ── 3. AND THERE IS NO SECOND PLACE TO BE THE OWNER ──────────────────

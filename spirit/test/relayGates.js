@@ -64,15 +64,15 @@ const createRelay = require(path.join(relayNode, 'js', 'relay.js')).createRelay;
 
 // createRelay() reads both files at construction, so each phase below gets
 // a clean slate written before it builds its own relay.
-function resetState(allowJson) {
+function resetState(ownerKey) {
   // The relay's data is a SQLite file since cycle 3, and Windows will not
   // delete a directory holding an open one: release it first.
   // The relay's own copy of the module — it runs out of the fake tree.
   require(path.join(relayNode, 'js', 'relayStore.js')).closeAll();
   fs.rmSync(RELAY_STATE, { recursive: true, force: true });
   fs.mkdirSync(RELAY_STATE, { recursive: true });
-  if (allowJson) {
-    fs.writeFileSync(path.join(RELAY_STATE, 'allow.json'), JSON.stringify(allowJson), 'utf8');
+  if (ownerKey) {
+    fs.writeFileSync(path.join(RELAY_STATE, 'owner.json'), JSON.stringify({ owner: ownerKey }), 'utf8');
   }
 }
 
@@ -101,7 +101,7 @@ test.subHeading('Keys mode: what a signature is actually required for');
 {
   const andy = auth.generateIdentity('andy');
   const mallory = auth.generateIdentity('mallory');
-  resetState({ keys: [{ name: andy.name, publicKey: andy.publicKey }] });
+  resetState(andy.publicKey);
   const relay = createRelay();
 
   const unsigned = relay.claim('andy', null, null);
@@ -217,24 +217,16 @@ test.subHeading('Keys mode: what a signature is actually required for');
 // ---- 3: rate limiting is per caller, not per claimed name ----
 test.subHeading('Rate limiting survives a rotating claimer name');
 {
-  // Fifty identities, every one of them ALLOWED, so the first refusal is
-  // the rate limit and not the invite lock. That distinction is the whole
-  // point: this assertion used to pass for exactly the wrong reason, with
-  // every claim refused for a missing key while the limit itself was
-  // broken.
-  //
-  // It used a names-mode allow.json to arrange that until 2026-09-15.
-  // Keys mode does the same job — a key already in allow.json is not a
-  // NEW key and needs no invite (relay.js, claim) — and does it without
-  // depending on a mode nothing in the tree writes.
+  // Every squatter holds an invite of its own, so the first refusal is the
+  // rate limit and not the invite lock.
   const squatters = [];
   for (let i = 0; i < ROTATION_CLAIMS; i++) {
     squatters.push(auth.generateIdentity('squatter' + i));
   }
-  resetState({
-    keys: squatters.map(function (s, i) {
-      return { name: 'squatter' + i, publicKey: s.publicKey };
-    }),
+  resetState(auth.generateIdentity('owner').publicKey);
+  const relayInvites = require(path.join(relayNode, 'js', 'invites.js'));
+  const tokens = squatters.map(function (s, i) {
+    return relayInvites.add(relayNode, { label: 'squatter' + i, days: 1 }).token;
   });
   const claimRelay = createRelay();
 
@@ -245,7 +237,9 @@ test.subHeading('Rate limiting survives a rotating claimer name');
       'squatter' + i,
       auth.sign(squatters[i].privateKey, auth.claimMessage('squatter' + i)),
       squatters[i].publicKey,
-      '203.0.113.9'
+      '203.0.113.9',
+      tokens[i],
+      'squatter' + i
     );
     if (r.ok) claimsAccepted++;
     else if (claimRefusal === null) claimRefusal = r;
@@ -268,7 +262,9 @@ test.subHeading('Rate limiting survives a rotating claimer name');
     nextFree,
     auth.sign(squatters[ROTATION_CLAIMS - 1].privateKey, auth.claimMessage(nextFree)),
     squatters[ROTATION_CLAIMS - 1].publicKey,
-    '198.51.100.7'
+    '198.51.100.7',
+    tokens[ROTATION_CLAIMS - 1],
+    nextFree
   );
   if (!other || other.status !== 429) {
     test.check('and a different caller is not spending the flooder budget');
@@ -278,7 +274,7 @@ test.subHeading('Rate limiting survives a rotating claimer name');
 }
 
 // ---- 4: an open relay should say so ----
-test.subHeading('A relay with no allow.json announces that it is open');
+test.subHeading('A relay with no owner.json announces that it is open');
 
 function freePort() {
   return new Promise(function (resolve, reject) {
@@ -316,7 +312,7 @@ function waitForBoot(port) {
 
 let child = null;
 
-resetState(null); // no allow.json — loadAllow answers mode 'unclaimed' (cycle 3)
+resetState(null); // no owner.json: unclaimed (cycle 3)
 
 freePort()
   .then(function (port) {

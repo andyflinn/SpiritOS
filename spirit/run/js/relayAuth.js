@@ -2,21 +2,12 @@
 
 // Shared by relay.js (verify) and hub.js (sign). Node crypto only.
 // Files live on that process's spirit/run home, never in git:
-//   relay-state/allow.json     { "keys": [{ "name", "publicKey" }] }, or absent = open
+//   relay-state/owner.json     { "owner" }, or absent = no owner
 //   relay-state/identity.json  { "name", "publicKey", "privateKey" }
-//
-// TWO MODES, NOT THREE. `{ "names": [...] }` was a third and went on
-// 2026-09-15 — see loadAllow. `devicePublicKey` was a third field on a
-// key row and went on 2026-09-13 — see writeAllowKeys.
 
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-// The device slot's shape and the one parser for an allow row. deviceAuth
-// requires nothing from here, so this is a one-way edge: the module that
-// owns the personal node's password also owns how a device key is spelled
-// in a mailbox's allow list, and there is one answer to that question.
-const deviceAuth = require('./deviceAuth');
 // What a label and a description may be, said once for both sides of the
 // wire. It requires nothing at all — that is what lets the browser have
 // the same copy — so this is another one-way edge.
@@ -391,71 +382,19 @@ function verify(publicKeyB64, message, sigB64) {
 // shown once over SSH (NODE-AND-RELAY, "The first claim needs a token";
 // 0003 amended to "first invited claim is owner").
 
-// TWO STATES, NAMED BY WHAT IS TRUE (cycle 3, Andy: "upon first claim, a
-// relay is always key-mode, except for claims — this needs tighter
-// specification"):
-//
-//   keys       an owner in allow.json. Claims need an owner-minted invite;
-//              everything else is by key and signature.
-//   unclaimed  no owner in allow.json. The ONE thing accepted is a claim
-//              presenting the installer's owner invite (relay.js
-//              claimAttempt). If the roll holds members, the relay refuses
-//              to start instead (relayServer.js): recovery is SSH, never
-//              the wire (Andy).
-//
-// `open` — "anyone may take the first claim" — does not exist any more.
-function loadAllow(rootDir) {
+// Every owned server keeps its owner's key in relay-state/owner.json, as
+// { owner } (Andy, cleanup/G1.7). No file, or no key in it: no owner.
+function loadOwner(rootDir) {
   try {
-    const raw = fs.readFileSync(path.join(rootDir, 'relay-state', 'allow.json'), 'utf8');
-    const parsed = JSON.parse(raw);
-    if (parsed && Array.isArray(parsed.keys) && parsed.keys.length) {
-      const byName = Object.create(null);
-      // A ROW IS A NAME AND A HOUSE KEY. `deviceByName` rode alongside
-      // until 2026-09-13 and is gone: a relay keeps no device key, because
-      // the binding between a device and its node is the NODE's (see
-      // deviceAuth.js). A stale `devicePublicKey` in an allow.json written
-      // by older code is read and dropped here, which is the migration.
-      parsed.keys.forEach(function (raw) {
-        const row = deviceAuth.parseKeyRow(raw);
-        if (!row) return;
-        byName[row.name] = row.publicKey;
-      });
-      return { mode: 'keys', byName: byName };
-    }
-    // D6 ELIMINATED (cycle 3, Part B; design/DEPRECATIONS.md). A
-    // names-mode allow.json fell through to `open`. There is no `open`
-    // now: any allow.json without an owner key is simply `unclaimed`, and
-    // a relay whose roll holds members refuses to start on it, so no code
-    // is left that is about names mode at all.
-    // NAMES MODE STOOD HERE — `{ "names": [...] }`, a list of labels
-    // allowed to claim with no key behind any of them. Deleted on
-    // 2026-09-15.
-    //
-    // Not because it was unused in principle but because NOTHING IN THE
-    // TREE EVER WROTE ONE. `writeAllowKeys` is the only writer of this
-    // file and it writes `keys`; first-claim-is-owner (decision 0003)
-    // produces a keys-mode box and always did. A names-mode allow.json
-    // could only arrive by hand, and the two gates that made it mean
-    // anything — checkSend and checkInbox — went with the ring in the
-    // same sitting, so what was left was a mode that could claim and do
-    // nothing else.
-    //
-  } catch (e) { /* missing = no owner */ }
-  return { mode: 'unclaimed' };
+    const doc = JSON.parse(fs.readFileSync(path.join(rootDir, 'relay-state', 'owner.json'), 'utf8'));
+    return doc && typeof doc.owner === 'string' ? doc.owner.trim() : '';
+  } catch (e) { return ''; }
 }
 
-// A row is a name and a house key. It carried a devicePublicKey until
-// 2026-09-13; anything still passing one has it dropped here, which is how
-// the field leaves a live allow.json on the next write.
-function writeAllowKeys(rootDir, keys) {
+function writeOwner(rootDir, key) {
   const dir = path.join(rootDir, 'relay-state');
   fs.mkdirSync(dir, { recursive: true });
-  const rows = (keys || []).map(function (raw) {
-    const row = deviceAuth.parseKeyRow(raw);
-    if (!row) return null;
-    return { name: row.name, publicKey: row.publicKey };
-  }).filter(Boolean);
-  fs.writeFileSync(path.join(dir, 'allow.json'), JSON.stringify({ keys: rows }, null, 2));
+  fs.writeFileSync(path.join(dir, 'owner.json'), JSON.stringify({ owner: String(key) }, null, 2));
 }
 
 // A KEY THAT CANNOT SIGN IS NOT AN IDENTITY.
@@ -620,7 +559,7 @@ function ensureIdentity(rootDir, name) {
 //
 // WHAT THE OWNER CHECK IS NOW, and it is not a replacement — it is where
 // the question was already being answered better. `relay.isOwner(who)`
-// compares the POST's proven sender against the key in allow.json, per
+// compares the POST's proven sender against the key in owner.json, per
 // verb, inside answerSelf. The post's own signature did the proving
 // before that line ran, so there is no second place to decide who the
 // owner is.
@@ -647,11 +586,6 @@ function ensureIdentity(rootDir, name) {
 // never matches. A device is the owner's window, not the owner's
 // credentials (design/relay/DEVICE.md).
 
-function ownerName(allow) {
-  if (allow.mode !== 'keys') return null;
-  var names = Object.keys(allow.byName);
-  return names.length ? names[0] : null;
-}
 
 module.exports = {
   setDescription: setDescription,
@@ -675,10 +609,9 @@ module.exports = {
   commandMessage,
   commandSignatureFor,
   commandSignatureOk,
-  loadAllow,
-  writeAllowKeys,
+  loadOwner,
+  writeOwner,
   loadIdentity,
   saveIdentity,
   ensureIdentity,
-  ownerName,
 };

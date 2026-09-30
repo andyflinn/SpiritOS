@@ -249,19 +249,6 @@ function passwordsEqual(stored, given) {
 //   a device key that was "a full copy of the owner's authority on this
 //     box", which is what the note here used to have to justify
 //
-// DEPRECATED(D5, expires: alpha) — allow rows spelled the old way:
-// `owner` for `publicKey`, `device`/`devicePublicKey` read and dropped on
-// the next write. See design/DEPRECATIONS.md (decision 0014).
-function parseKeyRow(row) {
-  if (!row || typeof row !== 'object') return null;
-  if (typeof row.name !== 'string' || !row.name.trim()) return null;
-  var owner = row.publicKey || row.owner;
-  if (typeof owner !== 'string' || !owner) return null;
-  var device = row.devicePublicKey || row.device || null;
-  if (typeof device !== 'string' || !device) device = null;
-  return { name: row.name.trim(), publicKey: owner, devicePublicKey: device };
-}
-
 module.exports = {
   keyToUrl: keyToUrl,
   keyFromUrl: keyFromUrl,
@@ -273,6 +260,5 @@ module.exports = {
   ensurePassword: ensurePassword,
   rotatePassword: rotatePassword,
   setDevicePublicKey: setDevicePublicKey,
-  passwordsEqual: passwordsEqual,
-  parseKeyRow: parseKeyRow
+  passwordsEqual: passwordsEqual
 };

@@ -556,7 +556,7 @@ test.subHeading('And the relay still keeps nothing');
   // relay.db holds the roll, the invites and the partner roll since cycle 3.
   // pending-owner.json left this list in cycle 3 (Part B): nothing writes
   // it any more, so its return would be a file the relay grew.
-  const known = ['allow.json', 'identity.json', 'relay.db'];
+  const known = ['owner.json', 'identity.json', 'relay.db'];
   const unexpected = files.filter(function (f) { return known.indexOf(f) === -1; });
   if (!unexpected.length) {
     test.check('the relay grew no new file for any of it — ' + files.join(', '));

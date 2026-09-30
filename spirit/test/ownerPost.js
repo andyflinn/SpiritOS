@@ -9,7 +9,7 @@
 //   supported in every context/environment".
 //
 // Built by claude-windows at 8c8347c. The far end is a REAL
-// nodeApps.puppetDoor with its own relay-state/puppet.json, so a command
+// nodeApps.puppetDoor with its own relay-state/owner.json, so a command
 // is signed by ownerPost, checked by G5's rule and run by G7's shim --
 // the whole owner door, end to end, over an in-process relay.
 //
@@ -31,12 +31,12 @@ const owner = auth.generateIdentity('owner');
 const puppet = auth.generateIdentity('puppet');
 const other = auth.generateIdentity('other-puppet');
 
-// A puppet node: its puppet.json, a real door, and a handler per verb.
-function puppetNode(id, carries) {
+// A puppet node: its owner.json, a real door, and a handler per verb.
+function puppetNode(id) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-ownerpost-'));
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'relay-state', 'puppet.json'),
-    JSON.stringify({ owner: owner.publicKey, carries: carries }));
+  fs.writeFileSync(path.join(root, 'relay-state', 'owner.json'),
+    JSON.stringify({ owner: owner.publicKey }));
   const ran = [];
   const node = {
     id: id, ran: ran, deliverAnswer: null,
@@ -92,7 +92,7 @@ function ownerWith(puppets, opts) {
 }
 
 (async function () {
-  const P = puppetNode(puppet, ['contact']);
+  const P = puppetNode(puppet);
   const puppets = {}; puppets[puppet.publicKey] = P;
 
   // ── THE CONTROL: A SIGNED COMMAND, RUN AND ANSWERED ────────────────
@@ -108,15 +108,15 @@ function ownerWith(puppets, opts) {
     }
   }
 
-  // ── NOT CARRIED THERE: THE CALLER GETS THAT REFUSAL, NOT A NETWORK ONE ─
+  // ── A VERB THE PUPPET HAS NO HANDLER FOR: THE CALLER GETS THAT REFUSAL ─
   {
     const op = ownerWith(puppets);
     const r = await op.send(puppet.publicKey, 'node.info', {});
-    if (r && r.ok === false && r.code === 'not-carried-here') {
-      test.check('a command for a group the puppet does not carry comes back to the caller as '
-        + 'not-carried-here — "not here", never mistaken for "broken"');
+    if (r && r.ok === false && r.code === 'no-such-verb') {
+      test.check('a verb the puppet does not answer comes back to the caller as no-such-verb, '
+        + 'never mistaken for "broken"');
     } else {
-      test.fail('uncarried group reached the caller as ' + JSON.stringify(r));
+      test.fail('an unanswered verb reached the caller as ' + JSON.stringify(r));
     }
   }
 

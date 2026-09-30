@@ -25,13 +25,8 @@ const auth = require('./relayAuth');
 
 const LABEL_LIMIT = 10;
 
-// '' on a relay nobody has claimed, or with no readable allow.json.
 function ownerKeyOf(rootDir) {
-  try {
-    const allow = auth.loadAllow(rootDir);
-    const label = auth.ownerName(allow);
-    return (label && allow.byName && allow.byName[label]) || '';
-  } catch (e) { return ''; }
+  return auth.loadOwner(rootDir);
 }
 
 function short(key) {

@@ -141,7 +141,7 @@ test.subHeading('Delivery: the owner\'s sink, and no other');
 
   const owner = auth.generateIdentity('andy');
   const friend = auth.generateIdentity('bella');
-  auth.writeAllowKeys(home, [{ name: 'andy', publicKey: owner.publicKey }]);
+  auth.writeOwner(home, owner.publicKey);
 
   const relay = createRelay.createRelay(home);
 

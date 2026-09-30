@@ -267,18 +267,16 @@ test.subHeading('The owner’s label lives in two places, and they move together
 // ---------------------------------------------------------------------
 
 {
-  // `allow.json` identifies the owner by NAME — `ownerName()` is its
-  // first key, and every owner check resolves through it. An owner whose
-  // peer row said `chief` while allow.json still said `andy` would be
-  // locked out of its own relay: not refused, simply not recognised.
+  // The owner is known by key (owner.json); its label is its member row's,
+  // so a rename touches nothing else (cleanup/G1.7).
   const L = world.build({ title: 'owner and a member', peers: ['bert'] });
 
   const moved = world.ask(L.box, L.owner, { rename: { label: 'chief' } });
   if (moved.answer && moved.answer.ok &&
-      auth.ownerName(auth.loadAllow(L.home)) === 'chief') {
-    test.check('renaming the owner moves allow.json in the same act');
+      auth.loadOwner(L.home) === L.owner.publicKey && L.box.ownerPublic().ownerLabel === 'chief') {
+    test.check('renaming the owner keeps owner.json and shows the new label');
   } else {
-    test.fail('allow.json: ' + auth.ownerName(auth.loadAllow(L.home)) +
+    test.fail('owner.json: ' + auth.loadOwner(L.home).slice(0, 16) + ' label ' + L.box.ownerPublic().ownerLabel +
       ' answer=' + JSON.stringify(moved.answer));
   }
 

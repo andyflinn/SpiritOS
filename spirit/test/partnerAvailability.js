@@ -74,7 +74,7 @@ async function relayHalf() {
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   const owner = auth.generateIdentity('owner');
-  auth.writeAllowKeys(home, [{ name: 'owner', publicKey: owner.publicKey }]);
+  auth.writeOwner(home, owner.publicKey);
 
   let now = Date.parse('2026-09-22T12:00:00Z');
   const partner = auth.generateIdentity('relay-partner');

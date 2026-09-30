@@ -94,7 +94,7 @@ function relayOf(n) {
   auth.saveIdentity(home, auth.generateIdentity('relay'));
 
   const owner = auth.generateIdentity('owner');
-  auth.writeAllowKeys(home, [{ name: 'owner', publicKey: owner.publicKey }]);
+  auth.writeOwner(home, owner.publicKey);
 
   const box = createRelay(home);
   box.claim('owner', auth.sign(owner.privateKey, auth.claimMessage('owner')), owner.publicKey);

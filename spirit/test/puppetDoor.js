@@ -10,7 +10,7 @@
 //
 // Built by claude-windows at 3feddc5. Driven here through
 // nodeApps.puppetDoor with the node's real packet codec and relayAuth, a
-// real relay-state/puppet.json on disc, and fake handlers standing in for
+// real relay-state/owner.json on disc, and fake handlers standing in for
 // loopbackVerbs. The tester read the shim once, to learn the calling
 // convention a fake handler must follow (handler(req, res), req a readable
 // holding the body, res catching status and body) — said here because the
@@ -24,7 +24,7 @@ const nodeApps = require('../run/js/nodeApps');
 const auth = require('../run/js/relayAuth');
 const packet = require('../run/js/client/packet');
 
-test.startTest('A puppet runs what its owner signs, for the groups it carries, and nothing else');
+test.startTest('A puppet runs what its owner signs, across its whole surface, and nothing else');
 
 const owner = auth.generateIdentity('owner');
 const newOwner = auth.generateIdentity('new-owner');
@@ -44,7 +44,7 @@ function command(verb, body, signer, opts) {
 function world(puppetJson) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-puppet-door-'));
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-  const file = path.join(root, 'relay-state', 'puppet.json');
+  const file = path.join(root, 'relay-state', 'owner.json');
   if (puppetJson) fs.writeFileSync(file, JSON.stringify(puppetJson));
   const ran = [];
   const sent = [];
@@ -92,7 +92,7 @@ function world(puppetJson) {
 }
 
 (async function () {
-  const OWNED = { owner: owner.publicKey, carries: ['contact'] };
+  const OWNED = { owner: owner.publicKey };
 
   // ── THE CONTROL: THE OWNER'S COMMAND TO A CARRIED GROUP IS RUN ──────
   {
@@ -108,16 +108,16 @@ function world(puppetJson) {
     }
   }
 
-  // ── NOT CARRIED HERE: REFUSED BY NAME, HANDLER NEVER RUNS ──────────
+  // ── THE WHOLE SURFACE: ANY GROUP THE OWNER SIGNS FOR RUNS ──────────
   {
     const w = world(OWNED);
     await w.arrive(owner.publicKey, command('node.info', {}));
     const b = w.sent[0] && w.sent[0].reply.body;
-    if (!w.ran.length && b && b.code === 'not-carried-here' && b.verb === 'node.info') {
-      test.check('a command for a group this puppet does not carry is refused by name, not-carried-here, '
-        + 'and its handler never runs — "not every group is supported in every context"');
+    if (w.ran.join() === 'node.info' && b && b.ok) {
+      test.check('a command for another group (node.info) runs too: the owner has the node\'s whole '
+        + 'surface, as a loopback client would');
     } else {
-      test.fail('uncarried group: ran ' + JSON.stringify(w.ran) + ', answer ' + JSON.stringify(b));
+      test.fail('node.info from the owner: ran ' + JSON.stringify(w.ran) + ', answer ' + JSON.stringify(b));
     }
   }
 
@@ -126,7 +126,7 @@ function world(puppetJson) {
     const w = world(null);
     await w.arrive(owner.publicKey, command('contact.list', {}));
     if (!w.ran.length && !w.sent.length) {
-      test.check('with no puppet.json a node runs no command and answers nothing — it cannot even be '
+      test.check('with no owner.json a node runs no command and answers nothing — it cannot even be '
         + 'told apart from a node that is not a puppet');
     } else {
       test.fail('a non-puppet acted: ran ' + JSON.stringify(w.ran) + ', sent ' + w.sent.length);
@@ -162,12 +162,12 @@ function world(puppetJson) {
   // ── A NEW OWNER IS OBEYED AT ONCE; THE OLD ONE IS NOT ──────────────
   {
     const w = world(OWNED);
-    w.edit({ owner: newOwner.publicKey, carries: ['contact'] });
+    w.edit({ owner: newOwner.publicKey });
     await w.arrive(owner.publicKey, command('contact.list', {}));
     const oldRan = w.ran.length;
     await w.arrive(newOwner.publicKey, command('contact.list', {}, newOwner));
     if (oldRan === 0 && w.ran.length === 1) {
-      test.check('after the owner changes puppet.json, the very next command obeys the new owner and the '
+      test.check('after the owner changes owner.json, the very next command obeys the new owner and the '
         + 'old one runs nothing — read on every arrival, no restart');
     } else {
       test.fail('owner edit: old owner ran ' + oldRan + ', new owner total ' + w.ran.length);

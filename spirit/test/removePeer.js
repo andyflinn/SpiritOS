@@ -257,7 +257,7 @@ function run() {
     path.join(legacyHome, 'relay-state', 'mailbox.json'),
     JSON.stringify(carried)
   );
-  auth.writeAllowKeys(legacyHome, [{ name: 'andy', publicKey: L.owner.publicKey }]);
+  auth.writeOwner(legacyHome, L.owner.publicKey);
 
   const ignored = createRelay(legacyHome);
   if (labels(ignored) === '') {

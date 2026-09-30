@@ -230,7 +230,7 @@ async function run() {
     // on: nothing to strand on a relay that was unreachable, nothing to
     // reconcile, nothing held on somebody's behalf.
     const onDisk = fs.readFileSync(
-      path.join(N.home, 'relay-state', 'allow.json'), 'utf8');
+      path.join(N.home, 'relay-state', 'owner.json'), 'utf8');
     const rowsHaveDevice = /devicePublicKey/.test(onDisk) ||
       rollOf(N.box).some(function (r) { return r.devicePublicKey; });
     if (!rowsHaveDevice) {
@@ -506,13 +506,13 @@ async function run() {
   // PEER's did not — the two rooms rule, with the owner's device in the
   // owner's room. A relay keeps no device key at all now, so the rule it
   // was protecting has nothing left to protect: no room holds one.
-  const allowRaw = fs.readFileSync(path.join(L.home, 'relay-state', 'allow.json'), 'utf8');
+  const allowRaw = fs.readFileSync(path.join(L.home, 'relay-state', 'owner.json'), 'utf8');
   if (allowRaw.indexOf(ownerPhone.publicKey) === -1 &&
       allowRaw.indexOf(phoneA.publicKey) === -1 &&
       allowRaw.indexOf('devicePublicKey') === -1) {
-    test.check("and allow.json holds no device key at all — not the owner's, not a peer's");
+    test.check("and owner.json holds no device key at all — not the owner's, not a peer's");
   } else {
-    test.fail('allow.json holds a device key: ' + allowRaw);
+    test.fail('owner.json holds a device key: ' + allowRaw);
   }
 
   replyTo(L.box, L.owner, ownerGot.req, false, '');

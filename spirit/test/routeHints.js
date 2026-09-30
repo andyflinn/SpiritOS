@@ -89,7 +89,7 @@ function relayWith(tag, memberNames) {
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay-' + tag));
   const owner = auth.generateIdentity('owner-' + tag);
-  auth.writeAllowKeys(home, [{ name: 'owner' + tag, publicKey: owner.publicKey }]);
+  auth.writeOwner(home, owner.publicKey);
   const box = createRelay(home, { askPartner: askPartner(home) });
   box.claim('owner' + tag, auth.sign(owner.privateKey, auth.claimMessage('owner' + tag)), owner.publicKey);
   const people = {};

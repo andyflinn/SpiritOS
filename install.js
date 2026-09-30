@@ -68,15 +68,15 @@ function ask(question) {
 }
 
 async function main() {
-  const allow = relayAuth.loadAllow(RUN_DIR);
-  if (allow.mode === 'keys') {
-    refuse('this relay already has an owner (' + relayAuth.ownerName(allow) + '). An owner is ' +
-      'changed over SSH by editing relay-state/allow.json, never by a second invite.');
+  const owner = relayAuth.loadOwner(RUN_DIR);
+  if (owner) {
+    refuse('this relay already has an owner (' + owner.slice(0, 24) + '...). An owner is ' +
+      'changed over SSH by editing relay-state/owner.json, never by a second invite.');
   }
   const members = relayStore.open(RUN_DIR).members.count();
   if (members > 0) {
-    refuse('relay-state/relay.db holds ' + members + ' member(s) but allow.json names no owner. ' +
-      'That is a lost allow.json, not a new relay: restore it; an invite would hand the box ' +
+    refuse('relay-state/relay.db holds ' + members + ' member(s) but owner.json names no owner. ' +
+      'That is a lost owner.json, not a new relay: restore it; an invite would hand the box ' +
       'and everyone on it to whoever redeems it.');
   }
 

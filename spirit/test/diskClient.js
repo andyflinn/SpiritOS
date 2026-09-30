@@ -55,7 +55,7 @@ function homeWith(tag, n) {
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   const owner = auth.generateIdentity('owner');
-  auth.writeAllowKeys(home, [{ name: 'owner', publicKey: owner.publicKey }]);
+  auth.writeOwner(home, owner.publicKey);
   const store = relayStore.open(home);
   // One member with a real key, so something besides the owner can sign.
   const real = auth.generateIdentity('real');

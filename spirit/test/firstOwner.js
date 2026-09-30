@@ -69,11 +69,10 @@ test.startTest('First invited claim is owner');
     test.fail('first claim: ' + JSON.stringify(first));
   }
 
-  const allow = auth.loadAllow(home);
-  if (allow.mode === 'keys' && allow.byName.andy === id.publicKey) {
-    test.check('allow.json written as keys for andy');
+  if (auth.loadOwner(home) === id.publicKey) {
+    test.check('owner.json names andy\'s key');
   } else {
-    test.fail('allow after first claim: ' + JSON.stringify(allow));
+    test.fail('owner after first claim: ' + JSON.stringify(auth.loadOwner(home)));
   }
 
   if (!invites.load(home).some(function (r) { return r.token === ownerInvite.token; })) {
@@ -168,15 +167,15 @@ test.startTest('First invited claim is owner');
   // a relay built in process refuses the claim for the same reason, so
   // the next owner invite cannot take a box with people on it. Recovery
   // is SSH (Andy).
-  fs.unlinkSync(path.join(home, 'relay-state', 'allow.json'));
+  fs.unlinkSync(path.join(home, 'relay-state', 'owner.json'));
   const box3 = createRelay(home);
   const thief = auth.generateIdentity('thief');
   const stolen = invites.mintOwner(home, 'thief', 1);
   const grab = box3.claim('thief',
     auth.sign(thief.privateKey, auth.claimMessage('thief')),
     thief.publicKey, '10.0.0.9', stolen.token, 'thief');
-  if (!grab.ok && grab.status === 503 && /restore allow\.json/.test(grab.error)) {
-    test.check('a relay with members and no allow.json refuses even the owner invite: ' + grab.error);
+  if (!grab.ok && grab.status === 503 && /restore owner\.json/.test(grab.error)) {
+    test.check('a relay with members and no owner.json refuses even the owner invite: ' + grab.error);
   } else {
     test.fail('members-no-owner claim: ' + JSON.stringify(grab));
   }

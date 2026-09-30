@@ -30,7 +30,7 @@ It runs exactly two long-lived processes:
 
 systemd unit: `spirit-relay.service`  
 Working directory: `/root/SpiritOS/spirit/run`  
-State that is **not** in git: `spirit/run/relay-state/` (`allow.json`, `mailbox.json`, optional `identity.json`)
+State that is **not** in git: `spirit/run/relay-state/` (`owner.json`, `relay.db`, `identity.json`)
 
 ---
 
@@ -134,7 +134,7 @@ else
 ```
 
 `relay-state/` is gitignored. Hard reset does not delete the mailbox or
-allow-list.
+the owner file.
 
 ### `./bash/cron-install`
 

@@ -25,7 +25,7 @@
 //       timeout, and a late reply is dropped, never handed to whoever asks
 //       next (the same rule as the face door's waiting table).
 //
-// Whatever the puppet answered (ok, not-carried-here, no-such-verb,
+// Whatever the puppet answered (ok, no-such-verb,
 // handler-failed, bad command signature) is passed through as it came.
 // Refusals from the way there (no route, peer not reachable) come back
 // as the post's own answer, so a remote failure keeps its contract.

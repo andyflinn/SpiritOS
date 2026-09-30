@@ -119,23 +119,14 @@ chmod 600 "$FACE_DIR/.env"
 # ── WHAT MAKES IT A FACE, AND WHOSE ─────────────────────────────────
 #
 # face.json switches puppetPost on (puppetPost.js faceConfigIn: absent means
-# no face). puppet.json names the only key this node obeys (nodeApps.puppetIn),
-# and 'carries' the verb groups that key may command through the owner door
-# (nodeApps.puppetDoor: anything else is 403 not-carried-here).
-#
-# CARRIES "contact": the owner keeps the face's contacts in sync with the
-# names it grants, so a member's answer is not a stranger's packet. Andy,
-# 2026-09-27: "ah, so the owner must keep the puppets contact-selection in
-# sync with its name grants" (now grantFace's), then "that's what the owners control of the
-# puppets api is for". Rewritten on every run, so a rerun upgrades a face
-# installed with [].
+# no face). owner.json names the only key this node obeys (nodeApps.puppetIn).
 STATE="$FACE_DIR/spirit/run/relay-state"
 mkdir -p "$STATE"
 chmod 700 "$STATE"
-say "write face.json and puppet.json"
+say "write face.json and owner.json"
 printf '{ "port": %s }\n' "$FACE_PORT" > "$STATE/face.json"
-printf '{ "owner": "%s", "carries": ["contact"] }\n' "$OWNER_KEY" > "$STATE/puppet.json"
-chmod 600 "$STATE/face.json" "$STATE/puppet.json"
+printf '{ "owner": "%s" }\n' "$OWNER_KEY" > "$STATE/owner.json"
+chmod 600 "$STATE/face.json" "$STATE/owner.json"
 ok "face on 127.0.0.1:$FACE_PORT, owned by ${OWNER_KEY:0:24}..."
 
 say "install unit $FACE_UNIT"

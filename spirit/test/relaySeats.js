@@ -51,7 +51,7 @@ function relayWith(ramLimitMB) {
   auth.saveIdentity(home, auth.generateIdentity('relay'));
 
   const owner = auth.generateIdentity('andy');
-  auth.writeAllowKeys(home, [{ name: 'andy', publicKey: owner.publicKey }]);
+  auth.writeOwner(home, owner.publicKey);
 
   const box = createRelay(home, {
     config: { ramLimitMB: ramLimitMB, discLimitMB: 64 },
@@ -219,7 +219,7 @@ test.subHeading('A relay with no configuration has no seat bound');
   fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
   auth.saveIdentity(home, auth.generateIdentity('relay'));
   const owner = auth.generateIdentity('andy');
-  auth.writeAllowKeys(home, [{ name: 'andy', publicKey: owner.publicKey }]);
+  auth.writeOwner(home, owner.publicKey);
   const box = createRelay(home);
   box.claim('andy', auth.sign(owner.privateKey, auth.claimMessage('andy')), owner.publicKey);
 

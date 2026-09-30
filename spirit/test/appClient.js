@@ -97,13 +97,14 @@ test.subHeading('None on a puppet, one server job per serving app elsewhere');
     test.fail('started: ' + JSON.stringify(started));
   }
   fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'relay-state', 'puppet.json'), '{}');
+  fs.writeFileSync(path.join(root, 'relay-state', 'owner.json'),
+    JSON.stringify({ owner: require('../run/js/relayAuth').generateIdentity('owner').publicKey }));
   const onPuppet = [];
   appClient.createAppClient({
     rootDir: root, platform: 'linux', log: function () {},
     startServerJob: function () { onPuppet.push(1); return {}; },
   }).startAll();
-  if (onPuppet.length === 0) test.check('a puppet (relay-state/puppet.json) starts none: app servers live on the owner\'s box');
+  if (onPuppet.length === 0) test.check('a puppet (relay-state/owner.json naming another key) starts none: app servers live on the owner\'s box');
   else test.fail('a puppet started ' + onPuppet.length);
   fs.rmSync(root, { recursive: true, force: true });
 })();

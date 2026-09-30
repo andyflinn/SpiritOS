@@ -247,7 +247,7 @@ if (byKey.code === 0 && byKey.text.indexOf('"bert"') !== -1 && byKey.text.indexO
 }
 
 // The owner is allow.json's one key, never a mark on the row.
-auth.writeAllowKeys(H, [{ name: 'andy', publicKey: 'K1' }]);
+auth.writeOwner(H, 'K1');
 const byLabel = dump(['label', 'andy']);
 const byBert = dump(['label', 'bert']);
 if (byLabel.code === 0 && /owner\s+andy\s+K1/.test(byLabel.text) && /member\s+bert\s+K3/.test(byBert.text)) {

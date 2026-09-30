@@ -52,7 +52,7 @@ function relayWith(tag, memberNames) {
   auth.saveIdentity(home, auth.generateIdentity('relay'));
 
   const owner = auth.generateIdentity('owner-' + tag);
-  auth.writeAllowKeys(home, [{ name: 'owner' + tag, publicKey: owner.publicKey }]);
+  auth.writeOwner(home, owner.publicKey);
 
   const box = createRelay(home);
   // WITH CARDS (cycle 10, R5): the relay seals its answers to the key on

@@ -287,7 +287,7 @@ define('search-failed', {
 });
 define('relay-no-owner', {
   status: 503, presence: NONE, retry: 'no', fault: 'relay',
-  texts: ['relay has members but no owner — restore allow.json over SSH'],
+  texts: ['relay has members but no owner — restore owner.json over SSH'],
 });
 define('relay-no-identity', {
   status: 503, presence: NONE, retry: 'no', fault: 'relay',
@@ -432,7 +432,7 @@ define('not-a-puppet', {
   status: 403, presence: NONE, retry: 'no', fault: 'caller',
   texts: ['not a puppet'],
   note: 'This node has no owner established, so it takes no owner commands at ' +
-    'all — absent means nobody, the same rule allow.json uses. Nothing is ' +
+    'all — absent means nobody. Nothing is ' +
     'wrong with the command; it arrived somewhere that does not take them.',
 });
 
@@ -631,13 +631,6 @@ define('no-reply-from-puppet', {
   note: 'peerOwnerPost sent a signed command and no answer with its hash came back within ' +
     'the wait. A reply arriving after that is dropped, never handed to whoever asks next ' +
     '(ownerPost.js).',
-});
-define('not-carried-here', {
-  status: 403, presence: NONE, retry: 'no', fault: 'caller',
-  texts: ['not carried by this puppet'],
-  note: 'The verb is real, and this puppet does not carry its group. Andy: "not ' +
-    'every group is supported in every context/environment". Said by name so a caller ' +
-    'can tell "not here" from "broken".',
 });
 define('no-such-verb', {
   status: 400, presence: NONE, retry: 'no', fault: 'caller',

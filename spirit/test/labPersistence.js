@@ -82,11 +82,11 @@ async function waitServing(timeoutMs) {
 // running relay and labMaster's cleanup never meet a handle of ours.
 // Answers the shape routingTable.json had — `peers` by key — plus the
 // database's table names, which is what "keeps nothing else" means now.
-// The owner's key as allow.json has it: the one place ownership lives.
+// The owner's key as owner.json has it: the one place ownership lives.
 function ownerKeyOnDisk() {
   try {
-    const allow = JSON.parse(fs.readFileSync(path.join(relayHome, 'relay-state', 'allow.json'), 'utf8'));
-    return (allow && Array.isArray(allow.keys) && allow.keys[0] && allow.keys[0].publicKey) || '';
+    const doc = JSON.parse(fs.readFileSync(path.join(relayHome, 'relay-state', 'owner.json'), 'utf8'));
+    return (doc && doc.owner) || '';
   } catch (e) { return ''; }
 }
 

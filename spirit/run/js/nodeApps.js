@@ -105,58 +105,36 @@ function boots(manifest) {
   return !!(manifest && manifest.boots === true);
 }
 
-// ── WHO OWNS THIS PUPPET (puppets/G6), AND WHAT IT CARRIES (G7) ──────
-//
-//   Andy: "the app must know who owns it, it stores the key of it's
-//   owner", naming the requirement in Desk on 2026-09-27 "Lock puppet out
-//   of Self-Ownership", and then ruling what a puppet IS: a node OWNED by
-//   another node's ID is a puppet, one puppet per node, several apps on it
-//   being apps of ONE puppet ("that is what ties a puppet to its owner").
-//
-// So the owner belongs to the NODE, not to each app: ONE file at the
-// node's home, relay-state/puppet.json, { "owner": "<key>", "carries":
-// ["contact", ...] }, written by the owner. ITS PRESENCE makes the node a
-// puppet: absent means not a puppet; an owner that is absent or not a key
-// means owned by nobody; carries absent means no node group is reachable
-// by command. One file, one read per ask, so an owner and a carried list
-// never come from two different moments (wsl-claude). Named puppet.json,
-// not owner.json, because a relay box already keeps pending-owner.json and
-// allow.json for the RELAY's owner in that folder, and two owners with
-// near-identical file names is how the next reader picks the wrong one.
-//
-// THE LOCK is stronger than read-only: relay-state is outside every app's
-// scope (scopedFs), so no app can reach the file at all, and "within
-// loopback, trust is the responsibility of the box-owner" covers code he
-// chose to run. Read on every call, never cached, for allow.json's
-// reason, with the same collapse: missing is silent, a broken file is said
-// once per distinct content, and the answer is then "nobody".
-const PUPPET = 'puppet.json';
 const OWNER_KEY = /^MCowBQYDK2VwAyEA[A-Za-z0-9+/]{43}=$/;
-const GROUP = /^[a-z][a-z0-9]*$/;
+// A node is a puppet when relay-state/owner.json names a key that is not its
+// own (Andy: "pupped is the fate of having an owner that is not the self").
+function selfKeyIn(rootDir) {
+  try {
+    const id = JSON.parse(fs.readFileSync(path.join(String(rootDir || ''), 'relay-state', 'identity.json'), 'utf8'));
+    return id && typeof id.publicKey === 'string' ? id.publicKey : '';
+  } catch (e) { return ''; }
+}
 function puppetIn(rootDir, log) {
   const say = log || function () {};
-  const file = path.join(String(rootDir || ''), 'relay-state', PUPPET);
+  const file = path.join(String(rootDir || ''), 'relay-state', 'owner.json');
   let moaned = null;
   return function () {
     let raw = null;
     try { raw = fs.readFileSync(file, 'utf8'); } catch (e) { raw = null; }
-    if (!raw || !String(raw).trim()) return { puppet: false, owner: '', carries: [] };
+    if (!raw || !String(raw).trim()) return { puppet: false, owner: '' };
     let doc = null;
     try { doc = JSON.parse(raw); } catch (e) { doc = null; }
     const owner = doc && typeof doc.owner === 'string' && OWNER_KEY.test(doc.owner) ? doc.owner : '';
-    const carries = doc && Array.isArray(doc.carries)
-      ? doc.carries.filter(function (g) { return typeof g === 'string' && GROUP.test(g); })
-      : [];
     if (!owner) {
       if (moaned !== raw) {
         moaned = raw;
-        say(PUPPET + ' exists but names no owner as { "owner": "MCowBQYDK2VwAyEA...", "carries": [...] }, ' +
-          'so this puppet is owned by nobody and takes no commands until it is fixed');
+        say('owner.json names no owner as { "owner": "MCowBQYDK2VwAyEA..." }, so this node takes no owner commands until it is fixed');
       }
-    } else {
-      moaned = null;
+      return { puppet: false, owner: '' };
     }
-    return { puppet: true, owner: owner, carries: carries };
+    moaned = null;
+    if (owner === selfKeyIn(rootDir)) return { puppet: false, owner: '' };
+    return { puppet: true, owner: owner };
   };
 }
 
@@ -358,19 +336,14 @@ function ownerCommandIn(arrival, opts) {
 
 // ── THE OWNER DOOR (puppets/G7, slice 1) ─────────────────────────────
 //
-// The approved shape (PUPPETS.md G7): commands the owner signs reach the
-// node groups this puppet CARRIES, and that is the only route to them.
-// The face door and the `puppet` group come in slice 2, after
-// public-app-server/G14 and G17.
+// Commands the owner signs reach the whole node surface, as a loopback
+// client would (Andy's puppet ruling).
 //
 // One arrival at a time, straight from arrivals.subscribe:
 //   - not a puppet, not a command, or not from the owner: SILENT. A node
 //     that answered strangers would tell them it is a puppet, and a
 //     non-puppet must behave exactly as one.
 //   - from the owner but failing ownerCommandIn (G5): refused to him.
-//   - a verb whose group is not carried here: refused BY NAME,
-//     not-carried-here, and the handler never runs. Andy: "not every group
-//     is supported in every context/environment".
 //   - otherwise the shim runs the verb's own handler with the unwrapped
 //     body, as the door in server.js does, and the answer goes back to the
 //     owner as a second packet carrying re = the command's hash
@@ -445,12 +418,6 @@ function puppetDoor(opts) {
       ownerKey: p.owner, selfKey: o.selfKey(), decode: o.decode, isEnvelope: o.isEnvelope, auth: o.auth,
     });
     if (!got.ok) { reply(message, p.owner, got); return; }
-    const group = got.verb.split('.')[0];
-    if (p.carries.indexOf(group) === -1) {
-      reply(message, p.owner, { ok: false, status: 403, code: 'not-carried-here', verb: got.verb,
-        error: 'not carried by this puppet' });
-      return;
-    }
     shim(got.verb, got.body).then(function (answer) {
       reply(message, p.owner, Object.assign({ verb: got.verb }, answer));
     });

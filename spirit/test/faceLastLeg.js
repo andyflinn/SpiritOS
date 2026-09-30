@@ -154,7 +154,7 @@ async function wholeRoute() {
 
   // THE PUPPET: owned by the owner, with the face.
   const puppet = home('puppet');
-  fs.writeFileSync(path.join(puppet.root, 'relay-state', 'puppet.json'), JSON.stringify({ owner: ownerId.publicKey, carries: [] }));
+  fs.writeFileSync(path.join(puppet.root, 'relay-state', 'owner.json'), JSON.stringify({ owner: ownerId.publicKey }));
   nodes[puppetId.publicKey] = arrivalsMod.createArrivals({});
   const face = puppetPost.createPuppetPost({ log: function () {} });
   const listener = await new Promise(function (r) { face.listen(0, r); });

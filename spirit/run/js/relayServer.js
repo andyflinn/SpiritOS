@@ -151,11 +151,11 @@ catch (e) {
 // people on it, where whoever holds the next owner invite takes the box
 // and everyone in it. No members and no owner is simply UNCLAIMED, which
 // is the state install.js is for.
-if (require('./relayAuth').loadAllow(ROOT_DIR).mode !== 'keys' &&
+if (!require('./relayAuth').loadOwner(ROOT_DIR) &&
     relayStore.open(ROOT_DIR).members.count() > 0) {
   refuseToStart('relay-state/relay.db holds ' + relayStore.open(ROOT_DIR).members.count() +
-    ' member(s) but relay-state/allow.json names no owner. Restore allow.json over SSH ' +
-    '({ "keys": [{ "name": "<owner>", "publicKey": "<key>" }] }); the wire cannot prove ownership.');
+    ' member(s) but relay-state/owner.json names no owner. Restore owner.json over SSH ' +
+    '({ "owner": "<key>" }); the wire cannot prove ownership.');
 }
 
 // ── THE OWNER'S BOUND, READ ONCE (cycle 1) ───────────────────────────
@@ -1023,9 +1023,9 @@ server.listen(port, BIND_HOST, () => {
   // boot is what tells an operator why nobody else can get in. The TOKEN
   // is never printed here: systemd's journal would keep it (NODE-AND-RELAY,
   // "The first claim needs a token").
-  if (require('./relayAuth').loadAllow(ROOT_DIR).mode !== 'keys') {
+  if (!require('./relayAuth').loadOwner(ROOT_DIR)) {
     console.warn(
-      '    UNCLAIMED — no owner in relay-state/allow.json. The only claim this relay\n' +
+      '    UNCLAIMED — no owner in relay-state/owner.json. The only claim this relay\n' +
       '    accepts is the owner invite: run `node install.js` over SSH, then claim with\n' +
       '    the name and token it prints (decision 0003, amended: first invited claim is owner).'
     );

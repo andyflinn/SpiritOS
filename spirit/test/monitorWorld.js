@@ -43,7 +43,7 @@ function world() {
   const owner = auth.generateIdentity('andy');
   const bella = auth.generateIdentity('bella');
   const carl = auth.generateIdentity('carl');
-  auth.writeAllowKeys(home, [{ name: 'andy', publicKey: owner.publicKey }]);
+  auth.writeOwner(home, owner.publicKey);
 
   const box = createRelay.createRelay(home);
   // WITH A CARD (cycle 10, R5): the relay seals its answers to the key

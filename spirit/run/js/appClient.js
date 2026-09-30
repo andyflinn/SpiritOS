@@ -135,8 +135,7 @@ function createAppClient(opts) {
   const table = Object.create(null);
 
   function isPuppet() {
-    try { return fs.statSync(path.join(rootDir, 'relay-state', 'puppet.json')).isFile(); }
-    catch (e) { return false; }
+    return require('./nodeApps').puppetIn(rootDir)().puppet;
   }
 
   function startAll() {

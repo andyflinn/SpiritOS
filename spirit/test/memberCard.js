@@ -70,7 +70,7 @@ function worldBeforeTheFlagDay() {
 
   const owner = auth.generateIdentity('andy');
   const bella = auth.generateIdentity('bella');
-  auth.writeAllowKeys(home, [{ name: 'andy', publicKey: owner.publicKey }]);
+  auth.writeOwner(home, owner.publicKey);
 
   const box = createRelay.createRelay(home);
   box.claim('andy', auth.sign(owner.privateKey, auth.claimMessage('andy')), owner.publicKey);

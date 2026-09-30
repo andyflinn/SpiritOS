@@ -9,10 +9,6 @@ const invites = require('./invites');
 // the relay enforces, or the pre-check is a lie.
 const limits = require('./limits.js');
 const peerSearch = require('./peerSearch');
-// parseKeyRow, and nothing else any more: a relay keeps no device key.
-// The binding between a device and its node belongs to the node — see
-// deviceAuth.js for why, and for the three hazards that deleted.
-const deviceAuth = require('./deviceAuth');
 const presence = require('./presence');
 const routerTable = require('./router');
 const relayStatus = require('./relayStatus');
@@ -318,7 +314,7 @@ function createRelay(rootDir, deps) {
   function refreshActive(key) {
     if (activeRows[key]) rememberActive(key);
   }
-  var allow = auth.loadAllow(rootDir);
+  var ownerKey = auth.loadOwner(rootDir);
   var claimHits = Object.create(null);
   // Enrolment attempts, per identity being enrolled. The limit lived in
   // deviceHandshake.js and came back here when that file went, because
@@ -788,8 +784,12 @@ function createRelay(rootDir, deps) {
     return answer;
   }
 
-  function reloadAllow() {
-    allow = auth.loadAllow(rootDir);
+  function reloadOwner() {
+    ownerKey = auth.loadOwner(rootDir);
+  }
+
+  function ownerLabel() {
+    return ownerKey ? labelOf(findByKey(ownerKey)) : '';
   }
 
   // Drops every key whose window has fully expired. Without this the
@@ -1045,9 +1045,7 @@ function createRelay(rootDir, deps) {
   // Empty on a relay nobody has claimed, which is a real answer: that box
   // has no owner yet, and partner promotion refuses it for that reason.
   function ownerPublic() {
-    var label = auth.ownerName(allow);
-    var key = label && allow.byName && allow.byName[label];
-    return { ownerKey: key || '', ownerLabel: label || '' };
+    return { ownerKey: ownerKey || '', ownerLabel: ownerLabel() };
   }
 
   // ── PARTNERSHIP, TIER ONE: THE FLAG AND NOTHING ELSE ────────────────
@@ -1391,8 +1389,8 @@ function createRelay(rootDir, deps) {
 
   function snapshot() {
     return {
-      owner: auth.ownerName(allow),
-      mode: allow.mode,
+      owner: ownerLabel() || null,
+      mode: ownerKey ? 'keys' : 'unclaimed',
       // `reserved: auth.RESERVED_NAME` STOOD HERE, justified as a fact a
       // browser building a claim form needed. No browser ever read it —
       // hub forwarded it to the page as `reservedName` and nothing on the
@@ -1439,9 +1437,9 @@ function createRelay(rootDir, deps) {
     };
   }
 
-  function becomeOwner(name, publicKey) {
-    auth.writeAllowKeys(rootDir, [{ name: name, publicKey: publicKey }]);
-    reloadAllow();
+  function becomeOwner(publicKey) {
+    auth.writeOwner(rootDir, publicKey);
+    reloadOwner();
   }
 
   // EVERY ATTEMPT TIDIES UP AFTER ITSELF.
@@ -1583,10 +1581,10 @@ function createRelay(rootDir, deps) {
     // is the same rule for a relay built in process. Recovery is SSH,
     // never the wire (Andy: "if allow.json is trashed, there is no way of
     // proving ownership other than ssh, manually replace allow.json").
-    var firstOwner = allow.mode !== 'keys';
+    var firstOwner = !ownerKey;
     if (firstOwner) {
       if (store.members.count() > 0) {
-        return { ok: false, status: 503, error: 'relay has members but no owner — restore allow.json over SSH' };
+        return { ok: false, status: 503, error: 'relay has members but no owner — restore owner.json over SSH' };
       }
       if (!publicKey || !sig) {
         return { ok: false, status: 400, error: 'first claim needs publicKey and sig' };
@@ -1613,7 +1611,7 @@ function createRelay(rootDir, deps) {
     // invite lock below — cycle 4 landed, whatever the comment that stood
     // here said about it not having — so deleting this removes a second
     // place where a token was consumed, not the feature.
-    } else if (allow.mode === 'keys') {
+    } else {
       if (!publicKey || !sig) {
         return { ok: false, status: 400, error: 'claim needs publicKey and sig' };
       }
@@ -1641,8 +1639,7 @@ function createRelay(rootDir, deps) {
       // (a restore, a lost peer record) locks its own owner out: no peer,
       // so no first-owner path, and no invite, because the only account
       // that can mint one is the one being refused.
-      var allowed = allow.byName[n];
-      if (!allowed || allowed !== publicKey) {
+      if (publicKey !== ownerKey) {
         if (!inviteToken) {
           return { ok: false, status: 403, error: 'invite required' };
         }
@@ -1760,7 +1757,7 @@ function createRelay(rootDir, deps) {
     }
     // The owner invite burned, so this claim IS the owner: allow.json is
     // written and the relay is in keys mode from here on.
-    if (firstOwner) becomeOwner(n, publicKey);
+    if (firstOwner) becomeOwner(publicKey);
 
     var peer = {
       // ONE LABEL. `name` stood here carrying the same string, and went
@@ -1965,7 +1962,7 @@ function createRelay(rootDir, deps) {
     var owner = normalizeName(ownerName);
     var lbl = normalizeName(label);
     var tok = invites.normalizeToken(token);
-    if (allow.mode !== 'keys') {
+    if (!ownerKey) {
       return { ok: false, status: 403, error: 'no owner key on this relay' };
     }
     // BOTH HALVES OF AN INVITE ARE SPOKEN, so both keep the tight rule.
@@ -1978,7 +1975,7 @@ function createRelay(rootDir, deps) {
     // This asks whether the name is on this relay at all, because it is
     // written into the row as `invitedBy` and a row cannot truthfully
     // name an inviter who is not here.
-    if (!owner || !allow.byName[owner]) {
+    if (!owner) {
       return { ok: false, status: 403, error: 'not the owner' };
     }
 
@@ -2129,12 +2126,8 @@ function createRelay(rootDir, deps) {
     // identity was a key, and the label scan in the unknown-sender flood
     // (NODE-AND-RELAY §9b). Every operation is by key now; labels serve
     // search and display only (Andy). One read, success or fail.
-    var ownerLabel = auth.ownerName(allow);
-    if (ownerLabel) {
-      var ownerKey = allow.byName && allow.byName[ownerLabel];
-      if (ownerKey && t === ownerKey) {
-        return { id: ownerKey, label: ownerLabel, publicKey: ownerKey, owner: true };
-      }
+    if (ownerKey && t === ownerKey) {
+      return { id: ownerKey, label: ownerLabel(), publicKey: ownerKey, owner: true };
     }
     if (!t) return null;
 
@@ -2483,14 +2476,6 @@ function createRelay(rootDir, deps) {
     // failed write to allow.json must not leave a renamed row behind —
     // the other order strands the owner, and this order costs at worst a
     // rename that did not happen.
-    if (isOwner(who)) {
-      try {
-        auth.writeAllowKeys(rootDir, [{ name: next, publicKey: who.publicKey }]);
-        reloadAllow();
-      } catch (e) {
-        return { ok: false, status: 500, error: 'could not move the owner record' };
-      }
-    }
 
     var was = labelOf(row);
     store.members.put({
@@ -2531,8 +2516,6 @@ function createRelay(rootDir, deps) {
     var target = findByKey(key);
     if (!target) return { ok: false, status: 404, error: 'no such peer' };
 
-    var owner = auth.ownerName(allow);
-    var ownerKey = owner && allow.byName && allow.byName[owner];
 
     // The owner's own row is not removable. NOT an auth check — it is a
     // safety invariant, which is why it lives with the act rather than
@@ -2649,8 +2632,6 @@ function createRelay(rootDir, deps) {
   // IS THIS THE HOUSE KEY. The one question the owner verbs ask, asked
   // in one place.
   function isOwner(who) {
-    var ownerLabel = auth.ownerName(allow);
-    var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
     return !!ownerKey && !!who && who.publicKey === ownerKey;
   }
 
@@ -3741,7 +3722,7 @@ function createRelay(rootDir, deps) {
     // caller supplied would be a second opinion about that.
     if (body && body.invite && owner) {
       var ask = body.invite;
-      out = mint(auth.ownerName(allow), ask.label, ask.days, ask.token, hash);
+      out = mint(ownerLabel(), ask.label, ask.days, ask.token, hash);
     }
 
     // `body.setDevice` STOOD HERE. It was the verb that proved a relay
@@ -4626,8 +4607,6 @@ function createRelay(rootDir, deps) {
   // reason: a relay that put anybody's words on the owner's screen would
   // be the ring in a new file.
   function ownerEvent(kind, extra) {
-    var ownerLabel = auth.ownerName(allow);
-    var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
     if (!ownerKey) return false;
     if (!presentNow.isPresent(ownerKey)) return false;
     var row = { at: new Date().toISOString(), kind: String(kind || '') };
@@ -4709,8 +4688,6 @@ function createRelay(rootDir, deps) {
     // Before anything is built. A filtered event must cost nothing, or
     // the filter is a courtesy rather than a control.
     if (!monitorWants(kind, from, to)) return false;
-    var ownerLabel = auth.ownerName(allow);
-    var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
     if (!ownerKey || !presentNow.isPresent(ownerKey)) return false;
     var row = {
       at: new Date().toISOString(),
@@ -4763,8 +4740,6 @@ function createRelay(rootDir, deps) {
   }
 
   function statusToOwner() {
-    var ownerLabel = auth.ownerName(allow);
-    var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
     if (!ownerKey) return false;
     if (!presentNow.isPresent(ownerKey)) return false;
 
@@ -4910,8 +4885,7 @@ function createRelay(rootDir, deps) {
   }
 
   function currentOwnerKey() {
-    var ownerLabel = auth.ownerName(allow);
-    return (ownerLabel && allow.byName && allow.byName[ownerLabel]) || '';
+    return ownerKey || '';
   }
 
   // `governorTick` STOOD HERE (cycle 1): read the heap, let the Governor
@@ -4990,8 +4964,6 @@ function createRelay(rootDir, deps) {
     // crashed must not leave this relay pushing into nothing, and a timer
     // to notice would be a second thing to get wrong: the socket closing
     // IS the notice.
-    var ownerLabel = auth.ownerName(allow);
-    var ownerKey = ownerLabel && allow.byName && allow.byName[ownerLabel];
     if (monitoring && ownerKey && who_.id === ownerKey) monitoring = false;
 
     presentNow.broadcast('presence', { key: who_.id, present: false });

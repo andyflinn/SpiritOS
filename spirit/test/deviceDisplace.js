@@ -33,6 +33,8 @@
 // asserted on the node's own file, and the relay is asked to prove it
 // holds nothing — before or after.
 
+const fs = require('fs');
+const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const deviceAuth = require('../run/js/deviceAuth');
@@ -101,11 +103,11 @@ test.startTest('Device cycle 5 — replace the slot, and the replacement is conf
   // Two enrolments happened and no relay was told about either. That is
   // the thing that deletes the hazard the old arrangement had: a device
   // key stranded on a relay that was unreachable when it was replaced.
-  const allow = auth.loadAllow(L.home);
-  if (!allow.deviceByName) {
+  const ownerDoc = JSON.parse(fs.readFileSync(path.join(L.home, 'relay-state', 'owner.json'), 'utf8'));
+  if (Object.keys(ownerDoc).join() === 'owner') {
     test.check('the relay keeps no device slot at all — nothing to strand');
   } else {
-    test.fail('deviceByName survives: ' + JSON.stringify(allow.deviceByName));
+    test.fail('owner.json holds more than the owner: ' + JSON.stringify(ownerDoc));
   }
 
   // PROVED BY USE, not by reading a field: neither key opens anything on

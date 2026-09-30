@@ -195,14 +195,14 @@ test.subHeading('peerOwnerPost — the owner configures a puppet over the wire')
   // spirit/test/puppetOwner.js, eight checks, mutation-tested against the
   // read-only list. As with G5, only reachability is asserted here, so this
   // file keeps saying what is owed and does not become a second copy.
-  // Moved to the NODE at 3feddc5 -- relay-state/puppet.json, { owner, carries }
+  // relay-state/owner.json, { owner } (cleanup/G1.7)
   // -- after Andy ruled "a node OWNED by another node's ID is a puppet".
-  if (typeof require('../run/js/nodeApps').puppetIn === 'function' && /puppet\.json/.test(nodeApps)) {
-    test.check('the owner lock exists as a unit — nodeApps.puppetIn and the node\'s puppet.json, asserted '
+  if (typeof require('../run/js/nodeApps').puppetIn === 'function' && /owner\.json/.test(nodeApps)) {
+    test.check('the owner lock exists as a unit — nodeApps.puppetIn and the node\'s owner.json, asserted '
       + 'in puppetOwner.js: read through api.owner(), unreachable from the puppet by any path, no '
       + 'self-planting, an owner edit seen at once, anything not a key means nobody');
   } else {
-    test.fail('puppets/G6 regressed: nodeApps no longer has puppetIn and puppet.json');
+    test.fail('puppets/G6 regressed: nodeApps no longer has puppetIn and owner.json');
   }
 
   // ── puppets/G7 IS BUILT: THE OWNER DOOR ──────────────────────────────

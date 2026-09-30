@@ -87,17 +87,17 @@ if (badName.status === 78 && /not a valid invite name/.test(badName.stderr)) {
 
 test.subHeading('install.js refuses a relay that already has an owner');
 
-auth.writeAllowKeys(A.run, [{ name: 'andy', publicKey: auth.generateIdentity('andy').publicKey }]);
+auth.writeOwner(A.run, auth.generateIdentity('andy').publicKey);
 const claimed = install(A, ['eve']);
-if (claimed.status === 78 && /already has an owner \(andy\)/.test(claimed.stderr)) {
-  test.check('a claimed relay gets no second owner invite — owners change over SSH, in allow.json');
+if (claimed.status === 78 && /already has an owner \(MCowBQYDK2VwAyEA/.test(claimed.stderr)) {
+  test.check('a claimed relay gets no second owner invite — owners change over SSH, in owner.json');
 } else {
   test.fail('install on a claimed relay: status=' + claimed.status + ' err=' + claimed.stderr);
 }
 
 test.subHeading('A relay with members and no owner refuses to start');
 
-// Members on the roll, allow.json gone: a lost owner, not a new relay.
+// Members on the roll, owner.json gone: a lost owner, not a new relay.
 const B = freshRepo();
 const store = relayStore.open(B.run);
 store.members.put({ publicKey: 'K1', publicLabel: 'andy', claimedAt: '2026-09-19', owner: true });
@@ -107,7 +107,7 @@ relayStore.closeAll();
 const refused = spawnSync(process.execPath, ['js/relayServer.js', '--port', '0'],
   { cwd: B.run, encoding: 'utf8', timeout: 20000 });
 const said = (refused.stderr || '') + (refused.stdout || '');
-if (refused.status === 78 && /2 member\(s\) but relay-state\/allow\.json names no owner/.test(said)) {
+if (refused.status === 78 && /2 member\(s\) but relay-state\/owner\.json names no owner/.test(said)) {
   test.check('it exits 78 and says why: ' + said.trim().split('\n')[0].slice(0, 120));
 } else {
   test.fail('relay start with members and no owner: status=' + refused.status + ' out=' + said.slice(0, 400));
@@ -115,7 +115,7 @@ if (refused.status === 78 && /2 member\(s\) but relay-state\/allow\.json names n
 
 const installB = install(B, ['thief']);
 relayStore.closeAll();
-if (installB.status === 78 && /lost allow\.json/.test(installB.stderr) &&
+if (installB.status === 78 && /lost owner\.json/.test(installB.stderr) &&
     invites.load(B.run).length === 0) {
   test.check('and install.js will not mint an owner invite for it either');
 } else {
