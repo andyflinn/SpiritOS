@@ -536,8 +536,12 @@ appServer.serve({
         getLabelStringFromIncomingObject: function (pair) { return pair.label; },
         extractKeyAndLabelFromRow: function (pair) { return pair; },
       });
+      // A line too big for the room on its own is never offered, as walked() never offers one: it would close
+      // the bucket with nothing in it (claude-windows's review).
       for (let i = it.chat.length - 1; i >= 0; i--) {
-        if (!bucket.offer({ key: String(i), label: JSON.stringify(it.chat[i]) })) break;
+        const pair = { key: String(i), label: JSON.stringify(it.chat[i]) };
+        if (Buffer.byteLength(JSON.stringify({ items: [pair], more: false }), 'utf8') > room) continue;
+        if (!bucket.offer(pair)) break;
       }
       const r = bucket.getResult();
       out.chat = r.items.map(function (p) { return JSON.parse(p.label); }).reverse();

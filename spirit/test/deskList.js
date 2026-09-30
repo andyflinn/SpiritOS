@@ -191,8 +191,9 @@ test.startTest('desk/G2.6: the List paints only what the desk server says');
   else test.fail(OWED + 'Current Goal Only asked ' + JSON.stringify(current));
 
   // desk/G3.4, Andy: "i should have a go-all button for fixing rounds", "the go all should be on the right side of
-  // the button bar in list". The goal row's buttons say when it is offered; it is drawn as #desk-go-all at the end
-  // of the search bar, never in a row, and sends press {id: <goal>, what: 'go-all', by: 'andy'}.
+  // the button bar in list", then "same as design buttons when team is active": #desk-go-all at the right of the
+  // tab bar on the List tab, never in a row. The goal row's buttons say when it is offered; it sends
+  // press {id: <goal>, what: 'go-all', by: 'andy'}.
   test.subHeading('desk/G3.4: Go all sits at the right of the bar while the goal offers it');
   const G34 = 'OWED by desk/G3.4: ';
   l.publish({ change: 16, verb: 'press', item: JSON.parse(label({ id: 't/G1', title: 'The goal', goal: '', buttons: ['go-all'], blocking: [], blocked: [] })) });
