@@ -268,6 +268,7 @@ function walkState() {
 function blank(id, title, goalId) {
   return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '',
     went: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
+    agentLineN: 0, seenN: 0,
     box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '' };
 }
 
@@ -317,7 +318,10 @@ function apply(s, r, b, item, goalOf) {
       if (c) { c.state = String(b.state); c.by = r.by; c.at = r.at; }
       return;
     }
-    case 'chat.add': it.chat.push({ by: r.by, at: r.at, text: String(b.text) }); return;
+    case 'chat.add':
+      it.chat.push({ by: r.by, at: r.at, text: String(b.text) });
+      if (r.by !== 'andy') it.agentLineN = r.n;
+      return;
     case 'item.rename': it.title = String(b.title); return;
     case 'item.status': it.status = String(b.word); return;
     case 'item.take': it.with = r.by; return;
@@ -338,6 +342,7 @@ function press(s, it, what, r, goalOf) {
   else if (what === 'reopen') { it.done = false; it.alone = false; it.claims = Object.create(null); }
   else if (what === 'close') it.closed = true;
   else if (what === 'bring-back') it.closed = false;
+  else if (what === 'seen') it.seenN = r.n;
 }
 
 // What blocks an item: every open item of its goal that names it in `blocks`.
@@ -372,7 +377,8 @@ function listed(s, it) {
 function facts(s, it) {
   const f = { id: it.id, title: it.title, goal: it.goal ? '' : it.goalId, status: it.done ? 'done' : it.status,
     with: it.with, buttons: buttons(s, it), blocking: it.blocks.slice(), blocked: blockers(s, it),
-    alone: it.alone, star: !!(it.chat.length && it.chat[it.chat.length - 1].by !== 'andy') };
+    // A red star: an agent's line newer than his last seen ("seen, fold (you): stars clear").
+    alone: it.alone, star: it.agentLineN > it.seenN };
   if (it.goal) {
     const g = s.goals[it.id];
     const now = Date.now();
@@ -422,7 +428,12 @@ function write(verb, a, check) {
   return after;
 }
 
-const PRESSES = ['go', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete'];
+const PRESSES = ['go', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen'];
+// Andy's alone (G2.1 review). His presses come by jobs.api, and apiDoor refuses a
+// member who says 'andy', so these are loopback-only. The agents keep claim-done,
+// design-complete and bring-back.
+const OWNER_PRESSES = ['go', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen'];
+function ownerOnly(a) { if (a.by !== 'andy') throw refused('not-owner'); }
 
 function doc(name) { const row = getDoc.get(name); return row ? row.json : '{}'; }
 function saveDoc(name, json) { parsed(json); putDoc.run(name, String(json)); return { saved: true }; }
@@ -515,7 +526,8 @@ appServer.serve({
     },
   },
   'chat.add': { request: { id: '', text: '', by: '' }, reply: { change: 0 }, handler: function (a) { return { change: write('chat.add', a).change }; } },
-  'item.rename': { request: { id: '', title: '', by: '' }, reply: { change: 0 }, handler: function (a) { return { change: write('item.rename', a).change }; } },
+  // "rename (you)": Andy's alone.
+  'item.rename': { request: { id: '', title: '', by: '' }, reply: { change: 0 }, handler: function (a) { ownerOnly(a); return { change: write('item.rename', a).change }; } },
   'item.status': { request: { id: '', word: '', by: '' }, reply: { change: 0 }, handler: function (a) { return { change: write('item.status', a).change }; } },
   'item.take': { request: { id: '', by: '' }, reply: { change: 0 }, handler: function (a) { return { change: write('item.take', a).change }; } },
   // Presses are records, not lines (Andy: "a press shouldn't post a line, it
@@ -525,7 +537,8 @@ appServer.serve({
   'press': {
     request: { id: '', what: '', by: '' }, reply: { change: 0 },
     handler: function (a) {
-      if (PRESSES.indexOf(a.what) === -1) throw new Error('no such press: ' + a.what);
+      if (PRESSES.indexOf(a.what) === -1) throw refused('bad-request');
+      if (OWNER_PRESSES.indexOf(a.what) !== -1) ownerOnly(a);
       return { change: write('press', a, function (st, it) {
         const offered = buttons(st, it);
         if ((a.what === 'go' || a.what === 'close' || a.what === 'reopen') && offered.indexOf(a.what) === -1) throw refused('not-offered');
