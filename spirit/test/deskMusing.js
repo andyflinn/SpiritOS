@@ -76,6 +76,28 @@ test.startTest('desk/G3.9: a musing is kept with the desk server, and needs no l
   test.subHeading('and no agent is sent anything');
   if (kept.length === 1 && !posted.length) test.check('it was kept, and no peerPost went out');
   else test.fail(OWED + (kept.length ? 'a musing was posted to ' + JSON.stringify(posted.map(function (p) { return p.to; })) : 'nothing was kept'));
+
+  // wsl-claude's review: a musing the server did not keep must not leave his box.
+  test.subHeading('a musing the server could not keep stays in the box');
+  const realVerb = fake.verb;
+  const failing = function (name, body) {
+    const ask = body && body.ask && body.ask.desk;
+    if (ask && ask['log.add']) return Promise.resolve({ status: 503, body: { ok: false, code: 'app-not-running', error: 'down' } });
+    return realVerb(name, body);
+  };
+  behavior.mount(fakeElement('container2'), {
+    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
+    escapeHtml: kernel.core.util.escapeHtml, verb: failing,
+    onPublished: function () {}, onPacket: function () {},
+    peerPost: function () { return Promise.resolve({ ok: true }); },
+    callDialog: function () { return new Promise(function () {}); }, armUntilElsewhere: function () {},
+  });
+  await settled();
+  doc.getElementById('desk-muse').value = 'UNKEPT-THOUGHT';
+  doc.getElementById('desk-muse-send').fire('click', { target: target({ id: 'desk-muse-send' }) });
+  await settled();
+  if (doc.getElementById('desk-muse').value === 'UNKEPT-THOUGHT') test.check('when log.add fails, his words stay in the box');
+  else test.fail('a failed keep cleared the box: it holds ' + JSON.stringify(doc.getElementById('desk-muse').value));
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   process.exit(0);

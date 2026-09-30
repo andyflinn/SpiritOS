@@ -196,7 +196,8 @@ function deskRecord(msgs) {
     // THE BACKUP LINE FOLLOWS THE RECORD: read once at load it went stale
     // (Andy: "last check 12:55" while it had copied at 13:26).
     .then(function () { if (fresh.length) return deskAskBackup(); })
-    .catch(deskWriteError('keep its log'));
+    // Says whether it was kept, so a caller can hold on to what he typed (desk/G3.9 review).
+    .then(function () { return true; }, function (e) { deskWriteError('keep its log')(e); return false; });
 }
 
 // Folds one message in by its key; one already held is not taken twice. It
@@ -692,11 +693,13 @@ function deskMuse() {
   if (!/^note to self:/i.test(said)) said = 'note to self: ' + said;
   deskSending['desk-muse'] = true;
   var line = deskOutgoing('', { from: 'andy', kind: 'musing', text: said }, { ok: true });
-  deskRecord([line]).then(function () {
+  deskRecord([line]).then(function (kept) {
     deskSending['desk-muse'] = false;
+    // Only a kept musing leaves the box; an unkept one stays for him to log again.
+    if (!kept) { if (err) err.textContent = 'Not kept: the desk server did not take it.'; return; }
     box.value = '';
     if (err) err.textContent = '';
-  }, function (e) { deskSending['desk-muse'] = false; if (err) err.textContent = 'Not kept: ' + ((e && e.message) || e); });
+  });
 }
 function deskSend(kind, boxId, errId, name) {
   var box = document.getElementById(boxId);
