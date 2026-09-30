@@ -1,6 +1,6 @@
 # Processes — what a node runs besides itself
 
-**Restored 2026-09-30 for desk/G2.2** (Andy: *"agreed. do it."*). Written 2026-09-28 for G19.1 (1e3703a5) and removed the same day with all of G19's build (6630efb5), so the code drifted from it. The section **Rulings of 2026-09-30** at the end overrides anything above it; lines marked *(stale)* describe code that no longer exists, and lines marked *(not built)* were designed for G19, reverted with it, and are desk/G2.2's to build or drop.
+**A snapshot for ideas, not a spec.** Andy, 2026-09-30: *"a lot of this spec is out of date, and it only servers as a snapshot reference for ideas. we're already building on a different branch. Do not take this document for gospel!"* Written 2026-09-28 for G19.1 (1e3703a5), reverted with G19 (6630efb5), restored here only so its ideas can be looked up. What rules is desk/G2's Desk items and the section **Rulings of 2026-09-30** at the end. Lines marked *(stale)* describe code that no longer exists; *(not built)* were never built.
 
 The written spec of the node's process subsystem. Before 2026-09-28 it existed
 only as code (`spirit/run/js/jobs.js`, and `spirit.core.jobs` in
