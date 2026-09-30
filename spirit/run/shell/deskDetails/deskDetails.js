@@ -23,7 +23,7 @@ var ddChecks = [];
 var ddChat = [];
 var ddChatMore = false;       // older lines the server left out (desk/G3.3)
 var ddAgents = {};           // name -> {key}, handed over by Desk, for the nudge
-var ddArmed = false;         // the goal's abandon, pressed once
+var ddArmed = '';            // the id of the armed button (abandon, go all), pressed once
 var ddRenaming = false;
 var ddNote = '';
 
@@ -63,7 +63,7 @@ function ddWrite(verb, args) {
   });
 }
 function ddPress(what) { return ddWrite('press', { id: ddId, what: what }); }
-function ddDisarm() { ddArmed = false; ddPaint(); }
+function ddDisarm() { ddArmed = ''; ddPaint(); }
 
 // ── THE FRAME, DRAWN ONCE PER OPEN ────────────────────────────────────
 //
@@ -112,10 +112,16 @@ function ddButtonsHtml() {
   // very right of the button row". The first press arms it, the second goes;
   // it disarms the moment he clicks elsewhere (armedButtons.js, the shell's
   // armUntilElsewhere), and data-armed has the shell paint it.
+  // GO ALL ON THE GOAL (desk/G3.7). Andy: "the goal-detail panel could offer the
+  // go-all button if there is any go-able items". Armed like the List's (G3.4).
+  if (f.goal === '' && (f.buttons || []).indexOf('go-all') !== -1) {
+    html += '<button type="button" id="dd-go-all"' + (ddArmed === 'dd-go-all' ? ' data-armed="1"' : '') + '>' +
+      (ddArmed === 'dd-go-all' ? 'Go all: sure?' : 'Go all') + '</button>';
+  }
   if (f.goal === '') {
-    html += '<button type="button" id="dd-abandon"' + (ddArmed ? ' data-armed="1"' : '') +
+    html += '<button type="button" id="dd-abandon"' + (ddArmed === 'dd-abandon' ? ' data-armed="1"' : '') +
       ' style="margin-left:auto;background:#b00020;color:#fff">' +
-      (ddArmed ? 'Sure? Abandon the goal' : 'Abandon') + '</button>';
+      (ddArmed === 'dd-abandon' ? 'Sure? Abandon the goal' : 'Abandon') + '</button>';
   }
   return html;
 }
@@ -258,15 +264,15 @@ spirit.shell.activateApp({
       // should close, since it doesn't exist in the list anymore either." Only once the server took it.
       if (id === 'dd-close') { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
       if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen') { ddPress(id.slice(3)); return; }
-      if (id === 'dd-abandon') {
-        if (!ddArmed) {
-          ddArmed = true;
+      if (id === 'dd-abandon' || id === 'dd-go-all') {
+        if (ddArmed !== id) {
+          ddArmed = id;
           ddPaint();
           if (typeof ddApi.armUntilElsewhere === 'function') ddApi.armUntilElsewhere(ddDisarm);
           return;
         }
-        ddArmed = false;
-        ddPress('abandon');
+        ddArmed = '';
+        ddPress(id.slice(3));
         return;
       }
       if (id === 'dd-rename') { ddRenaming = true; ddPaint(); return; }
@@ -293,7 +299,7 @@ spirit.shell.activateApp({
     ddChecks = [];
     ddChat = [];
     ddChatMore = false;
-    ddArmed = false;
+    ddArmed = '';
     ddRenaming = false;
     ddNote = '';
     ddFrame();
