@@ -35,9 +35,14 @@ function ddAsk(verb, args) {
   desk[verb] = args;
   return Promise.resolve(ddApi.verb('jobs.api', { ask: { desk: desk } })).then(function (r) {
     var body = (r && r.body) || {};
-    if (body.ok === false) throw new Error(body.error || body.code || 'refused');
+    if (body.ok === false) { var e = new Error(ddRefusalText(body)); e.refused = true; throw e; }
     return body;
   });
+}
+// A REFUSAL BY ITS NAME, SIZE AND LIMIT (Andy: "would have been diagnosed in an instant").
+function ddRefusalText(body) {
+  var x = body.extra || {};
+  return String(body.code || 'refused') + (typeof x.bytes === 'number' ? ': ' + x.bytes + ' bytes, the limit is ' + x.max : '') + (body.error ? ' (' + body.error + ')' : '');
 }
 
 // A BARE NUDGE (Andy's pick (b)): after the server has a change, each agent
@@ -223,6 +228,8 @@ function ddClear(id) { var el = document.getElementById(id); if (el) el.value = 
 var ddLastChange = 0;
 function ddTake(obj) {
   if (!obj) return;
+  // AN UPDATE TOO LARGE TO PUBLISH was dropped, and said: reload what is shown.
+  if (obj.dropped) { if (ddId) ddLoad(); return; }
   var change = Number(obj.change) || 0;
   var gap = ddLastChange && change > ddLastChange + 1;
   if (change) ddLastChange = change;
@@ -268,7 +275,7 @@ function ddLoad() {
       ddAsk('item.chat', { id: id }).then(function (c) { if (ddId !== id) return; ddChat = c.chat || []; ddChatMore = !!c.chatMore; ddPaint(); }),
     ]);
   }).then(null, function (e) {
-    ddNote = 'The desk server did not answer: ' + e.message;
+    ddNote = (e && e.refused ? 'Refused: ' : 'The desk server did not answer: ') + e.message;
     ddPaint();
   });
 }

@@ -133,9 +133,16 @@ function deskAsk(verb, args) {
   ask.desk[verb] = args || {};
   return Promise.resolve(deskApi.verb('jobs.api', { ask: ask })).then(function (r) {
     var body = r && r.body;
-    if (!r || r.status !== 200 || !body || body.ok === false) throw new Error((body && (body.error || body.code)) || 'the desk server did not answer');
+    if (!r || r.status !== 200 || !body || body.ok === false) throw new Error(deskRefusalText(body) || 'the desk server did not answer');
     return body;
   });
+}
+// A REFUSAL BY ITS NAME, SIZE AND LIMIT (Andy: "would have been diagnosed in an instant"): the code, and for a size
+// refusal how large and the limit, never only a sentence.
+function deskRefusalText(body) {
+  if (!body || !body.code) return body && body.error ? String(body.error) : '';
+  var x = body.extra || {};
+  return body.code + (typeof x.bytes === 'number' ? ': ' + x.bytes + ' bytes, the limit is ' + x.max : '') + (body.error ? ' (' + body.error + ')' : '');
 }
 // One bounded search; the server answers newest first in searchBucket's
 // shape, {items: [{key, label}], more}, a line being its label (slim/G1.2).
@@ -394,6 +401,8 @@ function deskSearchItems() {
 var deskLastChange = 0;
 function deskOnPublished(obj) {
   if (!obj || typeof obj !== 'object') return;
+  // AN UPDATE TOO LARGE TO PUBLISH was dropped, and said: ask again for what is shown.
+  if (obj.dropped) { deskSearchItems(); return; }
   var change = Number(obj.change) || 0;
   var gap = deskLastChange && change > deskLastChange + 1;
   if (change) deskLastChange = change;

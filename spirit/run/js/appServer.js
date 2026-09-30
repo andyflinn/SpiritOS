@@ -217,8 +217,16 @@ function publish(obj) {
   if (!isPlain(obj)) return false;
   let size = 0;
   try { size = Buffer.byteLength(JSON.stringify(obj), 'utf8'); } catch (e) { return false; }
-  if (size > PUBLISH_MAX) return false;
-  publishPending = obj;
+  // SAID, NOT DROPPED (Andy: "and downstream who else didn't do their job"): an object over the cap is not
+  // sent, and every page hears that one was lost, with its size and the limit, so it can ask again.
+  const dropped = size > PUBLISH_MAX;
+  publishPending = dropped ? { dropped: { bytes: size, max: PUBLISH_MAX } } : obj;
+  if (dropped) {
+    if (publishTimer) return false;
+    const w = Math.max(0, publishLast + PUBLISH_EVERY_MS - Date.now());
+    if (w === 0) publishNow(); else publishTimer = setTimeout(publishNow, w);
+    return false;
+  }
   if (publishTimer) return true;
   const wait = Math.max(0, publishLast + PUBLISH_EVERY_MS - Date.now());
   if (wait === 0) publishNow();
