@@ -225,6 +225,21 @@ test.subHeading('desk/G2.7: an app may listen to another server by name');
   else test.fail('onPublished with a server name got ' + JSON.stringify(got));
 })();
 
+// THE SHELL TAKES NO OVERSIZED PAYLOAD EITHER (Andy: "THE SHELL CHOKED", "and downstream who else didn't do their
+// job"; the rest of the path is sharedLimit.js). An update whose published object is over MAX_PAYLOAD is not handed
+// to any app.
+test.subHeading('the shell hands no app an object over MAX_PAYLOAD');
+(function () {
+  const limits = require('../run/js/limits.js');
+  const page = bootShell(DESK_MANIFEST);
+  const got = [];
+  page.load(page.scripts()[0], { mount: function (el, api) { if (typeof api.onPublished === 'function') api.onPublished(function (obj) { got.push(obj); }); } });
+  page.update({ id: 'job_9', kind: 'server', type: 'Desk server', module: 'process/js/desk', status: 'running', data: {}, log: [], app: { big: 'b'.repeat(limits.PAYLOAD_MAX + 1) } });
+  page.update({ id: 'job_9', kind: 'server', type: 'Desk server', module: 'process/js/desk', status: 'running', data: {}, log: [], app: { small: 1 } });
+  if (got.length === 1 && got[0].small === 1) test.check('the oversized object was not handed on; the next one was');
+  else test.fail('OWED by the shared-layer limit: the shell handed on ' + JSON.stringify(got.map(function (o) { return Object.keys(o); })));
+})();
+
 test.subHeading('desk/G2.3: an app that subscribes after its server published gets the current object');
 (function () {
   const page = bootShell(DESK_MANIFEST);
