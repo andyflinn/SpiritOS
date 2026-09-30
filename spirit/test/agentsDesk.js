@@ -61,8 +61,13 @@ const node = net.createServer(function (sock) {
       status = 200;
       // Andy's node answers a moment later, down the asker's own event stream.
       setTimeout(function () {
+        // A decoy first: Andy's answer to some other post. Only the one naming this post's hash is the answer.
+        const decoy = packet.encode('api', { decoy: true }, { re: 'H-other' }).text;
         const answer = packet.encode('api', reply, { re: hash }).text;
-        streams.forEach(function (s) { sendEvent(s, 'packet', { from: ANDY, hash: 'A-' + hash, text: answer, sentAt: new Date().toISOString() }); });
+        streams.forEach(function (s) {
+          sendEvent(s, 'packet', { from: ANDY, hash: 'D-' + hash, text: decoy, sentAt: new Date().toISOString() });
+          sendEvent(s, 'packet', { from: ANDY, hash: 'A-' + hash, text: answer, sentAt: new Date().toISOString() });
+        });
       }, 150);
     }
     const text = JSON.stringify(out);
