@@ -388,17 +388,33 @@ function deskSearchItems() {
 // asks again, since it adds and drops whole rows; so does a change to an item
 // the List does not show, since only the server knows whether the search and
 // toggles let it in (wsl-claude's review).
+// A DROPPED PUBLISH IS NOTICED (desk/G3.10): the server keeps only its last object per 100 ms, so a change number
+// that skips one means a change went by unseen, and the List asks once.
+var deskLastChange = 0;
 function deskOnPublished(obj) {
   if (!obj || typeof obj !== 'object') return;
-  if (obj.verb === 'session.set') { deskSearchItems(); return; }
-  var it = obj.item;
-  if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } }
-  if (!it || !it.id) return;
-  var at = -1;
-  deskItems.forEach(function (r, i) { if (r.id === it.id) at = i; });
-  if (obj.listed === false) { if (at !== -1) deskItems.splice(at, 1); }
-  else if (at !== -1) deskItems[at] = it;
-  else { deskSearchItems(); return; }
+  var change = Number(obj.change) || 0;
+  var gap = deskLastChange && change > deskLastChange + 1;
+  if (change) deskLastChange = change;
+  if (gap || obj.verb === 'session.set') { deskSearchItems(); return; }
+  // Every row it changed (desk/G3.10), else the one item as before.
+  var rows = Array.isArray(obj.rows) && obj.rows.length ? obj.rows : null;
+  if (!rows) {
+    var it = obj.item;
+    if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } }
+    if (!it || !it.id) return;
+    rows = [Object.assign({}, it, { listed: obj.listed !== false })];
+  }
+  var unknown = false;
+  rows.forEach(function (row) {
+    if (!row || !row.id) return;
+    var at = -1;
+    deskItems.forEach(function (r, i) { if (r.id === row.id) at = i; });
+    if (row.listed === false) { if (at !== -1) deskItems.splice(at, 1); }
+    else if (at !== -1) deskItems[at] = row;
+    else unknown = true;
+  });
+  if (unknown) { deskSearchItems(); return; }
   deskDraw();
 }
 // A PRESS IS NOT A LINE. Andy: "a press shouldn't post a line, it is not

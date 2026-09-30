@@ -219,8 +219,15 @@ function ddValue(id) {
 function ddClear(id) { var el = document.getElementById(id); if (el) el.value = ''; }
 
 // What the server published about this item, painted as it comes.
+// A change number that skips one means a publish went by unseen (desk/G3.10): the dialog asks item.get once.
+var ddLastChange = 0;
 function ddTake(obj) {
-  if (!obj || !obj.item || obj.item.id !== ddId) return;
+  if (!obj) return;
+  var change = Number(obj.change) || 0;
+  var gap = ddLastChange && change > ddLastChange + 1;
+  if (change) ddLastChange = change;
+  if (gap && ddId) { ddLoad(); return; }
+  if (!obj.item || obj.item.id !== ddId) return;
   ddFacts = obj.item;
   if (typeof obj.box === 'string') { ddBox = obj.box; ddVersion = Number(obj.version) || ddVersion; }
   if (obj.chat) ddChat.push(obj.chat);
@@ -242,6 +249,23 @@ function ddRename() {
   var title = ddValue('dd-name');
   if (!title) return;
   ddWrite('item.rename', { id: ddId, title: title }).then(function () { ddRenaming = false; ddPaint(); });
+}
+
+// The item as the server has it now: at open, and again after a dropped publish (desk/G3.10).
+function ddLoad() {
+  return ddAsk('item.get', { id: ddId }).then(function (got) {
+    try { ddFacts = JSON.parse(got.item); } catch (e) { ddFacts = null; }
+    ddBox = String(got.box || '');
+    ddVersion = Number(got.version) || 0;
+    ddChecks = got.checks || [];
+    ddChat = got.chat || [];
+    ddChatMore = !!got.chatMore;
+    ddLastChange = Number(got.change) || ddLastChange;
+    ddPaint();
+  }, function (e) {
+    ddNote = 'The desk server did not answer: ' + e.message;
+    ddPaint();
+  });
 }
 
 spirit.shell.activateApp({
@@ -302,21 +326,12 @@ spirit.shell.activateApp({
     ddArmed = '';
     ddRenaming = false;
     ddNote = '';
+    ddLastChange = 0;
     ddFrame();
     ddPaint();
-    return ddAsk('item.get', { id: ddId }).then(function (got) {
-      try { ddFacts = JSON.parse(got.item); } catch (e) { ddFacts = null; }
-      ddBox = String(got.box || '');
-      ddVersion = Number(got.version) || 0;
-      ddChecks = got.checks || [];
-      ddChat = got.chat || [];
-      ddChatMore = !!got.chatMore;
-      ddPaint();
+    return ddLoad().then(function () {
       // Opening it is seeing it: his seen clears the item's star.
       if (ddFacts && ddFacts.star) ddPress('seen');
-    }, function (e) {
-      ddNote = 'The desk server did not answer: ' + e.message;
-      ddPaint();
     });
   },
 });
