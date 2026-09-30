@@ -34,23 +34,23 @@ test.subHeading('the per-app allow list: no file is read, no allows() is handed 
 const nodeApps = code(path.join(RUN, 'js', 'nodeApps.js'));
 if (!/allow\.json/.test(nodeApps) && !/allowsIn/.test(nodeApps) && !/\ballows\s*:/.test(nodeApps)) test.check('nodeApps.js reads no allow.json and hands no allows() to an app');
 else test.fail(OWED + 'nodeApps.js still has the per-app allow list');
-['appFaceApp', 'fixList'].forEach(function (a) {
-  const src = code(path.join(RUN, 'shell', a, a + '.js'));
-  if (!/api\.allows/.test(src)) test.check(a + '.js asks no allows()');
-  else test.fail(OWED + a + '.js still asks api.allows');
-});
+if (!/api\.allows/.test(code(path.join(RUN, 'shell', 'appFaceApp', 'appFaceApp.js')))) test.check('appFaceApp.js asks no allows()');
+else test.fail(OWED + 'appFaceApp.js still asks api.allows');
+
+test.subHeading('fixList, whose only job was the peer path, is gone whole (Andy: "get rid of the whole thing")');
+if (!fs.existsSync(path.join(RUN, 'shell', 'fixList'))) test.check('shell/fixList is gone');
+else test.fail(OWED + 'shell/fixList is still there');
+if (!/fixList/i.test(fs.readFileSync(path.join(REPO, '.gitignore'), 'utf8'))) test.check('.gitignore names no fixList');
+else test.fail(OWED + '.gitignore still names fixList');
 
 // Removed, not opened: with an allow.json that lists the peer, the peer paths
 // still do nothing. A copied tree, never a link, so the checkout is not touched.
-test.subHeading('the two peer paths are removed, not opened');
+test.subHeading('appFaceApp\'s grant path is removed, not opened');
 const PEER = 'MCowBQYDK2VwAyEApeerpeerpeerpeerpeerpeerpeerpeerpeerpe=';
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-cleanupdead-'));
 fs.cpSync(path.join(RUN, 'js'), path.join(root, 'js'), { recursive: true });
-['appFaceApp', 'fixList'].forEach(function (a) {
-  const dir = path.join(root, 'shell', a);
-  fs.cpSync(path.join(RUN, 'shell', a), dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, 'allow.json'), JSON.stringify({ keys: [PEER] }) + '\n');
-});
+fs.cpSync(path.join(RUN, 'shell', 'appFaceApp'), path.join(root, 'shell', 'appFaceApp'), { recursive: true });
+fs.writeFileSync(path.join(root, 'shell', 'appFaceApp', 'allow.json'), JSON.stringify({ keys: [PEER] }) + '\n');
 fs.writeFileSync(path.join(root, 'shell', 'appFaceApp', 'grants.json'), '{}\n');
 const snapshot = function (a) {
   const dir = path.join(root, 'shell', a);
@@ -58,7 +58,7 @@ const snapshot = function (a) {
   fs.readdirSync(dir).forEach(function (n) { try { out[n] = fs.readFileSync(path.join(dir, n), 'utf8'); } catch (e) { out[n] = null; } });
   return JSON.stringify(out);
 };
-const before = { appFaceApp: snapshot('appFaceApp'), fixList: snapshot('fixList') };
+const before = snapshot('appFaceApp');
 const posts = [];
 const witnesses = [];
 const packet = require(path.join(root, 'js', 'client', 'packet.js'));
@@ -73,14 +73,11 @@ function send(app, body) {
   witnesses.forEach(function (fn) { fn(m); });
 }
 send('appFaceApp', { verb: 'grant', name: 'peername', app: 'natter' });
-send('fixList', { verb: 'fix', text: 'PEER-FIX-REQUEST' });
 setTimeout(function () {
-  if (witnesses.length >= 2) test.check('both apps booted and took arrivals');
+  if (witnesses.length) test.check('appFaceApp booted and took arrivals');
   else test.fail(OWED + 'no app subscribed to arrivals; the checks below would pass vacuously');
-  if (snapshot('appFaceApp') === before.appFaceApp && !posts.length) test.check('appFaceApp: a listed peer asking for a name gets no grant and no answer');
+  if (snapshot('appFaceApp') === before && !posts.length) test.check('appFaceApp: a listed peer asking for a name gets no grant and no answer');
   else test.fail(OWED + 'appFaceApp still grants to a peer: grants.json ' + fs.readFileSync(path.join(root, 'shell', 'appFaceApp', 'grants.json'), 'utf8').slice(0, 80) + ', ' + posts.length + ' posts');
-  if (snapshot('fixList') === before.fixList) test.check('fixList: a listed peer\'s fix request files nothing');
-  else test.fail(OWED + 'fixList still files a peer\'s request');
   fs.rmSync(root, { recursive: true, force: true });
   test.reportSuccessFailureCount();
   process.exit(0);
