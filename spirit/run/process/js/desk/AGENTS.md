@@ -36,6 +36,10 @@ for the new Desk by desk/G2.8; his to edit.
   agent's claim offers him Done.
 - How he checks it: `check.add {id, kind: C|T, words, test}`; a result is
   `check.set {id, check, state: passed|failed}`.
+- Taking an item on: `item.take {id}` puts your name in its "with" column, and
+  `item.status {id, word}` keeps its status word to what you are doing. Andy:
+  "when you claim an item, put your name in the right column, and update the
+  status word with the activity".
 - Go, Done, Reopen, Close, Abandon and design mode are his presses alone.
 - An abandoned goal is not a design or a decision: never cite it.
 
