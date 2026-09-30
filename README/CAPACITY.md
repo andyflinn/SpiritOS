@@ -654,6 +654,7 @@ platform travels with each.
 |---|---|---|---|---|---|---|---|---|
 | 2026-09-21 | `e96c904` | win32 / v24.20.0 | 58 KB | 49 MB | 59 MB | 72 MB | 197 / 222 B | 3756 KB |
 | 2026-09-21 | `dc21575` | win32 / v24.20.0 | 63 KB | 49 MB | 60 MB | 73 MB | 197 / **577** B¹ | 3797 KB |
+| 2026-09-30 | `0a702255` | win32 / v24.20.0 | 60 KB | 53 MB | 64 MB | 78 MB | **603** / 579 B² | **2519 KB** |
 
 **The first row is the baseline**, taken the day the measurement was
 built.
@@ -670,6 +671,18 @@ a better question being asked, not a cost that went up 2.6×.
 from the modules it now loads. Per-stream 58 → 63 KB is inside the
 57–63 KB spread every Windows run today has shown, and no code that holds
 a connection changed — noise, not drift.
+
+**² The third row: the member row nearly tripled, and why is not yet
+known.** 197 → 603 bytes a relay member, measured at `0a702255` after the
+desk/G2 and desk/G3 close. Nothing in those two goals touches the relay, so
+it came from the nine days of work between the tags, and it has not been
+traced to a column. Read it as drift to explain, not as settled cost. Also
+moved: the install shrank 3797 → 2519 KB, and bare node (49 → 53 MB), relay
+at rest (60 → 64 MB) and node at rest (73 → 78 MB) each grew about 4 MB,
+likewise not yet traced. Per stream, 60 KB, is inside the old spread.
+
+**Tagged `capacity-2026-09-30`** on Andy's *"tag the tree"*, at the close of
+desk/G2 and desk/G3, as a rollback point for the new Desk.
 
 **Tagged `capacity-2026-09-21`** — the first *capacity* tag (the repository already had fourteen others; an earlier draft of this line said "the first tag on the repository", which was not checked and was wrong), on
 Andy's *"tag the tree"*, after an assessment that this interval was real:
