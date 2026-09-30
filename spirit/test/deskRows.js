@@ -31,16 +31,17 @@ async function settled() { for (let i = 0; i < 6; i++) await settle(); }
 // The node's job callback, on a raw socket: every jobs.update the desk server reports, its `app` kept.
 const published = [];
 const callback = net.createServer(function (sock) {
-  let buf = '';
+  // Counted in bytes: Content-Length is bytes, and a facts label may hold more than ASCII.
+  let buf = Buffer.alloc(0);
   sock.on('error', function () {});
   sock.on('data', function (c) {
-    buf += c;
+    buf = Buffer.concat([buf, c]);
     const head = buf.indexOf('\r\n\r\n');
     if (head === -1) return;
-    const len = Number((/content-length:\s*(\d+)/i.exec(buf.slice(0, head)) || [0, 0])[1]);
+    const len = Number((/content-length:\s*(\d+)/i.exec(buf.slice(0, head).toString('utf8')) || [0, 0])[1]);
     if (buf.length - head - 4 < len) return;
-    try { const b = JSON.parse(buf.slice(head + 4, head + 4 + len)); if (b.app) published.push(b.app); } catch (e) { /* not ours */ }
-    buf = '';
+    try { const b = JSON.parse(buf.slice(head + 4, head + 4 + len).toString('utf8')); if (b.app) published.push(b.app); } catch (e) { /* not ours */ }
+    buf = Buffer.alloc(0);
     sock.end('HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}');
   });
 });
