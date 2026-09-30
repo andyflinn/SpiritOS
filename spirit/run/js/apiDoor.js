@@ -36,6 +36,19 @@ function asksDebug(body) {
   });
 }
 
+// A write that names its author as 'andy', the owner's name in the desk server's
+// `by` (desk/G2.1). The server cannot see who asks, so a member must not say it.
+function asksAsOwner(body) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return false;
+  return Object.keys(body).some(function (app) {
+    const v = body[app];
+    return v && typeof v === 'object' && Object.keys(v).some(function (verb) {
+      const args = v[verb];
+      return args && typeof args === 'object' && args.by === 'andy';
+    });
+  });
+}
+
 function createApiDoor(opts) {
   const o = opts || {};
   const say = o.log || function () {};
@@ -65,6 +78,8 @@ function createApiDoor(opts) {
     // 'DEBUG verb is never allowed through peerPost()' (Andy, desk/G2.5): a member's ask for any
     // server's DEBUG is refused here, by name, and never passed on. jobs.api (answer) still reaches it.
     if (asksDebug(info.body)) return reply(message, { ok: false, code: 'not-owner', error: 'DEBUG is for the owner, on loopback only' });
+    // Andy's presses come by jobs.api; a member writing as him is refused, never passed on.
+    if (asksAsOwner(info.body)) return reply(message, { ok: false, code: 'not-owner', error: 'a member cannot write as the owner' });
     return answer(o.servers, info.body).then(function (r) {
       return reply(message, r ? r.body : null);
     }, function (e) {

@@ -725,6 +725,11 @@ define('key-claimed', { status: 409, texts: ['key already claimed'] });
 define('slot-held', { status: 409, texts: ['this name is held by another id'] });
 define('minting-incomplete', { status: 409, retry: 'after', texts: ['minting incomplete'] });
 define('name-reserved', { status: 409, texts: ['name reserved by a live invite'] });
+// The desk server (desk/G2.1): an alteration written against a box version that has
+// moved on, a press the item does not offer now, and an id no session names.
+define('box-moved', { status: 409, texts: ['the box has changed since that version'] });
+define('not-offered', { status: 409, texts: ['that press is not offered for this item now'] });
+define('no-such-item', { status: 404, texts: ['no such item'] });
 
 // ── A MALFORMED REQUEST ──────────────────────────────────────────────
 //

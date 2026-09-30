@@ -235,52 +235,194 @@ function walked(walk, pairOf) {
   return { items: r.items, more: r.more || skipped };
 }
 
-// ── WHAT HAS GONE STALE (slim/G1.6) ─────────────────────────────────
+// ── THE STATE: RECORDS IN TIME ORDER (desk/G2.1) ─────────────────────
 //
-//   Andy: "no use if these displays go stale", "is this programatically or
-//   do i have to rely on agents to remember?" His go on: when an item's text
-//   changes, Desk marks its explanation stale and asks for a fresh one.
-//   Update requests on a status change he dropped (2026-09-30): the lists
-//   are Desk's own data and redraw at once, "lots of agent-work that can be
-//   done programatically".
+//   Andy: "The server determines all the content to be drawn. buttons, the
+//   text in the one text box, the status of items, the title of items etc."
 //
-// Folded here because only this server sees every session (Desk loads the
-// newest). For each item of the newest session, and its goal:
-//   changedAt        the at of the newest session in which its text (title,
-//                    description, check, tests, inPlace) differed from the
-//                    session before, or of the one it first appeared in
-function textOf(it) {
-  return JSON.stringify([it.title || '', it.description || '', it.check || '', it.tests || [], it.inPlace || []]);
-}
-function freshness() {
-  let session = null;
-  const seen = Object.create(null);
-  const changedAt = Object.create(null);
-  for (const row of allLines.iterate()) {
-    let m;
-    try { m = JSON.parse(row.line); } catch (e) { continue; }
-    const at = String(m.at || '');
-    if (m.dir === 'in' && m.kind === 'session') {
-      let sess = null;
-      try { sess = JSON.parse(String(m.text || '')); } catch (e) { sess = null; }
-      if (!sess || !Array.isArray(sess.items)) continue;
-      session = sess;
-      const all = sess.items.concat(sess.goal && sess.goal.id ? [sess.goal] : []);
-      all.forEach(function (it) {
-        const id = String(it.id || '');
-        if (!id) return;
-        const t = textOf(it);
-        if (seen[id] !== t) { seen[id] = t; changedAt[id] = at; }
-      });
-    }
+// Every write is one row of `records`, numbered in the order it arrived; that
+// number is the change number. The state is those rows walked in order, and
+// nothing else: the old `lines` stay as they are and feed no item (Andy: "the
+// new Server will not give deprecated items to agents either").
+db.exec('CREATE TABLE IF NOT EXISTS records (n INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, verb TEXT NOT NULL, by TEXT NOT NULL, body TEXT NOT NULL);');
+const addRecord = db.prepare('INSERT INTO records (at, verb, by, body) VALUES (?, ?, ?, ?)');
+const allRecords = db.prepare('SELECT n, at, verb, by, body FROM records ORDER BY n');
+
+// An agent counts as live for ten minutes after its last write (Andy: "fine.").
+const LIVE_MS = 10 * 60 * 1000;
+
+function walkState() {
+  const s = { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), current: '' };
+  const item = function (id) { return s.items[id] || null; };
+  const goalOf = function (id) { const it = item(id); return it ? (it.goal ? s.goals[it.id] : s.goals[it.goalId]) : null; };
+  for (const r of allRecords.iterate()) {
+    s.change = r.n;
+    let b = {};
+    try { b = JSON.parse(r.body); } catch (e) { continue; }
+    if (r.by !== 'andy') s.agentsAt[r.by] = r.at;
+    apply(s, r, b, item, goalOf);
   }
-  if (!session) return [];
-  const items = session.items.concat(session.goal && session.goal.id ? [session.goal] : []);
-  return items.filter(function (it) { return it && it.id; }).map(function (it) {
-    const id = String(it.id);
-    return JSON.stringify({ id: id, changedAt: changedAt[id] || '' });
+  return s;
+}
+
+function blank(id, title, goalId) {
+  return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '',
+    went: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
+    box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '' };
+}
+
+// One record applied to the state. A record that no longer fits (an item gone
+// from its session) changes nothing; the refusals happen before it is written.
+function apply(s, r, b, item, goalOf) {
+  const it = b.id ? item(String(b.id)) : null;
+  if (it) it.at = r.at;
+  switch (r.verb) {
+    case 'session.set': {
+      const sess = b.session;
+      const gid = String(sess.goal.id);
+      const g = s.goals[gid] || (s.goals[gid] = { id: gid, design: true, abandoned: false, members: [] });
+      const goalItem = s.items[gid] || (s.items[gid] = blank(gid, '', ''));
+      goalItem.title = String(sess.goal.title || goalItem.title);
+      goalItem.at = r.at;
+      const ids = [];
+      (sess.items || []).forEach(function (x) {
+        const id = String(x.id || '');
+        if (!id) return;
+        const one = s.items[id] || (s.items[id] = blank(id, '', gid));
+        one.title = String(x.title || one.title);
+        one.goalId = gid;
+        one.blocks = (Array.isArray(x.blocks) ? x.blocks : [x.blocks || gid]).map(String);
+        one.at = r.at;
+        ids.push(id);
+      });
+      // Rows appear or go: an item left out of the new session leaves the goal.
+      g.members.forEach(function (id) { if (ids.indexOf(id) === -1) delete s.items[id]; });
+      g.members = ids;
+      s.current = gid;
+      return;
+    }
+    case 'box.write':
+      it.boxHistory.push({ version: it.version + 1, by: r.by, at: r.at, text: String(b.text) });
+      it.box = String(b.text);
+      it.version += 1;
+      return;
+    case 'check.add': {
+      const kind = String(b.kind);
+      const number = kind + (it.checks.filter(function (c) { return c.kind === kind; }).length + 1);
+      it.checks.push({ number: number, kind: kind, words: String(b.words), test: String(b.test || ''), state: 'open', by: '', at: '' });
+      return;
+    }
+    case 'check.set': {
+      const c = it.checks.filter(function (x) { return x.number === String(b.check); })[0];
+      if (c) { c.state = String(b.state); c.by = r.by; c.at = r.at; }
+      return;
+    }
+    case 'chat.add': it.chat.push({ by: r.by, at: r.at, text: String(b.text) }); return;
+    case 'item.rename': it.title = String(b.title); return;
+    case 'item.status': it.status = String(b.word); return;
+    case 'item.take': it.with = r.by; return;
+    case 'press': press(s, it, String(b.what), r, goalOf); return;
+    default: return;
+  }
+}
+
+function press(s, it, what, r, goalOf) {
+  const g = goalOf(it.id);
+  if (what === 'start-design' && g) g.design = true;
+  else if (what === 'end-design' && g) g.design = false;
+  else if (what === 'abandon' && g) g.abandoned = true;
+  else if (what === 'design-complete') { it.designComplete = true; it.status = 'ready'; }
+  else if (what === 'go') { it.went = true; it.status = 'running'; }
+  else if (what === 'claim-done') it.claims[r.by] = true;
+  else if (what === 'done') { it.done = true; it.alone = !Object.keys(it.claims).length; }
+  else if (what === 'reopen') { it.done = false; it.alone = false; it.claims = Object.create(null); }
+  else if (what === 'close') it.closed = true;
+  else if (what === 'bring-back') it.closed = false;
+}
+
+// What blocks an item: every open item of its goal that names it in `blocks`.
+// Desk's meaning: "an item names what it blocks".
+function blockers(s, it) {
+  const g = s.goals[it.goal ? it.id : it.goalId];
+  if (!g) return [];
+  return g.members.filter(function (id) {
+    const o = s.items[id];
+    return o && o.id !== it.id && !o.done && o.blocks.indexOf(it.id) !== -1;
   });
 }
+
+// The buttons, decided here once for the List and the dialog alike.
+//   Go!    after design ends (Andy's "end design mode."), not yet gone, nothing open blocks it
+//   Done   once one agent has claimed ("1 agents consent will offer done buttons")
+//   Close and Reopen once done
+function buttons(s, it) {
+  const g = s.goals[it.goal ? it.id : it.goalId];
+  if (it.done) return ['close', 'reopen'];
+  const out = [];
+  if (g && !g.design && !it.went && !blockers(s, it).length) out.push('go');
+  if (Object.keys(it.claims).length) out.push('done');
+  return out;
+}
+
+function listed(s, it) {
+  const g = s.goals[it.goal ? it.id : it.goalId];
+  return !!g && !g.abandoned && !it.closed;
+}
+
+function facts(s, it) {
+  const f = { id: it.id, title: it.title, goal: it.goal ? '' : it.goalId, status: it.done ? 'done' : it.status,
+    with: it.with, buttons: buttons(s, it), blocking: it.blocks.slice(), blocked: blockers(s, it),
+    alone: it.alone, star: !!(it.chat.length && it.chat[it.chat.length - 1].by !== 'andy') };
+  if (it.goal) {
+    const g = s.goals[it.id];
+    const now = Date.now();
+    f.design = g.design;
+    f.waiting = g.members.map(function (id) { return s.items[id]; }).concat([it]).filter(function (o) {
+      return o && listed(s, o) && (buttons(s, o).length > 0 || o.star);
+    }).length;
+    f.live = Object.keys(s.agentsAt).filter(function (a) { return now - Date.parse(s.agentsAt[a]) < LIVE_MS; }).sort();
+  }
+  return f;
+}
+
+// The goal first, then its items in session order; the newest goal first.
+function searchItems(a) {
+  const s = walkState();
+  const text = String(a.text || '').toLowerCase();
+  const out = [];
+  const goals = Object.keys(s.goals).filter(function (gid) { return !a.currentGoalOnly || gid === s.current; });
+  goals.sort(function (x, y) { return x === s.current ? -1 : y === s.current ? 1 : 0; });
+  goals.forEach(function (gid) {
+    const ids = [gid].concat(a.goalsOnly ? [] : s.goals[gid].members);
+    ids.forEach(function (id) {
+      const it = s.items[id];
+      if (!it || !listed(s, it)) return;
+      if (text && (it.id + ' ' + it.title).toLowerCase().indexOf(text) === -1) return;
+      out.push(JSON.stringify(facts(s, it)));
+    });
+  });
+  return out;
+}
+
+function refused(code) { const e = new Error(code); e.refusal = code; return e; }
+
+// Every write: checked against the state as it stands, then recorded, then
+// published to the page with the change it made ("no pulling").
+function write(verb, a, check) {
+  const s = walkState();
+  const it = a.id !== undefined ? s.items[String(a.id)] : null;
+  if (a.id !== undefined && verb !== 'session.set' && !it) throw refused('no-such-item');
+  if (check) check(s, it);
+  const body = Object.assign({}, a);
+  delete body.by;
+  const r = addRecord.run(new Date().toISOString(), verb, String(a.by || ''), JSON.stringify(body));
+  const after = walkState();
+  const changed = it && after.items[it.id] ? facts(after, after.items[it.id]) : null;
+  appServer.publish({ change: Number(r.lastInsertRowid), verb: verb, item: changed });
+  return after;
+}
+
+const PRESSES = ['go', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete'];
 
 function doc(name) { const row = getDoc.get(name); return row ? row.json : '{}'; }
 function saveDoc(name, json) { parsed(json); putDoc.run(name, String(json)); return { saved: true }; }
@@ -315,11 +457,80 @@ appServer.serve({
       return walked(pending(String(a.who)), function (item) { return { key: JSON.parse(item).id, label: item }; });
     },
   },
-  // What has gone stale (slim/G1.6), one item per row of the newest session.
-  'fresh.get': {
-    request: {}, reply: { items: [{ key: '', label: '' }], more: false },
-    handler: function () {
-      return walked(freshness(), function (item) { return { key: JSON.parse(item).id, label: item }; });
+  // ── WHAT THE LIST AND THE DIALOG READ (desk/G2.1) ─────────────────
+  // Andy: "nice verb names! can use them an many seaches. aprooved."
+  // Each label is one item's facts as JSON; the goal's row also carries
+  // design mode, the waiting-on-you count and the live agents.
+  'items.search': {
+    request: { text: '', currentGoalOnly: false, goalsOnly: false }, reply: { items: [{ key: '', label: '' }], more: false },
+    handler: function (a) {
+      return walked(searchItems(a), function (item) { return { key: JSON.parse(item).id, label: item }; });
+    },
+  },
+  'item.get': {
+    request: { id: '' },
+    reply: { item: '', box: '', version: 0, change: 0,
+      checks: [{ number: '', kind: '', words: '', test: '', state: '', by: '', at: '' }], chat: [{ by: '', at: '', text: '' }] },
+    handler: function (a) {
+      const s = walkState();
+      const it = s.items[String(a.id)];
+      if (!it) throw refused('no-such-item');
+      return { item: JSON.stringify(facts(s, it)), box: it.box, version: it.version, change: s.change, checks: it.checks, chat: it.chat };
+    },
+  },
+  // ── THE WRITES (desk/G2.1): each carries `by`, an agent's name or 'andy'.
+  // The server cannot see who asks; a member cannot say 'andy' (apiDoor.js).
+  'session.set': {
+    request: { json: '', by: '' }, reply: { change: 0 },
+    handler: function (a) {
+      const sess = parsed(a.json);
+      if (!sess.goal || !sess.goal.id || !Array.isArray(sess.items)) throw new Error('a session needs its goal and items');
+      return { change: write('session.set', { session: sess, by: a.by }).change };
+    },
+  },
+  // Andy: "the FIRST text wins, all subsequent actions are alterations and
+  // corrections." An alteration names the version it was written against and
+  // is refused if the box has moved on, so nothing is silently overwritten.
+  'box.write': {
+    request: { id: '', text: '', version: 0, by: '' }, reply: { change: 0, version: 0 },
+    handler: function (a) {
+      const s = write('box.write', a, function (st, it) { if (a.version !== it.version) throw refused('box-moved'); });
+      return { change: s.change, version: s.items[a.id].version };
+    },
+  },
+  'check.add': {
+    request: { id: '', kind: '', words: '', test: '', by: '' }, reply: { change: 0 },
+    handler: function (a) {
+      if (a.kind !== 'C' && a.kind !== 'T') throw new Error('a check is C or T');
+      return { change: write('check.add', a).change };
+    },
+  },
+  'check.set': {
+    request: { id: '', check: '', state: '', by: '' }, reply: { change: 0 },
+    handler: function (a) {
+      if (['open', 'passed', 'failed'].indexOf(a.state) === -1) throw new Error('a check is open, passed or failed');
+      return { change: write('check.set', a, function (st, it) {
+        if (!it.checks.some(function (c) { return c.number === a.check; })) throw refused('no-row');
+      }).change };
+    },
+  },
+  'chat.add': { request: { id: '', text: '', by: '' }, reply: { change: 0 }, handler: function (a) { return { change: write('chat.add', a).change }; } },
+  'item.rename': { request: { id: '', title: '', by: '' }, reply: { change: 0 }, handler: function (a) { return { change: write('item.rename', a).change }; } },
+  'item.status': { request: { id: '', word: '', by: '' }, reply: { change: 0 }, handler: function (a) { return { change: write('item.status', a).change }; } },
+  'item.take': { request: { id: '', by: '' }, reply: { change: 0 }, handler: function (a) { return { change: write('item.take', a).change }; } },
+  // Presses are records, not lines (Andy: "a press shouldn't post a line, it
+  // is not textual information"). Go!, Close and Reopen only when offered;
+  // done also by Andy alone ("completions ... can be forced by the user"),
+  // marked alone.
+  'press': {
+    request: { id: '', what: '', by: '' }, reply: { change: 0 },
+    handler: function (a) {
+      if (PRESSES.indexOf(a.what) === -1) throw new Error('no such press: ' + a.what);
+      return { change: write('press', a, function (st, it) {
+        const offered = buttons(st, it);
+        if ((a.what === 'go' || a.what === 'close' || a.what === 'reopen') && offered.indexOf(a.what) === -1) throw refused('not-offered');
+        if (a.what === 'bring-back' && !it.closed) throw refused('not-offered');
+      }).change };
     },
   },
   'state.get': { request: {}, reply: { json: '' }, handler: function () { return { json: doc('state') }; } },

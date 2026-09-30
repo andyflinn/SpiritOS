@@ -14,19 +14,8 @@
 //   respective items."
 //
 // THE CONTRACT (agreed with wsl-claude before the build):
-//   THE DESK SERVER (process/js/desk/desk.js) walks every line, as pending()
-//   does, so it folds what Desk alone cannot see (it loads only the newest
-//   session):
-//     fresh.get {} -> {items: [{key: id, label: JSON {id, changedAt,
-//     updateRequested}}], more}, one per item of the newest session, the goal
-//     too.
-//     - changedAt: the `at` of the newest session in which the item's text
-//       (title, description, check, tests, inPlace) differs from the session
-//       before, or of the one it first appeared in (S1).
-//     - NO update requests (S2): Andy dropped them, 2026-09-30, since the
-//       lists are Desk's data and update at once; only prose an agent wrote
-//       goes stale, and that is changedAt's job.
-//   DESK (shell/desk/desk.js) asks fresh.get, marks no row 'update?' (L1),
+//   The desk server's fresh.get (S1, S2) was retired by desk/G2.1 for items.search.
+//   DESK (shell/desk/desk.js) marks no row 'update?' (L1),
 //   and its blocks and waits-on cells are links, data-open="<id>", as the
 //   dialog's lists are (L2).
 //   THE DIALOG draws blocking and blocked-by in a foldable block of their
@@ -42,14 +31,10 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { spawn } = require('child_process');
-const { DatabaseSync } = require('node:sqlite');
 const test = require('./testSupport.js');
 const kernel = require('../run/js/kernel.js');
-const appClient = require('../run/js/appClient.js');
 
 const OWED = 'OWED by slim/G1.6: ';
-const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
 const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
 const DETAILS = path.join(__dirname, '..', 'run', 'shell', 'deskDetails', 'deskDetails.js');
 const LEAD = 'MCowBQYDK2VwAyEAleadleadleadleadleadleadleadleadleadl=';
@@ -68,8 +53,6 @@ function session(items) { return JSON.stringify({ goal: { id: 't/G1', title: 'Th
 const A = { id: 't/G1.1', title: 'Alpha', description: 'first words', blocks: ['t/G1'] };
 const B = { id: 't/G1.2', title: 'Beta', description: 'beta', blocks: ['t/G1'], inPlace: [{ what: 'x', where: 'a.js:1' }] };
 const C = { id: 't/G1.3', title: 'Gamma', description: 'gamma', blocks: ['t/G1.1'] };
-const A2 = Object.assign({}, A, { description: 'changed words' });
-const B2 = Object.assign({}, B, { inPlace: [{ what: 'x', where: 'a.js:2' }] });
 
 function fakeElement(id) {
   let html = '';
@@ -101,61 +84,10 @@ function load(script, doc) {
 
 test.startTest('slim/G1.6: Desk keeps its displays fresh by itself');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskfresh-'));
-const kids = [];
 
 (async function () {
-  // ── THE DESK SERVER ─────────────────────────────────────────────────
-  const state = path.join(scratch, 'state');
-  fs.mkdirSync(state, { recursive: true });
-  const rows = [
-    line(1, 'claude-windows', 'session', session([A, B, C]), 'team/chat'),
-    line(2, 'claude-windows', 'note', 'on A', 't/G1.1'),
-    line(3, 'claude-windows', 'session', session([A, B, C]), 'team/chat'),   // nothing changed
-    line(5, 'claude-windows', 'session', session([A2, B2, C]), 'team/chat'), // A's words, B's inPlace
-    line(6, 'wsl-claude', 'note', 'on the goal', 't/G1'),
-    line(7, 'claude-windows', 'note', 'on C', 't/G1.3'),
-    line(8, 'andy', 'answer', 'done.', 't/G1.1'),                            // A's status changes
-  ];
-  const db = new DatabaseSync(path.join(state, 'desk.db'));
-  db.exec('CREATE TABLE IF NOT EXISTS lines (key TEXT PRIMARY KEY, at TEXT, todo TEXT, sender TEXT, kind TEXT, body TEXT, line TEXT NOT NULL);' +
-    'CREATE TABLE IF NOT EXISTS docs (name TEXT PRIMARY KEY, json TEXT NOT NULL);');
-  const ins = db.prepare('INSERT OR REPLACE INTO lines (key, at, todo, sender, kind, body, line) VALUES (?, ?, ?, ?, ?, ?, ?)');
-  rows.forEach(function (m) { ins.run(m.key, m.at, m.todo, m.from, m.kind, m.text, JSON.stringify(m)); });
-  db.close();
-
-  const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
-  const client = appClient.createAppClient({ rootDir: scratch });
-  client.register('desk', pipe);
-  const call = function (verb, args) { const b = {}; b[verb] = args; return client.ask({ desk: b }).then(function (r) { return r.body || {}; }); };
-  const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
-  kids.push(kid);
-  for (let i = 0; i < 60; i++) {
-    await sleep(150);
-    try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ }
-  }
-  async function fresh() {
-    const r = await call('fresh.get', {});
-    const by = {};
-    ((r && r.items) || []).forEach(function (i) { try { const o = JSON.parse(i.label); by[o.id] = o; } catch (e) { /* not one */ } });
-    return { raw: r, by: by };
-  }
-
-  test.subHeading('S1: changedAt is when an item\'s text last changed, inPlace included');
-  const f1 = await fresh();
-  const a = f1.by['t/G1.1'] || {}, b = f1.by['t/G1.2'] || {}, c = f1.by['t/G1.3'] || {};
-  if (a.changedAt === at(5) && b.changedAt === at(5) && c.changedAt === at(1)) {
-    test.check('A (words) and B (inPlace) changed at the third session; C, unchanged, dates from its first');
-  } else test.fail(OWED + 'fresh.get answered ' + JSON.stringify(f1.raw).slice(0, 240));
-
-  // NO UPDATE REQUESTS (Andy, 2026-09-30): what goes stale on a status
-  // change is only lists an agent copied into prose; the lists are Desk's
-  // data, drawn at once ("So there's no reason to queue update requests when
-  // an item closes etc..?", "that would save me lots of agent-work that can
-  // be done programatically"). A's done at 8 asks nothing of anyone.
-  test.subHeading('S2: a status change asks nobody for an update');
-  const asking = Object.keys(f1.by).filter(function (id) { return f1.by[id].updateRequested; });
-  if (Object.keys(f1.by).length && !asking.length) test.check('after A\'s done, no item carries an update request');
-  else test.fail(OWED + 'update requests are gone from G1.6, yet ' + JSON.stringify(asking) + ' carry one');
+  // THE DESK SERVER'S HALF (S1, S2) WENT WITH fresh.get: desk/G2.1 retired it for items.search
+  // (spirit/test/deskState.js).
 
   // ── THE LIST ────────────────────────────────────────────────────────
   const listLog = [line(1, 'claude-windows', 'session', session([A, B, C]), 'team/chat')];
@@ -381,7 +313,6 @@ const kids = [];
     test.check('goState go draws Go! even after his retitle answer; goState held draws none though the thread has an open ask');
   } else test.fail(OWED + 'dialog Go! with goState go (after a retitle) ' + hasGo(dGo) + ', with goState held ' + hasGo(dHeld));
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
-  kids.forEach(function (k) { try { k.kill(); } catch (e) { /* gone */ } });
   setTimeout(function () {
     try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* busy */ }
     test.reportSuccessFailureCount();
