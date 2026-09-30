@@ -117,6 +117,8 @@ const NOT_A_SUITE = [
   // A helper, not a suite: a desk server in memory, for the suites that
   // mount Desk once it keeps nothing in its own folder (desk/G1.4).
   'deskFake.js',
+  // A helper, not a suite: desk/G2.2's launcher checks, run by jobCallback.js through its stand-in door.
+  'launcherChecks.js',
   // A TOOL, NOT A SUITE. It spawns two servers, enrols 800 members, holds
   // 800 sockets and writes 11,000 rows — a minute of wall clock, and it
   // makes no pass/fail claim: it prints what a box holds

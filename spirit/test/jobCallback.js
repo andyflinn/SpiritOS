@@ -136,6 +136,11 @@ withJobsServer(function (jobs) {
       });
     });
 }).then(function () {
+  // desk/G2.2's checks need this door too; they live in launcherChecks.js.
+  const launcher = require('./launcherChecks.js');
+  return withJobsServer(function (jobs) { return launcher.withDoor(test, jobs); })
+    .then(function () { return launcher.withoutDoor(test); });
+}).then(function () {
   test.reportSuccessFailureCount();
 }).catch(function (err) {
   test.fail('unexpected error running the job-callback test: ' + (err && err.stack || err));
