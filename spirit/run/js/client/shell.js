@@ -2109,6 +2109,15 @@
     if (typeof handler !== 'function' || !appId) return function () {};
     var name = String(appId);
     (publishedHandlers[name] = publishedHandlers[name] || []).push(handler);
+    // An app opened after its server published gets what is there now (wsl-claude, G2.3 review).
+    var m = /^shell\/([^/]+)$/.exec(name);
+    if (m) {
+      jobsById.forEach(function (job) {
+        if (job && job.module === 'process/js/' + m[1] && job.app && typeof job.app === 'object') {
+          try { handler(job.app); } catch (e) { /* the app's own fault */ }
+        }
+      });
+    }
     return function off() {
       publishedHandlers[name] = (publishedHandlers[name] || []).filter(function (fn) { return fn !== handler; });
     };
