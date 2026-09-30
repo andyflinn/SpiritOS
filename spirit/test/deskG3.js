@@ -148,6 +148,13 @@ function clickTarget(attrs) {
   const short = await call('item.get', { id: 't/G1' });
   if (short.status === 200 && (short.body || {}).chatMore === false) test.check('a short chat says chatMore false');
   else test.fail(G33 + 'a short chat answered chatMore ' + JSON.stringify((short.body || {}).chatMore));
+  // From the review: a newest line too big for the room on its own must not empty the chat.
+  await call('chat.add', { id: 't/G1', text: 'SMALL-OLDER', by: 'wsl-claude' });
+  await call('chat.add', { id: 't/G1', text: 'HUGE ' + 'y'.repeat(appClient.ANSWER_MAX - 400), by: 'wsl-claude' });
+  const huge = await call('item.get', { id: 't/G1' });
+  const hc = (huge.body || {}).chat || [];
+  if (huge.status === 200 && hc.length === 1 && hc[0].text === 'SMALL-OLDER' && (huge.body || {}).chatMore === true) test.check('a newest line too big to send is left out, and the older one still comes, with chatMore');
+  else test.fail(G33 + 'with an oversized newest line item.get answered ' + JSON.stringify({ status: huge.status, chat: hc.map(function (l) { return String(l.text).slice(0, 12); }), more: (huge.body || {}).chatMore }));
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(async function () {
   for (const k of kids) await stop(k);
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* busy */ }
