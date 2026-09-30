@@ -122,7 +122,7 @@ function createAppServer(verbs, opts) {
       // (D12), so an app can say line-too-large rather than handler-failed.
       // Its own key, not e.code: a system error's code (ENOENT) must never
       // pass for a refusal. Anything else a handler throws stays handler-failed.
-      if (e && typeof e.refusal === 'string' && errors.byCode(e.refusal)) return refusal(e.refusal, { verb: name });
+      if (e && typeof e.refusal === 'string' && errors.byCode(e.refusal)) return refusal(e.refusal, Object.assign({ verb: name }, e.extra && typeof e.extra === 'object' ? e.extra : {}));
       return refusal('handler-failed', { verb: name });
     });
   }
@@ -143,7 +143,7 @@ function createAppServer(verbs, opts) {
     });
     httpReq.on('end', function () {
       let answer;
-      if (over) answer = Promise.resolve(refusal('app-request-too-large'));
+      if (over) answer = Promise.resolve(refusal('app-request-too-large', { bytes: size, max: limits.BODY_MAX }));
       else if (httpReq.method !== 'POST') answer = Promise.resolve(refusal('bad-request', { why: 'POST only' }));
       else {
         let parsed;

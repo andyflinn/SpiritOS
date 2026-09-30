@@ -78,10 +78,30 @@ const ANSWER_ROOM = appClient.ANSWER_MAX - 512;
 // split at start, log.add's refusal and the searches' skip all use this one
 // test: a line the bucket could not send first would stop a read with
 // nothing in it, the stall found on Andy's desk.db (182 such lines).
-function fitsOneAnswer(key, line) {
-  return Buffer.byteLength(JSON.stringify({ items: [{ key: String(key), label: String(line) }], more: false }), 'utf8') <= ANSWER_ROOM;
+function oneAnswerBytes(key, line) {
+  return Buffer.byteLength(JSON.stringify({ items: [{ key: String(key), label: String(line) }], more: false }), 'utf8');
 }
-function tooLarge() { const e = new Error('line too large to come back in one answer'); e.refusal = 'line-too-large'; return e; }
+function fitsOneAnswer(key, line) { return oneAnswerBytes(key, line) <= ANSWER_ROOM; }
+// A REFUSAL SAYS HOW LARGE, AND THE LIMIT (Andy: "why can't the system cleanly reject oversized stuff?").
+function tooLarge(bytes, max) {
+  const e = new Error('line too large to come back in one answer');
+  e.refusal = 'line-too-large';
+  e.extra = { bytes: Number(bytes) || 0, max: Number(max) || ANSWER_ROOM };
+  return e;
+}
+// The room item.chat fills, measured the way it fills it: so a line chat.add takes always comes back whole.
+const CHAT_ROOM = ANSWER_ROOM - Buffer.byteLength(JSON.stringify({ chatMore: false }), 'utf8');
+function chatLineBytes(index, line) { return oneAnswerBytes(String(index), JSON.stringify(line)); }
+// Every panel an item answers with, each measured as one answer: its facts (item.get, and its label in a search),
+// its box (item.box) and its checks (item.checks). The largest, against the room.
+function largestPanel(s, id) {
+  const it = s.items[id];
+  if (!it) return 0;
+  return Math.max(
+    oneAnswerBytes(id, JSON.stringify(facts(s, it))),
+    Buffer.byteLength(JSON.stringify({ box: it.box, version: it.version }), 'utf8'),
+    Buffer.byteLength(JSON.stringify({ checks: it.checks }), 'utf8'));
+}
 
 // ── THE LINES TOO BIG FOR ONE ANSWER, SPLIT ONCE (slim/G1.2 T3) ──────
 //
@@ -440,8 +460,27 @@ function write(verb, a, check) {
   if (check) check(s, it);
   const body = Object.assign({}, a);
   delete body.by;
-  const r = addRecord.run(new Date().toISOString(), verb, String(a.by || ''), JSON.stringify(body));
-  const after = walkState();
+  // KEPT ONLY IF IT CAN COME BACK (the oversize suite; Andy: "why can't the system cleanly reject oversized
+  // stuff?"). The write is taken inside a transaction, the state walked, and every panel it touched measured as
+  // the answer that would carry it; one that no longer fits undoes the write and is refused by name.
+  db.exec('BEGIN');
+  let r;
+  let after;
+  try {
+    r = addRecord.run(new Date().toISOString(), verb, String(a.by || ''), JSON.stringify(body));
+    after = walkState();
+    const touched = verb === 'session.set' && body.session && body.session.goal
+      ? [String(body.session.goal.id)].concat((body.session.items || []).map(function (x) { return String(x.id || ''); }))
+      : [String(a.id)];
+    touched.forEach(function (id) {
+      const bytes = largestPanel(after, id);
+      if (bytes > ANSWER_ROOM) throw tooLarge(bytes, ANSWER_ROOM);
+    });
+    db.exec('COMMIT');
+  } catch (e) {
+    db.exec('ROLLBACK');
+    throw e;
+  }
   const now = it ? after.items[it.id] : null;
   // THE CHANGE ITSELF TRAVELS (desk/G2.7, "no pulling"): the item's facts and
   // whether it is still on the List; a box write adds the box, a chat line the
@@ -495,7 +534,13 @@ const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'st
 function ownerOnly(a) { if (a.by !== 'andy') throw refused('not-owner'); }
 
 function doc(name) { const row = getDoc.get(name); return row ? row.json : '{}'; }
-function saveDoc(name, json) { parsed(json); putDoc.run(name, String(json)); return { saved: true }; }
+function saveDoc(name, json) {
+  parsed(json);
+  const bytes = Buffer.byteLength(JSON.stringify({ json: String(json) }), 'utf8');
+  if (bytes > ANSWER_ROOM) throw tooLarge(bytes, ANSWER_ROOM);
+  putDoc.run(name, String(json));
+  return { saved: true };
+}
 
 appServer.serve({
   'log.add': {
@@ -504,7 +549,7 @@ appServer.serve({
       const l = parsed(a.json);
       if (typeof l.key !== 'string' || !l.key) throw new Error('a line needs its key');
       // Refused, never stored to stall a read later (slim/G1.2 T4).
-      if (!fitsOneAnswer(l.key, a.json)) throw tooLarge();
+      if (!fitsOneAnswer(l.key, a.json)) throw tooLarge(oneAnswerBytes(l.key, a.json), ANSWER_ROOM);
       const r = addLine.run(l.key, String(l.at || ''), String(l.todo || ''), String(l.from || ''), String(l.kind || ''), String(l.text || ''), a.json);
       return { added: r.changes === 1 };
     },
@@ -572,7 +617,7 @@ appServer.serve({
     handler: function (a) {
       const it = walkState().items[String(a.id)];
       if (!it) throw refused('no-such-item');
-      const room = ANSWER_ROOM - Buffer.byteLength(JSON.stringify({ chatMore: false }), 'utf8');
+      const room = CHAT_ROOM;
       const bucket = searchBucket.createSearch({
         query: '**', maxBytes: room,
         getLabelStringFromIncomingObject: function (pair) { return pair.label; },
@@ -582,7 +627,7 @@ appServer.serve({
       // the bucket with nothing in it (claude-windows's review).
       for (let i = it.chat.length - 1; i >= 0; i--) {
         const pair = { key: String(i), label: JSON.stringify(it.chat[i]) };
-        if (Buffer.byteLength(JSON.stringify({ items: [pair], more: false }), 'utf8') > room) continue;
+        if (chatLineBytes(i, it.chat[i]) > room) continue;
         if (!bucket.offer(pair)) break;
       }
       const chat = bucket.getResult().items.map(function (p) { return JSON.parse(p.label); }).reverse();
@@ -606,7 +651,8 @@ appServer.serve({
     request: { id: '', text: '', version: 0, by: '' }, reply: { change: 0, version: 0 },
     handler: function (a) {
       // A box that could not come back whole in item.box is refused here, as chat.add refuses such a line.
-      if (!fitsOneAnswer('0', JSON.stringify({ box: String(a.text), version: 0 }))) throw tooLarge();
+      const boxBytes = Buffer.byteLength(JSON.stringify({ box: String(a.text), version: 0 }), 'utf8');
+      if (boxBytes > ANSWER_ROOM) throw tooLarge(boxBytes, ANSWER_ROOM);
       const s = write('box.write', a, function (st, it) { if (a.version !== it.version) throw refused('box-moved'); });
       return { change: s.change, version: s.items[a.id].version };
     },
@@ -633,7 +679,9 @@ appServer.serve({
     handler: function (a) {
       // MAX_PAYLOAD AT THE DOOR (desk/G3.3). Andy: "in the db yes, but in the sent messages ther MUST be a MAX_PAYLOAD".
       // A line that could not come back whole in one answer is refused here, as log.add refuses one; the sender slices it.
-      if (!fitsOneAnswer('0', JSON.stringify({ by: String(a.by), at: new Date().toISOString(), text: String(a.text) }))) throw tooLarge();
+      const it0 = walkState().items[String(a.id)];
+      const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: String(a.by), at: new Date().toISOString(), text: String(a.text) });
+      if (bytes > CHAT_ROOM) throw tooLarge(bytes, CHAT_ROOM);
       const c = write('chat.add', a).change;
       if (a.by === 'andy') addVoice(a.text);
       return { change: c };

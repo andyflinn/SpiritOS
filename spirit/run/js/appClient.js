@@ -119,8 +119,10 @@ function readServers(rootDir) {
   });
 }
 
-function refusal(code, app) {
-  return { status: STATUS[code], body: { ok: false, code: code, app: String(app || '') }, type: 'application/json; charset=utf-8' };
+function refusal(code, app, extra) {
+  const body = { ok: false, code: code, app: String(app || '') };
+  if (extra) body.extra = extra;
+  return { status: STATUS[code], body: body, type: 'application/json; charset=utf-8' };
 }
 
 // opts: { rootDir, startServerJob, log, platform, execPath, request }
@@ -170,7 +172,7 @@ function createAppClient(opts) {
     if (!row) return Promise.resolve(refusal('app-not-served', app));
     const r = req || {};
     const body = typeof r.body === 'string' ? r.body : (r.body == null ? '' : JSON.stringify(r.body));
-    if (Buffer.byteLength(body, 'utf8') > limits.BODY_MAX) return Promise.resolve(refusal('app-request-too-large', app));
+    if (Buffer.byteLength(body, 'utf8') > limits.BODY_MAX) return Promise.resolve(refusal('app-request-too-large', app, { bytes: Buffer.byteLength(body, 'utf8'), max: limits.BODY_MAX }));
     const p = String(r.path || '/');
     return Promise.resolve(request(row.pipe, String(r.method || 'GET'), p.charAt(0) === '/' ? p : '/' + p, body, {
       type: typeof r.type === 'string' ? r.type : '',
@@ -203,7 +205,12 @@ function createAppClient(opts) {
     return Promise.resolve(request(row.pipe, 'POST', '/', JSON.stringify(request_), {
       type: 'application/json', timeoutMs: DOOR_WAIT_MS, answerMax: ANSWER_MAX,
     })).then(function (a) {
-      if (!a || a.refused) return error(a && errors.byCode(a.refused) ? a.refused : 'app-not-running', { app: row.app });
+      if (!a || a.refused) {
+        const code = a && errors.byCode(a.refused) ? a.refused : 'app-not-running';
+        const extra = { app: row.app };
+        if (a && typeof a.bytes === 'number') { extra.bytes = a.bytes; extra.max = a.max; }
+        return error(code, extra);
+      }
       let body;
       try { body = JSON.parse(a.text); } catch (e) { return error('handler-failed', { app: row.app, why: 'not JSON' }); }
       return { status: a.status, body: body };

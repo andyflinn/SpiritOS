@@ -127,7 +127,7 @@ function pipeRequest(pipePath, method, pathname, bodyText, opts) {
       res.on('data', function (c) {
         if (done) return;
         size += c.length;
-        if (size > answerMax) { finish({ refused: 'app-answer-too-large' }); req.destroy(); return; }
+        if (size > answerMax) { finish({ refused: 'app-answer-too-large', bytes: size, max: answerMax }); req.destroy(); return; }
         chunks.push(c);
       });
       res.on('end', function () {
