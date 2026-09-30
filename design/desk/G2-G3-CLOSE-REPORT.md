@@ -33,7 +33,7 @@ failed first, by the agent who did not build.
 | Platform | Proves | At | Result |
 |---|---|---|---|
 | Windows (claude-windows) | node, shell, Desk | this commit | 233 suites, 3803 green, 0 red, 7 awaiting, 1 stood down |
-| Linux (wsl-claude) | relay | owed by wsl-claude | owed by wsl-claude |
+| Linux (wsl-claude) | relay | 1f22ad37 | 233 suites, 3827 green, 0 red |
 
 Flaky under load this stretch, green alone every time: peerPost (busy
 retry), liveFrontDoor, appServerBoundary (owner-asleep world), deskWhileBackup,
@@ -47,7 +47,7 @@ That is fixed, and it was green 5 of 5 alone.
   agents.js changed, and agents.js runs on the agents' side. Nothing his node
   runs differs.
 - The agents' nodes: agents.js runs fresh on each call, so nothing needs a restart.
-- WSL side: owed by wsl-claude.
+- WSL side: wsl-claude's node :45441 now runs 1f22ad37. Andy's WSL checkout (~/SpiritOS) is at 606be39b, behind the tree. It is his to pull, not an agent's: not yet brought up.
 - Relays (spirit-3): nothing in this stretch touches the relay, so no update
   is owed. Only Andy touches spirit-3.
 
@@ -83,7 +83,7 @@ That is fixed, and it was green 5 of 5 alone.
   before Andy chose between that and a larger room for his browser; his rulings
   ("in the sent messages ther MUST be a MAX_PAYLOAD", "i wont need a scroll up
   page") keep what was built. About: building ahead of a ruling.
-- (owed by wsl-claude: any he records.)
+- wsl-claude counts **0 divergences on 0 independently worked halves**: every item this stretch was split, tests from one agent and build from the other, never worked twice. His differences of reading, each settled: blocks written backwards in the G2.1 red, the voice regression, and his stale abandon claim, which the records corrected.
 
 **Readiness: five defects reached Andy's screen past a green harness.**
 - Reads refused a `by` (b349b47b).
@@ -99,7 +99,7 @@ server, the missing lead, the stale reads, and the missing tag.
 
 ## What the other agent checked
 
-Owed by wsl-claude: what he checked, named with commits, and what he would refuse to be handed. What he did report at the close: he compiled his vault (b92d9e7, compile 17: "a comment is not a fact; change the switch that exists; say what his node runs"), and he found the agents.js reads bug in item 6 above.
+wsl-claude, in his words: "Checked, with mutations each: G2.2 8ec76498, G2.4 01f6b726 (built); G2.3 020c339a, G2.5 c35fac42, G2.6 b80f8422/6e37f961, G2.8 bf9fb405/c365dc8f, G3.2+G3.4 2a80297f, G3.6 0ef3af49, G3.7 f7adde34/ace755eb, G3.9 aff359c2." He would refuse to be handed two things, both fixed before this report: the agents.js reads that were refused (c257c7e2), and deskRecord clearing a musing box on a failed write (75bc7bf5). He also compiled his vault at the close (b92d9e7, compile 17: "a comment is not a fact; change the switch that exists; say what his node runs").
 
 ## How the lead worked, for the record
 
