@@ -369,7 +369,8 @@ function buttons(s, it) {
   if (it.closed) return [];
   if (it.done) return ['close', 'reopen'];
   const out = [];
-  if (g && !g.design && !it.went && !blockers(s, it).length) out.push('go');
+  // A GOAL NEVER OFFERS GO! (desk/G3.7): its items are gone, not the goal itself.
+  if (!it.goal && g && !g.design && !it.went && !blockers(s, it).length) out.push('go');
   if (Object.keys(it.claims).length) out.push('done');
   if (it.goal && g && goable(s, g).length) out.push('go-all');
   return out;
