@@ -65,7 +65,7 @@ the only way a default survives contact with people in a hurry.
 
 ## What can be asked
 
-**48 verbs, in 11 families.** This list is generated from `server.js` and is exhaustive at the commit above.
+**49 verbs, in 11 families.** This list is generated from `server.js` and is exhaustive at the commit above.
 
 **Each verb carries its authority.** Andy, 2026-09-27: *"that's a boundary
 crossed that requires peer review AND my approval"* — and, on his own yes:
@@ -122,6 +122,7 @@ his words, which keeps the harness red until the verb is gone.
 
 **`node.*`** — this node's own identity as strangers see it
 - `node.card` — before the rule (2026-09-27)
+- `node.debug` — Andy, 2026-09-30: "node.debug: yes." (Desk, desk/G2.5; reviewed by wsl-claude)
 - `node.rotateCipher` — Andy, 2026-09-27: "go." (keep the three verbs added without approval, Desk under puppets/G10)
 - `node.setDescription` — before the rule (2026-09-27)
 - `node.setName` — before the rule (2026-09-27)

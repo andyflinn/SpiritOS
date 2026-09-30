@@ -661,6 +661,8 @@ freePort()
       // thing is to exercise the write. It touches a field nothing else
       // in this suite reads.
       ['POST', '/api/spirit', { verb: 'node.card' }],
+      // desk/G2.5: reads the node's DEBUG, and changes nothing.
+      ['POST', '/api/spirit', { verb: 'node.debug', debug: {} }],
       ['POST', '/api/spirit', { verb: 'node.setName' }],
       ['POST', '/api/spirit', { verb: 'node.setDescription', description: 'a node in a test' }],
       // A test node rotates its own throwaway key: the write is the point,
