@@ -73,6 +73,11 @@ module.exports = function installJobs(spirit, port) {
 
     patch = patch || {};
 
+    // NOTHING OVERSIZED ENTERS A PAGE'S STREAM (Andy: "the shared layer MUST instantly reject a payload, when the
+    // json exceeds the maximum size"). A server's published object over MAX_PAYLOAD is refused whole: the job keeps
+    // what it had, and no job-updated is emitted.
+    if (patch.app && typeof patch.app === 'object' && Buffer.byteLength(JSON.stringify(patch.app), 'utf8') > require('./limits').PAYLOAD_MAX) return null;
+
     if (patch.status) {
       job.status = patch.status;
     }

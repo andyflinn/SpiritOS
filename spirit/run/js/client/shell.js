@@ -2146,6 +2146,10 @@
     var m = /^process\/js\/([^/]+)$/.exec(String(job.module || ''));
     if (!m) return;
     var seen = JSON.stringify(job.app);
+    // NO APP IS HANDED AN OBJECT OVER MAX_PAYLOAD (Andy: "the shared layer MUST instantly reject a payload"). The
+    // node refuses one already; this is the last door, measured in bytes as the limit is.
+    var lim = typeof window !== 'undefined' && window.spiritLimits && window.spiritLimits.PAYLOAD_MAX;
+    if (lim && unescape(encodeURIComponent(seen)).length > lim) return;
     if (publishedLast[job.id] === seen) return;
     publishedLast[job.id] = seen;
     (publishedHandlers['shell/' + m[1]] || []).slice().forEach(function (fn) {

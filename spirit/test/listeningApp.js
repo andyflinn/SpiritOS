@@ -86,7 +86,7 @@ function bootShell(manifest) {
     },
   };
   new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(SHELL, 'utf8'))(
-    shellSpirit, doc, function () {}, { spiritPacket: packet });
+    shellSpirit, doc, function () {}, { spiritPacket: packet, spiritLimits: require('../run/js/limits.js') });
   subscribers.forEach(function (h) {
     if (typeof h.onSnapshot === 'function') h.onSnapshot([{ id: 'fs-watcher-1', type: 'fs-watcher', data: { files: [{ kind: 'file', relativePath: 'shell/desk/desk.js' }] } }]);
   });

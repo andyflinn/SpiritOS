@@ -201,7 +201,8 @@ function shape(v) {
 // reported through spirit.core.jobs.report; every open page gets it as job-updated.
 // Too large is not sent; a burst is sent at most every PUBLISH_EVERY_MS, the last
 // object winning.
-const PUBLISH_MAX = 64 * 1024;
+// One limit for everything a payload passes (Andy: "the shared layer MUST instantly reject a payload"): MAX_PAYLOAD.
+const PUBLISH_MAX = limits.PAYLOAD_MAX;
 const PUBLISH_EVERY_MS = 100;
 let publishPending = null;
 let publishTimer = null;
@@ -222,6 +223,7 @@ function publish(obj) {
   const dropped = size > PUBLISH_MAX;
   publishPending = dropped ? { dropped: { bytes: size, max: PUBLISH_MAX } } : obj;
   if (dropped) {
+    process.stderr.write('publish-too-large: ' + size + ' bytes, the limit is ' + PUBLISH_MAX + '\n');
     if (publishTimer) return false;
     const w = Math.max(0, publishLast + PUBLISH_EVERY_MS - Date.now());
     if (w === 0) publishNow(); else publishTimer = setTimeout(publishNow, w);

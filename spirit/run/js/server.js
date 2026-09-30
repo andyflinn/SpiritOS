@@ -343,6 +343,14 @@ function handleJobUpdate(req, res) {
     const body = Object.assign({}, whole);
     delete body.id;
     delete body.verb;
+    // An app object over MAX_PAYLOAD is refused here by name, with its size and the limit, never kept or streamed.
+    const appBytes = body.app && typeof body.app === 'object' ? Buffer.byteLength(JSON.stringify(body.app), 'utf8') : 0;
+    const appMax = require('./limits').PAYLOAD_MAX;
+    if (appBytes > appMax) {
+      res.writeHead(413, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ ok: false, code: 'app-request-too-large', error: 'the published object is too large', extra: { bytes: appBytes, max: appMax } }));
+      return;
+    }
     const job = jobs.updateJob(id, body);
     if (!job) {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
