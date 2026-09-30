@@ -79,20 +79,29 @@ const log = [row('claude-windows', 'session', SESSION, 'team/chat'), row('andy',
 
 const posted = [];
 const files = { 'log/log.json': JSON.stringify(log) };
+// THE LIST IS THE DESK SERVER'S (desk/G2.6): the goal row says design mode,
+// each row its status.
+const fake = require('./deskFake.js').fromFiles(files);
+const label = function (o) { return Object.assign({ goal: 't/G1', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false }, o); };
+fake.items = [
+  label({ id: 't/G1', title: 'Goal', goal: '', design: true, waiting: 0, blocked: ['t/G1.1'] }),
+  label({ id: 't/G1.1', title: 'First', status: 'blocking', blocking: ['t/G1', 't/G1.2'] }),
+  label({ id: 't/G1.2', title: 'Second', status: 'blocked', blocked: ['t/G1.1'] }),
+];
 const doc = fakeDocument();
 const root = fakeElement('container');
 load(DESK, doc).mount(root, {
   fs: { loadFile: function (f) { return Object.prototype.hasOwnProperty.call(files, f) ? files[f] : null; }, saveFile: function (f, c) { files[f] = c; return Promise.resolve(); } },
   escapeHtml: kernel.core.util.escapeHtml,
-  verb: require('./deskFake.js').fromFiles(files).verb,
-  onPacket: function () {},
+  verb: fake.verb,
+  onPublished: function () {}, onPacket: function () {},
   peerPost: function (app, key, body) { posted.push(body); return Promise.resolve({ ok: true, status: 200, hash: 'h' + posted.length }); },
   callDialog: function () { return new Promise(function () {}); },
 });
 
 function stateOf(id) {
   const html = doc.getElementById('desk-top').innerHTML;
-  const tr = (html.match(new RegExp('<tr data-id="' + id.replace(/[/.]/g, '\\$&') + '"[\\s\\S]*?</tr>')) || [''])[0];
+  const tr = (html.match(new RegExp('<tr data-row="' + id.replace(/[/.]/g, '\\$&') + '"[\\s\\S]*?</tr>')) || [''])[0];
   const cells = (tr.match(/<td[^>]*>[\s\S]*?<\/td>/g) || []).map(function (c) { return c.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); });
   return cells[cells.length - 1] || '';
 }
@@ -149,22 +158,22 @@ settle().then(function () {
     const armed = /sure\?/i.test(tabs.innerHTML);
     press();
     return settle().then(function () {
-      const ended = posted.some(function (b) { return b.text === 'end design mode.'; });
+      // A press on the goal, not a line (desk/G2.6).
+      const ended = fake.calls.some(function (k) { return k.verb === 'press' && k.args.what === 'end-design' && k.args.id === 't/G1' && k.args.by === 'andy'; });
       if (afterOne === 0 && armed && ended) test.check('the first press armed it (sure?) and sent nothing; the second ended design mode');
       else test.fail(OWED + 'after one press ' + afterOne + ' sent, armed ' + armed + '; after two, ended ' + ended);
     });
   });
 }).then(function () {
-  test.subHeading("T7: Desk works out blocked and blocking");
-  // Design mode is on in this log, so no Go! interferes.
+  test.subHeading("T7: the status column reads what the desk server says");
   const s1 = stateOf('t/G1.1');
   const s2 = stateOf('t/G1.2');
   if (/\bblocking\b/.test(s1) && /\bblocked\b/.test(s2)) test.check('t/G1.1 reads blocking, t/G1.2 (waiting on it) reads blocked');
   else test.fail(OWED + 't/G1.1 reads ' + JSON.stringify(s1) + ', t/G1.2 reads ' + JSON.stringify(s2));
 
-  test.subHeading('T5 in Desk: the bubble starts folded, rules included, with no seen.json');
+  test.subHeading('T5 in Desk: the bubble shows the goal by its title, nothing more');
   const bubble = doc.getElementById('desk-session').innerHTML;
-  if (/Goal/.test(bubble) && !/GOAL-TEXT/.test(bubble) && !/RULE-TEXT/.test(bubble)) test.check('on a first open the top box shows its title line only');
+  if (/Goal/.test(bubble) && !/GOAL-TEXT/.test(bubble) && !/RULE-TEXT/.test(bubble)) test.check('the bubble shows the goal\'s title line only');
   else test.fail(OWED + 'the bubble on first open: ' + bubble.replace(/\s+/g, ' ').slice(0, 200));
 
   // T8 (the goal banner folding) was dropped by O3's answer: the banner stays
@@ -173,7 +182,7 @@ settle().then(function () {
   // task-type icons in the second column."
   test.subHeading('T9: the unseen star has the first column to itself, the type icon the second');
   const list = doc.getElementById('desk-top').innerHTML;
-  const firstRow = (list.match(/<tr data-id="t\/G1\.2"[\s\S]*?<\/tr>/) || [''])[0];
+  const firstRow = (list.match(/<tr data-row="t\/G1\.2"[\s\S]*?<\/tr>/) || [''])[0];
   const tds = firstRow.match(/<td[^>]*>[\s\S]*?<\/td>/g) || [];
   const icons = [kernel.core.const.ICON.ERROR, kernel.core.const.ICON.CODE];
   const hasIcon = function (c) { return icons.some(function (i) { return c.indexOf(i) !== -1; }); };
@@ -199,7 +208,7 @@ settle().then(function () {
   const session = [
     { id: 't/G1.2', title: 'Second', description: 'ITEM-TEXT', check: 'CHECK-TEXT', tests: [], inPlace: [], blocks: ['t/G1'], waitsOn: [], verified: true, done: false },
   ];
-  dd.mount(fakeElement('dd'), { escapeHtml: kernel.core.util.escapeHtml, onPacket: function () {}, setScreenTitle: function (t) { screenTitle = String(t); },
+  dd.mount(fakeElement('dd'), { escapeHtml: kernel.core.util.escapeHtml, onPublished: function () {}, onPacket: function () {}, setScreenTitle: function (t) { screenTitle = String(t); },
     peerPost: function () { return Promise.resolve({ ok: true }); }, closeDialog: function () {},
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } } });
   dd.open({ id: 't/G1.2', row: session[0], agents: {}, session: session, rules: [],

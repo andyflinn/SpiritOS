@@ -86,7 +86,19 @@ function load(script, doc) {
 // one server as they do for real. The folder is kept in step with it.
 const deskFake = require('./deskFake.js');
 const fakes = new Map();
-function fakeFor(files) { if (!fakes.has(files)) fakes.set(files, deskFake.fromFiles(files)); return fakes.get(files); }
+// THE LIST IS THE DESK SERVER'S (desk/G2.6): each fake lists puppets/G2.
+const G2 = { id: 'puppets/G2', title: 'Search', goal: 'puppets/G', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false };
+function fakeFor(files) {
+  if (!fakes.has(files)) { const fk = deskFake.fromFiles(files); fk.items = [Object.assign({}, G2)]; fakes.set(files, fk); }
+  return fakes.get(files);
+}
+// A click on a row of the List, as its one listener sees it.
+function openRow(desk, id) {
+  const top = desk.doc.getElementById('desk-top');
+  const t = { getAttribute: function (n) { return n === 'data-row' ? id : null; }, parentNode: null };
+  t.closest = function (sel) { return sel === '[data-row]' ? t : null; };
+  top.fire('click', { target: t, currentTarget: top });
+}
 // One counter for every mount: two tabs on one node never get the same hash.
 let outHash = 0;
 function mountDesk(opts) {
@@ -106,7 +118,7 @@ function mountDesk(opts) {
       if (opts.dead) return Promise.resolve({ status: 503, body: { ok: false, code: 'app-not-running', error: 'the app server is not running' } });
       return fakeFor(opts.files).verb(name, body);
     },
-    onPacket: function (app, fn) { handlers.push({ app: app, fn: fn }); },
+    onPublished: function () {}, onPacket: function (app, fn) { handlers.push({ app: app, fn: fn }); },
     peerPost: function (app, to, body) {
       posts.push({ app: app, to: to, body: body });
       if (opts.refuse) return Promise.resolve({ ok: false, status: 428, hash: '', error: 'no cipher key' });
@@ -274,7 +286,7 @@ function dialogSendsComeBack() {
     const ddApi = {
       escapeHtml: spirit.core.util.escapeHtml,
       verb: function () { throw new Error('the dialog asked the node for a verb'); },
-      onPacket: function () {},
+      onPublished: function () {}, onPacket: function () {},
       setScreenTitle: function () {},
       setDialogResult: function (r) { result = r; },
       peerPost: function (app, to, body) { posts.push({ to: to, body: body }); return Promise.resolve({ ok: true, status: 200, hash: 'h-dd-' + posts.length }); },
@@ -302,14 +314,11 @@ function dialogSendsComeBack() {
     // DESK'S HALF: a click on the row opens the dialog with that row's
     // thread, and what the dialog returns when it leaves (Back resolves
     // callDialog, as the shell does) goes into Desk's log.
-    const rows = desk.doc.getElementById('desk-top').queried['tr[data-id]'] || [];
-    const row = rows.filter(function (r) { return r.getAttribute('data-id') === 'puppets/G2'; })[0];
-    if (!row) { test.fail('Desk drew no clickable row for puppets/G2'); return null; }
-    row.fire('click');
+    openRow(desk, 'puppets/G2');
     const opened = desk.dialogs[0];
-    if (opened && opened.id === 'shell/deskDetails' && opened.params.thread.length === 1 &&
-        opened.params.thread[0].key === 'h-in-2' && opened.params.agents['wsl-claude'].key === WSL) {
-      test.check('the row opens its dialog with its own thread and the agents Desk has heard');
+    // The dialog asks the desk server for the item itself (desk/G2.7).
+    if (opened && opened.id === 'shell/deskDetails' && opened.params.id === 'puppets/G2' && opened.params.agents['wsl-claude'].key === WSL) {
+      test.check('the row opens its dialog with its id and the agents Desk has heard');
     } else {
       test.fail('dialog opened with ' + JSON.stringify(opened && opened.params));
     }
@@ -343,13 +352,12 @@ function voiceHoldsWhatHeTyped() {
       { key: 'd4', at: '2026-09-27T05:06:00Z', dir: 'out', peer: WSL, outcome: 'sent', from: 'andy', kind: 'answer', text: 'go.', todo: 'puppets/G2' },
       { key: 'd5', at: '2026-09-27T05:06:00Z', dir: 'out', peer: WSL, outcome: 'sent', from: 'andy', kind: 'ask', text: 'explain this to me: what is it, and why is it where it is?', todo: 'puppets/G2' },
     ];
-    const rows = desk.doc.getElementById('desk-top').queried['tr[data-id]'] || [];
-    if (!rows.length) { test.fail('no row to open'); return null; }
-    rows[0].fire('click');
+    if (!/Search/.test(desk.doc.getElementById('desk-top').innerHTML)) { test.fail('no row to open'); return null; }
+    openRow(desk, 'puppets/G2');
     desk.dialogs[desk.dialogs.length - 1].resolve({ sent: sent });
     return settle().then(function () {
       // The same result again (a second close) writes nothing twice.
-      rows[0].fire('click');
+      openRow(desk, 'puppets/G2');
       desk.dialogs[desk.dialogs.length - 1].resolve({ sent: sent });
       return settle();
     });
@@ -426,45 +434,24 @@ function teamGoesToEveryAgent() {
 }
 
 function unseenIsMarked() {
-  test.subHeading('A red * marks what he has not seen, and opening it clears it');
   // Andy: "... indicating that new stuff has arrived for that item", and
-  // "or use the red "*" do indicate "unseen changes have occured"".
+  // "or use the red "*" do indicate "unseen changes have occured"". SINCE
+  // desk/G2.6 A ROW'S STAR IS THE DESK SERVER'S: the label says it, and
+  // opening the row presses 'seen'.
+  test.subHeading('A red * marks the row the server says he has not seen, and opening it presses seen');
   const files = {};
-  const first = mountDesk({ files: files });
-  first.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'u-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
-  first.arrive({ from: 'wsl-claude', kind: 'note', text: 'old news', todo: 'puppets/G2' }, { hash: 'u-2', fromKey: WSL, sentAt: '2026-09-27T05:01:00Z' });
+  const desk = mountDesk({ files: files });
   return settle().then(function () {
-    // A Desk opening with a log but no seen.json (the first run of this
-    // version) counts all it holds as seen.
-    delete files['seen.json'];
-    first.fake.docs.seen = '';
-    const again = mountDesk({ files: files });
+    const star = /title="unseen changes"/;
+    const top = desk.doc.getElementById('desk-top');
+    if (!star.test(top.innerHTML)) test.check('no star while the server says none');
+    else test.fail('a star with none said: ' + top.innerHTML.slice(0, 160));
+    desk.fake.calls.length = 0;
+    openRow(desk, 'puppets/G2');
     return settle().then(function () {
-      const star = /title="unseen changes"/;
-      if (!star.test(again.doc.getElementById('desk-top').innerHTML) && files['seen.json']) {
-        test.check('a first open with no seen shows nothing as unseen, and records what it holds');
-      } else {
-        test.fail('first open: ' + again.doc.getElementById('desk-top').innerHTML.slice(0, 160));
-      }
-      again.arrive({ from: 'wsl-claude', kind: 'note', text: 'fresh', todo: 'puppets/G2' }, { hash: 'u-3', fromKey: WSL, sentAt: '2026-09-27T05:02:00Z' });
-      return settle().then(function () { return again; });
-    });
-  }).then(function (again) {
-    const top = again.doc.getElementById('desk-top');
-    if (/title="unseen changes"/.test(top.innerHTML)) test.check('a new arrival under a row puts a red * on that row');
-    else test.fail('no mark after a new arrival');
-    const rows = top.queried['tr[data-id]'] || [];
-    rows[0].fire('click');
-    again.dialogs[again.dialogs.length - 1].resolve(null);
-    return settle().then(function () {
-      again.arrive({ from: 'claude-windows', kind: 'note', text: 'unrelated' }, { hash: 'u-4', fromKey: LEAD, sentAt: '2026-09-27T05:03:00Z' });
-      return settle();
-    }).then(function () {
-      if (!/title="unseen changes"/.test(top.innerHTML)) test.check('opening the row clears its mark, and it stays clear');
-      else test.fail('the row is still marked after it was opened');
-      const seen = JSON.parse(files['seen.json']);
-      if (seen.rows['puppets/G2'] === Date.parse('2026-09-27T05:02:00Z')) test.check('what was seen is kept by seen.set, by arrival time');
-      else test.fail('seen.json ' + files['seen.json']);
+      const seen = desk.fake.calls.filter(function (k) { return k.verb === 'press' && k.args.what === 'seen'; });
+      if (seen.length === 1 && seen[0].args.id === 'puppets/G2' && seen[0].args.by === 'andy') test.check('opening the row pressed seen for it, as andy');
+      else test.fail('presses on opening: ' + JSON.stringify(desk.fake.calls));
     });
   });
 }

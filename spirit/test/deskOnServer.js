@@ -186,7 +186,7 @@ function mount(fake, files, saved) {
     },
     escapeHtml: kernel.core.util.escapeHtml,
     verb: fake.verb,
-    onPacket: function (app, fn) { doc.arrive = fn; },
+    onPublished: function () {}, onPacket: function (app, fn) { doc.arrive = fn; },
     peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h' + Date.now() }); },
     callDialog: function () { return new Promise(function () {}); },
     armUntilElsewhere: function () {},
@@ -220,29 +220,11 @@ async function deskPart() {
   fake.backup = { lastCheck: new Date(T0 + 10 * 60000).toISOString(), lastCopy: new Date(T0 + 9 * 60000).toISOString(), lastError: '' };
   const files = {};
   const saved = [];
-  // The item searches wait, so the List can be seen before they answer.
-  fake.hold(function (c) { return c.verb === 'log.search' && /^t\/G1\.\d/.test((c.args || {}).todo || ''); });
+  // T5's List checks (drawn from the session, filled per item) retired with
+  // desk/G2.6: the List is items.search's answer, in deskList.js.
   const doc = mount(fake, files, saved);
   await settleLong();
-
-  test.subHeading('T5: the List shows each open item\'s id and title before its lines arrive');
-  const early = doc.getElementById('desk-top').innerHTML;
-  if (/ITEM-ONE/.test(early) && /ITEM-THREE/.test(early) && !/ITEM-TWO-CLOSED/.test(early)) test.check('t/G1.1 and t/G1.3 are drawn from the session at once; the closed t/G1.2 is not');
-  else test.fail(OWED + 'before the item searches answered, the List was: ' + early.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').slice(0, 200));
-
-  fake.release();
-  await settleLong();
-  const html = doc.getElementById('desk-top').innerHTML;
-  const itemSearches = fake.searches().map(function (c) { return (c.args || {}).todo || ''; });
-  test.subHeading('T5: each open item fills its state from its own lines; a closed one is never read');
-  const hasGo = /data-go="t\/G1\.1"/.test(html);
-  const coding = /<tr data-id="t\/G1\.3"[\s\S]*?coding[\s\S]*?<\/tr>/.test(html);
-  if (hasGo && coding && itemSearches.indexOf('t/G1.1') !== -1 && itemSearches.indexOf('t/G1.3') !== -1) {
-    test.check('t/G1.1 shows Go! from its old ask, t/G1.3 its status word, each from log.search on its own id');
-  } else test.fail(OWED + 'Go! on t/G1.1 ' + hasGo + ', coding on t/G1.3 ' + coding + ', searches ' + JSON.stringify(itemSearches));
-  // Judged only once Desk searches at all, or today's code passes it.
-  if (itemSearches.length && itemSearches.indexOf('t/G1.2') === -1) test.check('t/G1.2, closed, was never searched');
-  else test.fail(OWED + (itemSearches.length ? 't/G1.2 was searched though the newest session no longer names it' : 'Desk made no searches'));
+  test.subHeading('T5: nothing is read from Desk\'s folder');
   if (!doc.loaded.some(function (f) { return /^log\//.test(f) || f === 'state.json' || f === 'seen.json'; })) test.check('no log, state or seen file was read from Desk\'s folder');
   else test.fail(OWED + 'Desk still read ' + JSON.stringify(doc.loaded));
 
@@ -286,12 +268,15 @@ async function deskPart() {
   if (!saved.length && sets.length) test.check('state and seen went by state.set / seen.set; api.fs.saveFile was never called');
   else test.fail(OWED + 'saveFile called for ' + JSON.stringify(saved) + '; state/seen sets ' + sets.length);
 
-  test.subHeading('T7: Desk shows the backup\'s last check and copy, red when an item closed after the check');
+  // The red mark for "an item closed after the check" read Andy's "closed."
+  // line, and a close is a press since desk/G2.6: that mark waits on the desk
+  // server saying when it last closed something.
+  test.subHeading('T7: Desk shows the backup\'s last check and copy');
   const hhmm = function (iso) { const d = new Date(iso); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
   const bk = doc.getElementById('desk-backup').innerHTML;
   const askedBackup = fake.calls.some(function (c) { return c.server === 'backup' && c.verb === 'status.get'; });
-  if (askedBackup && bk.indexOf(hhmm(fake.backup.lastCheck)) !== -1 && bk.indexOf(hhmm(fake.backup.lastCopy)) !== -1 && /job-start-error/.test(bk)) {
-    test.check('#desk-backup names the last check and copy, marked red: t/G1.2 was closed after the check');
+  if (askedBackup && bk.indexOf(hhmm(fake.backup.lastCheck)) !== -1 && bk.indexOf(hhmm(fake.backup.lastCopy)) !== -1) {
+    test.check('#desk-backup names the last check and copy');
   } else test.fail(OWED + 'asked backup ' + askedBackup + '; #desk-backup: ' + JSON.stringify(bk.slice(0, 200)));
 }
 

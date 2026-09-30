@@ -75,7 +75,7 @@ test.startTest('desk/G1.5 T4: each agent\'s queue, in its tab');
   new Function('spirit', 'document', 'window', fs.readFileSync(DESK, 'utf8'))({ shell: { activateApp: function (x) { b = x; } }, core: kernel.core }, doc, {});
   b.mount(fakeElement('container'), {
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
-    escapeHtml: kernel.core.util.escapeHtml, verb: fake.verb, onPacket: function () {},
+    escapeHtml: kernel.core.util.escapeHtml, verb: fake.verb, onPublished: function () {}, onPacket: function () {},
     peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h' }); },
     callDialog: function () { return new Promise(function () {}); }, armUntilElsewhere: function () {},
   });

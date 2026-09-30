@@ -83,6 +83,9 @@ const log = [
 ];
 
 const posted = [];
+// WHAT WAITS ON ANDY IS THE DESK SERVER'S COUNT, on the goal row (desk/G2.6).
+const fake = require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(log), 'seen.json': JSON.stringify({ rows: {}, team: 0, agents: {} }) });
+fake.items = [{ id: 'test/G1', title: 'The goal', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false, design: false, waiting: 1 }];
 const doc = fakeDocument();
 const root = fakeElement('container');
 load(DESK, doc).mount(root, {
@@ -90,8 +93,8 @@ load(DESK, doc).mount(root, {
   // as seen on the first open (deskLoadSeen), and no star could ever show.
   fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify(log) : f === 'seen.json' ? JSON.stringify({ rows: {}, team: 0, agents: {} }) : null; }, saveFile: function () { return Promise.resolve(); } },
   escapeHtml: spirit.core.util.escapeHtml,
-  verb: require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(log), 'seen.json': JSON.stringify({ rows: {}, team: 0, agents: {} }) }).verb,
-  onPacket: function () {},
+  verb: fake.verb,
+  onPublished: function () {}, onPacket: function () {},
   peerPost: function (app, key, body) { posted.push({ key: key, body: body }); return Promise.resolve({ ok: true, status: 200, hash: 'h' + posted.length }); },
   callDialog: function () { return new Promise(function () {}); },
 });
@@ -145,7 +148,7 @@ settle().then(function () {
     const dd = load(DETAILS, ddDoc);
     const box = fakeElement('dd');
     try {
-      dd.mount(box, { escapeHtml: spirit.core.util.escapeHtml, onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
+      dd.mount(box, { escapeHtml: spirit.core.util.escapeHtml, onPublished: function () {}, onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
         fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } } });
       if (dd.open) dd.open({ id: 'test/G1.1', row: { id: 'test/G1.1', title: 'Asks Andy' }, thread: [], agents: {}, session: [], rules: [] });
     } catch (e) { /* drawn below */ }

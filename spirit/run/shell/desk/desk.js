@@ -43,14 +43,13 @@
 var DESK_PATIENCE = { patienceMs: 60000 };
 
 var deskApi = null;
-var deskBoard = null;       // the newest `board` packet's JSON
-var deskSession = null;     // the board's session: the newest `session` packet's JSON, unless a new design cleared it
-var deskSessionPosted = null, deskSessionAt = 0;
-var deskDone = {};           // item id -> true/false, from Andy's own "done." / "reopen."
-var deskReady = {};          // item id -> true once two agents have each said READY TO CLOSE under it
-var deskReadyBy = {};        // item id -> { agent name: true } for each READY TO CLOSE claim
-var deskStatus = {};         // item id -> the owner's newest one-word status (desk/G1.11)
-var DESK_STATUS = /^STATUS:\s*(\S+)\s*$/;
+// THE LIST IS THE DESK SERVER'S (desk/G2.6). Andy: "The server determines all the
+// content to be drawn." "no pulling". Its rows are items.search's labels, in the
+// server's order, kept only to be painted; each published change replaces its row.
+var deskItems = [];
+// The search bar and its two toggles. Andy: "When Desk opens: [Current Goal Only]
+// on, [Goals Only] off". "The server does the searching AND the filtering."
+var deskFilter = { text: '', currentGoalOnly: true, goalsOnly: false };
 // THE ROW'S ICON (desk/G1.11): ERROR wherever Andy blocks ("the ERROR for
 // anything i NEED to deal with", "wherever i block"), CODE on any other item.
 // From the kernel's own set; a Desk mounted without it draws none.
@@ -58,17 +57,6 @@ function deskIcon(name) {
   var set = (typeof spirit !== 'undefined' && spirit.core && spirit.core.const && spirit.core.const.ICON) || {};
   return set[name] || '';
 }
-var deskClosed = {};         // item id -> true once Andy closed its done line away
-var deskFrom = { done: {}, title: {}, pressed: {} };  // item id -> { at, key } of Andy's answer that set it
-var DESK_READY_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:[\w.\/-]+\s+is\s+)?READY TO CLOSE\b/;
-// NO GO BEFORE WHAT IS ALREADY THERE IS CHECKED. Andy: "The already in place
-// list must be verified before any go button can appear." The check is a
-// note under the item that opens with VERIFIED (or IN PLACE VERIFIED),
-// posted by the agent who did not write the list and naming the commit
-// (wsl-claude's shape, the same as READY TO CLOSE).
-var DESK_VERIFIED_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:IN PLACE )?VERIFIED\b/;
-var deskVerified = {};       // item id -> true once its Already-in-place list was verified
-var DESK_UNVERIFIED_CLAIM = /^(?:[\w.-]+[,:]\s*)?(?:UNVERIFIED|IN PLACE WITHDRAWN)\b/;  // the newest `session` packet as it arrived, and when
 var deskMessages = [];      // decoded agents messages, in log order
 var deskByHash = Object.create(null);
 var deskError = '';
@@ -76,22 +64,6 @@ var deskError = '';
 // one (runAll, lead = yes). Andy: "below the list in desk i'd like a direct
 // chat to lead". It is also the home for what belongs to no row.
 var deskLead = null;
-// WHICH AGENT HAS A ROW. Andy: "a column for the agent label would be
-// appropriate". Nothing in the tree records it; the claims do, in this
-// node's own record: the newest `taking` note per full id.
-var deskTaken = Object.create(null);
-// HIS NAME FOR A ROW, when he has given one. Andy: "I like that i get to
-// relable the issue with my own words". The newest `retitle:` he sent.
-var deskLabel = Object.create(null);
-// HIS LAST DECISION ON A ROW. Andy: "the list should display my decision
-// (go,accept)". The newest of go / no / accepted / rejected he sent.
-var deskDecision = Object.create(null);
-// A GO! ON THE LIST ITSELF. Andy: "gimme a go button right on the list, if
-// it really just implementation of something agreed upon during a design
-// session". An agent that is ready asks under the row (kind ask), and the
-// row carries Go! until he answers it. The newest open ask per full id.
-var deskOpenAsk = Object.create(null);
-var DESK_DECISIONS = { 'go.': 'go', 'no.': 'no', 'accepted.': 'accepted', 'rejected.': 'rejected' };
 // WHO HEARS ANDY FROM A ROW'S DIALOG: agents heard from, newest key per
 // name. Handed to DeskDetails, which can read only its own folder.
 var deskAgents = Object.create(null);
@@ -148,22 +120,6 @@ function deskOutgoing(to, body, r, e) {
 // door (D4). It reads only what it shows: the newest session, each open
 // item's own lines, a chat's newest page, never the whole log. Desk still
 // folds what it reads (deskFold); the server is storage and bounded search.
-// ── WHAT HAS GONE STALE (slim/G1.6) ─────────────────────────────────
-//
-// The desk server's fresh.get, one entry per item of the newest session:
-// {id, changedAt}. Asked at load and after new lines. A row carries
-// changedAt to its dialog, which marks an older explanation stale.
-var deskFresh = {};
-function deskAskFresh() {
-  return deskAsk('fresh.get', {}).then(function (r) {
-    var next = {};
-    ((r && r.items) || []).forEach(function (i) {
-      try { var o = JSON.parse(i.label); if (o && o.id) next[o.id] = o; } catch (e) { /* not one */ }
-    });
-    deskFresh = next;
-    deskDraw();
-  }, function () { /* no answer: nothing is marked */ });
-}
 // Each id a link to its item, as the dialog's are (Andy: "the blocked and
 // blocks lists link to the respective items").
 function deskLinks(ids) {
@@ -236,139 +192,22 @@ function deskRecord(msgs) {
   deskVoice(fresh);
   if (deskAgentTab !== '*' && fresh.length) deskAskQueue();
   deskDraw();
-  deskSaveState();
   return Promise.all(fresh.map(function (m) { return deskAsk('log.add', { json: JSON.stringify(m) }); }))
     // THE BACKUP LINE FOLLOWS THE RECORD: read once at load it went stale
     // (Andy: "last check 12:55" while it had copied at 13:26).
     .then(function () { if (fresh.length) return deskAskBackup(); })
-    // ITS OWN MARKS STAY FRESH TOO (slim/G1.6): a new line can change what
-    // is stale, so it is asked again once the lines are kept.
-    .then(function () { if (fresh.length) return deskAskFresh(); })
     .catch(deskWriteError('keep its log'));
 }
 
-// ── WHAT DESK HAS DECIDED, KEPT AS A FILE ───────────────────────────
-//
-//   Andy, 2026-09-28: "change the desk app, to persist following items:
-//   1) design mode 2) Andy's latest "done"! 3) Open question. 4) andy's
-//   personal titles for items."
-//
-// Kept by the desk server (state.set, desk/G1.4): the four things, each
-// with the time and the log key of the message that set it, so any entry
-// can be traced to his own press. Written by Desk only, whenever it
-// changes; no agent edits it. The log stays the record it is drawn from.
-var deskStateText = '';
-function deskStateJson() {
-  var d = deskDesignMarks();
-  var done = {}, title = {}, open = {};
-  // His latest Done or Reopen per item, and whether it counts: a Done
-  // counts only after an agent's READY TO CLOSE claim under that item.
-  Object.keys(deskFrom.pressed).forEach(function (id) {
-    var f = deskFrom.pressed[id];
-    done[id] = { pressed: f.text, at: f.at || '', key: f.key || '', counts: deskDone[id] === true, claimed: !!deskReady[id] };
-  });
-  Object.keys(deskLabel).forEach(function (id) {
-    var f = deskFrom.title[id] || {};
-    title[id] = { title: deskLabel[id], at: f.at || '', key: f.key || '' };
-  });
-  Object.keys(deskOpenAsk).forEach(function (id) {
-    var m = deskOpenAsk[id];
-    open[id] = { from: m.from || '', text: m.text || '', at: m.at || '', key: m.key || '' };
-  });
-  return JSON.stringify({
-    designMode: { on: d.started > d.ended,
-      started: d.started ? new Date(d.started).toISOString() : '',
-      ended: d.ended ? new Date(d.ended).toISOString() : '' },
-    done: done, openQuestions: open, titles: title, closed: Object.keys(deskClosed),
-  }, null, 2) + '\n';
-}
-function deskSaveState() {
-  var text = deskStateJson();
-  if (text === deskStateText || !deskLoaded) return;
-  deskStateText = text;
-  deskAsk('state.set', { json: text }).catch(function () { /* the log still holds it all */ });
-}
-
-// Folds one message in by its key; one already held is not taken twice.
+// Folds one message in by its key; one already held is not taken twice. It
+// keeps the chats and who the agents are; the List is the desk server's (desk/G2.6).
 function deskFold(msg) {
   if (!msg || !msg.key || deskByHash[msg.key]) return;
   deskByHash[msg.key] = msg;
   deskMessages.push(msg);
   if (msg.dir === 'in' && !msg.reported && msg.from && msg.peer) deskAgents[msg.from] = { key: msg.peer, at: Date.parse(msg.at) || 0 };
-  if (msg.todo && msg.kind === 'note' && /^taking(\s|$)/.test(msg.text) && msg.from) {
-    deskTaken[msg.todo] = msg.from;
-  }
-  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && /^retitle:\s*/.test(msg.text)) {
-    deskLabel[msg.todo] = msg.text.replace(/^retitle:\s*/, '');
-    deskFrom.title[msg.todo] = { at: msg.at, key: msg.key };
-  }
-  if (msg.todo && !msg.reported && msg.dir === 'in' && msg.kind === 'ask' && msg.peer) deskOpenAsk[msg.todo] = msg;
-  if (msg.todo && msg.dir === 'out' && msg.kind === 'answer') delete deskOpenAsk[msg.todo];
-  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && DESK_DECISIONS[msg.text]) {
-    deskDecision[msg.todo] = DESK_DECISIONS[msg.text];
-  }
-  // HE CLOSES AN ITEM, NOBODY ELSE. Andy: "how do those damn items get
-  // closed?", then "let's close that gap." His own latest "done." or
-  // "reopen." under an item is its state, and a board the lead reposts
-  // never un-closes it (wsl-claude's pitfall).
-  // AND ONLY AFTER A CLAIM. Andy: "when you claim completeness, that's when
-  // i want to see the close button, not before." A "done." counts only if an
-  // agent had said READY TO CLOSE under that item first.
-  // A CLAIM, not a mention: the note must open with it ("READY TO CLOSE", or
-  // "<id> is READY TO CLOSE", after an optional "<agent>:" or "<agent>,").
-  // An explanation that merely names the phrase mid-sentence is not one.
-  // BOTH AGENTS, NOT ONE. Andy: "so i get a done button and the two of you
-  // haven't even both tested it yet?", then go. An item is ready to close
-  // only once two different agents have each claimed it.
-  // THE OWNER'S ONE WORD (desk/G1.11). Andy: "as long as an item is owned,
-  // the owner should indicate in status a one word description of what's
-  // going on", "all real-time updated". A note 'STATUS: <word>' sets it; a
-  // claim or his done. clears it.
-  var said = DESK_STATUS.exec(String(msg.text || ''));
-  if (msg.dir === 'in' && msg.todo && said) deskStatus[msg.todo] = said[1];
-  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && msg.text === 'done.') delete deskStatus[msg.todo];
-  if (msg.dir === 'in' && msg.todo && DESK_READY_CLAIM.test(String(msg.text || ''))) {
-    delete deskStatus[msg.todo];
-    var by = deskReadyBy[msg.todo] || (deskReadyBy[msg.todo] = {});
-    by[String(msg.from || msg.peer || '')] = true;
-    deskReady[msg.todo] = Object.keys(by).length >= 2;
-  }
-  if (msg.dir === 'in' && msg.todo && DESK_VERIFIED_CLAIM.test(String(msg.text || ''))) deskVerified[msg.todo] = true;
-  // A VERIFICATION CAN BE WITHDRAWN, and the Go goes with it: a note opening
-  // with UNVERIFIED. Found when Andy spotted that G1.3's list claimed a Cancel
-  // button the Jobs app does not have, after it had been verified.
-  if (msg.dir === 'in' && msg.todo && DESK_UNVERIFIED_CLAIM.test(String(msg.text || ''))) deskVerified[msg.todo] = false;
-  // A line he closed away stays away (his "closed." under it).
-  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && msg.text === 'closed.') deskClosed[msg.todo] = true;
-  // His latest press is kept whether or not it counts yet.
-  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && (msg.text === 'done.' || msg.text === 'reopen.')) {
-    deskFrom.pressed[msg.todo] = { text: msg.text, at: msg.at, key: msg.key };
-  }
-  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && msg.text === 'reopen.') {
-    deskDone[msg.todo] = false;
-    deskFrom.done[msg.todo] = { at: msg.at, key: msg.key };
-  }
-  if (msg.dir === 'out' && msg.todo && msg.kind === 'answer' && msg.text === 'done.' && deskReady[msg.todo]) {
-    deskDone[msg.todo] = true;
-    deskFrom.done[msg.todo] = { at: msg.at, key: msg.key };
-  }
-  // THE LEAD IS WHOEVER POSTS THE SESSION. It was learned only from the old
-  // board's packets, which stopped with the old tracking (2026-09-28), and the
-  // Lead chat then had nobody to talk to. The session comes from the lead too.
+  // THE LEAD IS WHOEVER POSTS THE SESSION.
   if (msg.kind === 'session' && msg.dir === 'in' && msg.peer && msg.from) deskLead = { name: msg.from, key: msg.peer };
-  if (msg.kind === 'session' && msg.dir === 'in') {
-    try {
-      var sess = JSON.parse(msg.text);
-      if (sess && sess.goal && Array.isArray(sess.items)) { deskSessionPosted = sess; deskSessionAt = Date.parse(msg.at) || 0; }
-    } catch (e) { /* a session that does not parse is not a session */ }
-  }
-  if (msg.kind === 'board') {
-    if (msg.dir === 'in' && msg.peer && msg.from) deskLead = { name: msg.from, key: msg.peer };
-    try {
-      var b = JSON.parse(msg.text);
-      if (b && Array.isArray(b.rows)) deskBoard = b;
-    } catch (e) { /* a board that does not parse is not a board */ }
-  }
 }
 
 function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
@@ -387,7 +226,8 @@ function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
 // rather than his clock, so a sender's skew cannot hide anything. A row is
 // seen when he opens it, a chat while its tab is showing. A Desk with no
 // seen.json yet counts all it holds as seen, so the first open is not a
-// wall of red.
+// wall of red. A ROW'S STAR IS THE DESK SERVER'S (desk/G2.6): opening a row
+// presses 'seen', and the row's label says whether it has one.
 var DESK_UNSEEN = '<span style="color:#d00;font-weight:bold" title="unseen changes">*</span>';
 var deskSeen = { rows: {}, team: 0, agents: {}, folds: {}, acked: {} };
 var deskTab = 'list';
@@ -405,7 +245,6 @@ function deskIsDirectLine(name) {
   };
 }
 function deskIsTeamLine(m) { return m.todo === DESK_TEAM && m.kind !== 'board'; }
-function deskIsRowLine(id) { return function (m) { return m.todo === id && m.kind !== 'board'; }; }
 
 // The newest arrival (never his own line) that `pred` accepts.
 function deskNewest(pred) {
@@ -417,7 +256,6 @@ function deskNewest(pred) {
   });
   return newest;
 }
-function deskRowNews(id) { return deskNewest(deskIsRowLine(id)) > (deskSeen.rows[id] || 0); }
 // A chat is 'team' (All) or an agent's name.
 function deskChatPred(which) { return which === 'team' ? deskIsTeamLine : deskIsDirectLine(which); }
 function deskChatSeenAt(which) { return (which === 'team' ? deskSeen.team : deskSeen.agents[which]) || 0; }
@@ -426,10 +264,6 @@ function deskChatNews(which) { return deskNewest(deskChatPred(which)) > deskChat
 function deskSaveSeen() {
   if (!deskLoaded) return;
   deskAsk('seen.set', { json: JSON.stringify(deskSeen) }).catch(function () { /* only a marker */ });
-}
-function deskMarkRowSeen(id) {
-  var newest = deskNewest(deskIsRowLine(id));
-  if (newest > (deskSeen.rows[id] || 0)) { deskSeen.rows[id] = newest; deskSaveSeen(); }
 }
 function deskMarkChatSeen(which) {
   var newest = deskNewest(deskChatPred(which));
@@ -460,9 +294,6 @@ function deskLoadSeen(raw) {
     deskSaveSeen();
     return;
   }
-  var ids = Object.create(null);
-  deskMessages.forEach(function (m) { if (m.todo && m.todo !== DESK_TEAM) ids[m.todo] = true; });
-  Object.keys(ids).forEach(function (id) { deskSeen.rows[id] = deskNewest(deskIsRowLine(id)); });
   Object.keys(deskAgents).forEach(function (n) { deskSeen.agents[n] = deskNewest(deskIsDirectLine(n)); });
   deskSeen.team = deskNewest(deskIsTeamLine);
   deskSaveSeen();
@@ -476,24 +307,12 @@ function deskTabButton(attrs, on, news, label) {
     (news ? DESK_UNSEEN + ' ' : '') + deskEsc(label) + '</button>';
 }
 
-// WHAT WAITS ON HIM, COUNTED ON THE LIST TAB (desk/G1, D7): a Go! he can
-// press, a row both agents claimed ready for his Done, an open point.
-// WHERE HE BLOCKS: one rule for the List's (n) and the row's ERROR icon, so
-// the two can never disagree (desk/G1.11).
-function deskAndyBlocks(row) {
-  if (deskClosed[row.id] || row.done) return false;
-  return deskGoState(row) === 'go' || !!deskReady[row.id] || !!row.open;
-}
-function deskWaitingOnAndy() {
-  return deskSessionRows().filter(deskAndyBlocks).length;
-}
-
 // Drawn whole, as markup: List | Team | Musings. The Lead tab moved into
 // Team as the lead's own tab (desk/G1, D2).
 function deskDrawTabs() {
   var strip = document.getElementById('desk-tabs');
   if (!strip) return;
-  var listNews = deskBoard ? deskBoard.rows.some(function (r) { return deskRowNews(r.id); }) : false;
+  var listNews = deskItems.some(function (r) { return r.star; });
   var teamNews = deskChatNews('team') || Object.keys(deskAgents).some(deskChatNews);
   var waiting = deskWaitingOnAndy();
   var design = deskDesignOn();
@@ -538,249 +357,111 @@ function deskDrawAgentTabs() {
     }).join('');
 }
 
-// ── DESIGN MODE, AND THE DESIGN SESSION'S BOARD ─────────────────────
+// ── THE LIST, AS THE DESK SERVER SAYS IT (desk/G2.6) ──────────────────
 //
-//   Andy, 2026-09-28: "when i sent anything to team chat, we're all in
-//   design mode", and "design mode for the Desk app and its detail apps,
-//   can only be ended from within the team tab. Why? so that we can
-//   navigate anywhere in desk and desk detail to observe the effect of the
-//   design session."
+//   Andy: "The server determines all the content to be drawn. buttons, the
+//   text in the one text box, the status of items, the title of items etc.
+//   the UI's inputs will first go to the server, and only when the server
+//   has changed it's data/state will the UI be able to get the updated
+//   content to draw, from the server." And: "no pulling".
 //
-// STARTED BY A BUTTON, NOT BY TALKING. It was on whenever his newest Team
-// line was newer than his last "end design mode.", so every word he typed
-// in Team after ending it switched it back on and cleared the board. Andy:
-// "the "End design mode" button keeps oming back", then "i guess i need a
-// start design mode button instead." So it is on when his newest "start
-// design mode." in Team is newer than his newest "end design mode.", read
-// from Desk's own log: nothing new is stored.
-var DESK_END_DESIGN = 'end design mode.';
-var DESK_START_DESIGN = 'start design mode.';
-function deskDesignMarks() {
-  var started = 0, ended = 0;
-  deskMessages.forEach(function (m) {
-    if (m.dir !== 'out' || m.todo !== DESK_TEAM || m.kind !== 'answer') return;
-    var at = Date.parse(m.at) || 0;
-    if (m.text === DESK_END_DESIGN && at > ended) ended = at;
-    if (m.text === DESK_START_DESIGN && at > started) started = at;
-  });
-  return { started: started, ended: ended };
+// The List asks items.search once when it opens and again only when the
+// search or a toggle changes, or a new session is published. Everything else
+// arrives as the desk server's published change and replaces its row. It
+// decides nothing: which buttons a row has, its status, whether it waits on
+// Andy, all come in the label.
+function deskGoalRow() {
+  return deskItems.filter(function (r) { return r && r.goal === ''; })[0] || null;
+}
+function deskWaitingOnAndy() {
+  var g = deskGoalRow();
+  return g ? Number(g.waiting) || 0 : 0;
 }
 function deskDesignOn() {
-  var d = deskDesignMarks();
-  return d.started > d.ended;
+  var g = deskGoalRow();
+  return !!(g && g.design);
 }
-
-// ENDING KEEPS THE BOARD; STARTING CLEARS IT. Andy: "if i End design mode
-// the board stays, if i start a new one the board clears." A session posted
-// before the press of Start belongs to the design he ended, and a new design
-// shows none until the lead posts its goal.
-function deskSessionSync() {
-  var d = deskDesignMarks();
-  var cleared = d.started > d.ended && deskSessionAt < d.started;
-  deskSession = (deskSessionPosted && !cleared) ? deskSessionPosted : null;
+function deskLabels(r) {
+  return ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
 }
-
-// THE SESSION'S BOARD. Andy: "the Title item will become the first ond only
-// item on the board. every item in the indentede list below, will become an
-// item that blocks the title item from being complete", "The indentation
-// doesn't nest", and "the goal moves downward because it will become
-// dependent on more and more items being completed". So the list is every
-// required item, then the goal last, blocked by each one still open.
-// EVERY ITEM MAY HAVE ITS OWN REQUIREMENTS. Andy: "clicking on an item will
-// ring us to the details dialog, where the detail is the Title item in a
-// similar display block at the top, where we can add items required to make
-// that detail happen". So an item names what it blocks (`blocks`, the goal
-// when absent), and an item waits on every open item that blocks it.
-function deskSessionRows() {
-  if (!deskSession) return [];
-  var goalId = String(deskSession.goal.id);
-  var items = deskSession.items.map(function (it, i) {
-    return { id: String(it.id || ('item-' + (i + 1))), title: String(it.title || ''), done: deskIsDone(String(it.id || ('item-' + (i + 1))), it.done),
-      // ONE ITEM MAY BLOCK SEVERAL (RUN blocks both grantFace and ACT):
-      // `blocks` is a string or a list, and always a list here.
-      description: String(it.description || ''), refs: it.refs || [],
-      // HOW HE CAN CHECK IT, AND WHAT PROVES IT. Andy: "there should be a
-      // highlighted section on if and how i can check. same as wsl test
-      // requirements should be enumarated under requirements".
-      check: String(it.check || ''), tests: Array.isArray(it.tests) ? it.tests.map(String) : [],
-      // WHAT IS ALREADY THERE, so nothing is built twice: [{ what, where }],
-      // `where` being path:line and the text quoted there.
-      inPlace: Array.isArray(it.inPlace) ? it.inPlace : [],
-      verified: !!deskVerified[String(it.id || ('item-' + (i + 1)))],
-      // AN OPEN POINT IS AN ITEM (desk/G1 D6). Andy: "i keep missing my O's
-      // because the don't have a prioritized slot. perceive them as item
-      // other things depend on". The lead marks it open; it names what it
-      // blocks like any item, and it is his to answer.
-      open: !!it.open,
-      changedAt: String((deskFresh[String(it.id || '')] || {}).changedAt || ''),
-      blocks: (Array.isArray(it.blocks) ? it.blocks : [it.blocks || goalId]).map(String) };
-  });
-  var waiting = function (id) {
-    return items.filter(function (it) { return !it.done && it.blocks.indexOf(id) !== -1; }).map(function (it) { return it.id; });
-  };
-  items.forEach(function (it) { it.waitsOn = waiting(it.id); });
-  return items.concat([{ id: goalId, title: String(deskSession.goal.title), goal: true,
-    description: String(deskSession.goal.description || ''), done: deskIsDone(goalId, deskSession.goal.done), waitsOn: waiting(goalId),
-    check: String(deskSession.goal.check || ''), tests: Array.isArray(deskSession.goal.tests) ? deskSession.goal.tests.map(String) : [],
-    changedAt: String((deskFresh[goalId] || {}).changedAt || '') }]);
+function deskSearchItems() {
+  return deskAsk('items.search', { text: deskFilter.text, currentGoalOnly: deskFilter.currentGoalOnly, goalsOnly: deskFilter.goalsOnly })
+    .then(function (r) { deskItems = deskLabels(r); deskDraw(); }, deskWriteError('read its list'));
 }
-function deskIsDone(id, posted) {
-  return Object.prototype.hasOwnProperty.call(deskDone, id) ? deskDone[id] : !!posted;
-}
-function deskGoalDone() {
-  return !!deskSession && deskIsDone(String(deskSession.goal.id), deskSession.goal.done);
-}
-// Where a row's ask stands: '' none, 'unverified', 'held' (blocked or in
-// design mode), or 'go' when his Go! button shows.
-function deskGoState(row) {
-  if (!deskOpenAsk[row.id] || row.done) return '';
-  if (!row.goal && !deskVerified[row.id]) return 'unverified';
-  if ((row.waitsOn || []).length || deskDesignOn()) return 'held';
-  return 'go';
-}
-// An open item waits on this one (the goal waiting on everything is not
-// counted: every item blocks its goal).
-function deskIsBlocking(row) {
-  return deskSessionRows().some(function (r) {
-    return !r.goal && !r.done && r.id !== row.id && (r.waitsOn || []).indexOf(row.id) !== -1;
-  });
-}
-function deskSessionTable() {
-  var head = '<tr><th></th><th></th><th>to-do</th><th>with</th><th>your decision</th><th>blocks</th><th>waits on</th><th>state</th></tr>';
-  // A PRIORITIZED SLOT (desk/G1 D6): an open point he has not answered sits
-  // above everything else; the rest keep the session's order.
-  var rows = deskSessionRows().filter(function (row) { return !deskClosed[row.id]; });
-  var mine = function (row) { return row.open && !row.done; };
-  rows = rows.filter(mine).concat(rows.filter(function (row) { return !mine(row); }));
-  var body = rows.map(function (row) {
-    return '<tr data-id="' + deskEsc(row.id) + '" style="cursor:pointer' + (row.goal ? ';font-weight:bold' : '') + '">' +
-      // THE STAR ALONE, THEN THE TYPE (desk/G1.12). Andy: "the red stars
-      // should be in a separage first column, the task-type icons in the
-      // second column."
-      '<td>' + (deskRowNews(row.id) ? DESK_UNSEEN : '') + '</td>' +
-      '<td>' + (row.goal ? '' : deskIcon(deskAndyBlocks(row) ? 'ERROR' : 'CODE')) + '</td>' +
-      '<td title="' + deskEsc(row.title) + '">' + deskEsc(deskLabel[row.id] || row.title) +
-        ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span></td>' +
-      '<td>' + deskEsc(deskTaken[row.id] || '') + '</td>' +
-      // A CLOSED ITEM ASKS NOTHING. Andy: "this one still shows go button
-      // while market as done".
-      '<td>' + (deskGoState(row) === 'unverified'
-        ? '<span class="job-manifest-note">asks; not verified yet</span>'
-        // NO GO! WHILE BLOCKED, NONE IN DESIGN MODE. Andy, 2026-09-29: "Two
-        // items in the list show a Go button, even though they're blocked,
-        // And we're in design mode". The ask stays; only its button waits.
-        : deskGoState(row) === 'held'
-        ? '<span class="job-manifest-note">asks; ' + ((row.waitsOn || []).length ? 'waits on ' + deskEsc(row.waitsOn.join(', ')) : 'design mode') + '</span>'
-        : deskGoState(row) === 'go'
-        ? '<button type="button" data-go="' + deskEsc(row.id) + '" title="' + deskEsc(deskOpenAsk[row.id].text) + '">Go!</button>'
-        : deskEsc(deskDecision[row.id] || '')) + '</td>' +
-      '<td>' + deskLinks(row.blocks) + '</td>' +
-      '<td>' + deskLinks(row.waitsOn) + '</td>' +
-      // A DONE LINE CAN BE CLOSED AWAY. Andy: "done lines in the list should
-      // offer me a close button which will make the line disappear."
-      // The button says it; the word beside it went (Andy, 2026-09-29: "don't
-      // show "done" anymore").
-      '<td>' + (row.done ? '<button type="button" data-close="' + deskEsc(row.id) + '">Close</button>'
-        : deskStatus[row.id] ? '<b>' + deskEsc(deskStatus[row.id]) + '</b>'
-        : row.open ? '<b>yours</b>'
-        // BLOCKED AND BLOCKING ARE STATES TOO (desk/G1.12). Andy: "blocking and
-        // blocked, should be statuses as well".
-        : (row.waitsOn || []).length ? 'blocked'
-        : deskIsBlocking(row) ? 'blocking'
-        : deskDecision[row.id] === 'go' ? 'running' : 'open') + '</td>' +
-    '</tr>';
-  }).join('');
-  return '<div class="job-manifest-note">Design session: ' + deskEsc(deskSession.goal.id) + '</div>' + deskRulesHtml() +
-    '<table class="jobs-table"><thead>' + head + '</thead><tbody>' + body + '</tbody></table>';
-}
-
-// The bubble at the top of Team: the goal and what it waits on, filled by
-// the lead as the chat goes. Blank until the first session arrives.
-// THE PLAN'S RULES. Andy, of "nothing above trafficLog.js changes": "that's
-// a rule for this plan, we should find a way to insert it as such". A rule
-// is not an item: nothing is built to close it, and it holds for every item
-// in the session. So it sits under the goal, above the items, and is added
-// the way an item is: argued, then agreed.
-function deskSessionRules() {
-  return (deskSession && Array.isArray(deskSession.rules)) ? deskSession.rules.map(function (r, i) {
-    return typeof r === 'string' ? { id: 'rule-' + (i + 1), text: r } : { id: String(r.id || ('rule-' + (i + 1))), text: String(r.text || '') };
-  }) : [];
-}
-function deskRulesHtml() {
-  var rules = deskSessionRules();
-  // Gone with the goal they belong to. Andy: "the rules should also
-  // disappear with the requirement they were attached to."
-  if (!rules.length || deskClosed[String(deskSession.goal.id)]) return '';
-  // A BOX OF ITS OWN. Andy: "can we have a clearer separation between rules
-  // and requirements?" Rules sit in a dashed frame, named for what they are,
-  // so they never read as more items on the list.
-  // FOLDED TOO, UNTIL HE OPENS IT (desk/G1.12). Andy: "The rules box should
-  // also be foldable".
-  var folded = deskSeen.folds.rules !== false;
-  return '<div style="margin-top:8px;padding:6px 10px;border:1px dashed currentColor;border-radius:6px">' +
-    '<div style="display:flex;gap:8px;align-items:baseline">' + deskFoldToggle('rules', folded) +
-    '<div class="label">Rules — hold for every requirement, never done (' + rules.length + ')</div></div>' +
-    (folded ? '' : '<ul style="margin:6px 0 0 18px">' +
-      rules.map(function (r) { return '<li>' + deskEsc(r.id) + ': ' + deskEsc(r.text) + '</li>'; }).join('') + '</ul>') + '</div>';
-}
-
-// A box's fold toggle: open it points down, folded it points right.
-function deskFoldToggle(name, folded) {
-  return '<button type="button" data-fold="' + name + '" title="' + (folded ? 'Unfold' : 'Fold') + '">' + (folded ? '▸' : '▾') + '</button>';
-}
-// A click on a fold toggle (session or rules) flips it, keeps it in
-// seen.json and redraws. True when it was one.
-function deskToggleFold(e) {
-  var name = e && e.target && e.target.getAttribute && e.target.getAttribute('data-fold');
-  if (name !== 'session' && name !== 'rules') return false;
-  deskSeen.folds[name] = deskSeen.folds[name] === false;
-  deskSaveSeen();
+// A published change: {change, verb, item: <facts>, listed}. A new session is
+// the one change that asks again, since it adds and drops whole rows.
+function deskOnPublished(obj) {
+  if (!obj || typeof obj !== 'object') return;
+  if (obj.verb === 'session.set') { deskSearchItems(); return; }
+  var it = obj.item;
+  if (typeof it === 'string') { try { it = JSON.parse(it); } catch (e) { it = null; } }
+  if (!it || !it.id) return;
+  var at = -1;
+  deskItems.forEach(function (r, i) { if (r.id === it.id) at = i; });
+  if (obj.listed === false) { if (at !== -1) deskItems.splice(at, 1); }
+  else if (at !== -1) deskItems[at] = it;
+  else deskItems.push(it);
   deskDraw();
-  return true;
 }
+// A PRESS IS NOT A LINE. Andy: "a press shouldn't post a line, it is not
+// textual information." It goes to the desk server; the row changes when the
+// server publishes. Then each agent gets the bare nudge, his pick (b): "After
+// the server records a change, the page sends the agents a tiny 'changed'
+// packet with no content."
+function deskPress(id, what) {
+  return deskAsk('press', { id: id, what: what, by: 'andy' }).then(function () {
+    Object.keys(deskAgents).forEach(function (n) {
+      Promise.resolve(deskApi.peerPost('agents', deskAgents[n].key, { kind: 'changed' }))
+        .catch(function () { /* the agent reads the state when it next looks */ });
+    });
+  }, function (e) { deskError = 'Not pressed: ' + ((e && e.message) || e); deskDraw(); });
+}
+
+var DESK_PRESS_LABEL = { go: 'Go!', done: 'Done', reopen: 'Reopen', close: 'Close', 'bring-back': 'Bring back' };
+function deskRowHtml(row) {
+  var goal = row.goal === '';
+  var presses = (row.buttons || []).map(function (what) {
+    return '<button type="button" data-press="' + deskEsc(what) + '" data-id="' + deskEsc(row.id) + '">' +
+      deskEsc(DESK_PRESS_LABEL[what] || what) + '</button>';
+  }).join(' ');
+  return '<tr data-row="' + deskEsc(row.id) + '" style="cursor:pointer' + (goal ? ';font-weight:bold' : '') + '">' +
+    // THE STAR ALONE, THEN THE TYPE (desk/G1.12): the server says both.
+    '<td>' + (row.star ? DESK_UNSEEN : '') + '</td>' +
+    '<td>' + (goal ? '' : deskIcon((row.buttons || []).length ? 'ERROR' : 'CODE')) + '</td>' +
+    '<td title="' + deskEsc(row.title) + '">' + deskEsc(row.title) + ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span></td>' +
+    '<td>' + deskEsc(row.with || '') + '</td>' +
+    '<td>' + presses + '</td>' +
+    '<td>' + deskLinks(row.blocking) + '</td>' +
+    '<td>' + deskLinks(row.blocked) + '</td>' +
+    '<td>' + deskEsc(row.status || '') + '</td>' +
+  '</tr>';
+}
+// The toggles say how they stand; the server does the filtering.
+function deskDrawToggles() {
+  [['desk-current-goal', 'Current Goal Only', deskFilter.currentGoalOnly], ['desk-goals-only', 'Goals Only', deskFilter.goalsOnly]].forEach(function (t) {
+    var b = document.getElementById(t[0]);
+    if (!b) return;
+    b.textContent = t[1] + (t[2] ? ' ✓' : '');
+    b.style.fontWeight = t[2] ? 'bold' : 'normal';
+  });
+}
+function deskTable() {
+  if (!deskItems.length) return '<div class="job-manifest-note">Nothing to show.</div>';
+  var head = '<tr><th></th><th></th><th>to-do</th><th>with</th><th>yours</th><th>blocks</th><th>waits on</th><th>status</th></tr>';
+  return '<table class="jobs-table"><thead>' + head + '</thead><tbody>' + deskItems.map(deskRowHtml).join('') + '</tbody></table>';
+}
+
+// The bubble at the top of Team: the goal, by title, and a line that opens it.
 function deskSessionBubble() {
-  // Blank once its goal is closed, rules and all (deskSessionOpen).
-  if (!deskSessionOpen()) {
+  var g = deskGoalRow();
+  if (!g) {
     return '<div class="stat-tile wide"><div class="label">Design session</div>' +
-      '<div class="job-manifest-note">Blank. The lead fills in the goal (id and title), your description, and ' +
-      'the list of what must be done before it is, as we talk.</div></div>';
+      '<div class="job-manifest-note">Blank. The lead fills in the goal as we talk.</div></div>';
   }
-  var g = deskSession.goal;
-  // THE GOAL'S TITLE ONLY (desk/G1.14). Andy (O3): "the goal overview i only
-  // want to see in the goal item". Its description, rules and items live in
-  // the goal's own dialog, which this line opens.
   return '<div class="stat-tile wide"><div class="label" data-open="' + deskEsc(g.id) + '" style="cursor:pointer">' +
     deskEsc(g.id) + ' — ' + deskEsc(g.title) + '</div></div>';
 }
 
-function deskTable() {
-  // THE SESSION, DONE OR NOT; NEVER THE OLD BOARD. Andy: "this IS the
-  // official project governance. NOW." and the old tracking is forbidden;
-  // then, when a finished goal brought its rows back: "why are all the lines
-  // back again. i made most of them disappear with close". A done goal stays
-  // on its own board, closable like any line.
-  // A CLOSED GOAL TAKES ITS WHOLE SESSION WITH IT, RULES INCLUDED. Andy:
-  // "the rules should also disappear with the requirement they were attached to."
-  if (deskSessionOpen()) return deskSessionTable();
-  return '<div class="job-manifest-note">No design session is open. Press Start design mode in the Team tab to begin one.</div>';
-}
-// Open while any of its lines is not closed away: a closed goal takes its
-// rules with it, but a line still open is never hidden with it (wsl-claude's
-// deskClosed.js), so unfinished work cannot vanish.
-function deskSessionOpen() {
-  return !!deskSession && deskSessionRows().some(function (row) { return !deskClosed[row.id]; });
-}
-
-function deskRowOf(id) {
-  var sessionRow = deskSessionRows().filter(function (r) { return r.id === id; })[0];
-  // ONE DECISION FOR THE GO! BUTTON (slim/G1.6). Andy: "they obviously need
-  // to work it out from the same data". The dialog draws Go! from this and
-  // from nothing else.
-  if (sessionRow) { sessionRow.goState = deskGoState(sessionRow) || 'none'; return sessionRow; }
-  if (!deskBoard) return null;
-  for (var i = 0; i < deskBoard.rows.length; i += 1) if (deskBoard.rows[i].id === id) return deskBoard.rows[i];
-  return null;
-}
 
 // ── THE DIRECT CHAT TO THE LEAD, BELOW THE LIST ─────────────────────
 //
@@ -920,8 +601,9 @@ function deskArmOrFire(id, fire) {
   deskDrawTabs();
   if (deskApi && deskApi.armUntilElsewhere) deskApi.armUntilElsewhere(deskDisarm);
 }
-function deskEndDesign() { deskTeamPost('answer', DESK_END_DESIGN); }
-function deskStartDesign() { deskTeamPost('answer', DESK_START_DESIGN); }
+// A PRESS ON THE GOAL, NOT A LINE (desk/G2.6): design mode is the server's.
+function deskEndDesign() { var g = deskGoalRow(); if (g) deskPress(g.id, 'end-design'); }
+function deskStartDesign() { var g = deskGoalRow(); if (g) deskPress(g.id, 'start-design'); }
 function deskTeamPost(kind, fixed) {
   var box = document.getElementById('desk-team-say');
   var err = document.getElementById('desk-team-error');
@@ -982,7 +664,6 @@ function deskSend(kind, boxId, errId, name) {
 // everytime somebody sends something"). The table holds no input, so a
 // repaint on arrival costs him nothing.
 function deskDraw() {
-  deskSessionSync();
   var el = document.getElementById('desk-top');
   if (!el) return;
   var musings = document.getElementById('desk-musings');
@@ -999,9 +680,9 @@ function deskDraw() {
   if (bubble) bubble.innerHTML = deskSessionBubble();
   var goal = document.getElementById('desk-goal');
   if (goal) {
-    var open = deskSession && !deskGoalDone();
-    goal.hidden = !open;
-    goal.textContent = open ? deskSession.goal.title + ' (' + deskSession.goal.id + ')' : '';
+    var g = deskGoalRow();
+    goal.hidden = !g;
+    goal.textContent = g ? g.title + ' (' + g.id + ')' : '';
   }
   var design = deskDesignOn();
   var banner = document.getElementById('desk-design');
@@ -1012,80 +693,16 @@ function deskDraw() {
   deskDrawAgentTabs();
   el.innerHTML = (deskError ? '<div class="job-start-error">' + deskEsc(deskError) + '</div>' : '') +
     deskTable();
-  // CLOSE: the line disappears at once; his "closed." goes to the agents
-  // under that item and into Desk's log, so it stays away after a reload.
-  Array.prototype.forEach.call(el.querySelectorAll('button[data-close]'), function (b) {
-    b.addEventListener('click', function (e) {
-      e.stopPropagation();
-      var id = b.getAttribute('data-close');
-      deskClosed[id] = true;
-      deskDraw();
-      var to = Object.keys(deskAgents).filter(function (n) { return Date.now() - deskAgents[n].at < DESK_RECENT_MS; })
-        .map(function (n) { return deskAgents[n].key; });
-      var body = { from: 'andy', kind: 'answer', text: 'closed.', todo: id };
-      Promise.all(to.map(function (key) {
-        return deskApi.peerPost('agents', key, body, DESK_PATIENCE).then(function (r) { return deskOutgoing(key, body, r); },
-          function (err) { return deskOutgoing(key, body, null, err); });
-      })).then(function (msgs) {
-        // Kept in his log even when nobody could be reached: it is his decision.
-        return deskRecord(msgs.length ? msgs : [deskOutgoing('', body, null, new Error('no agent reachable'))]);
-      });
-    });
-  });
-  Array.prototype.forEach.call(el.querySelectorAll('button[data-go]'), function (b) {
-    b.addEventListener('click', function (e) {
-      e.stopPropagation();
-      var id = b.getAttribute('data-go');
-      var ask = deskOpenAsk[id];
-      if (!ask) return;
-      // GONE AT ONCE, AND RUNNING. Andy: "when i say go. the go button on the
-      // list and the detail become invisible immeadiately and are marked with
-      // status "running"". Put back only if the send fails.
-      delete deskOpenAsk[id];
-      var before = deskDecision[id];
-      deskDecision[id] = 'go';
-      deskDraw();
-      var body = { from: 'andy', kind: 'answer', text: 'go.', todo: id };
-      deskApi.peerPost('agents', ask.peer, body, DESK_PATIENCE)
-        .then(function (r) {
-          // Answering is reacting, so the row's * clears as if opened. Andy:
-          // "the red "*" should of course disappear once i reacted to them".
-          deskMarkRowSeen(id);
-          return deskRecord([deskOutgoing(ask.peer, body, r)]);
-        })
-        .catch(function (err) {
-          deskOpenAsk[id] = ask;
-          if (before === undefined) delete deskDecision[id]; else deskDecision[id] = before;
-          deskError = 'Go! not sent: ' + err.message; deskDraw();
-        });
-    });
-  });
-  Array.prototype.forEach.call(el.querySelectorAll('tr[data-id]'), function (tr) {
-    tr.addEventListener('click', function (event) {
-      // A link in the row opens its own item, not the row's (slim/G1.6).
-      var link = event && event.target && event.target.closest && event.target.closest('[data-open]');
-      if (link) { if (event.preventDefault) event.preventDefault(); deskOpenRow(link.getAttribute('data-open')); return; }
-      deskOpenRow(tr.getAttribute('data-id'));
-    });
-  });
 }
 
 // ONE ROW'S DIALOG, from the List or from the Team bubble. Andy: "i want to
 // be able to click on items in the bubble in team and see the details".
 function deskOpenRow(id) {
-  // THE DIALOG READS ONLY ITS OWN FOLDER, so Desk hands it this row's
-  // thread and the agents it can talk to, and takes back what Andy
-  // sent from it (a new name, a decision, a line) when it closes, into
-  // this log. Andy: "if i re-label the item ... the title in the list
-  // should change."
-  var thread = deskMessages.filter(function (m) { return m.todo === id; });
-  // Opening a row is seeing it, and so is what arrived while it was open.
-  deskMarkRowSeen(id);
-  // DESIGN MODE RIDES IN THE CALL. Andy: "you can force the design mode
-  // into the details dialog by paramet calling". The dialog shows it and
-  // cannot end it; only Team can.
-  deskApi.callDialog('shell/deskDetails', { id: id, row: deskRowOf(id), thread: thread, agents: deskAgents,
-    designMode: deskDesignOn(), session: deskSessionRows(), rules: deskSessionRules(),
+  // OPENING IS SEEING: a press, so the star is the server's to clear.
+  deskPress(id, 'seen');
+  // THE DIALOG ASKS THE DESK SERVER ITSELF (desk/G2.7): Desk hands it the id
+  // and the agents it can talk to, and nothing it would have to trust.
+  deskApi.callDialog('shell/deskDetails', { id: id, agents: deskAgents,
     // HIS ACKS COME BACK (slim/G1.6): a block he folded stays folded while
     // it shows the same; a changed one opens.
     acked: (deskSeen.acked && deskSeen.acked[id]) || {} })
@@ -1095,10 +712,11 @@ function deskOpenRow(id) {
         deskSeen.acked[id] = result.acked;
         deskSaveSeen();
       }
-      deskMarkRowSeen(id);
+      // What it sent comes back into the log until the dialog writes its own
+      // chat to the desk server (desk/G2.7).
       return deskRecord((result && result.sent) || []).then(function () {
         // A line in its Blocked by / Blocking lists was clicked: go there.
-        if (result && result.open && deskRowOf(result.open)) deskOpenRow(result.open);
+        if (result && result.open) deskOpenRow(result.open);
       });
     });
 }
@@ -1108,60 +726,24 @@ function deskOpenRow(id) {
 //   Andy: "desk loads down the dependency tree ... it skips closed items",
 //   "the list only loads key/title, and the rest lazy loads".
 //
-// First the newest session, and the List is drawn from it at once, id and
-// title. Then each open item's own lines, newest first, a page more only
-// while the server says it cut the answer. An item the newest session no
-// longer names is closed and is never read. The chats read their newest
-// page; Team reads older pages as he scrolls up (deskOlderTeam).
+// The List is items.search's answer (deskSearchItems). The chats read their
+// newest page; Team reads older pages as he scrolls up (deskOlderTeam).
 var deskLoaded = false;
 function deskLoad() {
   var seenRaw = '';
-  return Promise.all([
+  var reads = [
     deskAsk('seen.get', {}).then(function (r) { seenRaw = r.json || ''; }, function () { seenRaw = ''; }),
-    deskSearch({ kind: 'session' }).then(function (r) { deskTake(r.lines.slice(0, 1)); }),
-  ]).then(function () {
-    deskDraw();
-    var reads = [
-      deskSearch({ todo: DESK_TEAM }).then(function (r) { deskTake(r.lines); deskTeamPage(r); }),
-      // Design mode is his start/end answer in Team, which may be older than
-      // Team's newest page.
-      deskSearch({ todo: DESK_TEAM, kind: 'answer' }).then(function (r) { deskTake(r.lines); }),
-      deskSearch({ kind: 'musing' }).then(function (r) { deskTake(r.lines); }),
-      deskSearch({ todo: '-' }).then(function (r) { deskTake(r.lines); }),
-      // What he closed, wherever: one bounded search, not every item.
-      deskSearch({ kind: 'answer', text: 'closed.' }).then(function (r) { deskTake(r.lines); }),
-      deskAskBackup(),
-      deskAskFresh(),
-    ];
-    deskSessionRows().forEach(function (row) {
-      if (deskClosed[row.id]) return;
-      reads.push(deskReadItem(row.id, ''));
+    deskSearch({ todo: DESK_TEAM }).then(function (r) { deskTake(r.lines); deskTeamPage(r); }),
+    deskSearch({ kind: 'musing' }).then(function (r) { deskTake(r.lines); }),
+    deskSearch({ todo: '-' }).then(function (r) { deskTake(r.lines); }),
+    deskAskBackup(),
+  ];
+  return Promise.all(reads.map(function (p) { return p.catch(function (e) { deskError = 'Desk could not read: ' + ((e && e.message) || e); }); }))
+    .then(function () {
+      deskLoaded = true;
+      deskLoadSeen(seenRaw);
+      deskDraw();
     });
-    return Promise.all(reads.map(function (p) { return p.catch(function (e) { deskError = 'Desk could not read: ' + ((e && e.message) || e); }); }));
-  }).then(function () {
-    deskLoaded = true;
-    deskLoadSeen(seenRaw);
-    deskDraw();
-    deskSaveState();
-  }, function (e) {
-    // No server, no record: said, never drawn as an empty board.
-    deskError = 'Desk could not read its record from the desk server: ' + ((e && e.message) || e);
-    deskDraw();
-  });
-}
-// ALL OF AN ITEM'S PAGES, THEN ONE FOLD, OLDEST FIRST. Its state depends on
-// order (a done. counts only after both claims), and pages arrive newest
-// first: folding each page as it came folded his done. before claims on an
-// older page, and desk/G1 read "open" after he had pressed Done.
-function deskReadItem(id, before, held) {
-  var got = held || [];
-  return deskSearch({ todo: id, before: before }).then(function (r) {
-    got = got.concat(r.lines);
-    if (r.partial && r.lines.length) return deskReadItem(id, r.lines[r.lines.length - 1].at, got);
-    deskTake(got);
-    deskDraw();
-    return null;
-  });
 }
 // OLDER TEAM LINES, AS HE SCROLLS UP (T6): the page before the oldest line
 // of the pages read so far. Not the oldest Team line held: a session post or
@@ -1223,9 +805,7 @@ function deskAskBackup() {
 }
 function deskBackupHtml() {
   if (!deskBackup) return '';
-  var lastClosed = '';
-  deskMessages.forEach(function (m) { if (m.dir === 'out' && m.kind === 'answer' && m.text === 'closed.' && String(m.at) > lastClosed) lastClosed = String(m.at); });
-  var stale = !!deskBackup.lastCheck && lastClosed > String(deskBackup.lastCheck);
+  var stale = false;
   return '<div class="' + (stale ? 'job-start-error' : 'job-manifest-note') + '">Backup: last check ' +
     (deskBackup.lastCheck ? deskTime(deskBackup.lastCheck) : 'never') + ', last copy ' +
     (deskBackup.lastCopy ? deskTime(deskBackup.lastCopy) : 'never') +
@@ -1268,7 +848,15 @@ spirit.shell.activateApp({
         '<div class="start-job-form card" id="desk-agent-tabs" style="display:none"></div>' +
       '</div>' +
       '<div id="desk-root">' +
-        '<div data-pane="list"><div id="desk-backup"></div><div id="desk-top"></div></div>' +
+        // THE SEARCH BAR TOPS THE LIST (desk/G2.6). Andy: "all list displays in
+        // the UI now must be topped by a search input bar", "The server does the
+        // searching AND the filtering", "When Desk opens: [Current Goal Only] on,
+        // [Goals Only] off". Outside the repainted table, so typing survives.
+        '<div data-pane="list"><div id="desk-backup"></div>' +
+          '<div class="start-job-form card"><input id="desk-search" placeholder="search">' +
+          '<button type="button" id="desk-current-goal"></button>' +
+          '<button type="button" id="desk-goals-only"></button></div>' +
+          '<div id="desk-top"></div></div>' +
         '<div data-pane="team" hidden>' +
           '<div id="desk-queue"></div>' +
           '<div id="desk-session"></div>' +
@@ -1326,14 +914,36 @@ spirit.shell.activateApp({
       deskDraw();
     });
     show('list');
-    // The rules box folds in the List as it does in the bubble.
-    document.getElementById('desk-top').addEventListener('click', deskToggleFold);
+    // ONE LISTENER ON THE LIST, which is repainted: a press, a link, a row.
+    document.getElementById('desk-top').addEventListener('click', function (e) {
+      var t = e && e.target;
+      var press = t && t.closest && t.closest('[data-press]');
+      if (press) { if (e.stopPropagation) e.stopPropagation(); deskPress(press.getAttribute('data-id'), press.getAttribute('data-press')); return; }
+      var link = t && t.closest && t.closest('[data-open]');
+      if (link) { if (e.preventDefault) e.preventDefault(); deskOpenRow(link.getAttribute('data-open')); return; }
+      var row = t && t.closest && t.closest('[data-row]');
+      if (row) deskOpenRow(row.getAttribute('data-row'));
+    });
+    document.getElementById('desk-search').addEventListener('input', function () {
+      deskFilter.text = String(document.getElementById('desk-search').value || '');
+      deskSearchItems();
+    });
+    document.getElementById('desk-current-goal').addEventListener('click', function () {
+      deskFilter.currentGoalOnly = !deskFilter.currentGoalOnly;
+      deskDrawToggles();
+      deskSearchItems();
+    });
+    document.getElementById('desk-goals-only').addEventListener('click', function () {
+      deskFilter.goalsOnly = !deskFilter.goalsOnly;
+      deskDrawToggles();
+      deskSearchItems();
+    });
+    deskDrawToggles();
     function muse() { deskSend('musing', 'desk-muse', 'desk-muse-error'); }
     document.getElementById('desk-muse-send').addEventListener('click', muse);
     document.getElementById('desk-team-send').addEventListener('click', deskSendTeam);
     // The bubble is repainted on every arrival, so one listener on its box.
     document.getElementById('desk-session').addEventListener('click', function (e) {
-      if (deskToggleFold(e)) return;
       var el = e.target;
       while (el && el !== e.currentTarget && !(el.getAttribute && el.getAttribute('data-open'))) el = el.parentNode;
       var id = el && el.getAttribute && el.getAttribute('data-open');
@@ -1343,7 +953,8 @@ spirit.shell.activateApp({
     // title to move the discussion to the detail of the requirement, then
     // our discussion would be logged under that requirement".
     document.getElementById('desk-goal').addEventListener('click', function () {
-      if (deskSession && !deskGoalDone()) deskOpenRow(String(deskSession.goal.id));
+      var g = deskGoalRow();
+      if (g) deskOpenRow(g.id);
     });
     // Its own log first, then every arrival into it. Subscribed once, at
     // mount, and kept while Desk is hidden behind its dialog, so what
@@ -1361,7 +972,11 @@ spirit.shell.activateApp({
       if (el && el.scrollTop <= 0) deskOlderTeam();
     });
     deskApi.onPacket('agents', function (body, message) { deskRecord([deskArrival(body, message)]); });
+    // NO PULLING. Andy: "no pulling". The List asks once, then repaints from
+    // what the desk server publishes.
+    deskApi.onPublished(deskOnPublished);
     deskDraw();
+    deskSearchItems();
     deskLoad();
   },
 });

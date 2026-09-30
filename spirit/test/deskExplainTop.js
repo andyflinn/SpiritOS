@@ -77,7 +77,7 @@ function dialog(id, rows, thread) {
   const doc = fakeDocument();
   const dd = load(DETAILS, doc);
   const packets = [];
-  dd.mount(fakeElement('dd'), { escapeHtml: kernel.core.util.escapeHtml, onPacket: function (app, fn) { packets.push(fn); },
+  dd.mount(fakeElement('dd'), { escapeHtml: kernel.core.util.escapeHtml, onPublished: function () {}, onPacket: function (app, fn) { packets.push(fn); },
     setScreenTitle: function () {}, setDialogResult: function () {}, closeDialog: function () {},
     peerPost: function () { return Promise.resolve({ ok: true }); },
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } } });
@@ -104,7 +104,7 @@ test.startTest('desk/G1.14: the explanation on top and opening itself; the goal 
     fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify([row('claude-windows', 'session', SESSION, 'team/chat')]) : null; },
       saveFile: function () { return Promise.resolve(); } },
     escapeHtml: kernel.core.util.escapeHtml, verb: require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify([row('claude-windows', 'session', SESSION, 'team/chat')]) }).verb,
-    onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); }, callDialog: function () { return new Promise(function () {}); },
+    onPublished: function () {}, onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); }, callDialog: function () { return new Promise(function () {}); },
   });
   await settle();
   const tabs = doc.getElementById('desk-tabs');

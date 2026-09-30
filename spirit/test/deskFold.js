@@ -56,14 +56,19 @@ const SESSION = JSON.stringify({ goal: { id: 't/G1', title: 'The goal title', de
   items: [{ id: 't/G1.1', title: 'ITEM-ONE-TITLE', description: 'ITEM-DESCRIPTION-TEXT', check: 'ITEM-CHECK-TEXT', tests: ['ITEM-TEST-T1'] }] });
 const log = [{ key: 'k1', at: new Date(Date.now() - 60000).toISOString(), dir: 'in', peer: LEAD, outcome: 'received', from: 'claude-windows', kind: 'session', text: SESSION, todo: 'team/chat' }];
 
+// The goal row is the desk server's (desk/G2.6).
+function withGoal(fake) {
+  fake.items = [{ id: 't/G1', title: 'The goal title', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false, design: false, waiting: 0 }];
+  return fake;
+}
 function mountDesk(files) {
   const doc = fakeDocument();
   load(DESK, doc).mount(fakeElement('container'), {
     fs: { loadFile: function (f) { return Object.prototype.hasOwnProperty.call(files, f) ? files[f] : null; },
       saveFile: function (f, c) { files[f] = c; return Promise.resolve(); } },
     escapeHtml: spirit.core.util.escapeHtml,
-    verb: require('./deskFake.js').fromFiles(files).verb,
-    onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
+    verb: withGoal(require('./deskFake.js').fromFiles(files)).verb,
+    onPublished: function () {}, onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
     callDialog: function () { return new Promise(function () {}); },
   });
   return doc;
@@ -97,7 +102,7 @@ settle().then(function () {
   const session = [{ id: 't/G1.1', title: 'ITEM-ONE-TITLE', description: 'ITEM-DESCRIPTION-TEXT', check: 'ITEM-CHECK-TEXT',
     tests: ['ITEM-TEST-T1'], inPlace: [], blocks: ['t/G1'], waitsOn: [], done: false }];
   try {
-    dd.mount(fakeElement('dd'), { escapeHtml: spirit.core.util.escapeHtml, onPacket: function () {}, setScreenTitle: function () {},
+    dd.mount(fakeElement('dd'), { escapeHtml: spirit.core.util.escapeHtml, onPublished: function () {}, onPacket: function () {}, setScreenTitle: function () {},
       peerPost: function () { return Promise.resolve({ ok: true }); }, closeDialog: function () {},
       fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } } });
     if (dd.open) dd.open({ id: 't/G1.1', row: session[0], thread: [], agents: {}, session: session, rules: [] });

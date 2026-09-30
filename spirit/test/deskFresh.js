@@ -92,6 +92,9 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskfresh-'));
   // ── THE LIST ────────────────────────────────────────────────────────
   const listLog = [line(1, 'claude-windows', 'session', session([A, B, C]), 'team/chat')];
   const fake = require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(listLog) });
+  // The rows are the desk server's labels (desk/G2.6).
+  const lab = function (o) { return Object.assign({ goal: 't/G1', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false }, o); };
+  fake.items = [lab({ id: 't/G1.1', title: 'Alpha', blocked: ['t/G1.3'] }), lab({ id: 't/G1.3', title: 'Gamma', blocking: ['t/G1.1'] })];
   // Even a server that still answered one: the List draws no 'update?'.
   const answerFresh = { items: [{ key: 't/G1.3', label: JSON.stringify({ id: 't/G1.3', changedAt: at(1), updateRequested: true }) },
     { key: 't/G1.2', label: JSON.stringify({ id: 't/G1.2', changedAt: at(1) }) }], more: false };
@@ -104,7 +107,7 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskfresh-'));
   load(DESK, doc).mount(fakeElement('container'), {
     fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify(listLog) : null; }, saveFile: function () { return Promise.resolve(); } },
     escapeHtml: kernel.core.util.escapeHtml, verb: verb,
-    onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); }, callDialog: function () { return new Promise(function () {}); },
+    onPublished: function () {}, onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); }, callDialog: function () { return new Promise(function () {}); },
   });
   for (let i = 0; i < 6; i++) await settle();
   const list = ['desk-top', 'desk-session', 'desk-goal'].map(function (id) { return doc.getElementById(id).innerHTML; }).join(' ');
@@ -127,7 +130,7 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskfresh-'));
     const packets = [];
     const sent = [];
     const results = [];
-    dd.mount(fakeElement('dd'), { escapeHtml: kernel.core.util.escapeHtml, onPacket: function (app, fn) { packets.push(fn); },
+    dd.mount(fakeElement('dd'), { escapeHtml: kernel.core.util.escapeHtml, onPublished: function () {}, onPacket: function (app, fn) { packets.push(fn); },
       setScreenTitle: function () {}, setDialogResult: function (r) { results.push(r); }, closeDialog: function () {},
       peerPost: function (to, app, body) { sent.push(body); return Promise.resolve({ ok: true }); },
       fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } } });
@@ -235,7 +238,7 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskfresh-'));
   load(DESK, adoc).mount(fakeElement('container'), {
     fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify(ackLog) : null; }, saveFile: function () { return Promise.resolve(); } },
     escapeHtml: kernel.core.util.escapeHtml, verb: ackFake.verb,
-    onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
+    onPublished: function () {}, onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
     callDialog: function (name, params) {
       handed.push(params);
       return Promise.resolve(handed.length === 1 ? { sent: [], acked: { links: 'ACK-TOKEN' } } : { sent: [] });
@@ -267,37 +270,9 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskfresh-'));
 
   // ── D4: ONE DECISION FOR THE GO! BUTTON ─────────────────────────────
   //
-  // Andy, 2026-09-30: "Why is't the appearance and disappearance of the go
-  // button synced between a lit item and it's panel?", then "they obviously
-  // need to work it out from the same data." Shape (wsl-claude): desk.js puts
-  // its own decision on the row it hands the dialog, row.goState
-  // (unverified | held | go | none), and the dialog draws Go! from that and
-  // from nothing else.
-  test.subHeading('D4: the List hands its Go! decision to the dialog with the row');
-  const goLog = [line(1, 'claude-windows', 'session', session([A, B, C]), 'team/chat'),
-    line(2, 'claude-windows', 'note', 'IN PLACE VERIFIED', 't/G1.2'), line(3, 'claude-windows', 'ask', 'ready: go?', 't/G1.2'),
-    line(2, 'claude-windows', 'note', 'IN PLACE VERIFIED', 't/G1.3'), line(3, 'claude-windows', 'ask', 'ready: go?', 't/G1.3')];
-  const opened = [];
-  const gdoc = fakeDocument();
-  load(DESK, gdoc).mount(fakeElement('container'), {
-    fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify(goLog) : null; }, saveFile: function () { return Promise.resolve(); } },
-    escapeHtml: kernel.core.util.escapeHtml, verb: require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(goLog) }).verb,
-    onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
-    callDialog: function (name, params) { opened.push(params); return new Promise(function () {}); },
-  });
-  for (let i = 0; i < 6; i++) await settle();
-  const goList = ['desk-top', 'desk-session', 'desk-goal'].map(function (id) { return gdoc.getElementById(id).innerHTML; }).join(' ');
-  const openRow = function (id) {
-    const box = gdoc.getElementById('desk-session');
-    box.fire('click', { target: { getAttribute: function (a) { return a === 'data-open' ? id : null; }, parentNode: null }, currentTarget: box });
-    return opened[opened.length - 1] || {};
-  };
-  // Beta waits on nothing, is verified and asks: Go! in the List.
-  const listGo = function (id) { return goList.indexOf('data-go="' + id + '"') !== -1; };
-  const pBeta = (openRow('t/G1.2') || {}).row || {};
-  if (listGo('t/G1.2') && pBeta.goState === 'go') test.check('Beta shows Go! in the List, and the dialog is handed goState go');
-  else test.fail(OWED + 'Beta: List Go! ' + listGo('t/G1.2') + ', handed goState ' + JSON.stringify(pBeta.goState));
-
+  // Andy, 2026-09-30: "they obviously need to work it out from the same
+  // data." Since desk/G2.6 that data is the desk server's: the List draws the
+  // row's buttons (deskList.js), and the List half of D4 retired with it.
   function goDialog(goState, thread) {
     const row = Object.assign({}, { id: 't/G1.2', title: 'Beta', blocks: ['t/G1'], waitsOn: [], verified: true, done: false, changedAt: at(1) }, { goState: goState });
     const d = dialog(row, thread);

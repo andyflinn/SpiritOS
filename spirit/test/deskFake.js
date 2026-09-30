@@ -15,6 +15,8 @@
 //   fake.calls   -> [{server, verb, args}]
 //   fake.hold(pred) holds every call pred accepts until fake.release()
 //   fake.backup  -> {lastCheck, lastCopy, lastError}, what backup answers
+//   fake.items   -> the item labels (objects) items.search answers, as the
+//                   server's facts (desk/G2.6); a press is recorded in calls
 
 const appClient = require('../run/js/appClient.js');
 
@@ -29,7 +31,7 @@ function create(rows) {
   const calls = [];
   const held = [];
   let holding = null;
-  const fake = { lines: lines, docs: docs, voice: voice, calls: calls, backup: { lastCheck: '', lastCopy: '', lastError: '' }, pending: {} };
+  const fake = { lines: lines, docs: docs, voice: voice, calls: calls, backup: { lastCheck: '', lastCopy: '', lastError: '' }, pending: {}, items: [] };
 
   function search(a) {
     a = a || {};
@@ -75,6 +77,9 @@ function create(rows) {
     'seen.set': function (a) { docs.seen = a.json; return { saved: true }; },
     'voice.add': function (a) { voice.push({ text: a.text, day: a.day }); return { added: true }; },
     // fake.pending[who]: the items (objects) that wait on that party (desk/G1.5).
+    // The List's two verbs (desk/G2.6): the facts, and a press the server takes.
+    'items.search': function () { return walked(fake.items, function (i) { return { key: String(i.id), label: JSON.stringify(i) }; }); },
+    'press': function () { return { change: calls.length }; },
     'pending.get': function (a) { return walked(fake.pending[a.who] || [], function (i) { return { key: String(i.id), label: JSON.stringify(i) }; }); },
   };
   const backup = { 'status.get': function () { return Object.assign({}, fake.backup); } };

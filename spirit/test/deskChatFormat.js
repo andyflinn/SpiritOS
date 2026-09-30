@@ -95,7 +95,7 @@ test.startTest('desk/G1.10: chat lines drawn readably, in Desk and its dialogs')
   test.subHeading('The dialog (deskDetails): a note under a row');
   const ddDoc = fakeDocument();
   const dd = load(DETAILS, ddDoc);
-  const api = { escapeHtml: spirit.core.util.escapeHtml, onPacket: function () {}, setDialogResult: function () {}, closeDialog: function () {}, setScreenTitle: function () {},
+  const api = { escapeHtml: spirit.core.util.escapeHtml, onPublished: function () {}, onPacket: function () {}, setDialogResult: function () {}, closeDialog: function () {}, setScreenTitle: function () {},
     peerPost: function () { return Promise.resolve({ ok: true }); },
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } } };
   dd.mount(fakeElement('dd'), api);
@@ -129,7 +129,7 @@ test.startTest('desk/G1.10: chat lines drawn readably, in Desk and its dialogs')
       saveFile: function () { return Promise.resolve(); } },
     escapeHtml: spirit.core.util.escapeHtml,
     verb: require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(log), 'seen.json': JSON.stringify({ rows: {}, team: 0, agents: {} }) }).verb,
-    onPacket: function () {},
+    onPublished: function () {}, onPacket: function () {},
     peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h' }); },
     callDialog: function () { return new Promise(function () {}); },
   });

@@ -51,7 +51,7 @@ test.startTest("Desk's backup line stays current");
   new Function('spirit', 'document', 'window', fs.readFileSync(DESK, 'utf8'))({ shell: { activateApp: function (x) { b = x; } }, core: kernel.core }, doc, {});
   b.mount(fakeElement('container'), {
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
-    escapeHtml: kernel.core.util.escapeHtml, verb: fake.verb, onPacket: function (app, fn) { doc.arrive = fn; },
+    escapeHtml: kernel.core.util.escapeHtml, verb: fake.verb, onPublished: function () {}, onPacket: function (app, fn) { doc.arrive = fn; },
     peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h' }); },
     callDialog: function () { return new Promise(function () {}); }, armUntilElsewhere: function () {},
   });
