@@ -104,6 +104,9 @@ if (isNode()) {
   const path = require('path');
   const crypto = require('crypto');
   const http = require('http');
+  // A process the node started holds an IPC channel to it (jobs.js, launch).
+  // The channel closes when the node dies however it dies: the process goes too.
+  if (typeof process.send === 'function') process.on('disconnect', function () { process.exit(0); });
   // Pinned to this file's own location, not process.cwd() — kernel.js
   // always lives at spirit/run/js/kernel.js, so spirit/run/ is always
   // exactly one level up, regardless of which directory the server was

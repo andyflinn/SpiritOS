@@ -195,6 +195,35 @@ module.exports = function installJobs(spirit, port) {
     return job;
   }
 
+  // THE ONE LAUNCHER (desk/G2.2). Andy: "if a server is a process, it should
+  // get the perks of a process, that's no stretch." and "can those not
+  // collapse into one interface, that can't drift?" Every process, one-shot
+  // or server, is spawned here and nowhere else, with the same contract.
+  function launch(job, command, args, cwd) {
+    const child = child_process.spawn(command, args || [], {
+      cwd: cwd,
+      env: Object.assign({}, process.env, {
+        SPIRIT_JOB_ID: job.id,
+        // THE ONE DOOR, and the id travels beside the verb rather than
+        // baked into the path — see spirit.core.jobs.report in kernel.js,
+        // which is the only thing that reads this.
+        SPIRIT_CALLBACK_URL: 'http://localhost:' + port + '/api/spirit',
+      }),
+      // The IPC channel closes when this node dies however it dies, and the
+      // kernel ends the process then: no orphan ("who wants dangeling processes").
+      stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+    });
+    [child.stdout, child.stderr].forEach(function (stream) {
+      if (!stream) return;
+      stream.setEncoding('utf8');
+      stream.on('data', function (text) {
+        String(text).split(/\r?\n/).forEach(function (line) { if (line) appendLog(job, line); });
+      });
+    });
+    updateJob(job.id, { status: 'running', data: { pid: child.pid } });
+    return child;
+  }
+
   function startProcessJob(command, args, options) {
     options = options || {};
     const job = createJob('process', options.type || command, {
@@ -204,21 +233,11 @@ module.exports = function installJobs(spirit, port) {
       exitCode: null,
     }, options.module || moduleOf((args || [])[0], options.cwd));
 
-    const child = child_process.spawn(command, args || [], {
-      env: Object.assign({}, process.env, {
-        SPIRIT_JOB_ID: job.id,
-        // THE ONE DOOR, and the id travels beside the verb rather than
-        // baked into the path — see spirit.core.jobs.report in kernel.js,
-        // which is the only thing that reads this.
-        SPIRIT_CALLBACK_URL: 'http://localhost:' + port + '/api/spirit',
-      }),
-    });
+    const child = launch(job, command, args, options.cwd);
 
     job._stop = function() {
       child.kill();
     };
-
-    updateJob(job.id, { status: 'running', data: { pid: child.pid } });
 
     child.on('exit', function(code) {
       const current = getJob(job.id);
@@ -255,7 +274,6 @@ module.exports = function installJobs(spirit, port) {
   const STEADY_MS = 60000;
   function startServerJob(command, args, options) {
     options = options || {};
-    const spawn = options.spawn || child_process.spawn;
     // WHO OPERATES IT (processes/G1.3). Andy: 'node' is started with the
     // node and comes back when it exits; 'user' is started from Processes,
     // ended with Cancel, and "a manually started/stopped server has already
@@ -282,22 +300,11 @@ module.exports = function installJobs(spirit, port) {
       if (stopped) return;
       const startedAt = Date.now();
       try {
-        // AN IPC CHANNEL, so the server exits when this node does: a node
-        // killed outright leaves no orphan holding its pipe (faceServer.js,
-        // fromArgv, 'disconnect'). Its output goes to this job's log.
-        child = spawn(command, args || [], { cwd: options.cwd, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
+        child = launch(job, command, args, options.cwd);
       } catch (e) {
         updateJob(job.id, { status: 'failed', data: { error: String(e) } });
         return;
       }
-      updateJob(job.id, { status: 'running', data: { pid: child.pid } });
-      [child.stdout, child.stderr].forEach(function (stream) {
-        if (!stream) return;
-        stream.setEncoding('utf8');
-        stream.on('data', function (text) {
-          String(text).split(/\r?\n/).forEach(function (line) { if (line) appendLog(job, line); });
-        });
-      });
       child.on('error', function (err) { appendLog(job, 'could not start: ' + String(err)); });
       child.on('exit', function (code) {
         child = null;
