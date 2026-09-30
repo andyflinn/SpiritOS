@@ -18,7 +18,7 @@ if (!PIPE) {
 const ROOT = path.join(__dirname, '..', '..', '..');
 const TARGET = 'faceProof';
 const TARGET_PIPE = appClient.pipePathFor(ROOT, TARGET, process.platform, 'process');
-const WAIT_MS = 15000;
+const WAIT_MS = appClient.DOOR_WAIT_MS - 2000;
 
 function answer(res, status, type, text) {
   res.writeHead(status, type ? { 'Content-Type': type } : {});
@@ -38,7 +38,7 @@ const server = http.createServer(function (req, res) {
       return;
     }
     pipeRequest(TARGET_PIPE, req.method, req.url, Buffer.concat(chunks).toString('utf8'), {
-      type: req.headers['content-type'] || '', timeoutMs: WAIT_MS,
+      type: req.headers['content-type'] || '', timeoutMs: WAIT_MS, answerMax: appClient.ANSWER_MAX,
     }).then(function (a) {
       if (!a || a.refused) {
         answer(res, 503, 'application/json; charset=utf-8', JSON.stringify({ ok: false, code: 'app-not-running', app: TARGET }));
