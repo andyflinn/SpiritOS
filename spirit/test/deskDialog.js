@@ -182,6 +182,30 @@ test.startTest('desk/G2.7: the item dialog paints only what the desk server says
   if (item.page().indexOf('id="dd-abandon"') === -1) test.check('an item that is not a goal offers no abandon');
   else test.fail(OWED + 'an item offers dd-abandon');
 
+  // desk/G3.7, Andy: "the goal-detail panel could offer the go-all button if there is any go-able items". The goal's
+  // facts say when (go-all in its buttons, desk/G3.4); the dialog draws #dd-go-all, armed like abandon: the first press
+  // arms it, the second sends press {id: <goal>, what: 'go-all', by: 'andy'}. An item never draws it.
+  test.subHeading('desk/G3.7: the goal dialog offers Go all while the goal does, armed');
+  const G37 = 'OWED by desk/G3.7: ';
+  const ga = dialog(answerFor({ id: 't/G1', title: 'The goal', goal: '', buttons: ['go-all'] }, { checks: [], chat: [] }));
+  ga.dd.open({ id: 't/G1' });
+  await settled();
+  if (ga.page().indexOf('id="dd-go-all"') !== -1) test.check('the goal, offering go-all, draws dd-go-all');
+  else test.fail(G37 + 'the goal dialog draws no dd-go-all');
+  ga.click('dd-go-all');
+  await settled();
+  const armedGoAll = ga.asked.filter(function (a) { return a.verb === 'press'; }).length;
+  ga.click('dd-go-all');
+  await settled();
+  const goAll = ga.asked.filter(function (a) { return a.verb === 'press' && a.args.what === 'go-all'; });
+  if (armedGoAll === 0 && goAll.length === 1 && goAll[0].args.id === 't/G1' && goAll[0].args.by === 'andy') test.check('the first press arms it, the second sends press go-all on the goal');
+  else test.fail(G37 + 'Go all: after one press ' + armedGoAll + ' sent, after two ' + JSON.stringify(goAll));
+  const noGoAll = dialog(answerFor({ buttons: ['go'] }));
+  noGoAll.dd.open({ id: 't/G1.2' });
+  await settled();
+  if (noGoAll.page().indexOf('id="dd-go-all"') === -1) test.check('an item draws no dd-go-all');
+  else test.fail(G37 + 'an item draws dd-go-all');
+
   test.subHeading('one piece of code: the dialog keeps no rule of its own');
   const dd = code(DETAILS);
   const own = [];
