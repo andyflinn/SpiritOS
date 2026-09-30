@@ -1,6 +1,6 @@
 # Processes — what a node runs besides itself
 
-**Restored 2026-09-30 for desk/G2.2** (Andy: *"agreed. do it."*). Written 2026-09-28 for G19.1 (1e3703a5) and removed the same day with all of G19's build (6630efb5), so the code drifted from it. The section **Rulings of 2026-09-30** at the end overrides anything above it; lines marked *(stale)* describe code that no longer exists.
+**Restored 2026-09-30 for desk/G2.2** (Andy: *"agreed. do it."*). Written 2026-09-28 for G19.1 (1e3703a5) and removed the same day with all of G19's build (6630efb5), so the code drifted from it. The section **Rulings of 2026-09-30** at the end overrides anything above it; lines marked *(stale)* describe code that no longer exists, and lines marked *(not built)* were designed for G19, reverted with it, and are desk/G2.2's to build or drop.
 
 The written spec of the node's process subsystem. Before 2026-09-28 it existed
 only as code (`spirit/run/js/jobs.js`, and `spirit.core.jobs` in
@@ -35,7 +35,7 @@ every status is live or final, so any job can be cancelled and then deleted.
   gets at its lowest layer:
   - `spirit.core.fs.*`, which reads the node's run folder directly;
   - `spirit.core.jobs.report/log/complete/fail`, which reports to its own row;
-  - **`spirit.core.ask(verb, args)`**, which asks the node any verb a page can,
+  - *(not built: kernel.js:647 defines ask only in the browser half, :613)* **`spirit.core.ask(verb, args)`**, which asks the node any verb a page can,
     with the page's answer shape `{ status, text, body }`. In a page, `ask`
     posts to `/api/spirit` on the page's own host. In a process, the same call
     goes to `SPIRIT_CALLBACK_URL`.
@@ -54,7 +54,7 @@ A `server` also gets:
   orphan keeps its pipe.
 - *(superseded 2026-09-30, see below)* **Its output in its job's log**, line by line (stdout and stderr), so the
   jobs app shows what it does.
-- **`SPIRIT_APP`** (its app's name) and **`SPIRIT_PIPE`** (the named pipe or
+- **`SPIRIT_APP`** *(not built)* (its app's name) and **`SPIRIT_PIPE`** (the named pipe or
   socket file the node reaches it on). The node names the pipe; the app never
   chooses one.
 - **A heap cap**, `--max-old-space-size`, the way the node's own unit caps its
@@ -62,13 +62,13 @@ A `server` also gets:
 - **The shutdown verb.** Andy: *"a server process must implement a shutdown
   verb"*. The node sends `{ verb: 'shutdown' }` over the IPC channel, never
   over the pipe visitors come down. The server runs what it registered with
-  `spirit.core.server.onShutdown(fn)` (at most 4 s) and exits. The node
+  *(not built)* `spirit.core.server.onShutdown(fn)` (at most 4 s) and exits. The node
   waits 5 s, and kills only a server that has not gone by then.
 - **Shut down with its node.** Andy: *"on node-shutdown servers must sent a
   shutdown request to all server processes"*. On SIGTERM or SIGINT the node
-  sends every server the verb (`jobs.stopServers`), waits up to 3 s, then
+  sends every server the verb *(not built)* (`jobs.stopServers`), waits up to 3 s, then
   exits. Each server's job ends `stopped`.
-- **Requests and replies to the monitor.** Andy: *"server apps must send
+- *(superseded 2026-09-30: no stdout; replies and requests go as structured publishes, see below)* **Requests and replies to the monitor.** Andy: *"server apps must send
   incoming requests to the monitor"*, and *"server processes must send their
   replies to the monitor when retuning the reply to the node"*. One line per
   exchange on stdout (method, path, status, content type, size, time; never
@@ -90,7 +90,7 @@ A `server` also gets:
 
 The app's own manifest says so, and the node reads its own manifests at boot:
 
-- **`"server": "<file>.js"`** runs the app's own code, a file in its own
+- *(not built: today a server is a manifest with kind 'server' in process/js)* **`"server": "<file>.js"`** runs the app's own code, a file in its own
   folder, as its server job. The name is one plain file name; anything that
   could climb out of the folder is ignored. This is a faceless spirit app,
   answering the HTTP-equivalent requests its node hands it down its pipe.
@@ -128,5 +128,5 @@ Andy's words, in Desk under desk/G2.1:
 - **No stdout, structured messages.** *"the servers should send explicit messages via an appServerFunction, so the ui gets structured information. drop the stdio/stderr outputs"*; *"we don't ship servers with typos."* Except: *"in DEBUG mode we can write to standard out"*.
 - **Publishing.** appServer has one call taking a plain JS object: *"it calls with a js object. let the appServer to the work."* It is reported as the job's app object through `spirit.core.jobs.report`, and every open page gets it as `job-updated`. *"no pulling"*.
 - **Files.** *"servers should use the scope-constraints on the spirits fs utilities etc..."*; *"server by design get the whole spirit/run/ scope minus !fileServable()"*. A process's own `relay-state/process/<name>/` is the one exception, keyed on its name from its env: *"an easier fix would be in the exclusion rules for fileServable() and fileWritable() to give processes their writable space"*.
-- **DEBUG.** *"the relay-stream upgrade was designed to change const DEBUG to let DEBUG, we even talked about restart setting it back to it's default DEBUG = false"*; 2026-09-26: *"DEBUG is Off by default, returned and set by owner-only api"*, *"DEBUG is not persisted. it lives in RAM only"*. The kernel's `DEBUG` becomes that switch; the relay's own `debugging` goes.
+- **DEBUG.** Open, for Andy: 2026-09-28 said *"per server, never node-wide"* (above); today the kernel's `DEBUG` becomes the switch. Each process loads its own kernel.js, so both hold if the owner flips `DEBUG` per process. *"the relay-stream upgrade was designed to change const DEBUG to let DEBUG, we even talked about restart setting it back to it's default DEBUG = false"*; 2026-09-26: *"DEBUG is Off by default, returned and set by owner-only api"*, *"DEBUG is not persisted. it lives in RAM only"*. The kernel's `DEBUG` becomes that switch; the relay's own `debugging` goes.
 - **The fixed set.** *"node just says: these are the services you get. live within those constrants."* No negotiation or authentication on loopback: *"our code must act responsibly."*
