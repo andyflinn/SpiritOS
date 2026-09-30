@@ -12,9 +12,7 @@
 //     id and title) and the toggle: no description, no rules, no items.
 //   - The fold is remembered in seen.json as folds.session (per viewer, as
 //     what he has seen is), so it survives reopening Desk.
-//   - A dialog's item box (#dd-item) carries a toggle with data-fold="item".
-//     Folded, it keeps its title line and its Done/Reopen row (never hide
-//     the one button he closes with) and hides the rest.
+//   The dialog's folded item record went with desk/G2.7 (one box).
 
 const fs = require('fs');
 const path = require('path');
@@ -22,7 +20,6 @@ const test = require('./testSupport.js');
 const spirit = require('../run/js/kernel.js');
 
 const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
-const DETAILS = path.join(__dirname, '..', 'run', 'shell', 'deskDetails', 'deskDetails.js');
 const LEAD = 'MCowBQYDK2VwAyEAleadleadleadleadleadleadleadleadleadl=';
 
 function fakeElement(id) {
@@ -47,10 +44,6 @@ function load(script, doc) {
   return b;
 }
 function settle() { return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); }); }
-function clickOn(el, attr, value) {
-  const target = { getAttribute: function (n) { return n === attr ? value : null; }, closest: function () { return null; }, parentNode: null, id: '' };
-  el.fire('click', { target: target, currentTarget: el, preventDefault: function () {} });
-}
 
 const SESSION = JSON.stringify({ goal: { id: 't/G1', title: 'The goal title', description: 'GOAL-DESCRIPTION-TEXT' }, rules: [],
   items: [{ id: 't/G1.1', title: 'ITEM-ONE-TITLE', description: 'ITEM-DESCRIPTION-TEXT', check: 'ITEM-CHECK-TEXT', tests: ['ITEM-TEST-T1'] }] });
@@ -95,32 +88,5 @@ settle().then(function () {
     if (/The goal title/.test(b2) && !/GOAL-DESCRIPTION-TEXT/.test(b2)) test.check('a fresh Desk opens with the same goal line, and no overview');
     else test.fail('reopened: ' + b2.slice(0, 160));
   });
-}).then(function () {
-  test.subHeading("T2: a dialog's item text folds the same way, and its Done row stays");
-  const ddDoc = fakeDocument();
-  const dd = load(DETAILS, ddDoc);
-  const session = [{ id: 't/G1.1', title: 'ITEM-ONE-TITLE', description: 'ITEM-DESCRIPTION-TEXT', check: 'ITEM-CHECK-TEXT',
-    tests: ['ITEM-TEST-T1'], inPlace: [], blocks: ['t/G1'], waitsOn: [], done: false }];
-  try {
-    dd.mount(fakeElement('dd'), { escapeHtml: spirit.core.util.escapeHtml, onPublished: function () {}, onPacket: function () {}, setScreenTitle: function () {},
-      peerPost: function () { return Promise.resolve({ ok: true }); }, closeDialog: function () {},
-      fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } } });
-    if (dd.open) dd.open({ id: 't/G1.1', row: session[0], thread: [], agents: {}, session: session, rules: [] });
-  } catch (e) { /* judged below */ }
-  const box = ddDoc.getElementById('dd-item');
-  const firstItem = box.innerHTML;
-  // FIRST SIGHT OPENS since slim/G1.6 (Andy: "any changed block should
-  // immediately unfold. then i'll fold it, and that's my ack"): new to him,
-  // the box is open, the first click folds it, the second opens it again.
-  clickOn(ddDoc.getElementById('dd-body'), 'data-fold', 'item');
-  const foldedItem = box.innerHTML;
-  clickOn(ddDoc.getElementById('dd-body'), 'data-fold', 'item');
-  const openItem = box.innerHTML;
-  if (/ITEM-DESCRIPTION-TEXT/.test(firstItem) && /ITEM-ONE-TITLE/.test(firstItem)) test.check('the item box is open at first sight (slim/G1.6)');
-  else test.fail('the item box on opening: ' + firstItem.slice(0, 160));
-  if (/data-fold="item"/.test(openItem) && /ITEM-DESCRIPTION-TEXT/.test(openItem) &&
-      /ITEM-ONE-TITLE/.test(foldedItem) && /Open: not ready to close yet|id="dd-done"|id="dd-reopen"/.test(foldedItem) &&
-      !/ITEM-DESCRIPTION-TEXT/.test(foldedItem) && !/ITEM-CHECK-TEXT/.test(foldedItem)) {
-    test.check('folded, the item keeps its title and its Done row (the words; the button is in the row above since desk/G1.12), and hides its text and tests');
-  } else test.fail('toggle ' + /data-fold="item"/.test(openItem) + '; folded item: ' + foldedItem.slice(0, 200));
+  // T2 (the dialog's item record folds) went with desk/G2.7: the dialog has one box and no folded record.
 }).catch(function (e) { test.fail('the run broke: ' + e.message); }).then(function () { test.reportSuccessFailureCount(); });

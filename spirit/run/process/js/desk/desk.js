@@ -423,8 +423,16 @@ function write(verb, a, check) {
   delete body.by;
   const r = addRecord.run(new Date().toISOString(), verb, String(a.by || ''), JSON.stringify(body));
   const after = walkState();
-  const changed = it && after.items[it.id] ? facts(after, after.items[it.id]) : null;
-  appServer.publish({ change: Number(r.lastInsertRowid), verb: verb, item: changed });
+  const now = it ? after.items[it.id] : null;
+  // THE CHANGE ITSELF TRAVELS (desk/G2.7, "no pulling"): the item's facts and
+  // whether it is still on the List; a box write adds the box, a chat line the
+  // line, a check its item's checks. The page paints from this.
+  const out = { change: Number(r.lastInsertRowid), verb: verb, item: now ? facts(after, now) : null };
+  if (now) out.listed = listed(after, now);
+  if (now && verb === 'box.write') { out.box = now.box; out.version = now.version; }
+  if (now && verb === 'chat.add') out.chat = now.chat[now.chat.length - 1];
+  if (now && (verb === 'check.add' || verb === 'check.set')) out.checks = now.checks;
+  appServer.publish(out);
   return after;
 }
 

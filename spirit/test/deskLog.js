@@ -167,14 +167,14 @@ test.startTest('Desk — its record, through the desk server, and nothing else a
 
 // SINCE desk/G1.4 Desk reaches its record through jobs.api (D4), and that is
 // the one verb it may name; the node's own history it never asks for.
-test.subHeading('Desk names only jobs.api; its dialog names no verb; neither names node.history');
+test.subHeading('Desk and its dialog name only jobs.api (desk/G2.7), and never node.history');
 [DESK, DETAILS].forEach(function (f) {
   const src = fs.readFileSync(f, 'utf8');
   const code = src.split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
   const named = (code.match(/\.verb\(\s*'([^']*)'/g) || []).map(function (m) { return m.replace(/^\.verb\(\s*'|'$/g, ''); });
-  const allowed = f === DESK ? named.every(function (v) { return v === 'jobs.api'; }) && named.length > 0 : !/\.verb\(/.test(code);
+  const allowed = named.every(function (v) { return v === 'jobs.api'; }) && named.length > 0;
   if (allowed && !/node\.history/.test(code)) {
-    test.check(path.basename(f) + (f === DESK ? ' names only jobs.api' : ' calls no verb') + ', and never node.history outside a comment');
+    test.check(path.basename(f) + ' names only jobs.api' + ', and never node.history outside a comment');
   } else {
     test.fail(path.basename(f) + ' asks the node for ' + JSON.stringify(named) + (/node\.history/.test(code) ? ' and names node.history' : ''));
   }
@@ -261,78 +261,8 @@ function unreachableIsSaid() {
   });
 }
 
-function dialogSendsComeBack() {
-  test.subHeading('A row\'s dialog gets its thread from Desk and hands its sends back');
-  const files = {};
-  const desk = mountDesk({ files: files });
-  // RECENT TIMES, NOT FIXED ONES. The dialog sends only to an agent heard
-  // from in the last day (deskDetails.js, DD_RECENT_MS), and it takes that
-  // time from the thread. Fixed 2026-09-27 stamps made this a time bomb: it
-  // went red on its own a day later, with no code changed.
-  const justNow = function (minutesAgo) { return new Date(Date.now() - minutesAgo * 60000).toISOString(); };
-  desk.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: justNow(3) });
-  desk.arrive({ from: 'wsl-claude', kind: 'explain', text: 'what G2 is', todo: 'puppets/G2' },
-    { hash: 'h-in-2', fromKey: WSL, sentAt: justNow(1) });
-  return settle().then(function () {
-    // The table's row click, as desk.js binds it.
-    const params = { id: 'puppets/G2', row: { id: 'puppets/G2', title: 'Search' },
-      thread: (logged(files) || []).filter(function (r) { return r.todo === 'puppets/G2'; }),
-      agents: { 'wsl-claude': { key: WSL, at: Date.now() } } };
-
-    const doc = fakeDocument();
-    const dd = load(DETAILS, doc);
-    const posts = [];
-    let result;
-    const ddApi = {
-      escapeHtml: spirit.core.util.escapeHtml,
-      verb: function () { throw new Error('the dialog asked the node for a verb'); },
-      onPublished: function () {}, onPacket: function () {},
-      setScreenTitle: function () {},
-      setDialogResult: function (r) { result = r; },
-      peerPost: function (app, to, body) { posts.push({ to: to, body: body }); return Promise.resolve({ ok: true, status: 200, hash: 'h-dd-' + posts.length }); },
-    };
-    dd.mount(fakeElement('container'), ddApi);
-    dd.open(params);
-    if (/what G2 is/.test(doc.getElementById('dd-blurb').innerHTML) && !posts.length) {
-      test.check('the explanation comes from the handed thread, so opening asks nothing');
-    } else {
-      test.fail('blurb ' + doc.getElementById('dd-blurb').innerHTML + ' posts ' + posts.length);
-    }
-    doc.getElementById('dd-say').value = 'go on';
-    doc.getElementById('dd-body').fire('click', { target: { id: 'dd-say-send' } });
-    return settle().then(function () {
-      const sent = (result && result.sent) || [];
-      if (posts.length === 1 && posts[0].to === WSL && sent.length === 1 && sent[0].key === 'h-dd-1' &&
-          sent[0].todo === 'puppets/G2' && /go on/.test(doc.getElementById('dd-chat').innerHTML)) {
-        test.check('his line went to the agent, shows in the chat, and is the dialog\'s result');
-      } else {
-        test.fail('posts ' + JSON.stringify(posts) + ' result ' + JSON.stringify(result));
-      }
-      return sent;
-    });
-  }).then(function (sent) {
-    // DESK'S HALF: a click on the row opens the dialog with that row's
-    // thread, and what the dialog returns when it leaves (Back resolves
-    // callDialog, as the shell does) goes into Desk's log.
-    openRow(desk, 'puppets/G2');
-    const opened = desk.dialogs[0];
-    // The dialog asks the desk server for the item itself (desk/G2.7).
-    if (opened && opened.id === 'shell/deskDetails' && opened.params.id === 'puppets/G2' && opened.params.agents['wsl-claude'].key === WSL) {
-      test.check('the row opens its dialog with its id and the agents Desk has heard');
-    } else {
-      test.fail('dialog opened with ' + JSON.stringify(opened && opened.params));
-    }
-    if (opened) opened.resolve({ sent: sent });
-    return settle();
-  }).then(function () {
-    const back = (logged(files) || []).filter(function (r) { return r.key === 'h-dd-1'; });
-    if (back.length === 1 && back[0].dir === 'out' && back[0].text === 'go on') {
-      test.check('what he sent from the dialog is in Desk\'s log once it closes');
-    } else {
-      test.fail('Desk\'s log after the dialog: ' + files['log/log.json']);
-    }
-  });
-}
+// THE DIALOG'S OLD FLOW (a thread handed over, sends by peerPost, the result logged by Desk) went with
+// desk/G2.7: the dialog reads item.get and writes to the desk server (spirit/test/deskDialog.js).
 
 function voiceHoldsWhatHeTyped() {
   test.subHeading('what he typed goes to the desk server\'s voice, and nothing else');
@@ -467,7 +397,6 @@ arrivalsAndSendsAreLogged()
   .then(twoTabsKeepBoth)
   .then(failedSendsStayApart)
   .then(unreachableIsSaid)
-  .then(dialogSendsComeBack)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {
     test.fail('deskLog threw: ' + ((err && err.stack) || err));

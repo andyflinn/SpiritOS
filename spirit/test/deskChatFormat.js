@@ -95,26 +95,21 @@ test.startTest('desk/G1.10: chat lines drawn readably, in Desk and its dialogs')
   test.subHeading('The dialog (deskDetails): a note under a row');
   const ddDoc = fakeDocument();
   const dd = load(DETAILS, ddDoc);
-  const api = { escapeHtml: spirit.core.util.escapeHtml, onPublished: function () {}, onPacket: function () {}, setDialogResult: function () {}, closeDialog: function () {}, setScreenTitle: function () {},
+  // Since desk/G2.7 the dialog reads its chat from the desk server (item.get), not a handed thread.
+  const api = { escapeHtml: spirit.core.util.escapeHtml, onPacket: function () {}, onPublished: function () {}, closeDialog: function () {}, setScreenTitle: function () {},
     peerPost: function () { return Promise.resolve({ ok: true }); },
-    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } } };
+    verb: function () {
+      return Promise.resolve({ status: 200, body: { item: JSON.stringify({ id: 'test/G1.1', title: 'Asks Andy', goal: 'test/G1', status: '', with: '',
+        buttons: [], blocking: [], blocked: [], alone: false, star: false }), box: '', version: 0, change: 1, checks: [],
+        chat: [{ by: 'claude-windows', at: AT, text: NOTE }] } });
+    } };
   dd.mount(fakeElement('dd'), api);
-  dd.open({ id: 'test/G1.1', row: { id: 'test/G1.1', title: 'Asks Andy', explain: 'x' }, agents: {}, session: [], rules: [],
-    thread: [row('in', 'claude-windows', 'note', NOTE, 'test/G1.1')] });
+  dd.open({ id: 'test/G1.1' });
+  await settle();
   await settle();
   const ddChat = ddDoc.getElementById('dd-chat').innerHTML;
   report(checks('dialog', ddChat), ddChat);
-
-  test.subHeading('T4 in the dialog: the goal\'s session post is one line, never its JSON');
-  const goalDoc = fakeDocument();
-  const goal = load(DETAILS, goalDoc);
-  goal.mount(fakeElement('dd'), api);
-  goal.open({ id: 'test/G1', row: { id: 'test/G1', title: 'The goal', goal: true, explain: 'x' }, agents: {}, session: [], rules: [],
-    thread: [row('in', 'claude-windows', 'session', SESSION, 'test/G1')] });
-  await settle();
-  const goalChat = goalDoc.getElementById('dd-chat').innerHTML;
-  if (/test\/G1/.test(goalChat) && !/&quot;goal&quot;|"goal"|&quot;items&quot;|"items"/.test(goalChat)) test.check('T4 dialog: the session post names its goal, and no JSON shows');
-  else test.fail(OWED + 'T4 dialog: the session post drew ' + goalChat.replace(/\s+/g, ' ').slice(0, 220));
+  // T4 in the dialog went with desk/G2.7: a session is the desk server's record, never a chat line.
 
   // ── Desk ────────────────────────────────────────────────────────────
   const log = [

@@ -202,85 +202,61 @@ settle().then(function () {
   });
 }).then(function () {
   // ── The dialog ──────────────────────────────────────────────────────
+  // Since desk/G2.7 the dialog paints the desk server's item.get: the rulings below stand, on the new parts
+  // (#dd-head, #dd-name-row, #dd-strip, #dd-box, #dd-links).
   const ddDoc = fakeDocument();
   const dd = load(DETAILS, ddDoc);
   let screenTitle = '';
-  const session = [
-    { id: 't/G1.2', title: 'Second', description: 'ITEM-TEXT', check: 'CHECK-TEXT', tests: [], inPlace: [], blocks: ['t/G1'], waitsOn: [], verified: true, done: false },
-  ];
-  dd.mount(fakeElement('dd'), { escapeHtml: kernel.core.util.escapeHtml, onPublished: function () {}, onPacket: function () {}, setScreenTitle: function (t) { screenTitle = String(t); },
-    peerPost: function () { return Promise.resolve({ ok: true }); }, closeDialog: function () {},
-    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } } });
-  dd.open({ id: 't/G1.2', row: session[0], agents: {}, session: session, rules: [],
-    thread: [row('claude-windows', 'note', 'IN PLACE VERIFIED', 't/G1.2'), row('claude-windows', 'ask', 'ready: go?', 't/G1.2')] });
-  return settle().then(function () {
+  const answer = { item: JSON.stringify({ id: 't/G1.2', title: 'Second', goal: 't/G1', status: 'running', with: '',
+    buttons: ['go', 'done'], blocking: ['t/G1'], blocked: [], alone: false, star: false }),
+    box: 'ITEM-TEXT', version: 1, change: 1, chat: [],
+    checks: [{ number: 'C1', kind: 'C', words: 'CHECK-TEXT', test: '', state: 'open', by: '', at: '' }] };
+  dd.mount(fakeElement('dd'), { escapeHtml: kernel.core.util.escapeHtml, onPacket: function () {}, onPublished: function () {},
+    setScreenTitle: function (t) { screenTitle = String(t); }, closeDialog: function () {},
+    peerPost: function () { return Promise.resolve({ ok: true }); },
+    verb: function () { return Promise.resolve({ status: 200, body: answer }); } });
+  dd.open({ id: 't/G1.2' });
+  return settle().then(settle).then(function () {
+    const body = ddDoc.getElementById('dd-body').innerHTML;
+    const at = function (id) { return body.indexOf('id="' + id + '"'); };
+    const nameRow = ddDoc.getElementById('dd-name-row').innerHTML;
+    const strip = ddDoc.getElementById('dd-strip').innerHTML;
+    const box = ddDoc.getElementById('dd-box').innerHTML;
+
     test.subHeading("T3: a dialog's title starts with the item's id");
-    if (/^\s*t\/G1\.2\b|^\s*G1\.2\b/.test(screenTitle) && /Second/.test(screenTitle)) test.check('the screen title reads ' + JSON.stringify(screenTitle));
+    if (/^\s*t\/G1\.2\b/.test(screenTitle) && /Second/.test(screenTitle)) test.check('the screen title reads ' + JSON.stringify(screenTitle));
     else test.fail(OWED + 'the screen title is ' + JSON.stringify(screenTitle));
 
     test.subHeading('T4: your buttons sit before Rename, the check line right under them');
-    const body = ddDoc.getElementById('dd-body').innerHTML;
-    // The Rename row is drawn inside #dd-body's frame, or into its own
-    // element when repainted: read whichever holds it.
-    const ownRow = ddDoc.getElementById('dd-name-row').innerHTML;
-    const nameRow = ownRow || (body.match(/<div[^>]*id="dd-name-row"[^>]*>[\s\S]*?<\/div>/) || [''])[0];
     const goAt = nameRow.search(/id="dd-go"/);
     const renameAt = nameRow.search(/id="dd-rename"/);
-    const item = ddDoc.getElementById('dd-item').innerHTML;
-    const rowEnd = body.indexOf('id="dd-name-row"');
-    const checkAt = body.indexOf('CHECK-TEXT');
-    if (goAt !== -1 && renameAt !== -1 && goAt < renameAt && !/CHECK-TEXT/.test(item) && checkAt > rowEnd) {
-      test.check('Go! stands before Rename on one line; How you can check follows it, outside the item box');
-    } else test.fail(OWED + 'name row ' + nameRow.slice(0, 160) + ' | check in item box ' + /CHECK-TEXT/.test(item));
+    if (goAt !== -1 && renameAt !== -1 && goAt < renameAt && /CHECK-TEXT/.test(strip) && !/CHECK-TEXT/.test(box) && at('dd-strip') > at('dd-name-row')) {
+      test.check('Go! stands before Rename on one line; How you check it follows it, outside the box');
+    } else test.fail(OWED + 'name row ' + nameRow.slice(0, 160) + ' | strip ' + strip.slice(0, 80));
 
-    // FIRST SIGHT OPENS since slim/G1.6 (Andy: "any changed block should
-    // immediately unfold. then i'll fold it, and that's my ack"): new to him,
-    // the item box is open; it folds once he has acked it (deskFresh.js D6).
-    test.subHeading("T5 in the dialog: the item box opens at first sight, and empty groups draw nothing");
-    if (/ITEM-TEXT/.test(item) && /Second/.test(item) && !/Blocked by/.test(body)) test.check('the item box is open at first sight, and no Blocked by heading shows for an item nothing blocks');
-    else test.fail(OWED + 'item box ' + item.replace(/\s+/g, ' ').slice(0, 160) + ' | Blocked by shown ' + /Blocked by/.test(body));
+    test.subHeading('T5 in the dialog: the box shows at once, and empty groups draw nothing');
+    const links = ddDoc.getElementById('dd-links').innerHTML;
+    // And each id a way there (Andy: "the blocked and blocks lists link to the respective items").
+    if (/ITEM-TEXT/.test(box) && !/Blocked by/.test(links) && /data-open="t\/G1"/.test(links)) test.check('the box shows its text, no Blocked by heading shows for an item nothing blocks, and its blocking id is a link');
+    else test.fail(OWED + 'box ' + box.slice(0, 120) + ' | Blocked by shown ' + /Blocked by/.test(links));
 
-    // Andy, after looking: "the titles the right of the done button and in
-    // the always-visible part of the large text fold ar still to small, not
-    // Title-style yet", and "the yellow part is not separate from the the
-    // large text block, it should be right below the offered Done button".
-    // Andy: "same for this part Done Rename How you can check: ...": in a
-    // dialog, his buttons and the check line stay pinned at the top too.
     test.subHeading('T13: in a dialog, his buttons and the check line are pinned in one sticky block');
     const stickyTag = (body.match(/<div[^>]*position:\s*sticky[^>]*>/) || [''])[0];
     const stickyAt = stickyTag ? body.indexOf(stickyTag) : -1;
-    const nameAt = body.indexOf('id="dd-name-row"');
-    const checkLineAt = body.indexOf('How you can check');
-    const blurbAt = body.indexOf('id="dd-blurb"');
-    if (stickyAt !== -1 && /top:\s*0/.test(stickyTag) && stickyAt < nameAt && nameAt < checkLineAt && checkLineAt < blurbAt) {
-      test.check('one sticky block at top: 0 holds the button row and the check line, above the explanation');
-    } else test.fail(OWED + 'sticky block at ' + stickyAt + ', buttons at ' + nameAt + ', check at ' + checkLineAt + ', explanation at ' + blurbAt);
+    const closeAt = body.indexOf('</div>', at('dd-strip') + 1);
+    if (stickyAt !== -1 && /top:\s*0/.test(stickyTag) && stickyAt < at('dd-name-row') && at('dd-name-row') < at('dd-strip') &&
+        at('dd-strip') < at('dd-box') && closeAt < at('dd-box')) {
+      test.check('one sticky block at top: 0 holds the button row and the check line, above the box');
+    } else test.fail(OWED + 'sticky at ' + stickyAt + ', buttons at ' + at('dd-name-row') + ', strip at ' + at('dd-strip') + ', box at ' + at('dd-box'));
 
-    test.subHeading('T10: the item title in its fold head is title-sized');
-    const size = function (html, text) {
-      const at = html.indexOf(text);
-      if (at === -1) return 0;
-      const before = html.slice(0, at);
-      const m = before.match(/font-size:\s*([\d.]+)em[^>]*>[^<]*$/) || before.match(/font-size:\s*([\d.]+)em(?![\s\S]*font-size)[\s\S]*$/);
-      return m ? Number(m[1]) : 1;
-    };
-    const titleSize = size(item, 'Second');
-    if (titleSize >= 1.2) test.check('the item title reads at ' + titleSize + 'em');
-    else test.fail(OWED + 'the item title in its fold head is ' + titleSize + 'em, not title-sized');
-
-    // Andy: "the line above the text fold, which reads: Desk layout and
-    // buttons, ... (desk/G1.12) is basically the Title of this here item.
-    // it's still in tiny font, must be Title style/size as well."
-    test.subHeading('T15: the title line above the explanation is title-sized too');
-    const titleTag = (body.match(/<div[^>]*id="dd-title"[^>]*>/) || [''])[0];
-    const tagSize = Number((titleTag.match(/font-size:\s*([\d.]+)em/) || [0, 0])[1]);
-    const lineSize = Math.max(tagSize, size(ddDoc.getElementById('dd-title').innerHTML, 'Second') === 1 ? 0 : size(ddDoc.getElementById('dd-title').innerHTML, 'Second'));
-    if (lineSize >= 1.2) test.check('the title line reads at ' + lineSize + 'em');
-    else test.fail(OWED + 'the title line (#dd-title) is ' + (lineSize || 'the small label size') + ', not title-sized: ' + titleTag);
+    test.subHeading('T10 and T15: the title line is title-sized');
+    const headTag = (body.match(/<div[^>]*id="dd-head"[^>]*>/) || [''])[0];
+    const headSize = Number((headTag.match(/font-size:\s*([\d.]+)em/) || [0, 0])[1]);
+    if (headSize >= 1.2 && /Second/.test(ddDoc.getElementById('dd-head').innerHTML)) test.check('the title line reads at ' + headSize + 'em');
+    else test.fail(OWED + 'the title line (#dd-head) is ' + headSize + 'em: ' + headTag);
 
     test.subHeading('T11: the yellow check stands apart, with clear space around it');
-    const yellow = (body.match(/<div[^>]*background:#fff3c4[^>]*>(?:(?!<\/div>)[\s\S])*How you can check/) || [''])[0];
-    const tag = (yellow.match(/<div[^>]*>/) || [''])[0];
+    const tag = (strip.match(/<div[^>]*background:#fff3c4[^>]*>/) || [''])[0];
     const margin = (tag.match(/margin:\s*(\d+)px/) || [0, 0])[1];
     if (Number(margin) >= 12) test.check('the check line keeps ' + margin + 'px clear above and below');
     else test.fail(OWED + 'the check line has ' + margin + 'px of space around it: ' + tag.slice(0, 120));
