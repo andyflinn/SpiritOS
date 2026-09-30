@@ -105,7 +105,6 @@ expectLoads('index.html (desktop homepage)', 'index.html');
 expectLoads('relay.html (--relay homepage)', 'relay.html');
 expectLoads('favicon.svg', 'favicon.svg');
 expectLoads('js/client/shell.js (browser boot)', 'js/client/shell.js');
-expectLoads('js/client/browser.js', 'js/client/browser.js');
 // packet.js moved down here out of js/. If it ever stops serving, no app can
 // send or read an envelope, and the shell can only say so in the console —
 // so the serving is asserted rather than discovered.

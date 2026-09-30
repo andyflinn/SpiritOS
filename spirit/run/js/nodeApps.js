@@ -69,61 +69,6 @@
 // for. If this file ever grows a switch on the payload, the rule has
 // been broken and this paragraph is the evidence.
 //
-// ── ONE FUNCTION, AND A LIST OF WHO MAY CALL IT ──────────────────────
-//
-//   Andy, 2026-09-25: "concept. app provides 1 function, app-owner
-//   manages permission list (contacts on app"
-//   and: "since the owner gates which peers can use that app..... it's
-//   implicit permission to deposit a request on the owners hard drive"
-//
-// SO THERE ARE TWO GATES AND THEY ANSWER DIFFERENT QUESTIONS. The node's
-// front door decides who may reach this node at all — `peerPost.js`
-// calls onArrival only on verdict `known` or `admit`, and a held
-// stranger reaches no app (asserted at `arrivals.js:405`). The APP'S
-// list then decides which of those admitted peers may use THIS app.
-// Being on it is the permission: an app does not ask a second question
-// about what a listed peer may do, because that is what the list said.
-//
-// ONE MECHANISM, HERE, NOT ONE PER APP. Every booted app needs this and
-// two implementations of it would be the duplication this tree keeps
-// catching — so `allows(key)` is handed to the app already built, and an
-// app that grows its own key list is the thing to go red on.
-//
-// ── AN ABSENT LIST MEANS NOBODY ──────────────────────────────────────
-//
-// Not everybody. A missing `allow.json`, an unreadable one and an empty
-// one all mean the same thing: this app has no users yet. That is G14 —
-// an optional guard whose absence means "do the unsafe thing" IS
-// absent-means-everything, and it is how a permission list becomes
-// decoration. A freshly installed app therefore does nothing until its
-// owner puts a key in the file, and that is the correct amount of
-// nothing.
-//
-// The shape is `relayAuth.js:392`'s, deliberately: `{ "keys": [...] }`,
-// because the relay's member list already answers "which keys may do
-// this here" and a second spelling of an answer is how two lists drift.
-//
-// ── HOW THE OWNER MANAGES IT, AND WHERE THAT SCREEN WILL LIVE ────────
-//
-//   Andy, 2026-09-25: "the puppets contact configuration goes into a
-//   shell frame (LATER)"
-//
-// DECIDED, AND DELIBERATELY NOT BUILT. The owner edits `allow.json` by
-// hand today. The screen for it belongs in a SHELL FRAME — the master's
-// own console — and never in the puppet's folder: a puppet with a face
-// for configuring itself is a second door onto its own permissions, and
-// `appFaceGrant.js` goes red on a face appearing in that directory for
-// exactly this class of reason.
-//
-// His "(LATER)" is the whole of the schedule. Nobody should read this
-// paragraph as work owed, and a frame appearing before he asks for one
-// is scope taken rather than given.
-//
-// What this file guarantees in the meantime is what that frame will need
-// when it comes: ONE list shape, in ONE place, per puppet — so the frame
-// reads and writes `shell/<name>/allow.json` for every puppet alike and
-// needs no per-app knowledge to do it.
-//
 // ── WHAT A BOOTED APP MAY NOT DO ─────────────────────────────────────
 //
 // Compose the answer. `peerPost.js:1327` closes that door and states its
@@ -158,54 +103,6 @@ const path = require('path');
 // exists today — ABSENT MEANS NOTHING NEW, never "boot it and see".
 function boots(manifest) {
   return !!(manifest && manifest.boots === true);
-}
-
-// Who the app-owner has let use this app. Read on every ask rather than
-// cached at mount, because the owner edits the file while the node runs
-// and a cache would mean a revoked key kept working until a restart —
-// which is the failure that makes a permission list worth nothing at the
-// one moment it matters.
-const ALLOW = 'allow.json';
-function allowsIn(appFs, log, name) {
-  const say = log || function () {};
-  // THE VERDICT COLLAPSES THREE CASES; THE DIAGNOSTIC MUST NOT.
-  //
-  //   wsl-claude, 2026-09-25: "AN ABSENCE THE SYSTEM CHOSE AND AN
-  //   ABSENCE THE SYSTEM COULD NOT READ MUST NOT BE INDISTINGUISHABLE
-  //   TO THE PERSON WHO WROTE THE FILE."
-  //
-  // Missing and empty are the owner SAYING something — this puppet has
-  // no contacts yet — and deserve silence. A file that exists and does
-  // not parse is the owner's MISTAKE, and a mistake that produces the
-  // same silence as an intention is a file the owner will stare at
-  // wondering why nobody can reach their puppet.
-  //
-  // Said once per distinct broken content, not once per packet: the list
-  // is read on every ask, so logging naively would turn one typo into a
-  // line per arrival for as long as it stood.
-  let moaned = null;
-  return function (key) {
-    const want = String(key || '');
-    if (!want) return false;
-    const raw = appFs.read(ALLOW);
-    if (!raw) return false;
-    let keys = null;
-    try { keys = JSON.parse(raw).keys; }
-    catch (e) { keys = null; }
-    // Unreadable is not permissive. A torn or hand-broken file means the
-    // owner's intent cannot be read, and the safe reading of "I cannot
-    // tell who is allowed" is nobody.
-    if (!Array.isArray(keys)) {
-      if (moaned !== raw) {
-        moaned = raw;
-        say((name || 'app') + ': ' + ALLOW + ' exists but does not parse as { "keys": [...] }, ' +
-          'so nobody may use this app until it is fixed');
-      }
-      return false;
-    }
-    moaned = null;
-    return keys.indexOf(want) !== -1;
-  };
 }
 
 // ── WHO OWNS THIS PUPPET (puppets/G6), AND WHAT IT CARRIES (G7) ──────
@@ -266,10 +163,7 @@ function puppetIn(rootDir, log) {
 // The app's own folder, and refusing anything that climbs out of it.
 // `path.relative` rather than a prefix test, because a prefix test says
 // yes to `shell/appFaceAppEvil` for the scope `shell/appFaceApp`.
-function scopedFs(dir, opts) {
-  // Files inside the app's own folder that the app may READ but never
-  // WRITE. See `OWNER-ONLY` below for why the list exists at all.
-  const readOnly = (opts && opts.readOnly) || [];
+function scopedFs(dir) {
   function resolve(rel) {
     const full = path.resolve(dir, String(rel || ''));
     const away = path.relative(dir, full);
@@ -277,17 +171,6 @@ function scopedFs(dir, opts) {
       throw new Error('outside the app scope: ' + rel);
     }
     return full;
-  }
-  // COMPARED RESOLVED, NOT AS TYPED. './allow.json', 'x/../allow.json'
-  // and 'ALLOW.JSON' on a case-insensitive disc are all the same file,
-  // and a guard that compares the string a caller typed is a guard that
-  // is bypassed by typing it differently.
-  function isReadOnly(rel) {
-    const full = resolve(rel);
-    return readOnly.some(function (name) {
-      const a = path.resolve(dir, name);
-      return a === full || a.toLowerCase() === full.toLowerCase();
-    });
   }
   return {
     exists: function (rel) { return fs.existsSync(resolve(rel)); },
@@ -299,19 +182,6 @@ function scopedFs(dir, opts) {
     // no grant table: the name is either granted or it is not, and a
     // torn file is a third state nobody has a rule for.
     write: function (rel, text) {
-      // OWNER-ONLY. Andy, 2026-09-25: "the puppet has it's own contact
-      // list, BUT, only the puppets owner has write-authority over that
-      // contact list" — and, on whether the puppet holds that authority:
-      // "the puppet doesn't".
-      //
-      // The list lives in the puppet's folder because that is where a
-      // puppet's things live, and the folder is where its scope ends —
-      // so WITHOUT THIS the puppet could write its own guest list and
-      // the permission would be its own to grant. A puppet that can
-      // choose its audience has no master.
-      if (isReadOnly(rel)) {
-        throw new Error('owner-only, a puppet may read this and never write it: ' + rel);
-      }
       const file = resolve(rel);
       fs.mkdirSync(path.dirname(file), { recursive: true });
       const tmp = file + '.tmp';
@@ -354,18 +224,11 @@ function mountAll(opts) {
     try {
       const mod = require(path.join(dir, name + '.js'));
       if (!mod || typeof mod.mount !== 'function') return;
-      // TWO HANDLES ONTO ONE FOLDER, and the difference is the whole of
-      // the owner's authority. `ownerFs` is used by the seam to READ the
-      // list; `appFs` is what the puppet gets, and it cannot write it.
-      const ownerFs = scopedFs(dir);
-      const appFs = scopedFs(dir, { readOnly: [ALLOW] });
+      const appFs = scopedFs(dir);
       mod.mount({
         name: name,
         dir: dir,
         fs: appFs,
-        // WHO MAY USE THIS APP — handed over already built, so no app
-        // writes its own. See the header: absent means nobody.
-        allows: allowsIn(ownerFs, log, name),
         // WHO OWNS IT, read-only to it: the owner's key, or '' for none.
         // WHO OWNS THIS PUPPET: the node's, one for all its apps (puppetIn).
         owner: function () { return puppet().owner; },
@@ -595,6 +458,6 @@ function puppetDoor(opts) {
 }
 
 module.exports = {
-  mountAll: mountAll, boots: boots, scopedFs: scopedFs, allowsIn: allowsIn,
+  mountAll: mountAll, boots: boots, scopedFs: scopedFs,
   puppetIn: puppetIn, puppetDoor: puppetDoor, ownerCommandIn: ownerCommandIn,
 };

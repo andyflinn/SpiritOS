@@ -75,7 +75,6 @@
 // `arrivals.js:384`, which has been encoding packets this way all along.
 const packet = require('../../js/client/packet.js');
 
-const NAME_RE = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
 const DATASET = 'grants.json';
 // WHICH APP ON THE HOLDER'S BOX ANSWERS A NAME: a row's optional `app`, the
 // app folder whose server the owner node hands a visitor's request to.
@@ -106,44 +105,6 @@ function readGrants(api) {
   }
 }
 
-function writeGrants(api, names) {
-  api.fs.write(DATASET, JSON.stringify({ names: names }, null, 2) + '\n');
-}
-
-// The whole of the decision. Separated from the wire so the rule can be
-// read without reading the plumbing, and so a later caller cannot reach
-// the plumbing without passing through the rule.
-function decide(api, name, asker, app) {
-  if (!NAME_RE.test(String(name || ''))) {
-    return { ok: false, code: 'bad-request', name: name, why: 'a name is 1-63 characters of a-z, 0-9 and -, not starting or ending with -' };
-  }
-  const names = readGrants(api);
-  if (names === null) {
-    return { ok: false, code: 'no-row', name: name, why: 'the grant dataset could not be read, and guessing would re-grant a live name' };
-  }
-  const held = names[name];
-  if (held && held.to !== asker) {
-    // THE ONE REFUSAL THIS FEATURE HAS, and it is in the catalogue
-    // before this file emits it (`spiritErrors.js:513`) — a code living
-    // only in the file that throws it is outside the closed set at the
-    // one moment anybody needs to look it up.
-    //
-    // Permanent, not a reservation: `name-reserved` frees itself when
-    // its invite expires, a grant does not.
-    return { ok: false, code: 'name-already-granted', name: name };
-  }
-  if (held) {
-    // The same asker asking twice gets the same answer, not a refusal.
-    // An installer that retries after a lost reply must not be told the
-    // name it owns is taken.
-    return { ok: true, name: name, at: held.at, again: true };
-  }
-  const at = new Date().toISOString();
-  names[name] = { to: asker, at: at };
-  if (typeof app === 'string' && APP_RE.test(app)) names[name].app = app;
-  writeGrants(api, names);
-  return { ok: true, name: name, at: at };
-}
 
 
 // ── THE FACE ROUTE: STEP 1 OF ANDY'S THREE (public-app-server/G17) ────
@@ -404,49 +365,7 @@ function mount(api) {
     // An answer to something this node asked, on the VPS.
     if (puppetArrived && ask.re && puppetArrived(message, ask.re)) return;
     if (ownerRole(api, message, body)) return;
-    if (body.verb !== 'grant') return;
-
-    // THE APP-OWNER'S GATE (Andy: "app provides 1 function, app-owner
-    // manages permission list"). The node's front door has already said
-    // this peer may reach the node; `allows` says whether they may use
-    // THIS app. Absent list means nobody — nodeApps.js.
-    if (!api.allows(message.fromKey)) {
-      api.log(APP + ': not on the list, so no name was granted: ' + String(message.fromKey).slice(0, 8));
-      return;
-    }
-
-    const answer = decide(api, body.name, message.fromKey, body.app);
-
-    // `re` carries the asking packet's hash, which is what makes two
-    // packets one exchange. Without it a reply is just another arrival
-    // and the asker cannot tell which question it answers. Carried by
-    // the envelope rather than by a field of ours — see the header.
-    const made = packet.encode(APP, Object.assign({ verb: 'granted' }, answer), { re: message.hash });
-    const reply = made && made.text;
-
-    // A THROW HERE REACHES NOBODY — this runs inside peerPost's arrival
-    // fan-out, which swallows it (arrivals.js:200) while the sender is
-    // still owed a receipt for the ASK. The ask is receipted either way;
-    // it is the grant that would be lost, so it is logged rather than
-    // dropped in silence.
-    // A GRANT THAT COULD NOT BE PACKED IS SAID, NOT POSTED AS NOTHING
-    // (wsl-claude's sweep, puppets/G1). It cannot happen today, since a grant
-    // is name-sized, and if it ever does it is logged here rather than
-    // posting an undefined text. The post's own rejection is caught too:
-    // try/catch sees only a synchronous throw.
-    const lost = function (why) {
-      api.log(APP + ': the grant for "' + body.name + '" could not be posted: ' + why);
-    };
-    if (!reply) { lost((made && made.error) || 'it could not be packed'); return; }
-    try {
-      if (api.post) {
-        Promise.resolve(api.post('', message.fromKey, reply, null, null))
-          .catch(function (e) { lost((e && e.message) || e); });
-      }
-    } catch (e) {
-      lost((e && e.message) || e);
-    }
   });
 }
 
-module.exports = { mount: mount, decide: decide, NAME_RE: NAME_RE };
+module.exports = { mount: mount };

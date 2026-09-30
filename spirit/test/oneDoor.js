@@ -198,9 +198,6 @@ const TALLY = {
   // this helper, and its line went to 0.
   'js/appServer.js': 1,
 
-  // AGENT.md: unused, do not assume it is loaded, do not delete.
-  'js/client/browser.js': 1,
-
   // ── TESTS ───────────────────────────────────────────────────────────
   //
   // Counted for the first time. Some of these are legitimate — a suite
