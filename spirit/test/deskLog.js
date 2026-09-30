@@ -273,31 +273,15 @@ function voiceHoldsWhatHeTyped() {
   return settle().then(function () {
     sayToLead(desk, 'typed by andy');
     return settle();
-  }).then(function () {
-    // What a dialog returned: one line sent to two agents, a new name, a Go!.
-    const sent = [
-      { key: 'd1', at: '2026-09-27T05:04:00Z', dir: 'out', peer: LEAD, outcome: 'sent', from: 'andy', kind: 'note', text: 'from the row', todo: 'puppets/G2' },
-      { key: 'd2', at: '2026-09-27T05:04:00Z', dir: 'out', peer: WSL, outcome: 'sent', from: 'andy', kind: 'note', text: 'from the row', todo: 'puppets/G2' },
-      { key: 'd3', at: '2026-09-27T05:05:00Z', dir: 'out', peer: WSL, outcome: 'sent', from: 'andy', kind: 'answer', text: 'retitle: My Name', todo: 'puppets/G2' },
-      { key: 'd4', at: '2026-09-27T05:06:00Z', dir: 'out', peer: WSL, outcome: 'sent', from: 'andy', kind: 'answer', text: 'go.', todo: 'puppets/G2' },
-      { key: 'd5', at: '2026-09-27T05:06:00Z', dir: 'out', peer: WSL, outcome: 'sent', from: 'andy', kind: 'ask', text: 'explain this to me: what is it, and why is it where it is?', todo: 'puppets/G2' },
-    ];
-    if (!/Search/.test(desk.doc.getElementById('desk-top').innerHTML)) { test.fail('no row to open'); return null; }
-    openRow(desk, 'puppets/G2');
-    desk.dialogs[desk.dialogs.length - 1].resolve({ sent: sent });
-    return settle().then(function () {
-      // The same result again (a second close) writes nothing twice.
-      openRow(desk, 'puppets/G2');
-      desk.dialogs[desk.dialogs.length - 1].resolve({ sent: sent });
-      return settle();
-    });
+    // WHAT HE TYPES IN A DIALOG goes by chat.add since desk/G2.7; the dialog no
+    // longer hands its lines back for Desk to record, so this checks Desk's own.
   }).then(function () {
     // Since desk/G1.4 the server keeps it (voice.add), a plain file in its
     // state folder that he moves himself (deskOnServer.js, T4).
     const lines = desk.fake.voice;
     const texts = lines.map(function (l) { return l.text; });
-    if (texts.join(' | ') === 'typed by andy | from the row | My Name') {
-      test.check('his typed line, the row line once, and his new name; no Go!, no explain request, no agent text');
+    if (texts.join(' | ') === 'typed by andy') {
+      test.check('his typed line, and no agent text');
     } else {
       test.fail('voice holds ' + JSON.stringify(texts));
     }
@@ -364,25 +348,16 @@ function teamGoesToEveryAgent() {
 }
 
 function unseenIsMarked() {
-  // Andy: "... indicating that new stuff has arrived for that item", and
-  // "or use the red "*" do indicate "unseen changes have occured"". SINCE
-  // desk/G2.6 A ROW'S STAR IS THE DESK SERVER'S: the label says it, and
-  // opening the row presses 'seen'.
-  test.subHeading('A red * marks the row the server says he has not seen, and opening it presses seen');
+  // Andy: "... indicating that new stuff has arrived for that item". SINCE
+  // desk/G2.6 A ROW'S STAR IS THE DESK SERVER'S: the label says it, and the
+  // dialog presses seen when it opens a starred item (desk/G2.7, deskDialog.js).
+  test.subHeading('A red * is drawn only when the server says so');
   const files = {};
   const desk = mountDesk({ files: files });
   return settle().then(function () {
-    const star = /title="unseen changes"/;
     const top = desk.doc.getElementById('desk-top');
-    if (!star.test(top.innerHTML)) test.check('no star while the server says none');
+    if (!/title="unseen changes"/.test(top.innerHTML)) test.check('no star while the server says none');
     else test.fail('a star with none said: ' + top.innerHTML.slice(0, 160));
-    desk.fake.calls.length = 0;
-    openRow(desk, 'puppets/G2');
-    return settle().then(function () {
-      const seen = desk.fake.calls.filter(function (k) { return k.verb === 'press' && k.args.what === 'seen'; });
-      if (seen.length === 1 && seen[0].args.id === 'puppets/G2' && seen[0].args.by === 'andy') test.check('opening the row pressed seen for it, as andy');
-      else test.fail('presses on opening: ' + JSON.stringify(desk.fake.calls));
-    });
   });
 }
 

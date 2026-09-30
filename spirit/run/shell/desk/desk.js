@@ -229,7 +229,7 @@ function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
 // wall of red. A ROW'S STAR IS THE DESK SERVER'S (desk/G2.6): opening a row
 // presses 'seen', and the row's label says whether it has one.
 var DESK_UNSEEN = '<span style="color:#d00;font-weight:bold" title="unseen changes">*</span>';
-var deskSeen = { rows: {}, team: 0, agents: {}, folds: {}, acked: {} };
+var deskSeen = { team: 0, agents: {} };
 var deskTab = 'list';
 // WHICH CHAT INSIDE TEAM: '*' for All, else an agent's name (desk/G1, D2).
 var deskAgentTab = '*';
@@ -279,11 +279,7 @@ function deskLoadSeen(raw) {
   var held = null;
   try { held = raw ? JSON.parse(raw) : null; } catch (e) { held = null; }
   if (held && typeof held === 'object') {
-    deskSeen = { rows: held.rows && typeof held.rows === 'object' ? held.rows : {}, team: Number(held.team) || 0,
-      agents: held.agents && typeof held.agents === 'object' ? held.agents : null,
-      folds: held.folds && typeof held.folds === 'object' ? held.folds : {},
-      // What he acked in each item's dialog, by folding (slim/G1.6).
-      acked: held.acked && typeof held.acked === 'object' ? held.acked : {} };
+    deskSeen = { team: Number(held.team) || 0, agents: held.agents && typeof held.agents === 'object' ? held.agents : null };
     if (deskSeen.agents) return;
     // A seen.json from before the agent tabs: the lead keeps its old Lead
     // mark, and what the others said so far counts as seen.
@@ -388,8 +384,10 @@ function deskSearchItems() {
   return deskAsk('items.search', { text: deskFilter.text, currentGoalOnly: deskFilter.currentGoalOnly, goalsOnly: deskFilter.goalsOnly })
     .then(function (r) { deskItems = deskLabels(r); deskDraw(); }, deskWriteError('read its list'));
 }
-// A published change: {change, verb, item: <facts>, listed}. A new session is
-// the one change that asks again, since it adds and drops whole rows.
+// A published change: {change, verb, item: <facts>, listed}. A new session
+// asks again, since it adds and drops whole rows; so does a change to an item
+// the List does not show, since only the server knows whether the search and
+// toggles let it in (wsl-claude's review).
 function deskOnPublished(obj) {
   if (!obj || typeof obj !== 'object') return;
   if (obj.verb === 'session.set') { deskSearchItems(); return; }
@@ -400,7 +398,7 @@ function deskOnPublished(obj) {
   deskItems.forEach(function (r, i) { if (r.id === it.id) at = i; });
   if (obj.listed === false) { if (at !== -1) deskItems.splice(at, 1); }
   else if (at !== -1) deskItems[at] = it;
-  else deskItems.push(it);
+  else { deskSearchItems(); return; }
   deskDraw();
 }
 // A PRESS IS NOT A LINE. Andy: "a press shouldn't post a line, it is not
@@ -410,7 +408,11 @@ function deskOnPublished(obj) {
 // packet with no content."
 function deskPress(id, what) {
   return deskAsk('press', { id: id, what: what, by: 'andy' }).then(function () {
-    Object.keys(deskAgents).forEach(function (n) {
+    // To the agents the server says are live (the goal row's live), not to
+    // every agent ever heard (wsl-claude's review).
+    var g = deskGoalRow();
+    var live = g && Array.isArray(g.live) ? g.live : [];
+    Object.keys(deskAgents).filter(function (n) { return live.indexOf(n) !== -1; }).forEach(function (n) {
       Promise.resolve(deskApi.peerPost('agents', deskAgents[n].key, { kind: 'changed' }))
         .catch(function () { /* the agent reads the state when it next looks */ });
     });
@@ -698,26 +700,12 @@ function deskDraw() {
 // ONE ROW'S DIALOG, from the List or from the Team bubble. Andy: "i want to
 // be able to click on items in the bubble in team and see the details".
 function deskOpenRow(id) {
-  // OPENING IS SEEING: a press, so the star is the server's to clear.
-  deskPress(id, 'seen');
   // THE DIALOG ASKS THE DESK SERVER ITSELF (desk/G2.7): Desk hands it the id
-  // and the agents it can talk to, and nothing it would have to trust.
-  deskApi.callDialog('shell/deskDetails', { id: id, agents: deskAgents,
-    // HIS ACKS COME BACK (slim/G1.6): a block he folded stays folded while
-    // it shows the same; a changed one opens.
-    acked: (deskSeen.acked && deskSeen.acked[id]) || {} })
+  // and the agents it can talk to. It presses seen and writes its own chat.
+  deskApi.callDialog('shell/deskDetails', { id: id, agents: deskAgents })
     .then(function (result) {
-      if (result && result.acked && typeof result.acked === 'object') {
-        deskSeen.acked = deskSeen.acked || {};
-        deskSeen.acked[id] = result.acked;
-        deskSaveSeen();
-      }
-      // What it sent comes back into the log until the dialog writes its own
-      // chat to the desk server (desk/G2.7).
-      return deskRecord((result && result.sent) || []).then(function () {
-        // A line in its Blocked by / Blocking lists was clicked: go there.
-        if (result && result.open) deskOpenRow(result.open);
-      });
+      // A line in its Blocked by / Blocking lists was clicked: go there.
+      if (result && result.open) deskOpenRow(result.open);
     });
 }
 
