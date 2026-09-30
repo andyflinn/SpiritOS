@@ -83,7 +83,6 @@ Caddy  -- HTTP 127.0.0.1:65430 -->  node --relay
 | `cron-install` `cron-remove` | 755 | 10-minute update cron |
 | `firewall` | 755 | ufw: 22/80/443 allow, 65430 deny |
 | `tls` | 755 | Install Caddy + write `sites/<domain>.caddy` (never the main file) |
-| `lab-install` `lab-remove` | 755 | The SECOND relay on this box — see above |
 | `http-to-https` | 755 | One-shot cutover (unit + firewall + tls + start) |
 | `logs` | 755 | Last 100 lines of `spirit-relay` |
 | `systemd/spirit-relay.service` | 644 | Unit template |
@@ -196,62 +195,11 @@ SPIRIT_CLONE_DIR=/root/SpiritOS
 
 ---
 
-## More than one relay on this box
+## More than one clone on this box
 
-> Andy: "we'll need to fake multiple public relays without me shelling out
-> another bunch of bucks per month for that test environment."
-
-A second relay is a **second clone**, not a second machine and not a second
-Unix user. What makes it a different relay is its own `relay-state/` and
-therefore its own Ed25519 identity — `bash/ONE-OPERATOR.md` still stands,
-and root is still spirit.
-
-These belong to the MAIN clone, so **call them by absolute path** — it works
-from any directory, including from inside the lab:
-
-```bash
-/root/SpiritOS/bash/lab-install          # clone, unit, start, enable, caddy site
-/root/SpiritOS/bash/lab-remove           # stop, disable, drop the unit and the site
-/root/SpiritOS/bash/lab-remove --purge   # and delete the clone, key and all
-```
-
-This said "from the MAIN clone, `./bash/lab-install`", and that instruction
-failed twice in a row in practice: the `cd` is a separate step, and it is not
-the part that looks like the command, so it gets lost to a paste or to a
-prompt already sitting somewhere else. Both times the guard caught it — but a
-guard firing on the expected way of running something is a design telling you
-which way that should be. `REPO_ROOT` comes from `$BASH_SOURCE`, so the path
-form settles which clone the script belongs to and there is nothing left to
-remember.
-
-`lab-install` is idempotent: run it again after a push and it updates the
-lab clone from origin rather than complaining. It writes the lab clone's
-`.env` for you.
-
-Both **refuse to run** if the lab's directory, unit, port or domain matches
-the live relay's. A command named `lab-remove` that stops `spirit-relay` is
-the hazard here, and every knob has a default that could collide.
-
-Knobs, if the defaults do not suit:
-
-```
-SPIRIT_LAB_DIR=/root/lab/SpiritOS
-SPIRIT_LAB_PORT=65431
-SPIRIT_LAB_UNIT=spirit-lab
-SPIRIT_LAB_DOMAIN=lab.andyflinn.com
-```
-
-### Removing keeps the key, unless you say otherwise
-
-`lab-remove` without `--purge` takes the lab off the air and leaves the
-clone on disk. That is deliberate: **a relay's identity is what its members
-pinned.** Every node that has spoken to `lab.andyflinn.com` holds its public
-key in `relayKeys.json` and refuses a relay answering with a different one.
-Delete `relay-state/` and the lab comes back as a stranger to everybody, and
-each of those nodes has to accept it again.
-
-That is the damage `recycle` used to do to lab nodes, and the reason
-`refresh` was written. `--purge` is the deliberate second thought.
+A second clone (the face, `bash/face-install`) is a second checkout with its
+own `relay-state/` and `.env`, not a second machine and not a second Unix
+user — `bash/ONE-OPERATOR.md` still stands, and root is still spirit.
 
 ### The clone decides, not the shell
 
@@ -261,24 +209,8 @@ with `SPIRIT_UNIT_NAME`, `SPIRIT_RELAY_PORT`, `SPIRIT_RELAY_DOMAIN` and
 `SPIRIT_UNIT_TEMPLATE` **cleared**. So `cd <clone> && ./bash/<anything>` is
 always about that clone, and nothing you did earlier in the shell changes it.
 
-This replaces an earlier instruction here to source `.env` before every
-command in the lab clone. That instruction was not merely forgettable — it
-was wrong. `source` *exports*, and an export outlives the `cd` that follows
-it, so it made the hazard travel the other way:
-
-```
-cd /root/lab/SpiritOS && source .env     # exports SPIRIT_UNIT_NAME=spirit-lab
-cd /root/SpiritOS     && ./bash/update   # "unit spirit-lab" — wrong clone
-cd /root/SpiritOS     && ./bash/cron-install
-    clone: /root/SpiritOS    unit: spirit-lab
-```
-
-That last line is a cron entry that pulls the **live** clone's code and
-restarts the **lab's** service every ten minutes, and it installed without
-an error. It happened on spirit-3 on 2026-09-16.
-
-The cost of the fix is that a one-off `SPIRIT_RELAY_PORT=9999 ./bash/serve`
-no longer works — to change what a clone is, edit that clone's `.env`. The
+A one-off `SPIRIT_RELAY_PORT=9999 ./bash/serve`
+does not work — to change what a clone is, edit that clone's `.env`. The
 variables configure a clone, and which clone is not a question the shell
 gets a vote on.
 
@@ -292,13 +224,13 @@ unit. Per-clone, already, and now per-clone without help.
 
 `SPIRIT_TRACK` is `tag` by default and the default is the design. A clone
 with no `.env` **is** the live relay, so the guarded setting has to be the
-one you get by doing nothing; the lab opts into `master` in writing, in its
-own `.env`, and `lab-install` puts it there.
+one you get by doing nothing; a clone that should follow master opts in, in
+writing, in its own `.env`.
 
 | clone | `.env` | follows |
 |---|---|---|
 | `/root/SpiritOS` | none | the newest tag reachable from `origin/master` |
-| `/root/lab/SpiritOS` | `SPIRIT_TRACK=master` | `origin/master`, the moment it is pushed |
+| a second clone | `SPIRIT_TRACK=master` | `origin/master`, the moment it is pushed |
 
 **A clone tracking tags that finds none stays exactly where it is.** It does
 not fall back to master — that would hand back the whole gate at the one
@@ -328,7 +260,7 @@ asked for, created by fixing something else.
 `./bash/tls` writes `/etc/caddy/sites/<domain>.caddy` and **never** touches
 `/etc/caddy/Caddyfile`. It used to write the main file with `>` from a
 single-site template — so running it from a second clone deleted the live
-relay's config and replaced it with the lab's, with no error until somebody
+relay's config and replaced it with the second clone's, with no error until somebody
 noticed the certificate was for the wrong name.
 
 The main file becomes one line:
@@ -433,16 +365,12 @@ design, not a defect.
 
 ### The order
 
-**1. Lab first.** It shares this box with spirit
-(`## More than one relay on this box`), so it is the rehearsal that costs
-nothing. Run the exact sequence you intend to run on spirit.
-
-**2. The relay before any node.** A new node cannot reach an old relay at
+**1. The relay before any node.** A new node cannot reach an old relay at
 all, so nodes that go first go silent AND cannot claim their way back. A
 relay that goes first merely refuses old nodes, which is recoverable by
 updating them.
 
-**3. Then every node, in one pass.** Anything not updated in that pass is
+**2. Then every node, in one pass.** Anything not updated in that pass is
 off the network until it is.
 
 ### Proven, not predicted
@@ -458,7 +386,7 @@ spirit-3 returns no `sealKey`, which is the whole story in one field.
 - **`bash/update` does not reinstall the unit.** The unit gained
   `MemoryMax` and `Restart=always`; run `bash/install-units` where those
   are wanted. **That script has never run on Linux** — it is the least
-  tested step in this procedure and deserves the lab rehearsal most.
+  tested step in this procedure; watch it most.
 - **The `card` column is added, not altered.** Rolling a relay back
   leaves a column nothing reads, which is harmless.
 - **Members enrolled before cycle 10 have no card on the relay.** The node

@@ -23,7 +23,7 @@ test.startTest('Adjusting a remote relay\'s limits from its owner\'s node');
 
 const ROWS = [
   { url: 'https://spirit.andyflinn.com', owned: true, label: 'Andy Flinn Music Relay', key: 'KEY-SPIRIT' },
-  { url: 'https://lab.andyflinn.com', owned: true, label: 'lab', key: 'KEY-LAB' },
+  { url: 'https://relay-b.andyflinn.example', owned: true, label: 'lab', key: 'KEY-LAB' },
   { url: 'https://someone.else.example', owned: false, label: 'theirs', key: 'KEY-THEIRS' },
 ];
 
@@ -63,7 +63,7 @@ function run() {
   }
 
   let ambiguous = '';
-  try { tool.pick(ROWS, 'andyflinn.com'); } catch (e) { ambiguous = e.message; }
+  try { tool.pick(ROWS, 'andyflinn'); } catch (e) { ambiguous = e.message; }
   if (/matches 2/.test(ambiguous)) {
     test.check('a fragment matching both relays refuses rather than choosing one');
   } else {
@@ -89,7 +89,7 @@ function run() {
   test.subHeading('The packet it posts is an ordinary owner grant');
 
   const seen = [];
-  return tool.askRelay({ url: 'https://lab.andyflinn.com', key: 'KEY-LAB' },
+  return tool.askRelay({ url: 'https://relay-b.andyflinn.example', key: 'KEY-LAB' },
     { config: { ramLimitMB: 1 } }, doorSaying(relayAnswer({ ok: true, after: { ramLimitMB: 1 } }), seen))
     .then(function () {
       const posted = seen[seen.length - 1];
@@ -115,7 +115,7 @@ function run() {
     })
     .then(function () {
       test.subHeading('A relay that receipts the post and answers nothing is not mistaken for silence');
-      return tool.askRelay({ url: 'https://lab.andyflinn.com', key: 'KEY-LAB' }, { config: {} },
+      return tool.askRelay({ url: 'https://relay-b.andyflinn.example', key: 'KEY-LAB' }, { config: {} },
         function () { return Promise.resolve({ ok: true, hash: 'h', receipt: true }); })
         .then(function () { test.fail('an answerless post looked like an answer'); })
         .catch(function (e) {

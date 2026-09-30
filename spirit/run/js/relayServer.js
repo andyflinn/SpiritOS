@@ -920,10 +920,6 @@ common.refuseListenError(server, port, 'js/relayServer.js');
 
 // ── A RELAY THAT KNOWS IT IS GOING SAYS SO ───────────────────────────
 //
-//   Andy: "can a relay that knows its shutting down (lab.andyflinn.com
-//   reboot by your request) send a message down the SSE connections to
-//   prepare its counterparts to re-connect?"
-//
 // It spends its moment on `retry:`, which is SSE's own field for when to
 // come back. So a hundred members do not all reconnect one second later
 // into a box that is still booting, get refused, and back off further

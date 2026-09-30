@@ -322,10 +322,6 @@ function run() {
   test.subHeading('A relay that knows it is going says when to come back');
 
   {
-    //   Andy: "can a relay that knows its shutting down (lab.andyflinn.com
-    //   reboot by your request) send a message down the SSE connections to
-    //   prepare its counterparts to re-connect?"
-    //
     // It can, and it needs no message of its own: `retry:` is SSE's own
     // field for when to reconnect, so nothing new crosses the wire and no
     // client has to be taught a word. sseClient honours it, asserted in

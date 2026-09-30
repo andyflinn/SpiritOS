@@ -205,28 +205,7 @@ test.subHeading('A second clone cannot eat the first');
   }
 }
 
-// ── THE LAB SCRIPTS REFUSE TO TOUCH THE LIVE RELAY ───────────────────
-//
-//   Andy: "my ./batch tools need to give me the option to install/remove
-//   the clone that sits there (/root/lab/)."
-//
-// A command named `lab-remove` that stops `spirit-relay` is the whole
-// hazard here, and it is not hypothetical: every knob it reads has a
-// default, and a default that happens to match the live one turns a
-// tidy-up into an outage. So both scripts compare all four — directory,
-// unit, port, domain — against the live values and refuse rather than
-// guess.
-//
-// Asserted by reading the source, the way the rest of this file does:
-// these scripts need root and a relay host to run, so the harness
-// cannot execute them. What it CAN hold is that the refusals are still
-// written.
 // ── THE TEMPLATE IS NOT THE UNIT NAME ────────────────────────────────
-//
-// FOUND BY RUNNING IT, which is the part worth recording. `lab-install`
-// cloned, wrote .env, and died on:
-//
-//   ERROR: missing /root/lab/SpiritOS/bash/systemd/spirit-lab.service
 //
 // install-units read `bash/systemd/${UNIT_NAME}.service`, so the moment
 // UNIT_NAME became an override it started looking for a template nobody
@@ -314,13 +293,11 @@ test.subHeading('The unit template is one file, however many relays use it');
 // in lib.sh, on every box, including the cron that runs every ten
 // minutes.
 //
-// bash/lab-remove had the same line, where it would have skipped the
-// stop and disable and left a relay running after being told to remove
-// it. bash/status had it on the labMaster warning, which therefore never
+// bash/status had it on the labMaster warning, which therefore never
 // warned.
 test.subHeading('No pipeline decides anything — pipefail turns a match into 141');
 {
-  const SCRIPTS = ['update', 'lab-remove', 'lab-install', 'status', 'tls', 'cron-install', 'cron-remove'];
+  const SCRIPTS = ['update', 'status', 'tls', 'cron-install', 'cron-remove'];
   const guilty = [];
 
   SCRIPTS.forEach(function (name) {
@@ -384,20 +361,9 @@ test.subHeading('No pipeline decides anything — pipefail turns a match into 14
 //   update's `| grep -q` never matched under pipefail      (the restart)
 //   and this one: an exported SPIRIT_UNIT_NAME
 //
-// `source .env` was the documented way to work in the lab clone. It is
-// also an EXPORT, and an export outlives the `cd` that follows it, so
-// the documentation was handing the shell a lie to carry:
-//
-//   cd /root/lab/SpiritOS && source .env
-//   cd /root/SpiritOS     && ./bash/update        -> "unit spirit-lab"
-//   cd /root/SpiritOS     && ./bash/cron-install  -> clone: /root/SpiritOS
-//                                                    unit:  spirit-lab
-//
-// The guard written for lab-install compares the lab's knobs against the
-// live ones, which catches a mis-AIMED command. It cannot catch this,
-// because by the time it runs, "the live ones" have already been read
-// out of the poisoned environment: both sides of the comparison are
-// wrong together and it agrees with itself.
+// `source .env` is an EXPORT, and an export outlives the `cd` that
+// follows it, so a command run later in another clone reads the wrong
+// unit, port and domain.
 //
 // So the environment stops being an input. A clone with a .env is
 // described by that file; a clone without one takes the defaults; and in
@@ -460,44 +426,8 @@ test.subHeading('The clone decides what it is — not whatever the shell was car
     test.fail('update decides which unit to restart from the lib.sh it replaced a moment ago');
   }
 
-  // NOBODY SOURCES IT BY HAND ANY MORE. lab-install used to, in four
-  // places, and those four lines are the instruction that caused this.
-  const labInstallSrc = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'lab-install'), 'utf8');
-  const sourced = labInstallSrc.split('\n').filter(function (line) {
-    return /^\s*[^#]*\bsource \.env\b/.test(line);
-  });
-  if (sourced.length === 0) {
-    test.check('and lab-install no longer tells anyone to source it');
-  } else {
-    test.fail(sourced.length + ' line(s) in lab-install still `source .env` — that is the export that travels');
-  }
 }
 
-// ── THE KEEPER'S SSH DOOR IS ONE SCRIPT, NOT A SHELL ─────────────────
-//
-//   Andy: "you may set yourself up to remotely update and restart, i'll
-//   help you with my ssh until you can do it from here."
-//
-// The lazy way to grant that is a key in authorized_keys and a promise
-// about what will be typed with it. That is a root shell with a manner,
-// and the promise is the only thing between it and the box. SSH's own
-// `command=` is the real mechanism: sshd runs the named script and the
-// client's request survives only as $SSH_ORIGINAL_COMMAND — a string to
-// MATCH, never to execute.
-//
-// Two properties, and both are the kind that get loosened by someone
-// being helpful:
-//
-//   the request is matched against a list, never evaluated
-//   the door is the LAB's, never the live relay's
-//
-// The second is a policy choice worth stating: the same cron that makes
-// remote update useful also restarts spirit.andyflinn.com unattended on
-// every push, which became true only when bash/update was fixed. The
-// live relay should move when Andy cuts a tag. So the keeper's key
-// reaches the lab and refuses everything else, twice over — the clone
-// has no .env (which is what MAKES it the main clone), or it resolves to
-// the live unit or domain.
 // ── ANDY'S RELAY MOVES ON ANDY'S TAGS ────────────────────────────────
 //
 //   Andy: "let's make sure that my relay only restarts on my tags, and
@@ -512,25 +442,18 @@ test.subHeading('The clone decides what it is — not whatever the shell was car
 //
 // THE DEFAULT IS THE WHOLE DESIGN. A clone with no .env is the live
 // relay — that is what lib.sh's fallback means — so `tag` has to be what
-// you get by doing nothing, and the lab opts into `master` in writing.
+// you get by doing nothing, and a clone that follows master says so in writing.
 // Get that backwards and the safe case is the one requiring a step
 // somebody has to remember, which is how the last five of these went.
 test.subHeading('A clone follows tags unless it says otherwise in writing');
 {
   const upd = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'update'), 'utf8');
   const updCode = upd.split('\n').filter(function (l) { return !/^\s*#/.test(l); }).join('\n');
-  const labInstall = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'lab-install'), 'utf8');
 
   if (/TRACK="\$\{SPIRIT_TRACK:-tag\}"/.test(lib)) {
     test.check('the default is `tag`, so the clone with no .env is the guarded one');
   } else {
     test.fail('SPIRIT_TRACK does not default to `tag` — the live relay follows master again');
-  }
-
-  if (/export SPIRIT_TRACK=master/.test(labInstall)) {
-    test.check('and lab-install writes `master` into the lab’s own .env, opting in');
-  } else {
-    test.fail('lab-install does not set SPIRIT_TRACK — a fresh lab would freeze on tags');
   }
 
   // NO FALLBACK. A tag-tracking clone that finds no tag must STAY PUT.
@@ -600,7 +523,7 @@ test.subHeading('A clone follows tags unless it says otherwise in writing');
 // needed to run it failing — and for a script invoked by sshd as a
 // forced command, "failing" means the door does not open.
 //
-// That is exactly how keeper-ssh shipped: `chmod +x` locally (which git
+// That is exactly how one script shipped: `chmod +x` locally (which git
 // on Windows ignores), then `git update-index --chmod=+x` BEFORE the
 // file was staged, with its error swallowed by 2>/dev/null. Two mistakes
 // that cancel into silence. The file arrived on spirit-3 as -rw-r--r--.
@@ -638,69 +561,8 @@ test.subHeading('Every script in bash/ is committed executable');
   }
 }
 
-test.subHeading('The keeper’s SSH key runs one script and cannot reach the live relay');
+test.subHeading('No private key is committed');
 {
-  const keeper = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'keeper-ssh'), 'utf8');
-  const code = keeper.split('\n').filter(function (l) { return !/^\s*#/.test(l); }).join('\n');
-
-  // NEVER EVALUATED. eval, $REQ as a bare command, or feeding it to sh
-  // would each turn a forced command back into a shell.
-  const evaluated = /\beval\b/.test(code) ||
-    /^\s*\$\{?REQ/m.test(code) ||
-    /^\s*\$\{?SSH_ORIGINAL_COMMAND/m.test(code) ||
-    /(sh|bash)\s+-c\s+"?\$\{?(REQ|SSH_ORIGINAL_COMMAND)/.test(code);
-  if (!evaluated) {
-    test.check('the client’s request is matched, never executed');
-  } else {
-    test.fail('keeper-ssh evaluates $SSH_ORIGINAL_COMMAND — that is a shell, not a forced command');
-  }
-
-  // A CLOSED LIST. `case` with an explicit default that exits non-zero;
-  // a default that fell through to anything would be the same hole.
-  if (/case "\$REQ" in/.test(code) && /\*\)/.test(code) && /exit 2/.test(code)) {
-    test.check('and only a named verb reaches anything — the default refuses');
-  } else {
-    test.fail('keeper-ssh has no closed whitelist with a refusing default');
-  }
-
-  // THE LIVE RELAY IS NOT REACHABLE THROUGH IT, both ways round.
-  const guardsEnv = /! -f "\$REPO_ROOT\/\.env"/.test(code);
-  const guardsLive = /"\$UNIT_NAME" = "spirit-relay"/.test(code) &&
-    /"\$DOMAIN" = "spirit\.andyflinn\.com"/.test(code);
-  if (guardsEnv && guardsLive) {
-    test.check('and it refuses the main clone and anything resolving to the live relay');
-  } else {
-    test.fail('keeper-ssh can be pointed at spirit-3: env guard ' + guardsEnv + ', live guard ' + guardsLive);
-  }
-
-  // ── AN IDEMPOTENT INSTALLER MUST RESTART, NOT START ────────────────
-  //
-  // lab-install is documented "run it again after a push and it updates
-  // the lab" — and it called `systemctl start`, which does nothing to a
-  // unit that is already active. On spirit-3, 2026-09-16:
-  //
-  //   ok  at ea91a60                                 <- clone updated
-  //   ok  started spirit-lab
-  //   Active: active (running) since ... 51min ago   <- old process
-  //   /api/version -> 04e5acb                        <- old code
-  //
-  // Disk updated, process not, and an `ok` line claiming it started
-  // something that did not start. Exactly the shape of the pipefail bug
-  // in bash/update, which meant no relay was ever restarted by an
-  // update — found the same week, in the neighbouring script.
-  //
-  // `restart` is right on a first install too, so there is no case this
-  // trades away.
-  const labInstallSrc2 = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'lab-install'), 'utf8');
-  const startsOnly = /\.\/bash\/start\b/.test(
-    labInstallSrc2.split('\n').filter(function (l) { return !/^\s*#/.test(l); }).join('\n')
-  );
-  if (!startsOnly) {
-    test.check('and lab-install restarts rather than starts, so a re-run reaches the process');
-  } else {
-    test.fail('lab-install calls ./bash/start — a re-run updates the disk and leaves the old process');
-  }
-
   // THE PRIVATE KEY IS NOT IN THE REPOSITORY, which is OneDrive-synced
   // on the work machine — a key committed here would be a key uploaded.
   const strayKeys = [];
@@ -779,66 +641,6 @@ test.subHeading('Two clones can each keep their own update cron');
     test.check('and the pre-existing bare marker is claimed by the default unit only');
   } else {
     test.fail('any clone may clear the legacy cron line');
-  }
-}
-
-test.subHeading('lab-install and lab-remove cannot be aimed at the live relay');
-{
-  const labInstall = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'lab-install'), 'utf8');
-  const labRemove = fs.readFileSync(path.join(REPO_ROOT, 'bash', 'lab-remove'), 'utf8');
-
-  // Four knobs, four ways to be pointed at the wrong thing. `lab-remove`
-  // does not read a port — it never starts anything — so three there.
-  [
-    ['lab-install', labInstall, ['$REPO_ROOT', '$UNIT_NAME', '$NODE_PORT', '$DOMAIN']],
-    ['lab-remove', labRemove, ['$REPO_ROOT', '$UNIT_NAME', '$DOMAIN']],
-  ].forEach(function (row) {
-    const name = row[0];
-    const src = row[1];
-    const missing = row[2].filter(function (live) {
-      // A refusal is a comparison against the live value followed by
-      // `die`. Both halves, because a comparison that only warns is a
-      // pause on the way to the same outage.
-      return src.indexOf(live) === -1;
-    });
-    if (missing.length === 0 && /\|\| die/.test(src)) {
-      test.check(name + ' compares every knob against the live relay and dies rather than guessing');
-    } else {
-      test.fail(name + ' does not guard: ' + (missing.join(', ') || 'no die'));
-    }
-  });
-
-  // THE DEFAULT KEEPS THE DISK. A relay's identity is what its members
-  // PINNED — relayKeys.json refuses a relay answering with a different
-  // key — so deleting relay-state makes the lab a stranger to everybody
-  // that ever spoke to it. That is the damage `recycle` used to do, and
-  // the reason `refresh` exists.
-  if (/--purge/.test(labRemove) && /PURGE=no/.test(labRemove)) {
-    test.check('and removal keeps the clone by default — the key survives unless --purge is asked for');
-  } else {
-    test.fail('lab-remove deletes the clone without being asked');
-  }
-
-  // `rm -rf` ON A VARIABLE is how a script deletes something nobody
-  // asked it to. Two more refusals before it runs.
-  if (/refusing to purge inside/.test(labRemove) && /not a git clone/.test(labRemove)) {
-    test.check('and a purge refuses a path that is not a clone under a lab root');
-  } else {
-    test.fail('lab-remove purges without checking the path it was handed');
-  }
-
-  // NEITHER WRITES THE MAIN CADDYFILE. Same rule as bash/tls, and the
-  // same reason: it once held the live relay's only config.
-  const writesMain = [labInstall, labRemove].filter(function (src) {
-    return src.split('\n').some(function (line) {
-      return !/^\s*(#|echo\b|warn\b|say\b|ok\b|die\b)/.test(line) &&
-        />\s*\/etc\/caddy\/Caddyfile/.test(line);
-    });
-  });
-  if (writesMain.length === 0) {
-    test.check('while neither writes /etc/caddy/Caddyfile — one file per domain, the main one is the operator’s');
-  } else {
-    test.fail('a lab script writes the main Caddyfile');
   }
 }
 

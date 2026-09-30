@@ -952,7 +952,7 @@ spirit.shell.activateApp({
     // now, and a row has nothing on it to press but itself.
     // ── THE ADD BUTTON, WHICH HAD NO HANDLER AT ALL ──────────────────
     //
-    // Found by Andy trying to add lab.andyflinn.com: he typed a label and
+    // Found by Andy trying to add a relay: he typed a label and
     // a URL, pressed Add, and nothing happened. Not a refusal — nothing.
     //
     // It was wired in the app's first commit (4107fe0) and lost in a

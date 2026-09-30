@@ -84,13 +84,13 @@ test.subHeading('cycle 11 R5 — a report carrying people becomes a record carry
   const w = home();
   const withPeople = report(3, {
     invites: [{ label: 'bella', token: 'a1b2c3' }, { label: 'saint', token: 'd4e5f6' }],
-    partners: ['lab.andyflinn.com', 'spirit-4.example'],
+    partners: ['relay-b.example', 'spirit-4.example'],
     roll: [{ name: 'andy', key: 'MCowBQYD-andy' }, { name: 'erin', key: 'MCowBQYD-erin' }],
   });
   w.store.record.put(RELAY, withPeople, 4 * MIN);
   const raw = JSON.stringify(w.store.record.since(RELAY, 0, 10));
   const leaked = ['bella', 'saint', 'a1b2c3', 'd4e5f6', 'andy', 'erin', 'MCowBQYD',
-    'lab.andyflinn.com', 'spirit-4.example'].filter(function (s) { return raw.indexOf(s) !== -1; });
+    'relay-b.example', 'spirit-4.example'].filter(function (s) { return raw.indexOf(s) !== -1; });
   if (leaked.length === 0) {
     test.check('no label, token, member name, key or partner name reached the record — nine strings searched for');
   } else {
@@ -119,9 +119,9 @@ test.subHeading('cycle 11 R5 — a report carrying people becomes a record carry
   // on a box whose whole point is that it does not keep them.
   const scalars = home();
   scalars.store.record.put(RELAY, report(3, {
-    ownerLabel: 'Andy Flinn', lastClaim: 'bella', partner: 'lab.andyflinn.com',
+    ownerLabel: 'Andy Flinn', lastClaim: 'bella', partner: 'relay-b.example',
   }), 6 * MIN);
-  const kept = ['Andy Flinn', 'bella', 'lab.andyflinn.com'].filter(function (str) {
+  const kept = ['Andy Flinn', 'bella', 'relay-b.example'].filter(function (str) {
     return JSON.stringify(scalars.store.record.since(RELAY, 0, 5)).indexOf(str) !== -1;
   });
   if (kept.length === 0) {

@@ -44,14 +44,13 @@ fi
 # its own key. Only the unit name was shared, and a shared unit name is
 # not a clash you notice: `install-units` from the second clone
 # OVERWRITES /etc/systemd/system/spirit-relay.service and points the
-# LIVE relay at the lab's directory and port. Nothing fails until the
-# next restart, and then the public box comes back as the lab.
+# LIVE relay at the second clone's directory and port. Nothing fails
+# until the next restart, and then the public box comes back as it.
 #
 # NOT A SECOND UNIX USER, deliberately, and bash/ONE-OPERATOR.md still
-# stands: what makes lab.andyflinn.com a different RELAY is its own
-# clone, its own relay-state and its own Ed25519 identity. None of that
-# needs a second account, and inventing one to run a test fixture would
-# be the split that document exists to refuse.
+# stands: what makes a second clone a different party is its own
+# relay-state and its own Ed25519 identity. None of that needs a second
+# account.
 UNIT_NAME="${SPIRIT_UNIT_NAME:-spirit-relay}"
 
 # ── THE TEMPLATE IS NOT THE UNIT NAME ────────────────────────────────
@@ -60,11 +59,7 @@ UNIT_NAME="${SPIRIT_UNIT_NAME:-spirit-relay}"
 # file whichever relay you are installing — it is all placeholders. What
 # VARIES is what systemd calls the installed copy.
 #
-# Conflating the two is what broke the first real lab-install:
-# install-units read `bash/systemd/${UNIT_NAME}.service`, so setting
-# SPIRIT_UNIT_NAME=spirit-lab sent it looking for a template nobody
-# wrote. The error was honest — "missing .../spirit-lab.service" — and
-# the fix is that the template has a name of its own.
+# So the template has a name of its own, separate from SPIRIT_UNIT_NAME.
 UNIT_TEMPLATE="${SPIRIT_UNIT_TEMPLATE:-spirit-relay}"
 NODE_PORT="${SPIRIT_RELAY_PORT:-65430}"
 DOMAIN="${SPIRIT_RELAY_DOMAIN:-spirit.andyflinn.com}"

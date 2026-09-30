@@ -9,8 +9,8 @@
 # job is to take browser requests for *.face.<domain> (puppetPost, fed by
 # Caddy) and forward them to whichever node holds the name (appFaceApp).
 #
-# A second CLONE, like bash/lab-install's second relay, and for the same
-# reason: its own spirit/run/relay-state, its own key, its own port and unit.
+# A second CLONE: its own spirit/run/relay-state, its own key, its own port
+# and unit.
 # A node and the relay must never share one relay-state (identity.json alone
 # would make them the same party). It is not a second Unix user: root is
 # still spirit (bash/ONE-OPERATOR.md).
@@ -21,7 +21,7 @@
 #   git clone https://github.com/andyflinn/SpiritOS.git /root/face/SpiritOS
 #   /root/face/SpiritOS/bash/face-install <OWNER_KEY> [INVITE]
 #
-# WHY NOT FROM THE MAIN CLONE, as lab-install is run: the live relay's clone
+# WHY NOT FROM THE MAIN CLONE: the live relay's clone
 # follows Andy's TAGS, not master (lib.sh, SPIRIT_TRACK: "my relay only
 # restarts on my tags"). A script pushed to master is not in it until he
 # tags, and tagging restarts the live relay on all of master: a separate

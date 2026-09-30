@@ -1,38 +1,11 @@
 #!/usr/bin/env node
 'use strict';
 
-// ── IS THIS BOX STILL TWO RELAYS? ────────────────────────────────────
+// node relayLab/hostCheck.js
 //
-//   node relayLab/hostCheck.js
-//
-// Portable, per relayLab/README.md: on spirit-3 it checks everything, on
-// the Windows box it checks what can be seen from outside and says so.
-// Reads only. Never writes relay-state, never starts a server, never
-// needs root for anything it does (systemctl show and crontab -l are
-// reads; crontab -l reads the crontab of whoever runs it, which on
-// spirit-3 is root, which is spirit).
-//
-// WHY THIS EXISTS. Between 2026-09-14 and 2026-09-16, six faults of one
-// shape surfaced, and they only became possible when a second relay
-// appeared on the box:
-//
-//   install-units read systemd/${UNIT_NAME}.service   (the template)
-//   tls wrote /etc/caddy/Caddyfile with >             (the site config)
-//   cron-install swept every line with its marker     (the cron)
-//   update's `| grep -q` never matched under pipefail (the restart)
-//   an exported SPIRIT_UNIT_NAME outlived the cd      (the identity)
-//   update read the lib.sh it had just replaced       (the timing)
-//
-// Every one was silent, every one was fine with a single clone, and
-// every one failed TOWARD the live relay. Four were found by reading and
-// two by watching a command do the wrong thing in front of us. That
-// ratio is the argument for this file: the arrangement has more ways to
-// collapse into one relay than anybody is going to hold in their head.
-//
-// So this asks the question directly, from the outside in. Two clones,
-// two units, two ports, two domains, two crons, two Ed25519 identities —
-// and it is the LAST of those that actually matters. The rest are how a
-// box accidentally ends up with one.
+// Read-only check of the relay clone(s) on this box: units, cron, Caddy,
+// and each domain's identity and running commit over TLS. On spirit-3 it
+// checks everything; elsewhere it checks what can be seen from outside.
 
 const fs = require('fs');
 const path = require('path');
@@ -64,8 +37,7 @@ function say(s) { console.log('\n==> ' + s); }
 //   UNIT_NAME="${SPIRIT_UNIT_NAME:-spirit-relay}"
 //
 // — so take them from there and fail loudly if that shape ever changes,
-// rather than quietly falling back to a guess. lab-install writes its
-// four knobs the same way, so one reader covers both files.
+// rather than quietly falling back to a guess.
 function shellDefaults(relPath) {
   const src = fs.readFileSync(path.join(REPO_ROOT, relPath), 'utf8');
   const out = {};
@@ -134,7 +106,6 @@ function getJson(urlStr) {
 
 (async function main() {
   const defaults = shellDefaults(path.join('bash', 'lib.sh'));
-  const labKnobs = shellDefaults(path.join('bash', 'lab-install'));
   const onLinux = process.platform === 'linux';
   const haveSystemd = onLinux && !!sh('systemctl', ['--version']);
 
@@ -151,10 +122,7 @@ function getJson(urlStr) {
 
   // ── WHICH CLONES ARE ON THIS BOX ───────────────────────────────────
   say('clones');
-  const labDir = process.env.SPIRIT_LAB_DIR || labKnobs.SPIRIT_LAB_DIR;
   const candidates = [REPO_ROOT];
-  if (path.resolve(labDir) !== REPO_ROOT) candidates.push(labDir);
-  // Run from the lab clone and the MAIN one is the other half.
   const mainDir = process.env.SPIRIT_CLONE_DIR || '/root/SpiritOS';
   if (candidates.indexOf(mainDir) === -1 && path.resolve(mainDir) !== REPO_ROOT) {
     candidates.push(mainDir);
@@ -168,23 +136,7 @@ function getJson(urlStr) {
       (c.hasEnv ? '  (.env)' : '  (defaults)'));
   });
 
-  // ── THE PUBLIC HALF RUNS FROM ANYWHERE ─────────────────────────────
-  //
-  // On the Windows box there is one clone and no systemd, but both
-  // relays are still on the internet and both still have to be two
-  // relays. So the TLS section works off DOMAINS, which need no clone to
-  // exist locally — and the lab's is where lab-install says it is. That
-  // is the half of this check the work machine can run, and it is the
-  // half that catches the failure that actually costs something.
   const domains = clones.map(function (c) { return c.domain; });
-  if (domains.indexOf(labKnobs.SPIRIT_LAB_DOMAIN) === -1) {
-    domains.push(labKnobs.SPIRIT_LAB_DOMAIN);
-  }
-
-  if (clones.length === 1) {
-    line('one clone here', null, 'host checks need both clones on this box; ' +
-      domains.length + ' domain(s) still checked over TLS');
-  }
 
   // ── NOTHING IS SHARED ──────────────────────────────────────────────
   //
@@ -213,7 +165,7 @@ function getJson(urlStr) {
   //
   // Not what the clone intends — what is installed. install-units wrote
   // one unit over the other for a whole day and nothing said so until a
-  // restart pointed the public box at the lab's directory.
+  // restart pointed the public box at the other clone's directory.
   say('units');
   if (!haveSystemd) {
     line('systemd', null, 'not this box — run on spirit-3 for unit, cron and caddy checks');
@@ -253,7 +205,7 @@ function getJson(urlStr) {
   // Two separate rules, and both were broken in turn. The line must name
   // THIS clone's update script, and it must carry no SPIRIT_ variable —
   // a line that states its own unit is a line that can state the wrong
-  // one, and on 2026-09-16 one did: live clone's code, lab's service.
+  // one, and on 2026-09-16 one did: live clone's code, another clone's service.
   say('update cron');
   const cron = haveSystemd ? sh('crontab', ['-l']) : null;
   if (!cron) {
@@ -293,7 +245,7 @@ function getJson(urlStr) {
   // ── CADDY IS ADDITIVE ──────────────────────────────────────────────
   //
   // tls used to write the main Caddyfile with `>`, so running it from a
-  // second clone replaced the live relay's config with the lab's. One
+  // second clone replaced the live relay's config with its own. One
   // file per domain now, and the main file imports them.
   say('caddy');
   if (!onLinux) {
@@ -313,8 +265,8 @@ function getJson(urlStr) {
 
   // ── AND THE ONE THAT ACTUALLY MATTERS ──────────────────────────────
   //
-  // Everything above is plumbing. What makes lab.andyflinn.com a
-  // different RELAY is its own Ed25519 identity, and that is the thing
+  // Everything above is plumbing. What makes a relay a relay is its
+  // own Ed25519 identity, and that is the thing
   // members pin. Two domains answering with the SAME key means one relay
   // is serving both names and every peer that pinned them is holding a
   // key for a relay it has never actually spoken to.
@@ -332,13 +284,12 @@ function getJson(urlStr) {
     // `relayPublicKey`, and it is NOT the owner's key. The owner's is the
     // `owner:true` row in `peers`; this is the box's own Ed25519 identity,
     // made once on the first --relay boot, and it is the one a member
-    // pins in relayKeys.json. Two relays may legitimately share an owner
-    // — spirit-3 and the lab nearly did — but they can never share this.
+    // pins in relayKeys.json. Two relays may legitimately share an owner,
+    // but they can never share this.
     const key = r.json.relayPublicKey || '';
     const label = r.json.relayLabel || '';
     // AN UNCLAIMED PUBLIC RELAY IS FIRST-CLAIM-IS-OWNER, and certificate
     // transparency publishes the hostname the moment the cert issues.
-    // lab.andyflinn.com sat open for about forty minutes on 2026-09-15.
     const owner = (r.json.peers || []).filter(function (p) { return p && p.owner === true; })[0];
     line(domain, true, 'HTTP 200  ' + (r.json.peers || []).length + ' peers' +
       (label ? '  "' + label + '"' : ''));

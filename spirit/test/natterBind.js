@@ -262,19 +262,19 @@ function theAddButtonActuallyAdds() {
     // add somewhere they have been invited but not yet claimed.
     rows: [
       { url: 'https://spirit.example', label: 'spirit', status: 200, owned: true },
-      { url: 'https://lab.andyflinn.com', label: 'lab', status: 200, owned: false, claimed: false },
+      { url: 'https://relay-b.example', label: 'lab', status: 200, owned: false, claimed: false },
     ],
   });
 
   return settle().then(function () {
     el(app, 'natter-label').value = 'public Lab Relay';
-    el(app, 'natter-url').value = 'https://lab.andyflinn.com';
+    el(app, 'natter-url').value = 'https://relay-b.example';
     el(app, 'natter-add').fire('click');
 
     return settle().then(function () {
       let saved = [];
       try { saved = JSON.parse(app.store['relays.json'] || '[]'); } catch (e) { saved = []; }
-      const added = saved.filter(function (r) { return r.url === 'https://lab.andyflinn.com'; })[0];
+      const added = saved.filter(function (r) { return r.url === 'https://relay-b.example'; })[0];
 
       if (added && added.label === 'public Lab Relay') {
         test.check('the relay is written to relays.json, under the private label typed');

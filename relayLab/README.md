@@ -12,26 +12,19 @@ Not `bash/`. Not labMaster.
 
 ```
 node relayLab/probe.js                              # one relay, up close
-node relayLab/probe.js https://lab.andyflinn.com
-node relayLab/hostCheck.js                          # is this box still TWO relays?
+node relayLab/probe.js https://spirit.andyflinn.com
+node relayLab/hostCheck.js                          # the relay clone(s) on this box
 ```
 
 Windows: `node relayLab\probe.js` from the clone root.
 
 `hostCheck` is the one to reach for after anything touches the host. It reads
-both clones' `.env`, then asks whether the unit, port, domain, cron line and
-**Ed25519 identity** of each are actually distinct — and whether each is
-running the commit origin is on. Reads only; needs no key; exits non-zero on a
-problem, so it can be scheduled.
+each clone's `.env`, then checks its unit, cron line, Caddy site, **Ed25519
+identity** and whether it runs the commit origin is on. Reads only; needs no
+key; exits non-zero on a problem, so it can be scheduled.
 
-On spirit-3 it checks everything. On the work machine the systemd, cron and
-Caddy sections skip with a note and the TLS section still runs against both
-public names — which is the half that catches the failure that costs something.
-
-It exists because six faults of one shape surfaced in the two days after a
-second relay appeared on the box: every one silent, every one fine with a
-single clone, every one failing *toward* the live relay. The arrangement has
-more ways to collapse into one relay than anyone will hold in their head.
+On spirit-3 it checks everything. Elsewhere the systemd, cron and Caddy
+sections skip with a note and the TLS section still runs.
 
 ## Inbox
 

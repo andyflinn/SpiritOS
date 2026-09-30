@@ -2074,10 +2074,6 @@ contactBook.syncMarks(ROOT_DIR);
 
 // ── A RELAY THAT KNOWS IT IS GOING SAYS SO ───────────────────────────
 //
-//   Andy: "can a relay that knows its shutting down (lab.andyflinn.com
-//   reboot by your request) send a message down the SSE connections to
-//   prepare its counterparts to re-connect?"
-//
 // THERE WAS NO SHUTDOWN HANDLER AT ALL. systemd sends SIGTERM, node's
 // default terminates the process, and the *kernel* closes the sockets. It
 // works — clients see the stream end and come back — but nothing about it
