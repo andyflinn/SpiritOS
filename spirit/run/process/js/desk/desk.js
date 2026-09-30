@@ -61,7 +61,6 @@ const findLines = db.prepare(
   "SELECT key, line FROM lines WHERE (? = '' OR todo = ?) AND (? = '' OR kind = ?) AND (? = '' OR at >= ?) AND (? = '' OR at < ?)" +
   " AND (? = '' OR body LIKE '%' || ? || '%') ORDER BY at DESC, key DESC"
 );
-const hasKey = db.prepare('SELECT 1 AS n FROM lines WHERE key = ?');
 const getDoc = db.prepare('SELECT json FROM docs WHERE name = ?');
 const putDoc = db.prepare('INSERT INTO docs (name, json) VALUES (?, ?) ON CONFLICT(name) DO UPDATE SET json = excluded.json');
 
@@ -83,71 +82,6 @@ function fitsOneAnswer(key, line) {
   return Buffer.byteLength(JSON.stringify({ items: [{ key: String(key), label: String(line) }], more: false }), 'utf8') <= ANSWER_ROOM;
 }
 function tooLarge() { const e = new Error('line too large to come back in one answer'); e.refusal = 'line-too-large'; return e; }
-
-// ── WHAT DESK KEPT IN ITS OWN FOLDER, IMPORTED ONCE (desk/G1.4) ─────
-//
-//   Andy: "desk creates a lot of file-clutter". D5: its state is this
-//   server's. So at start, what the Desk app kept in <run>/shell/desk (<run>
-//   being --state's great-grandparent) comes in, and only then goes: every
-//   row of log/log*.json, state.json and seen.json (taken only while the
-//   server has none, so an old file never overwrites newer state), and every
-//   voice/voice*.jsonl appended to <state>/voice.jsonl (a line already there
-//   is not added twice). Nothing is deleted unless every row it read is in
-//   desk.db; a file that does not parse stops the import and deletes nothing.
-//   Only those data files go; desk.js, desk.json and anything else stay.
-function importFromApp() {
-  const app = path.join(path.resolve(STATE), '..', '..', '..', 'shell', 'desk');
-  const logDir = path.join(app, 'log');
-  const voiceDir = path.join(app, 'voice');
-  const listed = function (dir, re) { try { return fs.readdirSync(dir).filter(function (n) { return re.test(n); }); } catch (e) { return []; } };
-  const number = function (n) { const m = /-(\d+)\./.exec(n); return m ? Number(m[1]) : 0; };
-  const logs = listed(logDir, /^log(-\d+)?\.json$/).sort(function (a, b) { return number(a) - number(b); });
-  const voices = listed(voiceDir, /^voice(-\d+)?\.jsonl$/).sort(function (a, b) { return number(a) - number(b); });
-  const docs = ['state', 'seen'].filter(function (d) { return fs.existsSync(path.join(app, d + '.json')); });
-  if (!logs.length && !voices.length && !docs.length) return;
-  const rows = [];
-  try {
-    logs.forEach(function (n) {
-      const held = JSON.parse(fs.readFileSync(path.join(logDir, n), 'utf8'));
-      if (!Array.isArray(held)) throw new Error(n + ' is not a list');
-      held.forEach(function (m) { if (m && typeof m.key === 'string' && m.key) rows.push(m); });
-    });
-    docs.forEach(function (d) { parsed(fs.readFileSync(path.join(app, d + '.json'), 'utf8')); });
-  } catch (e) {
-    console.error('desk: the import from ' + app + ' stopped, nothing deleted: ' + e.message);
-    return;
-  }
-  // One transaction: thousands of rows committed one by one took seconds.
-  db.exec('BEGIN');
-  try {
-    rows.forEach(function (m) {
-      addLine.run(m.key, String(m.at || ''), String(m.todo || ''), String(m.from || ''), String(m.kind || ''), String(m.text || ''), JSON.stringify(m));
-    });
-    db.exec('COMMIT');
-  } catch (e) {
-    db.exec('ROLLBACK');
-    console.error('desk: the import from ' + app + ' failed, nothing deleted: ' + e.message);
-    return;
-  }
-  docs.forEach(function (d) { if (!getDoc.get(d)) putDoc.run(d, fs.readFileSync(path.join(app, d + '.json'), 'utf8')); });
-  const voiceFile = path.join(STATE, 'voice.jsonl');
-  const have = new Set((function () { try { return fs.readFileSync(voiceFile, 'utf8'); } catch (e) { return ''; } })().split('\n').filter(Boolean));
-  voices.forEach(function (n) {
-    fs.readFileSync(path.join(voiceDir, n), 'utf8').split('\n').filter(Boolean).forEach(function (l) {
-      if (!have.has(l)) { fs.appendFileSync(voiceFile, l + '\n'); have.add(l); }
-    });
-  });
-  if (!rows.every(function (m) { return !!hasKey.get(m.key); })) {
-    console.error('desk: the import from ' + app + ' did not land whole, nothing deleted');
-    return;
-  }
-  logs.forEach(function (n) { fs.rmSync(path.join(logDir, n), { force: true }); });
-  voices.forEach(function (n) { fs.rmSync(path.join(voiceDir, n), { force: true }); });
-  docs.forEach(function (d) { fs.rmSync(path.join(app, d + '.json'), { force: true }); });
-  [logDir, voiceDir].forEach(function (dir) { try { fs.rmdirSync(dir); } catch (e) { /* not empty, or none */ } });
-  console.log('desk: imported ' + rows.length + ' lines, ' + docs.join(' and ') + (docs.length ? ', ' : '') + voices.length + ' voice files from ' + app + ', and removed them there');
-}
-importFromApp();
 
 // ── THE LINES TOO BIG FOR ONE ANSWER, SPLIT ONCE (slim/G1.2 T3) ──────
 //
