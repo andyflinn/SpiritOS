@@ -214,6 +214,17 @@ test.subHeading('desk/G2.3: a server\'s published object reaches its own app');
   else test.fail(OWED + 'Desk got ' + JSON.stringify(got));
 })();
 
+test.subHeading('desk/G2.3: an app that subscribes after its server published gets the current object');
+(function () {
+  const page = bootShell(DESK_MANIFEST);
+  page.update({ id: 'job_9', kind: 'server', type: 'Desk server', module: 'process/js/desk', status: 'running', data: {}, log: [], app: { items: 7 } });
+  const got = [];
+  page.load(page.scripts()[0], { mount: function (el, api) { if (typeof api.onPublished === 'function') api.onPublished(function (obj) { got.push(obj); }); } });
+  page.update({ id: 'job_9', kind: 'server', type: 'Desk server', module: 'process/js/desk', status: 'running', data: { pid: 5 }, log: [], app: { items: 7 } });
+  if (got.length === 1 && got[0].items === 7) test.check('it got the object once, at subscribe, and the same object again is not news');
+  else test.fail('a late subscriber got ' + JSON.stringify(got));
+})();
+
 test.reportSuccessFailureCount();
 
 module.exports = test;
