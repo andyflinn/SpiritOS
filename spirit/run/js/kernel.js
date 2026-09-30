@@ -186,6 +186,22 @@ if (isNode()) {
   // building toward, not ordinary per-app config).
   const WRITABLE_ROOT_FILES = ['preferences.json'];
 
+  // A PROCESS'S OWN STATE FOLDER (desk/G2.4). Andy: "an easier fix would be in
+  // the exclusion rules for fileServable() and fileWritable() to give processes
+  // their writable space". The name is read from where the running script
+  // lives, process/js/<name>/<name>.js, never from the environment (Andy, on an
+  // env key: "that scared me"). The node, a test or any other script gets none.
+  const OWN_STATE_DIR = (function () {
+    const main = require.main && require.main.filename;
+    if (!main) return null;
+    const rel = path.relative(ROOT_DIR, main).replace(/\\/g, '/');
+    const m = /^process\/js\/([^/]+)\/\1\.js$/.exec(rel);
+    return m ? 'relay-state/process/' + m[1] : null;
+  })();
+  function isOwnState(canonical) {
+    return !!OWN_STATE_DIR && (canonical === OWN_STATE_DIR || canonical.startsWith(OWN_STATE_DIR + '/'));
+  }
+
   function isWithinWritableRoot(resolvedPath) {
     if (WRITABLE_ROOT_NAMES.some(function(rootName) {
       const root = path.join(ROOT_DIR, rootName);
@@ -270,6 +286,7 @@ if (isNode()) {
   function fileWritable(filePath) {
     const canonical = canonicalPath(filePath);
     if (canonical === null) return false;
+    if (isOwnState(canonical)) return true;
     const resolved = fsPath(ROOT_DIR, filePath);
     if (!resolved || !isWithinWritableRoot(resolved)) return false;
     if (APP_ENTRY_SCRIPT_PATTERN.test(canonical)) return false;
@@ -296,6 +313,7 @@ if (isNode()) {
     // (faceServer.js:614), and a top-level-only check served that private
     // key to any shell app and to the static route (wsl-claude found it,
     // 2026-09-27; Andy's "go." on the fix).
+    if (isOwnState(canonical)) return true;
     if (canonical.split('/').indexOf('relay-state') !== -1) return false;
     return true;
   }
