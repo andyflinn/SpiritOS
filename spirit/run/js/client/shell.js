@@ -1595,6 +1595,10 @@
 
       onPacket: function (packetApp, handler) { return onPacketFor(packetApp, handler); },
 
+      // What this app's own server published (desk/G2.3): the object alone,
+      // as it was published, whenever it changes. "no pulling".
+      onPublished: function (handler) { return onPublishedFor(app.id, handler); },
+
       // Everything a relay this node OWNS reports about itself, pushed.
       // Takes no app name because an owner-event is not addressed to one
       // — see deliverRelayEvent. Returns its own unsubscribe, like
@@ -2095,6 +2099,30 @@
     held.push(message);
     if (held.length > HELD_MAX) held.shift();
     return true;
+  }
+
+  // A job of module process/js/<name> belongs to the app shell/<name> (desk/G2.3).
+  var publishedHandlers = Object.create(null);
+  // A job keeps its last object; a later update for another reason is not news.
+  var publishedLast = Object.create(null);
+  function onPublishedFor(appId, handler) {
+    if (typeof handler !== 'function' || !appId) return function () {};
+    var name = String(appId);
+    (publishedHandlers[name] = publishedHandlers[name] || []).push(handler);
+    return function off() {
+      publishedHandlers[name] = (publishedHandlers[name] || []).filter(function (fn) { return fn !== handler; });
+    };
+  }
+  function deliverPublished(job) {
+    if (!job || !job.app || typeof job.app !== 'object') return;
+    var m = /^process\/js\/([^/]+)$/.exec(String(job.module || ''));
+    if (!m) return;
+    var seen = JSON.stringify(job.app);
+    if (publishedLast[job.id] === seen) return;
+    publishedLast[job.id] = seen;
+    (publishedHandlers['shell/' + m[1]] || []).slice().forEach(function (fn) {
+      try { fn(job.app); } catch (e) { /* one app's fault stays its own */ }
+    });
   }
 
   function onPacketFor(appId, handler) {
@@ -2929,6 +2957,7 @@
     },
     onUpdate: function (job) {
       jobsById.set(job.id, job);
+      deliverPublished(job);
       notifyFileSubscribers();
       notifyJobSubscribers(job);
       renderActive();

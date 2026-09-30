@@ -178,31 +178,29 @@ function tmpPipe(name) { const p = appClient.pipePathFor(fs.mkdtempSync(path.joi
   // Andy, 2026-09-29, desk/G1.3: "after starting the listener, it should
   // announce itself with its name, and a nicely formatted overview of it's
   // api." Its stdout is its job's console (processes/G1.4).
-  test.subHeading('T10: once listening, it announces its name and its api, one verb a line');
+  // desk/G2.3 moved the announce from stdout to a published object (Andy: "drop the stdio/stderr outputs", and
+  // "Yes" to the announce moving). publishChecks.js checks it arrives; here, that stdout stays quiet.
+  test.subHeading('T10: once listening, it prints nothing; its announce is published (desk/G2.3)');
   const dir10 = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-appserver-say-'));
   const greeter = path.join(dir10, 'greeter.js');
   fs.writeFileSync(greeter, "require(" + JSON.stringify(HELPER) + ").serve({\n" +
-    "  hello: { request: { name: '' }, reply: { text: '' }, handler: function (a) { return { text: 'hi ' + a.name }; } },\n" +
-    "  add: { request: { a: 0, b: 0 }, reply: { sum: 0 }, handler: function (x) { return { sum: x.a + x.b }; } },\n});\n");
+    "  hello: { request: { name: '' }, reply: { text: '' }, handler: function (a) { return { text: 'hi ' + a.name }; } },\n});\n");
   const pipe10 = tmpPipe('greeter');
   let said10 = '';
+  let up10 = false;
   if (has('serve')) {
     const k10 = spawn(process.execPath, [greeter, '--pipe', pipe10], { stdio: ['ignore', 'pipe', 'ignore'] });
     k10.stdout.on('data', function (b) { said10 += b; });
     const until10 = Date.now() + 5000;
-    while (Date.now() < until10 && !/add/.test(said10)) await new Promise(function (r) { setTimeout(r, 100); });
+    while (Date.now() < until10 && !up10) {
+      await new Promise(function (r) { setTimeout(r, 150); });
+      up10 = fs.existsSync(pipe10) || process.platform === 'win32';
+    }
+    await new Promise(function (r) { setTimeout(r, 500); });
     k10.kill();
   }
-  const lines10 = said10.split('\n');
-  const head10 = lines10[0] || '';
-  const verbLine = function (v) { return lines10.filter(function (l) { return l.indexOf(v) !== -1 && l.indexOf('->') !== -1; })[0] || ''; };
-  if (/greeter/.test(head10) && /listening/.test(head10) &&
-      /\{ ?name: ''? ?\}|name/.test(verbLine('hello')) && /text/.test(verbLine('hello')) &&
-      /a: 0/.test(verbLine('add')) && /sum: 0/.test(verbLine('add'))) {
-    test.check('it said who it is and that it listens, then each verb as request -> reply');
-  } else {
-    test.fail(OWED + 'on listening it said ' + JSON.stringify(said10.slice(0, 300)));
-  }
+  if (has('serve') && said10 === '') test.check('it printed nothing on listening');
+  else test.fail('on listening it printed ' + JSON.stringify(said10.slice(0, 300)));
 
   if (server) server.close();
   test.reportSuccessFailureCount();

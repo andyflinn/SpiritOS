@@ -85,6 +85,10 @@ module.exports = function installJobs(spirit, port) {
       appendLog(job, patch.logMessage);
     }
 
+    if (patch.app && typeof patch.app === 'object' && !Array.isArray(patch.app)) {
+      job.app = patch.app;
+    }
+
     job.updatedAt = Date.now();
 
     // The server's own record of completion, independent of whatever the job

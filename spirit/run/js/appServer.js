@@ -184,13 +184,35 @@ function shape(v) {
   if (isPlain(v)) return '{' + Object.keys(v).map(function (k) { return k + ': ' + shape(v[k]); }).join(', ') + '}';
   return typeof v === 'string' ? "'" + v + "'" : String(v);
 }
-function announce(name, pipe, verbs) {
-  const names = Object.keys(verbs).sort();
-  const width = names.reduce(function (w, n) { return Math.max(w, n.length); }, 0);
-  return [name + ': listening on ' + pipe + ', ' + names.length + ' verb' + (names.length === 1 ? '' : 's')]
-    .concat(names.map(function (n) {
-      return '  ' + n + ' '.repeat(width - n.length) + '  ' + shape(verbs[n].request) + '  ->  ' + shape(verbs[n].reply);
-    })).join('\n');
+// PUBLISHING (desk/G2.3). Andy: "the servers should send explicit messages via an
+// appServerFunction, so the ui gets structured information", "it calls with a js
+// object. let the appServer to the work." The object becomes the job's `app`,
+// reported through spirit.core.jobs.report; every open page gets it as job-updated.
+// Too large is not sent; a burst is sent at most every PUBLISH_EVERY_MS, the last
+// object winning.
+const PUBLISH_MAX = 64 * 1024;
+const PUBLISH_EVERY_MS = 100;
+let publishPending = null;
+let publishTimer = null;
+let publishLast = 0;
+function publishNow() {
+  publishTimer = null;
+  const obj = publishPending;
+  publishPending = null;
+  publishLast = Date.now();
+  Promise.resolve(require('./kernel.js').core.jobs.report({ app: obj })).catch(function () { /* not started by a node */ });
+}
+function publish(obj) {
+  if (!isPlain(obj)) return false;
+  let size = 0;
+  try { size = Buffer.byteLength(JSON.stringify(obj), 'utf8'); } catch (e) { return false; }
+  if (size > PUBLISH_MAX) return false;
+  publishPending = obj;
+  if (publishTimer) return true;
+  const wait = Math.max(0, publishLast + PUBLISH_EVERY_MS - Date.now());
+  if (wait === 0) publishNow();
+  else publishTimer = setTimeout(publishNow, wait);
+  return true;
 }
 
 // ── AGENTS: AN APP'S RULES FOR AGENTS, FROM A FILE (slim/G1.8) ────────
@@ -243,9 +265,13 @@ function serve(verbs) {
   const s = createAppServer(verbs);
   // IT SAYS WHO IT IS, AND WHAT IT ANSWERS. Andy, 2026-09-29: "after
   // starting the listener, it should announce itself with its name, and a
-  // nicely formatted overview of it's api." Its stdout is its job's console.
+  // nicely formatted overview of it's api." Published, not printed (desk/G2.3).
   const name = path.basename(String(argv[1] || 'server'), '.js');
-  const srv = s.listen(pipe, function () { console.log(announce(name, pipe, verbs)); });
+  const srv = s.listen(pipe, function () {
+    publish({ announce: { name: name, verbs: Object.keys(verbs).sort().map(function (n) {
+      return { verb: n, request: shape(verbs[n].request), reply: shape(verbs[n].reply) };
+    }) } });
+  });
   srv.on('error', function (e) {
     console.error('appServer: could not listen on ' + pipe + ': ' + ((e && e.code) || e));
     process.exit(1);
@@ -256,6 +282,7 @@ function serve(verbs) {
 module.exports = {
   createAppServer: createAppServer,
   serve: serve,
+  publish: publish,
   matches: matches,
   RESERVED: RESERVED,
 };
