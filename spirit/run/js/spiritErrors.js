@@ -729,6 +729,7 @@ define('no-governor', { status: 404, texts: ['no Governor'] });
 define('no-such-lever', { status: 404, texts: ['no such lever'] });
 define('no-such-request', { status: 404, texts: ['no such request'] });
 define('key-claimed', { status: 409, texts: ['key already claimed'] });
+define('slot-held', { status: 409, texts: ['this name is held by another id'] });
 define('minting-incomplete', { status: 409, retry: 'after', texts: ['minting incomplete'] });
 define('name-reserved', { status: 409, texts: ['name reserved by a live invite'] });
 

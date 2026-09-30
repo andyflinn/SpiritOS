@@ -40,6 +40,16 @@ const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-lastleg-'));
 
 // A root with one app that runs a server (serves: true), its pipe where the node
 // would put it. `serve` is the fake app's handler.
+function grantFaceStandIn(holders, rest) {
+  return { toLocalApp: function (app, req) {
+    if (app !== 'grantFace') return rest.toLocalApp(app, req);
+    let b = {};
+    try { b = JSON.parse(req.body); } catch (e) { b = {}; }
+    const name = (b.get && b.get.name) || '';
+    return Promise.resolve({ status: 200, type: 'application/json', body: JSON.stringify({ name: name, id: holders[name] || '' }) });
+  } };
+}
+
 function world(serve) {
   const root = path.join(scratch, 'root-' + Math.random().toString(36).slice(2, 8));
   fs.mkdirSync(path.join(root, 'process', 'js', 'faceProof'), { recursive: true });
@@ -111,11 +121,10 @@ async function wholeRoute() {
     };
   }
 
-  // THE OWNER: the grant for 'hello' naming the app that serves it (appFaceApp's
-  // own row, 5310ba7), and that app's manifest saying it runs a server.
+  // THE OWNER: grantFace (a stand-in) holds 'hello' for it, and faceProof's
+  // manifest says it runs a server.
   const owner = home('owner');
   fs.writeFileSync(path.join(owner.app, 'face-domain.json'), JSON.stringify({ faceDomain: FACE_DOMAIN }));
-  fs.writeFileSync(path.join(owner.app, 'grants.json'), JSON.stringify({ names: { hello: { to: ownerId.publicKey, app: 'faceProof' } } }));
   fs.mkdirSync(path.join(owner.root, 'process', 'js', 'faceProof'), { recursive: true });
   fs.writeFileSync(path.join(owner.root, 'process', 'js', 'faceProof', 'faceProof.json'), JSON.stringify({ serves: true }));
   require('../run/js/includeList.js').add(owner.root, 'process/js/faceProof');
@@ -141,7 +150,7 @@ async function wholeRoute() {
   await new Promise(function (r) { app.listen(pipe, r); });
   nodes[ownerId.publicKey] = arrivalsMod.createArrivals({});
   nodeApps.mountAll({ rootDir: owner.root, arrivals: nodes[ownerId.publicKey], post: postFrom(ownerId.publicKey),
-    servers: servers, log: function () {} });
+    servers: grantFaceStandIn({ hello: ownerId.publicKey }, servers), log: function () {} });
 
   // THE PUPPET: owned by the owner, with the face.
   const puppet = home('puppet');
@@ -169,8 +178,11 @@ async function wholeRoute() {
     });
   }
 
+  const SERVER = path.join(RUN, 'process', 'js', 'appFaceAppServer');
   const page = await browse('GET', '/');
-  if (page.status === 200 && /^text\/html/.test(page.type) && page.text === '<!doctype html><p>hello from the app</p>') {
+  if (!fs.existsSync(SERVER)) {
+    test.awaiting('cleanup/G1.10', 'process/js/appFaceAppServer', false, 'the page and a POST through the whole route, served by the slot-owner\'s appFaceAppServer');
+  } else if (page.status === 200 && /^text\/html/.test(page.type) && page.text === '<!doctype html><p>hello from the app</p>') {
     test.check('GET hello.' + FACE_DOMAIN + '/ is the app server\'s own page, typed text/html, as the browser needs to render it');
   } else {
     test.fail('the page through the whole route: ' + JSON.stringify(page).slice(0, 300));
@@ -180,7 +192,10 @@ async function wholeRoute() {
   const last = seen[seen.length - 1] || {};
   let echoed = null;
   try { echoed = JSON.parse(posted.text); } catch (e) { echoed = null; }
-  if (posted.status === 200 && /^application\/json/.test(posted.type) && echoed && echoed.echo === '{"verb":"app.state"}'
+  if (!fs.existsSync(SERVER)) {
+    if (posted.status === 404 && /no-handler/.test(posted.text)) test.check('until G1.10, a granted name is answered 404 no-handler');
+    else test.fail('before G1.10 a granted name should be 404 no-handler: ' + JSON.stringify(posted).slice(0, 200));
+  } else if (posted.status === 200 && /^application\/json/.test(posted.type) && echoed && echoed.echo === '{"verb":"app.state"}'
       && last.method === 'POST' && last.url === '/api/spirit' && last.type === 'application/json') {
     test.check('a POST crosses with its body and content type to the app, and the app\'s json answer comes back typed json');
   } else {

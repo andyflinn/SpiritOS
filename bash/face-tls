@@ -88,8 +88,8 @@ ANSWER=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$ASK_URL?domain=j
 case "$ANSWER" in
   200) ok "the face node says join.$FACE_DOMAIN is a real name: its certificate will be issued on the first visit" ;;
   404) warn "the face node says join.$FACE_DOMAIN is NOT a name (404)."
-       echo "    Its owner has no grant row for 'join', or has not answered. Check on your own node:"
-       echo "    app/appFaceApp/grants.json and face-domain.json (see bash/FACE.md)." ;;
+       echo "    Its owner has not granted 'join', or has not answered. Check on your own node:"
+       echo "    grantFace (get join, through jobs.api) and face-domain.json (see bash/FACE.md)." ;;
   *)   warn "the face node did not answer the name check ($ANSWER): is $FACE_PORT its face port, and is it running?" ;;
 esac
 echo "    test: curl -sS https://join.$FACE_DOMAIN/"

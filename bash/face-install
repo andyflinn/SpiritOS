@@ -126,7 +126,7 @@ chmod 600 "$FACE_DIR/.env"
 # CARRIES "contact": the owner keeps the face's contacts in sync with the
 # names it grants, so a member's answer is not a stranger's packet. Andy,
 # 2026-09-27: "ah, so the owner must keep the puppets contact-selection in
-# sync with grants.json", then "that's what the owners control of the
+# sync with its name grants" (now grantFace's), then "that's what the owners control of the
 # puppets api is for". Rewritten on every run, so a rerun upgrades a face
 # installed with [].
 STATE="$FACE_DIR/spirit/run/relay-state"

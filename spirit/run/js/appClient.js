@@ -33,8 +33,8 @@
 // WHICH APP ANSWERS A VISITOR IS NOT THE NODE'S BUSINESS. Andy, 2026-09-27:
 // "the core only knows about puppets (nodes owned by nodes, not people). the
 // face-name/app-or-member table must be owned by appFaceApp, not by the
-// puppet-infrastructure." So the table lives in appFaceApp's grants.json
-// (a row's `app`), and this file knows apps by their own names only. It first
+// puppet-infrastructure." So the name table is grantFace's, and this file
+// knows apps by their own names only. It first
 // read a 'face' field out of every manifest, which was appFaceApp's knowledge
 // living in the node (wsl-claude found it).
 //

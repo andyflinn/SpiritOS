@@ -1,0 +1,7 @@
+{
+  "label": "grantFace",
+  "description": "Grants DNS name slots under this node's face domain to IDs, keeps a slot for its ID, and deletes slots by ID or by name. Its slots live in grants.db in its own state folder.",
+  "kind": "server",
+  "operated": "node",
+  "args": []
+}

@@ -7,7 +7,7 @@ map is `design/shell/FACE-ROUND-TRIP.md`.
 
 ```
 browser ─https─ Caddy (on-demand cert) ─ face node :65434 (puppetPost → appFaceApp)
-        ─packet via the relay─ YOUR node (appFaceApp: grants.json) ─ answer ─ back the same way
+        ─packet via the relay─ YOUR node (appFaceApp asks grantFace) ─ answer ─ back the same way
 ```
 
 When it works, `https://join.face.spirit.andyflinn.com/` shows your node's
@@ -68,21 +68,18 @@ import sites/*.caddy
 then `caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile`,
 `systemctl reload caddy`, and `/root/face/SpiritOS/bash/face-tls`.
 
-**4. On your own box**, where your node runs, from your SpiritOS checkout, with
-the face node's key that step 2 printed:
+**4. On your own box**, where your node runs, with the face node's key that
+step 2 printed. Each is one POST to your node's `/api/spirit` on
+`http://127.0.0.1:65432`:
 
-```
-node bash/face-owner.js <FACE_NODE_KEY>
-```
+- let the face node in: `{"verb":"peer.acquire","publicKey":"<FACE_NODE_KEY>"}`,
+  then `{"verb":"contact.accept","publicKey":"<FACE_NODE_KEY>"}`;
+- write the face domain: `{"verb":"fs.save","path":"app/appFaceApp/face-domain.json","content":"{\"faceDomain\":\"face.spirit.andyflinn.com\"}
+"}`;
+- include `process/js/grantFace` in your node's list, then grant `join` to
+  your own node's key: `{"verb":"jobs.api","ask":{"grantFace":{"grant":{"name":"join","id":"<YOUR_NODE_KEY>"}}}}`.
 
-It talks to your node on `http://127.0.0.1:65432` (`--node` for another
-port), using only doors your node already has:
-- it lets the face node in (`peer.acquire`, then `contact.accept`);
-- it writes `app/appFaceApp/face-domain.json` (`face.spirit.andyflinn.com`);
-- it grants `join` to your own node's key in `app/appFaceApp/grants.json`.
-
-The grant is merged into whatever is already granted, never replaced. If
-`join` already belongs to another key, it refuses and changes nothing.
+grantFace refuses a name another key holds (409 `slot-held`) and changes nothing.
 
 **5. Test**, from anywhere:
 
@@ -98,7 +95,7 @@ and your node's key. A name you never granted gets no certificate at all.
 
 | you see | it means |
 |---|---|
-| a TLS error | Caddy was refused a certificate. The face node said the name is not granted (grants.json, face-domain.json, or your node did not answer), or the global `on_demand_tls` block is missing. |
+| a TLS error | Caddy was refused a certificate. The face node said the name is not granted (grantFace, face-domain.json, or your node did not answer), or the global `on_demand_tls` block is missing. |
 | `502 owner-unreachable` | the face node could not post to your node: it is not a member of the relay, or your node has not accepted its key. |
 | `504 owner-did-not-answer` | the post went, and no answer came back in time. Your node may be off. |
 | `404 no-such-route` | your node answered, and has no grant row for that name. |

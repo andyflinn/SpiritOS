@@ -53,19 +53,6 @@
 // that notices both ends are the same node. Two hashes and two receipts
 // in the traffic log is the observable form of that, and the suite
 // asserts it rather than trusting this comment.
-//
-// ── THE DATASET IS THE OWNER'S, AND IT STAYS HOME ────────────────────
-//
-//   Andy: "A name grant persists. true. but only on the owners node."
-//   Andy: "the list is reserved by the appShellApp mapping dataset on
-//   the owners personal node" — and, asked whether reserved names were
-//   hardcoded: "not hardcoded".
-//
-// So there is no RESERVED array in this file and there must not be one.
-// A name is taken because somebody was granted it, and for no other
-// reason. `join` reserving its subdomain is a row written by the same
-// exchange at install time, which is why the installer needs no
-// privilege this file does not give every member.
 
 // THE APP ENVELOPE, WHICH ALREADY EXISTED. A first draft of this file
 // invented a second one — raw `{app, verb, …}` JSON with a hand-rolled
@@ -75,37 +62,11 @@
 // `arrivals.js:384`, which has been encoding packets this way all along.
 const packet = require('../../js/client/packet.js');
 
-const DATASET = 'grants.json';
-// WHICH APP ON THE HOLDER'S BOX ANSWERS A NAME: a row's optional `app`, the
-// app folder whose server the owner node hands a visitor's request to.
-// THIS TABLE IS APPFACEAPP'S AND NOBODY ELSE'S. Andy, 2026-09-27: "the core
-// only knows about puppets (nodes owned by nodes, not people). the
-// face-name/app-or-member table must be owned by appFaceApp, not by the
-// puppet-infrastructure." The node knows apps by their own names only.
-const APP_RE = /^[A-Za-z0-9_-]{1,64}$/;
-
 // The envelope this app answers to. Read by THIS file, never by the
 // node — `nodeApps.js` hands every booted app every admitted arrival
 // and looks at none of them, which is Andy's "nothing in node and relay
 // should know about apps" kept literally.
 const APP = 'appFaceApp';
-
-function readGrants(api) {
-  const raw = api.fs.read(DATASET);
-  if (!raw) return {};
-  try {
-    const doc = JSON.parse(raw);
-    return (doc && typeof doc.names === 'object' && doc.names) || {};
-  } catch (e) {
-    // A TORN OR HAND-EDITED FILE IS NOT AN EMPTY ONE. Returning {} here
-    // would re-grant every name that is already out there, so this
-    // refuses to answer instead — see `grant` below, which treats null
-    // as "cannot say" rather than "nothing is taken".
-    return null;
-  }
-}
-
-
 
 // ── THE FACE ROUTE: STEP 1 OF ANDY'S THREE (public-app-server/G17) ────
 //
@@ -116,16 +77,6 @@ function readGrants(api) {
 //
 // Two roles, one file, told apart by what the node hands this app:
 //
-//   ON THE OWNER'S NODE (it holds grants.json): answers 'route?' from
-//   anyone with the truth from the row, "the owner of join is <key>", or
-//   "none", and judges nothing about itself. Andy, asked what api.self()
-//   was for: "so what's an api.self for then?" Nothing, it turned out: the
-//   puppet knows its own owner's key and makes the comparison. It answers
-//   'serve' for a granted name by handing the request to the app server
-//   that serves it on this box (api.toLocalApp, appClient.js: G17's last
-//   leg), and replies with that app's own answer. A node that starts no
-//   app servers still answers the step-1 stub, 501 last-leg-not-built.
-//
 //   ON THE VPS PUPPET (the node hands it api.face): claims the visitors,
 //   asks its owner once per host, keeps the answer in RAM (faceRoute's
 //   cache, "at restart, the dance starts anew"), and forwards each request
@@ -133,8 +84,7 @@ function readGrants(api) {
 //   hash (appServerReply).
 //
 // THE VPS MATCHES NOTHING: it never reads a name out of a host. Only the
-// owner's node does, against its face domain (face-domain.json, beside
-// grants.json, written at setup).
+// owner's node does, against its face domain (face-domain.json).
 const faceRoute = require('../../js/faceRoute.js');
 const FACE_DOMAIN_FILE = 'face-domain.json';
 // The time limits nest inside puppetPost's FACE_WAIT_MS (30 s), so the
@@ -167,53 +117,35 @@ function appServerReply(api, message, body) {
     .catch(function (e) { api.log(APP + ': an answer could not be posted: ' + ((e && e.message) || e)); });
 }
 
-// The owner's side: which name a host is, and who holds it, from the row.
 function ownerOf(api, host) {
   const name = faceRoute.nameOf(host, faceDomainOf(api));
-  if (!name) return { route: 'none', name: '' };
-  const rows = readGrants(api) || {};
-  const row = Object.prototype.hasOwnProperty.call(rows, name) ? rows[name] : null;
-  if (!row || !row.to) return { route: 'none', name: name };
-  return { route: 'owner', name: name, to: row.to, app: typeof row.app === 'string' ? row.app : '' };
+  if (!name) return Promise.resolve({ route: 'none', name: '' });
+  if (typeof api.toLocalApp !== 'function') return Promise.resolve({ route: 'none', name: name });
+  return Promise.resolve(api.toLocalApp('grantFace', { method: 'POST', path: '/', body: JSON.stringify({ get: { name: name } }), type: 'application/json' }))
+    .then(function (a) {
+      let got = null;
+      try { got = a && a.status === 200 ? (typeof a.body === 'string' ? JSON.parse(a.body) : a.body) : null; } catch (e) { got = null; }
+      if (!got || typeof got.id !== 'string' || !got.id) return { route: 'none', name: name };
+      return { route: 'owner', name: name, to: got.id };
+    }, function (e) {
+      api.log(APP + ': grantFace could not be asked: ' + ((e && e.message) || e));
+      return { route: 'none', name: name };
+    });
 }
 
 function ownerRole(api, message, body) {
   if (body.verb === 'route?') {
-    // Where the name lives, and not which app answers it there: that is
-    // this box's business, and the face needs only whom to forward to.
-    const o = ownerOf(api, body.host);
-    appServerReply(api, message, o.route === 'owner'
-      ? { verb: 'route', route: 'owner', name: o.name, to: o.to }
-      : { verb: 'route', route: o.route, name: o.name });
+    ownerOf(api, body.host).then(function (o) {
+      appServerReply(api, message, o.route === 'owner'
+        ? { verb: 'route', route: 'owner', name: o.name, to: o.to }
+        : { verb: 'route', route: o.route, name: o.name });
+    });
     return true;
   }
   if (body.verb === 'serve') {
-    const o = ownerOf(api, body.host);
-    // A puppet forwards 'serve' here only for a name whose row names its
-    // owner, so the row's key is this node's own.
-    if (o.route !== 'owner') {
-      appServerReply(api, message, { verb: 'served', status: 404, body: { ok: false, code: 'no-such-route', name: o.name } });
-      return true;
-    }
-    if (typeof api.toLocalApp !== 'function') {
-      appServerReply(api, message, { verb: 'served', status: 501, body: { ok: false, code: 'last-leg-not-built', name: o.name, node: o.to } });
-      return true;
-    }
-    if (!o.app || !APP_RE.test(o.app)) {
-      // Granted, and no app named to answer it on this box.
-      appServerReply(api, message, { verb: 'served', status: 404, body: { ok: false, code: 'no-such-route', name: o.name, why: 'no-app' } });
-      return true;
-    }
-    // THE LAST LEG. The app's own answer, status, body and content type,
-    // or the node's refusal by name (app-not-served, app-not-running, ...).
-    Promise.resolve(api.toLocalApp(o.app, { method: body.method, path: body.path, body: body.body, type: body.type }))
-      .then(function (a) {
-        const r = a || {};
-        appServerReply(api, message, { verb: 'served', status: r.status, body: r.body, type: r.type });
-      }, function (e) {
-        api.log(APP + ': the app server hop failed: ' + ((e && e.message) || e));
-        appServerReply(api, message, { verb: 'served', status: 503, body: { ok: false, code: 'app-not-running', name: o.name } });
-      });
+    ownerOf(api, body.host).then(function (o) {
+      appServerReply(api, message, { verb: 'served', status: 404, body: { ok: false, code: 'no-such-route', name: o.name, why: o.route === 'owner' ? 'no-handler' : 'not-granted' } });
+    });
     return true;
   }
   return false;

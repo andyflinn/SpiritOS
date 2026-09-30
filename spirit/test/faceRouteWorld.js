@@ -11,7 +11,7 @@
 //
 // Real parts: puppetPost's HTTP listener, appFaceApp mounted twice through
 // the real nodeApps.mountAll (the puppet, handed the face; the owner,
-// holding face-domain.json and grants.json), the real packet codec and the
+// holding face-domain.json, asking a grantFace stand-in), the real packet codec and the
 // real arrivals seam. The ONE fake is the relay: a function that hands a
 // posted packet to the other node's arrivals, with a hash, as peerPost's
 // arrival record would. The relay's transport is proven by its own suites.
@@ -81,6 +81,15 @@ function request(port, host, pathname) {
     req.end();
   });
 }
+function grantFaceStandIn(holders, rest) {
+  return { toLocalApp: function (app, req) {
+    if (app !== 'grantFace') return rest ? rest.toLocalApp(app, req) : Promise.resolve({ status: 404, body: '{}' });
+    let b = {};
+    try { b = JSON.parse(req.body); } catch (e) { b = {}; }
+    const name = (b.get && b.get.name) || '';
+    return Promise.resolve({ status: 200, type: 'application/json', body: JSON.stringify({ name: name, id: holders[name] || '' }) });
+  } };
+}
 function verbs(to, verb) {
   return wire.filter(function (w) { return w.to === to && w.body && w.body.verb === verb; });
 }
@@ -89,9 +98,9 @@ function verbs(to, verb) {
   // THE OWNER'S NODE: holds the face domain and the grant for 'join'.
   const owner = home('owner');
   fs.writeFileSync(path.join(owner.app, 'face-domain.json'), JSON.stringify({ faceDomain: FACE_DOMAIN }));
-  fs.writeFileSync(path.join(owner.app, 'grants.json'), JSON.stringify({ names: { join: { to: ownerId.publicKey } } }));
   nodes[ownerId.publicKey] = arrivalsMod.createArrivals({});
-  nodeApps.mountAll({ rootDir: owner.root, arrivals: nodes[ownerId.publicKey], post: postFrom(ownerId.publicKey), log: function () {} });
+  nodeApps.mountAll({ rootDir: owner.root, arrivals: nodes[ownerId.publicKey], post: postFrom(ownerId.publicKey),
+    servers: grantFaceStandIn({ join: ownerId.publicKey }), log: function () {} });
 
   // THE PUPPET ON THE VPS: owned by the owner, with the face.
   const puppet = home('puppet');
@@ -106,10 +115,9 @@ function verbs(to, verb) {
 
   // ── (a) THE ROUTE, THERE AND BACK ─────────────────────────────────────
   const first = await request(port, 'join.' + FACE_DOMAIN, '/');
-  if (first.status === 501 && first.json && first.json.code === 'last-leg-not-built' && first.json.name === 'join'
-      && first.json.node === ownerId.publicKey) {
+  if (first.status === 404 && first.json && first.json.why === 'no-handler' && first.json.name === 'join') {
     test.check('a browser request for join.' + FACE_DOMAIN + ' reaches the owner\'s node and its answer comes back: '
-      + '501 last-leg-not-built naming the owner\'s key, as live on spirit-3');
+      + '404 no-handler, which only the owner\'s node gives, until G1.10');
   } else {
     test.fail('the route did not come back: ' + JSON.stringify(first));
   }
