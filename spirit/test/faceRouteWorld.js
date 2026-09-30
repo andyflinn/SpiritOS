@@ -83,7 +83,7 @@ function request(port, host, pathname) {
 }
 function grantFaceStandIn(holders, rest) {
   return { toLocalApp: function (app, req) {
-    if (app !== 'grantFace') return rest ? rest.toLocalApp(app, req) : Promise.resolve({ status: 404, body: '{}' });
+    if (app !== 'grantFace') return rest ? rest.toLocalApp(app, req) : Promise.resolve({ status: 404, type: 'application/json', body: JSON.stringify({ ok: false, code: 'app-not-served', app: app }) });
     let b = {};
     try { b = JSON.parse(req.body); } catch (e) { b = {}; }
     const name = (b.get && b.get.name) || '';
@@ -115,9 +115,9 @@ function verbs(to, verb) {
 
   // ── (a) THE ROUTE, THERE AND BACK ─────────────────────────────────────
   const first = await request(port, 'join.' + FACE_DOMAIN, '/');
-  if (first.status === 404 && first.json && first.json.why === 'no-handler' && first.json.name === 'join') {
+  if (first.status === 404 && first.json && first.json.code === 'app-not-served' && first.json.app === 'appFaceAppServer') {
     test.check('a browser request for join.' + FACE_DOMAIN + ' reaches the owner\'s node and its answer comes back: '
-      + '404 no-handler, which only the owner\'s node gives, until G1.10');
+      + 'the owner\'s node runs no appFaceAppServer here, and says so: 404 app-not-served');
   } else {
     test.fail('the route did not come back: ' + JSON.stringify(first));
   }

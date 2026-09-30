@@ -143,9 +143,18 @@ function ownerRole(api, message, body) {
     return true;
   }
   if (body.verb === 'serve') {
-    ownerOf(api, body.host).then(function (o) {
-      appServerReply(api, message, { verb: 'served', status: 404, body: { ok: false, code: 'no-such-route', name: o.name, why: o.route === 'owner' ? 'no-handler' : 'not-granted' } });
-    });
+    if (typeof api.toLocalApp !== 'function') {
+      appServerReply(api, message, { verb: 'served', status: 404, body: { ok: false, code: 'no-such-route', why: 'no-handler' } });
+      return true;
+    }
+    Promise.resolve(api.toLocalApp('appFaceAppServer', { method: body.method, path: body.path, body: body.body, type: body.type }))
+      .then(function (a) {
+        const r = a || {};
+        appServerReply(api, message, { verb: 'served', status: r.status, body: r.body, type: r.type });
+      }, function (e) {
+        api.log(APP + ': appFaceAppServer could not be reached: ' + ((e && e.message) || e));
+        appServerReply(api, message, { verb: 'served', status: 503, body: { ok: false, code: 'app-not-running', app: 'appFaceAppServer' } });
+      });
     return true;
   }
   return false;

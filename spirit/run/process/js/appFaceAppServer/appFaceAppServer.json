@@ -1,0 +1,7 @@
+{
+  "label": "appFaceAppServer",
+  "description": "The slot-owner's side of appFaceApp: takes the requests for this member's face names and, for now, passes each one through to faceProof.",
+  "kind": "server",
+  "operated": "node",
+  "args": []
+}
