@@ -253,7 +253,9 @@ function ddRename() {
 
 // The item as the server has it now: at open, and again after a dropped publish (desk/G3.10).
 function ddLoad() {
-  return ddAsk('item.get', { id: ddId }).then(function (got) {
+  // THE PAGE'S ROOM, NOT AN AGENT'S. Andy: "i should have at up to MAX_PAYLOAD data in chat histor and i don't."
+  // The server holds it to MAX_PAYLOAD; an 8 KB answer let the box push his answers off the top.
+  return ddAsk('item.get', { id: ddId, room: 22016 }).then(function (got) {
     try { ddFacts = JSON.parse(got.item); } catch (e) { ddFacts = null; }
     ddBox = String(got.box || '');
     ddVersion = Number(got.version) || 0;

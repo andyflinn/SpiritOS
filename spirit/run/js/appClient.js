@@ -199,9 +199,9 @@ function createAppClient(opts) {
     if (extra) body.extra = extra;
     return { status: (e && e.status) || STATUS[code] || 500, body: body };
   }
-  function knock(row, request_) {
+  function knock(row, request_, answerMax) {
     return Promise.resolve(request(row.pipe, 'POST', '/', JSON.stringify(request_), {
-      type: 'application/json', timeoutMs: DOOR_WAIT_MS, answerMax: ANSWER_MAX,
+      type: 'application/json', timeoutMs: DOOR_WAIT_MS, answerMax: answerMax || ANSWER_MAX,
     })).then(function (a) {
       if (!a || a.refused) return error(a && errors.byCode(a.refused) ? a.refused : 'app-not-running', { app: row.app });
       let body;
@@ -211,7 +211,10 @@ function createAppClient(opts) {
   }
   function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
 
-  function ask(body) {
+  // opts.answerMax: a door that carries more than one sealed packet (the
+  // loopback page) may read a larger answer, never above MAX_PAYLOAD.
+  function ask(body, opts) {
+    const room = Math.min(Number(opts && opts.answerMax) || ANSWER_MAX, limits.PAYLOAD_MAX);
     if (body === 'api') {
       const names = Object.keys(table);
       return Promise.all(names.map(function (app) {
@@ -227,7 +230,7 @@ function createAppClient(opts) {
     const app = Object.keys(body)[0];
     if (!APP_RE.test(app) || !isPlain(body[app])) return Promise.resolve(error('bad-request', { why: 'an app name, then {verb: {args}}' }));
     if (!Object.prototype.hasOwnProperty.call(table, app)) return Promise.resolve(error('app-not-served', { app: app }));
-    return knock(table[app], body[app]);
+    return knock(table[app], body[app], room);
   }
 
   return {

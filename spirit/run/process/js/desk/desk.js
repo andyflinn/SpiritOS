@@ -539,6 +539,12 @@ appServer.serve({
   },
   'item.get': {
     request: { id: '' },
+    // An optional room, in bytes: his page asks for more than one agent answer
+    // holds (Andy: "on the browser the room can be larger"). Agents send none.
+    accepts: function (a) {
+      const keys = a && typeof a === 'object' ? Object.keys(a).sort().join(',') : '';
+      return (keys === 'id' || keys === 'id,room') && typeof a.id === 'string' && (a.room === undefined || typeof a.room === 'number');
+    },
     reply: { item: '', box: '', version: 0, change: 0, chatMore: false,
       checks: [{ number: '', kind: '', words: '', test: '', state: '', by: '', at: '' }], chat: [{ by: '', at: '', text: '' }] },
     handler: function (a) {
@@ -548,7 +554,8 @@ appServer.serve({
       const out = { item: JSON.stringify(facts(s, it)), box: it.box, version: it.version, change: s.change, chatMore: false, checks: it.checks, chat: [] };
       // THE CHAT IS A SEARCH (desk/G3.3). Andy: "why would the server not use bucket to give me the most recent
       // stuff?" Its newest lines, through the same bucket, in the room the rest of the answer leaves; oldest first.
-      const room = ANSWER_ROOM - Buffer.byteLength(JSON.stringify(out), 'utf8');
+      const asked = Math.min(Math.max(Number(a.room) || 0, ANSWER_ROOM), require('../../../js/limits').PAYLOAD_MAX - 512);
+      const room = asked - Buffer.byteLength(JSON.stringify(out), 'utf8');
       const bucket = searchBucket.createSearch({
         query: '**', maxBytes: Math.max(0, room),
         getLabelStringFromIncomingObject: function (pair) { return pair.label; },

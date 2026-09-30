@@ -1771,7 +1771,9 @@ contactBook.syncMarks(ROOT_DIR);
     // function they share (apiDoor.answer), and the reply is flat (D11).
     'jobs.api': function (rq, rs) {
       readJsonBody(rq).then(function (body) {
-        return require('./apiDoor').answer(appClient, body && body.ask);
+        // NOT SEALED, SO NOT HALVED: the page may read up to MAX_PAYLOAD (Andy:
+        // "on the browser the room can be larger, no rule prevents that").
+        return require('./apiDoor').answer(appClient, body && body.ask, { answerMax: require('./limits').PAYLOAD_MAX });
       }).then(function (a) {
         rs.writeHead((a && a.status) || 500, { 'Content-Type': 'application/json; charset=utf-8' });
         rs.end(JSON.stringify(a ? a.body : null));

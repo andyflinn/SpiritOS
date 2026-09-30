@@ -23,8 +23,11 @@
 // THE ONE WAY IN (desk/G1 D4): a member's packet here and the local shell's
 // jobs.api on the loopback door both end in this, so the gating layer that
 // is deferred (appPair D5) has one place to go.
-function answer(servers, ask) {
-  return Promise.resolve(servers.ask(ask));
+// opts.answerMax: how large an answer this door can carry. A member's packet
+// is sealed, so it keeps appClient's default; the loopback page is not, and
+// asks with MAX_PAYLOAD (Andy: "on the browser the room can be larger").
+function answer(servers, ask, opts) {
+  return Promise.resolve(servers.ask(ask, opts));
 }
 
 // opts: { servers: {ask}, post(relay, toKey, text), encode, decode, isKnown(key), log }
