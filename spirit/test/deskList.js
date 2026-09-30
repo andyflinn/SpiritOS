@@ -190,6 +190,32 @@ test.startTest('desk/G2.6: the List paints only what the desk server says');
   if (current.args.currentGoalOnly === false) test.check('Current Goal Only toggles off');
   else test.fail(OWED + 'Current Goal Only asked ' + JSON.stringify(current));
 
+  // desk/G3.4, Andy: "i should have a go-all button for fixing rounds", "the go all should be on the right side of
+  // the button bar in list". The goal row's buttons say when it is offered; it is drawn as #desk-go-all at the end
+  // of the search bar, never in a row, and sends press {id: <goal>, what: 'go-all', by: 'andy'}.
+  test.subHeading('desk/G3.4: Go all sits at the right of the bar while the goal offers it');
+  const G34 = 'OWED by desk/G3.4: ';
+  l.publish({ change: 16, verb: 'press', item: JSON.parse(label({ id: 't/G1', title: 'The goal', goal: '', buttons: ['go-all'], blocking: [], blocked: [] })) });
+  await settled();
+  const bar = l.doc.getElementById('desk-go-all');
+  const goalRow = rowOf(l.page(), 'The goal');
+  if (bar && !bar.hidden && !/data-press="go-all"/.test(goalRow)) test.check('#desk-go-all shows in the bar, and the goal row draws no go-all');
+  else test.fail(G34 + 'go-all shown in the bar ' + !!(bar && !bar.hidden) + ', in the goal row ' + /data-press="go-all"/.test(goalRow));
+  // "and be the armed-type": the first press arms it (data-armed, armUntilElsewhere), the second sends.
+  const goAlls = function () { return l.asked.filter(function (a) { return a.verb === 'press' && a.args.what === 'go-all'; }); };
+  l.click('desk-go-all', { id: 'desk-go-all' });
+  await settled();
+  const armedFirst = goAlls().length === 0;
+  l.click('desk-go-all', { id: 'desk-go-all' });
+  await settled();
+  const all = goAlls()[0];
+  if (armedFirst && goAlls().length === 1 && all.args.id === 't/G1' && all.args.by === 'andy') test.check('the first press arms it; the second sends press {id: t/G1, what: go-all, by: andy}');
+  else test.fail(G34 + 'Go all: sent after one press ' + !armedFirst + ', after two ' + JSON.stringify(goAlls()));
+  l.publish({ change: 17, verb: 'press', item: JSON.parse(label({ id: 't/G1', title: 'The goal', goal: '', buttons: [], blocking: [], blocked: [] })) });
+  await settled();
+  if (l.doc.getElementById('desk-go-all').hidden) test.check('once the goal no longer offers it, Go all hides');
+  else test.fail(G34 + 'Go all still shows after the goal stopped offering it');
+
   test.subHeading('one piece of code: the List keeps no rule of its own');
   const src = code(DESK);
   const own = ['deskGoState', 'deskReady', 'deskVerified', 'deskDone', 'READY TO CLOSE', 'fresh.get'].filter(function (w) { return src.indexOf(w) !== -1; });
