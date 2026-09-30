@@ -89,8 +89,13 @@ async function serverPart() {
     if (byName.status === 200 && (await idOf('join')) === '' && (await idOf('hello')) === ID_A) test.check('delete by name frees join only');
     else test.fail(OWED + 'delete join by name: ' + JSON.stringify(byName).slice(0, 120) + ', join ' + (await idOf('join')).slice(0, 16));
     await call('grant', { name: 'join', id: ID_A });
+    test.subHeading('an ID may hold several slots; only names are unique');
+    if ((await idOf('join')) === ID_A && (await idOf('hello')) === ID_A) test.check('ID_A holds join and hello at once');
+    else test.fail(OWED + 'ID_A should hold join and hello: ' + (await idOf('join')).slice(0, 16) + ' ' + (await idOf('hello')).slice(0, 16));
     const byId = await call('delete', { name: '', id: ID_A });
     const left = [await idOf('join'), await idOf('hello'), await idOf('bella')];
+    if (byId.body && byId.body.removed === 2) test.check('delete by ID_A says it removed 2');
+    else test.fail(OWED + 'delete by ID_A answered ' + JSON.stringify(byId.body).slice(0, 120));
     if (byId.status === 200 && left[0] === '' && left[1] === '' && left[2] === ID_B) test.check('delete by ID_A frees join and hello; bella (ID_B) stays');
     else test.fail(OWED + 'delete by ID_A: ' + JSON.stringify(byId).slice(0, 120) + ', left ' + left.map(function (s) { return s.slice(0, 16); }).join(' '));
 
