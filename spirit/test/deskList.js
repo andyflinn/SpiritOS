@@ -125,8 +125,11 @@ test.startTest('desk/G2.6: the List paints only what the desk server says');
   const beta = rowOf(p0, 'Beta');
   if (/data-press="go"/.test(alpha) && /data-id="t\/G1\.1"/.test(alpha)) test.check('Alpha, buttons [go], shows a Go! press for t/G1.1');
   else test.fail(OWED + 'Alpha\'s row: ' + JSON.stringify(alpha.slice(0, 300)));
-  if (/data-press="close"/.test(beta) && /data-press="reopen"/.test(beta) && !/data-press="go"/.test(beta)) test.check('Beta, done, shows Close and Reopen and no Go!');
+  // desk/G3.6, Andy: Reopen is never shown in the List; the dialog keeps it. The server still offers it.
+  if (/data-press="close"/.test(beta) && !/data-press="go"/.test(beta)) test.check('Beta, done, shows Close and no Go!');
   else test.fail(OWED + 'Beta\'s row: ' + JSON.stringify(beta.slice(0, 300)));
+  if (!/data-press="reopen"/.test(beta)) test.check('and no Reopen: the List never shows it (desk/G3.6)');
+  else test.fail('OWED by desk/G3.6: the List shows Reopen on Beta');
   if (/data-open="t\/G1\.2"/.test(alpha)) test.check('Alpha\'s blocking id links to its item');
   else test.fail(OWED + 'Alpha\'s blocking is not a data-open link');
 
