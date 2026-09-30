@@ -429,7 +429,7 @@ function deskPress(id, what) {
 var DESK_PRESS_LABEL = { go: 'Go!', done: 'Done', reopen: 'Reopen', close: 'Close', 'bring-back': 'Bring back' };
 function deskRowHtml(row) {
   var goal = row.goal === '';
-  var presses = (row.buttons || []).map(function (what) {
+  var presses = (row.buttons || []).filter(function (what) { return what !== 'go-all'; }).map(function (what) {
     return '<button type="button" data-press="' + deskEsc(what) + '" data-id="' + deskEsc(row.id) + '">' +
       deskEsc(DESK_PRESS_LABEL[what] || what) + '</button>';
   }).join(' ');
@@ -603,17 +603,33 @@ function deskSendTeam() {
 // anywhere else, through the shell's one mechanism, and it carries
 // data-armed so the shell paints it red.
 var deskArmed = '';
-function deskDisarm() { deskArmed = ''; deskDrawTabs(); }
+function deskDisarm() { deskArmed = ''; deskDrawTabs(); deskDrawGoAll(); }
 function deskArmOrFire(id, fire) {
   if (deskArmed === id) { deskDisarm(); fire(); return; }
   deskArmed = id;
   deskDrawTabs();
+  deskDrawGoAll();
   if (deskApi && deskApi.armUntilElsewhere) deskApi.armUntilElsewhere(deskDisarm);
 }
+// GO ALL (desk/G3.4). Andy: "i should have a go-all button for fixing rounds",
+// "the go all should be on the right side of the button bar in list", "and be the
+// armed-type". Shown while the goal's buttons offer it; the server decides which
+// items it goes.
+function deskDrawGoAll() {
+  var b = document.getElementById('desk-go-all');
+  if (!b) return;
+  var g = deskGoalRow();
+  var armed = deskArmed === 'desk-go-all';
+  b.hidden = !(deskTab === 'list' && g && (g.buttons || []).indexOf('go-all') !== -1);
+  b.textContent = armed ? 'Go all: sure?' : 'Go all';
+  if (b.setAttribute) b.setAttribute('data-armed', armed ? '1' : '');
+}
+function deskGoAll() { var g = deskGoalRow(); if (g) deskPress(g.id, 'go-all'); }
 // A PRESS ON THE GOAL, NOT A LINE (desk/G2.6): design mode is the server's.
 function deskEndDesign() { var g = deskGoalRow(); if (g) deskPress(g.id, 'end-design'); }
 // With no goal on the List, Start design starts a new one (desk/G3.1): the server names it goal/G<n>.
-function deskStartDesign() { var g = deskGoalRow(); deskPress(g ? g.id : '', 'start-design'); }
+// A closed goal row (shown at startup, desk/G3.2) is not an open goal: Start design starts a new one.
+function deskStartDesign() { var g = deskGoalRow(); deskPress(g && g.status !== 'closed' ? g.id : '', 'start-design'); }
 function deskTeamPost(kind, fixed) {
   var box = document.getElementById('desk-team-say');
   var err = document.getElementById('desk-team-error');
@@ -674,6 +690,7 @@ function deskSend(kind, boxId, errId, name) {
 // everytime somebody sends something"). The table holds no input, so a
 // repaint on arrival costs him nothing.
 function deskDraw() {
+  deskDrawGoAll();
   var el = document.getElementById('desk-top');
   if (!el) return;
   var musings = document.getElementById('desk-musings');
@@ -839,7 +856,10 @@ spirit.shell.activateApp({
         // of the list page should be attached below the title bar, and not
         // scroll away."
         '<div id="desk-goal" class="stat-tile wide" style="font-size:1.25em;font-weight:bold;cursor:pointer" title="Open the goal: talk about it under its own id" hidden></div>' +
-        '<div class="start-job-form card" id="desk-tabs"></div>' +
+        // GO ALL at the right of the tab bar, on the List tab only, as the design
+        // buttons are on Team's (desk/G3.4, Andy: "same as design buttons when team is active").
+        '<div style="display:flex;align-items:center"><div class="start-job-form card" id="desk-tabs" style="flex:1"></div>' +
+          '<button type="button" id="desk-go-all" hidden>Go all</button></div>' +
         // The agent row is Team's, so it shows only there (show()).
         '<div class="start-job-form card" id="desk-agent-tabs" style="display:none"></div>' +
       '</div>' +
@@ -851,7 +871,8 @@ spirit.shell.activateApp({
         '<div data-pane="list"><div id="desk-backup"></div>' +
           '<div class="start-job-form card"><input id="desk-search" placeholder="search">' +
           '<button type="button" id="desk-current-goal"></button>' +
-          '<button type="button" id="desk-goals-only"></button></div>' +
+          '<button type="button" id="desk-goals-only"></button>' +
+          '</div>' +
           '<div id="desk-top"></div></div>' +
         '<div data-pane="team" hidden>' +
           '<div id="desk-queue"></div>' +
@@ -878,6 +899,7 @@ spirit.shell.activateApp({
       // HIGHLIGHTED, NOT DISABLED. Andy: "on the desk app, the current tab
       // should be highlighted." A disabled button read as greyed out.
       deskTab = tab;
+      deskDrawGoAll();
       var agentRow = document.getElementById('desk-agent-tabs');
       // BY ITS STYLE, NOT ITS hidden ATTRIBUTE: .start-job-form sets display:
       // flex (index.html), which overrides [hidden] (Andy saw the row on List).
@@ -935,6 +957,7 @@ spirit.shell.activateApp({
       deskSearchItems();
     });
     deskDrawToggles();
+    document.getElementById('desk-go-all').addEventListener('click', function () { deskArmOrFire('desk-go-all', deskGoAll); });
     function muse() { deskSend('musing', 'desk-muse', 'desk-muse-error'); }
     document.getElementById('desk-muse-send').addEventListener('click', muse);
     document.getElementById('desk-team-send').addEventListener('click', deskSendTeam);

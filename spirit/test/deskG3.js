@@ -110,6 +110,25 @@ function clickTarget(attrs) {
   if (pressed && pressed.args.id === '' && pressed.args.by === 'andy') test.check('with no goal row, the List\'s Start design sends start-design with no id');
   else test.fail(G31 + 'the List sent ' + JSON.stringify(fake.calls.filter(function (c) { return c.verb === 'press'; })));
 
+  // G3.2 lists a closed current goal at startup; its row is not an open goal, so Start design still starts a new one.
+  fake.items = [{ id: 'old/G1', title: 'Closed goal', goal: '', status: 'closed', with: '', buttons: [], blocking: [], blocked: [], star: false, design: false }];
+  fake.calls.length = 0;
+  behavior.mount(fakeElement('container'), {
+    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
+    escapeHtml: kernel.core.util.escapeHtml, verb: fake.verb,
+    onPublished: function () {}, onPacket: function () {}, peerPost: function () { return Promise.resolve({ ok: true }); },
+    callDialog: function () { return new Promise(function () {}); }, armUntilElsewhere: function () {},
+  });
+  for (let i = 0; i < 6; i++) await settle();
+  const tabs2 = doc.getElementById('desk-tabs');
+  tabs2.fire('click', { target: clickTarget({ 'data-tab': 'team' }), currentTarget: tabs2 });
+  tabs2.fire('click', { target: clickTarget({ id: 'desk-start-design' }), currentTarget: tabs2 });
+  tabs2.fire('click', { target: clickTarget({ id: 'desk-start-design' }), currentTarget: tabs2 });
+  for (let i = 0; i < 6; i++) await settle();
+  const pressed2 = fake.calls.filter(function (c) { return c.verb === 'press' && c.args.what === 'start-design'; }).pop();
+  if (pressed2 && pressed2.args.id === '') test.check('with only a closed goal row, Start design still sends start-design with no id');
+  else test.fail('with a closed goal row, Start design sent ' + JSON.stringify(pressed2 || null));
+
   test.subHeading('G3.3: an item with a long chat still opens, with its newest lines');
   await call('session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'The goal' }, rules: [], items: [{ id: 't/G1.1', title: 'Talky', blocks: ['t/G1'] }] }), by: 'claude-windows' });
   await call('box.write', { id: 't/G1.1', text: 'the box', version: 0, by: 'claude-windows' });

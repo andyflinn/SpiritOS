@@ -337,6 +337,7 @@ function press(s, it, what, r, goalOf) {
   else if (what === 'abandon' && g) g.abandoned = true;
   else if (what === 'design-complete') { it.designComplete = true; it.status = 'ready'; }
   else if (what === 'go') { it.went = true; it.status = 'running'; }
+  else if (what === 'go-all' && g) goable(s, g).forEach(function (m) { m.went = true; m.status = 'running'; });
   else if (what === 'claim-done') it.claims[r.by] = true;
   else if (what === 'done') { it.done = true; it.alone = !Object.keys(it.claims).length; }
   else if (what === 'reopen') { it.done = false; it.alone = false; it.claims = Object.create(null); }
@@ -360,13 +361,24 @@ function blockers(s, it) {
 //   Go!    after design ends (Andy's "end design mode."), not yet gone, nothing open blocks it
 //   Done   once one agent has claimed ("1 agents consent will offer done buttons")
 //   Close and Reopen once done
+//   Go all on a goal while any of its items offers Go! (desk/G3.4, Andy: "i should
+//          have a go-all button for fixing rounds")
+//   none once closed
 function buttons(s, it) {
   const g = s.goals[it.goal ? it.id : it.goalId];
+  if (it.closed) return [];
   if (it.done) return ['close', 'reopen'];
   const out = [];
   if (g && !g.design && !it.went && !blockers(s, it).length) out.push('go');
   if (Object.keys(it.claims).length) out.push('done');
+  if (it.goal && g && goable(s, g).length) out.push('go-all');
   return out;
+}
+// The items of a goal that offer Go!, decided by the same rule as their own button.
+function goable(s, g) {
+  return g.members.map(function (id) { return s.items[id]; }).filter(function (m) {
+    return m && !m.closed && !m.done && buttons(s, m).indexOf('go') !== -1;
+  });
 }
 
 function listed(s, it) {
@@ -375,7 +387,7 @@ function listed(s, it) {
 }
 
 function facts(s, it) {
-  const f = { id: it.id, title: it.title, goal: it.goal ? '' : it.goalId, status: it.done ? 'done' : it.status,
+  const f = { id: it.id, title: it.title, goal: it.goal ? '' : it.goalId, status: it.closed ? 'closed' : it.done ? 'done' : it.status,
     with: it.with, buttons: buttons(s, it), blocking: it.blocks.slice(), blocked: blockers(s, it),
     // A red star: an agent's line newer than his last seen ("seen, fold (you): stars clear").
     alone: it.alone, star: it.agentLineN > it.seenN };
@@ -396,13 +408,19 @@ function searchItems(a) {
   const s = walkState();
   const text = String(a.text || '').toLowerCase();
   const out = [];
+  // THE LATEST STATE AT STARTUP (desk/G3.2, Andy: "and at startup, it should show the
+  // latest state"): with the current goal closed, the empty current-goal search shows
+  // it and its items as they were left, closed ones included. An open goal still hides
+  // its closed items ("Close makes item invisible"); an abandoned one stays invisible.
+  const cur = s.current && s.items[s.current];
+  const latest = !!(a.currentGoalOnly && !text && cur && cur.closed && s.goals[s.current] && !s.goals[s.current].abandoned);
   const goals = Object.keys(s.goals).filter(function (gid) { return !a.currentGoalOnly || gid === s.current; });
   goals.sort(function (x, y) { return x === s.current ? -1 : y === s.current ? 1 : 0; });
   goals.forEach(function (gid) {
     const ids = [gid].concat(a.goalsOnly ? [] : s.goals[gid].members);
     ids.forEach(function (id) {
       const it = s.items[id];
-      if (!it || !listed(s, it)) return;
+      if (!it || !(listed(s, it) || (latest && !s.goals[gid].abandoned))) return;
       if (text && (it.id + ' ' + it.title).toLowerCase().indexOf(text) === -1) return;
       out.push(JSON.stringify(facts(s, it)));
     });
@@ -451,11 +469,11 @@ function newGoal(a) {
   return write('session.set', { session: { goal: { id: id, title: 'New goal' }, items: [] }, by: a.by });
 }
 
-const PRESSES = ['go', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen'];
+const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen'];
 // Andy's alone (G2.1 review). His presses come by jobs.api, and apiDoor refuses a
 // member who says 'andy', so these are loopback-only. The agents keep claim-done,
 // design-complete and bring-back.
-const OWNER_PRESSES = ['go', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen'];
+const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen'];
 function ownerOnly(a) { if (a.by !== 'andy') throw refused('not-owner'); }
 
 function doc(name) { const row = getDoc.get(name); return row ? row.json : '{}'; }
@@ -583,7 +601,7 @@ appServer.serve({
       if (a.what === 'start-design' && a.id === '') return { change: newGoal(a).change };
       return { change: write('press', a, function (st, it) {
         const offered = buttons(st, it);
-        if ((a.what === 'go' || a.what === 'close' || a.what === 'reopen') && offered.indexOf(a.what) === -1) throw refused('not-offered');
+        if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen') && offered.indexOf(a.what) === -1) throw refused('not-offered');
         if (a.what === 'bring-back' && !it.closed) throw refused('not-offered');
       }).change };
     },
