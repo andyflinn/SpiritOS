@@ -142,6 +142,15 @@ node.listen(0, '127.0.0.1', async function () {
       test.check('items.search and item.get go without a by');
     } else test.fail('reads sent ' + JSON.stringify(reads));
 
+    // Found at the close (wsl-claude): log.search, pending.get, state.get and seen.get took no `by` either, and were
+    // refused. Only the desk server's writes carry one.
+    test.subHeading('only the writes carry by');
+    posts.length = 0;
+    for (const v of ['log.search', 'pending.get', 'state.get', 'seen.get']) await run(['desk', v, '{}'], port);
+    const others = posts.map(function (q) { try { const d = packet.decode(q.text).body.desk; const k = Object.keys(d)[0]; return [k, 'by' in d[k]]; } catch (e) { return null; } });
+    if (others.length === 4 && others.every(function (o) { return o && o[1] === false; })) test.check('log.search, pending.get, state.get and seen.get go without a by');
+    else test.fail('the other reads sent ' + JSON.stringify(others));
+
     // wsl-claude's review: send() is silent while halted, and a desk write is a post like any other.
     test.subHeading('halted means silent, for desk writes too');
     posts.length = 0;

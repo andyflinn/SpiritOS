@@ -497,6 +497,11 @@ This directory contains the vision, principles, and architecture decisions for *
   WHAT rather than whether local models are any good. The two columns that
   decide it are fabrication and triage cost: GPU hours are nearly free,
   attention is not. One cell of the matrix is filled.
+- [Close: desk/G2 and desk/G3](desk/G2-G3-CLOSE-REPORT.md) — the first SpiritOS
+  close sourced from Desk's own records. Fourteen items, each tested before it was
+  built and by the other agent. Five defects still reached Andy's screen past a
+  green harness, because the suites mounted Desk on fakes that answered as their
+  authors assumed.
 
 ## Future Layer (not yet implemented)
 - [Root Structure — spirit.json](spirit-json/ROOT-STRUCTURE.md)

@@ -34,15 +34,19 @@ const callback = net.createServer(function (sock) {
   // Counted in bytes: Content-Length is bytes, and a facts label may hold more than ASCII.
   let buf = Buffer.alloc(0);
   sock.on('error', function () {});
+  // KEPT ALIVE, as a real server: Node's client reuses the connection for the next report, so closing it after
+  // one answer lost every later publish, as timing allowed.
   sock.on('data', function (c) {
     buf = Buffer.concat([buf, c]);
-    const head = buf.indexOf('\r\n\r\n');
-    if (head === -1) return;
-    const len = Number((/content-length:\s*(\d+)/i.exec(buf.slice(0, head).toString('utf8')) || [0, 0])[1]);
-    if (buf.length - head - 4 < len) return;
-    try { const b = JSON.parse(buf.slice(head + 4, head + 4 + len).toString('utf8')); if (b.app) published.push(b.app); } catch (e) { /* not ours */ }
-    buf = Buffer.alloc(0);
-    sock.end('HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}');
+    for (;;) {
+      const head = buf.indexOf('\r\n\r\n');
+      if (head === -1) return;
+      const len = Number((/content-length:\s*(\d+)/i.exec(buf.slice(0, head).toString('utf8')) || [0, 0])[1]);
+      if (buf.length - head - 4 < len) return;
+      try { const b = JSON.parse(buf.slice(head + 4, head + 4 + len).toString('utf8')); if (b.app) published.push(b.app); } catch (e) { /* not ours */ }
+      buf = buf.slice(head + 4 + len);
+      sock.write('HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: 2\r\n\r\n{}');
+    }
   });
 });
 
@@ -99,12 +103,12 @@ callback.listen(0, '127.0.0.1', async function () {
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + callback.address().port + '/' }),
   });
   try {
-    for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk) break; } catch (e) { /* not yet */ } }
-
+    for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
     test.subHeading('the server: one publish carries every row the press changed');
     // A blocks B; B blocks the goal.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [
+    const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [
       { id: 'g/G1.1', title: 'A', blocks: ['g/G1.2'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }] }), by: 'claude-windows' });
+    if (set.status !== 200) test.fail('the session was not taken: ' + JSON.stringify(set));
     await call('press', { id: 'g/G1', what: 'end-design', by: 'andy' });
     await sleep(300);
     published.length = 0;

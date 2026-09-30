@@ -384,16 +384,18 @@ function post(cfg, toKey, env, fetchFn) {
 // andy, and one given here is replaced rather than sent to be refused.
 const packet = require('../../../js/client/packet');
 const DESK_WAIT_MS = 30000;
-const DESK_READS = ['items.search', 'item.get'];
+// The desk server's writes, each carrying who wrote it; every other verb takes
+// no `by` and refuses one.
+const DESK_WRITES = ['session.set', 'box.write', 'check.add', 'check.set', 'chat.add', 'item.rename', 'item.status', 'item.take', 'press'];
 function deskAsk(cfg, verb, json, fetchFn) {
   let args = {};
   if (json) {
     try { args = JSON.parse(json); } catch (e) { return Promise.reject(new Error('the args are not JSON: ' + e.message)); }
     if (!args || typeof args !== 'object' || Array.isArray(args)) return Promise.reject(new Error('the args must be a JSON object'));
   }
-  // The two reads take no `by` (the server refuses an argument it does not
-  // know); every write carries this agent's.
-  if (DESK_READS.indexOf(verb) === -1) args.by = cfg.self;
+  // Only a write carries `by`, and it is always this agent's; the server
+  // refuses an argument a verb does not know.
+  if (DESK_WRITES.indexOf(verb) !== -1) args.by = cfg.self;
   else delete args.by;
   if (!verb) return Promise.reject(new Error('usage: agents.js desk <verb> [json]'));
   // HALTED MEANS SILENT, as for send(): a desk write is a post like any other.
