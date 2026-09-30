@@ -53,11 +53,13 @@ function ddNudge() {
 
 // A write of Andy's. Nothing on screen changes until the server publishes.
 // His seen is his reading, not a change for the agents: it nudges nobody.
+// Answers whether the server took it.
 function ddWrite(verb, args) {
   args.by = 'andy';
-  return ddAsk(verb, args).then(function () { ddNote = ''; if (args.what !== 'seen') ddNudge(); }, function (e) {
+  return ddAsk(verb, args).then(function () { ddNote = ''; if (args.what !== 'seen') ddNudge(); return true; }, function (e) {
     ddNote = 'Not taken: ' + e.message;
     ddPaint();
+    return false;
   });
 }
 function ddPress(what) { return ddWrite('press', { id: ddId, what: what }); }
@@ -252,7 +254,10 @@ spirit.shell.activateApp({
       var check = t && t.getAttribute && t.getAttribute('data-check');
       if (check) { ddWrite('check.set', { id: ddId, check: check, state: 'passed' }); return; }
       var id = t && t.id;
-      if (id === 'dd-go' || id === 'dd-done' || id === 'dd-close' || id === 'dd-reopen') { ddPress(id.slice(3)); return; }
+      // CLOSE LEAVES THE DIALOG TOO (desk/G3.8). Andy: "when i click on Close in the Detail dialog, the Dialog
+      // should close, since it doesn't exist in the list anymore either." Only once the server took it.
+      if (id === 'dd-close') { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
+      if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen') { ddPress(id.slice(3)); return; }
       if (id === 'dd-abandon') {
         if (!ddArmed) {
           ddArmed = true;
