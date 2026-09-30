@@ -131,6 +131,17 @@ node.listen(0, '127.0.0.1', async function () {
     if (posts.length === 1 && refused && refused.code === 'box-moved' && r.code === 1) test.check('a box-moved answer is printed and exits 1');
     else test.fail(OWED + 'a refusal: posts ' + posts.length + ', printed ' + JSON.stringify(r.out.slice(0, 200)) + ', exit ' + r.code);
 
+    // Live on Andy's node: items.search and item.get take no `by`, and refused one with no-such-argument.
+    test.subHeading('a read carries no by');
+    posts.length = 0;
+    reply = { items: [], more: false };
+    await run(['desk', 'items.search', '{"text":"","currentGoalOnly":true,"goalsOnly":false}'], port);
+    await run(['desk', 'item.get', '{"id":"t/G1.2"}'], port);
+    const reads = posts.map(function (q) { try { return packet.decode(q.text).body.desk; } catch (e) { return null; } });
+    if (reads.length === 2 && reads[0] && reads[0]['items.search'] && !('by' in reads[0]['items.search']) && reads[1] && reads[1]['item.get'] && !('by' in reads[1]['item.get'])) {
+      test.check('items.search and item.get go without a by');
+    } else test.fail('reads sent ' + JSON.stringify(reads));
+
     // wsl-claude's review: send() is silent while halted, and a desk write is a post like any other.
     test.subHeading('halted means silent, for desk writes too');
     posts.length = 0;
