@@ -79,8 +79,8 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   else test.fail(OWED + 'fresh.get is still served');
 
   const session = { goal: { id: 't/G1', title: 'The goal' }, rules: [], items: [
-    { id: 't/G1.1', title: 'Alpha', blocks: ['t/G1'] },
-    { id: 't/G1.2', title: 'Beta', blocks: ['t/G1.1'] },
+    { id: 't/G1.1', title: 'Alpha', blocks: ['t/G1.2'] },
+    { id: 't/G1.2', title: 'Beta', blocks: ['t/G1'] },
   ] };
   await call('session.set', { json: JSON.stringify(session), by: 'claude-windows' });
 
