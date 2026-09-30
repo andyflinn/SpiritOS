@@ -370,6 +370,86 @@ function post(cfg, toKey, env, fetchFn) {
   });
 }
 
+// ── ASKING ANDY'S DESK SERVER (desk/G2.8) ──────────────────────────────
+//
+//   Andy: "lead: 1 and 2 agreed." The box: a claim, a box write, a check are
+//   writes, not text lines, and "Agents read state over peerPost with the
+//   same verbs the List reads (apiDoor.answer)".
+//
+// One 'api' packet {desk: {<verb>: args}} to his node, through this node's
+// peer.post, and its answer is the 'api' packet that comes back down this
+// node's own stream with re = that post's hash. The stream is opened before
+// the post, so an answer quicker than the post's own reply is not missed.
+// `by` IS ALWAYS THIS AGENT: his node's apiDoor refuses a member writing as
+// andy, and one given here is replaced rather than sent to be refused.
+const packet = require('../../../js/client/packet');
+const DESK_WAIT_MS = 30000;
+function deskAsk(cfg, verb, json, fetchFn) {
+  let args = {};
+  if (json) {
+    try { args = JSON.parse(json); } catch (e) { return Promise.reject(new Error('the args are not JSON: ' + e.message)); }
+    if (!args || typeof args !== 'object' || Array.isArray(args)) return Promise.reject(new Error('the args must be a JSON object'));
+  }
+  args.by = cfg.self;
+  if (!verb) return Promise.reject(new Error('usage: agents.js desk <verb> [json]'));
+  if (!cfg.control) return Promise.reject(new Error('AGENTS_CONTROL is not set: no node of Andy\'s to ask'));
+  const ask = { desk: {} };
+  ask.desk[verb] = args;
+  const encoded = packet.encode('api', ask);
+  if (!encoded.ok) return Promise.reject(new Error(encoded.error));
+  return nodeFetch(cfg, '/api/events', {}, fetchFn).then(function (r) {
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    let want = '';
+    const early = [];
+    return new Promise(function (resolve, reject) {
+      const timer = setTimeout(function () { finish(null, new Error('no answer from Andy\'s desk server in ' + DESK_WAIT_MS / 1000 + ' s')); }, DESK_WAIT_MS);
+      function finish(body, err) {
+        clearTimeout(timer);
+        reader.cancel().catch(function () { /* gone */ });
+        if (err) reject(err); else resolve(body);
+      }
+      function take(msg) {
+        if (msg.from !== cfg.control) return;
+        const got = packet.decode(msg.text);
+        if (got.app !== 'api' || !got.re) return;
+        if (!want) { early.push(got); return; }
+        if (got.re === want) finish(got.body);
+      }
+      function pump() {
+        reader.read().then(function (chunk) {
+          if (chunk.done) { finish(null, new Error('the node closed its stream before the answer came')); return; }
+          buf += dec.decode(chunk.value, { stream: true });
+          let i;
+          while ((i = buf.indexOf('\n\n')) !== -1) {
+            const block = buf.slice(0, i); buf = buf.slice(i + 2);
+            const ev = /event: (.*)/.exec(block); const da = /data: (.*)/.exec(block);
+            if (!ev || ev[1] !== 'packet' || !da) continue;
+            let msg; try { msg = JSON.parse(da[1]); } catch (e) { continue; }
+            take(msg);
+          }
+          pump();
+        }, function (e) { finish(null, e); });
+      }
+      pump();
+      nodeFetch(cfg, '/api/spirit', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ verb: 'peer.post', to: cfg.control, text: encoded.text }),
+      }, fetchFn).then(function (res) {
+        return res.text().then(function (t) {
+          let body = null;
+          try { body = JSON.parse(t); } catch (e) { body = { error: t }; }
+          if (!body || !body.ok || !body.hash) { finish(null, new Error('not posted: ' + ((body && body.error) || res.status))); return; }
+          want = body.hash;
+          const hit = early.filter(function (g) { return g.re === want; })[0];
+          if (hit) finish(hit.body);
+        });
+      }, function (e) { finish(null, e); });
+    });
+  });
+}
+
 function commitOf(cfg) {
   try {
     return execFileSync('git', ['-C', cfg.root, 'rev-parse', '--short', 'HEAD'], { encoding: 'utf8' }).trim();
@@ -769,7 +849,7 @@ module.exports = {
   config: config, parsePeers: parsePeers, resolvePeer: resolvePeer,
   makeEnvelope: makeEnvelope, halted: halted, obeyControl: obeyControl,
   send: send, conversation: conversation, read: read, formatEntry: formatEntry,
-  reportOf: reportOf, reportFits: reportFits, flushReports: flushReports, listen: listen,
+  reportOf: reportOf, reportFits: reportFits, flushReports: flushReports, listen: listen, deskAsk: deskAsk,
   TODO_ID: TODO_ID,
   KINDS: KINDS, NEEDS: NEEDS, WHO: WHO, STATES: STATES, blockLine: blockLine,
 };
@@ -785,6 +865,7 @@ module.exports = {
 //   node agents.js read [peer] [n]
 //   node agents.js status
 //   node agents.js verb <verb> [arg]        any loopback verb on its own node (desk/G1.13)
+//   node agents.js desk <verb> [json]       Andy's desk server, by an api packet (desk/G2.8)
 if (require.main === module) {
   const cfg = config();
   const argv = process.argv.slice(2);
@@ -830,6 +911,12 @@ if (require.main === module) {
         process.exit(r.status >= 200 && r.status < 300 ? 0 : 1);
       });
     }, function (e) { console.log(JSON.stringify({ error: e.message })); process.exit(1); });
+  } else if (cmd === 'desk') {
+    // node agents.js desk <verb> [json]: Andy's desk server, by an api packet.
+    deskAsk(cfg, String(rest[1] || ''), rest.slice(2).join(' ')).then(function (body) {
+      console.log(JSON.stringify(body));
+      process.exit(body && body.ok === false ? 1 : 0);
+    }, function (e) { console.log(JSON.stringify({ ok: false, error: e.message })); process.exit(1); });
   } else if (cmd === 'send') {
     send(cfg, rest[1], rest[2], rest.slice(3).join(' '), re, { todo: todo }).then(done, function (e) { done({ ok: false, error: e.message }); });
   } else if (cmd === 'blocked') {
@@ -903,6 +990,7 @@ if (require.main === module) {
       '       agents.js chatter <to> [n=30] [--every ms=300]   a batch, for the monitor',
       '       agents.js halt <to> | resume <to> | listen | read [peer] [n] | status',
       '       agents.js verb <verb> [json|ask]   e.g. verb jobs.api api',
+      '       agents.js desk <verb> [json]   the desk server on Andy\'s node, e.g. desk item.get {"id":"desk/G2.8"}',
     ].join('\n'));
   }
 }
