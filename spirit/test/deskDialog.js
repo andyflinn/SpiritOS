@@ -60,6 +60,7 @@ function dialog(answer) {
   const dd = load(doc);
   const asked = [];
   const published = [];
+  const servers = [];
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
@@ -72,7 +73,7 @@ function dialog(answer) {
       }
       return Promise.resolve({ status: 200, body: {} });
     },
-    onPublished: function (fn) { published.push(fn); return function () {}; },
+    onPublished: function (fn, server) { published.push(fn); servers.push(server); return function () {}; },
     onPacket: function () { return function () {}; },
     setScreenTitle: function () {}, setDialogResult: function () {}, closeDialog: function () {},
     peerPost: function () { return Promise.resolve({ ok: true }); },
@@ -81,7 +82,7 @@ function dialog(answer) {
   const page = function () { return Object.keys(doc.all).map(function (k) { return doc.all[k].innerHTML; }).join('\n'); };
   const click = function (id, attrs) { doc.getElementById('dd-body').fire('click', { target: target(id, attrs), preventDefault: function () {} }); };
   const publish = function (obj) { published.forEach(function (fn) { fn(obj); }); };
-  return { dd: dd, asked: asked, page: page, click: click, publish: publish, published: published };
+  return { dd: dd, asked: asked, page: page, click: click, publish: publish, published: published, servers: servers };
 }
 
 const facts = function (over) {
@@ -111,6 +112,10 @@ test.startTest('desk/G2.7: the item dialog paints only what the desk server says
   else test.fail(OWED + 'the dialog still has #dd-blurb or #dd-decide');
   if (!d.published.length) test.fail(OWED + 'the dialog does not subscribe with api.onPublished');
   else test.check('it listens with api.onPublished');
+  // Found live on Andy's node (wsl-claude): the shell hands a server's changes to the app of its own name, so the
+  // dialog must name the desk server, or it never hears a change.
+  if (d.servers.indexOf('desk') !== -1) test.check('it listens to the desk server by name');
+  else test.fail('the dialog listens as itself, so the desk server changes never reach it: ' + JSON.stringify(d.servers));
 
   test.subHeading('buttons and the yellow strip come from item.buttons');
   if (p0.indexOf('id="dd-done"') !== -1 && p0.indexOf('id="dd-go"') === -1) test.check('buttons [done]: Done shows, Go! does not');

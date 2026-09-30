@@ -214,6 +214,17 @@ test.subHeading('desk/G2.3: a server\'s published object reaches its own app');
   else test.fail(OWED + 'Desk got ' + JSON.stringify(got));
 })();
 
+test.subHeading('desk/G2.7: an app may listen to another server by name');
+(function () {
+  const page = bootShell(DESK_MANIFEST);
+  const got = [];
+  page.load(page.scripts()[0], { mount: function (el, api) { if (typeof api.onPublished === 'function') api.onPublished(function (obj) { got.push(obj); }, 'backup'); } });
+  page.update({ id: 'job_10', kind: 'server', type: 'Backup', module: 'process/js/backup', status: 'running', data: {}, log: [], app: { copied: 1 } });
+  page.update({ id: 'job_9', kind: 'server', type: 'Desk server', module: 'process/js/desk', status: 'running', data: {}, log: [], app: { items: 3 } });
+  if (got.length === 1 && got[0].copied === 1) test.check('onPublished(fn, backup) hears the backup server, and not its own');
+  else test.fail('onPublished with a server name got ' + JSON.stringify(got));
+})();
+
 test.subHeading('desk/G2.3: an app that subscribes after its server published gets the current object');
 (function () {
   const page = bootShell(DESK_MANIFEST);

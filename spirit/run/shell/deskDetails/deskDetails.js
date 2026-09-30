@@ -272,7 +272,8 @@ spirit.shell.activateApp({
         ddRename();
       }
     });
-    if (typeof api.onPublished === 'function') api.onPublished(ddTake);
+    // The desk server's changes, which the shell would otherwise hand only to Desk.
+    if (typeof api.onPublished === 'function') api.onPublished(ddTake, 'desk');
   },
 
   // Every call: which item this is. Nothing stale from the last one.

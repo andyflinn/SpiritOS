@@ -1597,7 +1597,12 @@
 
       // What this app's own server published (desk/G2.3): the object alone,
       // as it was published, whenever it changes. "no pulling".
-      onPublished: function (handler) { return onPublishedFor(app.id, handler); },
+      // `server` names another app's server when this app shows its state (the
+      // Desk item dialog listens to the desk server): a plain name, never a path.
+      onPublished: function (handler, server) {
+        var own = server && /^[\w-]+$/.test(String(server)) ? 'shell/' + String(server) : app.id;
+        return onPublishedFor(own, handler);
+      },
 
       // Everything a relay this node OWNS reports about itself, pushed.
       // Takes no app name because an owner-event is not addressed to one
