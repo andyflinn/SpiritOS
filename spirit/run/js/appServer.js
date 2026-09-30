@@ -152,8 +152,18 @@ function createAppServer(verbs, opts) {
         answer = ok ? route(parsed) : Promise.resolve(refusal('bad-request', { why: 'not JSON' }));
       }
       answer.then(function (a) {
+        // NO OVERSIZED REPLY LEAVES ANY SERVER. Andy: "the shared layer MUST instantly reject a payload, when the
+        // json exceeds the maximum size, that will make this never happen again." Measured here, where every
+        // server's answer is written, against one answer (appClient.ANSWER_MAX); one over it is refused by name.
+        let text = JSON.stringify(a.body);
+        const max = require('./appClient').ANSWER_MAX;
+        const bytes = Buffer.byteLength(text, 'utf8');
+        if (bytes > max) {
+          a = refusal('app-answer-too-large', { bytes: bytes, max: max });
+          text = JSON.stringify(a.body);
+        }
         res.writeHead(a.status, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify(a.body));
+        res.end(text);
       });
     });
   }
