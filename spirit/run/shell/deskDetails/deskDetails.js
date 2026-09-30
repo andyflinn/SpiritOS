@@ -252,17 +252,22 @@ function ddRename() {
 }
 
 // The item as the server has it now: at open, and again after a dropped publish (desk/G3.10).
+// EACH PANEL ITS OWN ANSWER. Andy: "lazy load the panels when thy open". The facts first, then the box, the
+// checks and the chat, each asked on its own, so no answer carries the sum of them.
 function ddLoad() {
-  return ddAsk('item.get', { id: ddId }).then(function (got) {
+  var id = ddId;
+  return ddAsk('item.get', { id: id }).then(function (got) {
+    if (ddId !== id) return null;
     try { ddFacts = JSON.parse(got.item); } catch (e) { ddFacts = null; }
-    ddBox = String(got.box || '');
     ddVersion = Number(got.version) || 0;
-    ddChecks = got.checks || [];
-    ddChat = got.chat || [];
-    ddChatMore = !!got.chatMore;
     ddLastChange = Number(got.change) || ddLastChange;
     ddPaint();
-  }, function (e) {
+    return Promise.all([
+      ddAsk('item.box', { id: id }).then(function (b) { if (ddId !== id) return; ddBox = String(b.box || ''); ddVersion = Number(b.version) || ddVersion; ddPaint(); }),
+      ddAsk('item.checks', { id: id }).then(function (k) { if (ddId !== id) return; ddChecks = k.checks || []; ddPaint(); }),
+      ddAsk('item.chat', { id: id }).then(function (c) { if (ddId !== id) return; ddChat = c.chat || []; ddChatMore = !!c.chatMore; ddPaint(); }),
+    ]);
+  }).then(null, function (e) {
     ddNote = 'The desk server did not answer: ' + e.message;
     ddPaint();
   });

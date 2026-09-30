@@ -10,7 +10,9 @@ for the new Desk by desk/G2.8; his to edit.
 - Everything Desk shows is the desk server's: items, the one box, checks,
   chat and presses. Andy: "The server determines all the content to be drawn."
 - Read it with `node agents.js desk items.search '{"text":"","currentGoalOnly":true,"goalsOnly":false}'`
-  and `node agents.js desk item.get '{"id":"<area/G1.2>"}'`: the same verbs the
+  and `node agents.js desk item.get '{"id":"<area/G1.2>"}'` for an item's facts;
+  its box, checks and chat are `item.box`, `item.checks` and `item.chat`, one
+  answer each (Andy: "lazy load the panels when thy open"). The same verbs the
   List and the dialog read. `by` is always you; you cannot write as andy.
 - A claim, a design-complete, a box write, a check, a check result are
   writes through `agents.js desk`, never text lines. Chat stays chat

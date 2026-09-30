@@ -5,7 +5,7 @@
 // items, the title of items etc." The one canonical state is desk.db; the browser holds none.
 // The contract the builder follows (names from claude-windows's proposal under desk/G2.1, each write carrying `by`):
 //   reads   items.search {text, currentGoalOnly, goalsOnly} -> {items: [{key, label}], more}, each label JSON
-//           {id, title, status, buttons, blocking, blocked, ...}; item.get {id} -> {item, box, version, checks, chat}
+//           {id, title, status, buttons, blocking, blocked, ...}; item.get {id} -> {item, version, change}; item.box, item.checks, item.chat {id} one panel each
 //   writes  session.set {json, by}; box.write {id, text, version, by}; check.add {id, kind, words, test, by};
 //           check.set {id, check, state, by}; chat.add {id, text, by}; item.rename {id, title, by};
 //           item.status {id, word, by}; item.take {id, by}; press {id, what, by}
@@ -25,7 +25,7 @@ const appClient = require('../run/js/appClient.js');
 const OWED = 'OWED by desk/G2.1: ';
 const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
 const WRITES = ['session.set', 'box.write', 'check.add', 'check.set', 'chat.add', 'item.rename', 'item.status', 'item.take', 'press'];
-const READS = ['items.search', 'item.get'];
+const READS = ['items.search', 'item.get', 'item.box', 'item.checks', 'item.chat'];
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -49,6 +49,12 @@ const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk
 const client = appClient.createAppClient({ rootDir: scratch });
 client.register('desk', pipe);
 const call = function (verb, args) { const b = {}; b[verb] = args; return client.ask({ desk: b }).then(function (r) { return r || {}; }, function () { return {}; }); };
+// The item as the dialog sees it: its facts and each panel, asked each on its own (lazy panels).
+async function whole(id) {
+  const parts = await Promise.all(['item.get', 'item.box', 'item.checks', 'item.chat'].map(function (v) { return call(v, { id: id }); }));
+  return { status: parts.every(function (p) { return p.status === 200; }) ? 200 : (parts.filter(function (p) { return p.status !== 200; })[0] || {}).status,
+    body: Object.assign({}, parts[0].body, parts[1].body, parts[2].body, parts[3].body) };
+}
 async function start() {
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   kids.push(kid);
@@ -125,30 +131,30 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
 
   test.subHeading('the one box: the first text wins, alterations name their version');
   const w1 = await call('box.write', { id: 't/G1.2', text: 'FIRST', version: 0, by: 'claude-windows' });
-  const g1 = (await call('item.get', { id: 't/G1.2' })).body || {};
+  const g1 = (await whole('t/G1.2')).body || {};
   if (g1.box === 'FIRST' && g1.version >= 1) test.check('the first write becomes the box');
   else test.fail(OWED + 'after the first write: ' + JSON.stringify({ w1: w1.body, g1: g1 }));
   const stale = await call('box.write', { id: 't/G1.2', text: 'SECOND-ON-STALE', version: 0, by: 'wsl-claude' });
-  const g2 = (await call('item.get', { id: 't/G1.2' })).body || {};
+  const g2 = (await whole('t/G1.2')).body || {};
   if (stale.status >= 400 && g2.box === 'FIRST') test.check('an alteration against an old version is refused, and the box keeps its text');
   else test.fail(OWED + 'a stale alteration: ' + JSON.stringify({ status: stale.status, box: g2.box }));
   await call('box.write', { id: 't/G1.2', text: 'MERGED', version: g2.version, by: 'wsl-claude' });
-  const g3 = (await call('item.get', { id: 't/G1.2' })).body || {};
+  const g3 = (await whole('t/G1.2')).body || {};
   if (g3.box === 'MERGED') test.check('an alteration against the current version replaces it');
   else test.fail(OWED + 'after a current alteration the box is ' + JSON.stringify(g3.box));
 
   test.subHeading('checks, chat, rename and status');
   await call('check.add', { id: 't/G1.2', kind: 'C', words: 'look at it', test: '', by: 'claude-windows' });
-  const c0 = ((await call('item.get', { id: 't/G1.2' })).body || {}).checks || [];
+  const c0 = ((await whole('t/G1.2')).body || {}).checks || [];
   const first = c0[0] || {};
   await call('check.set', { id: 't/G1.2', check: first.number || 'C1', state: 'passed', by: 'andy' });
-  const c1 = ((await call('item.get', { id: 't/G1.2' })).body || {}).checks || [];
+  const c1 = ((await whole('t/G1.2')).body || {}).checks || [];
   if (c1.length === 1 && c1[0].state === 'passed' && /C1/.test(String(c1[0].number))) test.check('a C check is added as C1, and its tick is recorded');
   else test.fail(OWED + 'checks: ' + JSON.stringify(c1));
   await call('chat.add', { id: 't/G1.2', text: 'a line', by: 'andy' });
   await call('item.rename', { id: 't/G1.2', title: 'Beta renamed', by: 'andy' });
   await call('item.status', { id: 't/G1.2', word: 'coding', by: 'wsl-claude' });
-  const g4 = (await call('item.get', { id: 't/G1.2' })).body || {};
+  const g4 = (await whole('t/G1.2')).body || {};
   by = await items();
   const chatOk = (g4.chat || []).some(function (l) { return l.text === 'a line'; });
   if (chatOk && by['t/G1.2'] && by['t/G1.2'].title === 'Beta renamed' && by['t/G1.2'].status === 'coding') test.check('chat, rename and status word all show');
@@ -226,7 +232,7 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   await stop(kids[kids.length - 1]);
   await start();
   by = await items();
-  const g5 = (await call('item.get', { id: 't/G1.2' })).body || {};
+  const g5 = (await whole('t/G1.2')).body || {};
   if (!by['t/G1.1'] && by['t/G1.2'] && by['t/G1.2'].title === 'Beta renamed' && g5.box === 'MERGED') test.check('after a restart: Alpha still closed, Beta renamed, its box kept');
   else test.fail(OWED + 'after a restart: ' + JSON.stringify({ keys: Object.keys(by), box: g5.box }));
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(async function () {

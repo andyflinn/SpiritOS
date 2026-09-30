@@ -46,7 +46,7 @@ const DIR = path.join(RUN, 'process', 'js', 'desk');
 const SCRIPT = path.join(DIR, 'desk.js');
 // pending.get joined with desk/G1.5; fresh.get with slim/G1.6; AGENTS with
 // slim/G1.8 (its AGENTS.md, which appServer.serve detects); DEBUG with desk/G2.5 (every server has it).
-const VERBS = ['AGENTS', 'DEBUG', 'box.write', 'chat.add', 'check.add', 'check.set', 'item.get', 'item.rename', 'item.status', 'item.take', 'items.search', 'log.add', 'log.search', 'pending.get', 'press', 'seen.get', 'seen.set', 'session.set', 'state.get', 'state.set', 'voice.add'];
+const VERBS = ['AGENTS', 'DEBUG', 'box.write', 'chat.add', 'check.add', 'check.set', 'item.box', 'item.chat', 'item.checks', 'item.get', 'item.rename', 'item.status', 'item.take', 'items.search', 'log.add', 'log.search', 'pending.get', 'press', 'seen.get', 'seen.set', 'session.set', 'state.get', 'state.set', 'voice.add'];
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskserver-'));
 const state = path.join(scratch, 'state');

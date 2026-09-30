@@ -9,7 +9,7 @@
 //         next free number), titled 'New goal', in design mode, and makes it the current goal; Andy renames it.
 //         With a goal open, an empty id is refused (bad-request). An agent's is refused like any owner press.
 //         The List's Start design, with no goal row, sends that press.
-//   G3.3  item.get walks the chat newest first through the server's bucket, in the room the answer has left after
+//   G3.3  item.chat (item.get before the lazy panels) walks the chat newest first through the server's bucket, in the room the answer has left after
 //         the box and the facts: `chat` holds the newest lines that fit, oldest first as before, and `chatMore` is
 //         true when older lines were left out. The whole answer fits one answer (appClient.ANSWER_MAX).
 
@@ -48,6 +48,12 @@ async function start() {
   return false;
 }
 function stop(kid) { return new Promise(function (r) { if (kid.exitCode !== null || kid.signalCode !== null) return r(); kid.once('exit', r); kid.kill(); }); }
+// The item as the dialog sees it: its facts and each panel, asked each on its own (lazy panels).
+async function whole(id) {
+  const parts = await Promise.all(['item.get', 'item.box', 'item.checks', 'item.chat'].map(function (v) { return call(v, { id: id }); }));
+  return { status: parts.every(function (p) { return p.status === 200; }) ? 200 : (parts.filter(function (p) { return p.status !== 200; })[0] || {}).status,
+    body: Object.assign({}, parts[0].body, parts[1].body, parts[2].body, parts[3].body) };
+}
 async function items(args) {
   const r = await call('items.search', Object.assign({ text: '', currentGoalOnly: false, goalsOnly: false }, args || {}));
   return (((r.body || {}).items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
@@ -134,7 +140,7 @@ function clickTarget(attrs) {
   await call('box.write', { id: 't/G1.1', text: 'the box', version: 0, by: 'claude-windows' });
   const n = Math.ceil((appClient.ANSWER_MAX * 3) / 1000);
   for (let i = 0; i < n; i++) await call('chat.add', { id: 't/G1.1', text: 'LINE-' + String(i).padStart(3, '0') + ' ' + 'x'.repeat(1000), by: i % 2 ? 'andy' : 'wsl-claude' });
-  const got = await call('item.get', { id: 't/G1.1' });
+  const got = await whole('t/G1.1');
   const body = got.body || {};
   const chat = body.chat || [];
   const newest = 'LINE-' + String(n - 1).padStart(3, '0');
@@ -145,14 +151,14 @@ function clickTarget(attrs) {
   else test.fail(G33 + 'chatMore ' + JSON.stringify(body.chatMore) + ', ' + chat.length + ' of ' + n + ' lines');
   if (got.status === 200 && Buffer.byteLength(JSON.stringify(body), 'utf8') <= appClient.ANSWER_MAX) test.check('the answer fits one answer');
   else test.fail(G33 + 'the answer is ' + Buffer.byteLength(JSON.stringify(body), 'utf8') + ' bytes');
-  const short = await call('item.get', { id: 't/G1' });
+  const short = await whole('t/G1');
   if (short.status === 200 && (short.body || {}).chatMore === false) test.check('a short chat says chatMore false');
   else test.fail(G33 + 'a short chat answered chatMore ' + JSON.stringify((short.body || {}).chatMore));
   // Andy: "in the db yes, but in the sent messages ther MUST be a MAX_PAYLOAD". A line too long to come back whole in
   // an item.get is refused when it is written (line-too-large), and the sender slices it; the chat keeps what it had.
   await call('chat.add', { id: 't/G1', text: 'SMALL-OLDER', by: 'wsl-claude' });
   const tooLong = await call('chat.add', { id: 't/G1', text: 'HUGE ' + 'y'.repeat(appClient.ANSWER_MAX - 400), by: 'wsl-claude' });
-  const huge = await call('item.get', { id: 't/G1' });
+  const huge = await whole('t/G1');
   const hc = (huge.body || {}).chat || [];
   if (tooLong.status === 413 && tooLong.body && tooLong.body.code === 'line-too-large') test.check('chat.add refuses a line too long to be sent back, as line-too-large');
   else test.fail(G33 + 'a too-long chat line answered ' + JSON.stringify({ status: tooLong.status, code: tooLong.body && tooLong.body.code }));

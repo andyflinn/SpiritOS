@@ -68,7 +68,7 @@ function dialog(answer) {
       if (name === 'jobs.api' && ask) {
         const v = Object.keys(ask)[0];
         asked.push({ verb: v, args: ask[v] });
-        if (v === 'item.get') return Promise.resolve({ status: 200, body: answer });
+        if (v === 'item.get' || v === 'item.box' || v === 'item.checks' || v === 'item.chat') return Promise.resolve({ status: 200, body: answer });
         return Promise.resolve({ status: 200, body: { change: 1 } });
       }
       return Promise.resolve({ status: 200, body: {} });

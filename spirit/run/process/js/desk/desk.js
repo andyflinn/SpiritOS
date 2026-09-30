@@ -537,20 +537,44 @@ appServer.serve({
       return walked(searchItems(a), function (item) { return { key: JSON.parse(item).id, label: item }; });
     },
   },
+  // EACH PANEL ITS OWN ANSWER. Andy: "what kind of app doesn't measure the sum of its packets?" and "lazy load the
+  // panels when thy open". item.get is the item's facts; its box, checks and chat are asked for each on its own, so
+  // no answer carries the sum of them and each fits one answer by itself.
   'item.get': {
-    request: { id: '' },
-    reply: { item: '', box: '', version: 0, change: 0, chatMore: false,
-      checks: [{ number: '', kind: '', words: '', test: '', state: '', by: '', at: '' }], chat: [{ by: '', at: '', text: '' }] },
+    request: { id: '' }, reply: { item: '', version: 0, change: 0 },
     handler: function (a) {
       const s = walkState();
       const it = s.items[String(a.id)];
       if (!it) throw refused('no-such-item');
-      const out = { item: JSON.stringify(facts(s, it)), box: it.box, version: it.version, change: s.change, chatMore: false, checks: it.checks, chat: [] };
-      // THE CHAT IS A SEARCH (desk/G3.3). Andy: "why would the server not use bucket to give me the most recent
-      // stuff?" Its newest lines, through the same bucket, in the room the rest of the answer leaves; oldest first.
-      const room = ANSWER_ROOM - Buffer.byteLength(JSON.stringify(out), 'utf8');
+      return { item: JSON.stringify(facts(s, it)), version: it.version, change: s.change };
+    },
+  },
+  'item.box': {
+    request: { id: '' }, reply: { box: '', version: 0 },
+    handler: function (a) {
+      const it = walkState().items[String(a.id)];
+      if (!it) throw refused('no-such-item');
+      return { box: it.box, version: it.version };
+    },
+  },
+  'item.checks': {
+    request: { id: '' }, reply: { checks: [{ number: '', kind: '', words: '', test: '', state: '', by: '', at: '' }] },
+    handler: function (a) {
+      const it = walkState().items[String(a.id)];
+      if (!it) throw refused('no-such-item');
+      return { checks: it.checks };
+    },
+  },
+  // THE CHAT IS A SEARCH (desk/G3.3). Andy: "why would the server not use bucket to give me the most recent
+  // stuff?" Its newest lines, through the same bucket, in a whole answer of its own; oldest first.
+  'item.chat': {
+    request: { id: '' }, reply: { chat: [{ by: '', at: '', text: '' }], chatMore: false },
+    handler: function (a) {
+      const it = walkState().items[String(a.id)];
+      if (!it) throw refused('no-such-item');
+      const room = ANSWER_ROOM - Buffer.byteLength(JSON.stringify({ chatMore: false }), 'utf8');
       const bucket = searchBucket.createSearch({
-        query: '**', maxBytes: Math.max(0, room),
+        query: '**', maxBytes: room,
         getLabelStringFromIncomingObject: function (pair) { return pair.label; },
         extractKeyAndLabelFromRow: function (pair) { return pair; },
       });
@@ -561,10 +585,8 @@ appServer.serve({
         if (Buffer.byteLength(JSON.stringify({ items: [pair], more: false }), 'utf8') > room) continue;
         if (!bucket.offer(pair)) break;
       }
-      const r = bucket.getResult();
-      out.chat = r.items.map(function (p) { return JSON.parse(p.label); }).reverse();
-      out.chatMore = out.chat.length < it.chat.length;
-      return out;
+      const chat = bucket.getResult().items.map(function (p) { return JSON.parse(p.label); }).reverse();
+      return { chat: chat, chatMore: chat.length < it.chat.length };
     },
   },
   // ── THE WRITES (desk/G2.1): each carries `by`, an agent's name or 'andy'.
@@ -583,6 +605,8 @@ appServer.serve({
   'box.write': {
     request: { id: '', text: '', version: 0, by: '' }, reply: { change: 0, version: 0 },
     handler: function (a) {
+      // A box that could not come back whole in item.box is refused here, as chat.add refuses such a line.
+      if (!fitsOneAnswer('0', JSON.stringify({ box: String(a.text), version: 0 }))) throw tooLarge();
       const s = write('box.write', a, function (st, it) { if (a.version !== it.version) throw refused('box-moved'); });
       return { change: s.change, version: s.items[a.id].version };
     },
