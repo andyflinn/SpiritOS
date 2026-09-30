@@ -7,6 +7,7 @@
   var contentEl = document.getElementById('app-content');
   var closeBtn = document.getElementById('app-close');
   var homeBtn = document.getElementById('app-home');
+  var dialogCloseBtn = document.getElementById('app-dialog-close');
 
   var jobsById = new Map();
   var apps = {};
@@ -164,7 +165,10 @@
   // hidden until this node has a name, exactly as before.
   function paintTitlebarChrome() {
     var canGoBack = !firstRun() || navStack.length > 1;
-    if (closeBtn) closeBtn.style.display = canGoBack ? '' : 'none';
+    // A dialog on top has no Back; its X at the right does what Back did (desk/G3.5).
+    var dialog = !!(activeAppId && apps[activeAppId] && apps[activeAppId].type === 'dialog');
+    if (closeBtn) closeBtn.style.display = canGoBack && !dialog ? '' : 'none';
+    if (dialogCloseBtn) dialogCloseBtn.style.display = dialog ? '' : 'none';
     if (homeBtn) homeBtn.style.display = firstRun() ? 'none' : '';
   }
 
@@ -1786,6 +1790,7 @@
     // other class, and an assignment is the one form the test harness's
     // fake elements answer.
     containerEl.className = app.type === 'dialog' ? 'is-dialog' : '';
+    paintTitlebarChrome();
     titleEl.textContent = app.name;
     // A file, when there is one: the launchers are not a special case,
     // they are apps whose displayed subject happens to be a path. Full
@@ -2051,6 +2056,7 @@
   }
 
   closeBtn.addEventListener('click', goBack);
+  if (dialogCloseBtn) dialogCloseBtn.addEventListener('click', goBack);
   homeBtn.addEventListener('click', goHome);
 
   function renderActive() {

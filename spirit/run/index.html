@@ -215,6 +215,10 @@
       }
 
       #app-title { font-size: 16px; font-weight: 600; }
+      /* A DIALOG CLOSES WITH A BLACK X AT THE FAR RIGHT (desk/G3.5). Andy: "when i exit out of i dialog, i don't
+         want my mouse pointer to be right on top of the back-button for the app." Light behind it, so the black
+         reads on the dialog's dark bar. */
+      #app-dialog-close { margin-left: auto; cursor: pointer; font-size: 18px; color: #000; background: #c3c3c3; border: none; border-radius: 4px; padding: 2px 8px; }
       #app-content { padding: 16px; }
 
       /* A MARK, NOT A LINK. Same size as Back and Home — 22px, inherited
@@ -1346,6 +1350,7 @@
         <button id="app-close" type="button" title="Back">⬅️</button>
         <button id="app-home" type="button" title="Home">🏠</button>
         <div id="app-title"></div>
+        <button id="app-dialog-close" type="button" title="Close" style="display:none">✖</button>
       </div>
       <div id="app-content"></div>
     </div>
