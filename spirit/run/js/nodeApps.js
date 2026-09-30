@@ -105,35 +105,24 @@ function boots(manifest) {
   return !!(manifest && manifest.boots === true);
 }
 
-const OWNER_KEY = /^MCowBQYDK2VwAyEA[A-Za-z0-9+/]{43}=$/;
 // A node is a puppet when relay-state/owner.json names a key that is not its
 // own (Andy: "pupped is the fate of having an owner that is not the self").
-function selfKeyIn(rootDir) {
-  try {
-    const id = JSON.parse(fs.readFileSync(path.join(String(rootDir || ''), 'relay-state', 'identity.json'), 'utf8'));
-    return id && typeof id.publicKey === 'string' ? id.publicKey : '';
-  } catch (e) { return ''; }
-}
+// Read on every call, so an owner edit is seen at once.
 function puppetIn(rootDir, log) {
+  const auth = require('./relayAuth');
   const say = log || function () {};
-  const file = path.join(String(rootDir || ''), 'relay-state', 'owner.json');
   let moaned = null;
   return function () {
-    let raw = null;
-    try { raw = fs.readFileSync(file, 'utf8'); } catch (e) { raw = null; }
-    if (!raw || !String(raw).trim()) return { puppet: false, owner: '' };
-    let doc = null;
-    try { doc = JSON.parse(raw); } catch (e) { doc = null; }
-    const owner = doc && typeof doc.owner === 'string' && OWNER_KEY.test(doc.owner) ? doc.owner : '';
-    if (!owner) {
-      if (moaned !== raw) {
-        moaned = raw;
-        say('owner.json names no owner as { "owner": "MCowBQYDK2VwAyEA..." }, so this node takes no owner commands until it is fixed');
-      }
-      return { puppet: false, owner: '' };
+    let broken = null;
+    const owner = auth.loadOwner(String(rootDir || ''), function (raw) { broken = raw; });
+    if (broken !== null && broken !== moaned) {
+      moaned = broken;
+      say('owner.json names no owner as { "owner": "MCowBQYDK2VwAyEA..." }, so this node takes no owner commands until it is fixed');
     }
-    moaned = null;
-    if (owner === selfKeyIn(rootDir)) return { puppet: false, owner: '' };
+    if (broken === null) moaned = null;
+    if (!owner) return { puppet: false, owner: '' };
+    const self = auth.loadIdentity(String(rootDir || ''));
+    if (self && self.publicKey === owner) return { puppet: false, owner: '' };
     return { puppet: true, owner: owner };
   };
 }

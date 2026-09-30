@@ -384,11 +384,19 @@ function verify(publicKeyB64, message, sigB64) {
 
 // Every owned server keeps its owner's key in relay-state/owner.json, as
 // { owner } (Andy, cleanup/G1.7). No file, or no key in it: no owner.
-function loadOwner(rootDir) {
-  try {
-    const doc = JSON.parse(fs.readFileSync(path.join(rootDir, 'relay-state', 'owner.json'), 'utf8'));
-    return doc && typeof doc.owner === 'string' ? doc.owner.trim() : '';
-  } catch (e) { return ''; }
+// Only an Ed25519 public key counts: a torn or hand-mangled file means no
+// owner, never a claimed relay nobody can enter.
+const OWNER_KEY = /^MCowBQYDK2VwAyEA[A-Za-z0-9+/]{43}=$/;
+// onBroken(raw), if given, hears a file that exists but names no key.
+function loadOwner(rootDir, onBroken) {
+  let raw = null;
+  try { raw = fs.readFileSync(path.join(rootDir, 'relay-state', 'owner.json'), 'utf8'); } catch (e) { return ''; }
+  let doc = null;
+  try { doc = JSON.parse(raw); } catch (e) { doc = null; }
+  const key = doc && typeof doc.owner === 'string' ? doc.owner.trim() : '';
+  if (OWNER_KEY.test(key)) return key;
+  if (onBroken && String(raw).trim()) onBroken(raw);
+  return '';
 }
 
 function writeOwner(rootDir, key) {

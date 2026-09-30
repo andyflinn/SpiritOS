@@ -28,11 +28,12 @@ const s = relayStore.open(H);
 
 test.subHeading('Members, by key');
 
-s.members.put({ publicKey: 'K1', publicLabel: 'andy', claimedAt: '2026-01-01', owner: true });
+const K1 = 'MCowBQYDK2VwAyEA' + 'k'.repeat(43) + '=';
+s.members.put({ publicKey: K1, publicLabel: 'andy', claimedAt: '2026-01-01', owner: true });
 s.members.put({ publicKey: 'K2', publicLabel: ' bert ', claimedAt: '2026-01-02' });
 s.members.put({ publicKey: 'K3', publicLabel: 'bert', claimedAt: '2026-01-03' });
 
-const k1 = s.members.get('K1');
+const k1 = s.members.get(K1);
 // `owner: true` is offered above, as a caller written before 2026-09-19
 // would, and does not stick: a row does not know who owns the relay.
 if (k1 && k1.publicLabel === 'andy' && !('owner' in k1)) {
@@ -78,8 +79,8 @@ if (s.members.get('K2').publicLabel === 'bertie' && s.members.count() === 3) {
 
 test.subHeading('Invites and the partner roll');
 
-s.invites.add({ token: 'T1', label: 'zoe', expiresAt: '2026-01-01T00:00:00Z', invitedBy: 'K1' });
-s.invites.add({ token: 'T2', label: 'yan', expiresAt: '2099-01-01T00:00:00Z', invitedBy: 'K1' });
+s.invites.add({ token: 'T1', label: 'zoe', expiresAt: '2026-01-01T00:00:00Z', invitedBy: K1 });
+s.invites.add({ token: 'T2', label: 'yan', expiresAt: '2099-01-01T00:00:00Z', invitedBy: K1 });
 const swept = s.invites.sweepExpired('2026-06-01T00:00:00Z');
 if (swept === 1 && s.invites.get('T1') === null && s.invites.get('T2')) {
   test.check('an expired invite is swept and a live one stays');
@@ -213,7 +214,7 @@ else test.fail('open() made a second connection');
 
 relayStore.closeAll();
 const again = relayStore.open(H);
-if (again !== s && again.members.count() === 3 && again.members.get('K1').publicLabel === 'andy') {
+if (again !== s && again.members.count() === 3 && again.members.get(K1).publicLabel === 'andy') {
   test.check('closed and reopened, the rows are still there');
 } else {
   test.fail('after reopen: count=' + again.members.count());
@@ -233,7 +234,7 @@ if (counts.code === 0 && /members\s+3/.test(counts.text) && /partners\s+1/.test(
 } else {
   test.fail('counts: ' + JSON.stringify(counts));
 }
-if (counts.text.indexOf('K1') === -1 && counts.text.indexOf('andy') === -1) {
+if (counts.text.indexOf('MCowBQYDK2Vw') === -1 && counts.text.indexOf('andy') === -1) {
   test.check('and names nobody — no whole-roll print (0012 widened)');
 } else {
   test.fail('the count view named a member: ' + counts.text);
@@ -246,12 +247,12 @@ if (byKey.code === 0 && byKey.text.indexOf('"bert"') !== -1 && byKey.text.indexO
   test.fail('key: ' + JSON.stringify(byKey));
 }
 
-// The owner is allow.json's one key, never a mark on the row.
-auth.writeOwner(H, 'K1');
+// The owner is owner.json's key, never a mark on the row.
+auth.writeOwner(H, K1);
 const byLabel = dump(['label', 'andy']);
 const byBert = dump(['label', 'bert']);
-if (byLabel.code === 0 && /owner\s+andy\s+K1/.test(byLabel.text) && /member\s+bert\s+K3/.test(byBert.text)) {
-  test.check('a label lookup shows who holds it, the owner named from allow.json');
+if (byLabel.code === 0 && /owner\s+andy\s+MCowBQYDK2Vw/.test(byLabel.text) && /member\s+bert\s+K3/.test(byBert.text)) {
+  test.check('a label lookup shows who holds it, the owner named from owner.json');
 } else {
   test.fail('label: ' + JSON.stringify(byLabel));
 }
