@@ -141,6 +141,10 @@ withJobsServer(function (jobs) {
   return withJobsServer(function (jobs) { return launcher.withDoor(test, jobs); })
     .then(function () { return launcher.withoutDoor(test); });
 }).then(function () {
+  // desk/G2.3's process half needs this door too; it lives in publishChecks.js.
+  const publish = require('./publishChecks.js');
+  return withJobsServer(function (jobs) { return publish.withDoor(test, jobs); });
+}).then(function () {
   test.reportSuccessFailureCount();
 }).catch(function (err) {
   test.fail('unexpected error running the job-callback test: ' + (err && err.stack || err));

@@ -91,12 +91,14 @@ function bootShell(manifest) {
     if (typeof h.onSnapshot === 'function') h.onSnapshot([{ id: 'fs-watcher-1', type: 'fs-watcher', data: { files: [{ kind: 'file', relativePath: 'shell/desk/desk.js' }] } }]);
   });
   const wired = subscribers.filter(function (h) { return typeof h.onPacket === 'function'; })[0];
+  const jobsWire = subscribers.filter(function (h) { return typeof h.onUpdate === 'function'; })[0];
   const scripts = function () { return doc.body.children.filter(function (c) { return c.tag === 'script'; }); };
   return {
     shell: shellSpirit.shell,
     doc: doc,
     scripts: scripts,
     content: byId['app-content'],
+    update: function (job) { jobsWire.onUpdate(job); },
     arrive: function (app, body, hash) {
       wired.onPacket({ hash: hash, fromKey: 'K', text: packet.encode(app, body).text, sentAt: '2026-09-27T06:00:00Z' });
     },
@@ -187,6 +189,29 @@ test.subHeading('What is held is bounded');
   page.load(page.scripts()[0], { mount: function (el, api) { api.onPacket('agents', function (body) { got.push(body.n); }); } });
   if (got.length === 500 && got[0] === 10 && got[499] === 509) test.check('past 500 the oldest goes first, so a script that never loads cannot grow the page without end');
   else test.fail('held ' + got.length + ' from ' + got[0] + ' to ' + got[got.length - 1]);
+})();
+
+// desk/G2.3: the shell hands a job's published object to the app of its module, as a JS object.
+// Andy: "so desk can update in realtime", "no pulling". A job of module process/js/<name> belongs to the app
+// shell/<name>; the app subscribes with api.onPublished(fn) and fn gets the object alone.
+test.subHeading('desk/G2.3: a server\'s published object reaches its own app');
+(function () {
+  const OWED = 'OWED by desk/G2.3: ';
+  const page = bootShell(DESK_MANIFEST);
+  const got = [];
+  let wired = false;
+  page.load(page.scripts()[0], {
+    mount: function (el, api) {
+      if (typeof api.onPublished === 'function') { wired = true; api.onPublished(function (obj) { got.push(obj); }); }
+    },
+  });
+  if (wired) test.check('an app is given api.onPublished');
+  else test.fail(OWED + 'no api.onPublished');
+  page.update({ id: 'job_9', kind: 'server', type: 'Desk server', module: 'process/js/desk', status: 'running', data: {}, log: [], app: { items: 3 } });
+  page.update({ id: 'job_10', kind: 'server', type: 'Backup', module: 'process/js/backup', status: 'running', data: {}, log: [], app: { other: 1 } });
+  page.update({ id: 'job_9', kind: 'server', type: 'Desk server', module: 'process/js/desk', status: 'running', data: { pid: 5 }, log: [] });
+  if (got.length === 1 && got[0] && got[0].items === 3) test.check('Desk got its server\'s object, and only that: not another server\'s, not an update without one');
+  else test.fail(OWED + 'Desk got ' + JSON.stringify(got));
 })();
 
 test.reportSuccessFailureCount();
