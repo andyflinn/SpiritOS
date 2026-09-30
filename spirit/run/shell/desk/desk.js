@@ -406,14 +406,21 @@ function deskOnPublished(obj) {
 // server publishes. Then each agent gets the bare nudge, his pick (b): "After
 // the server records a change, the page sends the agents a tiny 'changed'
 // packet with no content."
+// The agents the server says are live (the goal row's live), with the keys Desk has heard them on.
+function deskLiveAgents() {
+  var g = deskGoalRow();
+  var live = g && Array.isArray(g.live) ? g.live : [];
+  var out = {};
+  Object.keys(deskAgents).forEach(function (n) { if (live.indexOf(n) !== -1) out[n] = deskAgents[n]; });
+  return out;
+}
 function deskPress(id, what) {
   return deskAsk('press', { id: id, what: what, by: 'andy' }).then(function () {
     // To the agents the server says are live (the goal row's live), not to
     // every agent ever heard (wsl-claude's review).
-    var g = deskGoalRow();
-    var live = g && Array.isArray(g.live) ? g.live : [];
-    Object.keys(deskAgents).filter(function (n) { return live.indexOf(n) !== -1; }).forEach(function (n) {
-      Promise.resolve(deskApi.peerPost('agents', deskAgents[n].key, { kind: 'changed' }))
+    var live = deskLiveAgents();
+    Object.keys(live).forEach(function (n) {
+      Promise.resolve(deskApi.peerPost('agents', live[n].key, { kind: 'changed' }))
         .catch(function () { /* the agent reads the state when it next looks */ });
     });
   }, function (e) { deskError = 'Not pressed: ' + ((e && e.message) || e); deskDraw(); });
@@ -701,8 +708,8 @@ function deskDraw() {
 // be able to click on items in the bubble in team and see the details".
 function deskOpenRow(id) {
   // THE DIALOG ASKS THE DESK SERVER ITSELF (desk/G2.7): Desk hands it the id
-  // and the agents it can talk to. It presses seen and writes its own chat.
-  deskApi.callDialog('shell/deskDetails', { id: id, agents: deskAgents })
+  // and the live agents, for its nudge. It presses seen and writes its own chat.
+  deskApi.callDialog('shell/deskDetails', { id: id, agents: deskLiveAgents() })
     .then(function (result) {
       // A line in its Blocked by / Blocking lists was clicked: go there.
       if (result && result.open) deskOpenRow(result.open);

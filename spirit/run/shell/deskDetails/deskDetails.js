@@ -51,9 +51,10 @@ function ddNudge() {
 }
 
 // A write of Andy's. Nothing on screen changes until the server publishes.
+// His seen is his reading, not a change for the agents: it nudges nobody.
 function ddWrite(verb, args) {
   args.by = 'andy';
-  return ddAsk(verb, args).then(function () { ddNote = ''; ddNudge(); }, function (e) {
+  return ddAsk(verb, args).then(function () { ddNote = ''; if (args.what !== 'seen') ddNudge(); }, function (e) {
     ddNote = 'Not taken: ' + e.message;
     ddPaint();
   });

@@ -436,6 +436,11 @@ function write(verb, a, check) {
   return after;
 }
 
+// HIS VOICE, A PLAIN FILE (D5): one line per thing he typed, {text, day}.
+function addVoice(text, day) {
+  fs.appendFileSync(path.join(STATE, 'voice.jsonl'), JSON.stringify({ text: String(text), day: day || new Date().toISOString().slice(0, 10) }) + '\n');
+}
+
 const PRESSES = ['go', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen'];
 // Andy's alone (G2.1 review). His presses come by jobs.api, and apiDoor refuses a
 // member who says 'andy', so these are loopback-only. The agents keep claim-done,
@@ -533,9 +538,10 @@ appServer.serve({
       }).change };
     },
   },
-  'chat.add': { request: { id: '', text: '', by: '' }, reply: { change: 0 }, handler: function (a) { return { change: write('chat.add', a).change }; } },
+  // What he types is also his voice (desk/G1.4): kept here, once, for his chat and his names.
+  'chat.add': { request: { id: '', text: '', by: '' }, reply: { change: 0 }, handler: function (a) { const c = write('chat.add', a).change; if (a.by === 'andy') addVoice(a.text); return { change: c }; } },
   // "rename (you)": Andy's alone.
-  'item.rename': { request: { id: '', title: '', by: '' }, reply: { change: 0 }, handler: function (a) { ownerOnly(a); return { change: write('item.rename', a).change }; } },
+  'item.rename': { request: { id: '', title: '', by: '' }, reply: { change: 0 }, handler: function (a) { ownerOnly(a); const c = write('item.rename', a).change; addVoice(a.title); return { change: c }; } },
   'item.status': { request: { id: '', word: '', by: '' }, reply: { change: 0 }, handler: function (a) { return { change: write('item.status', a).change }; } },
   'item.take': { request: { id: '', by: '' }, reply: { change: 0 }, handler: function (a) { return { change: write('item.take', a).change }; } },
   // Presses are records, not lines (Andy: "a press shouldn't post a line, it
@@ -562,7 +568,7 @@ appServer.serve({
   'voice.add': {
     request: { text: '', day: '' }, reply: { added: true },
     handler: function (a) {
-      fs.appendFileSync(path.join(STATE, 'voice.jsonl'), JSON.stringify({ text: a.text, day: a.day }) + '\n');
+      addVoice(a.text, a.day);
       return { added: true };
     },
   },
