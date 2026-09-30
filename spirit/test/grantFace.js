@@ -6,8 +6,8 @@
 //
 // The contract this suite fixes (the builder follows it):
 //   process/js/grantFace/grantFace.js, an appServer started with --pipe and --state
-//   grant  {name, id}  -> {ok: true, name, id}; a name held by another id is refused (409)
-//   delete {name, id}  -> {ok: true, removed: n}; one of the two is '', the other chooses
+//   grant  {name, id}  -> {name, id}; a name held by another id is refused (409)
+//   delete {name, id}  -> {removed: n}; one of the two is '', the other chooses
 //   get    {name}      -> {name, id}; id is '' when nobody holds it
 //   its database lives in its --state folder; node.db is never touched
 //   appFaceApp answers route? by api.toLocalApp('grantFace', POST {get: {name}})
@@ -66,7 +66,7 @@ async function serverPart() {
   try {
     test.subHeading('grant: a name slot goes to an ID');
     const g = await call('grant', { name: 'join', id: ID_A });
-    if (g.status === 200 && g.body && g.body.ok === true && (await idOf('join')) === ID_A) test.check('join is granted to ID_A, and get says so');
+    if (g.status === 200 && g.body && g.body.name === 'join' && g.body.id === ID_A && (await idOf('join')) === ID_A) test.check('join is granted to ID_A, and get says so');
     else test.fail(OWED + 'grant join to ID_A: ' + JSON.stringify(g).slice(0, 160));
 
     test.subHeading('protect: a slot held by one ID is refused to any other');
@@ -74,7 +74,7 @@ async function serverPart() {
     if (other.status === 409 && other.body && other.body.ok === false && (await idOf('join')) === ID_A) test.check('join for ID_B is refused (409), ID_A keeps it');
     else test.fail(OWED + 'join for ID_B: ' + JSON.stringify(other).slice(0, 160) + ', held by ' + (await idOf('join')).slice(0, 24));
     const again = await call('grant', { name: 'join', id: ID_A });
-    if (again.status === 200 && again.body && again.body.ok === true) test.check('granting it to its own holder again is fine');
+    if (again.status === 200 && again.body && again.body.id === ID_A) test.check('granting it to its own holder again is fine');
     else test.fail(OWED + 'join for ID_A again: ' + JSON.stringify(again).slice(0, 160));
 
     test.subHeading('a name is a DNS label, nothing else');
