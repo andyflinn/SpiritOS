@@ -21,6 +21,7 @@ var ddBox = '';
 var ddVersion = 0;
 var ddChecks = [];
 var ddChat = [];
+var ddChatMore = false;       // older lines the server left out (desk/G3.3)
 var ddAgents = {};           // name -> {key}, handed over by Desk, for the nudge
 var ddArmed = false;         // the goal's abandon, pressed once
 var ddRenaming = false;
@@ -173,6 +174,7 @@ function ddLineHtml(text) {
 }
 function ddChatHtml() {
   if (!ddChat.length) return '<div class="job-manifest-note">Nothing said here yet.</div>';
+  var older = ddChatMore ? '<div class="job-manifest-note">Older lines are not shown.</div>' : '';
   return ddChat.slice().reverse().map(function (l) {
     var his = l.by === 'andy';
     // His lines black and full width, the agents' plain: "similar in the details chat."
@@ -181,7 +183,7 @@ function ddChatHtml() {
       : ' style="border-left:3px solid currentColor;padding-left:8px;margin:4px 0"';
     return '<div' + look + '><b>' + ddEsc(his ? 'you' : l.by) + '</b> <span class="job-manifest-note">' + ddTime(l.at) + '</span> ' +
       ddLineHtml(l.text) + '</div>';
-  }).join('');
+  }).join('') + older;
 }
 
 function ddSet(id, html) { var el = document.getElementById(id); if (el) el.innerHTML = html; }
@@ -285,6 +287,7 @@ spirit.shell.activateApp({
     ddVersion = 0;
     ddChecks = [];
     ddChat = [];
+    ddChatMore = false;
     ddArmed = false;
     ddRenaming = false;
     ddNote = '';
@@ -296,6 +299,7 @@ spirit.shell.activateApp({
       ddVersion = Number(got.version) || 0;
       ddChecks = got.checks || [];
       ddChat = got.chat || [];
+      ddChatMore = !!got.chatMore;
       ddPaint();
       // Opening it is seeing it: his seen clears the item's star.
       if (ddFacts && ddFacts.star) ddPress('seen');

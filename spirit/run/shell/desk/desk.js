@@ -612,7 +612,8 @@ function deskArmOrFire(id, fire) {
 }
 // A PRESS ON THE GOAL, NOT A LINE (desk/G2.6): design mode is the server's.
 function deskEndDesign() { var g = deskGoalRow(); if (g) deskPress(g.id, 'end-design'); }
-function deskStartDesign() { var g = deskGoalRow(); if (g) deskPress(g.id, 'start-design'); }
+// With no goal on the List, Start design starts a new one (desk/G3.1): the server names it goal/G<n>.
+function deskStartDesign() { var g = deskGoalRow(); deskPress(g ? g.id : '', 'start-design'); }
 function deskTeamPost(kind, fixed) {
   var box = document.getElementById('desk-team-say');
   var err = document.getElementById('desk-team-error');

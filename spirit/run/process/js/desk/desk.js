@@ -441,6 +441,16 @@ function addVoice(text, day) {
   fs.appendFileSync(path.join(STATE, 'voice.jsonl'), JSON.stringify({ text: String(text), day: day || new Date().toISOString().slice(0, 10) }) + '\n');
 }
 
+// A goal is open while it is on the List. With none open, start-design (no id) makes goal/G<n>, n the next free.
+function newGoal(a) {
+  const st = walkState();
+  const open = Object.keys(st.goals).some(function (gid) { const g = st.items[gid]; return g && listed(st, g) && !g.closed; });
+  if (open) throw refused('bad-request');
+  const used = Object.keys(st.goals).map(function (gid) { const m = /^goal\/G(\d+)$/.exec(gid); return m ? Number(m[1]) : 0; });
+  const id = 'goal/G' + (Math.max.apply(null, [0].concat(used)) + 1);
+  return write('session.set', { session: { goal: { id: id, title: 'New goal' }, items: [] }, by: a.by });
+}
+
 const PRESSES = ['go', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen'];
 // Andy's alone (G2.1 review). His presses come by jobs.api, and apiDoor refuses a
 // member who says 'andy', so these are loopback-only. The agents keep claim-done,
@@ -493,13 +503,28 @@ appServer.serve({
   },
   'item.get': {
     request: { id: '' },
-    reply: { item: '', box: '', version: 0, change: 0,
+    reply: { item: '', box: '', version: 0, change: 0, chatMore: false,
       checks: [{ number: '', kind: '', words: '', test: '', state: '', by: '', at: '' }], chat: [{ by: '', at: '', text: '' }] },
     handler: function (a) {
       const s = walkState();
       const it = s.items[String(a.id)];
       if (!it) throw refused('no-such-item');
-      return { item: JSON.stringify(facts(s, it)), box: it.box, version: it.version, change: s.change, checks: it.checks, chat: it.chat };
+      const out = { item: JSON.stringify(facts(s, it)), box: it.box, version: it.version, change: s.change, chatMore: false, checks: it.checks, chat: [] };
+      // THE CHAT IS A SEARCH (desk/G3.3). Andy: "why would the server not use bucket to give me the most recent
+      // stuff?" Its newest lines, through the same bucket, in the room the rest of the answer leaves; oldest first.
+      const room = ANSWER_ROOM - Buffer.byteLength(JSON.stringify(out), 'utf8');
+      const bucket = searchBucket.createSearch({
+        query: '**', maxBytes: Math.max(0, room),
+        getLabelStringFromIncomingObject: function (pair) { return pair.label; },
+        extractKeyAndLabelFromRow: function (pair) { return pair; },
+      });
+      for (let i = it.chat.length - 1; i >= 0; i--) {
+        if (!bucket.offer({ key: String(i), label: JSON.stringify(it.chat[i]) })) break;
+      }
+      const r = bucket.getResult();
+      out.chat = r.items.map(function (p) { return JSON.parse(p.label); }).reverse();
+      out.chatMore = out.chat.length < it.chat.length;
+      return out;
     },
   },
   // ── THE WRITES (desk/G2.1): each carries `by`, an agent's name or 'andy'.
@@ -553,6 +578,9 @@ appServer.serve({
     handler: function (a) {
       if (PRESSES.indexOf(a.what) === -1) throw refused('bad-request');
       if (OWNER_PRESSES.indexOf(a.what) !== -1) ownerOnly(a);
+      // START DESIGN WITH NOTHING OPEN STARTS A NEW GOAL (desk/G3.1). Andy: "start design mode should start a new
+      // project if nothing is in the list". It arrives in design mode; he names it.
+      if (a.what === 'start-design' && a.id === '') return { change: newGoal(a).change };
       return { change: write('press', a, function (st, it) {
         const offered = buttons(st, it);
         if ((a.what === 'go' || a.what === 'close' || a.what === 'reopen') && offered.indexOf(a.what) === -1) throw refused('not-offered');
