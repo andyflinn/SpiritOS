@@ -159,6 +159,34 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   if (found['t/G1.2'] && !found['t/G1']) test.check('text search answers what matches');
   else test.fail(OWED + 'search "renamed" answered ' + JSON.stringify(Object.keys(found)));
 
+  // Owner presses are Andy's (G2.1 review): go, done, reopen, close, abandon, start-design, end-design, and the
+  // rename ("rename (you)"). An agent's press of one is refused and changes nothing.
+  test.subHeading('owner presses are refused to an agent');
+  const beforeOwner = JSON.stringify((await items())['t/G1.2']);
+  const tries = ['done', 'close', 'abandon', 'start-design', 'end-design'];
+  const answered = [];
+  for (const what of tries) answered.push((await call('press', { id: 't/G1.2', what: what, by: 'wsl-claude' })).status);
+  answered.push((await call('item.rename', { id: 't/G1.2', title: 'AGENT-RENAME', by: 'wsl-claude' })).status);
+  const afterOwner = JSON.stringify((await items())['t/G1.2']);
+  if (answered.every(function (st) { return st >= 400; }) && afterOwner === beforeOwner) test.check('an agent\'s done, close, abandon, start/end-design and rename are refused, and Beta is unchanged');
+  else test.fail(OWED + 'agent owner-presses answered ' + JSON.stringify(answered) + ', Beta ' + (afterOwner === beforeOwner ? 'unchanged' : 'changed: ' + afterOwner));
+  const claim = await call('press', { id: 't/G1.2', what: 'claim-done', by: 'wsl-claude' });
+  if (claim.status === 200) test.check('an agent\'s claim-done still passes');
+  else test.fail('an agent\'s claim-done was refused: ' + JSON.stringify(claim));
+
+  test.subHeading('stars come from what Andy has seen');
+  await call('chat.add', { id: 't/G1.2', text: 'agent says', by: 'wsl-claude' });
+  const starred = (await items())['t/G1.2'] || {};
+  await call('press', { id: 't/G1.2', what: 'seen', by: 'andy' });
+  const cleared = (await items())['t/G1.2'] || {};
+  if (starred.star === true && cleared.star === false) test.check('an agent\'s new line stars the item, and Andy\'s seen clears it');
+  else test.fail(OWED + 'star before seen ' + starred.star + ', after ' + cleared.star);
+
+  test.subHeading('an unknown press is refused by name');
+  const odd = await call('press', { id: 't/G1.2', what: 'fly', by: 'andy' });
+  if (odd.status === 400 && odd.body && odd.body.code === 'bad-request') test.check('press what:fly answers bad-request');
+  else test.fail(OWED + 'press what:fly answered ' + JSON.stringify(odd));
+
   // wsl-claude: `by` is self-declared, so a member over peerPost could say 'andy'. Andy's presses come by jobs.api;
   // the member path (apiDoor) refuses a desk write that says by 'andy', and never passes it on.
   test.subHeading('a member cannot write as andy');
