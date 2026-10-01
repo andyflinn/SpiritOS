@@ -450,6 +450,24 @@ function open(rootDir, opts) {
     CREATE INDEX IF NOT EXISTS traffic_arrivals_at ON traffic (at) WHERE dir = 'in' AND admitted = 1;
   `);
 
+  // ── WHO MAY CALL WHICH API (apiAuth/G1.3) ───────────────────────────
+  //
+  //   Andy: "the lookup table is in node.db", "peers: peer_id (key) and label, one row per key. grants: peer_id
+  //   and path, one row per grant; issue inserts it, revoke deletes it.", "yes we neeed doulbe keyed for selective
+  //   delete", and on the last revoke: "it disappears." Only authorization is stored; an empty table is no access
+  //   for anybody but the owner. "the peer never sees our apiAuth data": nothing here travels to a member.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS peers (
+      peer_id TEXT PRIMARY KEY,
+      label   TEXT NOT NULL DEFAULT ''
+    );
+    CREATE TABLE IF NOT EXISTS grants (
+      peer_id TEXT NOT NULL,
+      path    TEXT NOT NULL,
+      PRIMARY KEY (peer_id, path)
+    );
+  `);
+
   // ── THE MIGRATION FROM THE MORNING'S SHAPE ───────────────────
   //
   // `node.db` shipped a few hours before this with `at` and `url` on the
@@ -570,6 +588,18 @@ function open(rootDir, opts) {
     bAll: db.prepare('SELECT * FROM queue_backoff'),
     // A backoff that has run out is not worth carrying into a new process.
     bExpired: db.prepare('DELETE FROM queue_backoff WHERE untilWall <= ?'),
+    // apiAuth/G1.3: the two exact lookups are the double key's; search walks the joined rows.
+    aHas: db.prepare('SELECT 1 FROM grants WHERE peer_id = ? AND path = ?'),
+    aPaths: db.prepare('SELECT path FROM grants WHERE peer_id = ? ORDER BY path'),
+    aPeer: db.prepare('SELECT g.peer_id AS key, p.label AS label, g.path AS path FROM grants g JOIN peers p ON p.peer_id = g.peer_id WHERE g.peer_id = ? ORDER BY g.path'),
+    aAll: db.prepare('SELECT g.peer_id AS key, p.label AS label, g.path AS path FROM grants g JOIN peers p ON p.peer_id = g.peer_id ORDER BY p.label, g.path'),
+    aKnownPath: db.prepare('SELECT 1 FROM grants WHERE path = ? LIMIT 1'),
+    aPeerRow: db.prepare('SELECT label FROM peers WHERE peer_id = ?'),
+    aPeerPut: db.prepare('INSERT OR IGNORE INTO peers (peer_id, label) VALUES (?, ?)'),
+    aGrantPut: db.prepare('INSERT INTO grants (peer_id, path) VALUES (?, ?)'),
+    aGrantDel: db.prepare('DELETE FROM grants WHERE peer_id = ? AND path = ?'),
+    aPeerDelIfBare: db.prepare('DELETE FROM peers WHERE peer_id = ? AND NOT EXISTS (SELECT 1 FROM grants WHERE peer_id = ?)'),
+    aRelabel: db.prepare('UPDATE peers SET label = ? WHERE peer_id = ?'),
     // GREEDY, IN ONE STATEMENT. A field is written when the caller has one
     // and left alone when it does not — the callers do not all know the
     // same things, and a search that taught a label must not have it
@@ -1186,6 +1216,31 @@ function open(rootDir, opts) {
         if (nowWall) q.bExpired.run(Number(nowWall));
         return q.bAll.all();
       },
+    },
+
+    // apiAuth/G1.3's tables, for apiAuth.js alone. A peers row is born by the first grant and goes with the last.
+    auth: {
+      has: function (key, p) { return !!q.aHas.get(String(key), String(p)); },
+      paths: function (key) { return q.aPaths.all(String(key)).map(function (r) { return r.path; }); },
+      peer: function (key) { return q.aPeer.all(String(key)).map(function (r) { return { key: r.key, label: r.label, path: r.path }; }); },
+      all: function () { return q.aAll.iterate(); },
+      knownPath: function (p) { return !!q.aKnownPath.get(String(p)); },
+      label: function (key) { const r = q.aPeerRow.get(String(key)); return r ? r.label : null; },
+      grant: function (key, p, label) {
+        db.exec('BEGIN');
+        try { q.aPeerPut.run(String(key), String(label)); q.aGrantPut.run(String(key), String(p)); db.exec('COMMIT'); }
+        catch (e) { db.exec('ROLLBACK'); throw e; }
+      },
+      revoke: function (key, p) {
+        db.exec('BEGIN');
+        try {
+          const n = q.aGrantDel.run(String(key), String(p)).changes;
+          q.aPeerDelIfBare.run(String(key), String(key));
+          db.exec('COMMIT');
+          return n > 0;
+        } catch (e) { db.exec('ROLLBACK'); throw e; }
+      },
+      relabel: function (key, label) { return q.aRelabel.run(String(label), String(key)).changes > 0; },
     },
 
     transaction: function (fn) {

@@ -65,7 +65,7 @@ the only way a default survives contact with people in a hurry.
 
 ## What can be asked
 
-**49 verbs, in 11 families.** This list is generated from `server.js` and is exhaustive at the commit above.
+**55 verbs, in 11 families.** This list is generated from `server.js` and is exhaustive at the commit above.
 
 **Each verb carries its authority.** Andy, 2026-09-27: *"that's a boundary
 crossed that requires peer review AND my approval"* — and, on his own yes:
@@ -105,6 +105,12 @@ his words, which keeps the harness red until the verb is gone.
 
 **`jobs.*`** — background work
 - `jobs.api` — Andy, 2026-09-29: "so it goes into jobs(.api) for me, that's settled", peer-reviewed by wsl-claude (Desk, desk/G1 D4). Loopback only; asks a server process through appClient, as a member's api packet does.
+- `jobs.authGrant` — Andy, 2026-10-01: "grant needs no input label. the rest is looks ok, approved with dropping label out of grant.input", then "Yes to the rename.", peer-reviewed by wsl-claude (Desk, apiAuth/G1.4). Loopback only; the owner's allow-table.
+- `jobs.authPeer` — the same approval (Desk, apiAuth/G1.4).
+- `jobs.authQuery` — the same approval (Desk, apiAuth/G1.4).
+- `jobs.authRelabel` — Andy, 2026-10-01: "relabel is FINE verb.", peer-reviewed by wsl-claude (Desk, apiAuth/G1.4).
+- `jobs.authRevoke` — the same approval as jobs.authGrant (Desk, apiAuth/G1.4).
+- `jobs.authSearch` — the same approval as jobs.authGrant (Desk, apiAuth/G1.4).
 - `jobs.cancel` — before the rule (2026-09-27)
 - `jobs.create` — before the rule (2026-09-27)
 - `jobs.delete` — before the rule (2026-09-27)
@@ -197,7 +203,7 @@ figure you can compute instead of estimate.
 
 ## The errors
 
-**99 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
+**104 conditions are catalogued** in `spirit/run/js/spiritErrors.js`, and
 each carries more than a sentence:
 
 | | |

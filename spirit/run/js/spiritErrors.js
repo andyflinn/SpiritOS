@@ -718,6 +718,12 @@ define('invite-not-found', { status: 403, texts: ['invite not found'] });
 // ── NOT FOUND AND CONFLICT ───────────────────────────────────────────
 
 define('no-row', { status: 404, texts: ['no row for that key'] });
+// apiAuth (G1.2, G1.4): the gate's refusals and jobs.auth's.
+define('not-granted', { status: 403, texts: ['not granted to this caller'] });
+define('already-granted', { status: 409, texts: ['already granted'] });
+define('unknown-path', { status: 404, texts: ['no server serves that path, and no grant names it'] });
+define('not-a-path', { status: 400, texts: ['not an app or app.verb path'] });
+define('store-unavailable', { status: 503, texts: ['the grants cannot be read'], fault: 'node' });
 define('no-governor', { status: 404, texts: ['no Governor'] });
 define('no-such-lever', { status: 404, texts: ['no such lever'] });
 define('no-such-request', { status: 404, texts: ['no such request'] });

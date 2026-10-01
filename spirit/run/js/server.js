@@ -1463,6 +1463,9 @@ contactBook.syncMarks(ROOT_DIR);
       encode: wire.encode,
       decode: wire.decode,
       isKnown: function (key) { return require('./hub').frontDoor(ROOT_DIR, key) === 'known'; },
+      // THE GATE'S GRANTS (apiAuth/G1.2, G1.3): a member's paths from node.db, read through apiAuth.js;
+      // a store that cannot be read throws, and the gate fails closed.
+      auth: require('./apiAuth').createApiAuth({ rootDir: ROOT_DIR }),
       log: function (line) { console.log(line); },
     }));
 
@@ -1765,7 +1768,37 @@ contactBook.syncMarks(ROOT_DIR);
   // jobs.list is gone: a list is a search (puppets/G2, nodeSearches.js).
   // proxyVerb is the plain body-in, answer-out wrapper, whatever the group.
   const nodeSearches = require('./nodeSearches').createNodeSearches({ jobs: jobs, rootDir: ROOT_DIR, fsPath: fsPath });
+  // jobs.auth (apiAuth/G1.4): the owner's allow-table, loopback only. Andy: "jobs.auth supersedes: "api.auth,
+  // sibling to app names";". An answer is the verb's object as is; a refusal is the catalogue's, by name.
+  const apiAuth = require('./apiAuth').createApiAuth({
+    rootDir: ROOT_DIR,
+    tree: function () { return appClient.ask('api').then(function (r) { return (r && r.body) || {}; }, function () { return {}; }); },
+  });
+  function authVerb(work) {
+    return function (rq, rs) {
+      const send = function (status, body) {
+        rs.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+        rs.end(JSON.stringify(body));
+      };
+      const refusal = function (code) {
+        const e = require('./spiritErrors').byCode(code);
+        send((e && e.status) || 400, { ok: false, code: code, error: e ? e.text : code });
+      };
+      readJsonBody(rq).then(function (body) {
+        return Promise.resolve().then(function () { return work(body && typeof body === 'object' ? body : {}); });
+      }, function () { return { refusal: 'bad-request' }; }).then(function (out) {
+        if (out && out.refusal) refusal(out.refusal);
+        else send(200, out);
+      }, function () { refusal('store-unavailable'); });
+    };
+  }
   loopbackVerbs.claim('jobs', 'server.js', {
+    'jobs.authQuery': authVerb(apiAuth.query),
+    'jobs.authSearch': authVerb(apiAuth.search),
+    'jobs.authPeer': authVerb(apiAuth.peer),
+    'jobs.authGrant': authVerb(apiAuth.grant),
+    'jobs.authRevoke': authVerb(apiAuth.revoke),
+    'jobs.authRelabel': authVerb(apiAuth.relabel),
     'jobs.search': proxyVerb(function (b) { return nodeSearches.jobsSearch(b); }),
     'jobs.get': proxyVerb(function (b) { return nodeSearches.jobsGet(b); }),
     'jobs.create': handleCreateJob,

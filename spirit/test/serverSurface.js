@@ -638,6 +638,14 @@ freePort()
       ['POST', '/api/spirit', { verb: 'jobs.cancel' }],
       ['POST', '/api/spirit', { verb: 'jobs.delete' }],
       ['POST', '/api/spirit', { verb: 'jobs.api', ask: 'api' }],
+      // The owner's allow-table (apiAuth/G1.4), each posted without its fields: refused bad-request, reachable,
+      // and nothing granted. Its own suite is jobsAuth.js.
+      ['POST', '/api/spirit', { verb: 'jobs.authQuery' }],
+      ['POST', '/api/spirit', { verb: 'jobs.authSearch' }],
+      ['POST', '/api/spirit', { verb: 'jobs.authPeer' }],
+      ['POST', '/api/spirit', { verb: 'jobs.authGrant' }],
+      ['POST', '/api/spirit', { verb: 'jobs.authRevoke' }],
+      ['POST', '/api/spirit', { verb: 'jobs.authRelabel' }],
       // What this node includes (slim/G1.3). setModules posted with no path,
       // which it refuses: reachable, and it changes nothing here.
       ['POST', '/api/spirit', { verb: 'config.searchModules', query: '' }],
