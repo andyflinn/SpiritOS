@@ -3,7 +3,8 @@
 // apiAuth/G1.1: appFaceAppServer serves through appServer. Red on today's code.
 //   Found 2026-10-01: it builds its own http.createServer (appFaceAppServer.js:28), so it answers no
 //   api, has no DEBUG, and none of the shared gates apply. Andy: "gruesome! fixed in this cycle,
-//   thanks!", and "correction: 'appFaceAppServer' is subject to all rules that appServers must obey".
+//   thanks!", and his correction under G1.1: appFaceAppServer is subject to every rule an app
+//   server must obey.
 // The shape the builder follows (the item's box):
 //   - appFaceAppServer serves its verbs through appServer (createAppServer's opts.fallback is the
 //     pass-through, appServer.js:94-136; no new server code), so api, DEBUG — and with G1.10,
@@ -47,15 +48,16 @@ const facePipe = appClient.pipePathFor(root, 'faceProof', process.platform, 'pro
 const myPipe = appClient.pipePathFor(root, 'appFaceAppServer', process.platform, 'process');
 const BIG = 'B'.repeat(appClient.ANSWER_MAX + 1024);
 
-const http = require('http');
+// The fake faceProof is itself an app server with a fallback — the shared
+// layer, not a raw socket, so oneDoor's tally stays whole.
 if (process.platform !== 'win32') { try { fs.unlinkSync(facePipe); } catch (e) { /* none */ } }
 fs.mkdirSync(path.dirname(facePipe), { recursive: true });
 fs.mkdirSync(path.dirname(myPipe), { recursive: true });
-const face = http.createServer(function (req, res) {
+const face = require(path.join(root, 'js', 'appServer.js')).createAppServer({}, { fallback: function (req, res) {
   if (req.url === '/big') { res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end(BIG); return; }
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
   res.end('FACE-PAGE ' + req.method + ' ' + req.url);
-});
+} });
 let kid = null;
 
 (async function () {
@@ -81,8 +83,10 @@ let kid = null;
   const up = await until(function () {
     return client.ask('api').then(function (r) { return r && r.body && r.body.appFaceAppServer; }, function () { return null; });
   }, 10000);
-  const tree = up && !Array.isArray(up) && typeof up === 'object' && up.ok !== false;
-  if (tree) test.check('ask \'api\': appFaceAppServer answers a verb tree, not an error');
+  // DEBUG in the tree proves the answer is appFaceAppServer's own shared
+  // layer, not a forward: only serve() puts DEBUG on every server.
+  const tree = up && !Array.isArray(up) && typeof up === 'object' && up.ok !== false && up.DEBUG;
+  if (tree) test.check('ask \'api\': appFaceAppServer answers its own verb tree, DEBUG on it like every server\'s');
   else test.fail(OWED + '\'api\' answered ' + JSON.stringify(up).slice(0, 160));
   const dbg = await call('DEBUG', {});
   if (dbg.debug === false) test.check('DEBUG {} reads false, the shared switch (desk/G2.5)');
