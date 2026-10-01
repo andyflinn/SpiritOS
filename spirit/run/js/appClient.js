@@ -201,9 +201,21 @@ function createAppClient(opts) {
     if (extra) body.extra = extra;
     return { status: (e && e.status) || STATUS[code] || 500, body: body };
   }
-  function knock(row, request_) {
+  // WHO ASKS RIDES AS A HEADER (apiAuth/G1.13). Andy: "ok, the verified
+  // key is forwarded to the appServer. i revise my ruling." and "agreed."
+  // to the shape: a member's verified key as X-Spirit-Caller, the owner
+  // as X-Spirit-Owner: 1 — out of band, so the body stays the app's ask
+  // and no app's argument namespace is touched.
+  function callerHeaders(caller) {
+    if (!caller || typeof caller !== 'object') return undefined;
+    if (caller.owner === true) return { 'X-Spirit-Owner': '1' };
+    if (typeof caller.key === 'string' && caller.key) return { 'X-Spirit-Caller': caller.key };
+    return undefined;
+  }
+  function knock(row, request_, caller) {
     return Promise.resolve(request(row.pipe, 'POST', '/', JSON.stringify(request_), {
       type: 'application/json', timeoutMs: DOOR_WAIT_MS, answerMax: ANSWER_MAX,
+      headers: callerHeaders(caller),
     })).then(function (a) {
       if (!a || a.refused) {
         const code = a && errors.byCode(a.refused) ? a.refused : 'app-not-running';
@@ -218,12 +230,13 @@ function createAppClient(opts) {
   }
   function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
 
-  function ask(body) {
+  // `caller` (apiAuth/G1.13): forwarded to every server this ask knocks on.
+  function ask(body, caller) {
     if (body === 'api') {
       const names = Object.keys(table);
       return Promise.all(names.map(function (app) {
         // A branch is what that app server answered, or its error (D14).
-        return knock(table[app], 'api').then(function (r) { return r.body; });
+        return knock(table[app], 'api', caller).then(function (r) { return r.body; });
       })).then(function (parts) {
         const tree = {};
         names.forEach(function (app, i) { tree[app] = parts[i]; });
@@ -234,7 +247,7 @@ function createAppClient(opts) {
     const app = Object.keys(body)[0];
     if (!APP_RE.test(app) || !isPlain(body[app])) return Promise.resolve(error('bad-request', { why: 'an app name, then {verb: {args}}' }));
     if (!Object.prototype.hasOwnProperty.call(table, app)) return Promise.resolve(error('app-not-served', { app: app }));
-    return knock(table[app], body[app]);
+    return knock(table[app], body[app], caller);
   }
 
   return {

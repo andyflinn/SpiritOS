@@ -66,7 +66,11 @@ function stripTree(tree, paths) {
 // own machine counts as you"), else { key, auth } for a member.
 function answer(servers, ask, caller) {
   const c = caller || { owner: true };
-  if (c.owner === true) return Promise.resolve(servers.ask(ask));
+  // The caller rides on to the servers (apiAuth/G1.13): the owner as its
+  // mark, a member as its verified key — never the auth handle, which is
+  // the gate's own and no server's business.
+  if (c.owner === true) return Promise.resolve(servers.ask(ask, { owner: true }));
+  const who = { key: c.key };
   let paths = null;
   try {
     paths = (c.auth && typeof c.auth.pathsOf === 'function') ? (c.auth.pathsOf(c.key) || []) : [];
@@ -76,7 +80,7 @@ function answer(servers, ask, caller) {
   }
   if (ask === 'api') {
     if (!paths.length) return Promise.resolve(refusal('not-granted', 'no path is granted to this key'));
-    return Promise.resolve(servers.ask('api')).then(function (r) {
+    return Promise.resolve(servers.ask('api', who)).then(function (r) {
       const kept = stripTree(r && r.body, paths);
       if (!Object.keys(kept).length) return refusal('not-granted', 'no granted path is served');
       return { status: 200, body: kept };
@@ -97,7 +101,7 @@ function answer(servers, ask, caller) {
     }
   }
   if (!named) return Promise.resolve(refusal('not-granted', 'the ask names no app.verb'));
-  return Promise.resolve(servers.ask(ask));
+  return Promise.resolve(servers.ask(ask, who));
 }
 
 // opts: { servers: {ask}, post(relay, toKey, text), encode, decode, isKnown(key), auth: {pathsOf(key)}, log }

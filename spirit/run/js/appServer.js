@@ -101,8 +101,10 @@ function createAppServer(verbs, opts) {
   const tree = {};
   Object.keys(verbs).forEach(function (name) { tree[name] = { request: verbs[name].request, reply: verbs[name].reply }; });
 
-  // One request body, already parsed, to { status, body }.
-  function route(req) {
+  // One request body, already parsed, to { status, body }. `caller` is
+  // who asked (apiAuth/G1.13), handed to the handler as its second
+  // argument; a handler that takes (args) alone is unchanged.
+  function route(req, caller) {
     if (req === 'api') return Promise.resolve({ status: 200, body: tree });
     if (!isPlain(req) || Object.keys(req).length !== 1) return Promise.resolve(refusal('bad-request', { why: 'one verb per call, as {verb: {args}}' }));
     const name = Object.keys(req)[0];
@@ -110,7 +112,7 @@ function createAppServer(verbs, opts) {
     const args = req[name];
     const fits = typeof verbs[name].accepts === 'function' ? verbs[name].accepts(args) : matches(verbs[name].request, args);
     if (!fits) return Promise.resolve(refusal('no-such-argument', { verb: name }));
-    return Promise.resolve().then(function () { return verbs[name].handler(args); }).then(function (reply) {
+    return Promise.resolve().then(function () { return verbs[name].handler(args, caller); }).then(function (reply) {
       // THE REPLY IS CHECKED TOO (wsl-claude's review; Andy: "go for the
       // proposed fix"). What arrives is the verb's declared shape or
       // nothing (D11), so a reply that is not is the verb's failure.
@@ -149,7 +151,14 @@ function createAppServer(verbs, opts) {
         let parsed;
         let ok = true;
         try { parsed = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (e) { ok = false; }
-        answer = ok ? route(parsed) : Promise.resolve(refusal('bad-request', { why: 'not JSON' }));
+        // WHO ASKS, from the door's headers (apiAuth/G1.13): the node
+        // verified the key before it forwarded it, and the pipe is the
+        // node's alone, so nobody else can set these. Nothing when
+        // neither came — an old caller is unchanged.
+        const callerKey = String(httpReq.headers['x-spirit-caller'] || '');
+        const caller = httpReq.headers['x-spirit-owner'] === '1' ? { owner: true }
+          : callerKey ? { key: callerKey } : undefined;
+        answer = ok ? route(parsed, caller) : Promise.resolve(refusal('bad-request', { why: 'not JSON' }));
       }
       answer.then(function (a) {
         // NO OVERSIZED REPLY LEAVES ANY SERVER. Andy: "the shared layer MUST instantly reject a payload, when the

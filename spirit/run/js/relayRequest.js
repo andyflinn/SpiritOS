@@ -115,6 +115,9 @@ function pipeRequest(pipePath, method, pathname, bodyText, opts) {
     var payload = bodyText == null ? '' : String(bodyText);
     var headers = { 'Content-Length': Buffer.byteLength(payload), 'Host': 'localhost' };
     if (o.type) headers['Content-Type'] = String(o.type);
+    // The caller's own headers ride along (apiAuth/G1.13: the door
+    // forwards who asked, out of band of the body).
+    if (o.headers) Object.keys(o.headers).forEach(function (h) { headers[h] = String(o.headers[h]); });
     var lib = http;
     var req = lib.request({
       socketPath: String(pipePath || ''),
