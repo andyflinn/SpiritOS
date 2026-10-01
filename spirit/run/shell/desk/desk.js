@@ -396,8 +396,9 @@ function deskSearchItems() {
 // asks again, since it adds and drops whole rows; so does a change to an item
 // the List does not show, since only the server knows whether the search and
 // toggles let it in (wsl-claude's review).
-// A DROPPED PUBLISH IS NOTICED (desk/G3.10): the server keeps only its last object per 100 ms, so a change number
-// that skips one means a change went by unseen, and the List asks once.
+// A MISSED PUBLISH IS NOTICED (desk/G3.10): every publish goes out since fileTransfer goal/G1.4, but one can still
+// go unseen here (an oversize drop notice, a stream reconnect); a change number that skips one means exactly that,
+// and the List asks once.
 var deskLastChange = 0;
 function deskOnPublished(obj) {
   if (!obj || typeof obj !== 'object') return;

@@ -500,8 +500,8 @@ function write(verb, a, check) {
   if (now && (verb === 'check.add' || verb === 'check.set')) out.checks = now.checks;
   // EVERY ROW IT CHANGED (desk/G3.10). Andy: "i just pressed the Go-All button in the list. and the G3.9 go button
   // didn't disarm." A press changes more than its own row (go-all, a done that unblocks, the goal's waiting), so the
-  // facts of every row of the goal that differ now ride along, in this one object: publish keeps only the last
-  // object per 100 ms.
+  // facts of every row of the goal that differ now ride along, in this one object: one press, one object, never a
+  // half-painted press (fileTransfer goal/G1.4 removed the publish coalescing; this ride-along never depended on it).
   if (it) out.rows = changedRows(s, after, it.goal ? it.id : it.goalId);
   appServer.publish(out);
   return after;

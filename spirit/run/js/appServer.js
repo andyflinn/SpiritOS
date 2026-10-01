@@ -217,19 +217,14 @@ function shape(v) {
 // appServerFunction, so the ui gets structured information", "it calls with a js
 // object. let the appServer to the work." The object becomes the job's `app`,
 // reported through spirit.core.jobs.report; every open page gets it as job-updated.
-// Too large is not sent; a burst is sent at most every PUBLISH_EVERY_MS, the last
-// object winning.
+// EVERY OBJECT GOES OUT AS IT IS HANDED IN (fileTransfer goal/G1.4). A 100 ms
+// last-wins rule once sat here; it was an agent's addition (desk/G2.3, 020c339a),
+// never Andy's ruling, and it dropped objects silently. Andy: "let desk worry
+// about its problems, don't but shit into a common component without asking."
+// An app that needs pacing does it itself.
 // One limit for everything a payload passes (Andy: "the shared layer MUST instantly reject a payload"): MAX_PAYLOAD.
 const PUBLISH_MAX = limits.PAYLOAD_MAX;
-const PUBLISH_EVERY_MS = 100;
-let publishPending = null;
-let publishTimer = null;
-let publishLast = 0;
-function publishNow() {
-  publishTimer = null;
-  const obj = publishPending;
-  publishPending = null;
-  publishLast = Date.now();
+function send(obj) {
   Promise.resolve(require('./kernel.js').core.jobs.report({ app: obj })).catch(function () { /* not started by a node */ });
 }
 function publish(obj) {
@@ -238,19 +233,12 @@ function publish(obj) {
   try { size = Buffer.byteLength(JSON.stringify(obj), 'utf8'); } catch (e) { return false; }
   // SAID, NOT DROPPED (Andy: "and downstream who else didn't do their job"): an object over the cap is not
   // sent, and every page hears that one was lost, with its size and the limit, so it can ask again.
-  const dropped = size > PUBLISH_MAX;
-  publishPending = dropped ? { dropped: { bytes: size, max: PUBLISH_MAX } } : obj;
-  if (dropped) {
+  if (size > PUBLISH_MAX) {
     process.stderr.write('publish-too-large: ' + size + ' bytes, the limit is ' + PUBLISH_MAX + '\n');
-    if (publishTimer) return false;
-    const w = Math.max(0, publishLast + PUBLISH_EVERY_MS - Date.now());
-    if (w === 0) publishNow(); else publishTimer = setTimeout(publishNow, w);
+    send({ dropped: { bytes: size, max: PUBLISH_MAX } });
     return false;
   }
-  if (publishTimer) return true;
-  const wait = Math.max(0, publishLast + PUBLISH_EVERY_MS - Date.now());
-  if (wait === 0) publishNow();
-  else publishTimer = setTimeout(publishNow, wait);
+  send(obj);
   return true;
 }
 

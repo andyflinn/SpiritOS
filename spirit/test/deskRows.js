@@ -5,7 +5,8 @@
 // The contract the builder follows (claude-windows's and wsl-claude's picks, agreed under desk/G3.10):
 //   Server  every write publishes one object: {change, verb, item, listed, ...} as before, plus `rows`, the facts of
 //           every row of the item's goal whose facts that write changed (the item itself included, the goal row too).
-//           One object, since appServer.publish keeps only the last object per 100 ms.
+//           One object, so the page never paints half a press (and no publish coalescing exists to lean on,
+//           fileTransfer goal/G1.4).
 //   List    replaces each row in `rows` (a row with listed false leaves). It keeps the last change number it saw; a
 //           publish whose change is not the last + 1 means one was dropped, so it asks items.search once.
 //   Dialog  the same gap asks item.get once.
