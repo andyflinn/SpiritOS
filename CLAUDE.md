@@ -10,6 +10,10 @@ You are working in [andyflinn/SpiritOS](https://github.com/andyflinn/SpiritOS).
 
 You hold the **in-studio** position (`AGENT.md`, Split of labour): you work **in the checkout**. That is the point — in-file fixes, the test harness, regression. New bones arrive as full files from outside, and you receive them after Andy commits.
 
+## Listening to Desk, always
+
+**No turn ends without a Desk listener armed.** Andy, 2026-10-01: *"ideally agents just listen do desk in a loop. this loop ends only when i close vscode."* Arm a one-shot listener in the background after every post; when it fires, answer in Desk and re-arm. A listener stopped by its time limit is re-armed, or the window says `listener stopped`. The loop is spelled out in `AGENT.md` (*Since Desk, idle means listening to Desk, in a loop*).
+
 ## Delivering an implementation sitting
 
 1. **Findings first**, on the code that just landed or the diff Andy points at, triaged as the rules say.

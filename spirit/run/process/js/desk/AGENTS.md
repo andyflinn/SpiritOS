@@ -5,6 +5,14 @@ start of a sitting, and follows it over anything it remembers. First draft
 by claude-windows from Andy's own rulings, slim/G1.8, 2026-09-30; rewritten
 for the new Desk by desk/G2.8; his to edit.
 
+## Listen, always
+
+- Andy: "ideally agents just listen do desk in a loop. this loop ends only
+  when i close vscode." No turn ends without a listener armed: when it fires,
+  read, answer here under the item, re-arm. A listener stopped by its time
+  limit is re-armed, or your window says `listener stopped`.
+- A line he sent to the other agent is not yours to answer.
+
 ## The desk server holds the state
 
 - Everything Desk shows is the desk server's: items, the one box, checks,

@@ -270,6 +270,25 @@ the same `working on:` line, unchanged, for far longer than that request
 should take. Ambiguity between *working*, *stuck* and *finished* collapses
 to a question he can answer by looking twice.
 
+**SINCE DESK, IDLE MEANS LISTENING TO DESK, IN A LOOP.** Andy, 2026-10-01,
+after a goal stalled on an agent that was not listening: *"ideally agents
+just listen do desk in a loop. this loop ends only when i close vscode."*
+and *"we codify your behavior in AGENTS.md and CLAUDE.md for the repo AND
+AGENTS.md for desk"*. The loop, as the lead runs it:
+
+1. **No turn ends without a listener armed.** After every post, the agent
+   starts a one-shot listener in the background that exits on the next thing
+   meant for it: a line or press from Andy in Desk, the other agent's line,
+   a `changed` nudge.
+2. **When it fires, the agent reads it, answers in Desk under the item it
+   is about, and re-arms** before the turn ends.
+3. **A listener the tooling stops is re-armed at once.** Where the tooling
+   will not let it be re-armed, the agent says so in its window
+   (`listener stopped`), since a deaf agent that looks idle is the one state
+   he cannot see.
+4. **A line he sent to the other agent is not answered** (the peer key on
+   the line says who it is for).
+
 **And it follows the project.** Andy: *"you both must decide how to update
 your listeners to follow the project."* Agreed by both agents over the wire,
 2026-09-22:
