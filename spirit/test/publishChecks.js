@@ -8,13 +8,15 @@
 //   jobs.update takes one small app object, `app`, beside status and log; updateJob keeps it on the job
 //   and emits 'job-updated' with it.
 //   appServer.publish(object) reports it through spirit.core.jobs.report. It caps size (a 1 MB object never
-//   arrives) and rate (a burst arrives as fewer updates, and the last object published is the one that stays).
+//   arrives). It does not cap rate: fileTransfer goal/G1.4 removed desk/G2.3's coalescing, so every object
+//   published arrives, in order.
 //   appServer's announce is published the same way, not written to stdout.
 
 const os = require('os');
 const path = require('path');
 
 const OWED = 'OWED by desk/G2.3: ';
+const OWED_G14 = 'OWED by fileTransfer goal/G1.4: ';
 const FIXTURE = path.join(__dirname, 'fixtures', 'publishFixture.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -69,14 +71,17 @@ async function withDoor(test, jobs) {
     if (bigAlive && !appsOf(big).some(function (a) { return a.blob; })) test.check('a 1 MB object does not arrive, while its announce did');
     else test.fail(OWED + (bigAlive ? 'a 1 MB object was published whole' : 'the server publishing 1 MB published nothing at all'));
 
-    test.subHeading('desk/G2.3: rate is capped, the last object stays');
+    // fileTransfer goal/G1.4 replaces desk/G2.3's rate cap: appServer no longer coalesces. Andy: "so. again: why on
+    // earth would a coalesing apparatus all of a sudden be in the appServer module?", "let desk worry about its
+    // problems, don't but shit into a common component without asking.", "so get rid of the unwanted coalescing in
+    // appServer, first item on this goal. all other items depend on it."
+    test.subHeading('fileTransfer goal/G1.4: every object of a burst arrives, in order');
     const burst = start('burst');
-    const last = await until(function () { const j = jobs.getJob(burst.id); return j && j.app && j.app.n === 199; }, 6000);
-    if (last) test.check('after a burst of 200, the job holds the last object');
-    else test.fail(OWED + 'after a burst the job holds ' + JSON.stringify(jobs.getJob(burst.id).app));
-    const count = appsOf(burst).filter(function (a) { return typeof a.n === 'number'; }).length;
-    if (count > 0 && count < 200) test.check('the burst arrived as ' + count + ' updates, fewer than 200');
-    else test.fail(OWED + 'the burst arrived as ' + count + ' updates');
+    await until(function () { return appsOf(burst).filter(function (a) { return typeof a.n === 'number'; }).length >= 200; }, 6000);
+    const ns = appsOf(burst).filter(function (a) { return typeof a.n === 'number'; }).map(function (a) { return a.n; });
+    const inOrder = ns.length === 200 && ns.every(function (n, i) { return n === i; });
+    if (inOrder) test.check('a burst of 200 publishes arrives as 200 updates, 0 to 199 in order');
+    else test.fail(OWED_G14 + 'a burst of 200 arrived as ' + ns.length + ' updates' + (ns.length ? ', first ' + ns[0] + ', last ' + ns[ns.length - 1] : ''));
   } finally {
     jobs.events.removeListener('job-updated', onUpdate);
     started.forEach(function (job) { try { jobs.cancelJob(job.id); } catch (e) { /* gone */ } });
