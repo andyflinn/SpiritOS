@@ -771,6 +771,12 @@ define('no-such-file', {
   texts: ['no such file'],
   note: 'This fileServer holds no file by that id.',
 });
+// Andy, on pulling onto a path where a different file sits: "fail: already exists."
+define('already-exists', {
+  status: 409, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['a different file already exists at that path'],
+  note: 'pull never overwrites; the file at the path is untouched.',
+});
 
 // ── AN APP SERVER'S OWN REFUSALS (cycle 2) ──────────────────────
 //

@@ -66,14 +66,21 @@ function writeStatus(id, status) {
 }
 
 // A file's own verb: the shape every hash-verb answers in (goal/G1.1, THE HASH-VERB'S SHAPE).
-// Its commands, info and chunk, are goal/G1.1 and G1.2's to build; until then every command is
-// refused by name rather than half-answered.
-function hashVerb() {
+// Andy: "the provider delivers the info, and the chunks, nothing else". Who may ask is apiAuth's
+// business at the door, not this server's. info answers one name, the one being shared (the
+// newest), never the owner's list. chunk is goal/G1.2's to build; until then it is refused by name.
+function hashVerb(id) {
   return {
     request: { command: '', data: '' },
     reply: { command: '', data: '' },
     handler: function (a) {
-      throw refused('bad-request', 'the command ' + JSON.stringify(a.command) + ' is not served yet');
+      if (a.command === 'info') {
+        const s = readStatus(id);
+        if (!s) throw refused('no-such-file');
+        const names = Array.isArray(s.names) ? s.names : [];
+        return { command: 'info', data: JSON.stringify({ bytes: s.bytes, mime: s.mime, name: names.length ? names[names.length - 1] : '' }) };
+      }
+      throw refused('bad-request', 'the command ' + JSON.stringify(a.command) + ' is not served');
     },
   };
 }
@@ -102,7 +109,7 @@ const server = appServer.serve({
       fs.writeFileSync(path.join(dir, BLOB + '.part'), bytes);
       fs.renameSync(path.join(dir, BLOB + '.part'), path.join(dir, BLOB));
       writeStatus(id, { hash: id, bytes: bytes.length, mime: mimeOf(name), names: [name], at: new Date().toISOString() });
-      server.addVerb(id, hashVerb());
+      server.addVerb(id, hashVerb(id));
       return { hash: id };
     },
   },
@@ -115,6 +122,37 @@ const server = appServer.serve({
       if (!isHeld(a.id) && held().length >= CAP) throw refused('pool-full');
       // Asking the peer is goal/G1.2's to build.
       throw refused('bad-request', 'fetching from a peer is not built yet');
+    },
+  },
+  // pull never overwrites (Andy, on a different file already at the path: "fail: already exists.").
+  // The same bytes already there are said, not refused: copied false, already true.
+  pull: {
+    request: { hash: '', path: '' }, reply: { copied: true, already: true },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      if (!isHeld(a.hash) || !fs.existsSync(path.join(STORE, a.hash, BLOB))) throw refused('no-such-file');
+      const blob = path.join(STORE, a.hash, BLOB);
+      if (fs.existsSync(a.path)) {
+        let there = null;
+        try { there = fs.readFileSync(a.path); } catch (e) { throw refused('already-exists'); }
+        if (idOf(there) === a.hash) return { copied: false, already: true };
+        throw refused('already-exists');
+      }
+      // Written under another name, then one rename, so a half-copied file never sits at the path.
+      try {
+        fs.copyFileSync(blob, a.path + '.part');
+        fs.renameSync(a.path + '.part', a.path);
+      } catch (e) { try { fs.rmSync(a.path + '.part', { force: true }); } catch (x) { /* none */ } throw refused('bad-request', 'cannot write ' + a.path); }
+      return { copied: true, already: false };
+    },
+  },
+  status: {
+    request: { hash: '' }, reply: { hash: '', bytes: 0, mime: '', names: [''], at: '' },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      const s = isHeld(a.hash) ? readStatus(a.hash) : null;
+      if (!s) throw refused('no-such-file');
+      return { hash: s.hash, bytes: s.bytes, mime: s.mime, names: s.names, at: String(s.at || '') };
     },
   },
   delete: {
@@ -133,5 +171,5 @@ function mimeOf(name) { return MIME_TYPES[path.extname(name).toLowerCase()] || '
 
 // Files held before this start get their verbs back: the api lists what the store holds.
 held().forEach(function (id) {
-  if (fs.existsSync(path.join(STORE, id, BLOB))) { try { server.addVerb(id, hashVerb()); } catch (e) { /* already served */ } }
+  if (fs.existsSync(path.join(STORE, id, BLOB))) { try { server.addVerb(id, hashVerb(id)); } catch (e) { /* already served */ } }
 });
