@@ -1,0 +1,7 @@
+{
+  "label": "File server",
+  "description": "Keeps files by their hash, at most 32, one folder each, in the node's state (relay-state/process/fileServer/). Started by the node; push, fetch and delete are the owner's alone (fileTransfer goal/G1).",
+  "kind": "server",
+  "operated": "node",
+  "args": []
+}

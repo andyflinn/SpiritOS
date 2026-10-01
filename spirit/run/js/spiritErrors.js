@@ -756,6 +756,22 @@ define('bad-request', {
   prefixes: ['policy must be one of:'],
 });
 
+// ── THE FILESERVER'S REFUSALS (fileTransfer goal/G1) ─────────────
+//
+// Andy: "make the limit 32. that's enough. we'll find a method later to
+// clean up that folder." The store holds at most 32 files, complete or
+// partial; a push or fetch past that is refused, never queued.
+define('pool-full', {
+  status: 409, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['the file pool is full'],
+  note: 'Delete a file to make room; nothing was stored.',
+});
+define('no-such-file', {
+  status: 404, presence: NONE, retry: 'no', fault: 'caller',
+  texts: ['no such file'],
+  note: 'This fileServer holds no file by that id.',
+});
+
 // ── AN APP SERVER'S OWN REFUSALS (cycle 2) ──────────────────────
 //
 // Seven, and they are here rather than in faceServer.js for the reason
