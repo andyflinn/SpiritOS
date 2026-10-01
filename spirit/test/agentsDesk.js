@@ -107,21 +107,23 @@ node.listen(0, '127.0.0.1', async function () {
     let sent = null;
     try { sent = packet.decode(p.text); } catch (e) { sent = null; }
     const args = sent && sent.body && sent.body.desk && sent.body.desk.press;
-    if (p.to === ANDY && sent && sent.app === 'api' && args && args.id === 't/G1.2' && args.what === 'claim-done' && args.by === 'wsl-claude') {
-      test.check('it posted Andy\'s node an api packet {desk: {press: {id, what: claim-done, by: wsl-claude}}}');
+    // No by since apiAuth/G1.13: the desk takes the writer from the
+    // verified key the door forwards; an agent naming itself is gone.
+    if (p.to === ANDY && sent && sent.app === 'api' && args && args.id === 't/G1.2' && args.what === 'claim-done' && !('by' in args)) {
+      test.check('it posted Andy\'s node an api packet {desk: {press: {id, what: claim-done}}}, no by: the key is the writer');
     } else test.fail(OWED + 'it posted ' + JSON.stringify(posts).slice(0, 300) + ' — printed ' + JSON.stringify(a.out.slice(0, 200)));
     const printed = lastJson(a.out);
     if (printed && printed.change === 5 && a.code === 0) test.check('it waited for the answer to that post, printed {"change":5} and exited 0');
     else test.fail(OWED + 'it printed ' + JSON.stringify(a.out.slice(0, 200)) + ', exit ' + a.code);
 
-    test.subHeading('`by` is always the agent\'s own name');
+    test.subHeading('`by` is never sent (apiAuth/G1.13)');
     posts.length = 0;
     await run(['desk', 'press', '{"id":"t/G1.2","what":"done","by":"andy"}'], port);
     let second = null;
     try { second = packet.decode((posts[0] || {}).text); } catch (e) { second = null; }
-    const by = second && second.body && second.body.desk && second.body.desk.press && second.body.desk.press.by;
-    if (by === 'wsl-claude') test.check('a by: andy in the args is replaced by wsl-claude');
-    else test.fail(OWED + 'the by sent was ' + JSON.stringify(by));
+    const press2 = second && second.body && second.body.desk && second.body.desk.press;
+    if (press2 && !('by' in press2)) test.check('a by: andy in the args is stripped, never sent to be refused');
+    else test.fail(OWED + 'the press sent was ' + JSON.stringify(press2));
 
     test.subHeading('a refusal is said, and exits 1');
     posts.length = 0;

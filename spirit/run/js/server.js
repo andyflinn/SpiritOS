@@ -1814,7 +1814,14 @@ contactBook.syncMarks(ROOT_DIR);
       readJsonBody(rq).then(function (body) {
         // The owner is never gated (apiAuth/G1.2, Andy: "a call from your
         // own machine counts as you"); the loopback door says so by name.
-        return require('./apiDoor').answer(appClient, body && body.ask, { owner: true });
+        // His key and name ride along (G1.13, Andy: "my key will at least
+        // confirm it came from my node..."), so a server tracks his
+        // records by key like anybody's.
+        const me = require('./relayAuth').loadIdentity(ROOT_DIR);
+        const own = { owner: true };
+        if (me && me.publicKey) own.key = me.publicKey;
+        if (me && me.name) own.label = String(me.name);
+        return require('./apiDoor').answer(appClient, body && body.ask, own);
       }).then(function (a) {
         rs.writeHead((a && a.status) || 500, { 'Content-Type': 'application/json; charset=utf-8' });
         rs.end(JSON.stringify(a ? a.body : null));

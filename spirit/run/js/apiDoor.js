@@ -66,11 +66,23 @@ function stripTree(tree, paths) {
 // own machine counts as you"), else { key, auth } for a member.
 function answer(servers, ask, caller) {
   const c = caller || { owner: true };
-  // The caller rides on to the servers (apiAuth/G1.13): the owner as its
-  // mark, a member as its verified key — never the auth handle, which is
-  // the gate's own and no server's business.
-  if (c.owner === true) return Promise.resolve(servers.ask(ask, { owner: true }));
+  // The caller rides on to the servers (apiAuth/G1.13): the owner as
+  // handed (jobs.api gives his mark, key and name), a member as its
+  // verified key with the label the auth table holds for it — never the
+  // auth handle, which is the gate's own and no server's business.
+  if (c.owner === true) {
+    const own = { owner: true };
+    if (typeof c.key === 'string' && c.key) own.key = c.key;
+    if (typeof c.label === 'string' && c.label) own.label = c.label;
+    return Promise.resolve(servers.ask(ask, own));
+  }
   const who = { key: c.key };
+  try {
+    if (c.auth && typeof c.auth.labelOf === 'function') {
+      const label = c.auth.labelOf(c.key);
+      if (typeof label === 'string' && label) who.label = label;
+    }
+  } catch (e) { /* an unreadable label is no label; the key stands alone */ }
   let paths = null;
   try {
     paths = (c.auth && typeof c.auth.pathsOf === 'function') ? (c.auth.pathsOf(c.key) || []) : [];

@@ -159,7 +159,7 @@ settle().then(function () {
     press();
     return settle().then(function () {
       // A press on the goal, not a line (desk/G2.6).
-      const ended = fake.calls.some(function (k) { return k.verb === 'press' && k.args.what === 'end-design' && k.args.id === 't/G1' && k.args.by === 'andy'; });
+      const ended = fake.calls.some(function (k) { return k.verb === 'press' && k.args.what === 'end-design' && k.args.id === 't/G1' && !('by' in k.args); });
       if (afterOne === 0 && armed && ended) test.check('the first press armed it (sure?) and sent nothing; the second ended design mode');
       else test.fail(OWED + 'after one press ' + afterOne + ' sent, armed ' + armed + '; after two, ended ' + ended);
     });

@@ -441,7 +441,9 @@ function deskLiveAgents() {
   return out;
 }
 function deskPress(id, what) {
-  return deskAsk('press', { id: id, what: what, by: 'andy' }).then(function () {
+  // No by since apiAuth/G1.13: the press is the owner's because it comes
+  // through the owner's door, and desk reads that from the caller.
+  return deskAsk('press', { id: id, what: what }).then(function () {
     // To the agents the server says are live (the goal row's live), not to
     // every agent ever heard (wsl-claude's review).
     var live = deskLiveAgents();

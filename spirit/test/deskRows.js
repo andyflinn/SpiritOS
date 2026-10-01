@@ -97,7 +97,11 @@ callback.listen(0, '127.0.0.1', async function () {
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
   const client = appClient.createAppClient({ rootDir: scratch });
   client.register('desk', pipe);
-  const call = function (verb, args) { const q = {}; q[verb] = args; return client.ask({ desk: q }).then(function (r) { return r || {}; }, function () { return {}; }); };
+  // Writers are CALLERS since apiAuth/G1.13 (deskWriterKey.js): desk refuses a by argument.
+const CW = { key: 'MCowBQYDK2VwAyEAdeskRowsTestPeerCWAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
+const WSL = { key: 'MCowBQYDK2VwAyEAdeskRowsTestPeerWSAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskRowsTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
+const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], {
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     env: Object.assign({}, process.env, { SPIRIT_JOB_ID: 'desk-job', SPIRIT_CALLBACK_URL: 'http://127.0.0.1:' + callback.address().port + '/' }),
@@ -107,12 +111,12 @@ callback.listen(0, '127.0.0.1', async function () {
     test.subHeading('the server: one publish carries every row the press changed');
     // A blocks B; B blocks the goal.
     const set = await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [
-      { id: 'g/G1.1', title: 'A', blocks: ['g/G1.2'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }] }), by: 'claude-windows' });
+      { id: 'g/G1.1', title: 'A', blocks: ['g/G1.2'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }] }) }, CW);
     if (set.status !== 200) test.fail('the session was not taken: ' + JSON.stringify(set));
-    await call('press', { id: 'g/G1', what: 'end-design', by: 'andy' });
+    await call('press', { id: 'g/G1', what: 'end-design' }, ANDY);
     await sleep(300);
     published.length = 0;
-    await call('press', { id: 'g/G1', what: 'go-all', by: 'andy' });
+    await call('press', { id: 'g/G1', what: 'go-all' }, ANDY);
     await sleep(400);
     const goAll = published[published.length - 1] || {};
     const rowsOf = function (o) { const by = {}; (o.rows || []).forEach(function (r) { by[r.id] = r; }); return by; };
@@ -120,10 +124,10 @@ callback.listen(0, '127.0.0.1', async function () {
     if (r1['g/G1.1'] && r1['g/G1.1'].status === 'running' && r1['g/G1'] && (r1['g/G1'].buttons || []).indexOf('go-all') === -1) {
       test.check('go-all on the goal publishes rows: A running, and the goal without go-all');
     } else test.fail(OWED + 'the go-all publish carried rows ' + JSON.stringify(Object.keys(r1)) + ' of ' + JSON.stringify(goAll).slice(0, 200));
-    await call('press', { id: 'g/G1.1', what: 'claim-done', by: 'wsl-claude' });
+    await call('press', { id: 'g/G1.1', what: 'claim-done' }, WSL);
     await sleep(300);
     published.length = 0;
-    await call('press', { id: 'g/G1.1', what: 'done', by: 'andy' });
+    await call('press', { id: 'g/G1.1', what: 'done' }, ANDY);
     await sleep(400);
     const r2 = rowsOf(published[published.length - 1] || {});
     if (r2['g/G1.2'] && (r2['g/G1.2'].buttons || []).indexOf('go') !== -1) test.check('done on A publishes B too, now unblocked and offering Go!');

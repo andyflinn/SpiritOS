@@ -386,17 +386,19 @@ const packet = require('../../../js/client/packet');
 const DESK_WAIT_MS = 30000;
 // The desk server's writes, each carrying who wrote it; every other verb takes
 // no `by` and refuses one.
-const DESK_WRITES = ['session.set', 'box.write', 'check.add', 'check.set', 'chat.add', 'item.rename', 'item.status', 'item.take', 'press'];
+// DESK_WRITES STOOD HERE and set `by` on every write — gone with
+// apiAuth/G1.13: the desk takes its writer from the verified key the
+// door forwards, and a by argument is refused no-such-argument. Nobody
+// names their own writer any more.
 function deskAsk(cfg, verb, json, fetchFn) {
   let args = {};
   if (json) {
     try { args = JSON.parse(json); } catch (e) { return Promise.reject(new Error('the args are not JSON: ' + e.message)); }
     if (!args || typeof args !== 'object' || Array.isArray(args)) return Promise.reject(new Error('the args must be a JSON object'));
   }
-  // Only a write carries `by`, and it is always this agent's; the server
-  // refuses an argument a verb does not know.
-  if (DESK_WRITES.indexOf(verb) !== -1) args.by = cfg.self;
-  else delete args.by;
+  // No verb carries `by` since apiAuth/G1.13; one that slipped in from an
+  // old caller is stripped rather than sent to be refused.
+  delete args.by;
   if (!verb) return Promise.reject(new Error('usage: agents.js desk <verb> [json]'));
   // HALTED MEANS SILENT, as for send(): a desk write is a post like any other.
   const h = halted(cfg);

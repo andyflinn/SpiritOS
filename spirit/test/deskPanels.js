@@ -35,11 +35,15 @@ test.startTest('each panel of an item its own answer');
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   try {
     for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-    const call = function (verb, args) { const q = {}; q[verb] = args; return client.ask({ desk: q }).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; }); };
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'p/G1', title: 'Panels' }, items: [] }), by: 'claude-windows' });
-    await call('box.write', { id: 'p/G1', text: 'B'.repeat(6000), version: 0, by: 'claude-windows' });
-    await call('check.add', { id: 'p/G1', kind: 'C', words: 'look', test: '', by: 'claude-windows' });
-    for (let i = 0; i < 30; i++) await call('chat.add', { id: 'p/G1', text: 'LINE-' + String(i).padStart(2, '0') + ' ' + 'x'.repeat(300), by: 'wsl-claude' });
+    // Writers are CALLERS since apiAuth/G1.13 (deskWriterKey.js): desk refuses a by argument.
+const CW = { key: 'MCowBQYDK2VwAyEAdeskPanelsTestPeerCWAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
+const WSL = { key: 'MCowBQYDK2VwAyEAdeskPanelsTestPeerWSAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskPanelsTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
+const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; }); };
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'p/G1', title: 'Panels' }, items: [] }) }, CW);
+    await call('box.write', { id: 'p/G1', text: 'B'.repeat(6000), version: 0 }, CW);
+    await call('check.add', { id: 'p/G1', kind: 'C', words: 'look', test: '' }, CW);
+    for (let i = 0; i < 30; i++) await call('chat.add', { id: 'p/G1', text: 'LINE-' + String(i).padStart(2, '0') + ' ' + 'x'.repeat(300) }, WSL);
 
     test.subHeading('item.get answers the facts alone');
     const g = await call('item.get', { id: 'p/G1' });
@@ -64,7 +68,7 @@ test.startTest('each panel of an item its own answer');
 
     test.subHeading('a box too long to come back is refused when written');
     const cur = (await call('item.box', { id: 'p/G1' })).body || {};
-    const tooLong = await call('box.write', { id: 'p/G1', text: 'C'.repeat(appClient.ANSWER_MAX), version: cur.version, by: 'claude-windows' });
+    const tooLong = await call('box.write', { id: 'p/G1', text: 'C'.repeat(appClient.ANSWER_MAX), version: cur.version }, CW);
     if (tooLong.status === 413 && tooLong.body && tooLong.body.code === 'line-too-large') test.check('box.write refuses it as line-too-large');
     else test.fail('a too-long box answered ' + JSON.stringify({ status: tooLong.status, code: tooLong.body && tooLong.body.code }));
   } catch (e) {

@@ -221,6 +221,13 @@ const TALLY = {
   // puppetPost's own listen. RESTING ON ANDY'S "step 1) build and prove the
   // route from browser to owner-of-subdomain, and back", 2026-09-27.
   'test/faceRouteWorld.js': 2,
+  // ── forwardKey: ONE, GRANTED BY ANDY 2026-10-01 ("yes", G1.13) ──────
+  //
+  // Its capture server must be raw http to PROVE the caller headers
+  // cross the pipe: appServer is half of what is under test, and a
+  // capture through it would prove nothing about the wire. The same
+  // reason serverSurface drives the door over real HTTP.
+  'test/forwardKey.js': 1,
   // ONE SUITE THAT MAKES EVERY API CALL (puppets/G3): TWO, AND A DECISION
   // RATHER THAN AN ENTRY, for doorWalk's reason. It measures the LOOPBACK
   // DOOR over real HTTP (a free-port probe and one request helper), which

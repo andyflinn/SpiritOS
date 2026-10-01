@@ -32,7 +32,11 @@ fs.mkdirSync(state, { recursive: true });
 const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
 const client = appClient.createAppClient({ rootDir: scratch });
 client.register('desk', pipe);
-const call = function (verb, args) { const b = {}; b[verb] = args; return client.ask({ desk: b }).then(function (r) { return r || {}; }, function () { return {}; }); };
+// Writers are CALLERS since apiAuth/G1.13 (deskWriterKey.js): desk refuses a by argument.
+const CW = { key: 'MCowBQYDK2VwAyEAdeskLatestTestPeerCWAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
+const WSL = { key: 'MCowBQYDK2VwAyEAdeskLatestTestPeerWSAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskLatestTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
+const call = function (verb, args, caller) { const b = {}; b[verb] = args; return client.ask({ desk: b }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
 let kid = null;
 async function start() {
   kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
@@ -48,7 +52,7 @@ async function items(args) {
   (((r.body || {}).items) || []).forEach(function (i) { try { const o = JSON.parse(i.label); by[o.id] = o; } catch (e) { /* not one */ } });
   return by;
 }
-const press = function (id, what, by) { return call('press', { id: id, what: what, by: by || 'andy' }); };
+const press = function (id, what, who) { return call('press', { id: id, what: what }, who || ANDY); };
 const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.buttons.indexOf(b) !== -1); };
 
 (async function () {
@@ -58,7 +62,7 @@ const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.b
   // A goal with three items: A and B unblocked, C blocked by A.
   await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Fixing round' }, items: [
     { id: 'g/G1.1', title: 'A', blocks: ['g/G1.3'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }, { id: 'g/G1.3', title: 'C', blocks: ['g/G1'] },
-  ] }), by: 'claude-windows' });
+  ] }) }, CW);
   test.subHeading('G3.4: the goal offers Go all only once design has ended');
   let by = await items();
   if (by['g/G1'] && !has(by['g/G1'], 'go-all')) test.check('in design mode the goal offers no Go all');
@@ -69,7 +73,7 @@ const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.b
   else test.fail(G34 + 'after end-design the goal has ' + JSON.stringify(by['g/G1'] && by['g/G1'].buttons));
 
   test.subHeading('G3.4: Go all is Andy\'s alone');
-  const agent = await press('g/G1', 'go-all', 'wsl-claude');
+  const agent = await press('g/G1', 'go-all', WSL);
   by = await items();
   if (agent.body && agent.body.code === 'not-owner' && has(by['g/G1.1'], 'go') && has(by['g/G1.2'], 'go')) test.check('an agent\'s go-all is refused not-owner and changes nothing');
   else test.fail(G34 + 'an agent\'s go-all answered ' + agent.status + ', A ' + JSON.stringify(by['g/G1.1'] && by['g/G1.1'].buttons));
@@ -91,7 +95,7 @@ const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.b
 
   // ── G3.2: the latest state ─────────────────────────────────────────────
   test.subHeading('G3.2: an open goal still hides its closed items');
-  await press('g/G1.2', 'claim-done', 'wsl-claude');
+  await press('g/G1.2', 'claim-done', WSL);
   await press('g/G1.2', 'done');
   await press('g/G1.2', 'close');
   by = await items();
@@ -101,7 +105,7 @@ const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.b
   test.subHeading('G3.2: once the current goal is closed, Desk opens on it, marked closed');
   for (const id of ['g/G1.1', 'g/G1.3', 'g/G1']) {
     if (id !== 'g/G1') await press(id, 'go');
-    await press(id, 'claim-done', 'wsl-claude');
+    await press(id, 'claim-done', WSL);
     await press(id, 'done');
     await press(id, 'close');
   }
@@ -112,7 +116,7 @@ const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.b
   else test.fail(G32 + 'with the current goal closed the List holds ' + JSON.stringify(ids.map(function (id) { return [id, by[id].status, by[id].buttons]; })));
 
   test.subHeading('G3.2: an abandoned goal stays invisible');
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G2', title: 'Dropped' }, items: [{ id: 'g/G2.1', title: 'D', blocks: ['g/G2'] }] }), by: 'claude-windows' });
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G2', title: 'Dropped' }, items: [{ id: 'g/G2.1', title: 'D', blocks: ['g/G2'] }] }) }, CW);
   await press('g/G2', 'abandon');
   by = await items();
   if (!by['g/G2'] && !by['g/G2.1']) test.check('the abandoned current goal and its item are not listed');
@@ -122,10 +126,10 @@ const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.b
   // Andy pressed desk/G2's Go! and asked what it meant (claude-windows, records 48-50); desk/G3 offered it again.
   test.subHeading('G3.7: a goal never offers Go!, even with every item done');
   const G37 = 'OWED by desk/G3.7: ';
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G3', title: 'Short round' }, items: [{ id: 'g/G3.1', title: 'E', blocks: ['g/G3'] }] }), by: 'claude-windows' });
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G3', title: 'Short round' }, items: [{ id: 'g/G3.1', title: 'E', blocks: ['g/G3'] }] }) }, CW);
   await press('g/G3', 'end-design');
   await press('g/G3.1', 'go');
-  await press('g/G3.1', 'claim-done', 'wsl-claude');
+  await press('g/G3.1', 'claim-done', WSL);
   await press('g/G3.1', 'done');
   by = await items();
   if (by['g/G3'] && !has(by['g/G3'], 'go')) test.check('with its only item done, the goal offers no Go!');
@@ -133,7 +137,7 @@ const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.b
   const goalGo = await press('g/G3', 'go');
   if (goalGo.status === 409 && goalGo.body && goalGo.body.code === 'not-offered') test.check('a go on the goal is refused not-offered');
   else test.fail(G37 + 'a go on the goal answered ' + JSON.stringify({ status: goalGo.status, body: goalGo.body }));
-  await press('g/G3', 'claim-done', 'wsl-claude');
+  await press('g/G3', 'claim-done', WSL);
   by = await items();
   if (has(by['g/G3'], 'done')) test.check('once claimed, the goal offers Done, as any item does');
   else test.fail('after a claim the goal offers ' + JSON.stringify(by['g/G3'] && by['g/G3'].buttons));

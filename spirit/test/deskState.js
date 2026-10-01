@@ -48,7 +48,11 @@ db.close();
 const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
 const client = appClient.createAppClient({ rootDir: scratch });
 client.register('desk', pipe);
-const call = function (verb, args) { const b = {}; b[verb] = args; return client.ask({ desk: b }).then(function (r) { return r || {}; }, function () { return {}; }); };
+// Writers are CALLERS since apiAuth/G1.13 (deskWriterKey.js): desk refuses a by argument.
+const CW = { key: 'MCowBQYDK2VwAyEAdeskStateTestPeerCWAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
+const WSL = { key: 'MCowBQYDK2VwAyEAdeskStateTestPeerWSAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskStateTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
+const call = function (verb, args, caller) { const b = {}; b[verb] = args; return client.ask({ desk: b }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
 // The item as the dialog sees it: its facts and each panel, asked each on its own (lazy panels).
 async function whole(id) {
   const parts = await Promise.all(['item.get', 'item.box', 'item.checks', 'item.chat'].map(function (v) { return call(v, { id: id }); }));
@@ -88,7 +92,7 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
     { id: 't/G1.1', title: 'Alpha', blocks: ['t/G1.2'] },
     { id: 't/G1.2', title: 'Beta', blocks: ['t/G1'] },
   ] };
-  await call('session.set', { json: JSON.stringify(session), by: 'claude-windows' });
+  await call('session.set', { json: JSON.stringify(session) }, CW);
 
   test.subHeading('the session: rows, and nothing from before the redesign');
   let by = await items();
@@ -98,11 +102,11 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   else test.fail(OWED + 'an old item was served');
 
   test.subHeading('Go! only after design ends, and only for an unblocked item');
-  await call('press', { id: 't/G1', what: 'start-design', by: 'andy' });
+  await call('press', { id: 't/G1', what: 'start-design' }, ANDY);
   by = await items();
   if (btns(by['t/G1.1']) && !btns(by['t/G1.1']).includes('go')) test.check('in design mode, no Go!');
   else test.fail(OWED + 'in design mode Alpha has ' + JSON.stringify(by['t/G1.1']));
-  await call('press', { id: 't/G1', what: 'end-design', by: 'andy' });
+  await call('press', { id: 't/G1', what: 'end-design' }, ANDY);
   by = await items();
   if (btns(by['t/G1.1']) && btns(by['t/G1.1']).includes('go')) test.check('after end-design, Alpha (unblocked) shows Go!');
   else test.fail(OWED + 'after end-design Alpha has ' + JSON.stringify(by['t/G1.1']));
@@ -110,50 +114,50 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   else test.fail(OWED + 'Beta has ' + JSON.stringify(by['t/G1.2']));
 
   test.subHeading('Done after one agent\'s claim; Close and Reopen after done; closed leaves the list');
-  await call('press', { id: 't/G1.1', what: 'go', by: 'andy' });
+  await call('press', { id: 't/G1.1', what: 'go' }, ANDY);
   by = await items();
   if (btns(by['t/G1.1']) && !btns(by['t/G1.1']).includes('done') && !btns(by['t/G1.1']).includes('go')) test.check('after go and before any claim: neither Go! nor Done');
   else test.fail(OWED + 'after go, before a claim, Alpha has ' + JSON.stringify(by['t/G1.1']));
-  await call('press', { id: 't/G1.1', what: 'claim-done', by: 'wsl-claude' });
+  await call('press', { id: 't/G1.1', what: 'claim-done' }, WSL);
   by = await items();
   if (btns(by['t/G1.1']) && btns(by['t/G1.1']).includes('done')) test.check('one agent\'s claim-done offers Done');
   else test.fail(OWED + 'after one claim Alpha has ' + JSON.stringify(by['t/G1.1']));
-  await call('press', { id: 't/G1.1', what: 'done', by: 'andy' });
+  await call('press', { id: 't/G1.1', what: 'done' }, ANDY);
   by = await items();
   if (same(btns(by['t/G1.1']) || [], ['close', 'reopen'])) test.check('after done: Close and Reopen');
   else test.fail(OWED + 'after done Alpha has ' + JSON.stringify(by['t/G1.1']));
   if (btns(by['t/G1.2']) && btns(by['t/G1.2']).includes('go')) test.check('Beta, no longer blocked, now shows Go!');
   else test.fail(OWED + 'Beta after Alpha done has ' + JSON.stringify(by['t/G1.2']));
-  await call('press', { id: 't/G1.1', what: 'close', by: 'andy' });
+  await call('press', { id: 't/G1.1', what: 'close' }, ANDY);
   by = await items();
   if (!by['t/G1.1'] && by['t/G1.2']) test.check('a closed item leaves the list');
   else test.fail(OWED + 'after close the list holds ' + JSON.stringify(Object.keys(by)));
 
   test.subHeading('the one box: the first text wins, alterations name their version');
-  const w1 = await call('box.write', { id: 't/G1.2', text: 'FIRST', version: 0, by: 'claude-windows' });
+  const w1 = await call('box.write', { id: 't/G1.2', text: 'FIRST', version: 0 }, CW);
   const g1 = (await whole('t/G1.2')).body || {};
   if (g1.box === 'FIRST' && g1.version >= 1) test.check('the first write becomes the box');
   else test.fail(OWED + 'after the first write: ' + JSON.stringify({ w1: w1.body, g1: g1 }));
-  const stale = await call('box.write', { id: 't/G1.2', text: 'SECOND-ON-STALE', version: 0, by: 'wsl-claude' });
+  const stale = await call('box.write', { id: 't/G1.2', text: 'SECOND-ON-STALE', version: 0 }, WSL);
   const g2 = (await whole('t/G1.2')).body || {};
   if (stale.status >= 400 && g2.box === 'FIRST') test.check('an alteration against an old version is refused, and the box keeps its text');
   else test.fail(OWED + 'a stale alteration: ' + JSON.stringify({ status: stale.status, box: g2.box }));
-  await call('box.write', { id: 't/G1.2', text: 'MERGED', version: g2.version, by: 'wsl-claude' });
+  await call('box.write', { id: 't/G1.2', text: 'MERGED', version: g2.version }, WSL);
   const g3 = (await whole('t/G1.2')).body || {};
   if (g3.box === 'MERGED') test.check('an alteration against the current version replaces it');
   else test.fail(OWED + 'after a current alteration the box is ' + JSON.stringify(g3.box));
 
   test.subHeading('checks, chat, rename and status');
-  await call('check.add', { id: 't/G1.2', kind: 'C', words: 'look at it', test: '', by: 'claude-windows' });
+  await call('check.add', { id: 't/G1.2', kind: 'C', words: 'look at it', test: '' }, CW);
   const c0 = ((await whole('t/G1.2')).body || {}).checks || [];
   const first = c0[0] || {};
-  await call('check.set', { id: 't/G1.2', check: first.number || 'C1', state: 'passed', by: 'andy' });
+  await call('check.set', { id: 't/G1.2', check: first.number || 'C1', state: 'passed' }, ANDY);
   const c1 = ((await whole('t/G1.2')).body || {}).checks || [];
   if (c1.length === 1 && c1[0].state === 'passed' && /C1/.test(String(c1[0].number))) test.check('a C check is added as C1, and its tick is recorded');
   else test.fail(OWED + 'checks: ' + JSON.stringify(c1));
-  await call('chat.add', { id: 't/G1.2', text: 'a line', by: 'andy' });
-  await call('item.rename', { id: 't/G1.2', title: 'Beta renamed', by: 'andy' });
-  await call('item.status', { id: 't/G1.2', word: 'coding', by: 'wsl-claude' });
+  await call('chat.add', { id: 't/G1.2', text: 'a line' }, ANDY);
+  await call('item.rename', { id: 't/G1.2', title: 'Beta renamed' }, ANDY);
+  await call('item.status', { id: 't/G1.2', word: 'coding' }, WSL);
   const g4 = (await whole('t/G1.2')).body || {};
   by = await items();
   const chatOk = (g4.chat || []).some(function (l) { return l.text === 'a line'; });
@@ -174,19 +178,19 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   const beforeOwner = JSON.stringify((await items())['t/G1.2']);
   const tries = ['done', 'close', 'abandon', 'start-design', 'end-design'];
   const answered = [];
-  for (const what of tries) answered.push((await call('press', { id: 't/G1.2', what: what, by: 'wsl-claude' })).status);
-  answered.push((await call('item.rename', { id: 't/G1.2', title: 'AGENT-RENAME', by: 'wsl-claude' })).status);
+  for (const what of tries) answered.push((await call('press', { id: 't/G1.2', what: what }, WSL)).status);
+  answered.push((await call('item.rename', { id: 't/G1.2', title: 'AGENT-RENAME' }, WSL)).status);
   const afterOwner = JSON.stringify((await items())['t/G1.2']);
   if (answered.every(function (st) { return st >= 400; }) && afterOwner === beforeOwner) test.check('an agent\'s done, close, abandon, start/end-design and rename are refused, and Beta is unchanged');
   else test.fail(OWED + 'agent owner-presses answered ' + JSON.stringify(answered) + ', Beta ' + (afterOwner === beforeOwner ? 'unchanged' : 'changed: ' + afterOwner));
-  const claim = await call('press', { id: 't/G1.2', what: 'claim-done', by: 'wsl-claude' });
+  const claim = await call('press', { id: 't/G1.2', what: 'claim-done' }, WSL);
   if (claim.status === 200) test.check('an agent\'s claim-done still passes');
   else test.fail('an agent\'s claim-done was refused: ' + JSON.stringify(claim));
 
   test.subHeading('stars come from what Andy has seen');
-  await call('chat.add', { id: 't/G1.2', text: 'agent says', by: 'wsl-claude' });
+  await call('chat.add', { id: 't/G1.2', text: 'agent says' }, WSL);
   const starred = (await items())['t/G1.2'] || {};
-  await call('press', { id: 't/G1.2', what: 'seen', by: 'andy' });
+  await call('press', { id: 't/G1.2', what: 'seen' }, ANDY);
   const cleared = (await items())['t/G1.2'] || {};
   if (starred.star === true && cleared.star === false) test.check('an agent\'s new line stars the item, and Andy\'s seen clears it');
   else test.fail(OWED + 'star before seen ' + starred.star + ', after ' + cleared.star);
@@ -202,7 +206,7 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   } else test.fail('voice.jsonl holds ' + JSON.stringify(said));
 
   test.subHeading('an unknown press is refused by name');
-  const odd = await call('press', { id: 't/G1.2', what: 'fly', by: 'andy' });
+  const odd = await call('press', { id: 't/G1.2', what: 'fly' }, ANDY);
   if (odd.status === 400 && odd.body && odd.body.code === 'bad-request') test.check('press what:fly answers bad-request');
   else test.fail(OWED + 'press what:fly answered ' + JSON.stringify(odd));
 

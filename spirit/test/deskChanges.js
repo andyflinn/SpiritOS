@@ -33,7 +33,13 @@ fs.mkdirSync(state, { recursive: true });
 const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
 const client = appClient.createAppClient({ rootDir: scratch });
 client.register('desk', pipe);
-const call = function (verb, args) { const b = {}; b[verb] = args; return client.ask({ desk: b }).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; }); };
+// Writers are CALLERS since apiAuth/G1.13 (deskWriterKey.js): the door
+// forwards who asked and desk refuses a by argument, so a write here
+// hands appClient the caller it would have been handed.
+const CW = { key: 'MCowBQYDK2VwAyEAdeskChangesTestPeerCWAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
+const WSL = { key: 'MCowBQYDK2VwAyEAdeskChangesTestPeerWSAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskChangesTestOwnerAAAAAAAAAAAAAAAAA=', label: 'andy' };
+const call = function (verb, args, caller) { const b = {}; b[verb] = args; return client.ask({ desk: b }, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; }); };
 let kid = null;
 
 (async function () {
@@ -41,9 +47,9 @@ let kid = null;
   for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
 
   // A goal, a press, a chat line: three records. And two desk lines.
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'c/G1', title: 'Goal' }, items: [{ id: 'c/G1.1', title: 'A', blocks: ['c/G1'] }] }), by: 'claude-windows' });
-  await call('press', { id: 'c/G1', what: 'end-design', by: 'andy' });
-  await call('chat.add', { id: 'c/G1.1', text: 'FIRST-CHAT', by: 'wsl-claude' });
+  await call('session.set', { json: JSON.stringify({ goal: { id: 'c/G1', title: 'Goal' }, items: [{ id: 'c/G1.1', title: 'A', blocks: ['c/G1'] }] }) }, CW);
+  await call('press', { id: 'c/G1', what: 'end-design' }, ANDY);
+  await call('chat.add', { id: 'c/G1.1', text: 'FIRST-CHAT' }, WSL);
   await call('log.add', { json: JSON.stringify({ key: 'L1', at: '2026-10-01T14:00:00.000Z', dir: 'out', from: 'andy', kind: 'note', text: 'LINE-ONE', todo: 'team/chat' }) });
   await call('log.add', { json: JSON.stringify({ key: 'L2', at: '2026-10-01T14:00:00.000Z', dir: 'out', from: 'andy', kind: 'note', text: 'LINE-TWO', todo: 'team/chat' }) });
 
@@ -77,7 +83,7 @@ let kid = null;
     test.subHeading('one answer: the cut says more, and the resume loses nothing and doubles nothing');
     let version = 0;
     for (let i = 0; i < 6; i++) {
-      const w = await call('box.write', { id: 'c/G1.1', text: 'B' + i + '-' + 'x'.repeat(4400), version: version, by: 'claude-windows' });
+      const w = await call('box.write', { id: 'c/G1.1', text: 'B' + i + '-' + 'x'.repeat(4400), version: version }, CW);
       version = (w.body || {}).version || version;
     }
     const walked = [];

@@ -265,8 +265,15 @@ function walked(walk, pairOf) {
 // nothing else: the old `lines` stay as they are and feed no item (Andy: "the
 // new Server will not give deprecated items to agents either").
 db.exec('CREATE TABLE IF NOT EXISTS records (n INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT NOT NULL, verb TEXT NOT NULL, by TEXT NOT NULL, body TEXT NOT NULL);');
-const addRecord = db.prepare('INSERT INTO records (at, verb, by, body) VALUES (?, ?, ?, ?)');
-const allRecords = db.prepare('SELECT n, at, verb, by, body FROM records ORDER BY n');
+// THE WRITER'S KEY, BESIDE THE NAME (apiAuth/G1.13). Andy: "internally
+// desk server will use keys for tracking" — the label is for showing and
+// a relabel must never orphan who wrote what. Older files lack the
+// column; rows written before it carry ''.
+if (!db.prepare('PRAGMA table_info(records)').all().some(function (c) { return c.name === 'key'; })) {
+  db.exec("ALTER TABLE records ADD COLUMN key TEXT NOT NULL DEFAULT ''");
+}
+const addRecord = db.prepare('INSERT INTO records (at, verb, by, key, body) VALUES (?, ?, ?, ?, ?)');
+const allRecords = db.prepare('SELECT n, at, verb, by, key, body FROM records ORDER BY n');
 
 // An agent counts as live for ten minutes after its last write (Andy: "fine.").
 const LIVE_MS = 10 * 60 * 1000;
@@ -460,6 +467,7 @@ function write(verb, a, check) {
   if (check) check(s, it);
   const body = Object.assign({}, a);
   delete body.by;
+  delete body.key;
   // KEPT ONLY IF IT CAN COME BACK (the oversize suite; Andy: "why can't the system cleanly reject oversized
   // stuff?"). The write is taken inside a transaction, the state walked, and every panel it touched measured as
   // the answer that would carry it; one that no longer fits undoes the write and is refused by name.
@@ -467,7 +475,7 @@ function write(verb, a, check) {
   let r;
   let after;
   try {
-    r = addRecord.run(new Date().toISOString(), verb, String(a.by || ''), JSON.stringify(body));
+    r = addRecord.run(new Date().toISOString(), verb, String(a.by || ''), String(a.key || ''), JSON.stringify(body));
     after = walkState();
     const touched = verb === 'session.set' && body.session && body.session.goal
       ? [String(body.session.goal.id)].concat((body.session.items || []).map(function (x) { return String(x.id || ''); }))
@@ -517,21 +525,36 @@ function addVoice(text, day) {
 }
 
 // A goal is open while it is on the List. With none open, start-design (no id) makes goal/G<n>, n the next free.
-function newGoal(a) {
+function newGoal(w) {
   const st = walkState();
   const open = Object.keys(st.goals).some(function (gid) { const g = st.items[gid]; return g && listed(st, g) && !g.closed; });
   if (open) throw refused('bad-request');
   const used = Object.keys(st.goals).map(function (gid) { const m = /^goal\/G(\d+)$/.exec(gid); return m ? Number(m[1]) : 0; });
   const id = 'goal/G' + (Math.max.apply(null, [0].concat(used)) + 1);
-  return write('session.set', { session: { goal: { id: id, title: 'New goal' }, items: [] }, by: a.by });
+  return write('session.set', { session: { goal: { id: id, title: 'New goal' }, items: [] }, by: w.by, key: w.key });
 }
 
 const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen'];
-// Andy's alone (G2.1 review). His presses come by jobs.api, and apiDoor refuses a
-// member who says 'andy', so these are loopback-only. The agents keep claim-done,
-// design-complete and bring-back.
+// Andy's alone (G2.1 review). His presses carry the owner's caller (the
+// mark the door forwards, apiAuth/G1.13); a member's are refused. The
+// agents keep claim-done, design-complete and bring-back.
 const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen'];
-function ownerOnly(a) { if (a.by !== 'andy') throw refused('not-owner'); }
+function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
+
+// WHO WRITES (apiAuth/G1.13): the caller appServer hands the handler,
+// never an argument — Andy: "yes. the label will only be used for
+// labeling in chat, and for referencing members, internally desk server
+// will use keys for tracking." The owner shows as andy; a member shows
+// its label, the key's tail when the door knew no name; a write with no
+// caller has no writer and is refused.
+function writerOf(caller) {
+  if (!caller || typeof caller !== 'object') throw refused('bad-request');
+  if (caller.owner === true) return { by: 'andy', key: String(caller.key || '') };
+  if (typeof caller.key !== 'string' || !caller.key) throw refused('bad-request');
+  const label = String(caller.label || '').trim();
+  // The one cut of a key, everywhere (G1.11): kernel.keyTail.
+  return { by: label || require('../../../js/kernel.js').keyTail(caller.key), key: caller.key };
+}
 
 function doc(name) { const row = getDoc.get(name); return row ? row.json : '{}'; }
 function saveDoc(name, json) {
@@ -545,13 +568,13 @@ function saveDoc(name, json) {
 // The walk behind `changes`: records first, then lines, each taken while the answer still fits ANSWER_ROOM. A
 // record too big to travel even alone goes with an empty body, so the cursor still passes it and the reader asks
 // the item's panels instead.
-const recordsAfter = db.prepare('SELECT n, at, verb, by, body FROM records WHERE n > ? ORDER BY n');
+const recordsAfter = db.prepare('SELECT n, at, verb, by, key, body FROM records WHERE n > ? ORDER BY n');
 const linesAfter = db.prepare('SELECT rowid AS rid, line FROM lines WHERE rowid > ? ORDER BY rowid');
 function changesSince(n, line) {
   const out = { records: [], lines: [], n: n, line: line, more: false };
   const size = function () { return Buffer.byteLength(JSON.stringify(out), 'utf8'); };
   for (const r of recordsAfter.iterate(n)) {
-    const rec = { n: r.n, at: r.at, verb: r.verb, by: r.by, body: r.body };
+    const rec = { n: r.n, at: r.at, verb: r.verb, by: r.by, key: r.key, body: r.body };
     out.records.push(rec);
     out.n = r.n;
     if (size() <= ANSWER_ROOM) continue;
@@ -605,7 +628,7 @@ appServer.serve({
   // not times: two lines can share one at, and a time cursor would re-read or miss them.
   'changes': {
     // A line is the object Desk stored, whatever keys it has, plus its rowid as line: so lines is an open list.
-    request: { n: 0, line: 0 }, reply: { records: [{ n: 0, at: '', verb: '', by: '', body: '' }], lines: [], n: 0, line: 0, more: false },
+    request: { n: 0, line: 0 }, reply: { records: [{ n: 0, at: '', verb: '', by: '', key: '', body: '' }], lines: [], n: 0, line: 0, more: false },
     handler: function (a) { return changesSince(Number(a.n) || 0, Number(a.line) || 0); },
   },
   // One party's queue, newest first, through the same bucket.
@@ -677,76 +700,85 @@ appServer.serve({
       return { chat: chat, chatMore: chat.length < it.chat.length };
     },
   },
-  // ── THE WRITES (desk/G2.1): each carries `by`, an agent's name or 'andy'.
-  // The server cannot see who asks; a member cannot say 'andy' (apiDoor.js).
+  // ── THE WRITES: no verb takes `by` any more (apiAuth/G1.13) — the
+  // writer is the caller the door forwarded and appServer handed in,
+  // so nobody names their own writer. A by argument fails the request
+  // shape and is refused no-such-argument, which is the point.
   'session.set': {
-    request: { json: '', by: '' }, reply: { change: 0 },
-    handler: function (a) {
+    request: { json: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
       const sess = parsed(a.json);
       if (!sess.goal || !sess.goal.id || !Array.isArray(sess.items)) throw new Error('a session needs its goal and items');
-      return { change: write('session.set', { session: sess, by: a.by }).change };
+      return { change: write('session.set', { session: sess, by: w.by, key: w.key }).change };
     },
   },
   // Andy: "the FIRST text wins, all subsequent actions are alterations and
   // corrections." An alteration names the version it was written against and
   // is refused if the box has moved on, so nothing is silently overwritten.
   'box.write': {
-    request: { id: '', text: '', version: 0, by: '' }, reply: { change: 0, version: 0 },
-    handler: function (a) {
+    request: { id: '', text: '', version: 0 }, reply: { change: 0, version: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
       // A box that could not come back whole in item.box is refused here, as chat.add refuses such a line.
       const boxBytes = Buffer.byteLength(JSON.stringify({ box: String(a.text), version: 0 }), 'utf8');
       if (boxBytes > ANSWER_ROOM) throw tooLarge(boxBytes, ANSWER_ROOM);
-      const s = write('box.write', a, function (st, it) { if (a.version !== it.version) throw refused('box-moved'); });
+      const s = write('box.write', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) { if (a.version !== it.version) throw refused('box-moved'); });
       return { change: s.change, version: s.items[a.id].version };
     },
   },
   'check.add': {
-    request: { id: '', kind: '', words: '', test: '', by: '' }, reply: { change: 0 },
-    handler: function (a) {
+    request: { id: '', kind: '', words: '', test: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
       if (a.kind !== 'C' && a.kind !== 'T') throw new Error('a check is C or T');
-      return { change: write('check.add', a).change };
+      return { change: write('check.add', Object.assign({}, a, { by: w.by, key: w.key })).change };
     },
   },
   'check.set': {
-    request: { id: '', check: '', state: '', by: '' }, reply: { change: 0 },
-    handler: function (a) {
+    request: { id: '', check: '', state: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
       if (['open', 'passed', 'failed'].indexOf(a.state) === -1) throw new Error('a check is open, passed or failed');
-      return { change: write('check.set', a, function (st, it) {
+      return { change: write('check.set', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
         if (!it.checks.some(function (c) { return c.number === a.check; })) throw refused('no-row');
       }).change };
     },
   },
   // What he types is also his voice (desk/G1.4): kept here, once, for his chat and his names.
   'chat.add': {
-    request: { id: '', text: '', by: '' }, reply: { change: 0 },
-    handler: function (a) {
+    request: { id: '', text: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
       // MAX_PAYLOAD AT THE DOOR (desk/G3.3). Andy: "in the db yes, but in the sent messages ther MUST be a MAX_PAYLOAD".
       // A line that could not come back whole in one answer is refused here, as log.add refuses one; the sender slices it.
       const it0 = walkState().items[String(a.id)];
-      const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: String(a.by), at: new Date().toISOString(), text: String(a.text) });
+      const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: w.by, at: new Date().toISOString(), text: String(a.text) });
       if (bytes > CHAT_ROOM) throw tooLarge(bytes, CHAT_ROOM);
-      const c = write('chat.add', a).change;
-      if (a.by === 'andy') addVoice(a.text);
+      const c = write('chat.add', Object.assign({}, a, { by: w.by, key: w.key })).change;
+      // His voice is the OWNER'S line, told by the caller, never by a name.
+      if (caller.owner === true) addVoice(a.text);
       return { change: c };
     },
   },
   // "rename (you)": Andy's alone.
-  'item.rename': { request: { id: '', title: '', by: '' }, reply: { change: 0 }, handler: function (a) { ownerOnly(a); const c = write('item.rename', a).change; addVoice(a.title); return { change: c }; } },
-  'item.status': { request: { id: '', word: '', by: '' }, reply: { change: 0 }, handler: function (a) { return { change: write('item.status', a).change }; } },
-  'item.take': { request: { id: '', by: '' }, reply: { change: 0 }, handler: function (a) { return { change: write('item.take', a).change }; } },
+  'item.rename': { request: { id: '', title: '' }, reply: { change: 0 }, handler: function (a, caller) { ownerOnly(caller); const w = writerOf(caller); const c = write('item.rename', Object.assign({}, a, { by: w.by, key: w.key })).change; addVoice(a.title); return { change: c }; } },
+  'item.status': { request: { id: '', word: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.status', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
+  'item.take': { request: { id: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.take', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
   // Presses are records, not lines (Andy: "a press shouldn't post a line, it
   // is not textual information"). Go!, Close and Reopen only when offered;
   // done also by Andy alone ("completions ... can be forced by the user"),
   // marked alone.
   'press': {
-    request: { id: '', what: '', by: '' }, reply: { change: 0 },
-    handler: function (a) {
+    request: { id: '', what: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
       if (PRESSES.indexOf(a.what) === -1) throw refused('bad-request');
-      if (OWNER_PRESSES.indexOf(a.what) !== -1) ownerOnly(a);
+      if (OWNER_PRESSES.indexOf(a.what) !== -1) ownerOnly(caller);
+      const w = writerOf(caller);
       // START DESIGN WITH NOTHING OPEN STARTS A NEW GOAL (desk/G3.1). Andy: "start design mode should start a new
       // project if nothing is in the list". It arrives in design mode; he names it.
-      if (a.what === 'start-design' && a.id === '') return { change: newGoal(a).change };
-      return { change: write('press', a, function (st, it) {
+      if (a.what === 'start-design' && a.id === '') return { change: newGoal(w).change };
+      return { change: write('press', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
         const offered = buttons(st, it);
         if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen') && offered.indexOf(a.what) === -1) throw refused('not-offered');
         if (a.what === 'bring-back' && !it.closed) throw refused('not-offered');

@@ -208,9 +208,11 @@ function createAppClient(opts) {
   // and no app's argument namespace is touched.
   function callerHeaders(caller) {
     if (!caller || typeof caller !== 'object') return undefined;
-    if (caller.owner === true) return { 'X-Spirit-Owner': '1' };
-    if (typeof caller.key === 'string' && caller.key) return { 'X-Spirit-Caller': caller.key };
-    return undefined;
+    const h = {};
+    if (caller.owner === true) h['X-Spirit-Owner'] = '1';
+    if (typeof caller.key === 'string' && caller.key) h['X-Spirit-Caller'] = caller.key;
+    if (typeof caller.label === 'string' && caller.label) h['X-Spirit-Label'] = caller.label;
+    return Object.keys(h).length ? h : undefined;
   }
   function knock(row, request_, caller) {
     return Promise.resolve(request(row.pipe, 'POST', '/', JSON.stringify(request_), {

@@ -157,11 +157,16 @@ function createAppServer(verbs, opts) {
         try { parsed = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (e) { ok = false; }
         // WHO ASKS, from the door's headers (apiAuth/G1.13): the node
         // verified the key before it forwarded it, and the pipe is the
-        // node's alone, so nobody else can set these. Nothing when
-        // neither came — an old caller is unchanged.
+        // node's alone, so nobody else can set these. A member is
+        // { key, label }, the owner { owner: true, key, label } (his
+        // own key and name ride along — Andy: "my key will at least
+        // confirm it came from my node..."). Nothing when none came —
+        // an old caller is unchanged.
         const callerKey = String(httpReq.headers['x-spirit-caller'] || '');
-        const caller = httpReq.headers['x-spirit-owner'] === '1' ? { owner: true }
-          : callerKey ? { key: callerKey } : undefined;
+        const callerLabel = String(httpReq.headers['x-spirit-label'] || '');
+        let caller;
+        if (httpReq.headers['x-spirit-owner'] === '1') caller = { owner: true, key: callerKey, label: callerLabel };
+        else if (callerKey) caller = { key: callerKey, label: callerLabel };
         answer = ok ? route(parsed, caller) : Promise.resolve(refusal('bad-request', { why: 'not JSON' }));
       }
       answer.then(function (a) {

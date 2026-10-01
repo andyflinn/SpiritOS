@@ -49,6 +49,10 @@ function createApiAuth(opts) {
     // THE GATE'S READ (G1.2): the paths granted to a key. Throws when node.db cannot be read; the gate fails closed.
     pathsOf: function (key) { return store().paths(key); },
 
+    // THE DOOR'S LABEL (G1.13): the peers row's name for a key, forwarded
+    // to the server beside it. null when the table knows no such peer.
+    labelOf: function (key) { return store().label(key); },
+
     query: function (a) {
       if (!text(a.key) || !text(a.path)) return refuse('bad-request');
       return { allowed: store().has(a.key, a.path) };

@@ -37,7 +37,11 @@ const kids = [];
 const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
 const client = appClient.createAppClient({ rootDir: scratch });
 client.register('desk', pipe);
-const call = function (verb, args) { const b = {}; b[verb] = args; return client.ask({ desk: b }).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; }); };
+// Writers are CALLERS since apiAuth/G1.13 (deskWriterKey.js): desk refuses a by argument.
+const CW = { key: 'MCowBQYDK2VwAyEAdeskG3TestPeerCWAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
+const WSL = { key: 'MCowBQYDK2VwAyEAdeskG3TestPeerWSAAAAAAAAAAAAAAAAAA=', label: 'wsl-claude' };
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskG3TestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
+const call = function (verb, args, caller) { const b = {}; b[verb] = args; return client.ask({ desk: b }, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; }); };
 async function start() {
   const kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   kids.push(kid);
@@ -79,16 +83,16 @@ function clickTarget(attrs) {
 (async function () {
   test.subHeading('G3.1: Start design with nothing open starts a new goal');
   await start();
-  const made = await call('press', { id: '', what: 'start-design', by: 'andy' });
+  const made = await call('press', { id: '', what: 'start-design' }, ANDY);
   const after = await items({ currentGoalOnly: true });
   const goal = after.filter(function (i) { return i.goal === ''; })[0];
   if (made.status === 200 && goal && /^goal\/G\d+$/.test(goal.id) && goal.title === 'New goal' && goal.design === true) {
     test.check('with nothing open, start-design created ' + goal.id + ' "New goal" in design mode, the current goal');
   } else test.fail(G31 + 'start-design with no id answered ' + JSON.stringify(made.body || made) + '; current goal ' + JSON.stringify(goal || null));
-  const second = await call('press', { id: '', what: 'start-design', by: 'andy' });
+  const second = await call('press', { id: '', what: 'start-design' }, ANDY);
   if (second.status === 400 && second.body && second.body.code === 'bad-request') test.check('with a goal open, an empty id is refused as bad-request');
   else test.fail(G31 + 'with a goal open, start-design with no id answered ' + JSON.stringify(second.body || second));
-  const agent = await call('press', { id: '', what: 'start-design', by: 'wsl-claude' });
+  const agent = await call('press', { id: '', what: 'start-design' }, WSL);
   if (agent.status >= 400) test.check('an agent cannot start a goal that way');
   else test.fail('an agent\'s start-design with no id was taken');
 
@@ -113,7 +117,7 @@ function clickTarget(attrs) {
   tabs.fire('click', { target: clickTarget({ id: 'desk-start-design' }), currentTarget: tabs });
   for (let i = 0; i < 6; i++) await settle();
   const pressed = fake.calls.filter(function (c) { return c.verb === 'press' && c.args.what === 'start-design'; })[0];
-  if (pressed && pressed.args.id === '' && pressed.args.by === 'andy') test.check('with no goal row, the List\'s Start design sends start-design with no id');
+  if (pressed && pressed.args.id === '' && !('by' in pressed.args)) test.check('with no goal row, the List\'s Start design sends start-design with no id and no by (apiAuth/G1.13)');
   else test.fail(G31 + 'the List sent ' + JSON.stringify(fake.calls.filter(function (c) { return c.verb === 'press'; })));
 
   // G3.2 lists a closed current goal at startup; its row is not an open goal, so Start design still starts a new one.
@@ -136,10 +140,10 @@ function clickTarget(attrs) {
   else test.fail('with a closed goal row, Start design sent ' + JSON.stringify(pressed2 || null));
 
   test.subHeading('G3.3: an item with a long chat still opens, with its newest lines');
-  await call('session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'The goal' }, rules: [], items: [{ id: 't/G1.1', title: 'Talky', blocks: ['t/G1'] }] }), by: 'claude-windows' });
-  await call('box.write', { id: 't/G1.1', text: 'the box', version: 0, by: 'claude-windows' });
+  await call('session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'The goal' }, rules: [], items: [{ id: 't/G1.1', title: 'Talky', blocks: ['t/G1'] }] }) }, CW);
+  await call('box.write', { id: 't/G1.1', text: 'the box', version: 0 }, CW);
   const n = Math.ceil((appClient.ANSWER_MAX * 3) / 1000);
-  for (let i = 0; i < n; i++) await call('chat.add', { id: 't/G1.1', text: 'LINE-' + String(i).padStart(3, '0') + ' ' + 'x'.repeat(1000), by: i % 2 ? 'andy' : 'wsl-claude' });
+  for (let i = 0; i < n; i++) await call('chat.add', { id: 't/G1.1', text: 'LINE-' + String(i).padStart(3, '0') + ' ' + 'x'.repeat(1000) }, i % 2 ? ANDY : WSL);
   const got = await whole('t/G1.1');
   const body = got.body || {};
   const chat = body.chat || [];
@@ -156,8 +160,8 @@ function clickTarget(attrs) {
   else test.fail(G33 + 'a short chat answered chatMore ' + JSON.stringify((short.body || {}).chatMore));
   // Andy: "in the db yes, but in the sent messages ther MUST be a MAX_PAYLOAD". A line too long to come back whole in
   // an item.get is refused when it is written (line-too-large), and the sender slices it; the chat keeps what it had.
-  await call('chat.add', { id: 't/G1', text: 'SMALL-OLDER', by: 'wsl-claude' });
-  const tooLong = await call('chat.add', { id: 't/G1', text: 'HUGE ' + 'y'.repeat(appClient.ANSWER_MAX - 400), by: 'wsl-claude' });
+  await call('chat.add', { id: 't/G1', text: 'SMALL-OLDER' }, WSL);
+  const tooLong = await call('chat.add', { id: 't/G1', text: 'HUGE ' + 'y'.repeat(appClient.ANSWER_MAX - 400) }, WSL);
   const huge = await whole('t/G1');
   const hc = (huge.body || {}).chat || [];
   if (tooLong.status === 413 && tooLong.body && tooLong.body.code === 'line-too-large') test.check('chat.add refuses a line too long to be sent back, as line-too-large');
