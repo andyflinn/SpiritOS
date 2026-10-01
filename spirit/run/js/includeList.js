@@ -67,9 +67,25 @@ function intrinsicShell(rootDir) {
   }).map(function (e) { return 'shell/' + e.name; });
 }
 
+// THE SAME WORD FOR A SERVER (fileTransfer goal/G1.6). Andy ruled the
+// fileServer intrinsic ("yes. its intrinsic and many apps can use it."),
+// found it unbuilt at the goal's close, and said "fix it.": a server whose
+// manifest says intrinsic: true is always included, never excluded, exactly
+// as a shell element is; one without the word is untouched (slim/G1.3).
+function intrinsicServers(rootDir) {
+  const dir = path.join(rootDir, 'process', 'js');
+  let es = [];
+  try { es = fs.readdirSync(dir, { withFileTypes: true }); } catch (e) { return []; }
+  return es.filter(function (e) {
+    if (!e.isDirectory() || !isPath('process/js/' + e.name)) return false;
+    try { return JSON.parse(fs.readFileSync(path.join(dir, e.name, e.name + '.json'), 'utf8')).intrinsic === true; }
+    catch (e2) { return false; }
+  }).map(function (e) { return 'process/js/' + e.name; });
+}
+
 // Every module this node includes, sorted.
 function paths(rootDir) {
-  const all = listed(rootDir).concat(intrinsicShell(rootDir));
+  const all = listed(rootDir).concat(intrinsicShell(rootDir)).concat(intrinsicServers(rootDir));
   return all.filter(function (p, i) { return all.indexOf(p) === i; }).sort();
 }
 function includes(rootDir, p) { return paths(rootDir).indexOf(String(p)) !== -1; }
