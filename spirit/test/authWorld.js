@@ -1,8 +1,8 @@
 'use strict';
 
 // apiAuth/G1.0: the auth world, red on today's code.
-//   Andy: "we may want to define a labWorld for this. which node must have appServers, which ones will seek
-//   grants.", "a script will configure the grants, via loopback.", "it's about permutations of configurations
+//   Andy: "we may want to define a labWorld for this" — which node must run app servers, which ones will seek
+//   grants; "a script will configure the grants, via loopback.", "it's about permutations of configurations
 //   that peerPost() fails in apiAuth", and his "yes" to the three fields (team meeting under G1.0).
 // The contract the builder follows:
 //   - scenario.js takes three fields more: servers: [names] (the OWNER's, seeded into its include.json through

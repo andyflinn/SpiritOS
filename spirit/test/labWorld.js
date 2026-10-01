@@ -51,6 +51,14 @@ const CASE_WAIT_MS = 8000;
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
+// ONE PLACE A STREAM IS OPENED, for the relay's wire and a peer node's
+// events alike (apiAuth/G1.0). One site, not two: oneDoor counts every
+// raw reach in this file, and two streams opened in two places is one
+// more site to watch for no more capability.
+function openStream(url, stop, headers) {
+  return fetch(url, { signal: stop.signal, headers: headers || {} }).catch(function () { return null; });
+}
+
 async function master(method, pathname, body) {
   const res = await fetch(MASTER + pathname, {
     method: method,
@@ -507,12 +515,9 @@ function createWorld(opts) {
     const wire = relayUrl + '/api/relay/stream?key=' + encodeURIComponent(ownerId.publicKey);
 
     const stop = new AbortController();
-    const opened = await fetch(wire, {
-      signal: stop.signal,
-      headers: { 'X-Spirit-Sig': streamSig },
-    });
-    if (!opened.ok) {
-      return { ok: false, error: 'lab owner could not open a stream: ' + opened.status };
+    const opened = await openStream(wire, stop, { 'X-Spirit-Sig': streamSig });
+    if (!opened || !opened.ok) {
+      return { ok: false, error: 'lab owner could not open a stream: ' + (opened ? opened.status : 'no connection') };
     }
 
     // Read the stream until the reply to THIS hash arrives. Matched by
@@ -655,8 +660,7 @@ function createWorld(opts) {
     const encoded = packet.encode('api', ask);
     if (!encoded.ok) return 'could not encode: ' + encoded.error;
     const stop = new AbortController();
-    let opened = null;
-    try { opened = await fetch(p.url + '/api/events', { signal: stop.signal }); } catch (e) { opened = null; }
+    const opened = await openStream(p.url + '/api/events', stop);
     if (!opened || !opened.ok) return 'no stream on ' + p.name;
     let want = '';
     const early = [];

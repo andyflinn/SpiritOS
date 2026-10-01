@@ -730,7 +730,12 @@ async function main() {
   // suites are discovered rather than listed — a list is a second place to
   // forget something.
   const shared = body.filter(function (f) {
-    return /setupRelayFakes/.test(fs.readFileSync(path.join(DIR, f), 'utf8'));
+    // createWorld too (apiAuth/G1.0): every labWorld world is lw-* rows
+    // on ONE set of ports, and build() starts by clearing every lw-*
+    // node — two world-builders in parallel lanes destroy each other.
+    // It was survivable while liveFrontDoor was effectively alone;
+    // authWorld made the collision a coin-flip per run.
+    return /setupRelayFakes|createWorld\(/.test(fs.readFileSync(path.join(DIR, f), 'utf8'));
   });
 
   // ONE labMaster FOR THE WHOLE RUN, owned by the runner. Suites that need
