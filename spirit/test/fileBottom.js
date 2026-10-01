@@ -116,8 +116,9 @@ async function main() {
     test.check('info echoes its command and delivers { bytes, mime, name } as JSON text in data');
   } else test.fail(OWED + 'info answered ' + info.status + ' ' + JSON.stringify(info.body));
 
-  const odd = await call(id, { command: 'chunk', data: '{"start":0,"length":4}' }, PEER);
-  if (odd.status !== 200 && odd.body && odd.body.code) test.check('every other command is still refused by name (chunk is G1.2\'s)');
+  // chunk was refused here until goal/G1.2 built it; an unknown command stands in.
+  const odd = await call(id, { command: 'erase', data: '' }, PEER);
+  if (odd.status !== 200 && odd.body && odd.body.code) test.check('a command the hash-verb does not serve is refused by name');
   else test.fail(OWED + 'an unserved command answered ' + odd.status + ' ' + JSON.stringify(odd.body));
 }
 

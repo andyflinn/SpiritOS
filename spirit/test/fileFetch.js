@@ -74,9 +74,11 @@ function bytesOf(seed, n) { const b = Buffer.alloc(n); for (let i = 0; i < n; i+
 const srcA = path.join(scratch, 'alpha.bin'); fs.writeFileSync(srcA, bytesOf(7, 20000));
 const srcB = path.join(scratch, 'beta.bin'); fs.writeFileSync(srcB, bytesOf(11, 15000));
 
-const providerPipe = path.join(scratch, 'prov.sock');
+// Windows listens on named pipes only, as fileCap.js does: pipePathFor there, a socket file elsewhere.
+const pipeFor = function (name) { return process.platform === 'win32' ? appClient.pipePathFor(scratch, name, 'win32', 'process') : path.join(scratch, name + '.sock'); };
+const providerPipe = pipeFor('prov');
 const providerState = path.join(scratch, 'prov-state');
-const receiverPipe = path.join(scratch, 'recv.sock');
+const receiverPipe = pipeFor('recv');
 const receiverState = path.join(scratch, 'recv-state');
 
 // ── THE PRETEND NODE: the receiver's one door to its peer ─────────────
