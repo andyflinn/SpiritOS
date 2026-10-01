@@ -27,8 +27,20 @@ function apiTreeServers(tree) {
   }).sort();
 }
 
+// ONE SERVER'S VERBS (apiAuth/G1.9), sorted, for the verb dropdown. DEBUG and DEPENDENCIES are the owner's and
+// never offered (Andy: "DEBUG/DEPENDENCIES are owner only and will never be offered to peerPost clients."); AGENTS
+// is a verb like any other. A server the tree does not hold, or whose branch is an error, has no verbs.
+var API_TREE_OWNER_VERBS = ['DEBUG', 'DEPENDENCIES'];
+function apiTreeVerbs(tree, server) {
+  if (apiTreeServers(tree).indexOf(server) === -1) return [];
+  return Object.keys(tree[server]).filter(function (verb) {
+    return API_TREE_OWNER_VERBS.indexOf(verb) === -1;
+  }).sort();
+}
+
 var apiTreeIndexApi = {
   servers: apiTreeServers,
+  verbs: apiTreeVerbs,
 };
 
 if (typeof process !== 'undefined' && process.versions && process.versions.node) {
