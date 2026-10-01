@@ -98,8 +98,11 @@ let kid = null;
   const big = await pipeRequest(myPipe, 'GET', '/big', '', { timeoutMs: 8000, answerMax: appClient.ANSWER_MAX + 4096 }).catch(function () { return null; });
   let body = null;
   try { body = JSON.parse(big && big.text); } catch (e) { body = null; }
-  if (body && body.ok === false && body.code === 'app-answer-too-large' && body.size > appClient.ANSWER_MAX && body.limit === appClient.ANSWER_MAX) {
-    test.check('over ANSWER_MAX: app-answer-too-large with the size and the limit, as a verb\'s reply would be');
+  // extra.bytes and extra.max, the shape every size refusal in the tree
+  // says (appClient.js knock; claude-windows' build review, 2026-10-01).
+  const ex = (body && body.extra) || {};
+  if (body && body.ok === false && body.code === 'app-answer-too-large' && ex.bytes > appClient.ANSWER_MAX && ex.max === appClient.ANSWER_MAX) {
+    test.check('over ANSWER_MAX: app-answer-too-large with extra.bytes and extra.max, as a verb\'s reply would be');
   } else {
     const got = big ? (body ? JSON.stringify(body).slice(0, 140) : String(big.text == null ? '' : big.text).length + ' bytes streamed') : 'no answer';
     test.fail(OWED + 'an oversized pass-through answered ' + got);
