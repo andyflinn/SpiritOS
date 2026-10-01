@@ -40,6 +40,14 @@ const PREFIX = 'lw-';
 // from where hand-made rows tend to land.
 const RELAY_PORT = 65425;
 const PEER_PORTS = [65426, 65427, 65428];
+// The owner NODE's port (apiAuth/G1.0). Before the auth world the lab
+// owner was a key with no node; a world whose cases are decided at the
+// owner's gate needs the gate running.
+const OWNER_PORT = 65429;
+// How long a case waits before its outcome is 'silence'. Long enough for
+// a relay round trip under harness load; a real answer arrives in well
+// under a second.
+const CASE_WAIT_MS = 8000;
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -102,7 +110,10 @@ function homeOf(id) {
 // relayServer.js reads the file once at startup and both create and
 // recycle have already started the process by the time we get it back.
 async function ensureNode(name, type, port, config) {
-  const id = PREFIX + name;
+  // labMaster slugs every id (slugName: lowercase, odd characters to
+  // '-'), so the id asked back for must be the slug or a camel-cased
+  // peer (the auth world's appPeer) creates one row and starts a 404.
+  const id = (PREFIX + name).toLowerCase().replace(/[^a-z0-9._-]+/g, '-');
   // `kind: 'fixture'` — a copy of the WORKING TREE under %TEMP%, not a
   // clone of origin/master under repo/lab.
   //
@@ -188,6 +199,9 @@ async function sealedClaimBody(relayUrl, id, body) {
 }
 function createWorld(opts) {
   opts = opts || {};
+  // THE AUTH WORLD (apiAuth/G1.0): a scenario carrying servers, grants
+  // and cases builds an owner NODE too, and runCases() asks its gate.
+  const sc = opts.scenario ? require('./scenario').normalize(opts.scenario) : null;
   // NOT CLAMPED. It was `Math.min(PEER_PORTS.length, ...)`, so a scenario
   // with five peers built three and reported success — and the world
   // Andy then looked at was not the scenario he asked for, with nothing
@@ -196,11 +210,12 @@ function createWorld(opts) {
   // A lab has as many peers as it has ports. Wanting more than that is a
   // refusal with a reason, which build() gives below: the failure that
   // names itself beats the success that lies.
-  const wanted = Math.max(1, opts.peers || 2);
-  const names = opts.peerNames || null;
+  const wanted = sc ? Math.max(1, sc.peers.length) : Math.max(1, opts.peers || 2);
+  const names = sc ? sc.peers.map(function (p) { return p.name; }) : (opts.peerNames || null);
 
   let relay = null;
   let owner = null;
+  let ownerNode = null;
   const peers = [];
 
   async function build() {
@@ -345,6 +360,18 @@ function createWorld(opts) {
       // correctly not knowing, and a world-builder has to write the
       // node's half as it writes every other file here (GAP 1).
       relayKeys.seat(node.home, relay.url, name);
+      // THE AUTH WORLD'S PEERS KNOW THE OWNER (apiAuth/G1.0): the
+      // owner's reply is an ordinary packet at the peer's own front
+      // door, and a stranger's packet is dropped without a word — so a
+      // peer that has not acquired the owner hears every answer as
+      // silence. The card rides along for the sealed paths.
+      if (sc) {
+        const contactBook = require('../run/js/contacts.js');
+        contactBook.acquire(node.home, { publicKey: owner.publicKey, publicLabel: ownerName }, 'invite');
+        contactBook.setCard(node.home, owner.publicKey,
+          nodeCard.cardFrom(Object.assign({ name: ownerName }, owner)), 'invite');
+        contactBook.setMyLabel(node.home, owner.publicKey, ownerName);
+      }
       // AND session.json, or the shell believes this node has no name.
       // firstRun() is decided by exactly one thing — a label in this file
       // — and an unbound node shows Natter alone and nothing else. So a
@@ -362,6 +389,70 @@ function createWorld(opts) {
       await master('POST', '/api/nodes/' + node.id + '/start');
 
       peers.push({ name: name, id: id, node: node, url: 'http://127.0.0.1:' + node.port });
+    }
+
+    // ── THE OWNER'S OWN NODE (apiAuth/G1.0) ─────────────────────────
+    //
+    // The cases are decided at the owner's gate, so the owner stops being
+    // a bare key and runs a node: its servers from the scenario, seeded
+    // through includeList (the one way a node is told what it runs), its
+    // peers made known through contacts.acquire (frontDoor's 'known' is
+    // the acquired set, hub.js listenSet) — GAP 1's shape, but through
+    // the product's own writers. The grants then go through
+    // jobs.authGrant on its loopback, never by writing node.db (Andy's
+    // ruling under G1.5: configuring by file is the cheat).
+    if (sc) {
+      const node = await ensureNode('owner', 'avatar', OWNER_PORT);
+      if (!node.ok) return node;
+      const includeList = require('../run/js/includeList.js');
+      const contactBook = require('../run/js/contacts.js');
+      auth.saveIdentity(node.home, owner);
+      fs.mkdirSync(path.join(node.home, 'shell', 'natter'), { recursive: true });
+      fs.writeFileSync(
+        path.join(node.home, 'shell', 'natter', 'relays.json'),
+        JSON.stringify([{ label: 'lab', url: relay.url }], null, 2)
+      );
+      relayKeys.seat(node.home, relay.url, ownerName);
+      fs.writeFileSync(
+        path.join(node.home, 'shell', 'natter', 'session.json'),
+        JSON.stringify({ label: ownerName, boundAt: new Date().toISOString() }, null, 2)
+      );
+      sc.servers.forEach(function (s) { includeList.add(node.home, 'process/js/' + s); });
+      peers.forEach(function (p) {
+        contactBook.acquire(node.home, { publicKey: p.id.publicKey, publicLabel: p.name }, 'invite');
+        contactBook.setCard(node.home, p.id.publicKey,
+          nodeCard.cardFrom(Object.assign({ name: p.name }, p.id)), 'invite');
+        contactBook.setMyLabel(node.home, p.id.publicKey, p.name);
+      });
+      await master('POST', '/api/nodes/' + node.id + '/stop');
+      await master('POST', '/api/nodes/' + node.id + '/start');
+      ownerNode = { id: node.id, port: OWNER_PORT, home: node.home, url: 'http://127.0.0.1:' + OWNER_PORT };
+      if (!await answering(ownerNode.url + '/')) {
+        return { ok: false, error: 'the owner node did not answer on ' + ownerNode.url };
+      }
+      // Its servers must be served before a grant can take their paths.
+      let served = false;
+      for (let n = 0; n < 100 && !served; n += 1) {
+        await sleep(300);
+        const tree = await post(ownerNode.url + '/api/spirit', { verb: 'jobs.api', ask: 'api' });
+        served = !!tree.body && sc.servers.every(function (s) {
+          const branch = tree.body[s];
+          return branch && typeof branch === 'object' && branch.ok !== false;
+        });
+      }
+      if (!served) {
+        return { ok: false, error: 'the owner node never served ' + sc.servers.join(', ') };
+      }
+      for (const p of sc.peers) {
+        const row = peers.filter(function (x) { return x.name === p.name; })[0];
+        for (const g of p.grants) {
+          const made = await post(ownerNode.url + '/api/spirit',
+            { verb: 'jobs.authGrant', key: row.id.publicKey, path: g });
+          if (!made.ok) {
+            return { ok: false, error: 'grant ' + p.name + ' ' + g + ': ' + JSON.stringify(made.body).slice(0, 160) };
+          }
+        }
+      }
     }
 
     return { ok: true };
@@ -552,6 +643,77 @@ function createWorld(opts) {
     peers.length = 0;
   }
 
+  // ── ONE CASE AT THE OWNER'S GATE (apiAuth/G1.0) ────────────────────
+  //
+  // The agents' own shape (agents.js deskAsk): the peer's stream is
+  // opened BEFORE the post, so an answer quicker than the post's own
+  // reply is not missed; the answer is the 'api' packet whose re is the
+  // post's hash. The outcome speaks expect's vocabulary: a refusal by
+  // its code, any other reply 'answered', no reply at all 'silence'.
+  async function oneCase(p, ask) {
+    const packet = require('../run/js/client/packet');
+    const encoded = packet.encode('api', ask);
+    if (!encoded.ok) return 'could not encode: ' + encoded.error;
+    const stop = new AbortController();
+    let opened = null;
+    try { opened = await fetch(p.url + '/api/events', { signal: stop.signal }); } catch (e) { opened = null; }
+    if (!opened || !opened.ok) return 'no stream on ' + p.name;
+    let want = '';
+    const early = [];
+    const reading = (async function () {
+      const reader = opened.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      for (;;) {
+        const chunk = await reader.read();
+        if (chunk.done) return null;
+        buf += dec.decode(chunk.value, { stream: true });
+        const frames = buf.split('\n\n');
+        buf = frames.pop();
+        for (const frame of frames) {
+          const ev = /^event: (.+)$/m.exec(frame);
+          const da = /^data: (.+)$/m.exec(frame);
+          if (!ev || ev[1] !== 'packet' || !da) continue;
+          let msg; try { msg = JSON.parse(da[1]); } catch (e) { continue; }
+          if (msg.from !== owner.publicKey) continue;
+          let got; try { got = packet.decode(msg.text); } catch (e) { continue; }
+          if (!got || got.app !== 'api' || !got.re) continue;
+          if (!want) { early.push(got); continue; }
+          if (got.re === want) return got.body;
+        }
+      }
+    })().catch(function () { return null; });
+    const sent = await post(p.url + '/api/spirit', { verb: 'peer.post', to: owner.publicKey, text: encoded.text });
+    if (!sent.ok || !sent.body || !sent.body.hash) {
+      stop.abort();
+      return 'not posted: ' + JSON.stringify(sent.body).slice(0, 100);
+    }
+    want = sent.body.hash;
+    const hit = early.filter(function (g) { return g.re === want; })[0];
+    const body = hit ? hit.body : await Promise.race([
+      reading,
+      sleep(CASE_WAIT_MS).then(function () { return undefined; }),
+    ]);
+    stop.abort();
+    // undefined is the race timing out; null is the stream closing with
+    // no answer. Both are a call nobody answered.
+    if (body === undefined || body === null) return 'silence';
+    if (body && body.ok === false && body.code) return 'refused ' + body.code;
+    return 'answered';
+  }
+
+  // Every case of the scenario, in order, each from its own peer.
+  async function runCases() {
+    const out = [];
+    if (!sc) return out;
+    for (let i = 0; i < sc.cases.length; i += 1) {
+      const c = sc.cases[i];
+      const p = peers.filter(function (x) { return x.name === c.from; })[0];
+      out.push({ index: i, outcome: p ? await oneCase(p, c.ask) : 'no peer named ' + c.from });
+    }
+    return out;
+  }
+
   // The final teardown: the nodes, and labMaster too if THIS process
   // started it (ensureMaster.stop is a no-op otherwise).
   async function destroy() {
@@ -574,6 +736,11 @@ function createWorld(opts) {
     // Asking the lab relay anything, as its owner. The only way to ask a
     // relay anything since decision 0010 emptied the register.
     askOn: askOn,
+    // The auth world's half (apiAuth/G1.0): the owner's node, the cases
+    // run at its gate, and teardown as the suites name it.
+    ownerNode: function () { return ownerNode; },
+    runCases: runCases,
+    teardown: destroy,
   };
 }
 

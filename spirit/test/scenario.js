@@ -43,9 +43,21 @@
 const TOP = [
   'title', 'why', 'covers', 'look',   // documentation, for the visual side
   'relays', 'owner', 'peers', 'knows', 'then',
+  // apiAuth/G1.0 (team meeting, both agents, Andy: "yes"): the owner's
+  // servers, and the cases a built world runs at its gate. `servers`
+  // sits at the top because the owner is a name here, not an object;
+  // the builder seeds them through includeList, the one way a node is
+  // told what it runs.
+  'servers', 'cases',
 ];
-const PEER = ['name', 'label', 'on', 'running', 'expect'];
+// `grants` (apiAuth/G1.0): the paths granted to this peer, set through
+// jobs.authGrant on the owner's loopback — never by writing node.db.
+const PEER = ['name', 'label', 'on', 'running', 'expect', 'grants'];
 const THEN = ['remove', 'from', 'why'];
+const CASE = ['from', 'ask', 'expect'];
+// A case's outcome vocabulary: a reply that is not a refusal, a refusal
+// by name, or no reply at all (a stranger's lot, appApiDoor T6).
+const CASE_EXPECT = /^(answered|silence|refused [a-z][a-z0-9-]*)$/;
 
 // `lab` is the relay a world always has. `live` names the real one and
 // exists only for the visual builder — in process there is nothing live
@@ -98,6 +110,7 @@ function normalize(input) {
       on: (peer.on && peer.on.length ? peer.on : [relays[0]]).slice(),
       running: peer.running !== false,
       expect: peer.expect || '',
+      grants: (peer.grants || []).slice(),
     };
   });
 
@@ -114,6 +127,11 @@ function normalize(input) {
     knows: (doc.knows || []).map(function (pair) { return (pair || []).slice(); }),
     then: (doc.then || []).map(function (step) {
       return { remove: step.remove, from: step.from || 'lab', why: step.why || '' };
+    }),
+    servers: (doc.servers || []).slice(),
+    cases: (doc.cases || []).map(function (c) {
+      const k = c || {};
+      return { from: k.from, ask: k.ask, expect: k.expect || '' };
     }),
   };
 }
@@ -163,6 +181,28 @@ function problems(input) {
   // message to a stranger, an unknown field on one. `messages` is not in
   // TOP any more, so `unknown()` above refuses the whole field by name
   // and these three can say nothing a reader needs.
+
+  // The auth world's words (apiAuth/G1.0), held to the same standard as
+  // every other: a stranger, a shapeless case or an outcome outside the
+  // vocabulary is refused by name.
+  s.servers.forEach(function (name) {
+    if (typeof name !== 'string' || !name) found.push('`servers` names nothing: ' + JSON.stringify(name));
+  });
+  s.peers.forEach(function (p) {
+    p.grants.forEach(function (g) {
+      if (typeof g !== 'string' || !g) found.push('`' + p.name + '` has a grant that is not a path: ' + JSON.stringify(g));
+    });
+  });
+  (doc.cases || []).forEach(function (c, i) {
+    unknown(c, CASE).forEach(function (k) { found.push('case ' + i + ' has unknown field `' + k + '`'); });
+  });
+  s.cases.forEach(function (c, i) {
+    if (names.indexOf(c.from) === -1) found.push('case ' + i + ' is from a stranger: `' + c.from + '`');
+    if (c.ask === undefined) found.push('case ' + i + ' asks nothing');
+    if (!CASE_EXPECT.test(c.expect)) {
+      found.push('case ' + i + ' expects `' + c.expect + '`, not answered | refused <code> | silence');
+    }
+  });
 
   (doc.then || []).forEach(function (step) {
     unknown(step, THEN).forEach(function (k) {
