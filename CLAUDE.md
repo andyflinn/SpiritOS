@@ -88,6 +88,14 @@ Four things worth knowing before touching it:
   copying the json.l file manualy to my brain input, and deleting the one
   in the app folder"*. Logging a Desk line by hand as well would double it.
   No app writes into the vault.
+  **Since apiAuth/G1 the brain draws his Desk lines through the desk api**
+  (`changes`, `log.search`, over peerPost), and the hand copy goes away.
+  Andy, 2026-10-01, closing the goal: *"and with this comes the close on
+  your  SpiritOS repos, the brain and your ability to draw my input
+  directly from the desk servers api...."*, and *"correct."* when asked
+  whether the hand copy then goes away. The compile reads; it still never
+  writes into `input/`. Desk's own `voice.jsonl` writer is the hack he
+  named above and is owed its removal as an item, not on the fly.
 - **Andy's words are corrected for spelling only.** Lower-case `i`,
   `andy-rule`, trailing `....`, comma splices and run-ons stay — *"sloppy
   keyboardage is part of me"* (2026-09-20). A garbled phrase stays
