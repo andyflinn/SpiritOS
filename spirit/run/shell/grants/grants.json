@@ -1,0 +1,8 @@
+{
+  "name": "Grants",
+  "description": "Who may call which api: give a contact a server or one verb, see and revoke what each key holds, and spot grants whose server is gone.",
+  "icon": "LOCKED",
+  "hidden": false,
+  "intrinsic": true,
+  "owner": "system"
+}

@@ -38,9 +38,25 @@ function apiTreeVerbs(tree, server) {
   }).sort();
 }
 
+// WHETHER THE TREE SERVES A PATH TODAY (apiAuth/G1.6): how the Grants
+// app tells a live grant from a deprecated one. 'app' is served when
+// that server answered; 'app.verb' when the verb is among its verbs —
+// verbs(), so DEBUG and DEPENDENCIES are nobody's grant. A grant this
+// says is gone is REPORTED, never pruned: Andy, "so we defer pruning to
+// be triggered by the owners auth app, who can report deprecated
+// branches".
+function apiTreeServes(tree, p) {
+  var path = String(p == null ? '' : p);
+  var dot = path.indexOf('.');
+  var app = dot === -1 ? path : path.slice(0, dot);
+  if (apiTreeServers(tree).indexOf(app) === -1) return false;
+  return dot === -1 || apiTreeVerbs(tree, app).indexOf(path.slice(dot + 1)) !== -1;
+}
+
 var apiTreeIndexApi = {
   servers: apiTreeServers,
   verbs: apiTreeVerbs,
+  serves: apiTreeServes,
 };
 
 if (typeof process !== 'undefined' && process.versions && process.versions.node) {
