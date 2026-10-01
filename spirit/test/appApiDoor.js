@@ -48,6 +48,9 @@ function world() {
     post: function () { posted.push(Array.prototype.slice.call(arguments)); return Promise.resolve({ ok: true }); },
     encode: packet.encode, decode: packet.decode,
     isKnown: function (key) { return key === MEMBER; },
+    // Since apiAuth/G1.2 the door gates every member by its grants (apiGate.js);
+    // this suite is about the wire, so its member holds the whole fake app.
+    auth: { pathsOf: function (key) { return key === MEMBER ? ['alpha'] : []; } },
     log: function () {},
   });
 }

@@ -217,6 +217,9 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
     servers: { ask: function (b) { askedDoor.push(b); return Promise.resolve({ status: 200, body: {} }); } },
     post: function (relay, to, text) { repliedDoor.push(packet.decode(text)); return Promise.resolve({ ok: true }); },
     encode: packet.encode, decode: packet.decode, isKnown: function (k) { return k === MEMBER; }, log: function () {},
+    // apiAuth/G1.2: the door gates members by their grants; this member
+    // holds desk whole, so what this suite tests stays its own.
+    auth: { pathsOf: function (k) { return k === MEMBER ? ['desk'] : []; } },
   });
   await door({ fromKey: MEMBER, hash: 'D1', relay: 'https://relay.example', text: packet.encode('api', { desk: { press: { id: 't/G1.2', what: 'done', by: 'andy' } } }).text });
   await sleep(50);

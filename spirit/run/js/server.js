@@ -1779,7 +1779,9 @@ contactBook.syncMarks(ROOT_DIR);
     // function they share (apiDoor.answer), and the reply is flat (D11).
     'jobs.api': function (rq, rs) {
       readJsonBody(rq).then(function (body) {
-        return require('./apiDoor').answer(appClient, body && body.ask);
+        // The owner is never gated (apiAuth/G1.2, Andy: "a call from your
+        // own machine counts as you"); the loopback door says so by name.
+        return require('./apiDoor').answer(appClient, body && body.ask, { owner: true });
       }).then(function (a) {
         rs.writeHead((a && a.status) || 500, { 'Content-Type': 'application/json; charset=utf-8' });
         rs.end(JSON.stringify(a ? a.body : null));

@@ -96,6 +96,9 @@ test.startTest('desk/G2.5: DEBUG is one switch per process, off at start, owner 
     servers: servers,
     post: function (relay, to, text) { posted.push(packet.decode(text)); return Promise.resolve({ ok: true }); },
     encode: packet.encode, decode: packet.decode, isKnown: function (k) { return k === MEMBER; }, log: function () {},
+    // apiAuth/G1.2: the door gates members by their grants; this member holds
+    // the whole fake app, so what this suite tests (DEBUG's refusal) stays its own.
+    auth: { pathsOf: function (k) { return k === MEMBER ? ['grantFace'] : []; } },
   });
   await door({ fromKey: MEMBER, hash: 'H1', relay: 'https://relay.example', text: packet.encode('api', { grantFace: { DEBUG: { on: true } } }).text });
   await sleep(50);

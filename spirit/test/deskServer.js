@@ -201,6 +201,9 @@ function line(key, todo, text, extra) {
     post: function (relay, to, text) { posted.push({ to: to, text: text }); return Promise.resolve({ ok: true }); },
     encode: packet.encode, decode: packet.decode,
     isKnown: function (key) { return key === 'MEMBER'; },
+    // apiAuth/G1.2: the door gates members by their grants; this member
+    // holds desk whole, so what this suite tests stays its own.
+    auth: { pathsOf: function (key) { return key === 'MEMBER' ? ['desk'] : []; } },
     log: function () {},
   });
   if (door) await door({ text: packet.encode('api', { desk: { 'state.get': {} } }).text, fromKey: 'MEMBER', hash: 'H4' });
