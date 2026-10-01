@@ -64,7 +64,8 @@ async function served(call) {
   for (let i = 0; i < 60; i++) {
     await sleep(150);
     const r = await call('status', { hash: 'verb-' + 'A'.repeat(43) }, ANDY);
-    if (r.status) return true;
+    // Up means the fileServer itself answered: app-not-running is the client saying it is not there yet.
+    if (r.status && !(r.body && r.body.code === 'app-not-running')) return true;
   }
   return false;
 }
