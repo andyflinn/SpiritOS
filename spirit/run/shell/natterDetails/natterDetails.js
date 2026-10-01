@@ -973,13 +973,13 @@ function ndWhen(iso) {
 // Picking a candidate fills BOTH fields, because unlike the Partner
 // button on a peer row this one knows the address as well — it came from
 // the relay whose roll named that key as owner.
-function ndPartnerPicked(select) {
-  var key = select.value || '';
+// `pick` is the shell's contact selector: value is the chosen key, row the chosen row (its url among it).
+function ndPartnerPicked(pick) {
+  var key = pick.value || '';
   var body = ndBody();
   if (!body) return;
 
-  var option = select.options[select.selectedIndex];
-  var url = (option && option.getAttribute('data-url')) || '';
+  var url = (pick.row && pick.row.url) || '';
 
   var keyField = body.querySelector('.nd-partner-key');
   var urlField = body.querySelector('.nd-partner-url');
@@ -1096,17 +1096,25 @@ function ndPartnerPickerHtml(existing) {
         (existing && existing.length ? ' that is not already a partner' : '') + '.</div>'
       : '';
   }
+  // THE SHELL'S CONTACT SELECTOR (apiAuth/G1.7) replaces the <select> built here: an empty slot now, filled by
+  // ndMountPartnerPick after each paint with these rows, which are relay owners, not everybody.
+  ndPickRows = candidates.map(function (c) {
+    return { key: c.key, label: c.hereLabel + ' — owns ' + c.relayLabel, url: c.url };
+  });
   return '<div class="start-job-form card">' +
     '<label class="field-label grow">Someone you already know' +
-    '<select class="nd-partner-pick">' +
-      '<option value="">choose a peer who owns a relay you use…</option>' +
-      candidates.map(function (c) {
-        return '<option value="' + ndEscapeHtml(c.key) + '" data-url="' + ndEscapeHtml(c.url) + '">' +
-          ndEscapeHtml(c.hereLabel) + ' — owns ' + ndEscapeHtml(c.relayLabel) +
-          '</option>';
-      }).join('') +
-    '</select></label>' +
+    '<div class="nd-partner-slot"></div></label>' +
     '</div>';
+}
+var ndPickRows = [];
+function ndMountPartnerPick() {
+  var body = ndBody();
+  var slot = body && body.querySelector('.nd-partner-slot');
+  var elements = ndApi && ndApi.ui && ndApi.ui.elements;
+  if (!slot || !elements || typeof elements.createContactSelector !== 'function') return;
+  slot.appendChild(elements.createContactSelector({
+    contacts: ndPickRows, className: 'nd-partner-pick', placeholder: 'choose a peer who owns a relay you use…',
+  }));
 }
 
 // ── "ON PARTNER RELAYS" STOOD HERE, AND IS GONE (2026-09-17) ─────────
@@ -1604,6 +1612,7 @@ function ndRender() {
       ndPartnersHtml()
     ) +
     ndDeviceHtml();
+  ndMountPartnerPick();
 }
 
 // NOTHING REPAINTS THIS SCREEN ANY MORE except ndRender, and ndRender
