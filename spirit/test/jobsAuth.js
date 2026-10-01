@@ -51,6 +51,11 @@ test.startTest('apiAuth/G1.4: jobs.auth, the owner\'s allow-table on the loopbac
 const root = setupRelayFakes('jobsAuth').andy;
 fs.writeFileSync(path.join(root, 'shell', 'natter', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
 fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+// The fake's node.db survives between runs; a second run must not find
+// its own rows (claude-windows, building this: "already-granted").
+['node.db', 'node.db-wal', 'node.db-shm'].forEach(function (f) {
+  try { fs.unlinkSync(path.join(root, 'relay-state', f)); } catch (e) { /* first run */ }
+});
 // One served app, so a grant has a live path to take: the desk server.
 fs.writeFileSync(path.join(root, 'relay-state', 'include.json'), JSON.stringify({ modules: ['process/js/desk'] }), 'utf8');
 // His contacts know KEYA as alice; KEYB and KEYC they have never met.

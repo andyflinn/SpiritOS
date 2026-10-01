@@ -40,6 +40,10 @@ const root = setupRelayFakes('authTables').andy;
 const DB = path.join(root, 'relay-state', 'node.db');
 fs.writeFileSync(path.join(root, 'shell', 'natter', 'relays.json'), JSON.stringify([{ label: 'nowhere', url: 'https://127.0.0.1:1' }]), 'utf8');
 fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+// The fake's node.db survives between runs; this suite plants exact rows.
+['node.db', 'node.db-wal', 'node.db-shm'].forEach(function (f) {
+  try { fs.unlinkSync(path.join(root, 'relay-state', f)); } catch (e) { /* first run */ }
+});
 fs.writeFileSync(path.join(root, 'relay-state', 'include.json'), JSON.stringify({ modules: ['process/js/desk'] }), 'utf8');
 fs.writeFileSync(path.join(root, 'relay-state', 'contacts.json'), JSON.stringify([{ publicKey: KEYA, myLabel: 'alice' }]), 'utf8');
 
@@ -63,16 +67,26 @@ async function boot() {
 function down() {
   return new Promise(function (resolve) {
     if (!child) return resolve();
-    child.on('exit', function () { resolve(); });
+    child.on('exit', function () { setTimeout(resolve, 200); });
     child.kill();
-    setTimeout(resolve, 3000);
+    // Under harness load a node can take a while to die; reading node.db
+    // before it does finds the WAL half-checkpointed.
+    setTimeout(resolve, 8000);
   });
 }
-// The node is dead when this reads, so the handle is the only one.
-function readDb(fn) {
+// The node is dead when this reads, so the handle is the only one; one
+// retry for the moment the exit raced the checkpoint.
+async function readDb(fn) {
   const { DatabaseSync } = require('node:sqlite');
-  const db = new DatabaseSync(DB);
-  try { return fn(db); } finally { db.close(); }
+  for (let i = 0; ; i++) {
+    try {
+      const db = new DatabaseSync(DB);
+      try { return fn(db); } finally { db.close(); }
+    } catch (e) {
+      if (i >= 2) throw e;
+      await sleep(1000);
+    }
+  }
 }
 
 (async function () {
@@ -96,7 +110,7 @@ function readDb(fn) {
   test.subHeading('on disk: two tables in node.db, shaped as decided');
   await down();
   try {
-    const seen = readDb(function (db) {
+    const seen = await readDb(function (db) {
       const names = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('peers', 'grants') ORDER BY name").all().map(function (r) { return r.name; });
       const peersCols = names.indexOf('peers') !== -1 ? db.prepare('PRAGMA table_info(peers)').all() : [];
       const grantsCols = names.indexOf('grants') !== -1 ? db.prepare('PRAGMA table_info(grants)').all() : [];
@@ -132,7 +146,7 @@ function readDb(fn) {
   const still = (await ask('jobs.authPeer', { key: KEYB })).body;
   await down();
   try {
-    const after = readDb(function (db) {
+    const after = await readDb(function (db) {
       return {
         peers: db.prepare('SELECT peer_id FROM peers ORDER BY peer_id').all().map(function (r) { return r.peer_id; }),
         grants: db.prepare('SELECT peer_id FROM grants ORDER BY peer_id').all().map(function (r) { return r.peer_id; }),
