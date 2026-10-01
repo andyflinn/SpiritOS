@@ -72,20 +72,14 @@ const TALLY = {
   'js/relayRequest.js': 2,   // http + https, the outbound socket
   'js/sseClient.js': 0,      // global fetch, via a capability probe
 
-  // THE BROWSER'S TRANSPORT. A page cannot require a node module, so
-  // kernel.js is the other side of the same rule rather than an exception
-  // to it — but FOURTEEN is not a design, it is a drawer. It has a number
-  // now and the number may only fall.
-  //
-  // 14 AGAIN, BY A RULING, NOT BACK-SLIDING (fileTransfer goal/G1.3).
-  // spirit.peerPost posts through the shared spirit.core.ask (no new line)
-  // and holds one stream open to the node — the server-side half of the
-  // browser's EventSource listen. Andy, 2026-10-02: "the peerPost in nodes
-  // half of kernel.js and the browser version count as 1, because they
-  // never co-exist in the same environment ... still just one api call to
-  // me." This audit counts lines, so the number moves by one; by Andy's
-  // counting it adds nothing.
-  'js/kernel.js': 14,
+  // kernel.js HAS NO ENTRY — EXEMPT BY ANDY'S RULING, 2026-10-02:
+  // "we exempt kernel.js from the oneDoor contract." and "because
+  // kernel.js is an environment-splitter." It is the one shared loopback
+  // client for every environment ("i like to have javascipt interfaces
+  // shared by all loopback clients via kernel.js, it is exactly to
+  // encourage/enforce a oneDoor policy"), so counting its lines counted
+  // the interface against itself. The walk below skips it by name; a raw
+  // reach anywhere else still has nowhere to hide.
 
   // THE SAME RULE FOR AN APP SERVED WITHOUT A SHELL — a new line, and so
   // an exception. GRANTED BY ANDY 2026-09-24, asked for out loud as this
@@ -268,6 +262,9 @@ function reachesIn(file) {
 test.startTest('One door — every file, always');
 
 const files = walk(path.join(SPIRIT, 'run', 'js'), 'js/', [])
+  // kernel.js is exempt (Andy, 2026-10-02: "we exempt kernel.js from the
+  // oneDoor contract") — it IS the shared loopback client, see the tally.
+  .filter(function (f) { return f.rel !== 'js/kernel.js'; })
   .concat(walk(path.join(SPIRIT, 'run', 'shell'), 'shell/', []))
   // spirit/test is not walked: tests are not subject to the same rules (Andy, 2026-10-02).
   // The folders of process/ that are walked: the granted exceptions above.
