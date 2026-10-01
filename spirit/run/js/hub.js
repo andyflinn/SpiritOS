@@ -539,9 +539,8 @@ function buildPeople(rootDir) {
 // about something else.
 var peerSearch = require('./peerSearch');
 
-function keyTail(publicKey) {
-  return String(publicKey || '').slice(-6);
-}
+// The one key cut is the kernel's (apiAuth/G1.11); hub.js had the original.
+const keyTail = require('./kernel.js').keyTail;
 
 // Every peer on the mailbox whose PUBLIC LABEL is the handle a human
 // heard. Not a search: an exact caption, case-insensitively, because a
@@ -2998,5 +2997,4 @@ module.exports = {
   // exports that surrounded it (R8).
   unknownPolicy: unknownPolicy,
   handleMatches: handleMatches,
-  keyTail: keyTail,
 };

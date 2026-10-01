@@ -31,7 +31,8 @@ function ownerKeyOf(rootDir) {
 
 function short(key) {
   const s = String(key || '');
-  return s.length > 20 ? s.slice(0, 12) + '…' + s.slice(-6) : s;
+  // The tail is the kernel's one cut (apiAuth/G1.11).
+  return s.length > 20 ? s.slice(0, 12) + '…' + require('./kernel.js').keyTail(s) : s;
 }
 
 function run(rootDir, args, out) {

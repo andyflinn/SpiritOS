@@ -43,6 +43,15 @@ const spirit = {
 };
 
 
+// ONE FUNCTION LABELS A KEY, EVERYWHERE (apiAuth/G1.11). Andy: "that ugly
+// default label must be procured by one and the same function across out
+// entire system", and kernel.js because "it carries common functions to
+// shell and node modules." The practice is hub.keyTail's: the last 6
+// characters, '' for no key. Only this file may cut a key (keyTail.js).
+spirit.keyTail = function (publicKey) {
+  return String(publicKey || '').slice(-6);
+};
+
 // use this for old fashioned console.log debugging, which can be turned on and off with DEBUG
 let print = spirit.core.util.print = function(str){ if (DEBUG) { console.log(str); }
 }

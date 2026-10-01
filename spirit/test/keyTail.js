@@ -19,6 +19,8 @@ const test = require('./testSupport.js');
 const RUN = path.join(__dirname, '..', 'run');
 const OWED = 'OWED by apiAuth/G1.11: ';
 
+test.startTest('apiAuth/G1.11: one function labels a key, everywhere');
+
 test.subHeading('kernel.js carries keyTail');
 const spirit = require('../run/js/kernel.js');
 const KEY = 'MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=';

@@ -182,7 +182,7 @@ function ndCountLabels(rows, labelOf) {
 function ndTellApart(counts, label, key) {
   if ((counts[String(label || '')] || 0) < 2) return '';
   return ' <span class="nd-peer-tail" title="more than one row here wears this name">…' +
-    ndEscapeHtml(String(key || '').slice(-8)) + '</span>';
+    ndEscapeHtml(spirit.keyTail(key)) + '</span>';
 }
 
 function ndPanel(id, mark, title, inner, extraClass) {

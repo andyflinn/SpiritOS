@@ -170,7 +170,7 @@ async function main() {
         const name = row.label || row.to;
         const key = cfg.peers[row.to] || row.to;
         const tail = row.to === NOWHERE ? '(a key nobody holds)'
-          : (key && key !== name ? String(key).slice(-10) : '');
+          : (key && key !== name ? require('../../../js/kernel.js').keyTail(key) : '');
         console.log('      ' + String(row.want).padStart(3) + '  ' + name + (tail ? '   ' + tail : ''));
       });
       console.log('      ' + String(plan.reduce(function (n, r) { return n + r.want; }, 0)).padStart(3) +

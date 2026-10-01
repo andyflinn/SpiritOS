@@ -50,7 +50,7 @@ const KNOWN = {
 
 function name(key) {
   if (!key) return '(none)';
-  return KNOWN[key] || ('…' + String(key).slice(-10));
+  return KNOWN[key] || ('…' + require('../../../js/kernel.js').keyTail(key));
 }
 
 function door(pathname, body) {
