@@ -61,7 +61,7 @@ async function boot() {
   port = await freePort();
   child = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
   const up = await until(function () { return post({ verb: 'node.info' }).then(function (r) { return r.status > 0; }); }, 15000);
-  const served = await until(function () { return post({ verb: 'jobs.api', ask: 'api' }).then(function (r) { return !!(r.body && r.body.desk); }); }, 15000);
+  const served = await until(function () { return post({ verb: 'jobs.api', ask: 'api' }).then(function (r) { return !!(r.body && r.body.desk && r.body.desk.ok !== false); }); }, 60000);
   return up && served;
 }
 function down() {
@@ -90,7 +90,7 @@ async function readDb(fn) {
 }
 
 (async function () {
-  if (!(await boot())) test.fail('the node did not boot with the desk server included');
+  if (!(await boot())) { test.fail('the node did not boot with the desk server included — every later check would blame the wrong thing'); throw new Error('no world'); }
   for (const g of [{ key: KEYA, path: 'desk' }, { key: KEYA, path: 'desk.chat.add' }, { key: KEYB, path: 'desk' }]) {
     await ask('jobs.authGrant', g);
   }
