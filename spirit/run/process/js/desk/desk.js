@@ -765,4 +765,7 @@ appServer.serve({
       return { added: true };
     },
   },
-});
+// The bundle a peer user needs (apiAuth/G1.10, DEPENDENCIES): the agents'
+// protocol spans most of this table — searches, reads, writes, presses,
+// changes — so the minimum is the app itself, one app-level grant-shape.
+}, { dependencies: ['desk'] });

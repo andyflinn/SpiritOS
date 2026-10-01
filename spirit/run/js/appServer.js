@@ -264,6 +264,40 @@ function withDebug(verbs) {
   return all;
 }
 
+// DEPENDENCIES — apiAuth/G1.10. Andy: "an app knows it's requirements, it
+// must provide owners with the bundle-info in an owner-only verb
+// dependencies which returns a list ofminimum api-tree-paths, a peer user
+// requires.", "dependencies format: a list of grant-shapes consisten of
+// 'appname.verb'", "the server hard-codes that reply internaly". The
+// server hands serve() its list; this builds the verb from it, as DEBUG
+// is built. Owner-only is the gate's business (apiAuth/G1.2, apiDoor.js:
+// a member asking it is refused not-owner by name).
+const DEP_PATH = /^[A-Za-z][A-Za-z0-9_-]*(\.[A-Za-z0-9_.-]+)?$/;
+
+function checkDependencies(paths) {
+  const list = paths == null ? [] : paths;
+  if (!Array.isArray(list)) throw new Error('appServer: dependencies must be a list of api-tree-paths');
+  list.forEach(function (p) {
+    // A malformed path stops the start, by name: a bundle nobody can
+    // grant is a bug in the server, not a row for the owner to puzzle at.
+    if (typeof p !== 'string' || !DEP_PATH.test(p)) {
+      throw new Error('appServer: dependency "' + String(p) + '" is not an api-tree-path (app or app.verb)');
+    }
+  });
+  return list.slice();
+}
+
+function withDependencies(verbs, paths) {
+  if (Object.prototype.hasOwnProperty.call(verbs, 'DEPENDENCIES')) return verbs;
+  const list = checkDependencies(paths);
+  const all = Object.assign({}, verbs);
+  all.DEPENDENCIES = {
+    request: {}, reply: { paths: [''] },
+    handler: function () { return { paths: list.slice() }; },
+  };
+  return all;
+}
+
 function withAgents(verbs, script) {
   const file = path.join(path.dirname(path.resolve(String(script || ''))), AGENTS_FILE);
   if (Object.prototype.hasOwnProperty.call(verbs, 'AGENTS') || !fs.existsSync(file)) return verbs;
@@ -297,7 +331,14 @@ function serve(verbs, opts) {
     process.exit(2);
   }
   if (typeof process.send === 'function') process.on('disconnect', function () { process.exit(0); });
-  verbs = withDebug(withAgents(verbs, argv[1]));
+  // A malformed dependency stops the start, by name (apiAuth/G1.10): the
+  // throw lands before anything listens, and the exit says why.
+  try {
+    verbs = withDependencies(withDebug(withAgents(verbs, argv[1])), opts && opts.dependencies);
+  } catch (e) {
+    console.error(e.message);
+    process.exit(2);
+  }
   const s = createAppServer(verbs, opts && typeof opts.fallback === 'function' ? { fallback: opts.fallback } : undefined);
   // IT SAYS WHO IT IS, AND WHAT IT ANSWERS. Andy, 2026-09-29: "after
   // starting the listener, it should announce itself with its name, and a

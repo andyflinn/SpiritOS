@@ -59,4 +59,5 @@ appServer.serve({
     request: { name: '' }, reply: { name: '', id: '' },
     handler: function (a) { return { name: a.name, id: holder(a.name) }; },
   },
-});
+// No peer user: faces reach it through the node, not by grant (apiAuth/G1.10).
+}, { dependencies: [] });

@@ -55,4 +55,5 @@ function passThrough(req, res) {
   });
 }
 
-appServer.serve({}, { fallback: passThrough });
+// dependencies []: no grant names it (Andy: "appFaceAppServer needs no grant").
+appServer.serve({}, { fallback: passThrough, dependencies: [] });
