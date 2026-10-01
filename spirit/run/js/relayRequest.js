@@ -134,11 +134,15 @@ function pipeRequest(pipePath, method, pathname, bodyText, opts) {
         chunks.push(c);
       });
       res.on('end', function () {
-        finish({
+        const answer = {
           status: res.statusCode,
           text: Buffer.concat(chunks).toString('utf8'),
           type: String(res.headers['content-type'] || ''),
-        });
+        };
+        // The server's no-rush mark, out of band like the caller headers
+        // in (fileTransfer goal/G1.3); absent, nothing is added.
+        if (res.headers['x-spirit-kind'] === 'background') answer.kind = 'background';
+        finish(answer);
       });
     });
     // A DEADLINE, NOT AN IDLE TIMER. req.setTimeout fires only on silence,

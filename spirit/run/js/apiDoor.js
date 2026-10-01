@@ -144,14 +144,18 @@ function createApiDoor(opts) {
   const o = opts || {};
   const say = o.log || function () {};
 
-  function reply(message, answer) {
+  function reply(message, answer, kind) {
     let made = o.encode('api', answer, { re: message.hash });
     // Too big for a packet is said, never dropped, as puppetDoor does.
     if (!made || !made.text) {
       made = o.encode('api', { ok: false, code: 'answer-too-large', error: 'answer too large for a packet' }, { re: message.hash });
       if (!made || !made.text) return Promise.resolve();
     }
-    return Promise.resolve(o.post(message.relay || '', message.fromKey, made.text)).catch(function (e) {
+    // A server that marked its answer background has it posted so, the word
+    // the queue already ranks by (fileTransfer goal/G1.3; Andy: "same for
+    // responses."). Nothing new travels between peers.
+    const how = kind === 'background' ? { kind: 'background' } : undefined;
+    return Promise.resolve(o.post(message.relay || '', message.fromKey, made.text, how)).catch(function (e) {
       say('api door: the answer to ' + String(message.hash).slice(0, 8) + ' could not be sent: ' + e.message);
     });
   }
@@ -173,7 +177,7 @@ function createApiDoor(opts) {
     // Andy's presses come by jobs.api; a member writing as him is refused, never passed on.
     if (asksAsOwner(info.body)) return reply(message, { ok: false, code: 'not-owner', error: 'a member cannot write as the owner' });
     return answer(o.servers, info.body, { key: message.fromKey, auth: o.auth }).then(function (r) {
-      return reply(message, r ? r.body : null);
+      return reply(message, r ? r.body : null, r && r.kind);
     }, function (e) {
       say('api door: ' + e.message);
     });

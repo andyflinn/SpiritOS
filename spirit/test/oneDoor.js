@@ -76,7 +76,16 @@ const TALLY = {
   // kernel.js is the other side of the same rule rather than an exception
   // to it — but FOURTEEN is not a design, it is a drawer. It has a number
   // now and the number may only fall.
-  'js/kernel.js': 13,
+  //
+  // 14 AGAIN, BY A RULING, NOT BACK-SLIDING (fileTransfer goal/G1.3).
+  // spirit.peerPost posts through the shared spirit.core.ask (no new line)
+  // and holds one stream open to the node — the server-side half of the
+  // browser's EventSource listen. Andy, 2026-10-02: "the peerPost in nodes
+  // half of kernel.js and the browser version count as 1, because they
+  // never co-exist in the same environment ... still just one api call to
+  // me." This audit counts lines, so the number moves by one; by Andy's
+  // counting it adds nothing.
+  'js/kernel.js': 14,
 
   // THE SAME RULE FOR AN APP SERVED WITHOUT A SHELL — a new line, and so
   // an exception. GRANTED BY ANDY 2026-09-24, asked for out loud as this
@@ -139,29 +148,8 @@ const TALLY = {
   // what would close it is the probe itself — arrival rather than
   // resemblance, which is the argument for the SOP that produced this
   // change. Recorded so the zero is not read as "this file is clean".
-  'test/tools/wirePaths.js': 0,
-
-  // ── doorWalk: TWO, AND IT IS A DECISION RATHER THAN AN ENTRY ────────
-  //
-  // This gate's refusal says "use peerPost, or decide to modify the
-  // interface. Do not add a line to the tally." So the decision, stated
-  // rather than assumed:
-  //
-  // peerPost IS THE WRONG INTERFACE HERE AND NOT A HARDER ONE. It is the
-  // p2p wire between nodes. doorWalk measures the LOOPBACK DOOR — the
-  // local port a developer in another language is handed, which is what
-  // Andy says the product is. Routing it through peerPost would measure
-  // something no such developer can reach, which is the one thing the
-  // tool exists not to do.
-  //
-  // The precedent is `test/serverSurface.js`: 3, for the same reason —
-  // it drives this door over real HTTP because a suite that called the
-  // handlers in-process would prove nothing about the door.
-  //
-  // TWO, AND THE NUMBER MAY ONLY FALL. Like wirePaths it runs only when
-  // invoked (`node spirit/test/tools/doorWalk.js`) and instruments
-  // nothing during an ordinary harness run.
-  'test/tools/doorWalk.js': 2,
+  // (wirePaths' own entry left with the rest of spirit/test, Andy's
+  // ruling below; the blind spot it found is this file's and stands.)
 
   // THE SERVER ITSELF: http.createServer, and fetchExternal, the gated
   // door apps ask for by verb rather than by URL.
@@ -198,96 +186,16 @@ const TALLY = {
   // this helper, and its line went to 0.
   'js/appServer.js': 1,
 
-  // ── TESTS ───────────────────────────────────────────────────────────
+  // ── TESTS ARE NOT COUNTED ── ANDY'S RULING, 2026-10-02 ─────────────────
   //
-  // Counted for the first time. Some of these are legitimate — a suite
-  // that spawns a real relay must be able to ask it something at the
-  // transport level, and asserting a 404 needs a request rather than a
-  // verb. Others are the quick way to green. The tally does not judge
-  // which is which; it stops the number growing while nobody looks.
-  // 2 -> 3 (cycle 2, wsl-claude, raising his own number rather than
-  // having it raised for him). The third is fetching the app server's own
-  // PAGE: a public page is the product surface a stranger meets, and
-  // there is no verb for "what does a visitor see" — the whole of G11 is
-  // about what that page says in four states.
-  'test/appServerBoundary.js': 3,
-  // The face is reached by a browser over HTTP and by nothing else, so its
-  // suite must be a browser: one request helper and the listener it starts
-  // (G17 slice 1, as serverSurface.js does for the node's door).
-  'test/puppetPost.js': 2,
-  // THE FACE ROUTE END TO END (G17 step 1): TWO, for puppetPost.js's reason.
-  // The face is reached by a browser over HTTP and by nothing else, so the
-  // world that proves the route must be a browser: one request helper, and
-  // puppetPost's own listen. RESTING ON ANDY'S "step 1) build and prove the
-  // route from browser to owner-of-subdomain, and back", 2026-09-27.
-  'test/faceRouteWorld.js': 2,
-  // ── forwardKey: ONE, GRANTED BY ANDY 2026-10-01 ("yes", G1.13) ──────
+  //   Andy: "tests are not subject to the same rules as production code."
+  //   (goal/G1.3, when the fileCore red's fake node was asked for as a
+  //   granted line.)
   //
-  // Its capture server must be raw http to PROVE the caller headers
-  // cross the pipe: appServer is half of what is under test, and a
-  // capture through it would prove nothing about the wire. The same
-  // reason serverSurface drives the door over real HTTP.
-  'test/forwardKey.js': 1,
-  // ONE SUITE THAT MAKES EVERY API CALL (puppets/G3): TWO, AND A DECISION
-  // RATHER THAN AN ENTRY, for doorWalk's reason. It measures the LOOPBACK
-  // DOOR over real HTTP (a free-port probe and one request helper), which
-  // peerPost cannot reach. RESTING ON ANDY'S "go." ON G3, 2026-09-27, whose
-  // shape was "starts a real node and calls every command once, through
-  // this box's door", and said so rather than assumed. If he reads this and
-  // disagrees, it is one line. The number may only fall.
-  'test/everyVerb.js': 2,
-  // THE LAST LEG, HELD TO ITS LIMITS (G17): TWO, for faceRouteWorld's
-  // reason, one step further in. An app server is reached over a pipe by
-  // HTTP and by nothing else, so the fake app on that pipe must be an HTTP
-  // server, and the browser at the front one request helper. RESTING ON
-  // ANDY'S "the go is officail. also: i explicitly permit the two
-  // new/proposed interfaces/api' for communication from node to appserver",
-  // 2026-09-27, and said so rather than assumed. If he reads this and
-  // disagrees, it is one line. The number may only fall.
-  'test/faceLastLeg.js': 2,
-  // THE LAST LEG'S OWN PIECES (G17): ONE, the same reason as the line above.
-  // The deadline check needs an app that trickles its answer over a pipe,
-  // and an app server is HTTP on that pipe and nothing else. RESTING ON THE
-  // SAME "go" as faceLastLeg's, and said so rather than assumed. If he reads
-  // this and disagrees, it is one line. The number may only fall.
-  'test/appClient.js': 1,
-  // THE WORLD BUILDER, counted for the first time (cycle 2). Three, and
-  // each is a public route with no verb behind it: POST /api/relay/claim
-  // is how a stranger joins a relay, GET /api/relay/key is the liveness
-  // probe every world waits on, and GET /api/relay/who is how the builder
-  // proves a relay meant to be UNCLAIMED really is — an absence a test
-  // must never assume.
-  'test/appServerWorlds.js': 3,
-  // 'test/chatPeople.js': 1 — REMOVED 2026-09-25, the file left with relayChat.
-  // A tally may only fall; an entry for a file that is gone is a room kept
-  // warm for a reach nobody has made.
-  'test/cycleA.js': 1,
-  'test/htmlEscaping.js': 1,
-  'test/jobCallback.js': 1,
-  'test/labLifecycle.js': 1,
-  'test/labPersistence.js': 2,
-  'test/labPopulate.js': 3,
-  'test/labRefusals.js': 3,
-  'test/labRelaySurface.js': 2,
-  'test/labServableStatic.js': 2,
-  'test/labWorld.js': 5,
-  'test/liveFrontDoor.js': 3,
-  'test/liveRelay.js': 2,
-  'test/oneDoor.js': 3,        // this file: the patterns it searches for
-  'test/presenceShow.js': 4,
-  'test/presenceWire.js': 6,
-  'test/relayGates.js': 2,
-  'test/relayProbe.js': 1,
-  'test/serverSurface.js': 3,
-
-  // labMaster: the lab control plane, which spawns and drives fake nodes.
-  // FOUND BY THIS REWRITE and not by the hand count that preceded it — the
-  // old scan stopped at the top of each directory and never descended, so
-  // nine reaches sat one level down, unwatched, for as long as the guard
-  // has existed. The recursive walk is the difference between "every file"
-  // and "every file I happened to list".
-  'test/labMaster/ensureMaster.js': 2,
-  'test/labMaster/labMaster.js': 7,
+  // So the walk no longer descends into spirit/test, and every granted
+  // test entry left with it — forwardKey's, the labs', the worlds'. This
+  // gate guards the production trees: a suite may stand up fake servers
+  // and raw sockets to PROVE them, and needs nobody's grant to do it.
 
   // ── THE AGENTS PROGRAM — A GRANTED EXCEPTION ──────────────────────────
   //
@@ -361,7 +269,7 @@ test.startTest('One door — every file, always');
 
 const files = walk(path.join(SPIRIT, 'run', 'js'), 'js/', [])
   .concat(walk(path.join(SPIRIT, 'run', 'shell'), 'shell/', []))
-  .concat(walk(path.join(SPIRIT, 'test'), 'test/', []))
+  // spirit/test is not walked: tests are not subject to the same rules (Andy, 2026-10-02).
   // The folders of process/ that are walked: the granted exceptions above.
   .concat(walk(path.join(SPIRIT, 'run', 'process', 'js', 'agents'), 'process/js/agents/', []))
   .concat(walk(path.join(SPIRIT, 'run', 'process', 'js', 'grokReview'), 'process/js/grokReview/', []))

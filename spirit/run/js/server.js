@@ -1459,7 +1459,8 @@ contactBook.syncMarks(ROOT_DIR);
     // exemption for aquire?".
     arrivals.witness(require('./apiDoor').createApiDoor({
       servers: appClient,
-      post: function (relayUrl, toKey, text) { return peerRouter.post(relayUrl, toKey, text); },
+      // `how` carries a background answer's mark to the queue (fileTransfer goal/G1.3).
+      post: function (relayUrl, toKey, text, how) { return peerRouter.post(relayUrl, toKey, text, undefined, how); },
       encode: wire.encode,
       decode: wire.decode,
       isKnown: function (key) { return require('./hub').frontDoor(ROOT_DIR, key) === 'known'; },

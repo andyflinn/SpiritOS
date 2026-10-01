@@ -70,6 +70,15 @@ const offenders = [];
 const builders = [];
 jsFilesIn(NODE_DIR).forEach(function (full) {
   const rel = path.relative(REPO, full).split(path.sep).join('/');
+  // kernel.js IS NOT THE NODE HERE (fileTransfer goal/G1.3). Its one decode
+  // sits in spirit.peerPost, the loopback CLIENT: a server process opening
+  // the answer to its OWN ask, which is the asker's envelope and nobody
+  // else's. The node never calls it. Andy, 2026-10-02: "i like to have
+  // javascipt interfaces shared by all loopback clients via kernel.js, it
+  // is exactly to encourage/enforce a oneDoor policy." What this exemption
+  // gives up: a node-side decode added to kernel.js later would hide behind
+  // it — the reviewer's eye is the guard there, as it is for the shell.
+  if (rel === 'spirit/run/js/kernel.js') return;
   const body = withoutComments(fs.readFileSync(full, 'utf8'));
   const bound = packetBinding(body);
   if (!bound) return;

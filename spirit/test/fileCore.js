@@ -4,7 +4,7 @@
 //   Andy: "let's make an item with the core modification needed. other items will depend on that".
 //   The no-rush scheme, G1.2: "agreed. scheme approved.", "same for responses.", "got it. so i agree on the same
 //   no-rush marker riding next the the fileServer replyPost".
-//   spirit.peerPost, G1.3: "should be done via the spirit object, no?"; R12 is not the way: "don't like it: in a
+//   spirit.peerPost, G1.3: "should be done via the spirit object, no?"; transport's R12 is not the way: "don't like it: in a
 //   file download between peer, the peer streams a request to the replier, and awaits a peerReply-by-post with
 //   correct hash, your implying changes to the relay as well."
 //   Runtime verbs: no republished announce, "nah, files added or dropped are implicitly know to the user."

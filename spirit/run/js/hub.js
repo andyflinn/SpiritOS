@@ -1296,6 +1296,23 @@ function createHub(rootDir) {
       // and a page must not park a post for days.
       var patience = Number(body && body.patienceMs);
       var how = patience > 0 ? { patienceMs: Math.min(Math.floor(patience), PATIENCE_MAX_MS) } : undefined;
+      // ── THE NO-RUSH WORD (fileTransfer goal/G1.3) ─────────────────
+      //
+      //   Andy, on the scheme in G1.2: "agreed. scheme approved." and
+      //   "same for responses."
+      //
+      // 'background' is the only value and it only demotes: without it a
+      // post stays deliberate, exactly as before, and any other word is
+      // refused here, before anything is posted. The queue already ranks
+      // the two classes (postQueue.js); this is the word reaching it.
+      var kind = body && body.kind;
+      if (kind !== undefined) {
+        if (kind !== 'background') {
+          fail(res, 400, "kind takes 'background' or nothing");
+          return;
+        }
+        how = Object.assign({ kind: 'background' }, how);
+      }
       return sendPacket(router, route.relayUrl, to, text, route.hints, how).then(function (answer) {
         learnPresence(rootDir, to, answer);
         res.writeHead(answer.ok ? 200 : (answer.status || 502),

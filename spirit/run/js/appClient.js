@@ -227,7 +227,11 @@ function createAppClient(opts) {
       }
       let body;
       try { body = JSON.parse(a.text); } catch (e) { return error('handler-failed', { app: row.app, why: 'not JSON' }); }
-      return { status: a.status, body: body };
+      const out = { status: a.status, body: body };
+      // The server's no-rush mark rides through (fileTransfer goal/G1.3),
+      // so the door can post that answer with the same word.
+      if (a.kind === 'background') out.kind = 'background';
+      return out;
     }, function () { return error('app-not-running', { app: row.app }); });
   }
   function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }

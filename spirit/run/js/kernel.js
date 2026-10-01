@@ -52,6 +52,38 @@ spirit.keyTail = function (publicKey) {
   return String(publicKey || '').slice(-6);
 };
 
+// ── THE ONE MOUTH ONTO THE NODE, BOTH ENVIRONMENTS ─────────────────────
+//
+// AGENT.md, Comms: all comms go through one interface, and in the page
+// that interface is this file. The shell asks here, apps ask the shell
+// (api.verb), and nothing else opens a socket.
+//
+// Moved out of the browser-only block for fileTransfer goal/G1.3: a server
+// process asks its node through the same function, naming the node with
+// `base` (absolute, from spirit.peerPost); the browser passes none and the
+// relative address keeps working. Andy: the node half and the browser half
+// "count as 1, because they never co-exist in the same environment".
+//
+// Answers `{ status, text, body }` — `body` parsed when it was JSON and
+// null when it was not, because the six private wrappers this replaces
+// disagreed about which they wanted and a caller picking a helper by
+// return shape picks wrong eventually.
+spirit.core.ask = function (verb, args, base) {
+  const payload = { verb: String(verb) };
+  if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
+  return fetch((base || '') + '/api/spirit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).then(function (r) {
+    return r.text().then(function (t) {
+      let body = null;
+      try { body = JSON.parse(t); } catch (e) { body = null; }
+      return { status: r.status, text: t, body: body };
+    });
+  });
+};
+
 // use this for old fashioned console.log debugging, which can be turned on and off with DEBUG
 let print = spirit.core.util.print = function(str){ if (DEBUG) { console.log(str); }
 }
@@ -636,6 +668,95 @@ if (isNode()) {
     },
   };
 
+  // ── ASK A PEER AND AWAIT THE ANSWER (fileTransfer goal/G1.3) ─────────
+  //
+  //   Andy: "should be done via the spirit object, no?" — and the
+  //   transport cycle's R12 is NOT the way ("don't like it: ... your
+  //   implying changes to the relay as well"): the answer keeps travelling
+  //   as its own post carrying re, the request's hash, exactly as the door
+  //   sends it (apiDoor.js).
+  //
+  // THE ONE COPY of the post-then-wait knot. agents.js moved onto it and
+  // the fileServer asks through it — a second hand-rolled copy is how
+  // answers get missed. One post through the node's peer.post, then the
+  // answer-post whose `re` matches that post's hash, read off the node's
+  // event stream. The stream is opened BEFORE the post, so an answer
+  // quicker than the post's own reply is not missed.
+  //
+  // Resolves with the answer's body. A refused post resolves {ok: false,
+  // code: 'not-posted'} at once; silence past how.waitMs (default 30 s)
+  // resolves {ok: false, code: 'no-answer'} — resolved, not thrown: an
+  // unanswered peer is an outcome, not a fault in the asking process.
+  // how.node names the node; else the origin of SPIRIT_CALLBACK_URL, the
+  // node that spawned this process. how.kind rides to peer.post
+  // (demote-only, 'background' the only word, as hub.js enforces).
+  spirit.peerPost = function (peer, app, body, how) {
+    const o = how && typeof how === 'object' ? how : {};
+    const waitMs = Number(o.waitMs) > 0 ? Number(o.waitMs) : 30000;
+    let base = o.node;
+    if (!base && process.env.SPIRIT_CALLBACK_URL) {
+      try { base = new URL(process.env.SPIRIT_CALLBACK_URL).origin; } catch (e) { base = ''; }
+    }
+    if (!base) return Promise.resolve({ ok: false, code: 'not-posted', error: 'no node: how.node and SPIRIT_CALLBACK_URL are both unset' });
+    const packet = require('./client/packet.js');
+    const made = packet.encode(app, body);
+    if (!made || !made.ok) return Promise.resolve({ ok: false, code: 'not-posted', error: (made && made.error) || 'the ask could not be encoded' });
+    return fetch(base + '/api/events').then(function (r) {
+      const reader = r.body.getReader();
+      const dec = new TextDecoder();
+      let buf = '';
+      let want = '';
+      const early = [];
+      return new Promise(function (resolve) {
+        const timer = setTimeout(function () { finish({ ok: false, code: 'no-answer', error: 'no answer within ' + waitMs + ' ms' }); }, waitMs);
+        function finish(v) {
+          clearTimeout(timer);
+          reader.cancel().catch(function () { /* stream gone */ });
+          resolve(v);
+        }
+        function take(msg) {
+          if (msg.from !== peer) return;
+          let got = null;
+          try { got = packet.decode(msg.text); } catch (e) { return; }
+          if (!got || !got.re) return;
+          // Before the post's own reply names the hash, a candidate is kept
+          // rather than judged, so the quick answer is not lost.
+          if (!want) { early.push(got); return; }
+          if (got.re === want) finish(got.body);
+        }
+        function pump() {
+          reader.read().then(function (chunk) {
+            if (chunk.done) { finish({ ok: false, code: 'no-answer', error: 'the node closed its stream before the answer came' }); return; }
+            buf += dec.decode(chunk.value, { stream: true });
+            let i;
+            while ((i = buf.indexOf('\n\n')) !== -1) {
+              const block = buf.slice(0, i); buf = buf.slice(i + 2);
+              const ev = /event: (.*)/.exec(block); const da = /data: (.*)/.exec(block);
+              if (!ev || ev[1] !== 'packet' || !da) continue;
+              let msg; try { msg = JSON.parse(da[1]); } catch (e) { continue; }
+              take(msg);
+            }
+            pump();
+          }, function (e) { finish({ ok: false, code: 'no-answer', error: 'the node stream: ' + ((e && e.message) || e) }); });
+        }
+        pump();
+        // The post leg is the shared mouth, spirit.core.ask, handed the
+        // node's address; only the stream above is this function's own.
+        const args = { to: peer, text: made.text };
+        if (o.kind) args.kind = o.kind;
+        spirit.core.ask('peer.post', args, base).then(function (res) {
+          const b = res.body;
+          if (res.status !== 200 || !b || b.ok !== true || !b.hash) { finish({ ok: false, code: 'not-posted', error: (b && b.error) || ('the node answered ' + res.status) }); return; }
+          want = b.hash;
+          const hit = early.filter(function (g) { return g.re === want; })[0];
+          if (hit) finish(hit.body);
+        }, function (e) { finish({ ok: false, code: 'not-posted', error: (e && e.message) || String(e) }); });
+      });
+    }, function (e) {
+      return { ok: false, code: 'not-posted', error: 'the node stream could not open: ' + ((e && e.message) || e) };
+    });
+  };
+
   module.exports = spirit;
 }
 
@@ -666,31 +787,9 @@ if (isNode()) {
     return result;
   };
 
-  // ── THE BROWSER'S ONE MOUTH ONTO THE NODE ──────────────────────────────
-  //
-  // AGENT.md, Comms: all comms go through one interface, and in the page
-  // that interface is this file. The shell asks here, apps ask the shell
-  // (api.verb), and nothing else opens a socket.
-  //
-  // Answers `{ status, text, body }` — `body` parsed when it was JSON and
-  // null when it was not, because the six private wrappers this replaces
-  // disagreed about which they wanted and a caller picking a helper by
-  // return shape picks wrong eventually.
-  spirit.core.ask = function (verb, args) {
-    const payload = { verb: String(verb) };
-    if (args) Object.keys(args).forEach(function (k) { payload[k] = args[k]; });
-    return fetch('/api/spirit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }).then(function (r) {
-      return r.text().then(function (t) {
-        let body = null;
-        try { body = JSON.parse(t); } catch (e) { body = null; }
-        return { status: r.status, text: t, body: body };
-      });
-    });
-  };
+  // spirit.core.ask LIVES IN SHARED SPACE NOW (fileTransfer goal/G1.3):
+  // the browser calls it exactly as before, with no base; spirit.peerPost
+  // hands it the node's address. One mouth, both environments.
 
   // THE SAME READ, FOR BYTES. loadFile is sync XHR returning responseText,
   // which mangles anything that is not text — so an app wanting an image's

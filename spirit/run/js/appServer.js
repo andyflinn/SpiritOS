@@ -83,6 +83,12 @@ function checkVerbs(verbs) {
     if (!isPlain(v) || typeof v.handler !== 'function' || !isPlain(v.request) || !('reply' in v)) {
       throw new Error('appServer: verb "' + name + '" needs request (an object), reply and handler');
     }
+    // background: true marks every answer of this verb no-rush (fileTransfer
+    // goal/G1.3; Andy: "same for responses."). The server declares its own
+    // answers' class, locally; nothing new travels between peers.
+    if ('background' in v && v.background !== true) {
+      throw new Error('appServer: verb "' + name + '" declares background, which takes true or nothing');
+    }
     // 'ok' is the reserved reply key (D12): a reply carrying it could pass
     // for an error.
     if (isPlain(v.reply) && Object.prototype.hasOwnProperty.call(v.reply, 'ok')) {
@@ -100,6 +106,10 @@ function createAppServer(verbs, opts) {
   const fallback = opts && typeof opts.fallback === 'function' ? opts.fallback : null;
   const tree = {};
   Object.keys(verbs).forEach(function (name) { tree[name] = { request: verbs[name].request, reply: verbs[name].reply }; });
+  // Verbs born after start (fileTransfer goal/G1.3): a hash-verb appears when
+  // a file lands and goes when it is deleted. Only these may be dropped — a
+  // fixed verb, DEBUG or DEPENDENCIES never leaves a running server.
+  const runtime = Object.create(null);
 
   // One request body, already parsed, to { status, body }. `caller` is
   // who asked (apiAuth/G1.13), handed to the handler as its second
@@ -112,6 +122,11 @@ function createAppServer(verbs, opts) {
     const args = req[name];
     const fits = typeof verbs[name].accepts === 'function' ? verbs[name].accepts(args) : matches(verbs[name].request, args);
     if (!fits) return Promise.resolve(refusal('no-such-argument', { verb: name }));
+    // A background verb's answers all carry the mark, refusals included:
+    // they are answers of the same verb (fileTransfer goal/G1.3).
+    const marked = verbs[name].background === true
+      ? function (a) { return Object.assign({ kind: 'background' }, a); }
+      : function (a) { return a; };
     // The caller is passed only when one came: a handler called with
     // (args) alone stays called with (args) alone, to the argument.
     return Promise.resolve().then(function () {
@@ -120,16 +135,16 @@ function createAppServer(verbs, opts) {
       // THE REPLY IS CHECKED TOO (wsl-claude's review; Andy: "go for the
       // proposed fix"). What arrives is the verb's declared shape or
       // nothing (D11), so a reply that is not is the verb's failure.
-      if (!matches(verbs[name].reply, reply)) return refusal('handler-failed', { verb: name, why: 'reply does not match its prototype' });
-      return { status: 200, body: reply };
+      if (!matches(verbs[name].reply, reply)) return marked(refusal('handler-failed', { verb: name, why: 'reply does not match its prototype' }));
+      return marked({ status: 200, body: reply });
     }, function (e) {
       // A DECLARED REFUSAL PASSES THROUGH (slim/G1.2): a handler that throws
       // {refusal: code}, a code the catalogue knows, is refused by that name
       // (D12), so an app can say line-too-large rather than handler-failed.
       // Its own key, not e.code: a system error's code (ENOENT) must never
       // pass for a refusal. Anything else a handler throws stays handler-failed.
-      if (e && typeof e.refusal === 'string' && errors.byCode(e.refusal)) return refusal(e.refusal, Object.assign({ verb: name }, e.extra && typeof e.extra === 'object' ? e.extra : {}));
-      return refusal('handler-failed', { verb: name });
+      if (e && typeof e.refusal === 'string' && errors.byCode(e.refusal)) return marked(refusal(e.refusal, Object.assign({ verb: name }, e.extra && typeof e.extra === 'object' ? e.extra : {})));
+      return marked(refusal('handler-failed', { verb: name }));
     });
   }
 
@@ -180,7 +195,11 @@ function createAppServer(verbs, opts) {
           a = refusal('app-answer-too-large', { bytes: bytes, max: max });
           text = JSON.stringify(a.body);
         }
-        res.writeHead(a.status, { 'Content-Type': 'application/json; charset=utf-8' });
+        const head = { 'Content-Type': 'application/json; charset=utf-8' };
+        // The mark rides the pipe out of band, as the caller headers ride in
+        // (fileTransfer goal/G1.3): the body stays the verb's answer alone.
+        if (a.kind === 'background') head['X-Spirit-Kind'] = 'background';
+        res.writeHead(a.status, head);
         res.end(text);
       });
     });
@@ -189,6 +208,28 @@ function createAppServer(verbs, opts) {
   let server = null;
   return {
     route: route,
+    // ── VERBS BORN AND DROPPED AT RUNTIME (fileTransfer goal/G1.3) ────
+    //
+    // The api answers from the current table, so a change shows at once.
+    // No republished announce: Andy, "nah, files added or dropped are
+    // implicitly know to the user."
+    addVerb: function (name, declaration) {
+      if (Object.prototype.hasOwnProperty.call(verbs, name)) throw new Error('appServer: verb "' + name + '" already exists');
+      // The whole start-up check, shapes and reserved keys included — a
+      // verb born late obeys every rule a declared one does.
+      const one = {};
+      one[name] = declaration;
+      checkVerbs(one);
+      verbs[name] = declaration;
+      tree[name] = { request: declaration.request, reply: declaration.reply };
+      runtime[name] = true;
+    },
+    dropVerb: function (name) {
+      if (!runtime[name]) throw new Error('appServer: "' + name + '" is not a runtime verb and cannot be dropped');
+      delete verbs[name];
+      delete tree[name];
+      delete runtime[name];
+    },
     // Listen on the pipe the node named. A socket file left by a process
     // that died holds the name off Windows, as faceServer.js found.
     // A number is a port instead, on loopback only (faceServer's --port):

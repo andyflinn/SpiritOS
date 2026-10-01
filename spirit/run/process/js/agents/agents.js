@@ -406,58 +406,15 @@ function deskAsk(cfg, verb, json, fetchFn) {
   if (!cfg.control) return Promise.reject(new Error('AGENTS_CONTROL is not set: no node of Andy\'s to ask'));
   const ask = { desk: {} };
   ask.desk[verb] = args;
-  const encoded = packet.encode('api', ask);
-  if (!encoded.ok) return Promise.reject(new Error(encoded.error));
-  return nodeFetch(cfg, '/api/events', {}, fetchFn).then(function (r) {
-    const reader = r.body.getReader();
-    const dec = new TextDecoder();
-    let buf = '';
-    let want = '';
-    const early = [];
-    return new Promise(function (resolve, reject) {
-      const timer = setTimeout(function () { finish(null, new Error('no answer from Andy\'s desk server in ' + DESK_WAIT_MS / 1000 + ' s')); }, DESK_WAIT_MS);
-      function finish(body, err) {
-        clearTimeout(timer);
-        reader.cancel().catch(function () { /* gone */ });
-        if (err) reject(err); else resolve(body);
-      }
-      function take(msg) {
-        if (msg.from !== cfg.control) return;
-        const got = packet.decode(msg.text);
-        if (got.app !== 'api' || !got.re) return;
-        if (!want) { early.push(got); return; }
-        if (got.re === want) finish(got.body);
-      }
-      function pump() {
-        reader.read().then(function (chunk) {
-          if (chunk.done) { finish(null, new Error('the node closed its stream before the answer came')); return; }
-          buf += dec.decode(chunk.value, { stream: true });
-          let i;
-          while ((i = buf.indexOf('\n\n')) !== -1) {
-            const block = buf.slice(0, i); buf = buf.slice(i + 2);
-            const ev = /event: (.*)/.exec(block); const da = /data: (.*)/.exec(block);
-            if (!ev || ev[1] !== 'packet' || !da) continue;
-            let msg; try { msg = JSON.parse(da[1]); } catch (e) { continue; }
-            take(msg);
-          }
-          pump();
-        }, function (e) { finish(null, e); });
-      }
-      pump();
-      nodeFetch(cfg, '/api/spirit', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ verb: 'peer.post', to: cfg.control, text: encoded.text }),
-      }, fetchFn).then(function (res) {
-        return res.text().then(function (t) {
-          let body = null;
-          try { body = JSON.parse(t); } catch (e) { body = { error: t }; }
-          if (!body || !body.ok || !body.hash) { finish(null, new Error('not posted: ' + ((body && body.error) || res.status))); return; }
-          want = body.hash;
-          const hit = early.filter(function (g) { return g.re === want; })[0];
-          if (hit) finish(hit.body);
-        });
-      }, function (e) { finish(null, e); });
-    });
+  // THE KNOT LIVES IN kernel.js NOW (fileTransfer goal/G1.3; Andy: "should
+  // be done via the spirit object, no?"): spirit.peerPost posts and awaits
+  // the answer whose re matches, the one copy for every process. This file
+  // only translates its two transport outcomes into the errors callers
+  // already handle; a desk refusal ({ok: false, code}) passes through.
+  return require('../../../js/kernel.js').peerPost(cfg.control, 'api', ask, { node: cfg.node, waitMs: DESK_WAIT_MS }).then(function (got) {
+    if (got && got.ok === false && got.code === 'not-posted') throw new Error('not posted: ' + (got.error || ''));
+    if (got && got.ok === false && got.code === 'no-answer') throw new Error('no answer from Andy\'s desk server in ' + DESK_WAIT_MS / 1000 + ' s');
+    return got;
   });
 }
 
