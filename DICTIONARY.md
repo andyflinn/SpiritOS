@@ -54,6 +54,12 @@ Format: **term** — aliases — meaning.
 
 **whoBook** — private who, perception book — `relay-state/who.json` on a **personal** node. publicKey, publicLabel, myLabel, relays[]. Never uploaded.
 
+**fileServer** — process/js/fileServer — The node's intrinsic server for files (fileTransfer goal/G1): at most 32, one folder each, named by the file's **id**, `verb-` and its sha256 in base64url. push, pull, fetch, status and delete are the owner's alone; a peer granted a file's id may ask its verb for **info** and **chunks**, nothing else.
+
+**chunk-request** — Andy's word, *"use chunk-request, makes more sense. my vocabulary."* — One ask from a receiving fileServer for one piece of a file, by start and length; the piece lands as `<start>-<length>.blob`. Not "stretch".
+
+**info-call** — Andy's word — The receiver's first ask of a file's verb, answering its size, type and one name; a progress bar starts from it.
+
 **labMaster** — 65420 — Laptop control plane that starts fake nodes. Forbidden on spirit-3.
 
 **Harness** — the test suite, `spirit/test/*` that Claude runs — In-process and loopback tests. No spirit-3 required. “Harness green” means those files’ last lines, not `./bash/status`.
