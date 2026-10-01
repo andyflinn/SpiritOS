@@ -78,7 +78,7 @@ function readDb(fn) {
 (async function () {
   if (!(await boot())) test.fail('the node did not boot with the desk server included');
   for (const g of [{ key: KEYA, path: 'desk' }, { key: KEYA, path: 'desk.chat.add' }, { key: KEYB, path: 'desk' }]) {
-    await ask('jobs.auth.grant', g);
+    await ask('jobs.authGrant', g);
   }
 
   test.subHeading('the member surface answers none of it');
@@ -123,13 +123,13 @@ function readDb(fn) {
 
   test.subHeading('the rows survive a restart, and the last revoke takes the peers row with it');
   if (!(await boot())) test.fail('the node did not boot again');
-  const kept = (await ask('jobs.auth.query', { key: KEYA, path: 'desk.chat.add' })).body;
+  const kept = (await ask('jobs.authQuery', { key: KEYA, path: 'desk.chat.add' })).body;
   if (kept.allowed === true) test.check('a grant made before the restart still answers after it');
   else test.fail(OWED + 'after a restart the grant answered ' + JSON.stringify(kept).slice(0, 160));
-  await ask('jobs.auth.revoke', { key: KEYA, path: 'desk' });
-  await ask('jobs.auth.revoke', { key: KEYA, path: 'desk.chat.add' });
-  const gone = (await ask('jobs.auth.peer', { key: KEYA })).body;
-  const still = (await ask('jobs.auth.peer', { key: KEYB })).body;
+  await ask('jobs.authRevoke', { key: KEYA, path: 'desk' });
+  await ask('jobs.authRevoke', { key: KEYA, path: 'desk.chat.add' });
+  const gone = (await ask('jobs.authPeer', { key: KEYA })).body;
+  const still = (await ask('jobs.authPeer', { key: KEYB })).body;
   await down();
   try {
     const after = readDb(function (db) {

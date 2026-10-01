@@ -1,18 +1,18 @@
 'use strict';
 
-// apiAuth/G1.4: jobs.auth, the owner's allow-table on the loopback door.
+// apiAuth/G1.4: jobs.auth (its verbs jobs.authQuery ... jobs.authRelabel — Andy, 2026-10-01: "Yes to the rename.", two-part names, verbTable.js:64), the owner's allow-table on the loopback door.
 //   Andy's yes on the verbs: "grant needs no input label. the rest is looks ok, approved with dropping label
 //   out of grant.input", "relabel is FINE verb.", "please fix the api, to be consistent with your practices
 //   in terms of precise answer shapes." (every answer an object, never a bare value).
 // The shapes, from the item's box @ version 20:
 //   A record: { key, label, path }; path is 'app' or 'app.verb', matched exactly.
-//   jobs.auth.query   { key, path }   -> { allowed: true|false }
-//   jobs.auth.search  { text }        -> { records, more }   (text matches a label or a word of a path, never the key)
-//   jobs.auth.peer    { key }         -> { records }         (at most apps + verbs)
-//   jobs.auth.grant   { key, path }   -> the record          (label from his contacts, contacts.byPublicKey(...).myLabel;
+//   jobs.authQuery   { key, path }   -> { allowed: true|false }
+//   jobs.authSearch  { text }        -> { records, more }   (text matches a label or a word of a path, never the key)
+//   jobs.authPeer    { key }         -> { records }         (at most apps + verbs)
+//   jobs.authGrant   { key, path }   -> the record          (label from his contacts, contacts.byPublicKey(...).myLabel;
 //                                                             kernel.keyTail when they know no name — G1.11)
-//   jobs.auth.revoke  { key, path }   -> { revoked: true }
-//   jobs.auth.relabel { key, label }  -> { key, label }      (a row is born only by grant, never by relabel)
+//   jobs.authRevoke  { key, path }   -> { revoked: true }
+//   jobs.authRelabel { key, label }  -> { key, label }      (a row is born only by grant, never by relabel)
 // Refusals, { ok: false, code, error }: bad-request, not-a-path, already-granted, not-granted,
 //   unknown-path, store-unavailable (lives in G1.2's red), no-such-peer; the new codes defined in
 //   spiritErrors.js by this item.
@@ -87,44 +87,44 @@ function down() {
   if (!(await boot())) test.fail('the node did not boot with the desk server included');
 
   test.subHeading('grant: a record, labelled from his contacts, or by kernel.keyTail');
-  const g1 = (await ask('jobs.auth.grant', { key: KEYA, path: 'desk' }));
+  const g1 = (await ask('jobs.authGrant', { key: KEYA, path: 'desk' }));
   const r1 = g1.body;
   if (r1.key === KEYA && r1.label === 'alice' && r1.path === 'desk') {
     test.check('grant { key, path } on a served app answers the record, label copied from contacts');
   } else test.fail(OWED + 'grant answered ' + JSON.stringify({ status: g1.status, body: r1 }).slice(0, 220));
-  const r2 = (await ask('jobs.auth.grant', { key: KEYB, path: 'desk.chat.add' })).body;
+  const r2 = (await ask('jobs.authGrant', { key: KEYB, path: 'desk.chat.add' })).body;
   if (r2.key === KEYB && r2.label === keyTail(KEYB) && r2.path === 'desk.chat.add') {
     test.check('a key his contacts never met is labelled by kernel.keyTail (G1.11: one cut, everywhere)');
   } else test.fail(OWED + 'the stranger\'s grant answered ' + JSON.stringify(r2).slice(0, 220));
-  const dup = (await ask('jobs.auth.grant', { key: KEYA, path: 'desk' })).body;
+  const dup = (await ask('jobs.authGrant', { key: KEYA, path: 'desk' })).body;
   if (dup.ok === false && dup.code === 'already-granted') test.check('the same row twice is already-granted');
   else test.fail(OWED + 'a duplicate grant answered ' + JSON.stringify(dup).slice(0, 160));
 
   test.subHeading('query: { allowed }, the exact row and nothing else');
-  const q1 = (await ask('jobs.auth.query', { key: KEYA, path: 'desk' })).body;
-  const q2 = (await ask('jobs.auth.query', { key: KEYB, path: 'desk' })).body;
-  const q3 = (await ask('jobs.auth.query', { key: KEYC, path: 'desk' })).body;
+  const q1 = (await ask('jobs.authQuery', { key: KEYA, path: 'desk' })).body;
+  const q2 = (await ask('jobs.authQuery', { key: KEYB, path: 'desk' })).body;
+  const q3 = (await ask('jobs.authQuery', { key: KEYC, path: 'desk' })).body;
   if (q1.allowed === true && q2.allowed === false && q3.allowed === false) {
     test.check('query answers { allowed: true } for the planted row, false for a path or key never granted');
   } else test.fail(OWED + 'query answered ' + JSON.stringify([q1, q2, q3]).slice(0, 200));
 
   test.subHeading('the malformed are refused by name');
-  const badPath = (await ask('jobs.auth.grant', { key: KEYA, path: 'desk/box!' })).body;
+  const badPath = (await ask('jobs.authGrant', { key: KEYA, path: 'desk/box!' })).body;
   if (badPath.ok === false && badPath.code === 'not-a-path') test.check('a path that is not app or app.verb form is not-a-path');
   else test.fail(OWED + 'grant of desk/box! answered ' + JSON.stringify(badPath).slice(0, 160));
-  const noKey = (await ask('jobs.auth.grant', { path: 'desk' })).body;
-  const noPath = (await ask('jobs.auth.query', { key: KEYA })).body;
+  const noKey = (await ask('jobs.authGrant', { path: 'desk' })).body;
+  const noPath = (await ask('jobs.authQuery', { key: KEYA })).body;
   if (noKey.ok === false && noKey.code === 'bad-request' && noPath.ok === false && noPath.code === 'bad-request') {
     test.check('a missing field is bad-request, on grant and on query');
   } else test.fail(OWED + 'missing fields answered ' + JSON.stringify([noKey, noPath]).slice(0, 200));
-  const ghost = (await ask('jobs.auth.grant', { key: KEYA, path: 'ghost' })).body;
+  const ghost = (await ask('jobs.authGrant', { key: KEYA, path: 'ghost' })).body;
   if (ghost.ok === false && ghost.code === 'unknown-path') test.check('a path neither served nor already in the table is unknown-path');
   else test.fail(OWED + 'grant of ghost answered ' + JSON.stringify(ghost).slice(0, 160));
 
   test.subHeading('search matches a label or a word of a path, never the key');
-  const s1 = (await ask('jobs.auth.search', { text: 'alice' })).body;
-  const s2 = (await ask('jobs.auth.search', { text: 'chat' })).body;
-  const s3 = (await ask('jobs.auth.search', { text: KEYB.slice(20, 32) })).body;
+  const s1 = (await ask('jobs.authSearch', { text: 'alice' })).body;
+  const s2 = (await ask('jobs.authSearch', { text: 'chat' })).body;
+  const s3 = (await ask('jobs.authSearch', { text: KEYB.slice(20, 32) })).body;
   const hasA = (s1.records || []).some(function (r) { return r.key === KEYA && r.path === 'desk'; });
   const hasB = (s2.records || []).some(function (r) { return r.key === KEYB && r.path === 'desk.chat.add'; });
   if (hasA && typeof s1.more === 'boolean' && hasB && Array.isArray(s3.records) && s3.records.length === 0) {
@@ -132,26 +132,26 @@ function down() {
   } else test.fail(OWED + 'search answered ' + JSON.stringify({ s1: s1, s2: s2, s3: s3 }).slice(0, 300));
 
   test.subHeading('peer: one key\'s rows');
-  const p1 = (await ask('jobs.auth.peer', { key: KEYB })).body;
+  const p1 = (await ask('jobs.authPeer', { key: KEYB })).body;
   const onlyB = (p1.records || []).length === 1 && p1.records[0].key === KEYB && p1.records[0].path === 'desk.chat.add';
   if (onlyB) test.check('peer { key } answers that key\'s records and nobody else\'s');
   else test.fail(OWED + 'peer answered ' + JSON.stringify(p1).slice(0, 200));
 
   test.subHeading('relabel changes the label in the table, and only that');
-  const rl = (await ask('jobs.auth.relabel', { key: KEYB, label: 'bob' })).body;
-  const pAfter = (await ask('jobs.auth.peer', { key: KEYB })).body;
+  const rl = (await ask('jobs.authRelabel', { key: KEYB, label: 'bob' })).body;
+  const pAfter = (await ask('jobs.authPeer', { key: KEYB })).body;
   if (rl.key === KEYB && rl.label === 'bob' && ((pAfter.records || [])[0] || {}).label === 'bob') {
     test.check('relabel { key, label } answers { key, label } and the row now carries it');
   } else test.fail(OWED + 'relabel answered ' + JSON.stringify({ rl: rl, after: pAfter }).slice(0, 220));
-  const rlEmpty = (await ask('jobs.auth.relabel', { key: KEYB, label: '' })).body;
-  const rlNobody = (await ask('jobs.auth.relabel', { key: KEYC, label: 'carl' })).body;
+  const rlEmpty = (await ask('jobs.authRelabel', { key: KEYB, label: '' })).body;
+  const rlNobody = (await ask('jobs.authRelabel', { key: KEYC, label: 'carl' })).body;
   if (rlEmpty.ok === false && rlEmpty.code === 'bad-request' && rlNobody.ok === false && rlNobody.code === 'no-such-peer') {
     test.check('an empty label is bad-request; a key with no peers row is no-such-peer (a row is born only by grant)');
   } else test.fail(OWED + 'relabel refusals answered ' + JSON.stringify([rlEmpty, rlNobody]).slice(0, 200));
 
   test.subHeading('revoke: { revoked: true } once, not-granted after');
-  const v1 = (await ask('jobs.auth.revoke', { key: KEYB, path: 'desk.chat.add' })).body;
-  const v2 = (await ask('jobs.auth.revoke', { key: KEYB, path: 'desk.chat.add' })).body;
+  const v1 = (await ask('jobs.authRevoke', { key: KEYB, path: 'desk.chat.add' })).body;
+  const v2 = (await ask('jobs.authRevoke', { key: KEYB, path: 'desk.chat.add' })).body;
   if (v1.revoked === true && v2.ok === false && v2.code === 'not-granted') {
     test.check('revoke takes the row out; revoking what is not there is not-granted');
   } else test.fail(OWED + 'revoke answered ' + JSON.stringify([v1, v2]).slice(0, 160));
@@ -163,9 +163,9 @@ function down() {
   child = spawn(process.execPath, ['js/server.js', '--port', String(port)], { cwd: root, stdio: 'ignore' });
   const up2 = await until(function () { return post({ verb: 'node.info' }).then(function (r) { return r.status > 0; }); }, 15000);
   if (!up2) test.fail('the node did not reboot without the desk server');
-  const qKept = (await ask('jobs.auth.query', { key: KEYA, path: 'desk' })).body;
-  const gKnown = (await ask('jobs.auth.grant', { key: KEYC, path: 'desk' })).body;
-  const gGhost = (await ask('jobs.auth.grant', { key: KEYC, path: 'ghost2' })).body;
+  const qKept = (await ask('jobs.authQuery', { key: KEYA, path: 'desk' })).body;
+  const gKnown = (await ask('jobs.authGrant', { key: KEYC, path: 'desk' })).body;
+  const gGhost = (await ask('jobs.authGrant', { key: KEYC, path: 'ghost2' })).body;
   if (qKept.allowed === true && gKnown.key === KEYC && gKnown.path === 'desk' && gGhost.ok === false && gGhost.code === 'unknown-path') {
     test.check('with no server serving desk: the kept grant still answers, desk is grantable because the table knows it, ghost2 is not');
   } else test.fail(OWED + 'the suspended app answered ' + JSON.stringify({ kept: qKept, known: gKnown, ghost: gGhost }).slice(0, 260));
