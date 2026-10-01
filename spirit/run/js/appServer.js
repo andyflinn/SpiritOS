@@ -112,7 +112,11 @@ function createAppServer(verbs, opts) {
     const args = req[name];
     const fits = typeof verbs[name].accepts === 'function' ? verbs[name].accepts(args) : matches(verbs[name].request, args);
     if (!fits) return Promise.resolve(refusal('no-such-argument', { verb: name }));
-    return Promise.resolve().then(function () { return verbs[name].handler(args, caller); }).then(function (reply) {
+    // The caller is passed only when one came: a handler called with
+    // (args) alone stays called with (args) alone, to the argument.
+    return Promise.resolve().then(function () {
+      return caller === undefined ? verbs[name].handler(args) : verbs[name].handler(args, caller);
+    }).then(function (reply) {
       // THE REPLY IS CHECKED TOO (wsl-claude's review; Andy: "go for the
       // proposed fix"). What arrives is the verb's declared shape or
       // nothing (D11), so a reply that is not is the verb's failure.
