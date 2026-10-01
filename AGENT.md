@@ -278,8 +278,10 @@ AGENTS.md for desk"*. The loop, as the lead runs it:
 
 1. **No turn ends without a listener armed.** After every post, the agent
    starts a one-shot listener in the background that exits on the next thing
-   meant for it: a line or press from Andy in Desk, the other agent's line,
-   a `changed` nudge.
+   meant for it: a line or press from Andy in Desk, the other agent's line.
+   The listener is `spirit/run/process/js/agents/deskEar.js --db <Andy's
+   desk.db> --self <agent> --once` (Andy: *"just put that listener script in
+   the repo"*).
 2. **When it fires, the agent reads it, answers in Desk under the item it
    is about, and re-arms** before the turn ends.
 3. **A listener the tooling stops is re-armed at once.** Where the tooling
