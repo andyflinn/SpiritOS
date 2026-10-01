@@ -4,7 +4,7 @@
 //   Andy: "oh, when i click on Close in the Detail dialog, the Dialog should close, since it doesn't exist in the list
 //   anymore either."
 // The contract the builder follows (claude-windows's picks where the box names no shape):
-//   A click on #dd-close sends press {id, what: 'close', by: 'andy'}. Once the server has answered it without a
+//   A click on #dd-close sends press {id, what: 'close'} (no by since apiAuth/G1.13: the desk takes the owner from his caller). Once the server has answered it without a
 //   refusal, the dialog leaves through api.closeDialog(), the same way out as Back. A refused close leaves the dialog
 //   open and says why. The other presses (done, go, reopen) keep the dialog open.
 
@@ -72,7 +72,7 @@ test.startTest('desk/G3.8: Close in the item dialog closes the dialog');
   a.click('dd-close');
   await settled();
   const sent = a.presses[0];
-  if (sent && sent.what === 'close' && sent.id === 't/G1.2' && sent.by === 'andy') test.check('Close sent press {id, what: close, by: andy}');
+  if (sent && sent.what === 'close' && sent.id === 't/G1.2' && sent.by === undefined) test.check('Close sent press {id, what: close}, no by (apiAuth/G1.13)');
   else test.fail('Close sent ' + JSON.stringify(a.presses));
   if (a.closed.length === 1) test.check('once the server took it, the dialog left through closeDialog');
   else test.fail(OWED + 'after a taken close, closeDialog was called ' + a.closed.length + ' times');

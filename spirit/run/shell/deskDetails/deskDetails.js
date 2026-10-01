@@ -58,9 +58,8 @@ function ddNudge() {
 
 // A write of Andy's. Nothing on screen changes until the server publishes.
 // His seen is his reading, not a change for the agents: it nudges nobody.
-// Answers whether the server took it.
+// Answers whether the server took it. It sends no by: the desk takes its writer from the caller (apiAuth/G1.13).
 function ddWrite(verb, args) {
-  args.by = 'andy';
   return ddAsk(verb, args).then(function () { ddNote = ''; if (args.what !== 'seen') ddNudge(); return true; }, function (e) {
     ddNote = 'Not taken: ' + e.message;
     ddPaint();

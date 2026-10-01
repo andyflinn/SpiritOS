@@ -9,9 +9,9 @@
 //   paints its answer. After that it asks nothing: it repaints from api.onPublished objects,
 //   {change, verb, item: <facts>} plus, for a box write, {box, version}, and for a chat line, {chat: {by, at, text}}.
 //   (The desk server publishes box and chat that way; its half is part of this item.)
-//   Buttons come from item.buttons only. A press goes to the server as press {id, what, by: 'andy'}; the screen
+//   Buttons come from item.buttons only. A press goes to the server as press {id, what} (no by since apiAuth/G1.13: the desk takes the owner from his caller); the screen
 //   does not change until the server publishes. A C check is ticked by pressing it: check.set {id, check, state:
-//   'passed', by: 'andy'}. The yellow strip shows the C checks only while item.buttons offers 'done'.
+//   'passed'}. The yellow strip shows the C checks only while item.buttons offers 'done'.
 //   On a goal, dd-abandon arms on the first press and sends press abandon on the second.
 //   No #dd-blurb, no #dd-decide; no ready flag, go rule or local done in deskDetails.js.
 
@@ -133,14 +133,14 @@ test.startTest('desk/G2.7: the item dialog paints only what the desk server says
   d.click('dd-done');
   await settled();
   const pressed = d.asked.filter(function (a) { return a.verb === 'press'; })[0];
-  if (pressed && pressed.args.id === 't/G1.2' && pressed.args.what === 'done' && pressed.args.by === 'andy') test.check('Done sends press {id, what: done, by: andy}');
+  if (pressed && pressed.args.id === 't/G1.2' && pressed.args.what === 'done' && pressed.args.by === undefined) test.check('Done sends press {id, what: done}, no by (apiAuth/G1.13)');
   else test.fail(OWED + 'Done sent ' + JSON.stringify(d.asked.slice(1)));
   if (d.page().indexOf('id="dd-done"') !== -1) test.check('until the server publishes, the page still shows Done');
   else test.fail(OWED + 'the page changed before the server published');
   d.click('', { 'data-check': 'C1' });
   await settled();
   const ticked = d.asked.filter(function (a) { return a.verb === 'check.set'; })[0];
-  if (ticked && ticked.args.check === 'C1' && ticked.args.state === 'passed' && ticked.args.by === 'andy') test.check('pressing C1 sends check.set {check: C1, state: passed, by: andy}');
+  if (ticked && ticked.args.check === 'C1' && ticked.args.state === 'passed' && ticked.args.by === undefined) test.check('pressing C1 sends check.set {check: C1, state: passed}, no by (apiAuth/G1.13)');
   else test.fail(OWED + 'pressing C1 sent ' + JSON.stringify(ticked || null));
 
   test.subHeading('it repaints from what the server publishes, and asks nothing more');
@@ -174,7 +174,7 @@ test.startTest('desk/G2.7: the item dialog paints only what the desk server says
   g.click('dd-abandon');
   await settled();
   const sent = g.asked.filter(function (a) { return a.verb === 'press' && a.args.what === 'abandon'; });
-  if (armed === 0 && sent.length === 1 && sent[0].args.by === 'andy') test.check('the first press arms, the second sends press abandon');
+  if (armed === 0 && sent.length === 1 && sent[0].args.by === undefined) test.check('the first press arms, the second sends press abandon');
   else test.fail(OWED + 'abandon: after one press ' + armed + ' sent, after two ' + JSON.stringify(sent));
   const item = dialog(answerFor());
   item.dd.open({ id: 't/G1.2' });
@@ -184,7 +184,7 @@ test.startTest('desk/G2.7: the item dialog paints only what the desk server says
 
   // desk/G3.7, Andy: "the goal-detail panel could offer the go-all button if there is any go-able items". The goal's
   // facts say when (go-all in its buttons, desk/G3.4); the dialog draws #dd-go-all, armed like abandon: the first press
-  // arms it, the second sends press {id: <goal>, what: 'go-all', by: 'andy'}. An item never draws it.
+  // arms it, the second sends press {id: <goal>, what: 'go-all'}. An item never draws it.
   test.subHeading('desk/G3.7: the goal dialog offers Go all while the goal does, armed');
   const G37 = 'OWED by desk/G3.7: ';
   const ga = dialog(answerFor({ id: 't/G1', title: 'The goal', goal: '', buttons: ['go-all'] }, { checks: [], chat: [] }));
@@ -198,7 +198,7 @@ test.startTest('desk/G2.7: the item dialog paints only what the desk server says
   ga.click('dd-go-all');
   await settled();
   const goAll = ga.asked.filter(function (a) { return a.verb === 'press' && a.args.what === 'go-all'; });
-  if (armedGoAll === 0 && goAll.length === 1 && goAll[0].args.id === 't/G1' && goAll[0].args.by === 'andy') test.check('the first press arms it, the second sends press go-all on the goal');
+  if (armedGoAll === 0 && goAll.length === 1 && goAll[0].args.id === 't/G1' && goAll[0].args.by === undefined) test.check('the first press arms it, the second sends press go-all on the goal');
   else test.fail(G37 + 'Go all: after one press ' + armedGoAll + ' sent, after two ' + JSON.stringify(goAll));
   const noGoAll = dialog(answerFor({ buttons: ['go'] }));
   noGoAll.dd.open({ id: 't/G1.2' });
