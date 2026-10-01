@@ -542,6 +542,40 @@ function saveDoc(name, json) {
   return { saved: true };
 }
 
+// The walk behind `changes`: records first, then lines, each taken while the answer still fits ANSWER_ROOM. A
+// record too big to travel even alone goes with an empty body, so the cursor still passes it and the reader asks
+// the item's panels instead.
+const recordsAfter = db.prepare('SELECT n, at, verb, by, body FROM records WHERE n > ? ORDER BY n');
+const linesAfter = db.prepare('SELECT rowid AS rid, line FROM lines WHERE rowid > ? ORDER BY rowid');
+function changesSince(n, line) {
+  const out = { records: [], lines: [], n: n, line: line, more: false };
+  const size = function () { return Buffer.byteLength(JSON.stringify(out), 'utf8'); };
+  for (const r of recordsAfter.iterate(n)) {
+    const rec = { n: r.n, at: r.at, verb: r.verb, by: r.by, body: r.body };
+    out.records.push(rec);
+    out.n = r.n;
+    if (size() <= ANSWER_ROOM) continue;
+    if (out.records.length === 1) { rec.body = ''; if (size() <= ANSWER_ROOM) continue; }
+    out.records.pop();
+    out.n = out.records.length ? out.records[out.records.length - 1].n : n;
+    out.more = true;
+    return out;
+  }
+  for (const l of linesAfter.iterate(line)) {
+    let obj = {};
+    try { obj = JSON.parse(l.line) || {}; } catch (e) { obj = {}; }
+    obj.line = l.rid;
+    out.lines.push(obj);
+    out.line = l.rid;
+    if (size() <= ANSWER_ROOM) continue;
+    out.lines.pop();
+    out.line = out.lines.length ? out.lines[out.lines.length - 1].line : line;
+    out.more = true;
+    return out;
+  }
+  return out;
+}
+
 appServer.serve({
   'log.add': {
     request: { json: '' }, reply: { added: true },
@@ -564,6 +598,15 @@ appServer.serve({
       const rows = findLines.iterate(a.todo, todo, a.kind, a.kind, a.since, a.since, a.before, a.before, a.text, a.text);
       return walked(rows, function (row) { return { key: row.key, label: row.line }; });
     },
+  },
+  // WHAT CHANGED SINCE (apiAuth/G1.12). Andy: "dsek needs an interface for that. desk can't serve agents at
+  // different locations otherwise", and "yes on the verb". The records after change n and the lines after rowid
+  // line, oldest first, as many as one answer holds; n and line come back as the cursors to resume from. Rowids,
+  // not times: two lines can share one at, and a time cursor would re-read or miss them.
+  'changes': {
+    // A line is the object Desk stored, whatever keys it has, plus its rowid as line: so lines is an open list.
+    request: { n: 0, line: 0 }, reply: { records: [{ n: 0, at: '', verb: '', by: '', body: '' }], lines: [], n: 0, line: 0, more: false },
+    handler: function (a) { return changesSince(Number(a.n) || 0, Number(a.line) || 0); },
   },
   // One party's queue, newest first, through the same bucket.
   'pending.get': {
