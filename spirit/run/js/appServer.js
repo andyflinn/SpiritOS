@@ -287,7 +287,8 @@ function withAgents(verbs, script) {
 
 // THE WHOLE OF AN APP SERVER'S START: verbs in, the node's pipe from argv.
 // Started by the node, it ends with the node (processes/G1.3).
-function serve(verbs) {
+// opts: { fallback } as createAppServer takes it (apiAuth/G1.1: appFaceAppServer's pass-through).
+function serve(verbs, opts) {
   const argv = process.argv;
   const at = argv.indexOf('--pipe');
   const pipe = at !== -1 ? argv[at + 1] : '';
@@ -297,7 +298,7 @@ function serve(verbs) {
   }
   if (typeof process.send === 'function') process.on('disconnect', function () { process.exit(0); });
   verbs = withDebug(withAgents(verbs, argv[1]));
-  const s = createAppServer(verbs);
+  const s = createAppServer(verbs, opts && typeof opts.fallback === 'function' ? { fallback: opts.fallback } : undefined);
   // IT SAYS WHO IT IS, AND WHAT IT ANSWERS. Andy, 2026-09-29: "after
   // starting the listener, it should announce itself with its name, and a
   // nicely formatted overview of it's api." Published, not printed (desk/G2.3).

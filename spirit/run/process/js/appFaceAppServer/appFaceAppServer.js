@@ -1,19 +1,22 @@
 'use strict';
 
-const fs = require('fs');
-const http = require('http');
-const path = require('path');
+// spirit/run/process/js/appFaceAppServer/appFaceAppServer.js
+// THE SLOT-OWNER'S FACE SERVER: every page request passed through to faceProof (cleanup/G1.10).
+//
+// THROUGH appServer (apiAuth/G1.1). Andy: "gruesome! fixed in this cycle, thanks!", his correction that it
+// obeys every rule every appServer process obeys, and on its replies: "appServer will
+// convert any oversized reply into an error and stream that error to the shell". So it serves through
+// appServer.serve (api, DEBUG and every shared gate), and its pages go through appServer's pass-through, the
+// fallback. A page answer that would not fit one answer is never streamed: it becomes app-answer-too-large, with
+// its size and the limit, as a verb's oversized reply does. No grant names it (Andy: "appFaceAppServer needs no
+// grant. it is run by the owner").
+
+const appServer = require('../../../js/appServer.js');
 const appClient = require('../../../js/appClient.js');
+const errors = require('../../../js/spiritErrors.js');
 const limits = require('../../../js/limits.js');
 const pipeRequest = require('../../../js/relayRequest.js').pipeRequest;
-
-const argv = process.argv;
-const at = argv.indexOf('--pipe');
-const PIPE = at !== -1 ? argv[at + 1] : '';
-if (!PIPE) {
-  console.error('appFaceAppServer: no --pipe; the node that starts this names its pipe');
-  process.exit(2);
-}
+const path = require('path');
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const TARGET = 'faceProof';
@@ -24,8 +27,15 @@ function answer(res, status, type, text) {
   res.writeHead(status, type ? { 'Content-Type': type } : {});
   res.end(text);
 }
+// The one error shape (D12), as appServer writes its own.
+function refused(res, code, extra) {
+  const e = errors.byCode(code);
+  const body = { ok: false, code: code, error: e ? e.text : code };
+  if (extra) body.extra = extra;
+  answer(res, e ? e.status : 500, 'application/json; charset=utf-8', JSON.stringify(body));
+}
 
-const server = http.createServer(function (req, res) {
+function passThrough(req, res) {
   const chunks = [];
   let size = 0;
   req.on('data', function (c) {
@@ -33,23 +43,16 @@ const server = http.createServer(function (req, res) {
     if (size <= limits.BODY_MAX) chunks.push(c);
   });
   req.on('end', function () {
-    if (size > limits.BODY_MAX) {
-      answer(res, 413, 'application/json; charset=utf-8', JSON.stringify({ ok: false, code: 'app-request-too-large', app: TARGET }));
-      return;
-    }
+    if (size > limits.BODY_MAX) { refused(res, 'app-request-too-large', { bytes: size, max: limits.BODY_MAX }); return; }
     pipeRequest(TARGET_PIPE, req.method, req.url, Buffer.concat(chunks).toString('utf8'), {
       type: req.headers['content-type'] || '', timeoutMs: WAIT_MS, answerMax: appClient.ANSWER_MAX,
     }).then(function (a) {
-      if (!a || a.refused) {
-        answer(res, 503, 'application/json; charset=utf-8', JSON.stringify({ ok: false, code: 'app-not-running', app: TARGET }));
-        return;
-      }
+      // Too big for one answer is its own refusal, never app-not-running: the conflation G1.1 ends.
+      if (a && a.refused === 'app-answer-too-large') { refused(res, 'app-answer-too-large', { bytes: a.bytes, max: a.max }); return; }
+      if (!a || a.refused) { refused(res, 'app-not-running', { app: TARGET }); return; }
       answer(res, a.status, a.type, a.text);
     });
   });
-});
-
-if (process.platform !== 'win32') {
-  try { fs.unlinkSync(PIPE); } catch (e) { /* none left */ }
 }
-server.listen(PIPE);
+
+appServer.serve({}, { fallback: passThrough });
