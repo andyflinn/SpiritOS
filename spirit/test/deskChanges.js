@@ -77,15 +77,18 @@ let kid = null;
     test.subHeading('one answer: the cut says more, and the resume loses nothing and doubles nothing');
     let version = 0;
     for (let i = 0; i < 6; i++) {
-      const w = await call('box.write', { id: 'c/G1.1', text: 'B' + i + '-' + 'x'.repeat(4000), version: version, by: 'claude-windows' });
+      const w = await call('box.write', { id: 'c/G1.1', text: 'B' + i + '-' + 'x'.repeat(4400), version: version, by: 'claude-windows' });
       version = (w.body || {}).version || version;
     }
     const walked = [];
     let cur = { n: b1.n, line: b1.line };
     let hops = 0;
     let sawMore = false;
+    let oversized = 0;
     for (; hops < 10; hops++) {
       const r = (await call('changes', cur)).body || {};
+      // Every answer fits one answer: the room the shared layer gives it, never over.
+      if (Buffer.byteLength(JSON.stringify(r), 'utf8') > appClient.ANSWER_MAX) oversized += 1;
       (r.records || []).forEach(function (x) { walked.push(x.n); });
       if (r.more) sawMore = true;
       if (!r.more) { cur = { n: r.n, line: r.line }; break; }
@@ -93,8 +96,8 @@ let kid = null;
     }
     const dupFree = walked.length === new Set(walked).size;
     const contiguous = walked.every(function (n, i) { return i === 0 || walked[i - 1] < n; });
-    if (sawMore && walked.length === 6 && dupFree && contiguous) test.check('6 big records came over ' + (hops + 1) + ' answers: cut with more, resumed exactly');
-    else test.fail(OWED + 'the cut walk: more seen ' + sawMore + ', got ' + walked.length + ' records in ' + (hops + 1) + ' answers, dupFree ' + dupFree);
+    if (sawMore && walked.length === 6 && dupFree && contiguous && oversized === 0) test.check('6 big records came over ' + (hops + 1) + ' answers: cut with more, each within one answer, resumed exactly');
+    else test.fail(OWED + 'the cut walk: more seen ' + sawMore + ', got ' + walked.length + ' records in ' + (hops + 1) + ' answers, dupFree ' + dupFree + ', oversized ' + oversized);
   }
 
   test.subHeading('a read takes no by');
