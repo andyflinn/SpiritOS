@@ -92,6 +92,14 @@ function printable(b) {
   return out;
 }
 
+// THE EAR SAYS WHAT IT DOES (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
+// stops when the agent goes back to listening. the listening script can toggle those two?" — listening as it arms,
+// working the moment it hands a line over; the agent itself remembers nothing. Never fatal: a word that does not
+// land costs the Team tab a blink, not the agent its line.
+function say(word) {
+  return agents.deskAsk(cfg, 'agent.state', JSON.stringify({ word: word })).catch(function () { /* said next time */ });
+}
+
 let busy = false;
 let again = false;
 function pass() {
@@ -109,7 +117,14 @@ function pass() {
   }
   step().then(function () {
     busy = false;
-    if (out.length) { out.forEach(function (l) { console.log(l); }); if (ONCE) process.exit(0); }
+    if (out.length) {
+      // Working is said before the line is handed over, so Desk shows it the moment the agent wakes.
+      return say('working').then(function () {
+        out.forEach(function (l) { console.log(l); });
+        if (ONCE) process.exit(0);
+        if (again) { again = false; pass(); }
+      });
+    }
     if (again) { again = false; pass(); }
   }, function (e) {
     busy = false;
@@ -124,6 +139,10 @@ const ready = (typeof st.n === 'number' && typeof st.line === 'number')
 ready.then(function () {
   // Desk's nudge, or any packet for this agent on its own node: ask now.
   agents.listen(cfg, function (line) { if (!/^listening on/.test(line)) pass(); }).catch(function (e) { console.error('deskEar: the node stream: ' + e.message); });
+  // Listening is said as the ear arms — once the stream above is being opened, so a nudge sent on hearing the
+  // word finds a listener; said earlier (before the cursors were found) a nudge in that gap was lost until the
+  // next poll, which the harness showed under load.
+  say('listening');
   setInterval(pass, POLL_MS);
   pass();
 }, function (e) { console.error('deskEar: could not find where Desk stands: ' + e.message); process.exit(1); });

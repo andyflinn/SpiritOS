@@ -279,7 +279,8 @@ const allRecords = db.prepare('SELECT n, at, verb, by, key, body FROM records OR
 const LIVE_MS = 10 * 60 * 1000;
 
 function walkState() {
-  const s = { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), current: '' };
+  // agentWord: each agent's last word about itself, listening or working (goal/G2.3); the ear says it, every time.
+  const s = { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), agentWord: Object.create(null), current: '' };
   const item = function (id) { return s.items[id] || null; };
   const goalOf = function (id) { const it = item(id); return it ? (it.goal ? s.goals[it.id] : s.goals[it.goalId]) : null; };
   for (const r of allRecords.iterate()) {
@@ -355,6 +356,9 @@ function apply(s, r, b, item, goalOf) {
     case 'item.status': it.status = String(b.word); return;
     case 'item.take': it.with = r.by; return;
     case 'press': press(s, it, String(b.what), r, goalOf); return;
+    // THE LISTENER'S WORD (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
+    // stops when the agent goes back to listening. the listening script can toggle those two?"
+    case 'agent.state': s.agentWord[r.by] = String(b.word); return;
     default: return;
   }
 }
@@ -434,6 +438,10 @@ function facts(s, it) {
       return o && listed(s, o) && (buttons(s, o).length > 0 || o.star);
     }).length;
     f.live = Object.keys(s.agentsAt).filter(function (a) { return now - Date.parse(s.agentsAt[a]) < LIVE_MS; }).sort();
+    // WHO IS WORKING (goal/G2.3): the live agents whose last word is working. A stale working clears with
+    // liveness, since an ear killed by its limit or a node restart says nothing (Andy: "while an agent is
+    // working, i should leave it alone.").
+    f.working = f.live.filter(function (a) { return s.agentWord[a] === 'working'; });
   }
   return f;
 }
@@ -486,7 +494,7 @@ function write(verb, a, check) {
     after = walkState();
     const touched = verb === 'session.set' && body.session && body.session.goal
       ? [String(body.session.goal.id)].concat((body.session.items || []).map(function (x) { return String(x.id || ''); }))
-      : [String(a.id)];
+      : a.id !== undefined ? [String(a.id)] : [];
     touched.forEach(function (id) {
       const bytes = largestPanel(after, id);
       if (bytes > ANSWER_ROOM) throw tooLarge(bytes, ANSWER_ROOM);
@@ -510,6 +518,8 @@ function write(verb, a, check) {
   // facts of every row of the goal that differ now ride along, in this one object: one press, one object, never a
   // half-painted press (fileTransfer goal/G1.4 removed the publish coalescing; this ride-along never depended on it).
   if (it) out.rows = changedRows(s, after, it.goal ? it.id : it.goalId);
+  // An agent's word changes the current goal's row (its working list), and that row travels (goal/G2.3).
+  if (verb === 'agent.state' && after.current) out.rows = changedRows(s, after, after.current);
   appServer.publish(out);
   return after;
 }
@@ -765,6 +775,17 @@ appServer.serve({
   },
   // "rename (you)": Andy's alone.
   'item.rename': { request: { id: '', title: '' }, reply: { change: 0 }, handler: function (a, caller) { ownerOnly(caller); const w = writerOf(caller); return { change: write('item.rename', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
+  // THE LISTENER'S WORD (goal/G2.3): listening when its ear arms, working when the ear hands a line over. From
+  // the caller the door hands over, never an argument; any other word is refused. The write publishes the goal
+  // row with its working list, so the Team tab paints from the publish (goal/G2.4).
+  'agent.state': {
+    request: { word: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      if (a.word !== 'listening' && a.word !== 'working') throw refused('bad-request');
+      return { change: write('agent.state', { word: a.word, by: w.by, key: w.key }).change };
+    },
+  },
   'item.status': { request: { id: '', word: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.status', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
   'item.take': { request: { id: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.take', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
   // Presses are records, not lines (Andy: "a press shouldn't post a line, it
