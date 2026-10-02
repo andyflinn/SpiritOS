@@ -18,7 +18,8 @@
 //   4. A first run, with no saved place, starts at now: what the desk already holds is not handed over.
 //   5. What is meant for its agent, exactly as today's deskEar selects and words it: Andy's records but his seen
 //      presses ('DESK andy <verb> <body>'), another agent's chat.add ('DESK <by> chat.add <body>'), and the
-//      lines Desk keeps from Andy or an agent ('LINE <from> <kind>: <text>'); never its own records or lines,
+//      lines Desk keeps from Andy or an agent ('LINE <from> <kind>: <text>'); never its own records (known by
+//      their key, whatever label the desk shows for it: Andy may relabel an agent) or its own lines,
 //      and never Andy's direct line to the other agent (the line's peer is not its own key). Who it is, name and
 //      key, is what its node hands a server it starts: --node {name, publicKey} (jobs.js), not a file it opens.
 //   6. Each thing is handed over once: the place is kept in its own state, so a restart misses nothing written
@@ -57,7 +58,9 @@ const OTHER_KEY = 'MCowBQYDK2VwAyEAdeskClientNextTestOtherAAAAAAAAAAAAAAA=';
 const DESK_KEY = 'MCowBQYDK2VwAyEAdeskClientNextTestDeskNodeAAAAAAAAAAA=';
 const OWNER = { owner: true, key: SELF_KEY, label: 'claude-windows' };
 const MEMBER = { key: 'MCowBQYDK2VwAyEAdeskClientNextTestMemberAAAAAAAAAAAAA=', label: 'somebody' };
-const SELF_AT_DESK = { key: SELF_KEY, label: 'claude-windows' };
+// At the desk the agent goes by the label Andy's node holds for its key, which he may change (jobs.authRelabel):
+// not the name of its own node. So its own records are known by their key.
+const SELF_AT_DESK = { key: SELF_KEY, label: 'renamed-at-the-desk' };
 const OTHER_AT_DESK = { key: OTHER_KEY, label: 'wsl-claude' };
 const ANDY = { owner: true, key: DESK_KEY, label: 'Andy' };
 
