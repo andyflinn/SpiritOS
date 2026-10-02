@@ -335,7 +335,11 @@ function deskDrawAgentTabs() {
   strip.innerHTML = deskTabButton('data-agent="*"', deskAgentTab === '*', deskChatNews('team'), 'All') +
     deskAgentNames().map(function (n) {
       var lead = !!deskLead && n === deskLead.name;
-      return deskTabButton('data-agent="' + deskEsc(n) + '"' + (lead ? ' data-lead="1" title="the lead"' : ''),
+      // WORKING BLINKS (goal/G2.4). Andy: "every agents tab has a blinking border while it's working." The
+      // server says who (the goal row's working, goal/G2.3); the mark follows its publish, nothing is pulled.
+      var working = deskWorkingAgents().indexOf(n) !== -1;
+      return deskTabButton('data-agent="' + deskEsc(n) + '"' + (lead ? ' data-lead="1" title="the lead"' : '') +
+        (working ? ' data-working="1" title="working: leave it alone until it listens again"' : ''),
         deskAgentTab === n, deskChatNews(n), n + (lead ? ' (lead)' : ''));
     }).join('');
 }
@@ -355,6 +359,11 @@ function deskDrawAgentTabs() {
 // Andy, all come in the label.
 function deskGoalRow() {
   return deskItems.filter(function (r) { return r && r.goal === ''; })[0] || null;
+}
+// The agents the server holds as working (goal/G2.3): the goal row's working, live agents only.
+function deskWorkingAgents() {
+  var g = deskGoalRow();
+  return g && Array.isArray(g.working) ? g.working : [];
 }
 function deskWaitingOnAndy() {
   var g = deskGoalRow();
@@ -890,6 +899,9 @@ spirit.shell.activateApp({
       // two rows each stuck at top 0 slid the agent row under the main one. The shell's #app-header is
       // sticky at the top of the same scroll, so this block sticks at its height (deskBarTop), never at 0
       // where it covered Back and Home. Opaque, in the shell's own background.
+      // THE BLINK, DECLARED ONCE (goal/G2.4): a working agent's tab border blinks; the mark is data-working.
+      '<style>@keyframes desk-blink { 50% { border-color: transparent; } } ' +
+        '#desk-agent-tabs button[data-working="1"] { border: 2px solid #d00; animation: desk-blink 1s step-start infinite; }</style>' +
       '<div id="desk-bars" style="position:sticky;top:var(--desk-bar-top,52px);z-index:2;background:#1a1a2e;padding-bottom:4px">' +
         // The goal line is pinned with the tabs (desk/G1.12). Andy: "this part
         // of the list page should be attached below the title bar, and not
