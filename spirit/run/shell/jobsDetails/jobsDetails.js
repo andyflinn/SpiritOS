@@ -8,6 +8,9 @@
 // and the only way out is back to the table. The console that used to fold
 // open under the row lives here, with the actions that sat in the row.
 //
+// NO DATA BOX. Andy: "get rid of that box. it's the (relatively) static portion of the fs data." The
+// console is what the job does; its job.data record is not drawn.
+//
 // LIVE THROUGH THE SHELL, NOT A STREAM OF ITS OWN. A dialog is never driven
 // by the job tick (switchTo, renderActive), so this asks the shell for the
 // jobs with api.onJobs — its opt-in for an app that wants live data — and
@@ -48,13 +51,6 @@ function jdLogHtml(job) {
   }).join('');
 }
 
-function jdDataHtml(job) {
-  var data = job.data;
-  if (data === undefined || data === null) return '';
-  var text = '';
-  try { text = typeof data === 'string' ? data : JSON.stringify(data, null, 2); } catch (e) { text = String(data); }
-  return '<div class="job-log-panel"><pre style="margin:0;white-space:pre-wrap">' + jdEscapeHtml(text) + '</pre></div>';
-}
 
 // The rule the row had, moved and unchanged: Cancel for a one-shot process
 // and for a user-operated server, never for a node-operated one, which
@@ -114,10 +110,7 @@ function jdRender() {
     '<div class="stat-tile wide">' +
       '<div class="job-manifest-note">Console</div>' +
       '<div class="job-log-panel" id="jd-log">' + jdLogHtml(job) + '</div>' +
-    '</div>' +
-    (job.data !== undefined && job.data !== null
-      ? '<div class="stat-tile wide"><div class="job-manifest-note">Data</div>' + jdDataHtml(job) + '</div>'
-      : '');
+    '</div>';
 
   var fresh = body.querySelector ? body.querySelector('#jd-log') : null;
   if (fresh) fresh.scrollTop = stickToBottom ? fresh.scrollHeight : previousScrollTop;

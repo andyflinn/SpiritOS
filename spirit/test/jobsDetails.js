@@ -17,7 +17,7 @@
 //      then open({id}) on every call. It takes its live jobs through api.onJobs — the shell's opt-in for a dialog
 //      that wants live data (shell.js, api.onJobs: fn(jobsById, changed, context)) — never a second stream.
 //   3. THE CONSOLE. It shows the job it was opened with and no other: its status, its kind and type, every log
-//      line (escaped), and its data. A later job event repaints it without a reopen; opening it for another job
+//      line (escaped) — and NOT its data (Andy: "get rid of that box. it's the (relatively) static portion of the fs data."). A later job event repaints it without a reopen; opening it for another job
 //      shows that job and nothing of the first.
 //   4. THE ACTIONS, the rule unchanged and only moved (Andy: "would allow cancel for servers - user but not for
 //      servers - node"): Cancel (id jd-cancel) for a running process and for a user-operated server; Delete (id
@@ -176,7 +176,7 @@ test.startTest('goal/G2.11: Job Monitor rows only, the console in a jobsDetails 
   dialog.mount(container, api);
   if (typeof dialog.open !== 'function') { test.fail(OWED + 'the dialog has no open(params): it is mounted once and opened per job'); return; }
 
-  test.subHeading('3. the console: the one job, its log and its data, live');
+  test.subHeading('3. the console: the one job, its log, live — no data box');
   dialog.open({ id: 'job_7' });
   feed();
   await settled();
@@ -185,8 +185,8 @@ test.startTest('goal/G2.11: Job Monitor rows only, the console in a jobsDetails 
   else test.fail(OWED + 'onJobs subscriptions ' + calls.feeds.length + ', own streams ' + calls.streams);
   if (html.indexOf('seven one') !== -1 && html.indexOf('seven &lt;b&gt;two&lt;/b&gt;') !== -1 && html.indexOf('<b>two</b>') === -1) test.check('every log line of the job, escaped');
   else test.fail(OWED + 'the console of job_7 does not show its log, escaped');
-  if (html.indexOf('seven-data') !== -1 && html.indexOf('running') !== -1 && html.indexOf('counter') !== -1) test.check('its data, its status and its type');
-  else test.fail(OWED + 'the dialog does not show job_7\'s data, status and type');
+  if (html.indexOf('seven-data') === -1 && html.indexOf('running') !== -1 && html.indexOf('counter') !== -1) test.check('its status and its type, and no data box (Andy: "get rid of that box")');
+  else test.fail(OWED + 'the dialog shows the data box, or lacks job_7\'s status and type');
   if (html.indexOf('eight only') === -1) test.check('and nothing of any other job');
   else test.fail(OWED + 'another job\'s log is on the screen');
   const seven = jobs.get('job_7');
