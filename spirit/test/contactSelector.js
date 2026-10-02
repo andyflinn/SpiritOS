@@ -24,8 +24,8 @@ const RUN = path.join(__dirname, '..', 'run');
 test.startTest('apiAuth/G1.7: the contact selector is a shell element, found by search, replacing the hand-rolled select');
 
 const shell = fs.readFileSync(path.join(RUN, 'js', 'client', 'shell.js'), 'utf8');
-// The factories moved to shell/js/elements.js (goal/G2.12); the shell hands them out from there, unchanged.
-const elements = fs.readFileSync(path.join(RUN, 'shell', 'js', 'elements.js'), 'utf8');
+// The factories moved to shell/js/, one file per element (goal/G2.12, G2.14); the shell hands them out from there, unchanged.
+const elements = fs.readFileSync(path.join(RUN, 'shell', 'js', 'contactSelector.js'), 'utf8');
 
 test.subHeading('the shell defines it and hands it to apps');
 const at = elements.indexOf('function createContactSelector');
@@ -38,8 +38,8 @@ if (at !== -1) {
     if (elements[i] === '}') { depth--; if (depth === 0) { body = elements.slice(at, i + 1); break; } }
   }
 }
-if (at !== -1 && handed) test.check('shell/js/elements.js defines createContactSelector and shell.js hands it to apps under api.ui.elements');
-else test.fail(OWED + 'elements.js: createContactSelector defined ' + (at !== -1) + ', handed under ui.elements ' + handed);
+if (at !== -1 && handed) test.check('shell/js/contactSelector.js defines createContactSelector and shell.js hands it to apps under api.ui.elements');
+else test.fail(OWED + 'contactSelector.js: createContactSelector defined ' + (at !== -1) + ', handed under ui.elements ' + handed);
 
 test.subHeading('it searches, carries a value and says when it changed');
 if (body && /contact\.search/.test(body) && /\bvalue\b/.test(body) && /change/.test(body)) {

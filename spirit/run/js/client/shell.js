@@ -732,9 +732,10 @@
   }
 
   // THE ELEMENT FACTORIES STOOD HERE (createIconSelector and the three
-  // selectors of apiAuth/G1.7-G1.9). They live in shell/js/elements.js
-  // since goal/G2.12 — Andy: "the shell-elements are better of being in
-  // 'spirit/run/shell/js/'" — loaded by index.html before this file, and
+  // selectors of apiAuth/G1.7-G1.9). They live in spirit/run/shell/js/, one
+  // file per element (goal/G2.12, G2.14) — Andy: "the shell-elements are
+  // better of being in 'spirit/run/shell/js/'", "there will be many" —
+  // loaded by index.html before this file, and
   // handed to apps below as api.ui.elements, unchanged. A host that loaded
   // this file without it (a fixture booting the shell alone) hands apps no
   // factories rather than failing to boot.

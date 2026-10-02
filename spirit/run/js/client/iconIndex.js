@@ -11,7 +11,7 @@
 // every name it answers to.
 //
 // Nothing here touches the DOM. The widget built on it (createIconSelector,
-// shell/js/elements.js) is a thin painter over these arrays, which is what lets the
+// shell/js/iconSelector.js) is a thin painter over these arrays, which is what lets the
 // grouping, the ordering, the exclusion and the filtering be asserted in
 // node instead of only being looked at.
 

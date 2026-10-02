@@ -1363,10 +1363,14 @@
       <div id="app-content"></div>
     </div>
 
-    <!-- The element factories apps build their screens from (goal/G2.12):
-         the icon, contact, app-server and api-branch selectors. Loaded
-         before the shell, which hands them to apps as api.ui.elements. -->
-    <script src="/shell/js/elements.js"></script>
+    <!-- The element factories apps build their screens from, one file per
+         element (goal/G2.14). Each adds itself to window.spiritElements; the
+         shell hands them to apps as api.ui.elements. Before the shell, and
+         the app-server selector before the api-branch one built from it. -->
+    <script src="/shell/js/iconSelector.js"></script>
+    <script src="/shell/js/contactSelector.js"></script>
+    <script src="/shell/js/appServerSelector.js"></script>
+    <script src="/shell/js/apiBranchSelector.js"></script>
     <script src="/js/client/shell.js"></script>
     <script>
       (function () {

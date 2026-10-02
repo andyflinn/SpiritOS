@@ -47,8 +47,8 @@ const html = fs.readFileSync(path.join(__dirname, '..', 'run', 'index.html'), 'u
 if (/<script src="\/js\/client\/apiTreeIndex\.js"><\/script>/.test(html)) test.check('index.html loads /js/client/apiTreeIndex.js');
 else test.fail(OWED + 'index.html does not load /js/client/apiTreeIndex.js');
 const shell = fs.readFileSync(path.join(CLIENT, 'shell.js'), 'utf8');
-// The factories moved to shell/js/elements.js (goal/G2.12); the shell hands them out from there, unchanged.
-const elements = fs.readFileSync(path.join(CLIENT, '..', '..', 'shell', 'js', 'elements.js'), 'utf8');
+// The factories moved to shell/js/, one file per element (goal/G2.12, G2.14); the shell hands them out from there, unchanged.
+const elements = fs.readFileSync(path.join(CLIENT, '..', '..', 'shell', 'js', 'appServerSelector.js'), 'utf8');
 const at = elements.indexOf('function createAppServerSelector');
 const handed = /elements:\s*\{[^}]*createAppServerSelector:\s*spiritElements\.createAppServerSelector/.test(shell);
 let body = '';
@@ -59,8 +59,8 @@ if (at !== -1) {
     if (elements[i] === '}') { depth--; if (depth === 0) { body = elements.slice(at, i + 1); break; } }
   }
 }
-if (at !== -1 && handed) test.check('shell/js/elements.js defines createAppServerSelector and shell.js hands it to apps under api.ui.elements');
-else test.fail(OWED + 'elements.js: createAppServerSelector defined ' + (at !== -1) + ', handed under ui.elements ' + handed);
+if (at !== -1 && handed) test.check('shell/js/appServerSelector.js defines createAppServerSelector and shell.js hands it to apps under api.ui.elements');
+else test.fail(OWED + 'appServerSelector.js: createAppServerSelector defined ' + (at !== -1) + ', handed under ui.elements ' + handed);
 if (body && /jobs\.api/.test(body) && /['"]api['"]/.test(body) && /spiritApiTreeIndex\.servers/.test(body) && /\bvalue\b/.test(body) && /change/.test(body)) {
   test.check('it asks jobs.api for \'api\', lists spiritApiTreeIndex.servers, and carries value and a change event');
 } else test.fail(OWED + 'createAppServerSelector does not ask jobs.api \'api\', list spiritApiTreeIndex.servers, and carry value with a change event');
