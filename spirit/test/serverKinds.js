@@ -31,7 +31,8 @@ test.startTest('processes/G1.3: node-operated and user-operated servers');
 const OWED = 'OWED by processes/G1.3: ';
 const RUN = path.join(__dirname, '..', 'run');
 const COUNTER = path.join(RUN, 'process', 'js', 'counterServer', 'counterServer.js');
-const JOBS_APP = path.join(RUN, 'shell', 'jobs', 'jobs.js');
+// The Cancel rule lives in the job's dialog since goal/G2.11 (the row offers no action); read there.
+const JOBS_APP = path.join(RUN, 'shell', 'jobsDetails', 'jobsDetails.js');
 const jobs = require('../run/js/jobs.js')(spirit, 65432);
 
 function freePort() {
@@ -131,10 +132,10 @@ const has = function (name) { return typeof jobs[name] === 'function'; };
   try {
     vm.runInContext(fs.readFileSync(JOBS_APP, 'utf8'), ctx);
     const row = function (operated) {
-      return ctx.renderJobRow({ id: 'j', kind: 'server', type: 't', status: 'running', data: { operated: operated }, log: [] });
+      return ctx.jdButtonsHtml({ id: 'j', kind: 'server', type: 't', status: 'running', data: { operated: operated }, log: [] });
     };
-    canUser = /data-job-id=/.test(row('user'));
-    canNode = /data-job-id=/.test(row('node'));
+    canUser = /id="jd-cancel"/.test(row('user'));
+    canNode = /id="jd-cancel"/.test(row('node'));
   } catch (e) { /* the app did not load: fail below */ }
   if (t2run && canUser && !canNode) test.check('Cancel closed its port; Jobs offers Cancel for user-operated servers only');
   else test.fail(OWED + 'Cancel closed the port ' + t2run + '; Jobs Cancel for user ' + canUser + ', for node ' + canNode);
