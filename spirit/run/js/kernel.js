@@ -744,6 +744,9 @@ if (isNode()) {
         // node's address; only the stream above is this function's own.
         const args = { to: peer, text: made.text };
         if (o.kind) args.kind = o.kind;
+        // PATIENCE RIDES TOO (goal/G2.6): the node holds a busy post and retries it with backoff for this long
+        // (peer.post's patienceMs, puppets/G2), so no caller loops by hand around "target is busy".
+        if (Number(o.patienceMs) > 0) args.patienceMs = Number(o.patienceMs);
         spirit.core.ask('peer.post', args, base).then(function (res) {
           const b = res.body;
           if (res.status !== 200 || !b || b.ok !== true || !b.hash) { finish({ ok: false, code: 'not-posted', error: (b && b.error) || ('the node answered ' + res.status) }); return; }

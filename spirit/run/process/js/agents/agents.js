@@ -383,7 +383,12 @@ function post(cfg, toKey, env, fetchFn) {
 // `by` IS ALWAYS THIS AGENT: his node's apiDoor refuses a member writing as
 // andy, and one given here is replaced rather than sent to be refused.
 const packet = require('../../../js/client/packet');
-const DESK_WAIT_MS = 30000;
+// EVERY DESK WRITE GOES WITH PATIENCE (goal/G2.6; both agents: "target is busy" is the relay refusing a second
+// post while one is in flight, nobody at the desk is busy). The node holds a busy post and retries it for
+// DESK_PATIENCE_MS (peer.post's own patienceMs, puppets/G2), so the hand-rolled retry loops around chat.add are
+// gone. The answer is waited for longer than the post may be held, or a held post would land after its asker left.
+const DESK_PATIENCE_MS = 60000;
+const DESK_WAIT_MS = DESK_PATIENCE_MS + 30000;
 // The desk server's writes, each carrying who wrote it; every other verb takes
 // no `by` and refuses one.
 // DESK_WRITES STOOD HERE and set `by` on every write — gone with
@@ -411,7 +416,7 @@ function deskAsk(cfg, verb, json, fetchFn) {
   // the answer whose re matches, the one copy for every process. This file
   // only translates its two transport outcomes into the errors callers
   // already handle; a desk refusal ({ok: false, code}) passes through.
-  return require('../../../js/kernel.js').peerPost(cfg.control, 'api', ask, { node: cfg.node, waitMs: DESK_WAIT_MS }).then(function (got) {
+  return require('../../../js/kernel.js').peerPost(cfg.control, 'api', ask, { node: cfg.node, waitMs: DESK_WAIT_MS, patienceMs: DESK_PATIENCE_MS }).then(function (got) {
     if (got && got.ok === false && got.code === 'not-posted') throw new Error('not posted: ' + (got.error || ''));
     if (got && got.ok === false && got.code === 'no-answer') throw new Error('no answer from Andy\'s desk server in ' + DESK_WAIT_MS / 1000 + ' s');
     return got;
