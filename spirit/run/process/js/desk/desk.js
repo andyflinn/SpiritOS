@@ -839,6 +839,9 @@ appServer.serve({
       if (w.by === 'andy') throw refused('bad-request');
       const it = walkState().items[String(a.id)];
       if (!it) throw refused('no-such-item');
+      // ONE TAKER UNTIL IT ANSWERS (claude-windows's review): a take on a newer line of his while the first stands
+      // would hand the item to a second agent and have the first's answer refused. The item is the taker's.
+      if (it.takenBy) throw refused('taken');
       let his = null;
       for (let i = it.chat.length - 1; i >= 0; i--) { if (it.chat[i].by === 'andy') { his = it.chat[i]; break; } }
       if (!his) throw refused('no-row');
