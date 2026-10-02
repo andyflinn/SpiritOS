@@ -1,0 +1,7 @@
+{
+  "label": "Desk client",
+  "description": "An agent's own way to Andy's desk (goal/G3.3). Passes one ask to the desk server on the node the owner named (setDesk) and counts it; its record, deskClient.db, is in the node's state (relay-state/process/deskClient/). Started by the node; reached by jobs.api on the loopback door.",
+  "kind": "server",
+  "operated": "node",
+  "args": []
+}
