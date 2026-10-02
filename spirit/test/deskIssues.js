@@ -128,19 +128,23 @@ callback.listen(0, '127.0.0.1', async function () {
     if (starred.star === true && answered.star === false) test.check('the agent line starred the row; his answer cleared it');
     else test.fail(OWED + 'star after the agent line ' + starred.star + ', after his own line ' + answered.star);
 
-    test.subHeading('5. a goal offers Done once every item is closed, no claim needed');
+    test.subHeading('5. a goal offers Done once every item is done, no claim needed');
+    // Was "once every item is closed" here; goal/G2.10 moved the line to done (Andy: "the goal should only offer a
+    // done button when all items are done"), and deskGoalDone.js holds the whole rule. Asserted here: one item done
+    // and one open offers nothing; both done offers Done with no claim; closing them keeps it.
     await call('press', { id: 'g/G1', what: 'go-all' }, ANDY);
-    for (const id of ['g/G1.1', 'g/G1.2']) {
-      await call('press', { id: id, what: 'claim-done' }, CW);
-      await call('press', { id: id, what: 'done' }, ANDY);
-    }
+    await call('press', { id: 'g/G1.1', what: 'claim-done' }, CW);
+    await call('press', { id: 'g/G1.1', what: 'done' }, ANDY);
     const halfway = await factsOf('g/G1');
+    await call('press', { id: 'g/G1.2', what: 'claim-done' }, CW);
+    await call('press', { id: 'g/G1.2', what: 'done' }, ANDY);
+    const allDone = await factsOf('g/G1');
     await call('press', { id: 'g/G1.1', what: 'close' }, ANDY);
     await call('press', { id: 'g/G1.2', what: 'close' }, ANDY);
     const allClosed = await factsOf('g/G1');
-    if ((halfway.buttons || []).indexOf('done') === -1 && (allClosed.buttons || []).indexOf('done') !== -1) {
-      test.check('no Done while an item is open; Done on the goal once all are closed, with no claim');
-    } else test.fail(OWED + 'goal buttons with items done ' + JSON.stringify(halfway.buttons) + ', all closed ' + JSON.stringify(allClosed.buttons));
+    if ((halfway.buttons || []).indexOf('done') === -1 && (allDone.buttons || []).indexOf('done') !== -1 && (allClosed.buttons || []).indexOf('done') !== -1) {
+      test.check('no Done while an item is open; Done on the goal once all are done, with no claim; still offered once closed');
+    } else test.fail(OWED + 'goal buttons with one item done ' + JSON.stringify(halfway.buttons) + ', all done ' + JSON.stringify(allDone.buttons) + ', all closed ' + JSON.stringify(allClosed.buttons));
 
     test.subHeading('6. a brought-back item pops into view with an attention mark');
     published.length = 0;
