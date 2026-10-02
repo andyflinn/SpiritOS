@@ -13,8 +13,9 @@
 // The contract the builder follows (the shape in goal/G2.9's box, both agents; Andy's Go 2026-10-02):
 //   1. presenceNode gains `heard(url, key)`: the relay at `url` has just carried `key` — the same mark a
 //      `present: true` broadcast on that stream makes, published through the job the Contacts dot reads. A key not in
-//      the book is not drawn, and not noted either: the caller wrote the shadow row already, that is why it is
-//      calling. A relay this node holds no open stream to marks nothing (there is no live word to give) and `heard`
+//      the book is not drawn, and not noted either (its caller wrote its route). An ID in the book has its proof
+//      persisted by presenceNode since the second half (presenceProof.js), which reversed "heard notes nobody".
+//      A relay this node holds no open stream to marks nothing (there is no live word to give) and `heard`
 //      says so (false). The newest word wins: a key the relay had said absent goes green again on `heard`.
 //   2. hub.handleSearch hears every row a relay answered, at the relay that was asked — a partner's member too
 //      (claude-windows, G2.8 review: a route through the asked relay exists, so the dot is honest). A row memory
@@ -59,6 +60,9 @@ function fakeJobs() {
 }
 function settle() { return new Promise(function (r) { setImmediate(r); }); }
 async function settled() { for (let i = 0; i < 12; i++) await settle(); }
+// What the table says about a key: true, false, or undefined for nobody having said. Each value is a proof,
+// {present, at} (goal/G2.9).
+function said(table, key) { return table[key] ? table[key].present : undefined; }
 
 // A node with john and bert in its book, pinned on one relay, its stream captured; the relay answers the reconcile
 // with nobody, so every green below is `heard`'s and not the open's.
@@ -158,33 +162,38 @@ test.startTest('goal/G2.9: the live presence table learns from every moment a re
   } else {
     let before = null;
     try { before = n.P.heard(RELAY, JOHN); } catch (e) { before = 'threw ' + e.message; }
-    if (before === false && n.P.table()[JOHN] === undefined) test.check('before the stream opens there is no live word to give: heard says false and marks nobody');
+    if (before === false && said(n.P.table(), JOHN) === undefined) test.check('before the stream opens there is no live word to give: heard says false and marks nobody');
     else test.fail(OWED + 'heard before the open: ' + JSON.stringify(before) + ', john ' + JSON.stringify(n.P.table()[JOHN]));
     s.onOpen();
     await settled();
     const learnedBefore = n.learned.length;
     const got = n.P.heard(RELAY, JOHN);
-    if (got === true && n.P.table()[JOHN] === true) test.check('john, in the book, goes green when the relay he is on has just carried him');
+    if (got === true && said(n.P.table(), JOHN) === true) test.check('john, in the book, goes green when the relay he is on has just carried him');
     else test.fail(OWED + 'heard on an open stream: ' + JSON.stringify(got) + ', john ' + JSON.stringify(n.P.table()[JOHN]));
-    const published = n.jobs.updates.filter(function (u) { return u.data && u.data.presence && u.data.presence[JOHN] === true; });
+    const published = n.jobs.updates.filter(function (u) { return u.data && u.data.presence && said(u.data.presence, JOHN) === true; });
     if (published.length >= 1) test.check('and the job carries him present, so the Contacts dot paints');
     else test.fail(OWED + 'no job update carried john present');
     n.P.heard(RELAY, ZOE);
-    if (n.P.table()[ZOE] === undefined) test.check('zoe, not in the book, is not drawn');
+    if (said(n.P.table(), ZOE) === undefined) test.check('zoe, not in the book, is not drawn');
     else test.fail(OWED + 'zoe drawn: ' + JSON.stringify(n.P.table()[ZOE]));
-    if (n.learned.length === learnedBefore) test.check('and heard notes nobody in the shadow — the caller already wrote that row');
-    else test.fail(OWED + 'heard wrote the shadow: ' + JSON.stringify(n.learned.slice(learnedBefore)));
+    // This asserted "heard notes nobody in the shadow". The second half of the item reversed it (Andy: "my OCD
+    // likes the idea of the same-data being persisted that is sent to the browser"): the proof presenceNode draws
+    // is the proof it persists, for an ID in the book; a stranger still gets nothing from here.
+    const sinceHeard = n.learned.slice(learnedBefore);
+    const johnProof = sinceHeard.filter(function (l) { return l.key === JOHN && l.what && l.what.present === true && typeof l.what.at === 'number'; });
+    if (johnProof.length === 1 && sinceHeard.every(function (l) { return l.key !== ZOE; })) test.check('heard persists john\'s proof {present, at} once, and nothing for zoe, who is not in the book');
+    else test.fail(OWED + 'shadow notes since heard: ' + JSON.stringify(sinceHeard));
     const elsewhere = n.P.heard(RELAY_B, BERT);
-    if (elsewhere === false && n.P.table()[BERT] === undefined) test.check('a relay this node holds no stream to gives no live word: false, nobody marked');
+    if (elsewhere === false && said(n.P.table(), BERT) === undefined) test.check('a relay this node holds no stream to gives no live word: false, nobody marked');
     else test.fail(OWED + 'heard at an unheld relay: ' + JSON.stringify(elsewhere) + ', bert ' + JSON.stringify(n.P.table()[BERT]));
     s.onEvent({ event: 'presence', data: { key: JOHN, present: false } });
-    if (n.P.table()[JOHN] === false) test.check('the relay says john absent: red');
+    if (said(n.P.table(), JOHN) === false) test.check('the relay says john absent: red');
     else test.fail('john after an absent broadcast: ' + JSON.stringify(n.P.table()[JOHN]));
     n.P.heard(RELAY, JOHN);
-    if (n.P.table()[JOHN] === true) test.check('then he speaks through that relay again: green — the newest word wins');
+    if (said(n.P.table(), JOHN) === true) test.check('then he speaks through that relay again: green — the newest word wins');
     else test.fail(OWED + 'john after heard following absent: ' + JSON.stringify(n.P.table()[JOHN]));
     s.onClose('gone');
-    if (n.P.table()[JOHN] === undefined) test.check('the stream closes and that relay\'s word goes with it, as before');
+    if (said(n.P.table(), JOHN) === undefined) test.check('the stream closes and that relay\'s word goes with it, as before');
     else test.fail('john after the close: ' + JSON.stringify(n.P.table()[JOHN]));
   }
 

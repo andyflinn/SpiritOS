@@ -750,12 +750,18 @@ async function run() {
     rootDir: home,
     jobs: jobs,
     router: fakeRouter(),
+    // A clock that moves on every word (goal/G2.9: each word is a proof
+    // {present, at}), so two words never share a stamp.
+    now: (function () { let t = 1790000000000; return function () { t += 1; return t; }; })(),
     connectImpl: function (o) {
       // The stream URL carries the key; index by the relay it belongs to.
       opened[o.url.split('/api/')[0]] = o;
       return { close: function () {} };
     },
   });
+  // What the table says about a key: true, false, or undefined for nobody
+  // having said. The value itself is a proof, {present, at}.
+  function said(table, key) { return table[key] ? table[key].present : undefined; }
 
   // Seats on both relays, so openTo accepts each and the streams are
   // opened the way they are in production. This said "a roll naming
@@ -792,7 +798,7 @@ async function run() {
   relaySays('http://b', 'presence', { key: 'zoe', present: false });
 
   const merged = P.table();
-  if (merged.john === true && merged.zoe === false) {
+  if (said(merged, 'john') === true && said(merged, 'zoe') === false) {
     test.check('one relay each for john and zoe, taken as said');
   } else {
     test.fail('merged: ' + JSON.stringify(merged));
@@ -801,7 +807,7 @@ async function run() {
   // The union, and this is the case the merge exists for: absent on one
   // relay and present on another means REACHABLE. An app asking "can I
   // reach bert" is asking about the union and nothing else.
-  if (merged.bert === true) {
+  if (said(merged, 'bert') === true) {
     test.check('and bert, absent on one and present on another, is reachable');
   } else {
     test.fail('bert should be reachable: ' + JSON.stringify(merged));
@@ -816,30 +822,36 @@ async function run() {
     test.fail('stranger appeared: ' + JSON.stringify(merged));
   }
 
-  test.subHeading('The shell hears about changes, and only changes');
+  test.subHeading('The shell hears every word, and nothing else');
 
+  // This asserted "a repeated broadcast publishes nothing" while the table
+  // held booleans. A word is a proof now (goal/G2.9, Andy: "timestamped
+  // presence by ID"): the same thing said again is a newer proof, and the
+  // page and the shadow get it with its newer stamp.
   const before = jobs.updates.length;
+  const johnWas = P.table().john;
   relaySays('http://a', 'presence', { key: 'john', present: true });
-  if (jobs.updates.length === before) {
-    test.check('a repeated broadcast publishes nothing — a quiet relay is not news');
+  const johnIs = P.table().john;
+  if (jobs.updates.length === before + 1 && johnIs.present === true && johnIs.at > johnWas.at) {
+    test.check('a repeated broadcast is a newer proof: published once, same word, later stamp');
   } else {
-    test.fail('republished on a repeated broadcast');
+    test.fail('a repeated broadcast: updates=' + (jobs.updates.length - before) + ' was ' + JSON.stringify(johnWas) + ' is ' + JSON.stringify(johnIs));
   }
 
   // A relay from before cycle 3 still sends a roster on connect. It is
   // ignored, not merged: a list of members is not something a node takes.
   relaySays('http://a', 'roster', { members: [{ key: 'intruder', present: true }] });
-  if (!('intruder' in P.table()) && jobs.updates.length === before) {
+  if (!('intruder' in P.table()) && jobs.updates.length === before + 1) {
     test.check('a roster from an old relay is ignored — no member list is taken');
   } else {
     test.fail('roster was merged: ' + JSON.stringify(P.table()));
   }
 
   relaySays('http://a', 'presence', { key: 'john', present: false });
-  if (jobs.updates.length === before + 1 && P.table().john === false) {
+  if (jobs.updates.length === before + 2 && said(P.table(), 'john') === false) {
     test.check('and a real change publishes exactly once');
   } else {
-    test.fail('updates=' + (jobs.updates.length - before) + ' john=' + P.table().john);
+    test.fail('updates=' + (jobs.updates.length - before) + ' john=' + JSON.stringify(P.table().john));
   }
 
   test.subHeading('A relay we cannot reach stops asserting');
@@ -848,7 +860,7 @@ async function run() {
   // keeping a dead relay's last word would hold peers green minutes
   // after the connection died.
   relaySays('http://b', 'presence', { key: 'zoe', present: true });
-  if (P.table().zoe === true) test.check('zoe is reachable while b is connected');
+  if (said(P.table(), 'zoe') === true) test.check('zoe is reachable while b is connected');
   else test.fail('setup: ' + JSON.stringify(P.table()));
 
   relayLost('http://b');
@@ -861,7 +873,7 @@ async function run() {
 
   // bert was present on b and absent on a. Losing b must not leave him
   // green, and must not lose him either — a still says something.
-  if (after.bert === false) {
+  if (said(after, 'bert') === false) {
     test.check('while a peer another relay still names keeps that answer');
   } else {
     test.fail('bert after losing b: ' + JSON.stringify(after));
@@ -879,7 +891,7 @@ async function run() {
   // Keys of their own, so removing one here cannot quietly change what a
   // later check in this file is asserting about bert or zoe.
   relaySays('http://a', 'presence', { key: 'gonzo', present: false });
-  if (P.table().gonzo === false) test.check('a member who is away is absent — red');
+  if (said(P.table(), 'gonzo') === false) test.check('a member who is away is absent — red');
   else test.fail('setup: ' + JSON.stringify(P.table()));
 
   relaySays('http://a', 'presence', { key: 'gonzo', present: false, gone: true });
@@ -894,7 +906,7 @@ async function run() {
   relaySays('http://a', 'presence', { key: 'hattie', present: true });
   relaySays('http://b', 'presence', { key: 'hattie', present: false });
   relaySays('http://a', 'presence', { key: 'hattie', present: false, gone: true });
-  if (P.table().hattie === false) {
+  if (said(P.table(), 'hattie') === false) {
     test.check('while another relay that still holds them keeps answering');
   } else {
     test.fail('gone on one relay erased the other: ' + JSON.stringify(P.table()));
@@ -906,7 +918,7 @@ async function run() {
   // breakdown is needed to decide, so the node keeps it — and the job
   // payload must not carry it.
   const detail = P.detail();
-  if (detail['http://a'] && detail['http://a'].bert === false) {
+  if (detail['http://a'] && said(detail['http://a'], 'bert') === false) {
     test.check('the node knows which relay said what');
   } else {
     test.fail('detail: ' + JSON.stringify(detail));
@@ -1014,7 +1026,7 @@ async function run() {
     angryStreams['http://relay-angry'].onEvent({
       event: 'presence', data: { key: 'ANYONE', present: true },
     });
-    if (A.table().ANYONE === true) {
+    if (A.table().ANYONE && A.table().ANYONE.present === true) {
       test.check('and a shadow that refuses a row does not cost this node its presence picture');
     } else {
       test.fail('a throwing cache broke the picture: ' + JSON.stringify(A.table()));

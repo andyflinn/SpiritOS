@@ -1513,6 +1513,14 @@ contactBook.syncMarks(ROOT_DIR);
     // that relay speaking about ITS OWN MEMBER — the highest standing
     // there is, for the name and for the route both (cycle R29).
     noteSeen: function (key, what) {
+      // A PROOF, PERSISTED AS IT WAS SENT (goal/G2.9). Andy: "my OCD likes the idea of the same-data being
+      // persisted that is sent to the browser. and it's precisely : timestamped presence by ID". presenceNode
+      // hands {present, at: <ms>} for an ID it draws; the shadow row takes that word and that moment, and
+      // nothing else on the row moves.
+      if (what && typeof what.at === 'number') {
+        require('./hub').shadow(ROOT_DIR).note(key, { present: what.present === true, seen: what.at });
+        return;
+      }
       require('./hub').shadow(ROOT_DIR).note(key, Object.assign({
         via: relayKeys.pinned(ROOT_DIR, (what && what.url) || '') || '',
         rank: require('./seenPeers').HOST,

@@ -266,4 +266,27 @@ test.subHeading('It survives the process, which is what the store bought (R26)')
   }
 }
 
+test.subHeading('A proof is kept with its own moment (goal/G2.9)');
+
+{
+  // Andy: "my OCD likes the idea of the same-data being persisted that is
+  // sent to the browser." presenceNode publishes {present, at}; the row
+  // takes that word and that stamp, not the time the write happened.
+  const c = clock(5000);
+  const S = shadow({ now: c.now });
+  S.note('KEY-PROOF', { at: 'RELAY-B', url: 'https://b.example', label: 'proof' });
+  c.tick(1000);
+  S.note('KEY-PROOF', { present: true, seen: 1790000000123 });
+  const got = S.get('KEY-PROOF');
+  if (got && got.present === true && got.seen === 1790000000123 && got.label === 'proof' && got.at === 'RELAY-B') {
+    test.check('the row holds the word and the moment it was said; its name and its route are left alone');
+  } else {
+    test.fail('proof row: ' + JSON.stringify(got));
+  }
+  c.tick(1000);
+  S.note('KEY-PROOF', { at: 'RELAY-B', url: 'https://b.example' });
+  if (S.get('KEY-PROOF').seen === c.now()) test.check('and a note without a stamp is stamped now, as before');
+  else test.fail('unstamped note: ' + JSON.stringify(S.get('KEY-PROOF')));
+}
+
 test.reportSuccessFailureCount();

@@ -238,7 +238,7 @@ async function run() {
   // No roster since cycle 3 (0012 widened). The node seeds itself and the
   // relay from the pinned relay key when the stream opens, so seeing
   // itself green is the proof that a real socket opened.
-  if (seen[lab.bert.publicKey] === true) {
+  if (seen[lab.bert.publicKey] && seen[lab.bert.publicKey].present === true) {
     test.check('the stream opens over a real socket and the node sees itself');
   } else {
     test.fail('stream never opened: ' + JSON.stringify(seen));
@@ -259,7 +259,7 @@ async function run() {
   await B.started;
   await sleep(1000);
   seen = A.P.table();
-  if (seen[lab.house.publicKey] === true) {
+  if (seen[lab.house.publicKey] && seen[lab.house.publicKey].present === true) {
     test.check('a second node connecting reaches the first as a change');
   } else {
     test.fail('arrival not seen: ' + JSON.stringify(seen));
@@ -270,7 +270,7 @@ async function run() {
   B.P.stop();
   await sleep(1200);
   seen = A.P.table();
-  if (seen[lab.house.publicKey] === false) {
+  if (seen[lab.house.publicKey] && seen[lab.house.publicKey].present === false) {
     test.check('and a real socket dying is seen as an absence, not silence');
   } else {
     test.fail('departure not seen: ' + JSON.stringify(seen));

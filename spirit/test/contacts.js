@@ -331,8 +331,12 @@ function mountApp(options) {
     // the shell has no unmount hook, so a subscription per mount would
     // be a socket per visit.
     subscriptions: function () { return jobFeed.length; },
-    // Deliver a presence payload the way the shell would.
-    presence: function (table, how) {
+    // Deliver a presence payload the way the shell would. The checks say
+    // what each relay said as true/false; the job carries a proof per ID,
+    // {present, at} (goal/G2.9), so that is what the page is handed.
+    presence: function (said, how) {
+      const table = {};
+      Object.keys(said).forEach(function (key) { table[key] = { present: said[key] === true, at: Date.now() }; });
       const job = { id: 'j1', type: 'relay-presence', data: { presence: table } };
       jobFeed.forEach(function (h) {
         if (how === 'snapshot') { if (h.onSnapshot) h.onSnapshot([job]); }

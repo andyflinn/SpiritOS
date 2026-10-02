@@ -280,13 +280,21 @@ function contactsStatus(text) {
 var contactsPresence = Object.create(null);
 var contactsPresenceSeen = false;
 
+// The table holds a proof per ID, {present, at} (goal/G2.9: "timestamped
+// presence by ID"). The dot reads what was said; `at` is there for whoever
+// wants its age.
+function contactsPresenceState(publicKey) {
+  var proof = contactsPresence[publicKey];
+  return proof && typeof proof === 'object' ? proof.present : undefined;
+}
+
 function contactsPresenceMark(publicKey) {
   // Before the first payload arrives nothing is known about anybody, and
   // a screenful of red on load would be a lie that corrects itself a
   // second later — which is worse than a screenful of white that fills
   // in, because the lie is the one that looks like information.
   if (!contactsPresenceSeen) return contactsIcon.WHITE_CIRCLE;
-  var state = contactsPresence[publicKey];
+  var state = contactsPresenceState(publicKey);
   if (state === true) return contactsIcon.GREEN_CIRCLE;
   if (state === false) return contactsIcon.RED_CIRCLE;
   return contactsIcon.WHITE_CIRCLE;
@@ -294,7 +302,7 @@ function contactsPresenceMark(publicKey) {
 
 function contactsPresenceTitle(publicKey) {
   if (!contactsPresenceSeen) return 'not known yet';
-  var state = contactsPresence[publicKey];
+  var state = contactsPresenceState(publicKey);
   if (state === true) return 'present — a relay you share is holding their connection';
   if (state === false) return 'absent — a relay you share says they are not connected';
   return 'not known — no relay you are connected to mentions this key';
@@ -320,14 +328,14 @@ function contactsPresenceTitle(publicKey) {
 // the thing a person needs to see, and it was unreadable while the field
 // was being dropped.
 function contactsSeenMark(c) {
-  var known = contactsPresence[c.publicKey];
+  var known = contactsPresenceState(c.publicKey);
   if (contactsPresenceSeen && known === true) return contactsIcon.GREEN_CIRCLE;
   if (contactsPresenceSeen && known === false) return contactsIcon.RED_CIRCLE;
   return c.present ? contactsIcon.GREEN_CIRCLE : contactsIcon.WHITE_CIRCLE;
 }
 
 function contactsSeenMarkTitle(c) {
-  var known = contactsPresence[c.publicKey];
+  var known = contactsPresenceState(c.publicKey);
   if (contactsPresenceSeen && known === true) {
     return 'present — a relay you share is holding their connection';
   }

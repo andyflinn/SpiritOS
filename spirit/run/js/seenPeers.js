@@ -218,7 +218,10 @@ function createSeenPeers(opts) {
     // always written. Doing it in SQL rather than by reading first keeps
     // it one round trip and makes both rules properties of the write
     // instead of disciplines each caller has to remember.
-    var now = nowFn();
+    // A caller holding the moment the word was said passes it (`seen`,
+    // goal/G2.9: the proof presenceNode publishes is persisted with its
+    // own stamp); everybody else is stamped now.
+    var now = (what && typeof what.seen === 'number' && what.seen > 0) ? what.seen : nowFn();
     rows.put(key, {
       label: label, labelRank: rank, labelAt: now,
       present: hasPresence ? present : undefined, seen: now,

@@ -88,11 +88,18 @@ function createPresence(opts) {
       'the post opened. Pass the peerPost instance you post from.');
   }
 
-  // relay url -> { key -> bool }. THE PER-RELAY DETAIL LIVES HERE AND
+  // relay url -> { key -> proof }. THE PER-RELAY DETAIL LIVES HERE AND
   // NOWHERE ELSE. Andy's ruling: the shell gets one merged set and apps
   // filter it. Deciding needs the breakdown, so the node keeps it; the
   // shell is told the verdict (PRESENCE.md §4).
+  //
+  // A PROOF IS {present, at} (goal/G2.9): what was said and the moment it
+  // was said, for a relay, a peer and this node alike. Andy, 2026-10-02:
+  // "timestamped presence by ID (not node, relays are not nodes)", and
+  // "nothing stops presence for relays and peers to be the exact same
+  // shape". No boolean is kept beside it.
   let byRelay = Object.create(null);
+  const now = typeof opts.now === 'function' ? opts.now : Date.now;
   let streams = Object.create(null);
   let job = null;
   let lastJson = '';
@@ -113,16 +120,42 @@ function createPresence(opts) {
   // only from a relay saying so (a `present: false` broadcast); green from
   // a broadcast. Deciding a contact is offline is the node's own
   // conclusion from not finding them.
+  //
+  // Across relays present still wins, and the proof that goes out is the
+  // one that won: the newest present word, or with none the newest absent.
   function merge() {
     const out = Object.create(null);
     Object.keys(byRelay).forEach(function (url) {
       const set = byRelay[url];
       Object.keys(set).forEach(function (key) {
-        if (set[key]) out[key] = true;
-        else if (out[key] === undefined) out[key] = false;
+        const said = set[key];
+        const had = out[key];
+        if (!had || (said.present && !had.present) || (said.present === had.present && said.at > had.at)) out[key] = said;
       });
     });
     return out;
+  }
+
+  // ── ONE WRITER, ONE RECORD (goal/G2.9) ────────────────────────────
+  //
+  //   Andy, 2026-10-02: "i would expect the thing you update the
+  //   shadow-roll with to be the thing that's sent to the browser?", and
+  //   "my OCD likes the idea of the same-data being persisted that is sent
+  //   to the browser."
+  //
+  // Every word a relay gives about an ID lands here — a broadcast, the
+  // open's seed and reconcile, heard() — stamped with the moment it was
+  // said, replacing what stood. The same {present, at} then goes to the
+  // shadow through the noteSeen this file is handed, for the IDs this node
+  // keeps a book row on; an ID outside the book was noted by its caller
+  // (its route) and gets no proof from here.
+  function say(url, key, present) {
+    const proof = { present: !!present, at: now() };
+    byRelay[url][key] = proof;
+    if (noteSeen && (!knows || knows(key))) {
+      try { noteSeen(key, { present: proof.present, at: proof.at }); }
+      catch (e) { /* a cache that will not take a row is not a reason to stop listening */ }
+    }
   }
 
   // ONLY WHEN THE SET ACTUALLY CHANGES. fs-watcher learned this the
@@ -187,11 +220,10 @@ function createPresence(opts) {
   // (its key, pinned at the seat — so a post addressed to the relay finds
   // it), and so is this node.
   function seedRelay(url) {
-    const set = Object.create(null);
+    byRelay[url] = Object.create(null);
     const relayKey = relayKeys.pinned(rootDir, url);
-    if (relayKey) set[relayKey] = true;
-    if (identity && identity.publicKey) set[identity.publicKey] = true;
-    byRelay[url] = set;
+    if (relayKey) say(url, relayKey, true);
+    if (identity && identity.publicKey) say(url, identity.publicKey, true);
   }
 
   // ── A FRESH STREAM RECONCILES THE BOOK ONCE (goal/G2.8) ───────────
@@ -229,7 +261,8 @@ function createPresence(opts) {
           if (noteSeen) { try { noteSeen(key, { at: relayKey, url: url }); } catch (e) { /* a cache that will not take a row is not a reason to stop */ } }
           return;
         }
-        if (byRelay[url][key] !== true) { byRelay[url][key] = true; changed = true; }
+        say(url, key, true);
+        changed = true;
       });
       if (changed) publish();
     }).catch(function () { /* marks nobody; the broadcasts still land on this stream */ });
@@ -302,8 +335,8 @@ function createPresence(opts) {
     // hold a route from another relay, and it ages out on its own terms
     // (cycle R4).
     //
-    // NO `present` FIELD YET. The shadow gains one in R30; this writes
-    // the route only, which is what `note` can hold today.
+    // THE ROUTE ONLY, for everybody. The proof of presence is written
+    // further down by say(), for the IDs this node draws (goal/G2.9).
     if (noteSeen && !body.gone) {
       try {
         noteSeen(body.key, { at: relayKeys.pinned(rootDir, url) || '', url: url });
@@ -324,7 +357,7 @@ function createPresence(opts) {
     // Keeping the key at `false` would show a removed person as merely
     // away, for ever, on the strength of a relay that has forgotten them.
     if (body.gone) delete byRelay[url][body.key];
-    else byRelay[url][body.key] = !!body.present;
+    else say(url, body.key, body.present);
 
     publish();
   }
@@ -588,7 +621,8 @@ function createPresence(opts) {
       const k = String(key || '');
       if (!k || !byRelay[url]) return false;
       if (knows && !knows(k)) return true;
-      if (byRelay[url][k] !== true) { byRelay[url][k] = true; publish(); }
+      say(url, k, true);
+      publish();
       return true;
     },
     // Which relay to send through. A node on two relays can reach a peer
@@ -596,7 +630,8 @@ function createPresence(opts) {
     // ones that currently name that key as present.
     relaysNaming: function (key) {
       return Object.keys(byRelay).filter(function (url) {
-        return byRelay[url][key] === true;
+        const said = byRelay[url][key];
+        return !!said && said.present === true;
       });
     },
     // In-process readers, for tests and for whatever needs the answer

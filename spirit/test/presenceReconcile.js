@@ -66,6 +66,9 @@ function answer(matches, more) {
 }
 function settle() { return new Promise(function (r) { setImmediate(r); }); }
 async function settled() { for (let i = 0; i < 12; i++) await settle(); }
+// What the table says about a key: true, false, or undefined for nobody having said. Each value is a proof,
+// {present, at} (goal/G2.9).
+function said(table, key) { return table[key] ? table[key].present : undefined; }
 function searches(router) { return router.posts.filter(function (p) { return p.body && p.body.search; }); }
 
 // A node with john and bert in its book, seated and pinned on one relay, its stream captured.
@@ -108,26 +111,26 @@ test.startTest('goal/G2.8: a fresh stream reconciles the book against the relay 
     test.check('one search packet, to the relay, sealed to its pinned key — the relay\'s own verb, nothing new');
   } else test.fail(OWED + 'searches after the open: ' + JSON.stringify(asked));
   const t = n.P.table();
-  if (t[JOHN] === true && t[BERT] === undefined && t[ZOE] === undefined) {
+  if (said(t, JOHN) === true && said(t, BERT) === undefined && said(t, ZOE) === undefined) {
     test.check('john, connected and in the book, is green; bert, in the book and not named, stays white; zoe, not in the book, is not drawn');
   } else test.fail(OWED + 'the table after the answer: john ' + JSON.stringify(t[JOHN]) + ', bert ' + JSON.stringify(t[BERT]) + ', zoe ' + JSON.stringify(t[ZOE]));
   const zoeLearned = n.learned.some(function (l) { return l.key === ZOE && l.what && l.what.url === RELAY; });
   if (zoeLearned) test.check('zoe is learned (noteSeen, with the relay) though not drawn — as a broadcast about her would be');
   else test.fail(OWED + 'zoe was not learned: ' + JSON.stringify(n.learned));
-  const published = n.jobs.updates.filter(function (u) { return u.data && u.data.presence && u.data.presence[JOHN] === true; });
+  const published = n.jobs.updates.filter(function (u) { return u.data && u.data.presence && said(u.data.presence, JOHN) === true; });
   if (published.length >= 1) test.check('the job carries john present, so the Contacts dot paints without a broadcast');
   else test.fail(OWED + 'no job update carried john present: ' + JSON.stringify(n.jobs.updates.map(function (u) { return u.data; })));
 
   test.subHeading('broadcasts still land after the reconcile, and a reconnection asks again');
   s.onEvent({ event: 'presence', data: { key: BERT, present: true } });
-  if (n.P.table()[BERT] === true) test.check('bert goes green on his broadcast');
+  if (said(n.P.table(), BERT) === true) test.check('bert goes green on his broadcast');
   else test.fail('bert after his broadcast: ' + JSON.stringify(n.P.table()[BERT]));
   s.onClose('gone');
   s.onOpen();
   await settled();
   if (searches(n.router).length === 2) test.check('the second open asks once more — every open, never twice for one');
   else test.fail(OWED + 'searches after a close and a second open: ' + searches(n.router).length);
-  if (n.P.table()[JOHN] === true) test.check('and john is green again after the reconnection, with no broadcast');
+  if (said(n.P.table(), JOHN) === true) test.check('and john is green again after the reconnection, with no broadcast');
   else test.fail(OWED + 'john after the second open: ' + JSON.stringify(n.P.table()[JOHN]));
 
   test.subHeading('4. a relay that fails the question marks nobody and breaks nothing');
@@ -137,16 +140,16 @@ test.startTest('goal/G2.8: a fresh stream reconciles the book against the relay 
   let tripped = null;
   try { fs2.onOpen(); await settled(); } catch (e) { tripped = e; }
   const ft = f.P.table();
-  if (!tripped && ft[JOHN] === undefined && ft[BERT] === undefined) test.check('nobody marked, nothing thrown');
+  if (!tripped && said(ft, JOHN) === undefined && said(ft, BERT) === undefined) test.check('nobody marked, nothing thrown');
   else test.fail(OWED + 'after a failed search: ' + (tripped ? 'threw ' + tripped.message : 'table ' + JSON.stringify(ft)));
   fs2.onEvent({ event: 'presence', data: { key: JOHN, present: true } });
-  if (f.P.table()[JOHN] === true) test.check('and a broadcast still lands on that stream');
+  if (said(f.P.table(), JOHN) === true) test.check('and a broadcast still lands on that stream');
   else test.fail('john after a broadcast on the failed-search stream: ' + JSON.stringify(f.P.table()[JOHN]));
   const r = node(function () { return Promise.resolve({ text: JSON.stringify({ body: { ok: false, error: 'no such peer' } }) }); });
   await r.P.start(keyDoor);
   r.stream().onOpen();
   await settled();
-  if (r.P.table()[JOHN] === undefined && r.P.table()[BERT] === undefined) test.check('an older relay refusing the verb marks nobody either');
+  if (said(r.P.table(), JOHN) === undefined && said(r.P.table(), BERT) === undefined) test.check('an older relay refusing the verb marks nobody either');
   else test.fail(OWED + 'after a refusal: ' + JSON.stringify(r.P.table()));
 })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
