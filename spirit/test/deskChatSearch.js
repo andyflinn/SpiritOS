@@ -1,17 +1,21 @@
 'use strict';
 
-// goal/G3.11: a search on the chat lines of desk/G0.0. Red on today's tree: the desk server has no verb chat.search;
+// goal/G3.11: a search on the chat lines of an item, the group chat's (desk/G0.0) first. Red on today's tree: the desk server has no verb chat.search;
 // the group chat answers only its newest lines that fit one answer (item.chat), and an older line cannot be found.
 //   Andy, 2026-10-02: "a search on the chat lines of 'desk/G0.0'" — "nothing else". Earlier, of the same: "you may
 //   introduce a search() just for the records of 'desk/G0.0' s chat, if you like.", "with time boundaries etc....
 //   just for you agents". Of an item chat answering only its newest lines: "and that is as it should be. what's the
 //   problem with having to be brief?" And of handing a full answer on in pieces: "no. none of this joing shit."
-//   His Go on this item is his press in Desk.
+//   His Go on this item is his press in Desk. Then, with the first red on master: "why dont you generalize the
+//   search so you can do it to the chat lines for any item in desk?" — so the search names its item (id), and
+//   this red is amended for it.
 // The contract the builder follows (the spec in the box of goal/G3.11, wsl-claude's; the four filters are the ones
 // Andy asked it to name):
-//   1. One verb on the desk server, chat.search {text, by, since, before} -> {items: [{key, label}], more}: what
+//   1. One verb on the desk server, chat.search {id, text, by, since, before} -> {items: [{key, label}], more}: what
 //      every search here answers.
-//   2. It searches the chat lines of desk/G0.0 and nothing else: a line of another item's chat is never answered.
+//   2. It searches the chat lines of the ONE item named by id and nothing else: asked for desk/G0.0, a line of
+//      another item's chat is never answered, and the other way round. An id no item has is refused
+//      no-such-item.
 //   3. Each label is one line as JSON {by, at, text}; the newest first; the keys differ.
 //   4. The filters, one left empty filtering nothing: text, words in the line; by, who wrote it (andy, or an agent
 //      as the desk names it); since, lines from that time on; before, lines earlier than that time. Together they
@@ -68,7 +72,7 @@ const call = function (app, verb, args, caller) {
   const b = {}; b[app] = q;
   return client.ask(b, caller).then(function (r) { return r || {}; }, function (e) { return { status: 0, error: e.message }; });
 };
-const NONE = { text: '', by: '', since: '', before: '' };
+const NONE = { id: CHAT, text: '', by: '', since: '', before: '' };
 const filter = function (f) { return Object.assign({}, NONE, f); };
 // One search, as an agent asks it: { status, code, lines: [{by, at, text}], keys, more }.
 async function search(f, caller) {
@@ -119,13 +123,13 @@ async function main() {
   const tree = await up('desk') || {};
 
   test.subHeading('1. the verb');
-  if (JSON.stringify(tree['chat.search'] || null) !== JSON.stringify({ request: { text: '', by: '', since: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false } })) {
-    test.fail(OWED + 'the desk server answered chat.search ' + JSON.stringify(tree['chat.search'] || null) + ', where {text, by, since, before} -> {items, more} is owed');
-    ['2. the chat lines of desk/G0.0 and nothing else', '3. each line as {by, at, text}, the newest first', '4. the four filters, alone and together', '5. a read',
+  if (JSON.stringify(tree['chat.search'] || null) !== JSON.stringify({ request: { id: '', text: '', by: '', since: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false } })) {
+    test.fail(OWED + 'the desk server answered chat.search ' + JSON.stringify(tree['chat.search'] || null) + ', where {id, text, by, since, before} -> {items, more} is owed');
+    ['2. the chat lines of the item named and nothing else', '3. each line as {by, at, text}, the newest first', '4. the four filters, alone and together', '5. a read',
       '6. brief: cut to fit, and whole through deskClient', '7. narrowing brings the next older lines'].forEach(function (what) { test.fail(OWED + what + ': the desk server has no verb chat.search'); });
     return;
   }
-  test.check('chat.search {text, by, since, before} -> {items: [{key, label}], more}');
+  test.check('chat.search {id, text, by, since, before} -> {items: [{key, label}], more}');
 
   // An ordinary goal with an item, whose chat must never be answered; then four lines in the group chat, each at
   // its own moment.
@@ -137,13 +141,20 @@ async function main() {
   const at = held.map(function (l) { return l.at; });
   if (held.length !== 4 || new Set(at).size !== 4) { test.fail(OWED + 'the test desk holds ' + held.length + ' group chat lines at ' + new Set(at).size + ' moments; four of each are needed'); return; }
 
-  test.subHeading('2. the chat lines of desk/G0.0 and nothing else; 3. each line as {by, at, text}, the newest first');
+  test.subHeading('2. the chat lines of the item named and nothing else; 3. each line as {by, at, text}, the newest first');
   const all = await search({});
   if (all.status === 200 && texts(all) === 'beta four | beta three | alpha two | alpha one' && all.more === false) test.check('with no filter: the four lines of the group chat, newest first, and not the other item\'s line');
   else test.fail(OWED + 'with no filter chat.search answered ' + all.status + ' ' + JSON.stringify(all.body).slice(0, 240));
   const shaped = all.lines.length === 4 && all.lines.every(function (l, i) { const h = held[3 - i]; return Object.keys(l).sort().join(',') === 'at,by,text' && l.by === h.by && l.at === h.at && l.text === h.text; });
   if (shaped && new Set(all.keys).size === 4) test.check('each label is the line as the chat holds it, {by, at, text}, and the four keys differ');
   else test.fail(OWED + 'the labels read ' + JSON.stringify(all.lines).slice(0, 240) + ' with keys ' + JSON.stringify(all.keys));
+
+  const other = await search({ id: 't/G1.1' });
+  const otherAlpha = await search({ id: 't/G1.1', text: 'alpha' });
+  const nowhere = await search({ id: 'nope/G9.9' });
+  if (texts(other) === 'alpha in another item' && texts(otherAlpha) === 'alpha in another item' && nowhere.code === 'no-such-item') {
+    test.check('asked for another item, it answers the one line of that item and none of the group chat; an id no item has is refused no-such-item');
+  } else test.fail(OWED + 'asked for t/G1.1 it gave [' + texts(other) + '], with text alpha [' + texts(otherAlpha) + ']; an unknown id answered ' + nowhere.status + ' ' + JSON.stringify(nowhere.body).slice(0, 120));
 
   test.subHeading('4. the four filters, alone and together');
   const byText = await search({ text: 'alpha' });
