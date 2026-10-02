@@ -411,7 +411,8 @@ function blockers(s, it) {
 
 // The buttons, decided here once for the List and the dialog alike.
 //   Go!    after design ends (Andy's "end design mode."), not yet gone, nothing open blocks it
-//   Done   once one agent has claimed ("1 agents consent will offer done buttons")
+//   Done   on an item once one agent has claimed ("1 agents consent will offer done buttons");
+//          on a goal once every item is done or closed (goal/G2.10)
 //   Close and Reopen once done
 //   Go all on a goal while any of its items offers Go! (desk/G3.4, Andy: "i should
 //          have a go-all button for fixing rounds")
@@ -423,10 +424,14 @@ function buttons(s, it) {
   const out = [];
   // A GOAL NEVER OFFERS GO! (desk/G3.7): its items are gone, not the goal itself.
   if (!it.goal && g && !g.design && !it.went && !blockers(s, it).length) out.push('go');
-  // A GOAL OFFERS DONE ONCE EVERY ITEM IS CLOSED, no claim needed (goal/G2.1 note 5). Andy: "the done button
-  // should appear on the goal as soon as it is no longer blocked".
-  const allClosed = it.goal && g && g.members.length > 0 && g.members.every(function (id) { const m = s.items[id]; return m && m.closed; });
-  if (Object.keys(it.claims).length || allClosed) out.push('done');
+  // A GOAL OFFERS DONE ONLY WHEN EVERY ITEM IS DONE OR CLOSED, AND NEVER ON A CLAIM (goal/G2.10). Andy: "the goal
+  // should only offer a done button when all items are done", and "the goals done button should be tied to the
+  // condition that all visible items are done" — so an item added open takes it away again, and a claim-done
+  // pressed against the goal id offers nothing by itself. An item's own rule is unchanged: a claim offers Done.
+  if (it.goal) {
+    const allDone = g && g.members.length > 0 && g.members.every(function (id) { const m = s.items[id]; return m && (m.done || m.closed); });
+    if (allDone) out.push('done');
+  } else if (Object.keys(it.claims).length) out.push('done');
   if (it.goal && g && goable(s, g).length) out.push('go-all');
   return out;
 }
