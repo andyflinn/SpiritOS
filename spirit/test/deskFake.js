@@ -31,7 +31,7 @@ function create(rows) {
   const calls = [];
   const held = [];
   let holding = null;
-  const fake = { lines: lines, docs: docs, voice: voice, calls: calls, backup: { lastCheck: '', lastCopy: '', lastError: '' }, pending: {}, items: [] };
+  const fake = { lines: lines, docs: docs, voice: voice, calls: calls, backup: { lastCheck: '', lastCopy: '', lastError: '' }, pending: {}, items: [], groupChat: [] };
 
   function search(a) {
     a = a || {};
@@ -80,6 +80,13 @@ function create(rows) {
     // The List's two verbs (desk/G2.6): the facts, and a press the server takes.
     'items.search': function () { return walked(fake.items, function (i) { return { key: String(i.id), label: JSON.stringify(i) }; }); },
     'press': function () { return { change: calls.length }; },
+    // The group chat (goal/G3.10): the real server holds the standing goal desk/G0.0 from its start, so the
+    // fake does too. fake.groupChat: its lines, oldest first; a chat.add on it is his line.
+    'item.chat': function (a) { return { chat: a.id === 'desk/G0.0' ? fake.groupChat.slice() : [], chatMore: false }; },
+    'chat.add': function (a) {
+      if (a.id === 'desk/G0.0') fake.groupChat.push({ by: 'andy', at: new Date().toISOString(), text: String(a.text), taken: '' });
+      return { change: calls.length };
+    },
     'pending.get': function (a) { return walked(fake.pending[a.who] || [], function (i) { return { key: String(i.id), label: JSON.stringify(i) }; }); },
   };
   const backup = { 'status.get': function () { return Object.assign({}, fake.backup); } };

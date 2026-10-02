@@ -403,6 +403,16 @@ function deskOnPublished(obj) {
   if (change && deskLastChange && change < deskLastChange) return;
   var gap = deskLastChange && change > deskLastChange + 1;
   if (change) deskLastChange = change;
+  // A LINE OF THE GROUP CHAT IS DRAWN AS IT COMES (goal/G3.10): its goal is on no List, so it is no row. A gap
+  // may have swallowed one, so the chat is read again with the List.
+  if (gap) deskAskGroup().then(deskDraw, function () { /* shown as it stands */ });
+  var said = obj.item;
+  if (typeof said === 'string') { try { said = JSON.parse(said); } catch (e) { said = null; } }
+  if (!gap && obj.verb === 'chat.add' && said && said.id === DESK_GROUP && obj.chat) {
+    if (deskGroup && !deskGroup.some(function (l) { return deskSameLine(l, obj.chat); })) deskGroup.push(obj.chat);
+    deskDraw();
+    return;
+  }
   if (gap || obj.verb === 'session.set') { deskSearchItems(); return; }
   // Every row it changed (desk/G3.10), else the one item as before.
   var rows = Array.isArray(obj.rows) && obj.rows.length ? obj.rows : null;
@@ -593,33 +603,63 @@ function deskMusings() {
 // twice (once direct, once as the report of the agent-to-agent copy), and
 // the chat folds that to one.
 var DESK_TEAM = 'team/chat';
-var DESK_RECENT_MS = 24 * 60 * 60 * 1000;
-function deskTeamChat() {
-  var lines = [];
-  var seen = Object.create(null);
-  deskMessages.forEach(function (m) {
-    if (m.todo !== DESK_TEAM || m.kind === 'board') return;
-    var who = m.dir === 'out' ? 'andy' : m.from;
-    var fold = who + '\n' + m.kind + '\n' + m.text;
-    var at = Date.parse(m.at) || 0;
-    if (seen[fold] !== undefined && Math.abs(at - seen[fold]) < 60000) return;
-    seen[fold] = at;
-    lines.push(m);
-  });
-  if (!lines.length) return '<div class="job-manifest-note">Nothing said yet. What you write here goes to every agent.</div>';
-  return lines.slice().reverse().map(function (m) {
-    var look = m.dir === 'out'
+
+// ── THE GROUP CHAT, UNDER ALL (goal/G3.10) ──────────────────────────
+//
+//   Andy, 2026-10-02: "This looks like a perfect team chat. Is it because
+//   it has a coal/item to anchor it?", then "when deskServer Starts up, it
+//   makes sure there is a closed goal with the id 'desk/G0.0', instead of
+//   the team-chat box, the 'all' tab displays the chat box for
+//   'desk/G0.0'", and "for now, we just show the chat box under all".
+//
+// The All tab is that goal's chat, held by the desk server: one record, in
+// one order, that he and every agent write with chat.add. It replaced the
+// team box, which drew the packets this page had recorded under DESK_TEAM
+// and posted his line to each agent as a packet; with the agents app gone
+// no agent could answer there. Read once (item.chat), then drawn from what
+// the server publishes ("no pulling").
+var DESK_GROUP = 'desk/G0.0';
+var deskGroup = null;   // its lines as the server holds them, oldest first; null until read
+function deskSameLine(a, b) { return a.by === b.by && a.at === b.at && a.text === b.text; }
+function deskAskGroup() {
+  return deskAsk('item.chat', { id: DESK_GROUP }).then(function (r) { deskGroup = Array.isArray(r.chat) ? r.chat : []; });
+}
+function deskGroupChat() {
+  if (deskGroup === null) return '<div class="job-manifest-note">The group chat has not been read yet.</div>';
+  if (!deskGroup.length) return '<div class="job-manifest-note">Nothing said yet. What you write here is read by every agent.</div>';
+  return deskGroup.slice().reverse().map(function (l) {
+    var mine = l.by === 'andy';
+    var look = mine
       ? ' style="text-align:right;background:#000;color:#fff;padding:4px 8px;margin:4px 0"'
       : ' style="border-left:3px solid currentColor;padding-left:8px;margin:4px 0"';
-    return '<div' + look + '><b>' + deskEsc(m.dir === 'out' ? 'you' : m.from) + '</b> <span class="job-manifest-note">' +
-      deskTime(m.at) + '</span> ' + deskLineHtml(m) + '</div>';
+    return '<div' + look + '><b>' + deskEsc(mine ? 'you' : l.by) + '</b> <span class="job-manifest-note">' +
+      deskTime(l.at) + '</span> ' + deskLineHtml({ text: l.text }) + '</div>';
   }).join('');
 }
+// His line under All: one chat.add on the group chat's goal, and no packet to
+// anybody. The line is drawn when the server publishes it, like everybody's.
+function deskGroupSay() {
+  var box = document.getElementById('desk-team-say');
+  var err = document.getElementById('desk-team-error');
+  var said = box ? String(box.value || '').trim() : '';
+  if (!said || deskSending['desk-team-say']) return;
+  deskSending['desk-team-say'] = true;
+  if (err) err.textContent = 'Sending…';
+  deskAsk('chat.add', { id: DESK_GROUP, text: said }).then(function () {
+    deskSending['desk-team-say'] = false;
+    if (box) box.value = '';
+    if (err) err.textContent = '';
+  }, function (e) {
+    // What he typed stays in the box: an unkept line is his to send again.
+    deskSending['desk-team-say'] = false;
+    if (err) err.textContent = 'Not kept: ' + ((e && e.message) || e);
+  });
+}
 
-// All goes to every agent under the team todo; an agent's tab to that
-// agent alone, with no todo.
+// All is the group chat; an agent's tab goes to that agent alone, with no
+// todo.
 function deskSendTeam() {
-  if (deskAgentTab === '*') deskTeamPost('note');
+  if (deskAgentTab === '*') deskGroupSay();
   else deskSend('note', 'desk-team-say', 'desk-team-error', deskAgentTab);
 }
 // Ending design mode is his decision, said in Team: an `answer` with the
@@ -658,32 +698,6 @@ function deskEndDesign() { var g = deskGoalRow(); if (g) deskPress(g.id, 'end-de
 // With no goal on the List, Start design starts a new one (desk/G3.1): the server names it goal/G<n>.
 // A closed goal row (shown at startup, desk/G3.2) is not an open goal: Start design starts a new one.
 function deskStartDesign() { var g = deskGoalRow(); deskPress(g && g.status !== 'closed' ? g.id : '', 'start-design'); }
-function deskTeamPost(kind, fixed) {
-  var box = document.getElementById('desk-team-say');
-  var err = document.getElementById('desk-team-error');
-  var said = fixed || (box ? String(box.value || '').trim() : '');
-  if (!said || deskSending['desk-team-say']) return;
-  var to = Object.keys(deskAgents).filter(function (n) { return Date.now() - deskAgents[n].at < DESK_RECENT_MS; })
-    .map(function (n) { return deskAgents[n].key; });
-  if (!to.length) { if (err) err.textContent = 'No agent has written here in the last day, so there is nobody to send to.'; return; }
-  deskSending['desk-team-say'] = true;
-  if (err) err.textContent = 'Sending…';
-  var body = { from: 'andy', kind: kind, text: said, todo: DESK_TEAM };
-  Promise.all(to.map(function (key) {
-    return deskApi.peerPost('agents', key, body, DESK_PATIENCE).then(function (r) { return deskOutgoing(key, body, r); },
-      function (e) { return deskOutgoing(key, body, null, e); });
-  })).then(function (msgs) {
-    deskSending['desk-team-say'] = false;
-    // A line to all: every working recipient gets the desk's word for it (goal/G2.5).
-    deskWorkingAgents().forEach(function (n) {
-      if (deskAgents[n] && to.indexOf(deskAgents[n].key) !== -1) msgs.push(deskBusyLine(n, deskAgents[n].key));
-    });
-    if (!fixed && box) box.value = '';
-    if (err) err.textContent = '';
-    return deskRecord(msgs);
-  });
-}
-
 // ONE recipient, so one row in his record per line: nothing to fold.
 // ONE SEND PER BOX AT A TIME. Andy's half-typed line reached the lead EIGHT
 // times in 1.6 s: eight distinct posts from this page, because a held or
@@ -769,7 +783,7 @@ function deskDraw() {
   var backup = document.getElementById('desk-backup');
   if (backup) backup.innerHTML = deskBackupHtml();
   var team = document.getElementById('desk-team');
-  if (team) team.innerHTML = deskAgentTab === '*' ? deskTeamChat() : deskDirectChat(deskAgentTab);
+  if (team) team.innerHTML = deskAgentTab === '*' ? deskGroupChat() : deskDirectChat(deskAgentTab);
   var label = document.getElementById('desk-team-label');
   if (label) label.textContent = deskAgentTab === '*' ? 'Team: you and every agent, newest first' : 'You and ' + deskAgentTab + ' alone, newest first';
   var bubble = document.getElementById('desk-session');
@@ -809,13 +823,17 @@ function deskOpenRow(id) {
 //   "the list only loads key/title, and the rest lazy loads".
 //
 // The List is items.search's answer (deskSearchItems). The chats read their
-// newest page; Team reads older pages as he scrolls up (deskOlderTeam).
+// newest page. The lines under DESK_TEAM are still read, once: who the agents
+// and the lead are is learned from them (deskFold); they are drawn nowhere
+// since the All tab became the group chat (goal/G3.10), so nothing reads older
+// ones any more.
 var deskLoaded = false;
 function deskLoad() {
   var seenRaw = '';
   var reads = [
     deskAsk('seen.get', {}).then(function (r) { seenRaw = r.json || ''; }, function () { seenRaw = ''; }),
-    deskSearch({ todo: DESK_TEAM }).then(function (r) { deskTake(r.lines); deskTeamPage(r); }),
+    deskSearch({ todo: DESK_TEAM }).then(function (r) { deskTake(r.lines); }),
+    deskAskGroup(),
     deskSearch({ kind: 'musing' }).then(function (r) { deskTake(r.lines); }),
     deskSearch({ todo: '-' }).then(function (r) { deskTake(r.lines); }),
     deskAskBackup(),
@@ -827,27 +845,6 @@ function deskLoad() {
       deskDraw();
     });
 }
-// OLDER TEAM LINES, AS HE SCROLLS UP (T6): the page before the oldest line
-// of the pages read so far. Not the oldest Team line held: a session post or
-// a design answer read on its own is older, and would skip whole pages.
-var deskTeamOldest = '';
-var deskTeamMore = true;
-var deskTeamReading = false;
-function deskTeamPage(r) {
-  if (r.lines.length) deskTeamOldest = String(r.lines[r.lines.length - 1].at);
-  deskTeamMore = r.partial;
-}
-function deskOlderTeam() {
-  if (deskTeamReading || !deskTeamMore || !deskTeamOldest) return;
-  deskTeamReading = true;
-  deskSearch({ todo: DESK_TEAM, before: deskTeamOldest }).then(function (r) {
-    deskTeamReading = false;
-    deskTake(r.lines);
-    deskTeamPage(r);
-    deskDraw();
-  }, function () { deskTeamReading = false; });
-}
-
 // ── EACH AGENT'S QUEUE, IN ITS TAB (desk/G1.5, D1) ──────────────────
 //
 //   Andy: "ah, it can visualize job-queues for agents and me. yes." What
@@ -1057,10 +1054,6 @@ spirit.shell.activateApp({
       while (el && el !== e.currentTarget && !(el.getAttribute && el.getAttribute('data-open'))) el = el.parentNode;
       var id = el && el.getAttribute && el.getAttribute('data-open');
       if (id) deskOpenRow(id);
-    });
-    document.getElementById('desk-team').addEventListener('scroll', function (e) {
-      var el = e && e.currentTarget;
-      if (el && el.scrollTop <= 0) deskOlderTeam();
     });
     deskApi.onPacket('agents', function (body, message) { deskRecord([deskArrival(body, message)]); });
     // NO PULLING. Andy: "no pulling". The List asks once, then repaints from

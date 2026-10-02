@@ -307,39 +307,10 @@ function twoTabsKeepBoth() {
   });
 }
 
-function teamGoesToEveryAgent() {
-  test.subHeading('Team: one line to every agent, and an agent\'s line shown once');
-  const files = {};
-  const desk = mountDesk({ files: files });
-  const now = new Date().toISOString();
-  desk.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: now });
-  desk.arrive({ from: 'wsl-claude', kind: 'note', text: 'hello', todo: 'puppets/G2' }, { hash: 'h-in-2', fromKey: WSL, sentAt: now });
-  return settle().then(function () {
-    desk.doc.getElementById('desk-team-say').value = 'design talk';
-    desk.doc.getElementById('desk-team-send').fire('click');
-    return settle();
-  }).then(function () {
-    const to = desk.posts.map(function (p) { return p.to; }).sort();
-    if (to.join(',') === [LEAD, WSL].sort().join(',') && desk.posts.every(function (p) { return p.body.todo === 'team/chat'; })) {
-      test.check('his team line went to both agents, under team/chat');
-    } else {
-      test.fail('team posts ' + JSON.stringify(desk.posts));
-    }
-    // wsl's answer, direct and again as the report of its copy to the lead.
-    desk.arrive({ from: 'wsl-claude', kind: 'note', text: 'agreed', todo: 'team/chat' }, { hash: 'h-t-1', fromKey: WSL, sentAt: now });
-    desk.arrive({ from: 'wsl-claude', kind: 'report', text: JSON.stringify({ v: 1, from: 'wsl-claude', to: 'claude-windows', kind: 'note', text: 'agreed', todo: 'team/chat' }) },
-      { hash: 'h-t-2', fromKey: WSL, sentAt: now });
-    return settle();
-  }).then(function () {
-    const chat = desk.doc.getElementById('desk-team').innerHTML;
-    const mine = (chat.match(/design talk/g) || []).length;
-    const theirs = (chat.match(/agreed/g) || []).length;
-    if (mine === 1 && theirs === 1) test.check('the chat shows his line once and the agent\'s line once');
-    else test.fail('team chat shows his line ' + mine + ' times and the answer ' + theirs + ' times');
-    if (!/Search/.test(chat) && !/team\/chat/.test(desk.doc.getElementById('desk-top').innerHTML)) test.check('and team is no row on the list');
-    else test.fail('team leaked into the list or the board into team');
-  });
-}
+// teamGoesToEveryAgent STOOD HERE: his team line posted to every agent as a packet under team/chat, and an
+// agent's packet line shown once in Team. That mechanism is gone with goal/G3.10: the All tab is the chat of the
+// desk server's standing goal desk/G0.0, written with chat.add and posted to nobody. deskGroupChat.js holds what
+// replaced it, including that no packet is posted and no team/chat packet line is drawn there.
 
 function unseenIsMarked() {
   // Andy: "... indicating that new stuff has arrived for that item". SINCE
@@ -361,7 +332,6 @@ function unseenIsMarked() {
 
 arrivalsAndSendsAreLogged()
   .then(unseenIsMarked)
-  .then(teamGoesToEveryAgent)
   .then(voiceHoldsWhatHeTyped)
   .then(twoTabsKeepBoth)
   .then(failedSendsStayApart)

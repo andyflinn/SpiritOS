@@ -228,29 +228,28 @@ async function deskPart() {
   if (!doc.loaded.some(function (f) { return /^log\//.test(f) || f === 'state.json' || f === 'seen.json'; })) test.check('no log, state or seen file was read from Desk\'s folder');
   else test.fail(OWED + 'Desk still read ' + JSON.stringify(doc.loaded));
 
-  test.subHeading('T5b: the Team chat opens with one bounded search, its newest lines');
+  // SINCE goal/G3.10 THE ALL TAB IS THE GROUP CHAT, the chat of the desk server's standing goal desk/G0.0, and the
+  // lines under team/chat are drawn nowhere. They are still read, once and bounded: who the agents and the lead
+  // are is learned from them (desk.js deskFold).
+  test.subHeading('T5b: the lines under team/chat are read with one bounded search, and drawn nowhere');
   const team = doc.getElementById('desk-team').innerHTML;
   const teamSearches = fake.searches().filter(function (c) { return (c.args || {}).todo === 'team/chat' && !(c.args || {}).kind; });
-  if (teamSearches.length === 1 && /TEAMLINE-59/.test(team) && !/TEAMLINE-00/.test(team)) test.check('one search on team/chat; the newest line shows, the oldest does not yet');
-  else test.fail(OWED + teamSearches.length + ' team/chat searches; newest shown ' + /TEAMLINE-59/.test(team) + ', oldest shown ' + /TEAMLINE-00/.test(team));
+  const groupAsks = fake.calls.filter(function (c) { return c.server === 'desk' && c.verb === 'item.chat' && (c.args || {}).id === 'desk/G0.0'; });
+  if (teamSearches.length === 1 && groupAsks.length === 1 && !/TEAMLINE-/.test(team)) test.check('one search on team/chat and one item.chat for desk/G0.0; no team/chat line is drawn under All');
+  else test.fail(OWED + teamSearches.length + ' team/chat searches, ' + groupAsks.length + ' item.chat asks for desk/G0.0; a team/chat line drawn: ' + /TEAMLINE-/.test(team));
   const whole = fake.searches().filter(function (c) { const a = c.args || {}; return !a.todo && !a.kind && !a.text; });
   if (fake.searches().length && !whole.length) test.check('no search without a todo or kind: the whole log is never read');
   else test.fail(OWED + (whole.length ? whole.length + ' unfiltered searches: ' + JSON.stringify(whole[0].args) : 'Desk made no searches'));
 
-  test.subHeading('T6: scrolling Team to its top fills the next older lines');
-  const shownAts = fake.lines.filter(function (m) { return m.todo === 'team/chat' && /TEAMLINE-/.test(m.text) && team.indexOf(m.text.slice(0, 11)) !== -1; }).map(function (m) { return m.at; }).sort();
-  const oldestShown = shownAts[0] || '';
+  test.subHeading('T6: scrolling Team to its top reads nothing more');
+  // The pager that filled older team/chat lines went with the team box (goal/G3.10): nothing draws them.
   const teamEl = doc.getElementById('desk-team');
   teamEl.scrollTop = 0;
   teamEl.fire('scroll', { target: teamEl, currentTarget: teamEl });
   await settleLong();
   const older = fake.searches().filter(function (c) { return (c.args || {}).todo === 'team/chat' && (c.args || {}).before; });
-  const after = doc.getElementById('desk-team').innerHTML;
-  // One scroll brings one page: the line just older than the oldest shown
-  // (wsl-claude: 60 lines are about three pages, so TEAMLINE-00 is further).
-  const nextOlder = fake.lines.filter(function (m) { return m.todo === 'team/chat' && /TEAMLINE-/.test(m.text) && m.at < oldestShown; }).map(function (m) { return m.text.slice(0, 11); }).pop() || 'none';
-  if (older.length && older[0].args.before === oldestShown && team.indexOf(nextOlder) === -1 && after.indexOf(nextOlder) !== -1) test.check('a search before ' + oldestShown + ' brought ' + nextOlder + ', the next older line, in');
-  else test.fail(OWED + 'after scrolling to the top: ' + older.length + ' searches with before' + (older[0] ? ' (' + older[0].args.before + ', oldest shown ' + oldestShown + ')' : '') + ', ' + nextOlder + ' shown ' + (after.indexOf(nextOlder) !== -1));
+  if (!older.length) test.check('no search for older team/chat lines is made');
+  else test.fail(OWED + 'after scrolling to the top: ' + older.length + ' searches with before, for lines nothing draws');
 
   test.subHeading('T3: what arrives, what he types and what Desk decides go to the server, never to files');
   const before = fake.lines.length;

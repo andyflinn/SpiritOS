@@ -62,8 +62,6 @@ function clickOn(container, attr, value) {
 // One note that carries everything under test, and the minute it came.
 const AT = '2026-09-29T05:49:12.000Z';
 const NOTE = 'first line\nsecond line\n- item one\n- item two\nrun `node x.js` now <b>not bold</b>';
-const SESSION = JSON.stringify({ goal: { id: 'test/G1', title: 'The goal' }, rules: [],
-  items: [{ id: 'test/G1.1', title: 'Asks Andy' }] });
 let n = 0;
 function row(dir, from, kind, text, todo) {
   n += 1;
@@ -113,17 +111,24 @@ test.startTest('desk/G1.10: chat lines drawn readably, in Desk and its dialogs')
 
   // ── Desk ────────────────────────────────────────────────────────────
   const log = [
-    row('in', 'claude-windows', 'session', SESSION, 'team/chat'),
-    row('in', 'claude-windows', 'note', NOTE, 'team/chat'),
     row('in', 'claude-windows', 'note', NOTE, ''),
     row('out', 'andy', 'musing', 'note to self: ' + NOTE, ''),
   ];
+  // TEAM (ALL) IS THE GROUP CHAT SINCE goal/G3.10: the chat of the desk server's standing goal desk/G0.0, read
+  // with item.chat, no longer the packets this page recorded under team/chat. So the note under test is a line of
+  // that chat, answered here as the desk server answers it.
+  const deskFake = require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(log), 'seen.json': JSON.stringify({ rows: {}, team: 0, agents: {} }) });
+  const deskVerb = function (name, body) {
+    const asked = name === 'jobs.api' && body && body.ask && body.ask.desk && body.ask.desk['item.chat'];
+    if (asked && asked.id === 'desk/G0.0') return Promise.resolve({ status: 200, body: { chat: [{ by: 'claude-windows', at: AT, text: NOTE, taken: '' }], chatMore: false } });
+    return deskFake.verb(name, body);
+  };
   const doc = fakeDocument();
   load(DESK, doc).mount(fakeElement('container'), {
     fs: { loadFile: function (f) { return f === 'log/log.json' ? JSON.stringify(log) : f === 'seen.json' ? JSON.stringify({ rows: {}, team: 0, agents: {} }) : null; },
       saveFile: function () { return Promise.resolve(); } },
     escapeHtml: spirit.core.util.escapeHtml,
-    verb: require('./deskFake.js').fromFiles({ 'log/log.json': JSON.stringify(log), 'seen.json': JSON.stringify({ rows: {}, team: 0, agents: {} }) }).verb,
+    verb: deskVerb,
     onPublished: function () {}, onPacket: function () {},
     peerPost: function () { return Promise.resolve({ ok: true, status: 200, hash: 'h' }); },
     callDialog: function () { return new Promise(function () {}); },
@@ -136,9 +141,8 @@ test.startTest('desk/G1.10: chat lines drawn readably, in Desk and its dialogs')
   test.subHeading('Desk, Team (All)');
   const team = doc.getElementById('desk-team').innerHTML;
   report(checks('Team', team), team);
-  test.subHeading('T4 in Team: the session post is one line, never its JSON');
-  if (/test\/G1/.test(team) && !/&quot;goal&quot;|"goal"|&quot;items&quot;|"items"/.test(team)) test.check('T4 Team: the session post names its goal, and no JSON shows');
-  else test.fail(OWED + 'T4 Team: drew ' + team.replace(/\s+/g, ' ').slice(0, 220));
+  // T4 in Team went with goal/G3.10, as it went from the dialog with desk/G2.7: a session is the desk server's
+  // record, and the group chat holds chat lines only, never a session post.
 
   test.subHeading("Desk, the lead's own tab");
   clickOn(agents, 'data-agent', 'claude-windows');

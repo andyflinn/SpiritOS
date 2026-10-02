@@ -278,10 +278,26 @@ const allRecords = db.prepare('SELECT n, at, verb, by, key, body FROM records OR
 // An agent counts as live for ten minutes after its last write (Andy: "fine.").
 const LIVE_MS = 10 * 60 * 1000;
 
+// ── THE GROUP CHAT'S ANCHOR (goal/G3.10) ─────────────────────────────
+//
+//   Andy, 2026-10-02: "This looks like a perfect team chat. Is it because it has a coal/item to anchor it?",
+//   then "when deskServer Starts up, it makes sure there is a closed goal with the id 'desk/G0.0', instead of
+//   the team-chat box, the 'all' tab displays the chat box for 'desk/G0.0'", and of its box: "the description
+//   box for that chat are the 6 rules i stated a while back. the chat there may change those rules over time."
+//
+// A goal the server holds from its start, as its own state: no record makes it, so a session (which would make
+// it the current goal) never does, and a fresh desk has it. It is closed, so it is on no List, offers no button
+// and is not an open goal; and it stays closed. Its chat and its box are an item's like any other: the lines
+// and writes are records, replayed onto it at every walk.
+const GROUP_CHAT = 'desk/G0.0';
+
 function walkState() {
   // agentWord: each agent's last word about itself, listening or working (goal/G2.3); the ear says it, every time.
   // agentKey: the key each agent last wrote with (goal/G2.2 note 6), so the goal row can name its live agents' keys.
   const s = { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), agentWord: Object.create(null), agentKey: Object.create(null), current: '' };
+  s.goals[GROUP_CHAT] = { id: GROUP_CHAT, design: false, abandoned: false, members: [] };
+  s.items[GROUP_CHAT] = blank(GROUP_CHAT, 'Group chat', '');
+  s.items[GROUP_CHAT].closed = true;
   const item = function (id) { return s.items[id] || null; };
   const goalOf = function (id) { const it = item(id); return it ? (it.goal ? s.goals[it.id] : s.goals[it.goalId]) : null; };
   for (const r of allRecords.iterate()) {
@@ -922,6 +938,8 @@ appServer.serve({
         const offered = buttons(st, it);
         if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen') && offered.indexOf(a.what) === -1) throw refused('not-offered');
         if (a.what === 'bring-back' && !it.closed) throw refused('not-offered');
+        // The group chat's anchor stays closed (goal/G3.10): nobody brings it back onto the List.
+        if (a.what === 'bring-back' && it.id === GROUP_CHAT) throw refused('not-offered');
       }).change };
     },
   },
