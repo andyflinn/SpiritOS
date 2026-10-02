@@ -324,7 +324,12 @@ function deskDrawTabs() {
 // [agent-name], karked as lead".
 function deskAgentNames() {
   var lead = deskLead ? deskLead.name : '';
-  return Object.keys(deskAgents).sort(function (a, b) {
+  // THE TABS COME FROM THE GOAL ROW (goal/G2.2 note 6): every agent the server says is live has its tab, lines
+  // or none; the log lines only fill the chat (found live: an agent working only through item chat had vanished).
+  var g = deskGoalRow();
+  var names = Object.keys(deskAgents);
+  (g && Array.isArray(g.live) ? g.live : []).forEach(function (n) { if (names.indexOf(n) === -1) names.push(n); });
+  return names.sort(function (a, b) {
     if ((a === lead) !== (b === lead)) return a === lead ? -1 : 1;
     return a < b ? -1 : a > b ? 1 : 0;
   });
@@ -721,7 +726,9 @@ function deskSend(kind, boxId, errId, name) {
   var said = box ? String(box.value || '').trim() : '';
   var err = document.getElementById(errId);
   if (!said || deskSending[boxId]) return;
-  var to = name ? deskAgents[name] && deskAgents[name].key : deskLead && deskLead.key;
+  // The key from its lines, else the one the goal row gives for a live agent (goal/G2.2 note 6).
+  var g = deskGoalRow();
+  var to = name ? (deskAgents[name] && deskAgents[name].key) || (g && g.agents && g.agents[name]) : deskLead && deskLead.key;
   if (!to) { if (err) err.textContent = name ? 'No key known for ' + name + '.' : 'No lead known yet.'; return; }
   deskSending[boxId] = true;
   // It may wait up to a minute for a busy agent, so it says so.

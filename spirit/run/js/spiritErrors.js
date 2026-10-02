@@ -718,6 +718,10 @@ define('invite-not-found', { status: 403, texts: ['invite not found'] });
 // ── NOT FOUND AND CONFLICT ───────────────────────────────────────────
 
 define('no-row', { status: 404, texts: ['no row for that key'] });
+// A line of Andy's an agent has taken (goal/G2.2 note 2): a second take, or another agent's answer under that item
+// before the taker's, is refused by this name. Andy: "an item can 'take' my message and be the only one to answer
+// after that".
+define('taken', { status: 409, texts: ['taken by another agent'] });
 // apiAuth (G1.2, G1.4): the gate's refusals and jobs.auth's.
 define('not-granted', { status: 403, texts: ['not granted to this caller'] });
 define('already-granted', { status: 409, texts: ['already granted'] });

@@ -280,7 +280,8 @@ const LIVE_MS = 10 * 60 * 1000;
 
 function walkState() {
   // agentWord: each agent's last word about itself, listening or working (goal/G2.3); the ear says it, every time.
-  const s = { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), agentWord: Object.create(null), current: '' };
+  // agentKey: the key each agent last wrote with (goal/G2.2 note 6), so the goal row can name its live agents' keys.
+  const s = { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), agentWord: Object.create(null), agentKey: Object.create(null), current: '' };
   const item = function (id) { return s.items[id] || null; };
   const goalOf = function (id) { const it = item(id); return it ? (it.goal ? s.goals[it.id] : s.goals[it.goalId]) : null; };
   for (const r of allRecords.iterate()) {
@@ -288,7 +289,7 @@ function walkState() {
     let b = {};
     try { b = JSON.parse(r.body); } catch (e) { continue; }
     // Writers other than him and the desk itself are agents, and a write is their liveness.
-    if (r.by !== 'andy' && r.by !== 'desk') s.agentsAt[r.by] = r.at;
+    if (r.by !== 'andy' && r.by !== 'desk') { s.agentsAt[r.by] = r.at; if (r.key) s.agentKey[r.by] = String(r.key); }
     apply(s, r, b, item, goalOf);
   }
   return s;
@@ -297,7 +298,7 @@ function walkState() {
 function blank(id, title, goalId) {
   return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '',
     went: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
-    agentLineN: 0, seenN: 0, alert: false,
+    agentLineN: 0, seenN: 0, alert: false, takenBy: '',
     box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '' };
 }
 
@@ -348,7 +349,9 @@ function apply(s, r, b, item, goalOf) {
       return;
     }
     case 'chat.add':
-      it.chat.push({ by: r.by, at: r.at, text: String(b.text) });
+      it.chat.push({ by: r.by, at: r.at, text: String(b.text), taken: '' });
+      // THE TAKER'S ANSWER FREES THE ITEM (goal/G2.2 note 2): after it, any agent may write again.
+      if (it.takenBy && r.by === it.takenBy) it.takenBy = '';
       // HIS OWN LINE IS HIS SEEN (goal/G2.1 note 3). Andy: "when I'm the originator of a chat entry, no red
       // mark should appear in the list." His answer acknowledges every agent line before it.
       // The desk's own line (goal/G2.5, "message delivered, <agent> busy") is addressed to him and stars nothing.
@@ -361,6 +364,18 @@ function apply(s, r, b, item, goalOf) {
     // THE LISTENER'S WORD (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
     // stops when the agent goes back to listening. the listening script can toggle those two?"
     case 'agent.state': s.agentWord[r.by] = String(b.word); return;
+    // TAKING HIS LINE (goal/G2.2 note 2). Andy: "an item can 'take' my message and be the only one to answer after
+    // that, i then can solicit an answer from others." The taker's name goes on his latest line under the item,
+    // and the item is the taker's to answer until it does; the handler refuses a take with no line or one already
+    // taken, so what reaches here always lands.
+    case 'line.take': {
+      for (let i = it.chat.length - 1; i >= 0; i--) {
+        if (it.chat[i].by !== 'andy') continue;
+        if (!it.chat[i].taken) { it.chat[i].taken = r.by; it.takenBy = r.by; }
+        return;
+      }
+      return;
+    }
     default: return;
   }
 }
@@ -432,6 +447,12 @@ function facts(s, it) {
     with: it.with, buttons: buttons(s, it), blocking: it.blocks.slice(), blocked: blockers(s, it),
     // A red star: an agent's line newer than his last seen ("seen, fold (you): stars clear").
     alone: it.alone, star: it.agentLineN > it.seenN, alert: it.alert === true };
+  // THE BOX CAP (goal/G2.2 note 1). Andy: "there will be no second box per item. absolutely not.", "orange at 50%,
+  // red at 75%". The box measured as its one answer against appClient.ANSWER_MAX: half from 50%, full from 75%;
+  // nothing is refused below the answer limit, and the split is negotiated, never automated.
+  const boxBytes = Buffer.byteLength(JSON.stringify({ box: it.box, version: it.version }), 'utf8');
+  f.half = boxBytes >= appClient.ANSWER_MAX * 0.5;
+  f.full = boxBytes >= appClient.ANSWER_MAX * 0.75;
   if (it.goal) {
     const g = s.goals[it.id];
     const now = Date.now();
@@ -444,6 +465,10 @@ function facts(s, it) {
     // liveness, since an ear killed by its limit or a node restart says nothing (Andy: "while an agent is
     // working, i should leave it alone.").
     f.working = f.live.filter(function (a) { return s.agentWord[a] === 'working'; });
+    // ITS LIVE AGENTS' KEYS (goal/G2.2 note 6): the page draws the Team tabs from live and sends to these keys,
+    // so an agent working only through item chat keeps its tab (found live: "still can't see you on desk").
+    f.agents = {};
+    f.live.forEach(function (a) { if (s.agentKey[a]) f.agents[a] = s.agentKey[a]; });
   }
   return f;
 }
@@ -697,7 +722,7 @@ appServer.serve({
   // THE CHAT IS A SEARCH (desk/G3.3). Andy: "why would the server not use bucket to give me the most recent
   // stuff?" Its newest lines, through the same bucket, in a whole answer of its own; oldest first.
   'item.chat': {
-    request: { id: '' }, reply: { chat: [{ by: '', at: '', text: '' }], chatMore: false },
+    request: { id: '' }, reply: { chat: [{ by: '', at: '', text: '', taken: '' }], chatMore: false },
     handler: function (a) {
       const it = walkState().items[String(a.id)];
       if (!it) throw refused('no-such-item');
@@ -770,6 +795,8 @@ appServer.serve({
       // MAX_PAYLOAD AT THE DOOR (desk/G3.3). Andy: "in the db yes, but in the sent messages ther MUST be a MAX_PAYLOAD".
       // A line that could not come back whole in one answer is refused here, as log.add refuses one; the sender slices it.
       const it0 = walkState().items[String(a.id)];
+      // ONLY THE TAKER ANSWERS while a take stands (goal/G2.2 note 2); his own lines, and the desk's, are never refused.
+      if (it0 && it0.takenBy && w.by !== it0.takenBy && w.by !== 'andy' && w.by !== 'desk') throw refused('taken');
       const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: w.by, at: new Date().toISOString(), text: String(a.text) });
       if (bytes > CHAT_ROOM) throw tooLarge(bytes, CHAT_ROOM);
       const after = write('chat.add', Object.assign({}, a, { by: w.by, key: w.key }));
@@ -803,6 +830,22 @@ appServer.serve({
   },
   'item.status': { request: { id: '', word: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.status', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
   'item.take': { request: { id: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.take', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
+  // TAKING HIS LINE (goal/G2.2 note 2): an agent takes Andy's latest line under an item and is the only one to
+  // answer until it does. First wins; a second take is refused taken; an item with no line of his refuses no-row.
+  'line.take': {
+    request: { id: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      if (w.by === 'andy') throw refused('bad-request');
+      const it = walkState().items[String(a.id)];
+      if (!it) throw refused('no-such-item');
+      let his = null;
+      for (let i = it.chat.length - 1; i >= 0; i--) { if (it.chat[i].by === 'andy') { his = it.chat[i]; break; } }
+      if (!his) throw refused('no-row');
+      if (his.taken) throw refused('taken');
+      return { change: write('line.take', { id: a.id, by: w.by, key: w.key }).change };
+    },
+  },
   // Presses are records, not lines (Andy: "a press shouldn't post a line, it
   // is not textual information"). Go!, Close and Reopen only when offered;
   // done also by Andy alone ("completions ... can be forced by the user"),

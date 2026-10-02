@@ -161,9 +161,12 @@ function ddStripHtml() {
 var ddFolded = true;  // every open starts folded, as before desk/G2.7
 function ddBoxHtml() {
   if (!ddBox) return '<div class="job-manifest-note">No text yet: an agent writes it.</div>';
+  // THE BOX CAP, SEEN (goal/G2.2 note 1). Andy: "orange at 50%, red at 75%" — the server says half and full; the
+  // border is the only automatic part, the split into items is negotiated ("never automated").
+  var cap = ddFacts && ddFacts.full ? 'border:2px solid red;padding:4px;' : ddFacts && ddFacts.half ? 'border:2px solid orange;padding:4px;' : '';
   var toggle = '<button type="button" data-fold="item" title="' + (ddFolded ? 'Unfold' : 'Fold') + '">' + (ddFolded ? '▸' : '▾') + '</button> ';
-  if (ddFolded) return '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + toggle + ddEsc(ddBox.split('\n')[0]) + '</div>';
-  return '<div>' + toggle + '</div><div style="white-space:pre-wrap">' + ddEsc(ddBox) + '</div>';
+  if (ddFolded) return '<div style="' + cap + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + toggle + ddEsc(ddBox.split('\n')[0]) + '</div>';
+  return '<div style="' + cap + '"><div>' + toggle + '</div><div style="white-space:pre-wrap">' + ddEsc(ddBox) + '</div></div>';
 }
 
 // Each id a way there (Andy: "the blocked and blocks lists link to the respective items").
