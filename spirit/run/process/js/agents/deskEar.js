@@ -139,7 +139,14 @@ const ready = (typeof st.n === 'number' && typeof st.line === 'number')
 
 ready.then(function () {
   // Desk's nudge, or any packet for this agent on its own node: ask now.
-  agents.listen(cfg, function (line) { if (!/^listening on/.test(line)) pass(); }).catch(function (e) { console.error('deskEar: the node stream: ' + e.message); });
+  // A DEAD STREAM ENDS THE EAR. Found live 2026-10-02 (Andy: "you don't seem to be connected to desk"): an ear
+  // whose node had restarted printed this and lived on, polling every 30 s on the shared cursor beside the fresh
+  // ear the agent armed — five at once, each swallowing lines the tracked one never saw. Under --once the exit
+  // wakes the agent, which arms one ear again; without --once the loop keeps polling, as before.
+  agents.listen(cfg, function (line) { if (!/^listening on/.test(line)) pass(); }).catch(function (e) {
+    console.error('deskEar: the node stream: ' + e.message);
+    if (ONCE) process.exit(1);
+  });
   // Listening is said as the ear arms — once the stream above is being opened, so a nudge sent on hearing the
   // word finds a listener; said earlier (before the cursors were found) a nudge in that gap was lost until the
   // next poll, which the harness showed under load.
