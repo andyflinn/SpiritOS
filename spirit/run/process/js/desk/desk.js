@@ -8,8 +8,8 @@
 //   of the nodes state" and "any appServer state is none of git's business".
 //
 // DECIDED in Desk (desk/G1), not this file's to undo:
-//   D5  its state is relay-state/process/desk/: desk.db and Andy's voice
-//       file, never in git. The node names that folder and hands it over as
+//   D5  its state is relay-state/process/desk/: desk.db, never in git (his
+//       voice file lived there too until goal/G2.1). The node names that folder and hands it over as
 //       --state, beside --pipe; this process never works it out itself, so
 //       a test hands it a temp folder and the live record is never touched.
 //   D4  the local shell reaches it by jobs.api on the loopback door, a known
@@ -295,7 +295,7 @@ function walkState() {
 function blank(id, title, goalId) {
   return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '',
     went: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
-    agentLineN: 0, seenN: 0,
+    agentLineN: 0, seenN: 0, alert: false,
     box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '' };
 }
 
@@ -347,7 +347,9 @@ function apply(s, r, b, item, goalOf) {
     }
     case 'chat.add':
       it.chat.push({ by: r.by, at: r.at, text: String(b.text) });
-      if (r.by !== 'andy') it.agentLineN = r.n;
+      // HIS OWN LINE IS HIS SEEN (goal/G2.1 note 3). Andy: "when I'm the originator of a chat entry, no red
+      // mark should appear in the list." His answer acknowledges every agent line before it.
+      if (r.by !== 'andy') it.agentLineN = r.n; else it.seenN = r.n;
       return;
     case 'item.rename': it.title = String(b.title); return;
     case 'item.status': it.status = String(b.word); return;
@@ -369,8 +371,10 @@ function press(s, it, what, r, goalOf) {
   else if (what === 'done') { it.done = true; it.alone = !Object.keys(it.claims).length; }
   else if (what === 'reopen') { it.done = false; it.alone = false; it.claims = Object.create(null); }
   else if (what === 'close') it.closed = true;
-  else if (what === 'bring-back') it.closed = false;
-  else if (what === 'seen') it.seenN = r.n;
+  // A BROUGHT-BACK ITEM DRAWS HIS EYE (goal/G2.1 note 6). Andy: "the row should immediately pop back into
+  // visibility, with the attention-grabbing error icon, to draw my attention." The alert stands until his seen.
+  else if (what === 'bring-back') { it.closed = false; it.alert = true; }
+  else if (what === 'seen') { it.seenN = r.n; it.alert = false; }
 }
 
 // What blocks an item: every open item of its goal that names it in `blocks`.
@@ -398,7 +402,10 @@ function buttons(s, it) {
   const out = [];
   // A GOAL NEVER OFFERS GO! (desk/G3.7): its items are gone, not the goal itself.
   if (!it.goal && g && !g.design && !it.went && !blockers(s, it).length) out.push('go');
-  if (Object.keys(it.claims).length) out.push('done');
+  // A GOAL OFFERS DONE ONCE EVERY ITEM IS CLOSED, no claim needed (goal/G2.1 note 5). Andy: "the done button
+  // should appear on the goal as soon as it is no longer blocked".
+  const allClosed = it.goal && g && g.members.length > 0 && g.members.every(function (id) { const m = s.items[id]; return m && m.closed; });
+  if (Object.keys(it.claims).length || allClosed) out.push('done');
   if (it.goal && g && goable(s, g).length) out.push('go-all');
   return out;
 }
@@ -418,7 +425,7 @@ function facts(s, it) {
   const f = { id: it.id, title: it.title, goal: it.goal ? '' : it.goalId, status: it.closed ? 'closed' : it.done ? 'done' : it.status,
     with: it.with, buttons: buttons(s, it), blocking: it.blocks.slice(), blocked: blockers(s, it),
     // A red star: an agent's line newer than his last seen ("seen, fold (you): stars clear").
-    alone: it.alone, star: it.agentLineN > it.seenN };
+    alone: it.alone, star: it.agentLineN > it.seenN, alert: it.alert === true };
   if (it.goal) {
     const g = s.goals[it.id];
     const now = Date.now();
@@ -519,10 +526,9 @@ function changedRows(before, after, goalId) {
   });
 }
 
-// HIS VOICE, A PLAIN FILE (D5): one line per thing he typed, {text, day}.
-function addVoice(text, day) {
-  fs.appendFileSync(path.join(STATE, 'voice.jsonl'), JSON.stringify({ text: String(text), day: day || new Date().toISOString().slice(0, 10) }) + '\n');
-}
+// HIS VOICE IS NO LONGER WRITTEN HERE (goal/G2.1 note 8). The plain file of what he typed (D5, desk/G1.4) was
+// the hack he named on 2026-09-27; since apiAuth/G1's close the brain reads his Desk lines through this
+// server's api, and the vault's own tool (claude/voiceFromDesk.js) keeps his corpus. No app writes into the vault.
 
 // A goal is open while it is on the List. With none open, start-design (no id) makes goal/G<n>, n the next free.
 function newGoal(w) {
@@ -745,7 +751,6 @@ appServer.serve({
       }).change };
     },
   },
-  // What he types is also his voice (desk/G1.4): kept here, once, for his chat and his names.
   'chat.add': {
     request: { id: '', text: '' }, reply: { change: 0 },
     handler: function (a, caller) {
@@ -755,14 +760,11 @@ appServer.serve({
       const it0 = walkState().items[String(a.id)];
       const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: w.by, at: new Date().toISOString(), text: String(a.text) });
       if (bytes > CHAT_ROOM) throw tooLarge(bytes, CHAT_ROOM);
-      const c = write('chat.add', Object.assign({}, a, { by: w.by, key: w.key })).change;
-      // His voice is the OWNER'S line, told by the caller, never by a name.
-      if (caller.owner === true) addVoice(a.text);
-      return { change: c };
+      return { change: write('chat.add', Object.assign({}, a, { by: w.by, key: w.key })).change };
     },
   },
   // "rename (you)": Andy's alone.
-  'item.rename': { request: { id: '', title: '' }, reply: { change: 0 }, handler: function (a, caller) { ownerOnly(caller); const w = writerOf(caller); const c = write('item.rename', Object.assign({}, a, { by: w.by, key: w.key })).change; addVoice(a.title); return { change: c }; } },
+  'item.rename': { request: { id: '', title: '' }, reply: { change: 0 }, handler: function (a, caller) { ownerOnly(caller); const w = writerOf(caller); return { change: write('item.rename', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
   'item.status': { request: { id: '', word: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.status', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
   'item.take': { request: { id: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.take', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
   // Presses are records, not lines (Andy: "a press shouldn't post a line, it
@@ -789,14 +791,6 @@ appServer.serve({
   'state.set': { request: { json: '' }, reply: { saved: true }, handler: function (a) { return saveDoc('state', a.json); } },
   'seen.get': { request: {}, reply: { json: '' }, handler: function () { return { json: doc('seen') }; } },
   'seen.set': { request: { json: '' }, reply: { saved: true }, handler: function (a) { return saveDoc('seen', a.json); } },
-  // A PLAIN FILE, NOT A ROW (D5): Andy moves it into his vault by hand.
-  'voice.add': {
-    request: { text: '', day: '' }, reply: { added: true },
-    handler: function (a) {
-      addVoice(a.text, a.day);
-      return { added: true };
-    },
-  },
 // The bundle a peer user needs (apiAuth/G1.10, DEPENDENCIES): the agents'
 // protocol spans most of this table — searches, reads, writes, presses,
 // changes — so the minimum is the app itself, one app-level grant-shape.

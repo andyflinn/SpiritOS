@@ -68,8 +68,9 @@ test.startTest('desk/G3.9: a musing is kept with the desk server, and needs no l
   const kept = lines.filter(function (l) { return l.kind === 'musing' && /^note to self: MUSED-THOUGHT$/.test(String(l.text)); });
   if (kept.length === 1) test.check('one log.add line of kind musing, "note to self: MUSED-THOUGHT"');
   else test.fail(OWED + 'log.add lines ' + JSON.stringify(lines.map(function (l) { return [l.kind, l.text]; })));
-  if (fake.voice.some(function (v) { return /MUSED-THOUGHT/.test(v.text); })) test.check('and his voice holds what he typed');
-  else test.fail(OWED + 'voice holds ' + JSON.stringify(fake.voice));
+  // NO voice.add ANY MORE (goal/G2.1 note 8): the log line is the record; the brain reads it through the desk api.
+  if (!fake.voice.length) test.check('and nothing goes to voice.add');
+  else test.fail('OWED by goal/G2.1: the page still sends voice.add ' + JSON.stringify(fake.voice));
   if (doc.getElementById('desk-muse').value === '') test.check('the box clears once it is kept');
   else test.fail(OWED + 'the box still holds ' + JSON.stringify(doc.getElementById('desk-muse').value));
 

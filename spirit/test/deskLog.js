@@ -276,19 +276,13 @@ function voiceHoldsWhatHeTyped() {
     // WHAT HE TYPES IN A DIALOG goes by chat.add since desk/G2.7; the dialog no
     // longer hands its lines back for Desk to record, so this checks Desk's own.
   }).then(function () {
-    // Since desk/G1.4 the server keeps it (voice.add), a plain file in its
-    // state folder that he moves himself (deskOnServer.js, T4).
-    const lines = desk.fake.voice;
-    const texts = lines.map(function (l) { return l.text; });
-    if (texts.join(' | ') === 'typed by andy') {
-      test.check('his typed line, and no agent text');
+    // From desk/G1.4 to goal/G2.1 the server kept it (voice.add), a plain file in its state folder that he
+    // moved himself. NO LONGER (goal/G2.1 note 8): the log line is the record, the brain reads it through the
+    // desk api, and the vault's own tool keeps his corpus. Nothing goes to voice.add.
+    if (!desk.fake.voice.length) {
+      test.check('his typed line went to the log alone, nothing to voice.add');
     } else {
-      test.fail('voice holds ' + JSON.stringify(texts));
-    }
-    if (lines.every(function (l) { return Object.keys(l).join(',') === 'text,day' && /^\d{4}-\d\d-\d\d$/.test(l.day); })) {
-      test.check('each row is the vault\'s shape, {text, day}, stamped by the day and never finer');
-    } else {
-      test.fail('voice rows: ' + JSON.stringify(lines));
+      test.fail('OWED by goal/G2.1: the page still sends voice.add ' + JSON.stringify(desk.fake.voice));
     }
   });
 }

@@ -262,8 +262,9 @@ async function deskPart() {
   const added = fake.calls.filter(function (c) { return c.verb === 'log.add'; }).map(function (c) { return JSON.parse(c.args.json).text; });
   if (fake.lines.length > before && added.indexOf('ARRIVED-LINE') !== -1) test.check('an arrival was recorded by log.add');
   else test.fail(OWED + 'log.add calls: ' + JSON.stringify(added));
-  if (fake.voice.some(function (v) { return v.text === 'TYPED-BY-ANDY'; })) test.check('his typed line went to voice.add');
-  else test.fail(OWED + 'voice.add got ' + JSON.stringify(fake.voice));
+  // NO voice.add ANY MORE (goal/G2.1 note 8): his typed line is in the log; nothing is sent to a voice file.
+  if (!fake.voice.length) test.check('his typed line went to the log alone, nothing to voice.add');
+  else test.fail('OWED by goal/G2.1: the page still sends voice.add ' + JSON.stringify(fake.voice));
   const sets = fake.calls.filter(function (c) { return c.verb === 'state.set' || c.verb === 'seen.set'; });
   if (!saved.length && sets.length) test.check('state and seen went by state.set / seen.set; api.fs.saveFile was never called');
   else test.fail(OWED + 'saveFile called for ' + JSON.stringify(saved) + '; state/seen sets ' + sets.length);

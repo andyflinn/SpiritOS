@@ -115,16 +115,18 @@ settle().then(function () {
   const shell = root.innerHTML;
   // ONE STICKY BLOCK HOLDING BOTH ROWS (claude-windows' review of the build):
   // two rows each stuck at top 0 slid the agent row under the main one. So
-  // exactly one sticky tag at top 0, and both rows follow it, before any pane.
+  // exactly one sticky tag, and both rows follow it, before any pane. It sticks BELOW the title bar, never at
+  // top 0 (goal/G2.1 note 4; Andy: "stay sticky below those title bars"): the shell's #app-header is sticky at
+  // the top of the same scroll.
   const stickies = shell.match(/<div[^>]*position:\s*sticky[^>]*>/g) || [];
-  const at = stickies.length === 1 && /top:\s*0/.test(stickies[0]) ? shell.indexOf(stickies[0]) : -1;
+  const at = stickies.length === 1 && /top:/.test(stickies[0]) && !/top:\s*0\b/.test(stickies[0]) ? shell.indexOf(stickies[0]) : -1;
   const tabsAt = shell.indexOf('id="desk-tabs"');
   const agentAt = shell.indexOf('id="desk-agent-tabs"');
   const paneAt = shell.indexOf('data-pane=');
   const pinned = at !== -1 && at < tabsAt && tabsAt < agentAt && agentAt < paneAt;
   const buttons = tabs.innerHTML.match(/<button[^>]*>/g) || [];
   const last = buttons[buttons.length - 1] || '';
-  if (pinned && /desk-(end|start)-design/.test(last)) test.check('one sticky block at top: 0 holds both tab rows, and the design button closes the row');
+  if (pinned && /desk-(end|start)-design/.test(last)) test.check('one sticky block below the title bar holds both tab rows, and the design button closes the row');
   else test.fail(OWED + 'sticky tags ' + JSON.stringify(stickies) + ', rows inside it ' + pinned + ', last button ' + last);
 
   // Andy: "this part of the list page should be attached below the title
@@ -244,9 +246,10 @@ settle().then(function () {
     const stickyTag = (body.match(/<div[^>]*position:\s*sticky[^>]*>/) || [''])[0];
     const stickyAt = stickyTag ? body.indexOf(stickyTag) : -1;
     const closeAt = body.indexOf('</div>', at('dd-strip') + 1);
-    if (stickyAt !== -1 && /top:\s*0/.test(stickyTag) && stickyAt < at('dd-name-row') && at('dd-name-row') < at('dd-strip') &&
+    // Below the title bar, never at top 0 (goal/G2.1 note 4), as the List's bars.
+    if (stickyAt !== -1 && /top:/.test(stickyTag) && !/top:\s*0\b/.test(stickyTag) && stickyAt < at('dd-name-row') && at('dd-name-row') < at('dd-strip') &&
         at('dd-strip') < at('dd-box') && closeAt < at('dd-box')) {
-      test.check('one sticky block at top: 0 holds the button row and the check line, above the box');
+      test.check('one sticky block below the title bar holds the button row and the check line, above the box');
     } else test.fail(OWED + 'sticky at ' + stickyAt + ', buttons at ' + at('dd-name-row') + ', strip at ' + at('dd-strip') + ', box at ' + at('dd-box'));
 
     test.subHeading('T10 and T15: the title line is title-sized');

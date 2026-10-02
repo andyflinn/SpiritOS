@@ -164,31 +164,9 @@ function deskWriteError(what) {
   return function (e) { deskError = 'Desk could not ' + what + ': ' + ((e && e.message) || e); deskDraw(); };
 }
 
-// ── WHAT ANDY TYPED, FOR HIS VAULT ──────────────────────────────────────
-//
-//   Andy, 2026-09-27: "I'll live with an alternative way, by copying the
-//   json.l file manualy to my brain input". The desk server keeps it as a
-//   plain file in its state folder (D5: relay-state/process/desk/voice.jsonl),
-//   in the vault's row shape ({text, day}, the day and never finer). Button
-//   presses (Go!, No, Accept, Reject) and the explain request a dialog sends
-//   on opening are not his words, so they stay out.
-var DESK_TYPED = /^(note|musing)$/;
-function deskVoiceText(m) {
-  if (!m || m.dir !== 'out') return '';
-  if (DESK_TYPED.test(m.kind)) return m.text;
-  if (m.kind === 'answer' && /^retitle:\s*/.test(m.text)) return m.text.replace(/^retitle:\s*/, '');
-  return '';
-}
-function deskVoice(msgs) {
-  // One line per thing he typed: a dialog line goes once per agent.
-  var seen = Object.create(null);
-  msgs.forEach(function (m) {
-    var t = deskVoiceText(m);
-    if (!t || seen[m.kind + '\n' + t]) return;
-    seen[m.kind + '\n' + t] = true;
-    deskAsk('voice.add', { text: t, day: String(m.at || new Date().toISOString()).slice(0, 10) }).catch(deskWriteError('keep what you typed'));
-  });
-}
+// WHAT ANDY TYPES IS NO LONGER SENT TO A VOICE FILE (goal/G2.1 note 8). The desk server kept a plain file of
+// his lines (desk/G1.4) for his vault; since apiAuth/G1's close the brain reads them through the desk api, and the
+// vault's own tool (claude/voiceFromDesk.js) keeps his corpus. Nothing here writes it, and nothing may.
 
 // Onto the screen and into the server's log. Only what is new to this page
 // is added, and the server keeps a key once, so a replay writes nothing twice.
@@ -196,7 +174,6 @@ function deskRecord(msgs) {
   var fresh = msgs.filter(function (m) { return m && m.key && !deskByHash[m.key]; });
   fresh.forEach(deskFold);
   deskMessages.sort(function (a, b) { return String(a.at) < String(b.at) ? -1 : String(a.at) > String(b.at) ? 1 : 0; });
-  deskVoice(fresh);
   if (deskAgentTab !== '*' && fresh.length) deskAskQueue();
   deskDraw();
   return Promise.all(fresh.map(function (m) { return deskAsk('log.add', { json: JSON.stringify(m) }); }))
@@ -237,6 +214,8 @@ function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
 // wall of red. A ROW'S STAR IS THE DESK SERVER'S (desk/G2.6): opening a row
 // presses 'seen', and the row's label says whether it has one.
 var DESK_UNSEEN = '<span style="color:#d00;font-weight:bold" title="unseen changes">*</span>';
+// A brought-back item's mark (goal/G2.1 note 6): "the attention-grabbing error icon"; his seen clears it.
+var DESK_ALERT = '<span style="color:#d00;font-weight:bold" title="brought back: needs your eye">❗</span>';
 var deskSeen = { team: 0, agents: {} };
 var deskTab = 'list';
 // WHICH CHAT INSIDE TEAM: '*' for All, else an agent's name (desk/G1, D2).
@@ -405,6 +384,9 @@ function deskOnPublished(obj) {
   // AN UPDATE TOO LARGE TO PUBLISH was dropped, and said: ask again for what is shown.
   if (obj.dropped) { deskSearchItems(); return; }
   var change = Number(obj.change) || 0;
+  // AN OLDER UPDATE CHANGES NOTHING (goal/G2.1 note 7). Andy: "let desk worry about its problems": publishes
+  // travel as their own requests and can overtake each other; a row is never painted over by what came before.
+  if (change && deskLastChange && change < deskLastChange) return;
   var gap = deskLastChange && change > deskLastChange + 1;
   if (change) deskLastChange = change;
   if (gap || obj.verb === 'session.set') { deskSearchItems(); return; }
@@ -467,7 +449,7 @@ function deskRowHtml(row) {
   }).join(' ');
   return '<tr data-row="' + deskEsc(row.id) + '" style="cursor:pointer' + (goal ? ';font-weight:bold' : '') + '">' +
     // THE STAR ALONE, THEN THE TYPE (desk/G1.12): the server says both.
-    '<td>' + (row.star ? DESK_UNSEEN : '') + '</td>' +
+    '<td>' + (row.alert ? DESK_ALERT : row.star ? DESK_UNSEEN : '') + '</td>' +
     '<td>' + (goal ? '' : deskIcon((row.buttons || []).length ? 'ERROR' : 'CODE')) + '</td>' +
     '<td title="' + deskEsc(row.title) + '">' + deskEsc(row.title) + ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span></td>' +
     '<td>' + deskEsc(row.with || '') + '</td>' +
@@ -693,8 +675,8 @@ function deskTeamPost(kind, fixed) {
 var deskSending = Object.create(null);
 // To the agent named, or to the lead.
 // A MUSING NEEDS NO LEAD (desk/G3.9). Andy: "Why would it require a lead to
-// update my musings?" It goes to the desk server alone, into its log and his
-// voice file (deskRecord); no agent is sent anything.
+// update my musings?" It goes to the desk server alone, into its log
+// (deskRecord); no agent is sent anything.
 function deskMuse() {
   var box = document.getElementById('desk-muse');
   var err = document.getElementById('desk-muse-error');
@@ -737,7 +719,15 @@ function deskSend(kind, boxId, errId, name) {
 // erased his typing on every arrival ("also my typing gets erased,
 // everytime somebody sends something"). The table holds no input, so a
 // repaint on arrival costs him nothing.
+// The title bar's height, as it is on this screen: the offset the pinned bars stick at (goal/G2.1 note 4).
+function deskBarTop() {
+  var header = document.getElementById('app-header');
+  var bars = document.getElementById('desk-bars');
+  var h = header && Number(header.offsetHeight);
+  if (bars && bars.style && h > 0) bars.style.setProperty('--desk-bar-top', h + 'px');
+}
 function deskDraw() {
+  deskBarTop();
   deskDrawGoAll();
   var el = document.getElementById('desk-top');
   if (!el) return;
@@ -894,12 +884,13 @@ spirit.shell.activateApp({
       '<div id="desk-design" class="stat-tile wide" style="background:#fff3c4;color:#000" hidden>' +
         '<b>Design mode.</b> Nothing is built until it ends, and it ends only in the Team tab.</div>' +
       // Drawn by deskDrawTabs.
-      // PINNED LIKE THE TITLE BAR (desk/G1.12). Andy: "the tabs should stick
-      // top the top like the title bar". ONE sticky block holding both rows
-      // (claude-windows' review): two rows each stuck at top 0 slid the agent
-      // row under the main one. Opaque, in the shell's own background, so the
-      // List does not show through it.
-      '<div id="desk-bars" style="position:sticky;top:0;z-index:2;background:#1a1a2e;padding-bottom:4px">' +
+      // PINNED BELOW THE TITLE BAR (desk/G1.12; goal/G2.1 note 4). Andy: "the tabs should stick
+      // top the top like the title bar", then "they should leave the app or dialog visible, and stay
+      // sticky below those title bars". ONE sticky block holding both rows (claude-windows' review):
+      // two rows each stuck at top 0 slid the agent row under the main one. The shell's #app-header is
+      // sticky at the top of the same scroll, so this block sticks at its height (deskBarTop), never at 0
+      // where it covered Back and Home. Opaque, in the shell's own background.
+      '<div id="desk-bars" style="position:sticky;top:var(--desk-bar-top,52px);z-index:2;background:#1a1a2e;padding-bottom:4px">' +
         // The goal line is pinned with the tabs (desk/G1.12). Andy: "this part
         // of the list page should be attached below the title bar, and not
         // scroll away."

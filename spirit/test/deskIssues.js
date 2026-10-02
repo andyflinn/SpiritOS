@@ -147,7 +147,9 @@ callback.listen(0, '127.0.0.1', async function () {
     await call('press', { id: 'g/G1.1', what: 'bring-back' }, CW);
     await sleep(400);
     const back = await factsOf('g/G1.1');
-    const idOf = function (p) { try { return JSON.parse(p.item).id; } catch (e) { return ''; } };
+    // The publish carries the item's facts as an object (desk.js write: out.item = facts(...)), a string only
+    // in older shapes; both are read.
+    const idOf = function (p) { try { return (typeof p.item === 'string' ? JSON.parse(p.item) : p.item || {}).id || ''; } catch (e) { return ''; } };
     const pub = published.filter(function (p) { return p.verb === 'press' && idOf(p) === 'g/G1.1'; }).pop() || {};
     if (pub.listed === true && back.alert === true) {
       await call('press', { id: 'g/G1.1', what: 'seen' }, ANDY);

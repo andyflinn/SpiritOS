@@ -77,9 +77,11 @@ function ddFrame() {
   var el = document.getElementById('dd-body');
   if (!el) return;
   el.innerHTML =
-    // His buttons and the strip stay pinned below the title bar while the
-    // rest scrolls (desk/G1.12).
-    '<div style="position:sticky;top:0;z-index:2;background:#1a1a2e;padding-bottom:2px">' +
+    // His buttons and the strip stay pinned BELOW the title bar while the
+    // rest scrolls (desk/G1.12; goal/G2.1 note 4). The shell's #app-header is
+    // sticky at the top of the same scroll, so this block sticks at its
+    // height, measured below, never at 0 where it would cover Back and Close.
+    '<div id="dd-bars" style="position:sticky;top:var(--desk-bar-top,52px);z-index:2;background:#1a1a2e;padding-bottom:2px">' +
       '<div id="dd-head" style="font-size:1.25em;font-weight:bold"></div>' +
       '<div class="start-job-form card" id="dd-name-row"></div>' +
       '<div id="dd-strip"></div>' +
@@ -92,6 +94,14 @@ function ddFrame() {
       '<button type="button" id="dd-say-send">Send</button></div>' +
     '<div id="dd-error" class="job-start-error"></div>' +
     '<div class="stat-tile wide"><div class="label">Chat, newest first</div><div id="dd-chat"></div></div>';
+  ddBarTop();
+}
+// The title bar's height, as it is on this screen: the offset the pinned block sticks at.
+function ddBarTop() {
+  var header = document.getElementById('app-header');
+  var bars = document.getElementById('dd-bars');
+  var h = header && Number(header.offsetHeight);
+  if (bars && bars.style && h > 0) bars.style.setProperty('--desk-bar-top', h + 'px');
 }
 
 var DD_LABELS = { go: 'Go!', done: 'Done', close: 'Close', reopen: 'Reopen' };
@@ -146,9 +156,14 @@ function ddStripHtml() {
 }
 
 // THE ONE BOX. An item with no text yet says so; an agent writes it.
+// IT FOLDS AGAIN (goal/G2.1 note 1; the fold was lost in desk/G2.7). Andy: "BIG complaint: the text bubble
+// no longer folds." Folded shows its first line; the state is kept here, so a repaint keeps his fold.
+var ddFolded = true;  // every open starts folded, as before desk/G2.7
 function ddBoxHtml() {
   if (!ddBox) return '<div class="job-manifest-note">No text yet: an agent writes it.</div>';
-  return '<div style="white-space:pre-wrap">' + ddEsc(ddBox) + '</div>';
+  var toggle = '<button type="button" data-fold="item" title="' + (ddFolded ? 'Unfold' : 'Fold') + '">' + (ddFolded ? '▸' : '▾') + '</button> ';
+  if (ddFolded) return '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + toggle + ddEsc(ddBox.split('\n')[0]) + '</div>';
+  return '<div>' + toggle + '</div><div style="white-space:pre-wrap">' + ddEsc(ddBox) + '</div>';
 }
 
 // Each id a way there (Andy: "the blocked and blocks lists link to the respective items").
@@ -230,6 +245,9 @@ function ddTake(obj) {
   // AN UPDATE TOO LARGE TO PUBLISH was dropped, and said: reload what is shown.
   if (obj.dropped) { if (ddId) ddLoad(); return; }
   var change = Number(obj.change) || 0;
+  // AN OLDER UPDATE CHANGES NOTHING (goal/G2.1 note 7): publishes travel as their own requests and can
+  // overtake each other; what is shown is never painted over by what came before it.
+  if (change && ddLastChange && change < ddLastChange) return;
   var gap = ddLastChange && change > ddLastChange + 1;
   if (change) ddLastChange = change;
   if (gap && ddId) { ddLoad(); return; }
@@ -292,6 +310,7 @@ spirit.shell.activateApp({
         ddApi.closeDialog({ open: link.getAttribute('data-open') });
         return;
       }
+      if (t && t.getAttribute && t.getAttribute('data-fold') === 'item') { ddFolded = !ddFolded; ddPaint(); return; }
       var check = t && t.getAttribute && t.getAttribute('data-check');
       if (check) { ddWrite('check.set', { id: ddId, check: check, state: 'passed' }); return; }
       var id = t && t.id;
@@ -338,6 +357,7 @@ spirit.shell.activateApp({
     ddRenaming = false;
     ddNote = '';
     ddLastChange = 0;
+    ddFolded = true;
     ddFrame();
     ddPaint();
     return ddLoad().then(function () {

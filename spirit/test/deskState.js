@@ -198,12 +198,10 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   // desk/G1.4: what he types in Desk reaches his voice file, and the desk server writes it (G2.7 review): his
   // chat line and his new name, never an agent's line.
   test.subHeading('his chat and his names reach voice.jsonl; an agent\'s line does not');
-  let voice = '';
-  try { voice = fs.readFileSync(path.join(state, 'voice.jsonl'), 'utf8'); } catch (e) { voice = ''; }
-  const said = voice.split('\n').filter(Boolean).map(function (l) { try { return JSON.parse(l).text; } catch (e) { return null; } });
-  if (said.indexOf('a line') !== -1 && said.indexOf('Beta renamed') !== -1 && said.indexOf('agent says') === -1 && said.indexOf('AGENT-RENAME') === -1) {
-    test.check('voice.jsonl holds his chat line and his rename, and neither agent line');
-  } else test.fail('voice.jsonl holds ' + JSON.stringify(said));
+  // NO VOICE FILE ANY MORE (goal/G2.1 note 8): his lines and renames were kept in <state>/voice.jsonl until
+  // then; the brain reads them through the desk api now, and the vault's own tool keeps his corpus.
+  if (!fs.existsSync(path.join(state, 'voice.jsonl'))) test.check('his chat line and his rename write no voice.jsonl in the state folder');
+  else test.fail('OWED by goal/G2.1: the desk server still writes voice.jsonl');
 
   test.subHeading('an unknown press is refused by name');
   const odd = await call('press', { id: 't/G1.2', what: 'fly' }, ANDY);

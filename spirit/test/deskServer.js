@@ -6,8 +6,8 @@
 //
 //   Andy's go on desk/G1.3. Decided (Desk, desk/G1): the desk server owns
 //   desk.db (D5), in the process's state folder relay-state/process/desk/,
-//   never in git ("any appServer state is none of git's business"); the
-//   voice file stays a plain file, written there; the local shell reaches
+//   never in git ("any appServer state is none of git's business"); his
+//   voice file was a plain file there until goal/G2.1; the local shell reaches
 //   it by jobs.api on the loopback door (D4), a member by an 'api' packet.
 //   Andy: "test suites need their own copy of node", so the node T3 boots
 //   is planted in a temp home, never the checkout.
@@ -22,7 +22,7 @@
 //              bounded by bytes under appClient.ANSWER_MAX; '' matches all
 //   state.get  {} -> {json};  state.set {json} -> {saved: true}
 //   seen.get   {} -> {json};  seen.set  {json} -> {saved: true}
-//   voice.add  {text, day} -> {added: true}, a line in <state>/voice.jsonl
+//   (voice.add, a line in <state>/voice.jsonl, left with goal/G2.1)
 //   jobs.api   POST /api/spirit {verb: 'jobs.api', ask} -> appClient.ask's
 //              status and body; apiDoor.answer(servers, ask) is the function
 //              it shares with the member door.
@@ -48,7 +48,7 @@ const SCRIPT = path.join(DIR, 'desk.js');
 // slim/G1.8 (its AGENTS.md, which appServer.serve detects); DEBUG with desk/G2.5 (every server has it).
 // changes: apiAuth/G1.12, Andy's "yes on the verb" (its own suite is deskChanges.js).
 // DEPENDENCIES: apiAuth/G1.10, every appServer process answers it.
-const VERBS = ['AGENTS', 'DEBUG', 'DEPENDENCIES', 'box.write', 'changes', 'chat.add', 'check.add', 'check.set', 'item.box', 'item.chat', 'item.checks', 'item.get', 'item.rename', 'item.status', 'item.take', 'items.search', 'log.add', 'log.search', 'pending.get', 'press', 'seen.get', 'seen.set', 'session.set', 'state.get', 'state.set', 'voice.add'];
+const VERBS = ['AGENTS', 'DEBUG', 'DEPENDENCIES', 'box.write', 'changes', 'chat.add', 'check.add', 'check.set', 'item.box', 'item.chat', 'item.checks', 'item.get', 'item.rename', 'item.status', 'item.take', 'items.search', 'log.add', 'log.search', 'pending.get', 'press', 'seen.get', 'seen.set', 'session.set', 'state.get', 'state.set'];
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskserver-'));
 const state = path.join(scratch, 'state');
@@ -168,11 +168,11 @@ function line(key, todo, text, extra) {
   } else {
     test.fail(OWED + 'state/seen answered ' + JSON.stringify([s1, sg, n1, ng]));
   }
+  // voice.add IS GONE (goal/G2.1 note 8): it appended {text, day} to <state>/voice.jsonl, the hack Andy named;
+  // the brain reads his lines through the desk api now, and the vault's own tool keeps his corpus.
   const v = up ? await call('voice.add', { text: 'typed by andy', day: '2026-09-29' }) : {};
-  let voice = '';
-  try { voice = fs.readFileSync(path.join(state, 'voice.jsonl'), 'utf8'); } catch (e) { voice = ''; }
-  if (v.added === true && voice === JSON.stringify({ text: 'typed by andy', day: '2026-09-29' }) + '\n') test.check('voice.add appends {text, day} to voice.jsonl, a plain file in the state folder');
-  else test.fail(OWED + 'voice.add ' + JSON.stringify(v) + ', file ' + JSON.stringify(voice));
+  if (v.code === 'no-such-verb' && !fs.existsSync(path.join(state, 'voice.jsonl'))) test.check('voice.add is no-such-verb, and no voice.jsonl is written');
+  else test.fail('OWED by goal/G2.1: voice.add answered ' + JSON.stringify(v) + ', file present ' + fs.existsSync(path.join(state, 'voice.jsonl')));
 
   const bad = up ? await call('log.add', { json: 'not json' }) : {};
   if (bad.ok === false) test.check('a line that is not JSON is refused, by an error');
