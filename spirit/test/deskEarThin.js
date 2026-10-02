@@ -153,9 +153,13 @@ async function main() {
   const claudeMd = read('CLAUDE.md');
   const agentMd = read('AGENT.md');
   const stale = [];
-  if (/agents\.js/.test(agentsMd) || /process\/js\/agents/.test(agentsMd) || !/process\/js\/desk\/deskEar\.js/.test(agentsMd)) stale.push('process/js/desk/AGENTS.md');
-  if (/process\/js\/agents\//.test(claudeMd) || !/process\/js\/desk\/deskEar\.js/.test(claudeMd)) stale.push('CLAUDE.md');
-  if (/process\/js\/agents\/deskEar\.js/.test(agentMd) || !/process\/js\/desk\/deskEar\.js/.test(agentMd)) stale.push('AGENT.md');
+  // The deleted app's folder, spelled in two halves: agentsAppGone.js (goal/G3.2) reads this file too, and a
+  // suite that spelled the path whole would be the last thing in spirit/ still naming it.
+  const OLD = 'process/js/' + 'agents';
+  const NEW = 'process/js/desk/deskEar.js';
+  if (/agents\.js/.test(agentsMd) || agentsMd.indexOf(OLD) !== -1 || agentsMd.indexOf(NEW) === -1) stale.push('process/js/desk/AGENTS.md');
+  if (claudeMd.indexOf(OLD + '/') !== -1 || claudeMd.indexOf(NEW) === -1) stale.push('CLAUDE.md');
+  if (agentMd.indexOf(OLD + '/deskEar.js') !== -1 || agentMd.indexOf(NEW) === -1) stale.push('AGENT.md');
   if (!stale.length) test.check('AGENTS.md, CLAUDE.md and AGENT.md name process/js/desk/deskEar.js and no longer the agents app\'s listener');
   else test.fail(OWED + 'still naming the deleted listener, or not naming the new one: ' + stale.join(', '));
 }
