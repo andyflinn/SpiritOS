@@ -92,6 +92,10 @@ function tooLarge(bytes, max) {
 // The room item.chat fills, measured the way it fills it: so a line chat.add takes always comes back whole.
 const CHAT_ROOM = ANSWER_ROOM - Buffer.byteLength(JSON.stringify({ chatMore: false }), 'utf8');
 function chatLineBytes(index, line) { return oneAnswerBytes(String(index), JSON.stringify(line)); }
+// The room chat.search fills (goal/G3.11): half an answer. An agent's deskClient packs the desk's answer once more
+// as text, where every quote and backslash gains one byte, so at most the answer doubles; half the room is what
+// still arrives in one piece. Andy: "what's the problem with having to be brief?", "none of this joing shit."
+const SEARCH_ROOM = Math.floor(ANSWER_ROOM / 2);
 // Every panel an item answers with, each measured as one answer: its facts (item.get, and its label in a search),
 // its box (item.box) and its checks (item.checks). The largest, against the room.
 function largestPanel(s, id) {
@@ -811,6 +815,41 @@ appServer.serve({
       }
       const chat = bucket.getResult().items.map(function (p) { return JSON.parse(p.label); }).reverse();
       return { chat: chat, chatMore: chat.length < it.chat.length };
+    },
+  },
+  // A SEARCH ON AN ITEM'S CHAT LINES (goal/G3.11), for the agents. Andy: "a search on the chat lines of
+  // 'desk/G0.0'", "with time boundaries etc.... just for you agents", then "why dont you generalize the search so
+  // you can do it to the chat lines for any item in desk?" — so id names the item, the group chat among them.
+  // The filters are the four he asked wsl-claude to name: text (found in the line, whatever the case), by (who
+  // wrote it), since (from that time on), before (earlier than that time); one left empty filters nothing.
+  // The newest lines that match, through the same bucket, in half an answer (SEARCH_ROOM). NOTHING PAGES AND
+  // NOTHING IS JOINED: more says there were more, and the agent narrows (before = the oldest time it got).
+  // A read: it writes no record.
+  'chat.search': {
+    request: { id: '', text: '', by: '', since: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false },
+    handler: function (a) {
+      const it = walkState().items[String(a.id)];
+      if (!it) throw refused('no-such-item');
+      const text = String(a.text).toLowerCase();
+      const bucket = searchBucket.createSearch({
+        query: '**', maxBytes: SEARCH_ROOM,
+        getLabelStringFromIncomingObject: function (pair) { return pair.label; },
+        extractKeyAndLabelFromRow: function (pair) { return pair; },
+      });
+      // A line too big for the room on its own is never offered (as item.chat does): it is skipped, and said by more.
+      let skipped = false;
+      for (let i = it.chat.length - 1; i >= 0; i--) {
+        const l = it.chat[i];
+        if (a.by && l.by !== a.by) continue;
+        if (a.since && !(String(l.at) >= a.since)) continue;
+        if (a.before && !(String(l.at) < a.before)) continue;
+        if (text && String(l.text).toLowerCase().indexOf(text) === -1) continue;
+        const pair = { key: String(i), label: JSON.stringify({ by: l.by, at: l.at, text: l.text }) };
+        if (oneAnswerBytes(pair.key, pair.label) > SEARCH_ROOM) { skipped = true; continue; }
+        if (!bucket.offer(pair)) break;
+      }
+      const r = bucket.getResult();
+      return { items: r.items, more: r.more || skipped };
     },
   },
   // ── THE WRITES: no verb takes `by` any more (apiAuth/G1.13) — the
