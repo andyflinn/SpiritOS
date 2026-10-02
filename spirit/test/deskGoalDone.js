@@ -72,9 +72,22 @@ test.startTest('goal/G2.10: the goal offers Done only when every item is done');
       test.check('one closed, one done: still offered; an item reopened: taken away again');
     } else test.fail(OWED + 'goal buttons with one closed and one done ' + JSON.stringify(oneClosed) + ', after a reopen ' + JSON.stringify(reopened));
 
-    test.subHeading('3. the goal\'s own Done still works once offered');
+    test.subHeading('3. a new open item takes the goal\'s Done away again');
+    // Andy (Team line): "when all items are done and the done button appears on the goal, then a new item is
+    // added, not done, the goals done button should disappear." — "tied to the condition that all visible items are done."
     await call('press', { id: 'g/G1.2', what: 'claim-done' }, CW);
     await call('press', { id: 'g/G1.2', what: 'done' }, ANDY);
+    const beforeNew = await buttonsOf('g/G1');
+    const grown = await call('session.set', { json: JSON.stringify({ goal: { id: 'g/G1', title: 'Round' }, items: [
+      { id: 'g/G1.1', title: 'A', blocks: ['g/G1'] }, { id: 'g/G1.2', title: 'B', blocks: ['g/G1'] }, { id: 'g/G1.3', title: 'C', blocks: ['g/G1'] }] }) }, CW);
+    const withNew = await buttonsOf('g/G1');
+    if (beforeNew.indexOf('done') !== -1 && grown.status === 200 && withNew.indexOf('done') === -1) {
+      test.check('Done offered with every item done; a third item added open: Done gone');
+    } else test.fail(OWED + 'goal buttons with every item done ' + JSON.stringify(beforeNew) + ', after an open item was added ' + JSON.stringify(withNew) + ' (session.set ' + grown.status + ')');
+    await call('press', { id: 'g/G1.3', what: 'claim-done' }, CW);
+    await call('press', { id: 'g/G1.3', what: 'done' }, ANDY);
+
+    test.subHeading('4. the goal\'s own Done still works once offered');
     const offered = await buttonsOf('g/G1');
     const pressed = await call('press', { id: 'g/G1', what: 'done' }, ANDY);
     const after = await buttonsOf('g/G1');
