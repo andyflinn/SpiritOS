@@ -253,7 +253,9 @@ function ddTake(obj) {
   if (gap && ddId) { ddLoad(); return; }
   if (!obj.item || obj.item.id !== ddId) return;
   ddFacts = obj.item;
-  if (typeof obj.box === 'string') { ddBox = obj.box; ddVersion = Number(obj.version) || ddVersion; }
+  // A CHANGED BOX UNFOLDS (slim/G1.6 D6: "a changed block opens; his fold is his ack"): an agent's write while
+  // his dialog is open must not hide behind his fold; he folds it again when he has read it.
+  if (typeof obj.box === 'string') { ddBox = obj.box; ddVersion = Number(obj.version) || ddVersion; ddFolded = false; }
   if (obj.chat) ddChat.push(obj.chat);
   if (Array.isArray(obj.checks)) ddChecks = obj.checks;
   ddPaint();
