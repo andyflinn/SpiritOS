@@ -797,7 +797,9 @@ appServer.serve({
       const it0 = walkState().items[String(a.id)];
       // ONLY THE TAKER ANSWERS while a take stands (goal/G2.2 note 2); his own lines, and the desk's, are never refused.
       if (it0 && it0.takenBy && w.by !== it0.takenBy && w.by !== 'andy' && w.by !== 'desk') throw refused('taken');
-      const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: w.by, at: new Date().toISOString(), text: String(a.text) });
+      // Measured as it is stored and answered: with its taken field (goal/G2.2), else the largest line that passes
+      // here would not come back whole (oversize.js caught the ten bytes).
+      const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: w.by, at: new Date().toISOString(), text: String(a.text), taken: '' });
       if (bytes > CHAT_ROOM) throw tooLarge(bytes, CHAT_ROOM);
       const after = write('chat.add', Object.assign({}, a, { by: w.by, key: w.key }));
       // A MESSAGE TO A BUSY AGENT IS ANSWERED (goal/G2.5). Andy: "the app sends an-auto reply after sending the
