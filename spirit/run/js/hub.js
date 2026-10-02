@@ -1315,6 +1315,12 @@ function createHub(rootDir) {
       }
       return sendPacket(router, route.relayUrl, to, text, route.hints, how).then(function (answer) {
         learnPresence(rootDir, to, answer);
+        // DELIVERED MEANS THERE (goal/G2.9): an answer that crossed the wire is the relay carrying that peer now,
+        // so the live table hears it at the relay the post went through. A refusal teaches the shadow (above) and
+        // the live table nothing here: its red comes from the relay's own broadcast.
+        if (answer && answer.ok && typeof presence.heard === 'function') {
+          try { presence.heard(route.relayUrl, to); } catch (e) { /* a witness, never a reason to fail the post */ }
+        }
         res.writeHead(answer.ok ? 200 : (answer.status || 502),
           { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify(answer));
@@ -2397,6 +2403,8 @@ function createHub(rootDir) {
   // nothing here changes.
   function handleSearch(req, res, readJsonBody, deps) {
     var router = deps && deps.router;
+    // The live picture, told what the relay answered (goal/G2.9). Absent in the lab and the older suites, and then nobody is told.
+    var presence = deps && deps.presence;
     readJsonBody(req).then(function (body) {
       var q = String((body && body.q) || '').trim();
       // No floor: see relay.js. A short query is a real question with a
@@ -2463,6 +2471,13 @@ function createHub(rootDir) {
             // members, marked `present: false`. Search is online only
             // (relay.js walkRoll, 2026-09-19), whichever relay answered.
             if (p.present === false) return;
+            // THE DOT LEARNS FROM THE ANSWER (goal/G2.9). The relay asked has just carried this row — a member
+            // of its own or of a partner it reached — so the live table hears it at that relay, as a broadcast
+            // would be heard, and the Contacts dot paints without a restart. A row memory supplies below is not
+            // heard: it is what this node already had, not evidence.
+            if (presence && typeof presence.heard === 'function') {
+              try { presence.heard(url, p.publicKey); } catch (e) { /* the picture is a witness to the search, never a reason to fail it */ }
+            }
             var row = contactBook.byPublicKey(rootDir, p.publicKey);
             found[p.publicKey] = {
               publicKey: p.publicKey,

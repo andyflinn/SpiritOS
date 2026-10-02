@@ -567,6 +567,30 @@ function createPresence(opts) {
       urls.forEach(handOverCard);
       return urls.length;
     },
+    // ── A RELAY JUST CARRIED THIS KEY (goal/G2.9) ──────────────────────
+    //
+    //   Andy, 2026-10-02: "... but presence is implied... by search
+    //   results", "and every incoming request?", and, shown a Find painting
+    //   the WSL nodes green while the list stayed white: "looks like the
+    //   search results don't make it into the contact list".
+    //
+    // A search row the relay answered, a post it delivered, a packet it
+    // carried in: each is that relay saying this key is there now — the
+    // same statement as a `present: true` broadcast on its stream, and it
+    // lands the same way, in that relay's set, published through the job
+    // the Contacts dot reads. Only for a relay this node holds a stream to:
+    // without one there is no live word to give, and the caller is told so
+    // (false). Not in the book: not drawn, exactly as a broadcast would not
+    // be — and not noted either, the caller wrote the shadow row already.
+    // The newest word wins: a key the relay had said absent is green again.
+    // The relay's absent and gone still clear it, as they clear a broadcast.
+    heard: function (url, key) {
+      const k = String(key || '');
+      if (!k || !byRelay[url]) return false;
+      if (knows && !knows(k)) return true;
+      if (byRelay[url][k] !== true) { byRelay[url][k] = true; publish(); }
+      return true;
+    },
     // Which relay to send through. A node on two relays can reach a peer
     // by either, so the caller says nothing and this answers with the
     // ones that currently name that key as present.

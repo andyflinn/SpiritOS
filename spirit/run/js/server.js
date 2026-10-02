@@ -1349,6 +1349,13 @@ contactBook.syncMarks(ROOT_DIR);
         via: relayKeys.pinned(ROOT_DIR, relayUrl || '') || '',
         rank: require('./seenPeers').ARRIVED,
       });
+      // AND THE DOT HEARS THE ARRIVAL (goal/G2.9). Andy: "and every incoming request?" — a packet the relay just
+      // carried in is that relay saying its sender is there now, the strongest evidence there is; the live table
+      // marks the sender at that relay as a broadcast would, and the Contacts dot paints. No unit mounts this
+      // closure; it is verified live, a line between the agents' nodes.
+      if (presence && relayUrl && typeof presence.heard === 'function') {
+        try { presence.heard(relayUrl, from); } catch (e) { /* a witness, never a reason to refuse the packet */ }
+      }
     },
     remember: function (from, verdict, relayUrl) {
       return require('./hub').remember(ROOT_DIR, from, verdict, relayUrl);
