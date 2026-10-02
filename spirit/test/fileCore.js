@@ -194,22 +194,13 @@ async function partD() {
   }
 }
 
-function partE() {
-  test.subHeading('E. agents.js asks through spirit.peerPost; its own knot is gone');
-  const src = fs.readFileSync(path.join(RUN, 'process', 'js', 'agents', 'agents.js'), 'utf8')
-    .split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
-  const uses = /\.peerPost\(/.test(src);
-  const knot = /got\.re\s*===\s*want/.test(src);
-  if (uses && !knot) test.check('agents.js calls peerPost and no longer matches answers by re itself');
-  else test.fail(OWED + 'agents.js ' + (uses ? 'calls peerPost' : 'does not call peerPost') + (knot ? ' and still matches answers by re itself' : ''));
-}
+// Part E read agents.js (it asks through spirit.peerPost, its own knot gone); the agents app is gone (goal/G3.2).
 
 (async function () {
   await partA();
   await partB();
   await partC();
   await partD();
-  partE();
 })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   setTimeout(function () { process.exit(0); }, 200);

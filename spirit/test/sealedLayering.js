@@ -187,22 +187,7 @@ test.subHeading("cycle 10's R7: exactly one place in the tree can turn sealing o
       '. Every one that is not the partner wrapper is an exemption somebody granted themselves.');
   }
 
-  // AND THE AGENTS HAVE NO OPINION ABOUT SEALING AT ALL, which is the
-  // point of that requirement: they are sealed by not being special. A mention of
-  // sealing in the agents program would mean somebody had taught it a
-  // rule it should have inherited.
-  const agents = fs.readFileSync(
-    path.join(__dirname, '..', 'run', 'process', 'js', 'agents', 'agents.js'), 'utf8');
-  const codeLines = agents.split(/\r?\n/).filter(function (l) {
-    return !/^\s*\/\//.test(l) && /\bseal|sealsPosts|cipher/i.test(l);
-  });
-
-  if (!codeLines.length) {
-    test.check('and agents.js contains no sealing code whatsoever — the two Claudes are sealed ' +
-      'because all peer traffic is, which is exactly what cycle 10 asks for');
-  } else {
-    test.fail('agents.js has grown its own opinion about sealing: ' + codeLines.join(' | '));
-  }
+  // agents.js was read here too, for holding no sealing code of its own; the agents app is gone (goal/G3.2).
 }
 
 try { relayStore.closeAll(); } catch (e) { /* leave it */ }

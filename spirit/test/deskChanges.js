@@ -10,8 +10,9 @@
 //   - the reply's n and line are the cursors to resume from; asking again with them answers empty, more false;
 //   - one answer: the bucket cuts, more says so, and resuming from the returned cursors loses nothing and
 //     doubles nothing (the rowid is the cursor BECAUSE a time re-reads or misses on equal stamps);
-//   - a read: it takes no by (agents.js strips by off non-writes).
-//   DONE WHEN also: deskEar.js asks this verb instead of opening the db file.
+//   - a read: it takes no by.
+//   DONE WHEN also held deskEar.js to asking this verb instead of opening the db file. That listener went with
+//   the agents app (goal/G3.2); the one that replaces it is held to account by its own suites (goal/G3.4, G3.6).
 
 const fs = require('fs');
 const os = require('os');
@@ -22,7 +23,6 @@ const appClient = require('../run/js/appClient.js');
 
 const OWED = 'OWED by apiAuth/G1.12: ';
 const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
-const EAR = path.join(__dirname, '..', 'run', 'process', 'js', 'agents', 'deskEar.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
@@ -108,13 +108,8 @@ let kid = null;
 
   test.subHeading('a read takes no by');
   const withBy = await call('changes', { n: 0, line: 0, by: 'wsl-claude' });
-  if (withBy.status >= 400 && (withBy.body || {}).code === 'no-such-argument') test.check('changes with a by is refused no-such-argument, so agents.js keeps it a read');
+  if (withBy.status >= 400 && (withBy.body || {}).code === 'no-such-argument') test.check('changes with a by is refused no-such-argument: it is a read');
   else test.fail(OWED + 'changes with a by answered ' + JSON.stringify({ status: withBy.status, code: (withBy.body || {}).code }));
-
-  test.subHeading('deskEar asks, and no longer opens the file');
-  const ear = fs.readFileSync(EAR, 'utf8').split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n');
-  if (!/node:sqlite|DatabaseSync/.test(ear) && /changes/.test(ear)) test.check('deskEar.js holds no DatabaseSync and asks changes');
-  else test.fail(OWED + 'deskEar.js still opens the db file (DatabaseSync ' + /DatabaseSync/.test(ear) + ', asks changes ' + /changes/.test(ear) + ')');
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   if (kid) kid.kill();
   setTimeout(function () {

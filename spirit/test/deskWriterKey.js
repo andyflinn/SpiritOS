@@ -89,15 +89,14 @@ function call(verb, args, headers) {
   } catch (e) { test.fail(OWED + 'desk.db could not be read: ' + e.message); }
 
   test.subHeading('nobody sends by any more');
-  const agents = fs.readFileSync(path.join(RUN, 'process', 'js', 'agents', 'agents.js'), 'utf8');
   const page = fs.readFileSync(path.join(RUN, 'shell', 'desk', 'desk.js'), 'utf8') + fs.readFileSync(path.join(RUN, 'shell', 'deskDetails', 'deskDetails.js'), 'utf8');
   // Any spelling of setting a by: as a property (by: ...) or by assignment (x.by = ...). The first check looked
   // for by: 'andy' alone and missed deskDetails' args.by = 'andy', which reached Andy's live Desk.
   const sets = /(\.by\s*=(?!=)|[{,]\s*by\s*:)/;
-  const agentsSends = sets.test(agents.split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n'));
   const pageSends = sets.test(page.split('\n').filter(function (l) { return !/^\s*\/\//.test(l); }).join('\n'));
-  if (!agentsSends && !pageSends) test.check('agents.js and the Desk page and dialog send no by');
-  else test.fail(OWED + 'still sending by: agents.js ' + agentsSends + ', Desk page or dialog ' + pageSends);
+  // agents.js was read here too; the agents app is gone (goal/G3.2).
+  if (!pageSends) test.check('the Desk page and dialog send no by');
+  else test.fail(OWED + 'still sending by: Desk page or dialog ' + pageSends);
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   if (kid) kid.kill();
   setTimeout(function () {

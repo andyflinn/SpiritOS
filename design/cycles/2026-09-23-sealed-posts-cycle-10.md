@@ -1075,8 +1075,12 @@ send, and it went. `agents.js` refuses a `blocked` with no `what`; a send
 with no text should be refused the same way, rather than spending a post
 and a receipt on nothing.
 
-**Verify:** `spirit/test/agentsApp.js` — `makeEnvelope` refuses text that
-is empty or only whitespace, as it already refuses an unknown kind.
+**Verify:** `spirit/test/agentsAppGone.js` — since 2026-10-02 the agents
+app itself is gone (goal/G3.2; Andy: *"the agents APP is no longer
+permitted in this REPO"*), so nothing of it can send, empty or not. Until
+then this was verified by spirit/test/agentsApp.js, deleted with the app:
+`makeEnvelope` refused text that was empty or only whitespace, as it
+already refused an unknown kind.
 
 **Status:** DONE at `cfe965c`, **by wsl-claude**. Refused at the SENDER,
 where the mistake is and where it costs one failed command rather than a

@@ -191,19 +191,11 @@ const TALLY = {
   // gate guards the production trees: a suite may stand up fake servers
   // and raw sockets to PROVE them, and needs nobody's grant to do it.
 
-  // ── THE AGENTS PROGRAM — A GRANTED EXCEPTION ──────────────────────────
-  //
-  //   Andy, 2026-09-22: "exception granted"
-  //
-  // A client of its OWN node's loopback door, as the shell is, so agents
-  // can post to each other node to node (design/agents/). It lives under
-  // process/, which the walk skips as "spawned scripts talking to third
-  // parties" — and this one talks to no third party, so leaving it inside
-  // the skip would have made the skip the category meaning unlimited. So
-  // its folder is walked, and its one reach is counted like any other.
-  'process/js/agents/agents.js': 1,
+  // The agents program held a granted exception here (Andy, 2026-09-22:
+  // "exception granted"), one reach. The app is gone, and its line with it
+  // (goal/G3.2; Andy: "the agents APP is no longer permitted in this REPO").
 
-  // ── THE GROK REVIEW PROGRAM — THE SAME KIND OF EXCEPTION ──────────────
+  // ── THE GROK REVIEW PROGRAM — A GRANTED EXCEPTION ─────────────────────
   //
   //   Andy, 2026-09-22: "this is where the env-variable proxy-call in node
   //   should come in" — "may as well excercise that aspect of the SpiritOS"
@@ -268,7 +260,6 @@ const files = walk(path.join(SPIRIT, 'run', 'js'), 'js/', [])
   .concat(walk(path.join(SPIRIT, 'run', 'shell'), 'shell/', []))
   // spirit/test is not walked: tests are not subject to the same rules (Andy, 2026-10-02).
   // The folders of process/ that are walked: the granted exceptions above.
-  .concat(walk(path.join(SPIRIT, 'run', 'process', 'js', 'agents'), 'process/js/agents/', []))
   .concat(walk(path.join(SPIRIT, 'run', 'process', 'js', 'grokReview'), 'process/js/grokReview/', []))
   // platform/ — tools for Andy's machines, beside spirit/ (platform/README.md).
   .concat(walk(path.join(SPIRIT, '..', 'platform'), 'platform/', []));

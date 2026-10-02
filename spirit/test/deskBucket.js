@@ -26,8 +26,8 @@
 //      together are bigger than one answer, so they are read page by page.
 //   T4 log.add refuses a line too big for the room with a declared error
 //      {ok: false, code: 'line-too-large'}, status 413.
-//   T5 agents.js refuses, before sending anything, a message whose line on
-//      Andy's node would be too big for the room, and says so.
+//   T5 was agents.js's own refusal of such a line before sending; it went
+//      with the agents app (goal/G3.2).
 
 const fs = require('fs');
 const os = require('os');
@@ -36,7 +36,6 @@ const { spawn } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const test = require('./testSupport.js');
 const appClient = require('../run/js/appClient.js');
-const agents = require('../run/process/js/agents/agents.js');
 
 const OWED = 'OWED by slim/G1.2: ';
 const DESK = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
@@ -159,20 +158,6 @@ const kids = [];
   if (r4.status === 413 && r4.body && r4.body.ok === false && r4.body.code === 'line-too-large') test.check('413, line-too-large');
   else test.fail(OWED + 'log.add of a too-big line answered ' + r4.status + ' ' + JSON.stringify(r4.body).slice(0, 160));
   await stop(kid);
-
-  // ── T5 ──────────────────────────────────────────────────────────────
-  test.subHeading('T5: agents.js refuses, before sending, a message too big to read back on Andy\'s node');
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskbucket-agent-'));
-  fs.mkdirSync(path.join(home, 'relay-state'), { recursive: true });
-  fs.writeFileSync(path.join(home, 'relay-state', 'identity.json'), JSON.stringify({ publicKey: 'KEY-OWN' }));
-  const cfg = agents.config({ AGENTS_NODE: 'http://127.0.0.1:45440', AGENTS_ROOT: home, AGENTS_SELF: 'claude-windows',
-    AGENTS_PEERS: 'wsl-claude=KEY-WSL', AGENTS_CONTROL: 'KEY-ANDY', AGENTS_RETRY_MS: '0' });
-  const posts = [];
-  const fetchFn = function (url, init) { posts.push(init); return Promise.resolve({ status: 200, text: function () { return Promise.resolve('{"hash":"H","receipt":true}'); } }); };
-  // Plain text, so the report to his node (16 KB) would fit; the line his desk keeps would not.
-  const r5 = await agents.send(cfg, 'control', 'note', 'P'.repeat(ROOM + 200), '', { fetch: fetchFn });
-  if (r5 && r5.ok === false && posts.length === 0 && /answer|too big|too long/i.test(String(r5.error || ''))) test.check('refused before sending: ' + String(r5.error).slice(0, 90));
-  else test.fail(OWED + 'agents.send answered ' + JSON.stringify(r5).slice(0, 160) + ' after ' + posts.length + ' post(s)');
 })().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
   kids.forEach(function (k) { try { k.kill(); } catch (e) { /* gone */ } });
   setTimeout(function () {

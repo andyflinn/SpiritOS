@@ -5,13 +5,14 @@
 
 const test = require('./testSupport.js');
 const boardPost = require('./boardPost.js');
-const agents = require('../run/process/js/agents/agents.js');
 const limits = require('../run/js/limits.js');
 
 test.startTest('The lead posts the board when it changed, and refuses one too big to send');
 
 function boardOf(rows) { return JSON.stringify({ rows: rows }, null, 2); }
-function envelopeOf(json) { return JSON.stringify(agents.makeEnvelope('lead', 'board', json)); }
+// The envelope was the agents app's (makeEnvelope), and the app is gone (goal/G3.2). What decide() measures is
+// the board wrapped once more in JSON, so a plain wrapper stands in for it here.
+function envelopeOf(json) { return JSON.stringify({ from: 'lead', kind: 'board', text: json }); }
 
 const small = boardOf([{ kind: 'to-do', id: 'x/a', title: 'a' }]);
 
@@ -65,20 +66,6 @@ const small = boardOf([{ kind: 'to-do', id: 'x/a', title: 'a' }]);
     test.fail('could not build a board that fits alone but not wrapped; the control proves nothing');
   } else {
     test.fail('the wrapped board was ' + JSON.stringify(d));
-  }
-}
-
-// ── AND THE ENVELOPE REFUSES ANYTHING THAT IS NOT A BOARD ────────────
-{
-  let refused = false;
-  try { agents.makeEnvelope('lead', 'board', 'not json at all'); } catch (e) { refused = true; }
-  let accepted = false;
-  try { agents.makeEnvelope('lead', 'board', small); accepted = true; } catch (e) { accepted = false; }
-  if (refused && accepted) {
-    test.check('a board envelope is refused at the sender unless its text is the scoreboard JSON, '
-      + 'and accepted when it is');
-  } else {
-    test.fail('refused non-board: ' + refused + ', accepted board: ' + accepted);
   }
 }
 

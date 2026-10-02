@@ -1,7 +1,8 @@
 'use strict';
 
 // goal/G2.3: the listener tells Desk what it does — listening when it arms, working when it hands over a line.
-// Red on today's tree: Desk has no such verb, and deskEar says nothing about itself.
+// This suite holds the desk server's half (1 to 3). The listener's half (4) ran agents/deskEar.js, which went with
+// the agents app (goal/G3.2); the listener that replaces it is held to its words by its own suite (goal/G3.4).
 //   Andy (goal/G2.2 note 3, broken out): "every agents tab has a blinking border while it's working. it starts,
 //   when the agent stops listening to do a task, and it stops when the agent goes back to listening. the
 //   listening script can toggle those two?"
@@ -13,9 +14,6 @@
 //      live (a write in the last 10 minutes, the same rule as live); a stale working clears with liveness.
 //   3. The change is published: the write that takes the word publishes the goal row with its new working list,
 //      so a page paints it from the publish and pulls nothing.
-//   4. deskEar.js says listening when it arms (before its first changes ask) and working the moment it hands over
-//      a line (before it prints and exits under --once). Proven live: a real desk server, a pretend node between
-//      it and a real deskEar.
 
 const fs = require('fs');
 const os = require('os');
@@ -24,20 +22,16 @@ const http = require('http');
 const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const appClient = require('../run/js/appClient.js');
-const packet = require('../run/js/client/packet.js');
 
 const OWED = 'OWED by goal/G2.3: ';
 const RUN = path.join(__dirname, '..', 'run');
 const SERVER = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
-const EAR = path.join(RUN, 'process', 'js', 'agents', 'deskEar.js');
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-async function until(fn, ms) { const end = Date.now() + ms; for (;;) { const v = fn(); if (v || Date.now() > end) return v; await sleep(100); } }
 
 const CW = { key: 'MCowBQYDK2VwAyEAdeskEarStateTestPeerCWAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const WSL = { key: 'MCowBQYDK2VwAyEAdeskEarStateTestPeerWSLAAAAAAAAAAAAA=', label: 'wsl-claude' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskEarStateTestOwnerAAAAAAAAAAAAAAA=', label: 'andy' };
-const CONTROL = 'MCowBQYDK2VwAyEAdeskEarStateControlAAAAAAAAAAAAAAAAA=';
 
 test.startTest('goal/G2.3: the listener tells Desk listening or working');
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-earstate-'));
@@ -56,17 +50,8 @@ const goalRow = async function () {
 
 // The publishes the desk server sends up (its node callback), every object kept.
 const published = [];
-// The pretend node deskEar talks to: its peer.post goes into the desk server as the agent's own ask, and the
-// answer comes back down the event stream by re; the stream also carries any nudge the test sends.
-const streams = [];
-const words = [];  // every agent.state the desk server was asked, in order: { by, word }
+// The pretend node the desk server reports to: it keeps what the server publishes.
 const node = http.createServer(function (req, res) {
-  if (req.method === 'GET' && req.url === '/api/events') {
-    res.writeHead(200, { 'Content-Type': 'text/event-stream' });
-    res.write(': open\n\n');
-    streams.push(res);
-    return;
-  }
   let raw = '';
   req.on('data', function (c) { raw += c; });
   req.on('end', function () {
@@ -76,19 +61,7 @@ const node = http.createServer(function (req, res) {
       res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"ok":true}');
       return;
     }
-    if (b.verb !== 'peer.post') { res.writeHead(400); res.end('{"ok":false}'); return; }
-    const hash = 'H' + Date.now() + Math.random();
-    let ask = null;
-    try { ask = packet.decode(b.text); } catch (e) { ask = null; }
-    const desk = (ask && ask.body && ask.body.desk) || {};
-    const verb = Object.keys(desk)[0] || '';
-    if (verb === 'agent.state') words.push({ by: CW.label, word: desk[verb] && desk[verb].word });
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ ok: true, hash: hash }));
-    client.ask({ desk: desk }, CW).then(function (r) {
-      const made = packet.encode('api', r && r.body, { re: hash });
-      streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: CONTROL, text: made.text }) + '\n\n'); } catch (e) { /* gone */ } });
-    }, function () { /* the ear retries */ });
+    res.writeHead(400); res.end('{"ok":false}');
   });
 });
 
@@ -129,38 +102,10 @@ async function main() {
   if (pub && Array.isArray(pub.working) && pub.working.join() === 'wsl-claude') test.check('a publish carried the goal row with working: [wsl-claude]');
   else test.fail(OWED + 'no publish carried the goal row with the new working list: ' + JSON.stringify(published.slice(-2)).slice(0, 300));
   await call('agent.state', { word: 'listening' }, WSL);
-
-  test.subHeading('4. deskEar says listening when it arms, working when it hands over a line');
-  words.length = 0;
-  const ear = spawn(process.execPath, [EAR, '--self', 'claude-windows', '--once'], {
-    stdio: ['ignore', 'pipe', 'pipe'],
-    env: Object.assign({}, process.env, { AGENTS_NODE: nodeUrl, AGENTS_ROOT: scratch, AGENTS_SELF: 'claude-windows', AGENTS_CONTROL: CONTROL, AGENTS_PEERS: '' }),
-  });
-  kids.push(ear);
-  let out = '';
-  ear.stdout.on('data', function (c) { out += c; });
-  ear.stderr.on('data', function (c) { out += c; });
-  const armed = await until(function () { return words.some(function (x) { return x.word === 'listening'; }); }, 15000);
-  const armedRow = await goalRow();
-  if (armed && (armedRow.working || []).indexOf('claude-windows') === -1) test.check('the ear said listening as it armed, and Desk shows it not working');
-  else test.fail(OWED + 'the ear ' + (armed ? 'said listening but Desk still shows it working' : 'never said listening') + '; words ' + JSON.stringify(words) + ' ear: ' + out.slice(0, 300));
-  // A line of his for this agent, then a nudge down the stream: the ear hands it over and exits.
-  await call('chat.add', { id: 'e/G1.1', text: 'a line for the ear' }, ANDY);
-  // Desk's own nudge, as the page sends it (deskDetails.js): an agents packet { kind: 'changed' }; the ear's
-  // stream reader passes only agents envelopes on.
-  const nudge = packet.encode('agents', { kind: 'changed', from: 'desk', text: '' });
-  streams.forEach(function (s) { try { s.write('event: packet\ndata: ' + JSON.stringify({ from: CONTROL, text: nudge.text }) + '\n\n'); } catch (e) { /* gone */ } });
-  const exited = await new Promise(function (resolve) { const t = setTimeout(function () { resolve(false); }, 15000); ear.on('exit', function () { clearTimeout(t); resolve(true); }); });
-  const last = words[words.length - 1] || {};
-  const workingRow = await goalRow();
-  if (exited && /a line for the ear/.test(out) && last.word === 'working' && (workingRow.working || []).indexOf('claude-windows') !== -1) {
-    test.check('the ear said working, handed the line over, and exited; Desk shows claude-windows working');
-  } else test.fail(OWED + (exited ? 'the ear exited' : 'the ear did not exit') + ', last word ' + JSON.stringify(last.word) + ', Desk working ' + JSON.stringify(workingRow.working) + ', ear: ' + out.slice(0, 300));
 }
 
 main().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
   kids.forEach(function (k) { try { k.kill(); } catch (e) { /* gone */ } });
-  streams.forEach(function (s) { try { s.end(); } catch (e) { /* gone */ } });
   try { node.close(); } catch (e) { /* closed */ }
   setTimeout(function () {
     try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* busy */ }
