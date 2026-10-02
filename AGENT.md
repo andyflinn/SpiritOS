@@ -279,9 +279,10 @@ AGENTS.md for desk"*. The loop, as the lead runs it:
 1. **No turn ends without a listener armed.** After every post, the agent
    starts a one-shot listener in the background that exits on the next thing
    meant for it: a line or press from Andy in Desk, the other agent's line.
-   The listener is `spirit/run/process/js/agents/deskEar.js --self <agent>
-   --once` (Andy: *"just put that listener script in the repo"*), with the
-   same AGENTS_* settings as agents.js. It asks Desk's `changes` over peerPost
+   The listener is `node spirit/run/process/js/desk/deskEar.js <port>`, the
+   port being the agent's own node's (Andy: *"just put that listener script in
+   the repo"*; its place and form since goal/G3.6). It asks that node's
+   deskClient server, which reads Desk's `changes` over peerPost
    (apiAuth/G1.12), so it works from wherever the agent is.
 2. **When it fires, the agent reads it, answers in Desk under the item it
    is about, and re-arms** before the turn ends.
