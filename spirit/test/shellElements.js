@@ -30,7 +30,8 @@ const vm = require('vm');
 const test = require('./testSupport.js');
 const spirit = require('../run/js/kernel.js');
 
-const OWED = 'OWED by goal/G2.12: ';
+// The split was ruled after G2.12 closed on the one-file build; it is goal/G2.14's.
+const OWED = 'OWED by goal/G2.14: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DIR = path.join(RUN, 'shell', 'js');
 const FILES = { createIconSelector: 'iconSelector.js', createContactSelector: 'contactSelector.js', createAppServerSelector: 'appServerSelector.js', createApiBranchSelector: 'apiBranchSelector.js' };
