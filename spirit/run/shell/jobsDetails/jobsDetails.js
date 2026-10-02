@@ -43,7 +43,44 @@ function jdJob() {
   return (jdJobs && jdId && jdJobs.get(jdId)) || null;
 }
 
+// ── THE WATCHER'S CONSOLE IS ITS STREAM (goal/G2.16) ───────────────────
+//
+//   Andy, 2026-10-02: "jobs don't need to write logs, logs should be consumed
+//   by an outside reader ... the watcher only needs to stream data", and "let's
+//   just make the consoles display the usefull data, the data in the live
+//   stream, we'll do it one item per job."
+//
+// fs-watcher writes no log line; each change it settles arrives as a job event
+// whose data carries lastEvent {eventType, filename}. This page is the reader:
+// every such event, heard while the page lives (open or not), becomes one line —
+// time, event, path — in a window of JD_WINDOW lines kept here, oldest falling
+// off the top. Nothing is asked of the node, and a repeat of the same event at
+// the same moment adds nothing.
+var JD_WINDOW = 1000;
+var jdStreams = Object.create(null);   // job id -> [{at, event, path}]
+
+function jdHear(job) {
+  if (!job || job.type !== 'fs-watcher') return;
+  var ev = job.data && job.data.lastEvent;
+  if (!ev || !ev.filename) return;
+  var lines = jdStreams[job.id] || (jdStreams[job.id] = []);
+  var last = lines[lines.length - 1];
+  if (last && last.at === job.updatedAt && last.event === ev.eventType && last.path === ev.filename) return;
+  lines.push({ at: job.updatedAt, event: String(ev.eventType || ''), path: String(ev.filename) });
+  if (lines.length > JD_WINDOW) lines.splice(0, lines.length - JD_WINDOW);
+}
+
+function jdStreamHtml(job) {
+  var lines = jdStreams[job.id] || [];
+  if (!lines.length) return '<div class="job-log-empty">(no file events heard yet)</div>';
+  return lines.map(function (l) {
+    return '<div class="job-log-entry"><span class="job-log-time">' +
+      new Date(l.at).toLocaleTimeString() + '</span>' + jdEscapeHtml(l.event) + ' ' + jdEscapeHtml(l.path) + '</div>';
+  }).join('');
+}
+
 function jdLogHtml(job) {
+  if (job.type === 'fs-watcher') return jdStreamHtml(job);
   if (!job.log || job.log.length === 0) return '<div class="job-log-empty">(no log entries yet)</div>';
   return job.log.map(function (entry) {
     return '<div class="job-log-entry"><span class="job-log-time">' +
@@ -127,6 +164,9 @@ spirit.shell.activateApp({
     // when the shell did not say which job moved.
     api.onJobs(function (jobsById, changed) {
       jdJobs = jobsById;
+      // The watcher's stream is heard whatever is on screen, so a reopen shows what came meanwhile (goal/G2.16).
+      if (changed) jdHear(changed);
+      else if (jobsById && jobsById.forEach) jobsById.forEach(jdHear);
       if (!jdId) return;
       if (!changed || changed.id === jdId) jdRender();
     });
