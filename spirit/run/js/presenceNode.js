@@ -48,6 +48,8 @@ function createPresence(opts) {
   // LEARNS, which is a different question and was never meant to be the
   // same one. Injected, like every other outward reach in this file.
   const noteSeen = typeof opts.noteSeen === 'function' ? opts.noteSeen : null;
+  // (The router this node posts from is `opts.router`, taken below as it always was; the reconcile of goal/G2.8
+  // asks a relay its own search through it — the wire this node already uses, nothing new.)
 
   // ── THE OWNER'S RELAY RECORD (cycle 11's R2) ─────────────────────
   //
@@ -190,6 +192,47 @@ function createPresence(opts) {
     if (relayKey) set[relayKey] = true;
     if (identity && identity.publicKey) set[identity.publicKey] = true;
     byRelay[url] = set;
+  }
+
+  // ── A FRESH STREAM RECONCILES THE BOOK ONCE (goal/G2.8) ───────────
+  //
+  //   Andy, 2026-10-02: "also, none of you appear as 'present'", "and your
+  //   nodes should be showing green dots", "in Find someone on the network
+  //   you do show green."
+  //
+  // Green comes only from a broadcast heard since this stream opened, and
+  // the relay sends no roster on connect (cycle 3): a node that opens its
+  // stream after its contacts connected never hears them. So on every open
+  // this node asks that relay once, with the relay's own search — the same
+  // packet the network search sends, sealed to the relay's pinned key,
+  // nothing new on the wire — and marks the book contacts it answers exactly
+  // as a `present: true` broadcast would. A contact the answer does not name
+  // stays unmentioned, white, never red: not being in a capped answer is not
+  // being absent, and this node does not ask again per missing key — the
+  // broadcast comes when they connect. What the relay answers that is not in
+  // the book is learned, as a broadcast is, and not drawn. A relay that
+  // fails the question (a rejected post, an older relay refusing the verb)
+  // marks nobody and breaks nothing: the stream stays, broadcasts still land.
+  function reconcile(url) {
+    const relayKey = relayKeys.pinned(rootDir, url);
+    if (!router || !relayKey) return Promise.resolve();
+    const packet = JSON.stringify({ v: 1, body: { search: { q: '*' } } });
+    return Promise.resolve().then(function () { return router.post(url, relayKey, packet); }).then(function (answer) {
+      let out = null;
+      try { const parsed = JSON.parse(String((answer && answer.text) || '')); out = parsed && parsed.body ? parsed.body : parsed; } catch (e) { out = null; }
+      if (!out || out.ok !== true || !Array.isArray(out.matches) || !byRelay[url]) return;
+      let changed = false;
+      out.matches.forEach(function (m) {
+        const key = m && String(m.publicKey || m.key || '');
+        if (!key) return;
+        if (knows && !knows(key)) {
+          if (noteSeen) { try { noteSeen(key, { at: relayKey, url: url }); } catch (e) { /* a cache that will not take a row is not a reason to stop */ } }
+          return;
+        }
+        if (byRelay[url][key] !== true) { byRelay[url][key] = true; changed = true; }
+      });
+      if (changed) publish();
+    }).catch(function () { /* marks nobody; the broadcasts still land on this stream */ });
   }
 
   // ── AND THIS NODE HANDS THE RELAY ITS CARD (cycle 10, R20) ──────────
@@ -465,6 +508,7 @@ function createPresence(opts) {
       onOpen: function () {
         seedRelay(url);
         handOverCard(url);
+        reconcile(url);
         if (recordEdge) { try { recordEdge(url, 'open', ''); } catch (e) { /* witness */ } }
         publish('connected to ' + url);
       },
