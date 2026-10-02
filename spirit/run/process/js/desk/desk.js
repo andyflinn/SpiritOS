@@ -388,7 +388,12 @@ function press(s, it, what, r, goalOf) {
   else if (what === 'design-complete') { it.designComplete = true; it.status = 'ready'; }
   else if (what === 'go') { it.went = true; it.status = 'running'; }
   else if (what === 'go-all' && g) goable(s, g).forEach(function (m) { m.went = true; m.status = 'running'; });
-  else if (what === 'claim-done') it.claims[r.by] = true;
+  // A CLAIM CONSUMES THE GO (goal/G2.13). Andy: "When Done is offered, Go will be considered pressed/consumed",
+  // and "ok, too." to a Reopen without a Go: an item claimed before his Go counts as gone, as his Go would make it.
+  else if (what === 'claim-done') {
+    it.claims[r.by] = true;
+    if (!it.goal && !it.went) { it.went = true; it.status = 'running'; }
+  }
   else if (what === 'done') { it.done = true; it.alone = !Object.keys(it.claims).length; }
   else if (what === 'reopen') { it.done = false; it.alone = false; it.claims = Object.create(null); }
   else if (what === 'close') it.closed = true;
