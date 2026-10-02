@@ -9,18 +9,20 @@
 //   In the tree: createIconSelector (js/client/shell.js:762), createContactSelector (:915), createAppServerSelector
 //   (:963), createApiBranchSelector (:1002), closed over shell.js's helpers and handed out at shell.js:1634 as
 //   api.ui.elements; index.html loads /js/client/shell.js last (index.html:1366). No shell/js/ folder exists.
-// The contract the builder follows (the shape in goal/G2.12's box; the arguable parts fixed here by name):
-//   1. spirit/run/shell/js/elements.js defines the four factories and exposes them as window.spiritElements
-//      {createIconSelector, createContactSelector, createAppServerSelector, createApiBranchSelector} — the pattern
-//      iconIndex.js set (window.spiritIconIndex). It takes what it needs from the globals every shell script has
-//      (spirit, window.spiritIconIndex, window.spiritApiTreeIndex, document) and from nothing inside shell.js.
-//   2. index.html loads /shell/js/elements.js before /js/client/shell.js, as it loads iconIndex.js.
-//   3. shell.js defines none of the four any more (no `function createXSelector` in it) and hands apps
-//      spiritElements.createXSelector under api.ui.elements — the api an app sees is unchanged.
-//   4. The factories behave as they did: a contact selector built from given rows paints them and answers the
-//      chosen row's key on change, as a control (root.value, a bubbling change).
-// Suites asserting the old home (apiBranchSelector, appServerSelector, contactSelector: "shell.js defines ... and
-// hands it") go red on the build and are flipped by the builder to the new home; their behaviour checks stand.
+// AMENDED, the same day (Andy, verbatim, on the one elements.js the first build made): "why all in one?" — no
+// good reason, said back — "i can guarantee you: there will be many". So one file per element.
+// The contract the builder follows (the shape in goal/G2.12's box):
+//   1. One file per element in spirit/run/shell/js/: iconSelector.js, contactSelector.js, appServerSelector.js,
+//      apiBranchSelector.js. Each defines its one factory and adds it to window.spiritElements (created by
+//      whichever loads first), on the globals every shell script has (spirit, window.spiritIconIndex,
+//      window.spiritApiTreeIndex, document) and nothing inside shell.js or another element's closure; the
+//      api-branch selector reaches the app-server one through window.spiritElements. elements.js is gone.
+//   2. index.html loads the four before /js/client/shell.js, appServerSelector.js before apiBranchSelector.js,
+//      and no longer loads elements.js.
+//   3. shell.js defines none of the four and hands spiritElements.createXSelector under api.ui.elements — the api
+//      an app sees is unchanged.
+//   4. Loaded together the four expose four functions, and a contact selector still works as a control (root.value,
+//      one bubbling change on the root).
 
 const fs = require('fs');
 const path = require('path');
@@ -30,7 +32,8 @@ const spirit = require('../run/js/kernel.js');
 
 const OWED = 'OWED by goal/G2.12: ';
 const RUN = path.join(__dirname, '..', 'run');
-const ELEMENTS = path.join(RUN, 'shell', 'js', 'elements.js');
+const DIR = path.join(RUN, 'shell', 'js');
+const FILES = { createIconSelector: 'iconSelector.js', createContactSelector: 'contactSelector.js', createAppServerSelector: 'appServerSelector.js', createApiBranchSelector: 'apiBranchSelector.js' };
 const SHELL = path.join(RUN, 'js', 'client', 'shell.js');
 const INDEX = path.join(RUN, 'index.html');
 const FOUR = ['createIconSelector', 'createContactSelector', 'createAppServerSelector', 'createApiBranchSelector'];
@@ -58,24 +61,27 @@ function fakeElement(tag) {
 // the root fires its own, so a listener on the root hears one change, not two.
 function FakeEvent(type, init) { const ev = this; ev.type = type; ev.bubbles = !!(init && init.bubbles); ev.stopped = false; ev.stopPropagation = function () { ev.stopped = true; }; ev.preventDefault = function () {}; }
 
-test.startTest('goal/G2.12: the element factories live in shell/js/elements.js, handed to apps as before');
+test.startTest('goal/G2.12: one file per element factory in shell/js/, handed to apps as before');
 
 const shell = fs.readFileSync(SHELL, 'utf8');
 const index = fs.readFileSync(INDEX, 'utf8');
-let elements = null;
-try { elements = fs.readFileSync(ELEMENTS, 'utf8'); } catch (e) { elements = null; }
+const src = {};
+FOUR.forEach(function (n) { try { src[n] = fs.readFileSync(path.join(DIR, FILES[n]), 'utf8'); } catch (e) { src[n] = null; } });
 
-test.subHeading('1. the file, and the four in it');
-if (elements && FOUR.every(function (n) { return elements.indexOf('function ' + n) !== -1; }) && /spiritElements/.test(elements)) {
-  test.check('shell/js/elements.js defines the four factories and exposes them as spiritElements');
-} else if (!elements) test.fail(OWED + 'there is no spirit/run/shell/js/elements.js');
-else test.fail(OWED + 'elements.js lacks: ' + FOUR.filter(function (n) { return elements.indexOf('function ' + n) === -1; }).join(', ') + (/spiritElements/.test(elements) ? '' : ', and does not expose spiritElements'));
+test.subHeading('1. one file per element, each adding itself to spiritElements');
+const missing = FOUR.filter(function (n) { return !src[n]; });
+const wrong = FOUR.filter(function (n) { return src[n] && (src[n].indexOf('function ' + n) === -1 || !/spiritElements/.test(src[n]) || FOUR.some(function (o) { return o !== n && src[n].indexOf('function ' + o) !== -1; })); });
+if (!missing.length && !wrong.length) test.check('iconSelector.js, contactSelector.js, appServerSelector.js and apiBranchSelector.js each define their one factory and add it to spiritElements');
+else test.fail(OWED + (missing.length ? 'missing files: ' + missing.map(function (n) { return FILES[n]; }).join(', ') : '') + (wrong.length ? ' wrong contents: ' + wrong.map(function (n) { return FILES[n]; }).join(', ') : ''));
+if (!fs.existsSync(path.join(DIR, 'elements.js'))) test.check('and the all-in-one elements.js is gone');
+else test.fail(OWED + 'shell/js/elements.js still exists');
 
-test.subHeading('2. loaded by index.html before the shell');
-const atElements = index.indexOf('src="/shell/js/elements.js"');
+test.subHeading('2. loaded by index.html before the shell, app-server before api-branch');
+const at = {}; FOUR.forEach(function (n) { at[n] = index.indexOf('src="/shell/js/' + FILES[n] + '"'); });
 const atShell = index.indexOf('src="/js/client/shell.js"');
-if (atElements !== -1 && atShell !== -1 && atElements < atShell) test.check('index.html loads /shell/js/elements.js, before /js/client/shell.js');
-else test.fail(OWED + 'index.html: elements at ' + atElements + ', shell at ' + atShell);
+if (FOUR.every(function (n) { return at[n] !== -1 && at[n] < atShell; }) && at.createAppServerSelector < at.createApiBranchSelector && index.indexOf('/shell/js/elements.js') === -1) {
+  test.check('index.html loads the four before /js/client/shell.js, app-server before api-branch, and no elements.js');
+} else test.fail(OWED + 'index.html positions ' + JSON.stringify(at) + ', shell at ' + atShell + ', elements.js tag ' + (index.indexOf('/shell/js/elements.js') !== -1));
 
 test.subHeading('3. the shell defines none of them and hands them out as before');
 const stillDefined = FOUR.filter(function (n) { return shell.indexOf('function ' + n) !== -1; });
@@ -86,9 +92,9 @@ const handed = FOUR.filter(function (n) { return new RegExp('elements: \\{[^}]*'
 if (handed.length === 4) test.check('and hands all four to apps under api.ui.elements from spiritElements');
 else test.fail(OWED + 'handed from spiritElements under ui.elements: ' + handed.join(', ') + ' — missing ' + FOUR.filter(function (n) { return handed.indexOf(n) === -1; }).join(', '));
 
-test.subHeading('4. a factory still works as a control');
-if (!elements) {
-  test.fail(OWED + 'no elements.js to load — the behaviour is owed with the file');
+test.subHeading('4. loaded together, the factories still work as controls');
+if (missing.length) {
+  test.fail(OWED + 'not every element file exists — the behaviour is owed with them');
 } else {
   const window = { spiritIconIndex: { choices: function () { return []; }, keyFor: function () { return ''; } }, spiritApiTreeIndex: { servers: function () { return []; }, verbs: function () { return []; } } };
   const ctx = {
@@ -99,10 +105,10 @@ if (!elements) {
   };
   ctx.self = ctx.window;
   let tripped = null;
-  try { vm.runInNewContext(elements, ctx); } catch (e) { tripped = e; }
+  try { vm.createContext(ctx); ['createIconSelector', 'createContactSelector', 'createAppServerSelector', 'createApiBranchSelector'].forEach(function (n) { vm.runInContext(src[n], ctx); }); } catch (e) { tripped = e; }
   const E = window.spiritElements;
-  if (!tripped && E && FOUR.every(function (n) { return typeof E[n] === 'function'; })) test.check('elements.js loads on the shell\'s globals alone and exposes four functions');
-  else test.fail(OWED + (tripped ? 'elements.js tripped on load: ' + tripped.message : 'spiritElements exposes ' + JSON.stringify(E && Object.keys(E))));
+  if (!tripped && E && FOUR.every(function (n) { return typeof E[n] === 'function'; })) test.check('the four files load on the shell\'s globals alone and expose four functions');
+  else test.fail(OWED + (tripped ? 'an element file tripped on load: ' + tripped.message : 'spiritElements exposes ' + JSON.stringify(E && Object.keys(E))));
   if (E && typeof E.createContactSelector === 'function') {
     let root = null; let err = null;
     try { root = E.createContactSelector({ contacts: [{ key: 'k1', label: 'Bert' }, { key: 'k2', label: 'Carol' }], placeholder: 'who?' }); } catch (e) { err = e; }
