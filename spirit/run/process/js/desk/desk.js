@@ -287,7 +287,8 @@ function walkState() {
     s.change = r.n;
     let b = {};
     try { b = JSON.parse(r.body); } catch (e) { continue; }
-    if (r.by !== 'andy') s.agentsAt[r.by] = r.at;
+    // Writers other than him and the desk itself are agents, and a write is their liveness.
+    if (r.by !== 'andy' && r.by !== 'desk') s.agentsAt[r.by] = r.at;
     apply(s, r, b, item, goalOf);
   }
   return s;
@@ -350,7 +351,8 @@ function apply(s, r, b, item, goalOf) {
       it.chat.push({ by: r.by, at: r.at, text: String(b.text) });
       // HIS OWN LINE IS HIS SEEN (goal/G2.1 note 3). Andy: "when I'm the originator of a chat entry, no red
       // mark should appear in the list." His answer acknowledges every agent line before it.
-      if (r.by !== 'andy') it.agentLineN = r.n; else it.seenN = r.n;
+      // The desk's own line (goal/G2.5, "message delivered, <agent> busy") is addressed to him and stars nothing.
+      if (r.by === 'andy') it.seenN = r.n; else if (r.by !== 'desk') it.agentLineN = r.n;
       return;
     case 'item.rename': it.title = String(b.title); return;
     case 'item.status': it.status = String(b.word); return;
@@ -770,7 +772,20 @@ appServer.serve({
       const it0 = walkState().items[String(a.id)];
       const bytes = chatLineBytes(it0 ? it0.chat.length : 0, { by: w.by, at: new Date().toISOString(), text: String(a.text) });
       if (bytes > CHAT_ROOM) throw tooLarge(bytes, CHAT_ROOM);
-      return { change: write('chat.add', Object.assign({}, a, { by: w.by, key: w.key })).change };
+      const after = write('chat.add', Object.assign({}, a, { by: w.by, key: w.key }));
+      // A MESSAGE TO A BUSY AGENT IS ANSWERED (goal/G2.5). Andy: "the app sends an-auto reply after sending the
+      // message the agents in-queue, saying 'message delivered, agents busy'", "after every message". His line
+      // under an item an agent holds (item.take) while that agent's last word is working (goal/G2.3) gets the
+      // desk's own line right after it, by desk — a record like any other, so changes lists it and a search
+      // counts it ("if desk keeps count of those interactions, we can track them later").
+      if (caller.owner === true) {
+        const it = after.items[String(a.id)];
+        const taker = it && it.with;
+        if (taker && after.agentWord[taker] === 'working') {
+          write('chat.add', { id: a.id, text: 'message delivered, ' + taker + ' busy', by: 'desk', key: '' });
+        }
+      }
+      return { change: after.change };
     },
   },
   // "rename (you)": Andy's alone.

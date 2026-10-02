@@ -669,6 +669,10 @@ function deskTeamPost(kind, fixed) {
       function (e) { return deskOutgoing(key, body, null, e); });
   })).then(function (msgs) {
     deskSending['desk-team-say'] = false;
+    // A line to all: every working recipient gets the desk's word for it (goal/G2.5).
+    deskWorkingAgents().forEach(function (n) {
+      if (deskAgents[n] && to.indexOf(deskAgents[n].key) !== -1) msgs.push(deskBusyLine(n, deskAgents[n].key));
+    });
     if (!fixed && box) box.value = '';
     if (err) err.textContent = '';
     return deskRecord(msgs);
@@ -704,6 +708,14 @@ function deskMuse() {
     if (err) err.textContent = '';
   });
 }
+// THE DESK ANSWERS A LINE TO A BUSY AGENT (goal/G2.5). Andy: "the app sends an-auto reply after sending the
+// message the agents in-queue, saying 'message delivered, agents busy'", "after every message", "it won't bother
+// you". One line from desk in that agent's own chat, recorded and logged like every line and sent to nobody: an
+// out-line to the agent's key, so the agent tab shows it, the news mark ignores it, and no ear prints it.
+function deskBusyLine(name, key) {
+  return { key: 'desk-busy-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8), at: new Date().toISOString(),
+    dir: 'out', from: 'desk', peer: key, kind: 'note', text: 'message delivered, ' + name + ' busy' };
+}
 function deskSend(kind, boxId, errId, name) {
   var box = document.getElementById(boxId);
   var said = box ? String(box.value || '').trim() : '';
@@ -719,7 +731,10 @@ function deskSend(kind, boxId, errId, name) {
     deskSending[boxId] = false;
     box.value = '';
     if (err) err.textContent = '';
-    return deskRecord([deskOutgoing(to, body, r)]);
+    var msgs = [deskOutgoing(to, body, r)];
+    // Delivered to a working agent: the desk says so, after every message (goal/G2.5).
+    if (name && deskWorkingAgents().indexOf(name) !== -1) msgs.push(deskBusyLine(name, to));
+    return deskRecord(msgs);
   }).catch(function (e) { deskSending[boxId] = false; if (err) err.textContent = 'Not sent: ' + e.message; });
 }
 

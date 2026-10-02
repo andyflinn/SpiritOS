@@ -76,7 +76,8 @@ function printable(b) {
     if (r.by === 'andy') {
       if (r.verb === 'press' && /"what":"seen"/.test(r.body)) return;
       out.push('DESK andy ' + r.verb + ' ' + String(r.body).slice(0, 4000));
-    } else if (r.by && r.by !== cfg.self && r.verb === 'chat.add') {
+    } else if (r.by && r.by !== cfg.self && r.by !== 'desk' && r.verb === 'chat.add') {
+      // The desk's own busy replies (goal/G2.5) are for Andy; they wake no agent (Andy: "it won't bother you").
       out.push('DESK ' + r.by + ' chat.add ' + String(r.body).slice(0, 4000));
     }
   });
