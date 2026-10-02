@@ -9,11 +9,12 @@
 // The contract the builder follows (the shape in goal/G2.13's box; the arguable parts fixed here by name):
 //   1. The one rule lives in buttons(), so the List and the dialog follow it alike: an item that offers Done does
 //      not offer Go. An item with no claim offers Go as before; once claimed it offers Done and no Go.
-//   2. Nothing else moves: a claim still offers Done, Done still leads to Close and Reopen, a Reopen clears the
-//      claims and so offers Go again (the item has not gone), and an item that went offers neither Go nor, until
-//      a claim, Done.
-//   3. The press is refused where the button is gone: a Go pressed on an item that offers Done does not mark it
-//      gone. Not asserted, named: whether that refusal says why — the builder says in its commit.
+//   2. THE CLAIM CONSUMES THE GO (Andy, 2026-10-02, under goal/G2.13: "When Done is offered, Go will be considered
+//      pressed/consumed", and "ok, too." to a Reopen without a Go): a claim marks the item gone, as his Go would
+//      have, so it never offers Go again — not after Done, not after a Reopen. Done still leads to Close and
+//      Reopen, and an item that went by his Go offers neither Go nor, until a claim, Done.
+//   3. The press is refused where the button is gone: a Go pressed on an item that offers Done is refused as not
+//      offered (desk.js's press guard, not-offered).
 
 const fs = require('fs');
 const os = require('os');
@@ -74,8 +75,8 @@ test.startTest('goal/G2.13: an item that offers Done no longer offers Go');
     else test.fail('g/G1.1 after Done: ' + JSON.stringify(done));
     await call('press', { id: 'g/G1.1', what: 'reopen' }, ANDY);
     const reopened = await buttonsOf('g/G1.1');
-    if (has(reopened, 'go') && !has(reopened, 'done')) test.check('a Reopen clears the claims, so Go is offered again and Done is not');
-    else test.fail('g/G1.1 after Reopen: ' + JSON.stringify(reopened));
+    if (!has(reopened, 'go') && !has(reopened, 'done')) test.check('the claim consumed the Go: after a Reopen there is no Go, and no Done until a new claim');
+    else test.fail(OWED + 'g/G1.1 after Reopen (its Go was consumed by the claim): ' + JSON.stringify(reopened));
     await call('press', { id: 'g/G1.2', what: 'go' }, ANDY);
     const went = await buttonsOf('g/G1.2');
     if (!has(went, 'go') && !has(went, 'done')) test.check('an item that went offers neither Go nor, until a claim, Done');
@@ -87,11 +88,11 @@ test.startTest('goal/G2.13: an item that offers Done no longer offers Go');
 
     test.subHeading('3. a Go pressed where Done is offered does not mark the item gone');
     await call('press', { id: 'g/G1.1', what: 'claim-done' }, CW);
-    await call('press', { id: 'g/G1.1', what: 'go' }, ANDY);
+    const goAnswer = await call('press', { id: 'g/G1.1', what: 'go' }, ANDY);
     const after = await itemOf('g/G1.1');
-    const status = after.status || '';
-    if (status !== 'running' && has(after.buttons, 'done') && !has(after.buttons, 'go')) test.check('the Go is not taken: the item is not running, Done still offered');
-    else test.fail(OWED + 'after a Go on a claimed item: status ' + JSON.stringify(status) + ', buttons ' + JSON.stringify(after.buttons));
+    const code = (goAnswer.body || {}).code || '';
+    if (code === 'not-offered' && has(after.buttons, 'done') && !has(after.buttons, 'go')) test.check('a Go pressed on a claimed item is refused as not offered; Done still offered');
+    else test.fail(OWED + 'after a Go on a claimed item: answer ' + JSON.stringify(goAnswer.body) + ', buttons ' + JSON.stringify(after.buttons));
   } catch (e) {
     test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e));
   } finally {
