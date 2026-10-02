@@ -3233,26 +3233,20 @@ test.subHeading('The Job Selector screen offers one control and one list');
   }
 }
 
-test.subHeading('The Jobs screen offers one action and one table');
+test.subHeading('The Jobs screen is one table: rows only (goal/G2.11)');
 
 {
   const src = readRun('shell/jobs/jobs.js');
   const css = readRun('index.html');
 
-  // The form is the one thing this screen asks you to do, so it sits in
-  // a panel of its own with its error under it — the shape the Groups
-  // create form has. A bare row at the top of a pane read as chrome.
-  // Read as an ordering rather than a shape: the markup is built by
-  // string concatenation across many lines, so a regex spanning it would
-  // be matching the source's formatting rather than the page's.
-  const panelAt = src.indexOf('<div class="stat-tile wide">');
-  const formAt = src.indexOf('start-job-form"');
-  const errorAt = src.indexOf('job-start-error"');
-  const tableAt = src.indexOf('<table class="jobs-table">');
-  if (panelAt !== -1 && panelAt < formAt && formAt < errorAt && errorAt < tableAt) {
-    test.check('the start form and its error share a panel of their own');
+  // THE START FORM IS GONE (goal/G2.11). Andy, 2026-10-02: "the form on top
+  // should be gone." This asserted a panelled form with its error under it;
+  // the screen offers no action now — starting a job is the Process
+  // Browser's — and its console lives in shell/jobsDetails.
+  if (src.indexOf('start-job-form') === -1 && src.indexOf('job-start-error') === -1 && src.indexOf('<form') === -1) {
+    test.check('no start form and no error line on the Jobs screen');
   } else {
-    test.fail('start form is not panelled');
+    test.fail('the start form (or its error line) is still on the Jobs screen');
   }
 
   // A column of one clipped line — enough to say something happened,
@@ -3274,16 +3268,14 @@ test.subHeading('The Jobs screen offers one action and one table');
     test.fail('last-log leftovers in: ' + leftovers.join(', '));
   }
 
-  // Captions over the inputs, as every other form in the shell has. A
-  // placeholder is the caption hidden inside the box, and it leaves the
-  // moment you type in it.
+  // No inputs at all (goal/G2.11): the three captioned fields went with
+  // the form they captioned.
   const jobFields = (src.match(/class="field-label/g) || []).length;
-  const bare = /<input type="text" id="job-command"/.test(src) &&
-    src.indexOf('<label class="field-label">Command') === -1;
-  if (jobFields === 3 && !bare) {
-    test.check('and all three inputs are captioned, not left to their placeholders');
+  const inputs = (src.match(/<input/g) || []).length;
+  if (jobFields === 0 && inputs === 0) {
+    test.check('and no input or caption remains: nothing to type on the Jobs screen');
   } else {
-    test.fail(jobFields + ' captions, bare command input: ' + bare);
+    test.fail(jobFields + ' captions, ' + inputs + ' inputs still on the Jobs screen');
   }
 
   // A column removed is two numbers to keep in step: the header and
@@ -3293,7 +3285,9 @@ test.subHeading('The Jobs screen offers one action and one table');
   const spans = (src.match(/colspan="(\d+)"/g) || []).map(function (m) {
     return Number(/\d+/.exec(m)[0]);
   });
-  if (headers === 5 && spans.length && spans.every(function (n) { return n === headers; })) {
+  // Four columns since goal/G2.11: the action column went to jobsDetails
+  // with the buttons that filled it.
+  if (headers === 4 && spans.length && spans.every(function (n) { return n === headers; })) {
     test.check('and every colspan still matches the ' + headers + ' columns above it');
   } else {
     test.fail(headers + ' headers vs colspans ' + JSON.stringify(spans));

@@ -1,0 +1,9 @@
+{
+  "name": "Job",
+  "description": "One job from the Job Monitor: its status, its console and its data, with Cancel or Delete where the rule allows.",
+  "icon": "RUN",
+  "hidden": true,
+  "type": "dialog",
+  "intrinsic": true,
+  "owner": "system"
+}
