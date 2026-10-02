@@ -43,7 +43,7 @@ function fakeElement(tag) {
   el.addEventListener = function (ev, fn) { (el.listeners[ev] = el.listeners[ev] || []).push(fn); };
   el.dispatchEvent = function (event) {
     (el.listeners[event.type] || []).forEach(function (fn) { fn(event); });
-    if (event.bubbles && el.parentNode && el.parentNode.dispatchEvent) el.parentNode.dispatchEvent(event);
+    if (event.bubbles && !event.stopped && el.parentNode && el.parentNode.dispatchEvent) el.parentNode.dispatchEvent(event);
     return true;
   };
   el.setAttribute = function (n, v) { el.attributes[n] = String(v); };
@@ -54,7 +54,9 @@ function fakeElement(tag) {
   el.closest = function () { return null; };
   return el;
 }
-function FakeEvent(type, init) { this.type = type; this.bubbles = !!(init && init.bubbles); this.stopPropagation = function () {}; this.preventDefault = function () {}; }
+// stopPropagation stops the bubble, as a browser's does: the inner <select>'s change is stopped by the factory and
+// the root fires its own, so a listener on the root hears one change, not two.
+function FakeEvent(type, init) { const ev = this; ev.type = type; ev.bubbles = !!(init && init.bubbles); ev.stopped = false; ev.stopPropagation = function () { ev.stopped = true; }; ev.preventDefault = function () {}; }
 
 test.startTest('goal/G2.12: the element factories live in shell/js/elements.js, handed to apps as before');
 

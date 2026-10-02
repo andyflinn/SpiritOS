@@ -47,18 +47,20 @@ const html = fs.readFileSync(path.join(__dirname, '..', 'run', 'index.html'), 'u
 if (/<script src="\/js\/client\/apiTreeIndex\.js"><\/script>/.test(html)) test.check('index.html loads /js/client/apiTreeIndex.js');
 else test.fail(OWED + 'index.html does not load /js/client/apiTreeIndex.js');
 const shell = fs.readFileSync(path.join(CLIENT, 'shell.js'), 'utf8');
-const at = shell.indexOf('function createAppServerSelector');
-const handed = /elements:\s*\{[^}]*createAppServerSelector:\s*createAppServerSelector/.test(shell);
+// The factories moved to shell/js/elements.js (goal/G2.12); the shell hands them out from there, unchanged.
+const elements = fs.readFileSync(path.join(CLIENT, '..', '..', 'shell', 'js', 'elements.js'), 'utf8');
+const at = elements.indexOf('function createAppServerSelector');
+const handed = /elements:\s*\{[^}]*createAppServerSelector:\s*spiritElements\.createAppServerSelector/.test(shell);
 let body = '';
 if (at !== -1) {
   let depth = 0;
-  for (let i = shell.indexOf('{', at); i < shell.length; i++) {
-    if (shell[i] === '{') depth++;
-    if (shell[i] === '}') { depth--; if (depth === 0) { body = shell.slice(at, i + 1); break; } }
+  for (let i = elements.indexOf('{', at); i < elements.length; i++) {
+    if (elements[i] === '{') depth++;
+    if (elements[i] === '}') { depth--; if (depth === 0) { body = elements.slice(at, i + 1); break; } }
   }
 }
-if (at !== -1 && handed) test.check('shell.js defines createAppServerSelector and hands it to apps under api.ui.elements');
-else test.fail(OWED + 'shell.js: createAppServerSelector defined ' + (at !== -1) + ', handed under ui.elements ' + handed);
+if (at !== -1 && handed) test.check('shell/js/elements.js defines createAppServerSelector and shell.js hands it to apps under api.ui.elements');
+else test.fail(OWED + 'elements.js: createAppServerSelector defined ' + (at !== -1) + ', handed under ui.elements ' + handed);
 if (body && /jobs\.api/.test(body) && /['"]api['"]/.test(body) && /spiritApiTreeIndex\.servers/.test(body) && /\bvalue\b/.test(body) && /change/.test(body)) {
   test.check('it asks jobs.api for \'api\', lists spiritApiTreeIndex.servers, and carries value and a change event');
 } else test.fail(OWED + 'createAppServerSelector does not ask jobs.api \'api\', list spiritApiTreeIndex.servers, and carry value with a change event');

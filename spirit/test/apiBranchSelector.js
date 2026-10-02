@@ -47,18 +47,20 @@ if (!index || typeof index.verbs !== 'function') {
 
 test.subHeading('the shell hands apps the element, the appServer selector inside it');
 const shell = fs.readFileSync(path.join(CLIENT, 'shell.js'), 'utf8');
-const at = shell.indexOf('function createApiBranchSelector');
-const handed = /elements:\s*\{[^}]*createApiBranchSelector:\s*createApiBranchSelector/.test(shell.replace(/\n/g, ' '));
+// The factories moved to shell/js/elements.js (goal/G2.12); the shell hands them out from there, unchanged.
+const elements = fs.readFileSync(path.join(CLIENT, '..', '..', 'shell', 'js', 'elements.js'), 'utf8');
+const at = elements.indexOf('function createApiBranchSelector');
+const handed = /elements:\s*\{[^}]*createApiBranchSelector:\s*spiritElements\.createApiBranchSelector/.test(shell.replace(/\n/g, ' '));
 let body = '';
 if (at !== -1) {
   let depth = 0;
-  for (let i = shell.indexOf('{', at); i < shell.length; i++) {
-    if (shell[i] === '{') depth++;
-    if (shell[i] === '}') { depth--; if (depth === 0) { body = shell.slice(at, i + 1); break; } }
+  for (let i = elements.indexOf('{', at); i < elements.length; i++) {
+    if (elements[i] === '{') depth++;
+    if (elements[i] === '}') { depth--; if (depth === 0) { body = elements.slice(at, i + 1); break; } }
   }
 }
-if (at !== -1 && handed) test.check('shell.js defines createApiBranchSelector and hands it to apps under api.ui.elements');
-else test.fail(OWED + 'shell.js: createApiBranchSelector defined ' + (at !== -1) + ', handed under ui.elements ' + handed);
+if (at !== -1 && handed) test.check('shell/js/elements.js defines createApiBranchSelector and shell.js hands it to apps under api.ui.elements');
+else test.fail(OWED + 'elements.js: createApiBranchSelector defined ' + (at !== -1) + ', handed under ui.elements ' + handed);
 if (body && /createAppServerSelector/.test(body) && /spiritApiTreeIndex\.verbs/.test(body) && /all verbs/.test(body) &&
     /\bvalue\b/.test(body) && /change/.test(body)) {
   test.check('it holds the appServer selector, fills its verbs from spiritApiTreeIndex.verbs, offers all verbs, and carries value with a change event');
