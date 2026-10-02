@@ -45,6 +45,17 @@
 const test = require('./testSupport.js');
 const mw = require('./monitorWorld.js');
 const seal = require('../run/js/seal');
+const auth = require('../run/js/relayAuth');
+
+// THE RECIPIENT ANSWERS, which is what releases the sender's route. A member
+// has one request in flight (0016, the member cap is 1 since 2026-10-02), and
+// the owner both posts to bella here and asks the relay its DEBUG verb: with
+// his post left unanswered, as this suite first left it, every ask after it
+// is refused `too many in flight` and never reaches the switch.
+function answered(w, who, sent) {
+  if (!sent || !sent.hash) return null;
+  return w.box.routeReply(who.publicKey, sent.hash, 'ok', auth.sign(who.privateKey, auth.receiptMessage(sent.hash)));
+}
 
 test.startTest('The relay cannot read a sealed post, proved by trying to read it');
 
@@ -99,8 +110,9 @@ function lastRow(w, from) {
   // call a team review rather than patch one.
   {
     const at = mw.events(w.heard.andy).length;
-    mw.post(w, w.owner, w.bella, SECRET);
+    const sent = mw.post(w, w.owner, w.bella, SECRET);
     const row = lastRow(w, at);
+    answered(w, w.bella, sent);
     if (row && row.kind === 'post' && row.held === '') {
       test.check('with DEBUG off a real sealed post still streams a row, and its `held` is '
         + 'EMPTY — so "no plaintext in held" below is a finding and not a tautology');
@@ -134,8 +146,9 @@ function lastRow(w, from) {
 
   // ── D4: THE PROOF ITSELF ───────────────────────────────────────────
   const at = mw.events(w.heard.andy).length;
-  mw.post(w, w.owner, w.bella, SECRET);
+  const sent = mw.post(w, w.owner, w.bella, SECRET);
   const row = lastRow(w, at);
+  answered(w, w.bella, sent);
 
   if (row && typeof row.held === 'string' && row.held.length > 0
       && row.held.indexOf(SECRET) === -1) {

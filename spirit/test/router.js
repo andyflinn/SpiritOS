@@ -199,6 +199,42 @@ function run() {
     }
   }
 
+  // THE NUMBER ITSELF, AS THE RELAY RUNS IT: 1 in, 1 out. Decision 0016:
+  // "Caps of 1, in two directions. One in flight per member as requester;
+  // one per member as target." The target half was built 2026-09-21; the
+  // requester half stood at the unargued 16 until Andy, 2026-10-02, in
+  // Desk: "experiment 1: change relay on spirit-3 to be 1 <--> 1 no 16
+  // concurrent inputs ... you will chane 1 thing in the relay: and that's
+  // 1 in 1 out." relay.js creates its router with no options, so the
+  // defaults ARE the live relay's numbers and this block asserts them.
+  {
+    const R = router.createRouter();
+    const first = R.open('d1', 'alice', 'tgt1', function () { return true; }, null, router.MEMBER);
+    const second = R.open('d2', 'alice', 'tgt2', function () { return true; }, null, router.MEMBER);
+    const other = R.open('d3', 'bob', 'tgt3', function () { return true; }, null, router.MEMBER);
+    if (R.caps.member === 1 && R.maxPerRequester === 1 && R.maxPerTarget === 1
+        && first.ok && second.ok === false && second.status === 429 && second.kind === router.MEMBER && other.ok) {
+      test.check('by default a member has ONE request in flight: the second is refused 429, and another member is not');
+    } else {
+      test.fail('OWED by Andy\'s experiment 1 (2026-10-02): default caps ' + JSON.stringify(R.caps)
+        + ', second ' + JSON.stringify(second) + ', other ' + JSON.stringify(other));
+    }
+    // The relay acting for its members, and a partner forwarding in, post
+    // under the relay's own key for everybody at once: they keep the
+    // budgets they had, or the member ceiling would starve the relay's own
+    // work (the three-budgets block above says why).
+    const r1 = R.open('d4', 'relayKey', 'tgt4', function () { return true; }, null, router.RELAY);
+    const r2 = R.open('d5', 'relayKey', 'tgt5', function () { return true; }, null, router.RELAY);
+    if (R.caps.relay === router.DEFAULT_PER_REQUESTER && R.caps.partner === router.DEFAULT_PER_REQUESTER && r1.ok && r2.ok) {
+      test.check('and the relay\'s own class and the partner class keep their budget of ' + router.DEFAULT_PER_REQUESTER);
+    } else {
+      test.fail('relay and partner classes: ' + JSON.stringify(R.caps) + ' / ' + JSON.stringify(r2));
+    }
+    const live = require('fs').readFileSync(require('path').join(__dirname, '..', 'run', 'js', 'relay.js'), 'utf8');
+    if (/createRouter\(\s*\)/.test(live)) test.check('relay.js creates its router with no options, so these defaults are what a live relay runs');
+    else test.fail('relay.js no longer creates its router with the defaults; assert the numbers where it now sets them');
+  }
+
   // countFor WITHOUT a class still counts everything, and that is not an
   // accident of the default. Its other caller asks "is this identity
   // busy?" to spare a live stream from eviction (relay.js) — a question

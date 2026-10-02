@@ -154,7 +154,8 @@ var CLAIM_PER_MIN = 10;
 //
 // HALF OF IT WAS ALREADY THERE, which is worth stating so this is not
 // mistaken for a box with no defences: `routes.open` caps a requester's
-// OUTSTANDING posts (`too many in flight`, DEFAULT_PER_REQUESTER) and the
+// OUTSTANDING posts (`too many in flight`: DEFAULT_PER_MEMBER, one, for a
+// member since 2026-10-02; DEFAULT_PER_REQUESTER for the other classes) and the
 // table caps the box (DEFAULT_MAX). That is the stock — what is held —
 // and it is fair per requester already. What was missing is the FLOW:
 // posts that complete promptly cost nothing against a stock limit, so a

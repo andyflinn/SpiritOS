@@ -22,6 +22,9 @@
 // table caps the box at DEFAULT_MAX = 256. That is the RAM half of
 // CAPACITY.md, built and fair, and it is why a naive flood loop here was
 // stopped at sixteen by something that has nothing to do with rate.
+// (SINCE 2026-10-02 THE MEMBER'S NUMBER IS ONE, not sixteen: 0016's "one in
+// flight per member as requester", router.js DEFAULT_PER_MEMBER. The point
+// stands and is sharper: an unanswered post is the member's whole stock.)
 //
 // So the gap is one half, not the whole: a STOCK limit existed and a FLOW
 // limit did not.
@@ -177,6 +180,13 @@ if (refused && /\d/.test(String(refused.error)) && typeof refused.perMin === 'nu
 // keyed on a string the sender picks resets when they pick another. bob
 // has spent nothing and must be unaffected by ann's flood.
 const bobsTurn = post(R.box, R.people.bob, R.people.ann, { hello: 1 });
+// ANN ANSWERS IT, which releases bob's route: a member has one request in
+// flight (0016, the member cap is 1 since 2026-10-02), and bob asks the
+// relay a verb further down. Left unanswered, this post would still be his.
+if (bobsTurn.ok) {
+  R.box.routeReply(R.people.ann.publicKey, bobsTurn.hash, 'ok',
+    auth.sign(R.people.ann.privateKey, auth.receiptMessage(bobsTurn.hash)));
+}
 if (bobsTurn.ok) {
   test.check('and it is per sender — one member flooding does not spend another’s budget');
 } else {

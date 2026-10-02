@@ -128,8 +128,12 @@ test.subHeading('A target this box can reach is simply asked');
   // and one member may be asked one thing at a time (0016). Aimed at the
   // same peer this would be refused `busy` before the budget was looked
   // at, and would pass for the wrong reason.
+  // AND A DIFFERENT ASKER, for the mirror reason: 'me' has the entry above
+  // in flight, and one member has one request in flight (0016; the member
+  // cap is 1 since 2026-10-02). From 'me' this would be refused `too many
+  // in flight` before the budget was looked at.
   let ran = false;
-  const spent = R.open('e', 'me', 'somebody-else', function () { ran = true; return true; },
+  const spent = R.open('e', 'somebody-asking', 'somebody-else', function () { ran = true; return true; },
     null, { ttlMs: 0 });
   if (spent.ok === false && spent.tooLittleTime === true && !ran) {
     test.check('while an exhausted budget of zero is refused, and nothing is delivered');
@@ -269,7 +273,8 @@ test.subHeading('The asker is told what it was granted, and stops when the relay
     test.fail('grant not reported: ' + JSON.stringify(asked));
   }
 
-  const modest = R.open('g2', 'me', 'other', function () { return true; }, null, { ttlMs: 1200 });
+  // Another asker: 'me' still has g1 in flight, and a member has one (0016).
+  const modest = R.open('g2', 'another', 'other', function () { return true; }, null, { ttlMs: 1200 });
   if (modest.ok && modest.grantedMs === 1200) {
     test.check('and asking for less is granted in full, and said so');
   } else {

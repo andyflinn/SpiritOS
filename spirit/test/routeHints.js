@@ -283,9 +283,13 @@ async function run() {
   test.subHeading('A target on this relay is delivered here, whatever the hints say');
 
   carriedTo.length = 0;
-  const local = post(A.box, A.people.jazz, A.people.kim.publicKey, { hello: 1 }, [C.key]);
-  if (local.ok && carriedTo.length === 0 && requests(A.inboxes.kim) === 1) {
-    test.check('jazz to kim with a hint naming C: delivered locally, nothing carried');
+  // KIM ASKS, NOT JAZZ: jazz's post above went to D, a minted partner that
+  // never answers, so it is still in flight, and a member has one request
+  // in flight (0016, the member cap is 1 since 2026-10-02). Who asks is
+  // not the point here; where the post is delivered is.
+  const local = post(A.box, A.people.kim, A.people.jazz.publicKey, { hello: 1 }, [C.key]);
+  if (local.ok && carriedTo.length === 0 && requests(A.inboxes.jazz) === 1) {
+    test.check('kim to jazz with a hint naming C: delivered locally, nothing carried');
   } else {
     test.fail('local delivery: ' + JSON.stringify(local) + ' carried ' + JSON.stringify(carriedTo));
   }

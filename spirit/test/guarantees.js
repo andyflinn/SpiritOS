@@ -145,9 +145,15 @@ test.subHeading('GUARANTEE: a relay serves every member it admits');
 
   // One inbound route per member, all at once. Nothing answers, so every
   // route stays open.
+  // EACH FROM A DIFFERENT ASKER, round the ring: a member has one request
+  // in flight (0016, the member cap is 1 since 2026-10-02), so the owner
+  // asking every member at once, as this first did, opens one route and is
+  // refused the rest. Member i+1 asks member i: every member is a target
+  // at once and no asker holds more than its one.
   let opened = 0;
-  joined.forEach(function (target) {
-    const sent = post(w, w.owner, target, JSON.stringify({ app: 'x', v: 1, body: { hi: 1 } }));
+  joined.forEach(function (target, i) {
+    const asker = joined[(i + 1) % joined.length];
+    const sent = post(w, asker, target, JSON.stringify({ app: 'x', v: 1, body: { hi: 1 } }));
     if (sent && sent.ok) opened += 1;
   });
 

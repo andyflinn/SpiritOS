@@ -26,6 +26,23 @@
 var DEFAULT_MAX = 256;
 var DEFAULT_PER_REQUESTER = 16;
 
+// ── HOW MANY REQUESTS ONE MEMBER MAY HAVE IN FLIGHT ──────────────────
+//
+//   Decision 0016: "Caps of 1, in two directions. One in flight per
+//   member as requester; one per member as target."
+//   Andy, 2026-10-02, in Desk: "experiment 1: change relay on spirit-3 to
+//   be 1 <--> 1 no 16 concurrent inputs ... you will chane 1 thing in the
+//   relay: and that's 1 in 1 out."
+//
+// ONE, and it is the member class alone. The 16 above stood for every
+// class since the first router, though 0016 superseded it by name; it
+// stays the budget of the relay's own class and the partner class, which
+// post under the relay's key for everybody at once (the classes, below).
+// A node already sends one post at a time to a relay (postQueue.js), so a
+// member that keeps to that never meets this refusal: it is what holds a
+// node that does not.
+var DEFAULT_PER_MEMBER = 1;
+
 // ── HOW MANY REQUESTS MAY BE AIMED AT ONE MEMBER ─────────────────────
 //
 //   Andy: "cap the requests for a specific target at one, respond with
@@ -81,7 +98,8 @@ function capsFrom(given) {
   var flat = typeof given === 'number' ? given : null;
   KINDS.forEach(function (k) {
     var v = flat !== null ? flat
-      : (given && typeof given[k] === 'number' ? given[k] : DEFAULT_PER_REQUESTER);
+      : (given && typeof given[k] === 'number' ? given[k]
+        : (k === MEMBER ? DEFAULT_PER_MEMBER : DEFAULT_PER_REQUESTER));
     caps[k] = v;
   });
   return caps;
@@ -454,6 +472,7 @@ module.exports = {
   createRouter: createRouter,
   DEFAULT_MAX: DEFAULT_MAX,
   DEFAULT_PER_REQUESTER: DEFAULT_PER_REQUESTER,
+  DEFAULT_PER_MEMBER: DEFAULT_PER_MEMBER,
   DEFAULT_PER_TARGET: DEFAULT_PER_TARGET,
   DEFAULT_TTL_MS: DEFAULT_TTL_MS,
   MIN_USEFUL_MS: MIN_USEFUL_MS,

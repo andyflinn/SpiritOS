@@ -114,7 +114,12 @@ test.subHeading('Silent until asked');
 (function onlyTheOwner() {
   const w = world();
   startMonitor(w);
-  post(w, w.bella, w.owner, 'hello');
+  // FROM CARL, NOT BELLA: nobody answers this post, so it stays in flight,
+  // and a member has one request in flight (0016, the member cap is 1
+  // since 2026-10-02). Bella asks the relay itself further down; with this
+  // post still hers, that ask would be refused `too many in flight` and
+  // never reach the per-verb refusal this block is about.
+  post(w, w.carl, w.owner, 'hello');
 
   // THE CHECK THE FEATURE RESTS ON. These rows say who is talking to whom
   // on this relay. presentNow.broadcast is one word away and would put

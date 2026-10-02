@@ -257,6 +257,11 @@ async function run() {
   } else {
     test.fail('other target: ' + JSON.stringify(elsewhere));
   }
+  // DAVE ANSWERS IT, which releases carol's route: a member has one request
+  // in flight (0016, the member cap is 1 since 2026-10-02), and carol asks
+  // bob again below. Left open, this post would still be hers and "third"
+  // would be refused for carol's own traffic, not for bob's.
+  if (elsewhere.body && elsewhere.body.hash) await reply(W, dave, elsewhere.body.hash);
 
   // bob answers, which is what releases the route — the reply is the
   // normal release and the timeout is only the fallback.
