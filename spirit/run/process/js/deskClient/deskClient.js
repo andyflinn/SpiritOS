@@ -1,7 +1,7 @@
 'use strict';
 
 // spirit/run/process/js/deskClient/deskClient.js
-// THE DESK CLIENT — goal/G3.3, G3.4. A server on an agent's own node: it passes one ask to Andy's desk and counts
+// THE DESK CLIENT — goal/G3.3, G3.4, G3.5. A server on an agent's own node: it passes one ask to Andy's desk and counts
 // it, and while its agent waits it reads what changed at the desk and holds what is meant for that agent.
 //
 //   Andy, 2026-10-02 (goal/G3.1): "i am ready to accept completely alternative design, if it achieves what todays
@@ -22,6 +22,9 @@
 //   - WHO IT IS, name and key, is what its node hands a server it starts (--node, jobs.js): no ask and no file.
 //   - IT ASKS THE DESK ONLY WHILE ITS AGENT WAITS on next: at once when the last ask is pollMs old, then every
 //     pollMs. Nobody waiting, nothing asked.
+//   - THE DESK NUDGES IT, SERVER TO SERVER (goal/G3.5): changed, from the desk's key alone. A nudge makes a wait
+//     ask at once; with nobody waiting it asks nothing and is remembered, so the next wait asks at once. The
+//     node's own door lets the desk's key in only once the node's owner granted it deskClient.changed.
 //   - What is meant for its agent is selected and worded as the listener it replaces did (goal/G3.4, 5): Andy's
 //     records but his seen presses, another agent's chat, and the lines Desk keeps from Andy or an agent; never
 //     its own, never the desk's busy replies, never Andy's direct line to the other agent.
@@ -189,6 +192,9 @@ const waiting = [];
 let lastAskAt = 0;
 let turn = null;
 let said = '';
+// nudged: the desk said something changed, and no poll has started since. wakers: the waits a nudge ends early.
+let nudged = false;
+const wakers = [];
 
 function keepPlace(p) {
   place = p;
@@ -300,6 +306,8 @@ function readOn(to) {
 // The one poll under way, or a new one. Never two at once: two would read the same things twice.
 function poll(to) {
   if (turn) return turn;
+  // A nudge that lands while this poll is under way stands: what it tells of may be written after the read.
+  nudged = false;
   lastAskAt = Date.now();
   turn = Promise.resolve().then(function () { return fetched ? readOn(to) : findNow(to); })
     .catch(function () { /* the next poll tries again */ })
@@ -380,10 +388,29 @@ appServer.serve({
         if (waiting.length) return handOver(to, t0);
         const now = Date.now();
         if (now >= deadline) return { lines: [] };
-        if (turn || now - lastAskAt >= POLL_MS) return within(poll(to), deadline - now).then(wait);
-        return within(new Promise(function () { /* only the time ends this */ }), Math.min(deadline, lastAskAt + POLL_MS) - now).then(wait);
+        if (turn || nudged || now - lastAskAt >= POLL_MS) return within(poll(to), deadline - now).then(wait);
+        // Nothing to ask yet: the time ends this, or a nudge does.
+        let wake = null;
+        const woken = new Promise(function (resolve) { wake = resolve; wakers.push(resolve); });
+        return within(woken, Math.min(deadline, lastAskAt + POLL_MS) - now).then(function () {
+          const i = wakers.indexOf(wake);
+          if (i !== -1) wakers.splice(i, 1);
+          return wait();
+        });
       }
       return wait();
+    },
+  },
+  // THE DESK'S NUDGE (goal/G3.5): something changed there. The desk's alone, by the key setDesk named. It asks
+  // nothing itself: a waiting agent's wait does, at once, and with nobody waiting the next wait will.
+  'changed': {
+    request: {}, reply: { heard: true },
+    handler: function (a, caller) {
+      const to = getSetting.get('desk');
+      if (!caller || !to || !to.value || caller.key !== to.value) throw refused('not-granted');
+      nudged = true;
+      wakers.splice(0).forEach(function (wake) { wake(); });
+      return { heard: true };
     },
   },
   // THE STATISTICS. Each label is one record as JSON; the walk is ours (newest first, the text against the verb
@@ -404,4 +431,5 @@ appServer.serve({
       return { items: r.items, more: r.more };
     },
   },
-});
+// What a peer needs granted here (apiAuth/G1.10): the desk's node, the one verb it nudges with.
+}, { dependencies: ['deskClient.changed'] });

@@ -513,6 +513,42 @@ function searchItems(a) {
 
 function refused(code) { const e = new Error(code); e.refusal = code; return e; }
 
+// ── THE NUDGE, SERVER TO SERVER (goal/G3.5) ──────────────────────────
+//
+//   Andy, 2026-10-02: "so the desk server would nudge the deskClient server?" — and "accepted." to the design
+//   that holds it. Until this the Desk page sent the nudge, after a press, and had to be open.
+//
+// One api packet {deskClient: {changed: {}}}, through the kernel, to the node of each agent a write is meant for;
+// that agent's deskClient then asks what changed. Meant for: a write of Andy's, every agent (but his seen press,
+// which no agent is handed); an agent's chat line, every other agent; a kept line of his, the agent it was for.
+// An agent's own word (agent.state) nudges nobody: it would wake every other agent at every wait.
+// NEVER HELD BY IT: the write has answered before the post leaves, and an agent whose node does not answer costs
+// nothing but the wait below. A nudge that does not land is not repeated; the agent's own poll is the net.
+// WHOM: an agent heard from in the last day, not only a live one (ten minutes): an agent that has waited quietly
+// for longer than that is exactly the one a nudge is for.
+const NUDGE_WAIT_MS = 10000;
+const NUDGE_FOR_MS = 24 * 60 * 60 * 1000;
+function nudgeKeys(s) {
+  const now = Date.now();
+  return Object.keys(s.agentsAt).filter(function (a) { return s.agentKey[a] && now - Date.parse(s.agentsAt[a]) < NUDGE_FOR_MS; })
+    .map(function (a) { return s.agentKey[a]; });
+}
+function nudge(keys) {
+  keys.filter(function (k, i) { return k && keys.indexOf(k) === i; }).forEach(function (key) {
+    Promise.resolve().then(function () {
+      return require('../../../js/kernel.js').peerPost(key, 'api', { deskClient: { changed: {} } }, { waitMs: NUDGE_WAIT_MS });
+    }).catch(function () { /* the agent reads the state when it next asks */ });
+  });
+}
+function nudgeForWrite(s, verb, a) {
+  if (a.by === 'andy') {
+    if (verb === 'press' && a.what === 'seen') return;
+    nudge(nudgeKeys(s));
+  } else if (a.by !== 'desk' && verb === 'chat.add') {
+    nudge(nudgeKeys(s).filter(function (k) { return k !== String(a.key || ''); }));
+  }
+}
+
 // Every write: checked against the state as it stands, then recorded, then
 // published to the page with the change it made ("no pulling").
 function write(verb, a, check) {
@@ -561,6 +597,7 @@ function write(verb, a, check) {
   // An agent's word changes the current goal's row (its working list), and that row travels (goal/G2.3).
   if (verb === 'agent.state' && after.current) out.rows = changedRows(s, after, after.current);
   appServer.publish(out);
+  nudgeForWrite(after, verb, a);
   return after;
 }
 
@@ -664,6 +701,10 @@ appServer.serve({
       // Refused, never stored to stall a read later (slim/G1.2 T4).
       if (!fitsOneAnswer(l.key, a.json)) throw tooLarge(oneAnswerBytes(l.key, a.json), ANSWER_ROOM);
       const r = addLine.run(l.key, String(l.at || ''), String(l.todo || ''), String(l.from || ''), String(l.kind || ''), String(l.text || ''), a.json);
+      // A line of Andy's nudges the agent it was for, and nobody else (goal/G3.5).
+      if (r.changes === 1 && l.from === 'andy' && l.peer) {
+        nudge(nudgeKeys(walkState()).filter(function (k) { return k === String(l.peer); }));
+      }
       return { added: r.changes === 1 };
     },
   },

@@ -1,6 +1,6 @@
 {
   "label": "Desk client",
-  "description": "An agent's own way to Andy's desk (goal/G3.3, G3.4). Passes one ask to the desk server on the node the owner named (setDesk) and counts it; while its agent waits (next), reads what changed at the desk every pollMs and hands over what is meant for that agent. Its record, deskClient.db, holds the newest historyMax asks and is in the node's state (relay-state/process/deskClient/). Started by the node; reached by jobs.api on the loopback door.",
+  "description": "An agent's own way to Andy's desk (goal/G3.3, G3.4, G3.5). Passes one ask to the desk server on the node the owner named (setDesk) and counts it; while its agent waits (next), reads what changed at the desk every pollMs, and at once when the desk nudges it (changed), and hands over what is meant for that agent. Its record, deskClient.db, holds the newest historyMax asks and is in the node's state (relay-state/process/deskClient/). Started by the node; reached by jobs.api on the loopback door.",
   "kind": "server",
   "operated": "node",
   "args": [
