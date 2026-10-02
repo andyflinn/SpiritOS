@@ -423,7 +423,10 @@ function buttons(s, it) {
   if (it.done) return ['close', 'reopen'];
   const out = [];
   // A GOAL NEVER OFFERS GO! (desk/G3.7): its items are gone, not the goal itself.
-  if (!it.goal && g && !g.design && !it.went && !blockers(s, it).length) out.push('go');
+  // AND NO ITEM OFFERS GO BESIDE DONE (goal/G2.13). Andy: "when Done is offered, Go may no longer be displayed."
+  // A claimed item offers Done, so it offers no Go; the press below refuses a Go that is not offered.
+  const claimed = !it.goal && Object.keys(it.claims).length > 0;
+  if (!it.goal && !claimed && g && !g.design && !it.went && !blockers(s, it).length) out.push('go');
   // A GOAL OFFERS DONE ONLY WHEN EVERY ITEM IS DONE OR CLOSED, AND NEVER ON A CLAIM (goal/G2.10). Andy: "the goal
   // should only offer a done button when all items are done", and "the goals done button should be tied to the
   // condition that all visible items are done" — so an item added open takes it away again, and a claim-done
