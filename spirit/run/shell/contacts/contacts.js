@@ -91,6 +91,28 @@ var CONTACTS_UNKNOWN_LABELS = {
 // asked for whole: past the answer's cap, contactsBookMore says so.
 var contactsPeople = [];
 var contactsBookQueries = ['*'];
+// THE TERM FILTERS WHAT IS SHOWN (goal/G2.7). Andy: "i kind of expect for the
+// search term to remain in the search box, and while it remains, it also
+// filters the visible list. would help me find even contacts withing the
+// list." — and "those search boxes that leave the search term, with a little
+// closing button on the right that removes the input". The * priming and the
+// added searches above still decide what the table HOLDS; this decides what
+// of it is drawn, live as he types, until the × or Escape empties the box.
+var contactsBookTerm = '';
+function contactsShown() {
+  var term = contactsBookTerm.toLowerCase();
+  if (!term) return contactsPeople;
+  return contactsPeople.filter(function (p) {
+    return String(p.label || '').toLowerCase().indexOf(term) !== -1 ||
+      String(p.publicKey || '').toLowerCase().indexOf(term) !== -1;
+  });
+}
+function contactsSetTerm(term) {
+  contactsBookTerm = String(term || '').trim();
+  var box = document.getElementById('contacts-book-q');
+  if (box && box.value !== contactsBookTerm && !contactsBookTerm) box.value = '';
+  contactsRender();
+}
 var contactsBookMore = false;
 // Search results — see contactsSearchSeen. Not a standing list: a
 // thousand-member relay makes that unreadable and expensive both.
@@ -394,7 +416,14 @@ function contactsRender() {
     tbody.innerHTML = '<tr><td colspan="5">(nobody found — search the network below to add someone)</td></tr>';
     return;
   }
-  tbody.innerHTML = contactsPeople.map(contactsRowHtml).join('') +
+  // The term in the box narrows the drawing, never the holding (goal/G2.7).
+  var shown = contactsShown();
+  if (!shown.length) {
+    tbody.innerHTML = '<tr><td colspan="5">(nobody in your book matches ' + contactsEscapeHtml(contactsBookTerm) +
+      ' — press Search to look past the first answer, or × to see everyone)</td></tr>';
+    return;
+  }
+  tbody.innerHTML = shown.map(contactsRowHtml).join('') +
     (contactsBookMore
       ? '<tr><td colspan="5" class="muted">More in your book than fits one answer. Search above to add them.</td></tr>'
       : '');
@@ -444,7 +473,8 @@ function contactsSearchBook() {
   var q = el ? String(el.value || '').trim() : '';
   if (!q) return;
   if (contactsBookQueries.indexOf(q) === -1) contactsBookQueries.push(q);
-  if (el) el.value = '';
+  // The term stays in the box and keeps filtering (goal/G2.7); it used to be emptied here.
+  contactsBookTerm = q;
   contactsRefresh();
 }
 
@@ -1018,6 +1048,8 @@ spirit.shell.activateApp({
       // this node's book, and what it finds is added to the table.
       '<div class="start-job-form card"><label class="field-label grow">Search your contacts' +
         '<input type="text" id="contacts-book-q" placeholder="a name, or blocked, or waiting"></label>' +
+        // The × at the right of the box empties it and the whole list is back (goal/G2.7).
+        '<button type="button" id="contacts-book-clear" title="clear the search">×</button>' +
         '<button type="button" id="contacts-book-go">Search</button></div>' +
       '<table class="jobs-table"><thead><tr>' +
         '<th class="icon-cell"></th>' +
@@ -1191,9 +1223,15 @@ spirit.shell.activateApp({
     });
 
     document.getElementById('contacts-book-go').addEventListener('click', contactsSearchBook);
+    // Typing filters live; Enter still asks the book for more; Escape and the × empty the box (goal/G2.7).
+    document.getElementById('contacts-book-q').addEventListener('input', function () {
+      contactsSetTerm(document.getElementById('contacts-book-q').value);
+    });
     document.getElementById('contacts-book-q').addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.repeat) { e.preventDefault(); contactsSearchBook(); }
+      else if (e.key === 'Escape') { e.preventDefault(); contactsSetTerm(''); }
     });
+    document.getElementById('contacts-book-clear').addEventListener('click', function () { contactsSetTerm(''); });
     contactsRefresh();
     contactsWatchPresence();
   },
