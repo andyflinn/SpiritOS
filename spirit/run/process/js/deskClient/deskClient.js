@@ -209,10 +209,14 @@ function meantForAgent(got, from) {
   const cur = { n: from.n, line: from.line };
   got.records.forEach(function (r) {
     cur.n = r.n;
+    // ITS OWN RECORDS ARE KNOWN BY THEIR KEY. At the desk an agent goes by the label Andy's node holds for its
+    // key, which he may change and which need not be its node's name (claude-windows's review of goal/G3.4); the
+    // name decides only where no key was handed over.
+    const mine = SELF_KEY ? r.key === SELF_KEY : r.by === SELF;
     if (r.by === 'andy') {
       if (r.verb === 'press' && /"what":"seen"/.test(r.body)) return;
       out.push({ text: 'DESK andy ' + r.verb + ' ' + String(r.body).slice(0, 4000), n: cur.n, line: cur.line });
-    } else if (r.by && r.by !== SELF && r.by !== 'desk' && r.verb === 'chat.add') {
+    } else if (r.by && !mine && r.by !== 'desk' && r.verb === 'chat.add') {
       // The desk's own busy replies are for Andy; they wake no agent (Andy: "it won't bother you").
       out.push({ text: 'DESK ' + r.by + ' chat.add ' + String(r.body).slice(0, 4000), n: cur.n, line: cur.line });
     }
@@ -220,7 +224,8 @@ function meantForAgent(got, from) {
   got.lines.forEach(function (l) {
     cur.line = l.line;
     const sender = String(l.from || '');
-    if (sender === SELF) return;
+    // Its own line: the name it sent it under, or a line Desk took in from its own key.
+    if (sender === SELF || (l.dir === 'in' && SELF_KEY && l.peer === SELF_KEY)) return;
     // His direct line to the other agent is not this agent's: the peer on the line says who it was for.
     if (sender === 'andy' && SELF_KEY && l.peer && l.peer !== SELF_KEY) return;
     if (sender === 'andy' || /claude/.test(sender)) {
