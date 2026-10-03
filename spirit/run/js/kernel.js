@@ -1151,6 +1151,11 @@ const ICON = spirit.core.const.ICON = {
     INFO: 'ℹ️',
     CHECKED: '☑️',
     UNCHECKED: '⬜',
+    // A chat line's marks, the popular style (goal/G4.11): kept by the peer,
+    // and refused. Andy, 2026-10-03: "you have permission to expand the ICON
+    // object in kernel.js." ⏳ while it travels is LOADING.
+    DELIVERED: '✓',
+    REFUSED: '❗',
     LOADING: '⏳',
     ERROR: '❌',
     POINTRIGHT: '▶️',

@@ -185,6 +185,10 @@
       });
     }
 
+    // Ask the same search again, with what is typed: for a caller whose
+    // rows changed under it (chatter, when a line arrives).
+    root.refresh = function () { run(box.value); };
+
     root.mark = function (key, status) {
       statusOf[key] = status;
       if (cells[key]) cells[key].status.textContent = glyphFor(key);

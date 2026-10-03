@@ -1,0 +1,8 @@
+{
+  "name": "chatter",
+  "description": "Chat with your peers, one chat at a time, over this node's chatClerver.",
+  "icon": "CHAT",
+  "hidden": false,
+  "intrinsic": false,
+  "owner": "system"
+}
