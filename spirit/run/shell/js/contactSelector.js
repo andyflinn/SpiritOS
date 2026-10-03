@@ -137,14 +137,16 @@
         var row = document.createElement('div');
         row.className = 'contact-selector-row' + (r.key === root.value ? ' current' : '');
         row.setAttribute('data-key', r.key);
-        var presence = document.createElement('span');
-        presence.className = 'contact-selector-presence';
-        presence.textContent = presenceGlyph(r.key);
-        row.appendChild(presence);
+        // The configurable status first, presence second (Andy, goal/G4.10: "Make the configurable icons the first
+        // column, and the presence dots the second column").
         var status = document.createElement('span');
         status.className = 'contact-selector-status';
         status.textContent = glyphFor(r.key);
         row.appendChild(status);
+        var presence = document.createElement('span');
+        presence.className = 'contact-selector-presence';
+        presence.textContent = presenceGlyph(r.key);
+        row.appendChild(presence);
         // Only a string is a name: chatter's peers.search hands a whole
         // row as label, which is the caller's to mark, not to show.
         var caption = typeof r.label === 'string' && r.label ? r.label : undefined;
