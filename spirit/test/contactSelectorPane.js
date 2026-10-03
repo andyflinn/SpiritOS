@@ -28,6 +28,10 @@
 //      that row alone is drawn marked current (its className holds 'current', NAMED).
 //   5. THE DROPDOWN: the same pane under a button: no row is shown until the button is clicked; a click on a row then
 //      sets root.value, fires one change, and closes the pane.
+//   6. (goal/G4.10) THE OPEN DROPDOWN hides its own button; closed or picked, the button shows.
+//   7. (goal/G4.10) PRESENCE, always a column: every row a dot, white until root.present(key, true) makes it green
+//      (NAMED); false is white too, never red, which is a status in chatter. Dot and status mark stand side by side,
+//      and presence survives a redraw.
 // NOT ASSERTED, the builder's: markup beyond the names above, classes, scrolling, the fold button (chatter's, G4.9 and
 // G4.10). shellElements.js, which reads today's native select, moves with the change.
 
@@ -38,6 +42,7 @@ const kernel = require('../run/js/kernel.js');
 
 const RUN = path.join(__dirname, '..', 'run');
 const OWED = 'owed by goal/G4.14: ';
+const OWED10 = 'owed by goal/G4.10: ';
 const FILE = path.join(RUN, 'shell', 'js', 'contactSelector.js');
 const ICON = kernel.core.const.ICON;
 
@@ -223,6 +228,55 @@ async function main() {
     if (drop.value === 'k3' && dchanges === 1 && rowsOf(drop).length === 0) test.check('a pick sets root.value, fires one change, and closes the pane');
     else test.fail(OWED + 'after a pick: value ' + JSON.stringify(drop.value) + ', changes ' + dchanges + ', rows still shown ' + rowsOf(drop).length);
   }
+
+  // ── goal/G4.10, reopened: Andy, 2026-10-03, trying chatter live: "the choose a peer from the dropdown shouldn't be
+  // seen when the dropdown turn into a pane"; "the presence is always a column" (G4.14); "same green and white dots i
+  // see in contacts"; "my line said, \"like in contacts\" where i only see green and white...".
+  test.subHeading('6. (goal/G4.10) the open dropdown hides its own button');
+  const drop2 = m.make({ search: search, statuses: STATUSES, placeholder: 'choose a peer' });
+  await settle();
+  const b2 = buttonOf(drop2);
+  if (b2) {
+    const shownClosed = visible(b2, drop2);
+    fire(b2, 'click');
+    await settle();
+    const hiddenOpen = !visible(b2, drop2) && rowsOf(drop2).length === 3;
+    const pick2 = rowFor(drop2, 'k1');
+    if (pick2) { fire(pick2, 'click'); await settle(); }
+    if (shownClosed && hiddenOpen && visible(b2, drop2) && rowsOf(drop2).length === 0) test.check('closed: the button shows; open: the pane alone, the button hidden; picked: the button again');
+    else test.fail(OWED10 + 'the button: shown closed ' + shownClosed + ', hidden while open ' + hiddenOpen + ', shown after a pick ' + visible(b2, drop2));
+  } else test.fail(OWED10 + 'no dropdown button');
+
+  test.subHeading('7. (goal/G4.10) presence, always a column: green when present, white otherwise');
+  const pres = m.make({ face: 'pane', search: search, statuses: STATUSES });
+  await settle();
+  const dot = function (k) { const r = rowFor(pres, k); return r ? shown(r) : ''; };
+  const G = ICON.GREEN_CIRCLE; const W = ICON.WHITE_CIRCLE;
+  if (['k1', 'k2', 'k3'].every(function (k) { return dot(k).indexOf(W) !== -1 && dot(k).indexOf(G) === -1; })) test.check('every row has its presence dot, white until told');
+  else test.fail(OWED10 + 'rows before any presence: ' + JSON.stringify(['k1', 'k2', 'k3'].map(dot)).slice(0, 200));
+  if (typeof pres.present === 'function') {
+    pres.present('k2', true);
+    pres.present('k3', false);
+    await settle();
+    if (dot('k2').indexOf(G) !== -1 && dot('k2').indexOf(W) === -1 && dot('k3').indexOf(W) !== -1 && dot('k3').indexOf(G) === -1 && dot('k3').indexOf(ICON.RED_CIRCLE) === -1) test.check('root.present(key, true) green; false white, never red (red is a status here)');
+    else test.fail(OWED10 + 'after present: k2 ' + JSON.stringify(dot('k2')).slice(0, 100) + ', k3 ' + JSON.stringify(dot('k3')).slice(0, 100));
+    pres.mark('k2', 'unanswered');
+    await settle();
+    if (dot('k2').indexOf(G) !== -1 && dot('k2').indexOf(ICON.RED_CIRCLE) !== -1) test.check('the presence dot and the status mark stand side by side');
+    else test.fail(OWED10 + 'k2 with presence and unanswered: ' + JSON.stringify(dot('k2')).slice(0, 120));
+    box2Search(pres);
+    await settle();
+    if (dot('k2').indexOf(G) !== -1) test.check('presence survives the rows being drawn again');
+    else test.fail(OWED10 + 'after a redraw k2 shows ' + JSON.stringify(dot('k2')).slice(0, 100));
+  } else test.fail(OWED10 + 'the root has no present(key, state)');
+}
+
+// Ask the pane's search again, as typing does: the rows are drawn anew.
+function box2Search(root) {
+  const box = inputOf(root);
+  if (!box) return;
+  box.value = '';
+  fire(box, 'input');
 }
 
 main().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {

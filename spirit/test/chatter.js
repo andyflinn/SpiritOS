@@ -50,6 +50,13 @@
 //     C7. Older lines: with more, a scroll to the top asks chat.read {peer, before: the oldest line's at}.
 //     C8. The style selector (a SELECT in the centre pane, offering plain and bubbles): a change is kept in
 //         shell/chatter/ through api.fs, and the next mount shows it.
+//   G4.10, REOPENED (Andy trying it live):
+//     P6. Presence: chatter reads the node's relay-presence job through api.onJobs (the shell's one stream) and
+//         sets the pane's root.present(key, state): green present, white otherwise, the 🔴 beside it.
+//     P7. Three panes, data-pane peers, chat and objects (NAMED); the objects pane shown and empty; each side pane
+//         folds by its data-fold button (NAMED), POINTRIGHT/POINTLEFT pointing the way it will move.
+//     P8. Two visible boundaries, data-divider left and right (NAMED), dragged by pointer events to resize; the
+//         widths kept in the same api.fs file as the look, and drawn again on the next mount.
 // NOT ASSERTED, the builder's: markup and classes beyond the names above, the bubbles' look, the fold buttons and the
 // bounded window (G4.9), the missing fallback's wording.
 
@@ -224,6 +231,7 @@ function mount(opts) {
     return {};
   }
   const published = [];
+  const jobsFns = [];
   const saved = {};
   const api = {
     verb: function (name, args) {
@@ -245,6 +253,8 @@ function mount(opts) {
     onPublished: function (fn, server) { published.push({ fn: fn, server: server }); return function () {}; },
     onPacket: function () { return function () {}; },
     onReconnect: function () { return function () {}; },
+    // The shell's one stream, fanned out: fn(jobsById, job, ctx), called at once with what is held (shell.js onJobs).
+    onJobs: function (fn) { jobsFns.push(fn); fn(new Map(), null, { visible: true }); return function () {}; },
     setScreenTitle: function () {}, setScreenMark: function () {},
     escapeHtml: kernel.core.util.escapeHtml,
     fs: {
@@ -277,6 +287,12 @@ function mount(opts) {
   if (behavior && typeof behavior.render === 'function') { try { behavior.render(); } catch (e) { /* render is the app's */ } }
   return {
     container: container, asked: asked, selectors: selectors, labels: labels, saved: saved, behavior: behavior, doc: doc,
+    // The node's relay-presence job, as the stream carries it: {type, data: {presence: {key: {present, at}}}}.
+    presence: function (table) {
+      const job = { id: 'relay-presence', type: 'relay-presence', data: { presence: table } };
+      jobsFns.forEach(function (fn) { fn(new Map([[job.id, job]]), job, { visible: true }); });
+    },
+    listensToJobs: function () { return jobsFns.length > 0; },
     publish: function (obj) { published.filter(function (p) { return p.server === 'chatClerver'; }).forEach(function (p) { p.fn(obj); }); },
     listening: function () { return published.some(function (p) { return p.server === 'chatClerver'; }); },
     clerverAsks: function (verb) { return asked.filter(function (a) { return a.via === 'clerver' && a.verb === verb; }); },
@@ -468,6 +484,75 @@ async function main() {
   await settled();
   if (app2.clerverAsks('peers.search').length > before) test.check('a line from a peer the list does not hold makes it ask peers.search again');
   else test.fail(OWED10 + 'a line from a new peer did not refresh the list');
+
+  // ── goal/G4.10, reopened: Andy, 2026-10-03, trying chatter live: "and the list doesn't show presence."; "same green
+  // and white dots i see in contacts"; "my line said, \"like in contacts\" where i only see green and white...";
+  // "also i'd like to see pane boundaries (vertiacally) and possibly change theirs size by dragging the pane
+  // boundary"; "and i kind of expected to see the empty right-hand pane, so i could test it's collapsibility".
+  test.subHeading('G4.10 P6: presence from the relay-presence job, through the shell\'s one stream');
+  const app3 = mount();
+  await settled();
+  if (app3.listensToJobs()) test.check('chatter hears jobs through api.onJobs (no stream of its own)');
+  else test.fail(OWED10 + 'chatter does not ask api.onJobs');
+  const p3 = pane(app3);
+  const presTable = {}; presTable[PEER] = { present: true, at: T(9) }; presTable[QUIET] = { present: false, at: T(9) };
+  app3.presence(presTable);
+  await settled();
+  const r3 = function (k) { const r = p3 && rowFor(p3.root, k); return r ? shown(r) : ''; };
+  if (r3(PEER).indexOf(ICON.GREEN_CIRCLE) !== -1 && r3(QUIET).indexOf(ICON.GREEN_CIRCLE) === -1 && r3(QUIET).indexOf(ICON.WHITE_CIRCLE) !== -1) test.check('a present peer green, an absent one white');
+  else test.fail(OWED10 + 'after the presence job: ' + JSON.stringify([r3(PEER), r3(QUIET)]).slice(0, 220));
+  if (r3(PEER).indexOf(ICON.RED_CIRCLE) !== -1) test.check('and its 🔴 for unanswered stands beside the green');
+  else test.fail(OWED10 + 'PEER lost its unanswered mark: ' + JSON.stringify(r3(PEER)).slice(0, 160));
+
+  test.subHeading('G4.10 P7: three panes, the right one empty, each side pane folding toward its edge');
+  const paneEl = function (app, name) { return all(app.container).filter(function (n) { return n.getAttribute && n.getAttribute('data-pane') === name; })[0] || null; };
+  const foldEl = function (app, name) { return all(app.container).filter(function (n) { return n.getAttribute && n.getAttribute('data-fold') === name; })[0] || null; };
+  const objects = paneEl(app3, 'objects');
+  if (paneEl(app3, 'peers') && paneEl(app3, 'chat') && objects && visible(objects, app3.container)) test.check('data-pane peers, chat and objects, the objects pane shown (empty until file transfer)');
+  else test.fail(OWED10 + 'panes: peers ' + !!paneEl(app3, 'peers') + ', chat ' + !!paneEl(app3, 'chat') + ', objects ' + !!objects);
+  const fo = foldEl(app3, 'objects'); const fp = foldEl(app3, 'peers');
+  if (fo && fp) {
+    const start = shown(fo).indexOf(ICON.POINTRIGHT) !== -1 && shown(fp).indexOf(ICON.POINTLEFT) !== -1;
+    fire(fo, 'click'); await settled();
+    const folded = !!objects && !visible(objects, app3.container) && shown(fo).indexOf(ICON.POINTLEFT) !== -1;
+    fire(fo, 'click'); await settled();
+    const back = !!objects && visible(objects, app3.container) && shown(fo).indexOf(ICON.POINTRIGHT) !== -1;
+    if (start && folded && back) test.check('the objects fold: POINTRIGHT open, a click folds it (POINTLEFT), again opens; the peers fold mirrors it');
+    else test.fail(OWED10 + 'folds: start ' + start + ', folded ' + folded + ', back ' + back);
+  } else test.fail(OWED10 + 'fold buttons: peers ' + !!fp + ', objects ' + !!fo);
+
+  test.subHeading('G4.10 P8: visible boundaries, dragged to resize, the widths kept in shell/chatter');
+  const divider = function (app, side) { return all(app.container).filter(function (n) { return n.getAttribute && n.getAttribute('data-divider') === side; })[0] || null; };
+  const widthOf = function (el) { return el ? String(el.style.width || el.style.flexBasis || '') : ''; };
+  const dl = divider(app3, 'left'); const dr = divider(app3, 'right');
+  if (dl && dr && visible(dl, app3.container) && visible(dr, app3.container)) test.check('data-divider left and right, both shown');
+  else test.fail(OWED10 + 'dividers: left ' + !!dl + ', right ' + !!dr);
+  if (dl && dr) {
+    const peersEl = paneEl(app3, 'peers');
+    const before1 = widthOf(peersEl);
+    const drag = function (el, from, to) {
+      fire(el, 'pointerdown', { clientX: from, button: 0, pointerId: 1 });
+      app3.doc.dispatchEvent({ type: 'pointermove', clientX: to, pointerId: 1, preventDefault: function () {} });
+      app3.doc.dispatchEvent({ type: 'pointerup', clientX: to, pointerId: 1, preventDefault: function () {} });
+    };
+    drag(dl, 300, 360);
+    await settled();
+    const after1 = widthOf(peersEl);
+    if (/px$/.test(after1) && after1 !== before1) test.check('dragging the left boundary sets the peer pane\'s width (' + (before1 || 'none') + ' to ' + after1 + ')');
+    else test.fail(OWED10 + 'after a drag the peer pane\'s width is ' + JSON.stringify(after1) + ' (was ' + JSON.stringify(before1) + ')');
+    drag(dr, 900, 820);
+    await settled();
+    const kept = Object.keys(app3.saved).filter(function (k) { return app3.saved[k].indexOf(after1.replace('px', '')) !== -1; })[0];
+    if (kept && /bubbles|plain/.test(app3.saved[kept])) test.check('the widths are kept with the look in one file through api.fs (' + kept + ')');
+    else test.fail(OWED10 + 'kept: ' + JSON.stringify(app3.saved).slice(0, 200));
+    if (kept) {
+      const files = {}; files[kept] = app3.saved[kept];
+      const app4 = mount({ files: files });
+      await settled();
+      if (widthOf(paneEl(app4, 'peers')) === after1) test.check('and the next mount draws the peer pane at that width');
+      else test.fail(OWED10 + 'the next mount draws ' + JSON.stringify(widthOf(paneEl(app4, 'peers'))));
+    }
+  }
 }
 
 main().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
