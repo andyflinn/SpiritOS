@@ -93,6 +93,8 @@ const handed = FOUR.filter(function (n) { return new RegExp('elements: \\{[^}]*'
 if (handed.length === 4) test.check('and hands all four to apps under api.ui.elements from spiritElements');
 else test.fail(OWED + 'handed from spiritElements under ui.elements: ' + handed.join(', ') + ' — missing ' + FOUR.filter(function (n) { return handed.indexOf(n) === -1; }).join(', '));
 
+// The contact selector paints from a search that answers later (goal/G4.14), so the report waits for it.
+let pending = Promise.resolve();
 test.subHeading('4. loaded together, the factories still work as controls');
 if (missing.length) {
   test.fail(OWED + 'not every element file exists — the behaviour is owed with them');
@@ -111,21 +113,27 @@ if (missing.length) {
   if (!tripped && E && FOUR.every(function (n) { return typeof E[n] === 'function'; })) test.check('the four files load on the shell\'s globals alone and expose four functions');
   else test.fail(OWED + (tripped ? 'an element file tripped on load: ' + tripped.message : 'spiritElements exposes ' + JSON.stringify(E && Object.keys(E))));
   if (E && typeof E.createContactSelector === 'function') {
+    // goal/G4.14: the contact selector is a drawn list now, the dropdown the same pane under a button (its own suite,
+    // contactSelectorPane.js); what this suite keeps is that it still works as a control on the shell's globals.
     let root = null; let err = null;
     try { root = E.createContactSelector({ contacts: [{ key: 'k1', label: 'Bert' }, { key: 'k2', label: 'Carol' }], placeholder: 'who?' }); } catch (e) { err = e; }
-    const select = root && root.children[0];
-    if (!err && root && /contact-selector/.test(root.className) && select && /Bert/.test(select.innerHTML) && root.value === '') {
-      test.check('a contact selector from given rows paints them, and answers nothing until a pick');
-    } else test.fail(OWED + 'contact selector: ' + (err ? 'threw ' + err.message : 'className ' + JSON.stringify(root && root.className) + ', options ' + JSON.stringify(select && select.innerHTML) + ', value ' + JSON.stringify(root && root.value)));
-    if (select) {
-      let bubbled = 0;
-      root.addEventListener('change', function () { bubbled += 1; });
-      select.value = '0';
-      select.dispatchEvent(new FakeEvent('change', { bubbles: true }));
-      if (root.value === 'k1' && root.row && root.row.label === 'Bert' && bubbled === 1) test.check('a pick sets root.value to the key and fires one bubbling change on the root');
-      else test.fail(OWED + 'after a pick: value ' + JSON.stringify(root.value) + ', row ' + JSON.stringify(root.row) + ', changes on the root ' + bubbled);
-    }
+    const everything = function (n) { return [n].concat((n.children || []).reduce(function (a, c) { return a.concat(everything(c)); }, [])); };
+    pending = Promise.resolve().then(function () { return new Promise(function (r) { setImmediate(r); }); }).then(function () {
+      const rowsFor = function (key) { return root ? everything(root).filter(function (n) { return n.getAttribute && n.getAttribute('data-key') === key; }) : []; };
+      const named = root && everything(root).some(function (n) { return n.textContent === 'Bert'; });
+      if (!err && root && /contact-selector/.test(root.className) && named && rowsFor('k1').length && root.value === '') {
+        test.check('a contact selector from given rows paints them, and answers nothing until a pick');
+      } else test.fail(OWED + 'contact selector: ' + (err ? 'threw ' + err.message : 'className ' + JSON.stringify(root && root.className) + ', Bert drawn ' + named + ', value ' + JSON.stringify(root && root.value)));
+      const row = rowsFor('k1')[0];
+      if (row) {
+        let bubbled = 0;
+        root.addEventListener('change', function () { bubbled += 1; });
+        row.dispatchEvent(new FakeEvent('click', { bubbles: true }));
+        if (root.value === 'k1' && root.row && root.row.label === 'Bert' && bubbled === 1) test.check('a pick sets root.value to the key and fires one bubbling change on the root');
+        else test.fail(OWED + 'after a pick: value ' + JSON.stringify(root.value) + ', row ' + JSON.stringify(root.row) + ', changes on the root ' + bubbled);
+      }
+    });
   }
 }
 
-test.reportSuccessFailureCount();
+pending.then(function () { test.reportSuccessFailureCount(); });
