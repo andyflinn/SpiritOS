@@ -33,6 +33,7 @@ var chMore = false;       // the server cut the chat: older lines exist
 var chLoadingOlder = false;
 var chStyle = 'plain';
 var chOpenSeq = 0;        // the newest openChat wins
+var chPresent = {};       // the keys the last relay-presence table named
 var ICON = (spirit.core.const && spirit.core.const.ICON) || {};
 var CH_PREFS = 'prefs.json';
 var CH_STYLES = ['plain', 'bubbles'];
@@ -302,12 +303,27 @@ function chOnPublished(obj) {
 
 // ── THE LOOK, KEPT IN shell/chatter (G4.11) ──────────────────────────
 
-function chLoadStyle() {
+// The look and the two side panes' widths, one file in this app's own folder (goal/G4.10: Andy, "possibly change
+// theirs size by dragging the pane boundary"; the widths kept beside the look so they survive a reload).
+var CH_WIDTH = { peers: 280, objects: 220 };
+var CH_WIDTH_MIN = 160;
+var CH_WIDTH_MAX = 640;
+function chLoadPrefs() {
   var raw = null;
   try { raw = chApi.fs && chApi.fs.loadFile(CH_PREFS); } catch (e) { raw = null; }
   var prefs = {};
   try { prefs = raw ? JSON.parse(raw) : {}; } catch (e) { prefs = {}; }
-  return CH_STYLES.indexOf(prefs.style) !== -1 ? prefs.style : 'plain';
+  return prefs && typeof prefs === 'object' ? prefs : {};
+}
+function chClampWidth(n, fallback) {
+  var v = Math.round(Number(n));
+  if (!(v > 0)) return fallback;
+  return Math.max(CH_WIDTH_MIN, Math.min(CH_WIDTH_MAX, v));
+}
+function chSavePrefs() {
+  if (!chApi || !chApi.fs) return;
+  var body = JSON.stringify({ style: chStyle, peersWidth: CH_WIDTH.peers, objectsWidth: CH_WIDTH.objects });
+  Promise.resolve(chApi.fs.saveFile(CH_PREFS, body)).catch(function () { chSay('the look could not be kept'); });
 }
 
 function chApplyStyle() {
@@ -321,7 +337,10 @@ function chApplyStyle() {
 spirit.shell.activateApp({
   mount: function (container, api) {
     chApi = api;
-    chStyle = chLoadStyle();
+    var prefs = chLoadPrefs();
+    chStyle = CH_STYLES.indexOf(prefs.style) !== -1 ? prefs.style : 'plain';
+    CH_WIDTH.peers = chClampWidth(prefs.peersWidth, 280);
+    CH_WIDTH.objects = chClampWidth(prefs.objectsWidth, 220);
     var root = document.createElement('div');
     api._root = root;
     container.appendChild(root);
@@ -335,8 +354,12 @@ spirit.shell.activateApp({
     var css = make('style');
     css.textContent =
       '.ch-app { display: flex; gap: 12px; height: calc(100vh - 120px); min-height: 320px; }' +
-      '.ch-left { flex: 0 0 280px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }' +
-      '.ch-app.ch-left-folded .ch-left { display: none; }' +
+      '.ch-left { flex: 0 0 auto; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }' +
+      '.ch-right { flex: 0 0 auto; overflow-y: auto; opacity: 0.6; font-size: 13px; }' +
+      '.ch-divider { flex: 0 0 6px; cursor: col-resize; background: rgba(255, 255, 255, 0.12); border-radius: 3px; touch-action: none; }' +
+      '.ch-divider:hover { background: rgba(255, 255, 255, 0.3); }' +
+      // A folded pane and its boundary: [hidden] would lose to the panes' own display: flex.
+      '.ch-app [hidden] { display: none !important; }' +
       '.ch-fold { flex: 0 0 auto; align-self: flex-start; background: none; border: none; cursor: pointer; font-size: 16px; }' +
       '.ch-centre { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }' +
       '.ch-title { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 600; }' +
@@ -357,10 +380,12 @@ spirit.shell.activateApp({
       '.ch-status { font-size: 13px; color: #ff8080; }' +
       '.ch-status:empty { display: none; }';
     root.appendChild(css);
-    var foldBtn = make('button', 'ch-fold', 'ch-fold', { type: 'button', title: 'fold the peers away' });
-    root.appendChild(foldBtn);
-    root.appendChild(make('div', 'ch-left', 'ch-left'));
-    var centre = make('div', null, 'ch-centre');
+    // THREE PANES (G4.9): peers left, the chat centre, objects right, each side pane folding toward its own window
+    // edge by a button there, and sized by dragging the boundary between it and the chat.
+    root.appendChild(make('button', 'ch-fold-peers', 'ch-fold', { type: 'button', title: 'fold the peers away', 'data-fold': 'peers' }));
+    root.appendChild(make('div', 'ch-left', 'ch-left', { 'data-pane': 'peers' }));
+    root.appendChild(make('div', 'ch-divider-left', 'ch-divider', { 'data-divider': 'left', title: 'drag to resize' }));
+    var centre = make('div', null, 'ch-centre', { 'data-pane': 'chat' });
     var titleBar = make('div', null, 'ch-title');
     var name = make('span', 'ch-title-name', 'ch-title-name');
     name.textContent = 'choose a peer';
@@ -380,20 +405,63 @@ spirit.shell.activateApp({
     input.disabled = true;
     centre.appendChild(input);
     root.appendChild(centre);
+    root.appendChild(make('div', 'ch-divider-right', 'ch-divider', { 'data-divider': 'right', title: 'drag to resize' }));
+    // Empty until file transfer (goal/G4.12, deferred); shown so its fold can be tried (Andy: "i kind of expected
+    // to see the empty right-hand pane, so i could test it's collapsibility").
+    var objectsPane = make('div', 'ch-right', 'ch-right', { 'data-pane': 'objects' });
+    objectsPane.textContent = 'objects arrive here once file transfer exists';
+    root.appendChild(objectsPane);
+    root.appendChild(make('button', 'ch-fold-objects', 'ch-fold', { type: 'button', title: 'fold the objects away', 'data-fold': 'objects' }));
     chApplyStyle();
 
-    // The peer pane folds away to the left (G4.9): the button points the way the pane will move.
-    var fold = chEl('ch-fold');
-    function paintFold() {
-      var folded = /\bch-left-folded\b/.test(root.className);
-      fold.textContent = folded ? (ICON.POINTRIGHT || '▶') : (ICON.POINTLEFT || '◀');
+    function sizePanes() {
+      [['ch-left', CH_WIDTH.peers], ['ch-right', CH_WIDTH.objects]].forEach(function (pw) {
+        var el = chEl(pw[0]);
+        el.style.width = pw[1] + 'px';
+      });
     }
-    fold.addEventListener('click', function () {
-      root.className = /\bch-left-folded\b/.test(root.className)
-        ? root.className.replace(/\s*ch-left-folded\b/, '') : root.className + ' ch-left-folded';
-      paintFold();
-    });
-    paintFold();
+    sizePanes();
+
+    // Each side pane folds toward its own edge (G4.9): the button points the way the pane will move.
+    function fold(which, paneId, dividerId, openGlyph, foldedGlyph) {
+      var btn = chEl('ch-fold-' + which);
+      var paneEl = chEl(paneId);
+      var divider = chEl(dividerId);
+      function paint() { btn.textContent = paneEl.hidden ? foldedGlyph : openGlyph; }
+      btn.addEventListener('click', function () {
+        paneEl.hidden = !paneEl.hidden;
+        divider.hidden = paneEl.hidden;
+        paint();
+      });
+      paint();
+    }
+    fold('peers', 'ch-left', 'ch-divider-left', ICON.POINTLEFT || '◀', ICON.POINTRIGHT || '▶');
+    fold('objects', 'ch-right', 'ch-divider-right', ICON.POINTRIGHT || '▶', ICON.POINTLEFT || '◀');
+
+    // A boundary dragged resizes the side pane beside it; the width is kept when the drag ends.
+    function drag(dividerId, which, sign) {
+      var divider = chEl(dividerId);
+      divider.addEventListener('pointerdown', function (event) {
+        if (event.button !== undefined && event.button !== 0) return;
+        if (event.preventDefault) event.preventDefault();
+        var startX = Number(event.clientX) || 0;
+        var startW = CH_WIDTH[which];
+        function move(e) {
+          CH_WIDTH[which] = chClampWidth(startW + sign * ((Number(e.clientX) || 0) - startX), startW);
+          sizePanes();
+        }
+        function up(e) {
+          move(e);
+          document.removeEventListener('pointermove', move);
+          document.removeEventListener('pointerup', up);
+          chSavePrefs();
+        }
+        document.addEventListener('pointermove', move);
+        document.addEventListener('pointerup', up);
+      });
+    }
+    drag('ch-divider-left', 'peers', 1);
+    drag('ch-divider-right', 'objects', -1);
 
     var left = chEl('ch-left');
     chPick = api.ui.elements.createContactSelector({ search: chContactsSearch, placeholder: 'new chat with…' });
@@ -437,10 +505,29 @@ spirit.shell.activateApp({
     style.addEventListener('change', function () {
       chStyle = CH_STYLES.indexOf(style.value) !== -1 ? style.value : 'plain';
       chApplyStyle();
-      if (api.fs) Promise.resolve(api.fs.saveFile(CH_PREFS, JSON.stringify({ style: chStyle }))).catch(function () {
-        chSay('the look could not be kept');
-      });
+      chSavePrefs();
     });
+
+    // PRESENCE, as Contacts shows it (goal/G4.10: "same green and white dots i see in contacts"): the node's
+    // relay-presence job, heard through the shell's one stream, never a stream of chatter's own.
+    if (api.onJobs) {
+      api.onJobs(function (jobsById, job) {
+        var found = job && job.type === 'relay-presence' ? job : null;
+        if (!found && jobsById && typeof jobsById.forEach === 'function') {
+          jobsById.forEach(function (j) { if (j && j.type === 'relay-presence') found = j; });
+        }
+        var table = found && found.data && found.data.presence;
+        if (!table || !chPane) return;
+        // A key the table no longer names goes white again, as in Contacts: unknown is never present.
+        Object.keys(chPresent).forEach(function (key) { if (!table[key]) chPane.present(key, false); });
+        chPresent = {};
+        Object.keys(table).forEach(function (key) {
+          var proof = table[key];
+          chPresent[key] = true;
+          chPane.present(key, !!(proof && typeof proof === 'object' && proof.present === true));
+        });
+      });
+    }
 
     api.onPublished(chOnPublished, 'chatClerver');
     if (api.onReconnect) api.onReconnect(function () { if (chPane) chPane.refresh(); if (chPeer) chOpen(chPeer); });

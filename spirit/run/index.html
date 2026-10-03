@@ -762,6 +762,9 @@
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
       }
       .contact-selector-pane[hidden] { display: none; }
+      /* The open dropdown hides its own button (goal/G4.10); [hidden] alone
+         would lose to the field's display: flex. */
+      .contact-selector-field[hidden] { display: none; }
       .contact-selector-search { width: 100%; margin-bottom: 12px; font-size: 16px; }
       .contact-selector-face-dropdown .contact-selector-rows { max-height: 40vh; overflow-y: auto; }
       .contact-selector-row {
@@ -778,6 +781,8 @@
       .contact-selector-status { flex: 0 0 24px; text-align: center; }
       .contact-selector-more { opacity: 0.6; font-size: 13px; }
       .contact-selector-more:empty { display: none; }
+      /* The presence column, always there: green present, white otherwise. */
+      .contact-selector-presence { flex: 0 0 20px; text-align: center; }
 
       /* The contact label (shell/js/contactLabel.js, goal/G4.13). It takes
          the style of its container, so nothing here sets its face or size;

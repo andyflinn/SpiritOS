@@ -53,6 +53,11 @@
     var statuses = (Array.isArray(options.statuses) && options.statuses.length)
       ? options.statuses : [{ status: 'none' }];
     var statusOf = {};
+    // PRESENCE, always a column (Andy, G4.14: "the presence is always a
+    // column"; goal/G4.10: "same green and white dots i see in contacts",
+    // "where i only see green and white"): white until a caller says a key
+    // is present. Never red, which is a status mark beside it.
+    var presentOf = {};
     var rows = [];
     var cells = {};
     var asked = 0;
@@ -92,6 +97,10 @@
       return (pair && pair.iconKey && ICON[pair.iconKey]) || '';
     }
 
+    function presenceGlyph(key) {
+      return presentOf[key] === true ? (ICON.GREEN_CIRCLE || '●') : (ICON.WHITE_CIRCLE || '○');
+    }
+
     function paintField() {
       if (!field) return;
       var label = root.row ? ((typeof root.row.label === 'string' && root.row.label) || root.row.key) : (options.placeholder || 'choose a contact…');
@@ -102,6 +111,10 @@
     function setOpen(open) {
       if (isPane) return;
       pane.hidden = !open;
+      // Open, the pane stands alone; the button returns when it closes
+      // (Andy, goal/G4.10: "the choose a peer from the dropdown shouldn't be
+      // seen when the dropdown turn into a pane").
+      if (field) field.hidden = !!open;
       if (open) { box.value = ''; run(''); if (box.focus) box.focus(); }
     }
 
@@ -124,6 +137,10 @@
         var row = document.createElement('div');
         row.className = 'contact-selector-row' + (r.key === root.value ? ' current' : '');
         row.setAttribute('data-key', r.key);
+        var presence = document.createElement('span');
+        presence.className = 'contact-selector-presence';
+        presence.textContent = presenceGlyph(r.key);
+        row.appendChild(presence);
         var status = document.createElement('span');
         status.className = 'contact-selector-status';
         status.textContent = glyphFor(r.key);
@@ -144,7 +161,7 @@
         // element included, is a pick of this row.
         row.addEventListener('click', function () { pick(r); });
         list.appendChild(row);
-        cells[r.key] = { row: row, status: status };
+        cells[r.key] = { row: row, status: status, presence: presence };
       });
       more.textContent = (answer && answer.more) ? 'more… type to narrow' : '';
     }
@@ -188,6 +205,13 @@
     // Ask the same search again, with what is typed: for a caller whose
     // rows changed under it (chatter, when a line arrives).
     root.refresh = function () { run(box.value); };
+
+    // Whether a key is present now: true green, anything else white. Kept by
+    // key, so it holds across a redraw and may come before the row does.
+    root.present = function (key, state) {
+      presentOf[key] = state === true;
+      if (cells[key]) cells[key].presence.textContent = presenceGlyph(key);
+    };
 
     root.mark = function (key, status) {
       statusOf[key] = status;
