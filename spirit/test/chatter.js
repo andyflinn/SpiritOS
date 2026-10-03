@@ -23,10 +23,12 @@
 //   api.onPublished(fn, 'chatClerver'). It builds with the shell's elements, api.ui.elements.
 //   G4.10, THE PEERS:
 //     P1. The left pane is createContactSelector({face: 'pane', statuses, search}), statuses
-//         [{status: 'none'}, {status: 'unanswered', iconKey: 'RED_CIRCLE'}], search asking peers.search {text}.
+//         [{status: 'none'}, {status: 'unanswered', iconKey: 'RED_CIRCLE'}], search asking peers.search
+//         {text, since, before}. EVERY ASK carries exactly its verb's request keys, read from chatClerver.js: the
+//         fake server refuses any other, as the real one does.
 //     P2. A peer whose row counts unanswered above zero is marked unanswered (🔴); the number is drawn nowhere, and
 //         the row's raw record is not shown as its name (the label element names it by key).
-//     P3. A click on a row opens that peer's chat in the centre: chat.read {peer}.
+//     P3. A click on a row opens that peer's chat in the centre: chat.read {peer, before: ''}.
 //     P4. A new chat: a contact picked from the node's book (a createContactSelector dropdown, its rows from
 //         contact.search), a blocked contact never offered (contact.search lists blocked rows; how they are left out
 //         is the builder's, contact.get per row as peers.search does); the pick opens its (empty) chat and the
@@ -69,6 +71,21 @@ const QUIET = 'MCowBQYDK2VwAyEAquietquietquietquietquietquietquiet=';
 const NEWBIE = 'MCowBQYDK2VwAyEAnewbienewbienewbienewbienewbienewbi=';
 const BLOCKED = 'MCowBQYDK2VwAyEAblockedblockedblockedblockedblocke=';
 const STRANGER = 'MCowBQYDK2VwAyEAstrangerstrangerstrangerstrangerstr=';
+
+// Each verb's request keys, read from the chatClerver itself (its table's `request: {...}`), so the fake server
+// below refuses what the real one refuses and follows the verbs if they change.
+const REQUEST_KEYS = (function () {
+  const src = fs.readFileSync(path.join(RUN, 'process', 'js', 'chatClerver', 'chatClerver.js'), 'utf8');
+  const out = {};
+  const re = /'([\w.]+)':\s*\{\s*request:\s*\{/g;
+  let m;
+  while ((m = re.exec(src))) {
+    let depth = 1; let i = re.lastIndex;
+    while (i < src.length && depth) { if (src[i] === '{') depth += 1; else if (src[i] === '}') depth -= 1; i += 1; }
+    try { out[m[1]] = Object.keys(new Function('return {' + src.slice(re.lastIndex, i - 1) + '}')()).sort().join(','); } catch (e) { /* not a literal */ }
+  }
+  return out;
+})();
 
 function settle() { return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); }); }
 async function settled() { for (let i = 0; i < 6; i += 1) await settle(); }
@@ -214,6 +231,15 @@ function mount(opts) {
       const ask = (args && args.ask && args.ask.chatClerver) || null;
       if (!ask) return Promise.resolve({ status: 404, body: { ok: false, code: 'no-such-server' } });
       const v = Object.keys(ask)[0];
+      // AS STRICT AS THE REAL SERVER: a call with any key more or less than the verb's request is refused. A fake that
+      // took short asks let chatter ship peers.search {text} and chat.read {peer}, refused on a real node
+      // (wsl-claude, found on Andy's WSL node).
+      const want = REQUEST_KEYS[v];
+      const got = Object.keys(ask[v] || {}).sort().join(',');
+      if (!want || got !== want) {
+        asked.push({ via: 'refused', verb: v, body: ask[v] || {} });
+        return Promise.resolve({ status: 400, body: { ok: false, code: 'bad-request', error: v + ' takes ' + want + ', not ' + got } });
+      }
       return Promise.resolve({ status: 200, body: clerver(v, ask[v]) });
     },
     onPublished: function (fn, server) { published.push({ fn: fn, server: server }); return function () {}; },
@@ -288,7 +314,7 @@ async function main() {
   if (p && Array.isArray(st) && st[0] && st[0].status === 'none' && !st[0].iconKey && st.some(function (s) { return s.status === 'unanswered' && s.iconKey === 'RED_CIRCLE'; })) test.check('createContactSelector({face: \'pane\', statuses: [none, unanswered RED_CIRCLE]})');
   else test.fail(OWED10 + 'the pane is ' + (p ? JSON.stringify({ face: p.options.face, statuses: st }) : 'not made'));
   const searched = app.clerverAsks('peers.search');
-  if (p && typeof p.options.search === 'function' && searched.length && searched[0].body.text === '') test.check('its search asks peers.search {text}, \'\' first');
+  if (p && typeof p.options.search === 'function' && searched.length && searched[0].body.text === '') test.check('its search asks peers.search {text, since, before}, text \'\' first');
   else test.fail(OWED10 + 'peers.search asked ' + JSON.stringify(searched));
   const peerRow = p && rowFor(p.root, PEER);
   const quietRow = p && rowFor(p.root, QUIET);
@@ -301,7 +327,7 @@ async function main() {
   if (peerRow) fire(peerRow, 'click');
   await settled();
   const read = app.clerverAsks('chat.read');
-  if (read.length && read[0].body.peer === PEER && !read[0].body.before) test.check('chat.read {peer} for the clicked row');
+  if (read.length && read[0].body.peer === PEER && !read[0].body.before) test.check('chat.read {peer, before: \'\'} for the clicked row');
   else test.fail(OWED10 + 'chat.read asked ' + JSON.stringify(read));
   const title = app.labels.filter(function (l) { return l.options.key === PEER && l.options.editable === true; });
   if (title.length && app.container.contains(title[title.length - 1].root)) test.check('the centre pane\'s title bar names the contact: createContactLabel({key, editable: true})');
