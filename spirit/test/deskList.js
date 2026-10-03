@@ -10,7 +10,7 @@
 //   Each button of a row's `buttons` is an element with data-press="<what>" data-id="<id>"; the row's blocking and
 //   blocked ids are data-open links.
 //   A click on a data-press element sends press {id, what, by: 'andy'}; the row does not change until the server
-//   publishes. Once the server has answered, the page sends each agent it knows a bare agents packet {kind: 'changed'}.
+//   publishes. Since goal/G3.8 the page posts no nudge: the desk server nudges the agents (goal/G3.5).
 //   It repaints from api.onPublished: {change, verb, item: <facts>} replaces that row; `listed: false` removes it.
 //   A published session.set (item null) is the one publish that asks items.search again.
 //   The search bar #desk-search (on 'input') and the toggles #desk-current-goal and #desk-goals-only (on click) ask
@@ -143,9 +143,10 @@ test.startTest('desk/G2.6: the List paints only what the desk server says');
   else test.fail(OWED + 'Go! sent ' + JSON.stringify(pressed || null));
   if (/data-press="go"/.test(rowOf(l.page(), 'Alpha'))) test.check('until the server publishes, Alpha still shows Go!');
   else test.fail(OWED + 'the row changed before the server published');
-  const nudge = l.posted.filter(function (p) { return p.to === AGENT_KEY && p.body && p.body.kind === 'changed'; });
-  if (nudge.length === 1 && !nudge[0].body.text) test.check('after the server answered, the agent got one bare changed packet');
-  else test.fail(OWED + 'the nudge: ' + JSON.stringify(l.posted));
+  // goal/G3.8: the page's nudge is gone; the desk server nudges (goal/G3.5, deskNudge.js). deskPageNoNudge.js has the rest.
+  const nudge = l.posted.filter(function (p) { return p.body && p.body.kind === 'changed'; });
+  if (!nudge.length) test.check('after the server answered, the page sent no changed packet: the server nudges (goal/G3.8)');
+  else test.fail('OWED by goal/G3.8: the page still nudges: ' + JSON.stringify(nudge));
   const lines = l.posted.filter(function (p) { return p.body && /^go\.$/.test(String(p.body.text || '')); });
   if (pressed && !lines.length) test.check('the press went as a press, and no "go." line was posted');
   else test.fail(OWED + (pressed ? 'the press also went out as a line' : 'nothing was pressed'));
