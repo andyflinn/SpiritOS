@@ -10,8 +10,9 @@
 // contactLabel.
 //
 // TWO PANES (the objects pane on the right waits for file transfer, goal/G4.12):
-//   LEFT, the peers (G4.10): a search over peers.search; 🔴 while a peer has unanswered lines, never the number
-//   (Andy: "the count is not allowed by 4.14", "🔴 is fine"); a click opens that chat. A new chat begins by picking a
+//   LEFT, the peers (G4.10): a search by name over the peers with a chat; ⌛ while a peer has unanswered lines,
+//   never the number (Andy: "the count is not allowed by 4.14"; the 🔴 he first chose became "use ICON:WAITING", since
+//   it read as a presence dot); a click opens that chat. A new chat begins by picking a
 //   contact from the node's book, a blocked one never offered (Andy: "a blocked contact should not be offered to the
 //   chatter user at all."), and its first line goes line.write {to}.
 //   CENTRE, one chat (G4.11): its contact named in the pane's own title bar; lines placed by their data, never by
@@ -63,9 +64,26 @@ function chSay(text) {
 
 // peers.search's rows carry the record as label: {peer, at, sent, seq, unanswered}. The pane is handed keys alone
 // (the label element names them); the record only decides the mark.
+//
+// TYPED TEXT FINDS NAMES, NOT KEYS (Andy, goal/G4.10: "the search on top or the pane seem to search keys instead of
+// labels..."). The chatClerver knows keys only (G4.3), so a name is looked up in the node's book first
+// (contact.search), and the peers with a chat are kept to those keys.
 function chPeersSearch(text) {
-  // Exactly the verb's keys: the app server refuses any other shape (appServer.js, no-such-argument).
-  return chAsk('peers.search', { text: String(text || ''), since: '', before: '' }).then(function (body) {
+  var typed = String(text || '').trim();
+  var named = typed
+    ? spirit.core.ask('contact.search', { q: typed }).then(function (a) {
+      var keys = {};
+      ((a && a.body && a.body.items) || []).forEach(function (it) { if (it && it.key) keys[it.key] = true; });
+      return keys;
+    }, function () { return {}; })
+    : Promise.resolve(null);
+  return named.then(function (keys) {
+    // Exactly the verb's keys: the app server refuses any other shape (appServer.js, no-such-argument).
+    return chAsk('peers.search', { text: '', since: '', before: '' }).then(function (body) {
+      if (keys) body.items = (body.items || []).filter(function (it) { return it && keys[it.key]; });
+      return body;
+    });
+  }).then(function (body) {
     var items = (body.items || []).map(function (it) {
       var row = {};
       try { row = JSON.parse(it.label || '{}'); } catch (e) { row = {}; }
@@ -469,7 +487,8 @@ spirit.shell.activateApp({
     left.appendChild(chPick);
     chPane = api.ui.elements.createContactSelector({
       face: 'pane', search: chPeersSearch,
-      statuses: [{ status: 'none' }, { status: 'unanswered', iconKey: 'RED_CIRCLE' }],
+      // Waiting lines as ⌛, not a dot that reads as presence (Andy, goal/G4.10: "use ICON:WAITING").
+      statuses: [{ status: 'none' }, { status: 'unanswered', iconKey: 'WAITING' }],
     });
     chPane.addEventListener('change', function () { if (chPane.value) chOpen(chPane.value); });
     left.appendChild(chPane);
