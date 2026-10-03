@@ -53,6 +53,8 @@
 //   G4.10, REOPENED (Andy trying it live):
 //     P6. Presence: chatter reads the node's relay-presence job through api.onJobs (the shell's one stream) and
 //         sets the pane's root.present(key, state): green present, white otherwise, the ⌛ beside it.
+//         The new-chat dropdown gets the same presence as the pane (Andy: "the color of presence dots in the
+//         dropdown don't match the color of the presence dots in the pane...").
 //     P7. Three panes, data-pane peers, chat and objects (NAMED); the objects pane shown and empty; each side pane
 //         folds by its data-fold button (NAMED), POINTRIGHT/POINTLEFT pointing the way it will move.
 //     P9. The pane's search matches the names shown, not keys (Andy: "the search on top or the pane seem to search
@@ -517,6 +519,19 @@ async function main() {
   else test.fail(OWED10 + 'after the presence job: ' + JSON.stringify([r3(PEER), r3(QUIET)]).slice(0, 220));
   if (r3(PEER).indexOf(ICON.WAITING) !== -1) test.check('and its ⌛ for unanswered stands beside the green');
   else test.fail(OWED10 + 'PEER lost its unanswered mark: ' + JSON.stringify(r3(PEER)).slice(0, 160));
+  // Andy, 2026-10-03: "2. the color of presence dots in the dropdown don't match the color of the presence dots in the pane..."
+  const pk3 = picker(app3);
+  const presTable2 = {}; presTable2[PEER] = { present: true, at: T(9) }; presTable2[NEWBIE] = { present: true, at: T(9) };
+  app3.presence(presTable2);
+  await settled();
+  if (pk3) {
+    const pkButton = all(pk3.root).filter(function (n) { return n.tagName === 'BUTTON'; })[0];
+    if (pkButton) fire(pkButton, 'click');
+    await settled();
+    const nb = rowFor(pk3.root, NEWBIE);
+    if (nb && shown(nb).indexOf(ICON.GREEN_CIRCLE) !== -1) test.check('the new-chat dropdown shows the same presence: a present contact green there too');
+    else test.fail(OWED10 + 'in the dropdown a present contact shows ' + JSON.stringify(nb && shown(nb)).slice(0, 120));
+  } else test.fail(OWED10 + 'no new-chat dropdown');
 
   test.subHeading('G4.10 P7: three panes, the right one empty, each side pane folding toward its edge');
   const paneEl = function (app, name) { return all(app.container).filter(function (n) { return n.getAttribute && n.getAttribute('data-pane') === name; })[0] || null; };

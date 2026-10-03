@@ -29,6 +29,8 @@
 //   5. THE DROPDOWN: the same pane under a button: no row is shown until the button is clicked; a click on a row then
 //      sets root.value, fires one change, and closes the pane.
 //   6. (goal/G4.10) THE OPEN DROPDOWN hides its own button; closed or picked, the button shows.
+//   8. (goal/G4.10) THE COLUMNS: the status icon first, the presence dot second (Andy: "Make the configurable icons
+//      the first column, and the presence dots the second column").
 //   7. (goal/G4.10) PRESENCE, always a column: every row a dot, white until root.present(key, true) makes it green
 //      (NAMED); false is white too, never red, which is a status in chatter. Dot and status mark stand side by side,
 //      and presence survives a redraw.
@@ -264,6 +266,12 @@ async function main() {
     await settle();
     if (dot('k2').indexOf(G) !== -1 && dot('k2').indexOf(ICON.RED_CIRCLE) !== -1) test.check('the presence dot and the status mark stand side by side');
     else test.fail(OWED10 + 'k2 with presence and unanswered: ' + JSON.stringify(dot('k2')).slice(0, 120));
+    // Andy, 2026-10-03: "1. Make the configurable icons the first column, and the presence dots the second column".
+    const r2 = rowFor(pres, 'k2');
+    const cellOf = function (glyph) { return r2 ? r2.children.findIndex(function (c) { return shown(c).indexOf(glyph) !== -1; }) : -1; };
+    const si = cellOf(ICON.RED_CIRCLE); const pi = cellOf(G);
+    if (si !== -1 && pi !== -1 && si < pi) test.check('the status icon is the first column, the presence dot the second');
+    else test.fail(OWED10 + 'in the row the status icon is cell ' + si + ', the presence dot cell ' + pi);
     box2Search(pres);
     await settle();
     if (dot('k2').indexOf(G) !== -1) test.check('presence survives the rows being drawn again');
