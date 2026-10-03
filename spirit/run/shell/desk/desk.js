@@ -436,29 +436,15 @@ function deskOnPublished(obj) {
 }
 // A PRESS IS NOT A LINE. Andy: "a press shouldn't post a line, it is not
 // textual information." It goes to the desk server; the row changes when the
-// server publishes. Then each agent gets the bare nudge, his pick (b): "After
-// the server records a change, the page sends the agents a tiny 'changed'
-// packet with no content."
-// The agents the server says are live (the goal row's live), with the keys Desk has heard them on.
-function deskLiveAgents() {
-  var g = deskGoalRow();
-  var live = g && Array.isArray(g.live) ? g.live : [];
-  var out = {};
-  Object.keys(deskAgents).forEach(function (n) { if (live.indexOf(n) !== -1) out[n] = deskAgents[n]; });
-  return out;
-}
+// server publishes. THE PAGE NUDGES NOBODY (goal/G3.8): the desk server nudges
+// each agent's deskClient itself on his writes (goal/G3.5), so the tiny
+// 'changed' packet the page posted to every live agent after a press is gone,
+// with the agents app it was addressed to.
 function deskPress(id, what) {
   // No by since apiAuth/G1.13: the press is the owner's because it comes
   // through the owner's door, and desk reads that from the caller.
-  return deskAsk('press', { id: id, what: what }).then(function () {
-    // To the agents the server says are live (the goal row's live), not to
-    // every agent ever heard (wsl-claude's review).
-    var live = deskLiveAgents();
-    Object.keys(live).forEach(function (n) {
-      Promise.resolve(deskApi.peerPost('agents', live[n].key, { kind: 'changed' }))
-        .catch(function () { /* the agent reads the state when it next looks */ });
-    });
-  }, function (e) { deskError = 'Not pressed: ' + ((e && e.message) || e); deskDraw(); });
+  return deskAsk('press', { id: id, what: what }).then(function () { /* the server publishes, and nudges */ },
+    function (e) { deskError = 'Not pressed: ' + ((e && e.message) || e); deskDraw(); });
 }
 
 var DESK_PRESS_LABEL = { go: 'Go!', done: 'Done', close: 'Close', 'bring-back': 'Bring back' };
@@ -808,9 +794,9 @@ function deskDraw() {
 // ONE ROW'S DIALOG, from the List or from the Team bubble. Andy: "i want to
 // be able to click on items in the bubble in team and see the details".
 function deskOpenRow(id) {
-  // THE DIALOG ASKS THE DESK SERVER ITSELF (desk/G2.7): Desk hands it the id
-  // and the live agents, for its nudge. It presses seen and writes its own chat.
-  deskApi.callDialog('shell/deskDetails', { id: id, agents: deskLiveAgents() })
+  // THE DIALOG ASKS THE DESK SERVER ITSELF (desk/G2.7): Desk hands it the id.
+  // It presses seen and writes its own chat, and nudges nobody (goal/G3.8).
+  deskApi.callDialog('shell/deskDetails', { id: id })
     .then(function (result) {
       // A line in its Blocked by / Blocking lists was clicked: go there.
       if (result && result.open) deskOpenRow(result.open);

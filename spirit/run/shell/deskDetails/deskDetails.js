@@ -22,7 +22,6 @@ var ddVersion = 0;
 var ddChecks = [];
 var ddChat = [];
 var ddChatMore = false;       // older lines the server left out (desk/G3.3)
-var ddAgents = {};           // name -> {key}, handed over by Desk, for the nudge
 var ddArmed = '';            // the id of the armed button (abandon, go all), pressed once
 var ddRenaming = false;
 var ddNote = '';
@@ -45,22 +44,13 @@ function ddRefusalText(body) {
   return String(body.code || 'refused') + (typeof x.bytes === 'number' ? ': ' + x.bytes + ' bytes, the limit is ' + x.max : '') + (body.error ? ' (' + body.error + ')' : '');
 }
 
-// A BARE NUDGE (Andy's pick (b)): after the server has a change, each agent
-// Desk knows gets an empty 'changed' packet and reads the state itself.
-function ddNudge() {
-  Object.keys(ddAgents).forEach(function (name) {
-    var who = ddAgents[name];
-    if (who && who.key && typeof ddApi.peerPost === 'function') {
-      Promise.resolve(ddApi.peerPost('agents', who.key, { kind: 'changed' })).catch(function () { /* the next change nudges again */ });
-    }
-  });
-}
-
 // A write of Andy's. Nothing on screen changes until the server publishes.
-// His seen is his reading, not a change for the agents: it nudges nobody.
+// THE DIALOG NUDGES NOBODY (goal/G3.8): the bare 'changed' packet it posted to
+// each agent after a write went with the agents app; the desk server nudges
+// each agent's deskClient itself on his writes (goal/G3.5).
 // Answers whether the server took it. It sends no by: the desk takes its writer from the caller (apiAuth/G1.13).
 function ddWrite(verb, args) {
-  return ddAsk(verb, args).then(function () { ddNote = ''; if (args.what !== 'seen') ddNudge(); return true; }, function (e) {
+  return ddAsk(verb, args).then(function () { ddNote = ''; return true; }, function (e) {
     ddNote = 'Not taken: ' + e.message;
     ddPaint();
     return false;
@@ -351,7 +341,6 @@ spirit.shell.activateApp({
   // Every call: which item this is. Nothing stale from the last one.
   open: function (params) {
     ddId = String((params && params.id) || '');
-    ddAgents = (params && params.agents) || {};
     ddFacts = null;
     ddBox = '';
     ddVersion = 0;
