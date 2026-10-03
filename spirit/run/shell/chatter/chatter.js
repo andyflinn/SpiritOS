@@ -455,7 +455,7 @@ spirit.shell.activateApp({
     titleBar.appendChild(name);
     titleBar.appendChild(make('span', 'ch-title-count', 'ch-title-count'));
     var styleSel = make('select', 'ch-style', null, { title: 'how lines look' });
-    [['plain', 'plain'], ['bubbles', 'speech bubbles']].forEach(function (o) {
+    [['plain', 'plain'], ['bubbles', 'bubbles']].forEach(function (o) {
       var opt = document.createElement('option');
       opt.value = o[0];
       opt.textContent = o[1];

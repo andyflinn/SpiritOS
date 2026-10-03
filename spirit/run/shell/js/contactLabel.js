@@ -28,11 +28,31 @@
 // contact.rename").
 
 (function () {
+  // ONE NAME PER KEY FOR THE PAGE (Andy, goal/G4.10: "the pane and dropdown seem to still initialize with keys. this
+  // makes the keys flashing briefly every time an update occurs"). A list redrawn makes new labels; a name already
+  // known draws at once, and one key is asked of the node once, however many labels wait for it.
+  var known = Object.create(null);
+  var asking = Object.create(null);
+  function nameFor(key) {
+    if (!asking[key]) {
+      asking[key] = spirit.core.ask('contact.get', { key: key }).then(function (a) {
+        var person = a && a.body && a.body.person;
+        if (person && typeof person.caption === 'string') known[key] = person.caption;
+        return known[key] || '';
+      }, function () { return ''; }).then(function (name) { delete asking[key]; return name; });
+    }
+    return asking[key];
+  }
+
   function createContactLabel(options) {
     options = options || {};
     var key = String(options.key || '');
     var editable = options.editable === true;
     var caption = typeof options.caption === 'string' ? options.caption : '';
+    if (caption) known[key] = caption;
+    else if (known[key]) caption = known[key];
+    // Unknown and not yet asked: blank, never the key, until the book answers (the key shows only if it cannot).
+    var unanswered = !caption;
     var editing = null;
 
     // A span, and nothing set on its font or colour: it takes the style of
@@ -48,7 +68,7 @@
     root.appendChild(why);
 
     function draw() {
-      text.textContent = caption || key;
+      text.textContent = caption || (unanswered ? '' : key);
     }
 
     function close() {
@@ -71,6 +91,7 @@
           return;
         }
         caption = (a.body && typeof a.body.caption === 'string') ? a.body.caption : name;
+        known[key] = caption;
         close();
         draw();
       }, function () { why.textContent = 'not renamed'; });
@@ -112,6 +133,7 @@
       }
       var d = (event && event.detail) || {};
       if (d.key !== key || typeof d.caption !== 'string') return;
+      known[key] = d.caption;
       caption = d.caption;
       draw();
     }
@@ -119,10 +141,11 @@
 
     draw();
     if (!caption && key) {
-      spirit.core.ask('contact.get', { key: key }).then(function (a) {
-        var person = a && a.body && a.body.person;
-        if (person && typeof person.caption === 'string' && !caption) { caption = person.caption; draw(); }
-      }, function () { /* the key stays shown; the node says why elsewhere */ });
+      nameFor(key).then(function (name) {
+        unanswered = false;
+        if (!caption) caption = name;
+        draw();
+      });
     }
     return root;
   }
