@@ -542,6 +542,42 @@ function searchItems(a) {
   return out;
 }
 
+// ITEMS FOUND BY THEIR LINES (goal/G3.13), for the agents. Andy, 2026-10-03: "items can be searched with filters
+// akin to the ones the current chat-search has", "the item search should consider searching chat items, on the
+// deskServer side, and the resulting item titles (or keys) should be returned", "Server-Side searches can expand
+// to chat-lines without cost to the wire", and "items.find" when asked for a second verb beside items.search.
+// by, since and before are chat.search's filters on a line; text is found in a line, or, with no line filter set,
+// in the item's id or title. Every goal's items and the goals, closed ones too (a search is not the List; Andy:
+// "close is more of an 'visibility' issue than a process issue"), an abandoned goal's never. Ordered by the newest
+// line that matched, newest first; an item matched by id or title alone comes after those, newest written first.
+function findItems(a) {
+  const s = walkState();
+  const text = String(a.text || '').toLowerCase();
+  const lineFilter = !!(a.by || a.since || a.before);
+  const lineMatches = function (l) {
+    if (a.by && l.by !== a.by) return false;
+    if (a.since && !(String(l.at) >= a.since)) return false;
+    if (a.before && !(String(l.at) < a.before)) return false;
+    if (text && String(l.text).toLowerCase().indexOf(text) === -1) return false;
+    return true;
+  };
+  const byLine = [];
+  const byTitle = [];
+  Object.keys(s.goals).forEach(function (gid) {
+    if (s.goals[gid].abandoned) return;
+    [gid].concat(s.goals[gid].members).forEach(function (id) {
+      const it = s.items[id];
+      if (!it) return;
+      let newest = '';
+      for (let i = it.chat.length - 1; i >= 0; i--) { if (lineMatches(it.chat[i])) { newest = String(it.chat[i].at); break; } }
+      if (newest) byLine.push({ at: newest, it: it });
+      else if (!lineFilter && (!text || (it.id + ' ' + it.title).toLowerCase().indexOf(text) !== -1)) byTitle.push({ at: String(it.at || ''), it: it });
+    });
+  });
+  const newestFirst = function (x, y) { return x.at < y.at ? 1 : x.at > y.at ? -1 : 0; };
+  return byLine.sort(newestFirst).concat(byTitle.sort(newestFirst)).map(function (w) { return JSON.stringify(facts(s, w.it)); });
+}
+
 function refused(code) { const e = new Error(code); e.refusal = code; return e; }
 
 // ── THE NUDGE, SERVER TO SERVER (goal/G3.5) ──────────────────────────
@@ -779,6 +815,25 @@ appServer.serve({
   // EACH PANEL ITS OWN ANSWER. Andy: "what kind of app doesn't measure the sum of its packets?" and "lazy load the
   // panels when thy open". item.get is the item's facts; its box, checks and chat are asked for each on its own, so
   // no answer carries the sum of them and each fits one answer by itself.
+  // A SEARCH FOR THE AGENTS (goal/G3.13): items by their lines, half a room like chat.search, a read.
+  'items.find': {
+    request: { text: '', by: '', since: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false },
+    handler: function (a) {
+      const bucket = searchBucket.createSearch({
+        query: '**', maxBytes: SEARCH_ROOM,
+        getLabelStringFromIncomingObject: function (pair) { return pair.label; },
+        extractKeyAndLabelFromRow: function (pair) { return pair; },
+      });
+      let skipped = false;
+      for (const item of findItems(a)) {
+        const pair = { key: JSON.parse(item).id, label: item };
+        if (oneAnswerBytes(pair.key, pair.label) > SEARCH_ROOM) { skipped = true; continue; }
+        if (!bucket.offer(pair)) break;
+      }
+      const r = bucket.getResult();
+      return { items: r.items, more: r.more || skipped };
+    },
+  },
   'item.get': {
     request: { id: '' }, reply: { item: '', version: 0, change: 0 },
     handler: function (a) {
