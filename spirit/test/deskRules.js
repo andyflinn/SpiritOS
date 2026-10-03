@@ -32,7 +32,7 @@
 //      1. An item's facts (item.get, items.search) carry go: true once HE pressed go or go-all on it, false before;
 //         an agent's claim-done never sets it.
 //      2. A claim-done on an item without his Go on record is refused (ok: false) and changes nothing: the item
-//         still offers go, is not gone, has no claim. After his Go the same claim-done is taken and Done is
+//         is not gone (go false, not running) and offers no Done. After his Go the same claim-done is taken and Done is
 //         offered. (This replaces "a claim consumes the Go", goal/G2.13, for the claim before Go: his ruling above.)
 //      3. An item not yet gone and not done offers close beside go; his close press on it is taken, and the item
 //         is closed. A done item offers close as before; a closed item offers nothing but bring-back.
@@ -306,7 +306,8 @@ async function main() {
 
   test.subHeading('B. the desk: go is his press; a claim before Go is refused; Close before Go');
   const set = await desk('session.set', { json: JSON.stringify({ goal: { id: 'r/G1', title: 'Rules' }, items: [
-    { id: 'r/G1.1', title: 'Gone by his press', blocks: ['r/G1'] },
+    // r/G1.1 blocks r/G1.2, so his go-all on the goal never reaches r/G1.2 (wsl-claude's review of the first red).
+    { id: 'r/G1.1', title: 'Gone by his press', blocks: ['r/G1.2'] },
     { id: 'r/G1.2', title: 'Never gone', blocks: ['r/G1'] },
     { id: 'r/G1.3', title: 'Gone by go-all', blocks: ['r/G1'] },
     { id: 'r/G1.4', title: 'Closed before Go', blocks: ['r/G1'] },
@@ -319,7 +320,7 @@ async function main() {
   const claimEarly = await desk('press', { id: 'r/G1.2', what: 'claim-done' }, SELF_AT_DESK);
   const f2 = await factsOf('r/G1.2');
   const refusedEarly = claimEarly.status !== 200 || (claimEarly.body && claimEarly.body.ok === false);
-  if (refusedEarly && f2 && f2.go === false && f2.buttons.indexOf('go') !== -1 && f2.buttons.indexOf('done') === -1) test.check('B2: a claim-done on an item without his Go is refused (' + JSON.stringify(claimEarly.body).slice(0, 80) + '), and the item still offers go, not done');
+  if (refusedEarly && f2 && f2.go === false && f2.buttons.indexOf('done') === -1 && f2.status !== 'running') test.check('B2: a claim-done on an item without his Go is refused (' + JSON.stringify(claimEarly.body).slice(0, 80) + '), and the item is not gone and offers no Done');
   else test.fail(OWED + 'B2: claim-done before Go answered ' + claimEarly.status + ' ' + JSON.stringify(claimEarly.body).slice(0, 120) + '; facts after: ' + JSON.stringify(f2));
   const go = await desk('press', { id: 'r/G1.1', what: 'go' }, ANDY);
   f1 = await factsOf('r/G1.1');
