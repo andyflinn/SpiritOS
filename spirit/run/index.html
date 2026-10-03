@@ -11,7 +11,7 @@
          node may be left with fewer relays). Node-only code inside it
          never runs here. -->
     <script src="/js/ownerBadge.js"></script>
-    <!-- The isomorphic half of js/labelRule.js: what a label may be.
+    <!-- The isomorphic half of js/fieldRules.js: what a label may be.
 
          Andy: "an input field should validate before taxing the wire."
 
@@ -20,11 +20,11 @@
          is wrong while the cursor is still in the box, instead of paying
          a round trip to another continent to be told about a space. One
          file so the two cannot drift. -->
-    <script src="/js/labelRule.js"></script>
+    <script src="/js/fieldRules.js"></script>
     <!-- The isomorphic half of js/lever.js: what a lever is, what it may
          be set to, and how it describes itself.
 
-         Here for the same reason as labelRule: the Relay Monitor checks a
+         Here for the same reason as fieldRules: the Relay Monitor checks a
          value against the lever's own floor and ceiling before taxing the
          wire, using the SAME canSet the relay will apply. The relay is
          still the enforcer — it refuses whatever a browser believed.
@@ -821,8 +821,8 @@
       /* A CELL THAT HOLDS A LABEL.
 
          Labels became Unicode and permissive on 2026-09-15 — a real
-         name, with spaces and punctuation. The relay BOUNDS one (256
-         bytes, 48 graphemes) so nobody can write ten kilobytes into
+         name, with spaces and punctuation. The relay BOUNDS one (64
+         bytes, js/fieldRules.js) so nobody can write ten kilobytes into
          somebody else's enrolment ledger, and it stops there: how wide a
          table is belongs to the table, not to a router.
 
@@ -831,8 +831,8 @@
             labels."
 
          Done in CSS rather than by truncating the string, because the
-         width that matters is the RENDERED one. 40 CJK characters is 40
-         graphemes and 80 columns; an ellipsis counted in JavaScript
+         width that matters is the RENDERED one. 20 CJK characters is 20
+         graphemes and 40 columns; an ellipsis counted in JavaScript
          would cut the two cases differently and cut emoji in half. The
          browser already measures this correctly. */
       .label-cell {

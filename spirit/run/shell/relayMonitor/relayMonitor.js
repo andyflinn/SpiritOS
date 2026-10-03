@@ -49,7 +49,7 @@
   // The lever rules, from the same file the relay uses. In the shell that
   // is the global index.html loads; in a suite it is the module, so the
   // pure half can be asserted without a browser. Same two-environment
-  // shape as js/lever.js and js/labelRule.js, and for the same reason:
+  // shape as js/lever.js and js/fieldRules.js, and for the same reason:
   // one implementation, so the app and the relay cannot drift.
   //
   // Absent only if the page was built wrong, in which case the app still

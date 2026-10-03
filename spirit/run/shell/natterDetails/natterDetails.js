@@ -35,7 +35,7 @@ var ndEscapeHtml = spirit.core.util.escapeHtml;
 var ndIcon = spirit.core.const.ICON;
 
 // WHAT A LABEL MAY BE, asked before a round trip is spent on it. The
-// rule is js/labelRule.js, loaded by index.html, and the relay enforces
+// rule is js/fieldRules.js, loaded by index.html, and the relay enforces
 // the same one — this only saves the hop and says what is wrong while
 // the cursor is still in the box.
 //
@@ -73,7 +73,7 @@ function ndNoKey(out, cls) {
 }
 
 function ndLabelProblem(name) {
-  var rule = (typeof window !== 'undefined' && window.spiritLabelRule) || null;
+  var rule = (typeof window !== 'undefined' && window.spiritFieldRules) || null;
   return rule ? rule.problem(name) : '';
 }
 var ndApi = null;
@@ -907,7 +907,7 @@ function ndSetRelayLabel(button) {
   }
 
   // Asked here first, so a space costs no round trip. Same rule object
-  // both sides (js/labelRule.js), so the two cannot disagree.
+  // both sides (js/fieldRules.js), so the two cannot disagree.
   var badName = ndLabelProblem(wanted);
   if (badName) { say(badName, true); return; }
 
@@ -1659,7 +1659,7 @@ function ndClaim(button) {
   //
   // The relay still decides — it writes the ledger — but there is no
   // reason to cross an ocean to be told about a character. Same rule
-  // object both sides (js/labelRule.js), so the two cannot disagree.
+  // object both sides (js/fieldRules.js), so the two cannot disagree.
   // THE PUBLIC LABEL IS OPTIONAL AND FALLS BACK TO THE INVITE NAME.
   // Being called what the person who invited you called you is the
   // obvious default, and it is what the form imposed on everybody back

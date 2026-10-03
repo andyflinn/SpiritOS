@@ -2,7 +2,7 @@
 
 // spirit/run/js/lever.js
 // ONE GAUGE — what a relay's bound is, where it stands, and what it says
-// about itself. Isomorphic, the way labelRule.js and ownerBadge.js are.
+// about itself. Isomorphic, the way fieldRules.js and ownerBadge.js are.
 //
 // ── IT WAS A LEVER, AND NOW IT CANNOT MOVE (cycle 8) ─────────────────────
 //
@@ -44,21 +44,21 @@ function isInteger(v) {
   return typeof v === 'number' && isFinite(v) && Math.floor(v) === v;
 }
 
-// labelRule in node; the browser global the shell already loads. Same
+// fieldRules in node; the browser global the shell already loads. Same
 // split, and the same reason, as the rest of the isomorphic modules: one
 // rule, not one per environment that could drift.
-function labelRule() {
+function fieldRules() {
   if (typeof module !== 'undefined' && module.exports && typeof require === 'function') {
-    return require('./labelRule.js');
+    return require('./fieldRules.js');
   }
-  return (typeof window !== 'undefined' && window.spiritLabelRule) || null;
+  return (typeof window !== 'undefined' && window.spiritFieldRules) || null;
 }
 
 // REFUSES RATHER THAN CORRECTS. A gauge built with a bad label or an
 // inverted range is a programming error on the relay, not a runtime
 // condition to be tidied.
 function make(label, opts) {
-  var rule = labelRule();
+  var rule = fieldRules();
   if (!rule || !rule.leverOk(label)) {
     throw new Error('lever: bad label ' + JSON.stringify(label));
   }
@@ -101,7 +101,7 @@ function make(label, opts) {
 function fromReport(obj) {
   if (!obj || typeof obj !== 'object') return null;
   if (!isInteger(obj.floor) || !isInteger(obj.ceiling)) return null;
-  var rule = labelRule();
+  var rule = fieldRules();
   if (!rule || !rule.leverOk(obj.label)) return null;
   var view;
   try {

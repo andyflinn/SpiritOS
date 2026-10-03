@@ -75,7 +75,7 @@ var bucket = require('./bucket');
 // which only ever backtracks to the last star. So it is a table: one row
 // per pattern position, filled across the label once. O(label x pattern)
 // time, O(label) space, and no input makes it worse than that. Labels cap
-// at 256 bytes (labelRule), so the worst case is small and knowable.
+// at 64 bytes (fieldRules), so the worst case is small and knowable.
 function globMatches(text, pattern) {
   var tokens = [];
   for (var i = 0; i < pattern.length; i += 1) {
@@ -362,7 +362,7 @@ function rank(label, query, multi) {
 //   Andy: "there's just a fixed number of slots."
 //
 // The number is checkable rather than chosen. A row is at most a 60-char
-// key, a 256-byte label (labelRule), an ISO date and two booleans, with
+// key, a 256-byte label (the cap before goal/G4.16; fieldRules now says 64), an ISO date and two booleans, with
 // field names — 418 bytes measured. The budget is PAYLOAD_MAX less a
 // reply's own envelope, 16266. So 32 slots is 13376 worst case, with 2890
 // spare — and that slack is there so adding a field to a row later is a

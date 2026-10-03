@@ -1,7 +1,14 @@
 'use strict';
 
-// spirit/run/js/labelRule.js
-// What a label may be — one definition, both sides of the wire.
+// spirit/run/js/fieldRules.js
+// What a text field may be — one definition, both sides of the wire.
+//
+//   Andy, 2026-10-03 (goal/G4.16): "all occurrences of label and
+//   description must validate at a central point" / "fieldRules.js  it
+//   becomes a bucket for field validation." / "this rule applies for all
+//   text fields in node from now on." — every maximum is in BYTES, never
+//   characters: "64 bytes max for labels.", "description 128 bytes is
+//   alright.", too long is refused, never cut.
 //
 //   Andy: "an input field should validate before taxing the wire. the
 //   reason to have it there is to make it uniformely avalable to all
@@ -48,8 +55,9 @@
 // in node and in every browser, so there is ONE implementation rather
 // than one per environment that could drift.
 
-var LABEL_MAX_BYTES = 256;
-var LABEL_MAX_GRAPHEMES = 48;
+// Bytes only (goal/G4.16). The longest label measured on a live node was
+// 37 bytes; 64 holds a person's name in any script with room to spare.
+var LABEL_MAX_BYTES = 64;
 
 // The spoken pair: 1-32 of the characters that survive being read aloud.
 // Also the token rule — a spoken token has no entropy floor (`dog` is a
@@ -74,21 +82,8 @@ var INVISIBLE_RE = new RegExp(
   '[\\u0000-\\u001F\\u007F-\\u009F\\u00AD\\u200B-\\u200F' +
   '\\u2028\\u2029\\u202A-\\u202E\\u2060-\\u2064\\u2066-\\u206F\\uFEFF]');
 
-// Graphemes, not codepoints: an emoji with a skin-tone modifier is one
-// thing a reader sees and two codepoints. Intl.Segmenter is in every
-// current browser and Node 18+; the fallback counts codepoints, which is
-// wrong only in the direction of being more permissive.
-var SEGMENTER = null;
-try { SEGMENTER = new Intl.Segmenter(undefined, { granularity: 'grapheme' }); }
-catch (e) { SEGMENTER = null; }
-
 var ENCODER = null;
 try { ENCODER = new TextEncoder(); } catch (e) { ENCODER = null; }
-
-function graphemeCount(s) {
-  if (SEGMENTER) return Array.from(SEGMENTER.segment(s)).length;
-  return Array.from(s).length;
-}
 
 function byteLength(s) {
   if (ENCODER) return ENCODER.encode(s).length;
@@ -133,7 +128,6 @@ function problem(name) {
   if (!n) return 'name required';
   if (INVISIBLE_RE.test(n)) return 'name has invisible or control characters';
   if (byteLength(n) > LABEL_MAX_BYTES) return 'name too long';
-  if (graphemeCount(n) > LABEL_MAX_GRAPHEMES) return 'name too long';
   return '';
 }
 
@@ -198,9 +192,9 @@ function leverOk(label) {
 
 // ── THE THIRD RULE: A SENTENCE ABOUT YOURSELF ────────────────────────
 //
-// 128 bytes, which is the cap relayAuth stores to and is repeated here
-// for the reason this whole file exists: a rule in two files is a rule
-// that will be changed in one of them. It is small on purpose — this
+// 128 bytes, defined here and read by relayAuth, which refuses past it:
+// a rule in two files is a rule that will be changed in one of them.
+// It is small on purpose — this
 // travels as an answer to anybody who asks, and a node that can be made
 // to emit a paragraph is a better amplifier than one that emits a line.
 var DESCRIPTION_MAX_BYTES = 128;
@@ -210,16 +204,15 @@ var DESCRIPTION_MAX_BYTES = 128;
 // description is something you may simply not have written. Clearing it
 // is a legitimate edit, not a form to refuse.
 //
-// LENGTH IS NOT REFUSED EITHER. relayAuth trims prose to fit rather than
-// rejecting it, and the two must agree or an app reports an error for
-// something the node would have quietly accepted. So the only thing
-// refused here is the invisible: a bidi override in a description sits
-// in the same row as somebody's name, and reverses it just as well from
+// TOO LONG IS REFUSED, never cut (Andy, goal/G4.16: "too-long refused").
+// The invisible is refused too: a bidi override in a description sits in
+// the same row as somebody's name, and reverses it just as well from
 // either field.
 function describeProblem(text) {
   var n = normalize(text);
   if (!n) return '';
   if (INVISIBLE_RE.test(n)) return 'description has invisible or control characters';
+  if (byteLength(n) > DESCRIPTION_MAX_BYTES) return 'description too long';
   return '';
 }
 
@@ -235,7 +228,6 @@ function describeRemaining(text) {
 // need a filesystem. Same split, and the same reason, as ownerBadge.js.
 var RULE = {
   MAX_BYTES: LABEL_MAX_BYTES,
-  MAX_GRAPHEMES: LABEL_MAX_GRAPHEMES,
   DESCRIPTION_MAX_BYTES: DESCRIPTION_MAX_BYTES,
   normalize: normalize,
   problem: problem,
@@ -243,12 +235,11 @@ var RULE = {
   describeRemaining: describeRemaining,
   spokenOk: spokenOk,
   leverOk: leverOk,
-  graphemeCount: graphemeCount,
   byteLength: byteLength,
 };
 
 if (typeof process !== 'undefined' && !!process.versions && !!process.versions.node) {
   module.exports = RULE;
 } else if (typeof window !== 'undefined') {
-  window.spiritLabelRule = RULE;
+  window.spiritFieldRules = RULE;
 }

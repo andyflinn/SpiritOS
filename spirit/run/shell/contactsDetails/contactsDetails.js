@@ -407,7 +407,15 @@ spirit.shell.activateApp({
 
     document.getElementById('cd-body').addEventListener('change', function (event) {
       if (!event.target || event.target.id !== 'cd-label-input') return;
-      cdPeerAction('label', { myLabel: event.target.value.trim() });
+      var typed = event.target.value.trim();
+      // Checked here before anything is asked, by the same rule the node
+      // checks again (js/fieldRules.js; Andy, goal/G4.16: "the shell may
+      // as well rule that inputs themselves implement constraints in
+      // fieldRules.js"). Empty clears your name for them, and is asked.
+      var rule = (typeof window !== 'undefined' && window.spiritFieldRules) || null;
+      var bad = (typed && rule) ? rule.problem(typed) : '';
+      if (bad) { cdStatus(bad); return; }
+      cdPeerAction('label', { myLabel: typed });
     });
 
   },

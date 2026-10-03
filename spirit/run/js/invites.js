@@ -99,7 +99,7 @@ function add(rootDir, opts) {
 // first invited claim is owner).
 //
 // MARKED, so only it can make an owner. `invitedBy` is a value no spoken
-// label can take (labelRule's spoken form has no parentheses). Without the
+// label can take (fieldRules's spoken form has no parentheses). Without the
 // mark, a relay whose allow.json was lost while ordinary invites were still
 // live could be claimed by any one of them.
 //

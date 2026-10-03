@@ -33,7 +33,7 @@
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
 const limits = require('../run/js/limits');
-const rule = require('../run/js/labelRule.js');
+const rule = require('../run/js/fieldRules.js');
 const lab = require('./labMaster/ensureMaster.js');
 const { mintOwnerInvite } = require('./ownerClaim');
 const { sealedClaimBody } = require('./labWorld');
@@ -112,14 +112,13 @@ async function run() {
 
   test.subHeading('A label is a caption, and the relay holds it to the shared rule');
 
-  // TOO LONG, measured in GRAPHEMES rather than characters, which is the
-  // rule's own unit — 48 of them. Taken from the module rather than
-  // written as a number here, so the relay and this suite cannot drift
-  // apart the way a copied constant would.
-  const tooLong = 'a'.repeat(rule.MAX_GRAPHEMES + 1);
+  // TOO LONG, measured in BYTES, the rule's one unit (goal/G4.16). Taken
+  // from the module rather than written as a number here, so the relay
+  // and this suite cannot drift apart the way a copied constant would.
+  const tooLong = 'a'.repeat(rule.MAX_BYTES + 1);
   const long = await claim(tooLong);
   if (long.status === 400) {
-    test.check('a label past ' + rule.MAX_GRAPHEMES + ' graphemes is refused BY THE RELAY, not only by the rule module');
+    test.check('a label past ' + rule.MAX_BYTES + ' bytes is refused BY THE RELAY, not only by the rule module');
   } else {
     test.fail('long label: ' + long.status + ' ' + long.text);
   }

@@ -47,7 +47,7 @@
 // could join — and the two things most easily got wrong here are both in
 // the enrolment path: the invite label must be SPOKEN-safe
 // (`[A-Za-z0-9._-]{1,32}`, so no spaces), while the claimed label may be
-// the line itself (48 graphemes, spaces and punctuation allowed).
+// the line itself (at most 64 bytes, spaces and punctuation allowed).
 //
 // And every claim carries its own `clientKey`. CLAIM_PER_MIN is ten
 // against one shared bucket, so a loop that passes null for all of them
@@ -58,8 +58,8 @@ const auth = require('../run/js/relayAuth');
 
 // ── THE TEXT ─────────────────────────────────────────────────────────
 //
-// Hamlet III.i and a sonnet, trimmed to lines of 48 graphemes or fewer
-// because that is what a label may hold. Public domain, embedded rather
+// Hamlet III.i and a sonnet, trimmed to lines of 48 characters or fewer,
+// inside the 64 bytes a label may hold (fieldRules.js). Public domain, embedded rather
 // than fetched: a fixture that reaches the network is a fixture that
 // fails on a train.
 const LINES = [
@@ -148,7 +148,7 @@ var DEFAULT_WORDS = wordsOf(LINES.join(' '));
 
 // Lengths cycle 2..6 words so labels vary the way names do -- some short,
 // some long -- rather than all being the same shape. Truncated to 48
-// graphemes because that is what a label may hold (labelRule.js), and cut
+// characters, inside the 64 bytes a label may hold (fieldRules.js), and cut
 // at a word boundary so the result still reads like something a person
 // typed.
 function windowFor(i, words) {

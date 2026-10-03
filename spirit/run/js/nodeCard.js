@@ -49,7 +49,7 @@
 // node is, and deserves the argument this one got.
 
 const auth = require('./relayAuth');
-const labelRule = require('./labelRule');
+const fieldRules = require('./fieldRules');
 
 // ── ONE NAME FOR ONE THING (cycle 10, R1) ────────────────────────────
 //
@@ -276,7 +276,7 @@ function read(rootDir) {
     name: String(id.name || ''),
     description: String(id.description || ''),
     publicKey: String(id.publicKey || ''),
-    descriptionMax: labelRule.DESCRIPTION_MAX_BYTES,
+    descriptionMax: fieldRules.DESCRIPTION_MAX_BYTES,
   };
 }
 
@@ -330,7 +330,7 @@ function ensureDescription(rootDir, now) {
 
 // ── AND WRITTEN ──────────────────────────────────────────────────────
 //
-// Both fields go through labelRule, which is the rule the RELAY enforces
+// Both fields go through fieldRules, which is the rule the RELAY enforces
 // on a rename (relay.setRelayLabel) — so a node names itself under the
 // same law a mailbox does, rather than under whatever this file felt like.
 //
@@ -342,23 +342,23 @@ function setName(rootDir, text) {
   const id = auth.loadIdentity(rootDir);
   if (!id) return { ok: false, status: 409, error: 'this node has no key yet' };
 
-  const bad = labelRule.problem(text);
+  const bad = fieldRules.problem(text);
   if (bad) return { ok: false, status: 400, error: bad };
 
-  id.name = labelRule.normalize(text);
+  id.name = fieldRules.normalize(text);
   try { auth.saveIdentity(rootDir, id); }
   catch (e) { return { ok: false, status: 500, error: 'could not write identity.json' }; }
   return { ok: true, status: 200, name: id.name };
 }
 
-// THE LENGTH IS NOT REFUSED HERE EITHER. relayAuth trims to fit and says
-// why; this checks what is left — the invisible, which is the same
-// impersonation in a description as in a name, and in the same row.
+// Too long is refused, as is the invisible, which is the same
+// impersonation in a description as in a name, and in the same row
+// (fieldRules.describeProblem; goal/G4.16: "too-long refused").
 function setDescription(rootDir, text) {
-  const bad = labelRule.describeProblem(text);
+  const bad = fieldRules.describeProblem(text);
   if (bad) return { ok: false, status: 400, error: bad };
 
-  const saved = auth.setDescription(rootDir, labelRule.normalize(text));
+  const saved = auth.setDescription(rootDir, fieldRules.normalize(text));
   if (!saved) return { ok: false, status: 409, error: 'this node has no key yet' };
   // WHAT WAS ACTUALLY STORED goes back, not what was sent. A caller that
   // echoes its own input is a caller that will draw 140 characters into a

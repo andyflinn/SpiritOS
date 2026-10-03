@@ -54,7 +54,7 @@ if (!fs.existsSync(path.join(JS, 'relayStore.js'))) {
 const relayStore = require(path.join(JS, 'relayStore.js'));
 const relayAuth = require(path.join(JS, 'relayAuth.js'));
 const invites = require(path.join(JS, 'invites.js'));
-const labelRule = require(path.join(JS, 'labelRule.js'));
+const fieldRules = require(path.join(JS, 'fieldRules.js'));
 
 if (!relayStore.available()) {
   refuse('node:sqlite is not available in Node ' + process.version + ' — a relay needs 22.13 or later');
@@ -88,7 +88,7 @@ async function main() {
   // The invite's label is SPOKEN — typed on the claim screen as the
   // second half of the invite — so it keeps the tight spoken rule every
   // invite label keeps (relay.js mint).
-  if (!labelRule.spokenOk(name)) {
+  if (!fieldRules.spokenOk(name)) {
     refuse('"' + name + '" is not a valid invite name: 1-32 letters, digits, . _ -');
   }
 

@@ -86,6 +86,14 @@ const deviceAuth = require('./deviceAuth');
 // them cannot drift.
 const nodeCard = require('./nodeCard');
 const limits = require('./limits');
+// Every label checked at one point (Andy, 2026-10-03, goal/G4.16: "all
+// occurrences of label and description must validate at a central
+// point"). Empty is not a label here but its absence: clearing your own
+// name for somebody, or a pasted key with no label yet.
+const fieldRules = require('./fieldRules');
+function labelRefusal(text) {
+  return fieldRules.normalize(text) ? fieldRules.problem(text) : '';
+}
 
 // ── packet.js IS BACK, AND THE DELETION IT LOOKS LIKE UNDOING STANDS ──
 //
@@ -1694,13 +1702,19 @@ function createHub(rootDir) {
       // have never been acquired. A row is made so the block has
       // somewhere to live and somewhere to be undone from.
       if (action === 'block' && !contactBook.byPublicKey(rootDir, publicKey)) {
-        contactBook.hold(rootDir, { publicKey: publicKey, publicLabel: String((body && body.publicLabel) || '') });
+        var heldLabel = String((body && body.publicLabel) || '');
+        var heldBad = labelRefusal(heldLabel);
+        if (heldBad) { fail(res, 400, heldBad); return; }
+        contactBook.hold(rootDir, { publicKey: publicKey, publicLabel: fieldRules.normalize(heldLabel) });
       }
       // What YOU call that key. Never uploaded, never seen by the peer,
       // and the reason contactBook keeps publicLabel separate: the mailbox's
       // caption is theirs and can change under you, this one is yours.
       if (action === 'label') {
-        var row = contactBook.setMyLabel(rootDir, publicKey, String((body && body.myLabel) || ''));
+        var mine = String((body && body.myLabel) || '');
+        var mineBad = labelRefusal(mine);
+        if (mineBad) { fail(res, 400, mineBad); return; }
+        var row = contactBook.setMyLabel(rootDir, publicKey, fieldRules.normalize(mine));
         if (!row) { fail(res, 404, 'no row for that key'); return; }
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
@@ -1771,6 +1785,10 @@ function createHub(rootDir) {
         fail(res, 400, 'publicKey required');
         return;
       }
+      // A label given by hand is checked before anything is asked or
+      // written (goal/G4.16); none at all is still allowed.
+      var givenBad = labelRefusal((body && body.publicLabel) || '');
+      if (givenBad) { fail(res, 400, givenBad); return; }
       // ── WHICH ROLL PROVES IT ───────────────────────────────────────
       //
       //   Andy: "now we need to be able to add foreign peers to contacts,
@@ -1863,7 +1881,7 @@ function createHub(rootDir) {
           // Empty is a real answer: a pasted key has no label until its
           // holder writes to you or you type one yourself. Inventing one
           // would be worse than an unnamed row.
-          publicLabel: String((body && body.publicLabel) || ''),
+          publicLabel: fieldRules.normalize((body && body.publicLabel) || ''),
           relay: url,
         }, via);
 
@@ -2038,7 +2056,7 @@ function createHub(rootDir) {
 
   // A REFUSAL IS A BODY, NOT A STATUS, for both of these. The app draws
   // `error` under the field that caused it, which is where somebody is
-  // looking — and labelRule already told it the same thing before the
+  // looking — and fieldRules already told it the same thing before the
   // request left, so arriving here means the browser was out of date or
   // was not the one asking.
   function handleNodeName(req, res, readJsonBody) {

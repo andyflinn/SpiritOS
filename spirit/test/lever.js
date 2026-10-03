@@ -18,7 +18,7 @@
 // only thing that can move a value also records why it moved.
 
 const test = require('./testSupport.js');
-const rule = require('../run/js/labelRule');
+const rule = require('../run/js/fieldRules');
 const lever = require('../run/js/lever');
 
 test.startTest('A lever — its name, its bounds, and the one mutator');

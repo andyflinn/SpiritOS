@@ -151,7 +151,7 @@ const PHONE = '07700900123';
 
   // THE SAME RULE AS ANY PUBLIC LABEL. A relay's caption sits in the
   // same lists beside the same peers, so an invisible character is the
-  // same impersonation here as anywhere (js/labelRule.js).
+  // same impersonation here as anywhere (js/fieldRules.js).
   const sneaky = box.setRelayLabel('and​y', 'H2');
   if (!sneaky.ok && sneaky.status === 400 && box.relayLabel() === 'Andy’s box') {
     test.check('while a label with an invisible character is refused, and changes nothing');

@@ -66,9 +66,9 @@
 var infoApi = null;
 
 // What the node last told us, so a repaint after a save draws what was
-// STORED rather than what was typed. The description is trimmed to fit at
-// 128 bytes, and a field that keeps showing the longer version is a field
-// lying about what strangers are being told.
+// STORED rather than what was typed: the node normalises what it keeps,
+// and a field that shows something else is a field lying about what
+// strangers are being told.
 var infoCard = null;
 
 // ── EVERY RELAY THIS NODE HOLDS A ROW ON ─────────────────────────────
@@ -100,13 +100,13 @@ var infoPushed = Object.create(null);
 // whichever finished last.
 var infoBusy = false;
 
-// The rule, from the copy the browser has (js/labelRule.js). Same object
+// The rule, from the copy the browser has (js/fieldRules.js). Same object
 // the node checks with, so the message beside the field and the message
 // from the verb cannot disagree — and the hop is saved when they would
 // have agreed anyway (Andy: "an input field should validate before taxing
 // the wire").
 function infoRule() {
-  return (typeof window !== 'undefined' && window.spiritLabelRule) || null;
+  return (typeof window !== 'undefined' && window.spiritFieldRules) || null;
 }
 
 function infoNameProblem(text) {
@@ -139,9 +139,7 @@ function infoSay(id, text, isError) {
 
 // THE COUNTDOWN IS IN BYTES, because the cap is. An emoji costs four of
 // them and a letter costs one, so a counter that counted characters would
-// truncate somebody mid-sentence with no warning — and the trim happens
-// at the node, silently, which is exactly the surprise this exists to
-// prevent.
+// say there was room where the node refuses.
 function infoCount() {
   var el = document.getElementById('info-description-count');
   var box = document.getElementById('info-description');
@@ -152,10 +150,9 @@ function infoCount() {
     el.textContent = left + ' left';
     el.className = 'job-manifest-note';
   } else {
-    // Red, because past here the node stops keeping what is typed. It is
-    // not a refusal — prose slightly too long is trimmed rather than
-    // rejected — which is precisely why it has to be visible.
-    el.textContent = Math.abs(left) + ' too many — the node keeps the first ' +
+    // Red, because past here the node refuses it (goal/G4.16: "too-long
+    // refused"; js/fieldRules.js).
+    el.textContent = Math.abs(left) + ' too many — the most is ' +
       ((infoCard && infoCard.descriptionMax) || 128);
     el.className = 'job-start-error';
   }
@@ -322,7 +319,7 @@ function infoSaveName() {
 
   // ASKED HERE FIRST, and the wire is not troubled when the answer is
   // already known. The node asks the same question of the same rule, so
-  // this is a courtesy and never the only check (js/labelRule.js).
+  // this is a courtesy and never the only check (js/fieldRules.js).
   var bad = infoNameProblem(box.value);
   if (bad) { infoSay('info-name-error', bad, true); return Promise.resolve(); }
 
@@ -371,14 +368,11 @@ function infoSaveDescription() {
       infoSay('info-description-error', said.error || 'could not save', true);
       return;
     }
-    // WHAT WAS STORED, not what was typed. If the node trimmed it, the
-    // field shows the trim — the person finds out here, looking at it,
-    // rather than the next time somebody else reads their card.
-    var trimmed = said.description !== box.value;
+    // WHAT WAS STORED, not what was typed: the field shows what strangers
+    // are told.
     infoCard.description = said.description;
     infoDraw();
-    infoSay('info-description-error',
-      trimmed ? 'saved, trimmed to fit' : 'saved', false);
+    infoSay('info-description-error', 'saved', false);
   });
 }
 

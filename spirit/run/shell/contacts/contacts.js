@@ -376,13 +376,13 @@ function contactsRowHtml(person) {
     // THE COLUMN FITS THE LABEL, THE RELAY DOES NOT (2026-09-15).
     //
     // Labels are Unicode and permissive now — a real name, with spaces
-    // and punctuation, up to 48 graphemes. The relay BOUNDS one so a
+    // and punctuation, up to 64 bytes (js/fieldRules.js). The relay BOUNDS one so a
     // peer cannot write ten kilobytes into somebody else's ledger, and
     // has no opinion beyond that: how wide a table is belongs to the
     // table. See .label-cell in index.html, and UI_DESIGN_STYLE.md.
     //
-    // Both cells, because `myLabel` is the private caption and a person
-    // may write anything they like in their own address book.
+    // Both cells, because `myLabel` is the private caption; it is held to
+    // the same rule as any label (goal/G4.16), checked by the node.
     // ONE NAME, and it is the node's own answer to what to call this key
     // — mine for them if I set one, theirs otherwise (contactBook.labelForKey).
     // The ending still rides on it where two rows read alike, which is

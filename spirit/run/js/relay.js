@@ -108,7 +108,7 @@ var ROUTE_WAIT_MS = 15000;
 var DEVICE_PER_MIN = 10;
 // ── WHAT A LABEL MAY BE ──────────────────────────────────────────────
 //
-// The rule moved to js/labelRule.js on 2026-09-15 and this requires it.
+// The rule moved to js/fieldRules.js on 2026-09-15 and this requires it.
 //
 //   Andy: "an input field should validate before taxing the wire. the
 //   reason to have it there is to make it uniformely avalable to all
@@ -123,7 +123,7 @@ var DEVICE_PER_MIN = 10;
 // THIS FILE IS STILL THE ENFORCER. The browser half is a courtesy that
 // saves a hop; the ledger is written here, and every claim and rename
 // is checked here whatever any page believed.
-var labelRule = require('./labelRule');
+var fieldRules = require('./fieldRules');
 var lever = require('./lever');
 
 // ── HOW MANY STREAMS THE OWNER'S RAM ALLOWS (cycle 8) ────────────────────
@@ -828,11 +828,11 @@ function createRelay(rootDir, deps) {
   }
 
   // Thin wrappers, so the twelve call sites below read as they always
-  // have. The rule itself is labelRule.js — see the note at the head of
+  // have. The rule itself is fieldRules.js — see the note at the head of
   // this file about why it left.
-  function normalizeName(name) { return labelRule.normalize(name); }
-  function labelProblem(n) { return labelRule.problem(n); }
-  function spokenOk(n) { return labelRule.spokenOk(n); }
+  function normalizeName(name) { return fieldRules.normalize(name); }
+  function labelProblem(n) { return fieldRules.problem(n); }
+  function spokenOk(n) { return fieldRules.spokenOk(n); }
 
   // A PEER IS ITS KEY. A `|| peer.name` fallback stood here for rows
   // filed under a label, and went with them — every row has a key now,
@@ -1368,7 +1368,7 @@ function createRelay(rootDir, deps) {
   // answerSelf's `owner` branch, which has already verified the post
   // against the row marked owner in allow.json.
   //
-  // THE SAME RULE AS ANY OTHER PUBLIC LABEL (js/labelRule.js). A relay's
+  // THE SAME RULE AS ANY OTHER PUBLIC LABEL (js/fieldRules.js). A relay's
   // caption goes in the same lists, next to the same peers, and an
   // invisible character is the same impersonation here as anywhere.
   function setRelayLabel(next, hash) {

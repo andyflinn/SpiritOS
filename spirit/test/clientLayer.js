@@ -421,7 +421,7 @@ function laterNewsFindsWhoAsked() {
 //
 // The genuinely dual files stay up in js/ and this proves it of them:
 // limits.js (relay.js, server.js), peerFile.js (hub.js, peerStats.js),
-// labelRule.js (relay.js), ownerBadge.js (hub.js, presenceNode.js).
+// fieldRules.js (relay.js), ownerBadge.js (hub.js, presenceNode.js).
 function aBrowserOnlyFileLivesWithTheShell() {
   test.subHeading('A file js/ keeps is a file the node reads');
 
@@ -472,7 +472,7 @@ function aBrowserOnlyFileLivesWithTheShell() {
   // the case client/ would be wrong for. lever.js joined on 2026-09-20
   // (cycle 4.1): the Relay Monitor applies the same canSet the relay
   // will, from the same file, so the two cannot drift.
-  const dual = ['limits.js', 'peerFile.js', 'labelRule.js', 'ownerBadge.js', 'lever.js'];
+  const dual = ['limits.js', 'peerFile.js', 'fieldRules.js', 'ownerBadge.js', 'lever.js'];
   const misplaced = dual.filter(function (f) {
     return inJs.indexOf(f) === -1 || nodeRequirersOf(f).length === 0;
   });

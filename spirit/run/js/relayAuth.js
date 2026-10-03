@@ -11,7 +11,7 @@ const crypto = require('crypto');
 // What a label and a description may be, said once for both sides of the
 // wire. It requires nothing at all — that is what lets the browser have
 // the same copy — so this is another one-way edge.
-const labelRule = require('./labelRule');
+const fieldRules = require('./fieldRules');
 
 // ── RESERVED_NAME = 'relay' STOOD HERE ───────────────────────────────
 //
@@ -450,22 +450,21 @@ function loadIdentity(rootDir) {
 // with the identity it describes and not with the things this machine
 // keeps to itself.
 //
-// THE NUMBER IS labelRule's, and is read from there rather than repeated.
+// THE NUMBER IS fieldRules's, and is read from there rather than repeated.
 // A form that counts down to 128 while the file trims at 140 is the exact
 // drift that file was written to stop, and it is the browser half that
 // cannot require this module.
-var DESCRIPTION_MAX = labelRule.DESCRIPTION_MAX_BYTES;
+var DESCRIPTION_MAX = fieldRules.DESCRIPTION_MAX_BYTES;
 
 function setDescription(rootDir, text) {
   const id = loadIdentity(rootDir);
   if (!id) return null;
-  let next = String(text == null ? '' : text).trim();
-  // Trimmed to fit rather than refused. A description is prose somebody
-  // typed, and the honest failure for prose that is slightly too long is
-  // a shorter description, not a rejected form.
-  while (Buffer.byteLength(next, 'utf8') > DESCRIPTION_MAX) {
-    next = next.slice(0, -1);
-  }
+  const next = String(text == null ? '' : text).trim();
+  // REFUSED, NEVER CUT (Andy, 2026-10-03, goal/G4.16: "too-long
+  // refused"). Too long keeps nothing and hands back what is stored, so a
+  // caller that reports what was stored reports the truth; the verb
+  // (nodeCard.setDescription) refuses it out loud before it gets here.
+  if (Buffer.byteLength(next, 'utf8') > DESCRIPTION_MAX) return id;
   id.description = next;
   saveIdentity(rootDir, id);
   return id;

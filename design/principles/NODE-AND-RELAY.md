@@ -2415,7 +2415,7 @@ exists, so nothing new goes on the wire, and cycle 4's monitor draws it.
   thought yesterday; tomorrow will bring…". Each lever declares itself in
   the report; the monitor, the ranking and the dialog never name one; a
   lever from a newer relay is still drawn, ranked and, if live, movable.
-- **A shared lever module** (isomorphic, like `labelRule.js`) produces a
+- **A shared lever module** (isomorphic, like `fieldRules.js`) produces a
   **labelled object with a variable value**: the label fixed, bounds and
   `live` declared once, the value the one thing that varies, `set(v, why)`
   the only mutator (checks `canSet`, records the move). The Governor and the
@@ -2425,7 +2425,7 @@ exists, so nothing new goes on the wire, and cycle 4's monitor draws it.
 - **Levers have no ID, only labels**, restricted like an invite's label:
   **`^[A-Za-z]+[1-9][0-9]*$`** — the meaning in letters, then its
   iteration as the shortest form of a positive integer (`connections1`),
-  within 32 characters; `labelRule.leverOk` layers it on `spokenOk`. A
+  within 32 characters; `fieldRules.leverOk` layers it on `spokenOk`. A
   change of meaning takes a new iteration; a retired label is never reused.
 - **Setting vs constant.** A *setting* is a live, temporary value — an
   experiment during a learning cycle, kept in `levers.json`, clamped to the
@@ -3169,7 +3169,7 @@ none is mine to take.
   `node js/server.js --relay` hands off to the relay module before loading
   anything. Measured by booting each mode and reading `require.cache`: relay
   **30 → 22 modules**, node **32 → 26**. *This corrects the static count
-  that stood here, which named only `relayAuth`, `deviceAuth`, `labelRule`
+  that stood here, which named only `relayAuth`, `deviceAuth`, `fieldRules`
   and constants as shared:* the relay also loads `peerPost`, `partnerLink`,
   `relayRequest`, `sseClient` — and, through `peerPost`, the node-side
   `contacts.js` and `nodeCard.js`. That last pair is the next thing a

@@ -24,7 +24,7 @@ const fs = require('fs');
 const path = require('path');
 const test = require('./testSupport.js');
 const auth = require('../run/js/relayAuth');
-const labelRule = require('../run/js/labelRule');
+const fieldRules = require('../run/js/fieldRules');
 const nodeCard = require('../run/js/nodeCard');
 const ownerBadge = require('../run/js/ownerBadge');
 
@@ -169,8 +169,8 @@ function mountApp(home, relays) {
     core: { relays: test.browserRelays(function (v, a) { return api.verb(v, a); }) } };
   const src = fs.readFileSync(APP_SCRIPT, 'utf8');
   // The browser's copy of the rule, which is the same file the node
-  // requires — that is the whole point of labelRule being isomorphic.
-  const win = { spiritLabelRule: labelRule };
+  // requires — that is the whole point of fieldRules being isomorphic.
+  const win = { spiritFieldRules: fieldRules };
   new Function('spirit', 'document', 'window', src)(shellSpirit, doc, win);
 
   const container = fakeElement('container');
@@ -235,30 +235,30 @@ function theRules() {
     test.fail('bidi name: ' + JSON.stringify(bidiName));
   }
 
-  // LENGTH IS NOT REFUSED. Prose slightly too long is shortened, not
-  // rejected — and the caller is told what was STORED so it cannot draw
-  // its own input back into the box.
+  // TOO LONG IS REFUSED, NEVER CUT (Andy, 2026-10-03, goal/G4.16:
+  // "too-long refused"), and nothing of it is kept.
+  const before = nodeCard.read(home).description;
   const long = 'x'.repeat(400);
-  const trimmed = nodeCard.setDescription(home, long);
-  if (trimmed.ok && Buffer.byteLength(trimmed.description, 'utf8') === labelRule.DESCRIPTION_MAX_BYTES) {
-    test.check('prose too long is trimmed to fit rather than refused');
+  const refused = nodeCard.setDescription(home, long);
+  if (!refused.ok && refused.status === 400 && /too long/.test(refused.error)) {
+    test.check('prose too long is refused rather than trimmed');
   } else {
-    test.fail('trim: ' + JSON.stringify(trimmed).slice(0, 120));
+    test.fail('too long: ' + JSON.stringify(refused).slice(0, 120));
   }
 
-  if (trimmed.description !== long) {
-    test.check('and what comes back is what was stored, not what was sent');
+  if (nodeCard.read(home).description === before) {
+    test.check('and nothing of it was stored');
   } else {
-    test.fail('the input was echoed');
+    test.fail('stored after a refusal: ' + JSON.stringify(nodeCard.read(home).description).slice(0, 80));
   }
 
   // COUNTED IN BYTES, which is what the cap is in. A counter that counted
   // characters would let four emoji through where one fits and truncate
   // somebody mid-word with no warning.
-  if (labelRule.describeRemaining('🎹') === labelRule.DESCRIPTION_MAX_BYTES - 4) {
+  if (fieldRules.describeRemaining('🎹') === fieldRules.DESCRIPTION_MAX_BYTES - 4) {
     test.check('the countdown is in bytes, so an emoji costs four and not one');
   } else {
-    test.fail('remaining: ' + labelRule.describeRemaining('🎹'));
+    test.fail('remaining: ' + fieldRules.describeRemaining('🎹'));
   }
 
   // ── AND IT IS THE SAME CARD A STRANGER GETS ──────────────────────
@@ -334,24 +334,25 @@ function theScreen() {
           test.fail('after Return: ' + JSON.stringify(nodeCard.read(home)));
         }
 
-        // ── THE TRIM IS VISIBLE, WHICH IS THE POINT ──────────────────
+        // ── TOO LONG IS REFUSED UNDER THE FIELD ──────────────────────
         //
-        // The node shortens prose silently. A screen that kept showing
-        // the long version would mean the first person to learn the
-        // description had been cut is somebody ELSE, reading the card.
+        // The node refuses past the cap (goal/G4.16), and the screen says
+        // so before asking, leaving what was typed in the box to shorten.
+        const askedForLong = app.asked.length;
         el(app, 'info-description').value = 'y'.repeat(300);
         el(app, 'info-description-save').fire('click');
 
         return settle().then(function () {
           const shown = el(app, 'info-description').value;
-          if (shown.length === labelRule.DESCRIPTION_MAX_BYTES && shown !== 'y'.repeat(300)) {
-            test.check('an over-long description comes back trimmed, into the box');
+          if (shown === 'y'.repeat(300) && app.asked.length === askedForLong) {
+            test.check('an over-long description stays in the box, and the node is not asked');
           } else {
-            test.fail('after trim: ' + shown.length + ' characters');
+            test.fail('after too long: ' + shown.length + ' characters, ' + (app.asked.length - askedForLong) + ' asked');
           }
 
-          if (/trimmed/.test(el(app, 'info-description-error').textContent)) {
-            test.check('and the screen says so rather than letting it be discovered later');
+          if (/too long/.test(el(app, 'info-description-error').textContent) &&
+              el(app, 'info-description-error').className === 'job-start-error') {
+            test.check('and the screen says so, in red, under the field');
           } else {
             test.fail('said: ' + el(app, 'info-description-error').textContent);
           }
@@ -379,7 +380,7 @@ function theScreen() {
               test.fail('the refusal wrote anyway: ' + JSON.stringify(nodeCard.read(home)));
             }
 
-            // AND IT NEVER LEFT THE BROWSER. labelRule is the same rule
+            // AND IT NEVER LEFT THE BROWSER. fieldRules is the same rule
             // both sides, so a field that is already wrong is not a hop
             // (Andy: "an input field should validate before taxing the
             // wire"). The node still refuses it; this is the courtesy
@@ -395,7 +396,7 @@ function theScreen() {
             el(app, 'info-description').value = 'short';
             el(app, 'info-description').fire('input');
             if (el(app, 'info-description-count').textContent ===
-                (labelRule.DESCRIPTION_MAX_BYTES - 5) + ' left') {
+                (fieldRules.DESCRIPTION_MAX_BYTES - 5) + ' left') {
               test.check('the counter says what is left while the cursor is in the box');
             } else {
               test.fail('counter: ' + el(app, 'info-description-count').textContent);
@@ -405,7 +406,7 @@ function theScreen() {
             el(app, 'info-description').fire('input');
             const over = el(app, 'info-description-count');
             if (/too many/.test(over.textContent) && over.className === 'job-start-error') {
-              test.check('and goes red past the cap, because past there the node stops keeping it');
+              test.check('and goes red past the cap, because past there the node refuses it');
             } else {
               test.fail('over: ' + over.textContent + ' [' + over.className + ']');
             }
@@ -706,7 +707,7 @@ function theFirstDescription() {
 
   // IT GOES THROUGH THE ORDINARY SETTER, so the one thing written with
   // nobody present obeys every rule a person's would.
-  if (Buffer.byteLength(again, 'utf8') <= labelRule.DESCRIPTION_MAX_BYTES) {
+  if (Buffer.byteLength(again, 'utf8') <= fieldRules.DESCRIPTION_MAX_BYTES) {
     test.check('and it fits the cap, like anything else that reaches this field');
   } else {
     test.fail('too long: ' + again.length);
@@ -829,7 +830,7 @@ function noTick() {
     core: { relays: test.browserRelays(function (v, a) { return api.verb(v, a); }) } };
   const src = fs.readFileSync(APP_SCRIPT, 'utf8');
   new Function('spirit', 'document', 'window', src)(
-    shellSpirit, doc, { spiritLabelRule: labelRule }
+    shellSpirit, doc, { spiritFieldRules: fieldRules }
   );
 
   // NOTHING HERE CHANGES ON ITS OWN — this app is the only writer of

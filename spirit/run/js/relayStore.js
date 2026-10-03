@@ -53,7 +53,7 @@ function dbPath(rootDir) {
   return path.join(rootDir, 'relay-state', 'relay.db');
 }
 
-// Labels are stored as the relay normalised them at claim (labelRule), and
+// Labels are stored as the relay normalised them at claim (fieldRules), and
 // compared exactly — a lookup here must answer what `labelOf(p) === n`
 // answered before cycle 3, no more loosely. The index is on this column so
 // a label lookup is one seek.
