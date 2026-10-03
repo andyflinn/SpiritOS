@@ -63,7 +63,8 @@
 //     P10. Reading resets the count (Andy: "it's the fact that they're now reading that should reset the counter, and
 //         make the hourglass disappear"): opening a chat takes its ⌛ away and shows its count in the centre pane's
 //         title bar ("Andy: 35 new messages"); chatter keeps per peer the newest line shown, through api.fs in
-//         shell/chatter, so the next mount draws no ⌛ for it; a newer line of theirs brings ⌛ back.
+//         shell/chatter, so the next mount draws no ⌛ for it; a newer line of theirs brings ⌛ back. A line written
+//         in that chat drops the count from the title bar (Andy: "as soon as andy responds, drop the count").
 //     P8. Two visible boundaries, data-divider left and right (NAMED), dragged by pointer events to resize; the
 //         widths kept in the same api.fs file as the look, and drawn again on the next mount.
 // NOT ASSERTED, the builder's: markup and classes beyond the names above, the bubbles' look, the fold buttons and the
@@ -628,6 +629,12 @@ async function main() {
   const outsideRows = all(app6.container).filter(function (n) { return !(p6 && p6.root.contains(n)); });
   if (outsideRows.some(function (n) { return /\b2 new messages\b/.test((n.textContent || '') + ' ' + (n.innerHTML || '')); })) test.check('the title bar shows "2 new messages" beside the name');
   else test.fail(OWED10 + 'no "2 new messages" in the centre pane');
+  // Andy: "and as soon as andy responds, drop the count, and hide the hourglass".
+  const box6 = textarea(app6);
+  if (box6) { box6.value = 'my answer'; fire(box6, 'keydown', { key: 'Enter' }); await settled(); }
+  const still = all(app6.container).filter(function (n) { return !(p6 && p6.root.contains(n)); }).some(function (n) { return /new messages/.test((n.textContent || '') + ' ' + (n.innerHTML || '')); });
+  if (box6 && !still && row6(app6, PEER).indexOf(ICON.WAITING) === -1) test.check('a line written in that chat drops the count from the title bar, and ⌛ stays hidden');
+  else test.fail(OWED10 + 'after writing a line: the count still shown ' + still + ', ⌛ ' + (row6(app6, PEER).indexOf(ICON.WAITING) !== -1));
   const seenIn = Object.keys(app6.saved).filter(function (k) { return app6.saved[k].indexOf(PEER) !== -1; })[0];
   if (seenIn) test.check('the reset is kept through api.fs (' + seenIn + ')');
   else test.fail(OWED10 + 'nothing kept for Pete: ' + JSON.stringify(app6.saved).slice(0, 160));
