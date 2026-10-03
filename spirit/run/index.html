@@ -768,8 +768,11 @@
         display: flex; align-items: center; gap: 12px;
         padding: 6px 12px; border-radius: 8px; cursor: pointer;
       }
-      .contact-selector-row:hover,
-      .contact-selector-row.current { background: #0f3460; }
+      .contact-selector-row:hover { background: #0f3460; }
+      /* The current row a step brighter than a hovered one, so the chat
+         shown is the row that stands out (Andy, goal/G4.10: "slightly
+         brighter background for the currently selected item"). */
+      .contact-selector-row.current { background: #1d5590; }
       /* The status column is always there, blank or not, so the names
          line up whether a row is marked or not. */
       .contact-selector-status { flex: 0 0 24px; text-align: center; }

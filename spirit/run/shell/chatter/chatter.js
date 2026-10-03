@@ -63,7 +63,8 @@ function chSay(text) {
 // peers.search's rows carry the record as label: {peer, at, sent, seq, unanswered}. The pane is handed keys alone
 // (the label element names them); the record only decides the mark.
 function chPeersSearch(text) {
-  return chAsk('peers.search', { text: String(text || '') }).then(function (body) {
+  // Exactly the verb's keys: the app server refuses any other shape (appServer.js, no-such-argument).
+  return chAsk('peers.search', { text: String(text || ''), since: '', before: '' }).then(function (body) {
     var items = (body.items || []).map(function (it) {
       var row = {};
       try { row = JSON.parse(it.label || '{}'); } catch (e) { row = {}; }
@@ -232,7 +233,7 @@ function chOpen(key) {
   var box = chEl('ch-input');
   if (box) box.disabled = false;
   chSay('');
-  return chAsk('chat.read', { peer: key }).then(function (body) {
+  return chAsk('chat.read', { peer: key, before: '' }).then(function (body) {
     if (mine !== chOpenSeq) return;
     chMore = !!body.more;
     chItemsToLines(body.items).forEach(chUpsert);
