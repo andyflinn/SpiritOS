@@ -230,7 +230,11 @@ function mount(opts) {
         { key: PEER, label: JSON.stringify({ peer: PEER, at: T(5), sent: 1, seq: 3, unanswered: 2 }) },
         { key: QUIET, label: JSON.stringify({ peer: QUIET, at: T(0), sent: 1, seq: 1, unanswered: 0 }) },
       ].concat(opts.extraPeers || []);
-      return { items: rows, more: false };
+      // As the real one does: text is found in the key, nowhere else (chatClerver.js peers.search, G4.3). A fake that
+      // ignored text let a build pass that hands the typed name on, which empties the list on a real node
+      // (wsl-claude, 48250df7).
+      const t = String(a.text || '');
+      return { items: rows.filter(function (r) { return !t || r.key.indexOf(t) !== -1; }), more: false };
     }
     if (verb === 'chat.read') {
       if (a.peer !== PEER) return { items: [], more: false };
