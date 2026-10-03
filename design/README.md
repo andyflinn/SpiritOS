@@ -502,6 +502,11 @@ This directory contains the vision, principles, and architecture decisions for *
   built and by the other agent. Five defects still reached Andy's screen past a
   green harness, because the suites mounted Desk on fakes that answered as their
   authors assumed.
+- [Close: goal/G4, the chatClerver and chatter](chat/G4-CLOSE-REPORT.md) — a
+  peer-to-peer chat server and its face in a day, with the contact label, the peer
+  pane and fieldRules.js made on the way. The same lesson as desk/G2-G3, met again:
+  a fake server that took short asks let chatter ship asks the real one refused;
+  the fakes now read the real verbs' keys.
 
 ## Future Layer (not yet implemented)
 - [Root Structure — spirit.json](spirit-json/ROOT-STRUCTURE.md)
