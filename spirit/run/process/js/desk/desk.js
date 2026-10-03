@@ -35,6 +35,16 @@ const searchBucket = require('../../../js/searchBucket.js');
 const argv = process.argv;
 const at = argv.indexOf('--state');
 const STATE = at !== -1 ? argv[at + 1] : '';
+// THE MANIFEST'S VALUES, as the node hands them (jobs.js: one JSON object, name -> value, as the first argument).
+let values = {};
+try { values = JSON.parse(argv[2] || '{}') || {}; } catch (e) { values = {}; }
+// THE CURRENT GOAL IN THE REPO (goal/G3.14). Andy, 2026-10-03: "The desk server will produce a file
+// \"spirit/run/process/js/desk/currentGoal.json\" it will contain the complete data set of the current goal, including
+// the commit-level agains which the file was generated. the file re-generation is triggered by 'Go' and 'Done
+// events' and the data includes items not visible to the user.", "it's the truth scoped by commit level." The path
+// is the manifest's goalFile, relative to this folder; empty or absent (a server spawned with {}, as every suite
+// spawns one) writes nothing, so no test writes into a clone. The commit level is implicit in his push.
+const GOAL_FILE = values.goalFile ? path.resolve(__dirname, String(values.goalFile)) : '';
 if (!STATE) {
   console.error('desk: no --state; the node that starts this names its state folder');
   process.exit(2);
@@ -665,7 +675,29 @@ function write(verb, a, check) {
   if (verb === 'agent.state' && after.current) out.rows = changedRows(s, after, after.current);
   appServer.publish(out);
   nudgeForWrite(after, verb, a);
+  writeGoalFile(after, verb, a, Number(r.lastInsertRowid));
   return after;
+}
+
+// THE FILE (goal/G3.14): written whole on his go, go-all and done, and on session.set (items appear and leave by
+// it; his open point, taken as yes); a line, a box, a claim or any other press leave it as it was. One object:
+// the two cursors as changes answers them at this moment (change, and line, the newest line's rowid), the current
+// goal's id, and every item of that goal, the goal's row and the closed ones included, each with its facts as
+// item.get gives them, its box and version, its checks and its chat lines {by, at, text}. The group chat desk/G0.0
+// is no item of the goal and is not in it. Written at the end of the write, after the publish: a failure to write
+// the file is said on stderr and fails no press.
+const newestLine = db.prepare('SELECT COALESCE(MAX(rowid), 0) AS rid FROM lines');
+function writeGoalFile(s, verb, a, change) {
+  if (!GOAL_FILE || !s.current || !s.goals[s.current]) return;
+  const his = verb === 'press' && (a.what === 'go' || a.what === 'go-all' || a.what === 'done');
+  if (!his && verb !== 'session.set') return;
+  const g = s.goals[s.current];
+  const items = [s.current].concat(g.members).map(function (id) { return s.items[id]; }).filter(Boolean).map(function (it) {
+    return Object.assign(facts(s, it), { box: it.box, version: it.version, checks: it.checks,
+      chat: it.chat.map(function (l) { return { by: l.by, at: l.at, text: l.text }; }) });
+  });
+  const doc = { change: change, line: Number(newestLine.get().rid) || 0, goal: s.current, writtenAt: new Date().toISOString(), items: items };
+  try { fs.writeFileSync(GOAL_FILE, JSON.stringify(doc, null, 1) + '\n'); } catch (e) { console.error('desk: the goal file was not written: ' + ((e && e.message) || e)); }
 }
 
 // The goal and its items whose facts differ between two states, each with whether it is still listed.

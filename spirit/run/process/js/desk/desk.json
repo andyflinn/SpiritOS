@@ -3,5 +3,7 @@
   "description": "Owns Desk's record, desk.db, in the node's state (relay-state/process/desk/). Started by the node; reached by jobs.api on the loopback door and by an api packet from a known member (desk/G1.3).",
   "kind": "server",
   "operated": "node",
-  "args": []
+  "args": [
+    { "name": "goalFile", "default": "currentGoal.json", "description": "Where the current goal is written whole on Go, go-all, Done and session.set (goal/G3.14): a path relative to this folder, so the default lands beside desk.js, in the repo. Empty: no file is written; a server spawned with {} (every test suite) has no value and writes none." }
+  ]
 }
