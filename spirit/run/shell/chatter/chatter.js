@@ -35,6 +35,8 @@ var chLoadingOlder = false;
 var chStyle = 'plain';
 var chOpenSeq = 0;        // the newest openChat wins
 var chPresent = {};       // the keys the last relay-presence table named
+var chRows = {};          // peers.search's row per key: {at, sent, seq, unanswered}
+var chSeen = {};          // per peer, the newest line time already shown here (kept in shell/chatter)
 var ICON = (spirit.core.const && spirit.core.const.ICON) || {};
 var CH_PREFS = 'prefs.json';
 var CH_STYLES = ['plain', 'bubbles'];
@@ -87,11 +89,35 @@ function chPeersSearch(text) {
     var items = (body.items || []).map(function (it) {
       var row = {};
       try { row = JSON.parse(it.label || '{}'); } catch (e) { row = {}; }
-      if (chPane) chPane.mark(it.key, Number(row.unanswered) > 0 ? 'unanswered' : 'none');
+      chRows[it.key] = row;
+      if (chPane) chPane.mark(it.key, chWaiting(it.key) ? 'unanswered' : 'none');
       return { key: it.key };
     });
     return { items: items, more: !!body.more };
   });
+}
+
+// READING RESETS THE COUNT (Andy, goal/G4.10: "it's the fact that they're now reading that should reset the counter,
+// and make the hourglass disappear"; "keep the waiting count"). The count is the chatClerver's unanswered; ⌛ shows
+// while it is above zero and a line newer than the newest one shown here exists. Kept in this app's folder on the
+// node, never sent: there is still no read mark (Andy: "we won't support \"read\"").
+function chWaiting(key) {
+  var row = chRows[key];
+  if (!row || !(Number(row.unanswered) > 0)) return false;
+  return !chSeen[key] || String(row.at || '') > chSeen[key];
+}
+
+function chMarkSeen(key, at) {
+  if (!key || !at || (chSeen[key] && chSeen[key] >= at)) return;
+  chSeen[key] = String(at);
+  if (chPane) chPane.mark(key, chWaiting(key) ? 'unanswered' : 'none');
+  chSavePrefs();
+}
+
+function chShowCount(n) {
+  var el = chEl('ch-title-count');
+  if (!el) return;
+  el.textContent = n > 0 ? n + ' new message' + (n === 1 ? '' : 's') : '';
 }
 
 // The node's book, less every blocked contact: contact.search lists blocked rows, so each is asked of the book
@@ -249,6 +275,10 @@ function chOpen(key) {
     slot.innerHTML = '';
     slot.appendChild(chApi.ui.elements.createContactLabel({ key: key, editable: true }));
   }
+  // The count is said once, as the chat opens ("Andy: 35 new messages"), and the chat is then read.
+  var row = chRows[key];
+  chShowCount(chWaiting(key) ? Number(row.unanswered) : 0);
+  if (row) chMarkSeen(key, row.at);
   var box = chEl('ch-input');
   if (box) box.disabled = false;
   chSay('');
@@ -288,6 +318,8 @@ function chSend() {
   var cur = chCurrent && chLines[chCurrent] && chLines[chCurrent].line;
   if (cur) re = { writer: cur.sent === 1 ? chSelf : chPeer, seq: cur.seq };
   box.value = '';
+  // Answering drops the count (Andy: "as soon as andy responds, drop the count, and hide the hourglass").
+  chShowCount(0);
   chAsk('line.write', { to: to, text: text, re: re }).then(function (body) {
     if (to !== chPeer) return;
     var seq = Number(body.seq);
@@ -311,6 +343,8 @@ function chOnPublished(obj) {
   var l = obj.line;
   if (chPane) chPane.refresh();
   if (l.peer !== chPeer) return;
+  // A line of theirs arriving in the open chat is read as it is drawn.
+  if (Number(l.sent) === 0) chMarkSeen(l.peer, l.at);
   var fresh = chUpsert(l);
   if (fresh) {
     chSetCurrent(chKey(l.sent, l.seq));
@@ -340,7 +374,7 @@ function chClampWidth(n, fallback) {
 }
 function chSavePrefs() {
   if (!chApi || !chApi.fs) return;
-  var body = JSON.stringify({ style: chStyle, peersWidth: CH_WIDTH.peers, objectsWidth: CH_WIDTH.objects });
+  var body = JSON.stringify({ style: chStyle, peersWidth: CH_WIDTH.peers, objectsWidth: CH_WIDTH.objects, seen: chSeen });
   Promise.resolve(chApi.fs.saveFile(CH_PREFS, body)).catch(function () { chSay('the look could not be kept'); });
 }
 
@@ -359,6 +393,10 @@ spirit.shell.activateApp({
     chStyle = CH_STYLES.indexOf(prefs.style) !== -1 ? prefs.style : 'plain';
     CH_WIDTH.peers = chClampWidth(prefs.peersWidth, 280);
     CH_WIDTH.objects = chClampWidth(prefs.objectsWidth, 220);
+    chSeen = {};
+    if (prefs.seen && typeof prefs.seen === 'object') {
+      Object.keys(prefs.seen).forEach(function (k) { if (typeof prefs.seen[k] === 'string') chSeen[k] = prefs.seen[k]; });
+    }
     var root = document.createElement('div');
     api._root = root;
     container.appendChild(root);
@@ -382,6 +420,7 @@ spirit.shell.activateApp({
       '.ch-centre { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }' +
       '.ch-title { display: flex; align-items: center; gap: 12px; font-size: 18px; font-weight: 600; }' +
       '.ch-title-name { flex: 1; min-width: 0; }' +
+      '.ch-title-count { font-size: 13px; font-weight: 400; opacity: 0.75; }' +
       '.ch-lines { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; outline: none; }' +
       '.ch-line { padding: 4px 8px; border-radius: 8px; cursor: pointer; }' +
       '.ch-line.current { outline: 1px solid #5b8def; }' +
@@ -408,6 +447,7 @@ spirit.shell.activateApp({
     var name = make('span', 'ch-title-name', 'ch-title-name');
     name.textContent = 'choose a peer';
     titleBar.appendChild(name);
+    titleBar.appendChild(make('span', 'ch-title-count', 'ch-title-count'));
     var styleSel = make('select', 'ch-style', null, { title: 'how lines look' });
     [['plain', 'plain'], ['bubbles', 'speech bubbles']].forEach(function (o) {
       var opt = document.createElement('option');
