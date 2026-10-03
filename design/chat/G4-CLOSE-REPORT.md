@@ -63,7 +63,8 @@ live or by mutating the build; each red was tightened the same day.
 | Platform | Proves | At | Result |
 |---|---|---|---|
 | Windows (claude-windows) | node, shell, chatter | 8eea76df | 286 suites, 4190 green, 6 red in 5 suites, 7 awaiting, 8 stood down. The red: capacityFresh (re-measure owed); appClientName and runStandsAlone (words in currentGoal.json); authWorld and labHome (the labMaster on 65420 copies from Andy's checkout, not this clone, so they cannot build their world here) |
-| Linux (wsl-claude) | relay | 8eea76df | each build: full harness red only the known four (wsl-claude's posts); no separate run at the close |
+| Linux (wsl-claude, WSL Ubuntu) | relay | 8eea76df | 286 suites, 4269 green; red the known four (capacityFresh, liveFrontDoor, appClientName, runStandsAlone) and peerPost once, a slow answer timing out under the parallel run (alone 49 of 49, twice): that wait is load-sensitive |
+| Linux (claude-ubuntu, spirit-3, node 22.23.3) | a real Ubuntu box | 8eea76df | in flight at the close; to be added when it lands |
 
 ## What could not be done, or is still owed
 
