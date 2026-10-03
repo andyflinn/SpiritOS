@@ -1,0 +1,446 @@
+'use strict';
+
+// spirit/test/chatter.js
+// goal/G4.10 and goal/G4.11: chatter, the app over the chatClerver: the peers on the left, one chat in the centre.
+// RED on today's tree: there is no shell/chatter.
+//
+//   Andy, 2026-10-03, his go-all on goal/G4. The rulings stand verbatim in the boxes. G4.10: "A click on a row brings
+//   that rows chat into the center/chat pane."; "We need to pick and icon/status pair for \"new message(s)\" waiting.";
+//   "the count is not allowed by 4.14"; "🔴 is fine"; and, from the faceless items, "the initiation of a record,
+//   because it begins when a user selects a peer as target for a message."; "a blocked contact should not be offered
+//   to the chatter user at all." G4.11: "in chatter, it is the \"selected\" contact that shows in the titlebar of the
+//   center pane."; "on every publish arrived, the chat must reconcile placement and re: references."; "ah the
+//   delivered-checkmark. that would be mighty fine"; "we won't support \"read\""; "refused is the only other one worth
+//   knowing to the user, besise delivered and replied-to."; "a newly arrived line becomes the current line, that can
+//   be changed by clicking on an other one, or by using up/down arrow-keys, home/end keys for top/bottom of visible
+//   chat lines."; "Do the popular style."; "put a style selector in there. and offer plain and speech bubbles."; "it
+//   could also go into the chat pane's titlebar"; "this: Enter sends and Shift+Enter a new line (popular)"; "looks
+//   like the preferences belon in shell/chatter (likely)".
+//
+// THE CONTRACT (the boxes of goal/G4.10, G4.11, and G4.9 for the app itself; shapes they left open marked NAMED).
+//   THE APP (G4.9): shell/chatter/chatter.js and chatter.json, named chatter, icon CHAT, not intrinsic. It asks its
+//   server as Desk does, api.verb('jobs.api', {ask: {chatClerver: {<verb>: args}}}), and hears it by
+//   api.onPublished(fn, 'chatClerver'). It builds with the shell's elements, api.ui.elements.
+//   G4.10, THE PEERS:
+//     P1. The left pane is createContactSelector({face: 'pane', statuses, search}), statuses
+//         [{status: 'none'}, {status: 'unanswered', iconKey: 'RED_CIRCLE'}], search asking peers.search {text}.
+//     P2. A peer whose row counts unanswered above zero is marked unanswered (🔴); the number is drawn nowhere, and
+//         the row's raw record is not shown as its name (the label element names it by key).
+//     P3. A click on a row opens that peer's chat in the centre: chat.read {peer}.
+//     P4. A new chat: a contact picked from the node's book (a createContactSelector dropdown, its rows from
+//         contact.search), a blocked contact never offered (contact.search lists blocked rows; how they are left out
+//         is the builder's, contact.get per row as peers.search does); the pick opens its (empty) chat and the
+//         first line goes line.write {to}.
+//     P5. A published line from a peer the list does not hold makes the list ask peers.search again.
+//   G4.11, THE CHAT:
+//     C1. One chat; its contact named in the centre pane's own title bar by createContactLabel({key, editable: true}).
+//     C2. Lines drawn as elements carrying data-sent ('1' mine, '0' theirs) and data-seq (NAMED), placed by their
+//         time, oldest first, never by arrival; a line published again is updated in place, never drawn twice.
+//     C3. Marks, the popular style: a sent line ⏳ while unsent (refused 'unsent'), ✓ once kept (refused ''), ❗ when
+//         refused (any other code); a received line no mark; no read mark.
+//     C4. One current line (className holds 'current', NAMED): a line that arrives becomes it; a click, ArrowUp,
+//         ArrowDown, Home and End move it.
+//     C5. A reply: the line written answers the current line (re {writer, seq}); a line with a re shows a short
+//         quote of the answered line's text, filled in when the answered line arrives after it; a click on the quote
+//         makes the answered line current.
+//     C6. The input (a TEXTAREA): Enter sends line.write {to, text, re}, Shift+Enter does not; the sent line shows at
+//         once, by the seq line.write answered, ⏳ until the publish says kept.
+//     C7. Older lines: with more, a scroll to the top asks chat.read {peer, before: the oldest line's at}.
+//     C8. The style selector (a SELECT in the centre pane, offering plain and bubbles): a change is kept in
+//         shell/chatter/ through api.fs, and the next mount shows it.
+// NOT ASSERTED, the builder's: markup and classes beyond the names above, the bubbles' look, the fold buttons and the
+// bounded window (G4.9), the missing fallback's wording.
+
+const fs = require('fs');
+const path = require('path');
+const test = require('./testSupport.js');
+const kernel = require('../run/js/kernel.js');
+
+const RUN = path.join(__dirname, '..', 'run');
+const OWED = 'owed by goal/G4.10 and G4.11: ';
+const OWED10 = 'owed by goal/G4.10: ';
+const OWED11 = 'owed by goal/G4.11: ';
+const APP = path.join(RUN, 'shell', 'chatter', 'chatter.js');
+const MANIFEST = path.join(RUN, 'shell', 'chatter', 'chatter.json');
+const ICON = kernel.core.const.ICON;
+
+const PEER = 'MCowBQYDK2VwAyEApeerpeerpeerpeerpeerpeerpeerpeerpeerp=';
+const QUIET = 'MCowBQYDK2VwAyEAquietquietquietquietquietquietquiet=';
+const NEWBIE = 'MCowBQYDK2VwAyEAnewbienewbienewbienewbienewbienewbi=';
+const BLOCKED = 'MCowBQYDK2VwAyEAblockedblockedblockedblockedblocke=';
+const STRANGER = 'MCowBQYDK2VwAyEAstrangerstrangerstrangerstrangerstr=';
+
+function settle() { return new Promise(function (r) { setImmediate(r); }).then(function () { return new Promise(function (r) { setImmediate(r); }); }); }
+async function settled() { for (let i = 0; i < 6; i += 1) await settle(); }
+
+test.startTest('goal/G4.10 and G4.11: chatter, the peers on the left and one chat in the centre');
+
+// ── A SMALL DOM ──────────────────────────────────────────────────────
+// Built by createElement and appendChild; events bubble along parentNode; closest() for an attribute, a class or a
+// tag. The shell's own elements (contactSelector, contactLabel) are loaded for real into it.
+
+function node(tag) {
+  let html = '';
+  const e = { tagName: String(tag || 'div').toUpperCase(), value: '', textContent: '', className: '', style: {}, dataset: {},
+    children: [], listeners: {}, parentNode: null, hidden: false, attrs: {}, scrollTop: 0, scrollHeight: 0, clientHeight: 0,
+    appendChild: function (c) { if (c.parentNode) c.parentNode.removeChild(c); e.children.push(c); c.parentNode = e; return c; },
+    insertBefore: function (c, ref) {
+      if (c.parentNode) c.parentNode.removeChild(c);
+      const i = ref ? e.children.indexOf(ref) : -1;
+      if (i === -1) e.children.push(c); else e.children.splice(i, 0, c);
+      c.parentNode = e; return c;
+    },
+    prepend: function (c) { return e.insertBefore(c, e.children[0] || null); },
+    append: function () { Array.from(arguments).forEach(function (c) { e.appendChild(typeof c === 'string' ? Object.assign(node('#text'), { textContent: c }) : c); }); },
+    removeChild: function (c) { e.children = e.children.filter(function (x) { return x !== c; }); c.parentNode = null; return c; },
+    replaceChild: function (n, o) { const i = e.children.indexOf(o); if (i !== -1) { if (n.parentNode) n.parentNode.removeChild(n); e.children[i] = n; n.parentNode = e; o.parentNode = null; } return o; },
+    replaceChildren: function () { e.children.forEach(function (c) { c.parentNode = null; }); e.children = []; Array.from(arguments).forEach(function (c) { e.appendChild(c); }); },
+    remove: function () { if (e.parentNode) e.parentNode.removeChild(e); },
+    addEventListener: function (t, fn) { (e.listeners[t] = e.listeners[t] || []).push(fn); },
+    removeEventListener: function (t, fn) { e.listeners[t] = (e.listeners[t] || []).filter(function (f) { return f !== fn; }); },
+    dispatchEvent: function (ev) { bubble(e, ev); return true; },
+    setAttribute: function (k, v) { e.attrs[k] = String(v); if (k.indexOf('data-') === 0) e.dataset[camel(k.slice(5))] = String(v); if (k === 'class') e.className = String(v); if (k === 'hidden') e.hidden = true; },
+    getAttribute: function (k) { if (k.indexOf('data-') === 0) { const d = e.dataset[camel(k.slice(5))]; return d === undefined ? null : d; } return e.attrs[k] === undefined ? null : e.attrs[k]; },
+    hasAttribute: function (k) { return e.getAttribute(k) !== null; },
+    removeAttribute: function (k) { delete e.attrs[k]; if (k.indexOf('data-') === 0) delete e.dataset[camel(k.slice(5))]; if (k === 'hidden') e.hidden = false; },
+    closest: function (sel) {
+      for (let n = e; n; n = n.parentNode) {
+        const a = /^\[([\w-]+)\]$/.exec(sel);
+        if (a && n.getAttribute && n.getAttribute(a[1]) !== null) return n;
+        if (sel.charAt(0) === '.' && String(n.className || '').split(/\s+/).indexOf(sel.slice(1)) !== -1) return n;
+        if (/^[a-z]+$/i.test(sel) && n.tagName === sel.toUpperCase()) return n;
+      }
+      return null;
+    },
+    querySelector: function (sel) { return all(e).slice(1).filter(function (n) { return n.closest && n.closest(sel) === n; })[0] || null; },
+    querySelectorAll: function (sel) { return all(e).slice(1).filter(function (n) { return n.closest && n.closest(sel) === n; }); },
+    contains: function (x) { for (let n = x; n; n = n.parentNode) if (n === e) return true; return false; },
+    scrollIntoView: function () {}, focus: function () {}, select: function () {}, blur: function () {},
+    getBoundingClientRect: function () { return { top: 0, bottom: 0, left: 0, right: 0, height: 0, width: 0 }; },
+  };
+  e.classList = {
+    add: function (c) { const s = String(e.className || '').split(/\s+/).filter(Boolean); if (s.indexOf(c) === -1) s.push(c); e.className = s.join(' '); },
+    remove: function (c) { e.className = String(e.className || '').split(/\s+/).filter(function (x) { return x && x !== c; }).join(' '); },
+    toggle: function (c, on) { if (on === undefined) on = !e.classList.contains(c); if (on) e.classList.add(c); else e.classList.remove(c); return on; },
+    contains: function (c) { return String(e.className || '').split(/\s+/).indexOf(c) !== -1; },
+  };
+  Object.defineProperty(e, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); e.children.forEach(function (c) { c.parentNode = null; }); e.children = []; }, enumerable: true });
+  Object.defineProperty(e, 'isConnected', { get: function () { for (let n = e; n; n = n.parentNode) if (n.isDocumentRoot) return true; return false; } });
+  return e;
+}
+function camel(s) { return s.replace(/-([a-z])/g, function (m, ch) { return ch.toUpperCase(); }); }
+function bubble(target, ev) {
+  if (!ev.target) { try { Object.defineProperty(ev, 'target', { value: target, configurable: true }); } catch (x) { ev.target = target; } }
+  let stopped = false;
+  const realStop = ev.stopPropagation;
+  try { ev.stopPropagation = function () { stopped = true; if (realStop) realStop.call(ev); }; } catch (x) { /* frozen */ }
+  for (let n = target; n && !stopped; n = n.parentNode) {
+    (n.listeners[ev.type] || []).slice().forEach(function (fn) { fn.call(n, ev); });
+    if (ev.bubbles === false && n === target) break;
+  }
+}
+function fire(n, type, extra) { bubble(n, Object.assign({ type: type, bubbles: true, preventDefault: function () {} }, extra || {})); }
+function all(root) { return [root].concat(root.children.reduce(function (acc, c) { return acc.concat(all(c)); }, [])); }
+function visible(n, root) {
+  for (let x = n; x; x = x.parentNode) { if (x.hidden || (x.style && x.style.display === 'none')) return false; if (x === root) return true; }
+  return true;
+}
+function shown(n) { return all(n).map(function (x) { return (x.textContent || '') + ' ' + (x.innerHTML || '') + ' ' + (x.tagName === 'INPUT' || x.tagName === 'TEXTAREA' ? '' : (x.value || '')); }).join(' '); }
+
+function line(o) {
+  return { sent: o.sent, seq: o.seq, at: o.at, text: o.text, receivedAt: o.sent ? '' : o.at, re: o.re || { writer: '', seq: 0 }, refused: o.refused || '' };
+}
+function item(l) { return { key: l.sent + ':' + l.seq, label: JSON.stringify(l) }; }
+const T = function (m) { return '2026-10-03T10:' + String(m).padStart(2, '0') + ':00.000Z'; };
+
+// PEER's chat: theirs 1 (T1), mine 1 kept (T2), theirs 2 (T3), mine 2 unsent (T4), mine 3 refused (T5). Cut: more.
+const CHAT = [
+  line({ sent: 1, seq: 3, at: T(5), text: 'third of mine', refused: 'not-granted' }),
+  line({ sent: 1, seq: 2, at: T(4), text: 'second of mine', refused: 'unsent' }),
+  line({ sent: 0, seq: 2, at: T(3), text: 'how are you' }),
+  line({ sent: 1, seq: 1, at: T(2), text: 'hello there', refused: '' }),
+  line({ sent: 0, seq: 1, at: T(1), text: 'hi' }),
+];
+
+function mount(opts) {
+  opts = opts || {};
+  const docListeners = {};
+  const docRoot = node('html'); docRoot.isDocumentRoot = true;
+  const doc = {
+    documentElement: docRoot, body: docRoot,
+    createElement: node, createTextNode: function (t) { const n = node('#text'); n.textContent = String(t); return n; },
+    createDocumentFragment: function () { return node('#fragment'); },
+    addEventListener: function (t, fn) { (docListeners[t] = docListeners[t] || []).push(fn); },
+    removeEventListener: function (t, fn) { docListeners[t] = (docListeners[t] || []).filter(function (f) { return f !== fn; }); },
+    dispatchEvent: function (ev) { (docListeners[ev.type] || []).slice().forEach(function (fn) { fn(ev); }); return true; },
+    getElementById: function () { return null; },
+  };
+  const asked = [];
+  // The node's own verbs, as the elements ask them (spirit.core.ask).
+  const coreAsk = function (verb, body) {
+    asked.push({ via: 'core', verb: verb, body: body || {} });
+    if (verb === 'contact.search') return Promise.resolve({ status: 200, body: { ok: true, items: [{ key: NEWBIE, label: 'Newbie' }, { key: BLOCKED, label: 'Blocky' }], more: false } });
+    if (verb === 'contact.get') {
+      const names = {}; names[PEER] = 'Pete'; names[QUIET] = 'Quinn'; names[NEWBIE] = 'Newbie'; names[BLOCKED] = 'Blocky'; names[STRANGER] = 'Stan';
+      return Promise.resolve({ status: 200, body: { ok: true, key: body.key, person: { publicKey: body.key, caption: names[body.key] || body.key, blocked: body.key === BLOCKED } } });
+    }
+    if (verb === 'contact.label') return Promise.resolve({ status: 200, body: { publicKey: body.publicKey, myLabel: body.myLabel, caption: body.myLabel } });
+    return Promise.resolve({ status: 200, body: {} });
+  };
+  let nextSeq = 4;
+  // The chatClerver, as the app asks it (api.verb jobs.api).
+  function clerver(verb, a) {
+    asked.push({ via: 'clerver', verb: verb, body: a || {} });
+    if (verb === 'peers.search') {
+      const rows = [
+        { key: PEER, label: JSON.stringify({ peer: PEER, at: T(5), sent: 1, seq: 3, unanswered: 2 }) },
+        { key: QUIET, label: JSON.stringify({ peer: QUIET, at: T(0), sent: 1, seq: 1, unanswered: 0 }) },
+      ].concat(opts.extraPeers || []);
+      return { items: rows, more: false };
+    }
+    if (verb === 'chat.read') {
+      if (a.peer !== PEER) return { items: [], more: false };
+      if (a.before) return { items: [item(line({ sent: 0, seq: 0, at: T(0), text: 'the oldest' }))].filter(function () { return a.before === T(1); }), more: false };
+      return { items: CHAT.map(item), more: true };
+    }
+    if (verb === 'line.write') { const s = a.to === PEER ? nextSeq++ : 1; return { seq: s, outcome: 'pending' }; }
+    return {};
+  }
+  const published = [];
+  const saved = {};
+  const api = {
+    verb: function (name, args) {
+      if (name !== 'jobs.api') { asked.push({ via: 'verb', verb: name, body: args }); return Promise.resolve({ status: 404, body: { ok: false } }); }
+      const ask = (args && args.ask && args.ask.chatClerver) || null;
+      if (!ask) return Promise.resolve({ status: 404, body: { ok: false, code: 'no-such-server' } });
+      const v = Object.keys(ask)[0];
+      return Promise.resolve({ status: 200, body: clerver(v, ask[v]) });
+    },
+    onPublished: function (fn, server) { published.push({ fn: fn, server: server }); return function () {}; },
+    onPacket: function () { return function () {}; },
+    onReconnect: function () { return function () {}; },
+    setScreenTitle: function () {}, setScreenMark: function () {},
+    escapeHtml: kernel.core.util.escapeHtml,
+    fs: {
+      loadFile: function (rel) { return Object.prototype.hasOwnProperty.call(opts.files || {}, rel) ? opts.files[rel] : (saved[rel] === undefined ? null : saved[rel]); },
+      saveFile: function (rel, text) { saved[rel] = String(text); return Promise.resolve(); },
+      statFile: function () { return null; },
+    },
+  };
+  const win = { spiritFieldRules: require('../run/js/fieldRules.js'), spiritElements: {} };
+  const sp = { core: { ask: coreAsk, util: { escapeHtml: kernel.core.util.escapeHtml, formatBytes: kernel.core.util.formatBytes }, const: { ICON: ICON } } };
+  const load = function (file) {
+    new Function('spirit', 'document', 'window', 'Event', 'CustomEvent', fs.readFileSync(file, 'utf8'))(sp, doc, win, Event, CustomEvent);
+  };
+  load(path.join(RUN, 'shell', 'js', 'contactSelector.js'));
+  load(path.join(RUN, 'shell', 'js', 'contactLabel.js'));
+  // Watched, not replaced: what chatter builds with is recorded, and the real element answers.
+  const selectors = [];
+  const labels = [];
+  const realSelector = win.spiritElements.createContactSelector;
+  const realLabel = win.spiritElements.createContactLabel;
+  win.spiritElements.createContactSelector = function (o) { const r = realSelector(o); selectors.push({ options: o || {}, root: r }); return r; };
+  win.spiritElements.createContactLabel = function (o) { const r = realLabel(o); labels.push({ options: o || {}, root: r }); return r; };
+  api.ui = { elements: win.spiritElements };
+  let behavior = null;
+  sp.shell = { activateApp: function (b) { behavior = b; }, registerApp: function (b) { behavior = b; } };
+  new Function('spirit', 'document', 'window', 'Event', 'CustomEvent', fs.readFileSync(APP, 'utf8'))(sp, doc, win, Event, CustomEvent);
+  const container = node('div');
+  docRoot.appendChild(container);
+  if (behavior && typeof behavior.mount === 'function') behavior.mount(container, api);
+  if (behavior && typeof behavior.render === 'function') { try { behavior.render(); } catch (e) { /* render is the app's */ } }
+  return {
+    container: container, asked: asked, selectors: selectors, labels: labels, saved: saved, behavior: behavior, doc: doc,
+    publish: function (obj) { published.filter(function (p) { return p.server === 'chatClerver'; }).forEach(function (p) { p.fn(obj); }); },
+    listening: function () { return published.some(function (p) { return p.server === 'chatClerver'; }); },
+    clerverAsks: function (verb) { return asked.filter(function (a) { return a.via === 'clerver' && a.verb === verb; }); },
+  };
+}
+
+function pane(app) { const s = app.selectors.filter(function (x) { return x.options.face === 'pane'; })[0]; return s || null; }
+function picker(app) { return app.selectors.filter(function (x) { return x.options.face !== 'pane'; })[0] || null; }
+function rowFor(root, key) { return all(root).filter(function (n) { return n.getAttribute && n.getAttribute('data-key') === key && visible(n, root); })[0] || null; }
+function lines(app) {
+  return all(app.container).filter(function (n) { return n.getAttribute && n.getAttribute('data-seq') !== null && n.getAttribute('data-sent') !== null; });
+}
+function lineFor(app, sent, seq) { return lines(app).filter(function (n) { return n.getAttribute('data-sent') === String(sent) && n.getAttribute('data-seq') === String(seq); }); }
+function order(app) { return lines(app).map(function (n) { return n.getAttribute('data-sent') + ':' + n.getAttribute('data-seq'); }).join(','); }
+function current(app) { return lines(app).filter(function (n) { return /\bcurrent\b/.test(n.className); }).map(function (n) { return n.getAttribute('data-sent') + ':' + n.getAttribute('data-seq'); }); }
+function textarea(app) { return all(app.container).filter(function (n) { return n.tagName === 'TEXTAREA'; })[0] || null; }
+
+async function main() {
+  test.subHeading('the app (G4.9): shell/chatter, named chatter, icon CHAT, not intrinsic');
+  let manifest = null;
+  try { manifest = JSON.parse(fs.readFileSync(MANIFEST, 'utf8')); } catch (e) { manifest = null; }
+  if (manifest && manifest.name === 'chatter' && manifest.icon === 'CHAT' && manifest.intrinsic === false) test.check('chatter.json: chatter, CHAT, intrinsic false');
+  else test.fail(OWED + 'shell/chatter/chatter.json is ' + JSON.stringify(manifest));
+  if (!fs.existsSync(APP)) { test.fail(OWED + 'there is no shell/chatter/chatter.js'); return; }
+  let app = null;
+  try { app = mount(); } catch (e) { test.fail(OWED + 'chatter did not mount: ' + (e && e.stack || e).toString().slice(0, 300)); return; }
+  await settled();
+  if (app.listening()) test.check('it hears its server: api.onPublished(fn, \'chatClerver\')');
+  else test.fail(OWED + 'chatter does not listen to the chatClerver\'s publishes');
+
+  // ── G4.10 ──
+  test.subHeading('G4.10 P1-P2: the left pane is the shell\'s peer pane over peers.search, 🔴 for unanswered');
+  const p = pane(app);
+  const st = p && p.options.statuses;
+  if (p && Array.isArray(st) && st[0] && st[0].status === 'none' && !st[0].iconKey && st.some(function (s) { return s.status === 'unanswered' && s.iconKey === 'RED_CIRCLE'; })) test.check('createContactSelector({face: \'pane\', statuses: [none, unanswered RED_CIRCLE]})');
+  else test.fail(OWED10 + 'the pane is ' + (p ? JSON.stringify({ face: p.options.face, statuses: st }) : 'not made'));
+  const searched = app.clerverAsks('peers.search');
+  if (p && typeof p.options.search === 'function' && searched.length && searched[0].body.text === '') test.check('its search asks peers.search {text}, \'\' first');
+  else test.fail(OWED10 + 'peers.search asked ' + JSON.stringify(searched));
+  const peerRow = p && rowFor(p.root, PEER);
+  const quietRow = p && rowFor(p.root, QUIET);
+  if (peerRow && quietRow && shown(peerRow).indexOf(ICON.RED_CIRCLE) !== -1 && shown(quietRow).indexOf(ICON.RED_CIRCLE) === -1) test.check('a peer with unanswered lines shows 🔴, a peer with none does not');
+  else test.fail(OWED10 + 'rows: ' + JSON.stringify([peerRow && shown(peerRow), quietRow && shown(quietRow)]).slice(0, 220));
+  if (peerRow && !/\{"peer"|unanswered/.test(shown(peerRow)) && !/\b2\b/.test(shown(peerRow).replace(/MCow\S+/g, ''))) test.check('neither the count nor the raw record is drawn; the row is named by key');
+  else test.fail(OWED10 + 'the row shows ' + JSON.stringify(peerRow && shown(peerRow)).slice(0, 200));
+
+  test.subHeading('G4.10 P3 and G4.11 C1: a click on a row opens its chat, named in the pane\'s title bar');
+  if (peerRow) fire(peerRow, 'click');
+  await settled();
+  const read = app.clerverAsks('chat.read');
+  if (read.length && read[0].body.peer === PEER && !read[0].body.before) test.check('chat.read {peer} for the clicked row');
+  else test.fail(OWED10 + 'chat.read asked ' + JSON.stringify(read));
+  const title = app.labels.filter(function (l) { return l.options.key === PEER && l.options.editable === true; });
+  if (title.length && app.container.contains(title[title.length - 1].root)) test.check('the centre pane\'s title bar names the contact: createContactLabel({key, editable: true})');
+  else test.fail(OWED11 + 'labels made ' + JSON.stringify(app.labels.map(function (l) { return l.options; })).slice(0, 200));
+
+  test.subHeading('G4.11 C2-C3: lines by their time, marks in the popular style');
+  if (order(app) === '0:1,1:1,0:2,1:2,1:3') test.check('five lines, data-sent and data-seq, oldest first by time');
+  else test.fail(OWED11 + 'lines drawn ' + JSON.stringify(order(app)));
+  const m = function (s, q) { const n = lineFor(app, s, q)[0]; return n ? shown(n) : ''; };
+  if (m(1, 2).indexOf(ICON.LOADING) !== -1 && m(1, 1).indexOf('✓') !== -1 && m(1, 3).indexOf('❗') !== -1) test.check('mine: ⏳ unsent, ✓ kept, ❗ refused');
+  else test.fail(OWED11 + 'marks: unsent ' + JSON.stringify(m(1, 2)).slice(0, 80) + ', kept ' + JSON.stringify(m(1, 1)).slice(0, 80) + ', refused ' + JSON.stringify(m(1, 3)).slice(0, 80));
+  if ([ICON.LOADING, '✓', '❗'].every(function (g) { return m(0, 2).indexOf(g) === -1; })) test.check('theirs: no mark');
+  else test.fail(OWED11 + 'a received line is marked: ' + JSON.stringify(m(0, 2)).slice(0, 100));
+
+  test.subHeading('G4.11 C2-C4: a publish is reconciled, the arrival becomes current, keys move it');
+  app.publish({ line: Object.assign({ peer: PEER }, line({ sent: 1, seq: 2, at: T(4), text: 'second of mine', refused: '' })) });
+  await settled();
+  if (lineFor(app, 1, 2).length === 1 && m(1, 2).indexOf('✓') !== -1 && m(1, 2).indexOf(ICON.LOADING) === -1) test.check('a line published again is updated in place: ⏳ became ✓, one element');
+  else test.fail(OWED11 + 'after the publish: ' + lineFor(app, 1, 2).length + ' elements, ' + JSON.stringify(m(1, 2)).slice(0, 100));
+  app.publish({ line: Object.assign({ peer: PEER }, line({ sent: 0, seq: 4, at: T(7), text: 'the answer', re: { writer: PEER, seq: 3 } })) });
+  await settled();
+  if (order(app) === '0:1,1:1,0:2,1:2,1:3,0:4' && current(app).join() === '0:4') test.check('a line that arrives is placed by its time and becomes the current line');
+  else test.fail(OWED11 + 'after an arrival: lines ' + JSON.stringify(order(app)) + ', current ' + JSON.stringify(current(app)));
+  const replyBefore = m(0, 4);
+  app.publish({ line: Object.assign({ peer: PEER }, line({ sent: 0, seq: 3, at: T(6), text: 'the question it answers' })) });
+  await settled();
+  if (order(app) === '0:1,1:1,0:2,1:2,1:3,0:3,0:4' && m(0, 4).indexOf('the question it answers') !== -1 && replyBefore.indexOf('the question it answers') === -1) test.check('a reply that came first gets its quote once the answered line arrives, placed before it by time');
+  else test.fail(OWED11 + 'after the answered line: lines ' + JSON.stringify(order(app)) + ', the reply shows ' + JSON.stringify(m(0, 4)).slice(0, 160));
+  const cur = function () { return current(app).join(); };
+  const keyOn = function (k) { const n = lineFor(app, ...cur().split(':').map(Number))[0] || app.container; fire(n, 'keydown', { key: k }); };
+  // From a known line: which of the two late arrivals is current is not the point here.
+  const last = lineFor(app, 0, 4)[0];
+  if (last) { fire(last, 'click'); await settled(); }
+  keyOn('ArrowUp'); await settled(); const up = cur();
+  keyOn('Home'); await settled(); const home = cur();
+  keyOn('ArrowDown'); await settled(); const down = cur();
+  keyOn('End'); await settled(); const end = cur();
+  if (up === '0:3' && home === '0:1' && down === '1:1' && end === '0:4') test.check('ArrowUp, Home, ArrowDown, End move the current line');
+  else test.fail(OWED11 + 'current after ArrowUp ' + up + ', Home ' + home + ', ArrowDown ' + down + ', End ' + end);
+  const target = lineFor(app, 0, 2)[0];
+  if (target) fire(target, 'click');
+  await settled();
+  if (cur() === '0:2') test.check('a click on a line makes it current');
+  else test.fail(OWED11 + 'after a click on 0:2 the current line is ' + cur());
+  const reply = lineFor(app, 0, 4)[0];
+  const quote = reply && all(reply).filter(function (n) { return n !== reply && /the question it answers/.test(n.textContent || ''); })[0];
+  if (quote) { fire(quote, 'click'); await settled(); }
+  if (quote && cur() === '0:3') test.check('a click on a reply\'s quote makes the answered line current');
+  else test.fail(OWED11 + 'the quote ' + (quote ? 'moved the current line to ' + cur() : 'is no element of the reply'));
+
+  test.subHeading('G4.11 C5-C6: the input, Enter sends a reply to the current line');
+  const box = textarea(app);
+  if (!box) { test.fail(OWED11 + 'the chat has no TEXTAREA'); }
+  else {
+    const writes = function () { return app.clerverAsks('line.write'); };
+    box.value = 'two\nlines';
+    fire(box, 'keydown', { key: 'Enter', shiftKey: true });
+    await settled();
+    const none = writes().length === 0;
+    box.value = 'my reply';
+    fire(box, 'keydown', { key: 'Enter', shiftKey: false });
+    await settled();
+    const w = writes()[0];
+    if (none && w && w.body.to === PEER && w.body.text === 'my reply' && w.body.re && w.body.re.writer === PEER && w.body.re.seq === 3) test.check('Shift+Enter sends nothing; Enter sends line.write {to, text, re: the current line}');
+    else test.fail(OWED11 + 'Shift+Enter sent ' + !none + '; Enter sent ' + JSON.stringify(w));
+    const mine = lineFor(app, 1, 4)[0];
+    if (mine && /my reply/.test(shown(mine)) && shown(mine).indexOf(ICON.LOADING) !== -1) test.check('the sent line shows at once by the seq answered, ⏳');
+    else test.fail(OWED11 + 'after Enter the line 1:4 is ' + JSON.stringify(mine && shown(mine)).slice(0, 120));
+    if (mine && /the question it answers/.test(shown(mine))) test.check('and quotes the line it answers');
+    else test.fail(OWED11 + 'the sent reply shows no quote: ' + JSON.stringify(mine && shown(mine)).slice(0, 120));
+    app.publish({ line: Object.assign({ peer: PEER }, line({ sent: 1, seq: 4, at: T(8), text: 'my reply', re: { writer: PEER, seq: 3 }, refused: '' })) });
+    await settled();
+    if (lineFor(app, 1, 4).length === 1 && shown(lineFor(app, 1, 4)[0]).indexOf('✓') !== -1) test.check('its publish makes it ✓, still one element');
+    else test.fail(OWED11 + 'after its publish: ' + lineFor(app, 1, 4).length + ' elements');
+  }
+
+  test.subHeading('G4.11 C7: older lines by before, on a scroll to the top');
+  const scrollers = all(app.container).filter(function (n) { return (n.listeners.scroll || []).length; });
+  scrollers.forEach(function (n) { n.scrollTop = 0; fire(n, 'scroll', { bubbles: false }); });
+  await settled();
+  const older = app.clerverAsks('chat.read').filter(function (a) { return a.body.before; });
+  if (older.length && older[0].body.peer === PEER && older[0].body.before === T(1) && lineFor(app, 0, 0).length === 1 && order(app).indexOf('0:0') === 0) test.check('chat.read {peer, before: the oldest line\'s at}, the older line drawn first');
+  else test.fail(OWED11 + 'on a scroll to the top: ' + scrollers.length + ' elements listen to scroll; asked ' + JSON.stringify(older) + '; lines ' + JSON.stringify(order(app)));
+
+  test.subHeading('G4.11 C8: plain or bubbles, chosen in the chat pane, kept in shell/chatter');
+  const select = all(app.container).filter(function (n) { return n.tagName === 'SELECT' && /plain/.test(shown(n)) && /bubbles/.test(shown(n)); })[0];
+  if (select) {
+    select.value = 'bubbles';
+    fire(select, 'change');
+    await settled();
+    const keptIn = Object.keys(app.saved).filter(function (k) { return /bubbles/.test(app.saved[k]); })[0];
+    if (keptIn) test.check('a change is kept through api.fs (' + keptIn + ')');
+    else test.fail(OWED11 + 'the style was kept nowhere: ' + JSON.stringify(app.saved).slice(0, 160));
+    if (keptIn) {
+      const again = mount({ files: (function () { const f = {}; f[keptIn] = app.saved[keptIn]; return f; })() });
+      await settled();
+      const sel2 = all(again.container).filter(function (n) { return n.tagName === 'SELECT' && /bubbles/.test(shown(n)); })[0];
+      if (sel2 && sel2.value === 'bubbles') test.check('and the next mount shows bubbles');
+      else test.fail(OWED11 + 'the next mount shows ' + JSON.stringify(sel2 && sel2.value));
+    }
+  } else test.fail(OWED11 + 'the chat pane has no SELECT offering plain and bubbles');
+
+  test.subHeading('G4.10 P4-P5: a new chat with a contact from the book, never a blocked one');
+  const app2 = mount();
+  await settled();
+  const pick = picker(app2);
+  if (pick) {
+    const button = all(pick.root).filter(function (n) { return n.tagName === 'BUTTON'; })[0];
+    if (button) fire(button, 'click');
+    await settled();
+    if (app2.asked.some(function (a) { return a.verb === 'contact.search'; })) test.check('a contact dropdown over the node\'s contact.search');
+    else test.fail(OWED10 + 'the new-chat dropdown never asked contact.search');
+    const newRow = rowFor(pick.root, NEWBIE);
+    if (newRow && !rowFor(pick.root, BLOCKED)) test.check('the book\'s contacts offered, the blocked one not');
+    else test.fail(OWED10 + 'offered: Newbie ' + !!newRow + ', Blocky ' + !!rowFor(pick.root, BLOCKED));
+    if (newRow) fire(newRow, 'click');
+    await settled();
+    const opened = app2.clerverAsks('chat.read').filter(function (a) { return a.body.peer === NEWBIE; });
+    const named = app2.labels.filter(function (l) { return l.options.key === NEWBIE && l.options.editable === true; });
+    if (opened.length && named.length) test.check('the pick opens its chat, named in the title bar');
+    else test.fail(OWED10 + 'after the pick: chat.read ' + JSON.stringify(opened) + ', title labels ' + named.length);
+    const box2 = textarea(app2);
+    if (box2) {
+      box2.value = 'first words';
+      fire(box2, 'keydown', { key: 'Enter' });
+      await settled();
+    }
+    const first = app2.clerverAsks('line.write')[0];
+    if (first && first.body.to === NEWBIE && first.body.text === 'first words') test.check('the first line goes line.write {to: the picked contact}');
+    else test.fail(OWED10 + 'the first line went ' + JSON.stringify(first));
+  } else test.fail(OWED10 + 'there is no new-chat contact dropdown');
+  const before = app2.clerverAsks('peers.search').length;
+  app2.publish({ line: Object.assign({ peer: STRANGER }, line({ sent: 0, seq: 1, at: T(9), text: 'hello from nowhere' })) });
+  await settled();
+  if (app2.clerverAsks('peers.search').length > before) test.check('a line from a peer the list does not hold makes it ask peers.search again');
+  else test.fail(OWED10 + 'a line from a new peer did not refresh the list');
+}
+
+main().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
+  test.reportSuccessFailureCount();
+  process.exit(0);
+});
