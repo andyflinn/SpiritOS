@@ -1,0 +1,7 @@
+{
+  "label": "Chat server",
+  "description": "The faceless, p2p chat server (goal/G4): this node's memory of the chats it is a party to, memory.db in the node's state (relay-state/process/chatClerver/), the lines it wrote and the sealed lines it received, and nothing it did not witness. Started by the node; its verbs come with goal/G4.2, G4.6 and G4.7.",
+  "kind": "server",
+  "operated": "node",
+  "args": []
+}
