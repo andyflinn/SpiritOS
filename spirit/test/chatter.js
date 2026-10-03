@@ -23,10 +23,10 @@
 //   api.onPublished(fn, 'chatClerver'). It builds with the shell's elements, api.ui.elements.
 //   G4.10, THE PEERS:
 //     P1. The left pane is createContactSelector({face: 'pane', statuses, search}), statuses
-//         [{status: 'none'}, {status: 'unanswered', iconKey: 'RED_CIRCLE'}], search asking peers.search
+//         [{status: 'none'}, {status: 'unanswered', iconKey: 'WAITING'}] (Andy: "use ICON:WAITING"), search asking peers.search
 //         {text, since, before}. EVERY ASK carries exactly its verb's request keys, read from chatClerver.js: the
 //         fake server refuses any other, as the real one does.
-//     P2. A peer whose row counts unanswered above zero is marked unanswered (🔴); the number is drawn nowhere, and
+//     P2. A peer whose row counts unanswered above zero is marked unanswered (⌛ WAITING); the number is drawn nowhere, and
 //         the row's raw record is not shown as its name (the label element names it by key).
 //     P3. A click on a row opens that peer's chat in the centre: chat.read {peer, before: ''}.
 //     P4. A new chat: a contact picked from the node's book (a createContactSelector dropdown, its rows from
@@ -52,9 +52,12 @@
 //         shell/chatter/ through api.fs, and the next mount shows it.
 //   G4.10, REOPENED (Andy trying it live):
 //     P6. Presence: chatter reads the node's relay-presence job through api.onJobs (the shell's one stream) and
-//         sets the pane's root.present(key, state): green present, white otherwise, the 🔴 beside it.
+//         sets the pane's root.present(key, state): green present, white otherwise, the ⌛ beside it.
 //     P7. Three panes, data-pane peers, chat and objects (NAMED); the objects pane shown and empty; each side pane
 //         folds by its data-fold button (NAMED), POINTRIGHT/POINTLEFT pointing the way it will move.
+//     P9. The pane's search matches the names shown, not keys (Andy: "the search on top or the pane seem to search
+//         keys instead of labels..."): typed text finds a peer by its name in the node's book (contact.search), and
+//         only peers with a chat are listed.
 //     P8. Two visible boundaries, data-divider left and right (NAMED), dragged by pointer events to resize; the
 //         widths kept in the same api.fs file as the look, and drawn again on the next mount.
 // NOT ASSERTED, the builder's: markup and classes beyond the names above, the bubbles' look, the fold buttons and the
@@ -203,7 +206,14 @@ function mount(opts) {
   // The node's own verbs, as the elements ask them (spirit.core.ask).
   const coreAsk = function (verb, body) {
     asked.push({ via: 'core', verb: verb, body: body || {} });
-    if (verb === 'contact.search') return Promise.resolve({ status: 200, body: { ok: true, items: [{ key: NEWBIE, label: 'Newbie' }, { key: BLOCKED, label: 'Blocky' }], more: false } });
+    if (verb === 'contact.search') {
+      // By name, as the node's book answers (hub.js searchPeople); with nothing typed, the two the picker offers.
+      const book = [[PEER, 'Pete'], [QUIET, 'Quinn'], [NEWBIE, 'Newbie'], [BLOCKED, 'Blocky'], [STRANGER, 'Stan']];
+      const q = String(body.q || '').toLowerCase();
+      const items = q ? book.filter(function (b) { return b[1].toLowerCase().indexOf(q) !== -1; }).map(function (b) { return { key: b[0], label: b[1] }; })
+        : [{ key: NEWBIE, label: 'Newbie' }, { key: BLOCKED, label: 'Blocky' }];
+      return Promise.resolve({ status: 200, body: { ok: true, items: items, more: false } });
+    }
     if (verb === 'contact.get') {
       const names = {}; names[PEER] = 'Pete'; names[QUIET] = 'Quinn'; names[NEWBIE] = 'Newbie'; names[BLOCKED] = 'Blocky'; names[STRANGER] = 'Stan';
       return Promise.resolve({ status: 200, body: { ok: true, key: body.key, person: { publicKey: body.key, caption: names[body.key] || body.key, blocked: body.key === BLOCKED } } });
@@ -324,17 +334,17 @@ async function main() {
   else test.fail(OWED + 'chatter does not listen to the chatClerver\'s publishes');
 
   // ── G4.10 ──
-  test.subHeading('G4.10 P1-P2: the left pane is the shell\'s peer pane over peers.search, 🔴 for unanswered');
+  test.subHeading('G4.10 P1-P2: the left pane is the shell\'s peer pane over peers.search, ⌛ for unanswered');
   const p = pane(app);
   const st = p && p.options.statuses;
-  if (p && Array.isArray(st) && st[0] && st[0].status === 'none' && !st[0].iconKey && st.some(function (s) { return s.status === 'unanswered' && s.iconKey === 'RED_CIRCLE'; })) test.check('createContactSelector({face: \'pane\', statuses: [none, unanswered RED_CIRCLE]})');
+  if (p && Array.isArray(st) && st[0] && st[0].status === 'none' && !st[0].iconKey && st.some(function (s) { return s.status === 'unanswered' && s.iconKey === 'WAITING'; })) test.check('createContactSelector({face: \'pane\', statuses: [none, unanswered WAITING]})');
   else test.fail(OWED10 + 'the pane is ' + (p ? JSON.stringify({ face: p.options.face, statuses: st }) : 'not made'));
   const searched = app.clerverAsks('peers.search');
   if (p && typeof p.options.search === 'function' && searched.length && searched[0].body.text === '') test.check('its search asks peers.search {text, since, before}, text \'\' first');
   else test.fail(OWED10 + 'peers.search asked ' + JSON.stringify(searched));
   const peerRow = p && rowFor(p.root, PEER);
   const quietRow = p && rowFor(p.root, QUIET);
-  if (peerRow && quietRow && shown(peerRow).indexOf(ICON.RED_CIRCLE) !== -1 && shown(quietRow).indexOf(ICON.RED_CIRCLE) === -1) test.check('a peer with unanswered lines shows 🔴, a peer with none does not');
+  if (peerRow && quietRow && shown(peerRow).indexOf(ICON.WAITING) !== -1 && shown(quietRow).indexOf(ICON.WAITING) === -1 && shown(peerRow).indexOf(ICON.RED_CIRCLE) === -1) test.check('a peer with unanswered lines shows 🔴, a peer with none does not');
   else test.fail(OWED10 + 'rows: ' + JSON.stringify([peerRow && shown(peerRow), quietRow && shown(quietRow)]).slice(0, 220));
   if (peerRow && !/\{"peer"|unanswered/.test(shown(peerRow)) && !/\b2\b/.test(shown(peerRow).replace(/MCow\S+/g, ''))) test.check('neither the count nor the raw record is drawn; the row is named by key');
   else test.fail(OWED10 + 'the row shows ' + JSON.stringify(peerRow && shown(peerRow)).slice(0, 200));
@@ -501,7 +511,7 @@ async function main() {
   const r3 = function (k) { const r = p3 && rowFor(p3.root, k); return r ? shown(r) : ''; };
   if (r3(PEER).indexOf(ICON.GREEN_CIRCLE) !== -1 && r3(QUIET).indexOf(ICON.GREEN_CIRCLE) === -1 && r3(QUIET).indexOf(ICON.WHITE_CIRCLE) !== -1) test.check('a present peer green, an absent one white');
   else test.fail(OWED10 + 'after the presence job: ' + JSON.stringify([r3(PEER), r3(QUIET)]).slice(0, 220));
-  if (r3(PEER).indexOf(ICON.RED_CIRCLE) !== -1) test.check('and its 🔴 for unanswered stands beside the green');
+  if (r3(PEER).indexOf(ICON.WAITING) !== -1) test.check('and its ⌛ for unanswered stands beside the green');
   else test.fail(OWED10 + 'PEER lost its unanswered mark: ' + JSON.stringify(r3(PEER)).slice(0, 160));
 
   test.subHeading('G4.10 P7: three panes, the right one empty, each side pane folding toward its edge');
@@ -553,6 +563,33 @@ async function main() {
       else test.fail(OWED10 + 'the next mount draws ' + JSON.stringify(widthOf(paneEl(app4, 'peers'))));
     }
   }
+
+  test.subHeading('G4.10 P9: the pane\'s search finds peers by the names it shows');
+  const app5 = mount();
+  await settled();
+  const p5 = pane(app5);
+  const box5 = p5 && all(p5.root).filter(function (n) { return n.tagName === 'INPUT'; })[0];
+  const listed = function () { return p5 ? all(p5.root).filter(function (n) { return n.getAttribute && n.getAttribute('data-key') !== null && visible(n, p5.root); }).map(function (n) { return n.getAttribute('data-key'); }) : []; };
+  if (box5) {
+    box5.value = 'pet';
+    fire(box5, 'input');
+    await settled();
+    const byName = listed();
+    box5.value = 'quin';
+    fire(box5, 'input');
+    await settled();
+    const byName2 = listed();
+    box5.value = 'stan';
+    fire(box5, 'input');
+    await settled();
+    const noChat = listed();
+    if (byName.join() === PEER && byName2.join() === QUIET) test.check('"pet" finds Pete, "quin" finds Quinn: names, not keys');
+    else test.fail(OWED10 + 'typed "pet" lists ' + byName.length + ' rows (' + (byName.indexOf(PEER) !== -1 ? 'Pete among them' : 'not Pete') + '), "quin" lists ' + byName2.length);
+    if (noChat.length === 0) test.check('a name in the book with no chat lists nobody (the pane holds chats only)');
+    else test.fail(OWED10 + 'typed "stan" (no chat) lists ' + JSON.stringify(noChat));
+    if (app5.asked.every(function (a) { return a.via !== 'refused'; })) test.check('and every ask of the chatClerver carried its exact keys');
+    else test.fail(OWED10 + 'refused asks: ' + JSON.stringify(app5.asked.filter(function (a) { return a.via === 'refused'; })).slice(0, 200));
+  } else test.fail(OWED10 + 'the pane has no search box');
 }
 
 main().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
