@@ -38,7 +38,7 @@
 //         is closed. A done item offers close as before; a closed item offers nothing but bring-back.
 //   C. THE DESK PAGE.
 //      1. The dialog (shell/deskDetails/deskDetails.js): on an item that is neither done nor closed, Close is the
-//         LAST button of the bar (the right edge) and is armed: the first click sends no press and marks the button
+//         LAST button of the bar (dd-name-row, the right edge) and is armed: the first click sends no press and marks the button
 //         data-armed="1"; the second click sends press {id, what: 'close'}. On a done item Close presses on the
 //         first click, as desk/G3.8 built it.
 //      2. The List (shell/desk/desk.js): a row that is neither done nor closed draws no Close, whatever its buttons
@@ -242,7 +242,9 @@ function dialog(facts) {
   dd.open({ id: facts.id, agents: {} });
   const click = function (id) { doc.getElementById('dd-body').fire('click', { target: { id: id, getAttribute: function () { return null; }, closest: function () { return null; } }, preventDefault: function () {} }); };
   const html = function () { return Object.keys(byId).map(function (k) { return byId[k].innerHTML; }).join('\n'); };
-  return { presses: presses, click: click, html: html };
+  // The button bar alone (dd-name-row, where ddButtonsHtml lands): the box's fold toggle comes after it in the dialog.
+  const bar = function () { return doc.getElementById('dd-name-row').innerHTML; };
+  return { presses: presses, click: click, html: html, bar: bar };
 }
 function list(rows) {
   const byId = {};
@@ -313,27 +315,28 @@ async function main() {
   f1 = await factsOf('r/G1.1');
   if (claim.status === 200 && f1 && f1.go === true && f1.buttons.indexOf('done') !== -1) test.check('B2: after his Go the claim-done is taken and Done is offered');
   else test.fail(OWED + 'B2: claim-done after Go answered ' + claim.status + ' ' + JSON.stringify(claim.body).slice(0, 100) + '; facts ' + JSON.stringify(f1));
-  await desk('press', { id: 'r/G1.3', what: 'go-all' }, ANDY);
-  await desk('press', { id: 'r/G1', what: 'go-all' }, ANDY);
-  const f3 = await factsOf('r/G1.3');
-  if (f3 && f3.go === true) test.check('B1: go-all sets go on each item it reached');
-  else test.fail(OWED + 'B1: after go-all, r/G1.3 facts ' + JSON.stringify(f3));
+  // B3 BEFORE THE GO-ALL (wsl-claude's review of the first red): r/G1.4 is goable, so his go-all would reach it.
   let f4 = await factsOf('r/G1.4');
   const offered = f4 && f4.buttons.indexOf('close') !== -1 && f4.buttons.indexOf('go') !== -1;
   const close = await desk('press', { id: 'r/G1.4', what: 'close' }, ANDY);
   f4 = await factsOf('r/G1.4');
   if (offered && close.status === 200 && f4 && f4.status === 'closed' && f4.buttons.length === 0) test.check('B3: an item not gone and not done offers close beside go; his close is taken and the item is closed');
   else test.fail(OWED + 'B3: offered close before Go: ' + offered + ', his close answered ' + close.status + ' ' + JSON.stringify(close.body).slice(0, 100) + ', facts ' + JSON.stringify(f4));
+  await desk('press', { id: 'r/G1.3', what: 'go-all' }, ANDY);
+  await desk('press', { id: 'r/G1', what: 'go-all' }, ANDY);
+  const f3 = await factsOf('r/G1.3');
+  if (f3 && f3.go === true) test.check('B1: go-all sets go on each item it reached');
+  else test.fail(OWED + 'B1: after go-all, r/G1.3 facts ' + JSON.stringify(f3));
 
   test.subHeading('C. the page: an armed Close at the right edge of the dialog, none on the List row');
   const early = dialog({ id: 'r/G1.4', title: 'Closed before Go', goal: 'r/G1', status: '', with: '', buttons: ['go', 'close'], blocking: [], blocked: [], alone: false, star: false, go: false });
   await settled();
-  const bar0 = early.html();
+  const bar0 = early.bar();
   const closeAt = bar0.indexOf('id="dd-close"');
   const lastButton = bar0.lastIndexOf('<button');
   early.click('dd-close');
   await settled();
-  const armed = /id="dd-close"[^>]*data-armed="1"/.test(early.html());
+  const armed = /id="dd-close"[^>]*data-armed="1"/.test(early.bar());
   const noPress = early.presses.length === 0;
   early.click('dd-close');
   await settled();
