@@ -169,6 +169,10 @@ function chTime(at) {
 function chQuoteText(l) {
   var k = chAnsweredKey(l.re);
   if (!k) return null;
+  // No quote for the line right above (Andy, goal/G4.10: "maybe leave it out when that line immediately precedes the
+  // answer"); a line placed between them later brings it back.
+  var at = chOrder.indexOf(chKey(l.sent, l.seq));
+  if (at > 0 && chOrder[at - 1] === k) return null;
   var ans = chLines[k];
   if (!ans) return '…';
   var t = String(ans.line.text || '');
@@ -228,9 +232,11 @@ function chUpsert(l) {
   var next = chOrder[at + 1] ? chLines[chOrder[at + 1]].el : null;
   list.insertBefore(entry.el, next);
   chPaintLine(entry);
-  // A reply drawn before its answered line gets its quote now.
+  // A reply drawn before its answered line gets its quote now, and the line after this one is drawn again: whether
+  // its quote shows depends on what now stands right above it.
+  var below = chOrder[at + 1];
   chOrder.forEach(function (k) {
-    if (k !== key && chAnsweredKey(chLines[k].line.re) === key) chPaintLine(chLines[k]);
+    if (k !== key && (k === below || chAnsweredKey(chLines[k].line.re) === key)) chPaintLine(chLines[k]);
   });
   return fresh;
 }
