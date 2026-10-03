@@ -742,6 +742,8 @@ define('not-offered', { status: 409, texts: ['that press is not offered for this
 define('no-such-item', { status: 404, texts: ['no such item'] });
 // deskClient (goal/G3.9, rule 1): the agent's wait is refused while another agent's key is not blocked on its node.
 define('unblocked', { status: 409, texts: ['another agent is not blocked on this node'] });
+// The chatClerver (goal/G4.6): a line to a key the node's contact book marks blocked; the node's block outranks.
+define('peer-blocked', { status: 409, texts: ['that peer is blocked on this node'] });
 
 // ── A MALFORMED REQUEST ──────────────────────────────────────────────
 //

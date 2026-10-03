@@ -25,6 +25,9 @@ const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../js/appServer.js');
+const kernel = require('../../../js/kernel.js');
+const packet = require('../../../js/client/packet.js');
+const limits = require('../../../js/limits.js');
 
 const argv = process.argv;
 function arg(name) { const i = argv.indexOf(name); return i !== -1 ? String(argv[i + 1] || '') : ''; }
@@ -57,4 +60,93 @@ db.exec(
   " highestReceived INTEGER NOT NULL DEFAULT 0, bornAt TEXT NOT NULL);"
 );
 
-appServer.serve({});
+// ── THE NODE THIS SERVER RUNS ON ─────────────────────────────────────
+// Its own node, as the node named it at start: the contact book and the grants are asked there, on the loopback.
+let NODE_URL = '';
+try { NODE_URL = new URL(String(process.env.SPIRIT_CALLBACK_URL || '')).origin; } catch (e) { NODE_URL = ''; }
+// A peer's answer is waited for as long as the desk's agents wait for theirs; a busy relay is retried by the node.
+const PATIENCE_MS = 60000;
+const WAIT_MS = PATIENCE_MS + 30000;
+
+function refused(code) { const e = new Error(code); e.refusal = code; return e; }
+function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
+function askNode(verb, args) {
+  return kernel.core.ask(verb, args, NODE_URL).then(function (r) { return r || {}; }, function () { return {}; });
+}
+
+const getPeer = db.prepare('SELECT peer, highestSent, highestReceived, bornAt FROM peers WHERE peer = ?');
+const addPeer = db.prepare('INSERT INTO peers (peer, highestSent, highestReceived, bornAt) VALUES (?, 0, 0, ?)');
+const setSent = db.prepare('UPDATE peers SET highestSent = ? WHERE peer = ?');
+const addLine = db.prepare('INSERT INTO lines (peer, sent, seq, at, text, receivedAt, reWriter, reSeq, refused, refusedAt) VALUES (?, 1, ?, ?, ?, \'\', ?, ?, \'\', \'\')');
+const markRefused = db.prepare('UPDATE lines SET refused = ?, refusedAt = ? WHERE peer = ? AND sent = 1 AND seq = ?');
+const unrefused = db.prepare("SELECT seq, at, text, reWriter, reSeq FROM lines WHERE peer = ? AND sent = 1 AND refused != '' ORDER BY seq");
+
+// One line as it travels: the peer's chatClerver takes it with line.receive (goal/G4.2).
+function bodyOf(l) {
+  return { chatClerver: { 'line.receive': { seq: l.seq, at: l.at, text: l.text, re: { writer: l.reWriter, seq: l.reSeq } } } };
+}
+// One post of one line, and what came back: kept, or the peer's refusal (its door's, sealed) kept as proof that
+// contact was attempted (goal/G4.6, Andy: "the writers keeps refusals, they are proof that contact was attempted.").
+function post(to, l) {
+  return kernel.peerPost(to, 'api', bodyOf(l), { waitMs: WAIT_MS, patienceMs: PATIENCE_MS }).then(function (got) {
+    if (got && got.kept === true) { markRefused.run('', '', to, l.seq); return 'sent'; }
+    markRefused.run(String((got && (got.code || got.error)) || 'no-answer'), new Date().toISOString(), to, l.seq);
+    return 'refused';
+  });
+}
+
+appServer.serve({
+  // THE OWNER WRITES A LINE TO A PEER (goal/G4.6, G4.7). Decided in Desk, not this file's to undo:
+  //   - A peer is named by its key; the chatClerver matches no label (Andy: "matching labels to keys is the UI's
+  //     problem").
+  //   - The node's block is the one truth and outranks: a blocked key is refused peer-blocked, nothing granted or
+  //     posted ("a node-level-block supersedes app level blocks").
+  //   - A held key is released by the owner's first line to it, no are-you-sure (Andy: "release happens when the
+  //     users sends a message to a held contact", "i prefer no are-you-sure.").
+  //   - A line to K is also the grant to K to answer ("writing to a peer should automatically be a grant to accept
+  //     an answer"), asked of this node before the line leaves.
+  //   - Refused lines stay in the record and go again, in their order, before the next new one.
+  //   - One line, one packet: a line too large to travel is refused before anything is kept or posted.
+  'line.write': {
+    request: { to: '', text: '', re: { writer: '', seq: 0 } }, reply: { seq: 0, outcome: '' },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      const to = String(a.to);
+      if (!to) throw refused('bad-request');
+      const re = { writer: String((a.re && a.re.writer) || ''), seq: Number((a.re && a.re.seq) || 0) };
+      const at = new Date().toISOString();
+      const row = getPeer.get(to);
+      const seq = (row ? Number(row.highestSent) : 0) + 1;
+      const line = { seq: seq, at: at, text: String(a.text), reWriter: re.writer, reSeq: re.seq };
+      const made = packet.encode('api', bodyOf(line));
+      if (!made || !made.ok || !limits.fitsSealed(made.text)) throw refused('line-too-large');
+      return askNode('contact.get', { key: to }).then(function (r) {
+        const person = r.body && r.body.person;
+        if (person && person.blocked === true) throw refused('peer-blocked');
+        return person && person.held === true ? askNode('contact.accept', { publicKey: to }) : null;
+      }).then(function () {
+        return askNode('jobs.authGrant', { key: to, path: 'chatClerver.line.receive' });
+      }).then(function () {
+        // The record first: what was written is kept before it travels, so a crash loses nothing.
+        if (!row) addPeer.run(to, at);
+        addLine.run(to, seq, at, line.text, re.writer, re.seq);
+        // Marked unsent until the peer keeps it: a line lost in flight or to a crash goes again like a refused one.
+        markRefused.run('unsent', at, to, seq);
+        setSent.run(seq, to);
+        // Earlier refused lines go again first, in their order, each with its own seq and at.
+        const queue = unrefused.all(to).map(function (l) { return { seq: Number(l.seq), at: l.at, text: l.text, reWriter: l.reWriter, reSeq: Number(l.reSeq) }; });
+        let outcome = 'refused';
+        function next(i) {
+          if (i >= queue.length) return { seq: seq, outcome: outcome };
+          return post(to, queue[i]).then(function (o) {
+            if (queue[i].seq === seq) outcome = o;
+            // A refusal stops the round: the rest wait for the next line, in order.
+            if (o !== 'sent') return { seq: seq, outcome: queue[i].seq === seq ? o : 'refused' };
+            return next(i + 1);
+          });
+        }
+        return next(0);
+      });
+    },
+  },
+});
