@@ -55,8 +55,9 @@ asking again until something comes), prints each line that is yours as
 what wakes you. Read, answer in Desk, start it again. Never end a turn without
 it running; a listener stopped by a time limit is started again.
 
-**Send exactly a verb's keys**, no more and no fewer, or the call is refused
-`bad-request`. The desk verbs and their requests:
+**Send exactly a verb's keys**, no more and no fewer, each of the type shown
+(a string as '', a number as 0, a flag as false), or the call is refused
+`no-such-argument` (appServer.js). The desk verbs and their requests:
 
     items.search  {text, currentGoalOnly, goalsOnly}   the List: '' text, true, false
     items.find    {text, by, since, before}            items by their chat lines, closed ones too
@@ -102,4 +103,5 @@ it in a small `node -e` script with `JSON.stringify` and call deskEar with
 - `REFUSED (rules 3 and 4)` from git — the item has no Go, or is done.
 - `no-answer` from deskEar — Desk was slow; read the item's chat before
   posting again, the line may have landed.
-- `bad-request` — the keys sent are not exactly the verb's.
+- `no-such-argument` — the keys sent are not exactly the verb's.
+- `bad-request` — the call itself is malformed (not one verb, or not an object).
