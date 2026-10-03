@@ -333,6 +333,14 @@ async function theElement() {
   const third = m2.make({ key: THIRD, editable: false });
   if (/Third Renamed/.test(shown(third))) test.check('and a rename updates the name a new label shows');
   else test.fail(OWED10 + 'after a rename a new label shows ' + JSON.stringify(shown(third)).slice(0, 120));
+  // Two labels made before the first answer share one ask (wsl-claude's note on bda37747: each asking passed).
+  const FOURTH = 'MCowBQYDK2VwAyEAfourthfourthfourthfourthfourthfourt=';
+  const f1 = m2.make({ key: FOURTH, editable: false });
+  const f2 = m2.make({ key: FOURTH, editable: false });
+  await settle();
+  const fourthAsks = m2.asked.filter(function (x) { return x.verb === 'contact.get' && x.body.key === FOURTH; }).length;
+  if (fourthAsks === 1 && /Fetched Name/.test(shown(f1)) && /Fetched Name/.test(shown(f2))) test.check('two labels made before the answer share one contact.get, and both show the name');
+  else test.fail(OWED10 + 'two waiting labels asked contact.get ' + fourthAsks + ' times; they show ' + JSON.stringify([shown(f1), shown(f2)]).slice(0, 120));
 }
 
 async function main() {
