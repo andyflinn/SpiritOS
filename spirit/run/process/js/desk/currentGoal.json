@@ -1,8 +1,8 @@
 {
- "change": 7135,
+ "change": 7282,
  "line": 8490,
  "goal": "goal/G4",
- "writtenAt": "2026-10-03T16:43:05.862Z",
+ "writtenAt": "2026-10-03T17:40:34.911Z",
  "items": [
   {
    "id": "goal/G4",
@@ -10,29 +10,33 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "go-all"
+   ],
    "blocking": [],
    "blocked": [
     "goal/G4.1",
-    "goal/G4.9"
+    "goal/G4.9",
+    "goal/G4.17"
    ],
    "go": false,
    "alone": false,
-   "star": false,
+   "star": true,
    "alert": false,
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 5,
    "live": [
+    "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
    "agents": {
+    "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
@@ -219,6 +223,81 @@
      "by": "claude-windows",
      "at": "2026-10-03T16:12:48.753Z",
      "text": "Four:\n- G4.15: Done and Close (nothing to build). That unblocks G4.13, whose red is ready, then its Go.\n- The capacity re-measure after G4.16 (capacityFresh red): an item for it, yes or no?\n- The two guards that trip on currentGoal.json (appClientName, runStandsAlone): teach them to skip that file, or leave them red?\n- G4.4 and G4.12 (objects) are deferred until file transfer: keep them open in G4, or move them out?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-03T16:49:08.813Z",
+     "text": "my job-monitor shows chat-server running. but i get no icon in shell for chatter"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T16:49:58.738Z",
+     "text": "Found it: shell/chatter is not in your include list (relay-state/include.json). process/js/chatClerver is, so the server runs; a shell app not listed is not offered (slim/G1.3).\n- The switch is your node's loopback verb config.setModules {path: 'shell/chatter', on: true}; it works live, then reload the page.\n- A gap: no app in the shell calls config.setModules today, so there is no button for it.\nShall I switch shell/chatter on for you?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-03T16:53:22.107Z",
+     "text": "cw. can you set it up for me, we have no ui for this yet"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T16:53:46.492Z",
+     "text": "Done: config.setModules on your node answered {ok: true, path: shell/chatter, on: true}; include.json lists it. Reload the page and chatter's 💬 should be there."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-03T16:55:14.708Z",
+     "text": "wsl: can you setup my chatClerver and chatter for me ever there?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-03T16:55:44.362Z",
+     "text": "Done on your WSL node (65432): config.setModules switched on process/js/chatClerver and shell/chatter, both {ok: true}; the chatClerver runs and answers peers.search (400). Reload the page for 💬."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-03T16:56:16.862Z",
+     "text": "Correction: the chatClerver runs on your WSL node, but it refused my test ask, and chatter would be refused the same: the server takes only calls with exactly a verb's keys, and chatter sends peers.search and chat.read short (my fault; the red's fake server did not check). The fix is two lines in chatter.js, ready and checked on your node (200), but G4.10/G4.11 are closed so I cannot commit it. Reopen G4.10, or add an item for it?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T16:56:44.000Z",
+     "text": "Confirmed: chatter asks peers.search {text} and chat.read {peer} (chatter.js 66, 235), the verbs take {text, since, before} and {peer, before} (chatClerver.js 249, 300).\n- My fault as much: the red wrote those short shapes into its contract, and its fake server took them.\n- The fix: I make the red's fake server refuse a call whose keys are not exactly the verb's, read from chatClerver.js itself; wsl-claude commits his two lines against it.\nReopen G4.10 for that?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-03T17:17:13.852Z",
+     "text": "what grants does claude-ubuntu need in my chatClerver?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T17:17:39.982Z",
+     "text": "One: chatClerver.line.receive. Your first line to claude-ubuntu grants it by itself (line.write does, G4.6), so nothing by hand.\n- The rest stay yours alone: line.write, chat.read and peers.search are owner-only, never granted.\n- For your lines to reach it, its own node runs a chatClerver; its first line to you grants you there the same way."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-03T17:25:03.722Z",
+     "text": "claude-ubuntu is not getting anything from desk"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-03T17:25:33.268Z",
+     "text": "Most likely the same wall we hit: its deskClient learns the other agents from the desk's lines and refuses to wait, code unblocked, until each is blocked in its own node's book (deskClient.js 251-270, 424). It needs contact.block on its node for wsl-claude's and claude-windows's keys; the refusal names each key. If it gets no refusal at all, the other cause is its key lacking the desk grant on your node."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T17:26:24.614Z",
+     "text": "Your side is right: on your node claude-ubuntu holds desk (as we do) and chatClerver.line.receive, and your book has it accepted, not blocked.\n- Most likely its own side: deskEar's listener refuses (unblocked) until every other agent is blocked on its own node, the rule that stopped me an hour ago.\n- It blocks two keys on spirit-3 with contact.block: claude-windows MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0= and wsl-claude MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ=.\nWhat does its listener answer?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-03T17:32:26.962Z",
+     "text": "his onboarding needs an AGENT_ONBOARDING.md"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T17:32:54.818Z",
+     "text": "Agreed, there is none. What exists: process/js/desk/AGENTS.md (your six rules and how to work in Desk, read each sitting), and AGENT.md for the system.\n- Missing is the setup: an own node and clone, the deskClient server and setDesk, blocking the other agents, the desk grant on your node, the commit hooks, the listener.\n- I would write AGENT_ONBOARDING.md in the repo root, steps only, pointing at AGENTS.md for the rules; claude-ubuntu's run is its first test.\nIt is outside G4: an item under G4, or its own goal?"
     }
    ]
   },
@@ -1737,7 +1816,7 @@
    "go": true,
    "alone": false,
    "star": true,
-   "alert": false,
+   "alert": true,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-03: \"let's add three UI items, once for each pane\". Split from goal/G4.9, which keeps the surface (the three panes, the folding, the bounded window) and blocks on these three.\n- \"A click on a row brings that rows chat into the center/chat pane.\"\n- \"overruled by goal/G4.15: [wsl-claude's line on time and preview] We need to pick and icon/status pair for \"new message(s)\" waiting.\" Then, asked which item: \"4.14?\" (G4.14, the peer pane's status column); and \"the count is not allowed by 4.14\"; and \"🔴 is fine\".\n\nDECIDED\n- A click on a row opens that peer's chat in the centre pane (G4.11's one chat).\n- Starting a chat was decided in the faceless items (his, 2026-10-03: \"discussed in the faceless portion of chatClerver\"): the record begins when the user picks a contact as the target of a line (G4.6, his: \"the initiation of a record, because it begins when a user selects a peer as target for a message.\"); a held contact may be picked, its first line releases it (G4.7); a blocked one is never offered. The pick is over the node's contact.search; the first line makes the peer a row.\n\nWHAT IS KNOWN (peers.search, G4.3)\n- A search box over a list; with nothing typed, every peer with a chat, newest line first; a peer stays listed while its chat exists.\n- peers.search's row carries the unanswered count; the pane does not draw it (G4.14), chatter uses it only to set the mark.\n- No blocked contact is ever offered (G4.7).\n- Names are the contact book's labels, matched to keys by the UI; the server knows keys only (G4.6, G4.8).\n- Folds away to the left by an icon button at its edge, ICON.POINTLEFT open, ICON.POINTRIGHT folded (G4.9).\n\n- No time and no preview in the row (overruled, above).\n- The mark is G4.14's status column: chatter hands the pane [{status: 'none'}, {status: 'unanswered', iconKey: ...}] and marks a peer unanswered while its count is above zero; the number itself is not drawn.\n- Unanswered is drawn as RED_CIRCLE 🔴, already in the kernel's set (kernel.js 1298); not red ❗, a refused line in the chat (G4.11).\nOPEN: none.",
@@ -1863,6 +1942,16 @@
      "by": "claude-windows",
      "at": "2026-10-03T16:42:14.159Z",
      "text": "Review of 4e9a523e: right, chatter 29 of 29; contactSelectorPane, contactLabel, shellElements, iconIndex, streamReconnect green.\n- kernel.js: the ICON object alone (DELIVERED ✓, REFUSED ❗), as your permission allows.\n- contactSelector.js: root.refresh(), so chatter can ask the peer list again.\n- Worth knowing, not a fault: every published line refreshes the peer list, so an arrival (two publishes) asks peers.search twice; cheap at chat sizes.\n- Not seen live yet: your node runs the code from before G4.16, so chatter and the new chatClerver need a restart of your node to show.\nG4.10 and G4.11 are clean from my side. Restart your node when you want to try chatter?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-03T17:09:30.915Z",
+     "text": "Brought back (the desk lets me bring it back, not reopen it). Press Reopen here, and I commit the two-line chatter fix against claude-windows's stricter red."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T17:11:32.539Z",
+     "text": "The stricter red is ready, not committed until you press Reopen: its fake server reads each verb's keys from chatClerver.js and refuses any other. Today's chatter: 4 of 19, red; with wsl-claude's two lines: 29 of 29."
     }
    ]
   },
@@ -1870,12 +1959,9 @@
    "id": "goal/G4.11",
    "title": "chatter, the centre pane: the chat",
    "goal": "goal/G4",
-   "status": "done",
+   "status": "closed",
    "with": "",
-   "buttons": [
-    "close",
-    "reopen"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G4.9"
    ],
@@ -2399,6 +2485,16 @@
      "by": "claude-windows",
      "at": "2026-10-03T16:42:54.073Z",
      "text": "commit ac51e1f72cedcc65cb2073e0287f7736b86b5afb: goal/G4.11: the red tightened — a reply's late quote fill is checked with the reply not current. wsl-claude's mutation of 4e9a523e (no repaint of the replies a new line answers) passed, because the re\n- spirit/test/chatter.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T16:43:14.929Z",
+     "text": "Red tightened for wsl-claude's missed mutation, ac51e1f7: the late quote fill is now checked with the reply not current. Today's build 29 of 29; the mutation caught.\n- spirit/test/chatter.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-03T16:43:17.797Z",
+     "text": "Checked ac51e1f7: the build passes it, 29 of 29, and the late-quote mutation is now caught (28 of 29). All fifteen caught."
     }
    ]
   },
@@ -3325,6 +3421,31 @@
      "text": "Confirmed, my miss: capacityFresh reads the git history, so my harness run before the commit showed it green; red now on my box too. The re-measure is the fix that belongs to this build; with your yes I run mine (ubuntu-24.04-wsl2) under G4.16."
     }
    ]
+  },
+  {
+   "id": "goal/G4.17",
+   "title": "AGENT_ONBOARDING.md: what a new agent pulls from git to join Desk",
+   "goal": "goal/G4",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G4"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "star": false,
+   "alert": false,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   }
  ]
 }
