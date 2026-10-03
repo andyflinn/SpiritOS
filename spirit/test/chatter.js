@@ -326,6 +326,10 @@ async function main() {
   if (order(app) === '0:1,1:1,0:2,1:2,1:3,0:4' && current(app).join() === '0:4') test.check('a line that arrives is placed by its time and becomes the current line');
   else test.fail(OWED11 + 'after an arrival: lines ' + JSON.stringify(order(app)) + ', current ' + JSON.stringify(current(app)));
   const replyBefore = m(0, 4);
+  // The reply is not the current line when its answered line arrives, so a repaint of the old current line cannot
+  // fill its quote by accident (wsl-claude's mutation, 4e9a523e).
+  const elsewhere = lineFor(app, 0, 1)[0];
+  if (elsewhere) { fire(elsewhere, 'click'); await settled(); }
   app.publish({ line: Object.assign({ peer: PEER }, line({ sent: 0, seq: 3, at: T(6), text: 'the question it answers' })) });
   await settled();
   if (order(app) === '0:1,1:1,0:2,1:2,1:3,0:3,0:4' && m(0, 4).indexOf('the question it answers') !== -1 && replyBefore.indexOf('the question it answers') === -1) test.check('a reply that came first gets its quote once the answered line arrives, placed before it by time');
