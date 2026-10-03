@@ -100,10 +100,13 @@
 
     if (editable) root.addEventListener('click', open);
 
-    // Both modes listen. A label no longer on any page lets go of document
-    // the first time a rename reaches it.
+    // Both modes listen. A label that was on a page and has left it lets go
+    // of document the first time a rename reaches it; one made but not yet
+    // placed (a row before its list is appended) keeps listening.
+    var placed = false;
     function onRename(event) {
-      if (root.isConnected === false) {
+      if (root.isConnected === true) placed = true;
+      else if (root.isConnected === false && placed) {
         document.removeEventListener('contact.rename', onRename);
         return;
       }
