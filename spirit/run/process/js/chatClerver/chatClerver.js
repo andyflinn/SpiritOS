@@ -66,22 +66,55 @@ db.exec(
 // Its own node, as the node named it at start: the contact book and the grants are asked there, on the loopback.
 let NODE_URL = '';
 try { NODE_URL = new URL(String(process.env.SPIRIT_CALLBACK_URL || '')).origin; } catch (e) { NODE_URL = ''; }
+// This node's own key, as the node handed it over (--node): a re naming it names a line written here.
+let SELF_KEY = '';
+try { SELF_KEY = String(JSON.parse(arg('--node') || '{}').publicKey || ''); } catch (e) { SELF_KEY = ''; }
 // A peer's answer is waited for as long as the desk's agents wait for theirs; a busy relay is retried by the node.
 const PATIENCE_MS = 60000;
 const WAIT_MS = PATIENCE_MS + 30000;
+// THE OWNER IS ANSWERED IN TIME (goal/G4.2, D1): the node gives a server 12 s (appClient.js DOOR_WAIT_MS), so a
+// write answers by 10 s at the latest; a peer still silent then leaves the line pending, and the post goes on.
+const ANSWER_BY_MS = 10000;
+// A chat read fills half an answer, as chat.search does: an agent's deskClient-like wrapper may pack it once more.
+const READ_ROOM = Math.floor((appClient.ANSWER_MAX - 512) / 2);
 
 function refused(code) { const e = new Error(code); e.refusal = code; return e; }
 function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
+// One ask of this node: {status, body}, or {status: 0} when the node did not answer at all.
 function askNode(verb, args) {
-  return kernel.core.ask(verb, args, NODE_URL).then(function (r) { return r || {}; }, function () { return {}; });
+  return kernel.core.ask(verb, args, NODE_URL).then(function (r) { return r || { status: 0 }; }, function () { return { status: 0 }; });
 }
 
 const getPeer = db.prepare('SELECT peer, highestSent, highestReceived, bornAt FROM peers WHERE peer = ?');
 const addPeer = db.prepare('INSERT INTO peers (peer, highestSent, highestReceived, bornAt) VALUES (?, 0, 0, ?)');
 const setSent = db.prepare('UPDATE peers SET highestSent = ? WHERE peer = ?');
-const addLine = db.prepare('INSERT INTO lines (peer, sent, seq, at, text, receivedAt, reWriter, reSeq, refused, refusedAt) VALUES (?, 1, ?, ?, ?, \'\', ?, ?, \'\', \'\')');
+const setReceived = db.prepare('UPDATE peers SET highestReceived = MAX(highestReceived, ?) WHERE peer = ?');
+const addLine = db.prepare("INSERT INTO lines (peer, sent, seq, at, text, receivedAt, reWriter, reSeq, refused, refusedAt) VALUES (?, 1, ?, ?, ?, '', ?, ?, 'unsent', ?)");
+const takeLine = db.prepare("INSERT INTO lines (peer, sent, seq, at, text, receivedAt, reWriter, reSeq, refused, refusedAt) VALUES (?, 0, ?, ?, ?, ?, ?, ?, '', '') ON CONFLICT (peer, sent, seq) DO NOTHING");
 const markRefused = db.prepare('UPDATE lines SET refused = ?, refusedAt = ? WHERE peer = ? AND sent = 1 AND seq = ?');
-const unrefused = db.prepare("SELECT seq, at, text, reWriter, reSeq FROM lines WHERE peer = ? AND sent = 1 AND refused != '' ORDER BY seq");
+const unsent = db.prepare("SELECT seq, at, text, reWriter, reSeq FROM lines WHERE peer = ? AND sent = 1 AND refused != '' ORDER BY seq");
+const oneLine = db.prepare('SELECT peer, sent, seq, at, text, receivedAt, reWriter, reSeq, refused FROM lines WHERE peer = ? AND sent = ? AND seq = ?');
+const chatLines = db.prepare("SELECT sent, seq, at, text, receivedAt, reWriter, reSeq, refused FROM lines WHERE peer = ? AND (? = '' OR at < ?) ORDER BY at DESC, seq DESC");
+
+// ── THE PUBLISH (goal/G4.2) ──────────────────────────────────────────
+// Every kept line, written or received, and every change of a written line's mark, as {line: {...}}. Andy: "the
+// answered line FIRST, then the received line", "the answered line and the received line must be streamed to the UI
+// separately"; a page places a line by its data, never by its arrival.
+function lineOf(r) {
+  return { peer: r.peer, sent: Number(r.sent), seq: Number(r.seq), at: r.at, text: r.text, receivedAt: r.receivedAt,
+    re: { writer: r.reWriter, seq: Number(r.reSeq) }, refused: r.refused };
+}
+function publishLine(peer, sent, seq, extra) {
+  const r = oneLine.get(peer, sent, seq);
+  if (r) appServer.publish(Object.assign({ line: lineOf(r) }, extra || {}));
+}
+// The line a re names, in this record: the writer's key says which side wrote it (G4.2: "the chatClerver is the one
+// who knows what an incoming message may miss, in terms of what it refers to").
+function answered(peer, re) {
+  if (!re || !re.writer || !re.seq) return null;
+  const sent = re.writer === SELF_KEY ? 1 : re.writer === peer ? 0 : -1;
+  return sent === -1 ? undefined : oneLine.get(peer, sent, re.seq) || undefined;
+}
 
 // One line as it travels: the peer's chatClerver takes it with line.receive (goal/G4.2).
 function bodyOf(l) {
@@ -91,9 +124,38 @@ function bodyOf(l) {
 // contact was attempted (goal/G4.6, Andy: "the writers keeps refusals, they are proof that contact was attempted.").
 function post(to, l) {
   return kernel.peerPost(to, 'api', bodyOf(l), { waitMs: WAIT_MS, patienceMs: PATIENCE_MS }).then(function (got) {
-    if (got && got.kept === true) { markRefused.run('', '', to, l.seq); return 'sent'; }
-    markRefused.run(String((got && (got.code || got.error)) || 'no-answer'), new Date().toISOString(), to, l.seq);
-    return 'refused';
+    if (got && got.kept === true) markRefused.run('', '', to, l.seq);
+    else markRefused.run(String((got && (got.code || got.error)) || 'no-answer'), new Date().toISOString(), to, l.seq);
+    publishLine(to, 1, l.seq);
+    return got && got.kept === true ? 'sent' : 'refused';
+  });
+}
+
+// ── ONE ROUND AT A TIME PER PEER ─────────────────────────────────────
+// The posting rounds of one peer run in order, so lines travel in their order and none is posted twice by rounds
+// that overlap. (Two writes at once take two numbers without a lock: the number is read and the line kept in one
+// synchronous step, after every ask, goal/G4.2 D2.)
+const rounds = Object.create(null);
+function inTurn(map, peer, fn) {
+  const before = map[peer] || Promise.resolve();
+  const mine = before.then(fn, fn);
+  map[peer] = mine.then(function () { return null; }, function () { return null; });
+  return mine;
+}
+// One round: every unsent line of this peer, in order, until one is refused; what became of each, by seq.
+function round(to) {
+  return inTurn(rounds, to, function () {
+    const queue = unsent.all(to).map(function (l) { return { seq: Number(l.seq), at: l.at, text: l.text, reWriter: l.reWriter, reSeq: Number(l.reSeq) }; });
+    const outcome = Object.create(null);
+    function next(i) {
+      if (i >= queue.length) return outcome;
+      return post(to, queue[i]).then(function (o) {
+        outcome[queue[i].seq] = o;
+        if (o !== 'sent') return outcome;
+        return next(i + 1);
+      });
+    }
+    return next(0);
   });
 }
 
@@ -127,16 +189,16 @@ function peerRows(a) {
 }
 
 appServer.serve({
-  // THE OWNER WRITES A LINE TO A PEER (goal/G4.6, G4.7). Decided in Desk, not this file's to undo:
+  // THE OWNER WRITES A LINE TO A PEER (goal/G4.6, G4.7, made sound by G4.2). Decided in Desk, not this file's to undo:
   //   - A peer is named by its key; the chatClerver matches no label (Andy: "matching labels to keys is the UI's
   //     problem").
   //   - The node's block is the one truth and outranks: a blocked key is refused peer-blocked, nothing granted or
-  //     posted ("a node-level-block supersedes app level blocks").
+  //     posted ("a node-level-block supersedes app level blocks"). A node that cannot say refuses the write too.
   //   - A held key is released by the owner's first line to it, no are-you-sure (Andy: "release happens when the
   //     users sends a message to a held contact", "i prefer no are-you-sure.").
   //   - A line to K is also the grant to K to answer ("writing to a peer should automatically be a grant to accept
-  //     an answer"), asked of this node before the line leaves.
-  //   - Refused lines stay in the record and go again, in their order, before the next new one.
+  //     an answer"), asked of this node before the line leaves; a grant not kept refuses the write.
+  //   - Refused and unsent lines stay in the record and go again, in their order, before the next new one.
   //   - One line, one packet: a line too large to travel is refused before anything is kept or posted.
   'line.write': {
     request: { to: '', text: '', re: { writer: '', seq: 0 } }, reply: { seq: 0, outcome: '' },
@@ -145,38 +207,38 @@ appServer.serve({
       const to = String(a.to);
       if (!to) throw refused('bad-request');
       const re = { writer: String((a.re && a.re.writer) || ''), seq: Number((a.re && a.re.seq) || 0) };
-      const at = new Date().toISOString();
-      const row = getPeer.get(to);
-      const seq = (row ? Number(row.highestSent) : 0) + 1;
-      const line = { seq: seq, at: at, text: String(a.text), reWriter: re.writer, reSeq: re.seq };
-      const made = packet.encode('api', bodyOf(line));
+      const text = String(a.text);
+      // Measured before anything is asked, with the largest number this line could carry.
+      const made = packet.encode('api', bodyOf({ seq: Number.MAX_SAFE_INTEGER, at: new Date().toISOString(), text: text, reWriter: re.writer, reSeq: re.seq }));
       if (!made || !made.ok || !limits.fitsSealed(made.text)) throw refused('line-too-large');
       return askNode('contact.get', { key: to }).then(function (r) {
-        const person = r.body && r.body.person;
-        if (person && person.blocked === true) throw refused('peer-blocked');
-        return person && person.held === true ? askNode('contact.accept', { publicKey: to }) : null;
+        // A key the book never saw is nobody's block; a book that does not answer cannot vouch for one.
+        if (r.status === 404) return null;
+        const person = r.status === 200 && r.body && r.body.person;
+        if (!person) throw refused('no-answer');
+        if (person.blocked === true) throw refused('peer-blocked');
+        if (person.held !== true) return null;
+        return askNode('contact.accept', { publicKey: to }).then(function (x) { if (x.status !== 200) throw refused('no-answer'); });
       }).then(function () {
         return askNode('jobs.authGrant', { key: to, path: 'chatClerver.line.receive' });
-      }).then(function () {
-        // The record first: what was written is kept before it travels, so a crash loses nothing.
+      }).then(function (g) {
+        const already = g.status === 409 && g.body && g.body.code === 'already-granted';
+        if (g.status !== 200 && !already) throw refused('store-unavailable');
+        // The record first: what was written is kept before it travels, so a crash loses nothing. Marked unsent
+        // until the peer keeps it: a line lost in flight or to a crash goes again like a refused one.
+        const at = new Date().toISOString();
+        const row = getPeer.get(to);
+        const seq = (row ? Number(row.highestSent) : 0) + 1;
         if (!row) addPeer.run(to, at);
-        addLine.run(to, seq, at, line.text, re.writer, re.seq);
-        // Marked unsent until the peer keeps it: a line lost in flight or to a crash goes again like a refused one.
-        markRefused.run('unsent', at, to, seq);
+        addLine.run(to, seq, at, text, re.writer, re.seq, at);
         setSent.run(seq, to);
-        // Earlier refused lines go again first, in their order, each with its own seq and at.
-        const queue = unrefused.all(to).map(function (l) { return { seq: Number(l.seq), at: l.at, text: l.text, reWriter: l.reWriter, reSeq: Number(l.reSeq) }; });
-        let outcome = 'refused';
-        function next(i) {
-          if (i >= queue.length) return { seq: seq, outcome: outcome };
-          return post(to, queue[i]).then(function (o) {
-            if (queue[i].seq === seq) outcome = o;
-            // A refusal stops the round: the rest wait for the next line, in order.
-            if (o !== 'sent') return { seq: seq, outcome: queue[i].seq === seq ? o : 'refused' };
-            return next(i + 1);
-          });
-        }
-        return next(0);
+        publishLine(to, 1, seq);
+        return seq;
+      }).then(function (seq) {
+        const done = round(to).then(function (outcome) { return { seq: seq, outcome: outcome[seq] || 'refused' }; });
+        let timer = null;
+        const late = new Promise(function (resolve) { timer = setTimeout(function () { resolve({ seq: seq, outcome: 'pending' }); }, ANSWER_BY_MS); });
+        return Promise.race([done, late]).finally(function () { clearTimeout(timer); });
       });
     },
   },
@@ -206,6 +268,50 @@ appServer.serve({
         });
       }
       return offerRow(0).then(function () { const res = bucket.getResult(); return { items: res.items, more: res.more }; });
+    },
+  },
+  // A PEER'S LINE ARRIVES (goal/G4.2). The writer is the caller's key, proven by the sealed packet; the door let it
+  // in only under the grant this node gave (G4.6). Kept once, as received; the same line again is answered kept.
+  'line.receive': {
+    request: { seq: 0, at: '', text: '', re: { writer: '', seq: 0 } }, reply: { kept: true },
+    handler: function (a, caller) {
+      const peer = caller && caller.key ? String(caller.key) : '';
+      if (!peer) throw refused('not-granted');
+      const seq = Number(a.seq);
+      if (!(seq > 0)) throw refused('bad-request');
+      const re = { writer: String((a.re && a.re.writer) || ''), seq: Number((a.re && a.re.seq) || 0) };
+      const receivedAt = new Date().toISOString();
+      if (!getPeer.get(peer)) addPeer.run(peer, receivedAt);
+      const fresh = takeLine.run(peer, seq, String(a.at), String(a.text), receivedAt, re.writer, re.seq).changes > 0;
+      setReceived.run(seq, peer);
+      if (fresh) {
+        // The answered line first, then the received one; a re this record lacks is said, by writer and seq.
+        const ans = answered(peer, re);
+        if (ans) publishLine(peer, Number(ans.sent), Number(ans.seq));
+        publishLine(peer, 0, seq, ans === undefined ? { missing: re } : null);
+      }
+      return { kept: true };
+    },
+  },
+  // ONE CHAT, READ (goal/G4.2): the owner's alone; both ways, newest first by the writer's time; one bounded
+  // answer, cut with more, older lines by before. No paging (Andy: "keep the paging back in the chat window out of
+  // this level of design").
+  'chat.read': {
+    request: { peer: '', before: '' }, reply: { items: [{ key: '', label: '' }], more: false },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      const before = String(a.before || '');
+      const bucket = searchBucket.createSearch({
+        query: '**', maxBytes: READ_ROOM,
+        getLabelStringFromIncomingObject: function (pair) { return pair.label; },
+        extractKeyAndLabelFromRow: function (pair) { return pair; },
+      });
+      for (const r of chatLines.iterate(String(a.peer), before, before)) {
+        const l = { sent: Number(r.sent), seq: Number(r.seq), at: r.at, text: r.text, receivedAt: r.receivedAt, re: { writer: r.reWriter, seq: Number(r.reSeq) }, refused: r.refused };
+        if (!bucket.offer({ key: l.sent + ':' + l.seq, label: JSON.stringify(l) })) break;
+      }
+      const out = bucket.getResult();
+      return { items: out.items, more: out.more };
     },
   },
 });
