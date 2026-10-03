@@ -453,6 +453,15 @@ async function main() {
     else test.fail(OWED10 + 'lines ' + JSON.stringify(order5) + '; the adjacent reply shows ' + JSON.stringify(adj && shown(adj)).slice(0, 120));
     if (/the question it answers/.test(m(0, 4))) test.check('and a reply further from its line keeps its quote');
     else test.fail(OWED10 + 'the reply 0:4 lost its quote: ' + JSON.stringify(m(0, 4)).slice(0, 120));
+    // A line landing between them brings the quote back (wsl-claude's mutation of 3e957722: dropping that redraw passed).
+    // The reply is made not current first, so the arrival's repaint of the old current line cannot do it by accident.
+    const away = lineFor(app, 0, 1)[0];
+    if (away) { fire(away, 'click'); await settled(); }
+    app.publish({ line: Object.assign({ peer: PEER }, line({ sent: 0, seq: 6, at: '2026-10-03T10:08:30.000Z', text: 'squeezed in between' })) });
+    await settled();
+    const back5 = lineFor(app, 0, 5)[0];
+    if (/,1:4,0:6,0:5$/.test(order(app)) && back5 && /my reply/.test(shown(back5))) test.check('a line landing between a reply and its line brings the quote back');
+    else test.fail(OWED10 + 'lines ' + JSON.stringify(order(app)) + '; the reply 0:5 shows ' + JSON.stringify(back5 && shown(back5)).slice(0, 120));
   }
 
   test.subHeading('G4.11 C7: older lines by before, on a scroll to the top');
