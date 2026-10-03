@@ -29,6 +29,8 @@
 //        when it is not empty and js/fieldRules.js (window.spiritFieldRules) passes it; a refused name is not asked
 //        and the rule's reason is shown; empty is not asked.
 //      - Both modes listen: a contact.rename for its key redraws it with the new caption; another key's leaves it.
+//   4. (goal/G4.10) NO KEY FLASHES: a label not yet answered shows no key; a name once known is kept for the page, so
+//      a new label for that key shows it at once with no second contact.get; a rename updates what a new label shows.
 // NOT ASSERTED, the builder's: the markup and classes, the style it takes from its container, how the input closes.
 
 const fs = require('fs');
@@ -43,6 +45,7 @@ const packet = require('../run/js/client/packet');
 
 const RUN = path.join(__dirname, '..', 'run');
 const OWED = 'owed by goal/G4.13: ';
+const OWED10 = 'owed by goal/G4.10: ';
 const ELEMENT = path.join(RUN, 'shell', 'js', 'contactLabel.js');
 const KERNEL = path.join(RUN, 'js', 'kernel.js');
 const SHELL = path.join(RUN, 'js', 'client', 'shell.js');
@@ -306,6 +309,30 @@ async function theElement() {
   else test.fail(OWED + 'after contact.rename the labels show ' + JSON.stringify([shown(a), shown(b)]).slice(0, 160));
   if (/Olga/.test(shown(c)) && !/Renamed/.test(shown(c))) test.check('and another key\'s label is left as it was');
   else test.fail(OWED + 'another key\'s label shows ' + JSON.stringify(shown(c)).slice(0, 120));
+
+  // goal/G4.10, Andy, 2026-10-03, trying chatter: "the pane and dropdown seem to still initialize with keys. this makes
+  // the keys flashing briefly every time an update occurs". Every redraw makes new labels, and each showed its key
+  // until contact.get answered.
+  test.subHeading('4. (goal/G4.10) no key flashes: a name once known is shown at once');
+  const m2 = mountElement();
+  const THIRD = 'MCowBQYDK2VwAyEAthirdthirdthirdthirdthirdthirdthird=';
+  const first = m2.make({ key: THIRD, editable: false });
+  const beforeAnswer = shown(first);
+  if (beforeAnswer.indexOf(THIRD) === -1) test.check('a label not yet answered shows no key');
+  else test.fail(OWED10 + 'before contact.get answered the label shows ' + JSON.stringify(beforeAnswer).slice(0, 120));
+  await settle();
+  const asksBefore = m2.asked.filter(function (x) { return x.verb === 'contact.get' && x.body.key === THIRD; }).length;
+  const second = m2.make({ key: THIRD, editable: false });
+  const atOnce = shown(second);
+  await settle();
+  const asksAfter = m2.asked.filter(function (x) { return x.verb === 'contact.get' && x.body.key === THIRD; }).length;
+  if (/Fetched Name/.test(atOnce) && atOnce.indexOf(THIRD) === -1 && asksAfter === asksBefore) test.check('a second label for a known key shows its name at once, with no second contact.get');
+  else test.fail(OWED10 + 'a second label shows ' + JSON.stringify(atOnce).slice(0, 120) + ' at once, and asked contact.get ' + (asksAfter - asksBefore) + ' more times');
+  m2.doc.dispatchEvent(new CustomEvent('contact.rename', { detail: { key: THIRD, caption: 'Third Renamed' } }));
+  await settle();
+  const third = m2.make({ key: THIRD, editable: false });
+  if (/Third Renamed/.test(shown(third))) test.check('and a rename updates the name a new label shows');
+  else test.fail(OWED10 + 'after a rename a new label shows ' + JSON.stringify(shown(third)).slice(0, 120));
 }
 
 async function main() {
