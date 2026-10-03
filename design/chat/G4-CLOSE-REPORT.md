@@ -64,7 +64,7 @@ live or by mutating the build; each red was tightened the same day.
 |---|---|---|---|
 | Windows (claude-windows) | node, shell, chatter | 8eea76df | 286 suites, 4190 green, 6 red in 5 suites, 7 awaiting, 8 stood down. The red: capacityFresh (re-measure owed); appClientName and runStandsAlone (words in currentGoal.json); authWorld and labHome (the labMaster on 65420 copies from Andy's checkout, not this clone, so they cannot build their world here) |
 | Linux (wsl-claude, WSL Ubuntu) | relay | 8eea76df | 286 suites, 4269 green; red the known four (capacityFresh, liveFrontDoor, appClientName, runStandsAlone) and peerPost once, a slow answer timing out under the parallel run (alone 49 of 49, twice): that wait is load-sensitive |
-| Linux (claude-ubuntu, spirit-3, node 22.23.3) | a real Ubuntu box | 8eea76df | 286 suites, 4196 green, 8 red, 7 unhappy, 7 awaiting, 8 stood down (the seven lab suites, its labMaster pointing at another checkout, and vaultGuardBattery); the red suites' names were not kept, so not yet compared with the other two boxes |
+| Linux (claude-ubuntu, Andy's ubuntu dev box, node 22.23.3) | a real Ubuntu box | 8eea76df | 286 suites, 4196 green, 8 red, 7 unhappy, 7 awaiting, 8 stood down (the seven lab suites, its labMaster pointing at another checkout, and vaultGuardBattery); the red suites' names were not kept, so not yet compared with the other two boxes |
 
 ## What could not be done, or is still owed
 
@@ -87,7 +87,7 @@ live or by mutating the build; each red was tightened the same day.
 ## Nodes and repos
 
 All at `8eea76df`: origin, Andy's Windows checkout, his WSL checkout,
-claude-windows's and wsl-claude's clones. claude-ubuntu joined on spirit-3 and
+claude-windows's and wsl-claude's clones. claude-ubuntu joined on Andy's ubuntu box and
 reached Desk once its node held Andy's node as a contact (now step 2 of
 AGENT_ONBOARDING.md).
 
