@@ -72,7 +72,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const http = require('http');
-const { spawn, spawnSync } = require('child_process');
+const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 const kernel = require('../run/js/kernel.js');
 const appClient = require('../run/js/appClient.js');
@@ -265,13 +265,27 @@ const row = function (o) { return Object.assign({ goal: 'r/G1', status: '', with
 const hasClose = function (html, id) { return new RegExp('data-press="close" data-id="' + id.replace(/[/.]/g, '\\$&') + '"').test(html); };
 
 // ── E. git, in a clone of the suite's own ──────────────────────────────────
-function git(cwd, args) {
-  return spawnSync('git', ['-c', 'user.name=andy', '-c', 'user.email=andy@example.invalid', '-c', 'commit.gpgsign=false'].concat(args), { cwd: cwd, encoding: 'utf8', timeout: 60000 });
+// Asynchronous, awaited (wsl-claude's review of the first red): the pretend node lives in this process, and a hook's
+// ask of it can only be answered while this process is free to answer.
+function run(cmd, args, cwd) {
+  return new Promise(function (resolve) {
+    const kid = spawn(cmd, args, { cwd: cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+    let out = '';
+    let err = '';
+    kid.stdout.on('data', function (c) { out += c; });
+    kid.stderr.on('data', function (c) { err += c; });
+    const timer = setTimeout(function () { try { kid.kill(); } catch (e) { /* gone */ } }, 60000);
+    kid.on('error', function (e) { clearTimeout(timer); resolve({ status: -1, stdout: out, stderr: String(e && e.message) }); });
+    kid.on('exit', function (code) { clearTimeout(timer); resolve({ status: code, stdout: out, stderr: err }); });
+  });
 }
-function commits(cwd) { const r = git(cwd, ['rev-list', '--count', 'HEAD']); return r.status === 0 ? Number(r.stdout.trim()) : 0; }
-function commitWith(cwd, file, text, message) {
+function git(cwd, args) {
+  return run('git', ['-c', 'user.name=andy', '-c', 'user.email=andy@example.invalid', '-c', 'commit.gpgsign=false'].concat(args), cwd);
+}
+async function commits(cwd) { const r = await git(cwd, ['rev-list', '--count', 'HEAD']); return r.status === 0 ? Number(r.stdout.trim()) : 0; }
+async function commitWith(cwd, file, text, message) {
   fs.writeFileSync(path.join(cwd, file), text);
-  git(cwd, ['add', file]);
+  await git(cwd, ['add', file]);
   return git(cwd, ['commit', '-m', message]);
 }
 
@@ -390,34 +404,37 @@ async function main() {
   test.subHeading('E. rules 3 and 4 at the commit: refused without an item with his Go; recorded under it with its files');
   const repo = path.join(scratch, 'clone');
   fs.mkdirSync(repo);
-  git(repo, ['init', '-q']);
-  const install = fs.existsSync(CHECK) ? spawnSync(process.execPath, [CHECK, 'install', String(node.address().port)], { cwd: repo, encoding: 'utf8', timeout: 30000 }) : { status: -1, stdout: '', stderr: 'no process/js/desk/commitCheck.js' };
+  await git(repo, ['init', '-q']);
+  const install = fs.existsSync(CHECK) ? await run(process.execPath, [CHECK, 'install', String(node.address().port)], repo) : { status: -1, stdout: '', stderr: 'no process/js/desk/commitCheck.js' };
   if (install.status === 0) test.check('E: `node commitCheck.js install <port>` in the clone exits 0');
   else test.fail(OWED + 'E: install answered ' + install.status + ' ' + String(install.stderr || install.stdout).trim().slice(0, 160));
-  const noItem = commitWith(repo, 'a.txt', 'a', 'names no item at all');
-  const notGone = commitWith(repo, 'b.txt', 'b', 'r/G1.2: an item he never pressed Go on');
-  const n0 = commits(repo);
+  const noItem = await commitWith(repo, 'a.txt', 'a', 'names no item at all');
+  const notGone = await commitWith(repo, 'b.txt', 'b', 'r/G1.2: an item he never pressed Go on');
+  const n0 = await commits(repo);
   if (install.status === 0 && noItem.status !== 0 && notGone.status !== 0 && n0 === 0) test.check('E1: a commit naming no item, or an item without his Go, is refused and nothing is committed');
   else test.fail(OWED + 'E1: no item -> ' + noItem.status + ', item without Go -> ' + notGone.status + ', commits on record: ' + n0);
-  const taken = commitWith(repo, 'c.txt', 'c', 'r/G1.1: taken, he pressed Go');
-  const hash = git(repo, ['rev-parse', 'HEAD']).stdout.trim();
+  const taken = await commitWith(repo, 'c.txt', 'c', 'r/G1.1: taken, he pressed Go');
+  const hash = (await git(repo, ['rev-parse', 'HEAD'])).stdout.trim();
+  const n1 = await commits(repo);
   await sleep(1500);
   const lines = (await chatOf('r/G1.1')).filter(function (c) { return c.by !== 'andy' && c.by !== 'desk'; });
   const line = lines.filter(function (c) { return hash && c.text.indexOf(hash.slice(0, 7)) !== -1; })[0];
   const bullets = line ? line.text.split('\n').filter(function (x) { return /^- /.test(x.trim()); }).map(function (x) { return x.trim().slice(2).trim(); }) : [];
-  if (taken.status === 0 && commits(repo) === 1 && line && bullets.length === 1 && bullets[0] === 'c.txt') test.check('E2: a commit naming an item with his Go is taken and written under it: ' + hash.slice(0, 7) + ' with "- c.txt"');
-  else test.fail(OWED + 'E2: commit -> ' + taken.status + ' ' + String(taken.stderr).trim().slice(0, 120) + '; commits: ' + commits(repo) + '; line under r/G1.1: ' + JSON.stringify(line || lines.map(function (c) { return c.text; })).slice(0, 200));
+  if (taken.status === 0 && n1 === 1 && line && bullets.length === 1 && bullets[0] === 'c.txt') test.check('E2: a commit naming an item with his Go is taken and written under it: ' + hash.slice(0, 7) + ' with "- c.txt"');
+  else test.fail(OWED + 'E2: commit -> ' + taken.status + ' ' + String(taken.stderr).trim().slice(0, 120) + '; commits: ' + n1 + '; line under r/G1.1: ' + JSON.stringify(line || lines.map(function (c) { return c.text; })).slice(0, 200));
   const viaClient = asked.filter(function (a) { return a.verb === 'jobs.api' && a.body.ask && a.body.ask.deskClient; }).length;
   if (viaClient > 0) test.check('E2: the check asked through this agent\'s own deskClient (' + viaClient + ' jobs.api asks), so it is counted');
   else test.fail(OWED + 'E2: no jobs.api ask of deskClient came from the check');
   await desk('press', { id: 'r/G1.1', what: 'done' }, ANDY);
-  const isDone = commitWith(repo, 'd.txt', 'd', 'r/G1.1: done already');
-  if (isDone.status !== 0 && commits(repo) === 1) test.check('E1: a commit naming a done item is refused');
-  else test.fail(OWED + 'E1: after his Done a commit naming r/G1.1 -> ' + isDone.status + ', commits: ' + commits(repo));
-  const dark = spawnSync(process.execPath, [CHECK, 'install', '1'], { cwd: repo, encoding: 'utf8', timeout: 30000 });
-  const unreachable = fs.existsSync(CHECK) && dark.status === 0 ? commitWith(repo, 'e.txt', 'e', 'r/G1.3: the node is down') : { status: 0 };
-  if (unreachable.status !== 0 && commits(repo) === 1) test.check('E3: with the node unreachable the commit is refused, not waved through');
-  else test.fail(OWED + 'E3: with no node on port 1 the commit -> ' + unreachable.status + ', commits: ' + commits(repo));
+  const isDone = await commitWith(repo, 'd.txt', 'd', 'r/G1.1: done already');
+  const n2 = await commits(repo);
+  if (isDone.status !== 0 && n2 === 1) test.check('E1: a commit naming a done item is refused');
+  else test.fail(OWED + 'E1: after his Done a commit naming r/G1.1 -> ' + isDone.status + ', commits: ' + n2);
+  const dark = fs.existsSync(CHECK) ? await run(process.execPath, [CHECK, 'install', '1'], repo) : { status: -1 };
+  const unreachable = dark.status === 0 ? await commitWith(repo, 'e.txt', 'e', 'r/G1.3: the node is down') : { status: 0 };
+  const n3 = await commits(repo);
+  if (unreachable.status !== 0 && n3 === 1) test.check('E3: with the node unreachable the commit is refused, not waved through');
+  else test.fail(OWED + 'E3: with no node on port 1 the commit -> ' + unreachable.status + ', commits: ' + n3);
 }
 
 main().catch(function (e) { test.fail('the run broke: ' + (e && e.stack || e)); }).then(function () {
