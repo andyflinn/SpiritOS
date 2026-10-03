@@ -94,7 +94,7 @@
 
     function paintField() {
       if (!field) return;
-      var label = root.row ? (root.row.label || root.row.key) : (options.placeholder || 'choose a contact…');
+      var label = root.row ? ((typeof root.row.label === 'string' && root.row.label) || root.row.key) : (options.placeholder || 'choose a contact…');
       field.innerHTML = '<span class="contact-selector-name">' + escapeHtml(label) + '</span>' +
         '<span class="contact-selector-caret">▾</span>';
     }
@@ -128,13 +128,16 @@
         status.className = 'contact-selector-status';
         status.textContent = glyphFor(r.key);
         row.appendChild(status);
+        // Only a string is a name: chatter's peers.search hands a whole
+        // row as label, which is the caller's to mark, not to show.
+        var caption = typeof r.label === 'string' && r.label ? r.label : undefined;
         var make = window.spiritElements && window.spiritElements.createContactLabel;
         if (typeof make === 'function') {
-          row.appendChild(make({ key: r.key, label: r.label }));
+          row.appendChild(make({ key: r.key, caption: caption }));
         } else {
           var name = document.createElement('span');
           name.className = 'contact-selector-label';
-          name.textContent = r.label || r.key;
+          name.textContent = caption || r.key;
           row.appendChild(name);
         }
         // On the row itself, so a click anywhere inside it, the label
