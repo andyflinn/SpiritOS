@@ -60,6 +60,11 @@
 //     P9. The pane's search matches the names shown, not keys (Andy: "the search on top or the pane seem to search
 //         keys instead of labels..."): typed text finds a peer by its name in the node's book (contact.search), and
 //         only peers with a chat are listed.
+//     P10. Reading resets the count (Andy: "it's the fact that they're now reading that should reset the counter, and
+//         make the hourglass disappear"): opening a chat takes its ⌛ away and shows its count in the centre pane's
+//         title bar ("Andy: 35 new messages"); chatter keeps per peer the newest line shown, through api.fs in
+//         shell/chatter, so the next mount draws no ⌛ for it; a newer line of theirs brings ⌛ back. A line written
+//         in that chat drops the count from the title bar (Andy: "as soon as andy responds, drop the count").
 //     P8. Two visible boundaries, data-divider left and right (NAMED), dragged by pointer events to resize; the
 //         widths kept in the same api.fs file as the look, and drawn again on the next mount.
 // NOT ASSERTED, the builder's: markup and classes beyond the names above, the bubbles' look, the fold buttons and the
@@ -229,7 +234,7 @@ function mount(opts) {
     asked.push({ via: 'clerver', verb: verb, body: a || {} });
     if (verb === 'peers.search') {
       const rows = [
-        { key: PEER, label: JSON.stringify({ peer: PEER, at: T(5), sent: 1, seq: 3, unanswered: 2 }) },
+        { key: PEER, label: JSON.stringify(Object.assign({ peer: PEER, at: T(5), sent: 1, seq: 3, unanswered: 2 }, opts.peerRow || {})) },
         { key: QUIET, label: JSON.stringify({ peer: QUIET, at: T(0), sent: 1, seq: 1, unanswered: 0 }) },
       ].concat(opts.extraPeers || []);
       // As the real one does: text is found in the key, nowhere else (chatClerver.js peers.search, G4.3). A fake that
@@ -609,6 +614,41 @@ async function main() {
     if (app5.asked.every(function (a) { return a.via !== 'refused'; })) test.check('and every ask of the chatClerver carried its exact keys');
     else test.fail(OWED10 + 'refused asks: ' + JSON.stringify(app5.asked.filter(function (a) { return a.via === 'refused'; })).slice(0, 200));
   } else test.fail(OWED10 + 'the pane has no search box');
+
+  test.subHeading('G4.10 P10: reading resets the count; the count in the title bar');
+  const app6 = mount();
+  await settled();
+  const p6 = pane(app6);
+  const row6 = function (app, k) { const pp = pane(app); const r = pp && rowFor(pp.root, k); return r ? shown(r) : ''; };
+  const peer6 = p6 && rowFor(p6.root, PEER);
+  const hadWaiting = row6(app6, PEER).indexOf(ICON.WAITING) !== -1;
+  if (peer6) fire(peer6, 'click');
+  await settled();
+  if (hadWaiting && row6(app6, PEER).indexOf(ICON.WAITING) === -1) test.check('opening Pete\'s chat takes his ⌛ away');
+  else test.fail(OWED10 + 'Pete\'s row before opening had ⌛ ' + hadWaiting + ', after opening shows ' + JSON.stringify(row6(app6, PEER)).slice(0, 100));
+  const outsideRows = all(app6.container).filter(function (n) { return !(p6 && p6.root.contains(n)); });
+  if (outsideRows.some(function (n) { return /\b2 new messages\b/.test((n.textContent || '') + ' ' + (n.innerHTML || '')); })) test.check('the title bar shows "2 new messages" beside the name');
+  else test.fail(OWED10 + 'no "2 new messages" in the centre pane');
+  // Andy: "and as soon as andy responds, drop the count, and hide the hourglass".
+  const box6 = textarea(app6);
+  if (box6) { box6.value = 'my answer'; fire(box6, 'keydown', { key: 'Enter' }); await settled(); }
+  const still = all(app6.container).filter(function (n) { return !(p6 && p6.root.contains(n)); }).some(function (n) { return /new messages/.test((n.textContent || '') + ' ' + (n.innerHTML || '')); });
+  if (box6 && !still && row6(app6, PEER).indexOf(ICON.WAITING) === -1) test.check('a line written in that chat drops the count from the title bar, and ⌛ stays hidden');
+  else test.fail(OWED10 + 'after writing a line: the count still shown ' + still + ', ⌛ ' + (row6(app6, PEER).indexOf(ICON.WAITING) !== -1));
+  const seenIn = Object.keys(app6.saved).filter(function (k) { return app6.saved[k].indexOf(PEER) !== -1; })[0];
+  if (seenIn) test.check('the reset is kept through api.fs (' + seenIn + ')');
+  else test.fail(OWED10 + 'nothing kept for Pete: ' + JSON.stringify(app6.saved).slice(0, 160));
+  if (seenIn) {
+    const files6 = {}; files6[seenIn] = app6.saved[seenIn];
+    const app7 = mount({ files: files6 });
+    await settled();
+    if (row6(app7, PEER).indexOf(ICON.WAITING) === -1) test.check('the next mount draws no ⌛ for a chat read since its last line');
+    else test.fail(OWED10 + 'after a reload Pete shows ' + JSON.stringify(row6(app7, PEER)).slice(0, 100));
+    const app8 = mount({ files: files6, peerRow: { at: T(30), sent: 0, seq: 9, unanswered: 3 } });
+    await settled();
+    if (row6(app8, PEER).indexOf(ICON.WAITING) !== -1) test.check('a newer line of his brings ⌛ back');
+    else test.fail(OWED10 + 'with a newer line Pete shows ' + JSON.stringify(row6(app8, PEER)).slice(0, 100));
+  }
 }
 
 main().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {

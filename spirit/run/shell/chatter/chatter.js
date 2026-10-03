@@ -537,13 +537,19 @@ spirit.shell.activateApp({
         }
         var table = found && found.data && found.data.presence;
         if (!table || !chPane) return;
+        // Both lists show the same dots: the peer pane and the new-chat dropdown (Andy, goal/G4.10: "the color of
+        // presence dots in the dropdown don't match the color of the presence dots in the pane").
+        var lists = [chPane, chPick].filter(function (l) { return l && typeof l.present === 'function'; });
         // A key the table no longer names goes white again, as in Contacts: unknown is never present.
-        Object.keys(chPresent).forEach(function (key) { if (!table[key]) chPane.present(key, false); });
+        Object.keys(chPresent).forEach(function (key) {
+          if (!table[key]) lists.forEach(function (l) { l.present(key, false); });
+        });
         chPresent = {};
         Object.keys(table).forEach(function (key) {
           var proof = table[key];
+          var on = !!(proof && typeof proof === 'object' && proof.present === true);
           chPresent[key] = true;
-          chPane.present(key, !!(proof && typeof proof === 'object' && proof.present === true));
+          lists.forEach(function (l) { l.present(key, on); });
         });
       });
     }
