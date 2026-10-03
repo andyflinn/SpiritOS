@@ -43,7 +43,7 @@
 //     C4. One current line (className holds 'current', NAMED): a line that arrives becomes it; a click, ArrowUp,
 //         ArrowDown, Home and End move it.
 //     C5. A reply: the line written answers the current line (re {writer, seq}); a line with a re shows a short
-//         quote of the answered line's text, filled in when the answered line arrives after it; a click on the quote
+//         quote of the answered line's text (none when that line is drawn right before it: Andy, under G4.10), filled in when the answered line arrives after it; a click on the quote
 //         makes the answered line current.
 //     C6. The input (a TEXTAREA): Enter sends line.write {to, text, re}, Shift+Enter does not; the sent line shows at
 //         once, by the seq line.write answered, ⏳ until the publish says kept.
@@ -393,9 +393,9 @@ async function main() {
   // fill its quote by accident (wsl-claude's mutation, 4e9a523e).
   const elsewhere = lineFor(app, 0, 1)[0];
   if (elsewhere) { fire(elsewhere, 'click'); await settled(); }
-  app.publish({ line: Object.assign({ peer: PEER }, line({ sent: 0, seq: 3, at: T(6), text: 'the question it answers' })) });
+  app.publish({ line: Object.assign({ peer: PEER }, line({ sent: 0, seq: 3, at: '2026-10-03T10:03:30.000Z', text: 'the question it answers' })) });
   await settled();
-  if (order(app) === '0:1,1:1,0:2,1:2,1:3,0:3,0:4' && m(0, 4).indexOf('the question it answers') !== -1 && replyBefore.indexOf('the question it answers') === -1) test.check('a reply that came first gets its quote once the answered line arrives, placed before it by time');
+  if (order(app) === '0:1,1:1,0:2,0:3,1:2,1:3,0:4' && m(0, 4).indexOf('the question it answers') !== -1 && replyBefore.indexOf('the question it answers') === -1) test.check('a reply that came first gets its quote once the answered line arrives, placed before it by time');
   else test.fail(OWED11 + 'after the answered line: lines ' + JSON.stringify(order(app)) + ', the reply shows ' + JSON.stringify(m(0, 4)).slice(0, 160));
   const cur = function () { return current(app).join(); };
   const keyOn = function (k) { const n = lineFor(app, ...cur().split(':').map(Number))[0] || app.container; fire(n, 'keydown', { key: k }); };
@@ -406,7 +406,7 @@ async function main() {
   keyOn('Home'); await settled(); const home = cur();
   keyOn('ArrowDown'); await settled(); const down = cur();
   keyOn('End'); await settled(); const end = cur();
-  if (up === '0:3' && home === '0:1' && down === '1:1' && end === '0:4') test.check('ArrowUp, Home, ArrowDown, End move the current line');
+  if (up === '1:3' && home === '0:1' && down === '1:1' && end === '0:4') test.check('ArrowUp, Home, ArrowDown, End move the current line');
   else test.fail(OWED11 + 'current after ArrowUp ' + up + ', Home ' + home + ', ArrowDown ' + down + ', End ' + end);
   const target = lineFor(app, 0, 2)[0];
   if (target) fire(target, 'click');
@@ -443,6 +443,16 @@ async function main() {
     await settled();
     if (lineFor(app, 1, 4).length === 1 && shown(lineFor(app, 1, 4)[0]).indexOf('✓') !== -1) test.check('its publish makes it ✓, still one element');
     else test.fail(OWED11 + 'after its publish: ' + lineFor(app, 1, 4).length + ' elements');
+    // Andy, 2026-10-03 (under G4.10): "i like the small reference, on top of an answer, but maybe leave it out when
+    // that line immediately precedes the answer." Theirs answers my 1:4, drawn right above it: no quote.
+    app.publish({ line: Object.assign({ peer: PEER }, line({ sent: 0, seq: 5, at: T(9), text: 'right back at you', re: { writer: 'MY-OWN-KEY', seq: 4 } })) });
+    await settled();
+    const adj = lineFor(app, 0, 5)[0];
+    const order5 = order(app);
+    if (adj && /,1:4,0:5$/.test(order5) && !/my reply/.test(shown(adj))) test.check('a reply drawn right after the line it answers shows no quote');
+    else test.fail(OWED10 + 'lines ' + JSON.stringify(order5) + '; the adjacent reply shows ' + JSON.stringify(adj && shown(adj)).slice(0, 120));
+    if (/the question it answers/.test(m(0, 4))) test.check('and a reply further from its line keeps its quote');
+    else test.fail(OWED10 + 'the reply 0:4 lost its quote: ' + JSON.stringify(m(0, 4)).slice(0, 120));
   }
 
   test.subHeading('G4.11 C7: older lines by before, on a scroll to the top');
