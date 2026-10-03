@@ -141,15 +141,9 @@ function settle() {
     .then(function () { return new Promise(function (r2) { setImmediate(r2); }); });
 }
 
-// THE LEAD'S CHAT IS THE LEAD'S TAB INSIDE TEAM (desk/G1.2, D2): pick it,
-// then type in Team's box.
-function toLead(desk) {
-  const target = { getAttribute: function (n) { return n === 'data-agent' ? 'claude-windows' : null; }, parentNode: null };
-  const strip = desk.doc.getElementById('desk-agent-tabs');
-  strip.fire('click', { target: target, currentTarget: strip });
-}
-function sayToLead(desk, text) {
-  toLead(desk);
+// THE LEAD'S TAB INSIDE TEAM WENT (goal/G3.12): a line typed under Team is the group chat's, one chat.add on
+// desk/G0.0, posted to nobody. What he types there is no longer a log line of the page's.
+function sayInTeam(desk, text) {
   desk.doc.getElementById('desk-team-say').value = text;
   desk.doc.getElementById('desk-team-send').fire('click');
 }
@@ -192,29 +186,32 @@ function arrivalsAndSendsAreLogged() {
     } else {
       test.fail('after one arrival the log holds ' + JSON.stringify(rows));
     }
-    sayToLead(desk, 'hello lead');
+    sayInTeam(desk, 'hello team');
     return settle();
   }).then(function () {
+    // HIS LINE TO THE LEAD STOOD HERE, posted as a packet and logged as an out row. Since goal/G3.12 a Team line is
+    // one chat.add on the group chat: no packet, no out row of the page's.
     const rows = logged(files) || [];
     const out = rows.filter(function (r) { return r.dir === 'out'; });
-    if (desk.posts.length === 1 && desk.posts[0].to === LEAD && out.length === 1 &&
-        out[0].text === 'hello lead' && out[0].key === 'h-out-1' && out[0].outcome === 'sent') {
-      test.check('his line went to the lead once and is logged under the hash it went as');
+    const added = desk.fake.calls.filter(function (c) { return c.verb === 'chat.add'; });
+    if (!desk.posts.length && !out.length && added.length === 1 && added[0].args.id === 'desk/G0.0' && added[0].args.text === 'hello team') {
+      test.check('his Team line went as one chat.add on desk/G0.0: no packet, no out row');
     } else {
-      test.fail('posts ' + JSON.stringify(desk.posts) + ' out rows ' + JSON.stringify(out));
+      test.fail('posts ' + JSON.stringify(desk.posts) + ' out rows ' + JSON.stringify(out) + ' chat.add ' + JSON.stringify(added.map(function (c) { return c.args; })));
     }
     if (!desk.verbs.length) test.check('the node was asked nothing but jobs.api');
     else test.fail('verbs asked: ' + desk.verbs.join(', '));
 
     const again = mountDesk({ files: files });
     return settle().then(function () {
-      toLead(again);
+      // The remount reads the group chat (item.chat on desk/G0.0) and draws it; the fake holds his line there.
       const chat = again.doc.getElementById('desk-team').innerHTML;
       const top = again.doc.getElementById('desk-top').innerHTML;
-      if (/hello lead/.test(chat) && /Search/.test(top)) {
-        test.check('a fresh mount draws the board and the chat from the server\'s record alone');
+      const groupRead = again.fake.calls.some(function (c) { return c.verb === 'item.chat' && c.args.id === 'desk/G0.0'; });
+      if (groupRead && /hello team/.test(chat) && /Search/.test(top)) {
+        test.check('a fresh mount draws the board and the group chat from the server\'s record alone');
       } else {
-        test.fail('remount drew chat ' + chat.slice(0, 120) + ' / top ' + top.slice(0, 120));
+        test.fail('remount read the group chat: ' + groupRead + '; drew chat ' + chat.slice(0, 120) + ' / top ' + top.slice(0, 120));
       }
       // The same arrival twice (a replay) is one row.
       again.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
@@ -227,27 +224,6 @@ function arrivalsAndSendsAreLogged() {
   });
 }
 
-function failedSendsStayApart() {
-  test.subHeading('Two sends that never crossed are two rows');
-  const files = { 'log/log.json': JSON.stringify([{ key: 'h-in-1', at: '2026-09-27T05:00:00Z', dir: 'in', peer: LEAD,
-    outcome: 'received', from: 'claude-windows', kind: 'session', text: BOARD, todo: '' }]) };
-  const desk = mountDesk({ files: files, refuse: true });
-  // Its record loads from the server first (desk/G1.4), the lead with it.
-  return settle().then(function () {
-    sayToLead(desk, 'one');
-    return settle();
-  }).then(function () {
-    sayToLead(desk, 'two');
-    return settle();
-  }).then(function () {
-    const out = (logged(files) || []).filter(function (r) { return r.dir === 'out'; });
-    if (out.length === 2 && out[0].key !== out[1].key && /^undelivered/.test(out[1].outcome)) {
-      test.check('each failed send keeps its own row and says it was undelivered');
-    } else {
-      test.fail('failed sends logged as ' + JSON.stringify(out));
-    }
-  });
-}
 
 // A LOG THAT DID NOT PARSE is the server's to refuse now (deskOnServer.js,
 // the import). What Desk still owes: a record it cannot reach is said, and
@@ -271,7 +247,7 @@ function voiceHoldsWhatHeTyped() {
   desk.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
   desk.arrive({ from: 'claude-windows', kind: 'ask', text: 'go?', todo: 'puppets/G2' }, { hash: 'h-in-3', fromKey: LEAD, sentAt: '2026-09-27T05:03:00Z' });
   return settle().then(function () {
-    sayToLead(desk, 'typed by andy');
+    sayInTeam(desk, 'typed by andy');
     return settle();
     // WHAT HE TYPES IN A DIALOG goes by chat.add since desk/G2.7; the dialog no
     // longer hands its lines back for Desk to record, so this checks Desk's own.
@@ -287,25 +263,6 @@ function voiceHoldsWhatHeTyped() {
   });
 }
 
-function twoTabsKeepBoth() {
-  test.subHeading('Two Desk tabs do not drop each other\'s lines');
-  const files = {};
-  const a = mountDesk({ files: files });
-  const b = mountDesk({ files: files });
-  a.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
-  b.arrive({ from: 'claude-windows', kind: 'session', text: BOARD }, { hash: 'h-in-1', fromKey: LEAD, sentAt: '2026-09-27T05:00:00Z' });
-  return settle().then(function () {
-    sayToLead(a, 'from tab a');
-    return settle();
-  }).then(function () {
-    sayToLead(b, 'from tab b');
-    return settle();
-  }).then(function () {
-    const texts = (logged(files) || []).filter(function (r) { return r.dir === 'out'; }).map(function (r) { return r.text; }).sort();
-    if (texts.join(',') === 'from tab a,from tab b') test.check('the record keeps both tabs\' lines');
-    else test.fail('after two tabs the log holds ' + JSON.stringify(texts));
-  });
-}
 
 // teamGoesToEveryAgent STOOD HERE: his team line posted to every agent as a packet under team/chat, and an
 // agent's packet line shown once in Team. That mechanism is gone with goal/G3.10: the All tab is the chat of the
@@ -333,8 +290,8 @@ function unseenIsMarked() {
 arrivalsAndSendsAreLogged()
   .then(unseenIsMarked)
   .then(voiceHoldsWhatHeTyped)
-  .then(twoTabsKeepBoth)
-  .then(failedSendsStayApart)
+  // twoTabsKeepBoth and failedSendsStayApart stood here: two Desk tabs' lines to the lead both kept, and two failed
+  // sends two rows. The page sends no line as a packet since goal/G3.12, so there is nothing of the kind to log.
   .then(unreachableIsSaid)
   .then(function () { test.reportSuccessFailureCount(); })
   .catch(function (err) {

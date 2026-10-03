@@ -77,13 +77,14 @@ test.startTest('goal/G2.4: the Team tab shows who is working');
       { key: 'l2', label: JSON.stringify(line('l2', 'wsl-claude', WSL_KEY)) }], more: false },
   });
   await settled();
-  const strip = function () { return list.doc.getElementById('desk-agent-tabs').innerHTML; };
-  const tabOf = function (name) { return strip().split('<button').filter(function (s) { return s.indexOf('data-agent="' + name + '"') !== -1; })[0] || ''; };
+  // THE MARK IS ON THE BUBBLES (goal/G3.12): the agent tabs inside Team went; the bubbles sit in the tab row.
+  const strip = function () { return list.doc.getElementById('desk-tabs').innerHTML; };
+  const tabOf = function (name) { return (strip().match(new RegExp('<[^>]*data-bubble="' + name + '"[^>]*>')) || [''])[0]; };
 
-  test.subHeading('1. a working agent\'s tab carries the mark, the others none');
-  if (/data-working="1"/.test(tabOf('claude-windows')) && !/data-working/.test(tabOf('wsl-claude')) && !/data-working/.test(tabOf('*'))) {
-    test.check('claude-windows (working) is marked; wsl-claude and All are not');
-  } else test.fail(OWED + 'the agent tabs read ' + JSON.stringify(strip().slice(0, 300)));
+  test.subHeading('1. a working agent\'s bubble carries the mark, the other none');
+  if (/data-working="1"/.test(tabOf('claude-windows')) && tabOf('wsl-claude') && !/data-working/.test(tabOf('wsl-claude'))) {
+    test.check('claude-windows (working) is marked; wsl-claude is not');
+  } else test.fail(OWED + 'the bubbles read ' + JSON.stringify(strip().slice(0, 300)));
 
   test.subHeading('2. the blink is declared for the mark');
   const src = fs.readFileSync(DESK, 'utf8');

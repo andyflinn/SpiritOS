@@ -121,13 +121,13 @@ settle().then(function () {
   const stickies = shell.match(/<div[^>]*position:\s*sticky[^>]*>/g) || [];
   const at = stickies.length === 1 && /top:/.test(stickies[0]) && !/top:\s*0\b/.test(stickies[0]) ? shell.indexOf(stickies[0]) : -1;
   const tabsAt = shell.indexOf('id="desk-tabs"');
-  const agentAt = shell.indexOf('id="desk-agent-tabs"');
+  // ONE ROW SINCE goal/G3.12: the agent row inside Team went; the bubbles ride in #desk-tabs.
   const paneAt = shell.indexOf('data-pane=');
-  const pinned = at !== -1 && at < tabsAt && tabsAt < agentAt && agentAt < paneAt;
+  const pinned = at !== -1 && at < tabsAt && tabsAt < paneAt && shell.indexOf('id="desk-agent-tabs"') === -1;
   const buttons = tabs.innerHTML.match(/<button[^>]*>/g) || [];
   const last = buttons[buttons.length - 1] || '';
-  if (pinned && /desk-(end|start)-design/.test(last)) test.check('one sticky block below the title bar holds both tab rows, and the design button closes the row');
-  else test.fail(OWED + 'sticky tags ' + JSON.stringify(stickies) + ', rows inside it ' + pinned + ', last button ' + last);
+  if (pinned && /desk-(end|start)-design/.test(last)) test.check('one sticky block below the title bar holds the tab row, no agent row, and the design button closes the row');
+  else test.fail(OWED + 'sticky tags ' + JSON.stringify(stickies) + ', row inside it ' + pinned + ', last button ' + last);
 
   // Andy: "this part of the list page should be attached below the title
   // bar, and not scroll away. Upgrading Desk ... (desk/G1) List (1) Team
@@ -142,14 +142,13 @@ settle().then(function () {
   // [wsl-claude] should only appear when [team] is the active button". The
   // hidden attribute alone loses to .start-job-form's display:flex
   // (index.html), so it must be display none, not only hidden.
-  test.subHeading('T14: the agent row is not displayed off Team, and is on Team');
-  const agentRow = doc.getElementById('desk-agent-tabs');
-  const tabTo = function (name) { tabs.fire('click', { target: clickTarget(tabs, { 'data-tab': name }), currentTarget: tabs }); return agentRow.style.display; };
-  const onList = tabTo('list');
-  const onMusings = tabTo('musings');
-  const onTeam = tabTo('team');
-  if (onList === 'none' && onMusings === 'none' && onTeam !== 'none') test.check('List and Musings: display none; Team: shown');
-  else test.fail(OWED + 'display on List ' + JSON.stringify(onList) + ', Musings ' + JSON.stringify(onMusings) + ', Team ' + JSON.stringify(onTeam));
+  // T14 STOOD HERE: the agent row shown on Team alone. It went with goal/G3.12 (the bubbles show on every tab;
+  // deskFrontPage.js asserts them on the List tab).
+  test.subHeading('T14: the tab row is one row on every tab');
+  const tabTo = function (name) { tabs.fire('click', { target: clickTarget(tabs, { 'data-tab': name }), currentTarget: tabs }); return tabs.innerHTML; };
+  const rows = [tabTo('list'), tabTo('musings'), tabTo('team')];
+  if (rows.every(function (h) { return /data-tab="team"/.test(h) && !/data-agent=/.test(h); })) test.check('List, Musings, Team: the one tab row, no agent tab on any');
+  else test.fail(OWED + 'the tab row across the tabs: ' + JSON.stringify(rows.map(function (h) { return h.slice(0, 80); })));
 
   test.subHeading('T2: design mode ends only on the second press');
   posted.length = 0;

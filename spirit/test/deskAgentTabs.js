@@ -102,42 +102,17 @@ load(DESK, doc).mount(root, {
 test.startTest('desk/G1.2: one tab per agent inside Team, the lead marked');
 settle().then(function () {
   const tabs = doc.getElementById('desk-tabs');
-  const agents = doc.getElementById('desk-agent-tabs');
   clickOn(tabs, 'data-tab', 'team');
   const strip = root.innerHTML + tabs.innerHTML;
 
-  test.subHeading('T1: Team shows All and one tab per agent heard from; Lead is no longer a top tab');
-  const a = agents.innerHTML;
-  if (!/data-tab="lead"/.test(strip) && /data-agent="\*"/.test(a) && /data-agent="claude-windows"/.test(a) && /data-agent="wsl-claude"/.test(a)) {
-    test.check('no Lead top tab; Team shows All, claude-windows and wsl-claude');
-  } else test.fail('top Lead tab ' + /data-tab="lead"/.test(strip) + '; agent tabs: ' + a.slice(0, 200));
-
-  test.subHeading("T2: the lead's tab is marked");
-  if (/data-agent="claude-windows"[^>]*data-lead="1"|data-lead="1"[^>]*data-agent="claude-windows"/.test(a) &&
-      !/data-agent="wsl-claude"[^>]*data-lead="1"/.test(a)) test.check("claude-windows's tab carries the lead mark, wsl-claude's does not");
-  else test.fail('lead mark not on the lead\'s tab alone: ' + a.slice(0, 200));
-
-  // Before T3: opening a tab is seeing it.
-  test.subHeading('T6: an agent tab with a line he has not seen shows the red *');
-  const wslTab = (agents.innerHTML.match(/<button[^>]*data-agent="wsl-claude"[^>]*>[\s\S]*?<\/button>/) || [''])[0];
-  if (/title="unseen changes"/.test(wslTab)) test.check('wsl-claude\'s tab shows the unseen star');
-  else test.fail('wsl-claude tab: ' + wslTab);
-
-  test.subHeading("T3: a line typed in an agent's tab goes to that agent only");
-  clickOn(agents, 'data-agent', 'wsl-claude');
-  doc.getElementById('desk-team-say').value = 'for wsl only';
-  posted.length = 0;
-  doc.getElementById('desk-team-send').fire('click', {});
+  // T1, T2, T6, T3 AND T4 STOOD HERE: All and one tab per agent inside Team, the lead's marked, the unseen star on an
+  // agent's tab, a line typed in a tab to that agent alone, the lead's direct chat in its tab. All of it went with
+  // goal/G3.12: Team is the group chat, the agents show as bubbles in the tab row (deskFrontPage.js). What stands
+  // from desk/G1.2 here: no Lead top tab, the List count, Rename as its own button.
+  test.subHeading('T1: Lead is no longer a top tab, and no agent tab stands in its place');
+  if (!/data-tab="lead"/.test(strip) && !/data-agent=/.test(root.innerHTML + tabs.innerHTML)) test.check('no Lead top tab, no agent tab');
+  else test.fail('top Lead tab ' + /data-tab="lead"/.test(strip) + '; agent tabs: ' + /data-agent=/.test(root.innerHTML));
   return settle().then(function () {
-    if (posted.length === 1 && posted[0].key === WSL && !posted[0].body.todo) test.check('one post, to wsl-claude\'s key, as a direct line');
-    else test.fail('posted: ' + JSON.stringify(posted.map(function (p) { return [p.key.slice(16, 22), p.body.todo]; })));
-
-    test.subHeading("T4: today's Lead chat appears in the lead's tab");
-    clickOn(agents, 'data-agent', 'claude-windows');
-    const chat = doc.getElementById('desk-team').innerHTML;
-    if (/a line from the lead to Andy alone/.test(chat) && !/wsl in the team chat/.test(chat)) test.check('the lead\'s tab shows the lead\'s direct line, not the team chat');
-    else test.fail('lead tab shows: ' + chat.slice(0, 200));
-
     test.subHeading('T5: the List tab carries the count of rows waiting on Andy');
     const listLabel = (tabs.innerHTML.match(/data-tab="list"[^>]*>([^<]*(?:<[^>]*>[^<]*)*?)<\/button>/) || ['', ''])[1];
     if (/\(1\)/.test(listLabel)) test.check('List shows (1): one row asks Andy');

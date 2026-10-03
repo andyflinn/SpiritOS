@@ -189,29 +189,21 @@ test.startTest('goal/G2.2: Desk for the agents — the box cap, taking his line,
   } else test.fail(OWED + 'the box wears: none ' + JSON.stringify(looks.none.slice(0, 100)) + ' | half ' + JSON.stringify(looks.half.slice(0, 100)) + ' | full ' + JSON.stringify(looks.full.slice(0, 100)));
 
   // ── THE TEAM STRIP: 6a ─────────────────────────────────────────────────
-  test.subHeading('6b. a tab for every live agent, lines or none, sending to the key the goal row gives');
+  // 6b STOOD HERE: a tab for every live agent, and a line under it to the key the goal row gives. The tabs and the
+  // direct line went with goal/G3.12; what 6a guards (an agent live through item chat alone is not lost) now shows
+  // as a bubble in the tab row, drawn from the goal row's live.
+  test.subHeading('6b. a bubble for every live agent, lines or none, from the goal row');
   const keys = {}; keys['claude-windows'] = CW.key; keys['wsl-claude'] = WSL.key;
   const p = mountPage(DESK, {
     'items.search': { items: [{ key: 'g/G1', label: JSON.stringify(goalRow(['claude-windows', 'wsl-claude'], keys)) }], more: false },
     'log.search': { items: [{ key: 'l1', label: JSON.stringify(logLine('l1', 'claude-windows', CW.key)) }], more: false },
   });
   await settled();
-  const strip = p.doc.getElementById('desk-agent-tabs').innerHTML;
-  const tabs = (strip.match(/data-agent="([^"]+)"/g) || []).map(function (s) { return s.slice(12, -1); });
-  if (tabs.indexOf('wsl-claude') !== -1 && tabs.indexOf('claude-windows') !== -1 && tabs.indexOf('*') !== -1) {
-    test.check('wsl-claude, live with no line in the window, has its tab beside claude-windows and All');
-  } else test.fail(OWED + 'the Team strip has tabs ' + JSON.stringify(tabs) + ' — an agent working only through item chat vanishes');
-  // Under its tab, a line goes to wsl-claude's key — the one the goal row gave, no line of its own needed.
-  const tab = fakeElement('tab-wsl');
-  tab.getAttribute = function (n) { return n === 'data-agent' ? 'wsl-claude' : null; };
-  p.doc.getElementById('desk-agent-tabs').fire('click', { target: tab, currentTarget: p.doc.getElementById('desk-agent-tabs') });
-  p.doc.getElementById('desk-team-say').value = 'wsl, are you there?';
-  p.doc.getElementById('desk-team-send').fire('click', {});
-  await settled();
-  const toWsl = p.sent.filter(function (s) { return s.text === 'wsl, are you there?'; });
-  if (toWsl.length === 1 && toWsl[0].key === WSL.key) {
-    test.check('the line under its tab went once, to the key the goal row holds for wsl-claude');
-  } else test.fail(OWED + 'the line went to ' + JSON.stringify(toWsl.map(function (s) { return s.key; })) + ' (error box: ' + JSON.stringify(p.doc.getElementById('desk-team-error').textContent) + ')');
+  const strip = p.doc.getElementById('desk-tabs').innerHTML;
+  const bubbles = (strip.match(/data-bubble="([^"]+)"/g) || []).map(function (s) { return s.slice(13, -1); });
+  if (bubbles.indexOf('wsl-claude') !== -1 && bubbles.indexOf('claude-windows') !== -1 && !/data-agent=/.test(strip)) {
+    test.check('wsl-claude, live with no line in the window, has its bubble beside claude-windows; no agent tab');
+  } else test.fail(OWED + 'the tab row has bubbles ' + JSON.stringify(bubbles) + ' — an agent working only through item chat vanishes');
 })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   setTimeout(function () { process.exit(0); }, 200);

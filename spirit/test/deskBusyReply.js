@@ -140,26 +140,22 @@ test.startTest('goal/G2.5: a message to a busy agent is queued and answered');
   }
 
   // ── 2: the page, Team tab ─────────────────────────────────────────────
-  test.subHeading('2. a Team line to a working agent is answered by the page, once per line, and logged');
+  // THE PAGE'S HALF STOOD HERE: a Team line to one working agent, answered by the page with the desk's busy line.
+  // It went with the direct tabs (goal/G3.12): Team is the group chat, a line there is one chat.add on desk/G0.0
+  // and reaches no single agent; the desk server's own reply (part 1 above) is the busy reply that remains.
+  test.subHeading('2. a Team line is the group chat\'s, posted to no agent');
   const page = mount({
     'items.search': { items: [{ key: 'g/G1', label: JSON.stringify(goalRow(['claude-windows'])) }], more: false },
     'log.search': { items: [{ key: 'l1', label: JSON.stringify(line('l1', 'claude-windows', CW.key)) }], more: false },
   });
   await settled();
-  // Onto claude-windows' own tab, then a line to it.
-  const strip = page.doc.getElementById('desk-agent-tabs');
-  strip.fire('click', { target: { getAttribute: function (a) { return a === 'data-agent' ? 'claude-windows' : null; }, id: '' }, currentTarget: strip, preventDefault: function () {} });
-  await settled();
   page.doc.getElementById('desk-team-say').value = 'are you there?';
   page.doc.getElementById('desk-team-send').fire('click', { preventDefault: function () {} });
   await settled();
-  const sent = page.posted.filter(function (p) { return p.to === CW.key; });
-  const logged = page.writes.filter(function (w) { return w.verb === 'log.add'; }).map(function (w) { try { return JSON.parse(w.args.json); } catch (e) { return {}; } });
-  const reply = logged.filter(function (l) { return l.from === 'desk' && BUSY.test(String(l.text)); });
-  const chatHtml = page.doc.getElementById('desk-team').innerHTML;
-  if (sent.length === 1 && reply.length === 1 && BUSY.test(chatHtml) && !page.posted.some(function (p) { return BUSY.test(String(p.body && p.body.text)); })) {
-    test.check('the line went to the agent once, the page answered once from desk, logged it, and sent the agent nothing for it');
-  } else test.fail(OWED + 'posted ' + sent.length + ' to the agent, desk replies logged ' + reply.length + ', shown ' + BUSY.test(chatHtml));
+  const added = page.writes.filter(function (w) { return w.verb === 'chat.add'; });
+  if (added.length === 1 && added[0].args.id === 'desk/G0.0' && !page.posted.length) {
+    test.check('the line went as one chat.add on desk/G0.0; nothing was posted to the agent and no busy line was made by the page');
+  } else test.fail('the Team line: chat.add ' + JSON.stringify(added.map(function (w) { return w.args; })) + ', posted ' + page.posted.length);
 })().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   setTimeout(function () { process.exit(0); }, 200);

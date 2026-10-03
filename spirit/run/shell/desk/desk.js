@@ -40,7 +40,8 @@
 // his go, peer.post takes a patience and the node retries a busy target
 // with backoff; Desk asks for a minute. What the log records is the final
 // outcome, after that minute, never the first refusal.
-var DESK_PATIENCE = { patienceMs: 60000 };
+// DESK_PATIENCE stood here: the minute the page gave a busy agent when it posted him a line. No line leaves the
+// page as a packet since goal/G3.12.
 
 var deskApi = null;
 // THE LIST IS THE DESK SERVER'S (desk/G2.6). Andy: "The server determines all the
@@ -60,12 +61,10 @@ function deskIcon(name) {
 var deskMessages = [];      // decoded agents messages, in log order
 var deskByHash = Object.create(null);
 var deskError = '';
-// THE LEAD, learned from whoever posts the board: only the lead box posts
-// one (runAll, lead = yes). Andy: "below the list in desk i'd like a direct
-// chat to lead". It is also the home for what belongs to no row.
-var deskLead = null;
-// WHO HEARS ANDY FROM A ROW'S DIALOG: agents heard from, newest key per
-// name. Handed to DeskDetails, which can read only its own folder.
+// THE LEAD (deskLead) stood here, learned from whoever posted the session: the direct chat to the lead was its
+// home. Gone with the direct line (goal/G3.12); the desk server knows the agents by their keys.
+// WHO THE AGENTS ARE, from the packets of the agents-app era still on record: newest key per name. Nothing on the
+// page sends to these keys any more (goal/G3.8, G3.12); the bubbles are drawn from the goal row, not from here.
 var deskAgents = Object.create(null);
 
 // One arrival (onPacket's body and message) -> one agents message, or null
@@ -174,7 +173,6 @@ function deskRecord(msgs) {
   var fresh = msgs.filter(function (m) { return m && m.key && !deskByHash[m.key]; });
   fresh.forEach(deskFold);
   deskMessages.sort(function (a, b) { return String(a.at) < String(b.at) ? -1 : String(a.at) > String(b.at) ? 1 : 0; });
-  if (deskAgentTab !== '*' && fresh.length) deskAskQueue();
   deskDraw();
   return Promise.all(fresh.map(function (m) { return deskAsk('log.add', { json: JSON.stringify(m) }); }))
     // THE BACKUP LINE FOLLOWS THE RECORD: read once at load it went stale
@@ -191,8 +189,6 @@ function deskFold(msg) {
   deskByHash[msg.key] = msg;
   deskMessages.push(msg);
   if (msg.dir === 'in' && !msg.reported && msg.from && msg.peer) deskAgents[msg.from] = { key: msg.peer, at: Date.parse(msg.at) || 0 };
-  // THE LEAD IS WHOEVER POSTS THE SESSION.
-  if (msg.kind === 'session' && msg.dir === 'in' && msg.peer && msg.from) deskLead = { name: msg.from, key: msg.peer };
 }
 
 function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
@@ -218,19 +214,10 @@ var DESK_UNSEEN = '<span style="color:#d00;font-weight:bold" title="unseen chang
 var DESK_ALERT = '<span style="color:#d00;font-weight:bold" title="brought back: needs your eye">❗</span>';
 var deskSeen = { team: 0, agents: {} };
 var deskTab = 'list';
-// WHICH CHAT INSIDE TEAM: '*' for All, else an agent's name (desk/G1, D2).
-var deskAgentTab = '*';
+// THE DIRECT TABS ARE GONE (goal/G3.12). Team is the group chat alone; there is no chat inside Team to pick, no
+// line to one agent and no direct line's unseen mark. Andy, 2026-10-03: "the The team tab will only show the team
+// chat interface (Chat of goal 'desk/G0.0')". deskSeen keeps its agents field so an older seen.json still parses.
 
-// What passed between Andy and one agent with NO row: his untagged lines to
-// its key, its untagged lines to him. The lead's is today's Lead chat.
-function deskIsDirectLine(name) {
-  return function (m) {
-    var who = deskAgents[name];
-    if (m.todo || m.reported || m.kind === 'board' || m.kind === 'report') return false;
-    if (m.kind === 'note' && /^taking(\s|$)/.test(m.text)) return false;
-    return (m.dir === 'out' && !!who && m.peer === who.key) || (m.dir === 'in' && m.from === name);
-  };
-}
 function deskIsTeamLine(m) { return m.todo === DESK_TEAM && m.kind !== 'board'; }
 
 // The newest arrival (never his own line) that `pred` accepts.
@@ -243,42 +230,30 @@ function deskNewest(pred) {
   });
   return newest;
 }
-// A chat is 'team' (All) or an agent's name.
-function deskChatPred(which) { return which === 'team' ? deskIsTeamLine : deskIsDirectLine(which); }
-function deskChatSeenAt(which) { return (which === 'team' ? deskSeen.team : deskSeen.agents[which]) || 0; }
-function deskChatNews(which) { return deskNewest(deskChatPred(which)) > deskChatSeenAt(which); }
+// The Team tab's unseen mark: a team line (a packet of the agents-app era, drawn nowhere since goal/G3.10) newer
+// than his last look. Kept as it was; the group chat's own lines carry no mark yet.
+function deskTeamNews() { return deskNewest(deskIsTeamLine) > (deskSeen.team || 0); }
 
 function deskSaveSeen() {
   if (!deskLoaded) return;
   deskAsk('seen.set', { json: JSON.stringify(deskSeen) }).catch(function () { /* only a marker */ });
 }
-function deskMarkChatSeen(which) {
-  var newest = deskNewest(deskChatPred(which));
-  if (newest <= deskChatSeenAt(which)) return;
-  if (which === 'team') deskSeen.team = newest; else deskSeen.agents[which] = newest;
+function deskMarkTeamSeen() {
+  var newest = deskNewest(deskIsTeamLine);
+  if (newest <= (deskSeen.team || 0)) return;
+  deskSeen.team = newest;
   deskSaveSeen();
 }
-// The chat showing inside Team.
-function deskTeamWhich() { return deskAgentTab === '*' ? 'team' : deskAgentTab; }
 
 // Applied once at mount, after the first reads. Absent: all held is seen.
 function deskLoadSeen(raw) {
   var held = null;
   try { held = raw ? JSON.parse(raw) : null; } catch (e) { held = null; }
   if (held && typeof held === 'object') {
-    deskSeen = { team: Number(held.team) || 0, agents: held.agents && typeof held.agents === 'object' ? held.agents : null };
-    if (deskSeen.agents) return;
-    // A seen.json from before the agent tabs: the lead keeps its old Lead
-    // mark, and what the others said so far counts as seen.
-    deskSeen.agents = {};
-    Object.keys(deskAgents).forEach(function (n) {
-      deskSeen.agents[n] = deskLead && n === deskLead.name ? Number(held.lead) || 0 : deskNewest(deskIsDirectLine(n));
-    });
-    deskSaveSeen();
+    deskSeen = { team: Number(held.team) || 0, agents: held.agents && typeof held.agents === 'object' ? held.agents : {} };
     return;
   }
-  Object.keys(deskAgents).forEach(function (n) { deskSeen.agents[n] = deskNewest(deskIsDirectLine(n)); });
-  deskSeen.team = deskNewest(deskIsTeamLine);
+  deskSeen = { team: deskNewest(deskIsTeamLine), agents: {} };
   deskSaveSeen();
 }
 
@@ -290,19 +265,35 @@ function deskTabButton(attrs, on, news, label) {
     (news ? DESK_UNSEEN + ' ' : '') + deskEsc(label) + '</button>';
 }
 
-// Drawn whole, as markup: List | Team | Musings. The Lead tab moved into
-// Team as the lead's own tab (desk/G1, D2).
+// THE AGENT BUBBLES, BESIDE THE TABS (goal/G3.12). Andy, 2026-10-03: "the main botton row now reads: [List]
+// [Team] [Musings], those are buttons, and Info [Agent1-status] [Agent2-status]... Where the Agent - bubbles are
+// highlighted with a red-blinking border when busy." One bubble per agent the goal row says is live, the working
+// one marked data-working (the blink is declared on that mark, goal/G2.4); state only, a click does nothing. They
+// follow the goal row's publish, nothing is pulled.
+function deskBubblesHtml() {
+  var g = deskGoalRow();
+  var live = g && Array.isArray(g.live) ? g.live.slice().sort() : [];
+  if (!live.length) return '';
+  var working = deskWorkingAgents();
+  return '<span class="job-manifest-note" style="margin-left:12px">Info</span>' + live.map(function (n) {
+    var busy = working.indexOf(n) !== -1;
+    return '<span data-bubble="' + deskEsc(n) + '"' + (busy ? ' data-working="1" title="working: leave it alone until it listens again"' : ' title="listening"') +
+      ' style="display:inline-block;padding:2px 10px;margin-left:6px;border-radius:12px;border:2px solid ' + (busy ? '#d00' : '#555') + '">' + deskEsc(n) + '</span>';
+  }).join('');
+}
+
+// Drawn whole, as markup: List | Team | Musings, then the bubbles.
 function deskDrawTabs() {
   var strip = document.getElementById('desk-tabs');
   if (!strip) return;
   var listNews = deskItems.some(function (r) { return r.star; });
-  var teamNews = deskChatNews('team') || Object.keys(deskAgents).some(deskChatNews);
   var waiting = deskWaitingOnAndy();
   var design = deskDesignOn();
   strip.innerHTML =
     deskTabButton('data-tab="list"', deskTab === 'list', listNews, 'List' + (waiting ? ' (' + waiting + ')' : '')) +
-    deskTabButton('data-tab="team"', deskTab === 'team', teamNews, 'Team') +
+    deskTabButton('data-tab="team"', deskTab === 'team', deskTeamNews(), 'Team') +
     deskTabButton('data-tab="musings"', deskTab === 'musings', false, 'Musings') +
+    deskBubblesHtml() +
     // AT THE END OF THE TAB ROW, ONLY ON TEAM, AND LOOMING. Andy: "put the
     // end design mode button at the end of the tab-button-row, only
     // visible while in teh team tab. and make the button a different
@@ -318,36 +309,9 @@ function deskDrawTabs() {
       (deskArmed === 'desk-start-design' ? ': sure?' : '') + '</button>';
 }
 
-// INSIDE TEAM, ONE TAB PER AGENT (desk/G1, D2): All is the team chat, every
-// other tab a channel between Andy and that agent alone, the lead first and
-// marked. Andy: "the top level [lead] tab moves into [team] as
-// [agent-name], karked as lead".
-function deskAgentNames() {
-  var lead = deskLead ? deskLead.name : '';
-  // THE TABS COME FROM THE GOAL ROW (goal/G2.2 note 6): every agent the server says is live has its tab, lines
-  // or none; the log lines only fill the chat (found live: an agent working only through item chat had vanished).
-  var g = deskGoalRow();
-  var names = Object.keys(deskAgents);
-  (g && Array.isArray(g.live) ? g.live : []).forEach(function (n) { if (names.indexOf(n) === -1) names.push(n); });
-  return names.sort(function (a, b) {
-    if ((a === lead) !== (b === lead)) return a === lead ? -1 : 1;
-    return a < b ? -1 : a > b ? 1 : 0;
-  });
-}
-function deskDrawAgentTabs() {
-  var strip = document.getElementById('desk-agent-tabs');
-  if (!strip) return;
-  strip.innerHTML = deskTabButton('data-agent="*"', deskAgentTab === '*', deskChatNews('team'), 'All') +
-    deskAgentNames().map(function (n) {
-      var lead = !!deskLead && n === deskLead.name;
-      // WORKING BLINKS (goal/G2.4). Andy: "every agents tab has a blinking border while it's working." The
-      // server says who (the goal row's working, goal/G2.3); the mark follows its publish, nothing is pulled.
-      var working = deskWorkingAgents().indexOf(n) !== -1;
-      return deskTabButton('data-agent="' + deskEsc(n) + '"' + (lead ? ' data-lead="1" title="the lead"' : '') +
-        (working ? ' data-working="1" title="working: leave it alone until it listens again"' : ''),
-        deskAgentTab === n, deskChatNews(n), n + (lead ? ' (lead)' : ''));
-    }).join('');
-}
+// THE AGENT TABS INSIDE TEAM STOOD HERE (desk/G1 D2, goal/G2.4) and went with goal/G3.12: one tab per agent, a
+// channel between Andy and that agent alone, drawn from packets of the agents app. The working blink moved to the
+// bubbles above; the direct line has no place on the page any more.
 
 // ── THE LIST, AS THE DESK SERVER SAYS IT (desk/G2.6) ──────────────────
 //
@@ -547,25 +511,6 @@ function deskLineHtml(m) {
   return out.join('<br>').replace(/<br>(<ul)/g, '$1').replace(/(<\/ul>)<br>/g, '$1');
 }
 
-function deskDirectChat(name) {
-  var lines = deskMessages.filter(deskIsDirectLine(name));
-  if (!lines.length) return '<div class="job-manifest-note">Nothing said yet.</div>';
-  return lines.slice().reverse().map(function (m) {
-    var who = m.dir === 'out' ? 'you' : m.from;
-    // Andy: "in this chat, could you change the appearance of your messages
-    // from mine a bit?" His lines sit to the right and quieter; the lead's
-    // carry a rule down their left edge.
-    var look = m.dir === 'out'
-      // Andy: "a differen background color (black) for my lines ... if mine had
-      // black background all across, then i could see all you responses as a
-      // block. similar in the details chat."
-      ? ' style="text-align:right;background:#000;color:#fff;padding:4px 8px;margin:4px 0"'
-      : ' style="border-left:3px solid currentColor;padding-left:8px;margin:4px 0"';
-    return '<div' + look + '><b>' + deskEsc(who) + '</b> <span class="job-manifest-note">' + deskTime(m.at) +
-      '</span> ' + deskLineHtml(m) + '</div>';
-  }).join('');
-}
-
 // ── MUSINGS: HIS THOUGHTS FOR LATER, NOT A CONVERSATION ─────────────
 //
 // Andy: "now i need something that lets me pipe stuff to voice.jsonl
@@ -649,12 +594,6 @@ function deskGroupSay() {
   });
 }
 
-// All is the group chat; an agent's tab goes to that agent alone, with no
-// todo.
-function deskSendTeam() {
-  if (deskAgentTab === '*') deskGroupSay();
-  else deskSend('note', 'desk-team-say', 'desk-team-error', deskAgentTab);
-}
 // Ending design mode is his decision, said in Team: an `answer` with the
 // fixed words, which Desk reads back (deskDesignOn) and the agents obey.
 // NEITHER BY ACCIDENT (desk/G1.12). Andy: "re-arm both design on and off,
@@ -720,37 +659,10 @@ function deskMuse() {
     if (err) err.textContent = '';
   });
 }
-// THE DESK ANSWERS A LINE TO A BUSY AGENT (goal/G2.5). Andy: "the app sends an-auto reply after sending the
-// message the agents in-queue, saying 'message delivered, agents busy'", "after every message", "it won't bother
-// you". One line from desk in that agent's own chat, recorded and logged like every line and sent to nobody: an
-// out-line to the agent's key, so the agent tab shows it, the news mark ignores it, and no ear prints it.
-function deskBusyLine(name, key) {
-  return { key: 'desk-busy-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8), at: new Date().toISOString(),
-    dir: 'out', from: 'desk', peer: key, kind: 'note', text: 'message delivered, ' + name + ' busy' };
-}
-function deskSend(kind, boxId, errId, name) {
-  var box = document.getElementById(boxId);
-  var said = box ? String(box.value || '').trim() : '';
-  var err = document.getElementById(errId);
-  if (!said || deskSending[boxId]) return;
-  // The key from its lines, else the one the goal row gives for a live agent (goal/G2.2 note 6).
-  var g = deskGoalRow();
-  var to = name ? (deskAgents[name] && deskAgents[name].key) || (g && g.agents && g.agents[name]) : deskLead && deskLead.key;
-  if (!to) { if (err) err.textContent = name ? 'No key known for ' + name + '.' : 'No lead known yet.'; return; }
-  deskSending[boxId] = true;
-  // It may wait up to a minute for a busy agent, so it says so.
-  if (err) err.textContent = 'Sending…';
-  var body = { from: 'andy', kind: kind, text: said };
-  deskApi.peerPost('agents', to, body, DESK_PATIENCE).then(function (r) {
-    deskSending[boxId] = false;
-    box.value = '';
-    if (err) err.textContent = '';
-    var msgs = [deskOutgoing(to, body, r)];
-    // Delivered to a working agent: the desk says so, after every message (goal/G2.5).
-    if (name && deskWorkingAgents().indexOf(name) !== -1) msgs.push(deskBusyLine(name, to));
-    return deskRecord(msgs);
-  }).catch(function (e) { deskSending[boxId] = false; if (err) err.textContent = 'Not sent: ' + e.message; });
-}
+// HIS DIRECT LINE TO ONE AGENT STOOD HERE (deskSend, with the desk's busy reply of goal/G2.5) and went with
+// goal/G3.12: the page posts no agents packet any more. What he says to the team is one chat.add on the group
+// chat (deskGroupSay); what he says about an item goes under the item. The desk server answers a line to a busy
+// agent itself (desk.js chat.add).
 
 // A ROW OPENS ITS OWN DIALOG. Andy: "we need a DeskDetails immediately,
 // with inputs specific to the item" — and the inline thread this replaced
@@ -771,14 +683,10 @@ function deskDraw() {
   if (!el) return;
   var musings = document.getElementById('desk-musings');
   if (musings) musings.innerHTML = deskMusings();
-  var queue = document.getElementById('desk-queue');
-  if (queue) queue.innerHTML = deskQueueHtml();
   var backup = document.getElementById('desk-backup');
   if (backup) backup.innerHTML = deskBackupHtml();
   var team = document.getElementById('desk-team');
-  if (team) team.innerHTML = deskAgentTab === '*' ? deskGroupChat() : deskDirectChat(deskAgentTab);
-  var label = document.getElementById('desk-team-label');
-  if (label) label.textContent = deskAgentTab === '*' ? 'Team: you and every agent, newest first' : 'You and ' + deskAgentTab + ' alone, newest first';
+  if (team) team.innerHTML = deskGroupChat();
   var bubble = document.getElementById('desk-session');
   if (bubble) bubble.innerHTML = deskSessionBubble();
   var goal = document.getElementById('desk-goal');
@@ -791,9 +699,8 @@ function deskDraw() {
   var banner = document.getElementById('desk-design');
   if (banner) banner.hidden = !design;
   // A chat on screen is being seen as it arrives.
-  if (deskTab === 'team') deskMarkChatSeen(deskTeamWhich());
+  if (deskTab === 'team') deskMarkTeamSeen();
   deskDrawTabs();
-  deskDrawAgentTabs();
   el.innerHTML = (deskError ? '<div class="job-start-error">' + deskEsc(deskError) + '</div>' : '') +
     deskTable();
 }
@@ -838,30 +745,8 @@ function deskLoad() {
       deskDraw();
     });
 }
-// ── EACH AGENT'S QUEUE, IN ITS TAB (desk/G1.5, D1) ──────────────────
-//
-//   Andy: "ah, it can visualize job-queues for agents and me. yes." What
-// waits on an agent is pending.get's answer, the same one agents read, so
-// he sees what they see. His own queue is the List (D7): the ERROR icon and
-// List (n). All shows no queue.
-var deskQueue = { who: '', items: null, partial: false };
-function deskAskQueue() {
-  var who = deskAgentTab === '*' ? '' : deskAgentTab;
-  if (!who) { deskQueue = { who: '', items: null, partial: false }; return Promise.resolve(); }
-  return deskAsk('pending.get', { who: who }).then(function (r) {
-    if (deskAgentTab !== who) return;
-    deskQueue = { who: who, items: (r.items || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean), partial: !!r.more };
-    deskDraw();
-  }, function () { /* no queue is shown; the tab still works */ });
-}
-function deskQueueHtml() {
-  if (!deskQueue.who || deskQueue.who !== deskAgentTab || !deskQueue.items) return '';
-  if (!deskQueue.items.length) return '<div class="job-manifest-note">Nothing waits on ' + deskEsc(deskQueue.who) + '.</div>';
-  return '<div class="label">Waiting on ' + deskEsc(deskQueue.who) + '</div>' + deskQueue.items.map(function (it) {
-    return '<div data-open="' + deskEsc(it.id) + '" style="cursor:pointer">' + deskEsc(it.id) + ' — ' + deskEsc(it.title) +
-      ' <span class="job-manifest-note">(' + deskEsc(it.why) + ')</span></div>';
-  }).join('') + (deskQueue.partial ? '<div class="job-manifest-note">More wait than fit here.</div>' : '');
-}
+// AN AGENT'S QUEUE IN ITS TAB STOOD HERE (desk/G1.5 D1, pending.get) and went with the agent tabs (goal/G3.12):
+// with no tab per agent there is no place that shows one agent's queue. His own queue is still the List.
 
 // ── THE BACKUP, SEEN FROM DESK (desk/G1.7, T7) ───────────────────────
 //
@@ -913,7 +798,7 @@ spirit.shell.activateApp({
       // where it covered Back and Home. Opaque, in the shell's own background.
       // THE BLINK, DECLARED ONCE (goal/G2.4): a working agent's tab border blinks; the mark is data-working.
       '<style>@keyframes desk-blink { 50% { border-color: transparent; } } ' +
-        '#desk-agent-tabs button[data-working="1"] { border: 2px solid #d00; animation: desk-blink 1s step-start infinite; }</style>' +
+        '#desk-tabs [data-bubble][data-working="1"] { animation: desk-blink 1s step-start infinite; }</style>' +
       '<div id="desk-bars" style="position:sticky;top:var(--desk-bar-top,52px);z-index:2;background:#1a1a2e;padding-bottom:4px">' +
         // The goal line is pinned with the tabs (desk/G1.12). Andy: "this part
         // of the list page should be attached below the title bar, and not
@@ -923,8 +808,6 @@ spirit.shell.activateApp({
         // buttons are on Team's (desk/G3.4, Andy: "same as design buttons when team is active").
         '<div style="display:flex;align-items:center"><div class="start-job-form card" id="desk-tabs" style="flex:1"></div>' +
           '<button type="button" id="desk-go-all" hidden>Go all</button></div>' +
-        // The agent row is Team's, so it shows only there (show()).
-        '<div class="start-job-form card" id="desk-agent-tabs" style="display:none"></div>' +
       '</div>' +
       '<div id="desk-root">' +
         // THE SEARCH BAR TOPS THE LIST (desk/G2.6). Andy: "all list displays in
@@ -938,7 +821,6 @@ spirit.shell.activateApp({
           '</div>' +
           '<div id="desk-top"></div></div>' +
         '<div data-pane="team" hidden>' +
-          '<div id="desk-queue"></div>' +
           '<div id="desk-session"></div>' +
           '<div class="start-job-form card"><label class="field-label grow">Say' +
             // SEVERAL LINES, AND RETURN IS A NEW LINE (desk/G1.12): only Send sends.
@@ -963,11 +845,7 @@ spirit.shell.activateApp({
       // should be highlighted." A disabled button read as greyed out.
       deskTab = tab;
       deskDrawGoAll();
-      var agentRow = document.getElementById('desk-agent-tabs');
-      // BY ITS STYLE, NOT ITS hidden ATTRIBUTE: .start-job-form sets display:
-      // flex (index.html), which overrides [hidden] (Andy saw the row on List).
-      if (agentRow) agentRow.style.display = tab === 'team' ? '' : 'none';
-      if (tab === 'team') deskMarkChatSeen(deskTeamWhich());
+      if (tab === 'team') deskMarkTeamSeen();
       deskDrawTabs();
     }
     // The strips are redrawn, so one listener on each, and the click may
@@ -983,16 +861,6 @@ spirit.shell.activateApp({
       if (el.id === 'desk-end-design') deskArmOrFire(el.id, deskEndDesign);
       else if (el.id === 'desk-start-design') deskArmOrFire(el.id, deskStartDesign);
       else if (el.getAttribute && el.getAttribute('data-tab')) show(el.getAttribute('data-tab'));
-    });
-    document.getElementById('desk-agent-tabs').addEventListener('click', function (e) {
-      var el = clicked(e, 'data-agent');
-      var who = el && el.getAttribute && el.getAttribute('data-agent');
-      if (!who) return;
-      deskAgentTab = who;
-      deskAskQueue();
-      var box = document.getElementById('desk-team-say');
-      if (box) box.placeholder = who === '*' ? 'to every agent; design talk that belongs to no row' : 'to ' + who + ' alone, about anything that is not one row';
-      deskDraw();
     });
     show('list');
     // ONE LISTENER ON THE LIST, which is repainted: a press, a link, a row.
@@ -1022,7 +890,7 @@ spirit.shell.activateApp({
     deskDrawToggles();
     document.getElementById('desk-go-all').addEventListener('click', function () { deskArmOrFire('desk-go-all', deskGoAll); });
     document.getElementById('desk-muse-send').addEventListener('click', deskMuse);
-    document.getElementById('desk-team-send').addEventListener('click', deskSendTeam);
+    document.getElementById('desk-team-send').addEventListener('click', deskGroupSay);
     // The bubble is repainted on every arrival, so one listener on its box.
     document.getElementById('desk-session').addEventListener('click', function (e) {
       var el = e.target;
@@ -1041,13 +909,6 @@ spirit.shell.activateApp({
     // mount, and kept while Desk is hidden behind its dialog, so what
     // arrives while a row is open is logged too.
     // Scrolled to its top, Team reads the page before (T6).
-    // A queue line opens its row, as the List does.
-    document.getElementById('desk-queue').addEventListener('click', function (e) {
-      var el = e.target;
-      while (el && el !== e.currentTarget && !(el.getAttribute && el.getAttribute('data-open'))) el = el.parentNode;
-      var id = el && el.getAttribute && el.getAttribute('data-open');
-      if (id) deskOpenRow(id);
-    });
     deskApi.onPacket('agents', function (body, message) { deskRecord([deskArrival(body, message)]); });
     // NO PULLING. Andy: "no pulling". The List asks once, then repaints from
     // what the desk server publishes.

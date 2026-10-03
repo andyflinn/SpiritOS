@@ -181,18 +181,19 @@ test.startTest('goal/G3.8: the Desk page stops nudging; the desk server does it 
   if (set && !changedPackets(d.posted).length) test.check('and no changed packet followed it');
   else test.fail(OWED + 'after check.set the dialog posted ' + JSON.stringify(d.posted));
 
-  test.subHeading('4. his direct line to an agent still leaves as a packet');
+  // 4 STOOD HERE AS "his direct line to an agent still leaves as a packet": the one packet this item kept. The
+  // direct line itself went with goal/G3.12 (Team is the group chat), so the page now posts no packet at all.
+  test.subHeading('4. a Team line is the group chat\'s: no packet leaves the page for anything');
   l.click('desk-tabs', { 'data-tab': 'team' });
   await settled();
-  l.click('desk-agent-tabs', { 'data-agent': 'claude-windows' });
-  await settled();
-  l.doc.getElementById('desk-team-say').value = 'for claude-windows alone';
+  l.doc.getElementById('desk-team-say').value = 'for the team';
   l.posted.length = 0;
+  const asksBefore = l.asked.length;
   l.doc.getElementById('desk-team-send').fire('click', {});
   await settled();
-  const line = l.posted.filter(function (p) { return p.to === AGENT_KEY && p.body && p.body.text === 'for claude-windows alone'; });
-  if (line.length === 1 && l.posted.length === 1) test.check('one agents packet, his line, to that agent\'s key; nothing else');
-  else test.fail('his direct line: posted ' + JSON.stringify(l.posted));
+  const line = l.asked.slice(asksBefore).filter(function (a) { return a.verb === 'chat.add' && a.args.id === 'desk/G0.0' && a.args.text === 'for the team'; });
+  if (line.length === 1 && !l.posted.length) test.check('one chat.add on desk/G0.0; no packet to anybody');
+  else test.fail('his Team line: asked ' + JSON.stringify(l.asked.slice(asksBefore)) + ', posted ' + JSON.stringify(l.posted));
 
   test.subHeading('5. the source carries no changed packet');
   const pageSrc = code(DESK);
