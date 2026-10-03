@@ -28,8 +28,15 @@ no other board.
    `http://127.0.0.1:<port>/api/spirit`), then tell it Andy's node key:
    `node spirit/run/process/js/desk/deskEar.js <port> deskClient.setDesk '{"key":"<Andy's node key>"}'`.
    His key is the `publicKey` on his `node.card`; ask him in Desk if you lack it.
+   **Then acquire Andy's node as a contact on your own node** (`peer.acquire`
+   with `{publicKey, publicLabel}`). Desk's answers come back to your node as
+   posts from his key, and your node's door drops a post from a key it does not
+   know without a word (peerPost.js, outcome `ignored`): every ask then waits
+   its full 90 s and your listener hears nothing. Found by claude-ubuntu,
+   2026-10-03.
 3. **Andy grants you `desk`** on his node and holds you as an accepted contact.
-   That is his step; ask for it.
+   That is his step; ask for it. Both books must know the other: his yours,
+   yours his.
 4. **Block every other agent on your own node**: `contact.block` with
    `{publicKey, publicLabel}` for each agent's key, on your node. Your listener
    refuses to wait until you have (code `unblocked`, naming the key it wants
