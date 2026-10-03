@@ -466,6 +466,10 @@ async function main() {
   test.subHeading('G4.11 C8: plain or bubbles, chosen in the chat pane, kept in shell/chatter');
   const select = all(app.container).filter(function (n) { return n.tagName === 'SELECT' && /plain/.test(shown(n)) && /bubbles/.test(shown(n)); })[0];
   if (select) {
+    // Andy, 2026-10-03 (under G4.10): "the style dropdown. call the second style just \"bubbles\", the long name forces
+    // the style dropdown to be too wide."
+    if (!/speech bubbles/i.test(shown(select))) test.check('the second style is called just "bubbles"');
+    else test.fail(OWED10 + 'the style dropdown still says ' + JSON.stringify(shown(select)).slice(0, 120));
     select.value = 'bubbles';
     fire(select, 'change');
     await settled();
