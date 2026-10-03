@@ -103,9 +103,14 @@ function ddHeadHtml() {
     (f.status ? ' <span class="job-manifest-note">(' + ddEsc(f.status) + ')</span>' : '');
 }
 
+// CLOSE BEFORE HIS GO IS ARMED, AT THE RIGHT EDGE (goal/G3.9). Andy, 2026-10-03: "A close - with arm-button is
+// available on the right edge of the button bar, before an item has received a 'go' or a 'done'", "the close-with
+// arm is only visible on the item detail". On a done item Close presses at once, as desk/G3.8 built it.
+function ddEarlyClose(f) { return f.status !== 'done' && f.status !== 'closed' && (f.buttons || []).indexOf('close') !== -1; }
 function ddButtonsHtml() {
   var f = ddFacts || {};
-  var html = (f.buttons || []).filter(function (b) { return DD_LABELS[b]; }).map(function (b) {
+  var early = ddEarlyClose(f);
+  var html = (f.buttons || []).filter(function (b) { return DD_LABELS[b] && !(early && b === 'close'); }).map(function (b) {
     return '<button type="button" id="dd-' + b + '">' + DD_LABELS[b] + '</button>';
   }).join('');
   html += ddRenaming
@@ -126,6 +131,10 @@ function ddButtonsHtml() {
     html += '<button type="button" id="dd-abandon"' + (ddArmed === 'dd-abandon' ? ' data-armed="1"' : '') +
       ' style="margin-left:auto;background:#b00020;color:#fff">' +
       (ddArmed === 'dd-abandon' ? 'Sure? Abandon the goal' : 'Abandon') + '</button>';
+  }
+  if (early) {
+    html += '<button type="button" id="dd-close"' + (ddArmed === 'dd-close' ? ' data-armed="1"' : '') + ' style="margin-left:auto">' +
+      (ddArmed === 'dd-close' ? 'Close: sure?' : 'Close') + '</button>';
   }
   return html;
 }
@@ -311,9 +320,10 @@ spirit.shell.activateApp({
       var id = t && t.id;
       // CLOSE LEAVES THE DIALOG TOO (desk/G3.8). Andy: "when i click on Close in the Detail dialog, the Dialog
       // should close, since it doesn't exist in the list anymore either." Only once the server took it.
-      if (id === 'dd-close') { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
+      var armedClose = id === 'dd-close' && ddEarlyClose(ddFacts || {});
+      if (id === 'dd-close' && !armedClose) { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
       if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen') { ddPress(id.slice(3)); return; }
-      if (id === 'dd-abandon' || id === 'dd-go-all') {
+      if (id === 'dd-abandon' || id === 'dd-go-all' || armedClose) {
         if (ddArmed !== id) {
           ddArmed = id;
           ddPaint();
@@ -321,6 +331,7 @@ spirit.shell.activateApp({
           return;
         }
         ddArmed = '';
+        if (armedClose) { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
         ddPress(id.slice(3));
         return;
       }

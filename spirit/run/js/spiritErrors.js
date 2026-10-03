@@ -740,6 +740,8 @@ define('name-reserved', { status: 409, texts: ['name reserved by a live invite']
 define('box-moved', { status: 409, texts: ['the box has changed since that version'] });
 define('not-offered', { status: 409, texts: ['that press is not offered for this item now'] });
 define('no-such-item', { status: 404, texts: ['no such item'] });
+// deskClient (goal/G3.9, rule 1): the agent's wait is refused while another agent's key is not blocked on its node.
+define('unblocked', { status: 409, texts: ['another agent is not blocked on this node'] });
 
 // ── A MALFORMED REQUEST ──────────────────────────────────────────────
 //

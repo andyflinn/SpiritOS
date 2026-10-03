@@ -84,9 +84,11 @@ const SAY_MS = 3000;
 const LEAVE_BY_MS = 11000;
 const BIG = Number.MAX_SAFE_INTEGER;
 
-// The node this server runs on, as the node itself named it; its port goes into every record.
+// The node this server runs on, as the node itself named it; its port goes into every record, and its door answers
+// who is blocked there (goal/G3.9).
 let PORT = 0;
-try { PORT = Number(new URL(String(process.env.SPIRIT_CALLBACK_URL || '')).port) || 0; } catch (e) { PORT = 0; }
+let NODE_URL = '';
+try { const u = new URL(String(process.env.SPIRIT_CALLBACK_URL || '')); PORT = Number(u.port) || 0; NODE_URL = u.origin; } catch (e) { PORT = 0; NODE_URL = ''; }
 
 const db = new DatabaseSync(path.join(STATE, 'deskClient.db'));
 // The backup copies this file while it is written, as it does desk.db: in WAL a reader never blocks the writer.
@@ -219,6 +221,7 @@ function meantForAgent(got, from) {
     // key, which he may change and which need not be its node's name (claude-windows's review of goal/G3.4); the
     // name decides only where no key was handed over.
     const mine = SELF_KEY ? r.key === SELF_KEY : r.by === SELF;
+    if (r.key && !mine && r.by && r.by !== 'andy' && r.by !== 'desk') rememberOther(r.key, r.by);
     if (r.by === 'andy') {
       if (r.verb === 'press' && /"what":"seen"/.test(r.body)) return;
       out.push({ text: 'DESK andy ' + r.verb + ' ' + String(r.body).slice(0, 4000), n: cur.n, line: cur.line });
@@ -239,6 +242,38 @@ function meantForAgent(got, from) {
     }
   });
   return out;
+}
+
+// RULE 1 AT THIS NODE (goal/G3.9). Andy, 2026-10-02: "Agants will NOT speak to each other behind the users back."
+// Each agent's node blocks the other agent's key (contact.block; contacts.js: a blocked key is not heard). Every
+// other agent seen writing at the desk — a record under a key not this agent's, not andy's, not the desk's — is
+// kept here, and before a wait hands anything over the node is asked whether each is blocked; one that is not
+// has the wait refused, unblocked, naming it, until it holds. Andy's writes name no agent.
+function others() {
+  const row = getSetting.get('others');
+  try { const o = row ? JSON.parse(row.value) : null; return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; }
+}
+function rememberOther(key, name) {
+  const o = others();
+  if (o[key] === name) return;
+  o[key] = name;
+  putSetting.run('others', JSON.stringify(o));
+}
+function blockedHere(key) {
+  if (!NODE_URL) return Promise.resolve(false);
+  return kernel.core.ask('contact.get', { key: key }, NODE_URL).then(function (r) {
+    const p = r && r.body && r.body.person;
+    return !!(p && p.blocked === true);
+  }, function () { return false; });
+}
+function unblockedOther() {
+  const o = others();
+  const keys = Object.keys(o);
+  function one(i) {
+    if (i >= keys.length) return Promise.resolve(null);
+    return blockedHere(keys[i]).then(function (blocked) { return blocked ? one(i + 1) : { name: o[keys[i]], key: keys[i] }; });
+  }
+  return one(0);
 }
 
 // A FIRST RUN STARTS AT NOW, not at the beginning: each cursor is found by halving, the smallest value after
@@ -384,10 +419,17 @@ appServer.serve({
       const t0 = Date.now();
       const deadline = t0 + HOLD_MS;
       if (said !== 'listening') say(to, 'listening');
+      // The wait ends, with lines or with none, only once every other agent is blocked here (goal/G3.9).
+      function ending(answer) {
+        return unblockedOther().then(function (bad) {
+          if (bad) throw refused('unblocked', bad);
+          return answer();
+        });
+      }
       function wait() {
-        if (waiting.length) return handOver(to, t0);
+        if (waiting.length) return ending(function () { return handOver(to, t0); });
         const now = Date.now();
-        if (now >= deadline) return { lines: [] };
+        if (now >= deadline) return ending(function () { return { lines: [] }; });
         if (turn || nudged || now - lastAskAt >= POLL_MS) return within(poll(to), deadline - now).then(wait);
         // Nothing to ask yet: the time ends this, or a nudge does.
         let wake = null;

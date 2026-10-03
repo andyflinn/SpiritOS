@@ -9,10 +9,11 @@
 // The contract the builder follows (the shape in goal/G2.13's box; the arguable parts fixed here by name):
 //   1. The one rule lives in buttons(), so the List and the dialog follow it alike: an item that offers Done does
 //      not offer Go. An item with no claim offers Go as before; once claimed it offers Done and no Go.
-//   2. THE CLAIM CONSUMES THE GO (Andy, 2026-10-02, under goal/G2.13: "When Done is offered, Go will be considered
-//      pressed/consumed", and "ok, too." to a Reopen without a Go): a claim marks the item gone, as his Go would
-//      have, so it never offers Go again — not after Done, not after a Reopen. Done still leads to Close and
-//      Reopen, and an item that went by his Go offers neither Go nor, until a claim, Done.
+//   2. THE CLAIM CONSUMED THE GO (Andy, 2026-10-02, under goal/G2.13: "When Done is offered, Go will be considered
+//      pressed/consumed") — REPLACED by goal/G3.9 (Andy, 2026-10-03: "yes, the desk may refuse a claim-done, on an
+//      item without 'go' on record"): a claim before his Go is refused and changes nothing; the item is gone by his
+//      Go alone. After it, Done still leads to Close and Reopen, a Reopen offers no Go again, and an item that
+//      went by his Go offers neither Go nor, until a claim, Done. deskRules.js has the refusal in full.
 //   3. The press is refused where the button is gone: a Go pressed on an item that offers Done is refused as not
 //      offered (desk.js's press guard, not-offered).
 
@@ -55,10 +56,16 @@ test.startTest('goal/G2.13: an item that offers Done no longer offers Go');
     const fresh = await buttonsOf('g/G1.1');
     if (has(fresh, 'go') && !has(fresh, 'done')) test.check('an item with no claim offers Go, as before');
     else test.fail('g/G1.1 with no claim: ' + JSON.stringify(fresh));
+    // goal/G3.9: a claim before his Go is refused; the item still offers Go. His Go, then the claim, offers Done alone.
+    const early = await call('press', { id: 'g/G1.1', what: 'claim-done' }, CW);
+    const stillFresh = await buttonsOf('g/G1.1');
+    if ((early.body || {}).ok === false && has(stillFresh, 'go') && !has(stillFresh, 'done')) test.check('a claim before his Go is refused, and the item still offers Go (goal/G3.9)');
+    else test.fail('OWED by goal/G3.9: the claim before Go answered ' + JSON.stringify(early.body) + ', buttons ' + JSON.stringify(stillFresh));
+    await call('press', { id: 'g/G1.1', what: 'go' }, ANDY);
     await call('press', { id: 'g/G1.1', what: 'claim-done' }, CW);
     const claimed = await buttonsOf('g/G1.1');
-    if (has(claimed, 'done') && !has(claimed, 'go')) test.check('claimed without a Go press: Done offered, Go no longer');
-    else test.fail(OWED + 'g/G1.1 claimed without a Go: ' + JSON.stringify(claimed));
+    if (has(claimed, 'done') && !has(claimed, 'go')) test.check('gone by his Go and claimed: Done offered, Go no longer');
+    else test.fail(OWED + 'g/G1.1 gone and claimed: ' + JSON.stringify(claimed));
     // The List draws from items.search: {items: [{key, label}]}, the label being the item's facts as JSON.
     const list = await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: false }, ANDY);
     const row = (function () {
@@ -75,8 +82,8 @@ test.startTest('goal/G2.13: an item that offers Done no longer offers Go');
     else test.fail('g/G1.1 after Done: ' + JSON.stringify(done));
     await call('press', { id: 'g/G1.1', what: 'reopen' }, ANDY);
     const reopened = await buttonsOf('g/G1.1');
-    if (!has(reopened, 'go') && !has(reopened, 'done')) test.check('the claim consumed the Go: after a Reopen there is no Go, and no Done until a new claim');
-    else test.fail(OWED + 'g/G1.1 after Reopen (its Go was consumed by the claim): ' + JSON.stringify(reopened));
+    if (!has(reopened, 'go') && !has(reopened, 'done')) test.check('gone once: after a Reopen there is no Go, and no Done until a new claim');
+    else test.fail(OWED + 'g/G1.1 after Reopen (gone by his Go): ' + JSON.stringify(reopened));
     await call('press', { id: 'g/G1.2', what: 'go' }, ANDY);
     const went = await buttonsOf('g/G1.2');
     if (!has(went, 'go') && !has(went, 'done')) test.check('an item that went offers neither Go nor, until a claim, Done');

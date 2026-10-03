@@ -451,9 +451,16 @@ var DESK_PRESS_LABEL = { go: 'Go!', done: 'Done', close: 'Close', 'bring-back': 
 // NOT IN A ROW: Go all sits in the tab bar (desk/G3.4), and Reopen only in the item's dialog (desk/G3.6, Andy:
 // "the Re-Open button should never be shown in the list").
 var DESK_NOT_IN_ROW = ['go-all', 'reopen'];
+// CLOSE BEFORE HIS GO IS THE DIALOG'S ALONE (goal/G3.9). Andy, 2026-10-03: "the close-with arm is only visible on
+// the item detail". A done row keeps its Close as before.
+function deskInRow(row, what) {
+  if (DESK_NOT_IN_ROW.indexOf(what) !== -1) return false;
+  if (what === 'close' && row.status !== 'done') return false;
+  return true;
+}
 function deskRowHtml(row) {
   var goal = row.goal === '';
-  var presses = (row.buttons || []).filter(function (what) { return DESK_NOT_IN_ROW.indexOf(what) === -1; }).map(function (what) {
+  var presses = (row.buttons || []).filter(function (what) { return deskInRow(row, what); }).map(function (what) {
     return '<button type="button" data-press="' + deskEsc(what) + '" data-id="' + deskEsc(row.id) + '">' +
       deskEsc(DESK_PRESS_LABEL[what] || what) + '</button>';
   }).join(' ');

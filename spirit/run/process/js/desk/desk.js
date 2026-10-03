@@ -317,7 +317,7 @@ function walkState() {
 
 function blank(id, title, goalId) {
   return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '',
-    went: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
+    went: false, go: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
     agentLineN: 0, seenN: 0, alert: false, takenBy: '',
     box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '' };
 }
@@ -406,10 +406,15 @@ function press(s, it, what, r, goalOf) {
   else if (what === 'end-design' && g) g.design = false;
   else if (what === 'abandon' && g) g.abandoned = true;
   else if (what === 'design-complete') { it.designComplete = true; it.status = 'ready'; }
-  else if (what === 'go') { it.went = true; it.status = 'running'; }
-  else if (what === 'go-all' && g) goable(s, g).forEach(function (m) { m.went = true; m.status = 'running'; });
+  // HIS GO IS ON RECORD (goal/G3.9): `go` is set by his go and go-all alone and by nothing else; `went` stays the
+  // state of the item, which older records set in other ways.
+  else if (what === 'go') { it.went = true; it.go = true; it.status = 'running'; }
+  else if (what === 'go-all' && g) goable(s, g).forEach(function (m) { m.went = true; m.go = true; m.status = 'running'; });
   // A CLAIM CONSUMES THE GO (goal/G2.13). Andy: "When Done is offered, Go will be considered pressed/consumed",
   // and "ok, too." to a Reopen without a Go: an item claimed before his Go counts as gone, as his Go would make it.
+  // SINCE goal/G3.9 NO SUCH CLAIM IS TAKEN: the press refuses a claim-done on an item without his Go (Andy,
+  // 2026-10-03: "yes, the desk may refuse a claim-done, on an item without 'go' on record", "the actual contract
+  // is consumed between 'go' and 'done'"). The line below replays the records taken before that day as they were.
   else if (what === 'claim-done') {
     it.claims[r.by] = true;
     if (!it.goal && !it.went) { it.went = true; it.status = 'running'; }
@@ -439,6 +444,9 @@ function blockers(s, it) {
 //   Done   on an item once one agent has claimed ("1 agents consent will offer done buttons");
 //          on a goal once every item is done or closed (goal/G2.10)
 //   Close and Reopen once done
+//   Close also on an item before his Go (goal/G3.9; Andy, 2026-10-03: "A close - with arm-button is available ...
+//          before an item has received a 'go' or a 'done', so the user can get it off the desk, since close is
+//          more of an 'visibility' issue than a process issue"); the List hides it, the dialog arms it
 //   Go all on a goal while any of its items offers Go! (desk/G3.4, Andy: "i should
 //          have a go-all button for fixing rounds")
 //   none once closed
@@ -461,6 +469,7 @@ function buttons(s, it) {
     if (allDone) out.push('done');
   } else if (Object.keys(it.claims).length) out.push('done');
   if (it.goal && g && goable(s, g).length) out.push('go-all');
+  if (!it.goal && !it.went && !claimed) out.push('close');
   return out;
 }
 // The items of a goal that offer Go!, decided by the same rule as their own button.
@@ -478,6 +487,8 @@ function listed(s, it) {
 function facts(s, it) {
   const f = { id: it.id, title: it.title, goal: it.goal ? '' : it.goalId, status: it.closed ? 'closed' : it.done ? 'done' : it.status,
     with: it.with, buttons: buttons(s, it), blocking: it.blocks.slice(), blocked: blockers(s, it),
+    // His Go on record (goal/G3.9): true once he pressed go or go-all on it; an agent's claim never sets it.
+    go: it.go === true,
     // A red star: an agent's line newer than his last seen ("seen, fold (you): stars clear").
     alone: it.alone, star: it.agentLineN > it.seenN, alert: it.alert === true };
   // THE BOX CAP (goal/G2.2 note 1). Andy: "there will be no second box per item. absolutely not.", "orange at 50%,
@@ -977,6 +988,10 @@ appServer.serve({
         const offered = buttons(st, it);
         if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen') && offered.indexOf(a.what) === -1) throw refused('not-offered');
         if (a.what === 'bring-back' && !it.closed) throw refused('not-offered');
+        // NO CLAIM BEFORE HIS GO (goal/G3.9). Andy, 2026-10-03: "yes, the desk may refuse a claim-done, on an item
+        // without 'go' on record", "the actual contract is consumed between 'go' and 'done'". It replaces
+        // goal/G2.13's "a claim consumes the Go" for that case. A goal takes the press as before (goal/G2.10).
+        if (a.what === 'claim-done' && !it.goal && !it.go) throw refused('not-offered');
         // The group chat's anchor stays closed (goal/G3.10): nobody brings it back onto the List.
         if (a.what === 'bring-back' && it.id === GROUP_CHAT) throw refused('not-offered');
       }).change };

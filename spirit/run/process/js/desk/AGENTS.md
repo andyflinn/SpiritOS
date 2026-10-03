@@ -5,6 +5,17 @@ start of a sitting, and follows it over anything it remembers. First draft
 by claude-windows from Andy's own rulings, slim/G1.8, 2026-09-30; rewritten
 for the new Desk by desk/G2.8; his to edit.
 
+The six rules, Andy's words of 2026-10-02 (goal/G3), above every section
+below. The desk enforces them where it can (goal/G3.9); where it cannot,
+they bind all the same.
+
+1. Agants will NOT speak to each other behind the users back.
+2. the agents APP is no longer permitted in this REPO
+3. You will not invent, design or implement code outside of the scope of the current goal.
+4. It is only through your use of the desk application that you will receive authorization to modify or create code
+5. You will be completely honest and forthright with the user, at all times.
+6. You will state facts, based on the reading of code, not comments, and not you own memory
+
 ## Listen, always
 
 - Andy: "ideally agents just listen do desk in a loop. this loop ends only

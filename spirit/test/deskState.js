@@ -183,6 +183,8 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   const afterOwner = JSON.stringify((await items())['t/G1.2']);
   if (answered.every(function (st) { return st >= 400; }) && afterOwner === beforeOwner) test.check('an agent\'s done, close, abandon, start/end-design and rename are refused, and Beta is unchanged');
   else test.fail(OWED + 'agent owner-presses answered ' + JSON.stringify(answered) + ', Beta ' + (afterOwner === beforeOwner ? 'unchanged' : 'changed: ' + afterOwner));
+  // goal/G3.9: a claim before his Go is refused, so his Go comes first (Beta is unblocked since Alpha closed).
+  await call('press', { id: 't/G1.2', what: 'go' }, ANDY);
   const claim = await call('press', { id: 't/G1.2', what: 'claim-done' }, WSL);
   if (claim.status === 200) test.check('an agent\'s claim-done still passes');
   else test.fail('an agent\'s claim-done was refused: ' + JSON.stringify(claim));
