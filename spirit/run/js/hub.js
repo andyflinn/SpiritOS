@@ -958,6 +958,10 @@ function remember(rootDir, from, verdict, relayUrl) {
 // than a line to restore.
 
 function createHub(rootDir) {
+  // A kept rename of a contact, on its way to every open page (server.js
+  // writes it on /api/events as contact.rename). The same seam shape as
+  // arrivals: the hub notes, the stream fans out, neither knows the other.
+  var contactRenames = require('./arrivals').createFanOut();
   function fail(res, status, msg) {
     res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ error: msg }));
@@ -1716,12 +1720,17 @@ function createHub(rootDir) {
         if (mineBad) { fail(res, 400, mineBad); return; }
         var row = contactBook.setMyLabel(rootDir, publicKey, fieldRules.normalize(mine));
         if (!row) { fail(res, 404, 'no row for that key'); return; }
+        var caption = contactBook.labelForKey(rootDir, publicKey, row.publicLabel || '');
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
           publicKey: row.publicKey,
           myLabel: row.myLabel || '',
-          caption: contactBook.labelForKey(rootDir, publicKey, row.publicLabel || ''),
+          caption: caption,
         }));
+        // Every label showing this contact redraws (goal/G4.13). The
+        // node's own event, named contact.rename: Andy, 2026-10-03,
+        // "peer labels belong to node." / "so node owns contact.rename".
+        contactRenames.note({ key: row.publicKey, caption: caption });
         return;
       }
 
@@ -3007,6 +3016,7 @@ function createHub(rootDir) {
     adoptClaim: adoptClaim,
     handleNodeName: handleNodeName,
     handleNodeDescription: handleNodeDescription,
+    contactRenames: contactRenames,
   };
 }
 

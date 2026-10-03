@@ -776,6 +776,15 @@
       .contact-selector-more { opacity: 0.6; font-size: 13px; }
       .contact-selector-more:empty { display: none; }
 
+      /* The contact label (shell/js/contactLabel.js, goal/G4.13). It takes
+         the style of its container, so nothing here sets its face or size;
+         only the editable one says it can be clicked, and a refusal shows
+         beside it. */
+      .contact-label-editable { cursor: text; }
+      .contact-label-input { font: inherit; }
+      .contact-label-error { color: #ff8080; font-size: 13px; margin-left: 8px; }
+      .contact-label-error:empty { display: none; }
+
       /* No min-height and no margin under it. Reserving a line for a
          message that is not there is exactly what §1 forbids, and here it
          was the bottom half of 48px of nothing below the Jobs form: the
@@ -1406,6 +1415,7 @@
          shell hands them to apps as api.ui.elements. Before the shell, and
          the app-server selector before the api-branch one built from it. -->
     <script src="/shell/js/iconSelector.js"></script>
+    <script src="/shell/js/contactLabel.js"></script>
     <script src="/shell/js/contactSelector.js"></script>
     <script src="/shell/js/appServerSelector.js"></script>
     <script src="/shell/js/apiBranchSelector.js"></script>

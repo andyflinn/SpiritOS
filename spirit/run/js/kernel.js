@@ -1053,6 +1053,11 @@ if (isNode()) {
       source.addEventListener('relay-event', function(e) {
         if (handlers.onRelayEvent) handlers.onRelayEvent(JSON.parse(e.data));
       });
+      // A CONTACT RENAMED, {key, caption} (goal/G4.13): the node's own
+      // event, so every label showing that key can redraw.
+      source.addEventListener('contact.rename', function(e) {
+        if (handlers.onContactRename) handlers.onContactRename(JSON.parse(e.data));
+      });
       }
       open();
       return function unsubscribe() { stopped = true; source.close(); };

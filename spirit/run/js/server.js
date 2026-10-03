@@ -270,6 +270,13 @@ function handleSseConnection(req, res) {
     res.write('event: packet\ndata: ' + JSON.stringify(message) + '\n\n');
   });
 
+  // A CONTACT RENAMED, so every label showing that key redraws (goal/G4.13).
+  // The node's own event, its name its own: Andy, 2026-10-03, "leave node
+  // alone. give appServers their namespace." / "so node owns contact.rename".
+  const offContactRename = hub.contactRenames.subscribe((row) => {
+    res.write('event: contact.rename\ndata: ' + JSON.stringify(row) + '\n\n');
+  });
+
   pageStreams.add(res);
 
   const heartbeat = setInterval(() => {
@@ -293,6 +300,7 @@ function handleSseConnection(req, res) {
     // a dead response for ever, and holds the message in memory to do it.
     offArrival();
     offRelayEvent();
+    offContactRename();
   }
   req.on('close', teardown);
   req.on('error', teardown);

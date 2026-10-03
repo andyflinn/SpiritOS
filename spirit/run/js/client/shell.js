@@ -1337,6 +1337,7 @@
         elements: {
           createIconSelector: spiritElements.createIconSelector,
           createContactSelector: spiritElements.createContactSelector,
+          createContactLabel: spiritElements.createContactLabel,
           createAppServerSelector: spiritElements.createAppServerSelector,
           createApiBranchSelector: spiritElements.createApiBranchSelector,
         },
@@ -2863,6 +2864,12 @@
     // decides what to do with one, and an app that is not on screen must
     // not drag the screen to it.
     onRelayEvent: function (event) { deliverRelayEvent(event); },
+
+    // A CONTACT RENAMED (goal/G4.13). Said once on document, so every
+    // contact label listens without a stream of its own (shell/js/contactLabel.js).
+    onContactRename: function (data) {
+      document.dispatchEvent(new CustomEvent('contact.rename', { detail: data }));
+    },
 
     // THE STREAM DOWN IS SAID, AND ITS RETURN IS HANDED ON. Andy, cut off
     // from both agents after a node restart: "this should work without a
