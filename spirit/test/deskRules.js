@@ -286,7 +286,11 @@ async function commits(cwd) { const r = await git(cwd, ['rev-list', '--count', '
 async function commitWith(cwd, file, text, message) {
   fs.writeFileSync(path.join(cwd, file), text);
   await git(cwd, ['add', file]);
-  return git(cwd, ['commit', '-m', message]);
+  const r = await git(cwd, ['commit', '-m', message]);
+  // A refused commit leaves its file staged (git keeps the index when commit-msg refuses); unstage it, so the next
+  // commit carries its own file alone (wsl-claude's review).
+  if (r.status !== 0) await git(cwd, ['rm', '-q', '--cached', file]);
+  return r;
 }
 
 async function main() {
