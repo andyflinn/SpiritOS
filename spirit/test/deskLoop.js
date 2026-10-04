@@ -26,6 +26,9 @@
 //      lines that start with the agent's nick (profile.get, goal/G4.23) are handed over, the one argument starting
 //      with a standing order before the lines; the command prints opencode run --format json's events, and the loop
 //      posts the text of the last step under the line's id, nothing of the steps before it.
+//   4  THE ECHO. Andy, 2026-10-04: "it inspires more confidence if i seeing it sputtering on its terminal". While the
+//      command runs, the loop shows each of its events in its own window as it comes (a tool call by its input, a
+//      text by its words); Desk still gets only the final answer.
 // LEFT OPEN, not asserted: what it does on a refusal from deskEar (unblocked, no-answer) beyond waiting again; on
 //   Windows, opencode is a .cmd, so the command may need a shell there.
 
@@ -163,9 +166,13 @@ function handed(log) {
     "ev({ type: 'text', part: { type: 'text', text: 'thinking aloud ' + n } });",
     "ev({ type: 'tool_use', part: { type: 'tool', tool: 'read', state: { status: 'completed', input: { filePath: 'AGENT_ONBOARDING.md' }, output: '(cut)' } } });",
     "ev({ type: 'step_finish', part: { reason: 'tool-calls', type: 'step-finish' } });",
+    // A model takes its time between steps (gemma: about 3 minutes an answer); here 3 s, so an echo can be seen
+    // before the end. The moment it ends is written beside the log.
+    'Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 3000);',
     "ev({ type: 'step_start', part: { type: 'step-start' } });",
     "ev({ type: 'text', part: { type: 'text', text: 'model heard ' + n } });",
     "ev({ type: 'step_finish', part: { reason: 'stop', type: 'step-finish' } });",
+    "fs.appendFileSync(log + '.ended', Date.now() + '\\n');",
   ].join('\n'));
 
   // HIS NICK FOR IT (goal/G4.23): a line of his that starts "gemma:" is the agent's.
@@ -177,10 +184,15 @@ function handed(log) {
   else { test.fail('the world: profile.set answered ' + short(nicked) + '; the agent reads ' + short(String(nickRead.stdout) + String(nickRead.stderr))); return; }
 
   test.subHeading('1. his "gemma:" line reaches the model under the standing order, and the model answers in Desk');
-  const loop = spawn(process.execPath, [LOOP, String(agentPort), process.execPath, model, log], { cwd: clone, stdio: ['ignore', 'ignore', 'pipe'] });
+  const loop = spawn(process.execPath, [LOOP, String(agentPort), process.execPath, model, log], { cwd: clone, stdio: ['ignore', 'pipe', 'pipe'] });
   kids.push(loop);
   let loopSaid = '';
-  loop.stderr.on('data', function (b) { loopSaid = (loopSaid + b).slice(-1000); });
+  // EVERYTHING ITS WINDOW SHOWS, stdout and stderr alike, each piece with the moment it came.
+  const shown = [];
+  const keep = function (b) { loopSaid = (loopSaid + b).slice(-1000); shown.push({ at: Date.now(), text: String(b) }); };
+  loop.stdout.on('data', keep);
+  loop.stderr.on('data', keep);
+  const shownAt = function (re) { const s = shown.filter(function (x) { return re.test(x.text); })[0]; return s ? s.at : 0; };
   await sleep(3000);
   await deskAsk('chat.add', { id: 'l/G1.1', text: 'a line for the claudes, not for gemma' }, ANDY);
   await deskAsk('chat.add', { id: 'l/G1.1', text: 'gemma: first question from andy' }, ANDY);
@@ -208,6 +220,17 @@ function handed(log) {
   else test.fail(OWED + 'no "model heard 1" under l/G1.1 from the agent: ' + short(chat.slice(-3)));
   if (!chat.some(function (l) { return /thinking aloud/.test(l.text) || /AGENT_ONBOARDING/.test(l.text); })) test.check('nothing of its thinking or tool calls reached Desk');
   else test.fail(OWED + 'its thinking or a tool call reached Desk: ' + short(chat.slice(-3)));
+  // THE ECHO, in the loop's own window only. Andy, 2026-10-04, under goal/G4.28: "it inspires more confidence if i
+  // seeing it sputtering on its terminal, that's what i watch with you"; claude-windows: "deskLoop echoes each event
+  // as it comes, one short line in its own window". Seen while the model still runs, not after it ended.
+  let ended = 0;
+  try { ended = Number(fs.readFileSync(log + '.ended', 'utf8').split('\n')[0]) || 0; } catch (e) { ended = 0; }
+  const toolAt = shownAt(/AGENT_ONBOARDING/);
+  const thoughtAt = shownAt(/thinking aloud 1/);
+  if (toolAt && ended && toolAt < ended) test.check('its window showed the tool call while the model still ran (' + (ended - toolAt) + ' ms before it ended)');
+  else test.fail(OWED + 'the tool call ' + (toolAt ? 'showed ' + (toolAt - ended) + ' ms after the model ended' : 'never showed in the loop\'s window') + '; it said ' + short(loopSaid));
+  if (thoughtAt && ended && thoughtAt < ended) test.check('its window showed the model\'s text as it came');
+  else test.fail(OWED + 'the model\'s text "thinking aloud 1" ' + (thoughtAt ? 'showed only after it ended' : 'never showed in the loop\'s window'));
 
   test.subHeading('2. the loop listens again; each line is handed over once');
   await deskAsk('chat.add', { id: 'l/G1.1', text: 'gemma: second question from andy' }, ANDY);
