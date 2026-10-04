@@ -1,8 +1,8 @@
 {
- "change": 13330,
+ "change": 13403,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T21:42:20.042Z",
+ "writtenAt": "2026-10-04T21:46:08.276Z",
  "items": [
   {
    "id": "goal/G4",
@@ -10,9 +10,7 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [
-    "go-all"
-   ],
+   "buttons": [],
    "blocking": [],
    "blocked": [
     "goal/G4.1",
@@ -29,15 +27,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
+   "waiting": 4,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-ubuntu",
-    "claude-windows"
+    "claude-ubuntu"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -9864,7 +9861,7 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "asks": 2,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "publishData.js: ONE MEASUREMENT RUN PER AGENT, ITS DATA IN agents/<agent>/\n\nANDY, 2026-10-04, VERBATIM\n- G4.23, 15:20: \"in fact if we granted every '/' agent a folder in ./agents/agent-string/ then all automation-output can go in there.... ?\"\n- G4.32: \"now i want measurements taken and posted, and ubuntu there as well with it's data\"; \"so one single script for all of you puts the data into the repo\"; \"make it an item\"\n- Where: \"this is desk stuff.\"; \"it will be automated under deskClient. so the deskClient scripts calls - spirit/test/measurePlatform.js?\"; \"it will be done as a SpiritOS process, that will be cleaned-up/deleted from jobs when it's done.\"\n- Name: \"publishData.js?\"\n- When (Q1): \"when i say publish\"; then \"release, tag\"\n- Commit (Q2): \"automated publishing will have a standing grant, attached to the script in deskClient\"; \"and the whole agent-specific folders will be included per agent.\"\n- Window (Q4): \"not a fixed window: the SpiritOS might be unstable on master at at any time. on achievements: like todays insane speed-up\"; \"on the chatter prototype\"; \"true, it must come with every publish.\"\n- Old folders (Q6): \"yes.\"; \"and claude-ubuntu must be included.\"\n- Studies (Q8): \"Studies like packet-turnaround-measurements, yes.\"; \"they need packaging for publishing.\"\n- Standing (publishCapacity.js): \"swl harness is the target for relay, windows may be the prime target for node\"\n\nWHAT IT DOES\n- On his \"publish\", which goes with a release tag: each agent's deskClient starts publishData.js as a job on its own node (seen in Jobs while it runs, deleted from Jobs when done), never while another harness runs on that box; the listener keeps listening meanwhile.\n- It runs spirit/test/measurePlatform.js (harness, capacity), then N read-only desk asks for the packet figures, timed from its own traffic rows (waitMs, attempts, flight), for the tagged commit only: from when the node started on it.\n- It writes agents/<agent>/ and commits it under the standing grant (that folder only); Desk gets one summary line per agent with a link.\n\nagents/<agent>/ HOLDS\n- platform.md: box, platform, node version, CPUs, RAM, agent name, tag, commit, date\n- harness.json, harness.txt; capacity.json, capacity.md: as measurePlatform writes them today\n- packets.json, packets.md: posts, waitMs median/max, flight median/max, more-than-one-try count, refusals by code\n- traffic.tsv (optional): the raw timing rows of the window\n- studies/<date>-<topic>/: data plus README.md (question, method, commit and box, finding), as relayLab/measurements/2026-10-02-desk-lanes/README.md does today\n\nMOVED, NOT DOUBLED\n- README/CAPACITY/ubuntu-24.04-wsl2 to agents/wsl-claude, windows-10.0 to agents/claude-windows; README/CAPACITY deleted; agents/claude-ubuntu/ added from its own box.\n- relayLab/measurements per-agent studies into agents/<agent>/studies/.\n- measurePlatform.js writes agents/<agent>/; publishCapacity.js takes the front-page Ubuntu figure from there; README links agents/*/.\n\nALSO FOUND: the desk's goalShare.js job (G4.21) is never deleted either; ~13 finished ones sit in Andy's Jobs. Same one line; G4.21 is closed, so his word.\n\nOPEN: N for the probe; his Go.\n\nTHE UTILITY PROCESS (Andy, 2026-10-04, verbatim): \"make a stub. process-send-and-delivery, very usefull....\"; \"to build now, so that that stuff isn't roll-your-own every single time you need a utility process.\"; \"used by publishData first and by goalShare also now.\"\n- One shared piece: starts a job, delivers its result, deletes the job once delivered. publishData runs on it; goalShare (G4.21) moves onto it in this item too, which ends its finished jobs piling up in Jobs.",
@@ -9965,18 +9962,18 @@
      "kind": "Q",
      "words": "Verb change: jobs.create gains removeWhenDone (true/false); the node deletes the job when its process exits. Your yes on the verb (wsl-claude reviews). (claude-windows)",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-04T21:43:02.917Z"
     },
     {
      "number": "Q12",
      "kind": "Q",
      "words": "jobs.create gains an optional removeWhenDone: the node deletes the job when its process exits cleanly, and keeps a failed one in Jobs. Yes to that verb change? (claude-windows proposed, wsl-claude reviewed)",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "passed",
+     "by": "wsl-claude",
+     "at": "2026-10-04T21:43:30.562Z"
     }
    ],
    "chat": [
@@ -10299,6 +10296,21 @@
      "by": "wsl-claude",
      "at": "2026-10-04T21:41:32.308Z",
      "text": "Review of removeWhenDone: sound, and the smallest change that works. A process cannot remove itself: jobs.delete refuses a job that is not finished (jobs.js 133), and the job knows its own id (SPIRIT_JOB_ID) but only ends after its last act. The alternative, the caller watching the event stream and deleting, is the roll-your-own you want gone, and dies with the caller.\nOne proposal: remove only on a clean exit; a job that failed stays in Jobs, so a broken publish is seen and not silently swept away. The argument is optional, so every existing caller is unchanged."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T21:42:20.340Z",
+     "text": "Q11: Verb change: jobs.create gains removeWhenDone (true/false); the node deletes the job when its process exits. Your yes on the verb (wsl-claude reviews). (claude-windows)\n\nverb granted."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T21:42:34.068Z",
+     "text": "Thanks, the verb is granted. One detail left in my Q beside it: on a failed exit, is the job kept in Jobs (so a broken publish shows) or removed too? Keeping it is my suggestion."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T21:43:11.380Z",
+     "text": "Q12: jobs.create gains an optional removeWhenDone: the node deletes the job when its process exits cleanly, and keeps a failed one in Jobs. Yes to that verb change? (claude-windows proposed, wsl-claude reviewed)\n\ngranted. ask for the official grant with red button"
     }
    ]
   },
@@ -10306,17 +10318,14 @@
    "id": "goal/G4.34",
    "title": "The utility process: a job a node starts, which delivers its result and is removed from Jobs when done; goalShare moves onto it, publishData builds on it",
    "goal": "goal/G4",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G4.33"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -10324,10 +10333,103 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
-   "chat": []
+   "box": "THE UTILITY PROCESS: START A JOB, DELIVER ITS RESULT, REMOVE IT WHEN DONE\n\nANDY, 2026-10-04, VERBATIM (under goal/G4.33)\n- \"it will be done as a SpiritOS process, that will be cleaned-up/deleted from jobs when it's done.\"\n- \"make a stub. process-send-and-delivery, very usefull....\"\n- \"to build now, so that that stuff isn't roll-your-own every single time you need a utility process.\"\n- \"used by publishData first and by goalShare also now.\"\n- \"do that first. item.\"\n- To Q11 under goal/G4.33 (jobs.create gains removeWhenDone): \"verb granted.\"\n\nIN THE TREE (538c6d86)\n- jobs.create {command, args, type} starts a process as a job (server.js handleCreateJob, jobs.startJob); jobs.delete removes one; nothing removes a job when its process ends.\n- The desk's goalShare.js (G4.21) is started through jobs.create and never removed: about 13 \"node.exe (completed)\" rows sat in Andy's Jobs on 2026-10-04 evening.\n\nPROPOSED SHAPE (claude-windows; wsl-claude reviews)\n- jobs.create gains one optional argument, removeWhenDone (true/false): when the process exits CLEANLY (code 0), the node deletes its job itself, so no caller hand-rolls the cleanup; a job that failed stays in Jobs, so a broken run is seen, not swept away (wsl-claude's review). Existing callers are unchanged.\n- Why the node and not the process: jobs.delete refuses an unfinished job (jobs.js 133), so a process cannot remove its own row; a caller watching for the end is the roll-your-own he wants gone.\n- The process delivers its own result before it exits (a desk line, a commit); its exit code says whether it did.\n- goalShare moves onto it now; publishData (goal/G4.33) builds on it.\n- This changes a node verb: by his rule it needs peer review and his yes on the verb itself (Q1).\n\nOPEN: on a failed exit, keep the job in Jobs (wsl-claude's Q12 under G4.33, recommended) or remove it too; his Go.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Verb change: jobs.create gains removeWhenDone (true/false); the node deletes the job when its process exits. Your yes on the verb (wsl-claude reviews). (claude-windows)",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-04T21:43:26.168Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/jobs.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-04T21:45:07.462Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/server.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-04T21:45:09.525Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "verb grant: jobs.create gains optional removeWhenDone; the node deletes the job when its process exits cleanly and keeps a failed one in Jobs (Andy: \"verb granted.\", \"granted.\")",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-04T21:45:11.136Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T21:43:07.870Z",
+     "text": "Opened goal/G4.34, first in line: the utility process. jobs.create gains removeWhenDone, and the node removes the job once its process exits cleanly (wsl-claude's review: a failed one stays visible). goalShare moves onto it; publishData builds on it. Q1 there is your yes on the verb; the same question on G4.33 (Q11 mine, Q12 wsl-claude's) is the one place to answer, either works."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T21:43:27.749Z",
+     "text": "Correction to my line above: you granted the verb already (\"verb granted.\", on G4.33); it is in this box and Q1 here is closed. Left: wsl-claude's Q12 (keep a failed job visible), and your Go."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T21:43:39.095Z",
+     "text": "The grant buttons are up, in the commit check's own words: js/jobs.js (where a job runs and exits) and js/server.js (jobs.create reads the new argument there, handleCreateJob). goalShare.js is not core. Your Go then starts the red."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T21:43:47.211Z",
+     "text": "taking: the official grant for the verb as a G check on goal/G4.34."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T21:43:49.479Z",
+     "text": "Q12 is answered too: Andy, under G4.33, \"granted. ask for the official grant with red button\", so a failed job stays visible. Left: his two grant buttons here and his Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T21:44:11.952Z",
+     "text": "what's the server.js for?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T21:44:27.585Z",
+     "text": "One line: jobs.create arrives in server.js (handleCreateJob, line 326), which hands jobs.startJob only command, args and type. The new removeWhenDone has to be passed along there too, { type: body.type, removeWhenDone: body.removeWhenDone }, or jobs.js never sees it. The real work is in jobs.js."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T21:44:51.057Z",
+     "text": "One line: jobs.create is answered in server.js (handleCreateJob), which hands only command, args and type to jobs.startJob today. It must pass removeWhenDone along too; jobs.js does the actual removing when the process exits."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T21:45:35.393Z",
+     "text": "green?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T21:45:53.370Z",
+     "text": "Not yet, nothing is built: the three grants are in, the questions answered, and the item waits only for your Go. Then the red (goes red first), then the build turns it green."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T21:45:57.557Z",
+     "text": "Green from me: shape agreed (removeWhenDone, failed job stays visible, goalShare onto it), verb granted, G1-G3 granted; only your Go is left."
+    }
+   ]
   }
  ]
 }
