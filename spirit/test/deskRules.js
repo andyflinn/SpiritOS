@@ -465,6 +465,31 @@ async function main() {
   const asMade = await linesFor(madeAs);
   if (made.status === 0 && pushed2.status === 0 && madeAs !== restackedAs && remoteHas === restackedAs && asPushed.hit && !asMade.hit) test.check('E2: a commit re-stacked by a pull is written under the id the remote holds (' + remoteHas.slice(0, 7) + '), not the one it was made with (' + madeAs.slice(0, 7) + ')');
   else test.fail(OWED19 + 'E2: made ' + madeAs.slice(0, 7) + ', re-stacked ' + restackedAs.slice(0, 7) + ', remote ' + remoteHas.slice(0, 7) + ', push -> ' + pushed2.status + '; written as pushed ' + !!asPushed.hit + ', as made ' + !!asMade.hit);
+  // A REFUSED PUSH WRITES NOTHING (goal/G4.27). Andy, 2026-10-04, to "Fix it so the line is written only once GitHub
+  // holds the commit, as a new item?": "if that's what's needed. do it.", then his Go on goal/G4.27. On GitHub the push
+  // is refused by the server after the pre-push hook ran (somebody pushed in between); a local bare remote refuses a
+  // stale push before the hook, so the server's refusal is made here by a pre-receive hook that refuses once. No line
+  // may name the refused commit; pushed again, the line names the id the remote holds. The line may come a little after
+  // the push (a detached helper waits for the remote), so it is polled for, up to ten seconds.
+  const OWED27 = 'OWED by goal/G4.27: ';
+  const hook = path.join(remote, 'hooks', 'pre-receive');
+  const once = path.join(scratch, 'refused-once');
+  fs.writeFileSync(hook, '#!/bin/sh\nif [ ! -f "' + once + '" ]; then touch "' + once + '"; echo refused once >&2; exit 1; fi\nexit 0\n');
+  fs.chmodSync(hook, 0o755);
+  const tried = await commitWith(repo, 'g.txt', 'g', 'r/G1.1: a push the server refuses once');
+  const triedAs = (await git(repo, ['rev-parse', 'HEAD'])).stdout.trim();
+  const refused = await git(repo, ['push', '-q', 'origin', 'HEAD:master']);
+  await sleep(3000);
+  const falseLine = await linesFor(triedAs);
+  if (tried.status === 0 && refused.status !== 0 && fs.existsSync(once) && !falseLine.hit) test.check('E2: a push the server refuses writes no line for its commit (' + triedAs.slice(0, 7) + ')');
+  else test.fail(OWED27 + 'E2: refused push -> ' + refused.status + ' (refused by the server ' + fs.existsSync(once) + '); a line names ' + triedAs.slice(0, 7) + ': ' + !!falseLine.hit);
+  const pushed3 = await git(repo, ['push', '-q', 'origin', 'HEAD:master']);
+  const remoteNow = (await git(remote, ['rev-parse', 'master'])).stdout.trim();
+  let landed = null;
+  for (let i = 0; i < 20 && !(landed && landed.hit); i++) { await sleep(500); landed = await linesFor(remoteNow); }
+  if (pushed3.status === 0 && remoteNow === triedAs && landed && landed.hit) test.check('E2: pushed again, the line names the id the remote holds (' + remoteNow.slice(0, 7) + ')');
+  else test.fail(OWED27 + 'E2: the second push -> ' + pushed3.status + '; remote ' + remoteNow.slice(0, 7) + ', a line names it: ' + !!(landed && landed.hit));
+  try { fs.unlinkSync(hook); } catch (e) { /* gone */ }
   const nBeforeDone = await commits(repo);
   await desk('press', { id: 'r/G1.1', what: 'done' }, ANDY);
   const isDone = await commitWith(repo, 'd.txt', 'd', 'r/G1.1: done already');
