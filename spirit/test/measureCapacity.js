@@ -13,7 +13,7 @@
 //
 //   node spirit/test/measureCapacity.js            print the tables
 //   node spirit/test/measureCapacity.js --row       one line, for the history table
-//   node spirit/test/measureCapacity.js --save      write README/CAPACITY/<platform>/
+//   node spirit/test/measureCapacity.js --save --agent <name>   write agents/<name>/ (goal/G4.33)
 //   node spirit/test/measureCapacity.js --save --as ubuntu-24.04-wsl2
 //
 // ── A SECOND PLATFORM IS THE POINT, NOT A NICETY ─────────────────
@@ -563,7 +563,10 @@ async function main() {
     const named = argAfter('--as');
     const slug = named || ((process.platform === 'win32' ? 'windows' : 'linux') + '-' +
       String(os.release()).replace(/[^0-9.]/g, '').split('.').slice(0, 2).join('.'));
-    const dir = path.join(REPO, 'README', 'CAPACITY', slug);
+    // THE AGENT'S FOLDER (goal/G4.33): agents/<agent>/, the agent named by --agent; README/CAPACITY/ is gone.
+    const agent = argAfter('--agent');
+    if (!agent) { console.log('--save needs --agent <your desk name>: it writes agents/<agent>/ (goal/G4.33)'); process.exit(2); }
+    const dir = path.join(REPO, 'agents', agent);
     fs.mkdirSync(dir, { recursive: true });
     const facts = {
       measuredAt: new Date().toISOString(),
@@ -638,8 +641,8 @@ async function main() {
     ];
     fs.writeFileSync(path.join(dir, 'capacity.md'),
       head.concat(out).join('\n') + '\n');
-    console.log('written: README/CAPACITY/' + slug + '/capacity.json');
-    console.log('         README/CAPACITY/' + slug + '/capacity.md');
+    console.log('written: agents/' + agent + '/capacity.json');
+    console.log('         agents/' + agent + '/capacity.md');
     console.log('');
     console.log(out.join(String.fromCharCode(10)));
   } else if (rowOnly) {

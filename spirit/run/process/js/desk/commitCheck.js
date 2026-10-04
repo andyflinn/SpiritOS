@@ -96,7 +96,28 @@ function check() {
   try { message = fs.readFileSync(file, 'utf8'); } catch (e) { end(1, 'commitCheck: no message file ' + file); }
   const ids = [];
   message.replace(ITEM, function (m, id) { if (ids.indexOf(id) === -1) ids.push(id); return m; });
-  if (!ids.length) end(1, 'commitCheck: REFUSED, the message names no item (rule 4: an item of the current goal with his Go, such as area/G1.2)');
+  return ownFolderOnly().then(function (own) {
+    if (own) end(0, 'commitCheck: agents/' + own + '/ alone: the standing grant for publishing takes it, no item needed');
+    if (!ids.length) end(1, 'commitCheck: REFUSED, the message names no item (rule 4: an item of the current goal with his Go, such as area/G1.2)');
+    return checkItems(ids);
+  });
+}
+
+// THE STANDING GRANT FOR PUBLISHING (goal/G4.33). Andy: "automated publishing will have a standing grant, attached to
+// the script in deskClient"; "and the whole agent-specific folders will be included per agent." A commit whose staged
+// files all lie in agents/<this agent>/ passes with no item; the agent is the name Andy set in its profile. Any other
+// file, or another agent's folder, is checked as before. Answers the agent's name, or '' when the grant does not apply.
+function ownFolderOnly() {
+  const staged = git(['diff', '--cached', '--name-only']).stdout.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+  if (!staged.length || !staged.every(function (f) { return /^agents\//.test(f); })) return Promise.resolve('');
+  return desk('profile.get', { agent: '' }).then(function (p) {
+    const name = String((p && p.name) || '');
+    const mine = 'agents/' + name + '/';
+    return name && staged.every(function (f) { return f.indexOf(mine) === 0; }) ? name : '';
+  });
+}
+
+function checkItems(ids) {
   return desk('items.search', { text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: false }).then(function (goals) {
     const current = (goals.items || []).map(function (p) { try { return JSON.parse(p.label).id; } catch (e) { return ''; } }).filter(Boolean);
     const reasons = [];

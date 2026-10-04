@@ -99,11 +99,12 @@ if (ready && perRow > 0 && perRow <= base) test.check('a row at the maxima measu
 else test.fail(OWED + 'a row at the maxima measured ' + perRow + ' bytes against a computed worst of ' + base);
 
 test.subHeading('3. every published figure is within the computed worst');
-const DIR = path.join(ROOT, 'README', 'CAPACITY');
+// Each agent's folder (goal/G4.33): agents/<agent>/capacity.json.
+const DIR = path.join(ROOT, 'agents');
 const published = fs.readdirSync(DIR).filter(function (n) { return fs.existsSync(path.join(DIR, n, 'capacity.json')); }).map(function (n) {
   return { name: n, bytes: Number(JSON.parse(fs.readFileSync(path.join(DIR, n, 'capacity.json'), 'utf8')).perMemberRowBytes) };
 });
-if (!published.length) test.fail('no capacity.json under README/CAPACITY, so nothing is compared');
+if (!published.length) test.fail('no capacity.json under agents/, so nothing is compared');
 else if (ready && published.every(function (p) { return p.bytes > 0 && p.bytes <= base; })) test.check('published ' + published.map(function (p) { return p.name + ' ' + p.bytes; }).join(', ') + ', each within ' + base);
 else test.fail(OWED + 'published ' + published.map(function (p) { return p.name + ' ' + p.bytes; }).join(', ') + ' against a computed worst of ' + base);
 

@@ -61,6 +61,15 @@ function namedAs() {
   return (i !== -1 && a[i + 1] && a[i + 1].charAt(0) !== '-') ? a[i + 1] : '';
 }
 
+// THE AGENT'S FOLDER (goal/G4.33). Andy: "in fact if we granted every '/' agent a folder in ./agents/agent-string/
+// then all automation-output can go in there"; to the old folders: "yes.". The results land in agents/<agent>/, the
+// agent being the name Andy set in its profile; --agent names it, and nothing is written without it.
+function agentName() {
+  const a = process.argv.slice(2);
+  const i = a.indexOf('--agent');
+  return (i !== -1 && a[i + 1] && a[i + 1].charAt(0) !== '-') ? a[i + 1] : '';
+}
+
 function platformSlug() {
   return namedAs() || ((process.platform === 'win32' ? 'windows' : 'linux') + '-' +
     String(os.release()).replace(/[^0-9.]/g, '').split('.').slice(0, 2).join('.'));
@@ -133,7 +142,9 @@ function main() {
   // DEFAULT ONE, so nothing changes for a quick look and a single run is
   // reported honestly as a single run. `--runs 3` is what a published
   // figure should be taken from.
-  const dir = path.join(REPO, 'README', 'CAPACITY', slug);
+  const agent = agentName();
+  if (!agent) { console.log('--agent <your desk name> is required: the results go to agents/<agent>/ (goal/G4.33)'); process.exit(2); }
+  const dir = path.join(REPO, 'agents', agent);
   const RUNS = Math.max(1, Number(process.argv[process.argv.indexOf('--runs') + 1]) || 1);
   const samples = [];
   console.log('2/2  capacity' + (RUNS > 1 ? ' (' + RUNS + ' runs)' : ''));
@@ -141,7 +152,7 @@ function main() {
   for (let i = 0; i < RUNS; i += 1) {
     if (RUNS > 1) console.log('     run ' + (i + 1) + ' of ' + RUNS);
     capRun = run('measureCapacity.js',
-      namedAs() ? ['--save', '--as', namedAs()] : ['--save']);
+      (namedAs() ? ['--save', '--as', namedAs()] : ['--save']).concat(['--agent', agent]));
     if (capRun.code === 0) {
       try {
         samples.push(JSON.parse(fs.readFileSync(path.join(dir, 'capacity.json'), 'utf8')));
@@ -231,7 +242,7 @@ function main() {
 
   const green = harness && harness.red === 0 && harness.unhappy === 0;
   const lines = [
-    '# ' + slug,
+    '# ' + slug + ' (' + agent + ')',
     '',
     '**Measured ' + at.slice(0, 10) + ', against `' + commit + '`.**',
     '',
@@ -262,9 +273,9 @@ function main() {
   fs.writeFileSync(path.join(dir, 'platform.md'), lines.join('\n'));
 
   console.log('');
-  console.log('written: README/CAPACITY/' + slug + '/platform.md');
-  console.log('         README/CAPACITY/' + slug + '/harness.json, harness.txt');
-  console.log('         README/CAPACITY/' + slug + '/capacity.json, capacity.md');
+  console.log('written: agents/' + agent + '/platform.md');
+  console.log('         agents/' + agent + '/harness.json, harness.txt');
+  console.log('         agents/' + agent + '/capacity.json, capacity.md');
   console.log('');
   if (!green) {
     console.log('NOTE: the harness was not clean on this box. That is worth reporting —');

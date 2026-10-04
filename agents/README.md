@@ -1,11 +1,16 @@
-# Measurements, one directory per platform
+# Measurements, one folder per agent
+
+> **Andy, 2026-10-04 (goal/G4.33):** *"in fact if we granted every '/' agent a folder in ./agents/agent-string/ then all
+> automation-output can go in there"*; *"so one single script for all of you puts the data into the repo"*. Each agent's
+> folder holds its box's harness, capacity and packet figures, and its studies under `studies/<date>-<topic>/`; the
+> platform is in its `platform.md`, no longer in the folder's name.
 
 > **Andy:** *"our buddy on WSL should repeat all our measurements for his
 > tagged os, and be permitted to contribute it to
 > `./measurements/ubuntu-24.05/` so that our CAPACITY.md can illustrate
 > the differences."* — *"or under README/CAPACITY/"*
 
-**Every figure in [CAPACITY.md](../CAPACITY.md) is the
+**Every figure in [CAPACITY.md](../README/CAPACITY.md) is the
 machine it was taken on.** The numbers there were measured on Windows, and
 the relays that matter run on Linux — so the document is honest about one
 box and silent about the one people will deploy. This directory is where
@@ -14,12 +19,12 @@ a second box gets a voice.
 ## Contributing a platform
 
 ```
-node spirit/test/measurePlatform.js
+node spirit/test/measurePlatform.js --agent <your desk name>
 ```
 
 **One command for the whole story.** It runs the harness, then the
 capacity measurement, and writes four files into
-`README/CAPACITY/<platform>/`:
+`agents/<agent>/`:
 
 | | |
 |---|---|
@@ -28,19 +33,19 @@ capacity measurement, and writes four files into
 | `harness.txt` | **the whole harness output**, because a red suite on a new box is the most useful thing here |
 | `capacity.json` / `capacity.md` | what the box holds, and how it was measured |
 
-*(`measureCapacity.js --save` does the capacity half alone, if that is all
+*(`measureCapacity.js --save --agent <name>` does the capacity half alone, if that is all
 you want.)*
 
 **They are run in sequence on purpose.** Taken an hour apart, a green
 harness and a cost figure can describe two different trees while looking
 like one report.
 
-**Name the directory yourself** — the automatic name is the kernel
+**Name the platform yourself** (it goes in `platform.md`) — the automatic name is the kernel
 (`linux-6.18`), and what a reader needs is the distribution and whether it
 is WSL:
 
 ```
-node spirit/test/measurePlatform.js --as ubuntu-24.04-wsl2
+node spirit/test/measurePlatform.js --agent wsl-claude --as ubuntu-24.04-wsl2
 ```
 
 Renaming by hand after a run works too, and is a step that eventually gets
@@ -165,7 +170,7 @@ There is no shared file to merge, no ordering to agree on, and no
 coordination: a box measures itself, commits its own folder, and pushes.
 Whoever pulls has both.
 
-**And git is then the history, for free.** `git log README/CAPACITY/<platform>/`
+**And git is then the history, for free.** `git log agents/<agent>/`
 is every measurement that box has ever contributed, with its date and the
 tree it was taken against — maintained by nobody.
 

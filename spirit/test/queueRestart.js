@@ -95,12 +95,17 @@ async function run() {
     test.fail('queue rows: ' + JSON.stringify(rows));
   }
 
+  // SINCE goal/G4.30 a busy answer earns 250 ms first, never the relay's whole quote (Andy: "agreed." to 250, 500,
+  // 1000, 2000, never past the quote), so the row is short; what this asserts is that it is written down at all.
   const pairs = store.backoff.all();
-  if (pairs.length === 1 && pairs[0].untilWall > Date.now() + 50000) {
+  if (pairs.length === 1 && pairs[0].untilWall > Date.now() - 5000 && pairs[0].untilWall <= Date.now() + 60000) {
     test.check('and so is the backoff the busy target earned');
   } else {
     test.fail('backoff rows: ' + JSON.stringify(pairs));
   }
+  // A LONG BACKOFF FOR THE RESTART TO RESPECT: set here, as the section after this does, since a busy one is 250 ms now
+  // and would be over before the new process starts.
+  store.backoff.put(RELAY, TO, Date.now() + 60000, 60000);
 
   test.subHeading('A new process takes it back, and respects the backoff');
 

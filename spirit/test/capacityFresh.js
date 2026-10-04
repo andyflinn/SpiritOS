@@ -46,7 +46,8 @@ const memberRowWorst = require('./memberRowWorst.js');
 test.startTest('Published capacity figures are within the worst the rule allows');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const DIR = path.join(ROOT, 'README', 'CAPACITY');
+// Each agent's folder (goal/G4.33): agents/<agent>/capacity.json; README/CAPACITY/ is gone.
+const DIR = path.join(ROOT, 'agents');
 const WORST = memberRowWorst.worstBytes();
 
 {
@@ -60,7 +61,7 @@ const WORST = memberRowWorst.worstBytes();
   } catch (e) { platforms = []; }
 
   if (!platforms.length) {
-    test.fail('no capacity.json found under README/CAPACITY — nothing is published to check');
+    test.fail('no capacity.json found under agents/ — nothing is published to check');
   }
 
   platforms.forEach(function (name) {

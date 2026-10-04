@@ -211,6 +211,22 @@ function changes(to, n, line) {
   });
 }
 
+// HIS "publish" STARTS A PUBLISH (goal/G4.33). Andy, to what starts it: "\"publish\"", his group-chat line exactly
+// that; to N: "that's a fine number" (20); "it will be done as a SpiritOS process, that will be cleaned-up/deleted
+// from jobs when it's done." So the line asks this agent's own node for a publishData job, removed from Jobs once it
+// exited cleanly (goal/G4.34); any other line starts nothing. The job runs from the node's own tree, so publishData
+// finds the agent's clone, measures, commits agents/<agent>/ under the standing grant, and says so in Desk.
+const PUBLISH_ASKS = 20;
+function publishOn(body) {
+  let b = null;
+  try { b = JSON.parse(body); } catch (e) { return; }
+  if (!b || b.id !== 'desk/G0.0' || String(b.text || '').trim() !== 'publish' || !NODE_URL || !PORT) return;
+  kernel.core.ask('jobs.create', { command: process.execPath, args: [path.join(__dirname, 'publishData.js'), String(PORT), '--asks', String(PUBLISH_ASKS)],
+    type: 'publishData', removeWhenDone: true }, NODE_URL).then(function (r) {
+    if (!r || r.status >= 300) console.error('deskClient: the node refused the publish job: ' + (r ? r.text : 'no answer'));
+  }, function (e) { console.error('deskClient: the publish job was not asked: ' + ((e && e.message) || e)); });
+}
+
 // What one answer of changes holds for this agent, in the order the desk gave it, each with the place after it.
 function meantForAgent(got, from) {
   const out = [];
@@ -224,6 +240,7 @@ function meantForAgent(got, from) {
     if (r.key && !mine && r.by && r.by !== 'andy' && r.by !== 'desk') rememberOther(r.key, r.by);
     if (r.by === 'andy') {
       if (r.verb === 'press' && /"what":"seen"/.test(r.body)) return;
+      if (r.verb === 'chat.add') publishOn(r.body);
       out.push({ text: 'DESK andy ' + r.verb + ' ' + String(r.body).slice(0, 4000), n: cur.n, line: cur.line });
     } else if (r.by && !mine && r.by !== 'desk' && r.verb === 'chat.add') {
       // The desk's own busy replies are for Andy; they wake no agent (Andy: "it won't bother you").
