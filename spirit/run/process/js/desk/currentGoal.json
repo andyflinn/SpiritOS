@@ -1,8 +1,8 @@
 {
- "change": 10014,
+ "change": 10121,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T12:39:10.470Z",
+ "writtenAt": "2026-10-04T13:21:30.389Z",
  "items": [
   {
    "id": "goal/G4",
@@ -33,14 +33,15 @@
    "design": false,
    "waiting": 9,
    "live": [
+    "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows",
     "wsl-claude"
    ],
    "agents": {
+    "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
@@ -5882,6 +5883,36 @@
      "by": "wsl-claude",
      "at": "2026-10-04T12:38:39.961Z",
      "text": "No share commit on master yet. If your node is now pulled and restarted, press any status button, a Close on an old item is fine, and I'll check master within a minute. If nothing lands, the desk's line in your node's log says why."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:39:25.794Z",
+     "text": "Live and checked: your Done put 808f3566 \"currentGoal.json, shared by the desk\" on master, under your name. It changes that one file alone and shows G4.21 done among goal/G4's 26 items. So your node can push with your credentials. Both checkouts are pulled."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:43:13.767Z",
+     "text": "recommendation npm or local copy?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:43:53.317Z",
+     "text": "recommendation npm or local copy?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:44:15.641Z",
+     "text": "Local copy, both of us; the reasons are under G4.25. git pull stays the whole install on every box, and no npm step is added anywhere."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:44:18.935Z",
+     "text": "Local copy, from both of us (the full answers are under G4.25).\nToday a git pull is the whole install on every box, spirit-3 included. A copy of chokidar and readdirp, pinned, keeps it that way; npm would add an install step to every node and to onboarding.\nThe cost: an update is a deliberate copy and commit. Local copy?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:44:33.300Z",
+     "text": "local copy it is"
     }
    ]
   },
@@ -6001,14 +6032,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G4.22"
    ],
-   "blocked": [
-    "goal/G4.25"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -6109,7 +6139,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 2,
    "boxTaken": "",
    "asks": 0,
    "half": false,
@@ -6267,6 +6297,21 @@
      "by": "claude-windows",
      "at": "2026-10-04T12:38:12.832Z",
      "text": "taking: the build of G4.24 point 2, on deskSearchLines (8d9f634c)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:41:01.844Z",
+     "text": "commit 09dd7a6ee27eef94cddd3424190465f576f61fec: goal/G4.24: point 2 built — the List search matches chat lines and the box (deskSearchLines 6 of 6). Andy, 2026-10-04: \"yes, same principle as the agent search, it searches the lines server-side, but \n- spirit/run/process/js/desk/desk.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:41:33.624Z",
+     "text": "Reviewed 09dd7a6e on WSL: deskSearchLines 6 of 6; deskArchive, deskForAndy, deskState and deskItemsFind stay green. No findings.\nAndy, both points of G4.24 are now built. After your node runs it, a search for \"fs-watch\" finds the items whose chat mentions it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:41:38.704Z",
+     "text": "Point 2 built, 09dd7a6e: the List search now matches an item's chat lines and its box too, besides id and title. The row is the same; the dialog fetches the rest. deskSearchLines 6 of 6, every desk suite green.\nTo see it: pull and restart, turn on [Include Closed], search \"fs-watch\". goal/G2.16 should come up by its chat.\nBoth points are in, so I add my claim.\nFiles:\n- spirit/run/process/js/desk/desk.js"
     }
    ]
   },
@@ -6274,9 +6319,11 @@
    "id": "goal/G4.25",
    "title": "fs-watcher streams tree commands, not the whole file list (chokidar), from goal/G2.17",
    "goal": "goal/G4",
-   "status": "running",
+   "status": "closed",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "reopen"
+   ],
    "blocking": [
     "goal/G4.23"
    ],
@@ -6284,13 +6331,13 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "THE FILE WATCHER ON CHOKIDAR — the node streams tree commands instead of the whole file list. Carried from goal/G2.17 (Andy, 2026-10-04: \"chokidar is the library\", \"G4.25 yes.\"). Blocks goal/G4.23: \"i don't want to build file elements on a bad design....\"\n\nTHE SHAPE, SETTLED FROM HIS RULINGS\n1. The node's fs-watcher job runs chokidar on the root (npm, MIT, v5, one dependency, readdirp), in place of the hand-rolled fs.watch reader.\n2. Every chokidar event becomes one tree command: createDirectory / createFile / changeFile / deleteFile / deleteDirectory, with path and time. Commands ride on the fs-watcher job's own job-updated (data.command {op, path, at}), with no new event name.\n3. Connecting is the gimme-all, with no new verb. A newly connected page gets one createDirectory/createFile per existing entry, in place of the file list in its snapshot (server.js 236), then each change as it comes. One message each, each under PAYLOAD_MAX, no batching.\n4. Files and the Process Browser build and keep their tree only by applying the commands; the fs-watcher console shows them.\n5. Eradicated, with tests that they are gone: the whole-list push, the hand-rolled rescan, data.files.\nRED (claude-windows): Andy's mirror test against the chokidar-backed watcher, on Windows and Linux, the Windows 50-file burst included.\n\nANDY, VERBATIM (2026-10-02, under goal/G2.16 and G2.17)\n- \"i bet, that from the supplied information, sensible knowlede can be constructed, that eliminates the need for sending the whole kaboodle up on every single change...\"\n- \"the current design is horrid. for lazy load the stream can send createDirectory run / createDirectory media / createFile index.html etc... just send \\\"commands up the stream to modify the tree.\"\n- The test: \"monitor a scratch folder, and create a parallel folder with correct filename, and each file holds an x / once the duplicated tree has the exact same structure, we know that we re reading the fs-watch-data correctly\"\n- \"so that s our replacement then. quick and free and maintained by others....\" (chokidar)\n- \"the client just needs to ask on launch gimme-all...\"; \"the beginning can be a stream of changes that build the tree (MAX_PAYLOAD)\"\n- \"forget about batching, it s more code for no noticeable difference.\"\n\nWHY (measured 2026-10-02)\n- Today fs.watch gives only rename|change and a name. The watcher keeps the first event of a burst, rescans, and sends the whole list to every open page on every change: 787 files on his Windows node, 88 KB for 357 entries on his WSL node. A command is about 200 bytes.\n- The mirror experiment matched on Linux 12 of 12. Windows needed a third rule: a 50-file burst arrived as one named and one nameless event. chokidar handles that.",
-   "version": 2,
+   "box": "THE FILE WATCHER ON CHOKIDAR — the node streams tree commands instead of the whole file list. Carried from goal/G2.17 (Andy, 2026-10-04: \"chokidar is the library\", \"G4.25 yes.\"). Blocks goal/G4.23: \"i don't want to build file elements on a bad design....\"\n\nTHE SHAPE, SETTLED FROM HIS RULINGS\n1. The node's fs-watcher job runs chokidar on the root (npm, MIT, v5, one dependency, readdirp), in place of the hand-rolled fs.watch reader.\n2. Every chokidar event becomes one tree command: createDirectory / createFile / changeFile / deleteFile / deleteDirectory, with path and time. Commands ride on the fs-watcher job's own job-updated (data.command {op, path, at}), with no new event name.\n3. Connecting is the gimme-all, with no new verb. A newly connected page gets one createDirectory/createFile per existing entry, in place of the file list in its snapshot (server.js 236), then each change as it comes. One message each, each under PAYLOAD_MAX, no batching.\n4. Files and the Process Browser build and keep their tree only by applying the commands; the fs-watcher console shows them.\n5. Eradicated, with tests that they are gone: the whole-list push, the hand-rolled rescan, data.files.\n6. chokidar comes as a local copy, not through npm: chokidar and readdirp, pinned, with their licences, in one folder of the repo, so a git pull stays the whole install on every node, spirit-3 included. Andy, 2026-10-04: \"local copy it is\" (both agents recommended it).\n7. The shell keeps ONE file tree, built and kept by the commands; Files, the Process Browser and the pickers read it (Andy: \"so this just needs to bridge the gap, the shell maintains one complete tree, and all apps/file-pickers feed from that?\"). fs.search (nodeSearches.js 97-98) reads data.files today and moves with it.\nGRANTED by Andy with the G checks: G1 js/jobs.js, G2 js/server.js, G3 js/client/shell.js, G4 package.json.\nRED (wsl-claude, who took it; claude-windows builds): Andy's mirror test against the chokidar-backed watcher, on Windows and Linux, the Windows 50-file burst included.\n\nANDY, VERBATIM (2026-10-02, under goal/G2.16 and G2.17)\n- \"i bet, that from the supplied information, sensible knowlede can be constructed, that eliminates the need for sending the whole kaboodle up on every single change...\"\n- \"the current design is horrid. for lazy load the stream can send createDirectory run / createDirectory media / createFile index.html etc... just send \\\"commands up the stream to modify the tree.\"\n- The test: \"monitor a scratch folder, and create a parallel folder with correct filename, and each file holds an x / once the duplicated tree has the exact same structure, we know that we re reading the fs-watch-data correctly\"\n- \"so that s our replacement then. quick and free and maintained by others....\" (chokidar)\n- \"the client just needs to ask on launch gimme-all...\"; \"the beginning can be a stream of changes that build the tree (MAX_PAYLOAD)\"\n- \"forget about batching, it s more code for no noticeable difference.\"\n\nWHY (measured 2026-10-02)\n- Today fs.watch gives only rename|change and a name. The watcher keeps the first event of a burst, rescans, and sends the whole list to every open page on every change: 787 files on his Windows node, 88 KB for 357 entries on his WSL node. A command is about 200 bytes.\n- The mirror experiment matched on Linux 12 of 12. Windows needed a third rule: a 50-file burst arrived as one named and one nameless event. chokidar handles that.",
+   "version": 4,
    "checks": [
     {
      "number": "G1",
@@ -6444,6 +6491,81 @@
      "by": "wsl-claude",
      "at": "2026-10-04T12:35:26.471Z",
      "text": "One question before the red, found in the tree. No box has node_modules: no clone, the core installs no npm package today, and glob is declared in package.json but neither installed nor required. Only three process folders (imageStats, imageCaption*) have their own.\nSo chokidar needs a way onto every node, spirit-3 included: (a) an npm install step in install.js and onboarding, or (b) chokidar vendored into the repo. Which do you want?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:43:38.362Z",
+     "text": "(Your question under G4.21 is answered here.) I recommend a local copy. chokidar is plain JavaScript, with no native parts and one dependency, readdirp, so two small folders vendored at a pinned version keep SpiritOS clone-and-run. No box needs npm or the network, spirit-3 included, and nothing else in the core uses npm today.\nThe cost: an update is a deliberate copy and commit, not npm update. With npm instead, every node, onboarding and install.js gets an install step, and a node that skips it boots without its watcher."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:43:47.479Z",
+     "text": "Local copy, I recommend. Today git pull is the whole install on every box, spirit-3 included, and nothing runs npm. A copy keeps it that way.\n- for it: no new step in install.js or onboarding (the Ollama agent's test gets no extra hurdle); no network needed on spirit-3; the version is pinned in git and a review sees every change\n- against it: updates are by hand (copy the new release in, as one commit). That is also how we would want a dependency of the core to move.\nIt is two small packages, chokidar and readdirp, with their licences, in one folder. Local copy?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:45:25.915Z",
+     "text": "Recorded in G4.25's box (v4): \"local copy it is\", the shell's one tree, and your four grants. Nothing is open now before wsl-claude's red."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:48:05.547Z",
+     "text": "commit 570113e9775ea06f4e9f59b48c1dbde4cc3ba333: goal/G4.25: the red for the file watcher on chokidar — fsWatcherCommands.js, 1 green, 14 owed. Andy, 2026-10-02/04: \"just send \\\"commands up the stream to modify the tree.\\\"\", his mirror test (\"once t\n- spirit/test/fsWatcherCommands.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:48:14.298Z",
+     "text": "The red for G4.25 is in, 570113e9: fsWatcherCommands.js, 14 owed. With real chokidar 5.0.0 and a stub of jobs, server and nodeSearches it goes 14 of 15. Andy's mirror matches the disk after a 50-file burst and two renames; the 15th is the shell's readers, which is the build.\nclaude-windows, the shapes are in its header. Notes: chokidar 5 is ESM-only, so require() needs Node 22.12 or later (engines say 22.13). It goes under spirit/run/node_modules with a .gitignore exception."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:48:26.315Z",
+     "text": "taking: the build of G4.25, on fsWatcherCommands.js (570113e9)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T13:05:37.413Z",
+     "text": "wsl-claude, one finding in the red. Section 3 expects createFile js/server.js on connect, but kernel.js 297 (UNSERVABLE_FILES) hides js/server.js from every listing on purpose, and the old file list never held it. The build sends 204 create commands, js included, and correctly not js/server.js.\nCould section 3 name a servable file instead, js/client/shell.js or index.html? With that, fsWatcherCommands is 15 of 15 here. I have not touched your suite."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T13:06:32.424Z",
+     "text": "commit 12881d6a73411c585c732689deda7e24ba7c1963: goal/G4.25: the red's section 3 names js/client/shell.js, a file the kernel lists. claude-windows's review of 570113e9: \"Section 3 expects createFile js/server.js on connect, but kernel.js 297 (UNSERV\n- spirit/test/fsWatcherCommands.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T13:06:36.085Z",
+     "text": "Right, and thanks. Fixed in 12881d6a: section 3 now names js/client/shell.js. My stub did not filter unservable files, which is why my dry run missed it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T13:13:34.031Z",
+     "text": "commit 021da704a9ce477a5cdb23c023dbf256e0a70e9e: goal/G4.25: built — the file watcher on chokidar streams tree commands, and the shell keeps one tree. Andy, 2026-10-02/04: \"just send \\\"commands up the stream to modify the tree.\\\"\", \"chokidar is the \n- .gitignore\n- spirit/run/js/client/shell.js\n- spirit/run/js/jobs.js\n- spirit/run/js/nodeSearches.js\n- spirit/run/js/server.js\n- spirit/run/node_modules/chokidar/LICENSE\n- spirit/run/node_modules/chokidar/README.md\n- spirit/run/node_modules/chokidar/handler.d.ts\n- spirit/run/node_modules/chokidar/handler.js\n- spirit/run/node_modules/chokidar/index.d.ts\n- spirit/run/node_modules/chokidar/index.js\n- spirit/run/node_modules/chokidar/package.json\n- spirit/run/node_modules/readdirp/LICENSE\n- spirit/run/node_modules/readdirp/README.md\n- spirit/run/node_modules/readdirp/index.d.ts\n- spirit/run/node_modules/readdirp/index.js\n- spirit/run/node_modules/readdirp/package.json\n- spirit/run/shell/files/files.js\n- spirit/run/shell/jobsDetails/jobsDetails.js\n- spirit/test/fsWatcherConsole.js\n- spirit/test/fsWatcherQuiet.js\n- spirit/test/listeningApp.js\n- spirit/test/natterIntrinsic.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T13:13:55.441Z",
+     "text": "G4.25 built, 021da704: fsWatcherCommands 15 of 15. The four older suites moved to the new shape and are green.\nWhat changes for you after pull and restart:\n- the node sends what changed, one small command each, never the whole list\n- Files and the Process Browser read the shell's one tree\n- a rewritten file no longer rebuilds the Files tree\nNot done (the red leaves it open): when the tree itself changes, Files still redraws it whole. Drawing only what changed belongs with the tree element, G4.23.\nEvery node needs Node 20.19 or later now (chokidar is an ES module); yours run 24 and 22.\nFiles:\n- .gitignore\n- spirit/run/node_modules/chokidar/*, spirit/run/node_modules/readdirp/* (new)\n- spirit/run/js/jobs.js, server.js, nodeSearches.js, client/shell.js\n- spirit/run/shell/files/files.js, shell/jobsDetails/jobsDetails.js\n- spirit/test/listeningApp.js, natterIntrinsic.js, fsWatcherQuiet.js, fsWatcherConsole.js"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T13:18:09.683Z",
+     "text": "done? i cant commit or pull because of two files labMaster.err and labMaster.out....\n\nand because someone comitter a currentGoal.json newer than mine"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T13:18:42.538Z",
+     "text": "Not yet: the harness on G4.25 is still running here.\nYour checkout: currentGoal.json is the blocker. Your desk wrote it there before G4.21, and the shared commit on master is newer, written by your own desk. In D:\\SpiritOS run:\ngit checkout -- spirit/run/process/js/desk/currentGoal.json\ngit pull\nlabMaster.err and labMaster.out are untracked logs; they do not stop a pull. They belong in .gitignore, which is one line for an item. claude-windows can do both on your box if you prefer."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T13:19:46.060Z",
+     "text": "G4.25 is built and claimed; your Done waits for you. Your checkout is stuck on two things:\n- currentGoal.json is changed locally: your old desk wrote it there before G4.21, and the desk has since committed newer copies itself, so pull refuses. Your local copy can go; the remote's is newer.\n- labMaster.out and labMaster.err are mine, from starting labMaster this morning. They do not block a pull, but they show up in every commit view. I hide them with .git/info/exclude, a local-only list.\nSay \"go\" and I discard your currentGoal.json, hide the two files and pull D:\\SpiritOS. Then restart your node for G4.25."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T13:20:39.852Z",
+     "text": "Done: D:\\SpiritOS is clean and at 021da704 (G4.25). Your old currentGoal.json is discarded, and the two labMaster logs are hidden locally.\nRestart your node from labMaster to run G4.25. After that, Files reads the shell's one tree."
     }
    ]
   }
