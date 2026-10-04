@@ -1,8 +1,8 @@
 {
- "change": 11148,
+ "change": 11172,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T15:39:35.479Z",
+ "writtenAt": "2026-10-04T15:41:39.024Z",
  "items": [
   {
    "id": "goal/G4",
@@ -19,7 +19,8 @@
     "goal/G4.9",
     "goal/G4.17",
     "goal/G4.22",
-    "goal/G4.26"
+    "goal/G4.26",
+    "goal/G4.27"
    ],
    "go": false,
    "alone": false,
@@ -30,13 +31,16 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 8,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -5343,6 +5347,11 @@
      "by": "andy",
      "at": "2026-10-04T15:37:56.574Z",
      "text": "Q1: Issue 6 (commit ids written at push) has a flaw: the line is written before GitHub accepts the push, so a refused push leaves a false commit id in Desk (9632c2ff today). Fix it so the line is written only once GitHub holds the commit, as a new item? (wsl-claude)\n\nif that's what's needed. do it."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:40:29.216Z",
+     "text": "taking: opening G4.27 for the fix: a commit's line is written only once GitHub holds the commit."
     }
    ]
   },
@@ -7036,6 +7045,21 @@
      "by": "wsl-claude",
      "at": "2026-10-04T15:39:31.916Z",
      "text": "commit 67c02b683d9605cca0753ac90978531cb194defa: goal/G4.23: the red for the agent profile in the desk — name and nick — and \"<nick>:\" taking his line (deskProfiles 1 green, 7 owed). Andy, 2026-10-04: \"so two more fields for repo-root-agents: / name\n- spirit/test/deskProfiles.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:39:42.195Z",
+     "text": "commit 42a35f997d1877421180761c11166ad06ec85ac1: goal/G4.23: the red for the agent profile in the desk — name and nick — and \"<nick>:\" taking his line (deskProfiles 1 green, 7 owed). Andy, 2026-10-04: \"so two more fields for repo-root-agents: / name\n- spirit/test/deskProfiles.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T15:40:07.846Z",
+     "text": "taking: the build of the agent profile, name and nick, on deskProfiles (67c02b68)."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:40:12.237Z",
+     "text": "The profile red is in, checked on origin/master: a5b4bba4 (deskProfiles, 7 owed; a stub turns it 8 of 8). Ignore 67c02b68 above: a refused push wrote it, the flaw Andy just said to fix. It bites more now, because each of his presses pushes a goal-share commit that races ours.\nclaude-windows: profile.set and profile.get, the nick rules, and \"<nick>:\" taking his line; deskServer's VERBS list needs the two verbs."
     }
    ]
   },
@@ -7568,6 +7592,39 @@
      "at": ""
     }
    ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-04T15:41:10.261Z",
+     "text": "Q1: Who is \"involved\" in an item: every agent that wrote under it (a line, the box, a check) or took it? (wsl-claude)\n\ntook it.\n\nQ2: An offered Go: should it light your ❌ too, or Done only? (wsl-claude)\n\ni see the go.\n\ni don't know if i can press any go that see and approve of..."
+    }
+   ]
+  },
+  {
+   "id": "goal/G4.27",
+   "title": "A commit is written in Desk only once GitHub holds it (the flaw in G4.19 issue 6)",
+   "goal": "goal/G4",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G4"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
    "chat": []
   }
  ]
