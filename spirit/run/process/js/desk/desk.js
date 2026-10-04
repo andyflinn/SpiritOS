@@ -785,7 +785,9 @@ function shareGoalFile() {
   try { base = new URL(url).origin; } catch (e) { console.error('desk: SPIRIT_CALLBACK_URL is no URL: ' + url); return; }
   Promise.resolve().then(function () {
     return require('../../../js/kernel.js').core.ask('jobs.create', { command: process.execPath,
-      args: [path.join(__dirname, 'goalShare.js'), '--repo', GOAL_REPO, '--path', GOAL_PATH, '--from', GOAL_STATE_FILE] }, base);
+      args: [path.join(__dirname, 'goalShare.js'), '--repo', GOAL_REPO, '--path', GOAL_PATH, '--from', GOAL_STATE_FILE],
+      // A UTILITY PROCESS (goal/G4.34): its job leaves Jobs once it exited cleanly; a failed share stays, to be seen.
+      removeWhenDone: true }, base);
   }).then(function (r) {
     if (!r || r.status >= 300) console.error('desk: the node refused the goal share: ' + (r ? r.text : 'no answer'));
   }).catch(function (e) { console.error('desk: the goal share was not asked: ' + ((e && e.message) || e)); });

@@ -323,7 +323,8 @@ function handleCreateJob(req, res) {
     // The script's manifest decides: a one-shot, or a user-operated server
     // (processes/G1.3, jobs.startJob). The request is unchanged.
     let job = null;
-    try { job = jobs.startJob(body.command, body.args || [], { type: body.type }); }
+    // removeWhenDone (goal/G4.34, Andy: "verb granted."): a utility process whose job is deleted once it exits cleanly.
+    try { job = jobs.startJob(body.command, body.args || [], { type: body.type, removeWhenDone: body.removeWhenDone === true }); }
     catch (e) {
       // A process this node does not include is refused by name (slim/G1.3).
       if (e && e.refusal === 'process-not-included') {

@@ -279,6 +279,10 @@ module.exports = function installJobs(spirit, port) {
           data: { exitCode: code },
           logMessage: 'process exited with code ' + code,
         });
+        // A UTILITY PROCESS LEAVES NO ROW (goal/G4.34). Andy: "so that that stuff isn't roll-your-own every single
+        // time you need a utility process"; "verb granted.", and to keeping a failed one: "granted." A job started
+        // with removeWhenDone is deleted here once it exited cleanly; a failed one stays in Jobs, to be seen.
+        if (code === 0 && options && options.removeWhenDone === true) deleteJob(job.id);
       }
     });
 
