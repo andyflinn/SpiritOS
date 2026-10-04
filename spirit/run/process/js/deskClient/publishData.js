@@ -173,9 +173,9 @@ async function main() {
 
   // 3. COMMIT AND SAY SO, unless this was only a look.
   if (packetsOnly || outArg) end(0, 'publishData: written to ' + out);
-  // NOTHING MEASURED, NOTHING PUBLISHED (wsl-claude's find under the reopened G4.33: its run would have committed 0
-  // posts without a word).
-  if (!packets.posts) end(1, 'publishData: the desk asks counted 0 posts, so nothing is published; is the node\'s deskClient answering?');
+  // ZERO POSTS IS PUBLISHED TOO (Andy, to Q16, whether a run counting 0 posts should refuse: "publish it anyway. that's
+  // what happened."). The figures say what the run met; it only says so aloud.
+  if (!packets.posts) say('the desk asks counted 0 posts; published as measured (is the node\'s deskClient answering?)');
   const rel = path.relative(clone, out).split(path.sep).join('/');
   git(['add', '--', rel], clone);
   const c = git(['commit', '-q', '-m', 'publish: ' + agent + ' at ' + commit + ' (agents/' + agent + '/, the standing grant of goal/G4.33)'], clone);
