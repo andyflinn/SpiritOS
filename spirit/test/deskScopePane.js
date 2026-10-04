@@ -34,7 +34,8 @@
 //      (data-scope-set) sends scope.set with that one folder, replacing what was there; with nothing chosen it sends
 //      nothing. The list with its Remove buttons goes.
 //   6  [set-to-repo-root] (data-scope-root), beside the words "for advanced agents", is an arm-button: the first click
-//      arms it, the second sets the one scope to '' (the repo root).
+//      arms it, the second sets the one scope to '' (the repo root). It is offered only while the scope is not '/'
+//      already ("only needs to be offered if the agent doesn't already have that scope").
 //   7  The desk keeps one folder per agent: scope.set with more than one folder is refused bad-request (deskScopes.js).
 // LEFT OPEN, not asserted: picking the repo root itself (the tree holds spirit/run only); styling; the pane for an
 // agent that is not live.
@@ -244,4 +245,12 @@ async function thePage() {
   else test.fail(OWED + 'root button ' + !!rootButton() + ', label ' + short(rootButton() && rootButton().textContent) + ', "for advanced agents" ' + /for advanced agents/.test(line()) + ', first click sent ' + (armedOnly ? 'nothing' : 'a scope.set'));
   if (rooted && rooted.folder === '/') test.check('the second click sets the one field to \'/\', the repo root');
   else test.fail(OWED + 'after two clicks the last scope.set was ' + short(rooted));
+  // OFFERED ONLY WHEN IT CHANGES SOMETHING (Andy, 2026-10-04, under goal/G4.23: "\"for advanced agents: \"
+  // [set-to-repo-root] only needs to be offered if the agent doesn't already have that scope."): once the scope reads
+  // '/', the button and its words are not shown.
+  await settled();
+  const shownRoot = all(slot || node('div')).filter(function (n) { return n.getAttribute && n.getAttribute('data-scope-root') !== null && visible(n, slot); });
+  const shownWords = all(slot || node('div')).filter(function (n) { return visible(n, slot) && /for advanced agents/.test(String(n.textContent || '') + ' ' + (n.children.length ? '' : n.innerHTML)); });
+  if (scope === '/' && !shownRoot.length && !shownWords.length) test.check('with the scope already /, [set-to-repo-root] and "for advanced agents" are not offered');
+  else test.fail(OWED + 'with the scope ' + short(scope) + ', set-to-repo-root shown ' + shownRoot.length + ', the words shown ' + shownWords.length);
 }
