@@ -1,8 +1,8 @@
 {
- "change": 10121,
+ "change": 10170,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T13:21:30.389Z",
+ "writtenAt": "2026-10-04T13:31:56.789Z",
  "items": [
   {
    "id": "goal/G4",
@@ -6029,27 +6029,52 @@
    "id": "goal/G4.23",
    "title": "Agent scopes: each agent bound to a folder, set in its own tab in Desk, enforced by the commit check",
    "goal": "goal/G4",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G4.22"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
-   "box": "AGENT SCOPES — each agent bound to a folder, set in Desk, enforced by the commit check. Opened from goal/G4.22's chat, 2026-10-04. Blocks goal/G4.22 (the Ollama onboarding test).\n\nANDY, VERBATIM\n- (under G4.21) \"It also may need the deskServer to have job-designations for agents, for example the ollama agent may be assigned a scope, like spirit/run/shell/ticTacToe/\"\n- (under G4.22) \"the red-bordered agent bubbles become tab-headers again, with their own pane for scope-configuration. file/folder selector in it a shell element.\"\n- \"i will go with your recommendations: which (new) item does the desk's scope pane belong in, and that blocks the onboarding of allama tests.\"\n\nDECIDED\n- Its own item, G4.23, and it blocks G4.22 (his \"i will go with your recommendations\").\n- The agent bubbles (deskBubblesHtml, shell/desk/desk.js) become tab headers again, each opening that agent's pane for its scope.\n- The file/folder selector is a shell element.\n\nIN THE TREE\n- The shell's selectors are elements in shell/js (contactSelector, apiBranchSelector, appServerSelector, iconSelector); none picks a file or folder. The Files app (shell/files/files.js) has the tree it would come from, as contactSelector came out of the contacts pane.\n- The commit check (process/js/desk/commitCheck.js) checks the item and his Go, not the files a commit touches.\n\nRECOMMENDED, NOT YET RULED\n- Three pieces: a path selector as a new shell element; the agent tabs with a scope pane; the desk keeping each agent's scope (one or more folders), which the commit check reads to refuse a commit touching files outside it.\n- How it meets the core-file grant check (refusing a core file nobody granted, still without an item): both are \"files this agent may touch\"; one shape may serve both.\n\nOPEN\n- Where the scope is kept (the desk's state, beside the agent's key), and whether Andy alone sets it.\n- An agent with no scope set: everything, or nothing.",
-   "version": 1,
-   "checks": [],
+   "box": "AGENT SCOPES — each agent bound to a folder, set in Desk, enforced by the commit check. Opened from goal/G4.22's chat, 2026-10-04. Blocks goal/G4.22 (the Ollama onboarding test).\n\nANDY, VERBATIM\n- (under G4.21) \"It also may need the deskServer to have job-designations for agents, for example the ollama agent may be assigned a scope, like spirit/run/shell/ticTacToe/\"\n- (under G4.22) \"the red-bordered agent bubbles become tab-headers again, with their own pane for scope-configuration. file/folder selector in it a shell element.\"\n- \"i will go with your recommendations: which (new) item does the desk's scope pane belong in, and that blocks the onboarding of allama tests.\"\n\nDECIDED\n- Its own item, G4.23, and it blocks G4.22 (his \"i will go with your recommendations\").\n- The agent bubbles (deskBubblesHtml, shell/desk/desk.js) become tab headers again, each opening that agent's pane for its scope.\n- The file/folder selector is a shell element.\n\nIN THE TREE\n- The shell's selectors are elements in shell/js (contactSelector, apiBranchSelector, appServerSelector, iconSelector); none picks a file or folder. The Files app (shell/files/files.js) has the tree it would come from, as contactSelector came out of the contacts pane.\n- The commit check (process/js/desk/commitCheck.js) checks the item and his Go, not the files a commit touches.\n\nRECOMMENDED, NOT YET RULED\n- Three pieces: a path selector as a new shell element; the agent tabs with a scope pane; the desk keeping each agent's scope (one or more folders), which the commit check reads to refuse a commit touching files outside it.\n- How it meets the core-file grant check (refusing a core file nobody granted, still without an item): both are \"files this agent may touch\"; one shape may serve both.\n\nDECIDED, his answers to Q1 and Q2 (2026-10-04)\n- Andy alone sets an agent's scope, consulting the agents: \"i alone, i definitely will consult you: for example, what is the default setting for its scope, that's a good beginning....\"\n- With no scope set, an agent may commit nothing: \"ahh, the default: nothing. it can read everything?  we check it's competence...\" A scope limits what an agent COMMITS (the commit check refuses a file outside it); reading is not limited, the clone is the repo.\n- The scope is kept beside the agent's key, in the desk's state, and is expected to grow: \"beside the agents key, this might be a growing dataset.\" So it is a record per agent (one or more folders now, room for more later), not a fixed field.\n- Inside a scope, core files stay locked behind a grant: \"the scope still has a grant-lock on core files.\" A commit touching a core file is refused unless he granted that file with a G check on the item; this is the core-grant check discussed under G4.20, now part of G4.23.\n\nOPEN\n- Q3: which files count as core. The list that needed explicit permission so far: js/kernel.js, js/server.js, js/hub.js, js/jobs.js, js/appServer.js, js/appClient.js, js/apiDoor.js, js/client/shell.js. wsl-claude recommended all of spirit/run/js/.",
+   "version": 4,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Do you alone set an agent's scope?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-04T13:29:43.397Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "An agent with no scope set: may it touch everything, or nothing?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-04T13:29:45.611Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Which files count as core (grant-locked)? So far: js/kernel.js, server.js, hub.js, jobs.js, appServer.js, appClient.js, apiDoor.js, js/client/shell.js. Or all of spirit/run/js/ (wsl-claude)?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
@@ -6120,6 +6145,31 @@
      "by": "andy",
      "at": "2026-10-04T11:49:01.019Z",
      "text": "if deleted is just a flag in the database, we can just ignore it from now on"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T13:28:53.381Z",
+     "text": "Q1: Do you alone set an agent's scope?\ni alone, i definitely will consult you: for example, what is the default setting for its scope, that's a good beginning....\n\n\nQ2: An agent with no scope set: may it touch everything, or nothing?\nahh, the default: nothing. it can read everything?  we check it's competence..."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T13:29:39.859Z",
+     "text": "Both in the box, verbatim.\nOn \"it can read everything?\": yes. A scope limits what an agent commits: the commit check refuses a file outside it. Reading is not limited, since its clone holds the whole repo. With no scope it reads everything and commits nothing, so you check its competence before giving it a folder.\nG4.23 now waits only for your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T13:30:29.741Z",
+     "text": "beside the agents key, this might be a growing dataset."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T13:30:58.906Z",
+     "text": "the scope still has a grant-lock on core files."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T13:31:25.237Z",
+     "text": "green?"
     }
    ]
   },
