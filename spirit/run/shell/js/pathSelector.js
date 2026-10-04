@@ -52,6 +52,10 @@
     }
 
     input.addEventListener('input', draw);
+    // THE SEARCH BOX'S OWN 'change' STAYS INSIDE. A browser fires it when the box loses focus after typing, and it
+    // bubbled to whoever listens on the root as if a row had been picked: the pane re-added the last folder each time
+    // (Andy: "who keeps adding folder to ubuntu scope . root is enough"). Only a click on a row says change.
+    input.addEventListener('change', function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); });
     root.addEventListener('click', function (ev) {
       var row = ev.target && ev.target.closest ? ev.target.closest('[data-path]') : null;
       if (!row) return;

@@ -182,6 +182,17 @@ async function thePage() {
   const added = sets[0] && sets[0].args;
   if (added && added.agent === CW_KEY && JSON.stringify(added.folders) === JSON.stringify(['spirit/run/shell/chess/', 'spirit/run/shell/ticTacToe/'])) test.check('picking shell/ticTacToe/ sends scope.set with spirit/run/shell/ticTacToe/ added');
   else test.fail(OWED + 'after the pick scope.set was ' + short(sets));
+  // A change from INSIDE the picker (its search box fires one on blur after typing) is no pick (Andy, 2026-10-04: "who
+  // keeps adding folder to ubuntu scope . root is enough"; claude-windows found the cause): no scope.set from it.
+  if (picker) {
+    const box = node('input');
+    picker.appendChild(box);
+    const setsBefore = asked.filter(function (a) { return a.verb === 'scope.set'; }).length;
+    fire(box, 'change');
+    await settled();
+    if (asked.filter(function (a) { return a.verb === 'scope.set'; }).length === setsBefore) test.check('a change from inside the picker (its search box) adds nothing');
+    else test.fail(OWED + 'a change from the picker\'s search box sent a scope.set');
+  }
   const getsAfter = asked.filter(function (a) { return a.verb === 'scope.get'; }).length;
   if (getsAfter > got.length) test.check('and the pane asks scope.get again rather than guessing');
   else test.fail(OWED + 'no scope.get after the pick');

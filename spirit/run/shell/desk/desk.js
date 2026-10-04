@@ -333,7 +333,10 @@ function deskAgentOpen(name) {
       foldersOnly: true,
       files: function () { return (spirit.shell && typeof spirit.shell.currentFiles === 'function' && spirit.shell.currentFiles()) || []; },
     });
-    picker.addEventListener('change', function () {
+    picker.addEventListener('change', function (ev) {
+      // ONLY THE PICKER'S OWN PICK. A change from inside it (its search box, on blur after typing) is no pick; it
+      // re-added the last folder (Andy: "who keeps adding folder to ubuntu scope . root is enough").
+      if (ev && ev.target && ev.target !== picker) return;
       if (picker.value) deskAgentSet(deskAgentFolders.concat(['spirit/run/' + picker.value]));
     });
     slot.innerHTML = '';
