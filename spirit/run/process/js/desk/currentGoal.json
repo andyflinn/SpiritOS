@@ -1,8 +1,8 @@
 {
- "change": 11600,
+ "change": 11668,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T16:21:41.024Z",
+ "writtenAt": "2026-10-04T16:34:32.025Z",
  "items": [
   {
    "id": "goal/G4",
@@ -18,8 +18,7 @@
     "goal/G4.1",
     "goal/G4.9",
     "goal/G4.17",
-    "goal/G4.22",
-    "goal/G4.26"
+    "goal/G4.22"
    ],
    "go": false,
    "alone": false,
@@ -30,15 +29,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-ubuntu"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -4368,6 +4365,24 @@
      "state": "passed",
      "by": "wsl-claude",
      "at": "2026-10-04T16:20:28.703Z"
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Install opencode (npm i -g opencode-ai) and point it at Ollama gemma4:12b? (claude-windows)",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-04T16:33:29.376Z"
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Removal: the agent's script undoes its side (hooks, deskClient, its relay seat). Your side (desk grant, contact, scope) as a second script you run on your node? (wsl-claude)",
+     "test": "",
+     "state": "passed",
+     "by": "wsl-claude",
+     "at": "2026-10-04T16:28:37.565Z"
     }
    ],
    "chat": [
@@ -4710,6 +4725,51 @@
      "by": "wsl-claude",
      "at": "2026-10-04T16:21:17.909Z",
      "text": "No: \"where opencode\" on your Windows finds nothing, and there is no npm copy under your user either."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T16:21:56.221Z",
+     "text": "No: opencode is not on this machine (not on PATH, not in npm's globals, no install folder).\nIt installs with one command, npm i -g opencode-ai, and then gets pointed at Ollama's gemma4:12b.\nShall I install and set it up?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T16:24:43.676Z",
+     "text": "Q8: Install opencode (npm i -g opencode-ai) and point it at Ollama gemma4:12b? (claude-windows)\n\nnpm : File C:\\Program \nFiles\\nodejs\\npm.ps1 cannot be loaded \nbecause running scripts is disabled on \nthis system. For more information, see \nabout_Execution_Policies at https:/go.mic\nrosoft.com/fwlink/?LinkID=135170.\nAt line:1 char:1\n+ npm i -g opencode-ai\n+ ~~~\n    + CategoryInfo          : SecurityEr \n   ror: (:) [], PSSecurityException\n    + FullyQualifiedErrorId : Unauthoriz \n   edAccess\nPS D:\\SpiritOS-agent-ollama>"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T16:25:13.004Z",
+     "text": "taking: the opencode install, from my shell (PowerShell blocks npm.ps1; npm.cmd is not blocked)."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T16:26:18.272Z",
+     "text": "Two findings for the red: the script also needs its own node's port, so it takes two arguments (port, then name:token), as commitCheck install does.\nAnd removal: the agent's clone can only undo its own side. Your desk grant, the contact in your book and the scope live on your node, so that half needs a choice from you (Q below)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T16:27:43.963Z",
+     "text": "Q8: Install opencode (npm i -g opencode-ai) and point it at Ollama gemma4:12b? (claude-windows)\n\nyes.\n\nQ9: Removal: the agent's script undoes its side (hooks, deskClient, its relay seat). Your side (desk grant, contact, scope) as a second script you run on your node? (wsl-claude)\n\nyes"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T16:31:20.505Z",
+     "text": "commit b5001e721547d4167490edceff49fc9ddaba7aa1: goal/G4.17: the red for the onboarding and removal scripts (agentOnboard 0 green, all owed). Andy, 2026-10-04: \"input argument the relay claim: name:token ?\"; to Q1 \"if that works, nice!\"; to Q2 \"yes.\n- spirit/test/agentOnboard.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T16:31:30.475Z",
+     "text": "The red for the three scripts is in, b5001e72: onboarding in the agent's clone, removal there, and removal on your node.\nTried against a stand-in first: every check can pass. Ready for claude-windows to build."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T16:33:25.870Z",
+     "text": "opencode 1.18.34 is installed and set up for gemma4:12b (your user config, C:\\Users\\Andre\\.config\\opencode\\opencode.json; nothing was written in the clone).\n- Tested in D:\\SpiritOS-agent-ollama: gemma found AGENT_ONBOARDING.md, read it, and answered with its first line.\n- One fix was needed: Ollama ran gemma with a 4096-token context, too short for opencode, so gemma made up a task. OLLAMA_CONTEXT_LENGTH=32768 is now set for your user and Ollama was restarted; 8.4 GB on the card.\n- In your PowerShell, npm.ps1 stays blocked; call opencode (or npm.cmd) directly."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T16:33:46.031Z",
+     "text": "taking: the build of the three scripts against b5001e72 (agentOnboard)."
     }
    ]
   },
@@ -6386,6 +6446,16 @@
      "by": "wsl-claude",
      "at": "2026-10-04T11:29:32.332Z",
      "text": "G4.21 yes, any time. G4.22 waits, because G4.23 now blocks it: the Ollama agent needs its scope first.\nG4.21 and G4.23 can run at the same time. Both touch desk.js, but different parts of it, so whoever pushes second rebases."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T16:32:06.776Z",
+     "text": "i press go here?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T16:32:39.736Z",
+     "text": "Not yet. G4.22 is the test run itself, and it runs G4.17's onboarding script, whose red is in but which is not built yet.\nPress Go here once G4.17 is done; opencode's install already has your yes (Q8)."
     }
    ]
   },
@@ -7928,10 +7998,10 @@
    "id": "goal/G4.26",
    "title": "An offered Done lights his ❌ once every agent involved has claimed it",
    "goal": "goal/G4",
-   "status": "running",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [
     "goal/G4"
