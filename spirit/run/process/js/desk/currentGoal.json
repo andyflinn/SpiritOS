@@ -1,8 +1,8 @@
 {
- "change": 10012,
+ "change": 10014,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T12:39:01.151Z",
+ "writtenAt": "2026-10-04T12:39:10.470Z",
  "items": [
   {
    "id": "goal/G4",
@@ -31,13 +31,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 10,
+   "waiting": 9,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows"
+    "claude-windows",
+    "wsl-claude"
    ],
    "agents": {
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -5531,10 +5532,9 @@
    "id": "goal/G4.21",
    "title": "currentGoal.json committed by the desk itself, on every status change of his",
    "goal": "goal/G4",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
