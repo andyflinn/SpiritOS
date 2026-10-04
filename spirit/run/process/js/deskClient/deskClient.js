@@ -381,9 +381,11 @@ function handOver(to, t0) {
 
 appServer.serve({
   // ONE ASK OF ANDY'S DESK. What comes back is the answer, a refusal of the desk's included: it is the desk's to
-  // say no.
+  // say no. THE ANSWER ITSELF, NOT A JSON STRING (goal/G4.19, issue 4): the reply is declared {} and may carry more
+  // (appServer.js), so a big desk read is not escaped once more past the travel limit. Andy: "4. a MAX_PAYLOAD pop
+  // is serious."
   'desk': {
-    request: { verb: '', json: '' }, reply: { json: '' },
+    request: { verb: '', json: '' }, reply: {},
     handler: function (a, caller) {
       ownerOnly(caller);
       const to = deskKey();
@@ -391,7 +393,11 @@ appServer.serve({
       try { args = JSON.parse(a.json || '{}'); } catch (e) { args = null; }
       if (!a.verb || !args || typeof args !== 'object' || Array.isArray(args)) throw refused('bad-request');
       const one = countedAsk(to, a.verb, args);
-      const answer = one.answer.then(function (got) { return { json: JSON.stringify(got === undefined ? null : got) }; });
+      // An answer that is no object (an unopenable sealed answer resolves empty) is no answer.
+      const answer = one.answer.then(function (got) {
+        if (got === null || typeof got !== 'object' || Array.isArray(got)) throw refused('no-answer', { id: String(one.id) });
+        return got;
+      });
       let timer = null;
       const held = new Promise(function (resolve, reject) {
         timer = setTimeout(function () { reject(refused('no-answer', { id: String(one.id) })); }, HOLD_MS);

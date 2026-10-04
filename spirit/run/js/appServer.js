@@ -49,17 +49,23 @@ function isPlain(v) { return v !== null && typeof v === 'object' && !Array.isArr
 // Does `value` have the shape of `proto`? Exact keys for an object, the
 // first element's shape for every element of an array, the same typeof
 // for anything else.
-function matches(proto, value) {
+// A REPLY MAY CARRY MORE (goal/G4.19, issue 4). Andy, 2026-10-04: "the alternativeL it must have all the declared
+// elements, or more...?", then "agreed." and his grant on appServer.js "to loosen constraints on reply shape".
+// With `more`, every declared key must be there, of its shape, at every depth, and keys beyond them pass; a reply
+// prototype {} takes any object. A REQUEST STAYS EXACT: it is checked without `more`, so a key more or less is
+// still refused no-such-argument.
+function matches(proto, value, more) {
   if (isPlain(proto)) {
     if (!isPlain(value)) return false;
     const want = Object.keys(proto).sort();
-    const got = Object.keys(value).sort();
-    if (want.join('\n') !== got.join('\n')) return false;
-    return want.every(function (k) { return matches(proto[k], value[k]); });
+    if (more) {
+      if (!want.every(function (k) { return Object.prototype.hasOwnProperty.call(value, k); })) return false;
+    } else if (want.join('\n') !== Object.keys(value).sort().join('\n')) return false;
+    return want.every(function (k) { return matches(proto[k], value[k], more); });
   }
   if (Array.isArray(proto)) {
     if (!Array.isArray(value)) return false;
-    return proto.length === 0 || value.every(function (v) { return matches(proto[0], v); });
+    return proto.length === 0 || value.every(function (v) { return matches(proto[0], v, more); });
   }
   if (proto === null) return value === null;
   return typeof value === typeof proto;
@@ -135,7 +141,7 @@ function createAppServer(verbs, opts) {
       // THE REPLY IS CHECKED TOO (wsl-claude's review; Andy: "go for the
       // proposed fix"). What arrives is the verb's declared shape or
       // nothing (D11), so a reply that is not is the verb's failure.
-      if (!matches(verbs[name].reply, reply)) return marked(refusal('handler-failed', { verb: name, why: 'reply does not match its prototype' }));
+      if (!matches(verbs[name].reply, reply, true)) return marked(refusal('handler-failed', { verb: name, why: 'reply does not match its prototype' }));
       return marked({ status: 200, body: reply });
     }, function (e) {
       // A DECLARED REFUSAL PASSES THROUGH (slim/G1.2): a handler that throws

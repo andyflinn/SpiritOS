@@ -110,14 +110,15 @@ async function main() {
     asked.length = 0;
     const SEARCH = '{"text":"","currentGoalOnly":true,"goalsOnly":false}';
     const ANSWER = '{"items":[{"key":"a/G1","label":"x"}],"more":false}';
-    script = [{ status: 200, body: { json: ANSWER } }];
+    // Since goal/G4.19 deskClient.desk answers with the desk's answer itself, not a json string.
+    script = [{ status: 200, body: JSON.parse(ANSWER) }];
     const read = await run([port, 'items.search', SEARCH]);
     const sent = asked[0] ? asked[0].body : {};
     if (read.code === 0 && read.out.trim() === ANSWER && asked.length === 1 && sent.verb === 'jobs.api' && JSON.stringify(sent.ask) === JSON.stringify({ deskClient: { desk: { verb: 'items.search', json: SEARCH } } })) {
       test.check('items.search went as deskClient.desk {verb, json}; the desk\'s answer was printed as it came, exit 0');
     } else test.fail(OWED + 'the ask exited ' + read.code + ', printed ' + JSON.stringify(read.out.slice(0, 160)) + ', having sent ' + JSON.stringify(sent).slice(0, 200));
     const NO = '{"ok":false,"code":"no-such-item","error":"no such item"}';
-    script = [{ status: 200, body: { json: NO } }];
+    script = [{ status: 200, body: JSON.parse(NO) }];
     const refusedAsk = await run([port, 'item.get', '{"id":"nope/G9"}']);
     script = [{ status: 504, body: { ok: false, code: 'no-answer', error: 'no answer yet', extra: { verb: 'desk', id: '41' } } }];
     const slowAsk = await run([port, 'chat.add', '{"id":"a/G1.1","text":"x"}']);

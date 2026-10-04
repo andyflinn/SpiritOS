@@ -199,10 +199,10 @@ async function main() {
   await up('deskClient');
   await call('deskClient', 'setDesk', { key: DESK_KEY }, CW_OWNER);
   const through = await call('deskClient', 'desk', { verb: 'chat.search', json: JSON.stringify(filter({ text: 'long' })) }, CW_OWNER);
-  let passed = null;
-  try { passed = JSON.parse((through.body || {}).json); } catch (e) { passed = null; }
+  // Since goal/G4.19 the desk's answer itself, not a json string.
+  const passed = through.body || null;
   if (through.status === 200 && passed && Array.isArray(passed.items) && passed.items.length === full.lines.length && passed.more === true) {
-    test.check('the same fullest answer came through deskClient in one piece: ' + passed.items.length + ' lines as {json}');
+    test.check('the same fullest answer came through deskClient in one piece: ' + passed.items.length + ' lines as the answer itself');
   } else test.fail(OWED + 'through deskClient the fullest answer came back ' + through.status + ' ' + JSON.stringify(through.body).slice(0, 200));
 
   test.subHeading('7. narrowing brings the next older lines');

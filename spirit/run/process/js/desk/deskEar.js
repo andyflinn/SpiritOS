@@ -64,12 +64,11 @@ else if (verb.indexOf('deskClient.') === 0) {
   // ONE ASK OF ITS OWN deskClient, the answer printed as it came.
   ask(verb.slice('deskClient.'.length), args).then(function (r) { end(refusedBy(r) ? 1 : 0, r.text, refusedBy(r)); });
 } else {
-  // ONE ASK OF THE DESK. Its answer is printed as it came, a refusal of the desk's too; deskClient's own refusal
-  // (a slow desk: no-answer with the record's id) is the reason.
+  // ONE ASK OF THE DESK. Its answer is printed as it came, a refusal of the desk's too (exit 1); deskClient's own
+  // refusal (a slow desk: no-answer with the record's id) is the reason. Since goal/G4.19 deskClient hands back the
+  // desk's answer itself, not a json string, so a desk refusal arrives as the body: ok false, printed, exit 1.
   ask('desk', { verb: verb, json: process.argv[4] || '{}' }).then(function (r) {
-    if (refusedBy(r) || typeof r.body.json !== 'string') end(1, 'deskEar: ' + r.text, true);
-    let said = null;
-    try { said = JSON.parse(r.body.json); } catch (e) { said = null; }
-    end(said && said.ok === false ? 1 : 0, r.body.json);
+    if (r.status !== 200 || !r.body || typeof r.body !== 'object') end(1, 'deskEar: ' + r.text, true);
+    end(r.body.ok === false ? 1 : 0, JSON.stringify(r.body));
   });
 }

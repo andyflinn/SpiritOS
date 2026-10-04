@@ -157,10 +157,10 @@ async function main() {
   test.subHeading('2. its verbs');
   const tree = await up('deskClient') || {};
   const shapeOf = function (v) { return JSON.stringify(tree[v] || null); };
-  if (shapeOf('desk') === JSON.stringify({ request: { verb: '', json: '' }, reply: { json: '' } })
+  if (shapeOf('desk') === JSON.stringify({ request: { verb: '', json: '' }, reply: {} })
     && shapeOf('setDesk') === JSON.stringify({ request: { key: '' }, reply: { set: true } })
     && shapeOf('history.search') === JSON.stringify({ request: { text: '' }, reply: { items: [{ key: '', label: '' }], more: false } })) {
-    test.check('desk {verb, json} -> {json}; setDesk {key} -> {set}; history.search {text} -> {items, more}');
+    test.check('desk {verb, json} -> the answer itself (goal/G4.19); setDesk {key} -> {set}; history.search {text} -> {items, more}');
   } else test.fail(OWED + 'the api answered desk ' + shapeOf('desk') + ', setDesk ' + shapeOf('setDesk') + ', history.search ' + shapeOf('history.search'));
 
   test.subHeading('3. setDesk, by the owner alone; no desk, no ask');
@@ -176,16 +176,15 @@ async function main() {
   test.subHeading('4. one ask, passed on and answered');
   posts.length = 0;
   const yes = await call('deskClient', 'desk', { verb: 'items.search', json: SEARCH }, OWNER);
-  let got = null;
-  try { got = JSON.parse((yes.body || {}).json); } catch (e) { got = null; }
+  // Since goal/G4.19 the desk's answer itself, not a json string.
+  const got = yes.body || null;
   const goalSeen = got && Array.isArray(got.items) && got.items.some(function (p) { return p.key === 'a/G1'; });
   if (yes.status === 200 && goalSeen && posts.length === 1 && posts[0].to === DESK_KEY && posts[0].app === 'api' && posts[0].verb === 'items.search') {
-    test.check('items.search went as one api post to the desk\'s key, and its answer came back as {json}');
+    test.check('items.search went as one api post to the desk\'s key, and its answer came back as the answer itself');
   } else test.fail(OWED + 'the ask answered ' + yes.status + ' ' + JSON.stringify(yes.body).slice(0, 200) + '; posts ' + JSON.stringify(posts));
   const no = await call('deskClient', 'desk', { verb: 'item.get', json: JSON.stringify({ id: 'nope/G9' }) }, OWNER);
-  let refusedBody = null;
-  try { refusedBody = JSON.parse((no.body || {}).json); } catch (e) { refusedBody = null; }
-  if (no.status === 200 && refusedBody && refusedBody.ok === false && refusedBody.code === 'no-such-item') test.check('the desk\'s refusal comes back as its answer: no-such-item inside {json}');
+  const refusedBody = no.body || null;
+  if (no.status === 200 && refusedBody && refusedBody.ok === false && refusedBody.code === 'no-such-item') test.check('the desk\'s refusal comes back as its answer: no-such-item as the body');
   else test.fail(OWED + 'a refused ask answered ' + no.status + ' ' + JSON.stringify(no.body).slice(0, 200));
 
   test.subHeading('5. every ask is recorded, newest first');

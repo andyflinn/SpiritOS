@@ -54,10 +54,10 @@ function desk(verb, args) {
   const ask = kernel.core.ask('jobs.api', { ask: { deskClient: { desk: { verb: verb, json: JSON.stringify(args) } } } }, 'http://127.0.0.1:' + port);
   return Promise.race([ask, late]).then(function (r) {
     clearTimeout(timer);
-    if (!r || r.status !== 200 || !r.body || r.body.ok === false || typeof r.body.json !== 'string') throw new Error('deskClient on port ' + port + ' answered ' + (r ? r.text : 'nothing'));
-    const said = JSON.parse(r.body.json);
-    if (!said || said.ok === false) throw new Error('the desk answered ' + JSON.stringify(said));
-    return said;
+    // The desk's answer itself is the body (goal/G4.19): a refusal of the desk's or of deskClient's is ok false.
+    if (!r || r.status !== 200 || !r.body || typeof r.body !== 'object') throw new Error('deskClient on port ' + port + ' answered ' + (r ? r.text : 'nothing'));
+    if (r.body.ok === false) throw new Error('the desk answered ' + JSON.stringify(r.body));
+    return r.body;
   }, function (e) { clearTimeout(timer); end(1, 'commitCheck: REFUSED, the node on port ' + port + ' could not be asked ' + verb + ': ' + ((e && e.message) || e)); });
 }
 
