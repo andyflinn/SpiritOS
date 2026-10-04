@@ -36,6 +36,8 @@
 //   6  [set-to-repo-root] (data-scope-root), beside the words "for advanced agents", is an arm-button: the first click
 //      arms it, the second sets the one scope to '' (the repo root). It is offered only while the scope is not '/'
 //      already ("only needs to be offered if the agent doesn't already have that scope").
+//   8  Name and nick on the line (section 5): inputs data-profile="name"/"nick" from profile.get, data-profile-save
+//      sends profile.set {agent, name, nick}.
 //   7  The desk keeps one folder per agent: scope.set with more than one folder is refused bad-request (deskScopes.js).
 // LEFT OPEN, not asserted: picking the repo root itself (the tree holds spirit/run only); styling; the pane for an
 // agent that is not live.
@@ -163,6 +165,7 @@ async function thePage() {
   new Function('spirit', 'document', 'window', fs.readFileSync(DESK, 'utf8'))({ shell: { activateApp: function (x) { behavior = x; } }, core: kernel.core }, doc, {});
   const asked = [];
   let scope = 'spirit/run/shell/chess/';
+  let profile = { name: 'claude-windows', nick: 'cw' };
   const pickers = [];
   const goalRow = { id: 't/G1', title: 'The goal', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], design: false, waiting: 0,
     live: ['claude-windows'], working: [], agents: { 'claude-windows': CW_KEY }, alone: false, alert: false, claims: 0, asks: 0, boxTaken: '' };
@@ -176,6 +179,8 @@ async function thePage() {
       asked.push({ verb: v, args: ask[v] });
       if (v === 'items.search') return Promise.resolve({ status: 200, body: { items: [{ key: 't/G1', label: JSON.stringify(goalRow) }], more: false } });
       if (v === 'scope.get') return Promise.resolve({ status: 200, body: { folder: scope } });
+      if (v === 'profile.get') return Promise.resolve({ status: 200, body: { name: profile.name, nick: profile.nick } });
+      if (v === 'profile.set') { profile = { name: ask[v].name, nick: ask[v].nick }; return Promise.resolve({ status: 200, body: { change: 10 } }); }
       if (v === 'scope.set') { scope = ask[v].folder; return Promise.resolve({ status: 200, body: { change: 9 } }); }
       return Promise.resolve({ status: 200, body: { items: [], more: false, json: '{}', chat: [], chatMore: false } });
     },
@@ -253,4 +258,24 @@ async function thePage() {
   const shownWords = all(slot || node('div')).filter(function (n) { return visible(n, slot) && /for advanced agents/.test(String(n.textContent || '') + ' ' + (n.children.length ? '' : n.innerHTML)); });
   if (scope === '/' && !shownRoot.length && !shownWords.length) test.check('with the scope already /, [set-to-repo-root] and "for advanced agents" are not offered');
   else test.fail(OWED + 'with the scope ' + short(scope) + ', set-to-repo-root shown ' + shownRoot.length + ', the words shown ' + shownWords.length);
+
+  test.subHeading('5. name and nick on the agent\'s line, saved through profile.set');
+  // Andy, 2026-10-04, under goal/G4.23: "so two more fields for repo-root-agents: / name <agent-name> / nick: <wc | wsl
+  // | ubi>", "build them now."; the desk side is built (fc3ce55c, deskProfiles.js). On the line: two text inputs,
+  // data-profile="name" and data-profile="nick", filled from profile.get {agent: key}, and a button data-profile-save
+  // that sends profile.set {agent: key, name, nick} with what the two inputs hold, then reads profile.get again.
+  const lineNodes = function () { return Object.keys(byId).filter(function (k) { return /^desk-agent/.test(k); }).reduce(function (acc, k) { return acc.concat(all(byId[k])); }, []); };
+  const field = function (f) { return lineNodes().filter(function (n) { return n.tagName === 'INPUT' && n.getAttribute && n.getAttribute('data-profile') === f; })[0]; };
+  const asked5 = asked.filter(function (a) { return a.verb === 'profile.get'; });
+  if (asked5.length && asked5[asked5.length - 1].args.agent === CW_KEY) test.check('opening the agent asks profile.get with its key');
+  else test.fail(OWED + 'profile.get asked ' + short(asked5));
+  if (field('name') && field('nick') && field('name').value === 'claude-windows' && field('nick').value === 'cw') test.check('two inputs, data-profile name and nick, hold claude-windows and cw');
+  else test.fail(OWED + 'name input ' + short(field('name') && field('name').value) + ', nick input ' + short(field('nick') && field('nick').value));
+  const saveBtn = lineNodes().filter(function (n) { return n.getAttribute && n.getAttribute('data-profile-save') !== null; })[0];
+  if (field('nick')) field('nick').value = 'cwx';
+  const gets5 = asked.filter(function (a) { return a.verb === 'profile.get'; }).length;
+  if (saveBtn) { fire(saveBtn, 'click'); await settled(); }
+  const saved = asked.filter(function (a) { return a.verb === 'profile.set'; }).slice(-1)[0];
+  if (saved && saved.args.agent === CW_KEY && saved.args.name === 'claude-windows' && saved.args.nick === 'cwx' && asked.filter(function (a) { return a.verb === 'profile.get'; }).length > gets5) test.check('[save] sends profile.set {agent, name, nick: cwx}, then reads profile.get again');
+  else test.fail(OWED + 'save button ' + !!saveBtn + '; profile.set sent ' + short(saved && saved.args));
 }
