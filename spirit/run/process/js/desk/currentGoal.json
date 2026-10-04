@@ -1,8 +1,8 @@
 {
- "change": 12442,
+ "change": 12549,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T19:35:47.181Z",
+ "writtenAt": "2026-10-04T19:54:42.414Z",
  "items": [
   {
    "id": "goal/G4",
@@ -26,15 +26,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
+   "waiting": 7,
    "live": [
-    "claude-ubuntu",
     "claude-windows",
-    "ollama agent node",
     "wsl-claude"
    ],
    "working": [
-    "wsl-claude"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -8322,9 +8320,9 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 2,
    "boxTaken": "",
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "GEMMA'S DESK LOOP: A SCRIPT KEEPS A MODEL WITH NO HARNESS ON DESK\n\nANDY, 2026-10-04, VERBATIM (Team chat)\n- \"how do we git it to stick to that loop that you are in when working over desk?\"\n- To \"New code, so it needs an item: open one, with your Go?\": \"yes. open one\"\n\nWHY\n- gemma under opencode reads and writes Desk through deskEar 11111, but nothing wakes it when a line comes, and opencode's shell tool stops any command after 120 s (seen twice on 2026-10-04). A 12b model told to loop drifts off it.\n\nSHAPE (claude-windows, wsl-claude proposed the same)\n- One small script in process/js/desk: waits on deskEar <port>; when lines come, hands them to the model with opencode run --session <one session>, so it keeps its memory; the model answers in Desk with deskEar chat.add; the script waits again. The script does the waiting, so the 120 s limit never applies.\n- Nothing in gemma's model or opencode changes.\n\nBUILT: deskLoop.js (5ea539ca), deskLoop 6 of 6. Started live by Andy; three flaws seen: gemma gets every line of his, gets no order to answer, and its printout never reaches Desk.\n\nRULED (Andy, 2026-10-04, to Q1 \"Should deskLoop post what gemma prints to Desk itself?\")\n- \"not it's internal thought process. claude's don't print to me what you print in your vscode window\"\n- So the loop never posts the model's output; the model answers in Desk itself, with deskEar chat.add, as the Claudes do.\n\nRULED (Andy, 2026-10-04, to Q2 \"A or B? A: the loop posts nothing, gemma answers with deskEar chat.add itself. B: the loop posts gemma's final answer for it, never its thinking.\"): \"can you? then do it.\", then \"but it doesn't help if you have to do it, the extraction i mean. then i may as well use you. it's only valuable if that can be extracted mechanically\"; earlier \"yes, like it needs a manual pre-loaded......\"\n- So B, mechanically: opencode run --format json; the loop posts the text of the last step under the line's id; thinking and tool calls never reach Desk.\nFIX ROUND: hand gemma only his lines starting with its nick; a manual file beside deskLoop goes before them; the loop posts the final text.\n\nOPEN\n- Its name and arguments; whether the session id is given or found; his Go.",
@@ -8767,6 +8765,36 @@
      "by": "claude-windows",
      "at": "2026-10-04T19:32:30.230Z",
      "text": "Echo built, 20e6551a; deskLoop 12 of 12: while gemma works, its loop window shows each step as it comes, \"[read] {...}\" for a tool call and its words as it writes them. Desk still gets only the final answer.\nTo see it: stop the loop, pull D:\\SpiritOS-agent-ollama, start it again with the same command.\n- spirit/run/process/js/desk/deskLoop.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T19:38:43.429Z",
+     "text": "On your \"gemma: keep reporting on G4.31\": the loop runs gemma once per line of yours, so it can report once now, not keep reporting; each further report needs another \"gemma:\" line. A standing watch would be a new feature (the loop waking gemma on that item's changes)."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T19:40:53.176Z",
+     "text": "Checked on WSL at 20e6551a: deskLoop 12 of 12 (a first run read 4 of 12 while my own disk-heavy test was still running; rerun clean, nothing else in it)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T19:41:49.118Z",
+     "text": "(Team chat is held for gemma, so here.) Not a hook that pulls input, but something better for you:\n- opencode serve runs gemma's session as a server; deskLoop sends each line into it (opencode run --attach <url>), and you watch the very same session live in a full opencode window (opencode attach <url>), the way you watch me. It also stays warm between lines, no cold start.\n- opencode also has plugins with event hooks (one fires when the session goes idle), but I have not checked that one can fetch input; the server route is plain and in its own --help.\nA small change to deskLoop's start command, no new code in deskLoop. Try it?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T19:43:05.985Z",
+     "text": "Nearly. The window you type in reads the keyboard, not a pipe, but opencode has two doors for code:\n- opencode acp: exactly your picture, stdin in and stdout out, as JSON messages (the Agent Client Protocol). One long-lived gemma, fed line by line; but then no window to watch it in.\n- opencode serve: the same over HTTP, and you can attach a window to that very session and watch it live.\nFor you, serve is the better one: same feeding, and you see it sputter."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T19:45:39.781Z",
+     "text": "yes http: makes more sense. and i suppose http has a verb to retrieve all session id's or to manage sessions?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T19:47:28.832Z",
+     "text": "Yes, checked on a throwaway server just now: GET /session lists every session (gemma's ses_ef80... came back), and per session there is message (send and wait), prompt_async (send, don't wait), abort, summarize, fork, and more; the whole API is described at /doc.\nSo deskLoop could talk HTTP to one long-running opencode serve, and you attach a window to it."
     }
    ]
   },
@@ -8788,7 +8816,7 @@
    "alert": false,
    "claims": 2,
    "boxTaken": "",
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "",
@@ -8842,9 +8870,7 @@
    "blocking": [
     "goal/G4"
    ],
-   "blocked": [
-    "goal/G4.31"
-   ],
+   "blocked": [],
    "go": true,
    "alone": false,
    "alert": false,
@@ -8945,6 +8971,31 @@
      "by": "claude-windows",
      "at": "2026-10-04T19:26:42.742Z",
      "text": "taking: opening the item for the arrivals fix."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T19:51:43.105Z",
+     "text": "can i get another reading on this?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T19:52:13.061Z",
+     "text": "taking: a fresh reading, from my node."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T19:52:35.183Z",
+     "text": "Fresh reading from my node, just now (8 desk asks): 0.58-0.68 s typical, one 0.9 s, one 5.7 s. My event stream opens in 0.12-0.16 s.\nFrom my traffic log: a post's receipt is back in 0.22-0.55 s and the answer in 0.43-0.75 s; three posts waited about 5 s for their receipt, which made the one slow ask. Cause of those three not found yet; they are the next thing to look at."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T19:52:45.380Z",
+     "text": "Fresh reading (your checkout runs e2b11f9e):\n- An event stream opening, first byte: your node 15-51 ms; my node 260-370 ms. Before the fix it was 1.0-1.25 s.\n- One whole desk ask from my window, deskEar included: 1.02-1.30 s over 5 tries. About 0.3 s of that is starting deskEar's own process, so the ask itself is roughly 0.7-1.0 s.\n- My node still opens slower than yours; it may hold more arrivals nobody ever took. Worth a look, not urgent."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T19:52:46.816Z",
+     "text": "Exact: two receipts took about 5.3-5.6 s and three answers about 5-6 s, not three receipts."
     }
    ]
   },
@@ -8952,9 +9003,12 @@
    "id": "goal/G4.31",
    "title": "Opening a node's event stream asks the traffic table only for undelivered arrivals, not the whole log (about 1 s per desk ask today); the log stays permanent",
    "goal": "goal/G4",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G4.30"
    ],
@@ -8962,19 +9016,107 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 2,
    "boxTaken": "",
    "asks": 0,
    "half": false,
    "full": false,
    "box": "ARRIVALS ON STREAM OPEN: ASK FOR THE UNDELIVERED ROWS ONLY\n\nANDY, 2026-10-04, VERBATIM\n- \"on an idle relay a peerpost takes already more than a second. i remember it being a fraction of that\"\n- To Q2 under goal/G4.30 (\"Fix it as a new item: on opening the stream, ask the traffic table only for undelivered arrivals (it has an index for exactly that) instead of reading the whole log; the log stays permanent.\"): \"yes\"\n- Standing: \"the log should be permanent. period.\" (peerPost.js)\n\nFOUND (goal/G4.30, wsl-claude measured, claude-windows confirmed in code)\n- Every desk ask opens the asking node's /api/events stream (kernel.peerPost). On open, arrivals.js waiting() calls traffic.read(), the whole traffic log, then keeps the rows inbound, admitted and not taken. 112,192 rows on wsl-claude's node took 1,047 ms; any other request answers in 2-5 ms.\n\nSHAPE\n- waiting() asks the traffic table for exactly those rows, in arrival order, through its index; same answer, no full read. Nothing is pruned.\n- Core file (spirit/run/js/arrivals.js, and traffic's query if one is needed): Andy's grant per file comes with the build.\n\nOPEN: his Go.",
    "version": 1,
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/arrivals.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-04T19:47:12.997Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/nodeStore.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-04T19:47:05.968Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: js/trafficLog.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-04T19:46:59.519Z"
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
      "at": "2026-10-04T19:28:59.671Z",
      "text": "Opened goal/G4.31: opening a node's event stream asks only for undelivered arrivals instead of reading the whole traffic log, which costs about a second on every desk ask today. Core file, so your Go and a grant for arrivals.js; wsl-claude writes the red."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T19:41:10.391Z",
+     "text": "taking: the red for G4.31."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T19:44:01.646Z",
+     "text": "commit 179d84127c03e0cbf28154b7674c9db32b4a7a33: goal/G4.31: the red for opening the event stream without reading the whole traffic log (arrivalsBacklogQuick 3 green, 2 owed). Found under goal/G4.30: every kernel.peerPost opens /api/events, and arri\n- spirit/test/arrivalsBacklogQuick.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T19:44:08.055Z",
+     "text": "The red is in, 179d8412: arrivalsBacklogQuick 3 green, 2 owed. Opening the stream must not read the whole log and must still replay every waiting arrival; over 20,000 rows it has to take under a fifth of a whole read.\nTried against patched copies: 46 ms against 477 ms. One trap, in the test's notes: the hash index only works if the query repeats hash <> ''."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T19:44:36.171Z",
+     "text": "taking: the build of G4.31 against 179d8412."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T19:47:45.834Z",
+     "text": "Built, waiting for your grants: opening the event stream now asks only for undelivered arrivals (arrivalsBacklogQuick 5 of 5: 41.7 ms against 523.4 ms for a whole read over 20,000 rows); arrivals, nodeStore, trafficLog and peerPost suites green.\nThe commit check refused it for three core files and put the grant requests on this item: arrivals.js, nodeStore.js, trafficLog.js."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T19:48:20.996Z",
+     "text": "commit e2b11f9ec360409e5ff5ef3d16931e07fb54afeb: goal/G4.31: opening the event stream asks only for undelivered arrivals (arrivalsBacklogQuick 5 of 5: 41.7 ms against 523.4 ms for a whole read over 20,000 rows). Andy, 2026-10-04: \"yes\" to asking the\n- spirit/run/js/arrivals.js\n- spirit/run/js/nodeStore.js\n- spirit/run/js/trafficLog.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T19:48:30.376Z",
+     "text": "Committed with your grants, e2b11f9e. It speeds up every node that runs it; your node needs a pull and restart, and so do the agents' nodes, for desk asks to lose that second.\n- spirit/run/js/arrivals.js\n- spirit/run/js/nodeStore.js\n- spirit/run/js/trafficLog.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T19:49:30.901Z",
+     "text": "Checked on WSL at e2b11f9e: arrivalsBacklogQuick 5 of 5, arrivals 24 of 24. And on real data, a copy of my node's node.db (86,413 rows): opening now costs 85 ms against 1,571 ms for the whole read."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T19:50:20.607Z",
+     "text": "Live on my node, restarted at e2b11f9e: its event stream now opens in 0.09-0.13 s (it was 1.0-1.25 s), and a desk ask to your node takes 0.57-0.65 s (it was 1.5-2 s, the first after the restart 1.0 s).\nYour node and the other agents' nodes gain the same once they run it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T19:51:24.545Z",
+     "text": "god, everythings sooo much faster now"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T19:51:36.662Z",
+     "text": "Good. One read of a log that never shrinks was costing every ask a second, and it would have grown every day."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T19:54:32.281Z",
+     "text": "this affected my shell-load, everything, chat is now very responsive...."
     }
    ]
   }
