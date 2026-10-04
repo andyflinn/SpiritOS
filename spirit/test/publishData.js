@@ -17,16 +17,19 @@
 //      relayLab/measurements/ is gone; README.md links agents/. No test or tool writes README/CAPACITY/ any more.
 //      (Two core files mention README/CAPACITY.md in comments only, nodeSettings.js 37 and relay.js 135; a doc, not a
 //      path the code uses, so not asserted.)
-//   2  PACKETS: node spirit/run/process/js/desk/publishData.js <port> --only packets --asks <N> --out <dir> makes N
+//   2  PACKETS: node spirit/run/process/js/deskClient/publishData.js <port> --only packets --asks <N> --out <dir> makes N
 //      read-only desk asks from that node and writes packets.json {posts, waitMs: {median, max}, flight: {median, max},
-//      retried, refusals} and packets.md from its own traffic rows, plus platform.md naming the agent and commit.
+//      retried, refusals, measuredAt, commit} and packets.md from its own traffic rows, plus platform.md naming the
+//      agent and commit, and README.md, the folder's front page (agent, date, what the files are). Every file dated.
 //      --only packets skips measurePlatform.js (a harness inside the harness would never end). It reads the traffic
 //      log of the node that runs from the clone it is run in, <clone>/spirit/run/relay-state/node.db (no verb reads it);
 //      the node holds that file open, so a read-only copy is the safe way.
 //   3  THE STANDING GRANT: a commit whose files all lie in agents/<this agent>/ passes the commit check with no item;
 //      any other file, or another agent's folder, is checked as today. The agent's name is the one Andy set in its
 //      profile (profile.get), as the folders are named by it.
-// LEFT OPEN (Q checks on goal/G4.33): what "publish" is to deskClient, and N for a real run; not asserted here.
+//   4  THE TRIGGER: his group-chat line exactly "publish" (Q13) makes the agent's deskClient start publishData.js as a
+//      job of type publishData on its own node, with removeWhenDone; N for that run is 20 (Q14). Any other line starts
+//      nothing. Whether the job also passes --asks 20 is the builder's; not asserted.
 
 const fs = require('fs');
 const os = require('os');
@@ -45,7 +48,10 @@ const appClient = require('../run/js/appClient.js');
 const OWED = 'OWED by goal/G4.33: ';
 const REPO = path.join(__dirname, '..', '..');
 const DESK_DIR = path.join(REPO, 'spirit', 'run', 'process', 'js', 'desk');
-const PUBLISH = path.join(DESK_DIR, 'publishData.js');
+// IN deskClient's FOLDER, not desk's: jobs.create refuses a script under process/js/<name>/ unless that folder is on the
+// node's include list (jobs.js 404-418, refuseUnlisted), and an agent's node includes deskClient but never desk (which
+// would start a desk server there). Found in the dry run of section 4. Andy: "it will be automated under deskClient."
+const PUBLISH = path.join(REPO, 'spirit', 'run', 'process', 'js', 'deskClient', 'publishData.js');
 const ONBOARD = path.join(DESK_DIR, 'onboard.js');
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEApublishDataTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
 
@@ -95,7 +101,7 @@ function plant(name) { const h = path.join(scratch, name, 'spirit', 'run'); plan
 function pointAt(home, url) { fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true }); fs.writeFileSync(path.join(home, 'shell', 'natter', 'relays.json'), JSON.stringify([{ label: 'spirit', url: url }])); }
 
 (async function () {
-  if (!fs.existsSync(PUBLISH)) { test.fail(OWED + 'there is no spirit/run/process/js/desk/publishData.js; sections 2 and 3 cannot run'); return; }
+  if (!fs.existsSync(PUBLISH)) { test.fail(OWED + 'there is no spirit/run/process/js/deskClient/publishData.js; sections 2 and 3 cannot run'); return; }
 
   // THE WORLD, as agentOnboard builds it: a relay, Andy's node with the desk, an agent joined by onboard.js.
   const relayHome = plant('relay');
@@ -156,6 +162,16 @@ function pointAt(home, url) { fs.mkdirSync(path.join(home, 'shell', 'natter'), {
   try { platform = fs.readFileSync(path.join(out, 'platform.md'), 'utf8'); } catch (e) { platform = ''; }
   if (/gemma/.test(platform) && /[0-9a-f]{7,}/.test(platform)) test.check('platform.md names the agent (gemma) and a commit');
   else test.fail(OWED + 'platform.md reads ' + short(platform || '(none)'));
+  // DATED, AND A README (Andy, 2026-10-05: "does it generate agents/<agent>/README.md ?"; "are all the ouputfiles
+  // properly dated?"). packets.json carries measuredAt (ISO) and commit as harness.json and capacity.json already do;
+  // README.md is the folder's front page, naming the agent, the date and what the files are.
+  const iso = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+  if (pk && iso.test(String(pk.measuredAt)) && /^[0-9a-f]{7,}$/.test(String(pk.commit))) test.check('packets.json is dated (measuredAt ' + pk.measuredAt + ') and names its commit');
+  else test.fail(OWED + 'packets.json lacks measuredAt or commit: ' + short(pk && { measuredAt: pk.measuredAt, commit: pk.commit }));
+  let readme = '';
+  try { readme = fs.readFileSync(path.join(out, 'README.md'), 'utf8'); } catch (e) { readme = ''; }
+  if (/gemma/.test(readme) && /\d{4}-\d{2}-\d{2}/.test(readme) && /packets/.test(readme)) test.check('README.md is written: the agent, the date, and what the files are');
+  else test.fail(OWED + 'README.md reads ' + short(readme || '(none)'));
 
   test.subHeading('3. the standing grant: its own folder, no item');
   const commit = function (rel, msg) {
@@ -175,6 +191,32 @@ function pointAt(home, url) { fs.mkdirSync(path.join(home, 'shell', 'natter'), {
   const outside = commit('README.md', 'publish: outside');
   if (outside.code !== 0) test.check('a file outside agents/gemma/, with no item, is refused as today');
   else test.fail('README.md with no item passed');
+
+  // ── 4. THE TRIGGER (Q13, Andy: "publish"; Q14, N: "that's a fine number", 20) ──
+  // His group-chat line that is exactly "publish" makes the agent's deskClient start publishData.js as a job of type
+  // publishData on its own node, with removeWhenDone (goal/G4.34). Any other line starts nothing. The agent listens as
+  // a real one does (deskEar running), and the job, once seen, is cancelled here: a whole publish runs the harness,
+  // which cannot run inside the harness.
+  test.subHeading('4. his "publish" in the group chat starts it, nothing else does');
+  const ear = spawn(process.execPath, [path.join(DESK_DIR, 'deskEar.js'), String(agentPort)], { cwd: clone, stdio: ['ignore', 'ignore', 'ignore'] });
+  kids.push(ear);
+  await sleep(2000);
+  const publishJob = function () {
+    return verb(agentPort, { verb: 'jobs.search', q: 'publishData' }).then(function (r) {
+      return ((r.body && r.body.items) || []).filter(function (i) { return /^publishData /.test(String(i.label)); })[0] || null;
+    });
+  };
+  await deskAsk('chat.add', { id: 'desk/G0.0', text: 'publish later, not now' });
+  await sleep(8000);
+  const early = await publishJob();
+  if (!early) test.check('"publish later, not now" starts nothing');
+  else test.fail('a line that is not exactly "publish" started ' + short(early));
+  await deskAsk('chat.add', { id: 'desk/G0.0', text: 'publish' });
+  let job = null;
+  await waitFor(function () { return publishJob().then(function (j) { job = j; return !!j; }); }, 60000);
+  if (job) test.check('his "publish" started a publishData job on the agent\'s node (' + job.label + ')');
+  else test.fail(OWED + 'no publishData job on the agent\'s node within 60 s of his "publish"');
+  if (job) await verb(agentPort, { verb: 'jobs.cancel', id: job.key });
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
   kids.forEach(function (k) { try { k.kill(); } catch (e) { /* gone */ } });
   setTimeout(function () {
