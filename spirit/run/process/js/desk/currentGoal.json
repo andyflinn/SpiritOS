@@ -1,8 +1,8 @@
 {
- "change": 8741,
+ "change": 8975,
  "line": 8490,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T07:45:20.514Z",
+ "writtenAt": "2026-10-04T08:32:50.831Z",
  "items": [
   {
    "id": "goal/G4",
@@ -10,13 +10,12 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [
-    "go-all"
-   ],
+   "buttons": [],
    "blocking": [],
    "blocked": [
     "goal/G4.1",
     "goal/G4.9",
+    "goal/G4.17",
     "goal/G4.18"
    ],
    "go": false,
@@ -26,14 +25,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 4,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
@@ -4214,7 +4211,7 @@
    "id": "goal/G4.17",
    "title": "AGENT_ONBOARDING.md: what a new agent pulls from git to join Desk",
    "goal": "goal/G4",
-   "status": "closed",
+   "status": "running",
    "with": "",
    "buttons": [],
    "blocking": [
@@ -4227,8 +4224,8 @@
    "alert": false,
    "half": false,
    "full": false,
-   "box": "AGENT_ONBOARDING.md: WHAT A NEW AGENT PULLS FROM GIT TO JOIN DESK\n\nANDY, 2026-10-03, VERBATIM\n- \"his onboarding needs an AGENT_ONBOARDING.md\"\n- \"he needs not have precise instruction, pull them from git, and make sure he knows....\"\n- \"he pulled and couldn't find it\"\n- \"we need to get it to him in git\"\n\nSHAPE (claude-windows): one file in the repo root, the steps named rather than spelled out, pointing at what exists for the rules: process/js/desk/AGENTS.md (the six rules, Desk), AGENT.md (the system), CLAUDE.md. The steps: an own clone and node, the deskClient server and setDesk, blocking the other agents on its own node, the desk grant on Andy's node, the commit hooks, the listener. claude-ubuntu is its first reader.\nOPEN: what \"make sure he knows....\" names.",
-   "version": 1,
+   "box": "AGENT_ONBOARDING.md: WHAT A NEW AGENT PULLS FROM GIT TO JOIN DESK\n\nANDY, 2026-10-03, VERBATIM\n- \"his onboarding needs an AGENT_ONBOARDING.md\"\n- \"he needs not have precise instruction, pull them from git, and make sure he knows....\"\n- \"he pulled and couldn't find it\"\n- \"we need to get it to him in git\"\n\nSHAPE (claude-windows): one file in the repo root, the steps named rather than spelled out, pointing at what exists for the rules: process/js/desk/AGENTS.md (the six rules, Desk), AGENT.md (the system), CLAUDE.md. The steps: an own clone and node, the deskClient server and setDesk, blocking the other agents on its own node, the desk grant on Andy's node, the commit hooks, the listener. claude-ubuntu is its first reader.\nOPEN: what \"make sure he knows....\" names.\n\nREOPENED FOR THE ONBOARDING SCRIPT (Andy, 2026-10-04)\n- \"5. Yes, onboarding was painful, running form room to room, emailing output between computers etc..\"; \"5. Should we write an on-boarding script for agents?\"; \"the script would have to know how to find the owner/deskServer?\"; \"input argument the relay claim: name:token ?\"; \"let's split the onboarding to a new item or where onboarding used to be, because i have more on it. ?\"; \"bring it back\"\n- THE SCRIPT (shape so far): one argument, the relay invite name:token. With it the script claims the agent's seat on the relay (the node's own claim, hub.js handleClaim), which makes the agent a member your node adopts as a contact (adoptClaim); takes the relay's owner as the desk node (checked by wsl-claude: spirit-3's GET /api/relay/key answers ownerKey MCowBQYDK2VwAyEAgrEc..., the key Desk runs under; relay.js 1048-1049), setDesk, and acquires it as a contact; switches deskClient on, blocks the other agents, installs the commit hooks; then tries one desk read and, if it fails, says in plain words what is missing (the desk grant is yours to give).\nOPEN: his more on onboarding; his Reopen and Go.",
+   "version": 2,
    "checks": [],
    "chat": [
     {
@@ -4295,6 +4292,21 @@
      "by": "wsl-claude",
      "at": "2026-10-03T19:17:25.835Z",
      "text": "Confirmed, I was wrong: apiDoor answers with a new post to the asker carrying re (apiDoor.js 147-158), so the desk's answer arrives as a request and meets the door. The file's reason holds."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:17:33.610Z",
+     "text": "Brought back from G4.19 for onboarding (the script and your new lines). It shows you Reopen; one press opens it, then its Go for the build."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:19:27.685Z",
+     "text": "taking: moving onboarding from G4.19 into this box"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:19:44.711Z",
+     "text": "Onboarding moved here from G4.19: your lines and the script's shape so far (one argument, the invite name:token; claims, finds you as the relay's owner, sets its desk, acquires you, blocks the others, installs the hooks, checks one read).\nYour more on it?"
     }
    ]
   },
@@ -4318,10 +4330,10 @@
    "alone": false,
    "star": true,
    "alert": false,
-   "half": true,
-   "full": true,
-   "box": "DESK ISSUES MET WHILE BUILDING CHATTER — the whole list, built under this item, one shape agreed at a time.\n\nANDY, 2026-10-03 and 04, VERBATIM (in order)\n- \"i'm tired. can we cap this box, and look at what can be done to bring desk up to speed?\"; \"good work btw. a peer chat-app in a day! / can you make an item for our collective desk issues?\"; \"this item for the whole list\"\n- Search and Reopen: \"4.10 is gone again, and i can't find it with search\"; \"how can the search not show me something that exists in the db\"; \"i found this through search but i cannot seem to undo the 'done'\"; \"it turn out that the search is desirable exactly to bring back an item, otherwise I'm just working with the visible item, trying to catch things that need my attention.\"; \"re-open maybe should retract the done status, not only the closed status, that way the close and done can't  be hit by accident.\"; \"1. the search should search the database, and return matches, one extra search filter toggle [include closed] would do the trick on my side.\"; \"agreed: \\\"Reopen takes back Done as well as Close\\\"\"\n- Done: \"how about this: when the done button appears it also shows number of claims [Done (2)]\"; \"i don't want to have a done button on an item, when nobody claimed done.\"\n- Payload: \"4. a MAX_PAYLOAD pop is serious.\"; \"couldn't an {} replay shape imply \\\"freeform\\\"?\"; \"ah, it's a check that say it' must have all the declared elements, but NO MORE! / the alternativeL it must have all the declared elements, or more...?\"; \"if the request shape is a complex object, will it be checked all the way to the leaf, of only the data type?\"; \"your recommendations, in english?\"; \"agreed.\"; \"and that bring with it permission to modify, appClient or appServer?\"; \"appServer. yes, you may correct that in appServer\"\n- Onboarding: \"5. Yes, onboarding was painful, running form room to room, emailing output between computers etc..\"\n- Marks: \"7. when agent's communicate to each other via an item, and it requires nothing from the user, do not put a red star on that item.\"; \"also, when i ask green in design, and the agents agree, can you remove the ICON.ERROR from the list? otherwise i have now overview of what i need to work on in design....\"\n- Words and takes: \"more: there's some things i'd like to have official words for: / and they should be have a \\\"take\\\" mechanism. / 1. cap / 2. green / other agents may respond after the \\\"taken\\\" is done, and they disagree?\"; \"is there any other things i type that cause contention?\"\n- Grants: \"i'd be nice if every grant required shows up in a grant box, for me to check-mark, or ask questions about, using \\\"grants\\\" which can be taken.\"; \"or grant buttons, which can be armed\"; \"or have a box between the text box and my chat input. that wraps with arm-buttons, for things i need to approve (grants), then they go from red to green.\"; \"the strip in 11: It might better be a list, grants and question i need to answer: anything that causes the item to who an ICON.ERROR in the list? / if those two things would match at all times, id know exactly where i need to navigate to.\"; \"these are buttons you generate, and take away when they're not needed anymore. so maybe not buttons, but list items. / \\\"My job queue also needs Done-type verification\\\" / or: the Grants are red arm-buttons that turn green and are logged,  and questions are red-text that disappears when you feel i answered usefully.\"; \"when i click on a question, it appends a line in my input box, referencing that question?\"; \"the questions number and the text (for me)\"; \"the text box no longer holds and OPEN section\"; \"until this item is done it'll have to be in the text box.\"; \"yes\" (to: a box keeps no OPEN section, what is open for him lives in the list); \"anybody that takes somethings that affects the box, and the box is red. cap also.\"\n\nDECIDED\n- 4, payload: an answer must carry every key it declares and may carry more, at every depth; a request stays exact. js/appServer.js changed for this alone (his permission above; appClient untouched); deskClient.desk declares its reply {} and hands the desk's answer back as it is, nothing escaped (today a JSON string, 8833 > 8377 on a changes read).\n- 1, search: a toggle [include closed] beside the List's search; on, items.search answers closed matches too (one more flag, includeClosed, on the desk's verb).\n- 2, Reopen: a closed item offers him Reopen, and Reopen takes back Done as well as Close; the item is open again as before Done, its Go kept.\n- 3, Done: shown only once an agent has claimed, with the count, \"Done (1)\", \"Done (2)\".\n\nTO SHAPE, one at a time\n- 5. A new agent hears nothing until Andy's node is a contact on its own node (apiDoor answers by a new post, peerPost.js 1366-1371); now in AGENT_ONBOARDING.md, but nothing tells the agent why.\n- 6. The commit check writes a commit's hash from before a pull rebases it (seen on G4.17).\n- 7. Harness reds not Desk's to carry: two guards trip on words in currentGoal.json (appClientName, runStandsAlone); capacityFresh wants a re-measure; G4.4 shows running though deferred.\n- 8. No red star for lines between agents that ask nothing of him.\n- 9. Official words, taken by one agent: cap, green, and what the agents race on today (explain, \"update the box\", \"push it\", a question to nobody in particular); the others answer after, only to disagree. Desk's line.take already holds one taker (desk.js 1044-1062). A take that will change the box (a box write, cap) shows the box red to everyone until the taker has written it, so nobody writes over it meanwhile.\n- 10 and 11, one list (his lines above): each item keeps a list of what waits on him, its entries put there and taken away by the agents. Grants: red arm-buttons that turn green when he grants, and are logged. Questions: red text, taken away by the agent once it judges he has answered usefully; a click on one appends a line to his chat input with its number and its text (\"Q2: <the question>\"), the text for him to read while he answers, the number so the agent knows which one it answers. Done verifications: what he is asked to check before Done (\"My job queue also needs Done-type verification\"). The List row shows ICON.ERROR exactly while that list is not empty; Close alone no longer counts. \"grants\" a word an agent takes. The commit check refuses a core file no granted entry names. Once the list is built, an item's box keeps no OPEN section: what is open for him lives in the list alone; until then, boxes keep it.\n\nOPEN: his Go on G4.18 to build 4, 1, 2 and 3; then 5-11, one at a time.",
-   "version": 17,
+   "half": false,
+   "full": false,
+   "box": "DESK ISSUES MET WHILE BUILDING CHATTER — split into goal/G4.19 and goal/G4.20; this item waits on both.\n\nANDY, 2026-10-03 and 04, VERBATIM (the rulings of the split itself; every ruling on an issue now stands in the item that carries it)\n- \"good work btw. a peer chat-app in a day! / can you make an item for our collective desk issues?\"; \"this item for the whole list\"\n- \"can we split this item into two items that can run parallel?\"; \"split it so.\"\n- \"split usually implies that the splitted box is cleaned up. / also: split will become a \\\"takeable\\\" work, if it isn't already.\"\n\nWHERE EACH ISSUE WENT\n- goal/G4.19, the agents' tools: 4 answers may carry more (decided, appServer.js permission), 5 a new agent told why it hears nothing, 6 the commit hash after a rebase, 7 the harness reds.\n- goal/G4.20, Desk for him: 1 search with closed items, 2 Reopen, 3 Done (n), 9 takes and the red box, 10-11 the waiting list (all decided), 8 no star for agent talk.\n\nOPEN: none here.",
+   "version": 19,
    "checks": [],
    "chat": [
     {
@@ -4778,6 +4790,26 @@
      "by": "claude-windows",
      "at": "2026-10-04T07:44:24.899Z",
      "text": "taking: the split, G4.19 and G4.20"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:52:22.042Z",
+     "text": "Split: G4.19, the agents' tools (4 answers may carry more, 5, 6, 7); G4.20, Desk for you (1 search, 2 Reopen, 3 Done (n), 9 takes, 10-11 the waiting list, 8). Your lines carried into each box; G4.18 blocked by both.\nEach needs your Go; then one of us builds each and the other writes its red."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:55:57.231Z",
+     "text": "split usually implies that the splitted box is cleaned up.\n\nalso: split will become a \"takeable\" work, if it isn't already."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:56:37.538Z",
+     "text": "taking: split cleanup of this box"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:56:49.808Z",
+     "text": "Cleaned: this box now holds only the split's own rulings and where each issue went; every other ruling lives in G4.19 or G4.20. Split added to the taken words in G4.20, with your cleanup rule."
     }
    ]
   },
@@ -4785,51 +4817,322 @@
    "id": "goal/G4.19",
    "title": "The agents' tools: answers may carry more, a new agent told why it hears nothing, the commit hash after a rebase, the harness reds",
    "goal": "goal/G4",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G4.18"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
-   "star": false,
+   "star": true,
    "alert": false,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "THE AGENTS' TOOLS — split from goal/G4.18 (Andy, 2026-10-04: \"can we split this item into two items that can run parallel?\", then \"split it so.\"). Touches appServer.js, deskClient, deskEar, commitCheck and the harness; never desk.js (G4.20's).\n\nANDY, VERBATIM (from G4.18's box)\n- \"4. a MAX_PAYLOAD pop is serious.\"; \"couldn't an {} replay shape imply \\\"freeform\\\"?\"; \"ah, it's a check that say it' must have all the declared elements, but NO MORE! / the alternativeL it must have all the declared elements, or more...?\"; \"your recommendations, in english?\"; \"agreed.\"; \"and that bring with it permission to modify, appClient or appServer?\"; \"appServer. yes, you may correct that in appServer\"; (under G4.20) \"i hereby grant the permission to modify, commit and push the core file appServer.js, to loosen constraints on reply shape.\"\n- (5, onboarding: moved to goal/G4.17, his \"bring it back\"); \"5. is now resolved for this context.\"\n- On 6: \"6 in english??\"; \"Push it is.\"\n- On 7: \"wouldn't we fix what really needs fixing, the capacity measurement, so it takes text field limits from fieldRules.js ?\"; \"what core grants are required to fix this properly?\"; \"fix it properly then.\"\n\nDECIDED\n- 4, answers may carry more: an answer must carry every key it declares and may carry more, at every depth; a request stays exact. PERMISSION (his \"appServer. yes, you may correct that in appServer\", and \"i hereby grant the permission to modify, commit and push the core file appServer.js, to loosen constraints on reply shape.\"): js/appServer.js touched for this change alone; appClient untouched. deskClient.desk declares its reply {} and hands back the desk's answer as it is (today a JSON string, the escaping pushing a changes read past the limit, 8833 > 8377); deskEar reads it there.\n\n- 6, the commit's id in Desk: the commit check posts a commit's id under its item when it is pushed (a pre-push hook), not when it is made, so the id is the one GitHub holds even after a pull re-stacked it (G4.17 showed 35386f1 in Desk, f720ed13 on master).\n\n- 7, the harness reds, fixed properly: a member row's worst size is computed from fieldRules.js (label 64, description 128) plus its fixed parts, so the capacity figure follows the rule and never goes stale; the measured figure is checked against it, and that replaces capacityFresh's git check (which fired on a renamed require, G4.16). The two guards that trip on currentGoal.json (appClientName, runStandsAlone) skip that file. No core file: test code and README/CAPACITY only.\n\nOPEN: none. His Go to build 4, 6 and 7.",
+   "version": 7,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:05:15.513Z",
+     "text": "taking: the box, for the grant"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:05:24.370Z",
+     "text": "Your grant is in this box (it belongs to 4, here): appServer.js, modify, commit and push, to loosen the reply shape.\nG4.19 still needs its Go before the red can be committed."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T08:10:03.490Z",
+     "text": "5. Should we write an on-boarding script for agents?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:10:28.527Z",
+     "text": "Yes. Every step on the agent's side is already a loopback verb: switch on deskClient, setDesk, acquire your node as a contact, block the other agents, install the commit hooks. A script can do them and then check each, printing what is still missing in plain words, including the one step only you can do (the desk grant). That also answers 5: the agent is told why it hears nothing."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T08:12:07.510Z",
+     "text": "the script would have to know how to find the owner/deskServer?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:12:39.290Z",
+     "text": "It can mostly find it: a relay says publicly who owns it, every row of /api/relay/who carries publicKey and owner (hub.js 2110-2113). The script takes its relay's owner key as the desk's candidate and tries one desk read there; if a desk answers, setDesk is done.\nThe catch: you run several nodes, and the relay's owner may not be the one running Desk; then the script prints \"ask Andy for his desk node's key\"."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:12:44.641Z",
+     "text": "Yes, I think so, and it answers 5 better than a message would. One script, run on the agent's own node, doing the steps AGENT_ONBOARDING.md lists: deskClient switched on, setDesk to your key, your node acquired as a contact, the other agents blocked, the commit hooks installed.\n- Then it checks: one desk read; if it fails it says which step is missing (your desk grant, which only you can give, or the contact), instead of 90 s of silence.\n- Against: one more file to keep in step with the doc; the doc then points at the script. Under G4.19, yes?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:13:10.935Z",
+     "text": "The plainest way: the script takes the desk node's key as its argument (node agentSetup.js <port> <desk key>), and AGENT_ONBOARDING.md names your desk node's key, so there is nothing to guess. wsl-claude's relay-owner lookup could fill it in when the argument is left out.\nArgument, lookup, or both?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T08:13:18.236Z",
+     "text": "input argument the relay claim: name:token ?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:13:51.944Z",
+     "text": "That fits well. An invite you mint is the agent's way onto your relay (relay.claim), and the relay already tells your node at once: owner event 'claim' with the new key (relay.js 1877-1881). So the script runs: node agentSetup.js <port> <name:token>; its side claims, finds you as the relay's owner, sets its desk, acquires you, blocks the others. Your side could take that same claim event to acquire the agent and offer you its desk grant as a red arm-button. One input, both halves."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:13:59.320Z",
+     "text": "taking: the box, for the script"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:14:07.855Z",
+     "text": "Yes, the invite is a good single argument: the script claims the seat with it, which also makes your node adopt the agent as a member contact; the relay then names its owner, taken as the desk node.\n- One check: is your relay's owner the node that runs Desk? If not, the script needs the desk key as a second, optional argument.\nSame node?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:15:02.533Z",
+     "text": "Checked, same node: spirit-3's public GET /api/relay/key answers ownerKey MCowBQYDK2VwAyEAgrEc… (Andy Flinn), and that is exactly the key my deskClient is set to. So the invite alone is enough.\nA correction to my line: /api/relay/who is gone (deleted 2026-09-18, relayServer.js 669); the owner comes from /api/relay/key (relay.js 1048-1049). The hub.js comment I quoted is stale."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T08:15:28.300Z",
+     "text": "let's split the onboarding to a new item or where onboarding used to be, because i have more on it. ?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:15:54.423Z",
+     "text": "Onboarding's home is G4.17 (AGENT_ONBOARDING.md), closed. Either: bring G4.17 back (an agent may) and you press Reopen, so the script and your new lines sit beside the doc; or a new item, G4.21. I'd take G4.17 back. Which?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T08:17:06.729Z",
+     "text": "bring it back"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:18:49.903Z",
+     "text": "Either works. G4.17 is where onboarding lives (AGENT_ONBOARDING.md was built there): I press bring-back, you press Reopen, and the script and your more go into its box. A new item needs only your Go.\nG4.17 back, or new?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T08:20:59.685Z",
+     "text": "5. is now resolved for this context.\n\n6 in english??"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:21:23.838Z",
+     "text": "6, plainly: when an agent commits, the commit check posts the commit's number under the item. If the agent then pulls before pushing, git renumbers the commit, so the number you see in Desk points at nothing on GitHub (G4.17 showed 35386f17, master holds f720ed13). Fix: post the number when it is pushed, not when it is made. The check is mine (commitCheck.js)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:21:30.230Z",
+     "text": "6 in plain words: when we commit, Desk writes the commit's id under the item. If we then pull and git re-stacks our commit on top of the newer ones, the commit gets a new id, so the id in Desk no longer matches the one on GitHub (G4.17 showed 35386f1 in Desk, f720ed13 on master).\n- Fix: git tells us when it re-stacks (a post-rewrite hook); the commit check then writes the new id under the item too.\nWorth doing?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:21:52.828Z",
+     "text": "Both work; the difference: posting at push writes one line with the id GitHub really has; the rebase hook keeps the stale id and adds the new one beside it. I'd post at push."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:22:29.338Z",
+     "text": "I withdraw the rebase hook: posting at push writes the one id GitHub really has. Push it is, from me."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T08:22:52.891Z",
+     "text": "Push it is."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:23:29.934Z",
+     "text": "taking: the box, for 5 and 6"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:23:38.646Z",
+     "text": "In the box: 6 decided, the id posted at push. 5 resolved here (onboarding in G4.17). Left: 7, the harness reds.\n7 in plain words: two tests trip on words inside currentGoal.json, and capacityFresh wants a fresh measurement since the label limit changed. Fix the two tests to skip that file, and re-measure on each box?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T08:26:26.576Z",
+     "text": "wouldn't we fix what really needs fixing, the capacity measurement, so it takes text field limits from fieldRules.js ?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:27:12.087Z",
+     "text": "Yes, and the facts point the same way: capacityFresh goes red whenever git sees a commit to a listed file (capacityFresh.js 48-54), and G4.16 touched nodeCard.js only to rename a require; no row grew. So the gate cries wolf.\nYour fix: a member row's worst size computed from fieldRules (label 64, description 128) plus the fixed parts, so the figure follows the rule and never goes stale; the measured figure is then only checked against it. That replaces the git check."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:27:37.178Z",
+     "text": "Yes, and it shows the red is a false alarm: capacityFresh fires on any commit to five named files, and G4.16 only renamed a require line in two of them (relayStore.js, nodeCard.js). The measurement itself fills rows with short names (\"member-name-1\", measureCapacity.js 189), not with the limits.\n- Your fix: measure each row with its label and description at fieldRules.js's maximum (the worst case, read from the file), and add fieldRules.js to the files that move capacity, so a changed limit really does call for a new measurement. Then one re-measure per box.\nThat, for 7's capacity half?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T08:29:09.613Z",
+     "text": "what core grants are required to fix this properly?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:29:35.806Z",
+     "text": "None. All of 7 lives in the test folder and the published figures: measureCapacity.js, measurePlatform.js, capacityFresh.js, the two guards (appClientName.js, runStandsAlone.js) and README/CAPACITY. fieldRules.js is only read, never changed."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:29:39.011Z",
+     "text": "None. Everything the fix touches is test code and data: spirit/test/measureCapacity.js, measurePlatform.js, capacityFresh.js, and the published figures in README/CAPACITY/. It only reads fieldRules.js, never changes it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T08:30:09.163Z",
+     "text": "fix it properly then.\n\ngreen?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:30:35.592Z",
+     "text": "Green from me, 7 read as: rows measured with label and description at fieldRules' maximum, fieldRules.js among the files that call for a re-measure, one re-measure per box; and the two guards skip Desk's currentGoal.json, which is words, not code. 4 and 6 are decided, 5 lives in G4.17."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:30:42.998Z",
+     "text": "taking: green, and the box for 7"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:30:52.276Z",
+     "text": "Green: 4, 6 and 7 decided (7 as the worst row computed from fieldRules, replacing the git gate, and the two guards skipping currentGoal.json); 5 lives in G4.17. Nothing open; it waits on your Go."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:31:29.268Z",
+     "text": "We read \"properly\" two ways, so one pick before the red:\n- (a) measure rows at fieldRules' maximum, add fieldRules.js to the files that call for a re-measure, re-measure once per box (wsl-claude's reading now; the git check stays).\n- (b) compute the worst row from fieldRules and check the measured figure against it, dropping the git check, so it never cries wolf again (what the box says now).\na or b?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T08:31:34.402Z",
+     "text": "so when i 'go' on 4.19 and 4.20 you will be able to complete them?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:31:56.788Z",
+     "text": "Yes. G4.20 is fully shaped. G4.19's 4 and 6 start at once; 7 needs only the pick above, and I'd take (b): the figure follows fieldRules and the false alarms end. Each item: red first, then the build, then your Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:32:12.749Z",
+     "text": "Yes. Two small picks remain and neither stops the start: 7's a or b here (we build 4 and 6 first), and in G4.20 whether the commit check enforces grants (the rest of G4.20 is built without it). Answer them when you like; press Go and we begin."
+    }
+   ]
   },
   {
    "id": "goal/G4.20",
    "title": "Desk for Andy: search with closed items, Reopen, Done (n), the waiting list, takes and the red box, no star for agent talk",
    "goal": "goal/G4",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G4.18"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
-   "star": false,
+   "star": true,
    "alert": false,
-   "half": false,
+   "half": true,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "DESK FOR ANDY — split from goal/G4.18 (Andy, 2026-10-04: \"can we split this item into two items that can run parallel?\", then \"split it so.\"). Touches desk.js (the desk server), the List and the item dialog; never appServer, deskClient or deskEar (G4.19's).\n\nANDY, VERBATIM (from G4.18's box)\n- Search and Reopen: \"how can the search not show me something that exists in the db\"; \"it turn out that the search is desirable exactly to bring back an item, otherwise I'm just working with the visible item, trying to catch things that need my attention.\"; \"re-open maybe should retract the done status, not only the closed status, that way the close and done can't  be hit by accident.\"; \"1. the search should search the database, and return matches, one extra search filter toggle [include closed] would do the trick on my side.\"; \"agreed: \\\"Reopen takes back Done as well as Close\\\"\"\n- Done: \"how about this: when the done button appears it also shows number of claims [Done (2)]\"; \"i don't want to have a done button on an item, when nobody claimed done.\"\n- Marks: \"7. when agent's communicate to each other via an item, and it requires nothing from the user, do not put a red star on that item.\"; \"8. when agents message each other through an item, and it generates new asks for user, do not put a red star next to this item on the list.\"; \"ha ha, the red star has no function anymore. take it out.\"; \"also, when i ask green in design, and the agents agree, can you remove the ICON.ERROR from the list? otherwise i have now overview of what i need to work on in design....\"\n- Words and takes: \"more: there's some things i'd like to have official words for: / and they should be have a \\\"take\\\" mechanism. / 1. cap / 2. green / other agents may respond after the \\\"taken\\\" is done, and they disagree?\"; \"anybody that takes somethings that affects the box, and the box is red. cap also.\"; (under G4.18) \"also: split will become a \\\"takeable\\\" work, if it isn't already.\"\n- The list: \"i'd be nice if every grant required shows up in a grant box, for me to check-mark, or ask questions about, using \\\"grants\\\" which can be taken.\"; \"or have a box between the text box and my chat input. that wraps with arm-buttons, for things i need to approve (grants), then they go from red to green.\"; \"the strip in 11: It might better be a list, grants and question i need to answer: anything that causes the item to who an ICON.ERROR in the list? / if those two things would match at all times, id know exactly where i need to navigate to.\"; \"these are buttons you generate, and take away when they're not needed anymore. so maybe not buttons, but list items. / \\\"My job queue also needs Done-type verification\\\" / or: the Grants are red arm-buttons that turn green and are logged,  and questions are red-text that disappears when you feel i answered usefully.\"; \"when i click on a question, it appends a line in my input box, referencing that question?\"; \"the questions number and the text (for me)\"; \"yes.\"; \"the text box no longer holds and OPEN section\"; \"until this item is done it'll have to be in the text box.\"; \"yes\"\n\nDECIDED\n- 1, search: a toggle [include closed] beside the List's search; on, items.search answers closed matches too (one more flag, includeClosed).\n- 2, Reopen: a closed item offers him Reopen, and Reopen takes back Done as well as Close; the item is open again as before Done, its Go kept.\n- 3, Done: shown only once an agent has claimed, with the count, \"Done (1)\", \"Done (2)\".\n- 10-11, the waiting list: each item keeps a list of what waits on him, put up and taken away by the agents, shown between the item's text and his chat input. Grants: red arm-buttons that turn green when he grants, and are logged. Questions: red text the agent removes once he has answered usefully; a click on one appends \"Q2: <the question>\" to his input. Done verifications: what he is asked to check before Done. The List row shows ICON.ERROR exactly while that list is not empty; Close alone no longer counts. Once built, a box keeps no OPEN section.\n- 8, the red star goes (his \"take it out\"): the List draws no unseen star at all (shell/desk/desk.js, DESK_UNSEEN); what waits on him is the waiting list and its ICON.ERROR. Taken out as replaced: the star and what feeds it, with a test that it is gone.\n- 9, takes: cap, green and split (a split leaves the parent box cleaned to a pointer, his \"split usually implies that the splitted box is cleaned up.\"), and every line both agents race on (explain, \"update the box\", \"push it\", a question to nobody), taken by one agent (line.take, desk.js 1044-1062); the others answer after only to disagree. A take that will change the box shows the box red to all until the taker has written it.\n\nTO SHAPE\n\n- The commit check refusing a core file that no granted entry names (with G4.19's commitCheck, once the list exists).\n\nOPEN: his Go to build 1, 2, 3, 8, 9 and 10-11.",
+   "version": 4,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:59:14.027Z",
+     "text": "8. when agents message each other through an item, and it generates new asks for user, do not put a red star next to this item on the list."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T07:59:40.692Z",
+     "text": "Read so: agents' lines to each other never put the red * on a row; whatever they ask of you goes into the waiting list, and the ❌ already says so. The * stays for what is new to you only. Right?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:59:46.497Z",
+     "text": "taking: the box, for 8"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:59:54.613Z",
+     "text": "In the box. Reading it: an agent's line never sets the star; if it asks something of you, the ask appears in the waiting list, and ICON.ERROR shows that, so the star would only repeat it.\nThen what still sets the star: nothing, or lines of yours on another screen?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T08:01:20.959Z",
+     "text": "ha ha, the red star has no function anymore. take it out."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:01:48.486Z",
+     "text": "taking: the box, for the star"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:01:57.506Z",
+     "text": "In the box: the red star goes, with whatever feeds it and a test that it is gone; the waiting list and its ERROR carry what is yours.\nG4.20 is fully shaped now; it waits on your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T08:03:11.156Z",
+     "text": "OPEN: isn't that now covered with the new grant list?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:03:35.358Z",
+     "text": "Once built, yes. The waiting list is part of what G4.20 builds, so until then the box keeps its OPEN line, by your own word: \"until this item is done it'll have to be in the text box.\""
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:03:39.168Z",
+     "text": "Half of it: the grant list is where you give a grant and where it is logged. What the list alone does not do is stop an agent who commits to a core file without one; the commit check reading the granted entries would, as it already refuses a commit without your Go.\nKeep that enforcement as one more piece, or is the list enough and I drop it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T08:04:48.330Z",
+     "text": "i hereby grant the permission to modify, commit and push the core file appServer.js, to loosen constraints on reply shape."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:05:12.075Z",
+     "text": "Noted, and it belongs to G4.19 (issue 4, the reply shape lives there since the split); it goes into G4.19's box as your grant. Building it waits only on G4.19's Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T08:06:49.564Z",
+     "text": "are both 4.19 and 4.20 only waiting for my 'go'? if yes, i will press go on both of them, and you will start implementation."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T08:07:23.173Z",
+     "text": "Yes for what is decided: G4.19's 4, and all of G4.20 (1, 2, 3, 8, 9, 10-11). Still to shape, before their reds and with you: G4.19's 5, 6, 7, and in G4.20 whether the commit check enforces grants.\n- Turns, so the two run side by side: I write G4.19's red and wsl-claude builds it; wsl-claude writes G4.20's red and I build it.\nPress Go on both and we start."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:07:36.982Z",
+     "text": "Yes for what is shaped: G4.20's six (1, 2, 3, 8, 9, 10-11) and G4.19's 4. Still to shape after, not blocking: G4.19's 5, 6, 7, and the commit check enforcing grants. Press both; claude-windows writes each red, I build, as so far, unless you split it the other way."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T08:07:56.178Z",
+     "text": "Agreed, those turns are better than mine: I write G4.20's red and build G4.19 on claude-windows's red. I start G4.20's red the moment its Go is on record."
+    }
+   ]
   }
  ]
 }
