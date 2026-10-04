@@ -297,10 +297,10 @@ function deskAgentDraw() {
   var el = document.getElementById('desk-agent');
   if (!el) return;
   var label = document.getElementById('desk-agent-label');
-  if (label) label.textContent = 'Scope of ' + deskAgentName + ': the folders it may commit in (core files still need your grant)';
-  el.innerHTML = (deskAgentFolders.length ? deskAgentFolders.map(function (f) {
-    return '<div>' + deskEsc(f === '' ? '(the repo root)' : f) + ' <button type="button" data-scope-remove="' + deskEsc(f) + '">Remove</button></div>';
-  }).join('') : '<div class="job-manifest-note">No folder: this agent may commit nothing.</div>') +
+  if (label) label.textContent = 'Scope of ' + deskAgentName + ': the one folder it may commit in (core files still need your grant)';
+  // ONE SCOPE, SHOWN AS IT IS (Andy: "we need only one scope per agent, not a long list."): '' is the repo root.
+  var one = deskAgentFolders[0];
+  el.innerHTML = '<span data-scope-current>' + (deskAgentFolders.length ? deskEsc(one === '' ? '/ (the repo root)' : one) : '(none: this agent may commit nothing)') + '</span>' +
     (deskAgentNote ? '<div class="job-start-error">' + deskEsc(deskAgentNote) + '</div>' : '');
 }
 function deskAgentLoad() {
@@ -333,28 +333,33 @@ function deskAgentOpen(name) {
       foldersOnly: true,
       files: function () { return (spirit.shell && typeof spirit.shell.currentFiles === 'function' && spirit.shell.currentFiles()) || []; },
     });
-    // A PICK ONLY SELECTS; ADD GRANTS. Andy: "one accidental click and a folder is granted, just like that, and the
-    // picker takes more than a page.... ? make it a selector, with an add button next to it." The selector is the
-    // drop-down face; the button beside it adds the chosen folder, and with nothing chosen sends nothing.
-    var add = document.createElement('button');
-    add.setAttribute('type', 'button');
-    add.setAttribute('data-scope-add-picked', '1');
-    add.textContent = 'Add';
-    add.addEventListener('click', function () {
-      if (picker.value) deskAgentSet(deskAgentFolders.concat(['spirit/run/' + picker.value]));
+    // ONE LINE (Andy: "The fs-scope should take only one line of agent configuration. [folder-dropdown] [set]
+    // 'current/scope/'   'for advanced agents' [set-to-repo-root]"). A pick only selects ("one accidental click and a
+    // folder is granted, just like that"); [set] replaces the one scope with the chosen folder, and with nothing chosen
+    // sends nothing.
+    var setOne = document.createElement('button');
+    setOne.setAttribute('type', 'button');
+    setOne.setAttribute('data-scope-set', '1');
+    setOne.textContent = 'set';
+    setOne.addEventListener('click', function () {
+      if (picker.value) deskAgentSet(['spirit/run/' + picker.value]);
     });
+    var advanced = document.createElement('span');
+    advanced.className = 'job-manifest-note';
+    advanced.textContent = ' for advanced agents ';
     slot.innerHTML = '';
     slot.appendChild(picker);
-    slot.appendChild(add);
-    // THE REPO ROOT, ARMED (Andy: "why can i not select root?", "i need \"/\" as an option", then "and give me an
-    // arm-button that says: [grant-repo-root]"). The shell's tree holds spirit/run only, so the root is a button of its
-    // own: the first click arms it, the second adds '' (the whole repo); a click elsewhere disarms it.
+    slot.appendChild(setOne);
+    slot.appendChild(advanced);
+    // THE REPO ROOT, ARMED (Andy: "i need \"/\" as an option", "give me an arm-button", then "[set-to-repo-root]").
+    // The shell's tree holds spirit/run only, so the root is a button of its own: the first click arms it, the second
+    // sets the one scope to '' (the whole repo); a click elsewhere disarms it.
     var whole = document.createElement('button');
     whole.setAttribute('type', 'button');
     whole.setAttribute('data-scope-root', '1');
     var armed = false;
     var paint = function () {
-      whole.textContent = armed ? 'grant-repo-root: sure?' : 'grant-repo-root';
+      whole.textContent = armed ? 'set-to-repo-root: sure?' : 'set-to-repo-root';
       if (armed) whole.setAttribute('data-armed', '1'); else whole.removeAttribute('data-armed');
     };
     paint();
@@ -367,7 +372,7 @@ function deskAgentOpen(name) {
       }
       armed = false;
       paint();
-      deskAgentSet(deskAgentFolders.concat(['']));
+      deskAgentSet(['']);
     });
     slot.appendChild(whole);
   }
@@ -966,13 +971,6 @@ spirit.shell.activateApp({
       else if (el.getAttribute && el.getAttribute('data-tab')) show(el.getAttribute('data-tab'));
     });
     show('list');
-    // The scope pane is repainted too: one listener for its remove buttons.
-    document.getElementById('desk-agent').addEventListener('click', function (e) {
-      var rm = e && e.target && e.target.closest && e.target.closest('[data-scope-remove]');
-      if (!rm) return;
-      var gone = rm.getAttribute('data-scope-remove');
-      deskAgentSet(deskAgentFolders.filter(function (f) { return f !== gone; }));
-    });
     // ONE LISTENER ON THE LIST, which is repainted: a press, a link, a row.
     document.getElementById('desk-top').addEventListener('click', function (e) {
       var t = e && e.target;

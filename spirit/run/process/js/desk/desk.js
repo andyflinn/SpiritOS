@@ -1128,6 +1128,8 @@ appServer.serve({
       ownerOnly(caller);
       const w = writerOf(caller);
       if (!a.agent) throw refused('bad-request');
+      // ONE FOLDER PER AGENT. Andy: "we need only one scope per agent, not a long list." [] (nothing) or one folder.
+      if (a.folders.length > 1) throw refused('bad-request');
       const bad = a.folders.filter(function (f) { return f !== '' && (!/\/$/.test(f) || /^\//.test(f) || /(^|\/)\.\.(\/|$)/.test(f) || f.indexOf('\\') !== -1); });
       if (bad.length) throw refused('bad-request');
       return { change: write('scope.set', { agent: a.agent, folders: a.folders, by: w.by, key: w.key }).change };
