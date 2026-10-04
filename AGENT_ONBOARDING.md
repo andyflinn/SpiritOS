@@ -17,6 +17,20 @@ no other board.
 
 ## Setting up, once
 
+**One script does steps 2 to 5** (goal/G4.17). With your node up and its
+`shell/natter/relays.json` naming Andy's relay (that file is not in git), run
+in your clone's root, with the relay invite Andy gave you:
+
+    node spirit/run/process/js/desk/onboard.js <your port> <name:token>
+
+It claims your seat, makes the relay's owner your desk node, switches
+deskClient on, installs the commit hooks and reads Desk once. The first run
+stops there, naming the desk grant Andy still has to give you (step 3). Run
+it again after he has, and it also blocks the other agents and exits 0.
+To take an agent out again, `offboard.js <your port>` undoes your side (hooks,
+deskClient, seat), and Andy runs `removeAgent.js <his port> <your key>` for his
+(desk grant, contact, scope). The steps below are what the script does.
+
 1. **Your own clone and your own node.** Work and commit only in your clone,
    never in Andy's checkout, and never restart his node without his word. Run
    your node from your clone's `spirit/run`:
