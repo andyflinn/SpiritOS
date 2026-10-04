@@ -317,7 +317,7 @@ const GROUP_CHAT = 'desk/G0.0';
 function walkState() {
   // agentWord: each agent's last word about itself, listening or working (goal/G2.3); the ear says it, every time.
   // agentKey: the key each agent last wrote with (goal/G2.2 note 6), so the goal row can name its live agents' keys.
-  const s = { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), agentWord: Object.create(null), agentKey: Object.create(null), scopes: Object.create(null), current: '' };
+  const s = { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), agentWord: Object.create(null), agentKey: Object.create(null), scopes: Object.create(null), profiles: Object.create(null), current: '' };
   s.goals[GROUP_CHAT] = { id: GROUP_CHAT, design: false, abandoned: false, members: [] };
   s.items[GROUP_CHAT] = blank(GROUP_CHAT, 'Group chat', '');
   s.items[GROUP_CHAT].closed = true;
@@ -397,6 +397,15 @@ function apply(s, r, b, item, goalOf) {
     }
     case 'chat.add':
       it.chat.push({ by: r.by, at: r.at, text: String(b.text), taken: '' });
+      // HIS "<nick>:" LINE IS THAT AGENT'S (goal/G4.23). Andy: "the nicks as trigger for them to take a question | job".
+      // A line of his starting with an agent's nick (case ignored) is taken for that agent, as its own line.take would
+      // take it, under the label it writes with; a nick nobody holds, or an agent never heard from, takes nothing.
+      if (r.by === 'andy') {
+        const m = /^\s*([a-z0-9]{1,8})\s*:/i.exec(String(b.text));
+        const key = m && Object.keys(s.profiles).filter(function (k) { return s.profiles[k].nick === m[1].toLowerCase(); })[0];
+        const label = key && Object.keys(s.agentKey).filter(function (l) { return s.agentKey[l] === key; })[0];
+        if (label) { it.chat[it.chat.length - 1].taken = label; it.takenBy = label; }
+      }
       // THE TAKER'S ANSWER FREES THE ITEM (goal/G2.2 note 2): after it, any agent may write again.
       if (it.takenBy && r.by === it.takenBy) it.takenBy = '';
       return;
@@ -413,6 +422,8 @@ function apply(s, r, b, item, goalOf) {
     // AN AGENT'S SCOPE (goal/G4.23), by its key, as he set it last; the handler refused anything malformed.
     // AN AGENT'S SCOPE (goal/G4.23), one field, as he set it last: '' nothing, '/' the repo root, else a folder. Records
     // written while it was a list replay to the same meaning: [] is '', [''] (the root) is '/', [f] is f.
+    // AN AGENT'S PROFILE (goal/G4.23), his, as he set it last: its name and its nick.
+    case 'profile.set': s.profiles[String(b.agent)] = { name: String(b.name), nick: String(b.nick) }; return;
     case 'scope.set': s.scopes[String(b.agent)] = typeof b.folder === 'string' ? b.folder
       : (Array.isArray(b.folders) && b.folders.length ? (String(b.folders[0]) === '' ? '/' : String(b.folders[0])) : ''); return;
     // TAKING HIS LINE (goal/G2.2 note 2). Andy: "an item can 'take' my message and be the only one to answer after
@@ -1135,6 +1146,28 @@ appServer.serve({
       const ok = f === '' || f === '/' || (/\/$/.test(f) && !/^\//.test(f) && !/(^|\/)\.\.(\/|$)/.test(f) && f.indexOf('\\') === -1);
       if (!ok) throw refused('bad-request');
       return { change: write('scope.set', { agent: a.agent, folder: f, by: w.by, key: w.key }).change };
+    },
+  },
+  // AGENT PROFILES (goal/G4.23). Andy: "so two more fields for repo-root-agents: name <agent-name> nick: <wc | wsl |
+  // ubi>", "build them now.", "the profiles are for me, in desk. a dataset that deskServer stores for me and let's you
+  // see." profile.set is his alone; profile.get answers any agent's ('' the caller). A name passes the label rule
+  // (fieldRules); a nick is 1-8 of a-z0-9, one agent's alone. Desk verbs, not node verbs.
+  'profile.set': {
+    request: { agent: '', name: '', nick: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      const w = writerOf(caller);
+      if (!a.agent || require('../../../js/fieldRules.js').problem(a.name) || !/^[a-z0-9]{1,8}$/.test(a.nick)) throw refused('bad-request');
+      const held = walkState().profiles;
+      if (Object.keys(held).some(function (k) { return k !== a.agent && held[k].nick === a.nick; })) throw refused('taken');
+      return { change: write('profile.set', { agent: a.agent, name: a.name, nick: a.nick, by: w.by, key: w.key }).change };
+    },
+  },
+  'profile.get': {
+    request: { agent: '' }, reply: { name: '', nick: '' },
+    handler: function (a, caller) {
+      const p = walkState().profiles[a.agent || writerOf(caller).key];
+      return { name: p ? p.name : '', nick: p ? p.nick : '' };
     },
   },
   'scope.get': {
