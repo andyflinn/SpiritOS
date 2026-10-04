@@ -22,6 +22,9 @@
     var root = document.createElement('div');
     root.className = 'path-selector';
     root.value = '';
+    // INLINE, so it sits on one line with its owner's buttons (Andy: "why is [set] on a new line?").
+    root.style.display = 'inline-block';
+    root.style.verticalAlign = 'top';
     // TWO FACES, AS THE CONTACT SELECTOR HAS (goal/G4.23; Andy: "the picker takes more than a page.... ? make it a
     // selector"). The default is a drop-down: a button showing the chosen path, the search and rows folded under it
     // until it is pressed, folded again by a pick. face 'pane' keeps them shown.
