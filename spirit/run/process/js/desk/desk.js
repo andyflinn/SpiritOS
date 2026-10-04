@@ -354,11 +354,17 @@ function apply(s, r, b, item, goalOf) {
         one.goalId = gid;
         one.blocks = (Array.isArray(x.blocks) ? x.blocks : [x.blocks || gid]).map(String);
         one.at = r.at;
+        one.leftOut = false;
         ids.push(id);
       });
-      // Rows appear or go: an item left out of the new session leaves the goal.
-      g.members.forEach(function (id) { if (ids.indexOf(id) === -1) delete s.items[id]; });
-      g.members = ids;
+      // LEFT OUT IS CLOSED, NEVER DELETED (goal/G4.24). Andy: "1. sounds dumb that the \"archive\" is not
+      // searchable.", "if deleted is just a flag in the database, we can just ignore it from now on". An item a new
+      // session leaves out stays a member, after the session's own, closed, with its box, checks and chat, so
+      // [Include Closed] finds it; the records replay to the same, so items left out before this come back too.
+      // It blocks nothing any more (blockers skips it), as it blocked nothing while it was deleted.
+      const kept = g.members.filter(function (id) { return ids.indexOf(id) === -1 && s.items[id]; });
+      kept.forEach(function (id) { s.items[id].closed = true; s.items[id].leftOut = true; });
+      g.members = ids.concat(kept);
       s.current = gid;
       return;
     }
@@ -448,7 +454,7 @@ function blockers(s, it) {
   if (!g) return [];
   return g.members.filter(function (id) {
     const o = s.items[id];
-    return o && o.id !== it.id && !o.done && o.blocks.indexOf(it.id) !== -1;
+    return o && o.id !== it.id && !o.done && !o.leftOut && o.blocks.indexOf(it.id) !== -1;
   });
 }
 
