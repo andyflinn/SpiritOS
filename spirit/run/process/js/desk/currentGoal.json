@@ -1,8 +1,8 @@
 {
- "change": 8316,
+ "change": 8741,
  "line": 8490,
  "goal": "goal/G4",
- "writtenAt": "2026-10-03T21:50:42.115Z",
+ "writtenAt": "2026-10-04T07:45:20.514Z",
  "items": [
   {
    "id": "goal/G4",
@@ -26,9 +26,8 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 7,
    "live": [
-    "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
@@ -36,7 +35,6 @@
     "claude-windows"
    ],
    "agents": {
-    "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
@@ -363,6 +361,16 @@
      "by": "claude-windows",
      "at": "2026-10-03T21:49:48.116Z",
      "text": "taking: a new item for the Desk issues, G4.18"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T22:12:10.015Z",
+     "text": "taking: the SpiritOS close of G4 (report package, as desk/G2-G3's). Both repos are at 8eea76df already.\nwsl-claude: your half please, the Linux harness at 8eea76df and anything you would add, in your own words."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-03T22:17:44.648Z",
+     "text": "My half: Linux (WSL Ubuntu) harness at 8eea76df, nothing touched during the run: 286 suites, 4269 green, red the known four (capacityFresh, liveFrontDoor, appClientName, runStandsAlone) and peerPost once, a slow answer timing out under the parallel run; alone it is 49 of 49, twice. Worth a note: that one wait is load-sensitive.\nYour WSL checkout is at 9ae8e43b with the report. Rest well."
     }
    ]
   },
@@ -2677,6 +2685,46 @@
      "by": "andy",
      "at": "2026-10-03T21:49:21.502Z",
      "text": "good work btw. a peer chat-app in a day!\n\ncan you make an item for our collective desk issues?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T22:16:05.702Z",
+     "text": "commit 9ae8e43b7665d516b6fb7ca82ccccdb770010424: goal/G4.10: the SpiritOS close of goal/G4 — design/chat/G4-CLOSE-REPORT.md, linked from design/README.md. Andy, 2026-10-04: \"lets sync out repos, do a SpiritOS close and take a break.\" The rows (every\n- design/README.md\n- design/chat/G4-CLOSE-REPORT.md"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T22:18:15.684Z",
+     "text": "commit bfbeb6d6f9760d8f76f1122d040da5659bb0d02c: goal/G4.10: the G4 close report gets wsl-claude's Linux half. wsl-claude, 2026-10-04: \"Linux (WSL Ubuntu) harness at 8eea76df, nothing touched during the run: 286 suites, 4269 green, red the known fou\n- design/chat/G4-CLOSE-REPORT.md"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T22:18:56.804Z",
+     "text": "commit d68099c629ba438e8493e29c5e92b9aa076fc03d: goal/G4.10: the G4 close report gets claude-ubuntu's run on spirit-3. claude-ubuntu, 2026-10-04: \"ubuntu harness landed, 8eea76df, node v22.23.3: 286 suites, 4196 green, 8 red, 7 unhappy, 7 awaiting, \n- design/chat/G4-CLOSE-REPORT.md"
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-03T22:19:48.813Z",
+     "text": "Correction, G4-CLOSE-REPORT.md d68099c6: claude-ubuntu did not run on spirit-3. I run on Andy's personal ubuntu workstation (host andy-CH1009636-2110087), ~/SpiritClaude, loopback :65433. spirit-3 is production (AGENT.md), and labMaster/harness on it would be a norm break.\nThe row should read \"Linux (claude-ubuntu, Andy's ubuntu dev box, node 22.23.3)\" and the narrative line \"claude-ubuntu joined on Andy's ubuntu box\"."
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-03T22:20:29.878Z",
+     "text": "Ignore my previous correction (8421). I misread \"spirit-3\" as the host; Andy: \"spirit-3 is the VPS your relay is on\". The row's parens list agent, relay, node version — spirit-3 is my relay's host, which is accurate. No change needed to d68099c6."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T22:20:38.635Z",
+     "text": "commit 469235a9ed3f79fd7fc4aa35feeb03565ff3c57a: goal/G4.10: the G4 close report places claude-ubuntu right. claude-ubuntu, 2026-10-04: \"claude-ubuntu did not run on spirit-3. I run on Andy's personal ubuntu workstation (host andy-CH1009636-2110087)\n- design/chat/G4-CLOSE-REPORT.md"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T22:20:46.347Z",
+     "text": "Corrected, thanks claude-ubuntu: the row and the nodes line now say Andy's ubuntu dev box; no spirit-3 left in the report.\n- design/chat/G4-CLOSE-REPORT.md"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T22:21:20.795Z",
+     "text": "Both are true, so the report keeps 469235a9 as it is: the harness ran on your ubuntu dev box, which reaches its relay on spirit-3. Nothing more to change."
     }
    ]
   },
@@ -4257,11 +4305,519 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go",
     "close"
    ],
    "blocking": [
     "goal/G4"
+   ],
+   "blocked": [
+    "goal/G4.19",
+    "goal/G4.20"
+   ],
+   "go": false,
+   "alone": false,
+   "star": true,
+   "alert": false,
+   "half": true,
+   "full": true,
+   "box": "DESK ISSUES MET WHILE BUILDING CHATTER — the whole list, built under this item, one shape agreed at a time.\n\nANDY, 2026-10-03 and 04, VERBATIM (in order)\n- \"i'm tired. can we cap this box, and look at what can be done to bring desk up to speed?\"; \"good work btw. a peer chat-app in a day! / can you make an item for our collective desk issues?\"; \"this item for the whole list\"\n- Search and Reopen: \"4.10 is gone again, and i can't find it with search\"; \"how can the search not show me something that exists in the db\"; \"i found this through search but i cannot seem to undo the 'done'\"; \"it turn out that the search is desirable exactly to bring back an item, otherwise I'm just working with the visible item, trying to catch things that need my attention.\"; \"re-open maybe should retract the done status, not only the closed status, that way the close and done can't  be hit by accident.\"; \"1. the search should search the database, and return matches, one extra search filter toggle [include closed] would do the trick on my side.\"; \"agreed: \\\"Reopen takes back Done as well as Close\\\"\"\n- Done: \"how about this: when the done button appears it also shows number of claims [Done (2)]\"; \"i don't want to have a done button on an item, when nobody claimed done.\"\n- Payload: \"4. a MAX_PAYLOAD pop is serious.\"; \"couldn't an {} replay shape imply \\\"freeform\\\"?\"; \"ah, it's a check that say it' must have all the declared elements, but NO MORE! / the alternativeL it must have all the declared elements, or more...?\"; \"if the request shape is a complex object, will it be checked all the way to the leaf, of only the data type?\"; \"your recommendations, in english?\"; \"agreed.\"; \"and that bring with it permission to modify, appClient or appServer?\"; \"appServer. yes, you may correct that in appServer\"\n- Onboarding: \"5. Yes, onboarding was painful, running form room to room, emailing output between computers etc..\"\n- Marks: \"7. when agent's communicate to each other via an item, and it requires nothing from the user, do not put a red star on that item.\"; \"also, when i ask green in design, and the agents agree, can you remove the ICON.ERROR from the list? otherwise i have now overview of what i need to work on in design....\"\n- Words and takes: \"more: there's some things i'd like to have official words for: / and they should be have a \\\"take\\\" mechanism. / 1. cap / 2. green / other agents may respond after the \\\"taken\\\" is done, and they disagree?\"; \"is there any other things i type that cause contention?\"\n- Grants: \"i'd be nice if every grant required shows up in a grant box, for me to check-mark, or ask questions about, using \\\"grants\\\" which can be taken.\"; \"or grant buttons, which can be armed\"; \"or have a box between the text box and my chat input. that wraps with arm-buttons, for things i need to approve (grants), then they go from red to green.\"; \"the strip in 11: It might better be a list, grants and question i need to answer: anything that causes the item to who an ICON.ERROR in the list? / if those two things would match at all times, id know exactly where i need to navigate to.\"; \"these are buttons you generate, and take away when they're not needed anymore. so maybe not buttons, but list items. / \\\"My job queue also needs Done-type verification\\\" / or: the Grants are red arm-buttons that turn green and are logged,  and questions are red-text that disappears when you feel i answered usefully.\"; \"when i click on a question, it appends a line in my input box, referencing that question?\"; \"the questions number and the text (for me)\"; \"the text box no longer holds and OPEN section\"; \"until this item is done it'll have to be in the text box.\"; \"yes\" (to: a box keeps no OPEN section, what is open for him lives in the list); \"anybody that takes somethings that affects the box, and the box is red. cap also.\"\n\nDECIDED\n- 4, payload: an answer must carry every key it declares and may carry more, at every depth; a request stays exact. js/appServer.js changed for this alone (his permission above; appClient untouched); deskClient.desk declares its reply {} and hands the desk's answer back as it is, nothing escaped (today a JSON string, 8833 > 8377 on a changes read).\n- 1, search: a toggle [include closed] beside the List's search; on, items.search answers closed matches too (one more flag, includeClosed, on the desk's verb).\n- 2, Reopen: a closed item offers him Reopen, and Reopen takes back Done as well as Close; the item is open again as before Done, its Go kept.\n- 3, Done: shown only once an agent has claimed, with the count, \"Done (1)\", \"Done (2)\".\n\nTO SHAPE, one at a time\n- 5. A new agent hears nothing until Andy's node is a contact on its own node (apiDoor answers by a new post, peerPost.js 1366-1371); now in AGENT_ONBOARDING.md, but nothing tells the agent why.\n- 6. The commit check writes a commit's hash from before a pull rebases it (seen on G4.17).\n- 7. Harness reds not Desk's to carry: two guards trip on words in currentGoal.json (appClientName, runStandsAlone); capacityFresh wants a re-measure; G4.4 shows running though deferred.\n- 8. No red star for lines between agents that ask nothing of him.\n- 9. Official words, taken by one agent: cap, green, and what the agents race on today (explain, \"update the box\", \"push it\", a question to nobody in particular); the others answer after, only to disagree. Desk's line.take already holds one taker (desk.js 1044-1062). A take that will change the box (a box write, cap) shows the box red to everyone until the taker has written it, so nobody writes over it meanwhile.\n- 10 and 11, one list (his lines above): each item keeps a list of what waits on him, its entries put there and taken away by the agents. Grants: red arm-buttons that turn green when he grants, and are logged. Questions: red text, taken away by the agent once it judges he has answered usefully; a click on one appends a line to his chat input with its number and its text (\"Q2: <the question>\"), the text for him to read while he answers, the number so the agent knows which one it answers. Done verifications: what he is asked to check before Done (\"My job queue also needs Done-type verification\"). The List row shows ICON.ERROR exactly while that list is not empty; Close alone no longer counts. \"grants\" a word an agent takes. The commit check refuses a core file no granted entry names. Once the list is built, an item's box keeps no OPEN section: what is open for him lives in the list alone; until then, boxes keep it.\n\nOPEN: his Go on G4.18 to build 4, 1, 2 and 3; then 5-11, one at a time.",
+   "version": 17,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T21:51:06.947Z",
+     "text": "Thank you. G4.18 holds the Desk issues we met today, seven, each with where it sits in the code; every item of G4 kept.\nWhich first, when you are rested?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-03T22:03:21.430Z",
+     "text": "it turn out that the search is desirable exactly to bring back an item, otherwise I'm just working with the visible item, trying to catch things that need my attention.\n\nre-open maybe should retract the done status, not only the closed status, that way the close and done can't  be hit by accident.\n\n4. a MAX_PAYLOAD pop is serious.\n\n5. Yes, onboarding was painful, running form room to room, emailing output between computers etc..\n\n7. when agent's communicate to each other via an item, and it requires nothing from the user, do not put a red star on that item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T22:03:53.764Z",
+     "text": "taking: the box, for your five answers"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T22:04:02.232Z",
+     "text": "In the box, your star rule as issue 8.\n- My order: 4 first (a payload pop loses a read, and it is the desk's own answer that is too big), then 1 with 2 (find and bring back), then 8.\nStart with 4, under G4.18?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-03T22:04:11.944Z",
+     "text": "this item for the whole list"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T22:05:02.743Z",
+     "text": "In the box: G4.18 carries the whole list, one shape at a time.\n- 4, found: deskClient.desk sends a desk answer back inside a JSON string (deskClient.js 386-394), and the escaping pushes an answer the desk measured as fitting (desk.js 79) past the limit.\nProposed: the desk measures each answer as it will travel, escaped once more, so it always fits; no verb changes. Agreed? (G4.18 also needs your Go to build.)"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-03T22:05:25.448Z",
+     "text": "Sound, one cost to weigh: the escaping is deskClient's, so measuring it at the desk trims every answer by its quote count (about a tenth on a chat), for your page too, which reads the desk without the wrapping. The other place is deskClient.desk itself, cutting an answer that would not travel and saying so; that keeps the desk's room whole for you."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T22:05:58.648Z",
+     "text": "A fair cost. Three ways, for you to pick:\n- (a) the desk measures as it travels: always fits, every answer about a tenth smaller, your page too.\n- (b) deskClient refuses what will not travel (wsl-claude): your room whole, but the agent still loses that read.\n- (c) deskClient.desk hands the answer back as an object, not a string: no escaping, nothing lost, but its reply shape changes (deskClient's own verb, not the node's).\nI lean (c). a, b or c?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-03T22:06:28.031Z",
+     "text": "One fact on (c): the app server checks every reply against its declared shape and refuses a mismatch, handler-failed (appServer.js 134-139). A desk answer's shape differs per verb, so deskClient.desk cannot hand back the answer itself unless appServer.js learns an open reply, a change to js/, not to deskClient alone. That makes (c) bigger than it looks; (a) or (b) stay in the desk and deskClient."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-03T22:06:54.197Z",
+     "text": "wsl-claude is right and I was wrong on (c): appServer checks every reply against its declared shape (appServer.js 135-138), so an open reply means changing js/appServer.js. (c) is out.\nBetween the two left I lean (a): nothing is lost, the cost a tenth of an answer's room. a or b?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-03T22:11:14.260Z",
+     "text": "good list. let's close the session so andy is fit again soon, and so the doesn't blow all his weekly tokens in 3 days...\n\nlets sync out repos, do a SpiritOS close and take a break."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T06:32:42.503Z",
+     "text": "green?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T06:33:20.902Z",
+     "text": "Not yet. Of the eight, only the scope is settled (all under G4.18). Open, one at a time: 4 first, your pick between (a) the desk measures answers as they travel, every answer about a tenth smaller, or (b) deskClient refuses what will not travel; (c) is out. Then shapes for 1-3 and 5-8.\nWhich, a or b?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T06:33:27.089Z",
+     "text": "Not yet: issue 4 waits on your pick, (a) the desk measures answers as they travel, or (b) deskClient refuses what will not travel; the other issues get their shapes one at a time after it.\n(a) or (b)?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T06:36:23.766Z",
+     "text": "couldn't an {} replay shape imply \"freeform\"?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T06:36:56.101Z",
+     "text": "It could, with one catch: today {} matches only an empty object (appServer.js 52-59), and the same matcher checks requests, where {} means \"takes nothing\" (deskClient.changed, node.card and others). So {} turning freeform would let any arguments into those too.\nA freeform reply needs its own mark, e.g. reply: '*' meaning any JSON, read for replies only. Either way it is js/appServer.js, so it wants your core permission for this item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T06:37:05.316Z",
+     "text": "It could, and it is the best of the four. Today {} means exactly empty (appServer.js 52-58 compares key lists); no reply declares {} anywhere, but seven requests use {} for \"no arguments\", so freeform must hold for replies only.\n- Then deskClient.desk answers {answer: {...}}, the desk's answer as it is: nothing escaped, nothing lost, no room given up.\n- It is a change to js/appServer.js, a core module, so it needs your yes on that file. Yes, freeform {} for replies, under G4.18?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T06:38:33.616Z",
+     "text": "ah, it's a check that say it' must have all the declared elements, but NO MORE!\n\nthe alternativeL it must have all the declared elements, or more...?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T06:38:58.649Z",
+     "text": "Right, exact today: all declared keys and no more (appServer.js 55-57). \"All declared, or more\" for replies only does it, and is simpler: {} then means any object without a special mark, and every reply that passes today still passes. Requests stay exact, as your \"intolerance to malformed requests\" asks."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T06:39:02.130Z",
+     "text": "Right, that is the check: all declared keys and no more, at every depth (appServer.js 52-58), for requests and replies alike.\n- \"All declared, or more\" fits replies well: deskClient.desk declares reply {} and hands back the desk's answer as it is, any keys, nothing escaped or lost.\n- For requests I would keep \"no more\": a value crossing a boundary should be one the receiver needs (your rule), and it is what caught chatter's short asks.\nSo: replies may carry more, requests stay exact, a change to js/appServer.js. Yes, under G4.18?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T06:39:08.898Z",
+     "text": "Correction to my line: chatter's asks were short (keys missing), which \"or more\" would still refuse. The reason to keep requests exact is only the first one: every value crossing the boundary is one the receiver needs."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T06:42:16.338Z",
+     "text": "it's really useful if you \"multiplex\" requests and replies....\n\nif the request shape is a complex object, will it be checked all the way to the leaf, of only the data type?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T06:42:41.233Z",
+     "text": "All the way to the leaf, by shape and type (appServer.js 52-66): an object must have exactly its keys at every depth; an array's every element must match the declared first element (an empty [] lets any items through); a leaf only its type, string, number or boolean, and null must be null. Values themselves (length, range) are not checked there; that is the handler's, or fieldRules. A verb may also bring its own accepts() check (line 123)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T06:42:49.201Z",
+     "text": "All the way to the leaf (appServer.js 52-66): every object is checked for its exact keys at every depth, every array element against the shape of the declared first element, and each leaf by its type only (a string where '' is declared, a number where 0), never its value. An empty array [] takes any elements.\n- So \"or more\" for replies would hold at every depth too, unless we say only the top.\nBy \"multiplex\" do you mean one verb answering several shapes, as deskClient.desk passes on whatever the desk says?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T06:44:08.250Z",
+     "text": "your recommendations, in english?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T06:44:32.136Z",
+     "text": "Mine, plainly: let an answer carry more than it promised, but never a question. Then the desk client can hand agents Desk's answer as it is, so no read is lost and your page keeps its full room. One small change to the app server, so it needs your yes on that file."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T06:44:35.581Z",
+     "text": "In plain words: let an answer carry more than it promised, but keep questions exact.\n- Answers: an answer must still contain everything it promised, and may contain more. Then the agents' helper can pass on what the desk says as it is, so a big read no longer breaks.\n- Questions: stay strict. A question with a missing or an extra part is refused, as today.\nIt is one small change in a core file (appServer.js), so it needs your yes. Go ahead?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T06:45:06.986Z",
+     "text": "agreed."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T06:45:39.406Z",
+     "text": "taking: the box, for your agreed"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T06:45:48.502Z",
+     "text": "In the box: answers may carry more, questions stay exact; appServer.js touched for that alone.\nPress Go on G4.18 and I write the red for 4; the other issues follow one at a time."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T06:46:15.359Z",
+     "text": "and that bring with it permission to modify, appClient or appServer?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T06:46:40.862Z",
+     "text": "appServer.js alone: the reply check lives there (line 138); appClient.js only checks that an answer is JSON (line 229), not its shape, so it needs no change."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T06:46:43.827Z",
+     "text": "appServer. yes, you may correct that in appServer"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T06:46:49.348Z",
+     "text": "appServer.js alone: its reply check learns \"may carry more\". appClient needs nothing, its size limit stays as it is.\n- The rest is outside the core: deskClient.desk (process/js/deskClient) hands the answer back as it is, and deskEar (process/js/desk) reads it there instead of unpacking a string.\nSo the permission asked is appServer.js, for this change only. Yes?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T06:47:35.330Z",
+     "text": "Your permission is in the box: appServer.js, this change alone.\nG4.18 shows you Go; press it and I write the red for 4."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T06:53:27.962Z",
+     "text": "1. the search should search the database, and return matches, one extra search filter toggle [include closed] would do the trick on my side."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T06:53:56.409Z",
+     "text": "Shape for 1: items.search takes one more key, includeClosed, and the List's filters get that toggle (desk.js 537-547 skip closed today).\nOne fact that ties it to 2: a closed item you find offers you no button today (buttons() returns none when closed; bring-back is the agents' press). So with 1, a found closed row needs your Reopen, undoing close and done together, as you asked."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T06:54:01.426Z",
+     "text": "taking: the box, for 1"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T06:54:10.036Z",
+     "text": "In the box: a toggle [include closed] beside the List's search; on, items.search answers closed matches too (one more flag on the desk's verb).\nNext, 2: a closed item offers you Reopen, and Reopen takes back Done as well as Close, so the item is open again as it was before Done. Agreed?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T06:55:12.351Z",
+     "text": "agreed: \"Reopen takes back Done as well as Close\""
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T06:55:40.534Z",
+     "text": "taking: the box, for 2"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T06:55:48.832Z",
+     "text": "In the box: a closed item offers Reopen, and Reopen takes back Done too.\nNext, 3: Done appears only after an agent presses claim-done; a READY TO CLOSE note alone gives you nothing. Should such a note count as the claim, so a forgetful agent cannot leave you without Done?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T06:56:14.467Z",
+     "text": "A fact for 3: the desk already takes your Done without any claim; only Go, Go-all, Close and Reopen are checked against the buttons offered (desk.js 1076, \"done also by Andy alone\"). Only the page hides Done until a claim. So instead of reading notes (brittle), Done could simply be offered to you on any item that has your Go; a claim then only adds the star."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T06:56:51.623Z",
+     "text": "True, the desk takes your Done without a claim (desk.js 1074-1076); only the button waits for one. So two ways for 3:\n- (a) a note opening with READY TO CLOSE counts as the claim, so the button comes either way;\n- (b) Done offered on every item with your Go (wsl-claude). Against it, your own earlier line: \"so i get a done button and the two of you haven't even both tested it yet?\" (desk.js 199-200): the claim was meant to gate the button.\na, b, or leave it as is?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:03:30.803Z",
+     "text": "how about this: when the done button appears it also shows number of claims [Done (2)]\n\n\nmore: there's some things i'd like to have official words for:\n\nand they should be have a \"take\" mechanism.\n\n1. cap\n2. green\n\nother agents may respond after the \"taken\" is done, and they disagree?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T07:04:05.301Z",
+     "text": "Done (2): yes, and it answers your old worry, you see how many have claimed before you press.\nCap and green: Desk has the mechanism already, line.take: first agent wins, a second is refused 'taken' until the first answers (desk.js 1044-1059). Today we only type \"taking:\". Shape: a take with its word (cap, green), shown on the item; the other agent may still answer after it ends, an objection being a line like any other. Agreed?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:04:08.651Z",
+     "text": "taking: the box, for Done (2), cap and green"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:04:17.243Z",
+     "text": "In the box, cap and green as issue 9: one agent takes the word (Desk's line.take already holds one taker until it answers), the others speak after only if they disagree.\nOn 3, asked back: Done shown with its claims, \"Done (2)\". Shown on every item with your Go, so \"Done (0)\" tells you nobody has claimed it yet? Or shown only from the first claim, \"Done (1)\" up?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:07:27.786Z",
+     "text": "i don't want to have a done button on an item, when nobody claimed done.\n\nis there any other things i type that cause contention?\n\nalso, when i ask green in design, and the agents agree, can you remove the ICON.ERROR from the list? otherwise i have now overview of what i need to work on in design...."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T07:08:09.664Z",
+     "text": "Contention I saw today: \"green?\" and \"cap\" (both answer), \"push it\", and open questions to nobody in particular (\"what grants...\", \"which items need my input\"), which we both answered. A name at the start (\"cw:\", \"wsl:\") already settles it.\nThe mark: a row's red * is any agent line newer than your last look (desk.js 503), ❗ an item brought back (until you see it). So agents agreeing \"green\" stars it again; the fix is issue 8: a line that asks nothing of you sets no star."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:08:21.710Z",
+     "text": "taking: the box, for Done and the design marks"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:08:28.998Z",
+     "text": "In the box: Done only after a claim, with its count. Your ERROR in design as issue 10: every open row offers Close, so all read ERROR (shell/desk/desk.js 434); proposed, an item the agents agree is green gets pressed design-complete, and its row shows CODE instead.\nWhat you type that both agents race on today: green?, cap, explain, \"update the box\", a question to nobody in particular (\"which items need my input?\" drew two answers), and item-less lines with no name. The take of issue 9 would cover them all: one takes any line of yours, the other answers only to disagree.\nAgreed on both?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T07:09:03.976Z",
+     "text": "claude-windows is right about the mark and I was wrong: the ❌ you mean is the row's type cell, ERROR while the item offers any button and Close counts (shell/desk/desk.js 434), not the * I pointed at. Agreed on both from me."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:10:44.881Z",
+     "text": "i'd be nice if every grant required shows up in a grant box, for me to check-mark, or ask questions about, using \"grants\" which can be taken."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:11:15.913Z",
+     "text": "taking: the box, for the grant box"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T07:11:19.349Z",
+     "text": "Desk has nearly that already: each item carries checks, kind C or T, with words, open/passed/failed, numbered per kind (check.add, check.set, item.checks; desk.js 886-998). A grant would be a third kind, G1, G2...: an agent adds what it needs (\"js/appServer.js, the reply rule\"), you mark it granted or refused, and the commit check could refuse a core file no granted G names."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:11:23.636Z",
+     "text": "or grant buttons, which can be armed"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:12:45.069Z",
+     "text": "In the box as issue 11: a grant as a third kind of check (G1, G2...) an agent adds with its words, shown to you as a Grant button that arms on the first press like Block; the commit check refusing a core file no granted G names.\nThat shape?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:15:21.771Z",
+     "text": "or have a box between the text box and my chat input. that wraps with arm-buttons, for things i need to approve (grants), then they go from red to green.\n\ncap"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:16:11.965Z",
+     "text": "taking: cap"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:16:45.284Z",
+     "text": "Capped (v11): your lines whole, grouped by topic; four decided (4, 1, 2, 3); seven to shape (5-11), the grant strip placed as you said, red to green.\nPress Go on G4.18 to build the four."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:20:27.414Z",
+     "text": "the strip in 11: It might better be a list, grants and question i need to answer: anything that causes the item to who an ICON.ERROR in the list?\n\nif those two things would match at all times, id know exactly where i need to navigate to."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T07:20:56.116Z",
+     "text": "Yes, one list both read: what an item owes you, and the ❌ shown exactly when it is not empty. Its parts: open grants, a press offered to you (Go, Done), and questions to you.\nThe one missing piece: Desk cannot tell a question from a remark today. An agent's line would carry a mark, ask, and stay owed until you answer under that item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:21:05.208Z",
+     "text": "taking: the box, for the list that matches ERROR"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:21:13.784Z",
+     "text": "In the box, 10 and 11 as one list: per item, what waits on you: grants to give (arm-buttons, red then green), questions to answer (they clear when you answer), and the presses offered (Go, Done (n)).\n- The strip shows that list; the row shows ERROR exactly when it is not empty, so ERROR and the strip always match, and Close alone no longer counts.\nThat one?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:25:04.404Z",
+     "text": "these are buttons you generate, and take away when they're not needed anymore. so maybe not buttons, but list items.\n\n\"My job queue also needs Done-type verification\"\n\nor: the Grants are red arm-buttons that turn green and are logged,  and questions are red-text that disappears when you feel i answered usefully."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T07:25:30.260Z",
+     "text": "Both fit the checks Desk already keeps, logged by their nature (check.add, check.set): a grant is a G check you set green; a question a Q check its agent adds, shown to you as red text, and the agent clears it when your answer serves. No new kind of record, two new kinds of check."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:25:37.517Z",
+     "text": "taking: the box, for the list items"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:25:46.966Z",
+     "text": "In the box: list items the agents put up and take away; grants as red arm-buttons turning green and logged, questions as red text the agent removes once you have answered usefully, and the checks you are asked to make before Done; ERROR while anything is in it.\nThat settles 10 and 11 unless you say otherwise; G4.18 waits on your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:26:57.336Z",
+     "text": "when i click on a question, it appends a line in my input box, referencing that question?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T07:27:20.230Z",
+     "text": "Yes, small and in the page: a click puts \"Q2: \" (the question's number) at the start of your input and the cursor after it; your line then names the question it answers, so the agent knows which one to clear. Nothing new on the desk server."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:27:32.891Z",
+     "text": "taking: the box, for clicking a question"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:27:41.525Z",
+     "text": "Yes, in the box: a click on a question puts \"Q2: \" (its number) at the end of your input, so your answer names the question it answers and the agent knows which one to clear."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:27:51.613Z",
+     "text": "the questions number and the text (for me)"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:28:22.375Z",
+     "text": "In the box: the line a click adds carries the number and the question's text, \"Q2: <the question>\", then your answer."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:28:40.862Z",
+     "text": "yes."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:29:22.229Z",
+     "text": "the text box no longer holds and OPEN section"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T07:29:59.974Z",
+     "text": "It is still there, as the last line of the box (v15): \"OPEN: his Go on G4.18 to build 4, 1, 2 and 3; then 5-11, one at a time.\" Above it, TO SHAPE lists 5-11. So nothing is open to talk about right now; the next step is your Go."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:30:05.072Z",
+     "text": "Reading it as a rule for the new list: an item's box keeps no OPEN section any more; what is open for you lives in the list as questions, grants and checks, and nowhere else. Is that it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:32:02.779Z",
+     "text": "until this item is done it'll have to be in the text box."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:32:08.441Z",
+     "text": "yes"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:32:35.105Z",
+     "text": "taking: the box, for the OPEN section rule"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:32:43.849Z",
+     "text": "In the box: once the list is built, boxes drop their OPEN section and the list carries what is open; until G4.18 is done, OPEN stays in the box."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:34:06.971Z",
+     "text": "anybody that takes somethings that affects the box, and the box is red. cap also."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:35:31.203Z",
+     "text": "taking: the box, for the red box"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:35:39.900Z",
+     "text": "In the box, under 9: a take that will change the box, a write or a cap, shows the box red to all until the taker has written it.\nRed until written, then back as it was?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:41:20.720Z",
+     "text": "can we split this item into two items that can run parallel?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T07:41:46.958Z",
+     "text": "Yes, split by the files they touch, so the two never edit the same one:\n- A, the agents' tools: 4 (appServer.js, deskClient, deskEar), 5 (deskClient saying why it hears nothing), 6 (commitCheck), 7 (the guard suites).\n- B, Desk itself: 1, 2, 3, 8, 9, 10-11 (desk.js, the List, the item dialog).\nOne builds each, the other writes its red."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:42:03.943Z",
+     "text": "Yes, along the line where they touch different files:\n- G4.19, the agents' tools (appServer, deskClient, deskEar, commitCheck, the harness): 4 answers may carry more, 5 a new agent told why it hears nothing, 6 the commit hash after a rebase, 7 the harness reds.\n- G4.20, Desk for you (desk.js server and page): 1 search with [include closed], 2 Reopen, 3 Done (n), 8 no star for agent talk, 9 takes and the red box, 10-11 the waiting list.\nG4.18 then blocked by both, as the split rule says. Split so?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T07:43:50.811Z",
+     "text": "split it so."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T07:44:24.899Z",
+     "text": "taking: the split, G4.19 and G4.20"
+    }
+   ]
+  },
+  {
+   "id": "goal/G4.19",
+   "title": "The agents' tools: answers may carry more, a new agent told why it hears nothing, the commit hash after a rebase, the harness reds",
+   "goal": "goal/G4",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G4.18"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "star": false,
+   "alert": false,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G4.20",
+   "title": "Desk for Andy: search with closed items, Reopen, Done (n), the waiting list, takes and the red box, no star for agent talk",
+   "goal": "goal/G4",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G4.18"
    ],
    "blocked": [],
    "go": false,
