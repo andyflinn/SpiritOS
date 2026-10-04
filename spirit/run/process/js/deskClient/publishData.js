@@ -112,10 +112,27 @@ async function main() {
   say('agent ' + agent + ', commit ' + commit + ', into ' + out);
 
   // 1. HARNESS AND CAPACITY, the tests' own tool.
+  // IN A WORKTREE, NOT THE LIVE CLONE (goal/G4.33, reopened): the first publish ran the harness beside the running
+  // node, and a suite disturbed the node's own sockets (wsl-claude's lost its deskClient, 0 packet posts). So the
+  // harness runs in a temporary git worktree of the commit being published; its files come back into agents/<agent>/,
+  // and the worktree is removed. relays.json is not in git, so it is carried over when the clone has one.
   if (!packetsOnly) {
-    say('harness and capacity (minutes)');
-    const m = spawnSync(process.execPath, [path.join(clone, 'spirit', 'test', 'measurePlatform.js'), '--agent', agent], { cwd: clone, stdio: 'inherit', windowsHide: true });
-    if (m.status !== 0) say('measurePlatform exited ' + m.status + '; its files say what it found');
+    say('harness and capacity in a worktree of ' + commit + ' (minutes)');
+    const tree = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-publish-tree-'));
+    fs.rmSync(tree, { recursive: true, force: true });
+    const added = git(['worktree', 'add', '-q', '--detach', tree, 'HEAD'], clone);
+    if (added.status !== 0) end(1, 'publishData: no worktree: ' + (added.stderr || added.stdout).trim());
+    try {
+      const relays = path.join('spirit', 'run', 'shell', 'natter', 'relays.json');
+      if (fs.existsSync(path.join(clone, relays))) { fs.mkdirSync(path.dirname(path.join(tree, relays)), { recursive: true }); fs.copyFileSync(path.join(clone, relays), path.join(tree, relays)); }
+      const m = spawnSync(process.execPath, [path.join(tree, 'spirit', 'test', 'measurePlatform.js'), '--agent', agent], { cwd: tree, stdio: 'inherit', windowsHide: true });
+      if (m.status !== 0) say('measurePlatform exited ' + m.status + '; its files say what it found');
+      const made = path.join(tree, 'agents', agent);
+      if (fs.existsSync(made)) fs.readdirSync(made).forEach(function (f) { const from = path.join(made, f); if (fs.statSync(from).isFile()) fs.copyFileSync(from, path.join(out, f)); });
+    } finally {
+      git(['worktree', 'remove', '--force', tree], clone);
+      git(['worktree', 'prune'], clone);
+    }
   }
 
   // 2. THE PACKET FIGURES: N read-only desk asks, timed by this node's own traffic rows.
@@ -156,11 +173,22 @@ async function main() {
 
   // 3. COMMIT AND SAY SO, unless this was only a look.
   if (packetsOnly || outArg) end(0, 'publishData: written to ' + out);
+  // NOTHING MEASURED, NOTHING PUBLISHED (wsl-claude's find under the reopened G4.33: its run would have committed 0
+  // posts without a word).
+  if (!packets.posts) end(1, 'publishData: the desk asks counted 0 posts, so nothing is published; is the node\'s deskClient answering?');
   const rel = path.relative(clone, out).split(path.sep).join('/');
   git(['add', '--', rel], clone);
   const c = git(['commit', '-q', '-m', 'publish: ' + agent + ' at ' + commit + ' (agents/' + agent + '/, the standing grant of goal/G4.33)'], clone);
   if (c.status !== 0) end(1, 'publishData: the commit was refused: ' + (c.stderr || c.stdout).trim());
-  const p = git(['push', '-q'], clone);
+  // PULL BEFORE PUSH (goal/G4.33 reopened; Andy, to Q15: "done"): the first publish's push was refused because others
+  // had pushed meanwhile. Rebased onto origin first, and once more if the push is still refused.
+  let p = null;
+  for (let i = 0; i < 2; i++) {
+    const pulled = git(['pull', '-q', '--rebase'], clone);
+    if (pulled.status !== 0) end(1, 'publishData: the pull before the push failed: ' + (pulled.stderr || pulled.stdout).trim());
+    p = git(['push', '-q'], clone);
+    if (p.status === 0) break;
+  }
   if (p.status !== 0) end(1, 'publishData: the push failed: ' + (p.stderr || p.stdout).trim());
   await desk('chat.add', { id: 'desk/G0.0', text: 'published ' + agent + ' at ' + commit + ': wait ' + packets.waitMs.median + '/' + packets.waitMs.max + ' ms, flight ' + packets.flight.median + '/' + packets.flight.max + ' ms over ' + packets.posts + ' posts; agents/' + agent + '/' });
   end(0, 'publishData: published agents/' + agent + '/');
