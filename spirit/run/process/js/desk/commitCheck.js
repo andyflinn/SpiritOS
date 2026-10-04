@@ -93,7 +93,7 @@ function check() {
   const ids = [];
   message.replace(ITEM, function (m, id) { if (ids.indexOf(id) === -1) ids.push(id); return m; });
   if (!ids.length) end(1, 'commitCheck: REFUSED, the message names no item (rule 4: an item of the current goal with his Go, such as area/G1.2)');
-  return desk('items.search', { text: '', currentGoalOnly: true, goalsOnly: true }).then(function (goals) {
+  return desk('items.search', { text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: false }).then(function (goals) {
     const current = (goals.items || []).map(function (p) { try { return JSON.parse(p.label).id; } catch (e) { return ''; } }).filter(Boolean);
     const reasons = [];
     function one(i) {
