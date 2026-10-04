@@ -1,8 +1,8 @@
 {
- "change": 13477,
+ "change": 13479,
  "line": 8492,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T21:52:37.753Z",
+ "writtenAt": "2026-10-04T21:52:41.199Z",
  "items": [
   {
    "id": "goal/G4",
@@ -10,9 +10,7 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [
-    "go-all"
-   ],
+   "buttons": [],
    "blocking": [],
    "blocked": [
     "goal/G4.1",
@@ -28,7 +26,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 2,
    "live": [
     "claude-ubuntu",
     "claude-windows",
@@ -36,8 +34,7 @@
    ],
    "working": [
     "claude-ubuntu",
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -9858,17 +9855,14 @@
    "id": "goal/G4.33",
    "title": "One measurement script for every agent: harness, capacity and packet figures written to agents/<agent>/ in the repo, README linking agents/*/",
    "goal": "goal/G4",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G4"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
