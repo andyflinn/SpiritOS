@@ -34,11 +34,15 @@ const FROM = arg('from', '');
 const REMOTE = arg('remote', 'origin');
 const BRANCH = arg('branch', 'master');
 
-function end(code, line) { (code ? process.stderr : process.stdout).write(line + '\n'); process.exit(code); }
+const INDEX = path.join(os.tmpdir(), 'spirit-goalshare-' + process.pid + '.index');
+// Every way out removes the temporary index first: process.exit skips a finally (wsl-claude's review of 16633dd7).
+function end(code, line) {
+  try { fs.unlinkSync(INDEX); } catch (e) { /* none written */ }
+  (code ? process.stderr : process.stdout).write(line + '\n');
+  process.exit(code);
+}
 if (!REPO || !PATH || !FROM) end(1, 'usage: node goalShare.js --repo <dir> --path <path in the repo> --from <file> [--remote origin] [--branch master]');
 if (!fs.existsSync(FROM)) end(1, 'goalShare: no file ' + FROM);
-
-const INDEX = path.join(os.tmpdir(), 'spirit-goalshare-' + process.pid + '.index');
 function git(args, env) {
   const r = spawnSync('git', args, { cwd: REPO, encoding: 'utf8', env: Object.assign({}, process.env, env || {}) });
   return { status: r.status, out: String(r.stdout || '').trim(), err: String(r.stderr || '').trim() };
@@ -61,14 +65,10 @@ function attempt() {
 }
 
 let last = '';
-try {
-  for (let i = 1; i <= TRIES; i++) {
-    let r;
-    try { r = attempt(); } catch (e) { r = { result: 'refused', why: e.message }; }
-    if (r.result !== 'refused') end(0, r.hash);
-    last = r.why;
-  }
-} finally {
-  try { fs.unlinkSync(INDEX); } catch (e) { /* none written */ }
+for (let i = 1; i <= TRIES; i++) {
+  let r;
+  try { r = attempt(); } catch (e) { r = { result: 'refused', why: e.message }; }
+  if (r.result !== 'refused') end(0, r.hash);
+  last = r.why;
 }
-end(1, 'goalShare: gave up after ' + TRIES + ' tries: ' + last);
+end(1,'goalShare: gave up after ' + TRIES + ' tries: ' + last);
