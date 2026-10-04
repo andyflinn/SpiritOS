@@ -94,17 +94,18 @@ const kids = [];
     }, function () { return { status: 0, body: {} }; });
   };
   await waitFor(function () { return ask({ verb: 'device.info' }).then(function (r) { return r.status === 200; }); }, 15000);
-  const made = await ask({ verb: 'jobs.create', command: process.execPath, args: [ok], type: 'utility', removeWhenDone: true });
+  // A SECOND, SLOWER SCRIPT, so the job can be seen before it ends. AND jobs.get, not jobs.list: this node has no
+  // jobs.list verb, and the first version of this section asked it, read an empty answer as "gone", and passed vacuously
+  // (wsl-claude, found 2026-10-05 writing the red of goal/G4.33). jobs.get {key} answers 200 while the job exists, 404 once
+  // it does not.
+  const slow = path.join(scratch, 'slow.js');
+  fs.writeFileSync(slow, 'setTimeout(function () { process.exit(0); }, 1500);');
+  const made = await ask({ verb: 'jobs.create', command: process.execPath, args: [slow], type: 'utility', removeWhenDone: true });
   const id = (made.body && (made.body.id || (made.body.job && made.body.job.id))) || '';
-  const listed = function () {
-    return ask({ verb: 'jobs.list' }).then(function (r) {
-      const all = (r.body && (r.body.jobs || r.body.items)) || [];
-      return all.some(function (j) { return (j.id || j.key) === id; });
-    });
-  };
-  const removed = id && await waitFor(function () { return listed().then(function (x) { return !x; }); }, 8000);
-  if (made.status >= 200 && made.status < 300 && id && removed) test.check('jobs.create with removeWhenDone: the job is gone from jobs.list once it exits');
-  else test.fail(OWED + 'jobs.create answered ' + made.status + ' ' + JSON.stringify(made.body).slice(0, 160) + '; still listed ' + (id ? !removed : 'no id'));
+  const seen = id ? (await ask({ verb: 'jobs.get', key: id })).status : 0;
+  const removed = id && await waitFor(function () { return ask({ verb: 'jobs.get', key: id }).then(function (r) { return r.status === 404; }); }, 10000);
+  if (made.status >= 200 && made.status < 300 && seen === 200 && removed) test.check('jobs.create with removeWhenDone: jobs.get finds the job while it runs, and answers 404 once it exited');
+  else test.fail(OWED + 'jobs.create answered ' + made.status + '; jobs.get while running ' + seen + '; gone after ' + !!removed);
 
   test.subHeading('3. the desk\'s goal share asks for it');
   const src = fs.readFileSync(DESK, 'utf8');
