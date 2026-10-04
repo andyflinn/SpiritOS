@@ -1,8 +1,8 @@
 {
- "change": 13472,
+ "change": 13477,
  "line": 8492,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T21:52:30.640Z",
+ "writtenAt": "2026-10-04T21:52:37.753Z",
  "items": [
   {
    "id": "goal/G4",
@@ -28,14 +28,16 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-ubuntu"
+    "claude-ubuntu",
+    "claude-windows",
+    "wsl-claude"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -10328,10 +10330,9 @@
    "id": "goal/G4.34",
    "title": "The utility process: a job a node starts, which delivers its result and is removed from Jobs when done; goalShare moves onto it, publishData builds on it",
    "goal": "goal/G4",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
