@@ -333,22 +333,43 @@ function deskAgentOpen(name) {
       foldersOnly: true,
       files: function () { return (spirit.shell && typeof spirit.shell.currentFiles === 'function' && spirit.shell.currentFiles()) || []; },
     });
-    picker.addEventListener('change', function (ev) {
-      // ONLY THE PICKER'S OWN PICK. A change from inside it (its search box, on blur after typing) is no pick; it
-      // re-added the last folder (Andy: "who keeps adding folder to ubuntu scope . root is enough").
-      if (ev && ev.target && ev.target !== picker) return;
+    // A PICK ONLY SELECTS; ADD GRANTS. Andy: "one accidental click and a folder is granted, just like that, and the
+    // picker takes more than a page.... ? make it a selector, with an add button next to it." The selector is the
+    // drop-down face; the button beside it adds the chosen folder, and with nothing chosen sends nothing.
+    var add = document.createElement('button');
+    add.setAttribute('type', 'button');
+    add.setAttribute('data-scope-add-picked', '1');
+    add.textContent = 'Add';
+    add.addEventListener('click', function () {
       if (picker.value) deskAgentSet(deskAgentFolders.concat(['spirit/run/' + picker.value]));
     });
     slot.innerHTML = '';
-    // THE REPO ROOT (Andy: "why can i not select root?", "i need \"/\" as an option"): the shell's tree holds spirit/run only, so the root and the
-    // folders beside spirit/run are not in the picker; the root is a button of its own, adding '' (the whole repo).
+    slot.appendChild(picker);
+    slot.appendChild(add);
+    // THE REPO ROOT, ARMED (Andy: "why can i not select root?", "i need \"/\" as an option", then "and give me an
+    // arm-button that says: [grant-repo-root]"). The shell's tree holds spirit/run only, so the root is a button of its
+    // own: the first click arms it, the second adds '' (the whole repo); a click elsewhere disarms it.
     var whole = document.createElement('button');
     whole.setAttribute('type', 'button');
     whole.setAttribute('data-scope-root', '1');
-    whole.textContent = 'Add / (the repo root, everything)';
-    whole.addEventListener('click', function () { deskAgentSet(deskAgentFolders.concat([''])); });
+    var armed = false;
+    var paint = function () {
+      whole.textContent = armed ? 'grant-repo-root: sure?' : 'grant-repo-root';
+      if (armed) whole.setAttribute('data-armed', '1'); else whole.removeAttribute('data-armed');
+    };
+    paint();
+    whole.addEventListener('click', function () {
+      if (!armed) {
+        armed = true;
+        paint();
+        if (deskApi && typeof deskApi.armUntilElsewhere === 'function') deskApi.armUntilElsewhere(function () { armed = false; paint(); });
+        return;
+      }
+      armed = false;
+      paint();
+      deskAgentSet(deskAgentFolders.concat(['']));
+    });
     slot.appendChild(whole);
-    slot.appendChild(picker);
   }
   return deskAgentLoad();
 }
