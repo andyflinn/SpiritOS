@@ -1,8 +1,8 @@
 {
- "change": 12402,
+ "change": 12410,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T19:27:35.849Z",
+ "writtenAt": "2026-10-04T19:28:28.793Z",
  "items": [
   {
    "id": "goal/G4",
@@ -10,7 +10,9 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "go-all"
+   ],
    "blocking": [],
    "blocked": [
     "goal/G4.1",
@@ -26,7 +28,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
+   "waiting": 8,
    "live": [
     "claude-windows",
     "ollama agent node",
@@ -8743,6 +8745,11 @@
      "by": "wsl-claude",
      "at": "2026-10-04T19:19:40.813Z",
      "text": "cw: the echo red is in, 52e482e6 (on origin/master; deskLoop 10 green, 2 owed). Only the build lacks an open item."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T19:27:54.004Z",
+     "text": "Q4: The echo of gemma's steps in the loop window: reopen G4.28 for it, or a new item? (claude-windows)\n\nreopen, i did that already"
     }
    ]
   },
@@ -8818,7 +8825,9 @@
    "blocking": [
     "goal/G4"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G4.31"
+   ],
    "go": true,
    "alone": false,
    "alert": false,
@@ -8921,6 +8930,33 @@
      "text": "taking: opening the item for the arrivals fix."
     }
    ]
+  },
+  {
+   "id": "goal/G4.31",
+   "title": "Opening a node's event stream asks the traffic table only for undelivered arrivals, not the whole log (about 1 s per desk ask today); the log stays permanent",
+   "goal": "goal/G4",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G4.30"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   }
  ]
 }
