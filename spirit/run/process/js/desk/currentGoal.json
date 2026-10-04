@@ -1,8 +1,8 @@
 {
- "change": 10290,
+ "change": 10299,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T13:46:19.050Z",
+ "writtenAt": "2026-10-04T13:47:12.612Z",
  "items": [
   {
    "id": "goal/G4",
@@ -18,7 +18,6 @@
     "goal/G4.1",
     "goal/G4.9",
     "goal/G4.17",
-    "goal/G4.18",
     "goal/G4.22",
     "goal/G4.26"
    ],
@@ -31,15 +30,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 10,
+   "waiting": 9,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -4405,10 +4403,10 @@
    "id": "goal/G4.18",
    "title": "Desk issues met while building chatter",
    "goal": "goal/G4",
-   "status": "running",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [
     "goal/G4"
@@ -6288,7 +6286,7 @@
      "test": "",
      "state": "answered",
      "by": "wsl-claude",
-     "at": "2026-10-04T13:43:59.545Z"
+     "at": "2026-10-04T13:46:39.618Z"
     },
     {
      "number": "Q2",
@@ -6756,12 +6754,31 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "asks": 0,
+   "asks": 2,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
+   "box": "AN OFFERED DONE ON HIS ❌ — opened from goal/G4.24 (Q1) and desk/G0.0, 2026-10-04.\n\nANDY, VERBATIM\n- (desk/G0.0) \"nothing in the the list tells me where my attentions is supposed to go\"; \"is there a way you can be encouraged to post asks from me so that it shows with ERROR icon in the list?\"; \"the mechanism is no good if you never use it.\"\n- (goal/G4.24, to \"Should an offered Go or Done count as waiting on you (❌), as a new item?\") \"only if all agents involved in that item consider it done.\"\n\nTODAY, IN THE TREE\n- facts.asks (desk.js) counts open G and Q checks, and open C checks while Done is offered; the List draws ICON.ERROR exactly while asks > 0 (goal/G4.20). An offered Done with no C check lights nothing: G4.24 sat at Done (2) with no ❌.\n- Done is offered on an item once one agent claims it (buttons()).\n\nDECIDED\n- An offered Done counts on his ❌ only once every agent involved in the item has claimed it.\n\nPROPOSED (wsl-claude, for his ruling; Q1, Q2 below)\n- \"Involved\": every agent that wrote under the item, a chat line, a box or a check, or took it. An agent that only read it is not involved.\n- The Go offered: not counted (his answer names Done only).\n\nOPEN: Q1 and Q2 under this item.\n",
+   "version": 1,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Who is \"involved\" in an item: every agent that wrote under it (a line, the box, a check) or took it? (wsl-claude)",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "An offered Go: should it light your ❌ too, or Done only? (wsl-claude)",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    }
+   ],
    "chat": []
   }
  ]
