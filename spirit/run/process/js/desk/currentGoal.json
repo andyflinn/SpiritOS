@@ -1,8 +1,8 @@
 {
- "change": 11257,
+ "change": 11318,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T15:52:50.844Z",
+ "writtenAt": "2026-10-04T16:00:56.069Z",
  "items": [
   {
    "id": "goal/G4",
@@ -10,7 +10,9 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "go-all"
+   ],
    "blocking": [],
    "blocked": [
     "goal/G4.1",
@@ -35,7 +37,10 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-ubuntu",
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -5971,14 +5976,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G4"
    ],
-   "blocked": [
-    "goal/G4.23"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -6077,10 +6081,10 @@
    "id": "goal/G4.23",
    "title": "Agent scopes: each agent bound to a folder, set in its own tab in Desk, enforced by the commit check",
    "goal": "goal/G4",
-   "status": "running",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [
     "goal/G4.22"
@@ -7110,6 +7114,11 @@
      "by": "wsl-claude",
      "at": "2026-10-04T15:49:35.371Z",
      "text": "Reviewed 91b5845c on WSL: deskScopePane 20 of 20; deskList, deskG3 and deskFrontPage stay green. No findings.\nAndy: pull, restart your node (the profile verbs are desk.js), reload, and each agent's line has name and nick with a save button."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T16:00:33.691Z",
+     "text": "agent names and nicknames persist past hard reloads in browser\n\ngood for now, i consider the desk UI done."
     }
    ]
   },
@@ -7604,7 +7613,9 @@
    "goal": "goal/G4",
    "status": "running",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G4"
    ],
@@ -7612,7 +7623,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 2,
    "boxTaken": "",
    "asks": 0,
    "half": false,
@@ -7664,6 +7675,26 @@
      "by": "wsl-claude",
      "at": "2026-10-04T15:48:08.879Z",
      "text": "The red for G4.26 is in, checked on origin/master: a04f4179, deskDoneAsks, 3 owed. A stub turns it 6 of 6.\nclaude-windows: the involved agents are those that took the item (item.take, line.take, box.take, and the nick take). While Done is offered and all of them have claimed it, asks counts one more. An item nobody took counts from its first claim. deskForAndy section 3 has one assertion to move."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T15:53:32.010Z",
+     "text": "taking: the build of G4.26 against a04f4179 (deskDoneAsks, 3 owed)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T15:56:08.635Z",
+     "text": "commit 98520422a601d6416d02769bc7cfd7ff71f976fc: goal/G4.26: an offered Done lights his ❌ once every agent that took the item has claimed it (deskDoneAsks 6 of 6). Andy, 2026-10-04: \"only if all agents involved in that item consider it done.\", invol\n- spirit/run/process/js/desk/desk.js\n- spirit/test/deskForAndy.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T15:56:28.576Z",
+     "text": "Built, 98520422: an offered Done lights your ❌ once every agent that took the item has claimed it; an item nobody took lights it on the first claim; an offered Go lights nothing. deskDoneAsks 6 of 6, every desk suite green.\nYour node needs a pull and restart to show it.\n- spirit/run/process/js/desk/desk.js\n- spirit/test/deskForAndy.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:56:45.443Z",
+     "text": "Reviewed 98520422 on WSL: deskDoneAsks 6 of 6. deskForAndy's moved assertion is right: the claimed Done now counts 1. deskState, deskProfiles, deskServer and deskList stay green. No findings.\nAndy: after pull and restart, an item whose takers have all claimed it shows ❌ with its Done."
     }
    ]
   },
@@ -7683,7 +7714,7 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "A COMMIT IS WRITTEN IN DESK ONLY ONCE GITHUB HOLDS IT — the flaw in goal/G4.19 issue 6, opened from G4.19's Q1, 2026-10-04.\n\nANDY, VERBATIM\n- (G4.19, to Q1 \"Fix it so the line is written only once GitHub holds the commit, as a new item?\") \"if that's what's needed. do it.\"\n\nTODAY, IN THE TREE\n- commitCheck.js's pre-push hook writes each pending commit's line under its item, then git pushes. A push the remote refuses (someone pushed first) has already left its line: 9632c2ff and 67c02b68 today, neither on GitHub. The commit, rebased and pushed again under a new id, is then never written, since its pending entry is gone.\n- It happens more now: each of his presses pushes a goal-share commit (G4.21), which races the agents' pushes.\n\nPROPOSED (wsl-claude, for his ruling)\n- The pre-push hook writes nothing itself. It starts a detached child and returns; the child waits (some seconds) until the remote holds the pushed commit (git ls-remote), then writes its line with the id GitHub holds. A refused push never shows up, so nothing is written and the commit stays pending for the next push.\n- claude-windows's alternative: write at the next push the pending commits the remote already holds; exact, but one push late.\n\nOPEN: his Go.\n",
@@ -7694,9 +7725,9 @@
      "kind": "Q",
      "words": "Go on G4.27 (a commit line only once GitHub holds the commit), with the detached-helper shape? (wsl-claude)",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:53:16.018Z"
     }
    ],
    "chat": [
@@ -7709,6 +7740,26 @@
      "by": "andy",
      "at": "2026-10-04T15:52:45.778Z",
      "text": "Q1: Go on G4.27 (a commit line only once GitHub holds the commit), with the detached-helper shape? (wsl-claude)\n\ncoming"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:53:18.055Z",
+     "text": "taking: the red for G4.27."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:55:26.015Z",
+     "text": "commit bb42d2bfdda0f3bb9445cb75598ba965ee317dab: goal/G4.27: the red for a commit line written only once the remote holds the commit (deskRules 22 green, 1 owed). Andy, 2026-10-04, to \"Fix it so the line is written only once GitHub holds the commit,\n- spirit/test/deskRules.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:55:43.023Z",
+     "text": "The red for G4.27 is in, checked on origin/master: bb42d2bf, deskRules E2, 1 owed. A stub turns it 23 of 23.\nclaude-windows: the test's remote refuses one push through a pre-receive hook. A local bare remote refuses a stale push before the pre-push hook runs, so only a refusal by the server shows the flaw. No line may name the refused commit, and the second push writes the remote's id. My stub: the hook hands the hashes to a detached helper that writes each once git ls-remote shows it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T15:56:52.091Z",
+     "text": "taking: the build of G4.27 against bb42d2bf (deskRules E2, 1 owed)."
     }
    ]
   }
