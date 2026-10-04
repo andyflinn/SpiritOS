@@ -283,11 +283,12 @@ function deskBubblesHtml() {
 // ── AN AGENT'S SCOPE PANE (goal/G4.23) ───────────────────────────────
 //
 //   Andy: "i alone" set an agent's scope; "file/folder selector in it a shell element"; "i'll do the third when the
-//   ui arrives". The pane lists the folders the desk holds for that agent (scope.get by its key, from the goal row's
-//   agents), each with a remove button, and a path selector on the shell's tree to add one. Every edit is a scope.set,
-//   and the pane draws only the answer of the scope.get after it, never what it guessed.
+//   ui arrives"; and "you set one field: '' = nothing '/' = repo-root all that are selectable from drop-down". The pane
+//   shows the agent's one scope (scope.get by its key, from the goal row's agents) and sets it: a folder from the
+//   path selector on the shell's tree, or the repo root. Every edit is a scope.set, and the pane draws only the answer
+//   of the scope.get after it, never what it guessed.
 var deskAgentName = '';
-var deskAgentFolders = [];
+var deskAgentScope = '';
 var deskAgentNote = '';
 function deskAgentKey() {
   var g = deskGoalRow();
@@ -298,32 +299,31 @@ function deskAgentDraw() {
   if (!el) return;
   var label = document.getElementById('desk-agent-label');
   if (label) label.textContent = 'Scope of ' + deskAgentName + ': the one folder it may commit in (core files still need your grant)';
-  // ONE SCOPE, SHOWN AS IT IS (Andy: "we need only one scope per agent, not a long list."): '' is the repo root.
-  var one = deskAgentFolders[0];
-  el.innerHTML = '<span data-scope-current>' + (deskAgentFolders.length ? deskEsc(one === '' ? '/ (the repo root)' : one) : '(none: this agent may commit nothing)') + '</span>' +
+  // ONE FIELD, SHOWN AS IT IS: '' nothing, '/' the repo root, else the folder.
+  var one = deskAgentScope;
+  el.innerHTML = '<span data-scope-current>' + (one === '' ? '(nothing: this agent may commit nothing)' : one === '/' ? '/ (the repo root)' : deskEsc(one)) + '</span>' +
     (deskAgentNote ? '<div class="job-start-error">' + deskEsc(deskAgentNote) + '</div>' : '');
 }
 function deskAgentLoad() {
   var key = deskAgentKey();
-  if (!key) { deskAgentFolders = []; deskAgentNote = 'No key known for ' + deskAgentName + '.'; deskAgentDraw(); return Promise.resolve(); }
+  if (!key) { deskAgentScope = ''; deskAgentNote = 'No key known for ' + deskAgentName + '.'; deskAgentDraw(); return Promise.resolve(); }
   return deskAsk('scope.get', { agent: key }).then(function (r) {
-    deskAgentFolders = Array.isArray(r.folders) ? r.folders : [];
+    deskAgentScope = typeof r.folder === 'string' ? r.folder : '';
     deskAgentNote = '';
     deskAgentDraw();
   }, function (e) { deskAgentNote = 'Not read: ' + ((e && e.message) || e); deskAgentDraw(); });
 }
-function deskAgentSet(folders) {
+function deskAgentSet(folder) {
   var key = deskAgentKey();
   if (!key) return;
-  var unique = folders.filter(function (f, i) { return folders.indexOf(f) === i; });
-  deskAsk('scope.set', { agent: key, folders: unique }).then(deskAgentLoad, function (e) {
+  deskAsk('scope.set', { agent: key, folder: folder }).then(deskAgentLoad, function (e) {
     deskAgentNote = 'Not set: ' + ((e && e.message) || e);
     deskAgentDraw();
   });
 }
 function deskAgentOpen(name) {
   deskAgentName = name;
-  deskAgentFolders = [];
+  deskAgentScope = '';
   deskAgentNote = '';
   deskAgentDraw();
   var slot = document.getElementById('desk-agent-picker');
@@ -342,7 +342,7 @@ function deskAgentOpen(name) {
     setOne.setAttribute('data-scope-set', '1');
     setOne.textContent = 'set';
     setOne.addEventListener('click', function () {
-      if (picker.value) deskAgentSet(['spirit/run/' + picker.value]);
+      if (picker.value) deskAgentSet('spirit/run/' + picker.value);
     });
     var advanced = document.createElement('span');
     advanced.className = 'job-manifest-note';
@@ -353,7 +353,7 @@ function deskAgentOpen(name) {
     slot.appendChild(advanced);
     // THE REPO ROOT, ARMED (Andy: "i need \"/\" as an option", "give me an arm-button", then "[set-to-repo-root]").
     // The shell's tree holds spirit/run only, so the root is a button of its own: the first click arms it, the second
-    // sets the one scope to '' (the whole repo); a click elsewhere disarms it.
+    // sets the one scope to '/' (the whole repo); a click elsewhere disarms it.
     var whole = document.createElement('button');
     whole.setAttribute('type', 'button');
     whole.setAttribute('data-scope-root', '1');
@@ -372,7 +372,7 @@ function deskAgentOpen(name) {
       }
       armed = false;
       paint();
-      deskAgentSet(['']);
+      deskAgentSet('/');
     });
     slot.appendChild(whole);
   }
