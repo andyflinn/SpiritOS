@@ -1,8 +1,8 @@
 {
- "change": 10170,
+ "change": 10264,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T13:31:56.789Z",
+ "writtenAt": "2026-10-04T13:40:47.661Z",
  "items": [
   {
    "id": "goal/G4",
@@ -10,9 +10,7 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [
-    "go-all"
-   ],
+   "buttons": [],
    "blocking": [],
    "blocked": [
     "goal/G4.1",
@@ -38,7 +36,7 @@
     "wsl-claude"
    ],
    "working": [
-    "wsl-claude"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -4301,12 +4299,22 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "AGENT_ONBOARDING.md: WHAT A NEW AGENT PULLS FROM GIT TO JOIN DESK\n\nANDY, 2026-10-03, VERBATIM\n- \"his onboarding needs an AGENT_ONBOARDING.md\"\n- \"he needs not have precise instruction, pull them from git, and make sure he knows....\"\n- \"he pulled and couldn't find it\"\n- \"we need to get it to him in git\"\n\nSHAPE (claude-windows): one file in the repo root, the steps named rather than spelled out, pointing at what exists for the rules: process/js/desk/AGENTS.md (the six rules, Desk), AGENT.md (the system), CLAUDE.md. The steps: an own clone and node, the deskClient server and setDesk, blocking the other agents on its own node, the desk grant on Andy's node, the commit hooks, the listener. claude-ubuntu is its first reader.\nOPEN: what \"make sure he knows....\" names.\n\nREOPENED FOR THE ONBOARDING SCRIPT (Andy, 2026-10-04)\n- \"5. Yes, onboarding was painful, running form room to room, emailing output between computers etc..\"; \"5. Should we write an on-boarding script for agents?\"; \"the script would have to know how to find the owner/deskServer?\"; \"input argument the relay claim: name:token ?\"; \"let's split the onboarding to a new item or where onboarding used to be, because i have more on it. ?\"; \"bring it back\"\n- THE SCRIPT (shape so far): one argument, the relay invite name:token. With it the script claims the agent's seat on the relay (the node's own claim, hub.js handleClaim), which makes the agent a member your node adopts as a contact (adoptClaim); takes the relay's owner as the desk node (checked by wsl-claude: spirit-3's GET /api/relay/key answers ownerKey MCowBQYDK2VwAyEAgrEc..., the key Desk runs under; relay.js 1048-1049), setDesk, and acquires it as a contact; switches deskClient on, blocks the other agents, installs the commit hooks; then tries one desk read and, if it fails, says in plain words what is missing (the desk grant is yours to give).\nOPEN: his more on onboarding; his Reopen and Go.",
    "version": 2,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Onboarding: your further input on AGENT_ONBOARDING.md, then your Go (the script takes one argument, name:token)?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
@@ -4394,27 +4402,34 @@
    "id": "goal/G4.18",
    "title": "Desk issues met while building chatter",
    "goal": "goal/G4",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G4"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "DESK ISSUES MET WHILE BUILDING CHATTER — split into goal/G4.19 and goal/G4.20; this item waits on both.\n\nANDY, 2026-10-03 and 04, VERBATIM (the rulings of the split itself; every ruling on an issue now stands in the item that carries it)\n- \"good work btw. a peer chat-app in a day! / can you make an item for our collective desk issues?\"; \"this item for the whole list\"\n- \"can we split this item into two items that can run parallel?\"; \"split it so.\"\n- \"split usually implies that the splitted box is cleaned up. / also: split will become a \\\"takeable\\\" work, if it isn't already.\"\n\nWHERE EACH ISSUE WENT\n- goal/G4.19, the agents' tools: 4 answers may carry more (decided, appServer.js permission), 5 a new agent told why it hears nothing, 6 the commit hash after a rebase, 7 the harness reds.\n- goal/G4.20, Desk for him: 1 search with closed items, 2 Reopen, 3 Done (n), 9 takes and the red box, 10-11 the waiting list (all decided), 8 no star for agent talk.\n\nOPEN: none here.",
    "version": 19,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Its two children, G4.19 and G4.20, are done: close G4.18, or is something in its box still owed?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
@@ -4890,6 +4905,11 @@
      "by": "claude-windows",
      "at": "2026-10-04T07:56:49.808Z",
      "text": "Cleaned: this box now holds only the split's own rulings and where each issue went; every other ruling lives in G4.19 or G4.20. Split added to the taken words in G4.20, with your cleanup rule."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T13:40:17.336Z",
+     "text": "Q1: Its two children, G4.19 and G4.20, are done: close G4.18, or is something in its box still owed?\n\nit is by default assumed, i found, that split items are considered \"parallel\" both usually block it's parent.\ni feel that \"split\" belongs into the take category.... \n\nand yes, i'll 'Go' this item and see if you find it's done...."
     }
    ]
   },
@@ -6044,8 +6064,8 @@
    "asks": 1,
    "half": false,
    "full": false,
-   "box": "AGENT SCOPES — each agent bound to a folder, set in Desk, enforced by the commit check. Opened from goal/G4.22's chat, 2026-10-04. Blocks goal/G4.22 (the Ollama onboarding test).\n\nANDY, VERBATIM\n- (under G4.21) \"It also may need the deskServer to have job-designations for agents, for example the ollama agent may be assigned a scope, like spirit/run/shell/ticTacToe/\"\n- (under G4.22) \"the red-bordered agent bubbles become tab-headers again, with their own pane for scope-configuration. file/folder selector in it a shell element.\"\n- \"i will go with your recommendations: which (new) item does the desk's scope pane belong in, and that blocks the onboarding of allama tests.\"\n\nDECIDED\n- Its own item, G4.23, and it blocks G4.22 (his \"i will go with your recommendations\").\n- The agent bubbles (deskBubblesHtml, shell/desk/desk.js) become tab headers again, each opening that agent's pane for its scope.\n- The file/folder selector is a shell element.\n\nIN THE TREE\n- The shell's selectors are elements in shell/js (contactSelector, apiBranchSelector, appServerSelector, iconSelector); none picks a file or folder. The Files app (shell/files/files.js) has the tree it would come from, as contactSelector came out of the contacts pane.\n- The commit check (process/js/desk/commitCheck.js) checks the item and his Go, not the files a commit touches.\n\nRECOMMENDED, NOT YET RULED\n- Three pieces: a path selector as a new shell element; the agent tabs with a scope pane; the desk keeping each agent's scope (one or more folders), which the commit check reads to refuse a commit touching files outside it.\n- How it meets the core-file grant check (refusing a core file nobody granted, still without an item): both are \"files this agent may touch\"; one shape may serve both.\n\nDECIDED, his answers to Q1 and Q2 (2026-10-04)\n- Andy alone sets an agent's scope, consulting the agents: \"i alone, i definitely will consult you: for example, what is the default setting for its scope, that's a good beginning....\"\n- With no scope set, an agent may commit nothing: \"ahh, the default: nothing. it can read everything?  we check it's competence...\" A scope limits what an agent COMMITS (the commit check refuses a file outside it); reading is not limited, the clone is the repo.\n- The scope is kept beside the agent's key, in the desk's state, and is expected to grow: \"beside the agents key, this might be a growing dataset.\" So it is a record per agent (one or more folders now, room for more later), not a fixed field.\n- Inside a scope, core files stay locked behind a grant: \"the scope still has a grant-lock on core files.\" A commit touching a core file is refused unless he granted that file with a G check on the item; this is the core-grant check discussed under G4.20, now part of G4.23.\n\nOPEN\n- Q3: which files count as core. The list that needed explicit permission so far: js/kernel.js, js/server.js, js/hub.js, js/jobs.js, js/appServer.js, js/appClient.js, js/apiDoor.js, js/client/shell.js. wsl-claude recommended all of spirit/run/js/.",
-   "version": 4,
+   "box": "AGENT SCOPES — each agent bound to a folder, set in Desk, enforced by the commit check. Opened from goal/G4.22's chat, 2026-10-04. Blocks goal/G4.22 (the Ollama onboarding test).\n\nANDY, VERBATIM\n- (under G4.21) \"It also may need the deskServer to have job-designations for agents, for example the ollama agent may be assigned a scope, like spirit/run/shell/ticTacToe/\"\n- (under G4.22) \"the red-bordered agent bubbles become tab-headers again, with their own pane for scope-configuration. file/folder selector in it a shell element.\"\n- \"i will go with your recommendations: which (new) item does the desk's scope pane belong in, and that blocks the onboarding of allama tests.\"\n\nDECIDED\n- Its own item, G4.23, and it blocks G4.22 (his \"i will go with your recommendations\").\n- The agent bubbles (deskBubblesHtml, shell/desk/desk.js) become tab headers again, each opening that agent's pane for its scope.\n- The file/folder selector is a shell element.\n\nIN THE TREE\n- The shell's selectors are elements in shell/js (contactSelector, apiBranchSelector, appServerSelector, iconSelector); none picks a file or folder. The Files app (shell/files/files.js) has the tree it would come from, as contactSelector came out of the contacts pane.\n- The commit check (process/js/desk/commitCheck.js) checks the item and his Go, not the files a commit touches.\n- The agents working today (claude-windows, wsl-claude) start with the repo root as their scope, core files still grant-locked: \"your initial scope is repo root\". The default of nothing is for an agent he has not scoped yet, the Ollama agent among them.\n\nRECOMMENDED, NOT YET RULED\n- Three pieces: a path selector as a new shell element; the agent tabs with a scope pane; the desk keeping each agent's scope (one or more folders), which the commit check reads to refuse a commit touching files outside it.\n- How it meets the core-file grant check (refusing a core file nobody granted, still without an item): both are \"files this agent may touch\"; one shape may serve both.\n\nDECIDED, his answers to Q1 and Q2 (2026-10-04)\n- Andy alone sets an agent's scope, consulting the agents: \"i alone, i definitely will consult you: for example, what is the default setting for its scope, that's a good beginning....\"\n- With no scope set, an agent may commit nothing: \"ahh, the default: nothing. it can read everything?  we check it's competence...\" A scope limits what an agent COMMITS (the commit check refuses a file outside it); reading is not limited, the clone is the repo.\n- The scope is kept beside the agent's key, in the desk's state, and is expected to grow: \"beside the agents key, this might be a growing dataset.\" So it is a record per agent (one or more folders now, room for more later), not a fixed field.\n- Inside a scope, core files stay locked behind a grant: \"the scope still has a grant-lock on core files.\" A commit touching a core file is refused unless he granted that file with a G check on the item; this is the core-grant check discussed under G4.20, now part of G4.23.\n- Core, grant-locked (Q3): \"basicall run/js and intrinsics\" — every file under spirit/run/js/, and the folders of the shell apps whose manifest says intrinsic (shell/<name>/). One named table, read by the commit check and by the test.\n\nRECOMMENDED, NOT YET RULED\n- spirit/run/node_modules/ (the core's local copy of chokidar) counts as core too: a change there changes what the core runs.\n\nOPEN: none.",
+   "version": 6,
    "checks": [
     {
      "number": "Q1",
@@ -6069,6 +6089,15 @@
      "number": "Q3",
      "kind": "Q",
      "words": "Which files count as core (grant-locked)? So far: js/kernel.js, server.js, hub.js, jobs.js, appServer.js, appClient.js, apiDoor.js, js/client/shell.js. Or all of spirit/run/js/ (wsl-claude)?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-04T13:33:07.978Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "When G4.23 lands, an unscoped agent can commit nothing. Will you set claude-windows and wsl-claude to the repo root right after, as you said (\"your initial scope is repo root\")? (wsl-claude)",
      "test": "",
      "state": "open",
      "by": "",
@@ -6170,6 +6199,51 @@
      "by": "andy",
      "at": "2026-10-04T13:31:25.237Z",
      "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T13:32:09.939Z",
+     "text": "Almost: one question is open, Q3, which files count as core (it is in the waiting list under the box). The rest is settled in the box (v4): you alone set scopes, nothing by default, kept beside the agent's key, core files grant-locked."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T13:32:28.343Z",
+     "text": "Go noted. Q3 (which files are core) is still open, but it doesn't hold the red: the core list can be one named table that the test and the commit check both read, filled in with your answer.\nwsl-claude writes the red; I build."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T13:32:31.541Z",
+     "text": "Q3: Which files count as core (grant-locked)? So far: js/kernel.js, server.js, hub.js, jobs.js, appServer.js, appClient.js, apiDoor.js, js/client/shell.js. Or all of spirit/run/js/ (wsl-claude)?\n\nbasicall run/js and intrinsics"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T13:33:15.647Z",
+     "text": "your initial scope is repo root"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T13:33:23.379Z",
+     "text": "Recorded (box v5): core is everything under run/js plus the intrinsic apps. Q3 is closed.\nOne thing to know: 17 shell apps call themselves intrinsic in their manifests. Among them are deskDetails (Desk's item dialog), grants, rotateKey, relayMonitor and appFaceApp, not only the nine named in shell.js. So a change to Desk's dialog will need your grant.\nIf that is too wide, the list can be the nine in shell.js instead. Say so if you want it narrower."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T13:34:11.397Z",
+     "text": "taking: the red for G4.23."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T13:38:09.642Z",
+     "text": "commit a1657439faa47415da7ed1f4796880ed465977e9: goal/G4.23: the red for agent scopes — deskScopes.js, 1 green, 11 owed. Andy, 2026-10-04: \"it should refuse to commit a core file that was not granted, and raise an ERROR icon in my list, and a grant \n- spirit/test/deskScopes.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T13:38:13.639Z",
+     "text": "The red for G4.23 is in, a1657439: deskScopes.js, 11 owed. A scratch stub turns it 12 of 12.\nclaude-windows: scope.set and scope.get by key, coreFiles.js, and the check refuses outside the scope and on core files without a grant, adding the G check once. deskRules E needs a scope set, and live both of us need ours before we can commit; that goes to Andy below. The scope pane is left for a later red."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T13:38:37.267Z",
+     "text": "taking: the build of G4.23, on deskScopes.js (a1657439)."
     }
    ]
   },
@@ -6191,12 +6265,31 @@
    "alert": false,
    "claims": 2,
    "boxTaken": "",
-   "asks": 0,
+   "asks": 2,
    "half": false,
    "full": false,
    "box": "THE SEARCHABLE ARCHIVE — opened from goal/G4.23's chat, 2026-10-04.\n\nANDY, VERBATIM (under goal/G4.23)\n- \"damn, my search still doesn't show old, closed items. i can't find it either.\"\n- \"1. sounds dumb that the \\\"archive\\\" is not searchable.\"\n- \"yes, same principle as the agent search, it searches the lines server-side, but only brings back handle/key and title, i'll have to go to details to fetch the rest.\"\n\nTODAY, IN THE TREE (at bd54875e)\n- desk.js 360, in session.set: \"g.members.forEach(function (id) { if (ids.indexOf(id) === -1) delete s.items[id]; });\" An item left out of a new session for its goal is deleted from the state. Its records stay in desk.db, but the desk no longer builds them. goal/G2 holds 0 items for that reason (items.search, includeClosed true), and goal/G2.16, the fs-watcher console, cannot be found.\n- desk.js searchItems: the List's text matches \"(it.id + ' ' + it.title)\" only, not an item's chat lines or box. items.find, the agents' search (goal/G3.13), already searches lines.\n\nDONE\n- Point 1, cbbad5a4: left out is closed, never deleted (deskArchive 5 of 5); live on his node, goal/G2.16 back. Andy: \"closed? it works for me now\".\n\nDECIDED\n- G4.24 stays open for point 2; it is not split. Andy, 2026-10-04: \"i'll keep this one active\"\n\nPROPOSED (wsl-claude, for his ruling)\n1. An item left out of a session is closed, never deleted, so [Include Closed] finds it. Items already deleted come back as closed the next time the desk builds its state from desk.db: replaying records rebuilds them anyway.\n2. The List's search also matches an item's chat lines and box, server-side, through the bucket like items.find, and answers the item's key and title (his \"only brings back handle/key and title\"); the dialog fetches the rest.\n\nOPEN\n- Whether 2 reuses items.find, or changes items.search's answer for the List.\n\nWHO: wsl-claude writes the red for point 2 once its shape is settled; claude-windows builds.\n",
    "version": 2,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Should an offered Go or Done count as waiting on you (❌), as a new item? (wsl-claude)",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Both points are built and reviewed (Done 2): press Done, or say what is missing?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    }
+   ],
    "chat": [
     {
      "by": "wsl-claude",
