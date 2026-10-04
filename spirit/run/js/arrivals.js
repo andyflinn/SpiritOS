@@ -153,7 +153,14 @@ function createArrivals(opts) {
   // returned from two days earlier). It was hidden while the node's own
   // listeners marked everything taken at once. The same filter arrivals
   // applies (inbound and admitted), over the whole log, in arrival order.
+  //
+  // NOT THE WHOLE LOG (goal/G4.31). Reading every row to find these few cost about a second on each open, on a node
+  // whose log runs back weeks; traffic.untaken() asks for just these rows, the same answer. read() stays only for a
+  // log that offers nothing else.
   function waiting() {
+    if (traffic && typeof traffic.untaken === 'function') {
+      try { return traffic.untaken(); } catch (e) { return []; }
+    }
     if (!traffic || typeof traffic.read !== 'function') return [];
     try {
       return traffic.read().filter(function (row) {

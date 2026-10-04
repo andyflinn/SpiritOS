@@ -596,6 +596,27 @@ function createTrafficLog(opts) {
     return foldTaken(rows, marks);
   }
 
+  // EVERY ARRIVAL NOT YET TAKEN, oldest first (goal/G4.31): admitted inbound rows with no taken mark, what a stream
+  // replays when it opens. It touches only those rows (the table's untaken query, through its indexes), never the
+  // whole log: arrivals.js once read() everything here, about a second per desk ask on a long-lived node. Rows still in
+  // a legacy file are folded in, their marks looked up as arrivals() does. The log itself stays permanent.
+  function untaken() {
+    var fileRows = readFile(rootDir);
+    var marks = takenSet(fileRows);
+    var tb = table(rootDir, false);
+    var rows = fileRows.filter(function (row) { return row && !row.mark && row.dir === 'in' && row.admitted && !(row.hash && marks[row.hash]); });
+    if (tb) {
+      rows = rows.filter(function (row) {
+        if (!row.hash) return true;
+        try { return !tb.byHash(row.hash).some(function (m) { return m.mark === 'taken'; }); } catch (e) { return true; }
+      });
+      try {
+        rows = rows.concat(tb.untaken().filter(function (row) { return !(row.hash && marks[row.hash]); }));
+      } catch (e) { /* the file's rows still stand */ }
+    }
+    return rows.sort(byTime);
+  }
+
   // WHAT THIS NODE'S OWN RELAYS DID ABOUT THEIR MEMBERSHIP, oldest first.
   //
   //   Andy: "This then enters the owners log (it should) and it can be
@@ -715,6 +736,8 @@ function createTrafficLog(opts) {
     size: size,
     // The log, read as a table. Keyed by hash, ordered by arrival.
     arrivals: arrivals,
+    // Every arrival not yet taken, without reading the whole log (goal/G4.31).
+    untaken: untaken,
     // The membership half of the same file — see ownerEvents for why it
     // is a second read and not a flag on the first.
     ownerEvents: ownerEvents,

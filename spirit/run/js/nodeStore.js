@@ -729,6 +729,11 @@ function open(rootDir, opts) {
     byHash: db.prepare("SELECT * FROM traffic WHERE hash = ? AND hash <> '' ORDER BY seq"),
     owner: db.prepare("SELECT * FROM traffic WHERE kind = 'owner' AND at > ? ORDER BY at LIMIT ?"),
     arrivals: db.prepare("SELECT * FROM traffic WHERE dir = 'in' AND admitted = 1 AND at > ? ORDER BY at LIMIT ?"),
+    // THE ARRIVALS NOT YET TAKEN (goal/G4.31), every one, oldest first: what a stream replays when it opens. Both
+    // partial indexes' WHEREs are repeated (traffic_arrivals_at for the rows, traffic_hash for each one's mark), so it
+    // never reads the whole log, which cost about a second per desk ask on a long-lived node.
+    untaken: db.prepare("SELECT t.* FROM traffic t WHERE t.dir = 'in' AND t.admitted = 1 AND NOT EXISTS " +
+      "(SELECT 1 FROM traffic m WHERE m.hash = t.hash AND m.hash <> '' AND m.mark = 'taken') ORDER BY t.at"),
     // The highest stamp written. NOT the last seq's: the migration
     // (transport/R19.5) appends a node's older history after rows it wrote
     // since, so seq order and time order part there. Read once per process.
@@ -779,6 +784,7 @@ function open(rootDir, opts) {
       byHash: function (hash) { return tq.byHash.all(String(hash || '')).map(trafficRow); },
       owner: function (since, limit) { return tq.owner.all(String(since || ''), Number(limit) || 200).map(trafficRow); },
       arrivals: function (since, limit) { return tq.arrivals.all(String(since || ''), Number(limit) || 200).map(trafficRow); },
+      untaken: function () { return tq.untaken.all().map(trafficRow); },
       lastAt: function () { const r = tq.lastAt.get(); return (r && r.at) || ''; },
       // For the migration's way back (transport/R19.5).
       maxSeq: function () { return tq.maxSeq.get().n; },
