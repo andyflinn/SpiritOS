@@ -19,6 +19,8 @@
 //   3  THE TREE AT CONNECT: jobs.fsTreeCommands() answers the create commands for the tree as it stands (a
 //      createDirectory before anything inside it); the node writes those to a page that connects, each its own
 //      fs-watcher job-updated, after the snapshot, whose fs-watcher job no longer carries a file list.
+//      Files the kernel never lists (UNSERVABLE_FILES, kernel.js 297: js/server.js among them) are in no command, as
+//      they were in no file list (claude-windows's review of this red).
 //   4  ERADICATED: the hand-rolled fs.watch reader and its rescan, and every reader of data.files (jobs.js, server.js,
 //      nodeSearches.js, js/client/shell.js, shell/files, shell/process-browser). fs.search keeps answering, from the
 //      watcher's tree.
@@ -223,7 +225,7 @@ async function theNode() {
     });
     stream.on('error', function () {});
     const commandsOf = function () { return events.filter(function (e) { return e.event === 'job-updated' && e.data && e.data.type === 'fs-watcher' && e.data.data && e.data.data.command; }).map(function (e) { return e.data.data.command; }); };
-    await waitFor(function () { return commandsOf().some(function (c) { return c.op === 'createFile' && c.path === 'js/server.js'; }); }, 8000);
+    await waitFor(function () { return commandsOf().some(function (c) { return c.op === 'createFile' && c.path === 'js/client/shell.js'; }); }, 8000);
     const snap = events.filter(function (e) { return e.event === 'snapshot'; })[0];
     const watcher = snap && snap.data && (snap.data.jobs || []).filter(function (j) { return j.type === 'fs-watcher'; })[0];
     if (snap && watcher && !(watcher.data && watcher.data.files !== undefined)) test.check('the snapshot\'s fs-watcher job carries no file list');
@@ -232,9 +234,9 @@ async function theNode() {
     const m = mirror();
     cmds.forEach(m.apply);
     const has = function (k) { return m.list().indexOf(k) !== -1; };
-    if (has('d:js') && has('f:js/server.js') && has('d:shell') && cmds.indexOf(cmds.filter(function (c) { return c.path === 'js'; })[0]) < cmds.indexOf(cmds.filter(function (c) { return c.path === 'js/server.js'; })[0])) {
-      test.check('then the tree arrives as create commands, ' + cmds.length + ' of them, js before js/server.js');
-    } else test.fail(OWED + 'after the snapshot ' + cmds.length + ' commands arrived; the mirror holds js ' + has('d:js') + ', js/server.js ' + has('f:js/server.js'));
+    if (has('d:js') && has('f:js/client/shell.js') && has('d:shell') && cmds.indexOf(cmds.filter(function (c) { return c.path === 'js'; })[0]) < cmds.indexOf(cmds.filter(function (c) { return c.path === 'js/client/shell.js'; })[0])) {
+      test.check('then the tree arrives as create commands, ' + cmds.length + ' of them, js before js/client/shell.js');
+    } else test.fail(OWED + 'after the snapshot ' + cmds.length + ' commands arrived; the mirror holds js ' + has('d:js') + ', js/client/shell.js ' + has('f:js/client/shell.js'));
     const found = await post(port, { verb: 'fs.search', q: 'fswatch-probe-g425.txt' });
     const keys = ((found.body || {}).items || []).map(function (x) { return x.key; });
     if (found.status === 200 && keys.indexOf('fswatch-probe-g425.txt') !== -1) test.check('fs.search still finds a file by its path');
