@@ -56,10 +56,11 @@
 //      1. A commit whose message names no item of the current goal with his Go on record (go: true) and not done
 //         is refused: git commit exits non-zero and nothing is committed. A message naming an item without his Go,
 //         or a done item, or no item at all, is refused alike.
-//      2. A commit naming such an item is taken, and the agent's deskClient writes it under the item as a chat
-//         line: the commit's hash (its first seven characters at least) and each file it changed, one `- path`
-//         line each. The asks go through the agent's own deskClient (jobs.api {deskClient: ...}), so they are
-//         counted.
+//      2. A commit naming such an item is taken. It is written under the item as a chat line when it is PUSHED, not
+//         when it is made (goal/G4.19, Andy: "Push it is."): the commit's hash as the remote holds it (its first
+//         seven characters at least) and each file it changed, one `- path` line each. A commit pulled and
+//         re-stacked before its push is written under the id it was pushed with, never the id it was made with.
+//         The asks go through the agent's own deskClient (jobs.api {deskClient: ...}), so they are counted.
 //      3. With the agent's node unreachable the commit is refused, not waved through.
 //      The claim-done line listing the item's files is the agents' by hand until this lands (Andy's ruling above);
 //      this suite asserts nothing about it.
@@ -80,6 +81,7 @@ const apiDoor = require('../run/js/apiDoor.js');
 const packet = require('../run/js/client/packet.js');
 
 const OWED = 'OWED by goal/G3.9: ';
+const OWED19 = 'owed by goal/G4.19: ';
 const RUN = path.join(__dirname, '..', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const AGENTS_MD = path.join(RUN, 'process', 'js', 'desk', 'AGENTS.md');
@@ -418,27 +420,58 @@ async function main() {
   const n0 = await commits(repo);
   if (install.status === 0 && noItem.status !== 0 && notGone.status !== 0 && n0 === 0) test.check('E1: a commit naming no item, or an item without his Go, is refused and nothing is committed');
   else test.fail(OWED + 'E1: no item -> ' + noItem.status + ', item without Go -> ' + notGone.status + ', commits on record: ' + n0);
+  // A remote to push to, and a second clone that pushes past this one, so a pull re-stacks (goal/G4.19 issue 6).
+  const remote = path.join(scratch, 'remote.git');
+  await git(scratch, ['init', '-q', '--bare', remote]);
+  await git(repo, ['remote', 'add', 'origin', remote]);
+  const linesFor = async function (sha) {
+    const all = (await chatOf('r/G1.1')).filter(function (c) { return c.by !== 'andy' && c.by !== 'desk'; });
+    return { all: all, hit: all.filter(function (c) { return sha && c.text.indexOf(sha.slice(0, 7)) !== -1; })[0] };
+  };
   const taken = await commitWith(repo, 'c.txt', 'c', 'r/G1.1: taken, he pressed Go');
   const hash = (await git(repo, ['rev-parse', 'HEAD'])).stdout.trim();
   const n1 = await commits(repo);
   await sleep(1500);
-  const lines = (await chatOf('r/G1.1')).filter(function (c) { return c.by !== 'andy' && c.by !== 'desk'; });
-  const line = lines.filter(function (c) { return hash && c.text.indexOf(hash.slice(0, 7)) !== -1; })[0];
-  const bullets = line ? line.text.split('\n').filter(function (x) { return /^- /.test(x.trim()); }).map(function (x) { return x.trim().slice(2).trim(); }) : [];
-  if (taken.status === 0 && n1 === 1 && line && bullets.length === 1 && bullets[0] === 'c.txt') test.check('E2: a commit naming an item with his Go is taken and written under it: ' + hash.slice(0, 7) + ' with "- c.txt"');
-  else test.fail(OWED + 'E2: commit -> ' + taken.status + ' ' + String(taken.stderr).trim().slice(0, 120) + '; commits: ' + n1 + '; line under r/G1.1: ' + JSON.stringify(line || lines.map(function (c) { return c.text; })).slice(0, 200));
+  const beforePush = await linesFor(hash);
+  if (taken.status === 0 && n1 === 1 && !beforePush.hit) test.check('E2: a commit naming an item with his Go is taken, and nothing is written yet: it is written at push');
+  else test.fail(OWED19 + 'E2: commit -> ' + taken.status + ' ' + String(taken.stderr).trim().slice(0, 120) + '; commits: ' + n1 + '; written before the push: ' + !!beforePush.hit);
+  const pushed = await git(repo, ['push', '-q', 'origin', 'HEAD:master']);
+  await sleep(1500);
+  const afterPush = await linesFor(hash);
+  const bullets = afterPush.hit ? afterPush.hit.text.split('\n').filter(function (x) { return /^- /.test(x.trim()); }).map(function (x) { return x.trim().slice(2).trim(); }) : [];
+  if (pushed.status === 0 && afterPush.hit && bullets.length === 1 && bullets[0] === 'c.txt') test.check('E2: pushed, it is written under the item: ' + hash.slice(0, 7) + ' with "- c.txt"');
+  else test.fail(OWED19 + 'E2: push -> ' + pushed.status + ' ' + String(pushed.stderr).trim().slice(0, 120) + '; line under r/G1.1: ' + JSON.stringify(afterPush.hit || afterPush.all.map(function (c) { return c.text; })).slice(0, 200));
   const viaClient = asked.filter(function (a) { return a.verb === 'jobs.api' && a.body.ask && a.body.ask.deskClient; }).length;
   if (viaClient > 0) test.check('E2: the check asked through this agent\'s own deskClient (' + viaClient + ' jobs.api asks), so it is counted');
   else test.fail(OWED + 'E2: no jobs.api ask of deskClient came from the check');
+  // Re-stacked before the push: the id written is the one the remote holds.
+  const other = path.join(scratch, 'other');
+  await git(scratch, ['clone', '-q', remote, other]);
+  fs.writeFileSync(path.join(other, 'o.txt'), 'o');
+  await git(other, ['add', 'o.txt']);
+  await git(other, ['commit', '-q', '-m', 'a commit of somebody else']);
+  await git(other, ['push', '-q', 'origin', 'HEAD:master']);
+  const made = await commitWith(repo, 'f.txt', 'f', 'r/G1.1: made before a pull re-stacks it');
+  const madeAs = (await git(repo, ['rev-parse', 'HEAD'])).stdout.trim();
+  await git(repo, ['pull', '-q', '--rebase', 'origin', 'master']);
+  const restackedAs = (await git(repo, ['rev-parse', 'HEAD'])).stdout.trim();
+  const pushed2 = await git(repo, ['push', '-q', 'origin', 'HEAD:master']);
+  const remoteHas = (await git(remote, ['rev-parse', 'master'])).stdout.trim();
+  await sleep(1500);
+  const asPushed = await linesFor(remoteHas);
+  const asMade = await linesFor(madeAs);
+  if (made.status === 0 && pushed2.status === 0 && madeAs !== restackedAs && remoteHas === restackedAs && asPushed.hit && !asMade.hit) test.check('E2: a commit re-stacked by a pull is written under the id the remote holds (' + remoteHas.slice(0, 7) + '), not the one it was made with (' + madeAs.slice(0, 7) + ')');
+  else test.fail(OWED19 + 'E2: made ' + madeAs.slice(0, 7) + ', re-stacked ' + restackedAs.slice(0, 7) + ', remote ' + remoteHas.slice(0, 7) + ', push -> ' + pushed2.status + '; written as pushed ' + !!asPushed.hit + ', as made ' + !!asMade.hit);
+  const nBeforeDone = await commits(repo);
   await desk('press', { id: 'r/G1.1', what: 'done' }, ANDY);
   const isDone = await commitWith(repo, 'd.txt', 'd', 'r/G1.1: done already');
   const n2 = await commits(repo);
-  if (isDone.status !== 0 && n2 === 1) test.check('E1: a commit naming a done item is refused');
+  if (isDone.status !== 0 && n2 === nBeforeDone) test.check('E1: a commit naming a done item is refused');
   else test.fail(OWED + 'E1: after his Done a commit naming r/G1.1 -> ' + isDone.status + ', commits: ' + n2);
   const dark = fs.existsSync(CHECK) ? await run(process.execPath, [CHECK, 'install', '1'], repo) : { status: -1 };
   const unreachable = dark.status === 0 ? await commitWith(repo, 'e.txt', 'e', 'r/G1.3: the node is down') : { status: 0 };
   const n3 = await commits(repo);
-  if (unreachable.status !== 0 && n3 === 1) test.check('E3: with the node unreachable the commit is refused, not waved through');
+  if (unreachable.status !== 0 && n3 === nBeforeDone) test.check('E3: with the node unreachable the commit is refused, not waved through');
   else test.fail(OWED + 'E3: with no node on port 1 the commit -> ' + unreachable.status + ', commits: ' + n3);
 }
 
