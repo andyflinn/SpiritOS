@@ -292,6 +292,7 @@ var deskAgentScope = '';
 // The root button and its words, offered only while the scope is not '/' already (Andy: "[set-to-repo-root] only needs
 // to be offered if the agent doesn't already have that scope.").
 var deskAgentRootParts = [];
+var deskAgentProfile = null;
 var deskAgentNote = '';
 function deskAgentKey() {
   var g = deskGoalRow();
@@ -329,6 +330,7 @@ function deskAgentOpen(name) {
   deskAgentName = name;
   deskAgentScope = '';
   deskAgentNote = '';
+  deskAgentProfile = null;
   deskAgentDraw();
   var slot = document.getElementById('desk-agent-picker');
   var make = deskApi && deskApi.ui && deskApi.ui.elements && deskApi.ui.elements.createPathSelector;
@@ -385,8 +387,48 @@ function deskAgentOpen(name) {
     });
     slot.appendChild(whole);
     deskAgentRootParts = [advanced, whole];
+    // NAME AND NICK, KEPT BY THE DESK FOR ANDY (Andy: "so two more fields for repo-root-agents: / name <agent-name> /
+    // nick: <wc | wsl | ubi>", and "the profiles are for me, in desk"). profile.set is owner-only on the server; the
+    // nick is what makes a line of his starting "<nick>:" that agent's to take.
+    var field = function (which, width) {
+      var label = document.createElement('label');
+      label.className = 'job-manifest-note';
+      label.textContent = which + ' ';
+      var input = document.createElement('input');
+      input.setAttribute('type', 'text');
+      input.setAttribute('data-profile', which);
+      input.style.width = width;
+      label.appendChild(input);
+      slot.appendChild(label);
+      return input;
+    };
+    deskAgentProfile = { name: field('name', '12em'), nick: field('nick', '5em') };
+    var save = document.createElement('button');
+    save.setAttribute('type', 'button');
+    save.setAttribute('data-profile-save', '1');
+    save.textContent = 'save';
+    save.addEventListener('click', deskAgentProfileSave);
+    slot.appendChild(save);
   }
+  deskAgentProfileLoad();
   return deskAgentLoad();
+}
+function deskAgentProfileLoad() {
+  var key = deskAgentKey();
+  if (!key || !deskAgentProfile) return Promise.resolve();
+  return deskAsk('profile.get', { agent: key }).then(function (r) {
+    deskAgentProfile.name.value = (r && r.name) || '';
+    deskAgentProfile.nick.value = (r && r.nick) || '';
+  }, function (e) { deskAgentNote = 'Profile not read: ' + ((e && e.message) || e); deskAgentDraw(); });
+}
+function deskAgentProfileSave() {
+  var key = deskAgentKey();
+  if (!key || !deskAgentProfile) return;
+  deskAsk('profile.set', { agent: key, name: deskAgentProfile.name.value, nick: deskAgentProfile.nick.value }).then(function () {
+    deskAgentNote = '';
+    deskAgentDraw();
+    return deskAgentProfileLoad();
+  }, function (e) { deskAgentNote = 'Profile not saved: ' + ((e && e.message) || e); deskAgentDraw(); });
 }
 
 // Drawn whole, as markup: List | Team | Musings, then the bubbles.
