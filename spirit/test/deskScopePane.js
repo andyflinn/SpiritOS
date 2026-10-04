@@ -28,10 +28,13 @@
 //   4  createPathSelector's default face is a dropdown, as contactSelector's: a button showing the chosen path (rows
 //      hidden until it is pressed); a pick sets root.value, fires change and folds the rows again. options.face
 //      'pane' keeps the rows shown, as before. The desk's pane uses the dropdown face.
-//   5  A pick only selects: no scope.set. Beside the selector, a button data-scope-add-picked adds the chosen folder
-//      ('spirit/run/' + root.value) through scope.set; with nothing chosen it sends nothing.
-//   6  The repo root button (data-scope-root) is an arm-button reading "grant-repo-root" ("and give me an arm-button
-//      that says: [grant-repo-root]"): the first click arms it, the second adds ''.
+//   5  ONE FOLDER, ONE LINE (his "only one scope per agent", "[folder-dropdown] [set] 'current/scope/'   'for advanced
+//      agents' [set-to-repo-root]"): the pane shows the agent's one scope; a pick only selects; [set]
+//      (data-scope-set) sends scope.set with that one folder, replacing what was there; with nothing chosen it sends
+//      nothing. The list with its Remove buttons goes.
+//   6  [set-to-repo-root] (data-scope-root), beside the words "for advanced agents", is an arm-button: the first click
+//      arms it, the second sets the one scope to '' (the repo root).
+//   7  The desk keeps one folder per agent: scope.set with more than one folder is refused bad-request (deskScopes.js).
 // LEFT OPEN, not asserted: picking the repo root itself (the tree holds spirit/run only); styling; the pane for an
 // agent that is not live.
 
@@ -191,67 +194,53 @@ async function thePage() {
   const got = asked.filter(function (a) { return a.verb === 'scope.get'; });
   if (got.length && got[got.length - 1].args.agent === CW_KEY) test.check('opening it asks scope.get with that agent\'s key, from the goal row\'s agents');
   else test.fail(OWED + 'scope.get asked ' + short(got));
-  const pane = byId['desk-agent'] ? byId['desk-agent'].innerHTML + ' ' + all(byId['desk-agent']).map(function (n) { return n.innerHTML; }).join(' ') : '';
-  if (/data-scope-remove="spirit\/run\/shell\/chess\/"/.test(pane)) test.check('#desk-agent lists its folder with a remove button');
-  else test.fail(OWED + '#desk-agent held ' + short(pane));
+  // ONE LINE, ONE FOLDER (Andy, 2026-10-04, under goal/G4.23: "we need only one scope per agent, not a long list. The
+  // fs-scope should take only one line of agent configuration. [folder-dropdown] [set] 'current/scope/'   'for
+  // advanced agents' [set-to-repo-root]"; "I kind of like that the picker is bound by the repo: a user-app, for example
+  // should have it's tests in a test-subfolder, where they belong....").
+  const line = function () { return Object.keys(byId).filter(function (k) { return /^desk-agent/.test(k); }).map(function (k) { return byId[k].innerHTML + ' ' + all(byId[k]).map(function (n) { return (n.textContent || '') + ' ' + n.innerHTML; }).join(' '); }).join(' '); };
+  if (line().indexOf('spirit/run/shell/chess/') !== -1) test.check('the line shows the agent\'s one scope: spirit/run/shell/chess/');
+  else test.fail(OWED + 'the scope line held ' + short(line()));
   const picker = pickers[pickers.length - 1];
   if (picker && picker.options && picker.options.foldersOnly === true && picker.options.face !== 'pane' && picker.parentNode && picker.parentNode.id === 'desk-agent-picker') test.check('a path selector (foldersOnly, the dropdown face) is mounted in #desk-agent-picker');
   else test.fail(OWED + 'path selectors made: ' + pickers.length + (picker ? ', options ' + short(picker.options) + ', in ' + short(picker.parentNode && picker.parentNode.id) : ''));
 
-  test.subHeading('3. a pick only selects; Add adds the folder; a remove takes one away, each through scope.set');
+  test.subHeading('3. [set] replaces the one scope with the chosen folder; a pick alone sends nothing');
   const slot = byId['desk-agent-picker'];
-  const addButton = function () { return all(slot || node('div')).filter(function (n) { return n.getAttribute && n.getAttribute('data-scope-add-picked') !== null; })[0]; };
-  if (addButton()) { fire(addButton(), 'click'); await settled(); }
-  const emptyAdd = asked.filter(function (a) { return a.verb === 'scope.set'; }).length;
-  if (addButton() && emptyAdd === 0) test.check('an Add button (data-scope-add-picked) stands beside the selector, and with nothing chosen it sends nothing');
-  else test.fail(OWED + 'Add button ' + !!addButton() + '; with nothing chosen it sent ' + emptyAdd + ' scope.set');
+  const setButton = function () { return all(slot || node('div')).filter(function (n) { return n.getAttribute && n.getAttribute('data-scope-set') !== null; })[0]; };
+  const setsNow = function () { return asked.filter(function (a) { return a.verb === 'scope.set'; }); };
+  if (setButton()) { fire(setButton(), 'click'); await settled(); }
+  if (setButton() && /\bset\b/i.test(String(setButton().textContent)) && setsNow().length === 0) test.check('a [set] button (data-scope-set) stands beside the selector, and with nothing chosen it sends nothing');
+  else test.fail(OWED + 'set button ' + !!setButton() + (setButton() ? ' reading ' + short(setButton().textContent) : '') + '; with nothing chosen it sent ' + setsNow().length);
   if (picker) { picker.value = 'shell/ticTacToe/'; fire(picker, 'change'); await settled(); }
-  const afterPick = asked.filter(function (a) { return a.verb === 'scope.set'; }).length;
-  if (afterPick === 0) test.check('a pick alone sends no scope.set: one click grants nothing');
-  else test.fail(OWED + 'a pick alone sent ' + afterPick + ' scope.set');
-  if (addButton()) { fire(addButton(), 'click'); await settled(); }
-  let sets = asked.filter(function (a) { return a.verb === 'scope.set'; });
-  const added = sets[0] && sets[0].args;
-  if (added && added.agent === CW_KEY && JSON.stringify(added.folders) === JSON.stringify(['spirit/run/shell/chess/', 'spirit/run/shell/ticTacToe/'])) test.check('Add then sends scope.set with spirit/run/shell/ticTacToe/ added');
-  else test.fail(OWED + 'after the pick and Add scope.set was ' + short(sets));
-  // A change from INSIDE the picker (its search box fires one on blur after typing) is no pick (Andy, 2026-10-04: "who
-  // keeps adding folder to ubuntu scope . root is enough"; claude-windows found the cause): no scope.set from it.
+  if (setsNow().length === 0) test.check('a pick alone sends no scope.set');
+  else test.fail(OWED + 'a pick alone sent ' + setsNow().length + ' scope.set');
   if (picker) {
     const box = node('input');
     picker.appendChild(box);
-    const setsBefore = asked.filter(function (a) { return a.verb === 'scope.set'; }).length;
     fire(box, 'change');
     await settled();
-    if (asked.filter(function (a) { return a.verb === 'scope.set'; }).length === setsBefore) test.check('a change from inside the picker (its search box) adds nothing');
+    if (setsNow().length === 0) test.check('a change from inside the picker (its search box) sends nothing');
     else test.fail(OWED + 'a change from the picker\'s search box sent a scope.set');
   }
-  const getsAfter = asked.filter(function (a) { return a.verb === 'scope.get'; }).length;
-  if (getsAfter > got.length) test.check('and the pane asks scope.get again rather than guessing');
-  else test.fail(OWED + 'no scope.get after the pick');
-  const rm = node('button');
-  rm.setAttribute('data-scope-remove', 'spirit/run/shell/chess/');
-  doc.getElementById('desk-agent').appendChild(rm);
-  bubble(rm, { type: 'click', bubbles: true, preventDefault: function () {}, stopPropagation: function () {} });
-  await settled();
-  sets = asked.filter(function (a) { return a.verb === 'scope.set'; });
-  const removed = sets[sets.length - 1] && sets[sets.length - 1].args;
-  if (sets.length >= 2 && removed.agent === CW_KEY && removed.folders.indexOf('spirit/run/shell/chess/') === -1 && removed.folders.indexOf('spirit/run/shell/ticTacToe/') !== -1) test.check('removing chess sends scope.set without it');
-  else test.fail(OWED + 'after the remove scope.set was ' + short(sets));
-  // THE REPO ROOT (Andy, 2026-10-04: "why can i not select root?"; claude-windows added it): the tree holds spirit/run
-  // only, so a button beside the picker adds '' (the whole repo).
-  // AN ARM-BUTTON (Andy, 2026-10-04, desk/G0.0: "and give me an arm-button that says: [grant-repo-root]"): it reads
-  // grant-repo-root; the first click arms it and sends nothing, the second adds ''.
-  const rootButton = function () { return all(byId['desk-agent-picker']).filter(function (n) { return n.getAttribute && n.getAttribute('data-scope-root') !== null; })[0]; };
-  const rootSets = function () { return asked.filter(function (a) { return a.verb === 'scope.set'; }).length; };
-  const labelOk = rootButton() && /grant-repo-root/.test(String(rootButton().textContent));
-  const r0 = rootSets();
+  const getsBefore = asked.filter(function (a) { return a.verb === 'scope.get'; }).length;
+  if (setButton()) { fire(setButton(), 'click'); await settled(); }
+  const replaced = setsNow()[0] && setsNow()[0].args;
+  if (replaced && replaced.agent === CW_KEY && JSON.stringify(replaced.folders) === JSON.stringify(['spirit/run/shell/ticTacToe/'])) test.check('[set] sends scope.set with that one folder, replacing chess');
+  else test.fail(OWED + 'after the pick and [set], scope.set was ' + short(setsNow()));
+  if (asked.filter(function (a) { return a.verb === 'scope.get'; }).length > getsBefore) test.check('and the line asks scope.get again rather than guessing');
+  else test.fail(OWED + 'no scope.get after [set]');
+
+  test.subHeading('4. [set-to-repo-root], for advanced agents, an arm-button');
+  const rootButton = function () { return all(slot || node('div')).filter(function (n) { return n.getAttribute && n.getAttribute('data-scope-root') !== null; })[0]; };
+  const labelOk = rootButton() && /set-to-repo-root/.test(String(rootButton().textContent)) && /for advanced agents/.test(line());
+  const r0 = setsNow().length;
   if (rootButton()) { fire(rootButton(), 'click'); await settled(); }
-  const armedOnly = rootSets() === r0;
+  const armedOnly = setsNow().length === r0;
   if (rootButton()) { fire(rootButton(), 'click'); await settled(); }
-  sets = asked.filter(function (a) { return a.verb === 'scope.set'; });
-  const rooted = sets.length > r0 && sets[sets.length - 1].args;
-  if (labelOk && armedOnly) test.check('the repo root button reads grant-repo-root, and its first click only arms it');
-  else test.fail(OWED + 'root button ' + !!rootButton() + ', label ' + short(rootButton() && rootButton().textContent) + ', first click sent ' + (armedOnly ? 'nothing' : 'a scope.set'));
-  if (rooted && rooted.folders.indexOf('') !== -1) test.check('the second click adds \'\' (the repo root) to the scope');
+  const rooted = setsNow().length > r0 && setsNow()[setsNow().length - 1].args;
+  if (labelOk && armedOnly) test.check('it reads set-to-repo-root beside "for advanced agents", and its first click only arms it');
+  else test.fail(OWED + 'root button ' + !!rootButton() + ', label ' + short(rootButton() && rootButton().textContent) + ', "for advanced agents" ' + /for advanced agents/.test(line()) + ', first click sent ' + (armedOnly ? 'nothing' : 'a scope.set'));
+  if (rooted && JSON.stringify(rooted.folders) === '[""]') test.check('the second click sets the one scope to \'\', the repo root');
   else test.fail(OWED + 'after two clicks the last scope.set was ' + short(rooted));
 }

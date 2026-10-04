@@ -9,7 +9,7 @@
 //   "your initial scope is repo root"; then his Go on goal/G4.23. The box (v6) holds the rest.
 //
 // THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks; the builder may argue them in Desk first):
-//   1  THE SCOPE IS DESK STATE, by the agent's key: desk verbs scope.set {agent: <key>, folders: [<repo path>...]},
+//   1  THE SCOPE IS DESK STATE, by the agent's key, ONE folder ("only one scope per agent"; more is bad-request): desk verbs scope.set {agent: <key>, folders: [<repo path>...]},
 //      Andy alone (an agent is refused not-owner), and scope.get {agent: <key>} answering {folders}; agent '' is the
 //      caller itself. A folder is a repo-relative path ending in '/', or '' for the repo root. An agent never set
 //      answers folders [] (his "the default: nothing").
@@ -151,6 +151,14 @@ async function main() {
   const f = function (r) { return JSON.stringify((r.body || {}).folders); };
   if (set.status === 200 && f(mine) === '["spirit/run/shell/ticTacToe/"]' && f(his) === f(mine) && f(other) === '[]') test.check('Andy sets it by key; the agent reads its own, Andy reads it by key, another agent is not touched');
   else test.fail(OWED + 'scope.set ' + set.status + ' ' + short(set.body) + '; own ' + f(mine) + ', by key ' + f(his) + ', other ' + f(other));
+
+  // ONE FOLDER PER AGENT (Andy, 2026-10-04, under goal/G4.23: "we need only one scope per agent, not a long list."):
+  // scope.set with more than one folder is refused bad-request, and the scope stays as it was.
+  const two = await desk('scope.set', { agent: SELF_KEY, folders: ['spirit/run/shell/a/', 'spirit/run/shell/b/'] }, ANDY);
+  const still = await desk('scope.get', { agent: SELF_KEY }, ANDY);
+  if ((two.body || {}).code === 'bad-request' && f(still) === '["spirit/run/shell/ticTacToe/"]') test.check('two folders are refused bad-request: one scope per agent');
+  else test.fail(OWED + 'scope.set with two folders answered ' + two.status + ' ' + short(two.body) + '; the scope is now ' + f(still));
+  await desk('scope.set', { agent: SELF_KEY, folders: ['spirit/run/shell/ticTacToe/'] }, ANDY);
 
   test.subHeading('2. the core table: run/js and the intrinsic apps');
   let core = null;
