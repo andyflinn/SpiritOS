@@ -107,21 +107,22 @@ async function main() {
   if (hooks.status !== 0) end(1, 'onboard: the commit hooks were not installed: ' + String(hooks.stderr || hooks.stdout).trim());
   say('commit hooks installed');
 
-  // 4. ONE DESK READ, which also names every agent that wrote at the desk.
-  const writers = Object.create(null);
-  let n = 0;
-  let line = 0;
-  for (;;) {
-    const r = await deskClient('desk', { verb: 'changes', json: JSON.stringify({ n: n, line: line }) });
-    if (!ok(r)) {
-      end(1, 'onboard: NOT YET JOINED: the desk did not answer this agent (' + ((r.body && (r.body.code || r.body.error)) || r.status) + ').\n' +
-        'Andy grants it on his node: jobs.authGrant {key: "' + me + '", path: "desk"} (the desk grant), then this is run again.');
-    }
-    (r.body.records || []).forEach(function (rec) { if (rec.key) writers[rec.key] = String(rec.by || ''); });
-    n = r.body.n; line = r.body.line;
-    if (!r.body.more) break;
+  // 4. ONE DESK READ: the current goal's row, which names the live agents and their keys. Not the desk's whole
+  // history: paged over the relay, thousands of records took minutes (found on gemma's first real run). An agent
+  // that is not live now is caught later by the listener, which refuses to wait until it is blocked (`unblocked`).
+  const r = await deskClient('desk', { verb: 'items.search', json: JSON.stringify({ text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: false }) });
+  if (!ok(r)) {
+    end(1, 'onboard: NOT YET JOINED: the desk did not answer this agent (' + ((r.body && (r.body.code || r.body.error)) || r.status) + ').\n' +
+      'Andy grants it on his node: jobs.authGrant {key: "' + me + '", path: "desk"} (the desk grant), then this is run again.');
   }
   say('the desk answered');
+  const writers = Object.create(null);
+  (r.body.items || []).forEach(function (p) {
+    let row = null;
+    try { row = JSON.parse(p.label); } catch (e) { row = null; }
+    const agents = (row && row.agents) || {};
+    Object.keys(agents).forEach(function (label) { writers[agents[label]] = label; });
+  });
   const others = Object.keys(writers).filter(function (k) { return k !== me && k !== desk; });
   for (const k of others) {
     const b = await ask('contact.block', { publicKey: k, publicLabel: writers[k] });
