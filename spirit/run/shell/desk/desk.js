@@ -266,17 +266,22 @@ function deskTabButton(attrs, on, label) {
 // follow the goal row's publish, nothing is pulled.
 function deskBubblesHtml() {
   var g = deskGoalRow();
-  var live = g && Array.isArray(g.live) ? g.live.slice().sort() : [];
-  if (!live.length) return '';
+  var live = g && Array.isArray(g.live) ? g.live.slice() : [];
+  // EVERY AGENT THE DESK KNOWS (goal/G4.29; Andy: "can't reach it because ollama is gone"): the live ones and every
+  // one in agents; an away one keeps its bubble and its pane, marked data-away, never working.
+  var known = live.concat(Object.keys((g && g.agents) || {}).filter(function (a) { return live.indexOf(a) === -1; })).sort();
+  if (!known.length) return '';
   var working = deskWorkingAgents();
   // EACH BUBBLE IS A TAB (goal/G4.23). Andy: "the red-bordered agent bubbles become tab-headers again, with their own
   // pane for scope-configuration." data-tab="agent:<name>" opens that agent's scope pane; the bubble keeps its state.
-  return '<span class="job-manifest-note" style="margin-left:12px">Info</span>' + live.map(function (n) {
-    var busy = working.indexOf(n) !== -1;
+  return '<span class="job-manifest-note" style="margin-left:12px">Info</span>' + known.map(function (n) {
+    var away = live.indexOf(n) === -1;
+    var busy = !away && working.indexOf(n) !== -1;
     var on = deskTab === 'agent:' + n;
-    return '<span data-bubble="' + deskEsc(n) + '" data-tab="agent:' + deskEsc(n) + '"' + (busy ? ' data-working="1" title="working: leave it alone until it listens again"' : ' title="listening: open its scope"') +
+    return '<span data-bubble="' + deskEsc(n) + '" data-tab="agent:' + deskEsc(n) + '"' +
+      (away ? ' data-away="1" title="away: not heard from in 10 minutes; open its scope"' : busy ? ' data-working="1" title="working: leave it alone until it listens again"' : ' title="listening: open its scope"') +
       ' style="display:inline-block;cursor:pointer;padding:2px 10px;margin-left:6px;border-radius:12px;font-weight:' + (on ? 'bold' : 'normal') +
-      ';border:2px solid ' + (busy ? '#d00' : '#555') + '">' + deskEsc(n) + '</span>';
+      ';border:2px ' + (away ? 'dashed #888;opacity:0.6' : 'solid ' + (busy ? '#d00' : '#555')) + '">' + deskEsc(n) + '</span>';
   }).join('');
 }
 

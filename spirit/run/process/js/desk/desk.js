@@ -578,8 +578,11 @@ function facts(s, it) {
     f.working = f.live.filter(function (a) { return s.agentWord[a] === 'working'; });
     // ITS LIVE AGENTS' KEYS (goal/G2.2 note 6): the page draws the Team tabs from live and sends to these keys,
     // so an agent working only through item chat keeps its tab (found live: "still can't see you on desk").
+    // SINCE goal/G4.29 EVERY AGENT THE DESK HAS SEEN, live or not (Andy: "can't reach it because ollama is gone", then
+    // "yes" to the pane opening for every agent the desk knows), so an agent with no listener keeps its pane; live
+    // still says who is here now.
     f.agents = {};
-    f.live.forEach(function (a) { if (s.agentKey[a]) f.agents[a] = s.agentKey[a]; });
+    Object.keys(s.agentKey).sort().forEach(function (a) { f.agents[a] = s.agentKey[a]; });
   }
   return f;
 }
