@@ -471,6 +471,10 @@ function createTrafficLog(opts) {
     // say which of seven things a 503 was.
     if (entry.code) row.code = String(entry.code);
     if (entry.ms != null) row.ms = Number(entry.ms) || 0;
+    // A POST'S QUEUE WAIT (goal/G4.32; Andy: "i like to know every step of our dear little packets."): from entering the
+    // queue to the attempt that finally left, and how many tries it took; ms - waitMs is the flight.
+    if (entry.waitMs != null) row.waitMs = Number(entry.waitMs) || 0;
+    if (entry.attempts != null) row.attempts = Number(entry.attempts) || 0;
 
     // The payload, whole and untouched. `bytes` is measured off the
     // string's length rather than by looking inside it — a length is not

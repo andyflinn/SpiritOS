@@ -337,6 +337,10 @@ function createPeerPost(opts) {
       // screen can never disagree about what an error meant.
       code: arrived ? undefined : ((spiritErrors.classifyAnswer(answer) || {}).code),
       ms: Date.now() - slot.at,
+      // ITS QUEUE WAIT AND TRIES (goal/G4.32). Andy: "how much time is spent from entering the queue to actually being
+      // posted". ms stays queued-to-end, so ms - waitMs is the flight.
+      waitMs: slot.leftAt ? slot.leftAt - slot.at : undefined,
+      attempts: slot.attempts || undefined,
       // A receipt usually carries nothing, but an app that answers with
       // something has sent bytes across the WAN and they are logged like
       // any other.
@@ -530,6 +534,10 @@ function createPeerPost(opts) {
     var hash = it.payload.hash;
     var slot = waiting[hash];
     if (!slot) { queue.done(it.seq); persistOut(hash); return; }
+    // THE MOMENT THIS ATTEMPT LEAVES (goal/G4.32): the "sent" row was written when the post entered the queue, so
+    // without this a wait behind a busy target read as flight.
+    slot.leftAt = Date.now();
+    slot.attempts = it.attempts;
 
     slot.timer = setT(function () {
       slot.timer = null;
