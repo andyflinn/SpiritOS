@@ -1,0 +1,17 @@
+{
+  "agent": "claude-windows",
+  "commit": "3ce4152f",
+  "measuredAt": "2026-10-04T22:38:43.162Z",
+  "asks": 20,
+  "posts": 20,
+  "waitMs": {
+    "median": 17,
+    "max": 348
+  },
+  "flight": {
+    "median": 209,
+    "max": 402
+  },
+  "retried": 1,
+  "refusals": {}
+}
