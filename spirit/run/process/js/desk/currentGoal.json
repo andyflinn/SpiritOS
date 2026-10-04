@@ -1,8 +1,8 @@
 {
- "change": 13403,
- "line": 8491,
+ "change": 13429,
+ "line": 8492,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T21:46:08.276Z",
+ "writtenAt": "2026-10-04T21:48:13.509Z",
  "items": [
   {
    "id": "goal/G4",
@@ -15,7 +15,6 @@
    "blocked": [
     "goal/G4.1",
     "goal/G4.9",
-    "goal/G4.32",
     "goal/G4.33"
    ],
    "go": false,
@@ -27,7 +26,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "live": [
     "claude-ubuntu",
     "claude-windows",
@@ -9635,10 +9634,10 @@
    "id": "goal/G4.32",
    "title": "Each post's closing traffic row records its wait in the queue (waitMs, busy retries included) and its attempts, so waiting here and flight there can be read from the log",
    "goal": "goal/G4",
-   "status": "running",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [
     "goal/G4"
@@ -9649,7 +9648,7 @@
    "alert": false,
    "claims": 2,
    "boxTaken": "",
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "QUEUE WAIT ON THE TRAFFIC ROW\n\nANDY, 2026-10-04, VERBATIM (under goal/G4.30)\n- \"what could be proven: how much time is spent from entering the queue to actually being posted, an interesting stat could be had from that.\"\n- \"i'm for it: because it is a problem area, and a possible indicator for the ouside world (relay/peer) not keeping up anymore. and then we just have to read logs....\"\n- \"i like to know every step of our dear little packets.\"\n\nWHY\n- The log writes a post's \"sent\" row when it enters the queue (peerPost.js), not when it leaves; under G4.30 that made both agents misread busy retries. The closing row's ms runs from queued to the end, so waiting and flight cannot be told apart.\n\nSHAPE (claude-windows, wsl-claude the same)\n- The closing row of each post (receipted, refused, no-answer) also carries waitMs: from queued to the attempt that finally left, busy retries included; and attempts. ms stays queued-to-end, so ms - waitMs is the flight. Nothing else stored; the log stays permanent.\n- Core file (spirit/run/js/peerPost.js): his grant for it comes with the build.\n\nOPEN: his Go.",
@@ -10428,6 +10427,16 @@
      "by": "claude-windows",
      "at": "2026-10-04T21:45:57.557Z",
      "text": "Green from me: shape agreed (removeWhenDone, failed job stays visible, goalShare onto it), verb granted, G1-G3 granted; only your Go is left."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T21:46:10.373Z",
+     "text": "If you meant agreed rather than tested: green from me too."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T21:46:23.779Z",
+     "text": "taking: the red for G4.34."
     }
    ]
   }
