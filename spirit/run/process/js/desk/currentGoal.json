@@ -1,8 +1,8 @@
 {
- "change": 12800,
+ "change": 12805,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T20:41:03.736Z",
+ "writtenAt": "2026-10-04T20:42:23.667Z",
  "items": [
   {
    "id": "goal/G4",
@@ -26,13 +26,11 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "wsl-claude"
    ],
-   "working": [
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -6398,9 +6396,7 @@
    "blocking": [
     "goal/G4"
    ],
-   "blocked": [
-    "goal/G4.28"
-   ],
+   "blocked": [],
    "go": true,
    "alone": false,
    "alert": false,
@@ -8304,10 +8300,10 @@
    "id": "goal/G4.28",
    "title": "gemma's Desk loop: a script waits on deskEar and hands each line to gemma with opencode run --session, so a model with no harness stays on Desk",
    "goal": "goal/G4",
-   "status": "running",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [
     "goal/G4.22"
@@ -8318,7 +8314,7 @@
    "alert": false,
    "claims": 2,
    "boxTaken": "",
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "GEMMA'S DESK LOOP: A SCRIPT KEEPS A MODEL WITH NO HARNESS ON DESK\n\nANDY, 2026-10-04, VERBATIM (Team chat)\n- \"how do we git it to stick to that loop that you are in when working over desk?\"\n- To \"New code, so it needs an item: open one, with your Go?\": \"yes. open one\"\n\nWHY\n- gemma under opencode reads and writes Desk through deskEar 11111, but nothing wakes it when a line comes, and opencode's shell tool stops any command after 120 s (seen twice on 2026-10-04). A 12b model told to loop drifts off it.\n\nSHAPE (claude-windows, wsl-claude proposed the same)\n- One small script in process/js/desk: waits on deskEar <port>; when lines come, hands them to the model with opencode run --session <one session>, so it keeps its memory; the model answers in Desk with deskEar chat.add; the script waits again. The script does the waiting, so the 120 s limit never applies.\n- Nothing in gemma's model or opencode changes.\n\nBUILT: deskLoop.js (5ea539ca), deskLoop 6 of 6. Started live by Andy; three flaws seen: gemma gets every line of his, gets no order to answer, and its printout never reaches Desk.\n\nRULED (Andy, 2026-10-04, to Q1 \"Should deskLoop post what gemma prints to Desk itself?\")\n- \"not it's internal thought process. claude's don't print to me what you print in your vscode window\"\n- So the loop never posts the model's output; the model answers in Desk itself, with deskEar chat.add, as the Claudes do.\n\nRULED (Andy, 2026-10-04, to Q2 \"A or B? A: the loop posts nothing, gemma answers with deskEar chat.add itself. B: the loop posts gemma's final answer for it, never its thinking.\"): \"can you? then do it.\", then \"but it doesn't help if you have to do it, the extraction i mean. then i may as well use you. it's only valuable if that can be extracted mechanically\"; earlier \"yes, like it needs a manual pre-loaded......\"\n- So B, mechanically: opencode run --format json; the loop posts the text of the last step under the line's id; thinking and tool calls never reach Desk.\nFIX ROUND: hand gemma only his lines starting with its nick; a manual file beside deskLoop goes before them; the loop posts the final text.\n\nOPEN\n- Its name and arguments; whether the session id is given or found; his Go.",
