@@ -10,14 +10,22 @@
 //
 // THE WORLD: agentOnboard's three real nodes in scratch homes (a relay; Andy's node owning it and running the desk; the
 // agent's node), the agent joined by the real onboard.js. The model is a stand-in script: it logs what it was handed
-// and answers in Desk through deskEar, as gemma does.
+// and prints what opencode run --format json prints.
 //
 // THE SHAPES, NAMED HERE where the box leaves them open (wsl-claude's picks; the builder may argue them in Desk first):
 //   1  node spirit/run/process/js/desk/deskLoop.js <port> <command> [args...]. Each time the listener (deskEar <port>)
 //      hands over lines, the command runs with its args plus one more: the lines exactly as deskEar printed them. The
-//      loop waits for it to end, then listens again. For gemma: deskLoop.js 11111 opencode run --session <id>, so the
+//      loop waits for it to end, then listens again. For gemma: deskLoop.js 11111 opencode run --format json --session <id>, so the
 //      session is given, not found.
 //   2  It never ends by itself: each line is handed over once, and a quiet Desk only means another wait.
+//   3  THE FIX ROUND. Andy, 2026-10-04, after gemma was handed our lines and its thinking stayed in its window: to Q1
+//      (the loop posting what gemma prints) "not it's internal thought process. claude's don't print to me what you
+//      print in your vscode window"; to the round claude-windows put (only his "gemma:" lines; one standing order;
+//      gemma answers in Desk itself, reading A) "yes, like it needs a manual pre-loaded......"; then, to A or B, "can
+//      you? then do it." and "it's only valuable if that can be extracted mechanically", which is B. So: only his
+//      lines that start with the agent's nick (profile.get, goal/G4.23) are handed over, the one argument starting
+//      with a standing order before the lines; the command prints opencode run --format json's events, and the loop
+//      posts the text of the last step under the line's id, nothing of the steps before it.
 // LEFT OPEN, not asserted: what it does on a refusal from deskEar (unblocked, no-answer) beyond waiting again; on
 //   Windows, opencode is a .cmd, so the command may need a shell there.
 
@@ -138,45 +146,76 @@ function handed(log) {
   if (joined.status === 0) test.check('the world: the agent joined Desk through onboard.js');
   else { test.fail('the world: onboard.js exited ' + joined.status + ': ' + short(String(joined.stdout || '') + String(joined.stderr || ''))); return; }
 
-  // THE STAND-IN MODEL: logs the argument it was handed, then answers in Desk through deskEar, as gemma does.
+  // THE STAND-IN MODEL: logs the argument it was handed and prints what opencode run --format json prints, events as
+  // claude-windows pasted from a real gemma run under goal/G4.28 (cut to the fields that matter): a step that thinks
+  // aloud and calls a tool, then the step that answers. It posts nothing itself.
   const log = path.join(scratch, 'handed.jsonl');
   const model = path.join(scratch, 'model.js');
   fs.writeFileSync(model, [
     "'use strict';",
     "const fs = require('fs');",
-    "const { execFileSync } = require('child_process');",
-    'const [log, ear, port] = process.argv.slice(2, 5);',
+    'const log = process.argv[2];',
     'const lines = process.argv[process.argv.length - 1];',
     "fs.appendFileSync(log, JSON.stringify(lines) + '\\n');",
     "const n = fs.readFileSync(log, 'utf8').split('\\n').filter(Boolean).length;",
-    "execFileSync(process.execPath, [ear, port, 'chat.add', JSON.stringify({ id: 'l/G1.1', text: 'model heard ' + n })]);",
+    'const ev = function (o) { console.log(JSON.stringify(Object.assign({ timestamp: Date.now(), sessionID: "ses_test" }, o))); };',
+    "ev({ type: 'step_start', part: { type: 'step-start' } });",
+    "ev({ type: 'text', part: { type: 'text', text: 'thinking aloud ' + n } });",
+    "ev({ type: 'tool_use', part: { type: 'tool', tool: 'read', state: { status: 'completed', input: { filePath: 'AGENT_ONBOARDING.md' }, output: '(cut)' } } });",
+    "ev({ type: 'step_finish', part: { reason: 'tool-calls', type: 'step-finish' } });",
+    "ev({ type: 'step_start', part: { type: 'step-start' } });",
+    "ev({ type: 'text', part: { type: 'text', text: 'model heard ' + n } });",
+    "ev({ type: 'step_finish', part: { reason: 'stop', type: 'step-finish' } });",
   ].join('\n'));
 
-  test.subHeading('1. a line of his reaches the model, and the model answers in Desk');
-  const loop = spawn(process.execPath, [LOOP, String(agentPort), process.execPath, model, log, EAR, String(agentPort)], { cwd: clone, stdio: ['ignore', 'ignore', 'pipe'] });
+  // HIS NICK FOR IT (goal/G4.23): a line of his that starts "gemma:" is the agent's.
+  // Asked until it answers: the desk's door answered app-not-running once here, right after the onboard runs.
+  let nicked = {};
+  await waitFor(function () { return deskAsk('profile.set', { agent: agentKey, name: 'ollama-gemma', nick: 'gemma' }, ANDY).then(function (r) { nicked = r; return r.status === 200; }); }, 15000);
+  const nickRead = spawnSync(process.execPath, [EAR, String(agentPort), 'profile.get', '{"agent":""}'], { encoding: 'utf8', timeout: 60000 });
+  if (nicked.status === 200 && /"nick":"gemma"/.test(String(nickRead.stdout))) test.check('the world: Andy gave the agent the nick gemma, and it reads it back');
+  else { test.fail('the world: profile.set answered ' + short(nicked) + '; the agent reads ' + short(String(nickRead.stdout) + String(nickRead.stderr))); return; }
+
+  test.subHeading('1. his "gemma:" line reaches the model under the standing order, and the model answers in Desk');
+  const loop = spawn(process.execPath, [LOOP, String(agentPort), process.execPath, model, log], { cwd: clone, stdio: ['ignore', 'ignore', 'pipe'] });
   kids.push(loop);
   let loopSaid = '';
   loop.stderr.on('data', function (b) { loopSaid = (loopSaid + b).slice(-1000); });
   await sleep(3000);
-  await deskAsk('chat.add', { id: 'l/G1.1', text: 'first question from andy' }, ANDY);
+  await deskAsk('chat.add', { id: 'l/G1.1', text: 'a line for the claudes, not for gemma' }, ANDY);
+  await deskAsk('chat.add', { id: 'l/G1.1', text: 'gemma: first question from andy' }, ANDY);
   const one = await waitFor(function () { return handed(log).length >= 1; }, 60000);
-  if (one && /first question from andy/.test(handed(log)[0])) test.check('the model was handed his line, as deskEar printed it');
+  const first = handed(log)[0] || '';
+  if (one && /gemma: first question from andy/.test(first)) test.check('the model was handed his "gemma:" line, as deskEar printed it');
   else test.fail(OWED + 'the model was handed ' + short(handed(log)) + (loopSaid ? '; the loop said ' + short(loopSaid) : ''));
+  if (one && !/a line for the claudes/.test(first)) test.check('his line without "gemma:" was not handed over');
+  else test.fail(OWED + 'the hand-over carries his line for the claudes: ' + short(first));
+  // THE MANUAL (Andy, 2026-10-04: "yes, like it needs a manual pre-loaded......"): text of its own before the lines.
+  const at = first.indexOf('DESK ');
+  if (one && at > 0 && first.slice(0, at).trim().length > 0) test.check('a standing order comes before the lines');
+  else test.fail(OWED + 'nothing stands before the lines: ' + short(first));
+  // THE LOOP POSTS THE ANSWER (B). Andy: "it's only valuable if that can be extracted mechanically"; claude-windows:
+  // "the answer is the text of the last step".
+  let chat = [];
   const answered = await waitFor(function () {
     return deskAsk('item.chat', { id: 'l/G1.1' }, ANDY).then(function (r) {
-      return (((r.body || {}).chat) || []).some(function (l) { return l.text === 'model heard 1'; });
+      chat = ((r.body || {}).chat) || [];
+      return chat.some(function (l) { return l.text === 'model heard 1'; });
     });
   }, 30000);
-  if (answered) test.check('the model\'s answer is in Desk under the item');
-  else test.fail(OWED + 'no "model heard 1" under l/G1.1');
+  const poster = (chat.filter(function (l) { return l.text === 'model heard 1'; })[0] || {}).by || '';
+  if (answered && poster && poster !== 'andy') test.check('the loop posted the model\'s final text under the line\'s item, as the agent (' + poster + ')');
+  else test.fail(OWED + 'no "model heard 1" under l/G1.1 from the agent: ' + short(chat.slice(-3)));
+  if (!chat.some(function (l) { return /thinking aloud/.test(l.text) || /AGENT_ONBOARDING/.test(l.text); })) test.check('nothing of its thinking or tool calls reached Desk');
+  else test.fail(OWED + 'its thinking or a tool call reached Desk: ' + short(chat.slice(-3)));
 
   test.subHeading('2. the loop listens again; each line is handed over once');
-  await deskAsk('chat.add', { id: 'l/G1.1', text: 'second question from andy' }, ANDY);
+  await deskAsk('chat.add', { id: 'l/G1.1', text: 'gemma: second question from andy' }, ANDY);
   const two = await waitFor(function () { return handed(log).length >= 2; }, 60000);
   const second = handed(log)[1] || '';
   if (two && /second question from andy/.test(second)) test.check('his second line reached the model: the loop waited again');
   else test.fail(OWED + 'after his second line the model was handed ' + short(handed(log)) + (loopSaid ? '; the loop said ' + short(loopSaid) : ''));
-  if (two && !/first question from andy/.test(second) && !/model heard/.test(second)) test.check('the second hand-over carries neither his first line again nor the model\'s own answer');
+  if (two && !/first question from andy/.test(second) && !/model heard/.test(second.slice(second.indexOf('gemma: second')))) test.check('the second hand-over carries neither his first line again nor the model\'s own answer');
   else test.fail(OWED + 'the second hand-over reads ' + short(second));
   if (loop.exitCode === null) test.check('the loop is still running');
   else test.fail(OWED + 'the loop ended with ' + loop.exitCode + (loopSaid ? ': ' + short(loopSaid) : ''));
