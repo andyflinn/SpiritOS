@@ -1,8 +1,8 @@
 {
- "change": 11722,
+ "change": 11751,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T16:47:32.723Z",
+ "writtenAt": "2026-10-04T16:56:32.154Z",
  "items": [
   {
    "id": "goal/G4",
@@ -10,9 +10,7 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [
-    "go-all"
-   ],
+   "buttons": [],
    "blocking": [],
    "blocked": [
     "goal/G4.1",
@@ -28,7 +26,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 3,
    "live": [
     "claude-ubuntu",
     "claude-windows",
@@ -6392,17 +6390,14 @@
    "id": "goal/G4.22",
    "title": "Onboarding tested with a non-Claude agent: an Ollama model on Andy's box, in D:/SpiritOS-agent-ollama",
    "goal": "goal/G4",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G4"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
