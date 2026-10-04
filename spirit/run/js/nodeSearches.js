@@ -65,17 +65,12 @@ function createNodeSearches(opts) {
     if (!key) return { ok: false, status: 400, error: 'key required' };
     var job = jobs.getJob(key);
     if (!job) return { ok: false, status: 404, error: 'job not found' };
-    // A copy without the internals (a leading _) and without the watcher's
-    // file list, which fs.search serves; its count stays, so the job still
-    // says how much it is watching.
+    // A copy without the internals (a leading _). The watcher carries no
+    // file list since goal/G4.25 (fs.search serves the tree); its count is
+    // added, so the job still says how much it is watching.
     var out = {};
     Object.keys(job).forEach(function (k) { if (k.charAt(0) !== '_') out[k] = job[k]; });
-    if (out.data && Array.isArray(out.data.files)) {
-      var data = {};
-      Object.keys(out.data).forEach(function (k) { if (k !== 'files') data[k] = out.data[k]; });
-      data.fileCount = out.data.files.length;
-      out.data = data;
-    }
+    if (out.type === 'fs-watcher') out.data = Object.assign({}, out.data, { fileCount: jobs.fsTreeEntries().length });
     return searchBucket.boundedGet({ ok: true, status: 200, key: key, job: out });
   }
 
@@ -94,8 +89,8 @@ function createNodeSearches(opts) {
   function fsSearch(body) {
     var pattern = cleanPattern(body && body.q);
     if (pattern === null) return { ok: false, status: 400, error: 'path outside the run folder' };
-    var watcher = jobs.listJobs().filter(function (j) { return j.type === 'fs-watcher'; })[0];
-    var files = (watcher && watcher.data && watcher.data.files) || [];
+    // The watcher's tree, in memory (goal/G4.25), as entries {name, relativePath, kind}.
+    var files = jobs.fsTreeEntries();
     // A folder reads with its trailing slash, so a person can tell the two
     // apart and 'shell/desk/' finds the folder itself.
     var pathOf = function (f) { return f.relativePath + (f.kind === 'folder' ? '/' : ''); };

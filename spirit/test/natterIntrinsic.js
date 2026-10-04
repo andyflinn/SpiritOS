@@ -178,16 +178,19 @@ function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysR
   // node attached to nothing. It rides in the relay-presence job's LOG,
   // which is where presenceNode really writes it — "connected to <url>"
   // when a stream opens, "lost <url>: reason" when it drops.
+  // Since goal/G4.25 the list is no longer in the snapshot: the node sends the tree after it as create commands, then
+  // treeComplete, and the shell discovers apps from that. feedTree does exactly that.
+  function feedTree(scripts) {
+    subscribers.forEach(function (h) {
+      if (typeof h.onUpdate !== 'function') return;
+      scripts.forEach(function (rel) {
+        h.onUpdate({ id: 'fs-watcher-1', type: 'fs-watcher', data: { command: { op: 'createFile', path: rel, at: '' } } });
+      });
+      h.onUpdate({ id: 'fs-watcher-1', type: 'fs-watcher', data: { treeComplete: true } });
+    });
+  }
   function snapshot(scripts, heldRelay) {
-    const jobs = [{
-      id: 'fs-watcher-1',
-      type: 'fs-watcher',
-      data: {
-        files: scripts.map(function (rel) {
-          return { kind: 'file', relativePath: rel };
-        }),
-      },
-    }];
+    const jobs = [{ id: 'fs-watcher-1', type: 'fs-watcher', data: {} }];
     if (heldRelay !== undefined) {
       jobs.push({
         id: 'relay-presence-1',
@@ -199,6 +202,7 @@ function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysR
       });
     }
     subscribers.forEach(function (h) { h.onSnapshot(jobs); });
+    feedTree(scripts);
   }
 
   if (!deferSnapshot) snapshot(appScripts, heldRelay);
@@ -222,14 +226,11 @@ function bootShell(preferences, appScripts, deferSnapshot, sessionLabel, relaysR
     snapshotWithLog: function (log) {
       subscribers.forEach(function (h) {
         h.onSnapshot([
-          {
-            id: 'fs-watcher-1',
-            type: 'fs-watcher',
-            data: { files: appScripts.map(function (rel) { return { kind: 'file', relativePath: rel }; }) },
-          },
+          { id: 'fs-watcher-1', type: 'fs-watcher', data: {} },
           { id: 'relay-presence-1', type: 'relay-presence', data: { presence: {} }, log: log },
         ]);
       });
+      feedTree(appScripts);
     },
   };
 }

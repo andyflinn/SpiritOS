@@ -76,10 +76,12 @@ function mountDialog() {
   };
 }
 
+// SINCE goal/G4.25 a change arrives as one tree command {op, path, at} and no file list; the console draws its time
+// (at), its op and its path. Each event below is written as that command; the checks are unchanged.
 function watcher(updatedAt, lastEvent, extra) {
   return Object.assign({ id: 'job_fs', kind: 'permanent', type: 'fs-watcher', status: 'running', createdAt: 1790000000000,
     updatedAt: updatedAt, log: [{ timestamp: 1790000000000, message: 'job created' }],
-    data: { files: [{ path: 'a.txt' }], lastEvent: lastEvent } }, extra || {});
+    data: lastEvent ? { command: { op: lastEvent.eventType, path: lastEvent.filename, at: updatedAt } } : {} }, extra || {});
 }
 // How many times a path is drawn: a line per event, the path in each.
 function count(html, needle) { return html.split(needle).length - 1; }

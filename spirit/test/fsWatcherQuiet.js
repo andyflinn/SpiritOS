@@ -2,6 +2,10 @@
 
 // The fs-watcher only speaks when the file list says something new.
 //
+// SINCE goal/G4.25 it sends no list at all: one tree command per change (fsWatcherCommands.js holds that contract).
+// What this suite guards stays: rewriting a file that already exists changes nothing in the tree, so it is at most a
+// changeFile, never a create or a delete, and the tree is as it was (the shell then redraws no Files tree for it).
+//
 // It watches rootDir recursively, and rootDir is where the running node
 // keeps its own state: Relay Chat polls its inbox every two seconds and
 // every poll rewrites relay-state/who.json. Each of those woke the
@@ -48,13 +52,17 @@ function settle() {
 const job = jobs.startFsWatcherJob(home);
 
 let updates = 0;
+let treeMoves = 0;
 jobs.events.on('job-updated', function (updated) {
-  if (updated.id === job.id) updates += 1;
+  if (updated.id !== job.id) return;
+  updates += 1;
+  const c = updated.data && updated.data.command;
+  if (c && c.op !== 'changeFile') treeMoves += 1;
 });
 
+// The watcher's tree, by name.
 function listed() {
-  const current = jobs.getJob(job.id);
-  return ((current && current.data && current.data.files) || []).map(function (f) { return f.name; });
+  return jobs.fsTreeEntries().map(function (f) { return f.name; });
 }
 
 function done() {
@@ -73,20 +81,21 @@ settle().then(function () {
   }
 
   updates = 0;
+  treeMoves = 0;
   // What Relay Chat does every two seconds: the same file, written
   // again, with content of its own that this list cannot see.
   fs.writeFileSync(path.join(home, 'state', 'who.json'), '[{"publicKey":"KEY","seen":2}]');
   return settle();
 }).then(function () {
-  if (updates === 0) {
-    test.check('rewriting a file that already existed wakes nobody');
+  if (treeMoves === 0 && updates <= 2) {
+    test.check('rewriting a file that already existed moves nothing in the tree (' + updates + ' changeFile, no create or delete)');
   } else {
-    test.fail('a no-op rewrite emitted ' + updates + ' update(s)');
+    test.fail('a no-op rewrite emitted ' + updates + ' update(s), ' + treeMoves + ' of them create or delete');
   }
 
   // And the shortcut did not empty what had already been published.
   if (listed().indexOf('note.txt') !== -1) {
-    test.check('and the list it already published is still there');
+    test.check('and the tree it already held is still there');
   } else {
     test.fail('files after a quiet rescan: ' + JSON.stringify(listed()));
   }
@@ -97,7 +106,7 @@ settle().then(function () {
   return settle();
 }).then(function () {
   if (updates >= 1 && listed().indexOf('arrived.txt') !== -1) {
-    test.check('a new file is announced, and is in what the announcement carried');
+    test.check('a new file is announced, and is in the tree');
   } else {
     test.fail('after create: ' + updates + ' update(s), list ' + JSON.stringify(listed()));
   }

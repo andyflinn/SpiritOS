@@ -50,8 +50,8 @@ function jdJob() {
 //   just make the consoles display the usefull data, the data in the live
 //   stream, we'll do it one item per job."
 //
-// fs-watcher writes no log line; each change it settles arrives as a job event
-// whose data carries lastEvent {eventType, filename}. This page is the reader:
+// fs-watcher writes no log line; each change arrives as a job event whose data
+// carries one tree command {op, path, at} (goal/G4.25). This page is the reader:
 // every such event, heard while the page lives (open or not), becomes one line —
 // time, event, path — in a window of JD_WINDOW lines kept here, oldest falling
 // off the top. Nothing is asked of the node, and a repeat of the same event at
@@ -61,12 +61,12 @@ var jdStreams = Object.create(null);   // job id -> [{at, event, path}]
 
 function jdHear(job) {
   if (!job || job.type !== 'fs-watcher') return;
-  var ev = job.data && job.data.lastEvent;
-  if (!ev || !ev.filename) return;
+  var c = job.data && job.data.command;
+  if (!c || !c.path) return;
   var lines = jdStreams[job.id] || (jdStreams[job.id] = []);
   var last = lines[lines.length - 1];
-  if (last && last.at === job.updatedAt && last.event === ev.eventType && last.path === ev.filename) return;
-  lines.push({ at: job.updatedAt, event: String(ev.eventType || ''), path: String(ev.filename) });
+  if (last && last.at === c.at && last.event === c.op && last.path === c.path) return;
+  lines.push({ at: c.at, event: String(c.op || ''), path: String(c.path) });
   if (lines.length > JD_WINDOW) lines.splice(0, lines.length - JD_WINDOW);
 }
 

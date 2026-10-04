@@ -29,13 +29,9 @@ var filesEscapeHtml = spirit.core.util.escapeHtml;
 var filesIcon = spirit.core.const.ICON;
 var filesApi = null; // handed in at mount, kept for the click handler
 
-// Reference-equality cache: the fs-watcher job this tree was last built
-// from. The watcher only speaks when the list has actually changed
-// (js/jobs.js), so this is now a cheap second line rather than the only
-// one. api.onFiles would replace it outright — that conversion was left
-// for its own sitting, because this one moves a file and changes
-// nothing.
-var lastFilesJob = null;
+// The version of the shell's one file tree this was last drawn from (goal/G4.25): the shell keeps the tree from the
+// watcher's commands, and the version moves only when a command changed it, so a stats tick redraws nothing.
+var lastFilesVersion = null;
 
 function filesBuildTree(files) {
   var byPath = new Map();
@@ -123,17 +119,17 @@ spirit.shell.activateApp({
     var treeEl = document.getElementById('file-tree');
     if (!treeEl) return;
 
-    var job = spirit.shell.findJobByType('fs-watcher');
-    if (job === lastFilesJob) return; // unchanged (e.g. an unrelated stats tick) — leave the tree, and its open folders, alone
-    lastFilesJob = job;
-
-    if (!job || !job.data || !Array.isArray(job.data.files)) {
+    var version = spirit.shell.filesVersion();
+    if (version === lastFilesVersion) return; // unchanged (e.g. an unrelated stats tick) — leave the tree, and its open folders, alone
+    var files = spirit.shell.currentFiles();
+    if (!files) {
       treeEl.textContent = 'waiting for file list…';
       return;
     }
+    lastFilesVersion = version;
 
     var openPaths = filesOpenTreePaths(treeEl);
-    var tree = filesBuildTree(job.data.files);
+    var tree = filesBuildTree(files);
     treeEl.innerHTML = tree.roots.map(function (r) {
       return filesRenderTreeNode(r, tree.childrenByPath, openPaths);
     }).join('') || '(empty)';

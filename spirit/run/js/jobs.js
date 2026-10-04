@@ -7,7 +7,6 @@ const { EventEmitter } = require('events');
 const { monitorEventLoopDelay } = require('perf_hooks');
 
 const MAX_LOG_ENTRIES = 200;
-const RESCAN_DEBOUNCE_MS = 150;
 const DEFAULT_STATS_INTERVAL_MS = 2000;
 
 const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled', 'stopped']);
@@ -148,44 +147,68 @@ module.exports = function installJobs(spirit, port) {
     };
   }
 
+  // ── THE FILE WATCHER ON CHOKIDAR, STREAMING TREE COMMANDS (goal/G4.25) ──
+  //
+  //   Andy, 2026-10-02: "the current design is horrid. for lazy load the stream can send createDirectory run /
+  //   createDirectory media / createFile index.html etc... just send \"commands up the stream to modify the tree.\"",
+  //   "so that s our replacement then. quick and free and maintained by others....", "forget about batching"; and
+  //   2026-10-04, "local copy it is" (chokidar under spirit/run/node_modules). His grant G1 on this file.
+  //
+  // The watcher keeps the tree (path -> folder|file) and sends what changed, one command per job-updated:
+  // data.command {op, path, at}, op createDirectory, createFile, changeFile, deleteFile or deleteDirectory, path
+  // relative to the watched root. The whole list never travels again: a page that connects gets the tree as create
+  // commands from fsTreeCommands (server.js). The tree is seeded from scanFolder, so it skips what that skips
+  // (node_modules, .git, anything fileServable refuses, relay-state among them); chokidar is asked to ignore the same,
+  // and reports at startup what the seed already holds, which sends nothing.
+  const FS_OPS = { add: 'createFile', addDir: 'createDirectory', change: 'changeFile', unlink: 'deleteFile', unlinkDir: 'deleteDirectory' };
+  const RUN_ROOT = path.join(__dirname, '..');
+  let fsTree = null; // the tree of the latest watcher this module started: Map relativePath -> 'folder' | 'file'
+
+  function fsTreeCommands() {
+    if (!fsTree) return [];
+    const at = new Date().toISOString();
+    // A folder sorts before everything inside it: its path is a prefix of theirs.
+    return Array.from(fsTree.keys()).sort().map(function (p) {
+      return { op: fsTree.get(p) === 'folder' ? 'createDirectory' : 'createFile', path: p, at: at };
+    });
+  }
+  // The tree as entries {name, relativePath, kind}, for the counts and fs.search, which read it in place.
+  function fsTreeEntries() {
+    if (!fsTree) return [];
+    return Array.from(fsTree.keys()).sort().map(function (p) {
+      return { name: p.slice(p.lastIndexOf('/') + 1), relativePath: p, kind: fsTree.get(p) };
+    });
+  }
+
   function startFsWatcherJob(rootDir) {
-    const files = scanFolder(rootDir).map(function(entry) { return mapEntry(entry, rootDir); });
-    const job = createJob('permanent', 'fs-watcher', { files: files });
-
-    let pending = null;
-    // What the last emitted list said. A rescan that says the same thing
-    // is not news: the payload carries name/parentPath/fullPath/
-    // relativePath/kind and no mtime or size, so rewriting a file that
-    // already existed produces a byte-identical list.
-    //
-    // That happens constantly. Relay Chat polls its inbox every two
-    // seconds and each poll rewrites relay-state/who.json, which is
-    // inside rootDir, which wakes this watcher, which rescans and — until
-    // now — emitted an update every two seconds forever. Every subscriber
-    // repainted from it: the Files tree rebuilt its markup and every open
-    // folder in it collapsed, because a <details> built fresh is a
-    // <details> that is closed.
-    //
-    // So the comparison happens once, here, rather than in each consumer
-    // (and each consumer that forgot). Note this makes lastEvent trail
-    // the truth when a write changes no names — nothing reads it, and a
-    // record of "somebody touched a file we cannot see the effect of" is
-    // not worth waking every app in the page for.
-    let lastFilesJson = JSON.stringify(job.data.files);
-    function scheduleRescan(eventType, filename) {
-      if (pending) return;
-      pending = setTimeout(function() {
-        pending = null;
-        const rescannedFiles = scanFolder(rootDir).map(function(entry) { return mapEntry(entry, rootDir); });
-        const asJson = JSON.stringify(rescannedFiles);
-        if (asJson === lastFilesJson) return;
-        lastFilesJson = asJson;
-        updateJob(job.id, { data: { files: rescannedFiles, lastEvent: { eventType: eventType, filename: filename } } });
-      }, RESCAN_DEBOUNCE_MS);
-    }
-
-    const watcher = fs.watch(rootDir, { recursive: true }, function(eventType, filename) {
-      scheduleRescan(eventType, filename);
+    const tree = new Map();
+    scanFolder(rootDir).forEach(function (entry) { const m = mapEntry(entry, rootDir); tree.set(m.relativePath, m.kind); });
+    fsTree = tree;
+    const job = createJob('permanent', 'fs-watcher', {});
+    const relOf = function (full) { return path.relative(rootDir, full).split(path.sep).join('/'); };
+    const ignored = function (full) {
+      const rel = path.relative(RUN_ROOT, path.resolve(full)).split(path.sep).join('/');
+      if (!rel || rel.indexOf('..') === 0) return false;
+      if (rel.split('/').some(function (part) { return part === 'node_modules' || part === '.git'; })) return true;
+      return !spirit.core.fs.fileServable(rel);
+    };
+    const watcher = require('chokidar').watch(rootDir, { ignored: ignored, ignoreInitial: false, persistent: true });
+    watcher.on('all', function (event, full) {
+      const op = FS_OPS[event];
+      const rel = full ? relOf(full) : '';
+      if (!op || !rel || rel.indexOf('..') === 0) return;
+      if (op === 'createFile' || op === 'createDirectory') {
+        const kind = op === 'createDirectory' ? 'folder' : 'file';
+        if (tree.get(rel) === kind) return; // already held: the startup report, or a repeat
+        tree.set(rel, kind);
+      } else if (op === 'deleteFile') {
+        if (!tree.has(rel)) return;
+        tree.delete(rel);
+      } else if (op === 'deleteDirectory') {
+        if (!tree.has(rel)) return;
+        Array.from(tree.keys()).forEach(function (p) { if (p === rel || p.indexOf(rel + '/') === 0) tree.delete(p); });
+      } else if (!tree.has(rel)) tree.set(rel, 'file'); // a change to a file never seen made it, so it exists
+      updateJob(job.id, { data: { command: { op: op, path: rel, at: new Date().toISOString() } } });
     });
 
     watcher.on('error', function(err) {
@@ -197,8 +220,8 @@ module.exports = function installJobs(spirit, port) {
     });
 
     job._stop = function() {
-      if (pending) clearTimeout(pending);
       watcher.close();
+      if (fsTree === tree) fsTree = null;
     };
 
     return job;
@@ -481,18 +504,16 @@ module.exports = function installJobs(spirit, port) {
       lastTickTime = now;
 
       const jobCounts = { total: 0, byStatus: {} };
-      let fsWatcherJob = null;
       listJobs().forEach(function(j) {
         jobCounts.total++;
         jobCounts.byStatus[j.status] = (jobCounts.byStatus[j.status] || 0) + 1;
-        if (j.type === 'fs-watcher') fsWatcherJob = j;
       });
 
-      // Derived from the fs-watcher job's already-in-memory file list —
-      // no extra filesystem I/O, just tallying what it already scanned.
+      // Derived from the watcher's tree, already in memory (goal/G4.25) —
+      // no extra filesystem I/O, just tallying what it already holds.
       const filesystem = { files: 0, folders: 0, byMimeType: {} };
-      if (fsWatcherJob && Array.isArray(fsWatcherJob.data.files)) {
-        fsWatcherJob.data.files.forEach(function(entry) {
+      {
+        fsTreeEntries().forEach(function(entry) {
           if (entry.kind === 'folder') {
             filesystem.folders++;
           } else {
@@ -544,6 +565,8 @@ module.exports = function installJobs(spirit, port) {
     cancelJob: cancelJob,
     deleteJob: deleteJob,
     startFsWatcherJob: startFsWatcherJob,
+    fsTreeCommands: fsTreeCommands,
+    fsTreeEntries: fsTreeEntries,
     startProcessJob: startProcessJob,
     startServerJob: startServerJob,
     startJob: startJob,

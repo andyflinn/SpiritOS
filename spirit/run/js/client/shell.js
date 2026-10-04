@@ -2209,14 +2209,42 @@
   // nothing new.
   var fileSubscribers = [];
   var jobSubscribers = [];
-  // What the last delivered file list said. The signature lives here so
-  // no app has to hold one again: a reconnect re-delivers every job as a
-  // fresh object with identical content, and that is not a change.
+  // THE SHELL'S ONE FILE TREE (goal/G4.25). Andy: "so this just needs to bridge the gap, the shell maintains one
+  // complete tree, and all apps/file-pickers feed from that?"; his grant G3 on this file. The node sends no file list
+  // any more: after each snapshot the fs-watcher sends the tree as create commands and then treeComplete, and every
+  // change after that as one command. This keeps the tree (path -> folder|file) and hands it out as the entries the
+  // apps already read ({name, relativePath, kind, fullPath, parentPath}, the paths relative), rebuilt only when a
+  // command changed something. null until the tree is whole.
+  var fileTree = new Map();
+  var fileTreeReady = false;
+  var fileTreeVersion = 0;
+  var fileListCache = null;
+  var lastFilesVersion = -1;
   var lastFilesJson = null;
 
+  function applyFileCommand(c) {
+    if (!c || typeof c.path !== 'string' || !c.path) return;
+    if (c.op === 'createDirectory') fileTree.set(c.path, 'folder');
+    else if (c.op === 'createFile' || c.op === 'changeFile') {
+      if (c.op === 'changeFile' && fileTree.get(c.path) === 'file') return; // contents only: the tree is unchanged
+      fileTree.set(c.path, 'file');
+    } else if (c.op === 'deleteFile') fileTree.delete(c.path);
+    else if (c.op === 'deleteDirectory') {
+      Array.from(fileTree.keys()).forEach(function (p) { if (p === c.path || p.indexOf(c.path + '/') === 0) fileTree.delete(p); });
+    } else return;
+    fileTreeVersion += 1;
+    fileListCache = null;
+  }
+
   function currentFiles() {
-    var job = findJobByType('fs-watcher');
-    return (job && job.data && Array.isArray(job.data.files)) ? job.data.files : null;
+    if (!fileTreeReady) return null;
+    if (!fileListCache) {
+      fileListCache = Array.from(fileTree.keys()).sort().map(function (p) {
+        var cut = p.lastIndexOf('/');
+        return { name: p.slice(cut + 1), relativePath: p, kind: fileTree.get(p), fullPath: p, parentPath: cut === -1 ? '' : p.slice(0, cut) };
+      });
+    }
+    return fileListCache;
   }
 
   function contextFor(entry) {
@@ -2226,6 +2254,10 @@
   function notifyFileSubscribers() {
     var files = currentFiles();
     if (!files) return;
+    // Only when a command changed the tree, and then only if it says something new: a reconnect rebuilds the same
+    // tree, and that is not news to an app.
+    if (fileTreeVersion === lastFilesVersion) return;
+    lastFilesVersion = fileTreeVersion;
     var asJson = JSON.stringify(files);
     if (asJson === lastFilesJson) return;
     lastFilesJson = asJson;
@@ -2720,12 +2752,13 @@
     });
   }
 
-  function discoverDynamicApps(jobs) {
-    var fsWatcherJob = jobs.find(function (j) { return j.type === 'fs-watcher'; });
-    if (!fsWatcherJob || !fsWatcherJob.data || !Array.isArray(fsWatcherJob.data.files)) return;
+  // From the shell's one tree, once it is whole (goal/G4.25).
+  function discoverDynamicApps() {
+    var files = currentFiles();
+    if (!files) return;
 
     var appEntryPattern = /^shell\/([^/]+)\/\1\.js$/;
-    fsWatcherJob.data.files.forEach(function (f) {
+    files.forEach(function (f) {
       if (f.kind !== 'file' || !appEntryPattern.test(f.relativePath)) return;
       var manifestRaw = spirit.core.fs.loadFile(f.relativePath.replace(/\.js$/, '.json'));
       if (manifestRaw == null) return; // no manifest, no discovery — same rule process/ already uses
@@ -2743,6 +2776,9 @@
   spirit.shell = {
     registerApp: registerApp,
     launchApp: launchApp,
+    // The shell's one file tree (goal/G4.25): the entries, null until whole, and a number that moves when it changes.
+    currentFiles: currentFiles,
+    filesVersion: function () { return fileTreeVersion; },
     escapeHtml: escapeHtml,
     activateApp: activateApp,
     renderOpenWith: renderOpenWith,
@@ -2828,14 +2864,34 @@
     onSnapshot: function (jobs) {
       jobsById.clear();
       jobs.forEach(function (job) { jobsById.set(job.id, job); });
-      discoverDynamicApps(jobs);
-      mountListeners();
-      pruneStalePreferences();
-      notifyFileSubscribers();
+      // THE TREE COMES AFTER THE SNAPSHOT (goal/G4.25): discovery, its listeners and the pruning wait for
+      // treeComplete, since pruning before the tree is whole would strip the settings of apps not yet seen. A node
+      // with no watcher sends no tree, so they run now, as they did when the list was empty.
+      fileTree.clear();
+      fileTreeReady = false;
+      fileListCache = null;
+      fileTreeVersion += 1;
+      if (!jobs.some(function (j) { return j.type === 'fs-watcher'; })) {
+        mountListeners();
+        pruneStalePreferences();
+      }
       notifyJobSubscribers(null);
       renderActive();
     },
     onUpdate: function (job) {
+      if (job && job.type === 'fs-watcher' && job.data) {
+        if (job.data.command) applyFileCommand(job.data.command);
+        if (job.data.treeComplete) {
+          fileTreeReady = true;
+          fileListCache = null;
+          discoverDynamicApps();
+          mountListeners();
+          pruneStalePreferences();
+        }
+        jobsById.set(job.id, job);
+        // While the tree is still arriving, one entry at a time, nothing is painted or told.
+        if (!fileTreeReady) return;
+      }
       jobsById.set(job.id, job);
       deliverPublished(job);
       notifyFileSubscribers();

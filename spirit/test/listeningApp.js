@@ -87,8 +87,15 @@ function bootShell(manifest) {
   };
   new Function('spirit', 'document', 'fetch', 'window', fs.readFileSync(SHELL, 'utf8'))(
     shellSpirit, doc, function () {}, { spiritPacket: packet, spiritLimits: require('../run/js/limits.js') });
+  // The tree as the node sends it since goal/G4.25: a snapshot without a file list, then the create commands, then
+  // treeComplete.
   subscribers.forEach(function (h) {
-    if (typeof h.onSnapshot === 'function') h.onSnapshot([{ id: 'fs-watcher-1', type: 'fs-watcher', data: { files: [{ kind: 'file', relativePath: 'shell/desk/desk.js' }] } }]);
+    if (typeof h.onSnapshot === 'function') h.onSnapshot([{ id: 'fs-watcher-1', type: 'fs-watcher', data: {} }]);
+    if (typeof h.onUpdate === 'function') {
+      ['shell', 'shell/desk'].forEach(function (p) { h.onUpdate({ id: 'fs-watcher-1', type: 'fs-watcher', data: { command: { op: 'createDirectory', path: p, at: '' } } }); });
+      h.onUpdate({ id: 'fs-watcher-1', type: 'fs-watcher', data: { command: { op: 'createFile', path: 'shell/desk/desk.js', at: '' } } });
+      h.onUpdate({ id: 'fs-watcher-1', type: 'fs-watcher', data: { treeComplete: true } });
+    }
   });
   const wired = subscribers.filter(function (h) { return typeof h.onPacket === 'function'; })[0];
   const jobsWire = subscribers.filter(function (h) { return typeof h.onUpdate === 'function'; })[0];

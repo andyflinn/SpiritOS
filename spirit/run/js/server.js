@@ -234,6 +234,17 @@ function handleSseConnection(req, res) {
   });
 
   res.write('event: snapshot\ndata: ' + JSON.stringify({ jobs: jobs.listJobs() }) + '\n\n');
+  // THE TREE ARRIVES AS COMMANDS (goal/G4.25; Andy: "the beginning can be a stream of changes that build the tree
+  // (MAX_PAYLOAD)", "forget about batching"; his grant G2 on this file). The snapshot's fs-watcher job carries no file
+  // list; right after it, one fs-watcher job-updated per entry, a createDirectory before what is inside it, then one
+  // carrying data.treeComplete, so the shell knows the tree is whole before it discovers apps from it.
+  const fsJob = jobs.listJobs().filter(function (j) { return j.type === 'fs-watcher'; })[0];
+  if (fsJob) {
+    jobs.fsTreeCommands().forEach(function (command) {
+      res.write('event: job-updated\ndata: ' + JSON.stringify(Object.assign({}, fsJob, { data: { command: command } })) + '\n\n');
+    });
+    res.write('event: job-updated\ndata: ' + JSON.stringify(Object.assign({}, fsJob, { data: { treeComplete: true } })) + '\n\n');
+  }
 
   const onJobUpdated = (job) => {
     res.write('event: job-updated\ndata: ' + JSON.stringify(job) + '\n\n');
