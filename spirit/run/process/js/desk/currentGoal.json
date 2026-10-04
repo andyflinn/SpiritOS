@@ -1,8 +1,8 @@
 {
- "change": 13731,
+ "change": 13894,
  "line": 8492,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T22:53:22.927Z",
+ "writtenAt": "2026-10-04T23:47:20.445Z",
  "items": [
   {
    "id": "goal/G4",
@@ -14,8 +14,7 @@
    "blocking": [],
    "blocked": [
     "goal/G4.1",
-    "goal/G4.9",
-    "goal/G4.33"
+    "goal/G4.9"
    ],
    "go": false,
    "alone": false,
@@ -26,13 +25,8 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
-   "live": [
-    "claude-ubuntu",
-    "claude-windows",
-    "ollama agent node",
-    "wsl-claude"
-   ],
+   "waiting": 2,
+   "live": [],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -9853,9 +9847,11 @@
    "id": "goal/G4.33",
    "title": "One measurement script for every agent: harness, capacity and packet figures written to agents/<agent>/ in the repo, README linking agents/*/",
    "goal": "goal/G4",
-   "status": "running",
+   "status": "closed",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "reopen"
+   ],
    "blocking": [
     "goal/G4"
    ],
@@ -9863,13 +9859,13 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 2,
    "boxTaken": "",
-   "asks": 1,
-   "half": false,
+   "asks": 0,
+   "half": true,
    "full": false,
-   "box": "publishData.js: ONE MEASUREMENT RUN PER AGENT, ITS DATA IN agents/<agent>/\n\nANDY, 2026-10-04, VERBATIM\n- G4.23, 15:20: \"in fact if we granted every '/' agent a folder in ./agents/agent-string/ then all automation-output can go in there.... ?\"\n- G4.32: \"now i want measurements taken and posted, and ubuntu there as well with it's data\"; \"so one single script for all of you puts the data into the repo\"; \"make it an item\"\n- Where: \"this is desk stuff.\"; \"it will be automated under deskClient. so the deskClient scripts calls - spirit/test/measurePlatform.js?\"; \"it will be done as a SpiritOS process, that will be cleaned-up/deleted from jobs when it's done.\"\n- Name: \"publishData.js?\"\n- When (Q1): \"when i say publish\"; then \"release, tag\"\n- Commit (Q2): \"automated publishing will have a standing grant, attached to the script in deskClient\"; \"and the whole agent-specific folders will be included per agent.\"\n- Window (Q4): \"not a fixed window: the SpiritOS might be unstable on master at at any time. on achievements: like todays insane speed-up\"; \"on the chatter prototype\"; \"true, it must come with every publish.\"\n- Old folders (Q6): \"yes.\"; \"and claude-ubuntu must be included.\"\n- Studies (Q8): \"Studies like packet-turnaround-measurements, yes.\"; \"they need packaging for publishing.\"\n- Standing (publishCapacity.js): \"swl harness is the target for relay, windows may be the prime target for node\"\n\nWHAT IT DOES\n- On his \"publish\", which goes with a release tag: each agent's deskClient starts publishData.js as a job on its own node (seen in Jobs while it runs, deleted from Jobs when done), never while another harness runs on that box; the listener keeps listening meanwhile.\n- It runs spirit/test/measurePlatform.js (harness, capacity), then N read-only desk asks for the packet figures, timed from its own traffic rows (waitMs, attempts, flight), for the tagged commit only: from when the node started on it.\n- It writes agents/<agent>/ and commits it under the standing grant (that folder only); Desk gets one summary line per agent with a link.\n\nagents/<agent>/ HOLDS\n- platform.md: box, platform, node version, CPUs, RAM, agent name, tag, commit, date\n- harness.json, harness.txt; capacity.json, capacity.md: as measurePlatform writes them today\n- packets.json, packets.md: posts, waitMs median/max, flight median/max, more-than-one-try count, refusals by code\n- traffic.tsv (optional): the raw timing rows of the window\n- studies/<date>-<topic>/: data plus README.md (question, method, commit and box, finding), as relayLab/measurements/2026-10-02-desk-lanes/README.md does today\n\nMOVED, NOT DOUBLED\n- README/CAPACITY/ubuntu-24.04-wsl2 to agents/wsl-claude, windows-10.0 to agents/claude-windows; README/CAPACITY deleted; agents/claude-ubuntu/ added from its own box.\n- relayLab/measurements per-agent studies into agents/<agent>/studies/.\n- measurePlatform.js writes agents/<agent>/; publishCapacity.js takes the front-page Ubuntu figure from there; README links agents/*/.\n\nALSO FOUND: the desk's goalShare.js job (G4.21) is never deleted either; ~13 finished ones sit in Andy's Jobs. Same one line; G4.21 is closed, so his word.\n\nOPEN: N for the probe; his Go.\n\nTHE UTILITY PROCESS (Andy, 2026-10-04, verbatim): \"make a stub. process-send-and-delivery, very usefull....\"; \"to build now, so that that stuff isn't roll-your-own every single time you need a utility process.\"; \"used by publishData first and by goalShare also now.\"\n- One shared piece: starts a job, delivers its result, deletes the job once delivered. publishData runs on it; goalShare (G4.21) moves onto it in this item too, which ends its finished jobs piling up in Jobs.\n\nLAST TWO ANSWERS (2026-10-04)\n- Q13 the trigger: \"publish\". His group-chat line that is exactly \"publish\" starts it in each agent's deskClient.\n- Q14 N: \"that's a fine number\": 20 read-only desk asks per agent.",
-   "version": 19,
+   "box": "publishData.js: ONE MEASUREMENT RUN PER AGENT, ITS DATA IN agents/<agent>/\n\nANDY, 2026-10-04, VERBATIM\n- G4.23, 15:20: \"in fact if we granted every '/' agent a folder in ./agents/agent-string/ then all automation-output can go in there.... ?\"\n- G4.32: \"now i want measurements taken and posted, and ubuntu there as well with it's data\"; \"so one single script for all of you puts the data into the repo\"; \"make it an item\"\n- Where: \"this is desk stuff.\"; \"it will be automated under deskClient. so the deskClient scripts calls - spirit/test/measurePlatform.js?\"; \"it will be done as a SpiritOS process, that will be cleaned-up/deleted from jobs when it's done.\"\n- Name: \"publishData.js?\"\n- When (Q1): \"when i say publish\"; then \"release, tag\"\n- Commit (Q2): \"automated publishing will have a standing grant, attached to the script in deskClient\"; \"and the whole agent-specific folders will be included per agent.\"\n- Window (Q4): \"not a fixed window: the SpiritOS might be unstable on master at at any time. on achievements: like todays insane speed-up\"; \"on the chatter prototype\"; \"true, it must come with every publish.\"\n- Old folders (Q6): \"yes.\"; \"and claude-ubuntu must be included.\"\n- Studies (Q8): \"Studies like packet-turnaround-measurements, yes.\"; \"they need packaging for publishing.\"\n- Standing (publishCapacity.js): \"swl harness is the target for relay, windows may be the prime target for node\"\n\nWHAT IT DOES\n- On his \"publish\", which goes with a release tag: each agent's deskClient starts publishData.js as a job on its own node (seen in Jobs while it runs, deleted from Jobs when done), never while another harness runs on that box; the listener keeps listening meanwhile.\n- It runs spirit/test/measurePlatform.js (harness, capacity), then N read-only desk asks for the packet figures, timed from its own traffic rows (waitMs, attempts, flight), for the tagged commit only: from when the node started on it.\n- It writes agents/<agent>/ and commits it under the standing grant (that folder only); Desk gets one summary line per agent with a link.\n\nagents/<agent>/ HOLDS\n- platform.md: box, platform, node version, CPUs, RAM, agent name, tag, commit, date\n- harness.json, harness.txt; capacity.json, capacity.md: as measurePlatform writes them today\n- packets.json, packets.md: posts, waitMs median/max, flight median/max, more-than-one-try count, refusals by code\n- traffic.tsv (optional): the raw timing rows of the window\n- studies/<date>-<topic>/: data plus README.md (question, method, commit and box, finding), as relayLab/measurements/2026-10-02-desk-lanes/README.md does today\n\nMOVED, NOT DOUBLED\n- README/CAPACITY/ubuntu-24.04-wsl2 to agents/wsl-claude, windows-10.0 to agents/claude-windows; README/CAPACITY deleted; agents/claude-ubuntu/ added from its own box.\n- relayLab/measurements per-agent studies into agents/<agent>/studies/.\n- measurePlatform.js writes agents/<agent>/; publishCapacity.js takes the front-page Ubuntu figure from there; README links agents/*/.\n\nALSO FOUND: the desk's goalShare.js job (G4.21) is never deleted either; ~13 finished ones sit in Andy's Jobs. Same one line; G4.21 is closed, so his word.\n\nOPEN: N for the probe; his Go.\n\nTHE UTILITY PROCESS (Andy, 2026-10-04, verbatim): \"make a stub. process-send-and-delivery, very usefull....\"; \"to build now, so that that stuff isn't roll-your-own every single time you need a utility process.\"; \"used by publishData first and by goalShare also now.\"\n- One shared piece: starts a job, delivers its result, deletes the job once delivered. publishData runs on it; goalShare (G4.21) moves onto it in this item too, which ends its finished jobs piling up in Jobs.\n\nLAST TWO ANSWERS (2026-10-04)\n- Q13 the trigger: \"publish\". His group-chat line that is exactly \"publish\" starts it in each agent's deskClient.\n- Q14 N: \"that's a fine number\": 20 read-only desk asks per agent.\n\nREOPENED 2026-10-05 FOR THE FIRST PUBLISH'S FLAWS (Andy pressed Reopen after \"publish\" ran on all three boxes)\n- claude-windows: committed, then the push was refused (the clone was behind origin); pushed by hand, bccf0c75.\n- wsl-claude: its node lost deskClient during the harness run, so 0 packet posts; nothing committed.\n- claude-ubuntu: no GitHub credentials on its box; a deploy key added by Andy, pushed ff9edc92.\nFIXES\n1. publishData pulls with rebase before it pushes, and tries once more if refused.\n2. The harness runs in a temporary git worktree of the commit being published, away from the live node; its files are written back into agents/<agent>/, the worktree removed; the packet asks run after, against a calm node.\n3. The front page: README.md's capacity block is now out of date by design (a bare-Ubuntu agent published). How it is refreshed after a publish is open: by the publishing agent (its standing grant then reaching that one block), or by hand under an item.",
+   "version": 20,
    "checks": [
     {
      "number": "Q1",
@@ -10002,9 +9998,36 @@
      "kind": "Q",
      "words": "publishData pushes without pulling first, so a publish fails when others pushed meanwhile (mine did). Fix: pull --rebase before push, retry once. Reopen G4.33 for it, or a new item? (claude-windows)",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-04T22:54:08.845Z"
+    },
+    {
+     "number": "Q16",
+     "kind": "Q",
+     "words": "A publish whose packet asks counted 0 posts (my node had lost deskClient) would have committed those zeros. Should publishData refuse to commit when it counts 0 posts? (wsl-claude)",
+     "test": "",
+     "state": "passed",
+     "by": "wsl-claude",
+     "at": "2026-10-04T23:02:11.003Z"
+    },
+    {
+     "number": "Q17",
+     "kind": "Q",
+     "words": "Fix 3: the front page shows old capacity figures since claude-ubuntu published. claude-windows proposes refreshing it by hand now, under this item, and an automatic refresh later. Go with that? (wsl-claude)",
+     "test": "",
+     "state": "passed",
+     "by": "wsl-claude",
+     "at": "2026-10-04T23:17:35.508Z"
+    },
+    {
+     "number": "Q18",
+     "kind": "Q",
+     "words": "Fix 3, the front page (out of date since claude-ubuntu published bare-Ubuntu figures): shall claude-windows refresh it by hand now under G4.33 (one commit, publishCapacity.js), leaving an automatic refresh for later? Then G4.33 is done. (claude-windows)",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-04T23:19:14.173Z"
     }
    ],
    "chat": [
@@ -10447,6 +10470,136 @@
      "by": "wsl-claude",
      "at": "2026-10-04T22:22:42.450Z",
      "text": "Verified 3ce4152f: publishData 20 of 20 here; with measuredAt removed it fails 4, restored. My node is restarted on it. Claimed done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T22:53:37.582Z",
+     "text": "taking: the red for the three publish fixes (pull before push, harness in a worktree, front page refresh); claude-windows builds."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T22:53:54.813Z",
+     "text": "taking: the G4.33 box, for the three publishing fixes."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T22:54:05.261Z",
+     "text": "Q15: publishData pushes without pulling first, so a publish fails when others pushed meanwhile (mine did). Fix: pull --rebase before push, retry once. Reopen G4.33 for it, or a new item? (claude-windows)\n\ndone"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T23:00:21.478Z",
+     "text": "commit 811e64e5f4f581c4109ce641e4483bac665ad78e: goal/G4.33: publishData's red gains the reopened fixes 1 and 2 (2 owed): pull before push, and the harness in a worktree. Andy pressed Reopen on goal/G4.33 after \"publish\" ran on all three boxes, and \n- spirit/test/publishData.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T23:00:28.343Z",
+     "text": "Red for fixes 1 and 2 is in, 811e64e5: publishData 22 of 24, owing pull-before-push and the harness in a worktree; with both patched in a scratch copy, 24 of 24. Fix 3 left open, as in the box.\nAlso seen: my run would have committed 0 posts without complaint; whether a publish with 0 posts should refuse is your call."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T23:00:41.816Z",
+     "text": "taking: the build of fixes 1 and 2 against 811e64e5."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T23:01:55.011Z",
+     "text": "Q16: A publish whose packet asks counted 0 posts (my node had lost deskClient) would have committed those zeros. Should publishData refuse to commit when it counts 0 posts? (wsl-claude)\n\npublish it anyway. that's what happened."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T23:02:26.225Z",
+     "text": "Published as it happened, c5ec20d2: agents/wsl-claude/ with its 0 posts. Q16 marked answered."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T23:03:01.031Z",
+     "text": "is this one done?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T23:03:13.777Z",
+     "text": "wsl: not yet. Fixes 1 and 2 (pull before push, harness in a worktree) are with claude-windows, not on origin yet; fix 3, the front page, is still yours to decide."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T23:03:24.588Z",
+     "text": "commit 623d2d0368f3ba8e6266621f6422e05b88f5d233: goal/G4.33: publishData's first-publish fixes (publishData 24 of 24). Andy pressed Reopen after \"publish\" ran on all three boxes; to Q15 (pull before push): \"done\". 1. It pulls with rebase before it p\n- spirit/run/process/js/deskClient/publishData.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T23:05:30.660Z",
+     "text": "commit 5073cca3bcdfa020966196850dd96450511b2091: goal/G4.33: a publish that counted 0 posts is published, not refused (publishData 24 of 24). Andy, to Q16: \"publish it anyway. that's what happened.\" Takes back the refusal 623d2d03 added a moment bef\n- spirit/run/process/js/deskClient/publishData.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T23:05:45.960Z",
+     "text": "Nearly: fixes 1 and 2 are in (623d2d03, pull before push and the harness in a worktree), and your Q16 too (5073cca3: 0 posts are published as measured). publishData 24 of 24.\nLeft: fix 3, the front page, out of date since claude-ubuntu's bare-Ubuntu publish. Shall I refresh it by hand now under G4.33 (one commit, publishCapacity.js) and leave an automatic refresh for later? Then it is done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T23:06:06.431Z",
+     "text": "Both are on origin: 623d2d03 (fixes 1 and 2) and 5073cca3 (Q16); wsl-claude's line crossed them. Only fix 3 waits on you."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T23:08:05.673Z",
+     "text": "Verified 5073cca3: publishData 24 of 24 here; with the pull before the push taken out it fails section 5, restored. Fix 3 waits on Andy."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T23:16:39.898Z",
+     "text": "nothing caught my attention here... ?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T23:16:54.465Z",
+     "text": "wsl: one decision left, fix 3 (the front page); it was only a chat line, so it is now a Q check for you."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T23:17:04.762Z",
+     "text": "Sorry, my question sat in chat, not on your red icon; it is up now as a Q check: fix 3, refresh the front page by hand now? Everything else in G4.33 is built and verified."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T23:17:19.990Z",
+     "text": "wsl: the two fix 3 checks are the same question (ours crossed); one answer covers both, and I mark mine with it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T23:17:25.774Z",
+     "text": "Q17: Fix 3: the front page shows old capacity figures since claude-ubuntu published. claude-windows proposes refreshing it by hand now, under this item, and an automatic refresh later. Go with that? (wsl-claude)\n\nGo with that. yes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T23:19:00.074Z",
+     "text": "taking: the front page refresh by hand (your Q17 yes)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T23:19:12.089Z",
+     "text": "commit 124543ff1bf0c226b39089e2504cf8d7e2997700: goal/G4.33: the front page takes claude-ubuntu's bare-Ubuntu capacity figure (publishCapacity.js), by hand. Andy, to Q17 (refresh it by hand now, automatic later): \"Go with that. yes.\"\n- README.md"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T23:19:24.517Z",
+     "text": "G4.33 done from my side: the front page now quotes claude-ubuntu's bare-Ubuntu figure (124543ff, publishCapacity --check current); pull before push and the harness in a worktree (623d2d03); 0 posts published as measured (5073cca3); publishData 24 of 24, verified by wsl-claude. Automatic front-page refresh stays for later, as you ruled.\n- spirit/run/process/js/deskClient/publishData.js\n- README.md"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T23:19:39.217Z",
+     "text": "Verified 124543ff: the front page now quotes claude-ubuntu figures, matching its capacity.json (30,638 and 603 bytes); publishCapacity and capacityFresh 6 of 6 each. Claimed done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T23:20:27.683Z",
+     "text": "Q18: Fix 3, the front page (out of date since claude-ubuntu published bare-Ubuntu figures): shall claude-windows refresh it by hand now under G4.33 (one commit, publishCapacity.js), leaving an automatic refresh for later? Then G4.33 is done. (claude-windows)\n\nrefresh it by hand. i must quit for today."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T23:20:47.062Z",
+     "text": "Already done: the front page quotes claude-ubuntu's figure (124543ff, verified by wsl-claude). G4.33 waits only for your Done; nothing else of mine is open.\nGood night; I keep listening."
     }
    ]
   },
