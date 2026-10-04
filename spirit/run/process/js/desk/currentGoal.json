@@ -1,8 +1,8 @@
 {
- "change": 10264,
+ "change": 10282,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T13:40:47.661Z",
+ "writtenAt": "2026-10-04T13:44:27.314Z",
  "items": [
   {
    "id": "goal/G4",
@@ -17,8 +17,7 @@
     "goal/G4.9",
     "goal/G4.17",
     "goal/G4.18",
-    "goal/G4.22",
-    "goal/G4.24"
+    "goal/G4.22"
    ],
    "go": false,
    "alone": false,
@@ -29,13 +28,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 9,
+   "waiting": 8,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
+    "claude-ubuntu",
     "claude-windows"
    ],
    "agents": {
@@ -4404,7 +4404,9 @@
    "goal": "goal/G4",
    "status": "running",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G4"
    ],
@@ -4412,7 +4414,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "asks": 1,
    "half": false,
@@ -4910,6 +4912,11 @@
      "by": "andy",
      "at": "2026-10-04T13:40:17.336Z",
      "text": "Q1: Its two children, G4.19 and G4.20, are done: close G4.18, or is something in its box still owed?\n\nit is by default assumed, i found, that split items are considered \"parallel\" both usually block it's parent.\ni feel that \"split\" belongs into the take category.... \n\nand yes, i'll 'Go' this item and see if you find it's done...."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T13:41:17.034Z",
+     "text": "Done, I find. Its box says OPEN: none, and every issue went on: 1-3 and 8-11 are built in G4.20, 4, 6 and 7 in G4.19, both done. Issue 5 (a new agent told why it hears nothing) lives in G4.17.\nSplit as a take is in too: whoever splits takes the box first (box.take, G4.20 point 9), and the box shows red until it is rewritten. I claimed it."
     }
    ]
   },
@@ -6251,10 +6258,10 @@
    "id": "goal/G4.24",
    "title": "The searchable archive: an item left out of a session is closed, never deleted; the List search matches lines",
    "goal": "goal/G4",
-   "status": "running",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [
     "goal/G4"
@@ -6265,7 +6272,7 @@
    "alert": false,
    "claims": 2,
    "boxTaken": "",
-   "asks": 2,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "THE SEARCHABLE ARCHIVE — opened from goal/G4.23's chat, 2026-10-04.\n\nANDY, VERBATIM (under goal/G4.23)\n- \"damn, my search still doesn't show old, closed items. i can't find it either.\"\n- \"1. sounds dumb that the \\\"archive\\\" is not searchable.\"\n- \"yes, same principle as the agent search, it searches the lines server-side, but only brings back handle/key and title, i'll have to go to details to fetch the rest.\"\n\nTODAY, IN THE TREE (at bd54875e)\n- desk.js 360, in session.set: \"g.members.forEach(function (id) { if (ids.indexOf(id) === -1) delete s.items[id]; });\" An item left out of a new session for its goal is deleted from the state. Its records stay in desk.db, but the desk no longer builds them. goal/G2 holds 0 items for that reason (items.search, includeClosed true), and goal/G2.16, the fs-watcher console, cannot be found.\n- desk.js searchItems: the List's text matches \"(it.id + ' ' + it.title)\" only, not an item's chat lines or box. items.find, the agents' search (goal/G3.13), already searches lines.\n\nDONE\n- Point 1, cbbad5a4: left out is closed, never deleted (deskArchive 5 of 5); live on his node, goal/G2.16 back. Andy: \"closed? it works for me now\".\n\nDECIDED\n- G4.24 stays open for point 2; it is not split. Andy, 2026-10-04: \"i'll keep this one active\"\n\nPROPOSED (wsl-claude, for his ruling)\n1. An item left out of a session is closed, never deleted, so [Include Closed] finds it. Items already deleted come back as closed the next time the desk builds its state from desk.db: replaying records rebuilds them anyway.\n2. The List's search also matches an item's chat lines and box, server-side, through the bucket like items.find, and answers the item's key and title (his \"only brings back handle/key and title\"); the dialog fetches the rest.\n\nOPEN\n- Whether 2 reuses items.find, or changes items.search's answer for the List.\n\nWHO: wsl-claude writes the red for point 2 once its shape is settled; claude-windows builds.\n",
@@ -6276,9 +6283,9 @@
      "kind": "Q",
      "words": "Should an offered Go or Done count as waiting on you (❌), as a new item? (wsl-claude)",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-04T13:43:59.545Z"
     },
     {
      "number": "Q2",
@@ -6455,6 +6462,16 @@
      "by": "claude-windows",
      "at": "2026-10-04T12:41:38.704Z",
      "text": "Point 2 built, 09dd7a6e: the List search now matches an item's chat lines and its box too, besides id and title. The row is the same; the dialog fetches the rest. deskSearchLines 6 of 6, every desk suite green.\nTo see it: pull and restart, turn on [Include Closed], search \"fs-watch\". goal/G2.16 should come up by its chat.\nBoth points are in, so I add my claim.\nFiles:\n- spirit/run/process/js/desk/desk.js"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T13:43:26.708Z",
+     "text": "Q1: Should an offered Go or Done count as waiting on you (❌), as a new item? (wsl-claude)\n\nonly if all agents involved in that item consider it done.\n\nQ2: Both points are built and reviewed (Done 2): press Done, or say what is missing?\n\nyes."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T13:44:01.787Z",
+     "text": "taking: opening G4.26 for your Q1 answer, an offered Done counted on your ❌ once every agent involved claimed it."
     }
    ]
   },
