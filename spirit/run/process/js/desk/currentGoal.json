@@ -1,8 +1,8 @@
 {
- "change": 12915,
+ "change": 12916,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T20:59:19.917Z",
+ "writtenAt": "2026-10-04T20:59:21.893Z",
  "items": [
   {
    "id": "goal/G4",
@@ -26,7 +26,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -8924,10 +8924,9 @@
    "id": "goal/G4.30",
    "title": "One post timed hop by hop (out of a node, through the relay, into the desk node, and back), so the 1.5 to 2 s round trip is explained, not guessed",
    "goal": "goal/G4",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
