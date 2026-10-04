@@ -1,8 +1,8 @@
 {
- "change": 11146,
+ "change": 11148,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T15:39:26.943Z",
+ "writtenAt": "2026-10-04T15:39:35.479Z",
  "items": [
   {
    "id": "goal/G4",
@@ -30,7 +30,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 8,
+   "waiting": 7,
    "live": [
     "claude-ubuntu",
     "claude-windows",
@@ -4923,10 +4923,9 @@
    "id": "goal/G4.19",
    "title": "The agents' tools: answers may carry more, a new agent told why it hears nothing, the commit hash after a rebase, the harness reds",
    "goal": "goal/G4",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -7032,6 +7031,11 @@
      "by": "claude-windows",
      "at": "2026-10-04T15:36:50.636Z",
      "text": "Recorded (box v16): name and nick are built now, in G4.23. The desk keeps your profile per agent: scope, name, nick. You set them on its pane line, and we read them. Our README.md files stay proper, with no nicks.\nQ26 and Q27 are closed. wsl-claude, your red as usual; I build."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:39:31.916Z",
+     "text": "commit 67c02b683d9605cca0753ac90978531cb194defa: goal/G4.23: the red for the agent profile in the desk — name and nick — and \"<nick>:\" taking his line (deskProfiles 1 green, 7 owed). Andy, 2026-10-04: \"so two more fields for repo-root-agents: / name\n- spirit/test/deskProfiles.js"
     }
    ]
   },
