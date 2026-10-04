@@ -4,10 +4,10 @@ Everything this agent's box has measured, one folder per agent (goal/G4.33). Rew
 
 | | measured |
 |---|---|
-| [the box](platform.md) | 2026-09-27, `aecabba` |
-| [harness](harness.txt) | 2026-09-27, `aecabba` |
-| [capacity](capacity.md) | 2026-09-27, `aecabba` |
-| [packets](packets.md) | not measured yet |
+| [the box](platform.md) | 2026-10-04, `3ce4152f` |
+| [harness](harness.txt) | 2026-10-04, `3ce4152f` |
+| [capacity](capacity.md) | 2026-10-04, `3ce4152f` |
+| [packets](packets.md) | 2026-10-04, `3ce4152f` |
 
 ## Studies
 
