@@ -1,8 +1,8 @@
 {
- "change": 12880,
+ "change": 12911,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T20:57:06.582Z",
+ "writtenAt": "2026-10-04T20:59:14.447Z",
  "items": [
   {
    "id": "goal/G4",
@@ -10,9 +10,7 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [
-    "go-all"
-   ],
+   "buttons": [],
    "blocking": [],
    "blocked": [
     "goal/G4.1",
@@ -29,15 +27,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 3,
    "live": [
-    "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-ubuntu",
-    "claude-windows"
+    "wsl-claude"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -9481,6 +9477,21 @@
      "by": "andy",
      "at": "2026-10-04T20:56:19.060Z",
      "text": "i like to know every step of our dear little packets."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T20:57:39.108Z",
+     "text": "grants required?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T20:58:02.974Z",
+     "text": "For G4.32, one grant: js/peerPost.js, now up as G1 on G4.32. No schema change: fields the traffic table does not name ride in its extra column (nodeStore.js 116), so nodeStore.js stays untouched."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T20:58:14.514Z",
+     "text": "One: js/peerPost.js, under goal/G4.32 (opened for this). The grant request is up there as G1, in the commit check's own words; with it and your Go on G4.32, wsl-claude writes the red and I build."
     }
    ]
   },
@@ -9618,17 +9629,14 @@
    "id": "goal/G4.32",
    "title": "Each post's closing traffic row records its wait in the queue (waitMs, busy retries included) and its attempts, so waiting here and flight there can be read from the log",
    "goal": "goal/G4",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G4"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -9636,10 +9644,40 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
-   "chat": []
+   "box": "QUEUE WAIT ON THE TRAFFIC ROW\n\nANDY, 2026-10-04, VERBATIM (under goal/G4.30)\n- \"what could be proven: how much time is spent from entering the queue to actually being posted, an interesting stat could be had from that.\"\n- \"i'm for it: because it is a problem area, and a possible indicator for the ouside world (relay/peer) not keeping up anymore. and then we just have to read logs....\"\n- \"i like to know every step of our dear little packets.\"\n\nWHY\n- The log writes a post's \"sent\" row when it enters the queue (peerPost.js), not when it leaves; under G4.30 that made both agents misread busy retries. The closing row's ms runs from queued to the end, so waiting and flight cannot be told apart.\n\nSHAPE (claude-windows, wsl-claude the same)\n- The closing row of each post (receipted, refused, no-answer) also carries waitMs: from queued to the attempt that finally left, busy retries included; and attempts. ms stays queued-to-end, so ms - waitMs is the flight. Nothing else stored; the log stays permanent.\n- Core file (spirit/run/js/peerPost.js): his grant for it comes with the build.\n\nOPEN: his Go.",
+   "version": 2,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/peerPost.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-04T20:59:02.588Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/peerPost.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-04T20:59:04.329Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T20:57:35.971Z",
+     "text": "Opened goal/G4.32: each post's closing traffic row records how long it waited in the queue (busy retries included) and how many tries it took, so waiting here and flight there read straight from the log. Core file, so your Go and a grant for peerPost.js; wsl-claude writes the red."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T20:58:40.195Z",
+     "text": "G1 and G2 on G4.32 are the same request (wsl-claude and I both put it up). Granting either one is enough: the commit check takes any granted G naming js/peerPost.js."
+    }
+   ]
   }
  ]
 }
