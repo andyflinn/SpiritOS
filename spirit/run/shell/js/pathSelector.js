@@ -27,41 +27,35 @@
     // its line; its rows float over the page under the button ("a dropdown floats above the page until selection"),
     // closed by a pick or a click elsewhere, so they never push the line apart.
     var dropdown = o.face !== 'pane';
+    // THE CONTACT SELECTOR'S LOOK, its classes reused (index.html): the dark field, the floating dark panel, the rows.
+    // Inline colours of its own gave the old all-white drop-down (Andy: "dropdown has the old all-white problem").
     var root = document.createElement(dropdown ? 'span' : 'div');
-    root.className = 'path-selector';
+    root.className = 'path-selector contact-selector ' + (dropdown ? 'contact-selector-face-dropdown' : 'contact-selector-face-pane');
     root.value = '';
     var toggle = null;
     var panel = document.createElement('div');
+    panel.className = 'contact-selector-pane';
     if (dropdown) {
-      root.style.position = 'relative';
       root.style.display = 'inline-block';
+      root.style.verticalAlign = 'middle';
       toggle = document.createElement('button');
       toggle.setAttribute('type', 'button');
+      toggle.className = 'contact-selector-field';
       toggle.textContent = o.foldersOnly ? 'choose a folder ▾' : 'choose a file ▾';
       root.appendChild(toggle);
       panel.hidden = true;
-      panel.style.position = 'absolute';
-      panel.style.top = '100%';
-      panel.style.left = '0';
-      panel.style.zIndex = '20';
-      panel.style.minWidth = '22em';
-      panel.style.maxHeight = '20em';
-      panel.style.overflowY = 'auto';
-      panel.style.padding = '4px';
-      panel.style.background = 'var(--spirit-panel, #fff)';
-      panel.style.border = '1px solid var(--spirit-line, #e2e5e9)';
-      panel.style.borderRadius = 'var(--spirit-radius, 8px)';
-      panel.style.boxShadow = '0 4px 12px rgba(0,0,0,0.4)';
       // A click anywhere else closes the rows.
       document.addEventListener('click', function (ev) {
         if (!panel.hidden && ev && ev.target && !root.contains(ev.target)) panel.hidden = true;
       });
     }
     var input = document.createElement('input');
+    input.className = 'contact-selector-search';
     input.setAttribute('placeholder', o.foldersOnly ? 'search folders' : 'search files and folders');
     var list = document.createElement('div');
+    list.className = 'contact-selector-rows';
     var note = document.createElement('div');
-    note.className = 'job-manifest-note';
+    note.className = 'contact-selector-more';
     panel.appendChild(input);
     panel.appendChild(list);
     panel.appendChild(note);
@@ -80,8 +74,8 @@
       var rows = found.slice(0, ROWS_MAX).map(function (p) {
         var row = document.createElement('div');
         row.setAttribute('data-path', p);
+        row.className = 'contact-selector-row' + (p === root.value ? ' current' : '');
         row.textContent = p;
-        row.style.cursor = 'pointer';
         return row;
       });
       list.replaceChildren.apply(list, rows);

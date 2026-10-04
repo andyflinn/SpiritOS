@@ -289,6 +289,9 @@ function deskBubblesHtml() {
 //   of the scope.get after it, never what it guessed.
 var deskAgentName = '';
 var deskAgentScope = '';
+// The root button and its words, offered only while the scope is not '/' already (Andy: "[set-to-repo-root] only needs
+// to be offered if the agent doesn't already have that scope.").
+var deskAgentRootParts = [];
 var deskAgentNote = '';
 function deskAgentKey() {
   var g = deskGoalRow();
@@ -301,6 +304,7 @@ function deskAgentDraw() {
   if (label) label.textContent = 'Scope of ' + deskAgentName + ': the one folder it may commit in (core files still need your grant)';
   // ONE FIELD, SHOWN AS IT IS: '' nothing, '/' the repo root, else the folder.
   var one = deskAgentScope;
+  deskAgentRootParts.forEach(function (n) { n.hidden = one === '/'; });
   el.innerHTML = '<span data-scope-current>' + (one === '' ? '(nothing: this agent may commit nothing)' : one === '/' ? '/ (the repo root)' : deskEsc(one)) + '</span>' +
     (deskAgentNote ? '<div class="job-start-error">' + deskEsc(deskAgentNote) + '</div>' : '');
 }
@@ -348,6 +352,11 @@ function deskAgentOpen(name) {
     advanced.className = 'job-manifest-note';
     advanced.textContent = ' for advanced agents ';
     slot.innerHTML = '';
+    // ONE LINE WITH ROOM BETWEEN ITS PARTS (Andy: "misses horizontal spacing between items").
+    slot.style.display = 'flex';
+    slot.style.alignItems = 'center';
+    slot.style.flexWrap = 'wrap';
+    slot.style.gap = '12px';
     slot.appendChild(picker);
     slot.appendChild(setOne);
     slot.appendChild(advanced);
@@ -375,6 +384,7 @@ function deskAgentOpen(name) {
       deskAgentSet('/');
     });
     slot.appendChild(whole);
+    deskAgentRootParts = [advanced, whole];
   }
   return deskAgentLoad();
 }
