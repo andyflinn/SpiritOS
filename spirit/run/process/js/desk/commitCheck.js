@@ -106,11 +106,48 @@ function check() {
         if (current.indexOf(f.goal) === -1) { reasons.push('- ' + id + ': not an item of the current goal'); return one(i + 1); }
         if (f.status === 'done' || f.status === 'closed') { reasons.push('- ' + id + ': ' + f.status + ' already; nothing is owed on it'); return one(i + 1); }
         if (f.go !== true) { reasons.push('- ' + id + ': Andy has not pressed Go on it'); return one(i + 1); }
-        fs.writeFileSync(path.join(gitDir(), 'commitCheck.item'), id);
-        end(0, 'commitCheck: ' + id + ' has his Go; the commit is taken');
+        return scopeAndGrants(id).then(function () {
+          fs.writeFileSync(path.join(gitDir(), 'commitCheck.item'), id);
+          end(0, 'commitCheck: ' + id + ' has his Go; the commit is taken');
+        });
       });
     }
     return one(0);
+  });
+}
+
+// ── the scope and the core grants (goal/G4.23) ───────────────────────
+// Andy: "it should refuse to commit a core file that was not granted, and raise an ERROR icon in my list, and a
+// grant request in the item?", "the default: nothing", "the scope still has a grant-lock on core files.". Every staged
+// file must lie in one of this agent's folders (scope.get, as he set them); a staged core file (coreFiles.js) also
+// needs a granted G check on the item naming its path under spirit/run. Refused without it, and the refusal puts one
+// open G check "core grant: <path>" under the item, once, so his List shows it.
+function scopeAndGrants(id) {
+  const staged = git(['diff', '--cached', '--name-only']).stdout.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+  const top = git(['rev-parse', '--show-toplevel']).stdout.trim();
+  return desk('scope.get', { agent: '' }).then(function (scope) {
+    const folders = Array.isArray(scope.folders) ? scope.folders : [];
+    const outside = staged.filter(function (f) { return !folders.some(function (d) { return d === '' || f.indexOf(d) === 0; }); });
+    if (outside.length) {
+      end(1, 'commitCheck: REFUSED (scope): outside the folders Andy set for this agent (' + (folders.length ? folders.map(function (d) { return d || '(repo root)'; }).join(', ') : 'none yet') + '):\n' +
+        outside.map(function (f) { return '- ' + f; }).join('\n'));
+    }
+    const core = staged.filter(function (f) { return require('./coreFiles.js').isCore(f, top); });
+    if (!core.length) return null;
+    const under = function (f) { return f.replace(/^spirit\/run\//, ''); };
+    return desk('item.checks', { id: id }).then(function (got) {
+      const checks = Array.isArray(got.checks) ? got.checks : [];
+      const grants = checks.filter(function (c) { return c.kind === 'G'; });
+      const ungranted = core.filter(function (f) { return !grants.some(function (c) { return c.state === 'granted' && c.words.indexOf(under(f)) !== -1; }); });
+      if (!ungranted.length) return null;
+      const toAsk = ungranted.filter(function (f) { return !grants.some(function (c) { return c.words.indexOf(under(f)) !== -1; }); });
+      return toAsk.reduce(function (chain, f) {
+        return chain.then(function () { return desk('check.add', { id: id, kind: 'G', words: 'core grant: ' + under(f), test: '' }); });
+      }, Promise.resolve()).then(function () {
+        end(1, 'commitCheck: REFUSED (grant): core files Andy has not granted under ' + id + ' (a grant request is under the item):\n' +
+          ungranted.map(function (f) { return '- ' + f; }).join('\n'));
+      });
+    });
   });
 }
 
