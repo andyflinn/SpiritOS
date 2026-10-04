@@ -1,8 +1,8 @@
 {
- "change": 13645,
+ "change": 13649,
  "line": 8492,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T22:23:54.311Z",
+ "writtenAt": "2026-10-04T22:24:06.103Z",
  "items": [
   {
    "id": "goal/G4",
@@ -25,14 +25,18 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "ollama agent node",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-ubuntu",
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -9852,10 +9856,9 @@
    "id": "goal/G4.33",
    "title": "One measurement script for every agent: harness, capacity and packet figures written to agents/<agent>/ in the repo, README linking agents/*/",
    "goal": "goal/G4",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
