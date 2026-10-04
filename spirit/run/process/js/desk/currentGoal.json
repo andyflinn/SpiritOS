@@ -1,8 +1,8 @@
 {
- "change": 11172,
+ "change": 11220,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T15:41:39.024Z",
+ "writtenAt": "2026-10-04T15:46:16.355Z",
  "items": [
   {
    "id": "goal/G4",
@@ -31,15 +31,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 8,
+   "waiting": 7,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows",
-    "wsl-claude"
+    "claude-ubuntu",
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -7060,6 +7060,46 @@
      "by": "wsl-claude",
      "at": "2026-10-04T15:40:12.237Z",
      "text": "The profile red is in, checked on origin/master: a5b4bba4 (deskProfiles, 7 owed; a stub turns it 8 of 8). Ignore 67c02b68 above: a refused push wrote it, the flaw Andy just said to fix. It bites more now, because each of his presses pushes a goal-share commit that races ours.\nclaude-windows: profile.set and profile.get, the nick rules, and \"<nick>:\" taking his line; deskServer's VERBS list needs the two verbs."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:42:02.590Z",
+     "text": "claude-windows: the red is a5b4bba4 on origin; 67c02b68 is the false id from the refused push."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T15:43:58.193Z",
+     "text": "commit fc3ce55c83ece55aec65c89d3320ac4a7a372021: goal/G4.23: the agent profile in the desk — name and nick — and \"<nick>:\" taking his line (deskProfiles 8 of 8). Andy, 2026-10-04: \"so two more fields for repo-root-agents: name <agent-name> nick: <wc\n- spirit/run/process/js/desk/desk.js\n- spirit/test/deskServer.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T15:44:21.944Z",
+     "text": "Profiles built, fc3ce55c: the desk keeps a name and a nick per agent, set by you, readable by all. A line of yours starting \"cw:\" / \"wsl:\" / \"ubi:\" is taken by that agent alone. deskProfiles 8 of 8, every desk suite green.\nNot yet on screen: the two fields on each agent's pane line, which come with the page red next. Until then a node restart puts the verbs on your desk."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:44:50.543Z",
+     "text": "Reviewed fc3ce55c on WSL: deskProfiles 8 of 8; deskServer, deskScopes, deskRules, deskForAndy and deskGroupChat stay green. No findings. Still to come in G4.23: the two fields on the pane line, so Andy can set name and nick; that page red is mine."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:44:58.964Z",
+     "text": "taking: the page red for name and nick on the agent's pane line."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:45:49.113Z",
+     "text": "commit 602cecc2a7cc2f1f8c8969c27ac65e35a7ae8952: goal/G4.23: the page red for name and nick on the agent's pane line (deskScopePane 17 green, 3 owed). Andy, 2026-10-04: \"so two more fields for repo-root-agents: / name <agent-name> / nick: <wc | wsl \n- spirit/test/deskScopePane.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:45:58.278Z",
+     "text": "The page red for name and nick is in, checked on origin/master: 602cecc2, deskScopePane section 5, 3 owed. A stub turns it 20 of 20.\nclaude-windows: inputs data-profile=\"name\"/\"nick\" from profile.get, and data-profile-save sending profile.set {agent, name, nick}, then profile.get again."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T15:46:13.043Z",
+     "text": "taking: the build of name and nick on the pane line (602cecc2)."
     }
    ]
   },
@@ -7552,44 +7592,41 @@
    "id": "goal/G4.26",
    "title": "An offered Done lights his ❌ once every agent involved has claimed it",
    "goal": "goal/G4",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G4"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "asks": 2,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "AN OFFERED DONE ON HIS ❌ — opened from goal/G4.24 (Q1) and desk/G0.0, 2026-10-04.\n\nANDY, VERBATIM\n- (desk/G0.0) \"nothing in the the list tells me where my attentions is supposed to go\"; \"is there a way you can be encouraged to post asks from me so that it shows with ERROR icon in the list?\"; \"the mechanism is no good if you never use it.\"\n- (goal/G4.24, to \"Should an offered Go or Done count as waiting on you (❌), as a new item?\") \"only if all agents involved in that item consider it done.\"\n\nTODAY, IN THE TREE\n- facts.asks (desk.js) counts open G and Q checks, and open C checks while Done is offered; the List draws ICON.ERROR exactly while asks > 0 (goal/G4.20). An offered Done with no C check lights nothing: G4.24 sat at Done (2) with no ❌.\n- Done is offered on an item once one agent claims it (buttons()).\n\nDECIDED\n- An offered Done counts on his ❌ only once every agent involved in the item has claimed it.\n\nPROPOSED (wsl-claude, for his ruling; Q1, Q2 below)\n- \"Involved\": every agent that wrote under the item, a chat line, a box or a check, or took it. An agent that only read it is not involved.\n- The Go offered: not counted (his answer names Done only).\n\nOPEN: Q1 and Q2 under this item.\n",
-   "version": 1,
+   "box": "AN OFFERED DONE ON HIS ❌ — opened from goal/G4.24 (Q1) and desk/G0.0, 2026-10-04.\n\nANDY, VERBATIM\n- (desk/G0.0) \"nothing in the the list tells me where my attentions is supposed to go\"; \"is there a way you can be encouraged to post asks from me so that it shows with ERROR icon in the list?\"; \"the mechanism is no good if you never use it.\"\n- (goal/G4.24, to \"Should an offered Go or Done count as waiting on you (❌), as a new item?\") \"only if all agents involved in that item consider it done.\"\n\nTODAY, IN THE TREE\n- facts.asks (desk.js) counts open G and Q checks, and open C checks while Done is offered; the List draws ICON.ERROR exactly while asks > 0 (goal/G4.20). An offered Done with no C check lights nothing: G4.24 sat at Done (2) with no ❌.\n- Done is offered on an item once one agent claims it (buttons()).\n\nDECIDED\n- An offered Done counts on his ❌ only once every agent involved in the item has claimed it.\n\nDECIDED, his answers (2026-10-04)\n- \"Involved\" means the agents that took the item (item.take, line.take, box.take): Q1, \"took it.\"\n- An offered Go lights nothing; Done only: Q2, \"i see the go.\"\n\nOPEN: his Go.\n",
+   "version": 2,
    "checks": [
     {
      "number": "Q1",
      "kind": "Q",
      "words": "Who is \"involved\" in an item: every agent that wrote under it (a line, the box, a check) or took it? (wsl-claude)",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:42:29.953Z"
     },
     {
      "number": "Q2",
      "kind": "Q",
      "words": "An offered Go: should it light your ❌ too, or Done only? (wsl-claude)",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:42:31.902Z"
     }
    ],
    "chat": [
@@ -7597,6 +7634,11 @@
      "by": "andy",
      "at": "2026-10-04T15:41:10.261Z",
      "text": "Q1: Who is \"involved\" in an item: every agent that wrote under it (a line, the box, a check) or took it? (wsl-claude)\n\ntook it.\n\nQ2: An offered Go: should it light your ❌ too, or Done only? (wsl-claude)\n\ni see the go.\n\ni don't know if i can press any go that see and approve of..."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:42:37.648Z",
+     "text": "Both recorded in the box: involved means the agents that took the item, and only an offered Done lights your ❌, not a Go.\nOn your last line: any Go you see is yours to press once you agree with the box. Nothing else is needed, and a Go is how work starts."
     }
    ]
   },
@@ -7619,13 +7661,29 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
-   "chat": []
+   "box": "A COMMIT IS WRITTEN IN DESK ONLY ONCE GITHUB HOLDS IT — the flaw in goal/G4.19 issue 6, opened from G4.19's Q1, 2026-10-04.\n\nANDY, VERBATIM\n- (G4.19, to Q1 \"Fix it so the line is written only once GitHub holds the commit, as a new item?\") \"if that's what's needed. do it.\"\n\nTODAY, IN THE TREE\n- commitCheck.js's pre-push hook writes each pending commit's line under its item, then git pushes. A push the remote refuses (someone pushed first) has already left its line: 9632c2ff and 67c02b68 today, neither on GitHub. The commit, rebased and pushed again under a new id, is then never written, since its pending entry is gone.\n- It happens more now: each of his presses pushes a goal-share commit (G4.21), which races the agents' pushes.\n\nPROPOSED (wsl-claude, for his ruling)\n- The pre-push hook writes nothing itself. It starts a detached child and returns; the child waits (some seconds) until the remote holds the pushed commit (git ls-remote), then writes its line with the id GitHub holds. A refused push never shows up, so nothing is written and the commit stays pending for the next push.\n- claude-windows's alternative: write at the next push the pending commits the remote already holds; exact, but one push late.\n\nOPEN: his Go.\n",
+   "version": 1,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Go on G4.27 (a commit line only once GitHub holds the commit), with the detached-helper shape? (wsl-claude)",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    }
+   ],
+   "chat": [
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T15:42:06.073Z",
+     "text": "G4.27 is open for your \"do it\": a commit gets its line in Desk only once GitHub holds it. The box names my shape (a detached helper confirms the push, then writes) and claude-windows's alternative. Your Go starts the red."
+    }
+   ]
   }
  ]
 }
