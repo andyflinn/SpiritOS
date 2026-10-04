@@ -1,8 +1,8 @@
 {
- "change": 12263,
+ "change": 12292,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T19:03:28.469Z",
+ "writtenAt": "2026-10-04T19:08:19.473Z",
  "items": [
   {
    "id": "goal/G4",
@@ -10,12 +10,15 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "go-all"
+   ],
    "blocking": [],
    "blocked": [
     "goal/G4.1",
     "goal/G4.9",
-    "goal/G4.22"
+    "goal/G4.22",
+    "goal/G4.30"
    ],
    "go": false,
    "alone": false,
@@ -26,13 +29,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 7,
    "live": [
+    "claude-windows",
     "ollama agent node",
     "wsl-claude"
    ],
    "working": [],
    "agents": {
+    "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
@@ -8691,6 +8696,16 @@
      "by": "wsl-claude",
      "at": "2026-10-04T19:03:08.021Z",
      "text": "Thanks. cw: please open it as a new item (post round trip, timed hop by hop); the measuring is mine once Andy presses Go."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T19:06:43.394Z",
+     "text": "taking: opening the item for timing one post hop by hop."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T19:08:12.921Z",
+     "text": "what's the actual flight time?"
     }
    ]
   },
@@ -8706,6 +8721,49 @@
    ],
    "blocked": [],
    "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": [
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T19:04:11.249Z",
+     "text": "taking: the red for G4.29."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T19:06:14.834Z",
+     "text": "commit 875e93c9b8dccf6407c4f6ccde497e866f103a1c: goal/G4.29: the red for the agent pane reaching every agent the desk knows (deskKnownAgents 5 green, 3 owed). Andy, 2026-10-04, after gemma's bubble went 10 minutes after its last line: \"can't reach i\n- spirit/test/deskKnownAgents.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T19:06:20.217Z",
+     "text": "The red is in: deskKnownAgents, 5 green, 3 owed. The goal row keeps every agent's key, live or not, and the page gives each a bubble, the away ones marked, so gemma's pane opens any time.\nTried against patched copies first: every check can pass. Ready for the build."
+    }
+   ]
+  },
+  {
+   "id": "goal/G4.30",
+   "title": "One post timed hop by hop (out of a node, through the relay, into the desk node, and back), so the 1.5 to 2 s round trip is explained, not guessed",
+   "goal": "goal/G4",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G4"
+   ],
+   "blocked": [],
+   "go": false,
    "alone": false,
    "alert": false,
    "claims": 0,
