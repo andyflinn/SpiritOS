@@ -1,8 +1,8 @@
 {
- "change": 11940,
+ "change": 11946,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T17:36:20.903Z",
+ "writtenAt": "2026-10-04T17:36:52.238Z",
  "items": [
   {
    "id": "goal/G4",
@@ -10,9 +10,7 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [
-    "go-all"
-   ],
+   "buttons": [],
    "blocking": [],
    "blocked": [
     "goal/G4.1",
@@ -28,14 +26,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
+   "waiting": 4,
    "live": [
     "claude-windows",
     "ollama agent node",
     "wsl-claude"
    ],
    "working": [
-    "ollama agent node"
+    "ollama agent node",
+    "wsl-claude"
    ],
    "agents": {
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -6410,7 +6409,7 @@
    "alert": false,
    "claims": 1,
    "boxTaken": "",
-   "asks": 3,
+   "asks": 2,
    "half": false,
    "full": false,
    "box": "ONBOARDING TESTED WITH A NON-CLAUDE AGENT — opened from goal/G4.21's chat, 2026-10-04.\n\nANDY, VERBATIM (under goal/G4.21)\n- \"also: i have a defunct ollama / Unsloth installation. (this is not about unsloth) I want a subitem to be: fix my ollama installation, ie, model-dir, CUDA device setup, etc.. I already started a SpiritOS clone in D:/SpiritOS-agent-ollama, and we test agent-onboarding with that installation. Since I'm no expert in these things that will require your help. It also may need the deskServer to have job-designations for agents, for example the ollama agent may be assigned a scope, like spirit/run/shell/ticTacToe/\"\n- \"i still want the onboarding tested with a non-claude agent, ie ollama, becaue that's a truer test that fitting the design to claude only. claude-code may be required for ollama onboarding. do i see this correctly.\"\n- \"there are much smaller models that are tool capable. Unsloth showed me some, but they download to some unkown spot instead of my D:/models/ollama folder... Im sure there's toolable models in the 14b range....\"; \"so pointing ollama to my correct model folder we'll easily find models on huggingface that fit the bill\"; \"and the newer gemmas have great reviews\"\n- \"can you fix those configurations from here?\"; \"go. for these ollama/Unsloth/huggingface fixes.\"\n- \"also: Unsloth seems to still use my rtx 4000 card as well, causing glitches on my desktop.\"\n- \"i did my first locally generated AI picture yesterday. so i know i should be able to do tagging and visual things locally.\"\n- \"so does the ollama tests for onboarding get a separate item or does it go in this box?\"; \"G4.22 then\"\n\nDECIDED\n- The WSL Ollama goes. Andy, 2026-10-04: \"yes. i thing wsl, you should remove ollama from your system.\" It is a systemd service that starts at every WSL boot and holds 127.0.0.1:11434 through wslrelay, so Windows Ollama loses its port; wsl-claude removes it (needs his sudo).\n- The model for the onboarding test is gemma4:12b (7 GB, calls tools, fits the 5060 Ti). Andy, 2026-10-04: \"the gemma will be used for onboarding tests\"\n- An open agent program drives it, not Claude Code, so neither the loop nor the model is Claude. Andy, 2026-10-04: \"recommendation accepted.\", then, asked which: \"opencode\". Onboarding means running scripts, git and deskEar in a shell, which opencode does as an agent loop.\n\nDONE ALREADY (under his go for the fixes)\n- HF_HOME=D:\\models\\huggingface set for his user; the 43.7 GB Hugging Face cache moved there from C:\\Users\\Andre\\.cache\\huggingface (robocopy, 55 files, finished 12:31). C:\\Users\\Andre\\.unsloth (9.7 GB, Unsloth's own tools) stays.\n- The WSL Ollama removed (wsl-claude, his sudo). Windows Ollama (D:\\ollama) holds 11434 again, updated to 0.35.1 after the reboot, still reading D:\\models\\ollama on the 5060 Ti only.\n- D:/SpiritOS-agent-ollama brought up to master by Andy (\"ollama repo up to date.\"), 8caabfd4.\n\nFOUND, OPEN\n- The models in D:\\models\\ollama: gemma4:12b (7 GB, tools), gpt-oss:20b (12.8 GB, tools), qwen3-coder:30b and gpt-oss:120b (too large for 16 GB), deepseek-coder-v2 (no tools).\n- Unsloth on the RTX 4000: its llama.cpp is a CUDA build; not yet pinned like Ollama is.\n\nRECOMMENDED, NOT YET RULED\n- Agent scopes in the desk (an agent bound to a folder, enforced by the commit check): its own item.",
@@ -6439,18 +6438,18 @@
      "kind": "Q",
      "words": "Open an item for a loop script (deskEar wait -> opencode run --session -> answer -> wait) so gemma stays on Desk, with your Go? (claude-windows)",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-04T17:36:45.580Z"
     },
     {
      "number": "Q3",
      "kind": "Q",
      "words": "A small script outside gemma that loops deskEar on 11111 and hands each line to one \"opencode run\", as a new item? (wsl-claude)",
      "test": "",
-     "state": "passed",
-     "by": "wsl-claude",
-     "at": "2026-10-04T17:34:47.467Z"
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-04T17:36:50.113Z"
     }
    ],
    "chat": [
@@ -8293,17 +8292,14 @@
    "id": "goal/G4.28",
    "title": "gemma's Desk loop: a script waits on deskEar and hands each line to gemma with opencode run --session, so a model with no harness stays on Desk",
    "goal": "goal/G4",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G4.22"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -8311,10 +8307,16 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "GEMMA'S DESK LOOP: A SCRIPT KEEPS A MODEL WITH NO HARNESS ON DESK\n\nANDY, 2026-10-04, VERBATIM (Team chat)\n- \"how do we git it to stick to that loop that you are in when working over desk?\"\n- To \"New code, so it needs an item: open one, with your Go?\": \"yes. open one\"\n\nWHY\n- gemma under opencode reads and writes Desk through deskEar 11111, but nothing wakes it when a line comes, and opencode's shell tool stops any command after 120 s (seen twice on 2026-10-04). A 12b model told to loop drifts off it.\n\nSHAPE (claude-windows, wsl-claude proposed the same)\n- One small script in process/js/desk: waits on deskEar <port>; when lines come, hands them to the model with opencode run --session <one session>, so it keeps its memory; the model answers in Desk with deskEar chat.add; the script waits again. The script does the waiting, so the 120 s limit never applies.\n- Nothing in gemma's model or opencode changes.\n\nOPEN\n- Its name and arguments; whether the session id is given or found; his Go.",
+   "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T17:36:40.020Z",
+     "text": "Opened goal/G4.28, gemma's Desk loop: a script does the waiting and hands each Desk line to gemma, so it stays on Desk without a harness. It blocks G4.22, where the need showed. Your Go starts its red."
+    }
+   ]
   }
  ]
 }
