@@ -1,8 +1,8 @@
 {
- "change": 11751,
+ "change": 11940,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T16:56:32.154Z",
+ "writtenAt": "2026-10-04T17:36:20.903Z",
  "items": [
   {
    "id": "goal/G4",
@@ -10,7 +10,9 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "go-all"
+   ],
    "blocking": [],
    "blocked": [
     "goal/G4.1",
@@ -26,16 +28,18 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 6,
    "live": [
-    "claude-ubuntu",
     "claude-windows",
+    "ollama agent node",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "ollama agent node"
+   ],
    "agents": {
-    "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
+    "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
    "box": "DESIGN GOAL. Andy, 2026-10-03, verbatim:\n\"Do you think we should design the chatClerver? (Chat-ClientServer?)\"\n\"this time, we design the faceless chatClerver only, with no regard to any user interface design. the chatClerver is an appServer and absolutely p2p. We have learned a few things now, and i think we're ready to tackle the real thing. the UI is out of scope, and might be called chatter (similar UI model to my desk, but a surface designed from scratch.\"\n\"please initialize the goal, based on our recent messages\"\n\nSCOPE WIDENED (Andy, 2026-10-03, verbatim, design mode on again): \"i didn't switch goals. i included UI in the scope now\" — chatter, the UI over the chatClerver, is now in this goal, designed one item at a time.\nSCOPE: a design, one item at a time, each argued and agreed before the next. Faceless: an appServer under process/, on every node that takes part. Absolutely p2p: no server in the middle. UI out of scope (chatter, later). No code until a build item names it.\n\nTHE DESIGN, SETTLED 2026-10-03 (each item holds his words and the decided list)\n- G4.1 the record, p2p: every party keeps every line of its own chats; a line named by writer key and seq, the writer proven by the sealed packet, ordered by the writer's clock; two copies are equals, a difference a gap; admittance a grant on the write verb; references, never objects.\n- G4.5 the record defined: per peer the highest seq received and sent; own counter = highest sent + 1; no edit, no withdrawal; a chat id column, for a pair the two keys; receivedAt on received lines; re names the line answered, the caller fills it.\n- G4.8 memory.db, relay-state/process/chatClerver/: the lines table (sent or received, peer id, seq, at, receivedAt, re, text, refused), the peers table (key, highest sent and received, born at; the name from the contact book), the references table deferred; never stored: an object, a line from an unadmitted key, a chat this node is not in.\n- G4.6 initiation: a peer is a key; the first line births the record and is also the grant to that key; a refused line is kept as proof and resent once admitted; a line to a blocked key is refused by the chatClerver (two-way inside the app; the node's block is the one truth).\n- G4.7 acceptance: the stranger's refused packet leaves a held row in the book; the owner's first line to a held key is the acceptance (contact.accept, grant, post; one press, no arm); a blocked key is never offered; unblocking oos.\n- G4.2 the lines: one write verb a granted key may call with one line, one line one packet; one bounded read, newest first, more, no paging; every kept line published, a reply as two publishes, the answered line first; a page places lines by their data; the gap ask deferred.\n- G4.3 the peer list: peers.search over the records, newest line first; a row is the key, the newest line's time, direction and seq, the count of the peer's lines newer than your last; no blocked key; a row only once a line crossed.\n- G4.4 the objects: deferred, too many unknowns; what G4.1 decided about references stands.\n\nDEFERRED, HIS: the gap ask (G4.2), the objects (G4.4), the references table (G4.8), groups, unblocking, a search-list shell element, the node-level two-way block (a musing, core).\nNEXT: the verbs and their shapes are named in the items; a build goal names the chatClerver when he opens it. No turn named here.",
@@ -6392,22 +6396,63 @@
    "goal": "goal/G4",
    "status": "running",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G4"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G4.28"
+   ],
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "asks": 0,
+   "asks": 3,
    "half": false,
    "full": false,
    "box": "ONBOARDING TESTED WITH A NON-CLAUDE AGENT — opened from goal/G4.21's chat, 2026-10-04.\n\nANDY, VERBATIM (under goal/G4.21)\n- \"also: i have a defunct ollama / Unsloth installation. (this is not about unsloth) I want a subitem to be: fix my ollama installation, ie, model-dir, CUDA device setup, etc.. I already started a SpiritOS clone in D:/SpiritOS-agent-ollama, and we test agent-onboarding with that installation. Since I'm no expert in these things that will require your help. It also may need the deskServer to have job-designations for agents, for example the ollama agent may be assigned a scope, like spirit/run/shell/ticTacToe/\"\n- \"i still want the onboarding tested with a non-claude agent, ie ollama, becaue that's a truer test that fitting the design to claude only. claude-code may be required for ollama onboarding. do i see this correctly.\"\n- \"there are much smaller models that are tool capable. Unsloth showed me some, but they download to some unkown spot instead of my D:/models/ollama folder... Im sure there's toolable models in the 14b range....\"; \"so pointing ollama to my correct model folder we'll easily find models on huggingface that fit the bill\"; \"and the newer gemmas have great reviews\"\n- \"can you fix those configurations from here?\"; \"go. for these ollama/Unsloth/huggingface fixes.\"\n- \"also: Unsloth seems to still use my rtx 4000 card as well, causing glitches on my desktop.\"\n- \"i did my first locally generated AI picture yesterday. so i know i should be able to do tagging and visual things locally.\"\n- \"so does the ollama tests for onboarding get a separate item or does it go in this box?\"; \"G4.22 then\"\n\nDECIDED\n- The WSL Ollama goes. Andy, 2026-10-04: \"yes. i thing wsl, you should remove ollama from your system.\" It is a systemd service that starts at every WSL boot and holds 127.0.0.1:11434 through wslrelay, so Windows Ollama loses its port; wsl-claude removes it (needs his sudo).\n- The model for the onboarding test is gemma4:12b (7 GB, calls tools, fits the 5060 Ti). Andy, 2026-10-04: \"the gemma will be used for onboarding tests\"\n- An open agent program drives it, not Claude Code, so neither the loop nor the model is Claude. Andy, 2026-10-04: \"recommendation accepted.\", then, asked which: \"opencode\". Onboarding means running scripts, git and deskEar in a shell, which opencode does as an agent loop.\n\nDONE ALREADY (under his go for the fixes)\n- HF_HOME=D:\\models\\huggingface set for his user; the 43.7 GB Hugging Face cache moved there from C:\\Users\\Andre\\.cache\\huggingface (robocopy, 55 files, finished 12:31). C:\\Users\\Andre\\.unsloth (9.7 GB, Unsloth's own tools) stays.\n- The WSL Ollama removed (wsl-claude, his sudo). Windows Ollama (D:\\ollama) holds 11434 again, updated to 0.35.1 after the reboot, still reading D:\\models\\ollama on the 5060 Ti only.\n- D:/SpiritOS-agent-ollama brought up to master by Andy (\"ollama repo up to date.\"), 8caabfd4.\n\nFOUND, OPEN\n- The models in D:\\models\\ollama: gemma4:12b (7 GB, tools), gpt-oss:20b (12.8 GB, tools), qwen3-coder:30b and gpt-oss:120b (too large for 16 GB), deepseek-coder-v2 (no tools).\n- Unsloth on the RTX 4000: its llama.cpp is a CUDA build; not yet pinned like Ollama is.\n\nRECOMMENDED, NOT YET RULED\n- Agent scopes in the desk (an agent bound to a folder, enforced by the commit check): its own item.",
    "version": 6,
-   "checks": [],
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "desk grant for the ollama agent node, MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0= (jobs.authGrant path desk on your node)",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Let the agent pane open for every agent the desk knows, not only the live ones, as a new item? Today gemma drops out of reach 10 minutes after its last line. (wsl-claude)",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Open an item for a loop script (deskEar wait -> opencode run --session -> answer -> wait) so gemma stays on Desk, with your Go? (claude-windows)",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "A small script outside gemma that loops deskEar on 11111 and hands each line to one \"opencode run\", as a new item? (wsl-claude)",
+     "test": "",
+     "state": "passed",
+     "by": "wsl-claude",
+     "at": "2026-10-04T17:34:47.467Z"
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
@@ -6498,6 +6543,41 @@
      "by": "wsl-claude",
      "at": "2026-10-04T16:32:39.736Z",
      "text": "Not yet. G4.22 is the test run itself, and it runs G4.17's onboarding script, whose red is in but which is not built yet.\nPress Go here once G4.17 is done; opencode's install already has your yes (Q8)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T16:57:04.125Z",
+     "text": "taking: the G4.22 run: gemma4:12b, through opencode in D:\\SpiritOS-agent-ollama, onboarding itself onto node 11111."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T16:58:43.234Z",
+     "text": "First run, done by gemma4:12b itself through opencode: it read AGENT_ONBOARDING.md, ran onboard.js 11111 ollama:none, and the script stopped where it should: seat kept, your node a contact, deskClient on, hooks installed, then \"not-granted\".\n- Your step: grant the ollama agent node (key ...q9ki0=) the path desk; the G check on this item. Then gemma runs it again.\n- Seen: gemma reported \"exit code 0\" though the script exits 1 there; it reads the words, not the code."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T17:02:45.897Z",
+     "text": "taking: gemma's second onboarding run."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T17:06:54.478Z",
+     "text": "commit fbee35d9c20615cd34643c09140b1103c295a94a: goal/G4.22: onboard.js reads the current goal's row for the agents to block, not the desk's whole history (agentOnboard 19 of 19). Found on gemma's second real run: paging thousands of change records \n- spirit/run/process/js/desk/onboard.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T17:07:31.384Z",
+     "text": "Checked on WSL at fbee35d9: agentOnboard 19 of 19. The change is sound: an agent missing from the goal row is still refused by the listener (unblocked) once it writes again."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T17:08:18.485Z",
+     "text": "Onboarding works with a non-Claude agent: gemma4:12b, through opencode, ran onboard.js itself and it ended \"onboard: joined\"; 3 other agents blocked on its node, and its node reads Desk (item.get of this item through port 11111).\n- The real run found one flaw: reading the desk's whole history over the relay took minutes. Fixed in fbee35d9 (the goal row's live agents instead); agentOnboard 19 of 19 here and on WSL.\n- gemma misreads exit codes (it called a 1 a 0), so its words must carry the result, as onboard.js's do.\n- spirit/run/process/js/desk/onboard.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T17:34:12.694Z",
+     "text": "On G4.22, Q2 (mine) and Q3 (wsl-claude's) ask the same thing, the loop script; one answer covers both."
     }
    ]
   },
@@ -8208,6 +8288,33 @@
      "text": "Reviewed a1f8b805 on WSL: deskRules 23 of 23. Sound: a check per pushed ref, a lock around the pending file, a job file in .git, and up to 60 s of waiting. One edge, no blocker: if somebody pushes again before the helper looks, the tip is an object this clone lacks, so the line waits for its next push instead of being lost. Claimed."
     }
    ]
+  },
+  {
+   "id": "goal/G4.28",
+   "title": "gemma's Desk loop: a script waits on deskEar and hands each line to gemma with opencode run --session, so a model with no harness stays on Desk",
+   "goal": "goal/G4",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G4.22"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   }
  ]
 }
