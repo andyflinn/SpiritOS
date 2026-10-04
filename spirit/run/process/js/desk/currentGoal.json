@@ -1,8 +1,8 @@
 {
- "change": 12549,
+ "change": 12552,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T19:54:42.414Z",
+ "writtenAt": "2026-10-04T19:54:46.168Z",
  "items": [
   {
    "id": "goal/G4",
@@ -26,13 +26,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 6,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows"
+    "claude-windows",
+    "wsl-claude"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -9003,10 +9004,9 @@
    "id": "goal/G4.31",
    "title": "Opening a node's event stream asks the traffic table only for undelivered arrivals, not the whole log (about 1 s per desk ask today); the log stays permanent",
    "goal": "goal/G4",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -9117,6 +9117,11 @@
      "by": "andy",
      "at": "2026-10-04T19:54:32.281Z",
      "text": "this affected my shell-load, everything, chat is now very responsive...."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T19:54:45.565Z",
+     "text": "That fits: your shell opens the same event stream when it loads, so it paid the same second, and so did every app ask through kernel.peerPost."
     }
    ]
   }
