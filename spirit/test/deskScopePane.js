@@ -23,6 +23,15 @@
 //      the picked path}; a click on data-scope-remove sends scope.set without that folder. The pane redraws from the
 //      answer of a new scope.get, never from what it guessed.
 //
+// THE SELECTOR AND ITS ADD BUTTON (Andy, 2026-10-04, desk/G0.0: "one accidental click and a folder is granted, just
+//   like that, and the picker takes more than a page.... ?", "make it a selector, with an add button next to it."):
+//   4  createPathSelector's default face is a dropdown, as contactSelector's: a button showing the chosen path (rows
+//      hidden until it is pressed); a pick sets root.value, fires change and folds the rows again. options.face
+//      'pane' keeps the rows shown, as before. The desk's pane uses the dropdown face.
+//   5  A pick only selects: no scope.set. Beside the selector, a button data-scope-add-picked adds the chosen folder
+//      ('spirit/run/' + root.value) through scope.set; with nothing chosen it sends nothing.
+//   6  The repo root button (data-scope-root) is an arm-button reading "grant-repo-root" ("and give me an arm-button
+//      that says: [grant-repo-root]"): the first click arms it, the second adds ''.
 // LEFT OPEN, not asserted: picking the repo root itself (the tree holds spirit/run only); styling; the pane for an
 // agent that is not live.
 
@@ -97,7 +106,7 @@ test.startTest('goal/G4.23: the scope pane — agent tabs, and the path selector
   }
   if (typeof make !== 'function') test.fail(OWED + 'no spirit/run/shell/js/pathSelector.js adding window.spiritElements.createPathSelector');
   else {
-    const root = make({ files: function () { return TREE; }, foldersOnly: true });
+    const root = make({ files: function () { return TREE; }, foldersOnly: true, face: 'pane' });
     await settled();
     const paths = rowsOf(root).map(function (r) { return r.getAttribute('data-path'); }).sort();
     if (JSON.stringify(paths) === JSON.stringify(['js/', 'shell/', 'shell/chess/', 'shell/ticTacToe/'])) test.check('foldersOnly: one row per folder, its path with a trailing \'/\', no files');
@@ -115,10 +124,23 @@ test.startTest('goal/G4.23: the scope pane — agent tabs, and the path selector
     else test.fail(OWED + 'after the click, value ' + short(root.value) + ', changes ' + changes);
     const big = [];
     for (let i = 0; i < 120; i++) big.push({ relativePath: 'many/f' + i, kind: 'folder' });
-    const wide = make({ files: function () { return big; }, foldersOnly: true });
+    const wide = make({ files: function () { return big; }, foldersOnly: true, face: 'pane' });
     await settled();
     if (rowsOf(wide).length > 0 && rowsOf(wide).length <= 50) test.check('a tree of 120 folders shows ' + rowsOf(wide).length + ' rows, never all');
     else test.fail(OWED + 'a tree of 120 folders showed ' + rowsOf(wide).length + ' rows');
+    // 4. the default face: a dropdown, rows folded until its button is pressed, folded again by a pick.
+    const drop = make({ files: function () { return TREE; }, foldersOnly: true });
+    await settled();
+    const button = all(drop).filter(function (n) { return n.tagName === 'BUTTON'; })[0];
+    const folded = rowsOf(drop).length;
+    if (button) { fire(button, 'click'); await settled(); }
+    const opened = rowsOf(drop).length;
+    let dropChanges = 0;
+    drop.addEventListener('change', function () { dropChanges += 1; });
+    const dropRow = rowsOf(drop).filter(function (n) { return n.getAttribute('data-path') === 'shell/chess/'; })[0];
+    if (dropRow) { fire(dropRow, 'click'); await settled(); }
+    if (button && folded === 0 && opened === 4 && drop.value === 'shell/chess/' && dropChanges === 1 && rowsOf(drop).length === 0) test.check('the default face is a dropdown: rows folded, opened by its button, folded again by a pick that sets value');
+    else test.fail(OWED + 'dropdown face: button ' + !!button + ', rows folded ' + folded + ', opened ' + opened + ', value ' + short(drop.value) + ', changes ' + dropChanges + ', rows after ' + rowsOf(drop).length);
   }
 
   // ── 2-3. the desk page ──
@@ -173,15 +195,25 @@ async function thePage() {
   if (/data-scope-remove="spirit\/run\/shell\/chess\/"/.test(pane)) test.check('#desk-agent lists its folder with a remove button');
   else test.fail(OWED + '#desk-agent held ' + short(pane));
   const picker = pickers[pickers.length - 1];
-  if (picker && picker.options && picker.options.foldersOnly === true && picker.parentNode && picker.parentNode.id === 'desk-agent-picker') test.check('a path selector (foldersOnly) is mounted in #desk-agent-picker');
+  if (picker && picker.options && picker.options.foldersOnly === true && picker.options.face !== 'pane' && picker.parentNode && picker.parentNode.id === 'desk-agent-picker') test.check('a path selector (foldersOnly, the dropdown face) is mounted in #desk-agent-picker');
   else test.fail(OWED + 'path selectors made: ' + pickers.length + (picker ? ', options ' + short(picker.options) + ', in ' + short(picker.parentNode && picker.parentNode.id) : ''));
 
-  test.subHeading('3. a pick adds a folder, a remove takes one away, each through scope.set');
+  test.subHeading('3. a pick only selects; Add adds the folder; a remove takes one away, each through scope.set');
+  const slot = byId['desk-agent-picker'];
+  const addButton = function () { return all(slot || node('div')).filter(function (n) { return n.getAttribute && n.getAttribute('data-scope-add-picked') !== null; })[0]; };
+  if (addButton()) { fire(addButton(), 'click'); await settled(); }
+  const emptyAdd = asked.filter(function (a) { return a.verb === 'scope.set'; }).length;
+  if (addButton() && emptyAdd === 0) test.check('an Add button (data-scope-add-picked) stands beside the selector, and with nothing chosen it sends nothing');
+  else test.fail(OWED + 'Add button ' + !!addButton() + '; with nothing chosen it sent ' + emptyAdd + ' scope.set');
   if (picker) { picker.value = 'shell/ticTacToe/'; fire(picker, 'change'); await settled(); }
+  const afterPick = asked.filter(function (a) { return a.verb === 'scope.set'; }).length;
+  if (afterPick === 0) test.check('a pick alone sends no scope.set: one click grants nothing');
+  else test.fail(OWED + 'a pick alone sent ' + afterPick + ' scope.set');
+  if (addButton()) { fire(addButton(), 'click'); await settled(); }
   let sets = asked.filter(function (a) { return a.verb === 'scope.set'; });
   const added = sets[0] && sets[0].args;
-  if (added && added.agent === CW_KEY && JSON.stringify(added.folders) === JSON.stringify(['spirit/run/shell/chess/', 'spirit/run/shell/ticTacToe/'])) test.check('picking shell/ticTacToe/ sends scope.set with spirit/run/shell/ticTacToe/ added');
-  else test.fail(OWED + 'after the pick scope.set was ' + short(sets));
+  if (added && added.agent === CW_KEY && JSON.stringify(added.folders) === JSON.stringify(['spirit/run/shell/chess/', 'spirit/run/shell/ticTacToe/'])) test.check('Add then sends scope.set with spirit/run/shell/ticTacToe/ added');
+  else test.fail(OWED + 'after the pick and Add scope.set was ' + short(sets));
   // A change from INSIDE the picker (its search box fires one on blur after typing) is no pick (Andy, 2026-10-04: "who
   // keeps adding folder to ubuntu scope . root is enough"; claude-windows found the cause): no scope.set from it.
   if (picker) {
@@ -207,10 +239,19 @@ async function thePage() {
   else test.fail(OWED + 'after the remove scope.set was ' + short(sets));
   // THE REPO ROOT (Andy, 2026-10-04: "why can i not select root?"; claude-windows added it): the tree holds spirit/run
   // only, so a button beside the picker adds '' (the whole repo).
-  const rootButton = all(byId['desk-agent-picker']).filter(function (n) { return n.getAttribute && n.getAttribute('data-scope-root') !== null; })[0];
-  if (rootButton) { fire(rootButton, 'click'); await settled(); }
+  // AN ARM-BUTTON (Andy, 2026-10-04, desk/G0.0: "and give me an arm-button that says: [grant-repo-root]"): it reads
+  // grant-repo-root; the first click arms it and sends nothing, the second adds ''.
+  const rootButton = function () { return all(byId['desk-agent-picker']).filter(function (n) { return n.getAttribute && n.getAttribute('data-scope-root') !== null; })[0]; };
+  const rootSets = function () { return asked.filter(function (a) { return a.verb === 'scope.set'; }).length; };
+  const labelOk = rootButton() && /grant-repo-root/.test(String(rootButton().textContent));
+  const r0 = rootSets();
+  if (rootButton()) { fire(rootButton(), 'click'); await settled(); }
+  const armedOnly = rootSets() === r0;
+  if (rootButton()) { fire(rootButton(), 'click'); await settled(); }
   sets = asked.filter(function (a) { return a.verb === 'scope.set'; });
-  const rooted = sets[sets.length - 1] && sets[sets.length - 1].args;
-  if (rootButton && rooted && rooted.folders.indexOf('') !== -1) test.check('the repo root button adds \'\' to the scope');
-  else test.fail(OWED + 'repo root button ' + !!rootButton + '; last scope.set ' + short(rooted));
+  const rooted = sets.length > r0 && sets[sets.length - 1].args;
+  if (labelOk && armedOnly) test.check('the repo root button reads grant-repo-root, and its first click only arms it');
+  else test.fail(OWED + 'root button ' + !!rootButton() + ', label ' + short(rootButton() && rootButton().textContent) + ', first click sent ' + (armedOnly ? 'nothing' : 'a scope.set'));
+  if (rooted && rooted.folders.indexOf('') !== -1) test.check('the second click adds \'\' (the repo root) to the scope');
+  else test.fail(OWED + 'after two clicks the last scope.set was ' + short(rooted));
 }
