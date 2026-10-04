@@ -337,7 +337,7 @@ function walkState() {
 function blank(id, title, goalId) {
   return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '',
     went: false, go: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
-    alert: false, takenBy: '', boxTakenBy: '',
+    alert: false, takenBy: '', boxTakenBy: '', takers: Object.create(null),
     box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '' };
 }
 
@@ -404,17 +404,17 @@ function apply(s, r, b, item, goalOf) {
         const m = /^\s*([a-z0-9]{1,8})\s*:/i.exec(String(b.text));
         const key = m && Object.keys(s.profiles).filter(function (k) { return s.profiles[k].nick === m[1].toLowerCase(); })[0];
         const label = key && Object.keys(s.agentKey).filter(function (l) { return s.agentKey[l] === key; })[0];
-        if (label) { it.chat[it.chat.length - 1].taken = label; it.takenBy = label; }
+        if (label) { it.chat[it.chat.length - 1].taken = label; it.takenBy = label; it.takers[label] = true; }
       }
       // THE TAKER'S ANSWER FREES THE ITEM (goal/G2.2 note 2): after it, any agent may write again.
       if (it.takenBy && r.by === it.takenBy) it.takenBy = '';
       return;
     case 'item.rename': it.title = String(b.title); return;
     case 'item.status': it.status = String(b.word); return;
-    case 'item.take': it.with = r.by; return;
+    case 'item.take': it.with = r.by; it.takers[r.by] = true; return;
     // TAKING THE BOX (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
     // is red. cap also." The handler refuses a take while another stands, so what reaches here always lands.
-    case 'box.take': it.boxTakenBy = r.by; return;
+    case 'box.take': it.boxTakenBy = r.by; it.takers[r.by] = true; return;
     case 'press': press(s, it, String(b.what), r, goalOf); return;
     // THE LISTENER'S WORD (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
     // stops when the agent goes back to listening. the listening script can toggle those two?"
@@ -433,7 +433,7 @@ function apply(s, r, b, item, goalOf) {
     case 'line.take': {
       for (let i = it.chat.length - 1; i >= 0; i--) {
         if (it.chat[i].by !== 'andy') continue;
-        if (!it.chat[i].taken) { it.chat[i].taken = r.by; it.takenBy = r.by; }
+        if (!it.chat[i].taken) { it.chat[i].taken = r.by; it.takenBy = r.by; it.takers[r.by] = true; }
         return;
       }
       return;
@@ -532,11 +532,18 @@ function listed(s, it) {
 // WHAT WAITS ON HIM (goal/G4.20 points 10-11): open grants, open questions, and open checks of his while Done is
 // offered. Andy: "if those two things would match at all times, id know exactly where i need to navigate to."
 // The List's ICON.ERROR is drawn from this alone.
+// AN OFFERED DONE WAITS ON HIM ONCE EVERY TAKER HAS CLAIMED IT (goal/G4.26). Andy: "only if all agents involved in
+// that item consider it done.", involved being those that "took it", and "i see the go." (an offered Go counts
+// nothing). The takers are those that wrote item.take, line.take (his "<nick>:" take included) or box.take; an item
+// nobody took counts from its first claim.
 function asksOf(s, it) {
   const doneOffered = buttons(s, it).indexOf('done') !== -1;
-  return it.checks.filter(function (c) {
+  const open = it.checks.filter(function (c) {
     return c.state === 'open' && (c.kind === 'G' || c.kind === 'Q' || (c.kind === 'C' && doneOffered));
   }).length;
+  const allClaimed = !it.goal && doneOffered && Object.keys(it.claims).length > 0 &&
+    Object.keys(it.takers).every(function (t) { return it.claims[t]; });
+  return open + (allClaimed ? 1 : 0);
 }
 
 function facts(s, it) {

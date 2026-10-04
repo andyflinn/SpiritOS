@@ -226,7 +226,9 @@ test.startTest('goal/G4.20: Desk for Andy');
     const cOpen = (await factsOf('g/G1.2')).asks;
     await call('check.set', { id: 'g/G1.2', check: 'C1', state: 'passed' }, ANDY);
     const cPassed = (await factsOf('g/G1.2')).asks;
-    if (cOpen === 1 && cPassed === 0) test.check('an open C while Done is offered counts in asks; passed, it does not');
+    // Nobody took g/G1.2 and both claimed it, so its offered Done counts one too (goal/G4.26: "only if all agents
+    // involved in that item consider it done.").
+    if (cOpen === 2 && cPassed === 1) test.check('an open C while Done is offered counts in asks; passed, it does not (the claimed Done counts 1)');
     else test.fail(OWED + 'asks with C1 open / passed under Done: ' + cOpen + ' / ' + cPassed);
 
     test.subHeading('2. Reopen on a closed item takes back Done and Close, keeps his Go');
