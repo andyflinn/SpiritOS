@@ -165,6 +165,10 @@ function createQueue(opts) {
   var backedOffUntil = Object.create(null);
   // and how long the last wait was, so a repeated timeout can double it.
   var lastWait = Object.create(null);
+  // Each pair's last busy wait (goal/G4.30): 250, 500, 1000, 2000 ms.
+  var busyStep = Object.create(null);
+  var BUSY_STEP_MS = 250;
+  var BUSY_STEP_MAX_MS = 2000;
 
   function pairKey(relayUrl, toKey) {
     return String(relayUrl) + '\u0000' + String(toKey);
@@ -325,16 +329,23 @@ function createQueue(opts) {
     return drop(seq);
   }
 
-  // A TARGET WAS BUSY. The relay said so and said for how long, so this
-  // does NOT grow: contention is not evidence about the peer, and the
-  // relay's own `retryAfterMs` is exact — the route expires at a known
-  // time whatever happens.
+  // A TARGET WAS BUSY: TRIED AGAIN SOON, ADAPTIVELY (goal/G4.30). The
+  // relay's `retryAfterMs` is when the other request's route would EXPIRE
+  // (router.js msUntilFreeFor, up to 5 s), while that request is usually
+  // answered in 0.2-0.5 s; sleeping the whole quote made every desk ask
+  // that met Andy's node busy wait ~5 s. Andy, 2026-10-04, to "first retry
+  // after 250 ms, then 500, 1000, 2000, never longer than the relay's own
+  // quote": "agreed." So the wait grows per pair, 250 to 2000, capped by the
+  // quote, and starts again at 250 once the target is reached.
   function busy(seq, retryAfterMs) {
     var it = find(seq);
     if (!it) return false;
     stopped(seq);
-    var wait = retryAfterMs > 0 ? retryAfterMs : backoffStart;
-    backedOffUntil[pairKey(it.relayUrl, it.toKey)] = nowFn() + wait;
+    var k = pairKey(it.relayUrl, it.toKey);
+    var step = busyStep[k] ? Math.min(busyStep[k] * 2, BUSY_STEP_MAX_MS) : BUSY_STEP_MS;
+    busyStep[k] = step;
+    var wait = retryAfterMs > 0 ? Math.min(step, retryAfterMs) : backoffStart;
+    backedOffUntil[k] = nowFn() + wait;
     // Deliberately NOT recorded in lastWait: a busy refusal must not
     // lengthen the wait a later timeout starts from.
     return true;
@@ -359,6 +370,7 @@ function createQueue(opts) {
     var k = pairKey(relayUrl, toKey);
     delete backedOffUntil[k];
     delete lastWait[k];
+    delete busyStep[k];
   }
 
   // Entries whose whole patience is spent. Returned rather than resolved,

@@ -161,9 +161,10 @@ test.subHeading('A refusal and a silence are different evidence');
   const c = clock();
   const q = pq.createQueue({ now: c.now, backoffStartMs: 1000 });
 
-  // BUSY: the relay said the target is occupied and said for how long.
-  // Contention is not evidence about the peer, so this honours the number
-  // and does not grow.
+  // BUSY: the relay said the target is occupied. Since goal/G4.30 the wait
+  // starts at 250 ms and grows (250, 500, 1000, 2000), never past the
+  // relay's quote (Andy: "agreed."); postQueueBusyAdaptive.js holds the
+  // steps. Here: 250, then the quote of 400 caps the 500 step.
   const b = q.add({ relayUrl: 'R1', toKey: 'popular', patienceMs: 999999 });
   q.started(b); q.busy(b, 400);
   const firstWait = q.backoffFor('R1', 'popular');
@@ -172,8 +173,8 @@ test.subHeading('A refusal and a silence are different evidence');
   q.started(q.eligible().seq); q.busy(b, 400);
   const secondWait = q.backoffFor('R1', 'popular');
 
-  if (firstWait === 400 && secondWait === 400) {
-    test.check('busy honours the relay’s retryAfterMs and does not grow — contention is not a fault');
+  if (firstWait === 250 && secondWait === 400) {
+    test.check('busy starts at 250 ms and never waits past the relay’s retryAfterMs (goal/G4.30)');
   } else {
     test.fail('busy waits: ' + firstWait + ' then ' + secondWait);
   }
