@@ -60,6 +60,36 @@ function run(file, argv) {
 }
 function ear(verb, body) { return run(process.execPath, [EAR, String(port), verb, JSON.stringify(body)]); }
 
+// THE ECHO (Andy: "it inspires more confidence if i seeing it sputtering on its terminal, that's what i watch with
+// you"). The model's run, with each event shown in this window as it comes: a tool call by its tool and input, a text
+// by its words. Only this window sees it; Desk gets the final answer alone. Resolves to {code, out} as run does.
+function shown(e) {
+  const p = (e && e.part) || {};
+  if (e.type === 'tool_use') return '  [' + (p.tool || 'tool') + '] ' + JSON.stringify((p.state && p.state.input) || {}).slice(0, 160);
+  if (e.type === 'text' && p.text) return '  ' + String(p.text).replace(/\s+/g, ' ').slice(0, 300);
+  return '';
+}
+function runEchoed(file, argv) {
+  return new Promise(function (resolve) {
+    let out = '';
+    let partial = '';
+    const kid = spawn(file, argv, { stdio: ['ignore', 'pipe', 'inherit'], windowsHide: true });
+    kid.stdout.on('data', function (b) {
+      out += b;
+      const lines = (partial + b).split('\n');
+      partial = lines.pop();
+      lines.forEach(function (l) {
+        let e = null;
+        try { e = JSON.parse(l); } catch (x) { return; }
+        const s = shown(e);
+        if (s) console.error(s);
+      });
+    });
+    kid.on('error', function (e) { resolve({ code: -1, out: String((e && e.message) || e) }); });
+    kid.on('close', function (code) { resolve({ code: code, out: out }); });
+  });
+}
+
 // The agent's nick, as Andy set it; '' when it has none (then nothing is its).
 async function nick() {
   const r = await ear('profile.get', { agent: '' });
@@ -113,7 +143,7 @@ async function loop() {
     try { manual = fs.readFileSync(MANUAL, 'utf8').trim(); } catch (e) { manual = ''; }
     for (const a of asks) {
       say('handing a line under ' + a.id + ' to ' + path.basename(command));
-      const answered = await run(command, args.concat([manual + '\n\n' + a.line]));
+      const answered = await runEchoed(command, args.concat([manual + '\n\n' + a.line]));
       const text = finalText(answered.out);
       if (!text) { say(path.basename(command) + ' ended ' + answered.code + ' with no answer to post'); continue; }
       const posted = await ear('chat.add', { id: a.id, text: text });
