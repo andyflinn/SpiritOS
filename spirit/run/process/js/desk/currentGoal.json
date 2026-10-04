@@ -1,8 +1,8 @@
 {
- "change": 10282,
+ "change": 10290,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T13:44:27.314Z",
+ "writtenAt": "2026-10-04T13:46:19.050Z",
  "items": [
   {
    "id": "goal/G4",
@@ -10,14 +10,17 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "go-all"
+   ],
    "blocking": [],
    "blocked": [
     "goal/G4.1",
     "goal/G4.9",
     "goal/G4.17",
     "goal/G4.18",
-    "goal/G4.22"
+    "goal/G4.22",
+    "goal/G4.26"
    ],
    "go": false,
    "alone": false,
@@ -28,15 +31,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 8,
+   "waiting": 10,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-ubuntu",
-    "claude-windows"
+    "claude-windows",
+    "wsl-claude"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -6472,6 +6475,11 @@
      "by": "wsl-claude",
      "at": "2026-10-04T13:44:01.787Z",
      "text": "taking: opening G4.26 for your Q1 answer, an offered Done counted on your ❌ once every agent involved claimed it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T13:45:52.493Z",
+     "text": "in the list this item still shows the Done button, while here, where i pressed Done, it already offers Reopen"
     }
    ]
   },
@@ -6728,6 +6736,33 @@
      "text": "Done: D:\\SpiritOS is clean and at 021da704 (G4.25). Your old currentGoal.json is discarded, and the two labMaster logs are hidden locally.\nRestart your node from labMaster to run G4.25. After that, Files reads the shell's one tree."
     }
    ]
+  },
+  {
+   "id": "goal/G4.26",
+   "title": "An offered Done lights his ❌ once every agent involved has claimed it",
+   "goal": "goal/G4",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G4"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   }
  ]
 }
