@@ -1,8 +1,8 @@
 {
- "change": 12410,
+ "change": 12442,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T19:28:28.793Z",
+ "writtenAt": "2026-10-04T19:35:47.181Z",
  "items": [
   {
    "id": "goal/G4",
@@ -10,9 +10,7 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [
-    "go-all"
-   ],
+   "buttons": [],
    "blocking": [],
    "blocked": [
     "goal/G4.1",
@@ -28,16 +26,18 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 8,
+   "waiting": 6,
    "live": [
+    "claude-ubuntu",
     "claude-windows",
     "ollama agent node",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows"
+    "wsl-claude"
    ],
    "agents": {
+    "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
@@ -8312,7 +8312,9 @@
    "goal": "goal/G4",
    "status": "running",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G4.22"
    ],
@@ -8320,9 +8322,9 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "GEMMA'S DESK LOOP: A SCRIPT KEEPS A MODEL WITH NO HARNESS ON DESK\n\nANDY, 2026-10-04, VERBATIM (Team chat)\n- \"how do we git it to stick to that loop that you are in when working over desk?\"\n- To \"New code, so it needs an item: open one, with your Go?\": \"yes. open one\"\n\nWHY\n- gemma under opencode reads and writes Desk through deskEar 11111, but nothing wakes it when a line comes, and opencode's shell tool stops any command after 120 s (seen twice on 2026-10-04). A 12b model told to loop drifts off it.\n\nSHAPE (claude-windows, wsl-claude proposed the same)\n- One small script in process/js/desk: waits on deskEar <port>; when lines come, hands them to the model with opencode run --session <one session>, so it keeps its memory; the model answers in Desk with deskEar chat.add; the script waits again. The script does the waiting, so the 120 s limit never applies.\n- Nothing in gemma's model or opencode changes.\n\nBUILT: deskLoop.js (5ea539ca), deskLoop 6 of 6. Started live by Andy; three flaws seen: gemma gets every line of his, gets no order to answer, and its printout never reaches Desk.\n\nRULED (Andy, 2026-10-04, to Q1 \"Should deskLoop post what gemma prints to Desk itself?\")\n- \"not it's internal thought process. claude's don't print to me what you print in your vscode window\"\n- So the loop never posts the model's output; the model answers in Desk itself, with deskEar chat.add, as the Claudes do.\n\nRULED (Andy, 2026-10-04, to Q2 \"A or B? A: the loop posts nothing, gemma answers with deskEar chat.add itself. B: the loop posts gemma's final answer for it, never its thinking.\"): \"can you? then do it.\", then \"but it doesn't help if you have to do it, the extraction i mean. then i may as well use you. it's only valuable if that can be extracted mechanically\"; earlier \"yes, like it needs a manual pre-loaded......\"\n- So B, mechanically: opencode run --format json; the loop posts the text of the last step under the line's id; thinking and tool calls never reach Desk.\nFIX ROUND: hand gemma only his lines starting with its nick; a manual file beside deskLoop goes before them; the loop posts the final text.\n\nOPEN\n- Its name and arguments; whether the session id is given or found; his Go.",
@@ -8360,9 +8362,9 @@
      "kind": "Q",
      "words": "The echo of gemma's steps in the loop window: reopen G4.28 for it, or a new item? (claude-windows)",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-04T19:29:20.782Z"
     }
    ],
    "chat": [
@@ -8750,6 +8752,21 @@
      "by": "andy",
      "at": "2026-10-04T19:27:54.004Z",
      "text": "Q4: The echo of gemma's steps in the loop window: reopen G4.28 for it, or a new item? (claude-windows)\n\nreopen, i did that already"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T19:29:23.030Z",
+     "text": "taking: the build of the echo against 52e482e6."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T19:32:20.984Z",
+     "text": "commit 20e6551a70f6ef22e6b52e08937a465ff565bc69: goal/G4.28: deskLoop echoes the model's steps in its own window as they come (deskLoop 12 of 12). Andy, 2026-10-04: \"it inspires more confidence if i seeing it sputtering on its terminal, that's what \n- spirit/run/process/js/desk/deskLoop.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T19:32:30.230Z",
+     "text": "Echo built, 20e6551a; deskLoop 12 of 12: while gemma works, its loop window shows each step as it comes, \"[read] {...}\" for a tool call and its words as it writes them. Desk still gets only the final answer.\nTo see it: stop the loop, pull D:\\SpiritOS-agent-ollama, start it again with the same command.\n- spirit/run/process/js/desk/deskLoop.js"
     }
    ]
   },
@@ -8853,9 +8870,9 @@
      "kind": "Q",
      "words": "Fix it as a new item: on opening the stream, ask the traffic table only for undelivered arrivals (it has an index for exactly that) instead of reading the whole log; the log stays permanent. (wsl-claude)",
      "test": "",
-     "state": "passed",
-     "by": "wsl-claude",
-     "at": "2026-10-04T19:26:32.445Z"
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-04T19:29:05.315Z"
     }
    ],
    "chat": [
@@ -8935,17 +8952,14 @@
    "id": "goal/G4.31",
    "title": "Opening a node's event stream asks the traffic table only for undelivered arrivals, not the whole log (about 1 s per desk ask today); the log stays permanent",
    "goal": "goal/G4",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G4.30"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -8953,10 +8967,16 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "ARRIVALS ON STREAM OPEN: ASK FOR THE UNDELIVERED ROWS ONLY\n\nANDY, 2026-10-04, VERBATIM\n- \"on an idle relay a peerpost takes already more than a second. i remember it being a fraction of that\"\n- To Q2 under goal/G4.30 (\"Fix it as a new item: on opening the stream, ask the traffic table only for undelivered arrivals (it has an index for exactly that) instead of reading the whole log; the log stays permanent.\"): \"yes\"\n- Standing: \"the log should be permanent. period.\" (peerPost.js)\n\nFOUND (goal/G4.30, wsl-claude measured, claude-windows confirmed in code)\n- Every desk ask opens the asking node's /api/events stream (kernel.peerPost). On open, arrivals.js waiting() calls traffic.read(), the whole traffic log, then keeps the rows inbound, admitted and not taken. 112,192 rows on wsl-claude's node took 1,047 ms; any other request answers in 2-5 ms.\n\nSHAPE\n- waiting() asks the traffic table for exactly those rows, in arrival order, through its index; same answer, no full read. Nothing is pruned.\n- Core file (spirit/run/js/arrivals.js, and traffic's query if one is needed): Andy's grant per file comes with the build.\n\nOPEN: his Go.",
+   "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T19:28:59.671Z",
+     "text": "Opened goal/G4.31: opening a node's event stream asks only for undelivered arrivals instead of reading the whole traffic log, which costs about a second on every desk ask today. Core file, so your Go and a grant for arrivals.js; wsl-claude writes the red."
+    }
+   ]
   }
  ]
 }
