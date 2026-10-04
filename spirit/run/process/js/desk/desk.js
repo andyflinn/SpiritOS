@@ -561,6 +561,12 @@ function facts(s, it) {
   return f;
 }
 
+function matchesText(it, text) {
+  if ((it.id + ' ' + it.title).toLowerCase().indexOf(text) !== -1) return true;
+  if (String(it.box || '').toLowerCase().indexOf(text) !== -1) return true;
+  return it.chat.some(function (l) { return String(l.text).toLowerCase().indexOf(text) !== -1; });
+}
+
 // The goal first, then its items in session order; the newest goal first.
 function searchItems(a) {
   const s = walkState();
@@ -582,7 +588,10 @@ function searchItems(a) {
       // extra search filter toggle [include closed] would do the trick on my side." An abandoned goal's stay out.
       const closedToo = (latest || a.includeClosed === true) && !s.goals[gid].abandoned;
       if (!it || !(listed(s, it) || closedToo)) return;
-      if (text && (it.id + ' ' + it.title).toLowerCase().indexOf(text) === -1) return;
+      // THE SEARCH READS THE LINES TOO (goal/G4.24 point 2). Andy: "same principle as the agent search, it searches the
+      // lines server-side, but only brings back handle/key and title, i'll have to go to details to fetch the rest."
+      // id, title, box and every chat line, case ignored; the answer is the row as before, never the box or the chat.
+      if (text && !matchesText(it, text)) return;
       out.push(JSON.stringify(facts(s, it)));
     });
   });
