@@ -194,4 +194,12 @@ async function thePage() {
   const removed = sets[sets.length - 1] && sets[sets.length - 1].args;
   if (sets.length >= 2 && removed.agent === CW_KEY && removed.folders.indexOf('spirit/run/shell/chess/') === -1 && removed.folders.indexOf('spirit/run/shell/ticTacToe/') !== -1) test.check('removing chess sends scope.set without it');
   else test.fail(OWED + 'after the remove scope.set was ' + short(sets));
+  // THE REPO ROOT (Andy, 2026-10-04: "why can i not select root?"; claude-windows added it): the tree holds spirit/run
+  // only, so a button beside the picker adds '' (the whole repo).
+  const rootButton = all(byId['desk-agent-picker']).filter(function (n) { return n.getAttribute && n.getAttribute('data-scope-root') !== null; })[0];
+  if (rootButton) { fire(rootButton, 'click'); await settled(); }
+  sets = asked.filter(function (a) { return a.verb === 'scope.set'; });
+  const rooted = sets[sets.length - 1] && sets[sets.length - 1].args;
+  if (rootButton && rooted && rooted.folders.indexOf('') !== -1) test.check('the repo root button adds \'\' to the scope');
+  else test.fail(OWED + 'repo root button ' + !!rootButton + '; last scope.set ' + short(rooted));
 }

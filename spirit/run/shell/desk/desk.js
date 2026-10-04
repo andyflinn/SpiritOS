@@ -337,6 +337,14 @@ function deskAgentOpen(name) {
       if (picker.value) deskAgentSet(deskAgentFolders.concat(['spirit/run/' + picker.value]));
     });
     slot.innerHTML = '';
+    // THE REPO ROOT (Andy: "why can i not select root?", "i need \"/\" as an option"): the shell's tree holds spirit/run only, so the root and the
+    // folders beside spirit/run are not in the picker; the root is a button of its own, adding '' (the whole repo).
+    var whole = document.createElement('button');
+    whole.setAttribute('type', 'button');
+    whole.setAttribute('data-scope-root', '1');
+    whole.textContent = 'Add / (the repo root, everything)';
+    whole.addEventListener('click', function () { deskAgentSet(deskAgentFolders.concat([''])); });
+    slot.appendChild(whole);
     slot.appendChild(picker);
   }
   return deskAgentLoad();
