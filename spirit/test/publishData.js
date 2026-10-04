@@ -30,6 +30,19 @@
 //   4  THE TRIGGER: his group-chat line exactly "publish" (Q13) makes the agent's deskClient start publishData.js as a
 //      job of type publishData on its own node, with removeWhenDone; N for that run is 20 (Q14). Any other line starts
 //      nothing. Whether the job also passes --asks 20 is the builder's; not asserted.
+//
+// REOPENED 2026-10-05 FOR THE FIRST PUBLISH'S FLAWS (Andy pressed Reopen after "publish" ran on all three boxes; to
+// Q15, pull before push, "done"). The box's FIXES, numbered as there:
+//   5  (fix 1) PULL BEFORE PUSH: when another clone pushed meanwhile, a publish rebases onto it and its push goes in.
+//      claude-windows's push was refused for exactly that and pushed by hand (bccf0c75). "Tries once more if refused"
+//      needs a push racing inside the run, which a test cannot stage reliably; not asserted.
+//   6  (fix 2) THE HARNESS IN A WORKTREE: measurePlatform.js runs in a temporary git worktree of the commit being
+//      published, not in the live clone beside the running node; its files come back into agents/<agent>/ and the
+//      worktree is removed. wsl-claude's run lost its deskClient during the harness (its door.sock remade at 00:40, the
+//      process itself still running), so its 20 asks counted 0 posts and nothing was committed. Seen here by a stub
+//      measurePlatform.js committed in the clone, which notes where it ran; the packet asks then count on a calm node.
+// LEFT OPEN, not asserted: fix 3, README.md's front-page capacity block after a publish, by the publishing agent or by
+// hand under an item; the box keeps it open.
 
 const fs = require('fs');
 const os = require('os');
@@ -217,6 +230,59 @@ function pointAt(home, url) { fs.mkdirSync(path.join(home, 'shell', 'natter'), {
   if (job) test.check('his "publish" started a publishData job on the agent\'s node (' + job.label + ')');
   else test.fail(OWED + 'no publishData job on the agent\'s node within 60 s of his "publish"');
   if (job) await verb(agentPort, { verb: 'jobs.cancel', id: job.key });
+  ear.kill();
+  if (job) await waitFor(function () { return publishJob().then(function (j) { return !j || !/running/.test(String(j.label)); }); }, 15000);
+
+  // ── 5 AND 6. A WHOLE PUBLISH, ITS HARNESS A STUB ──
+  // The clone gets an origin (a bare repo) and a stub spirit/test/measurePlatform.js, committed, so a worktree of HEAD
+  // holds it too. The stub writes agents/<agent>/harness.json beside ITSELF (as the real one writes into its own tree)
+  // and notes the folder it ran in. Then another clone pushes a commit first, as claude-ubuntu's did before
+  // claude-windows's publish pushed. Setup commits and pushes skip the hooks (--no-verify): they are the world, not the
+  // publish.
+  test.subHeading('5 and 6. a whole publish: pull before push, the harness in a worktree');
+  const g = function (args, cwd) { return spawnSync('git', args, { cwd: cwd || clone, encoding: 'utf8', timeout: 120000 }); };
+  const bare = path.join(scratch, 'origin.git');
+  spawnSync('git', ['init', '-q', '--bare', bare]);
+  const branch = g(['symbolic-ref', '--short', 'HEAD']).stdout.trim() || 'master';
+  const stub = path.join(clone, 'spirit', 'test', 'measurePlatform.js');
+  fs.mkdirSync(path.dirname(stub), { recursive: true });
+  fs.writeFileSync(stub, [
+    "const fs = require('fs'); const path = require('path');",
+    "const agent = process.argv[process.argv.indexOf('--agent') + 1];",
+    "const out = path.join(__dirname, '..', '..', 'agents', agent); fs.mkdirSync(out, { recursive: true });",
+    "fs.writeFileSync(path.join(out, 'harness.json'), JSON.stringify({ measuredAt: new Date().toISOString(), commit: 'stub', ranIn: __dirname }));",
+  ].join('\n'));
+  g(['add', 'spirit/test/measurePlatform.js']);
+  g(['commit', '-q', '--no-verify', '-m', 'the stub harness']);
+  g(['remote', 'add', 'origin', bare]);
+  const seeded = g(['push', '-q', '--no-verify', '-u', 'origin', branch]);
+  const otherClone = path.join(scratch, 'other');
+  g(['clone', '-q', '--branch', branch, bare, otherClone], scratch);
+  fs.writeFileSync(path.join(otherClone, 'other.txt'), 'another agent pushed first\n');
+  g(['add', 'other.txt'], otherClone);
+  g(['-c', 'user.email=o@example', '-c', 'user.name=other', 'commit', '-q', '-m', 'another agent pushed first'], otherClone);
+  const ahead = g(['push', '-q', 'origin', branch], otherClone);
+  if (seeded.status !== 0 || ahead.status !== 0) { test.fail('the world: origin could not be seeded (' + short(seeded.stderr) + ') or advanced (' + short(ahead.stderr) + ')'); return; }
+
+  const whole = spawnSync(process.execPath, [PUBLISH, String(agentPort), '--asks', '3'], { cwd: clone, encoding: 'utf8', timeout: 240000 });
+  const said = short(String(whole.stderr).trim().slice(-260) || String(whole.stdout).trim().slice(-260));
+  const onOrigin = g(['--git-dir', bare, 'log', '--format=%s', '-2', branch], scratch).stdout.trim().split('\n');
+  if (whole.status === 0 && /^publish: gemma/.test(onOrigin[0] || '') && onOrigin[1] === 'another agent pushed first') test.check('5. origin moved meanwhile: the publish rebased onto it and its push went in');
+  else test.fail(OWED + 'with origin one commit ahead, publishData exited ' + whole.status + ' and origin\'s last two read ' + short(onOrigin) + '; it said ' + said);
+
+  let harness = null;
+  try { harness = JSON.parse(fs.readFileSync(path.join(clone, 'agents', 'gemma', 'harness.json'), 'utf8')); } catch (e) { harness = null; }
+  const ranIn = harness ? String(harness.ranIn || '') : '';
+  const inClone = ranIn && !path.relative(clone, ranIn).startsWith('..');
+  if (harness && ranIn && !inClone) test.check('6. measurePlatform ran outside the live clone, and its harness.json came back into agents/gemma/');
+  else test.fail(OWED + (harness ? 'measurePlatform ran in the live clone (' + ranIn + ')' : 'no agents/gemma/harness.json in the clone after the publish'));
+  const trees = g(['worktree', 'list', '--porcelain']).stdout.split('\n').filter(function (l) { return /^worktree /.test(l); });
+  if (trees.length === 1) test.check('6. the worktree is removed afterwards');
+  else test.fail(OWED + 'worktrees left: ' + short(trees));
+  let pk2 = null;
+  try { pk2 = JSON.parse(fs.readFileSync(path.join(clone, 'agents', 'gemma', 'packets.json'), 'utf8')); } catch (e) { pk2 = null; }
+  if (pk2 && pk2.posts >= 3) test.check('6. the packet asks counted ' + pk2.posts + ' posts after the harness');
+  else test.fail(OWED + 'after the harness the packet asks counted ' + short(pk2 && pk2.posts));
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
   kids.forEach(function (k) { try { k.kill(); } catch (e) { /* gone */ } });
   setTimeout(function () {
