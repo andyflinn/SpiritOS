@@ -113,10 +113,12 @@ async function main() {
   else test.fail(OWED + 'spawned with {} the server wrote ' + JSON.stringify(quietFiles) + '; repo file changed: ' + (bytesOf(REPO_FILE) !== repoBytesBefore));
 
   test.subHeading('3. written on Go, go-all, Done and session.set; left alone by a line');
-  const file = path.join(scratch, 'written', 'goal.json');
+  // SINCE goal/G4.21 the desk writes the file into its own state folder, never the checkout, and goalShare.js
+  // commits it from there (goalShare.js holds that half). goalPath names its place in the repo; set, sharing is on.
   const args = Object.assign({}, defaults);
-  if (argName) args[argName] = file;
+  if (argName) args[argName] = 'spirit/run/process/js/desk/currentGoal.json';
   const d = await server('written', args);
+  const file = path.join(d.state, 'currentGoal.json');
   const set = await d.call('session.set', { json: JSON.stringify({ goal: { id: 'w/G1', title: 'Written' }, items: [
     { id: 'w/G1.1', title: 'First', blocks: ['w/G1'] },
     { id: 'w/G1.2', title: 'Second', blocks: ['w/G1'] },

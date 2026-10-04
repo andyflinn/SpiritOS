@@ -4,6 +4,7 @@
   "kind": "server",
   "operated": "node",
   "args": [
-    { "name": "goalFile", "default": "currentGoal.json", "description": "Where the current goal is written whole on Go, go-all, Done and session.set (goal/G3.14): a path relative to this folder, so the default lands beside desk.js, in the repo. Empty: no file is written; a server spawned with {} (every test suite) has no value and writes none." }
+    { "name": "goalRepo", "default": "", "description": "The repo the current goal is shared into (goal/G4.21): goalShare.js commits it there on the remote's master and pushes it, on his go, go-all, done, reopen, close and on session.set. Empty: the checkout holding desk.js. The desk never writes into the checkout itself." },
+    { "name": "goalPath", "default": "spirit/run/process/js/desk/currentGoal.json", "description": "The goal file's path in that repo. With neither goalRepo nor goalPath (a server spawned with {}, as every test suite spawns one) nothing is shared. A desk holding no goal (an agent's node) shares nothing either." }
   ]
 }

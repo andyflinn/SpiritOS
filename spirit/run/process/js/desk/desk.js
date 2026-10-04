@@ -42,9 +42,18 @@ try { values = JSON.parse(argv[2] || '{}') || {}; } catch (e) { values = {}; }
 // \"spirit/run/process/js/desk/currentGoal.json\" it will contain the complete data set of the current goal, including
 // the commit-level agains which the file was generated. the file re-generation is triggered by 'Go' and 'Done
 // events' and the data includes items not visible to the user.", "it's the truth scoped by commit level." The path
-// is the manifest's goalFile, relative to this folder; empty or absent (a server spawned with {}, as every suite
-// spawns one) writes nothing, so no test writes into a clone. The commit level is implicit in his push.
-const GOAL_FILE = values.goalFile ? path.resolve(__dirname, String(values.goalFile)) : '';
+// SINCE goal/G4.21 THE DESK SHARES IT ITSELF, and never writes into the checkout again (Andy: "i generally only read
+// the repo. i think we should make this automatic? agree?", "do it", "yes, that's the shape."). goalRepo is the repo to
+// share into (default: the checkout holding this file), goalPath the file's path in it; with neither (a server spawned
+// with {}, as every suite spawns one) nothing is shared, so no test pushes anywhere.
+const GOAL_SHARED = !!(values.goalRepo || values.goalPath);
+const GOAL_PATH = String(values.goalPath || 'spirit/run/process/js/desk/currentGoal.json');
+const GOAL_REPO = values.goalRepo ? path.resolve(String(values.goalRepo)) : (function () {
+  for (let d = __dirname; ; d = path.dirname(d)) {
+    if (fs.existsSync(path.join(d, '.git'))) return d;
+    if (path.dirname(d) === d) return '';
+  }
+}());
 if (!STATE) {
   console.error('desk: no --state; the node that starts this names its state folder');
   process.exit(2);
@@ -707,17 +716,21 @@ function write(verb, a, check) {
   return after;
 }
 
-// THE FILE (goal/G3.14): written whole on his go, go-all and done, and on session.set (items appear and leave by
-// it; his open point, taken as yes); a line, a box, a claim or any other press leave it as it was. One object:
+// THE FILE (goal/G3.14): written whole on his status changes, go, go-all, done, reopen and close (goal/G4.21: "a
+// re-open would be subject to the same rule?"), and on session.set (items appear and leave by it; his open point,
+// taken as yes); a line, a box, a claim or any other press leave it as it was. One object:
 // the two cursors as changes answers them at this moment (change, and line, the newest line's rowid), the current
 // goal's id, and every item of that goal, the goal's row and the closed ones included, each with its facts as
 // item.get gives them, its box and version, its checks and its chat lines {by, at, text}. The group chat desk/G0.0
-// is no item of the goal and is not in it. Written at the end of the write, after the publish: a failure to write
-// the file is said on stderr and fails no press.
+// is no item of the goal and is not in it. Written at the end of the write, after the publish, into this server's
+// own state folder, never the checkout; then goalShare.js commits it on the remote's master and pushes it, as a job
+// the node runs (goal/G4.21: an automation beside its owner, started through its own node's jobs.create, so Jobs
+// shows it under process/js/desk). A failure to write or to ask is said on stderr and fails no press.
 const newestLine = db.prepare('SELECT COALESCE(MAX(rowid), 0) AS rid FROM lines');
+const GOAL_STATE_FILE = path.join(STATE, 'currentGoal.json');
 function writeGoalFile(s, verb, a, change) {
-  if (!GOAL_FILE || !s.current || !s.goals[s.current]) return;
-  const his = verb === 'press' && (a.what === 'go' || a.what === 'go-all' || a.what === 'done');
+  if (!GOAL_SHARED || !GOAL_REPO || !s.current || !s.goals[s.current]) return;
+  const his = verb === 'press' && ['go', 'go-all', 'done', 'reopen', 'close'].indexOf(a.what) !== -1;
   if (!his && verb !== 'session.set') return;
   const g = s.goals[s.current];
   const items = [s.current].concat(g.members).map(function (id) { return s.items[id]; }).filter(Boolean).map(function (it) {
@@ -725,7 +738,22 @@ function writeGoalFile(s, verb, a, change) {
       chat: it.chat.map(function (l) { return { by: l.by, at: l.at, text: l.text }; }) });
   });
   const doc = { change: change, line: Number(newestLine.get().rid) || 0, goal: s.current, writtenAt: new Date().toISOString(), items: items };
-  try { fs.writeFileSync(GOAL_FILE, JSON.stringify(doc, null, 1) + '\n'); } catch (e) { console.error('desk: the goal file was not written: ' + ((e && e.message) || e)); }
+  try { fs.writeFileSync(GOAL_STATE_FILE, JSON.stringify(doc, null, 1) + '\n'); } catch (e) { console.error('desk: the goal file was not written: ' + ((e && e.message) || e)); return; }
+  shareGoalFile();
+}
+// The node runs goalShare.js as a job: asked at the node's door, SPIRIT_CALLBACK_URL (the one every spawned process
+// speaks through), through the kernel as the nudge is (goal/G3.5), with the verb the shell's Start Job uses.
+function shareGoalFile() {
+  const url = process.env.SPIRIT_CALLBACK_URL;
+  if (!url) { console.error('desk: no SPIRIT_CALLBACK_URL, so the goal file is not shared'); return; }
+  let base = '';
+  try { base = new URL(url).origin; } catch (e) { console.error('desk: SPIRIT_CALLBACK_URL is no URL: ' + url); return; }
+  Promise.resolve().then(function () {
+    return require('../../../js/kernel.js').core.ask('jobs.create', { command: process.execPath,
+      args: [path.join(__dirname, 'goalShare.js'), '--repo', GOAL_REPO, '--path', GOAL_PATH, '--from', GOAL_STATE_FILE] }, base);
+  }).then(function (r) {
+    if (!r || r.status >= 300) console.error('desk: the node refused the goal share: ' + (r ? r.text : 'no answer'));
+  }).catch(function (e) { console.error('desk: the goal share was not asked: ' + ((e && e.message) || e)); });
 }
 
 // The goal and its items whose facts differ between two states, each with whether it is still listed.
