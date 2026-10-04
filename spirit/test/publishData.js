@@ -1,0 +1,185 @@
+'use strict';
+
+// goal/G4.33: publishData.js, one measurement run per agent, its data in agents/<agent>/. Red on today's tree;
+// wsl-claude wrote it, claude-windows builds it.
+//   Andy, 2026-10-04 (the box of goal/G4.33 holds every line verbatim): "so one single script for all of you puts the
+//   data into the repo"; "this is desk stuff."; "it will be automated under deskClient. so the deskClient scripts calls
+//   - spirit/test/measurePlatform.js?"; "publishData.js?"; to the old folders: "yes." and "claude-ubuntu must be
+//   included."; to the studies: "Studies like packet-turnaround-measurements, yes." and "they need packaging for
+//   publishing."; the commit: "automated publishing will have a standing grant, attached to the script in deskClient";
+//   "and the whole agent-specific folders will be included per agent."; his Go on goal/G4.33. The utility process it
+//   runs on is goal/G4.34 (built, ba4d91e1).
+//
+// THE SHAPES (the box's; where it names none, wsl-claude's picks, the builder may argue them in Desk first):
+//   1  MOVED, NOT DOUBLED: README/CAPACITY/ubuntu-24.04-wsl2 is agents/wsl-claude, windows-10.0 is agents/claude-windows
+//      (capacity.json, capacity.md, harness.json, harness.txt, platform.md each), README/CAPACITY/ is gone; the desk-lanes
+//      study is agents/<agent>/studies/2026-10-02-desk-lanes/ with its README.md and that agent's own .tsv, and
+//      relayLab/measurements/ is gone; README.md links agents/. No test or tool writes README/CAPACITY/ any more.
+//      (Two core files mention README/CAPACITY.md in comments only, nodeSettings.js 37 and relay.js 135; a doc, not a
+//      path the code uses, so not asserted.)
+//   2  PACKETS: node spirit/run/process/js/desk/publishData.js <port> --only packets --asks <N> --out <dir> makes N
+//      read-only desk asks from that node and writes packets.json {posts, waitMs: {median, max}, flight: {median, max},
+//      retried, refusals} and packets.md from its own traffic rows, plus platform.md naming the agent and commit.
+//      --only packets skips measurePlatform.js (a harness inside the harness would never end). It reads the traffic
+//      log of the node that runs from the clone it is run in, <clone>/spirit/run/relay-state/node.db (no verb reads it);
+//      the node holds that file open, so a read-only copy is the safe way.
+//   3  THE STANDING GRANT: a commit whose files all lie in agents/<this agent>/ passes the commit check with no item;
+//      any other file, or another agent's folder, is checked as today. The agent's name is the one Andy set in its
+//      profile (profile.get), as the folders are named by it.
+// LEFT OPEN (Q checks on goal/G4.33): what "publish" is to deskClient, and N for a real run; not asserted here.
+
+const fs = require('fs');
+const os = require('os');
+const net = require('net');
+const path = require('path');
+const { spawn, spawnSync } = require('child_process');
+const test = require('./testSupport.js');
+const plantRun = require('./plantRun.js');
+const { mintOwnerInvite } = require('./ownerClaim.js');
+const { relayRequest } = require('../run/js/relayRequest.js');
+const invites = require('../run/js/invites.js');
+const relayStore = require('../run/js/relayStore.js');
+const includeList = require('../run/js/includeList.js');
+const appClient = require('../run/js/appClient.js');
+
+const OWED = 'OWED by goal/G4.33: ';
+const REPO = path.join(__dirname, '..', '..');
+const DESK_DIR = path.join(REPO, 'spirit', 'run', 'process', 'js', 'desk');
+const PUBLISH = path.join(DESK_DIR, 'publishData.js');
+const ONBOARD = path.join(DESK_DIR, 'onboard.js');
+const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEApublishDataTestOwnerAAAAAAAAAAAAAAAAAAA=', label: 'andy' };
+
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 260); }
+function exists(rel) { return fs.existsSync(path.join(REPO, rel)); }
+function freePort() { return new Promise(function (resolve) { const s = net.createServer().listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); }); }); }
+function waitFor(fn, ms) { const until = Date.now() + (ms || 15000); return (function again() { return Promise.resolve().then(fn).catch(function () { return false; }).then(function (ok) { if (ok || Date.now() > until) return ok; return sleep(200).then(again); }); })(); }
+function verb(port, body) {
+  const once = function () { return relayRequest('http://127.0.0.1:' + port, 'POST', '/api/spirit', body).then(function (r) { let b = {}; try { b = JSON.parse(r.text); } catch (e) { b = {}; } return { status: r.status, body: b }; }, function () { return { status: 0, body: {} }; }); };
+  return once().then(function (r) { return r.status ? r : sleep(200).then(once); });
+}
+
+test.startTest('goal/G4.33: publishData, every agent\'s data in agents/<agent>/');
+
+test.subHeading('1. moved, not doubled');
+{
+  const files = ['capacity.json', 'capacity.md', 'harness.json', 'harness.txt', 'platform.md'];
+  ['wsl-claude', 'claude-windows'].forEach(function (agent) {
+    const missing = files.filter(function (f) { return !exists('agents/' + agent + '/' + f); });
+    if (!missing.length) test.check('agents/' + agent + '/ holds ' + files.join(', '));
+    else test.fail(OWED + 'agents/' + agent + '/ lacks ' + missing.join(', '));
+    const study = 'agents/' + agent + '/studies/2026-10-02-desk-lanes/';
+    if (exists(study + 'README.md') && fs.existsSync(path.join(REPO, study)) && fs.readdirSync(path.join(REPO, study)).some(function (f) { return /\.tsv$/.test(f); })) test.check(study + ' holds the study\'s README.md and this agent\'s .tsv');
+    else test.fail(OWED + study + ' is missing or lacks README.md and a .tsv');
+  });
+  if (!exists('README/CAPACITY')) test.check('README/CAPACITY/ is gone');
+  else test.fail(OWED + 'README/CAPACITY/ still exists');
+  if (!exists('relayLab/measurements')) test.check('relayLab/measurements/ is gone');
+  else test.fail(OWED + 'relayLab/measurements/ still exists');
+  const readme = fs.readFileSync(path.join(REPO, 'README.md'), 'utf8');
+  if (/\]\((\.\/)?agents\/?/.test(readme)) test.check('README.md links agents/');
+  else test.fail(OWED + 'README.md has no link to agents/');
+  // The tools build the path as path.join(..., 'README', 'CAPACITY', ...) (measurePlatform.js 136, measureCapacity.js
+  // 566, publishCapacity.js 58 and 71, capacityFresh.js 49, capacityRule.js 102), so that is what is looked for.
+  const writers = ['measurePlatform.js', 'measureCapacity.js', 'publishCapacity.js', 'capacityFresh.js', 'capacityRule.js'].filter(function (f) {
+    return /'README',\s*'CAPACITY'/.test(fs.readFileSync(path.join(REPO, 'spirit', 'test', f), 'utf8'));
+  });
+  if (!writers.length) test.check('no tool builds a README/CAPACITY path any more');
+  else test.fail(OWED + 'still building README/CAPACITY as a path: ' + writers.join(', '));
+}
+
+const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-publishdata-'));
+const kids = [];
+function startNode(home, port, extra) { const k = spawn(process.execPath, ['js/server.js', '--port', String(port)].concat(extra || []), { cwd: home, stdio: ['ignore', 'ignore', 'ignore'] }); kids.push(k); return k; }
+function plant(name) { const h = path.join(scratch, name, 'spirit', 'run'); plantRun.plantRunTree(h); return h; }
+function pointAt(home, url) { fs.mkdirSync(path.join(home, 'shell', 'natter'), { recursive: true }); fs.writeFileSync(path.join(home, 'shell', 'natter', 'relays.json'), JSON.stringify([{ label: 'spirit', url: url }])); }
+
+(async function () {
+  if (!fs.existsSync(PUBLISH)) { test.fail(OWED + 'there is no spirit/run/process/js/desk/publishData.js; sections 2 and 3 cannot run'); return; }
+
+  // THE WORLD, as agentOnboard builds it: a relay, Andy's node with the desk, an agent joined by onboard.js.
+  const relayHome = plant('relay');
+  fs.rmSync(path.join(relayHome, 'relay-state'), { recursive: true, force: true });
+  const relayPort = await freePort();
+  startNode(relayHome, relayPort, ['--relay']);
+  const relayUrl = 'http://127.0.0.1:' + relayPort;
+  await waitFor(function () { return fetch(relayUrl + '/api/relay/key').then(function (r) { return r.ok; }); });
+  const andyHome = plant('andy');
+  includeList.add(andyHome, 'process/js/desk');
+  pointAt(andyHome, relayUrl);
+  const andyPort = await freePort();
+  startNode(andyHome, andyPort);
+  await waitFor(function () { return verb(andyPort, { verb: 'device.info' }).then(function (r) { return r.status === 200; }); });
+  const oi = mintOwnerInvite(relayHome, 'andy');
+  await verb(andyPort, { verb: 'relay.claim', url: relayUrl, name: 'andy', invite: oi.token, inviteLabel: 'andy' });
+  const deskPipe = appClient.createAppClient({ rootDir: andyHome });
+  deskPipe.register('desk', appClient.pipePathFor(andyHome, 'desk', process.platform, 'process'));
+  const deskAsk = function (v, a) { const q = {}; q[v] = a; return deskPipe.ask({ desk: q }, ANDY).then(function (r) { return r || {}; }, function () { return {}; }); };
+  await waitFor(function () { return deskAsk('state.get', {}).then(function (r) { return r.status === 200; }); });
+  await deskAsk('session.set', { json: JSON.stringify({ goal: { id: 'p/G1', title: 'Publish' }, items: [{ id: 'p/G1.1', title: 'Work', blocks: ['p/G1'] }] }) });
+  // THE AGENT'S NODE RUNS FROM ITS OWN CLONE (AGENT_ONBOARDING.md, step 1), so publishData finds the node's traffic
+  // log at <clone>/spirit/run/relay-state/node.db, the one place it can read it: no verb reads that log.
+  const clone = path.join(scratch, 'clone');
+  const agentHome = path.join(clone, 'spirit', 'run');
+  plantRun.plantRunTree(agentHome);
+  spawnSync('git', ['init', '-q'], { cwd: clone });
+  pointAt(agentHome, relayUrl);
+  const agentPort = await freePort();
+  startNode(agentHome, agentPort);
+  await waitFor(function () { return verb(agentPort, { verb: 'device.info' }).then(function (r) { return r.status === 200; }); });
+  spawnSync('git', ['config', 'user.email', 'test@example'], { cwd: clone });
+  spawnSync('git', ['config', 'user.name', 'test'], { cwd: clone });
+  const mi = invites.add(relayHome, { label: 'gemma', days: 1 });
+  relayStore.open(relayHome).close();
+  spawnSync(process.execPath, [ONBOARD, String(agentPort), 'gemma:' + mi.token], { cwd: clone, timeout: 180000 });
+  const agentKey = (await verb(agentPort, { verb: 'node.card' })).body.publicKey || '';
+  await verb(andyPort, { verb: 'jobs.authGrant', key: agentKey, path: 'desk' });
+  const joined = spawnSync(process.execPath, [ONBOARD, String(agentPort), 'gemma:' + mi.token], { cwd: clone, encoding: 'utf8', timeout: 180000 });
+  await waitFor(function () { return deskAsk('profile.set', { agent: agentKey, name: 'gemma', nick: 'gemma' }).then(function (r) { return r.status === 200; }); });
+  await waitFor(function () { return deskAsk('scope.set', { agent: agentKey, folder: 'src/' }).then(function (r) { return r.status === 200; }); });
+  if (joined.status === 0) test.check('the world: the agent joined, its profile name gemma, its scope src/');
+  else { test.fail('the world: onboard.js exited ' + joined.status + ': ' + short(String(joined.stdout) + String(joined.stderr))); return; }
+
+  test.subHeading('2. the packet figures, from the agent\'s own node');
+  const out = path.join(scratch, 'out');
+  const run = spawnSync(process.execPath, [PUBLISH, String(agentPort), '--only', 'packets', '--asks', '5', '--out', out], { cwd: clone, encoding: 'utf8', timeout: 240000 });
+  let pk = null;
+  try { pk = JSON.parse(fs.readFileSync(path.join(out, 'packets.json'), 'utf8')); } catch (e) { pk = null; }
+  if (run.status === 0 && pk && pk.posts >= 5) test.check('publishData.js --only packets --asks 5 exits 0 and counts ' + pk.posts + ' posts');
+  else test.fail(OWED + 'publishData exited ' + run.status + ', packets.json ' + short(pk) + '; it said ' + short(String(run.stdout) + String(run.stderr)));
+  const num = function (x) { return typeof x === 'number' && isFinite(x); };
+  if (pk && pk.waitMs && num(pk.waitMs.median) && num(pk.waitMs.max) && pk.flight && num(pk.flight.median) && num(pk.flight.max) && num(pk.retried) && pk.refusals && typeof pk.refusals === 'object') test.check('packets.json holds waitMs and flight (median, max), retried and refusals');
+  else test.fail(OWED + 'packets.json reads ' + short(pk));
+  if (fs.existsSync(path.join(out, 'packets.md'))) test.check('packets.md is written beside it');
+  else test.fail(OWED + 'no packets.md in ' + out);
+  let platform = '';
+  try { platform = fs.readFileSync(path.join(out, 'platform.md'), 'utf8'); } catch (e) { platform = ''; }
+  if (/gemma/.test(platform) && /[0-9a-f]{7,}/.test(platform)) test.check('platform.md names the agent (gemma) and a commit');
+  else test.fail(OWED + 'platform.md reads ' + short(platform || '(none)'));
+
+  test.subHeading('3. the standing grant: its own folder, no item');
+  const commit = function (rel, msg) {
+    fs.mkdirSync(path.dirname(path.join(clone, rel)), { recursive: true });
+    fs.writeFileSync(path.join(clone, rel), 'x ' + Date.now() + '\n');
+    spawnSync('git', ['add', rel], { cwd: clone });
+    const r = spawnSync('git', ['commit', '-q', '-m', msg], { cwd: clone, encoding: 'utf8', timeout: 120000 });
+    if (r.status !== 0) spawnSync('git', ['reset', '-q', 'HEAD', rel], { cwd: clone });
+    return { code: r.status, said: String(r.stdout) + String(r.stderr) };
+  };
+  const own = commit('agents/gemma/packets.json', 'publish: gemma\'s figures');
+  if (own.code === 0) test.check('a commit of agents/gemma/ alone passes with no item named');
+  else test.fail(OWED + 'its own folder was refused: ' + short(own.said));
+  const other = commit('agents/claude-windows/packets.json', 'publish: not mine');
+  if (other.code !== 0) test.check('another agent\'s folder is refused');
+  else test.fail('a commit of agents/claude-windows/ by gemma passed');
+  const outside = commit('README.md', 'publish: outside');
+  if (outside.code !== 0) test.check('a file outside agents/gemma/, with no item, is refused as today');
+  else test.fail('README.md with no item passed');
+})().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
+  kids.forEach(function (k) { try { k.kill(); } catch (e) { /* gone */ } });
+  setTimeout(function () {
+    try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* busy */ }
+    test.reportSuccessFailureCount();
+    process.exit(0);
+  }, 300);
+});
