@@ -1,8 +1,8 @@
 {
- "change": 12615,
+ "change": 12616,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T20:02:35.161Z",
+ "writtenAt": "2026-10-04T20:02:36.415Z",
  "items": [
   {
    "id": "goal/G4",
@@ -26,7 +26,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
+   "waiting": 5,
    "live": [
     "claude-windows",
     "ollama agent node",
@@ -8814,10 +8814,9 @@
    "id": "goal/G4.29",
    "title": "The agent pane opens for every agent the desk knows, not only the live ones, so an agent without a listener stays within reach",
    "goal": "goal/G4",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
