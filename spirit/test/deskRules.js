@@ -413,6 +413,9 @@ async function main() {
   fs.mkdirSync(repo);
   await git(repo, ['init', '-q']);
   const install = fs.existsSync(CHECK) ? await run(process.execPath, [CHECK, 'install', String(node.address().port)], repo) : { status: -1, stdout: '', stderr: 'no process/js/desk/commitCheck.js' };
+  // SINCE goal/G4.23 an agent he has not scoped commits nothing ("the default: nothing"), so this agent gets the repo
+  // root, as he gave the agents working today ("your initial scope is repo root"); deskScopes.js holds the scope rules.
+  await desk('scope.set', { agent: SELF_KEY, folders: [''] }, ANDY);
   if (install.status === 0) test.check('E: `node commitCheck.js install <port>` in the clone exits 0');
   else test.fail(OWED + 'E: install answered ' + install.status + ' ' + String(install.stderr || install.stdout).trim().slice(0, 160));
   const noItem = await commitWith(repo, 'a.txt', 'a', 'names no item at all');

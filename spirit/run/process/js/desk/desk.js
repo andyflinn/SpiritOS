@@ -317,7 +317,7 @@ const GROUP_CHAT = 'desk/G0.0';
 function walkState() {
   // agentWord: each agent's last word about itself, listening or working (goal/G2.3); the ear says it, every time.
   // agentKey: the key each agent last wrote with (goal/G2.2 note 6), so the goal row can name its live agents' keys.
-  const s = { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), agentWord: Object.create(null), agentKey: Object.create(null), current: '' };
+  const s = { change: 0, goals: Object.create(null), items: Object.create(null), agentsAt: Object.create(null), agentWord: Object.create(null), agentKey: Object.create(null), scopes: Object.create(null), current: '' };
   s.goals[GROUP_CHAT] = { id: GROUP_CHAT, design: false, abandoned: false, members: [] };
   s.items[GROUP_CHAT] = blank(GROUP_CHAT, 'Group chat', '');
   s.items[GROUP_CHAT].closed = true;
@@ -410,6 +410,8 @@ function apply(s, r, b, item, goalOf) {
     // THE LISTENER'S WORD (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
     // stops when the agent goes back to listening. the listening script can toggle those two?"
     case 'agent.state': s.agentWord[r.by] = String(b.word); return;
+    // AN AGENT'S SCOPE (goal/G4.23), by its key, as he set it last; the handler refused anything malformed.
+    case 'scope.set': s.scopes[String(b.agent)] = (b.folders || []).map(String); return;
     // TAKING HIS LINE (goal/G2.2 note 2). Andy: "an item can 'take' my message and be the only one to answer after
     // that, i then can solicit an answer from others." The taker's name goes on his latest line under the item,
     // and the item is the taker's to answer until it does; the handler refuses a take with no line or one already
@@ -1115,6 +1117,29 @@ appServer.serve({
   },
   'item.status': { request: { id: '', word: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.status', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
   'item.take': { request: { id: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.take', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
+  // AGENT SCOPES (goal/G4.23). Andy: "i alone, i definitely will consult you", "ahh, the default: nothing.",
+  // "beside the agents key, this might be a growing dataset." scope.set is his alone: the folders an agent may commit
+  // in, by its key; a folder is a repo path ending in '/', or '' for the repo root. scope.get answers them, agent ''
+  // being the caller; an agent never set answers [], and commits nothing. The commit check reads it (commitCheck.js).
+  // Desk verbs, not node verbs.
+  'scope.set': {
+    request: { agent: '', folders: [''] }, reply: { change: 0 },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      const w = writerOf(caller);
+      if (!a.agent) throw refused('bad-request');
+      const bad = a.folders.filter(function (f) { return f !== '' && (!/\/$/.test(f) || /^\//.test(f) || /(^|\/)\.\.(\/|$)/.test(f) || f.indexOf('\\') !== -1); });
+      if (bad.length) throw refused('bad-request');
+      return { change: write('scope.set', { agent: a.agent, folders: a.folders, by: w.by, key: w.key }).change };
+    },
+  },
+  'scope.get': {
+    request: { agent: '' }, reply: { folders: [''] },
+    handler: function (a, caller) {
+      const key = a.agent || writerOf(caller).key;
+      return { folders: (walkState().scopes[key] || []).slice() };
+    },
+  },
   // TAKING THE BOX (goal/G4.20 point 9): an agent takes the box before a change it will write (cap, split, an
   // update), and the box is drawn red until its write. First wins; another agent's take is refused taken; Andy
   // takes nothing, as with line.take. A desk verb, not a node verb.
