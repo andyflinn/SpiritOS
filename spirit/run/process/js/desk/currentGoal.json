@@ -1,8 +1,8 @@
 {
- "change": 9166,
+ "change": 10012,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T09:36:31.202Z",
+ "writtenAt": "2026-10-04T12:39:01.151Z",
  "items": [
   {
    "id": "goal/G4",
@@ -18,7 +18,9 @@
     "goal/G4.1",
     "goal/G4.9",
     "goal/G4.17",
-    "goal/G4.18"
+    "goal/G4.18",
+    "goal/G4.22",
+    "goal/G4.24"
    ],
    "go": false,
    "alone": false,
@@ -29,15 +31,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 10,
    "live": [
-    "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
-    "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
@@ -1709,7 +1711,6 @@
     "goal/G4"
    ],
    "blocked": [
-    "goal/G4.10",
     "goal/G4.12"
    ],
    "go": false,
@@ -1985,10 +1986,10 @@
    "id": "goal/G4.10",
    "title": "chatter, the left pane: the peers",
    "goal": "goal/G4",
-   "status": "running",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [
     "goal/G4.9"
@@ -2760,6 +2761,21 @@
      "by": "claude-windows",
      "at": "2026-10-03T22:21:20.795Z",
      "text": "Both are true, so the report keeps 469235a9 as it is: the harness ran on your ubuntu dev box, which reaches its relay on spirit-3. Nothing more to change."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:35:10.265Z",
+     "text": "done?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:35:55.407Z",
+     "text": "Yes from me. The box says OPEN: none, no grant or question is waiting, and everything in it is built: the peers pane, presence, status marks, waiting, the new-message count and the divider. I added my claim beside the first.\nWhat you have not yet seen live is a chat between two different people's nodes; that belongs to the chat as a whole, not to this pane."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:36:01.443Z",
+     "text": "Yes from me. The left pane's work is built and you checked it live. G4.10 also carried the G4 close report (design/chat/G4-CLOSE-REPORT.md), with its last correction in at 469235a9.\nIt carries one claim, so Done is offered. Nothing in it is still owed."
     }
    ]
   },
@@ -5195,6 +5211,91 @@
      "by": "claude-windows",
      "at": "2026-10-04T09:34:25.459Z",
      "text": "Me: yes to both. G4.20 you already pressed Done. G4.19 carries both claims, Done (2).\nStill open outside them: appClientName (server.js, contactLabel.js), and the core-grant check that needs its own item."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T09:39:26.122Z",
+     "text": "should my deskServer, when i cause a status change on an item, automatically commit & sync currentGoal.json ?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T09:39:57.951Z",
+     "text": "Today the desk rewrites currentGoal.json on Go and Done (desk.js 41-46, 722), and you commit it by hand.\nAuto-commit: yes, if it commits that one file alone, so nothing you have staged goes with it. Auto-push: only when your checkout is not behind the remote. It must never pull or rebase your tree by itself; when it is behind, it leaves the push to you.\nThat makes it a new item, and the desk server running git in your checkout is a step to approve on its own."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T09:40:11.172Z",
+     "text": "It can, and it would close the gap: today the file only reaches git when you commit it yourself.\nSafe shape: commit that one file alone, so nothing of yours gets swept in. Push only when it is a plain fast-forward; if your checkout is behind, skip the push and say so, never pull into your tree.\nCost: one commit per Go or Done, and a server process writing git in your checkout. A new item under goal/G4, if you want it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T09:40:31.612Z",
+     "text": "a re-open would be subject to the same rule?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T09:40:57.444Z",
+     "text": "Today, no. The file is rewritten only on go, go-all, done and a new session (desk.js 714-715). Reopen and close leave it as it was, so after a reopen the file still says done.\nMy recommendation: in that item, every status change you make rewrites the file under the same rule, reopen and close included."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T09:41:08.683Z",
+     "text": "Not today: the file is rewritten on Go, Go all, Done and a new session only (desk.js 714). A Reopen or a Close leaves it stale.\nSince Reopen now undoes a Done, it should rewrite and commit the file by the same rule. I would put Reopen and Close in the same item."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T09:41:58.052Z",
+     "text": "i generally only read the repo. i think we should make this automatic? agree?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T09:42:22.710Z",
+     "text": "Agreed. Since you only read the repo, nothing of yours can get swept into it.\nThe shape: on every status change you make, commit that one file and push only when it is a fast-forward.\nIt needs a new item under goal/G4 and your Go."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T09:42:34.041Z",
+     "text": "Agree, automatic. Since you only read the repo, nothing of yours can be swept in.\nOne care point: your node runs from that checkout, so the desk should never pull into it. Instead it builds the one-file commit on top of the remote's master and pushes that, leaving your files and your running node as they are.\nEvery status change of yours rewrites, commits and pushes it, Reopen and Close included. Open it as a new item under goal/G4?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T09:43:11.185Z",
+     "text": "The two shapes differ in one place:\n- wsl-claude: commit in your checkout and push only when it is a fast-forward. Agents push often and your checkout lags, so most pushes would be skipped.\n- mine: build the commit on top of the remote's master, so it always pushes and never touches your files.\nWhich one goes in the item?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T09:43:32.197Z",
+     "text": "claude-windows's shape is better. I withdraw mine.\nOne care point for its red: the desk still writes the file into your checkout, so your copy shows as changed until you pull. A plain pull then refuses to overwrite it. Pulls of your checkout must stash it automatically (--autostash), and that includes the ones I do on WSL."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T09:44:12.244Z",
+     "text": "can the automatic handle the complications?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T09:44:35.233Z",
+     "text": "Yes, all three:\n- Someone pushes in between: it fetches, rebuilds the commit and tries again.\n- Offline or refused: the next status change carries the whole file again, so nothing is lost.\n- Your changed copy: the desk writes the file only into the commit, never into your checkout. You get it on your next pull, so your files never change under you."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T09:44:42.640Z",
+     "text": "Yes, both of them:\n- the changed copy: the desk stops writing the file into your checkout and puts it only in the commit. Your tree stays clean and plain pulls work, so no autostash is needed.\n- a race with an agent's push: the push is refused, the desk fetches again and rebuilds on top, a few tries, and says so in Desk if it gives up.\nOne thing to check live: that the desk process can push with your git credentials."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T09:45:20.386Z",
+     "text": "do it"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T09:45:43.240Z",
+     "text": "Understood. G4.19 is done, though, so the commit check refuses anything filed here. This needs a new item under goal/G4 with its box. Your Go button there starts the work.\nclaude-windows, the box is yours, as before? I write the red once the Go is on record."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T09:45:49.635Z",
+     "text": "taking: opening the item for the automatic commit of currentGoal.json, under goal/G4."
     }
    ]
   },
@@ -5423,6 +5524,926 @@
      "by": "claude-windows",
      "at": "2026-10-04T09:27:21.703Z",
      "text": "Correction to my harness line: authWorld is a real red from my build (its items.search has no includeClosed), not this box's lab setup. wsl-claude's line under G4.19 fixes it."
+    }
+   ]
+  },
+  {
+   "id": "goal/G4.21",
+   "title": "currentGoal.json committed by the desk itself, on every status change of his",
+   "goal": "goal/G4",
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
+   "blocking": [
+    "goal/G4"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 1,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "AUTOMATING THE AGENTS' BORING DUTIES — first: currentGoal.json committed by the desk itself. Opened from goal/G4.19's chat, 2026-10-04.\n\nANDY, VERBATIM\n- (under G4.19) \"should my deskServer, when i cause a status change on an item, automatically commit & sync currentGoal.json ?\"; \"a re-open would be subject to the same rule?\"; \"i generally only read the repo. i think we should make this automatic? agree?\"; \"can the automatic handle the complications?\"; \"do it\"\n- (here) \"unfortunately, currentGoal.json is not the only thing here.... there are a few automated things that we want to delegate, both on the deskServer and on the deskClient, server-plugins, we might call them, where we want to establish a pattern. Automated Jobs the agents run by hand today / deskClient: - running the harness - producing stat files in their designated folders (ubuntu is not included yet in that, it seems) / deskServer - sharing currentGoal.json via git....\"\n- \"thing is, storing your app-related process in a subfolder of your server is legal in SpiritOS, and would group sub-processes properly with their owning processes....\"; \"the node will see it as soon as it runs\"; \"and it won't clutter the proccesses mountable by the user\"; \"yes, that's the shape.\"; \"this is how we automate the boring parts of agent duties.\"\n\nDECIDED: THE SHAPE (\"yes, that's the shape.\")\n- An automation is a script in its owner's process folder, beside the owner: process/js/desk/<name>.js for the desk's, process/js/deskClient/<name>.js for an agent's. The owner starts it by asking its own node over loopback (jobs.create, the verb table that already holds jobs.api, server.js 1819-1837), so the node runs it as a job: checked against the include list, shown in Jobs as an instance of its owner (jobs.js processOf, 377-382), and no new module the user could start. One folder deeper would not group under the owner (jobs.js 380). No new verb, no core file.\n- Each runs as its own OS process, outside the node, and writes its outcome under the item as a line.\n\nDECIDED: THE FIRST ONE, THE GIT SHARE (his \"do it\")\n- Every status change of his rewrites currentGoal.json, and the desk's script commits it: go, go-all, done, reopen and close included. Today only go, go-all, done and session.set write it (desk.js 714-715), into his checkout, and he commits it by hand.\n- The commit is built on top of the remote's master with that one file alone and pushed; his checkout is never written, pulled or rebased, so his files and his running node never move under him. He gets the file on his next pull.\n- A push refused because someone pushed in between: fetch again, rebuild on top, try again, a few times; giving up is said in Desk. Offline or refused: the next status change carries the whole file again.\n\nRECOMMENDED, NOT YET RULED\n- The harness and the stat files follow later, each its own script beside the deskClient, woken by the desk's changed signal. The harness starts its own nodes and relays, so runs must never stack. Ubuntu stats: claude-ubuntu offered to measure on its box.\n\nTO CHECK LIVE\n- That a job the desk starts can push with his git credentials.\n\nWHO: wsl-claude writes the red once his Go is on record; claude-windows builds.",
+   "version": 2,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T09:50:14.918Z",
+     "text": "G4.21 is open: currentGoal.json committed by the desk itself. Your words are in its box.\nwsl-claude writes the red after your Go; I build it.\nYour Go on G4.21?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T09:55:07.069Z",
+     "text": "unfortunately, currentGoal.json is not the only thing here....\n\nthere are a few automated things that we want to delegate, both on the deskServer and on the deskClient, \nserver-plugins, we might call them, where we want to establish a pattern.\n\nAutomated Jobs the agents run by hand today\n\ndeskClient:\n- running the harness\n- producing stat files in their designated folders (ubuntu is not included yet in that, it seems)\n\ndeskServer\n- sharing currentGoal.json via git....\n\nthoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T09:55:37.828Z",
+     "text": "The pattern already exists. Each process/js/<name> folder has a manifest, and the node starts it (desk and deskClient are two of them). The desk already tells each agent's deskClient when something changed (desk.js 598-616).\nMy suggestion: each automation becomes its own process of that kind, woken by that signal. The git share would sit beside the desk, and the harness and the stat files beside each deskClient. No new plugin mechanism.\nOn the stats: README/CAPACITY holds Windows and my WSL figures; claude-ubuntu's box is not in yet. This wants a design pass before G4.21's red."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T09:55:50.756Z",
+     "text": "G4.21 is open: currentGoal.json committed by the desk itself. Your words are in its box.\nwsl-claude writes the red after your Go; I build it.\nYour Go on G4.21?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T09:56:17.816Z",
+     "text": "(My repeated \"G4.21 is open\" line above was a slip; ignore it.)\nThoughts: one pattern for all three is right, and wsl-claude's shape is the plainest. Each automation is its own process under process/js with a manifest, woken by the desk's \"changed\" signal. No new plugin mechanism, and its outcome goes under the item as a line.\nRisks to settle in the design pass:\n- the harness takes minutes and loads the box, so events must not stack runs\n- whatever pushes to git acts with someone's credentials, so each needs its own grant\n- claude-ubuntu's box has no capacity figures yet\nSo G4.21 waits for a design pass first, one automation at a time. Agreed?"
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-04T09:56:40.887Z",
+     "text": "On the ubuntu capacity gap: I can run `node spirit/test/measurePlatform.js --as ubuntu-node22` on this box (Andy's workstation, node 22.23.3) and post the resulting JSON for inclusion under README/CAPACITY. Say the word; I'll hand it over for commit via whichever agent takes G4.21."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T09:57:40.529Z",
+     "text": "you're proposing to run SpiritOS processes for this?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T09:58:01.185Z",
+     "text": "Yes, that is my proposal. The desk's changed signal already reaches a node process, and that process can write its outcome under the item.\nThe catch: the harness starts its own nodes and relays, so running it from inside a node is the risky one. The git share and the stat files are not.\nThe other way is plain scripts outside SpiritOS (cron or git hooks, as commitCheck already is). Your call which world they live in."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T09:58:09.976Z",
+     "text": "Yes, that was the proposal: a process under process/js, started by the node and woken by the desk.\nThe catch I should have named: harness, stats and git are our development tooling, not the product. As SpiritOS processes they would sit in the shipped tree.\nThe other way is to keep them outside SpiritOS, as scripts in the agents' own loop and a git step beside your desk. Which do you want?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T09:59:56.627Z",
+     "text": "thing is, storing your app-related process in a subfolder of your server is legal in SpiritOS, and would group sub-processes properly with their owning processes...."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T10:00:26.694Z",
+     "text": "Agreed, and the desk folder already does it: commitCheck.js and deskEar.js sit beside desk.js.\nSo:\n- the git share is a script in process/js/desk/ that desk.js starts on your status changes\n- the harness and the stats are scripts in process/js/deskClient/ that the deskClient starts on the desk's signal\nEach runs as its own OS process, outside the node, so the harness's own nodes and relays never run inside one. Each writes its outcome under the item.\nShall I write this into G4.21's box as the decided shape, with the git share built first?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T10:00:30.455Z",
+     "text": "Checked in jobs.js, and it is only half there. The node knows a process only as process/js/<name>/<file>.js (processOf, jobs.js 377-382). A script one folder deeper is no module to it. It is never started at boot, never checked against the include list, and Jobs does not show it under its owner.\nSo today the owner would start it itself as its own child, desk.js running desk/goalShare/. That works and groups it, but the node would not see it.\nIf you want the node to know sub-processes, that is a jobs.js change, core, and needs your grant."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:01:28.380Z",
+     "text": "the node will see it as soon as it runs"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T10:01:56.627Z",
+     "text": "True, if the owner asks the node to start it (jobs.create, server.js 310) rather than spawning it itself. A script in the owner's folder, desk/goalShare.js, then shows in Jobs as an instance of process/js/desk at once, checked against the include list.\nOne folder deeper it would not group under its owner (jobs.js 380). So: beside the owner, started through jobs.create. I correct my earlier line that way."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:02:18.264Z",
+     "text": "and it won't clutter the proccesses mountable by the user"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T10:02:25.383Z",
+     "text": "You're right, when the owner asks the node to start it. desk.js can do that today: it asks its own node over loopback, as commitCheck already asks jobs.api (commitCheck.js 54). No new verb and no core change.\nSo the shape: goalShare.js beside desk.js, started through jobs.create, shown in Jobs as an instance of process/js/desk.\nShall I write that into G4.21's box?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:03:12.005Z",
+     "text": "yes, that's the shape."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:04:30.196Z",
+     "text": "this is how we automate the boring parts of agent duties."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T10:04:42.109Z",
+     "text": "taking: the box of G4.21, for your ruling on the shape."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T10:05:27.668Z",
+     "text": "Box written (v2): your ruling on the shape, verbatim, and the git share as the first automation. The harness and stats are only recommended there.\nYour Go on G4.21 starts the red."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:11:35.474Z",
+     "text": "also: i have a defunct ollama / Unsloth installation. (this is not about unsloth)\n\nI want a subitem to be: fix my ollama installation, ie, model-dir, CUDA device setup, etc.. I already started a SpiritOS clone in D:/SpiritOS-agent-ollama, and we test agent-onboarding with that installation. Since I'm no expert in these things that will require your help. It also may need the deskServer to have job-designations for agents, for example the ollama agent may be assigned a scope, like spirit/run/shell/ticTacToe/"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T10:12:20.891Z",
+     "text": "Box written (v2): your ruling on the shape, verbatim, and the git share as the first automation. The harness and stats are only recommended there.\nYour Go on G4.21 starts the red."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T10:12:39.540Z",
+     "text": "(The \"Box written (v2)\" line just above is a repeat by mistake; ignore it.)\nGlad to help with Ollama. I would make it two items, since they are different work:\n- G4.22: fix your Ollama on Windows (models in D:\\models\\ollama, pinned to the 5060 Ti, as we set it up on 09-22), then onboard the agent in D:\\SpiritOS-agent-ollama on it.\n- G4.23: a scope per agent in the desk, e.g. the ollama agent on spirit/run/shell/ticTacToe/, enforced by the commit check.\nAs children of G4.21 they would hold G4.21's Go until they are done. Beside it, under goal/G4, they would run in parallel. Which?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T10:13:57.002Z",
+     "text": "I looked first and changed nothing. Your Ollama answers right now:\n- the server runs from D:\\ollama, version 0.33.2, on 127.0.0.1:11434\n- it is pinned to the 5060 Ti only (its log of 10-02 shows CUDA0 = 5060 Ti), with the Vulkan path off\n- models from D:\\models\\ollama: deepseek-coder-v2, gpt-oss:120b and others\n- a second ollama.exe sits under AppData\\Local\\Programs\\Ollama, and that is the one on PATH\n- D:\\SpiritOS-agent-ollama is at ac05367, far behind master\nWhat does it do wrong when you use it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:15:06.504Z",
+     "text": "i still want the onboarding tested with a non-claude agent, ie ollama, becaue that's a truer test that fitting the design to claude only. claude-code may be required for ollama onboarding. do i see this correctly.\n\nfeedback please."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T10:15:31.202Z",
+     "text": "Yes, a non-Claude agent is the truer test of the onboarding.\nOne catch: Ollama serves a model, not an agent. Something has to run commands and read files around it, such as deskEar.js, git and the onboarding script. Claude Code would be that loop, but then Claude is in the test again, and I have not checked that Claude Code can drive an Ollama model.\nCleaner: an open agent loop that speaks to Ollama. Then the onboarding is tested against a loop and a model that both are not ours."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T10:15:53.540Z",
+     "text": "Yes on the test: onboarding that only works for Claude is fitted to Claude. A non-Claude agent is the truer test.\nTwo parts, and they are separate:\n- the model: it must call tools (shell, files). Of yours, gpt-oss:20b (12.8 GB) fits the 5060 Ti's 16 GB and can. qwen3-coder:30b and gpt-oss:120b are larger, so they spill into RAM and run slower. deepseek-coder-v2 cannot call tools at all.\n- the agent program that drives it: Claude Code is one option if it can be pointed at Ollama, which I have not verified on your 0.33.2. An open agent program (aider, opencode) talks to Ollama directly.\nWith Claude Code, the test still carries Claude's habits. The open program is the truer test, Claude Code the easier start.\nWhich do you want first?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:18:25.100Z",
+     "text": "there are much smaller models that are tool capable. Unsloth showed me some, but they download to some unkown spot instead of my D:/models/ollama folder... Im sure there's toolable models in the 14b range...."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T10:19:18.081Z",
+     "text": "Correction to my line above: gemma4:12b (7 GB) also calls tools and fits the card, so you already have a small one.\nThe unknown spot: Unsloth downloads through Hugging Face, into C:\\Users\\Andre\\.cache\\huggingface\\hub (43.7 GB on drive C), plus 9.7 GB in C:\\Users\\Andre\\.unsloth.\nFix: set HF_HOME to a folder on D, e.g. D:\\models\\huggingface, and move the 43.7 GB there. A GGUF from it can be imported into Ollama so it lands in D:\\models\\ollama.\nThat is G4.22's first step. Open G4.22 for the Ollama work, beside G4.21?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:19:48.101Z",
+     "text": "so pointing ollama to my correct model folder we'll easily find models on huggingface that fit the bill"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T10:20:16.970Z",
+     "text": "Yes, and Ollama already points at D:\\models\\ollama; only Unsloth's downloads go to C.\nOllama can pull a GGUF straight from Hugging Face (ollama pull hf.co/<user>/<repo>:<quant>). It lands in D:\\models\\ollama, no Unsloth in between.\nSo: pick a tool-capable model of about 14B that fits 16 GB, pull it that way, and Unsloth's C: cache can be moved or deleted when you like."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:20:28.424Z",
+     "text": "and the newer gemmas have great reviews"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T10:21:03.640Z",
+     "text": "You already have one: gemma4:12b is in D:\\models\\ollama, 7 GB, and calls tools. It fits the 5060 Ti with room for a long context.\nIt can be the onboarding test's model, run by an open agent program. Shall I open G4.22 for that test?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:21:57.387Z",
+     "text": "can you fix those configurations from here?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T10:22:31.129Z",
+     "text": "Yes, from here:\n1. set HF_HOME=D:\\models\\huggingface for your user, so new Unsloth/Hugging Face downloads go to D\n2. move the 43.7 GB from C:\\Users\\Andre\\.cache\\huggingface to D:\\models\\huggingface (some minutes; Unsloth Studio must be closed meanwhile)\n3. check Ollama still answers and lists your models\nOllama itself I leave as it is, since it already works. Unsloth picks up the new folder after a restart, or after you log out and in.\nGo?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:23:04.104Z",
+     "text": "Unsloth studio is closed now."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:23:43.086Z",
+     "text": "go. for these ollama/Unsloth/huggingface fixes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T10:23:56.754Z",
+     "text": "Doing it:\n1. HF_HOME=D:\\models\\huggingface is set for your user. Done.\n2. Moving the 43.7 GB from C to D:\\models\\huggingface. Running now; I post when it is through.\nKeep Unsloth Studio closed until then."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:25:15.253Z",
+     "text": "also: Unsloth seems to still use my rtx 4000 card as well, causing glitches on my desktop."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:26:37.755Z",
+     "text": "i did my first locally generated AI picture yesterday. so i know i should be able to do tagging and visual things locally."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:30:52.643Z",
+     "text": "so does the ollama tests for onboarding get a separate item or does it go in this box?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T10:55:09.728Z",
+     "text": "A separate item. G4.21 is the desk sharing currentGoal.json, and the Ollama onboarding test is different work with its own Go and checks. In one box, neither could be marked done alone."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:56:25.843Z",
+     "text": "G4.22 then"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T10:57:41.289Z",
+     "text": "After the reboot (frozen desktop, restarted 12:34): the Hugging Face move had finished at 12:31. 43.7 GB are in D:\\models\\huggingface, and HF_HOME points there.\nFound: a WSL Ollama (/usr/local/bin/ollama serve) is running again and holds 11434 through wslrelay, so Windows Ollama cannot take its port. It is the one revoked on 09-22.\nwsl-claude: that is your side. Stopping it (sudo systemctl disable --now ollama) is Andy's call; ask him?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T10:57:59.212Z",
+     "text": "taking: opening G4.22, the Ollama onboarding test, with your lines in its box."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T10:58:06.976Z",
+     "text": "Confirmed on WSL: the ollama service is enabled and running and holds 127.0.0.1:11434. It starts again at every WSL boot, which is why it came back.\nShall I stop and disable it (sudo systemctl disable --now ollama)? That frees the port for your Windows Ollama. The WSL install stays on disk. It needs your sudo password, so you would type it in my terminal, or run the line yourself."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T10:58:28.703Z",
+     "text": "green?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T10:58:57.742Z",
+     "text": "Green from me on box v2, with one note for the red. The job has to fetch and build the commit somewhere, so it uses your clone's .git, its objects and origin/master. Your files, your branch and your index stay untouched.\nThe red will check exactly that: your HEAD and working files are unchanged after a share, and the desk stops writing currentGoal.json into your checkout."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T11:00:49.753Z",
+     "text": "Green from me too: G4.21's shape is settled in box v2 and waits only for your Go.\nG4.22 is open, with your Ollama lines, the finished move and what is still open in its box."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:02:47.590Z",
+     "text": "yes. i thing wsl, you should remove ollama from your system."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:03:14.016Z",
+     "text": "I can't: sudo wants your password. Paste these into a WSL shell; it asks for the password once:\nsudo systemctl disable --now ollama && sudo rm /etc/systemd/system/ollama.service && sudo systemctl daemon-reload && sudo rm -r /usr/local/bin/ollama /usr/local/lib/ollama /usr/share/ollama && sudo userdel ollama; sudo groupdel ollama\nThat removes the service, the program and its 52 KB folder. Your Windows Ollama and D:\\models are not touched. Tell me when it's done and I check that port 11434 is free."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:04:26.460Z",
+     "text": "Done and checked: the WSL ollama service and program are gone, and port 11434 is free for your Windows Ollama."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:13:05.699Z",
+     "text": "ollama repo up to date."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:31:47.883Z",
+     "text": "taking: the red for G4.21."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:34:05.784Z",
+     "text": "commit bd54875e080535505cdb5e1a2f8832f44b9d6ee5: goal/G4.21: the red for the desk sharing currentGoal.json itself — goalShare.js (the suite), 5 green, 10 owed. Andy, 2026-10-04: \"should my deskServer, when i cause a status change on an item, automat\n- spirit/test/goalShare.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:34:13.844Z",
+     "text": "The red for G4.21 is in, bd54875e: spirit/test/goalShare.js, 10 owed. A scratch stub turns it 14 of 14.\nclaude-windows, the shapes are in its header: process/js/desk/goalShare.js --repo --path --from; goalRepo and goalPath in place of goalFile; jobs.create through SPIRIT_CALLBACK_URL. Saying \"gave up\" in Desk is left open there.\nFound: a pre-receive hook cannot move a ref, so the race is tested as fetch-first plus one refused push."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:07:07.716Z",
+     "text": "taking: the build of G4.21, on goalShare.js (bd54875e)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:18:39.443Z",
+     "text": "commit 16633dd795902346609ed553909d72dfa3d3a1b8: goal/G4.21: built — the desk shares currentGoal.json through git itself (goalShare 14 of 14). Andy, 2026-10-04: \"should my deskServer, when i cause a status change on an item, automatically commit & s\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/desk.json\n- spirit/run/process/js/desk/goalShare.js\n- spirit/test/deskGoalFile.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:19:28.953Z",
+     "text": "G4.21 built, 16633dd7: goalShare 14 of 14, every desk suite green.\nTo see it: pull and restart your node, then press any status button. A commit \"currentGoal.json, shared by the desk\" lands on master, and your checkout's files stay as they are. That press is also the live check of your git credentials.\nFiles:\n- spirit/run/process/js/desk/goalShare.js (new)\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/desk.json\n- spirit/test/deskGoalFile.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:19:48.256Z",
+     "text": "Reviewed 16633dd7 on WSL: goalShare 14 of 14, deskGoalFile 14, deskArchive 5, deskServer 17, deskRules 21.\nOne finding: on success end(0) calls process.exit inside the try, so the finally never runs and the temp index is left behind, one per share (two in /tmp here from my runs). Fix: unlink before end, or end outside the try.\nNo other findings."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:20:41.552Z",
+     "text": "Your close of G2.17 put no share commit on master. Most likely your node still runs the code from before 16633dd7: your last restart was for G4.24.\nPull, restart, and press again; I will watch master. If nothing lands then either, the desk's log on your node says why, credentials most likely."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:21:44.164Z",
+     "text": "commit 517abf82e933ccdc26b0a5a7db49512e701e4af6: goal/G4.21: goalShare removes its temporary index on every way out. wsl-claude's review of 16633dd7: \"on success end(0) calls process.exit inside the try, so the finally never runs and the temp index \n- spirit/run/process/js/desk/goalShare.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:22:20.055Z",
+     "text": "Verified 517abf82: goalShare 14 of 14, and no temporary index is left in /tmp afterwards. Finding closed."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:37:17.479Z",
+     "text": "Your Done and Close on G4.10 put no share commit on master, as expected: D:\\SpiritOS is at cbbad5a4, before G4.21 (16633dd7, 517abf82). Pull and restart your node, then any press shares."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:38:16.329Z",
+     "text": "done"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:38:39.961Z",
+     "text": "No share commit on master yet. If your node is now pulled and restarted, press any status button, a Close on an old item is fine, and I'll check master within a minute. If nothing lands, the desk's line in your node's log says why."
+    }
+   ]
+  },
+  {
+   "id": "goal/G4.22",
+   "title": "Onboarding tested with a non-Claude agent: an Ollama model on Andy's box, in D:/SpiritOS-agent-ollama",
+   "goal": "goal/G4",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G4"
+   ],
+   "blocked": [
+    "goal/G4.23"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "ONBOARDING TESTED WITH A NON-CLAUDE AGENT — opened from goal/G4.21's chat, 2026-10-04.\n\nANDY, VERBATIM (under goal/G4.21)\n- \"also: i have a defunct ollama / Unsloth installation. (this is not about unsloth) I want a subitem to be: fix my ollama installation, ie, model-dir, CUDA device setup, etc.. I already started a SpiritOS clone in D:/SpiritOS-agent-ollama, and we test agent-onboarding with that installation. Since I'm no expert in these things that will require your help. It also may need the deskServer to have job-designations for agents, for example the ollama agent may be assigned a scope, like spirit/run/shell/ticTacToe/\"\n- \"i still want the onboarding tested with a non-claude agent, ie ollama, becaue that's a truer test that fitting the design to claude only. claude-code may be required for ollama onboarding. do i see this correctly.\"\n- \"there are much smaller models that are tool capable. Unsloth showed me some, but they download to some unkown spot instead of my D:/models/ollama folder... Im sure there's toolable models in the 14b range....\"; \"so pointing ollama to my correct model folder we'll easily find models on huggingface that fit the bill\"; \"and the newer gemmas have great reviews\"\n- \"can you fix those configurations from here?\"; \"go. for these ollama/Unsloth/huggingface fixes.\"\n- \"also: Unsloth seems to still use my rtx 4000 card as well, causing glitches on my desktop.\"\n- \"i did my first locally generated AI picture yesterday. so i know i should be able to do tagging and visual things locally.\"\n- \"so does the ollama tests for onboarding get a separate item or does it go in this box?\"; \"G4.22 then\"\n\nDECIDED\n- The WSL Ollama goes. Andy, 2026-10-04: \"yes. i thing wsl, you should remove ollama from your system.\" It is a systemd service that starts at every WSL boot and holds 127.0.0.1:11434 through wslrelay, so Windows Ollama loses its port; wsl-claude removes it (needs his sudo).\n- The model for the onboarding test is gemma4:12b (7 GB, calls tools, fits the 5060 Ti). Andy, 2026-10-04: \"the gemma will be used for onboarding tests\"\n- An open agent program drives it, not Claude Code, so neither the loop nor the model is Claude. Andy, 2026-10-04: \"recommendation accepted.\", then, asked which: \"opencode\". Onboarding means running scripts, git and deskEar in a shell, which opencode does as an agent loop.\n\nDONE ALREADY (under his go for the fixes)\n- HF_HOME=D:\\models\\huggingface set for his user; the 43.7 GB Hugging Face cache moved there from C:\\Users\\Andre\\.cache\\huggingface (robocopy, 55 files, finished 12:31). C:\\Users\\Andre\\.unsloth (9.7 GB, Unsloth's own tools) stays.\n- The WSL Ollama removed (wsl-claude, his sudo). Windows Ollama (D:\\ollama) holds 11434 again, updated to 0.35.1 after the reboot, still reading D:\\models\\ollama on the 5060 Ti only.\n- D:/SpiritOS-agent-ollama brought up to master by Andy (\"ollama repo up to date.\"), 8caabfd4.\n\nFOUND, OPEN\n- The models in D:\\models\\ollama: gemma4:12b (7 GB, tools), gpt-oss:20b (12.8 GB, tools), qwen3-coder:30b and gpt-oss:120b (too large for 16 GB), deepseek-coder-v2 (no tools).\n- Unsloth on the RTX 4000: its llama.cpp is a CUDA build; not yet pinned like Ollama is.\n\nRECOMMENDED, NOT YET RULED\n- Agent scopes in the desk (an agent bound to a folder, enforced by the commit check): its own item.",
+   "version": 6,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T11:05:09.306Z",
+     "text": "Checked from Windows: your Ollama now holds 11434 itself, updated to 0.35.1 by the setup that ran after the reboot.\nIt still reads D:\\models\\ollama (all five models listed) and uses the 5060 Ti only.\nYour Ollama is working again. What remains for G4.22: Unsloth on the RTX 4000, and bringing D:/SpiritOS-agent-ollama up to master."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:15:41.565Z",
+     "text": "the gemma will be used for onboarding tests"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T11:16:19.955Z",
+     "text": "Recorded in the box: gemma4:12b is the model for the onboarding test.\nOne choice is left before it can start: the program that drives it. An open one (aider or opencode) is the truer test; Claude Code is the easier start, but puts Claude back in the test.\nWhich one?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:18:57.155Z",
+     "text": "recommendation accepted."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T11:19:38.601Z",
+     "text": "Recorded: an open program drives gemma4:12b, not Claude Code.\nI named two, so asking back: I'd take opencode. Onboarding means running scripts, git and deskEar in a shell, and opencode does that as an agent loop; aider is built mainly to edit files.\nopencode, then?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:19:57.020Z",
+     "text": "opencode"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T11:20:56.985Z",
+     "text": "Recorded: opencode drives gemma4:12b. G4.22's box is complete (v6).\nWith your Go, I install opencode on your box, point it at your Windows Ollama, and set it to work in D:\\SpiritOS-agent-ollama, then hand it AGENT_ONBOARDING.md. Every step it gets stuck on goes under this item as a finding.\nYour Go on G4.22?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:24:12.283Z",
+     "text": "the red-bordered agent bubbles become tab-headers again, with their own pane for scope-configuration. file/folder selector in it a shell element."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:24:41.949Z",
+     "text": "For the scope pane: the shell has no file/folder selector element yet. The nearest thing is the Files app's tree (shell/files/files.js). That tree would become a shell element, the way contactSelector came out of the contacts pane. The agent bubbles are deskBubblesHtml in shell/desk/desk.js.\nThis is the per-agent scope work claude-windows called G4.23, so it wants its own item beside G4.22."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T11:24:53.383Z",
+     "text": "That is agent scopes, which G4.22's box already names as an item of its own. Open it as G4.23 with your line?\nWhat exists: the shell's selectors live in shell/js (contactSelector, apiBranchSelector, appServerSelector, iconSelector), but none picks a file or folder. The Files app has the tree it would be built from.\nSo G4.23 holds three pieces: a path selector as a new shell element, the agent tabs with a scope pane, and the desk keeping each agent's scope for the commit check to enforce."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:27:07.822Z",
+     "text": "i will go with your recommendations: which (new) item does the desk's scope pane belong in, and that blocks the onboarding of allama tests."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:27:28.809Z",
+     "text": "G4.23 for the scope pane, with G4.23 blocking G4.22. That way the Ollama agent starts with a scope and never runs unconfined. claude-windows is opening it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:27:57.655Z",
+     "text": "cw: yes"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T11:29:10.243Z",
+     "text": "taking: opening G4.23, agent scopes, blocking G4.22."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:29:13.564Z",
+     "text": "wsl: can 21 and 22 go at the same time?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:29:32.332Z",
+     "text": "G4.21 yes, any time. G4.22 waits, because G4.23 now blocks it: the Ollama agent needs its scope first.\nG4.21 and G4.23 can run at the same time. Both touch desk.js, but different parts of it, so whoever pushes second rebases."
+    }
+   ]
+  },
+  {
+   "id": "goal/G4.23",
+   "title": "Agent scopes: each agent bound to a folder, set in its own tab in Desk, enforced by the commit check",
+   "goal": "goal/G4",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G4.22"
+   ],
+   "blocked": [
+    "goal/G4.25"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "AGENT SCOPES — each agent bound to a folder, set in Desk, enforced by the commit check. Opened from goal/G4.22's chat, 2026-10-04. Blocks goal/G4.22 (the Ollama onboarding test).\n\nANDY, VERBATIM\n- (under G4.21) \"It also may need the deskServer to have job-designations for agents, for example the ollama agent may be assigned a scope, like spirit/run/shell/ticTacToe/\"\n- (under G4.22) \"the red-bordered agent bubbles become tab-headers again, with their own pane for scope-configuration. file/folder selector in it a shell element.\"\n- \"i will go with your recommendations: which (new) item does the desk's scope pane belong in, and that blocks the onboarding of allama tests.\"\n\nDECIDED\n- Its own item, G4.23, and it blocks G4.22 (his \"i will go with your recommendations\").\n- The agent bubbles (deskBubblesHtml, shell/desk/desk.js) become tab headers again, each opening that agent's pane for its scope.\n- The file/folder selector is a shell element.\n\nIN THE TREE\n- The shell's selectors are elements in shell/js (contactSelector, apiBranchSelector, appServerSelector, iconSelector); none picks a file or folder. The Files app (shell/files/files.js) has the tree it would come from, as contactSelector came out of the contacts pane.\n- The commit check (process/js/desk/commitCheck.js) checks the item and his Go, not the files a commit touches.\n\nRECOMMENDED, NOT YET RULED\n- Three pieces: a path selector as a new shell element; the agent tabs with a scope pane; the desk keeping each agent's scope (one or more folders), which the commit check reads to refuse a commit touching files outside it.\n- How it meets the core-file grant check (refusing a core file nobody granted, still without an item): both are \"files this agent may touch\"; one shape may serve both.\n\nOPEN\n- Where the scope is kept (the desk's state, beside the agent's key), and whether Andy alone sets it.\n- An agent with no scope set: everything, or nothing.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T11:34:09.643Z",
+     "text": "G4.23 is open: agent scopes. Your lines are in its box. It blocks G4.22, so the Ollama test waits until scopes exist.\nTwo questions before the red:\n- Do you alone set an agent's scope?\n- An agent with no scope set: may it touch everything, or nothing?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:37:43.487Z",
+     "text": "damn .we still have the issue with node sending a rename and the shell rebuilding it's file-tree from scratch on every single update."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:38:14.213Z",
+     "text": "Confirmed in the tree: Files rebuilds the whole tree whenever the fs-watcher job changes (shell/files/files.js 126-139). It gets the whole file list each time and redraws it from scratch, keeping only which folders were open.\nSo the scope selector should not be built on it. The node already has fs.search (server.js 1896). The selector can work like contactSelector over peers.search: type a path, it asks for the newest matches, and nothing rebuilds.\nThe Files tree itself is its own fix, outside G4.23."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:39:40.438Z",
+     "text": "and we talked about a library that constructs usefull updates from a file-watch and using that on the node side, i don't want to build file elements on a bad design...."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:40:28.862Z",
+     "text": "I can't find that talk in the tree or in Desk, so this is not from it. Today jobs.js uses plain fs.watch, walks again on every event and ships the whole list (jobs.js 153, 187). A watcher library such as chokidar or @parcel/watcher gives ready-made add, change, unlink and rename events, so the node could send only what changed.\nThe scope selector does not need that fixed first, though: it searches with fs.search and builds no tree. The watcher fix can be its own item, run next to G4.23 or before it, as you prefer."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:41:18.834Z",
+     "text": "it's what we discovered when we tested fs-watch in the jobs panel to see what it sends"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:42:02.201Z",
+     "text": "Found it: goal/G2.16, the fs-watcher console (c68a4624). That item has left the desk, so the library's name is not recoverable from here.\nWhat you saw is plain fs.watch. It only knows two events, rename (anything created, deleted or moved) and change. On either one the node walks the whole tree again and sends the whole list (jobs.js 176-183).\nA watcher library that names add, unlink and move, with the node sending only that delta, fixes it at the root. My recommendation: make it its own item that blocks G4.23's selector, since you don't want file elements on the old design."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:43:55.138Z",
+     "text": "damn, my search still doesn't show old, closed items. i can't find it either."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:44:45.146Z",
+     "text": "Two reasons, both checked:\n1. goal/G2 has no items left on the desk at all; closed or not, it holds 0. The only code that removes an item is session.set: an item left out of a new session for its goal is deleted from the desk state (desk.js 360). The records are still in desk.db; the desk just no longer builds them.\n2. Your search matches id and title only (desk.js searchItems), not chat or box, so \"fs-watch\" finds nothing even among items that exist.\nBoth are what G4.20's \"search the database\" did not reach. This wants its own item: an item left out of a session is closed, never deleted, and your search also matches lines."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:45:38.918Z",
+     "text": "1. sounds dumb that the \"archive\" is not searchable."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:45:58.289Z",
+     "text": "Agreed, and nothing is lost: every record is still in desk.db. The fix is that an item left out of a session gets closed instead of deleted. Your search with [Include Closed] then finds it again, goal/G2.16 included. Do you want that as a new item, with the line search in it as well?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:47:51.676Z",
+     "text": "yes, same principle as the agent search, it searches the lines server-side, but only brings back handle/key and title, i'll have to go to details to fetch the rest."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:48:12.146Z",
+     "text": "taking: opening G4.24, the searchable archive (an item left out is closed, never deleted; the List search matches lines and brings back key and title)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:49:01.019Z",
+     "text": "if deleted is just a flag in the database, we can just ignore it from now on"
+    }
+   ]
+  },
+  {
+   "id": "goal/G4.24",
+   "title": "The searchable archive: an item left out of a session is closed, never deleted; the List search matches lines",
+   "goal": "goal/G4",
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "done"
+   ],
+   "blocking": [
+    "goal/G4"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 1,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "THE SEARCHABLE ARCHIVE — opened from goal/G4.23's chat, 2026-10-04.\n\nANDY, VERBATIM (under goal/G4.23)\n- \"damn, my search still doesn't show old, closed items. i can't find it either.\"\n- \"1. sounds dumb that the \\\"archive\\\" is not searchable.\"\n- \"yes, same principle as the agent search, it searches the lines server-side, but only brings back handle/key and title, i'll have to go to details to fetch the rest.\"\n\nTODAY, IN THE TREE (at bd54875e)\n- desk.js 360, in session.set: \"g.members.forEach(function (id) { if (ids.indexOf(id) === -1) delete s.items[id]; });\" An item left out of a new session for its goal is deleted from the state. Its records stay in desk.db, but the desk no longer builds them. goal/G2 holds 0 items for that reason (items.search, includeClosed true), and goal/G2.16, the fs-watcher console, cannot be found.\n- desk.js searchItems: the List's text matches \"(it.id + ' ' + it.title)\" only, not an item's chat lines or box. items.find, the agents' search (goal/G3.13), already searches lines.\n\nDONE\n- Point 1, cbbad5a4: left out is closed, never deleted (deskArchive 5 of 5); live on his node, goal/G2.16 back. Andy: \"closed? it works for me now\".\n\nDECIDED\n- G4.24 stays open for point 2; it is not split. Andy, 2026-10-04: \"i'll keep this one active\"\n\nPROPOSED (wsl-claude, for his ruling)\n1. An item left out of a session is closed, never deleted, so [Include Closed] finds it. Items already deleted come back as closed the next time the desk builds its state from desk.db: replaying records rebuilds them anyway.\n2. The List's search also matches an item's chat lines and box, server-side, through the bucket like items.find, and answers the item's key and title (his \"only brings back handle/key and title\"); the dialog fetches the rest.\n\nOPEN\n- Whether 2 reuses items.find, or changes items.search's answer for the List.\n\nWHO: wsl-claude writes the red for point 2 once its shape is settled; claude-windows builds.\n",
+   "version": 2,
+   "checks": [],
+   "chat": [
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:49:27.038Z",
+     "text": "G4.24 is open, with your three lines in its box. Nothing is lost: the desk rebuilds its state from every record each time. Once an item left out is closed instead of deleted, goal/G2.16 and the rest come back as closed, findable with [Include Closed].\nOne open point: whether the line search reuses the agents' items.find. Your Go starts it."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:49:33.876Z",
+     "text": "Even simpler: it is not a flag at all. desk.db only appends records and deletes nothing. The \"delete\" happens each time the desk replays those records into its state (desk.js 360).\nIgnoring it from now on is exactly point 1: change that one line to close instead of delete, and every past case comes back on the next replay."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:50:14.106Z",
+     "text": "is \"deleted\" just a flag in the database?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:50:31.955Z",
+     "text": "No, not even a flag; our lines crossed. desk.db never deletes anything. The item only drops out when the desk rebuilds its state from the records, and one line changed there brings them all back."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T11:51:08.438Z",
+     "text": "if it's that simple, lets do it quick"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:51:27.742Z",
+     "text": "Glad to. A chat line is no Go, though, so press Go on G4.24. Point 1, closed instead of deleted, is a small red plus a one-line build and can land first. Point 2, searching lines, follows once the items.find question is settled.\nWho: I write the red, claude-windows builds, as usual, unless you say otherwise."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:51:56.486Z",
+     "text": "taking: the red for point 1 (left out is closed, never deleted)."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:53:08.545Z",
+     "text": "commit 66e4edcb88b7de956e59d7af0dd4704809e0b125: goal/G4.24: the red for point 1 — an item left out of a session is closed, never deleted (deskArchive 1 green, 4 owed). Andy, 2026-10-04: \"1. sounds dumb that the \\\"archive\\\" is not searchable.\", \"if \n- spirit/test/deskArchive.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T11:53:16.255Z",
+     "text": "The red for point 1 is in, 66e4edcb: deskArchive.js, 4 owed. A three-line stub in session.set turns it 5 of 5, and the other desk suites stay green.\nclaude-windows, the shapes are in its header: the left-out member is closed, keeps everything, and stays a member after the session's own items. Left open: what a later session naming it again does."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T11:57:53.261Z",
+     "text": "My fault: one listener ended and I did not re-arm it, so I missed this stretch. I am back and listening.\ntaking: the builds of G4.24 point 1 (deskArchive, 66e4edcb) first, it is the small one, then G4.21 (goalShare, bd54875e)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:06:09.975Z",
+     "text": "commit cbbad5a4742ae281d2ec5694fbe012bea81614bf: goal/G4.24: point 1 built — an item left out of a session is closed, never deleted (deskArchive 5 of 5). Andy, 2026-10-04: \"1. sounds dumb that the \\\"archive\\\" is not searchable.\", \"if deleted is just\n- spirit/run/process/js/desk/desk.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:06:30.057Z",
+     "text": "commit cbbad5a4742ae281d2ec5694fbe012bea81614bf: goal/G4.24: point 1 built — an item left out of a session is closed, never deleted (deskArchive 5 of 5). Andy, 2026-10-04: \"1. sounds dumb that the \\\"archive\\\" is not searchable.\", \"if deleted is just\n- spirit/run/process/js/desk/desk.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:06:46.331Z",
+     "text": "Point 1 built, cbbad5a4: an item left out of a session is closed, never deleted. deskArchive 5 of 5; every desk suite green.\nYou see it after your node restarts: goal/G2.16 and every other item left out before come back as closed, found with [Include Closed].\nOne addition: a left-out item no longer blocks anything, as it blocked nothing while it was deleted. Point 2 (searching lines) still to come, so no claim yet.\nFiles:\n- spirit/run/process/js/desk/desk.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:06:55.586Z",
+     "text": "Reviewed cbbad5a4 on WSL: deskArchive 5 of 5, no findings. Keeping left-out items from blocking is right, since they blocked nothing while deleted.\nAndy, once your node runs this commit, goal/G2.16 should show with [Include Closed]. Point 2, the line search, is still to shape."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:09:01.144Z",
+     "text": "node updated"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:09:37.332Z",
+     "text": "Checked on your live desk: goal/G2.16 is back, closed, \"Jobs console for fs-watcher...\". goal/G2 holds 17 items again. With [Include Closed] on, search for G2.16 to see it.\nIts chat should hold the watcher talk you remembered."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:27:34.369Z",
+     "text": "closed? it works for me now"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:28:13.399Z",
+     "text": "Point 1 is done and working, as you see. Point 2, the List search matching chat lines, is not built yet.\nEither G4.24 stays open for it, or you press Done now and point 2 becomes its own item. I recommend Done plus a new item, so this one closes on what you checked."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:28:40.721Z",
+     "text": "Point 1 is done and working. Point 2 is not built: the List search matching chat lines, bringing back only key and title (your words).\nEither keep G4.24 open for point 2, or press Done now and point 2 becomes its own item. Which?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:33:29.785Z",
+     "text": "done?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:34:00.090Z",
+     "text": "Point 1 is done. Point 2 (the List search matching chat lines) is not.\nIf you say \"split\", I open point 2 as G4.26 and claim G4.24 done, so you get its Done button."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:34:06.755Z",
+     "text": "Yes, done from my side for point 1; press Done. Point 2, the List searching chat lines, then gets its own item when you want it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:34:31.228Z",
+     "text": "i'll keep this one active"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:34:40.140Z",
+     "text": "You will find no Done button yet: nobody has claimed G4.24, and Done shows only after a claim (your G4.20 rule).\nSay \"split\", and I open point 2 as its own item and claim G4.24, which brings the button."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:35:23.059Z",
+     "text": "claude-windows, I already claimed G4.24, so Andy has Done (1). He said he keeps it open for point 2, which is his call."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:36:20.803Z",
+     "text": "Correction: wsl-claude had claimed G4.24, so your Done (1) was there. I said nobody had, without checking. Your ruling stands and is in the box: G4.24 stays open for point 2."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:36:44.899Z",
+     "text": "taking: the red for point 2, the List search matching chat lines and the box."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:37:44.655Z",
+     "text": "commit 8d9f634c50537eb69c29d668c9c07d3e7c8d7b31: goal/G4.24: the red for point 2 — the List search matches chat lines and the box (deskSearchLines 1 green, 5 owed). Andy, 2026-10-04: \"yes, same principle as the agent search, it searches the lines se\n- spirit/test/deskSearchLines.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:37:51.890Z",
+     "text": "The red for point 2 is in, 8d9f634c: deskSearchLines.js, 5 owed. A one-line stub in searchItems turns it 6 of 6, and the other desk suites stay green.\nclaude-windows: items.search's text also matches chat lines and the box; filters and rows unchanged."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:38:12.832Z",
+     "text": "taking: the build of G4.24 point 2, on deskSearchLines (8d9f634c)."
+    }
+   ]
+  },
+  {
+   "id": "goal/G4.25",
+   "title": "fs-watcher streams tree commands, not the whole file list (chokidar), from goal/G2.17",
+   "goal": "goal/G4",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G4.23"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "THE FILE WATCHER ON CHOKIDAR — the node streams tree commands instead of the whole file list. Carried from goal/G2.17 (Andy, 2026-10-04: \"chokidar is the library\", \"G4.25 yes.\"). Blocks goal/G4.23: \"i don't want to build file elements on a bad design....\"\n\nTHE SHAPE, SETTLED FROM HIS RULINGS\n1. The node's fs-watcher job runs chokidar on the root (npm, MIT, v5, one dependency, readdirp), in place of the hand-rolled fs.watch reader.\n2. Every chokidar event becomes one tree command: createDirectory / createFile / changeFile / deleteFile / deleteDirectory, with path and time. Commands ride on the fs-watcher job's own job-updated (data.command {op, path, at}), with no new event name.\n3. Connecting is the gimme-all, with no new verb. A newly connected page gets one createDirectory/createFile per existing entry, in place of the file list in its snapshot (server.js 236), then each change as it comes. One message each, each under PAYLOAD_MAX, no batching.\n4. Files and the Process Browser build and keep their tree only by applying the commands; the fs-watcher console shows them.\n5. Eradicated, with tests that they are gone: the whole-list push, the hand-rolled rescan, data.files.\nRED (claude-windows): Andy's mirror test against the chokidar-backed watcher, on Windows and Linux, the Windows 50-file burst included.\n\nANDY, VERBATIM (2026-10-02, under goal/G2.16 and G2.17)\n- \"i bet, that from the supplied information, sensible knowlede can be constructed, that eliminates the need for sending the whole kaboodle up on every single change...\"\n- \"the current design is horrid. for lazy load the stream can send createDirectory run / createDirectory media / createFile index.html etc... just send \\\"commands up the stream to modify the tree.\"\n- The test: \"monitor a scratch folder, and create a parallel folder with correct filename, and each file holds an x / once the duplicated tree has the exact same structure, we know that we re reading the fs-watch-data correctly\"\n- \"so that s our replacement then. quick and free and maintained by others....\" (chokidar)\n- \"the client just needs to ask on launch gimme-all...\"; \"the beginning can be a stream of changes that build the tree (MAX_PAYLOAD)\"\n- \"forget about batching, it s more code for no noticeable difference.\"\n\nWHY (measured 2026-10-02)\n- Today fs.watch gives only rename|change and a name. The watcher keeps the first event of a burst, rescans, and sends the whole list to every open page on every change: 787 files on his Windows node, 88 KB for 357 entries on his WSL node. A command is about 200 bytes.\n- The mirror experiment matched on Linux 12 of 12. Windows needed a third rule: a 50-file burst arrived as one named and one nameless event. chokidar handles that.",
+   "version": 2,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: js/jobs.js — the fs-watcher job runs chokidar and streams tree commands",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-04T12:31:31.102Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "core grant: js/server.js — a page that connects gets the tree as create commands, in place of the file list in its snapshot",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-04T12:31:35.850Z"
+    },
+    {
+     "number": "G3",
+     "kind": "G",
+     "words": "core grant: js/client/shell.js — the shell keeps one file tree, built and kept by the commands",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-04T12:31:40.588Z"
+    },
+    {
+     "number": "G4",
+     "kind": "G",
+     "words": "grant: package.json — chokidar added as a dependency (MIT, one dependency of its own, readdirp); glob is the only one today",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-04T12:32:12.456Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:17:55.312Z",
+     "text": "G4.25 is open: G2.17's ruled shape carried whole into its box, chokidar named, and it blocks G4.23.\nYour Go on G4.25 starts the red. G2.17 can be closed again once you are happy it is carried."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:21:13.587Z",
+     "text": "cap"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:23:28.231Z",
+     "text": "Capped (v2, 7.4 KB down to 2.7 KB): the settled shape in five points, your six rulings verbatim, and why, measured. The superseded proposals and options are gone.\nAlso: wsl-claude verified the G4.21 fix, 517abf82."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:23:59.006Z",
+     "text": "so this just needs to bridge the gap, the shell maintains one complete tree, and all apps/file-pickers feed from that?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:24:25.532Z",
+     "text": "Yes. The shell keeps one tree, built from the node's create commands when the page connects and then kept current by the change commands. Files, the Process Browser and the scope selector all read that one tree, and none of them asks the node or redraws from scratch.\nThat replaces my fs.search suggestion for the selector. Today three readers each take the whole list (Files, Process Browser, and the app discovery at boot)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:24:35.000Z",
+     "text": "Yes, and it is better than the box: one tree in the shell, built from the commands, and Files, the Process Browser and the path selector all read it. Today Files and the Process Browser each build their own.\nThe cost: that tree lives in js/client/shell.js, a core file, so it needs your grant.\nPut it in G4.25's shape, with the grant on shell.js?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:25:26.948Z",
+     "text": "that means, virtually no change for the current file-picker and files app, yes?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:25:54.230Z",
+     "text": "Not quite. There is no file picker today, so that one is new. Files does change. It reads job.data.files now and redraws its whole tree on every change (files.js 126-139). With the shell's tree it reads that instead and adds, removes or renames one row per command. Only that part stops redrawing everything.\nIts look and its clicks stay as they are. The Process Browser gets the same change."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:26:01.079Z",
+     "text": "Small, but not zero. There is no file picker yet; it gets built on the shared tree.\nFiles today rebuilds its whole tree from job.data.files on every change (files.js render: filesBuildTree, then innerHTML for all of it). That is the redraw you complained about.\nWith the shared tree, Files reads the shell's tree instead of the list. To stop the redraw it must also draw only the folder a command touched; otherwise it keeps rebuilding, just from a better source."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:26:36.585Z",
+     "text": "there's just the Files-app which we move to elements now or later?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:26:58.359Z",
+     "text": "we have an open items file file-picker already"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:27:14.327Z",
+     "text": "Now, in G4.25. Files has to be rewritten to apply commands anyway. Done as a shell element (in shell/js, beside contactSelector), the same work gives G4.23 its path selector, so nothing is built twice.\nFiles then becomes the element plus its detail panel and launch clicks, which stay as they are. Add it to G4.25's shape?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:27:18.836Z",
+     "text": "Now, I recommend. The drawing per command has to be written once anyway. As a shell element, a file tree in shell/js the way contactSelector is, the Files app and G4.23's picker both mount the same element. Done later, it gets written twice."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:28:19.898Z",
+     "text": "I find no file picker, neither in the code (shell/, js/client/, index.html) nor as a Desk item; \"picker\" matches no item title. Which one do you mean, or where did you see it?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:28:46.922Z",
+     "text": "I can't find it. The tree has no file picker: shell/js holds contactSelector, apiBranchSelector, appServerSelector and iconSelector only. In Desk, a search for \"picker\" finds G4.25 and G4.10 (chatter, the left pane), neither a file picker.\nWhich item or file do you mean? If one exists, the tree element extends it rather than starting new."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:30:07.537Z",
+     "text": "so this one first, then we worry about the pickers?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-04T12:30:26.105Z",
+     "text": "it needs grants for core"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:30:30.281Z",
+     "text": "Yes. G4.25 first: the node streams tree commands, the shell keeps one tree, and Files draws from it, as an element if you agree. The pickers come after, in G4.23, built on that element.\nG4.25 needs your Go and the grant on js/client/shell.js."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:30:36.189Z",
+     "text": "Yes: G4.25 first (chokidar, commands on the stream, the shell's one tree, Files drawing per command). The pickers come in G4.23, built on that tree.\nTwo things still open for G4.25 before its red: the shell's one tree goes in js/client/shell.js, a core file, so it needs your grant; and whether the tree element in shell/js is part of G4.25 or of G4.23."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:31:00.855Z",
+     "text": "The core grants it needs, from the tree:\n- js/jobs.js: the fs-watcher moves to chokidar and sends commands\n- js/server.js: on connect, a page gets create commands, not the whole list (server.js 236)\n- js/client/shell.js: the one tree, and api.onFiles fed from it (shell.js 1362, 2218)\n- package.json: chokidar as a dependency; glob is the only one today\nPossibly js/kernel.js too, whose fs.search view reads the watcher's list (kernel.js 913); the builder says if it must move."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-04T12:31:58.175Z",
+     "text": "The grants are under G4.25 as arm-buttons, one per file: G1 jobs.js, G2 server.js, G3 js/client/shell.js, G4 package.json (chokidar).\nkernel.js is not needed: it only asks fs.search. But fs.search (nodeSearches.js 97-98) reads the watcher's data.files, which goes, so nodeSearches.js moves too. It is not a core file.\nGrant what you agree to, and press Go; wsl-claude writes the red."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:33:34.058Z",
+     "text": "taking: the red for G4.25."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T12:35:26.471Z",
+     "text": "One question before the red, found in the tree. No box has node_modules: no clone, the core installs no npm package today, and glob is declared in package.json but neither installed nor required. Only three process folders (imageStats, imageCaption*) have their own.\nSo chokidar needs a way onto every node, spirit-3 included: (a) an npm install step in install.js and onboarding, or (b) chokidar vendored into the repo. Which do you want?"
     }
    ]
   }
