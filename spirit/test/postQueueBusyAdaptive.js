@@ -36,14 +36,14 @@ test.subHeading('1. the wait grows 250, 500, 1000, 2000 and stays');
 {
   const c = clock();
   const q = pq.createQueue({ now: c.now });
-  const b = q.add({ relayUrl: 'R1', toKey: 'andy', patienceMs: 999999 });
+  const b = q.add({ relayUrl: 'relay-a', toKey: 'andy', patienceMs: 999999 });
   const waits = [];
   for (let i = 0; i < 6; i += 1) {
     const it = q.eligible();
     if (!it) { waits.push('none eligible'); break; }
     q.started(it.seq);
     q.busy(b, 5000);
-    const w = q.backoffFor('R1', 'andy');
+    const w = q.backoffFor('relay-a', 'andy');
     waits.push(w);
     c.tick(w);
   }
@@ -55,16 +55,16 @@ test.subHeading('2. never longer than the relay\'s own quote');
 {
   const c = clock();
   const q = pq.createQueue({ now: c.now });
-  const b = q.add({ relayUrl: 'R1', toKey: 'andy', patienceMs: 999999 });
+  const b = q.add({ relayUrl: 'relay-a', toKey: 'andy', patienceMs: 999999 });
   q.started(b); q.busy(b, 100);
-  const first = q.backoffFor('R1', 'andy');
+  const first = q.backoffFor('relay-a', 'andy');
   c.tick(first);
   q.started(q.eligible().seq); q.busy(b, 5000);
-  c.tick(q.backoffFor('R1', 'andy'));
+  c.tick(q.backoffFor('relay-a', 'andy'));
   q.started(q.eligible().seq); q.busy(b, 5000);
-  c.tick(q.backoffFor('R1', 'andy'));
+  c.tick(q.backoffFor('relay-a', 'andy'));
   q.started(q.eligible().seq); q.busy(b, 1200);
-  const capped = q.backoffFor('R1', 'andy');
+  const capped = q.backoffFor('relay-a', 'andy');
   if (first === 100) test.check('a quote of 100 ms is honoured over the first step of 250');
   else test.fail(OWED + 'with a quote of 100 ms the first wait was ' + first);
   if (capped === 1200) test.check('where the step would be 2000 ms and the relay quotes 1200, the wait is 1200');
@@ -75,14 +75,14 @@ test.subHeading('3. a reached pair starts again at 250');
 {
   const c = clock();
   const q = pq.createQueue({ now: c.now });
-  const b = q.add({ relayUrl: 'R1', toKey: 'andy', patienceMs: 999999 });
+  const b = q.add({ relayUrl: 'relay-a', toKey: 'andy', patienceMs: 999999 });
   q.started(b); q.busy(b, 5000);
-  c.tick(q.backoffFor('R1', 'andy'));
+  c.tick(q.backoffFor('relay-a', 'andy'));
   q.started(q.eligible().seq); q.busy(b, 5000);
-  c.tick(q.backoffFor('R1', 'andy'));
-  q.reached('R1', 'andy');
+  c.tick(q.backoffFor('relay-a', 'andy'));
+  q.reached('relay-a', 'andy');
   q.started(q.eligible().seq); q.busy(b, 5000);
-  const again = q.backoffFor('R1', 'andy');
+  const again = q.backoffFor('relay-a', 'andy');
   if (again === 250) test.check('after reached(), the next busy wait is 250 again');
   else test.fail(OWED + 'after reached() the next busy wait was ' + again);
 }
