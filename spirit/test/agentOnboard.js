@@ -76,12 +76,18 @@ function waitFor(fn, ms) {
     });
   })();
 }
+// ONE RETRY ON NO ANSWER AT ALL. claude-windows, building against this suite: after a script run of 5 s or more the
+// next request got status 0 within 3 ms and the node then answered normally, a reused connection gone stale; a node
+// that is really down answers 0 twice.
 function verb(port, body) {
-  return relayRequest('http://127.0.0.1:' + port, 'POST', '/api/spirit', body).then(function (r) {
-    let b = null;
-    try { b = JSON.parse(r.text); } catch (e) { b = null; }
-    return { status: r.status, body: b || {} };
-  }, function () { return { status: 0, body: {} }; });
+  const once = function () {
+    return relayRequest('http://127.0.0.1:' + port, 'POST', '/api/spirit', body).then(function (r) {
+      let b = null;
+      try { b = JSON.parse(r.text); } catch (e) { b = null; }
+      return { status: r.status, body: b || {} };
+    }, function () { return { status: 0, body: {} }; });
+  };
+  return once().then(function (r) { return r.status ? r : sleep(200).then(once); });
 }
 function run(file, args, cwd) {
   const r = spawnSync(process.execPath, [file].concat(args), { cwd: cwd, encoding: 'utf8', timeout: 180000 });
