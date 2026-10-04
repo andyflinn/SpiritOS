@@ -19,7 +19,8 @@
 //      map (desk.js facts: f.agents). The pane, #desk-agent, lists each folder with a button data-scope-remove="<folder>"
 //      ('' drawn as the repo root), and mounts a path selector (api.ui.elements.createPathSelector, foldersOnly) in
 //      #desk-agent-picker.
-//   3  THE EDITS: a pick in the selector sends scope.set {agent: key, folders: the folders shown plus 'spirit/run/' +
+//   3  THE EDITS (since the one field, see deskScopes.js: scope.set {agent, folder}, '' nothing, '/' the root): a pick
+//      in the selector, then [set], sends scope.set {agent: key, folder: 'spirit/run/' + the picked path}; formerly
 //      the picked path}; a click on data-scope-remove sends scope.set without that folder. The pane redraws from the
 //      answer of a new scope.get, never from what it guessed.
 //
@@ -160,7 +161,7 @@ async function thePage() {
   let behavior = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DESK, 'utf8'))({ shell: { activateApp: function (x) { behavior = x; } }, core: kernel.core }, doc, {});
   const asked = [];
-  let scope = ['spirit/run/shell/chess/'];
+  let scope = 'spirit/run/shell/chess/';
   const pickers = [];
   const goalRow = { id: 't/G1', title: 'The goal', goal: '', status: '', with: '', buttons: [], blocking: [], blocked: [], design: false, waiting: 0,
     live: ['claude-windows'], working: [], agents: { 'claude-windows': CW_KEY }, alone: false, alert: false, claims: 0, asks: 0, boxTaken: '' };
@@ -173,8 +174,8 @@ async function thePage() {
       const v = Object.keys(ask)[0];
       asked.push({ verb: v, args: ask[v] });
       if (v === 'items.search') return Promise.resolve({ status: 200, body: { items: [{ key: 't/G1', label: JSON.stringify(goalRow) }], more: false } });
-      if (v === 'scope.get') return Promise.resolve({ status: 200, body: { folders: scope.slice() } });
-      if (v === 'scope.set') { scope = ask[v].folders.slice(); return Promise.resolve({ status: 200, body: { change: 9 } }); }
+      if (v === 'scope.get') return Promise.resolve({ status: 200, body: { folder: scope } });
+      if (v === 'scope.set') { scope = ask[v].folder; return Promise.resolve({ status: 200, body: { change: 9 } }); }
       return Promise.resolve({ status: 200, body: { items: [], more: false, json: '{}', chat: [], chatMore: false } });
     },
     ui: { elements: { createPathSelector: function (o) { const r = node('div'); r.options = o; pickers.push(r); return r; } } },
@@ -226,7 +227,7 @@ async function thePage() {
   const getsBefore = asked.filter(function (a) { return a.verb === 'scope.get'; }).length;
   if (setButton()) { fire(setButton(), 'click'); await settled(); }
   const replaced = setsNow()[0] && setsNow()[0].args;
-  if (replaced && replaced.agent === CW_KEY && JSON.stringify(replaced.folders) === JSON.stringify(['spirit/run/shell/ticTacToe/'])) test.check('[set] sends scope.set with that one folder, replacing chess');
+  if (replaced && replaced.agent === CW_KEY && replaced.folder === 'spirit/run/shell/ticTacToe/') test.check('[set] sends scope.set with that one folder, replacing chess');
   else test.fail(OWED + 'after the pick and [set], scope.set was ' + short(setsNow()));
   if (asked.filter(function (a) { return a.verb === 'scope.get'; }).length > getsBefore) test.check('and the line asks scope.get again rather than guessing');
   else test.fail(OWED + 'no scope.get after [set]');
@@ -241,6 +242,6 @@ async function thePage() {
   const rooted = setsNow().length > r0 && setsNow()[setsNow().length - 1].args;
   if (labelOk && armedOnly) test.check('it reads set-to-repo-root beside "for advanced agents", and its first click only arms it');
   else test.fail(OWED + 'root button ' + !!rootButton() + ', label ' + short(rootButton() && rootButton().textContent) + ', "for advanced agents" ' + /for advanced agents/.test(line()) + ', first click sent ' + (armedOnly ? 'nothing' : 'a scope.set'));
-  if (rooted && JSON.stringify(rooted.folders) === '[""]') test.check('the second click sets the one scope to \'\', the repo root');
+  if (rooted && rooted.folder === '/') test.check('the second click sets the one field to \'/\', the repo root');
   else test.fail(OWED + 'after two clicks the last scope.set was ' + short(rooted));
 }

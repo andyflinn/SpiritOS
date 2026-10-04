@@ -9,15 +9,19 @@
 //   "your initial scope is repo root"; then his Go on goal/G4.23. The box (v6) holds the rest.
 //
 // THE SHAPES, NAMED HERE where the box names none (wsl-claude's picks; the builder may argue them in Desk first):
-//   1  THE SCOPE IS DESK STATE, by the agent's key, ONE folder ("only one scope per agent"; more is bad-request): desk verbs scope.set {agent: <key>, folders: [<repo path>...]},
-//      Andy alone (an agent is refused not-owner), and scope.get {agent: <key>} answering {folders}; agent '' is the
+//   1  THE SCOPE IS ONE FIELD, desk state by the agent's key (Andy, 2026-10-04: "throw out all that list-management
+//      code while your at it. you set one field: '' = nothing / '/' = repo-root / all that are selectable from
+//      drop-down, as is-"): desk verbs scope.set {agent: <key>, folder: <''|'/'|a repo path ending in '/'>}, Andy alone
+//      (an agent is refused not-owner), anything else refused bad-request; scope.get {agent: <key>} answering
+//      {folder}; agent '' is the
 //      caller itself. A folder is a repo-relative path ending in '/', or '' for the repo root. An agent never set
-//      answers folders [] (his "the default: nothing").
+//      answers folder '' (his "the default: nothing"). Records written before, with folders [...], replay as one field:
+//      [''] as '/', [] as '', [x] as x. No list code is left in desk.js, commitCheck.js or the desk page.
 //   2  THE CORE TABLE: spirit/run/process/js/desk/coreFiles.js exports isCore(repoPath): every file under spirit/run/js/,
 //      and every file in the folder of a shell app whose manifest (spirit/run/shell/<name>/<name>.json) says
 //      "intrinsic": true. The one table the commit check reads and this test reads.
 //   3  THE COMMIT CHECK, on top of today's item-and-Go rule: every staged file must lie inside one of the committing
-//      agent's folders (scope.get {agent: ''} through its own deskClient), else the commit is refused and nothing is
+//      agent's folder (scope.get {agent: ''} through its own deskClient), else the commit is refused and nothing is
 //      committed. A staged core file also needs a granted G check on the item whose words hold its path relative to
 //      spirit/run (as G4.25's "core grant: js/jobs.js — ..."); refused without it, and the refusal adds to the item one
 //      open G check "core grant: <that path>" (his "a grant request in the item"; asks then raises his ❌), once.
@@ -139,26 +143,29 @@ async function main() {
 
   test.subHeading('1. the scope is desk state by the agent\'s key, set by Andy alone');
   const none = await desk('scope.get', { agent: '' }, SELF_AT_DESK);
-  if (none.status === 200 && Array.isArray((none.body || {}).folders) && none.body.folders.length === 0) test.check('an agent never scoped answers folders []: it may commit nothing');
+  if (none.status === 200 && (none.body || {}).folder === '') test.check('an agent never scoped answers folder \'\': it may commit nothing');
   else test.fail(OWED + 'scope.get for an unscoped agent answered ' + none.status + ' ' + short(none.body));
-  const byAgent = await desk('scope.set', { agent: SELF_KEY, folders: [''] }, SELF_AT_DESK);
+  const byAgent = await desk('scope.set', { agent: SELF_KEY, folder: '/' }, SELF_AT_DESK);
   if ((byAgent.body || {}).code === 'not-owner') test.check('an agent setting a scope is refused not-owner');
   else test.fail(OWED + 'an agent\'s scope.set answered ' + byAgent.status + ' ' + short(byAgent.body));
-  const set = await desk('scope.set', { agent: SELF_KEY, folders: ['spirit/run/shell/ticTacToe/'] }, ANDY);
+  const set = await desk('scope.set', { agent: SELF_KEY, folder: 'spirit/run/shell/ticTacToe/' }, ANDY);
   const mine = await desk('scope.get', { agent: '' }, SELF_AT_DESK);
   const his = await desk('scope.get', { agent: SELF_KEY }, ANDY);
   const other = await desk('scope.get', { agent: '' }, OTHER_AT_DESK);
-  const f = function (r) { return JSON.stringify((r.body || {}).folders); };
-  if (set.status === 200 && f(mine) === '["spirit/run/shell/ticTacToe/"]' && f(his) === f(mine) && f(other) === '[]') test.check('Andy sets it by key; the agent reads its own, Andy reads it by key, another agent is not touched');
+  const f = function (r) { return JSON.stringify((r.body || {}).folder); };
+  if (set.status === 200 && f(mine) === '"spirit/run/shell/ticTacToe/"' && f(his) === f(mine) && f(other) === '""') test.check('Andy sets it by key; the agent reads its own, Andy reads it by key, another agent is not touched');
   else test.fail(OWED + 'scope.set ' + set.status + ' ' + short(set.body) + '; own ' + f(mine) + ', by key ' + f(his) + ', other ' + f(other));
 
   // ONE FOLDER PER AGENT (Andy, 2026-10-04, under goal/G4.23: "we need only one scope per agent, not a long list."):
-  // scope.set with more than one folder is refused bad-request, and the scope stays as it was.
-  const two = await desk('scope.set', { agent: SELF_KEY, folders: ['spirit/run/shell/a/', 'spirit/run/shell/b/'] }, ANDY);
+  // ONE FIELD: a folder that is no repo path ending in '/' (and not '' or '/') is refused bad-request, the scope kept.
+  const odd = await desk('scope.set', { agent: SELF_KEY, folder: '../outside' }, ANDY);
   const still = await desk('scope.get', { agent: SELF_KEY }, ANDY);
-  if ((two.body || {}).code === 'bad-request' && f(still) === '["spirit/run/shell/ticTacToe/"]') test.check('two folders are refused bad-request: one scope per agent');
-  else test.fail(OWED + 'scope.set with two folders answered ' + two.status + ' ' + short(two.body) + '; the scope is now ' + f(still));
-  await desk('scope.set', { agent: SELF_KEY, folders: ['spirit/run/shell/ticTacToe/'] }, ANDY);
+  if ((odd.body || {}).code === 'bad-request' && f(still) === '"spirit/run/shell/ticTacToe/"') test.check('a folder that is no repo path is refused bad-request, and the scope is kept');
+  else test.fail(OWED + 'scope.set with ../outside answered ' + odd.status + ' ' + short(odd.body) + '; the scope is now ' + f(still));
+  const code = function (file) { return fs.readFileSync(file, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/[^\n]*/g, '$1'); };
+  const lists = [DESK, CHECK, path.join(RUN, 'shell', 'desk', 'desk.js')].filter(function (file) { return /\bfolders\b/.test(code(file)); });
+  if (!lists.length) test.check('no list code is left: no "folders" in desk.js, commitCheck.js or the desk page');
+  else test.fail(OWED + 'list code ("folders") still in ' + lists.map(function (x) { return path.relative(RUN, x); }).join(', '));
 
   test.subHeading('2. the core table: run/js and the intrinsic apps');
   let core = null;
@@ -189,12 +196,12 @@ async function main() {
   const n2 = await commits(repo);
   if (outside.status !== 0 && n2 === 1 && /scope/i.test(outside.stderr + outside.stdout)) test.check('a file outside it is refused, saying scope, and nothing is committed');
   else test.fail(OWED + 'outside the scope the commit answered ' + outside.status + ' (' + n2 + ' commits): ' + String(outside.stderr).trim().slice(0, 160));
-  await desk('scope.set', { agent: SELF_KEY, folders: [] }, ANDY);
+  await desk('scope.set', { agent: SELF_KEY, folder: '' }, ANDY);
   const unscoped = await commitWith(repo, 'spirit/run/shell/ticTacToe/two.js', 'x', 'k/G1.1: no scope at all');
-  if (unscoped.status !== 0 && (await commits(repo)) === 1) test.check('with folders [] the same folder is refused too: the default is nothing');
+  if (unscoped.status !== 0 && (await commits(repo)) === 1) test.check('with folder \'\' the same folder is refused too: the default is nothing');
   else test.fail(OWED + 'with no scope the commit answered ' + unscoped.status);
 
-  await desk('scope.set', { agent: SELF_KEY, folders: [''] }, ANDY);
+  await desk('scope.set', { agent: SELF_KEY, folder: '/' }, ANDY);
   const anywhere = await commitWith(repo, 'other/notes.txt', 'x', 'k/G1.1: the repo root is the scope');
   if (anywhere.status === 0 && (await commits(repo)) === 2) test.check('with the repo root as its scope, the same file is taken');
   else test.fail(OWED + 'with the root as scope the commit answered ' + anywhere.status + ' ' + String(anywhere.stderr).trim().slice(0, 160));
