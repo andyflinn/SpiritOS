@@ -1,8 +1,8 @@
 {
- "change": 12340,
+ "change": 12343,
  "line": 8491,
  "goal": "goal/G4",
- "writtenAt": "2026-10-04T19:17:17.994Z",
+ "writtenAt": "2026-10-04T19:17:35.686Z",
  "items": [
   {
    "id": "goal/G4",
@@ -15,7 +15,6 @@
    "blocked": [
     "goal/G4.1",
     "goal/G4.9",
-    "goal/G4.22",
     "goal/G4.30"
    ],
    "go": false,
@@ -33,7 +32,9 @@
     "ollama agent node",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
@@ -6391,10 +6392,11 @@
    "id": "goal/G4.22",
    "title": "Onboarding tested with a non-Claude agent: an Ollama model on Andy's box, in D:/SpiritOS-agent-ollama",
    "goal": "goal/G4",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G4"
@@ -8826,6 +8828,11 @@
      "by": "andy",
      "at": "2026-10-04T19:16:56.418Z",
      "text": "are the local relays on the same or equivalent commit level?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-04T19:17:30.361Z",
+     "text": "Equivalent, checked: the VPS relay runs b44c3101 (its /api/version, started 2026-10-02); the local one would run master (17343722), 157 commits on. In the relay's own code the only change since is a module rename (labelRule to fieldRules in relay.js), so it relays the same way.\nThe nodes moved more (hub.js +38 lines), which is why step two reads your real node too."
     }
    ]
   }
