@@ -1340,6 +1340,8 @@
           createContactLabel: spiritElements.createContactLabel,
           createAppServerSelector: spiritElements.createAppServerSelector,
           createApiBranchSelector: spiritElements.createApiBranchSelector,
+          // A file or folder from the shell's one tree (goal/G4.23, shell/js/pathSelector.js).
+          createPathSelector: spiritElements.createPathSelector,
         },
       },
 

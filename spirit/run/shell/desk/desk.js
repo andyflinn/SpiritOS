@@ -269,11 +269,77 @@ function deskBubblesHtml() {
   var live = g && Array.isArray(g.live) ? g.live.slice().sort() : [];
   if (!live.length) return '';
   var working = deskWorkingAgents();
+  // EACH BUBBLE IS A TAB (goal/G4.23). Andy: "the red-bordered agent bubbles become tab-headers again, with their own
+  // pane for scope-configuration." data-tab="agent:<name>" opens that agent's scope pane; the bubble keeps its state.
   return '<span class="job-manifest-note" style="margin-left:12px">Info</span>' + live.map(function (n) {
     var busy = working.indexOf(n) !== -1;
-    return '<span data-bubble="' + deskEsc(n) + '"' + (busy ? ' data-working="1" title="working: leave it alone until it listens again"' : ' title="listening"') +
-      ' style="display:inline-block;padding:2px 10px;margin-left:6px;border-radius:12px;border:2px solid ' + (busy ? '#d00' : '#555') + '">' + deskEsc(n) + '</span>';
+    var on = deskTab === 'agent:' + n;
+    return '<span data-bubble="' + deskEsc(n) + '" data-tab="agent:' + deskEsc(n) + '"' + (busy ? ' data-working="1" title="working: leave it alone until it listens again"' : ' title="listening: open its scope"') +
+      ' style="display:inline-block;cursor:pointer;padding:2px 10px;margin-left:6px;border-radius:12px;font-weight:' + (on ? 'bold' : 'normal') +
+      ';border:2px solid ' + (busy ? '#d00' : '#555') + '">' + deskEsc(n) + '</span>';
   }).join('');
+}
+
+// ── AN AGENT'S SCOPE PANE (goal/G4.23) ───────────────────────────────
+//
+//   Andy: "i alone" set an agent's scope; "file/folder selector in it a shell element"; "i'll do the third when the
+//   ui arrives". The pane lists the folders the desk holds for that agent (scope.get by its key, from the goal row's
+//   agents), each with a remove button, and a path selector on the shell's tree to add one. Every edit is a scope.set,
+//   and the pane draws only the answer of the scope.get after it, never what it guessed.
+var deskAgentName = '';
+var deskAgentFolders = [];
+var deskAgentNote = '';
+function deskAgentKey() {
+  var g = deskGoalRow();
+  return (g && g.agents && g.agents[deskAgentName]) || '';
+}
+function deskAgentDraw() {
+  var el = document.getElementById('desk-agent');
+  if (!el) return;
+  var label = document.getElementById('desk-agent-label');
+  if (label) label.textContent = 'Scope of ' + deskAgentName + ': the folders it may commit in (core files still need your grant)';
+  el.innerHTML = (deskAgentFolders.length ? deskAgentFolders.map(function (f) {
+    return '<div>' + deskEsc(f === '' ? '(the repo root)' : f) + ' <button type="button" data-scope-remove="' + deskEsc(f) + '">Remove</button></div>';
+  }).join('') : '<div class="job-manifest-note">No folder: this agent may commit nothing.</div>') +
+    (deskAgentNote ? '<div class="job-start-error">' + deskEsc(deskAgentNote) + '</div>' : '');
+}
+function deskAgentLoad() {
+  var key = deskAgentKey();
+  if (!key) { deskAgentFolders = []; deskAgentNote = 'No key known for ' + deskAgentName + '.'; deskAgentDraw(); return Promise.resolve(); }
+  return deskAsk('scope.get', { agent: key }).then(function (r) {
+    deskAgentFolders = Array.isArray(r.folders) ? r.folders : [];
+    deskAgentNote = '';
+    deskAgentDraw();
+  }, function (e) { deskAgentNote = 'Not read: ' + ((e && e.message) || e); deskAgentDraw(); });
+}
+function deskAgentSet(folders) {
+  var key = deskAgentKey();
+  if (!key) return;
+  var unique = folders.filter(function (f, i) { return folders.indexOf(f) === i; });
+  deskAsk('scope.set', { agent: key, folders: unique }).then(deskAgentLoad, function (e) {
+    deskAgentNote = 'Not set: ' + ((e && e.message) || e);
+    deskAgentDraw();
+  });
+}
+function deskAgentOpen(name) {
+  deskAgentName = name;
+  deskAgentFolders = [];
+  deskAgentNote = '';
+  deskAgentDraw();
+  var slot = document.getElementById('desk-agent-picker');
+  var make = deskApi && deskApi.ui && deskApi.ui.elements && deskApi.ui.elements.createPathSelector;
+  if (slot && typeof make === 'function') {
+    var picker = make({
+      foldersOnly: true,
+      files: function () { return (spirit.shell && typeof spirit.shell.currentFiles === 'function' && spirit.shell.currentFiles()) || []; },
+    });
+    picker.addEventListener('change', function () {
+      if (picker.value) deskAgentSet(deskAgentFolders.concat(['spirit/run/' + picker.value]));
+    });
+    slot.innerHTML = '';
+    slot.appendChild(picker);
+  }
+  return deskAgentLoad();
 }
 
 // Drawn whole, as markup: List | Team | Musings, then the bubbles.
@@ -834,11 +900,18 @@ spirit.shell.activateApp({
           '<div id="desk-muse-error" class="job-start-error"></div>' +
           '<div class="stat-tile wide"><div class="label">Musings, for close time, newest first</div><div id="desk-musings"></div></div>' +
         '</div>' +
+        // AN AGENT'S SCOPE (goal/G4.23), opened from its bubble.
+        '<div data-pane="agent" hidden>' +
+          '<div class="stat-tile wide"><div class="label" id="desk-agent-label"></div><div id="desk-agent"></div></div>' +
+          '<div class="stat-tile wide"><div class="label">Add a folder</div><div id="desk-agent-picker"></div></div>' +
+        '</div>' +
       '</div>';
     function show(tab) {
+      var pane = tab.indexOf('agent:') === 0 ? 'agent' : tab;
       Array.prototype.forEach.call(container.querySelectorAll('[data-pane]'), function (p) {
-        p.hidden = p.getAttribute('data-pane') !== tab;
+        p.hidden = p.getAttribute('data-pane') !== pane;
       });
+      if (pane === 'agent') deskAgentOpen(tab.slice('agent:'.length));
       // HIGHLIGHTED, NOT DISABLED. Andy: "on the desk app, the current tab
       // should be highlighted." A disabled button read as greyed out.
       deskTab = tab;
@@ -861,6 +934,13 @@ spirit.shell.activateApp({
       else if (el.getAttribute && el.getAttribute('data-tab')) show(el.getAttribute('data-tab'));
     });
     show('list');
+    // The scope pane is repainted too: one listener for its remove buttons.
+    document.getElementById('desk-agent').addEventListener('click', function (e) {
+      var rm = e && e.target && e.target.closest && e.target.closest('[data-scope-remove]');
+      if (!rm) return;
+      var gone = rm.getAttribute('data-scope-remove');
+      deskAgentSet(deskAgentFolders.filter(function (f) { return f !== gone; }));
+    });
     // ONE LISTENER ON THE LIST, which is repainted: a press, a link, a row.
     document.getElementById('desk-top').addEventListener('click', function (e) {
       var t = e && e.target;
