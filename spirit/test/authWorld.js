@@ -20,7 +20,7 @@ const scenario = require('./scenario');
 const labWorld = require('./labWorld');
 
 const OWED = 'OWED by apiAuth/G1.0: ';
-const SEARCH = { text: '', currentGoalOnly: false, goalsOnly: false };
+const SEARCH = { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false };  // includeClosed since goal/G4.20
 
 const AUTH = {
   title: 'Who may call which api',

@@ -26,8 +26,10 @@ if (client && !old) test.check('js/appClient.js is there, the old name is gone')
 else test.fail(OWED + 'appClient.js ' + client + ', ' + OLD + '.js ' + old);
 
 test.subHeading('T2: no ' + OLD + ' identifier is left in spirit/run or spirit/test');
-// Desk's log records conversation, not code, and may name anything.
-const SKIP = /[\\/](node_modules|relay-state|app-state)[\\/]|[\\/]app[\\/]desk[\\/](log|voice)[\\/]/;
+// Desk's log records conversation, not code, and may name anything. So does process/js/desk/currentGoal.json, the
+// desk's record of the goal in his and the agents' words (goal/G4.19, issue 7: "the two guards that trip on
+// currentGoal.json skip that file").
+const SKIP = /[\\/](node_modules|relay-state|app-state)[\\/]|[\\/]app[\\/]desk[\\/](log|voice)[\\/]|[\\/]process[\\/]js[\\/]desk[\\/]currentGoal\.json[\\/]$/;
 const hits = [];
 (function walk(dir) {
   fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {

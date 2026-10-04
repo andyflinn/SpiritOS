@@ -52,7 +52,9 @@ const SKIP_DIRS = ['node_modules'];
 // spirit/test. What they said is not the product reaching for the harness.
 // Since 2026-09-29 the log's chunks and his typed lines live in log/ and
 // voice/ (desk.js, DESK_LOG).
-const SKIP_DATA = /[\\/]app[\\/]desk[\\/](log[\\/]log(-\d+)?\.json|voice[\\/]voice(-\d+)?\.jsonl|seen\.json)$/;
+// process/js/desk/currentGoal.json is such a record too: the current goal in his and the agents' words (goal/G4.19,
+// issue 7: "the two guards that trip on currentGoal.json skip that file").
+const SKIP_DATA = /[\\/]app[\\/]desk[\\/](log[\\/]log(-\d+)?\.json|voice[\\/]voice(-\d+)?\.jsonl|seen\.json)$|[\\/]process[\\/]js[\\/]desk[\\/]currentGoal\.json$/;
 
 function walk(dir, out) {
   // A DIRECTORY CAN VANISH UNDER A SCAN, and twice on 2026-09-13 one did:

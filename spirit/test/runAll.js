@@ -81,6 +81,9 @@ const NOT_A_SUITE = [
   // MEASURES WHEN REQUIRED, so asking it for the kinds starts a
   // measurement.
   'capacityKinds.js',
+  // A COMPUTATION, NOT A SUITE: the most a member row can cost, from
+  // fieldRules (goal/G4.19, issue 7). capacityFresh and capacityRule read it.
+  'memberRowWorst.js',
   // NOT A SUITE: a claimed relay with the owner watching, extracted from
   // relayMonitor.js when cycle 10's R12 needed the same world. It
   // asserts nothing and builds one.

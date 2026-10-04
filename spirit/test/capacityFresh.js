@@ -26,63 +26,31 @@
 // the schema moved underneath a published number. A figure nobody
 // re-measures is a claim, and this repo does not publish claims.
 //
-// ── WHY THIS IS RED AND NOT YELLOW ───────────────────────────────────
+// ── SINCE goal/G4.19: THE RULE, NOT GIT ──────────────────────────────
 //
-// Yellow is work nobody has written yet. This is something that USED to
-// hold and no longer does: the README states a number that the tree no
-// longer produces. That is the definition of red, and it stays red until
-// somebody re-measures — which is the pressure the gate exists to apply.
-//
-// It goes red on BOTH platforms at once and can only be cleared on each
-// box by its own agent, which is the point: the Ubuntu figure is
-// wsl-claude's to produce and the Windows figure is this side's.
+// This gate was a git check: a figure measured before the last commit to
+// a list of files (relayStore, limits, seal, nodeCard, relayLimits) was
+// stale. It fired on G4.16, a renamed require that moved nothing, and a
+// gate that cries wolf is a gate nobody reads. Andy, 2026-10-04: "wouldn't
+// we fix what really needs fixing, the capacity measurement, so it takes
+// text field limits from fieldRules.js ?", then "fix it properly then."
+// So a member row's worst size is computed from fieldRules
+// (memberRowWorst.js), and a published perMemberRowBytes above it is the
+// red: the README states a number the tree cannot produce.
 
 const fs = require('fs');
 const path = require('path');
-const { execFileSync } = require('child_process');
 const test = require('./testSupport.js');
+const memberRowWorst = require('./memberRowWorst.js');
 
-test.startTest('Published capacity figures were measured after what moves them');
+test.startTest('Published capacity figures are within the worst the rule allows');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const DIR = path.join(ROOT, 'README', 'CAPACITY');
+const WORST = memberRowWorst.worstBytes();
 
-// THE FILES WHOSE CHANGES MOVE THESE NUMBERS, named rather than guessed.
-// A new entry here is how a future cycle says "this moves capacity" — and
-// leaving one out is the only way this gate can miss drift, so the list
-// is short and every line says what it governs.
-const MOVERS = [
-  'spirit/run/js/relayStore.js',  // the schema: what a member, partner or route row costs
-  'spirit/run/js/limits.js',      // the payload ceiling and the stream event cap
-  'spirit/run/js/seal.js',        // wire inflation: sealing grows every body
-  'spirit/run/js/nodeCard.js',    // the card is what sits on the member row
-  'spirit/run/js/relayLimits.js', // the ceilings the figures are read against
-];
-
-function git(args) {
-  return String(execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' })).trim();
-}
-
-let lastMove = '';
-let movedBy = '';
-try {
-  // The most recent commit touching ANY mover. `--` keeps a path that
-  // looks like a revision from being read as one.
-  lastMove = git(['log', '-1', '--format=%H', '--'].concat(MOVERS));
-  movedBy = lastMove ? git(['log', '-1', '--format=%h %ad %s', '--date=short', lastMove]) : '';
-} catch (e) {
-  lastMove = '';
-}
-
-if (!lastMove) {
-  // NOT A PASS AND NOT A FAILURE. Without git history there is nothing to
-  // compare against, and a gate that quietly succeeds when it cannot
-  // check is worse than one that says so.
-  test.fail('no git history available — capacity freshness cannot be checked here');
-  test.reportSuccessFailureCount();
-} else {
-
-  test.subHeading('Each platform\'s figures are newer than the last change that moves them');
+{
+  test.subHeading('Each platform\'s member row is within the worst computed from fieldRules (' + WORST + ' bytes)');
 
   let platforms = [];
   try {
@@ -99,44 +67,14 @@ if (!lastMove) {
     let rec = null;
     try { rec = JSON.parse(fs.readFileSync(path.join(DIR, name, 'capacity.json'), 'utf8')); }
     catch (e) { rec = null; }
-
-    if (!rec || !rec.commit) {
-      test.fail(name + ': capacity.json has no `commit`, so its age cannot be established');
-      return;
-    }
-
-    // STALE means: the measurement's commit is an ANCESTOR of the last
-    // change that moves the numbers. Ancestry rather than dates, because
-    // a clock is not an ordering and a rebase moves dates.
-    let stale = false;
-    let known = true;
-    try {
-      execFileSync('git', ['merge-base', '--is-ancestor', rec.commit, lastMove],
-        { cwd: ROOT, stdio: 'ignore' });
-      stale = true;
-    } catch (e) {
-      // Exit 1 is "not an ancestor" — fresh. Anything else means the
-      // commit is not in this clone, which is not the same as fresh.
-      stale = false;
-      try { git(['cat-file', '-e', rec.commit + '^{commit}']); }
-      catch (e2) { known = false; }
-    }
-
-    if (!known) {
-      test.fail(name + ': measured at ' + String(rec.commit).slice(0, 8) +
-        ', which is not a commit in this clone — the figure cannot be trusted or cleared');
-      return;
-    }
-
-    if (stale) {
-      test.fail(name + ': measured at ' + String(rec.commit).slice(0, 8) +
-        ' (' + String(rec.measuredAt || '?').slice(0, 10) + '), ' +
-        'perMemberRowBytes=' + rec.perMemberRowBytes + ' — but capacity moved since:\n' +
-        '        ' + movedBy + '\n' +
-        '        re-measure on that box:  node spirit/test/measurePlatform.js --as ' + name);
+    const bytes = rec ? Number(rec.perMemberRowBytes) : NaN;
+    if (!(bytes > 0)) {
+      test.fail(name + ': capacity.json has no perMemberRowBytes, so it cannot be held to the rule');
+    } else if (bytes > WORST) {
+      test.fail(name + ': perMemberRowBytes=' + bytes + ' is more than the ' + WORST + ' bytes fieldRules allows a row — ' +
+        'the schema grew past memberRowWorst.js: re-measure its fixed parts, then on that box:  node spirit/test/measurePlatform.js --as ' + name);
     } else {
-      test.check(name + ': measured at ' + String(rec.commit).slice(0, 8) +
-        ', newer than the last change that moves capacity');
+      test.check(name + ': perMemberRowBytes=' + bytes + ', within the ' + WORST + ' the rule allows');
     }
   });
 
