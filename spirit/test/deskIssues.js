@@ -6,9 +6,9 @@
 //   1. The box at the top of the dialog folds again: the dialog paints it with a data-fold="item" toggle
 //      and its folded state (ddFolded) survives a repaint, as before desk/G2.7 ("BIG complaint: the text
 //      bubble no longer folds.").
-//   3. No red mark on his own lines: his chat line acknowledges everything before it, so a row whose
-//      newest agent line he just answered has no star ("when I'm the originator of a chat entry, no red
-//      mark should appear in the list.").
+//   3. No red mark on his own lines ("when I'm the originator of a chat entry, no red mark should appear in the
+//      list."). goal/G4.20 point 8 took the star out altogether ("ha ha, the red star has no function anymore.
+//      take it out."), so neither line leaves one: the facts carry no star.
 //   4. The two top lines stay sticky BELOW the app or dialog title bar, not at top 0, so close and back
 //      stay visible ("stay sticky below those title bars").
 //   5. A goal offers Done once every item of it is closed, with no agent claim ("the done button should
@@ -92,7 +92,7 @@ function mount(file, answers) {
   });
   return { doc: doc, publish: function (o) { subs.forEach(function (fn) { fn(o); }); } };
 }
-const lab = function (o) { return Object.assign({ goal: 'g/G1', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false }, o); };
+const lab = function (o) { return Object.assign({ goal: 'g/G1', status: '', with: '', buttons: [], blocking: [], blocked: [] }, o); };
 
 const CW = { key: 'MCowBQYDK2VwAyEAdeskIssuesTestPeerCWAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskIssuesTestOwnerAAAAAAAAAAAAAAAAA=', label: 'Andy Flinn' };
@@ -119,13 +119,14 @@ callback.listen(0, '127.0.0.1', async function () {
     if (set.status !== 200) { test.fail(OWED + 'the session was not taken: ' + JSON.stringify(set.body)); return; }
     await call('press', { id: 'g/G1', what: 'end-design' }, ANDY);
 
-    test.subHeading('3. his own line is his acknowledgement: no star after he answers');
+    test.subHeading('3. no star after an agent line or his answer (the star is gone, goal/G4.20)');
     await call('press', { id: 'g/G1.1', what: 'seen' }, ANDY);
     await call('chat.add', { id: 'g/G1.1', text: 'an agent asks' }, CW);
     const starred = await factsOf('g/G1.1');
     await call('chat.add', { id: 'g/G1.1', text: 'and he answers' }, ANDY);
     const answered = await factsOf('g/G1.1');
-    if (starred.star === true && answered.star === false) test.check('the agent line starred the row; his answer cleared it');
+    const noStar = function (f) { return f && f.id && !Object.prototype.hasOwnProperty.call(f, 'star'); };
+    if (noStar(starred) && noStar(answered)) test.check('neither the agent line nor his answer puts a star in the facts');
     else test.fail(OWED + 'star after the agent line ' + starred.star + ', after his own line ' + answered.star);
 
     test.subHeading('5. a goal offers Done once every item is done, no claim needed');

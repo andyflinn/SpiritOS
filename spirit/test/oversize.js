@@ -96,7 +96,7 @@ let kid = null;
   }
   const facts = JSON.parse(((await call('item.get', { id: 'o/G1.1' })).body || {}).item || '{}');
   const checks = ((await call('item.checks', { id: 'o/G1.1' })).body || {}).checks || [];
-  const goals = (((await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: true })).body || {}).items || []).map(function (i) { return i.key; });
+  const goals = (((await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: true, includeClosed: false })).body || {}).items || []).map(function (i) { return i.key; });
   const st = await call('state.get', {});
   const kept = [];
   if (facts.title !== 'Item') kept.push('the title');

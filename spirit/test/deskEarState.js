@@ -44,7 +44,7 @@ const client = appClient.createAppClient({ rootDir: scratch });
 client.register('desk', pipe);
 const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
 const goalRow = async function () {
-  const r = await call('items.search', { text: '', currentGoalOnly: true, goalsOnly: true }, ANDY);
+  const r = await call('items.search', { text: '', currentGoalOnly: true, goalsOnly: true, includeClosed: false }, ANDY);
   try { return JSON.parse(r.body.items[0].label); } catch (e) { return {}; }
 };
 

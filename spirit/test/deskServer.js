@@ -49,7 +49,7 @@ const SCRIPT = path.join(DIR, 'desk.js');
 // changes: apiAuth/G1.12, Andy's "yes on the verb" (its own suite is deskChanges.js).
 // DEPENDENCIES: apiAuth/G1.10, every appServer process answers it.
 // chat.search: goal/G3.11, the search on an item's chat lines (its own suite is deskChatSearch.js).
-const VERBS = ['AGENTS', 'DEBUG', 'DEPENDENCIES', 'agent.state', 'box.write', 'changes', 'chat.add', 'chat.search', 'check.add', 'check.set', 'item.box', 'item.chat', 'item.checks', 'item.get', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'log.add', 'log.search', 'pending.get', 'press', 'seen.get', 'seen.set', 'session.set', 'state.get', 'state.set'];
+const VERBS = ['AGENTS', 'DEBUG', 'DEPENDENCIES', 'agent.state', 'box.take', 'box.write', 'changes', 'chat.add', 'chat.search', 'check.add', 'check.set', 'item.box', 'item.chat', 'item.checks', 'item.get', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'log.add', 'log.search', 'pending.get', 'press', 'seen.get', 'seen.set', 'session.set', 'state.get', 'state.set'];
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskserver-'));
 const state = path.join(scratch, 'state');

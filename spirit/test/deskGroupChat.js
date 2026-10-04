@@ -86,8 +86,8 @@ async function server() {
   }
   // A goal of the ordinary kind, set as every goal is: it is the current one, and desk/G0.0 is not in its way.
   await call('session.set', { json: JSON.stringify({ goal: { id: 't/G1', title: 'An ordinary goal' }, items: [{ id: 't/G1.1', title: 'A', blocks: ['t/G1'] }] }) }, CW);
-  const current = labels(await call('items.search', { text: '', currentGoalOnly: true, goalsOnly: false }, ANDY)).map(function (i) { return i.id; });
-  const open = labels(await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: true }, ANDY)).map(function (i) { return i.id; });
+  const current = labels(await call('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, ANDY)).map(function (i) { return i.id; });
+  const open = labels(await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: true, includeClosed: false }, ANDY)).map(function (i) { return i.id; });
   if (Array.isArray(record.records) && record.records.length === 0 && current.indexOf('t/G1') !== -1 && current.indexOf(CHAT) === -1 && open.indexOf(CHAT) === -1) {
     test.check('the fresh desk\'s record is empty; an ordinary goal is the current one, and desk/G0.0 is not among the open goals');
   } else test.fail(OWED + 'the fresh record held ' + JSON.stringify(record.records).slice(0, 160) + '; the current goal lists ' + JSON.stringify(current) + ', the open goals ' + JSON.stringify(open));
@@ -122,7 +122,7 @@ async function server() {
   const after = await factsOf(CHAT);
   const chat2 = ((await call('item.chat', { id: CHAT }, ANDY)).body || {}).chat || [];
   const box2 = (await call('item.box', { id: CHAT }, ANDY)).body || {};
-  const current2 = labels(await call('items.search', { text: '', currentGoalOnly: true, goalsOnly: false }, ANDY)).map(function (i) { return i.id; });
+  const current2 = labels(await call('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, ANDY)).map(function (i) { return i.id; });
   if (after.item && after.item.status === 'closed' && chat2.length === 3 && box2.box === RULES && current2.indexOf('t/G1') !== -1 && current2.indexOf(CHAT) === -1) {
     test.check('after a restart: still closed, its three lines and its box intact, and the ordinary goal still the current one');
   } else test.fail(OWED + 'after a restart: status ' + JSON.stringify(after.item && after.item.status) + ', ' + chat2.length + ' line(s), box ' + JSON.stringify(box2.box).slice(0, 60) + ', current goal lists ' + JSON.stringify(current2));

@@ -67,7 +67,7 @@ test.startTest('goal/G2.13: an item that offers Done no longer offers Go');
     if (has(claimed, 'done') && !has(claimed, 'go')) test.check('gone by his Go and claimed: Done offered, Go no longer');
     else test.fail(OWED + 'g/G1.1 gone and claimed: ' + JSON.stringify(claimed));
     // The List draws from items.search: {items: [{key, label}]}, the label being the item's facts as JSON.
-    const list = await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: false }, ANDY);
+    const list = await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false }, ANDY);
     const row = (function () {
       const hit = (((list.body || {}).items) || []).filter(function (r) { return r.key === 'g/G1.1'; })[0];
       try { return hit ? JSON.parse(hit.label) : null; } catch (e) { return null; }

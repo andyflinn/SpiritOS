@@ -164,7 +164,7 @@ async function main() {
   } else test.fail(OWED + 'the api answered desk ' + shapeOf('desk') + ', setDesk ' + shapeOf('setDesk') + ', history.search ' + shapeOf('history.search'));
 
   test.subHeading('3. setDesk, by the owner alone; no desk, no ask');
-  const SEARCH = JSON.stringify({ text: '', currentGoalOnly: true, goalsOnly: false });
+  const SEARCH = JSON.stringify({ text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false });
   const early = await call('deskClient', 'desk', { verb: 'items.search', json: SEARCH }, OWNER);
   if (early.status !== 200 && (early.body || {}).code === 'no-such-peer' && posts.length === 0) test.check('before setDesk an ask is refused no-such-peer, and nothing is posted');
   else test.fail(OWED + 'an ask before setDesk answered ' + early.status + ' ' + JSON.stringify(early.body).slice(0, 160) + ' after ' + posts.length + ' post(s)');

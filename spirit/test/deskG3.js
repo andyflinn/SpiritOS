@@ -59,7 +59,7 @@ async function whole(id) {
     body: Object.assign({}, parts[0].body, parts[1].body, parts[2].body, parts[3].body) };
 }
 async function items(args) {
-  const r = await call('items.search', Object.assign({ text: '', currentGoalOnly: false, goalsOnly: false }, args || {}));
+  const r = await call('items.search', Object.assign({ text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false }, args || {}));
   return (((r.body || {}).items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
 }
 

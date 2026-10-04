@@ -50,7 +50,7 @@ var deskApi = null;
 var deskItems = [];
 // The search bar and its two toggles. Andy: "When Desk opens: [Current Goal Only]
 // on, [Goals Only] off". "The server does the searching AND the filtering."
-var deskFilter = { text: '', currentGoalOnly: true, goalsOnly: false };
+var deskFilter = { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false };
 // THE ROW'S ICON (desk/G1.11): ERROR wherever Andy blocks ("the ERROR for
 // anything i NEED to deal with", "wherever i block"), CODE on any other item.
 // From the kernel's own set; a Desk mounted without it draws none.
@@ -207,9 +207,8 @@ function deskEsc(s) { return deskApi.escapeHtml(String(s == null ? '' : s)); }
 // rather than his clock, so a sender's skew cannot hide anything. A row is
 // seen when he opens it, a chat while its tab is showing. A Desk with no
 // seen.json yet counts all it holds as seen, so the first open is not a
-// wall of red. A ROW'S STAR IS THE DESK SERVER'S (desk/G2.6): opening a row
-// presses 'seen', and the row's label says whether it has one.
-var DESK_UNSEEN = '<span style="color:#d00;font-weight:bold" title="unseen changes">*</span>';
+// wall of red. THE STAR IS GONE (goal/G4.20 point 8), from the rows and the tabs alike. Andy: "ha ha, the red
+// star has no function anymore. take it out." What waits on him is the row's ICON.ERROR (facts.asks).
 // A brought-back item's mark (goal/G2.1 note 6): "the attention-grabbing error icon"; his seen clears it.
 var DESK_ALERT = '<span style="color:#d00;font-weight:bold" title="brought back: needs your eye">❗</span>';
 var deskSeen = { team: 0, agents: {} };
@@ -230,10 +229,6 @@ function deskNewest(pred) {
   });
   return newest;
 }
-// The Team tab's unseen mark: a team line (a packet of the agents-app era, drawn nowhere since goal/G3.10) newer
-// than his last look. Kept as it was; the group chat's own lines carry no mark yet.
-function deskTeamNews() { return deskNewest(deskIsTeamLine) > (deskSeen.team || 0); }
-
 function deskSaveSeen() {
   if (!deskLoaded) return;
   deskAsk('seen.set', { json: JSON.stringify(deskSeen) }).catch(function () { /* only a marker */ });
@@ -257,12 +252,11 @@ function deskLoadSeen(raw) {
   deskSaveSeen();
 }
 
-// A tab button: the one showing is marked, and a red * before its title
-// says something arrived there that he has not seen.
-function deskTabButton(attrs, on, news, label) {
+// A tab button: the one showing is marked.
+function deskTabButton(attrs, on, label) {
   return '<button type="button" ' + attrs + ' aria-selected="' + (on ? 'true' : 'false') + '" style="font-weight:' +
     (on ? 'bold' : 'normal') + ';text-decoration:' + (on ? 'underline' : 'none') + '">' +
-    (news ? DESK_UNSEEN + ' ' : '') + deskEsc(label) + '</button>';
+    deskEsc(label) + '</button>';
 }
 
 // THE AGENT BUBBLES, BESIDE THE TABS (goal/G3.12). Andy, 2026-10-03: "the main botton row now reads: [List]
@@ -286,13 +280,12 @@ function deskBubblesHtml() {
 function deskDrawTabs() {
   var strip = document.getElementById('desk-tabs');
   if (!strip) return;
-  var listNews = deskItems.some(function (r) { return r.star; });
   var waiting = deskWaitingOnAndy();
   var design = deskDesignOn();
   strip.innerHTML =
-    deskTabButton('data-tab="list"', deskTab === 'list', listNews, 'List' + (waiting ? ' (' + waiting + ')' : '')) +
-    deskTabButton('data-tab="team"', deskTab === 'team', deskTeamNews(), 'Team') +
-    deskTabButton('data-tab="musings"', deskTab === 'musings', false, 'Musings') +
+    deskTabButton('data-tab="list"', deskTab === 'list', 'List' + (waiting ? ' (' + waiting + ')' : '')) +
+    deskTabButton('data-tab="team"', deskTab === 'team', 'Team') +
+    deskTabButton('data-tab="musings"', deskTab === 'musings', 'Musings') +
     deskBubblesHtml() +
     // AT THE END OF THE TAB ROW, ONLY ON TEAM, AND LOOMING. Andy: "put the
     // end design mode button at the end of the tab-button-row, only
@@ -346,7 +339,7 @@ function deskLabels(r) {
   return ((r && r.items) || []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
 }
 function deskSearchItems() {
-  return deskAsk('items.search', { text: deskFilter.text, currentGoalOnly: deskFilter.currentGoalOnly, goalsOnly: deskFilter.goalsOnly })
+  return deskAsk('items.search', { text: deskFilter.text, currentGoalOnly: deskFilter.currentGoalOnly, goalsOnly: deskFilter.goalsOnly, includeClosed: deskFilter.includeClosed })
     .then(function (r) { deskItems = deskLabels(r); deskDraw(); }, deskWriteError('read its list'));
 }
 // A published change: {change, verb, item: <facts>, listed}. A new session
@@ -429,9 +422,11 @@ function deskRowHtml(row) {
       deskEsc(DESK_PRESS_LABEL[what] || what) + '</button>';
   }).join(' ');
   return '<tr data-row="' + deskEsc(row.id) + '" style="cursor:pointer' + (goal ? ';font-weight:bold' : '') + '">' +
-    // THE STAR ALONE, THEN THE TYPE (desk/G1.12): the server says both.
-    '<td>' + (row.alert ? DESK_ALERT : row.star ? DESK_UNSEEN : '') + '</td>' +
-    '<td>' + (goal ? '' : deskIcon((row.buttons || []).length ? 'ERROR' : 'CODE')) + '</td>' +
+    // THE BROUGHT-BACK MARK, THEN THE TYPE (desk/G1.12): the server says both. ICON.ERROR EXACTLY WHILE SOMETHING
+    // WAITS ON HIM (goal/G4.20 points 10-11). Andy: "if those two things would match at all times, id know exactly
+    // where i need to navigate to."
+    '<td>' + (row.alert ? DESK_ALERT : '') + '</td>' +
+    '<td>' + (goal ? '' : deskIcon(Number(row.asks) > 0 ? 'ERROR' : 'CODE')) + '</td>' +
     '<td title="' + deskEsc(row.title) + '">' + deskEsc(row.title) + ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span></td>' +
     '<td>' + deskEsc(row.with || '') + '</td>' +
     '<td>' + presses + '</td>' +
@@ -442,7 +437,8 @@ function deskRowHtml(row) {
 }
 // The toggles say how they stand; the server does the filtering.
 function deskDrawToggles() {
-  [['desk-current-goal', 'Current Goal Only', deskFilter.currentGoalOnly], ['desk-goals-only', 'Goals Only', deskFilter.goalsOnly]].forEach(function (t) {
+  [['desk-current-goal', 'Current Goal Only', deskFilter.currentGoalOnly], ['desk-goals-only', 'Goals Only', deskFilter.goalsOnly],
+    ['desk-include-closed', 'Include Closed', deskFilter.includeClosed]].forEach(function (t) {
     var b = document.getElementById(t[0]);
     if (!b) return;
     b.textContent = t[1] + (t[2] ? ' ✓' : '');
@@ -818,6 +814,8 @@ spirit.shell.activateApp({
           '<div class="start-job-form card"><input id="desk-search" placeholder="search">' +
           '<button type="button" id="desk-current-goal"></button>' +
           '<button type="button" id="desk-goals-only"></button>' +
+          // [INCLUDE CLOSED] (goal/G4.20 point 1), off when Desk opens.
+          '<button type="button" id="desk-include-closed"></button>' +
           '</div>' +
           '<div id="desk-top"></div></div>' +
         '<div data-pane="team" hidden>' +
@@ -884,6 +882,11 @@ spirit.shell.activateApp({
     });
     document.getElementById('desk-goals-only').addEventListener('click', function () {
       deskFilter.goalsOnly = !deskFilter.goalsOnly;
+      deskDrawToggles();
+      deskSearchItems();
+    });
+    document.getElementById('desk-include-closed').addEventListener('click', function () {
+      deskFilter.includeClosed = !deskFilter.includeClosed;
       deskDrawToggles();
       deskSearchItems();
     });

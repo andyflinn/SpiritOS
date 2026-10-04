@@ -328,7 +328,7 @@ function walkState() {
 function blank(id, title, goalId) {
   return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '',
     went: false, go: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
-    agentLineN: 0, seenN: 0, alert: false, takenBy: '',
+    alert: false, takenBy: '', boxTakenBy: '',
     box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '' };
 }
 
@@ -366,6 +366,8 @@ function apply(s, r, b, item, goalOf) {
       it.boxHistory.push({ version: it.version + 1, by: r.by, at: r.at, text: String(b.text) });
       it.box = String(b.text);
       it.version += 1;
+      // THE TAKER'S WRITE FREES THE BOX (goal/G4.20 point 9).
+      if (it.boxTakenBy && r.by === it.boxTakenBy) it.boxTakenBy = '';
       return;
     case 'check.add': {
       const kind = String(b.kind);
@@ -382,14 +384,13 @@ function apply(s, r, b, item, goalOf) {
       it.chat.push({ by: r.by, at: r.at, text: String(b.text), taken: '' });
       // THE TAKER'S ANSWER FREES THE ITEM (goal/G2.2 note 2): after it, any agent may write again.
       if (it.takenBy && r.by === it.takenBy) it.takenBy = '';
-      // HIS OWN LINE IS HIS SEEN (goal/G2.1 note 3). Andy: "when I'm the originator of a chat entry, no red
-      // mark should appear in the list." His answer acknowledges every agent line before it.
-      // The desk's own line (goal/G2.5, "message delivered, <agent> busy") is addressed to him and stars nothing.
-      if (r.by === 'andy') it.seenN = r.n; else if (r.by !== 'desk') it.agentLineN = r.n;
       return;
     case 'item.rename': it.title = String(b.title); return;
     case 'item.status': it.status = String(b.word); return;
     case 'item.take': it.with = r.by; return;
+    // TAKING THE BOX (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
+    // is red. cap also." The handler refuses a take while another stands, so what reaches here always lands.
+    case 'box.take': it.boxTakenBy = r.by; return;
     case 'press': press(s, it, String(b.what), r, goalOf); return;
     // THE LISTENER'S WORD (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
     // stops when the agent goes back to listening. the listening script can toggle those two?"
@@ -430,12 +431,14 @@ function press(s, it, what, r, goalOf) {
     if (!it.goal && !it.went) { it.went = true; it.status = 'running'; }
   }
   else if (what === 'done') { it.done = true; it.alone = !Object.keys(it.claims).length; }
-  else if (what === 'reopen') { it.done = false; it.alone = false; it.claims = Object.create(null); }
+  // REOPEN TAKES BACK DONE AS WELL AS CLOSE (goal/G4.20 point 2). Andy: "agreed: \"Reopen takes back Done as well
+  // as Close\"". His Go stays on record; the claims go, so Done is not offered again until an agent claims anew.
+  else if (what === 'reopen') { it.done = false; it.closed = false; it.alone = false; it.claims = Object.create(null); }
   else if (what === 'close') it.closed = true;
   // A BROUGHT-BACK ITEM DRAWS HIS EYE (goal/G2.1 note 6). Andy: "the row should immediately pop back into
   // visibility, with the attention-grabbing error icon, to draw my attention." The alert stands until his seen.
   else if (what === 'bring-back') { it.closed = false; it.alert = true; }
-  else if (what === 'seen') { it.seenN = r.n; it.alert = false; }
+  else if (what === 'seen') it.alert = false;
 }
 
 // What blocks an item: every open item of its goal that names it in `blocks`.
@@ -459,10 +462,11 @@ function blockers(s, it) {
 //          more of an 'visibility' issue than a process issue"); the List hides it, the dialog arms it
 //   Go all on a goal while any of its items offers Go! (desk/G3.4, Andy: "i should
 //          have a go-all button for fixing rounds")
-//   none once closed
+//   Reopen alone once closed (goal/G4.20 point 2: Reopen takes back Done as well as Close); the group chat's
+//          anchor none, as it refuses bring-back (goal/G3.10)
 function buttons(s, it) {
   const g = s.goals[it.goal ? it.id : it.goalId];
-  if (it.closed) return [];
+  if (it.closed) return it.id === GROUP_CHAT ? [] : ['reopen'];
   if (it.done) return ['close', 'reopen'];
   const out = [];
   // A GOAL NEVER OFFERS GO! (desk/G3.7): its items are gone, not the goal itself.
@@ -494,13 +498,28 @@ function listed(s, it) {
   return !!g && !g.abandoned && !it.closed;
 }
 
+// WHAT WAITS ON HIM (goal/G4.20 points 10-11): open grants, open questions, and open checks of his while Done is
+// offered. Andy: "if those two things would match at all times, id know exactly where i need to navigate to."
+// The List's ICON.ERROR is drawn from this alone.
+function asksOf(s, it) {
+  const doneOffered = buttons(s, it).indexOf('done') !== -1;
+  return it.checks.filter(function (c) {
+    return c.state === 'open' && (c.kind === 'G' || c.kind === 'Q' || (c.kind === 'C' && doneOffered));
+  }).length;
+}
+
 function facts(s, it) {
   const f = { id: it.id, title: it.title, goal: it.goal ? '' : it.goalId, status: it.closed ? 'closed' : it.done ? 'done' : it.status,
     with: it.with, buttons: buttons(s, it), blocking: it.blocks.slice(), blocked: blockers(s, it),
     // His Go on record (goal/G3.9): true once he pressed go or go-all on it; an agent's claim never sets it.
     go: it.go === true,
-    // A red star: an agent's line newer than his last seen ("seen, fold (you): stars clear").
-    alone: it.alone, star: it.agentLineN > it.seenN, alert: it.alert === true };
+    // THE STAR IS GONE (goal/G4.20 point 8). Andy: "ha ha, the red star has no function anymore. take it out."
+    alone: it.alone, alert: it.alert === true,
+    // DONE (n) (goal/G4.20 point 3): how many agents claimed done.
+    claims: Object.keys(it.claims).length,
+    // WHO HOLDS THE BOX (goal/G4.20 point 9), '' when nobody.
+    boxTaken: it.boxTakenBy || '' };
+  f.asks = asksOf(s, it);
   // THE BOX CAP (goal/G2.2 note 1). Andy: "there will be no second box per item. absolutely not.", "orange at 50%,
   // red at 75%". The box measured as its one answer against appClient.ANSWER_MAX: half from 50%, full from 75%;
   // nothing is refused below the answer limit, and the split is negotiated, never automated.
@@ -512,7 +531,7 @@ function facts(s, it) {
     const now = Date.now();
     f.design = g.design;
     f.waiting = g.members.map(function (id) { return s.items[id]; }).concat([it]).filter(function (o) {
-      return o && listed(s, o) && (buttons(s, o).length > 0 || o.star);
+      return o && listed(s, o) && (buttons(s, o).length > 0 || asksOf(s, o) > 0);
     }).length;
     f.live = Object.keys(s.agentsAt).filter(function (a) { return now - Date.parse(s.agentsAt[a]) < LIVE_MS; }).sort();
     // WHO IS WORKING (goal/G2.3): the live agents whose last word is working. A stale working clears with
@@ -544,7 +563,10 @@ function searchItems(a) {
     const ids = [gid].concat(a.goalsOnly ? [] : s.goals[gid].members);
     ids.forEach(function (id) {
       const it = s.items[id];
-      if (!it || !(listed(s, it) || (latest && !s.goals[gid].abandoned))) return;
+      // [INCLUDE CLOSED] (goal/G4.20 point 1). Andy: "the search should search the database, and return matches, one
+      // extra search filter toggle [include closed] would do the trick on my side." An abandoned goal's stay out.
+      const closedToo = (latest || a.includeClosed === true) && !s.goals[gid].abandoned;
+      if (!it || !(listed(s, it) || closedToo)) return;
       if (text && (it.id + ' ' + it.title).toLowerCase().indexOf(text) === -1) return;
       out.push(JSON.stringify(facts(s, it)));
     });
@@ -839,7 +861,7 @@ appServer.serve({
   // Each label is one item's facts as JSON; the goal's row also carries
   // design mode, the waiting-on-you count and the live agents.
   'items.search': {
-    request: { text: '', currentGoalOnly: false, goalsOnly: false }, reply: { items: [{ key: '', label: '' }], more: false },
+    request: { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false }, reply: { items: [{ key: '', label: '' }], more: false },
     handler: function (a) {
       return walked(searchItems(a), function (item) { return { key: JSON.parse(item).id, label: item }; });
     },
@@ -973,7 +995,11 @@ appServer.serve({
       // A box that could not come back whole in item.box is refused here, as chat.add refuses such a line.
       const boxBytes = Buffer.byteLength(JSON.stringify({ box: String(a.text), version: 0 }), 'utf8');
       if (boxBytes > ANSWER_ROOM) throw tooLarge(boxBytes, ANSWER_ROOM);
-      const s = write('box.write', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) { if (a.version !== it.version) throw refused('box-moved'); });
+      const s = write('box.write', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
+        // ONLY THE TAKER WRITES while a box take stands (goal/G4.20 point 9); his writes are never refused.
+        if (it.boxTakenBy && w.by !== it.boxTakenBy && w.by !== 'andy') throw refused('taken');
+        if (a.version !== it.version) throw refused('box-moved');
+      });
       return { change: s.change, version: s.items[a.id].version };
     },
   },
@@ -981,7 +1007,8 @@ appServer.serve({
     request: { id: '', kind: '', words: '', test: '' }, reply: { change: 0 },
     handler: function (a, caller) {
       const w = writerOf(caller);
-      if (a.kind !== 'C' && a.kind !== 'T') throw new Error('a check is C or T');
+      // G (a grant) and Q (a question) are the waiting list (goal/G4.20 points 10-11), beside C and T.
+      if (['C', 'T', 'G', 'Q'].indexOf(a.kind) === -1) throw new Error('a check is C, T, G or Q');
       return { change: write('check.add', Object.assign({}, a, { by: w.by, key: w.key })).change };
     },
   },
@@ -989,9 +1016,15 @@ appServer.serve({
     request: { id: '', check: '', state: '' }, reply: { change: 0 },
     handler: function (a, caller) {
       const w = writerOf(caller);
-      if (['open', 'passed', 'failed'].indexOf(a.state) === -1) throw new Error('a check is open, passed or failed');
+      if (['open', 'passed', 'failed', 'granted', 'answered'].indexOf(a.state) === -1) throw new Error('a check is open, passed, failed, granted or answered');
+      // A GRANT IS HIS ALONE (goal/G4.20 points 10-11). Andy: "the Grants are red arm-buttons that turn green and are
+      // logged, and questions are red-text that disappears when you feel i answered usefully." So granted is his,
+      // answered the agent's; each fits only its own kind.
+      if (a.state === 'granted') ownerOnly(caller);
       return { change: write('check.set', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
-        if (!it.checks.some(function (c) { return c.number === a.check; })) throw refused('no-row');
+        const c = it.checks.filter(function (x) { return x.number === a.check; })[0];
+        if (!c) throw refused('no-row');
+        if ((a.state === 'granted' && c.kind !== 'G') || (a.state === 'answered' && c.kind !== 'Q')) throw refused('bad-request');
       }).change };
     },
   },
@@ -1039,6 +1072,20 @@ appServer.serve({
   },
   'item.status': { request: { id: '', word: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.status', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
   'item.take': { request: { id: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.take', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
+  // TAKING THE BOX (goal/G4.20 point 9): an agent takes the box before a change it will write (cap, split, an
+  // update), and the box is drawn red until its write. First wins; another agent's take is refused taken; Andy
+  // takes nothing, as with line.take. A desk verb, not a node verb.
+  'box.take': {
+    request: { id: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      if (w.by === 'andy') throw refused('bad-request');
+      const it = walkState().items[String(a.id)];
+      if (!it) throw refused('no-such-item');
+      if (it.boxTakenBy && it.boxTakenBy !== w.by) throw refused('taken');
+      return { change: write('box.take', { id: a.id, by: w.by, key: w.key }).change };
+    },
+  },
   // TAKING HIS LINE (goal/G2.2 note 2): an agent takes Andy's latest line under an item and is the only one to
   // answer until it does. First wins; a second take is refused taken; an item with no line of his refuses no-row.
   'line.take': {

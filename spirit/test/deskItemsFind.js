@@ -153,7 +153,7 @@ async function main() {
   else test.fail(OWED + 'rails by claude-windows answered ' + JSON.stringify(titleOnly.ids));
 
   test.subHeading('5. closed items answered, abandoned never');
-  const listed = await call('items.search', { text: 'rails', currentGoalOnly: true, goalsOnly: false }, CW);
+  const listed = await call('items.search', { text: 'rails', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, CW);
   const listedIds = ((listed.body && listed.body.items) || []).map(function (p) { return p.key; });
   if (listedIds.indexOf('f/G1.4') === -1 && wslRails.ids.indexOf('f/G1.4') !== -1) test.check('f/G1.4, closed: hidden from items.search, answered by items.find');
   else test.fail(OWED + 'closed f/G1.4: items.search ' + JSON.stringify(listedIds) + ', items.find ' + JSON.stringify(wslRails.ids));

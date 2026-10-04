@@ -47,7 +47,7 @@ async function start() {
   return false;
 }
 async function items(args) {
-  const r = await call('items.search', Object.assign({ text: '', currentGoalOnly: true, goalsOnly: false }, args || {}));
+  const r = await call('items.search', Object.assign({ text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false }, args || {}));
   const by = {};
   (((r.body || {}).items) || []).forEach(function (i) { try { const o = JSON.parse(i.label); by[o.id] = o; } catch (e) { /* not one */ } });
   return by;
@@ -111,8 +111,9 @@ const has = function (it, b) { return !!(it && Array.isArray(it.buttons) && it.b
   }
   by = await items();
   const ids = Object.keys(by).sort();
-  const allClosed = ids.length === 4 && ids.every(function (id) { return by[id].status === 'closed' && Array.isArray(by[id].buttons) && by[id].buttons.length === 0; });
-  if (allClosed) test.check('the closed goal and its three items are listed, each closed, with no buttons');
+  const allClosed = ids.length === 4 && ids.every(function (id) { return by[id].status === 'closed' && Array.isArray(by[id].buttons) && by[id].buttons.join(',') === 'reopen'; });
+  // A closed item offers Reopen alone since goal/G4.20 point 2 ("Reopen takes back Done as well as Close").
+  if (allClosed) test.check('the closed goal and its three items are listed, each closed, offering Reopen alone');
   else test.fail(G32 + 'with the current goal closed the List holds ' + JSON.stringify(ids.map(function (id) { return [id, by[id].status, by[id].buttons]; })));
 
   test.subHeading('G3.2: an abandoned goal stays invisible');

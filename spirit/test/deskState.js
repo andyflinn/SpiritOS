@@ -70,7 +70,7 @@ async function start() {
 }
 function stop(kid) { return new Promise(function (r) { if (kid.exitCode !== null || kid.signalCode !== null) return r(); kid.once('exit', r); kid.kill(); }); }
 async function items(args) {
-  const r = await call('items.search', Object.assign({ text: '', currentGoalOnly: false, goalsOnly: false }, args || {}));
+  const r = await call('items.search', Object.assign({ text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false }, args || {}));
   const by = {};
   (((r.body || {}).items) || []).forEach(function (i) { try { const o = JSON.parse(i.label); by[o.id] = o; } catch (e) { /* not one */ } });
   return by;
@@ -189,12 +189,15 @@ const same = function (a, b) { return JSON.stringify(a) === JSON.stringify(b.sli
   if (claim.status === 200) test.check('an agent\'s claim-done still passes');
   else test.fail('an agent\'s claim-done was refused: ' + JSON.stringify(claim));
 
-  test.subHeading('stars come from what Andy has seen');
+  // THE STAR IS GONE (goal/G4.20 point 8, Andy: "ha ha, the red star has no function anymore. take it out."):
+  // an agent's line and his seen leave no star in the facts.
+  test.subHeading('no star: neither an agent line nor his seen puts one in the facts');
   await call('chat.add', { id: 't/G1.2', text: 'agent says' }, WSL);
   const starred = (await items())['t/G1.2'] || {};
   await call('press', { id: 't/G1.2', what: 'seen' }, ANDY);
   const cleared = (await items())['t/G1.2'] || {};
-  if (starred.star === true && cleared.star === false) test.check('an agent\'s new line stars the item, and Andy\'s seen clears it');
+  const noStar = function (f) { return f.id && !Object.prototype.hasOwnProperty.call(f, 'star'); };
+  if (noStar(starred) && noStar(cleared)) test.check('an agent\'s new line and Andy\'s seen leave no star in the facts');
   else test.fail(OWED + 'star before seen ' + starred.star + ', after ' + cleared.star);
 
   // desk/G1.4: what he types in Desk reaches his voice file, and the desk server writes it (G2.7 review): his

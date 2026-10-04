@@ -77,6 +77,7 @@ function ddFrame() {
       '<div id="dd-strip"></div>' +
     '</div>' +
     '<div class="stat-tile wide" id="dd-box"></div>' +
+    '<div id="dd-waiting"></div>' +
     '<div id="dd-links"></div>' +
     '<div class="start-job-form card"><label class="field-label grow">Say' +
       // Return is a new line; only Send sends (desk/G1.12).
@@ -111,7 +112,9 @@ function ddButtonsHtml() {
   var f = ddFacts || {};
   var early = ddEarlyClose(f);
   var html = (f.buttons || []).filter(function (b) { return DD_LABELS[b] && !(early && b === 'close'); }).map(function (b) {
-    return '<button type="button" id="dd-' + b + '">' + DD_LABELS[b] + '</button>';
+    // DONE (n) (goal/G4.20 point 3). Andy: "when the done button appears it also shows number of claims [Done (2)]".
+    var label = b === 'done' && Number(f.claims) > 0 ? 'Done (' + Number(f.claims) + ')' : DD_LABELS[b];
+    return '<button type="button" id="dd-' + b + '">' + label + '</button>';
   }).join('');
   html += ddRenaming
     ? '<label class="field-label grow">Your name for it<input type="text" id="dd-name" placeholder="in your own words"></label>' +
@@ -159,13 +162,49 @@ function ddStripHtml() {
 // no longer folds." Folded shows its first line; the state is kept here, so a repaint keeps his fold.
 var ddFolded = true;  // every open starts folded, as before desk/G2.7
 function ddBoxHtml() {
-  if (!ddBox) return '<div class="job-manifest-note">No text yet: an agent writes it.</div>';
+  // A TAKEN BOX IS RED (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
+  // is red. cap also." Red until the taker writes it; the taker's name is on it.
+  var taker = ddFacts && ddFacts.boxTaken ? String(ddFacts.boxTaken) : '';
+  var taken = taker ? ' data-taken="' + ddEsc(taker) + '" title="' + ddEsc(taker) + ' is changing this box"' : '';
+  if (!ddBox) return '<div class="job-manifest-note"' + taken + (taker ? ' style="border:2px solid red;padding:4px"' : '') + '>No text yet: an agent writes it.</div>';
   // THE BOX CAP, SEEN (goal/G2.2 note 1). Andy: "orange at 50%, red at 75%" — the server says half and full; the
   // border is the only automatic part, the split into items is negotiated ("never automated").
-  var cap = ddFacts && ddFacts.full ? 'border:2px solid red;padding:4px;' : ddFacts && ddFacts.half ? 'border:2px solid orange;padding:4px;' : '';
+  var cap = taker || (ddFacts && ddFacts.full) ? 'border:2px solid red;padding:4px;' : ddFacts && ddFacts.half ? 'border:2px solid orange;padding:4px;' : '';
   var toggle = '<button type="button" data-fold="item" title="' + (ddFolded ? 'Unfold' : 'Fold') + '">' + (ddFolded ? '▸' : '▾') + '</button> ';
-  if (ddFolded) return '<div style="' + cap + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + toggle + ddEsc(ddBox.split('\n')[0]) + '</div>';
-  return '<div style="' + cap + '"><div>' + toggle + '</div><div style="white-space:pre-wrap">' + ddEsc(ddBox) + '</div></div>';
+  if (ddFolded) return '<div' + taken + ' style="' + cap + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + toggle + ddEsc(ddBox.split('\n')[0]) + '</div>';
+  return '<div' + taken + ' style="' + cap + '"><div>' + toggle + '</div><div style="white-space:pre-wrap">' + ddEsc(ddBox) + '</div></div>';
+}
+
+// WHAT WAITS ON HIM, UNDER THE BOX (goal/G4.20 points 10-11). Andy: "the Grants are red arm-buttons that turn green
+// and are logged, and questions are red-text that disappears when you feel i answered usefully." An open grant arms
+// on the first click and is granted on the second; a granted one stays, green. An open question shows its number and
+// words ("the questions number and the text (for me)"); a click puts "Q1: <words>" in his input; the agent marks it
+// answered and it goes.
+function ddWaitingHtml() {
+  var html = ddChecks.map(function (c) {
+    if (c.kind === 'G' && c.state === 'granted') {
+      return '<div data-granted="' + ddEsc(c.number) + '" style="color:#1a7f37" title="granted ' + ddEsc(c.at) + '">✓ ' + ddEsc(c.number) + ' ' + ddEsc(c.words) + '</div>';
+    }
+    if (c.kind === 'G' && c.state === 'open') {
+      var armed = ddArmed === 'grant:' + c.number;
+      return '<div><button type="button" data-grant="' + ddEsc(c.number) + '"' + (armed ? ' data-armed="1"' : '') +
+        ' style="background:#c00;color:#fff">' + (armed ? 'Grant ' + ddEsc(c.number) + ': sure?' : 'Grant ' + ddEsc(c.number)) + '</button> ' + ddEsc(c.words) + '</div>';
+    }
+    if (c.kind === 'Q' && c.state === 'open') {
+      return '<div data-question="' + ddEsc(c.number) + '" style="color:#d00;cursor:pointer" title="answer it below">' + ddEsc(c.number) + ': ' + ddEsc(c.words) + '</div>';
+    }
+    return '';
+  }).join('');
+  return html ? '<div class="stat-tile wide">' + html + '</div>' : '';
+}
+// A question clicked goes into his input as a line of its own.
+function ddQuote(number) {
+  var c = ddChecks.filter(function (x) { return x.number === number; })[0];
+  var say = document.getElementById('dd-say');
+  if (!c || !say) return;
+  var had = String(say.value || '');
+  say.value = (had && !/\n$/.test(had) ? had + '\n' : had) + c.number + ': ' + c.words;
+  if (typeof say.focus === 'function') say.focus();
 }
 
 // Each id a way there (Andy: "the blocked and blocks lists link to the respective items").
@@ -226,6 +265,7 @@ function ddPaint() {
   if (box) box.value = typed;
   ddSet('dd-strip', ddStripHtml());
   ddSet('dd-box', ddBoxHtml());
+  ddSet('dd-waiting', ddWaitingHtml());
   ddSet('dd-links', ddLinksHtml());
   ddSet('dd-chat', ddChatHtml());
   var err = document.getElementById('dd-error');
@@ -315,6 +355,21 @@ spirit.shell.activateApp({
         return;
       }
       if (t && t.getAttribute && t.getAttribute('data-fold') === 'item') { ddFolded = !ddFolded; ddPaint(); return; }
+      var grantEl = t && t.closest ? t.closest('[data-grant]') : null;
+      if (grantEl) {
+        var g = grantEl.getAttribute('data-grant');
+        if (ddArmed !== 'grant:' + g) {
+          ddArmed = 'grant:' + g;
+          ddPaint();
+          if (typeof ddApi.armUntilElsewhere === 'function') ddApi.armUntilElsewhere(ddDisarm);
+          return;
+        }
+        ddArmed = '';
+        ddWrite('check.set', { id: ddId, check: g, state: 'granted' });
+        return;
+      }
+      var question = t && t.closest ? t.closest('[data-question]') : null;
+      if (question) { ddQuote(question.getAttribute('data-question')); return; }
       var check = t && t.getAttribute && t.getAttribute('data-check');
       if (check) { ddWrite('check.set', { id: ddId, check: check, state: 'passed' }); return; }
       var id = t && t.id;
@@ -366,8 +421,9 @@ spirit.shell.activateApp({
     ddFrame();
     ddPaint();
     return ddLoad().then(function () {
-      // Opening it is seeing it: his seen clears the item's star.
-      if (ddFacts && ddFacts.star) ddPress('seen');
+      // Opening it is seeing it: his seen clears a brought-back item's mark (goal/G2.1 note 6). The star it
+      // also cleared is gone (goal/G4.20 point 8).
+      if (ddFacts && ddFacts.alert) ddPress('seen');
     });
   },
 });

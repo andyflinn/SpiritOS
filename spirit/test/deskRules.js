@@ -341,7 +341,7 @@ async function main() {
   const offered = f4 && f4.buttons.indexOf('close') !== -1 && f4.buttons.indexOf('go') !== -1;
   const close = await desk('press', { id: 'r/G1.4', what: 'close' }, ANDY);
   f4 = await factsOf('r/G1.4');
-  if (offered && close.status === 200 && f4 && f4.status === 'closed' && f4.buttons.length === 0) test.check('B3: an item not gone and not done offers close beside go; his close is taken and the item is closed');
+  if (offered && close.status === 200 && f4 && f4.status === 'closed' && f4.buttons.join(',') === 'reopen') test.check('B3: an item not gone and not done offers close beside go; his close is taken, the item is closed and offers Reopen alone (goal/G4.20 point 2)');
   else test.fail(OWED + 'B3: offered close before Go: ' + offered + ', his close answered ' + close.status + ' ' + JSON.stringify(close.body).slice(0, 100) + ', facts ' + JSON.stringify(f4));
   await desk('press', { id: 'r/G1.3', what: 'go-all' }, ANDY);
   await desk('press', { id: 'r/G1', what: 'go-all' }, ANDY);
