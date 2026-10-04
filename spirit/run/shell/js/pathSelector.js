@@ -19,24 +19,43 @@
   function createPathSelector(options) {
     var o = options || {};
     var files = typeof o.files === 'function' ? o.files : function () { return []; };
-    var root = document.createElement('div');
-    root.className = 'path-selector';
-    root.value = '';
-    // INLINE, so it sits on one line with its owner's buttons (Andy: "why is [set] on a new line?").
-    root.style.display = 'inline-block';
-    root.style.verticalAlign = 'top';
     // TWO FACES, AS THE CONTACT SELECTOR HAS (goal/G4.23; Andy: "the picker takes more than a page.... ? make it a
     // selector"). The default is a drop-down: a button showing the chosen path, the search and rows folded under it
     // until it is pressed, folded again by a pick. face 'pane' keeps them shown.
+    // A SPAN, A DIV ONLY AS A PANE. Andy: "single input objects like string and selectors, the should act like a
+    // <span>, only the pane-version should act like a <div>", and "why is [set] on a new line?". The drop-down sits in
+    // its line; its rows float over the page under the button ("a dropdown floats above the page until selection"),
+    // closed by a pick or a click elsewhere, so they never push the line apart.
     var dropdown = o.face !== 'pane';
+    var root = document.createElement(dropdown ? 'span' : 'div');
+    root.className = 'path-selector';
+    root.value = '';
     var toggle = null;
     var panel = document.createElement('div');
     if (dropdown) {
+      root.style.position = 'relative';
+      root.style.display = 'inline-block';
       toggle = document.createElement('button');
       toggle.setAttribute('type', 'button');
       toggle.textContent = o.foldersOnly ? 'choose a folder ▾' : 'choose a file ▾';
       root.appendChild(toggle);
       panel.hidden = true;
+      panel.style.position = 'absolute';
+      panel.style.top = '100%';
+      panel.style.left = '0';
+      panel.style.zIndex = '20';
+      panel.style.minWidth = '22em';
+      panel.style.maxHeight = '20em';
+      panel.style.overflowY = 'auto';
+      panel.style.padding = '4px';
+      panel.style.background = 'var(--spirit-panel, #fff)';
+      panel.style.border = '1px solid var(--spirit-line, #e2e5e9)';
+      panel.style.borderRadius = 'var(--spirit-radius, 8px)';
+      panel.style.boxShadow = '0 4px 12px rgba(0,0,0,0.4)';
+      // A click anywhere else closes the rows.
+      document.addEventListener('click', function (ev) {
+        if (!panel.hidden && ev && ev.target && !root.contains(ev.target)) panel.hidden = true;
+      });
     }
     var input = document.createElement('input');
     input.setAttribute('placeholder', o.foldersOnly ? 'search folders' : 'search files and folders');
