@@ -7,7 +7,9 @@
 //   currentGoal.json ?", "i generally only read the repo. i think we should make this automatic? agree?", "can the
 //   automatic handle the complications?", "do it", and on the shape, "yes, that's the shape."
 //
-//   node goalShare.js --repo <dir> --path <path in the repo> --from <file> [--remote origin] [--branch master]
+//   node goalShare.js --repo <dir> --path <path in the repo> --from <file> [--remote origin] [--branch master] [--message <text>]
+//
+// The rules file shares this way too (goal/G5.8), under its own --message.
 //
 // An automation beside its owner (goal/G4.21, decided): desk.js starts this through its own node's jobs.create, so the
 // node runs it as a job of process/js/desk. It fetches <remote>/<branch>, builds ONE commit on top of it that sets
@@ -33,6 +35,7 @@ const PATH = arg('path', '').replace(/\\/g, '/');
 const FROM = arg('from', '');
 const REMOTE = arg('remote', 'origin');
 const BRANCH = arg('branch', 'master');
+const MESSAGE = arg('message', 'currentGoal.json, shared by the desk (goal/G4.21)');
 
 const INDEX = path.join(os.tmpdir(), 'spirit-goalshare-' + process.pid + '.index');
 // Every way out removes the temporary index first: process.exit skips a finally (wsl-claude's review of 16633dd7).
@@ -59,7 +62,7 @@ function attempt() {
   must(git(['update-index', '--add', '--cacheinfo', '100644,' + blob + ',' + PATH], env), 'update-index');
   const tree = must(git(['write-tree'], env), 'write-tree');
   if (tree === must(git(['rev-parse', base + '^{tree}']), 'rev-parse tree')) return { result: 'same', hash: base };
-  const commit = must(git(['commit-tree', tree, '-p', base, '-m', 'currentGoal.json, shared by the desk (goal/G4.21)']), 'commit-tree');
+  const commit = must(git(['commit-tree', tree, '-p', base, '-m', MESSAGE]), 'commit-tree');
   const pushed = git(['push', '-q', REMOTE, commit + ':refs/heads/' + BRANCH]);
   return pushed.status === 0 ? { result: 'pushed', hash: commit } : { result: 'refused', why: pushed.err || pushed.out };
 }
