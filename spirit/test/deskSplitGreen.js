@@ -16,6 +16,8 @@
 //   4  a box.write with an OPEN section is refused.
 //   5  his End design is refused while any item of the goal is not design-green.
 //   6  a Go, and a go-all, are refused while an item in that scope is not design-green.
+//   7  no phase is taken while design is on, also on an item whose Go came before design was started again. Andy, in
+//      goal/G6.8: "no phases can be taken in an item while design mode is on.", and "yes." to Q2, adding it here.
 // THE NAMES that are wsl-claude's picks (the box names none): the fact is green (true | false); "an OPEN section" is a
 // line of the box that starts with the word OPEN in capitals (OPEN:, OPEN on its own line, OPEN followed by a space).
 // LEFT OPEN, with the reason, not asserted here:
@@ -153,6 +155,19 @@ function answer(id, check) { return call('check.set', { id: id, check: check, st
   const sibling2 = await facts('D/G1.2');
   if (!ok(allRefused) && sibling.go === false && ok(allOk) && sibling2.go === true) test.check('go-all on D/G1 is refused while D/G1.3 has an open Q (D/G1.2 untouched); once green it is accepted');
   else test.fail(OWED + 'go-all over a non-green goal: ' + short({ refused: allRefused.status, siblingGo: sibling.go, afterAnswer: allOk.status, siblingAfter: sibling2.go }));
+
+  test.subHeading('7. no phase is taken while design is on');
+  await session('P/G1', [{ id: 'P/G1.1', title: 'Code, Go before design restarts', blocks: ['P/G1'], code: true }]);
+  await call('press', { id: 'P/G1', what: 'end-design' }, ANDY);
+  const goP = await call('press', { id: 'P/G1.1', what: 'go' }, ANDY);
+  const restarted = await call('press', { id: 'P/G1', what: 'start-design' }, ANDY);
+  const inDesign = await call('phase.take', { id: 'P/G1.1', phase: 'red' }, CW);
+  const held = await facts('P/G1.1');
+  await call('press', { id: 'P/G1', what: 'end-design' }, ANDY);
+  const afterDesign = await call('phase.take', { id: 'P/G1.1', phase: 'red' }, CW);
+  if (!ok(goP) || !ok(restarted)) test.fail('the world: Go on P/G1.1 answered ' + goP.status + ', start-design ' + restarted.status);
+  else if (!ok(inDesign) && !held.with && ok(afterDesign)) test.check('P/G1.1 has Go on record, design started again: its red take is refused; after End design it is taken');
+  else test.fail(OWED + 'phase take in design: ' + short({ inDesign: inDesign.status, with: held.with, afterDesign: afterDesign.status }));
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
   await stop();
   setTimeout(function () {
