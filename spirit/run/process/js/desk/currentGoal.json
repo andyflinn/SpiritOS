@@ -1,8 +1,8 @@
 {
- "change": 14281,
+ "change": 15001,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T16:04:18.816Z",
+ "writtenAt": "2026-10-05T17:09:01.145Z",
  "items": [
   {
    "id": "goal/G5",
@@ -16,7 +16,8 @@
     "goal/G5.1",
     "goal/G5.2",
     "goal/G5.3",
-    "goal/G5.4"
+    "goal/G5.4",
+    "goal/G5.5"
    ],
    "go": false,
    "alone": false,
@@ -27,17 +28,13 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-ubuntu",
-    "claude-windows",
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -77,12 +74,17 @@
      "by": "claude-windows",
      "at": "2026-10-05T15:49:30.445Z",
      "text": "Both in the boxes, verbatim: \"I decide design mode, not any of you.\" (goal/G5) and the desk never idle without Done, a grant ask or a question (G5.4). Design is ended and your Gos stand, so G5 goes on: wsl-claude's red for G5.1 first, I build after."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:08:26.222Z",
+     "text": "taking: a new G5 item for FACE.md's desk changes."
     }
    ]
   },
   {
    "id": "goal/G5.1",
-   "title": "pushOrigin: one process that pushes when the clone is behind origin, for publishData and goalShare",
+   "title": "pushOrigin: one process that sends commits already made when the clone is behind origin, for Andy (from Jobs) and publishData",
    "goal": "goal/G5",
    "status": "running",
    "with": "",
@@ -96,20 +98,56 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "PUSHORIGIN: ONE PROCESS THAT PUSHES WHEN THE CLONE IS BEHIND ORIGIN\n\nANDY, andy/NOFACE.md, VERBATIM\n- \"during the creation of spirit/run/process/js/deskClient/publishData.js, when that script was run simultaneously on three platforms, by three instances of claude, conflicts arose when trying to push new measurment documents to github.\"\n- \"A fix was applied to publishData.js that fixed the problem automatically\"\n- \"That fix would be extremely useful for deskServer as well. I propose to isolate that fixed section and make it available as spirit/run/process/js/deskClient/publishData.js so desk can use it when updating in goalShare.js, which mabe already carries the fix (duplicated) as well.\"\n- The stub (1818d97f), spirit/run/process/js/pushOrigin/pushOrigin.js: \"This is where we put the SpiritOS process for pushing changes to github when out commit livel is behind the remote origin.\"\n\nFOUND\n- wsl-claude: line 9's path reads publishData.js where pushOrigin.js is meant; goalShare.js already retries its own way (fetch the tip, commit onto it, push, 5 tries; goalShare.js 52-74).\n- claude-windows: a process under process/js/<name>/ starts only on a node that lists that folder (jobs.js), so process/js/pushOrigin/ must be listed on each node using it; it fits goal/G4.34's removeWhenDone.\n\nOPEN: the shape; his Go.",
-   "version": 1,
+   "box": "PUSHORIGIN: SEND COMMITS ALREADY MADE TO GITHUB, EVEN WHEN THE CLONE IS BEHIND\n\nWHAT IT DOES\n- Lives in spirit/run/process/js/pushOrigin/pushOrigin.js (Andy's stub, 1818d97f).\n- Fetches origin, re-stacks the checkout's own commits on its newest (unsaved edits put aside and back), pushes, and tries again if someone pushed meanwhile.\n- On a clash (both sides changed the same lines) it stops, leaves the checkout as it was, and says why.\n\nWHO STARTS IT\n- publishData, in place of its own pull --rebase: it loads pushOrigin.js as shared code. Its commits keep passing commitCheck (its own folder only).\n- Andy, by hand, from the Jobs launcher: pushOrigin.json lists its arguments the way wordpressScanner.json does, the launcher draws the dialog (index.html 1472-1562) and hands them over as one JSON string (wordpressScanner.js 85 reads them the same way). The node must list process/js/pushOrigin/, or jobs.create refuses it (jobs.js 404-418).\n- Not goalShare: it keeps its own way, one new commit of currentGoal.json (goalShare.js 52-74).\n- Not Andy's day-to-day commits: those go through VS Code's Sync Changes (\"git.rebaseWhenSync\": true).\n\nANDY, VERBATIM\n- \"I run into the problem that you ran into while pushing measurements. happens often to me, that's why i want a unified approach that i can trigger from desk, separately from goalShare, so we want one unified shared approach, that ensures my commits go through.\"\n- To how Desk starts it: \"Implicitly, by design, or via jobs-selector manually\"\n- \"correct\", and \"it  must live in: spirit/run/process/js/pushOrigin/pushOrigin.js\"\n- \"i only plan commits in folders outside of the actual code. if vscode gives me an easy ui-options to sync and push, i'll use that.\"\n- \"agreed. so it' just about sharing code among desk components.\"\n- \"jobs provides argument introspection and create a dialog for arguments automatically\", \"the process interface that is\", \"the launcher in shell builds an input dialog automatically\"\n- \"look at spirit\\run\\process\\js\\wordpressScanner\\wordpressScanner.js\"\n- andy/NOFACE.md: \"during the creation of spirit/run/process/js/deskClient/publishData.js, when that script was run simultaneously on three platforms, by three instances of claude, conflicts arose when trying to push new measurment documents to github.\" / \"A fix was applied to publishData.js that fixed the problem automatically\" / \"That fix would be extremely useful for deskServer as well. I propose to isolate that fixed section and make it available as spirit/run/process/js/deskClient/publishData.js so desk can use it when updating in goalShare.js, which mabe already carries the fix (duplicated) as well.\"\n- The stub: \"This is where we put the SpiritOS process for pushing changes to github when out commit livel is behind the remote origin.\"\n\nWHY NOT GOALSHARE'S WAY FOR publishData\n- It builds commits with commit-tree, which runs no commit-msg hook, so commitCheck would not see them (claude-windows's find; wsl-claude's conclusion).\n\nOPEN: his Go.",
+   "version": 15,
    "checks": [
     {
      "number": "Q1",
      "kind": "Q",
      "words": "pushOrigin: take goalShare's way for both callers (commit the files onto origin's fetched tip, push, retry; the working tree is never touched), so publishData drops its pull --rebase? (wsl-claude)",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T16:13:06.649Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "How do you start the shared push from Desk: a button on the item or goal, or a chat line such as \"push\" (as \"publish\" works today)? (wsl-claude)",
+     "test": "",
+     "state": "passed",
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:18:15.048Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "How do you start pushOrigin from Desk: a Push button (on the goal row, for your own checkout), or a group-chat line \"push\" the way \"publish\" starts publishData? (claude-windows)",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T16:13:17.188Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Since you push your own commits with VSCode: does pushOrigin take goalShare's way (a new commit of the tool's files on origin's newest, push, retry; no working tree touched) for publishData and goalShare alike? (wsl-claude)",
+     "test": "",
+     "state": "passed",
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:35:41.902Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "pushOrigin from Jobs sends your own commits (re-stacked on GitHub newest, stops on a clash). For publishData: put its files up the goalShare way (claude-windows), or send its commits like yours (wsl-claude)?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T16:48:09.483Z"
     }
    ],
    "chat": [
@@ -122,6 +160,306 @@
      "by": "wsl-claude",
      "at": "2026-10-05T15:49:44.481Z",
      "text": "wsl: the G5.1 red waits on your answer to its red question (goalShare's way for both, or not); written before it, it would guess the shape."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:06:17.989Z",
+     "text": "Q1: pushOrigin: take goalShare's way for both callers (commit the files onto origin's fetched tip, push, retry; the working tree is never touched), so publishData drops its pull --rebase? (wsl-claude)\n\nrecommendations?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:06:31.696Z",
+     "text": "wsl recommends yes: one way for both, and it never touches a working tree, so it is safe in your checkout and cannot fail on a dirty tree or a rebase conflict.\nThe cost: an agent clone lags origin until its next pull, which is harmless.\nG5 is to be abandoned, so this question moves into G6 with pushOrigin."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:06:53.610Z",
+     "text": "claude-windows recommends yes too: one way, no working tree touched (that was why publishData needed its temporary worktree).\nOne risk: goalShare builds its commit with commit-tree, which runs no commit-msg hook, so commitCheck's scope check doesn't see it; only the push hook does. pushOrigin should keep that check for publishData's files."
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T16:06:54.055Z",
+     "text": "ubi: goalShare's way. One pushOrigin that commits onto the fetched tip and never touches the working tree is safer across clones we do not control — my own publish today failed on git identity and credentials, orthogonal to the merge path, but it showed the three boxes do not start from the same clean state. The fewer assumptions pushOrigin makes about the caller's tree, the better."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:11:00.483Z",
+     "text": "I run into the problem that you ran into while pushing measurements. happens often to me, that's why i want a unified approach that i can trigger from desk, separately from goalShare, so we want one unified shared approach, that ensures my commits go through. \n\ncap accordingly"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:11:15.046Z",
+     "text": "taking: cap G5.1's box with your ruling."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:11:16.502Z",
+     "text": "wsl, correcting my yes: goalShare's way only works for files the tool writes itself; your own commits already sit on your branch, so pushing them when behind needs a rebase onto origin in your checkout.\nSo the shared approach is publishData's: fetch, rebase your commits (autostash for unsaved edits), push, retry; it stops and says so on a conflict.\ngoalShare can keep its own way, since it never has local commits."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:12:02.538Z",
+     "text": "G5.1's box is capped: your ruling verbatim at the top, wsl's correction kept (your commits need a rebase onto origin, so goalShare keeps its own way).\nOpen: how Desk starts it, a button or a line like \"publish\"?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:12:39.736Z",
+     "text": "update the red questions"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:13:04.014Z",
+     "text": "taking: the red questions of G5.1."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:13:18.454Z",
+     "text": "Red questions updated: Q1 off (your line answered it: the shared way, separate from goalShare).\nQ3 was mine, the same as wsl's Q2, so I took it off; Q2 stays open."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:17:59.432Z",
+     "text": "Q2: How do you start the shared push from Desk: a button on the item or goal, or a chat line such as \"push\" (as \"publish\" works today)? (wsl-claude)\n\nImplicitly, by design, or via jobs-selector manually"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:18:15.964Z",
+     "text": "wsl: Q2 marked answered. For the Jobs selector, process/js/pushOrigin/ must be on that node's include list, or jobs.create refuses it (jobs.js 404-418)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:18:19.879Z",
+     "text": "taking: Q2's answer into G5.1's box, Q2 off."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:18:46.439Z",
+     "text": "G5.1's box has your Q2 answer verbatim: started implicitly by the processes that push, or by hand from the Jobs selector.\nNo question left on G5.1; it waits on your Go (G5 itself is still to be abandoned, so this moves to G6)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:21:24.170Z",
+     "text": "correct: \"- claude-windows: a process under process/js/<name>/ starts only on a node that lists that folder (jobs.js), so process/js/pushOrigin/ must be listed on each node using it; it fits goal/G4.34's removeWhenDone. wsl-claude: without that, jobs.create refuses it (jobs.js 404-418).\"\n\nit  must live in: spirit/run/process/js/pushOrigin/pushOrigin.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:21:45.373Z",
+     "text": "taking: your location ruling into G5.1's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:21:52.305Z",
+     "text": "In G5.1's box: \"correct\", and it lives in spirit/run/process/js/pushOrigin/pushOrigin.js (your stub's file).\nIt waits on your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:23:20.069Z",
+     "text": "wsl: explain \"- wsl-claude: goalShare's way cannot carry commits that already sit on a branch, so it is not the shared way.\""
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:23:33.564Z",
+     "text": "wsl: goalShare takes one file, makes a brand-new commit of it on top of origin's newest, and pushes that; it never looks at your branch.\nYour commits are already made, on top of an older origin; to push them they have to be replayed on top of the newest (a rebase), and goalShare has no such step.\nSo goalShare's way fits a tool writing its own file, not your own commits."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:26:05.096Z",
+     "text": "i only plan commits in folders outside of the actual code. if vscode gives me an easy ui-options to sync and push, i'll use that."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:26:21.338Z",
+     "text": "wsl: then pushOrigin only serves tools writing their own files (publishData, goalShare), and goalShare's way fits all of them again: never touches a working tree, nothing to rebase.\nThat takes my correction back; one question for you below."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:26:24.983Z",
+     "text": "taking: your line into G5.1's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:26:30.348Z",
+     "text": "VS Code has it: the Sync Changes button (the arrows in the status bar, or the Source Control view) pulls, then pushes.\n- Setting \"git.rebaseWhenSync\": true makes that pull a rebase, the same step pushOrigin takes, with no merge commits.\n- So pushOrigin is for the processes that push (publishData first); your own commits go through VS Code.\nShall I put that split into the box as the shape?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:27:39.938Z",
+     "text": "agreed. so it' just about sharing code among desk components."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:27:55.131Z",
+     "text": "wsl: then publishData and goalShare can simply load pushOrigin.js as shared code (no job, no include list); only starting it by hand from Jobs needs the folder listed.\nThe red question on which way it pushes stays open for you."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:28:02.677Z",
+     "text": "taking: G5.1's box to the agreed shape."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:28:29.448Z",
+     "text": "G5.1's box now holds the agreed shape: goalShare's way, as shared code in pushOrigin.js, for goalShare and publishData; your own commits through VS Code.\nQ4 (wsl's) is the same thing; your \"agreed\" answers it if you mean it so."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:29:25.741Z",
+     "text": "jobs provides argument introspection and create a dialog for arguments automatically"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:29:54.607Z",
+     "text": "taking: the Jobs dialog line into G5.1's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:30:00.263Z",
+     "text": "In the box: pushOrigin.json beside pushOrigin.js declares its arguments, so Jobs draws its dialog by itself (as desk.json does for desk.js)."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:30:00.573Z",
+     "text": "wsl: half of that is in the tree: a script declares its arguments in its .json beside it (desk.json: name, default, description), so pushOrigin.json would list its own.\nToday only the node reads them, for the defaults of node-run servers (jobs.js 475); no shell app builds a dialog from them yet.\nIs that dialog part of this goal, or later?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:30:07.214Z",
+     "text": "the process interface that is"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:30:19.582Z",
+     "text": "wsl, correcting the box line: Jobs draws no such dialog today; no shell code reads a manifest's args (shell/jobs, jobsDetails, process-browser: none), only the node, for defaults (jobs.js 475).\nSo the dialog is new work, and the box should say so until you place it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:30:36.078Z",
+     "text": "The dialog is in the tree: the process interface draws one input per argument of the script's .json and a Start Job button (index.html 1486-1502, read back at 1557).\nSo pushOrigin.json is all it needs; nothing to build for the dialog."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:30:42.347Z",
+     "text": "wsl: if the process interface means the manifest, yes: pushOrigin.json declares the arguments, as desk.json does.\nBut no shell app starts a job from it today (no spirit.core.jobs.create call in shell/), so the dialog that reads it is still to be built."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:30:56.627Z",
+     "text": "wsl: claude-windows is right, I was wrong: index.html 1486-1502 draws the inputs from the .json and a Start Job; I had searched shell/*.js only. My two corrections are withdrawn; the box line stands."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:30:59.078Z",
+     "text": "wsl, it is outside shell/: index.html 1472-1502 loads the script's .json when the file viewer opens a process/js/<name>/<x>.js, draws one input per argument, and Start Job (1555-1562) calls spirit.core.jobs.start.\n- One thing pushOrigin must follow: the arguments arrive as ONE JSON string after the script path ([scriptPath, JSON.stringify(values)], 1559)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:31:36.003Z",
+     "text": "look at spirit\\run\\process\\js\\wordpressScanner\\wordpressScanner.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:31:51.820Z",
+     "text": "wsl: read it: wordpressScanner.json lists its args (name, type, label, default) and the script reads them as one JSON string, JSON.parse(process.argv[2]) (line 85).\nSo pushOrigin follows that pattern for the Jobs start, and also exports its function so publishData and goalShare can load it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:31:52.340Z",
+     "text": "taking: reading wordpressScanner.js for pushOrigin's shape."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:32:18.127Z",
+     "text": "In the box: pushOrigin is built on wordpressScanner's pattern (its .json, JSON.parse(process.argv[2]), jobs.log/complete/fail), and exports its function for goalShare and publishData."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:32:53.195Z",
+     "text": "the launcher in shell builds an input dialog automatically"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:33:13.962Z",
+     "text": "Yes, that is the one in the box (index.html 1472-1562); your line is added verbatim. Nothing to build for the dialog."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:35:23.176Z",
+     "text": "Q4: Since you push your own commits with VSCode: does pushOrigin take goalShare's way (a new commit of the tool's files on origin's newest, push, retry; no working tree touched) for publishData and goalShare alike? (wsl-claude)\n\ni don't understand git enough to get what you're saying.\nif i get that pushOrigin tool in the process-system, i can try that before bothering you"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:35:40.984Z",
+     "text": "wsl, plainly: then pushOrigin, started from Jobs on a folder you pick, first catches your copy up with GitHub (your commits kept on top, unsaved edits put aside and back), then pushes, and tries again if someone pushed meanwhile.\nIt stops and tells you if your change and theirs touch the same lines.\npublishData uses the same; goalShare keeps its own way. Q4 is settled by that."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:35:43.229Z",
+     "text": "In plain words: there are two kinds of push.\n- A tool's push: \"put these files on GitHub\". Desk makes a new commit of them on GitHub's newest and pushes; your folder is untouched. goalShare does that today.\n- Your push: \"send the commits I already made\". If GitHub moved on meanwhile, your commits get re-stacked on its newest, then pushed. That is publishData's fix, and what you'd start from the process system.\nSo pushOrigin carries both: started from Jobs it sends your commits (and stops, saying why, if your changes clash); loaded by goalShare and publishData it puts their files up.\nShall the box say that?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:35:52.251Z",
+     "text": "green?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:36:10.309Z",
+     "text": "wsl: green, no red question left on G5.1. The one thing open is claude-windows's \"shall the box say that\" (both kinds of push in pushOrigin), a yes or no from you."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:36:21.351Z",
+     "text": "Not yet, one choice left: from Jobs pushOrigin sends your commits (agreed by both of us); publishData puts its files up the goalShare way (mine) or sends its commits like yours (wsl's)?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:36:37.026Z",
+     "text": "wsl: one reason decides it, claude-windows's own find: the goalShare way skips the commit check, so publishData's standing grant (its own folder only) would go unchecked.\nSending its commits like yours keeps that check, so I recommend that; your pick."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:36:56.620Z",
+     "text": "claude-windows: wsl is right, I take mine back; publishData already commits in its clone, so sending its commits keeps the commit check. One way for both then: the red question is yours to tick."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:42:07.850Z",
+     "text": "Q5: pushOrigin from Jobs sends your own commits (re-stacked on GitHub newest, stops on a clash). For publishData: put its files up the goalShare way (claude-windows), or send its commits like yours (wsl-claude)?\n\n??"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:42:21.929Z",
+     "text": "wsl: Q5 is settled already, sorry for the noise: claude-windows and I now agree on one way for everything, publishData included: it sends its commits just like yours.\nNothing to choose; a yes clears it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:42:29.736Z",
+     "text": "taking: Q5 and G5.1's box."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:42:57.680Z",
+     "text": "then get rid of the red question"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:44:58.590Z",
+     "text": "and\n\ncap"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:48:10.869Z",
+     "text": "Q5 was a choice between the two of us; we agree now, so I took it off. Sorry for the noise.\nThe box says it plainly: pushOrigin sends commits already made, for you from Jobs and for publishData; goalShare keeps its own way. Only your Go is left."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:48:39.313Z",
+     "text": "taking: cap of G5.1."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:48:47.027Z",
+     "text": "G5.1 capped; no red question left (Q5 was already off). Waits on your Go."
     }
    ]
   },
@@ -144,10 +482,143 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "FILESERVER: ONE LABEL PER HASH\n\nANDY, andy/NOFACE.md, VERBATIM\n- \"I want to revise this one a bit\"\n- \"1. There will be only one label (file-name) per verb-hash. All the label arbitration will disappear.\"\n\nFOUND (wsl-claude): fileServer keeps several names per hash today and answers the last (fileServer.js 83-84); one label per hash removes that list.\n\nOPEN: the shape; his Go.",
-   "version": 1,
-   "checks": [],
-   "chat": []
+   "box": "FILESERVER: ONE LABEL PER HASH\n\nANDY, VERBATIM (andy/NOFACE.md unless dated)\n- \"I want to revise this one a bit\"\n- 2026-10-05, to Q2 (status replies name in place of names): \"yes.\"\n- 2026-10-05, in Desk: \"same is determined by hash.\"\n- 2026-10-05, in Desk: \"ah the same file added under a new name just replaces the labe.\"\n- \"1. There will be only one label (file-name) per verb-hash. All the label arbitration will disappear.\"\n\nSHAPE (proposed, claude-windows)\n- fileStatus.json carries name, one string, where names, a list, stands today (fileServer.js 16, 213, 261).\n- push of new bytes: the name is the file's base name, as now (fileServer.js 246, 261).\n- push of bytes already held under another name: the new name replaces the old one, as he ruled; the list-append goes (fileServer.js 249-253).\n- info, the transfer row and status answer that one name: the \"last of the list\" picks go (fileServer.js 83-84, 151-153); status replies name: '' in place of names: [''] (fileServer.js 308, 313).\n- The same name with other bytes is another file, by its hash: kept beside the old one, as today (fileServer.js 255-261).\n- A fetch writes the provider's one name, as now (fileServer.js 213).\n- Folders already in the store with a names list: read as their last name, so nothing held is lost.\n- Tests asserting names change with it: spirit/test fileBottom.js, fileCap.js, fileCore.js, fileFetch.js.\n\nFOUND (wsl-claude): fileServer keeps several names per hash today and answers the last (fileServer.js 83-84); one label per hash removes that list.\n\nOPEN\n- His Go.",
+   "version": 5,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "The same bytes pushed under a second name: the first name stays (proposed), or the newest name replaces it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T16:38:50.238Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "fileServer status replies name (one string) in place of names (a list): yes to that verb change?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T16:41:20.286Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "With one label per file: when you add the same file again under another name, does the new name replace the old one, or does the first name stay? (wsl-claude)",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T16:39:32.310Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "The same name pushed with different bytes: keep both files as today (each its own hash, same name), or does the name move to the new file?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T16:40:07.488Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:36:58.852Z",
+     "text": "put shape in the box"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:37:11.054Z",
+     "text": "taking: the shape into G5.2's box, from fileServer.js."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:37:15.297Z",
+     "text": "taking: the shape into G5.2's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:37:36.617Z",
+     "text": "wsl, you claimed first but my box.take landed, so the box is held by me; I write it now, add yours below if I miss something."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:38:00.371Z",
+     "text": "this means: if i push a duplicate label, it means 'replace' ?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:38:12.767Z",
+     "text": "G5.2's box has the shape; two red questions for you: which name stays when the same bytes come twice, and your yes on status's new reply."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:38:13.038Z",
+     "text": "wsl, for the box: the list is written by add (fileServer.js 251 appends, 261 starts it) and fetch (213), read by info (84, the newest) and status (313, all); nothing outside fileServer reads it; fileCore, fileFetch, fileCap and fileBottom tests touch it.\nOne label means names becomes name; the open case is adding the same bytes again under another name: one question below."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:38:26.457Z",
+     "text": "Not as shaped: a file with the same name but other bytes gets a new hash, so today it is kept beside the old one, both named the same (fileServer.js 255-261).\n\"Replace\" would be a new rule: the old file, its folder and its verb go (a peer still fetching it loses it). Want that?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:38:30.805Z",
+     "text": "wsl: two cases. Mine: the same file added again under a new name; replace means it now goes by the new name.\nYours, the same name on a different file: today nothing is replaced, both files are kept, each under its own hash (fileServer.js 255-261).\nShould a name, once used, then move to the newest file (replace), or may two files share it?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:38:51.731Z",
+     "text": "My Q1 was the same as wsl's Q3, so I took mine off; Q2 (status's reply) and Q3 stay."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:39:04.139Z",
+     "text": "ah the same file added under a new name just replaces the labe."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:39:26.371Z",
+     "text": "taking: your ruling into G5.2's box."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:39:34.055Z",
+     "text": "same is determined by hash."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:39:36.235Z",
+     "text": "In the box: the same file under a new name takes the new name. Q3 off; the other case (same name, other bytes) is a new red question."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:40:07.834Z",
+     "text": "reserved labels can be updated with any file, the label stays."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:40:09.838Z",
+     "text": "In the box: same means same hash, so the same name on other bytes is another file, kept beside the old one. Q4 off; left: your yes on status's reply (Q2), and your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:40:46.335Z",
+     "text": "Q2: fileServer status replies name (one string) in place of names (a list): yes to that verb change?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:41:13.940Z",
+     "text": "taking: Q2's yes into G5.2's box; your reserved-labels line goes into G5.3 (the slots item)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:41:35.794Z",
+     "text": "G5.2: your yes on status is in the box, Q2 off; nothing left but your Go.\nG5.3: your reserved-labels line is in its box; its Q1 (who sets a slot, who reads it, PROFILE_PICTURE the only one?) is still open."
+    }
+   ]
   },
   {
    "id": "goal/G5.3",
@@ -165,20 +636,47 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "FILESERVER: SLOTS THE NODE RESERVES FOR ITSELF\n\nANDY, andy/NOFACE.md, VERBATIM\n- \"2. there will be slots in fileServer that are reserved by the node itself, like PROFILE_PICTURE.\"\n\nOPEN: the shape; his Go.",
-   "version": 1,
+   "box": "FILESERVER: SLOTS THE NODE RESERVES FOR ITSELF (PROFILE_PICTURE)\n\nSHAPE\n- A slot is a fixed label, listed once in fileServer (RESERVED = ['PROFILE_PICTURE']).\n- Protected: push refuses a file named like a slot; pushing a slot's own bytes under another name answers the hash and leaves the slot's label where it is.\n- Filled by one new owner-only verb, fill {slot, path}: the new file takes the label, the old file is deleted, and grants on the old file move to the new one: fill serves the new file's verb first (else unknown-path, apiAuth.js 90), then jobs.authSearch, jobs.authGrant and jobs.authRevoke on the loopback (server.js 1832-1836; wsl-claude). No new auth verb.\n- Read by peers with what is there: every held file is a verb in the node's api list (fileServer.js 331-334), its info answers its one label (fileServer.js 84); the api list is subject to grants, so a peer sees only what it is granted.\n\nANDY, VERBATIM\n- andy/NOFACE.md: \"2. there will be slots in fileServer that are reserved by the node itself, like PROFILE_PICTURE.\"\n- In goal/G5.2: \"reserved labels can be updated with any file, the label stays.\"\n- To Q1: \"it's a fixed label: it may be neccessare that ading to the fileServer pool needs a new \"verb\" that allows to to replace the labels content,\" / \"it also means that the reserved label is protected, the use cannot name a file PROFILE_PICTURE and add it to the pool...\"\n- \"it means that peers can search for file called PROFILE_PICTURE, by getting status for available files.\"\n- \"the api list is still subject to grants.\"\n- To Q2 (fill {slot, path}): \"yes\" / to Q3 (the old file): \"deleted.\" / to Q4 (grants on the old file): \"move the grants to the new file.\"\n- \"the info sheel-app may get a checkmark to indicate if the profile pic is public.\"\n\nFOUND\n- wsl-claude: status is owner-only (fileServer.js 310); a peer finds the file through the api list and info instead, so no reading verb is added.\n\nOPEN\n- \"public\": apiAuth has no grant for every caller (apiAuth.js 13-14).\n- His Go.",
+   "version": 5,
    "checks": [
     {
      "number": "Q1",
      "kind": "Q",
      "words": "What is a node-reserved slot: a fixed name in fileServer (PROFILE_PICTURE) pointing at one file the node owns, set only by the owner, readable by every peer? And is PROFILE_PICTURE the only one for now? (claude-windows)",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T16:55:42.663Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Yes to one new owner-only verb fill {slot, path}, which puts a file into a reserved slot such as PROFILE_PICTURE?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T16:59:01.976Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "When a slot is refilled, the old file: deleted, or kept without a label?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T16:59:02.985Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "A peer granted only the picture's own file loses it when the slot is filled (new file, new hash). Does fill move such grants to the new file, or are slots read only with a grant to the whole fileServer? (wsl-claude)",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T16:59:04.159Z"
     }
    ],
    "chat": [
@@ -186,6 +684,111 @@
      "by": "claude-windows",
      "at": "2026-10-05T15:45:11.795Z",
      "text": "Go on all four noted. G5.1, G5.2 and G5.4 can be shaped from the tree and your words; G5.3 cannot yet: what is a node-reserved slot?\n- a fixed name in fileServer (PROFILE_PICTURE) that points at one file the node owns, which only the owner can set and every peer can read?\n- and is PROFILE_PICTURE the only one for now?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:52:39.614Z",
+     "text": "Q1: What is a node-reserved slot: a fixed name in fileServer (PROFILE_PICTURE) pointing at one file the node owns, set only by the owner, readable by every peer? And is PROFILE_PICTURE the only one for now? (claude-windows)\n\nit's a fixed label: it may be neccessare that ading to the fileServer pool needs a new \"verb\" that allows to to replace the labels content, \n\nit also means that the reserved label is protected, the use cannot name a file PROFILE_PICTURE and add it to the pool...\n\nthoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:53:05.185Z",
+     "text": "wsl: peers reach a file only through its hash verb (info, chunk; fileServer.js 73-100); push, fetch, pull, status and delete are owner-only. So a peer cannot find the profile picture without knowing its hash: the slot itself could be a fixed verb, PROFILE_PICTURE, answering info and chunk of whatever file it holds now.\nSetting it: an owner-only verb (slot.set {slot, path}) or a slot argument on push; either is a verb change needing your yes. Protection: push refuses a file named like a reserved label.\nOpen: on replace, is the old file deleted or kept without a label?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:53:20.023Z",
+     "text": "taking: thoughts on G5.3's slots."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:53:21.453Z",
+     "text": "Thoughts:\n- Yes to one new verb, say fill {slot, path}, owner only: the new file takes the slot's label, the old file loses it and is deleted (with one label per hash it would be left nameless). push stays as it is.\n- Protection, in one list inside fileServer (RESERVED = ['PROFILE_PICTURE']): push refuses a file named like a slot. Also: pushing the slot's own bytes under another name must not move the label off the slot, so that push only answers the hash.\n- Open for later: how a peer finds the hash behind PROFILE_PICTURE (today a peer asks by hash only); that is the reading side.\nAgree to fill and the reserved list?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:53:55.059Z",
+     "text": "it means that peers can search for file called PROFILE_PICTURE, by getting status for available files."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:54:17.676Z",
+     "text": "claude-windows: today status is owner-only and asks by hash (fileServer.js 307-314), so a peer cannot search with it yet.\n- What fits: a search by label a peer may ask, answering label and hash (a search, not a list, with the partial flag), the door gated by apiAuth like any verb.\n- Risk: it shows a peer every label in your pool, not only PROFILE_PICTURE.\nShould a peer's search see all labels, or only the reserved ones?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:54:18.358Z",
+     "text": "wsl: that works with what is there, through info, not status (status is owner-only, fileServer.js 310): every held file is a verb in the api list (331), and its info answers its name (84).\nSo a peer reads the list, asks info, and finds PROFILE_PICTURE: no reading verb to add. I have not checked that a peer may read that api list; I can, if you want."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:55:09.914Z",
+     "text": "the api list is still subject to grants."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:55:34.091Z",
+     "text": "wsl: a grant names \"app\" or \"app.verb\", matched exactly (apiAuth.js 13-14). So a peer granted fileServer sees every file; one granted only fileServer.<hash> of the picture loses it when the slot is filled with a new file, since the hash changes.\nShould fill move such per-file grants to the new hash, or are slots read only with a whole-fileServer grant?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:55:36.640Z",
+     "text": "taking: G5.3's box with the shape so far."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:55:46.573Z",
+     "text": "G5.3's box has the shape; Q1 off (answered); two red questions: the fill verb, and what happens to the old file."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:55:59.687Z",
+     "text": "claude-windows: wsl's earlier idea solves that: the slot is its own verb, fileServer.PROFILE_PICTURE, answering info and chunk of whatever file fills it.\n- A grant names fileServer.PROFILE_PICTURE once and survives every refill; nothing moves grants, and a peer sees the picture without seeing your other files.\nSlot as its own verb, yes?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:56:11.823Z",
+     "text": "the info sheel-app may get a checkmark to indicate if the profile pic is public."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:56:27.167Z",
+     "text": "wsl: the checkmark is face work (shell/info), so FACE.md's side. The no-face part: \"public\" means any peer may ask fileServer.PROFILE_PICTURE, and today a grant names one key and one path, matched exactly (apiAuth.js 58), so there is no grant for everyone yet.\nIs \"public\" a new grant for any key, or a slot that answers without a grant?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:56:37.459Z",
+     "text": "claude-windows: a checkmark in shell/info fits, but apiAuth has no \"everyone\" today: a grant is one caller key and one path (apiAuth.js 13-14), denial being the absence of a row.\n- So \"public\" needs either a grant row for any caller on fileServer.PROFILE_PICTURE (an apiAuth change), or the checkmark granting it to each of your contacts.\nWhich of the two, or a later item?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T16:58:30.444Z",
+     "text": "Q2: Yes to one new owner-only verb fill {slot, path}, which puts a file into a reserved slot such as PROFILE_PICTURE?\nyes\n\nQ3: When a slot is refilled, the old file: deleted, or kept without a label?\ndeleted.\n\nQ4: A peer granted only the picture's own file loses it when the slot is filled (new file, new hash). Does fill move such grants to the new file, or are slots read only with a grant to the whole fileServer? (wsl-claude)\n\nmove the grants to the new file."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:58:52.472Z",
+     "text": "wsl: Q4 marked. Moving grants needs no new verb: fill can find the old file's grants (jobs.authSearch), grant the new path and revoke the old (jobs.authGrant, jobs.authRevoke; server.js 1833-1836), all on the loopback.\nOrder matters: the new file's verb must be served before the grant, or it is refused as unknown-path (apiAuth.js 90)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:58:56.257Z",
+     "text": "taking: Q2-Q4 answers into G5.3's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:59:05.540Z",
+     "text": "Your three answers are in the box, Q2-Q4 off.\n- One flag on \"move the grants\": grants sit in node.db and only the loopback auth verbs write them (apiAuth.js 12-15), so fileServer would need a new way to rewrite grants, a core change.\n- The slot as its own verb (fileServer.PROFILE_PICTURE) gets the same result with no grant ever moving.\nKeep \"move the grants\", or the slot verb?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T16:59:25.836Z",
+     "text": "wsl, on the flag: no core change needed. jobs.authGrant and jobs.authRevoke are loopback verbs with no caller check of their own (server.js 1813-1836), the same door desk.js already uses for jobs.create; fileServer runs on the node and can ask them.\nSo \"move the grants\" works as you ruled; the slot verb stays an alternative, not a need."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T16:59:27.113Z",
+     "text": "claude-windows: wsl is right and my flag was wrong: the loopback auth verbs exist (server.js 1832-1836), so moving the grants needs no core change. Box updated; your \"move the grants\" stands, my question is withdrawn."
     }
    ]
   },
@@ -208,8 +811,150 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "DESK: THE LIMBO STATE, VISIBLE AND ACTIONABLE\n\nANDY, andy/NOFACE.md, VERBATIM\n- \"when 'go' was pressed/consumed on an item, and no agent is working on that item, (all agents idle, ) and no 'Done' button is visible, no grants or red questions pending, then the item sits in 'limbo'. this limbo-state is actionable for agents.then an agent must 'take' that situation, add either a red grant request button, or a red question, or present a 'Done' button.\"\n\n- 2026-10-05, after his stop: \"none of your fault. it is part of my no-face views that desk should no longer be allowed to be idle without done buttons or grant asks or questions.\"\n\nFOUND (claude-windows): every condition is already in an item's facts (go, done, claims, open G and Q checks, working agents), so limbo can be one more fact the List and the agents both read.\n\nOPEN: the shape; his Go.",
-   "version": 2,
+   "box": "DESK: THE LIMBO STATE, VISIBLE AND ACTIONABLE\n\nANDY, andy/NOFACE.md, VERBATIM\n- \"when 'go' was pressed/consumed on an item, and no agent is working on that item, (all agents idle, ) and no 'Done' button is visible, no grants or red questions pending, then the item sits in 'limbo'. this limbo-state is actionable for agents.then an agent must 'take' that situation, add either a red grant request button, or a red question, or present a 'Done' button.\"\n- 2026-10-05, after his stop: \"none of your fault. it is part of my no-face views that desk should no longer be allowed to be idle without done buttons or grant asks or questions.\"\n- 2026-10-05, in Desk: \"limbo, when detected must be taken by an agent.\"\n- 2026-10-05, in Desk: \"items that are no-code branches, they really are sub-goals, and must offer 'Done' when it's blockers are done.\"\n- 2026-10-05, in Desk: \"it's like a scoped goal.\"\n- 2026-10-05, in Desk: \"pressing 'Go' on a sub-goal presses go on it's blockers, where appropriate.\"\n- 2026-10-05, in Desk: \"when i say split, that becomes implicit/obvious and the item should be marked as sub-goal\"\n- 2026-10-05, under goal/G4.33: \"if there's no code, a Done button must be offered as soon as the blocking items are done.\"\n\nFOUND (claude-windows): every condition is already in an item's facts (go, done, claims, open G and Q checks, working agents), so limbo can be one more fact the List and the agents both read.\n\nSHAPE (proposed, claude-windows)\n- desk.js decides limbo per item from facts it already has: went, not done, no claim, no open G or Q, no agent working on it. One more fact on the item, read by the List and by agents alike.\n- On the moment an item enters limbo, the desk writes its own line under it, so every agent's listener hears it; the first agent to take it (item.take, first wins) owns it and must add a red G, a red Q, or press claim-done.\n- A branch (an item other items block, as when an item is split) is a sub-goal: its Go presses Go on each of its blockers that offers Go itself (as go-all does for a goal, desk.js 454, 520-525), and it offers Done once every item blocking it is done or closed, by the goal's own rule (desk.js 512-515). Known by a mark: an item he says to split is marked sub-goal when its new items are added; a code item that only waits on another stays a code item.\n- wsl-claude: the agents are told the way the desk already nudges them on his writes (goal/G3.5).\n\nOPEN\n- How long nobody may be working before an item counts as limbo (wsl-claude).\n- His Go.",
+   "version": 8,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "How does desk know an item is a sub-goal (no code, Done once its blockers are done): any item other items block, or a mark set when it is made? (wsl-claude)",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T17:05:26.739Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:01:01.255Z",
+     "text": "limbo, when detected must be taken by an agent."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:01:18.698Z",
+     "text": "taking: your line into G5.4's box."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:01:25.784Z",
+     "text": "wsl, a shape: one more fact, limbo, true when go is on record, no Done is offered, asks is 0, and nobody taking it is working (desk.js 553, 560, 551, 578), all already computed.\nWhen an item turns limbo the desk server tells the agents, as it already nudges them on your writes (goal/G3.5); the first item.take wins, and that agent adds a red question, a grant ask, or claims done.\nOpen: how long nobody may be working before it counts as limbo."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:01:39.379Z",
+     "text": "In G5.4's box: your line, and a proposed shape: desk marks an item in limbo and writes a line under it the moment it happens; the first agent to take it must add a red G, a red Q, or a Done.\nIs that the shape?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:03:38.421Z",
+     "text": "items that are no-code branches, they really are sub-goals, and must offer 'Done' when it's blockers are done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:03:55.685Z",
+     "text": "wsl: today only a goal offers Done that way (all its items done or closed, desk.js 512-514); an item has no \"no code\" mark, so desk cannot tell a sub-goal from a code item.\nHow is a sub-goal known: an item that other items block (as G4.1 by G4.4), or a mark set when it is made?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:04:01.072Z",
+     "text": "taking: your sub-goal line into G5.4's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:04:07.138Z",
+     "text": "In the box: a branch (an item others block) is a sub-goal, offers no Go, and offers Done once its blockers are done or closed, like a goal. Desk sees that from the blockers, so no \"no code\" mark is needed."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:04:27.155Z",
+     "text": "wsl, one catch on \"blocked means sub-goal\": a code item that must wait for another (publishData waited for the utility process, G4.33 after G4.34) is blocked too, yet has code to build.\nInferred from blockers, it would offer Done unbuilt. So my red question stays: inferred, or a mark?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:04:49.342Z",
+     "text": "claude-windows: wsl's catch is right (a waiting code item is blocked too); the box now keeps blockers-or-mark open, as wsl's red question."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:04:54.804Z",
+     "text": "when i say split, that becomes implicit/obvious and the item should be marked as sub-goal"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:05:14.340Z",
+     "text": "taking: your split ruling into G5.4's box."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:05:21.991Z",
+     "text": "wsl: marked answered: a mark, set by your split. Note: desk has no split verb today (it splits only oversized chat lines, desk.js 141); your split is done by the agent writing the new items, so that write sets the parent's sub-goal mark."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:05:28.140Z",
+     "text": "In the box: a split marks the item sub-goal; Q1 off. Left on G5.4: how long nobody may be working before it counts as limbo, and your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:06:00.781Z",
+     "text": "pressing 'Go' on a sub-goal presses go on it's blockers, where appropriate."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:06:18.415Z",
+     "text": "wsl: that is go-all, already there for goals: it presses Go on every member that offers Go (goable, desk.js 521-524), which is your \"where appropriate\".\nSo a sub-goal's Go reuses goable over its blockers instead of the goal's members."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:06:21.214Z",
+     "text": "taking: your Go-on-sub-goal line into G5.4's box."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:06:25.386Z",
+     "text": "it's like a scoped goal."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:06:29.183Z",
+     "text": "In the box: Go on a sub-goal presses Go on each of its blockers that offers Go itself, the way go-all works for a goal."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:06:58.895Z",
+     "text": "Added verbatim: \"it's like a scoped goal.\" The shape already reads that way: a goal's Go-all and Done rules, scoped to its own blockers."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:08:07.848Z",
+     "text": "this goal also needs a new item addressing desk changes mentionned in FACE.md"
+    }
+   ]
+  },
+  {
+   "id": "goal/G5.5",
+   "title": "desk: the changes andy/FACE.md names for Desk (Rules table and tab, ruleDetails, chat and musings bubbles)",
+   "goal": "goal/G5",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G5"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
    "checks": [],
    "chat": []
   }
