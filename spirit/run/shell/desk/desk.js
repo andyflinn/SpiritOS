@@ -570,16 +570,23 @@ var DESK_PRESS_LABEL = { go: 'Go!', done: 'Done', close: 'Close', 'bring-back': 
 var DESK_NOT_IN_ROW = ['go-all', 'reopen'];
 // CLOSE BEFORE HIS GO IS THE DIALOG'S ALONE (goal/G3.9). Andy, 2026-10-03: "the close-with arm is only visible on
 // the item detail". A done row keeps its Close as before.
+// THE GOAL ROW KEEPS ITS CLOSE (goal/G6.6): the goal's Close appears in the List too, and asks "are you sure?" first
+// while any of its items is open (deskGoalCloseClick, below).
 function deskInRow(row, what) {
   if (DESK_NOT_IN_ROW.indexOf(what) !== -1) return false;
-  if (what === 'close' && row.status !== 'done') return false;
+  if (what === 'close' && row.status !== 'done' && !(row.goal === '')) return false;
   return true;
 }
 function deskRowHtml(row) {
   var goal = row.goal === '';
   var presses = (row.buttons || []).filter(function (what) { return deskInRow(row, what); }).map(function (what) {
-    return '<button type="button" data-press="' + deskEsc(what) + '" data-id="' + deskEsc(row.id) + '">' +
-      deskEsc(DESK_PRESS_LABEL[what] || what) + '</button>';
+    // goal/G6.6: the Close on a goal row with open items is armed with "are you sure? N open"; the shell paints
+    // data-armed red. A click on the armed button sends the press.
+    var armed = goal && what === 'close' && deskArmed === 'desk-goal-close-' + row.id;
+    var open = goal && what === 'close' ? (row.blocked || []).length : 0;
+    var label = armed ? 'are you sure? ' + open + ' open' : (DESK_PRESS_LABEL[what] || what);
+    return '<button type="button" data-press="' + deskEsc(what) + '" data-id="' + deskEsc(row.id) + '"' +
+      (armed ? ' data-armed="1"' : '') + '>' + deskEsc(label) + '</button>';
   }).join(' ');
   return '<tr data-row="' + deskEsc(row.id) + '" style="cursor:pointer' + (goal ? ';font-weight:bold' : '') + '">' +
     // THE BROUGHT-BACK MARK, THEN THE TYPE (desk/G1.12): the server says both. ICON.ERROR EXACTLY WHILE SOMETHING
@@ -766,7 +773,20 @@ function deskGroupSay() {
 // anywhere else, through the shell's one mechanism, and it carries
 // data-armed so the shell paints it red.
 var deskArmed = '';
-function deskDisarm() { deskArmed = ''; deskDrawTabs(); deskDrawGoAll(); }
+function deskDisarm() { deskArmed = ''; deskDrawTabs(); deskDrawGoAll(); deskDraw(); }
+// goal/G6.6: a goal's Close in the List, asking "are you sure?" while any of its items is open; nothing open sends
+// at once. The arm pattern paints the button red (armedButtons.js) and clicking again sends.
+function deskIsGoal(id) { return deskItems.some(function (r) { return r.id === id && r.goal === ''; }); }
+function deskGoalCloseClick(gid) {
+  var row = deskItems.filter(function (r) { return r.id === gid; })[0];
+  var open = row ? (row.blocked || []).length : 0;
+  var armId = 'desk-goal-close-' + gid;
+  if (open === 0) { deskDisarm(); deskPress(gid, 'close'); return; }
+  if (deskArmed === armId) { deskArmed = ''; deskDraw(); deskPress(gid, 'close'); return; }
+  deskArmed = armId;
+  deskDraw();
+  if (deskApi && deskApi.armUntilElsewhere) deskApi.armUntilElsewhere(deskDisarm);
+}
 function deskArmOrFire(id, fire) {
   if (deskArmed === id) { deskDisarm(); fire(); return; }
   deskArmed = id;
@@ -1046,7 +1066,15 @@ spirit.shell.activateApp({
     document.getElementById('desk-top').addEventListener('click', function (e) {
       var t = e && e.target;
       var press = t && t.closest && t.closest('[data-press]');
-      if (press) { if (e.stopPropagation) e.stopPropagation(); deskPress(press.getAttribute('data-id'), press.getAttribute('data-press')); return; }
+      if (press) {
+        if (e.stopPropagation) e.stopPropagation();
+        var what = press.getAttribute('data-press');
+        var id = press.getAttribute('data-id');
+        // goal/G6.6: Close on a goal with open items asks "are you sure?" first; nothing open sends at once.
+        if (what === 'close' && deskIsGoal(id)) { deskGoalCloseClick(id); return; }
+        deskPress(id, what);
+        return;
+      }
       var link = t && t.closest && t.closest('[data-open]');
       if (link) { if (e.preventDefault) e.preventDefault(); deskOpenRow(link.getAttribute('data-open')); return; }
       var row = t && t.closest && t.closest('[data-row]');

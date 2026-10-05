@@ -140,8 +140,14 @@ function ddButtonsHtml() {
       (ddArmed === 'dd-abandon' ? 'Sure? Abandon the goal' : 'Abandon') + '</button>';
   }
   if (early) {
+    // goal/G6.6: a goal's Close asks "are you sure? N open" while any of its items is open; nothing open presses at
+    // once. On a non-goal item (an open code item) the existing "Close: sure?" arm stands (desk/G3.9).
+    var goalOpen = f.goal === '' && (f.blocked || []).length;
+    var label = ddArmed === 'dd-close'
+      ? (goalOpen ? 'are you sure? ' + goalOpen + ' open' : 'Close: sure?')
+      : 'Close';
     html += '<button type="button" id="dd-close"' + (ddArmed === 'dd-close' ? ' data-armed="1"' : '') + ' style="margin-left:auto">' +
-      (ddArmed === 'dd-close' ? 'Close: sure?' : 'Close') + '</button>';
+      label + '</button>';
   }
   return html;
 }
@@ -381,7 +387,10 @@ spirit.shell.activateApp({
       var id = t && t.id;
       // CLOSE LEAVES THE DIALOG TOO (desk/G3.8). Andy: "when i click on Close in the Detail dialog, the Dialog
       // should close, since it doesn't exist in the list anymore either." Only once the server took it.
-      var armedClose = id === 'dd-close' && ddEarlyClose(ddFacts || {});
+      var f = ddFacts || {};
+      // goal/G6.6: a goal's Close asks "are you sure? N open" while any of its items is open; nothing open presses at
+      // once. On a non-goal item (an open code item) the existing early-close arm stands (desk/G3.9).
+      var armedClose = id === 'dd-close' && ddEarlyClose(f) && (f.goal !== '' || (f.blocked || []).length > 0);
       if (id === 'dd-close' && !armedClose) { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
       if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen') { ddPress(id.slice(3)); return; }
       if (id === 'dd-abandon' || id === 'dd-go-all' || armedClose) {
