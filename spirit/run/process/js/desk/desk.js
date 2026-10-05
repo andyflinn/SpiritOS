@@ -468,9 +468,10 @@ function apply(s, r, b, item, goalOf) {
     // THE PHASES (goal/G5.7): the handler checked who may; the replay records it.
     case 'phase.take':
       it.with = r.by; it.takers[r.by] = true; it.verified = false;
-      if (b.phase === 'red') { it.red = r.by; it.phase = 'red'; }
-      else if (b.phase === 'build') it.builder = r.by;
-      else if (b.phase === 'verify') it.verifier = r.by;
+      // The key beside the label (goal/G5.9): a label he may rename, a key that stays.
+      if (b.phase === 'red') { it.red = r.by; it.redKey = String(r.key || ''); it.phase = 'red'; }
+      else if (b.phase === 'build') { it.builder = r.by; it.builderKey = String(r.key || ''); }
+      else if (b.phase === 'verify') { it.verifier = r.by; it.verifierKey = String(r.key || ''); }
       return;
     case 'phase.done':
       it.with = '';
@@ -1375,6 +1376,20 @@ appServer.serve({
       }).change;
       if (a.phase === 'verify' && a.pass !== true && a.why) write('chat.add', { id: a.id, text: 'verify failed (' + w.by + '): ' + String(a.why), by: 'desk', key: '' });
       return { change: change };
+    },
+  },
+  // MAY THE CALLER COMMIT ON THIS ITEM (goal/G5.9), for the commit check. Andy, to Q7: "it should trigger a red GRANT
+  // request for me." The caller by its key at the door, never a name it sends; not allowed only when the item is marked
+  // code, is in build, the caller wrote its red, and he has not waived it. A refusal says why.
+  'phase.may': {
+    request: { id: '' }, reply: { allowed: true, why: '' },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      const it = walkState().items[String(a.id)];
+      if (!it) throw refused('no-such-item');
+      if (!it.code || it.phase !== 'build' || it.waived === true) return { allowed: true, why: '' };
+      const wrote = it.redKey ? it.redKey === w.key : it.red === w.by;
+      return wrote ? { allowed: false, why: 'red writer: ' + w.by + ' wrote the red of ' + it.id + ', which is in build' } : { allowed: true, why: '' };
     },
   },
   // THE JOBS OPEN TO THE CALLER: every open phase of an item marked code it may take now, as { id, phase }.
