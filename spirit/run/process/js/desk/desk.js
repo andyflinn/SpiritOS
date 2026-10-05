@@ -355,6 +355,17 @@ function apply(s, r, b, item, goalOf) {
       goalItem.title = String(sess.goal.title || goalItem.title);
       goalItem.at = r.at;
       const ids = [];
+      // A SPLIT MAKES A SUB-GOAL (goal/G5.4). Andy: "when i say split, that becomes implicit/obvious and the item
+      // should be marked as sub-goal". A split is a session that keeps an item and adds new items blocking it: that
+      // item is marked, and the mark stays.
+      const isNew = function (x) { return !s.items[String(x.id || '')]; };
+      (sess.items || []).forEach(function (x) {
+        if (!isNew(x)) return;
+        (Array.isArray(x.blocks) ? x.blocks : [x.blocks || gid]).map(String).forEach(function (b) {
+          const parent = s.items[b];
+          if (parent && !parent.goal && b !== gid) parent.subGoal = true;
+        });
+      });
       (sess.items || []).forEach(function (x) {
         const id = String(x.id || '');
         if (!id) return;
@@ -450,6 +461,8 @@ function press(s, it, what, r, goalOf) {
   else if (what === 'design-complete') { it.designComplete = true; it.status = 'ready'; }
   // HIS GO IS ON RECORD (goal/G3.9): `go` is set by his go and go-all alone and by nothing else; `went` stays the
   // state of the item, which older records set in other ways.
+  // His Go on a sub-goal is a go-all over its blockers (goal/G5.4); the sub-goal itself carries no Go.
+  else if (what === 'go' && it.subGoal && !it.goal) subGoalGoable(s, it).forEach(function (m) { m.went = true; m.go = true; m.status = 'running'; });
   else if (what === 'go') { it.went = true; it.go = true; it.status = 'running'; }
   else if (what === 'go-all' && g) goable(s, g).forEach(function (m) { m.went = true; m.go = true; m.status = 'running'; });
   // A CLAIM CONSUMES THE GO (goal/G2.13). Andy: "When Done is offered, Go will be considered pressed/consumed",
@@ -504,6 +517,16 @@ function buttons(s, it) {
   // AND NO ITEM OFFERS GO BESIDE DONE (goal/G2.13). Andy: "when Done is offered, Go may no longer be displayed."
   // A claimed item offers Done, so it offers no Go; the press below refuses a Go that is not offered.
   const claimed = !it.goal && Object.keys(it.claims).length > 0;
+  // A SUB-GOAL IS A SCOPED GOAL (goal/G5.4). Andy: "items that are no-code branches, they really are sub-goals, and
+  // must offer 'Done' when it's blockers are done.", "pressing 'Go' on a sub-goal presses go on it's blockers, where
+  // appropriate.", "it's like a scoped goal." So it offers Go while a blocker offers Go, Done once every item that
+  // blocks it is done or closed, and nothing else.
+  if (it.subGoal && !it.goal) {
+    if (g && !g.design && subGoalGoable(s, it).length) out.push('go');
+    const under = splitOf(s, it);
+    if (under.length && under.every(function (m) { return m.done || m.closed; })) out.push('done');
+    return out;
+  }
   if (!it.goal && !claimed && g && !g.design && !it.went && !blockers(s, it).length) out.push('go');
   // A GOAL OFFERS DONE ONLY WHEN EVERY ITEM IS DONE OR CLOSED, AND NEVER ON A CLAIM (goal/G2.10). Andy: "the goal
   // should only offer a done button when all items are done", and "the goals done button should be tied to the
@@ -520,6 +543,17 @@ function buttons(s, it) {
   // The asking is the face's; the press is taken either way, and the items keep their state.
   if (it.goal) out.push('close');
   return out;
+}
+// The items that block a sub-goal (its split), closed or done ones included; and those of them offering Go!.
+function splitOf(s, it) {
+  const g = s.goals[it.goalId];
+  if (!g) return [];
+  return g.members.map(function (id) { return s.items[id]; }).filter(function (o) {
+    return o && o.id !== it.id && !o.leftOut && o.blocks.indexOf(it.id) !== -1;
+  });
+}
+function subGoalGoable(s, it) {
+  return splitOf(s, it).filter(function (m) { return !m.closed && !m.done && buttons(s, m).indexOf('go') !== -1; });
 }
 // The items of a goal that offer Go!, decided by the same rule as their own button.
 function goable(s, g) {
@@ -552,6 +586,21 @@ function asksOf(s, it) {
   return open + (allClaimed ? 1 : 0);
 }
 
+// LIMBO (goal/G5.4). Andy (andy/NOFACE.md): "when 'go' was pressed/consumed on an item, and no agent is working on
+// that item, (all agents idle, ) and no 'Done' button is visible, no grants or red questions pending, then the item
+// sits in 'limbo'. this limbo-state is actionable for agents.", and "limbo, when detected must be taken by an
+// agent." Working on it: an agent that took it, live, whose last word is working. At once, with no grace time:
+// Andy, to how long nobody must be working first: "it counts al limbo immediately."
+function limboOf(s, it) {
+  if (!it || it.goal || it.subGoal || it.go !== true || it.done || it.closed) return false;
+  if (buttons(s, it).indexOf('done') !== -1) return false;
+  if (it.checks.some(function (c) { return c.state === 'open' && (c.kind === 'G' || c.kind === 'Q'); })) return false;
+  const now = Date.now();
+  return !Object.keys(it.takers).some(function (t) {
+    return s.agentWord[t] === 'working' && s.agentsAt[t] && now - Date.parse(s.agentsAt[t]) < LIVE_MS;
+  });
+}
+
 function facts(s, it) {
   const f = { id: it.id, title: it.title, goal: it.goal ? '' : it.goalId, status: it.closed ? 'closed' : it.done ? 'done' : it.status,
     with: it.with, buttons: buttons(s, it), blocking: it.blocks.slice(), blocked: blockers(s, it),
@@ -562,7 +611,9 @@ function facts(s, it) {
     // DONE (n) (goal/G4.20 point 3): how many agents claimed done.
     claims: Object.keys(it.claims).length,
     // WHO HOLDS THE BOX (goal/G4.20 point 9), '' when nobody.
-    boxTaken: it.boxTakenBy || '' };
+    boxTaken: it.boxTakenBy || '',
+    // goal/G5.4: in limbo, and marked a sub-goal by a split.
+    limbo: limboOf(s, it), subGoal: it.subGoal === true };
   f.asks = asksOf(s, it);
   // THE BOX CAP (goal/G2.2 note 1). Andy: "there will be no second box per item. absolutely not.", "orange at 50%,
   // red at 75%". The box measured as its one answer against appClient.ANSWER_MAX: half from 50%, full from 75%;
@@ -735,6 +786,21 @@ function write(verb, a, check) {
     db.exec('ROLLBACK');
     throw e;
   }
+  // THE DESK SAYS SO WHEN AN ITEM ENTERS LIMBO (goal/G5.4), one line by desk under it, so every agent's listener
+  // hears it and one takes it. An item that only slides into limbo as time passes (an agent going stale) is said
+  // on the next write.
+  const gidW = it ? (it.goal ? it.id : it.goalId)
+    : verb === 'session.set' && body.session && body.session.goal ? String(body.session.goal.id) : after.current;
+  const gW = after.goals[gidW];
+  let saidLimbo = false;
+  if (gW) gW.members.forEach(function (id) {
+    if (limboOf(after, after.items[id]) && !limboOf(s, s.items[id])) {
+      write('chat.add', { id: id, text: 'limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done.', by: 'desk', key: '' });
+      saidLimbo = true;
+    }
+  });
+  // Said before this write publishes and writes the goal file, so both carry the line and the newest cursor.
+  if (saidLimbo) after = walkState();
   const now = it ? after.items[it.id] : null;
   // THE CHANGE ITSELF TRAVELS (desk/G2.7, "no pulling"): the item's facts and
   // whether it is still on the List; a box write adds the box, a chat line the
@@ -753,7 +819,7 @@ function write(verb, a, check) {
   if (verb === 'agent.state' && after.current) out.rows = changedRows(s, after, after.current);
   appServer.publish(out);
   nudgeForWrite(after, verb, a);
-  writeGoalFile(after, verb, a, Number(r.lastInsertRowid));
+  writeGoalFile(after, verb, a, Math.max(Number(r.lastInsertRowid), after.change));
   return after;
 }
 
