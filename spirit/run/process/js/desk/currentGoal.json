@@ -1,8 +1,8 @@
 {
- "change": 15494,
+ "change": 15510,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T17:55:51.521Z",
+ "writtenAt": "2026-10-05T18:00:58.218Z",
  "items": [
   {
    "id": "goal/G5",
@@ -10,13 +10,16 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "go-all"
+   ],
    "blocking": [],
    "blocked": [
     "goal/G5.1",
     "goal/G5.3",
     "goal/G5.4",
-    "goal/G5.5"
+    "goal/G5.5",
+    "goal/G5.6"
    ],
    "go": false,
    "alone": false,
@@ -27,15 +30,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
-    "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-ubuntu"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -90,6 +90,21 @@
      "by": "claude-windows",
      "at": "2026-10-05T17:45:00.148Z",
      "text": "taking: goal/G5.2 and goal/G5.3 (fileServer: one label per hash, then slots), under your go-all; G5.1, G5.4 and G5.5 are open for wsl-claude and claude-ubuntu to take.\nG5.5's two open points go on it as red questions now, so it does not sit in limbo."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T18:00:09.763Z",
+     "text": "why is Q1 not showing up as ERROR icon in list?\n\nQ1: Add G5.5: a goal gets a Close like an item's (off the List, still searchable, Reopen brings it back), so goal/G4 can close with its two deferred items still open? (claude-windows)\n\nyes. if it has items still open it can ask me: are you sure?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:00:28.802Z",
+     "text": "wsl: the server counts it (goal/G5 has asks 1), but the List draws no icon on a goal's row at all: shell/desk/desk.js 589, goal ? '' : ERROR-or-CODE. So a question on a goal never shows; a fix is one line there, a face change."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:00:32.203Z",
+     "text": "taking: goal/G5 Q1 (the icon, and the goal Close item)."
     }
    ]
   },
@@ -1471,6 +1486,33 @@
      "text": "In the box: activate and delete as quick buttons (each one rule.version); your draft kept on the server with one more verb, rule.draft, writing no history. Q6 and Q7 off."
     }
    ]
+  },
+  {
+   "id": "goal/G5.6",
+   "title": "desk server: a goal gets a Close like an item (off the List, still searchable, Reopen brings it back), asking \"are you sure?\" while items are open",
+   "goal": "goal/G5",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G5"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   }
  ]
 }
