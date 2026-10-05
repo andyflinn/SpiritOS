@@ -1,8 +1,8 @@
 {
- "change": 15597,
+ "change": 15670,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T18:16:48.949Z",
+ "writtenAt": "2026-10-05T18:31:59.247Z",
  "items": [
   {
    "id": "goal/G5",
@@ -14,7 +14,6 @@
    "blocking": [],
    "blocked": [
     "goal/G5.1",
-    "goal/G5.4",
     "goal/G5.5"
    ],
    "go": false,
@@ -34,8 +33,7 @@
    ],
    "working": [
     "claude-ubuntu",
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -131,6 +129,21 @@
      "by": "claude-windows",
      "at": "2026-10-05T18:14:00.700Z",
      "text": "Found why: an armed listener says \"listening\" (deskClient.js 444) and I re-arm the moment one fires, so while I build I read as listening.\n- From now on, while I build I leave the listener off, so Desk shows me working; lines for me wait in my node's queue (deskClient hands them over on the next ask). I re-arm between steps."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T18:27:34.813Z",
+     "text": "limbo again, what's missing?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:28:02.577Z",
+     "text": "What's missing, item by item:\n- G5.4 and G5.5 are mine: G5.4 built (deskLimbo 12 of 12), harness running, then commit and claim; G5.5 after it. My state said listening again because I re-armed my ear; set to working now.\n- G5.1 has no builder: wsl wrote its red, so ubi or I build it. ubi, will you take it? Else I take it after G5.5."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:28:09.180Z",
+     "text": "wsl: the limbo is G5.1: red in since e116904d, my name on it from writing the red, and nobody free to build it but ubi. A red question on G5.1 asks you that."
     }
    ]
   },
@@ -138,7 +151,7 @@
    "id": "goal/G5.1",
    "title": "pushOrigin: one process that sends commits already made when the clone is behind origin, for Andy (from Jobs) and publishData",
    "goal": "goal/G5",
-   "status": "running",
+   "status": "red in, needs a builder",
    "with": "wsl-claude",
    "buttons": [],
    "blocking": [
@@ -200,6 +213,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-05T16:48:09.483Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "G5.1 (pushOrigin) has its red but no builder: I wrote the red, so I may not build it, and claude-windows is on G5.4 then G5.5. Shall claude-ubuntu build it? (wsl-claude)",
+     "test": "",
+     "state": "passed",
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:28:28.380Z"
     }
    ],
    "chat": [
@@ -527,6 +549,16 @@
      "by": "wsl-claude",
      "at": "2026-10-05T17:49:50.883Z",
      "text": "Red is in, e116904d: pushOrigin 5 owed (behind origin, unsaved edits, a clash leaves all as it was, from Jobs with one JSON argument, publishData uses it); with a scratch pushOrigin, 9 of 9 and publishData still 24 of 24. Open for its builder."
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T18:28:04.072Z",
+     "text": "ubi: taking the build of G5.1 against wsl's red e116904d (pushOrigin). spirit/run/process/js/pushOrigin/pushOrigin.js with its .json for Jobs; publishData switches onto it. Reading the red now."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:28:29.545Z",
+     "text": "wsl: Q6 cleared as moot: ubi took the build. Nothing for you to answer there."
     }
    ]
   },
@@ -932,9 +964,11 @@
    "id": "goal/G5.4",
    "title": "desk: the limbo state (Go consumed, nobody working, no Done, no open grant or question) visible and actionable for agents",
    "goal": "goal/G5",
-   "status": "running",
+   "status": "closed",
    "with": "claude-windows",
-   "buttons": [],
+   "buttons": [
+    "reopen"
+   ],
    "blocking": [
     "goal/G5"
    ],
@@ -942,13 +976,13 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 2,
    "boxTaken": "",
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "DESK: THE LIMBO STATE, VISIBLE AND ACTIONABLE\n\nANDY, andy/NOFACE.md, VERBATIM\n- \"when 'go' was pressed/consumed on an item, and no agent is working on that item, (all agents idle, ) and no 'Done' button is visible, no grants or red questions pending, then the item sits in 'limbo'. this limbo-state is actionable for agents.then an agent must 'take' that situation, add either a red grant request button, or a red question, or present a 'Done' button.\"\n- 2026-10-05, after his stop: \"none of your fault. it is part of my no-face views that desk should no longer be allowed to be idle without done buttons or grant asks or questions.\"\n- 2026-10-05, in Desk: \"limbo, when detected must be taken by an agent.\"\n- 2026-10-05, in Desk: \"items that are no-code branches, they really are sub-goals, and must offer 'Done' when it's blockers are done.\"\n- 2026-10-05, in Desk: \"it's like a scoped goal.\"\n- 2026-10-05, in Desk: \"pressing 'Go' on a sub-goal presses go on it's blockers, where appropriate.\"\n- 2026-10-05, in Desk: \"when i say split, that becomes implicit/obvious and the item should be marked as sub-goal\"\n- 2026-10-05, under goal/G4.33: \"if there's no code, a Done button must be offered as soon as the blocking items are done.\"\n\nFOUND (claude-windows): every condition is already in an item's facts (go, done, claims, open G and Q checks, working agents), so limbo can be one more fact the List and the agents both read.\n\nSHAPE (proposed, claude-windows)\n- desk.js decides limbo per item from facts it already has: went, not done, no claim, no open G or Q, no agent working on it. One more fact on the item, read by the List and by agents alike.\n- On the moment an item enters limbo, the desk writes its own line under it, so every agent's listener hears it; the first agent to take it (item.take, first wins) owns it and must add a red G, a red Q, or press claim-done.\n- A branch (an item other items block, as when an item is split) is a sub-goal: its Go presses Go on each of its blockers that offers Go itself (as go-all does for a goal, desk.js 454, 520-525), and it offers Done once every item blocking it is done or closed, by the goal's own rule (desk.js 512-515). Known by a mark: an item he says to split is marked sub-goal when its new items are added; a code item that only waits on another stays a code item.\n- wsl-claude: the agents are told the way the desk already nudges them on his writes (goal/G3.5).\n\nOPEN\n- How long nobody may be working before an item counts as limbo (wsl-claude).\n- His Go.",
-   "version": 8,
+   "box": "DESK: THE LIMBO STATE, VISIBLE AND ACTIONABLE\n\nANDY, andy/NOFACE.md, VERBATIM\n- \"when 'go' was pressed/consumed on an item, and no agent is working on that item, (all agents idle, ) and no 'Done' button is visible, no grants or red questions pending, then the item sits in 'limbo'. this limbo-state is actionable for agents.then an agent must 'take' that situation, add either a red grant request button, or a red question, or present a 'Done' button.\"\n- 2026-10-05, after his stop: \"none of your fault. it is part of my no-face views that desk should no longer be allowed to be idle without done buttons or grant asks or questions.\"\n- 2026-10-05, in Desk: \"limbo, when detected must be taken by an agent.\"\n- To Q2 (how long nobody must be working first): \"it counts al limbo immediately.\"\n- 2026-10-05, in Desk: \"items that are no-code branches, they really are sub-goals, and must offer 'Done' when it's blockers are done.\"\n- 2026-10-05, in Desk: \"it's like a scoped goal.\"\n- 2026-10-05, in Desk: \"pressing 'Go' on a sub-goal presses go on it's blockers, where appropriate.\"\n- 2026-10-05, in Desk: \"when i say split, that becomes implicit/obvious and the item should be marked as sub-goal\"\n- 2026-10-05, under goal/G4.33: \"if there's no code, a Done button must be offered as soon as the blocking items are done.\"\n\nFOUND (claude-windows): every condition is already in an item's facts (go, done, claims, open G and Q checks, working agents), so limbo can be one more fact the List and the agents both read.\n\nSHAPE (proposed, claude-windows)\n- desk.js decides limbo per item from facts it already has: went, not done, no claim, no open G or Q, no agent working on it. One more fact on the item, read by the List and by agents alike.\n- On the moment an item enters limbo, the desk writes its own line under it, so every agent's listener hears it; the first agent to take it (item.take, first wins) owns it and must add a red G, a red Q, or press claim-done.\n- A branch (an item other items block, as when an item is split) is a sub-goal: its Go presses Go on each of its blockers that offers Go itself (as go-all does for a goal, desk.js 454, 520-525), and it offers Done once every item blocking it is done or closed, by the goal's own rule (desk.js 512-515). Known by a mark: an item he says to split is marked sub-goal when its new items are added; a code item that only waits on another stays a code item.\n- wsl-claude: the agents are told the way the desk already nudges them on his writes (goal/G3.5).\n\nOPEN\n- His Go.",
+   "version": 9,
    "checks": [
     {
      "number": "Q1",
@@ -958,6 +992,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-05T17:05:26.739Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "How long must nobody be working on an item (Go on record, no Done, grant or question) before it counts as limbo: at once (as built: every Go writes a desk line until an agent takes it), or after some minutes?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T18:24:43.674Z"
     }
    ],
    "chat": [
@@ -1080,6 +1123,41 @@
      "by": "claude-windows",
      "at": "2026-10-05T18:11:13.819Z",
      "text": "taking: the build of G5.4 against ubi's red 98751246, right after G5.6 (both in desk.js, one at a time)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:17:43.543Z",
+     "text": "G5.4 build passes ubi's red deskLimbo 10 of 10; full harness running. Two points before I claim:\n- As built, an item is in limbo the moment your Go lands and nobody has taken it yet, so every Go writes one desk line until an agent takes it. wsl's open question (how long before it counts) decides whether that waits a while.\n- ubi, the red does not test your ruling \"must offer 'Done' when it's blockers are done\"; I built it (a sub-goal offers Done once every blocker is done or closed). Add a check?\nHow long should nobody be working before an item counts as limbo: at once, or after some minutes?"
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T18:20:37.525Z",
+     "text": "ubi: added section 4 to the red (cfcd7122, deskLimbo now 12 owed) — a sub-goal offers `done` once every blocker is done or closed. Press done on the sub-goal is gated on Done being offered first (Andy's press done bypasses the offered gate today, so it would pass vacuously otherwise). Your rebuild against this red should still green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T18:24:14.332Z",
+     "text": "Q2: How long must nobody be working on an item (Go on record, no Done, grant or question) before it counts as limbo: at once (as built: every Go writes a desk line until an agent takes it), or after some minutes?\n\nit counts al limbo immediately."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:24:48.958Z",
+     "text": "In the box and in the code comment: limbo counts at once, as built. Q2 off. Harness running, then the commit."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:28:57.828Z",
+     "text": "commit 8681834dd30ed30d91b71e7535aeb13f054c9368: goal/G5.4: limbo on the desk, and sub-goals made by a split (deskLimbo 12 of 12, against claude-ubuntu's red 98751246 and cfcd7122). Andy: \"limbo, when detected must be taken by an agent.\", \"it counts\n- spirit/run/process/js/desk/desk.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:29:04.311Z",
+     "text": "Built, 8681834d: limbo (at once, a desk line on entry), the sub-goal mark on a split, a sub-goal's Go over its blockers and its Done once they are done; ubi's red deskLimbo 12 of 12; harness reds only the owed ones (deskRuleTable G5.5, pushOrigin G5.1) and the four standing. Files:\n- spirit/run/process/js/desk/desk.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:29:51.208Z",
+     "text": "Verified 8681834d: deskLimbo 12 of 12 and seven related desk suites green here; with the limbo line (desk.js 797) cut, deskLimbo fails, restored. Desk suites only, not the full harness. Claimed done."
     }
    ]
   },
@@ -1087,8 +1165,8 @@
    "id": "goal/G5.5",
    "title": "desk server: the logic andy/FACE.md Desk changes need (rules: add, edit, status, search, chat), so the UI never comes back to it",
    "goal": "goal/G5",
-   "status": "red being written (wsl)",
-   "with": "wsl-claude",
+   "status": "red in, open for its builder",
+   "with": "claude-windows",
    "buttons": [],
    "blocking": [
     "goal/G5"
@@ -1557,6 +1635,21 @@
      "by": "wsl-claude",
      "at": "2026-10-05T18:16:42.111Z",
      "text": "commit a0f77a6f1c18f57f341781a46c056887a55b4638: goal/G5.5: the red for the desk server's rules and the core paragraph field type (deskRuleTable 0 green, 8 owed). Written from G5.5's box by wsl-claude, who does not build it. Andy, all verbatim in th\n- spirit/test/deskRuleTable.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:16:49.476Z",
+     "text": "Red is in, a0f77a6f, as deskRuleTable.js: 8 owed (paragraph type in fieldRules; rule.add, draft, version, history, search, a rule's chat, surviving restart and new goal). With a scratch build: 12 of 12, 13 related suites green. Two finds for the builder are in the commit text."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:18:08.907Z",
+     "text": "taking: the build of G5.5 against wsl's red a0f77a6f, after G5.4 lands (desk.js again, one at a time); fieldRules.js under your G2."
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T18:18:39.891Z",
+     "text": "ubi: owning a slip — I wrote a red (rulesStore.js, 83681e59) at the same time wsl-claude wrote deskRuleTable.js (a0f77a6f) and did not see theirs until my push. Removed mine (7f47413f); deskRuleTable stands. Also same mistake as wsl: I overwrote spirit/test/deskRules.js by accident before I realised the name was taken, and git checkout restored it before any commit landed."
     }
    ]
   },
@@ -1614,6 +1707,11 @@
      "by": "claude-windows",
      "at": "2026-10-05T18:16:31.933Z",
      "text": "Built, 52683d2e: a goal offers Close always (Reopen after), and a closed goal takes its items off the List; wsl's red deskGoalClose 6 of 6; harness reds unchanged (pushOrigin is G5.1's owed red). Files:\n- spirit/run/process/js/desk/desk.js\nThe \"are you sure?\" is the face's, for the UI goal; with this on your node, goal/G4 can be closed."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:17:38.664Z",
+     "text": "Verified 52683d2e here: deskGoalClose 6 of 6 and eight related desk suites green; with the closed-goal line in listed() cut, section 2 fails, restored. Desk suites only, not the full harness."
     }
    ]
   }
