@@ -651,6 +651,10 @@ function asksOf(s, it) {
 // waive lifts all of it ("with only one agent this must be waved").
 function mayTake(s, it, phase, who) {
   if (!it || it.goal || !it.code || it.go !== true || it.done || it.closed) return 'not-offered';
+  // NO PHASE WHILE DESIGN IS ON (goal/G6.8). Andy: "no phases can be taken in an item while design mode is on."; an
+  // earlier Go does not lift it.
+  const gd = s.goals[it.goalId];
+  if (gd && gd.design) return 'not-offered';
   if (it.with) return 'taken';
   const w = it.waived === true;
   if (phase === 'red') {
