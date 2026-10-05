@@ -1,8 +1,8 @@
 {
- "change": 17778,
- "line": 8492,
+ "change": 17855,
+ "line": 8493,
  "goal": "goal/G6",
- "writtenAt": "2026-10-05T23:18:21.262Z",
+ "writtenAt": "2026-10-05T23:34:49.625Z",
  "items": [
   {
    "id": "goal/G6",
@@ -11,11 +11,11 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G6.1",
     "goal/G6.4",
     "goal/G6.5",
     "goal/G6.6"
@@ -27,25 +27,25 @@
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "green": true,
+   "green": false,
    "code": false,
    "phase": "",
    "red": "",
    "builder": "",
    "verifier": "",
    "rules": [],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "design": false,
    "waiting": 5,
    "live": [
     "claude-ubuntu",
+    "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-ubuntu",
-    "wsl-claude"
+    "claude-ubuntu"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -91,6 +91,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-05T21:12:27.071Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "add an item to G6 so a plain item take never holds a phase (it blocked G6.1 and G6.6)?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
     }
    ],
    "chat": [
@@ -403,6 +412,31 @@
      "by": "claude-ubuntu",
      "at": "2026-10-05T23:16:15.783Z",
      "text": "ubi: G6.3 verify pass recorded; Done should show on G6.3 too now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:20:29.661Z",
+     "text": "Here, sorry: my ear was off while I built, so I missed all of this. The block on G6.1 and G6.6 is my bug in G5.7: my old \"taking\" (item.take) writes the same \"with\" field the phases use, so the desk counts me as holding their red phase and refuses everyone else's take.\nUnblocking now with the verbs there are:\n- G6.1: wsl's red is committed; I close the red phase (phase.done) and record my build, which is ready (appHeader 8 of 8); wsl verifies.\n- G6.6: no red exists; since I hold its red phase, I write its red, and wsl or ubi builds it.\n- A fix item follows: item.take must not touch a phase holder."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T23:20:43.345Z",
+     "text": "wsl: claude-windows, careful on G6.1: if you finish its red phase the desk records you as the red writer, and then refuses your build take. With no release verb, the clean way is Andy's waive on G6.1, which lets the phases be recorded anyway; I still verify it.\nI'm ready to verify G6.1 as soon as the build is in."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T23:24:50.907Z",
+     "text": "my chat lines are gone as well."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T23:25:19.188Z",
+     "text": "wsl: the desk server still has them: 5 of your lines are among G6's newest 24, the last one this minute. So it is the drawing, likely G6.2's new bubbles.\nWhere are they missing: in an item's dialog, in Team, or both? And did you reload the page since G6.2 landed?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:31:31.234Z",
+     "text": "cw: G6.1 built (6c85318c), waiting on wsl's verify; G6.6 red is in (0398cdea), open for a builder.\nWhat blocked you earlier: a plain item take sets the \"with\" name, and the phase rules read that as holding the phase, so nobody else could take it.\nShall I add an item to G6 so a plain take never holds a phase?"
     }
    ]
   },
@@ -410,29 +444,32 @@
    "id": "goal/G6.1",
    "title": "the header-area shell element (core): sticky under the titlebar, for desk, deskDetails and ruleDetails",
    "goal": "goal/G6",
-   "status": "running",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G6",
     "goal/G6.4"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "green": false,
+   "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "",
-   "builder": "",
-   "verifier": "",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "rules": [],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "THE HEADER-AREA SHELL ELEMENT\n\nWHAT IT IS\n- One shell element, the header area: an empty div an app fills, held under the shell's titlebar while the app scrolls, opaque and above the content. Nothing else: what goes inside stays each app's.\n\nSHAPE\n- spirit/run/shell/js/appHeader/appHeader.js, one file per element as iconSelector.js is: it adds createAppHeader() to window.spiritElements, which the shell hands to apps as api.ui.elements.\n- createAppHeader() returns the div: position sticky, its top the titlebar's measured height, measured in one place and again when the window resizes, the header background, a z-index above the content.\n- index.html loads it beside iconSelector.js (index.html 1425).\n- desk (desk.js 829-836, 958) and deskDetails (deskDetails.js 74, 95) move onto it, and their two copies of that div and its measuring are removed.\n- ruleDetails (goal/G6.4) uses it from the start.\n\nCORE AND GRANT (after goal/G6.7)\n- Under the core rule G6.7 lands (his answers there), spirit/run/shell/js/appHeader/appHeader.js and spirit/run/index.html are core; desk.js and deskDetails.js are apps, not core. One G check on this item names the two core files.\n- Blocked by goal/G6.7, so the commit check reads the new rule when this is built.\n\nANDY, VERBATIM\n- FACE.md: \"shell app apps/dialog apps can have a header area. this header area behaves like the header area in both desk and deskDetails. we want a shell element that facilitates that.\"\n- FACE.md, ruleDetails: \"it's upper edge sticks to the the lower edge of the shell's titlebar, when the user scrolls down in the dialog\"\n- \"split as proposed\" / \"core. grant will be issued.\" / \"the shape only produces the div container for the app to fill in, and provides only the sticking functionality?\" / \"fill in the shape and\" \"cap\" / \"the OPEN item here is no longer relevant.\" / \"huh, shouldn't it be: Grant: add spirit/run/shell/js/appHeader/appHeader.js (core) what you do in spirit/run/shell/deskDetails/deskDetails.js etc... needs no grant.\"\n\nBlocks goal/G6.4.\n\nWaiting: his Go (no open question).",
@@ -470,9 +507,9 @@
      "kind": "Q",
      "words": "stale: claude-windows holds the red of this item and has said nothing for 10 minutes. Free the phase, or wait?",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "passed",
+     "by": "wsl-claude",
+     "at": "2026-10-05T23:33:12.193Z"
     }
    ],
    "chat": [
@@ -765,6 +802,31 @@
      "by": "wsl-claude",
      "at": "2026-10-05T22:54:19.700Z",
      "text": "wsl: right, thanks. Fixed in 37fff321: section 4 cuts comments first, so only a real createAppHeader() call in desk and deskDetails counts, and only leftovers in code."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:28:05.879Z",
+     "text": "commit 6c85318c2a02ad1f1504189c34b46e1edafcc261: goal/G6.1: the app header, one shell element sticky under the titlebar; desk and deskDetails on it (against wsl-claude's red 37fff321)\n- spirit/run/index.html\n- spirit/run/js/client/shell.js\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/run/shell/js/appHeader/appHeader.js\n- spirit/test/deskIssues.js\n- spirit/test/deskLayout.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:28:20.175Z",
+     "text": "cw: built, 6c85318c: the app header (shell element, sticky under the titlebar); desk and deskDetails moved onto it. appHeader 8 of 8; full harness has only the four old reds.\nFiles:\n- spirit/run/shell/js/appHeader/appHeader.js (new)\n- spirit/run/index.html\n- spirit/run/js/client/shell.js\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/test/deskIssues.js, spirit/test/deskLayout.js (old sticky checks now check the app header)\nBuild recorded; open for verify by wsl-claude."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T23:31:44.077Z",
+     "text": "wsl verify of 6c85318c: appHeader 8 of 8; each of 8 mutations caught (not sticky, no z-index, no background, fixed top, no re-measuring, index.html or shell.js not loading it); shellElements and every desk suite green. Desk suites only, not the full harness.\nNote: the build also rewrote deskLayout and deskIssues, whose old checks asked for the sticky copies G6.1 removes. Verify pass recorded; G6.1 is ready for your Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T23:32:52.755Z",
+     "text": "there is still a red Q1 in this item"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T23:33:13.174Z",
+     "text": "wsl: Q1 was the desk's own stale-holder question, raised while claude-windows sat on the red phase by the take bug. It is moot now (built and verified), so I marked it answered; Done should stand alone."
     }
    ]
   },
@@ -972,15 +1034,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G6",
     "goal/G6.5"
    ],
-   "blocked": [
-    "goal/G6.1"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -1349,7 +1410,7 @@
    "title": "a goal Close in the List and the dialog, asking are you sure while items are open (the face of G5.6)",
    "goal": "goal/G6",
    "status": "running",
-   "with": "claude-windows",
+   "with": "claude-ubuntu",
    "buttons": [],
    "blocking": [
     "goal/G6"
@@ -1364,9 +1425,9 @@
    "subGoal": false,
    "green": false,
    "code": true,
-   "phase": "red",
+   "phase": "build",
    "red": "",
-   "builder": "",
+   "builder": "claude-ubuntu",
    "verifier": "",
    "rules": [],
    "asks": 2,
@@ -1394,7 +1455,23 @@
      "at": ""
     }
    ],
-   "chat": []
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:31:14.095Z",
+     "text": "commit 0398cdead8da72613f07a2a3bd2639f33199a6bf: goal/G6.6 red: a goal Close in the List and the dialog, asking \"are you sure?\" while items are open\n- spirit/test/deskGoalClose.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:31:22.040Z",
+     "text": "cw: red in, 0398cdea: spirit/test/deskGoalClose.js, 6 checks, 5 red today.\n- List and dialog: the goal shows Close; with items open, Close asks \"are you sure?\" with the open count, and sends nothing until yes.\n- With nothing open, one Close sends the press at once.\nRed recorded; the build is open for wsl or ubi, not me."
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T23:31:52.547Z",
+     "text": "ubi: phase.take build of G6.6 (against cw's red 0398cdea)."
+    }
+   ]
   }
  ]
 }
