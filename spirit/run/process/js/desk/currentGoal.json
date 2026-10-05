@@ -1,8 +1,8 @@
 {
- "change": 15510,
+ "change": 15516,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T18:00:58.218Z",
+ "writtenAt": "2026-10-05T18:01:31.033Z",
  "items": [
   {
    "id": "goal/G5",
@@ -10,9 +10,7 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [
-    "go-all"
-   ],
+   "buttons": [],
    "blocking": [],
    "blocked": [
     "goal/G5.1",
@@ -26,16 +24,18 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 0,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -50,9 +50,9 @@
      "kind": "Q",
      "words": "Add G5.5: a goal gets a Close like an item's (off the List, still searchable, Reopen brings it back), so goal/G4 can close with its two deferred items still open? (claude-windows)",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T18:01:18.602Z"
     }
    ],
    "chat": [
@@ -105,6 +105,11 @@
      "by": "claude-windows",
      "at": "2026-10-05T18:00:32.203Z",
      "text": "taking: goal/G5 Q1 (the icon, and the goal Close item)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:01:20.131Z",
+     "text": "New item goal/G5.6: a goal gets a Close (off the List, searchable, Reopen), asking \"are you sure?\" while items are open; your answer is in its box verbatim, Q1 off."
     }
    ]
   },
@@ -1491,17 +1496,14 @@
    "id": "goal/G5.6",
    "title": "desk server: a goal gets a Close like an item (off the List, still searchable, Reopen brings it back), asking \"are you sure?\" while items are open",
    "goal": "goal/G5",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G5"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -1509,8 +1511,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "DESK SERVER: A GOAL GETS A CLOSE\n\nANDY, VERBATIM\n- To goal/G5 Q1 (\"a goal gets a Close like an item's (off the List, still searchable, Reopen brings it back), so goal/G4 can close with its two deferred items still open?\"): \"yes. if it has items still open it can ask me: are you sure?\"\n\nWHAT CHANGES\n- Today a goal offers Done only when every item is done or closed, and never Close (desk.js buttons(), 498-517).\n- A goal offers Close always, his press alone; a closed goal leaves the List with its items and stays searchable with Include Closed; Reopen brings it back. Its open items stay as they are.\n- While items are open, the press first asks him \"are you sure?\" (the confirm is the face's; the server takes the press either way).\n\nOPEN: the shape; his Go.",
+   "version": 1,
    "checks": [],
    "chat": []
   }
