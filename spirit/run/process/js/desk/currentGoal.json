@@ -1,8 +1,8 @@
 {
- "change": 16639,
+ "change": 16659,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T20:45:43.544Z",
+ "writtenAt": "2026-10-05T20:47:01.338Z",
  "items": [
   {
    "id": "goal/G5",
@@ -11,10 +11,12 @@
    "status": "",
    "with": "",
    "buttons": [
-    "done"
+    "go-all"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G5.9"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -24,14 +26,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows"
+    "claude-ubuntu",
+    "wsl-claude"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -267,6 +270,16 @@
      "by": "claude-windows",
      "at": "2026-10-05T20:22:24.093Z",
      "text": "G5.7 closed; one part of it was never built: the commit check's red grant request when an item's red writer commits its build (your Q7). Open it as its own item?\nG5.8 is now unblocked and offers your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T20:46:30.845Z",
+     "text": "new item to build it"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T20:46:52.222Z",
+     "text": "taking: new item G5.9 for the commit check's red grant request."
     }
    ]
   },
@@ -2645,6 +2658,33 @@
      "text": "Verified 9b7a02c8: deskEarJobs 7 of 7 and nine related suites green. My first mutation (the unsaved-edit guard cut) went uncaught, since git refuses that pull anyway; I tightened section 4 to require the unsaved-edit message (aa320f7f), and now the cut guard fails it. Desk suites only, not the full harness. Claimed done."
     }
    ]
+  },
+  {
+   "id": "goal/G5.9",
+   "title": "commit check: a build commit by the red writer of the item raises a red grant request to Andy (goal/G5.7 Q7)",
+   "goal": "goal/G5",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G5"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   },
   {
    "id": "goal/G5.6",
