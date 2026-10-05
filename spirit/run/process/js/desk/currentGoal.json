@@ -1,8 +1,8 @@
 {
- "change": 17974,
+ "change": 18028,
  "line": 8493,
  "goal": "goal/G6",
- "writtenAt": "2026-10-05T23:42:26.713Z",
+ "writtenAt": "2026-10-05T23:51:29.067Z",
  "items": [
   {
    "id": "goal/G6",
@@ -11,11 +11,11 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
    "blocked": [
-    "goal/G6.4",
     "goal/G6.5"
    ],
    "go": false,
@@ -36,15 +36,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1088,42 +1086,53 @@
    "id": "goal/G6.4",
    "title": "ruleDetails, the new dialog app: header area, version, activate and delete, the textbox as draft, the rule chat",
    "goal": "goal/G6",
-   "status": "running",
-   "with": "wsl-claude",
-   "buttons": [],
+   "status": "closed",
+   "with": "",
+   "buttons": [
+    "reopen"
+   ],
    "blocking": [
     "goal/G6",
     "goal/G6.5"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "green": false,
+   "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
    "builder": "wsl-claude",
-   "verifier": "",
+   "verifier": "claude-windows",
    "rules": [],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "ruleDetails, THE NEW DIALOG APP\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\n- The header area (goal/G6.1), its top edge held under the titlebar: title key and label; buttons: the version button, his alone (rule.version {key, text, status}: \"i prefer to negotiate, and create an updated version with one button/verb that belongs to me.\"), activate (armable) and delete, each one quick version with that status.\n- The textbox of the rule, edited by him, saved as his draft (rule.draft; rule.get reads it back) until the version button.\n- No older versions shown (Andy, to G6 Q1: \"No. the agents know it, and can bring it up, if neccessary.\").\n- The chat area, styled like deskDetails': chat.add and item.chat under rule/N; \"this box does NOT have triggers like cap and split, because the text is edited by the user.\"\n\nWhere: a new shell app, shell/ruleDetails, beside shell/deskDetails. Blocked by goal/G6.1; blocks goal/G6.5.\n\nWaiting: his Go (no open question).",
-   "version": 2,
+   "box": "ruleDetails, THE NEW DIALOG APP\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\n- The header area (goal/G6.1), its top edge held under the titlebar: title key and label; buttons: the version button, his alone (rule.version {key, text, status}: \"i prefer to negotiate, and create an updated version with one button/verb that belongs to me.\"), activate (armable) and delete, each one quick version with that status.\n- The textbox of the rule, edited by him, saved as his draft (rule.draft; rule.get reads it back) until the version button.\n- No older versions shown (Andy, to G6 Q1: \"No. the agents know it, and can bring it up, if neccessary.\").\n- The chat area, styled like deskDetails': chat.add and item.chat under rule/N; \"this box does NOT have triggers like cap and split, because the text is edited by the user.\"\n- Delete is armed, as Activate is. Andy, to G6.4 Q1 (\"Delete: armed like Activate (press twice), or one press?\"): \"armed.\"\n\nWhere: a new shell app, shell/ruleDetails, beside shell/deskDetails. Blocked by goal/G6.1; blocks goal/G6.5.\n\nWaiting: his Go (no open question).",
+   "version": 3,
    "checks": [
     {
      "number": "Q1",
      "kind": "Q",
      "words": "Delete: armed like Activate (press twice), or one press? The box says \"activate (armable) and delete\"; the red accepts either.",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T23:43:39.282Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "red writer builds: red writer: claude-windows wrote the red of goal/G6.4, which is in build",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-05T23:45:18.827Z"
     }
    ],
    "chat": [
@@ -1166,6 +1175,61 @@
      "by": "wsl-claude",
      "at": "2026-10-05T23:39:24.432Z",
      "text": "wsl: build of G6.4 taken (phase.take), against claude-windows' red 84737b07."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T23:43:10.259Z",
+     "text": "Q1: Delete: armed like Activate (press twice), or one press? The box says \"activate (armable) and delete\"; the red accepts either.\n\narmed."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-05T23:43:10.807Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-05T23:44:16.807Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:44:37.253Z",
+     "text": "cw: your \"armed.\" is in G6.4's box now.\nThe red change for it waits: the desk refused my commit (a red writer may not commit while wsl builds), so I add that check when I verify. No grant needed; the G it raised can stay ungranted.\nwsl: build Delete armed, as the box now says."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T23:44:44.479Z",
+     "text": "commit 51759237a16abf1f9d9c5ca8243b0e9a8484ac7c: goal/G6.4: ruleDetails, the rule's dialog\n- spirit/run/shell/ruleDetails/ruleDetails.js\n- spirit/run/shell/ruleDetails/ruleDetails.json"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T23:44:46.083Z",
+     "text": "wsl: built, 51759237: shell/ruleDetails, the rule's dialog: header with key and label, Version, Activate and Delete (both armed, your answer), the textbox as your draft, the rule's chat in bubbles. ruleDetails 12 of 12; desk, include-list and manifest suites green.\nBuild recorded; open for verify by claude-windows (red writer) or claude-ubuntu."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:45:03.270Z",
+     "text": "taking: the verify of G6.4 (51759237), with the armed-Delete check added to the red."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-05T23:45:19.069Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-05T23:45:40.346Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:49:58.770Z",
+     "text": "commit 1bb9f2fb28c81ee2d3a8f861b9534544e6031582: goal/G6.4 verify: Delete is armed, as Activate is (the verifier extends the red)\n- spirit/test/ruleDetails.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:49:59.913Z",
+     "text": "cw verify of 51759237: ruleDetails 12 of 12, with Delete now checked as armed (1bb9f2fb); each of 12 mutations caught (one-press Delete or Activate, Version with a fixed status or the old text, no draft save, text over draft, no app header, older versions read, chat under another id or unread, a cap border, manifest not a dialog). Full harness: only the four old reds.\nVerify pass recorded; G6.4 is ready for your Done."
     }
    ]
   },
@@ -1176,14 +1240,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G6"
    ],
-   "blocked": [
-    "goal/G6.4"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
