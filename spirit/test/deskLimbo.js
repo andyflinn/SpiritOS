@@ -20,9 +20,9 @@
 //      === false otherwise. The desk writes a line by 'desk' under the
 //      item on the transition, so changes carries it.
 //   2  A split sets facts.subGoal === true on the parent: a session.set
-//      that keeps the parent and adds new items whose `blocks` includes
-//      the parent id. The mark survives on later sessions as long as the
-//      parent still has non-done blockers.
+//      that names the parent in split: [id] (goal/G6.8; before it, any
+//      new item blocking the parent marked it). The mark survives on
+//      later sessions as long as the parent still has non-done blockers.
 //   3  A sub-goal offers 'go' in facts.buttons once at least one blocker
 //      offers 'go' (today the server refuses, blockers.length > 0 kills
 //      Go in buttons()). Pressing 'go' on a sub-goal cascades: every
@@ -109,8 +109,9 @@ test.startTest('goal/G5.4: limbo marker, sub-goal mark on split, sub-goal Go cas
     if (parentBefore.subGoal === false) test.check('S/G1.1 before the split: facts.subGoal === false');
     else test.fail(OWED + 'parent before any split: subGoal is ' + short(parentBefore.subGoal));
 
-    // The split: a session.set keeps the parent and adds new items that block it.
-    await call('session.set', { json: JSON.stringify({ goal: { id: 'S/G1', title: 'Split' }, items: [
+    // The split: a session.set keeps the parent, adds new items that block it, and names it in split (goal/G6.8:
+    // "an item becomes a sub-goal only when i say split"; a new blocker alone marks nothing, deskSplitGreen asserts).
+    await call('session.set', { json: JSON.stringify({ goal: { id: 'S/G1', title: 'Split' }, split: ['S/G1.1'], items: [
       { id: 'S/G1.1', title: 'Parent, soon to be split', blocks: ['S/G1'] },
       { id: 'S/G1.2', title: 'First blocker', blocks: ['S/G1.1'] },
       { id: 'S/G1.3', title: 'Second blocker', blocks: ['S/G1.1'] }] }) }, CW);
