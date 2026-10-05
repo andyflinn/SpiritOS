@@ -144,7 +144,7 @@ function checkItems(ids) {
 // ── the scope and the core grants (goal/G4.23) ───────────────────────
 // Andy: "it should refuse to commit a core file that was not granted, and raise an ERROR icon in my list, and a
 // grant request in the item?", "the default: nothing", "the scope still has a grant-lock on core files.". Every staged
-// file must lie in this agent's one scope (scope.get, as he set it); a staged core file (coreFiles.js) also
+// file must lie in this agent's one scope (scope.get, as he set it); a staged core file (spirit/run/js/coreFiles.js) also
 // needs a granted G check on the item naming its path under spirit/run. Refused without it, and the refusal puts one
 // open G check "core grant: <path>" under the item, once, so his List shows it.
 function scopeAndGrants(id) {
@@ -159,7 +159,7 @@ function scopeAndGrants(id) {
       end(1, 'commitCheck: REFUSED (scope): outside the scope Andy set for this agent (' + (one === '' ? 'none yet' : one === '/' ? '/ (the repo root)' : one) + '):\n' +
         outside.map(function (f) { return '- ' + f; }).join('\n'));
     }
-    const core = staged.filter(function (f) { return require('./coreFiles.js').isCore(f, top); });
+    const core = staged.filter(function (f) { return require('../../../js/coreFiles.js').isCore(f, top); });
     if (!core.length) return null;
     const under = function (f) { return f.replace(/^spirit\/run\//, ''); };
     return desk('item.checks', { id: id }).then(function (got) {

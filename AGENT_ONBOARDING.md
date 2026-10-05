@@ -60,6 +60,12 @@ deskClient, seat), and Andy runs `removeAgent.js <his port> <your key>` for his
    on git takes a commit only if its message names an item of the current goal
    (e.g. `goal/G4.17`) that has Andy's Go and is not done, and writes the
    commit's hash and files under that item.
+6. **The desk's shell apps are your node's choice.** Neither `shell/desk` nor
+   `shell/deskDetails` is intrinsic (deskDetails since 6698275a), so no node
+   gets them by default. If you want to open Desk or an item's dialog on your
+   own node, list them yourself: `config.setModules {path: 'shell/deskDetails', on: true}`
+   (and `shell/desk`). Andy, goal/G6.7: "leave it to each node, and correct
+   AGENT_ONBOARDING accordingly."
 
 ## deskEar: the one tool
 

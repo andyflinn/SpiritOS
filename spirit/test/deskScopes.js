@@ -18,7 +18,7 @@
 //      answers folder '' (his "the default: nothing"). Records written before, with folders [...], replay as one field:
 //      [''] as '/', [] as '', [x] as x, which only desk.js's replay reads. No list code is left in commitCheck.js or the
 //      desk page (no reader of the old answer: until his node restarts, commits wait, as he has accepted before).
-//   2  THE CORE TABLE: spirit/run/process/js/desk/coreFiles.js exports isCore(repoPath): every file under spirit/run/js/,
+//   2  THE CORE TABLE: spirit/run/js/coreFiles.js (since goal/G6.7) exports isCore(repoPath): every file under spirit/run/js/,
 //      and every file in the folder of a shell app whose manifest (spirit/run/shell/<name>/<name>.json) says
 //      "intrinsic": true. The one table the commit check reads and this test reads.
 //   3  THE COMMIT CHECK, on top of today's item-and-Go rule: every staged file must lie inside one of the committing
@@ -50,7 +50,7 @@ const RUN = path.join(__dirname, '..', 'run');
 const DESK = path.join(RUN, 'process', 'js', 'desk', 'desk.js');
 const CLIENT = path.join(RUN, 'process', 'js', 'deskClient', 'deskClient.js');
 const CHECK = path.join(RUN, 'process', 'js', 'desk', 'commitCheck.js');
-const CORE = path.join(RUN, 'process', 'js', 'desk', 'coreFiles.js');
+const CORE = path.join(RUN, 'js', 'coreFiles.js');
 
 const SELF_KEY = 'MCowBQYDK2VwAyEAdeskScopesTestSelfAAAAAAAAAAAAAAAAAAAA=';
 const OTHER_KEY = 'MCowBQYDK2VwAyEAdeskScopesTestOtherAAAAAAAAAAAAAAAAAAA=';
@@ -172,13 +172,13 @@ async function main() {
 
   test.subHeading('2. the core table: run/js and the intrinsic apps');
   let core = null;
-  try { core = require(CORE); } catch (e) { core = null; }
-  const cases = [['spirit/run/js/jobs.js', true], ['spirit/run/js/client/shell.js', true], ['spirit/run/shell/deskDetails/deskDetails.js', true],
+  try { core = require('../run/js/coreFiles.js'); } catch (e) { core = null; }
+  const cases = [['spirit/run/js/jobs.js', true], ['spirit/run/js/client/shell.js', true], ['spirit/run/shell/deskDetails/deskDetails.js', false],
     ['spirit/run/shell/files/files.js', true], ['spirit/run/shell/desk/desk.js', false], ['spirit/run/shell/chatter/chatter.js', false],
     ['spirit/test/deskScopes.js', false], ['design/README.md', false], ['spirit/run/process/js/desk/desk.js', false]];
   const wrong = core && typeof core.isCore === 'function' ? cases.filter(function (c) { return core.isCore(c[0]) !== c[1]; }) : cases;
-  if (!wrong.length) test.check('isCore: run/js and the intrinsic apps\' folders (deskDetails, files) are core; desk, chatter, tests, design and process folders are not');
-  else test.fail(OWED + (core ? 'isCore wrong on ' + short(wrong) : 'no spirit/run/process/js/desk/coreFiles.js exporting isCore'));
+  if (!wrong.length) test.check('isCore: run/js and the intrinsic apps\' folders (files) are core; deskDetails (intrinsic: false since 6698275a), desk, chatter, tests, design and process folders are not');
+  else test.fail(OWED + (core ? 'isCore wrong on ' + short(wrong) : 'no spirit/run/js/coreFiles.js exporting isCore'));
 
   test.subHeading('3. the commit check refuses what lies outside the scope, and a core file nobody granted');
   kids.push(spawn(process.execPath, [CLIENT, JSON.stringify({ pollMs: 400, historyMax: 100 }), '--pipe', clientPipe, '--state', clientState, '--node', JSON.stringify({ name: 'claude-windows', publicKey: SELF_KEY })], {
