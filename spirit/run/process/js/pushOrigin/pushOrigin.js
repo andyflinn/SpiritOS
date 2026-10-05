@@ -33,11 +33,18 @@ function currentBranch(repo) {
   return (r.stdout || '').trim() || 'master';
 }
 
+// PUSH-RACE RETRIES, inside pushOrigin itself (goal/G5.1, Andy: "tries again if someone pushed meanwhile"). A clash
+// is NOT a race, so it does not retry: a clash exits at once with its reason, as the box says. A push rejected after
+// a clean rebase is read as a race (another commit landed between our fetch and our push); we fetch, rebase and push
+// again, up to this many times. Three is enough in practice (two agents racing settle in two tries; three covers a
+// third join).
+const MAX_PUSH_TRIES = 3;
+
 function pushOrigin(opts) {
   const repo = opts && opts.repo;
   if (!repo) return Promise.resolve({ ok: false, reason: 'repo is required' });
   const branch = currentBranch(repo);
-  // STASH, so an unsaved edit does not derail the rebase. The second word is a label we can match on later
+  // STASH ONCE, so an unsaved edit does not derail the rebase. The second word is a label we can match on later
   // (git stash list) when more than one stash sits in the tree.
   const stashLabel = 'pushOrigin ' + Date.now();
   const stash = git(['stash', 'push', '-u', '-m', stashLabel], repo);
@@ -46,20 +53,24 @@ function pushOrigin(opts) {
     if (!stashed) return;
     git(['stash', 'pop', '--quiet'], repo);
   };
-  // FETCH + REBASE. On conflict, abort cleanly.
-  const fetched = git(['fetch', '--quiet', 'origin', branch], repo);
-  if (fetched.status !== 0) { popStash(); return Promise.resolve({ ok: false, reason: 'fetch failed: ' + out(fetched) }); }
-  const rebased = git(['rebase', '--quiet', 'origin/' + branch], repo);
-  if (rebased.status !== 0) {
-    git(['rebase', '--abort'], repo);
-    popStash();
-    return Promise.resolve({ ok: false, reason: 'rebase onto origin/' + branch + ' had a clash: ' + out(rebased) });
+  let lastReason = '';
+  for (let attempt = 0; attempt < MAX_PUSH_TRIES; attempt++) {
+    const fetched = git(['fetch', '--quiet', 'origin', branch], repo);
+    if (fetched.status !== 0) { popStash(); return Promise.resolve({ ok: false, reason: 'fetch failed: ' + out(fetched) }); }
+    const rebased = git(['rebase', '--quiet', 'origin/' + branch], repo);
+    if (rebased.status !== 0) {
+      // A CLASH, not a race: abort and exit with the reason. Retrying would make the same clash again.
+      git(['rebase', '--abort'], repo);
+      popStash();
+      return Promise.resolve({ ok: false, reason: 'rebase onto origin/' + branch + ' had a clash: ' + out(rebased) });
+    }
+    const pushed = git(['push', '--quiet', 'origin', branch + ':' + branch], repo);
+    if (pushed.status === 0) { popStash(); return Promise.resolve({ ok: true }); }
+    // Push rejected (likely a race): remember why and loop to fetch again.
+    lastReason = out(pushed);
   }
-  // PUSH. If this fails (e.g. another push raced in while we were rebasing), say so and let the caller retry.
-  const pushed = git(['push', '--quiet', 'origin', branch + ':' + branch], repo);
   popStash();
-  if (pushed.status !== 0) return Promise.resolve({ ok: false, reason: 'push failed: ' + out(pushed) });
-  return Promise.resolve({ ok: true });
+  return Promise.resolve({ ok: false, reason: 'push failed after ' + MAX_PUSH_TRIES + ' tries (likely a persistent race): ' + lastReason });
 }
 
 module.exports = { pushOrigin: pushOrigin };

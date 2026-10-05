@@ -180,15 +180,10 @@ async function main() {
   git(['add', '--', rel], clone);
   const c = git(['commit', '-q', '-m', 'publish: ' + agent + ' at ' + commit + ' (agents/' + agent + '/, the standing grant of goal/G4.33)'], clone);
   if (c.status !== 0) end(1, 'publishData: the commit was refused: ' + (c.stderr || c.stdout).trim());
-  // PUSH THROUGH pushOrigin (goal/G5.1): one shared place that rebases onto origin's newest, pushes, stops on a
-  // clash. One retry here covers the race where another push lands while we were rebasing (Andy's "tries again if
-  // someone pushed meanwhile", noted in G5.1's box as unproven by a test).
+  // PUSH THROUGH pushOrigin (goal/G5.1): one shared place that rebases onto origin's newest, pushes, retries on a
+  // race (Andy: "tries again if someone pushed meanwhile"), stops on a clash.
   const { pushOrigin } = require('../pushOrigin/pushOrigin.js');
-  let pushed = null;
-  for (let i = 0; i < 2; i++) {
-    pushed = await pushOrigin({ repo: clone });
-    if (pushed && pushed.ok) break;
-  }
+  const pushed = await pushOrigin({ repo: clone });
   if (!pushed || !pushed.ok) end(1, 'publishData: the push failed: ' + ((pushed && pushed.reason) || 'unknown'));
   await desk('chat.add', { id: 'desk/G0.0', text: 'published ' + agent + ' at ' + commit + ': wait ' + packets.waitMs.median + '/' + packets.waitMs.max + ' ms, flight ' + packets.flight.median + '/' + packets.flight.max + ' ms over ' + packets.posts + ' posts; agents/' + agent + '/' });
   end(0, 'publishData: published agents/' + agent + '/');
