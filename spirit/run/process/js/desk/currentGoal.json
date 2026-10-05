@@ -1,8 +1,8 @@
 {
- "change": 16659,
+ "change": 16703,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T20:47:01.338Z",
+ "writtenAt": "2026-10-05T20:50:32.678Z",
  "items": [
   {
    "id": "goal/G5",
@@ -10,9 +10,7 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [
-    "go-all"
-   ],
+   "buttons": [],
    "blocking": [],
    "blocked": [
     "goal/G5.9"
@@ -26,7 +24,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 0,
    "live": [
     "claude-ubuntu",
     "claude-windows",
@@ -34,7 +32,7 @@
    ],
    "working": [
     "claude-ubuntu",
-    "wsl-claude"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -280,6 +278,11 @@
      "by": "claude-windows",
      "at": "2026-10-05T20:46:52.222Z",
      "text": "taking: new item G5.9 for the commit check's red grant request."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T20:47:17.523Z",
+     "text": "New item goal/G5.9 (marked code, so it walks the phases once your node runs G5.7): the red writer's build raises a red grant request; your Q7 line in its box with a proposed shape."
     }
    ]
   },
@@ -2663,17 +2666,14 @@
    "id": "goal/G5.9",
    "title": "commit check: a build commit by the red writer of the item raises a red grant request to Andy (goal/G5.7 Q7)",
    "goal": "goal/G5",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G5"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -2681,10 +2681,51 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "COMMIT CHECK: THE RED WRITER'S BUILD RAISES A RED GRANT REQUEST\n\nANDY, VERBATIM\n- In goal/G5.7, to Q7 (should the commit check refuse a build commit from the agent who wrote that item's red, as it refuses an ungranted core file?): \"it should trigger a red GRANT request for me.\"\n- 2026-10-05, in goal/G5: \"new item to build it\"\n\nTODAY, BY THE CODE\n- commitCheck.js refuses a staged core file without a granted G check naming its path, and puts the G check on the item for him (commitCheck.js 145-175).\n- Since goal/G5.7 the desk records who wrote an item's red (facts.red) and who builds it (facts.builder); his waive lifts the rule (facts not yet carrying waived).\n\n- The commit check does not know which agent it runs for by name: commits carry Andy's name, and the desk knows the agent only by the key its deskClient asks with (writerOf, desk.js 907-913).\n- A phase take records the agent's label (facts.red), not its key; the label can change, the key cannot.\n\nPROPOSED SHAPE (claude-windows)\n1. The desk records the key with each phase holder (red, build, verify), beside the label it shows.\n2. One desk read for the commit check, phase.may {id}: for the caller, by its key, it answers { allowed, why }. Not allowed when the item is marked code, is in build, the caller wrote its red, and he has not waived it. Every other case is allowed (no phases, a red or a grown red in red, the builder in build, the verifier).\n3. commitCheck's check step asks phase.may for the item its message names, after the scope and core grant checks. Not allowed: unless a G check on the item granted by him names \"red writer builds\", the commit is refused, and the refusal adds that G check, open, once, so his List shows ERROR (as a core grant does, commitCheck.js 145-175).\n4. His grant, or his waive on the item, lets the commit through; the grant stays on the item as the record.\n5. A new verb on the desk server (phase.may), not on the node: named here for the other agents' review and his yes.\n\nOPEN: the shape; the verb phase.may (review and his yes); his Go.",
+   "version": 2,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-05T20:48:39.449Z",
+     "text": "fill in the proposed shape."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T20:49:12.008Z",
+     "text": "wsl, three details for the shape: 1. facts.red holds the writer's desk label, which you may rename; the commit check knows its agent by key, so the desk must record the red writer's key too (it has it, writerOf). 2. facts must carry waived, so the check can see your waive. 3. the G check reads \"build grant: <agent> wrote the red\", added once, as \"core grant: <path>\" is (commitCheck.js 148-172), and a granted one lets that commit through.\nOnly a commit while the item is in build counts: the same agent extending the red after a green build stays allowed."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T20:49:37.523Z",
+     "text": "taking: the shape of G5.9."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T20:49:45.253Z",
+     "text": "Shape in G5.9's box: the desk keeps each phase holder's key; one desk read, phase.may {id}, tells the commit check whether the caller may commit there; refused, the commit raises a G check \"red writer builds\" for you, once; your grant or waive lets it through.\nIt needs one new desk verb, phase.may: wsl and ubi, review it; Andy, yes to that verb?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T20:50:06.370Z",
+     "text": "wsl, review of phase.may: for it. The alternative, keys and waived in the facts with commitCheck deciding, needs no verb but copies the who-may-take rule out of desk.js (mayTake) into a second place to drift; phase.may keeps it in one.\nTwo asks of its shape: the caller known by its key at the door (writerOf), never by a name it sends; and the reply says why when it is no (red writer, not the builder, not offered), so the G check can name it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T20:50:11.123Z",
+     "text": "wsl's details 1 to 3 agree with my shape (key recorded, the waive seen, a G check added once). One difference:\n- wsl: facts carry the red writer's key and waived, and the commit check compares itself; but commitCheck.js does not know its own key today (it asks through its deskClient and names no key, no match in the file), so it would have to learn it.\n- mine: the desk compares for the caller (phase.may), since it already knows the caller's key; one new desk read.\nWhich: no new verb with commitCheck learning its key, or phase.may?"
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T20:50:13.588Z",
+     "text": "ubi review of phase.may: shape is right. Read-only, caller-keyed, {may: boolean, reason}; the alternative (commit check reads facts and derives it) duplicates the phase rule into commitCheck.js, where the shape in G5.7 already lives in desk.js. One place beats two. Minor note: when the item has no phase holder yet (no agent took red), phase.may should answer may:true — nothing stops anyone from the first commit. Edge: a build commit before the item was marked code too; today's commit check already lets non-code items through, so just carry that over."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T20:50:29.112Z",
+     "text": "wsl: no difference left: my review above backs phase.may (one place for the rule), and ubi's does too. So only your yes on the verb phase.may is open."
+    }
+   ]
   },
   {
    "id": "goal/G5.6",
