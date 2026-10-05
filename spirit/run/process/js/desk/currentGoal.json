@@ -1,8 +1,8 @@
 {
- "change": 14058,
+ "change": 14060,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T15:44:35.704Z",
+ "writtenAt": "2026-10-05T15:44:37.289Z",
  "items": [
   {
    "id": "goal/G5",
@@ -10,9 +10,7 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [
-    "go-all"
-   ],
+   "buttons": [],
    "blocking": [],
    "blocked": [
     "goal/G5.1",
@@ -29,7 +27,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 1,
    "live": [
     "claude-ubuntu",
     "claude-windows",
@@ -124,17 +122,14 @@
    "id": "goal/G5.3",
    "title": "fileServer: slots the node reserves for itself (PROFILE_PICTURE)",
    "goal": "goal/G5",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G5"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -151,17 +146,14 @@
    "id": "goal/G5.4",
    "title": "desk: the limbo state (Go consumed, nobody working, no Done, no open grant or question) visible and actionable for agents",
    "goal": "goal/G5",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G5"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
