@@ -239,9 +239,9 @@ async function main() {
   fs.writeFileSync(notes, original + '\n// unsaved\n');
   const second = pushFromOther(w, 'second.txt', 'another build landed');
   await desk('chat.add', { id: 'j/G1.1', text: 'commit ' + second + ': another build landed' }, OTHER_AT_DESK);
-  const heard = await untilLines(function (seen) { return seen.some(function (l) { return /pull/i.test(String(l)) && /unsaved|not pulled|skipp/i.test(String(l)); }); }, 8000);
+  const heard = await untilLines(function (seen) { return seen.some(function (l) { return /pull/i.test(String(l)) && /unsaved/i.test(String(l)); }); }, 8000);
   const kept = fs.readFileSync(notes, 'utf8') === original + '\n// unsaved\n';
-  if (head(w.clone) === before && kept && heard.some(function (l) { return /pull/i.test(String(l)) && /unsaved|not pulled|skipp/i.test(String(l)); })) test.check('with an unsaved edit the clone is not pulled, the edit stays, and the agent is told');
+  if (head(w.clone) === before && kept && heard.some(function (l) { return /pull/i.test(String(l)) && /unsaved/i.test(String(l)); })) test.check('with an unsaved edit the clone is not pulled, the edit stays, and the agent is told');
   else test.fail(OWED + 'with an unsaved edit: head moved ' + (head(w.clone) !== before) + ', edit kept ' + kept + ', lines ' + short(heard));
 }
 
