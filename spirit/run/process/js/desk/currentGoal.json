@@ -1,8 +1,8 @@
 {
- "change": 17578,
+ "change": 17607,
  "line": 8492,
  "goal": "goal/G6",
- "writtenAt": "2026-10-05T22:38:13.079Z",
+ "writtenAt": "2026-10-05T22:44:31.882Z",
  "items": [
   {
    "id": "goal/G6",
@@ -10,7 +10,9 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "go-all"
+   ],
    "blocking": [],
    "blocked": [
     "goal/G6.1",
@@ -18,7 +20,6 @@
     "goal/G6.3",
     "goal/G6.4",
     "goal/G6.5",
-    "goal/G6.7",
     "goal/G6.6"
    ],
    "go": false,
@@ -30,15 +31,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
+   "waiting": 7,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -345,15 +344,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G6",
     "goal/G6.4"
    ],
-   "blocked": [
-    "goal/G6.7"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -649,14 +647,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G6"
    ],
-   "blocked": [
-    "goal/G6.7"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -677,14 +674,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G6"
    ],
-   "blocked": [
-    "goal/G6.7"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -712,8 +708,7 @@
     "goal/G6.5"
    ],
    "blocked": [
-    "goal/G6.1",
-    "goal/G6.7"
+    "goal/G6.1"
    ],
    "go": false,
    "alone": false,
@@ -741,8 +736,7 @@
     "goal/G6"
    ],
    "blocked": [
-    "goal/G6.4",
-    "goal/G6.7"
+    "goal/G6.4"
    ],
    "go": false,
    "alone": false,
@@ -761,9 +755,11 @@
    "id": "goal/G6.7",
    "title": "the core rule fixed: coreFiles.js moved to spirit/run/js/, free of desk, counting spirit/run/shell/js/; the intrinsic mark off the desk parts",
    "goal": "goal/G6",
-   "status": "running",
+   "status": "closed",
    "with": "claude-windows",
-   "buttons": [],
+   "buttons": [
+    "reopen"
+   ],
    "blocking": [
     "goal/G6",
     "goal/G6.1",
@@ -777,7 +773,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 2,
    "boxTaken": "",
    "asks": 0,
    "half": false,
@@ -842,6 +838,26 @@
      "by": "claude-ubuntu",
      "at": "2026-10-05T22:25:08.785Z",
      "text": "ubi: red in, 1d47a0b7, coreFilesMove 15 owed. Four sections — new file location (old gone), no desk require, isCore for run/js/run/shell/js/index.html/elements.css/tokens.css + intrinsic apps / false for non-intrinsic apps and ordinary paths, and the two readers (commitCheck.js, deskScopes.js) requiring from the new path. Open for cw."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T22:38:51.007Z",
+     "text": "commit 1723254ff9abb8d3ddecf61ba182f5d9046fb204: goal/G6.7: the core rule fixed (coreFilesMove 15 of 15, against claude-ubuntu's red 1d47a0b7; spirit/run/js/coreFiles.js under Andy's grant G1). Andy: \"coreFiles.js goes in \\\"spirit/run/js/coreFiles.j\n- AGENT_ONBOARDING.md\n- spirit/run/js/coreFiles.js\n- spirit/run/process/js/desk/commitCheck.js\n- spirit/test/deskScopes.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T22:38:57.956Z",
+     "text": "Built, 1723254f: coreFiles.js at spirit/run/js/, free of the desk, core = run/js, shell/js, index.html, the two css and intrinsic apps; ubi's red coreFilesMove 15 of 15, deskScopes 14 (green again); harness only the four standing reds. Files:\n- spirit/run/js/coreFiles.js (moved from spirit/run/process/js/desk/coreFiles.js)\n- spirit/run/process/js/desk/commitCheck.js\n- spirit/test/deskScopes.js\n- AGENT_ONBOARDING.md"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T22:39:02.351Z",
+     "text": "taking: the verify of G6.7 (1723254f)."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T22:43:55.216Z",
+     "text": "wsl verify of 1723254f: coreFilesMove 15 of 15, deskScopes 14 of 14, fileCore and every desk suite green; each of 8 mutations (shell/js, run/js, index.html, tokens.css, the intrinsic flag, a desk require, the old path) is caught. Desk and core suites only, not the full harness.\nOne note: the builder also changed deskScopes' deskDetails expectation to not core, which follows your flip. Claimed done; G6.7 is ready for your Done."
     }
    ]
   },
@@ -1028,14 +1044,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G6"
    ],
-   "blocked": [
-    "goal/G6.7"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
