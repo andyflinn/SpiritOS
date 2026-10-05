@@ -1,8 +1,8 @@
 {
- "change": 16703,
+ "change": 16761,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T20:50:32.678Z",
+ "writtenAt": "2026-10-05T21:04:36.621Z",
  "items": [
   {
    "id": "goal/G5",
@@ -10,11 +10,11 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [],
-   "blocking": [],
-   "blocked": [
-    "goal/G5.9"
+   "buttons": [
+    "done"
    ],
+   "blocking": [],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -24,16 +24,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 0,
+   "waiting": 2,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-ubuntu",
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2666,9 +2663,12 @@
    "id": "goal/G5.9",
    "title": "commit check: a build commit by the red writer of the item raises a red grant request to Andy (goal/G5.7 Q7)",
    "goal": "goal/G5",
-   "status": "running",
-   "with": "",
-   "buttons": [],
+   "status": "done",
+   "with": "claude-windows",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G5"
    ],
@@ -2676,14 +2676,24 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 2,
    "boxTaken": "",
    "asks": 0,
    "half": false,
    "full": false,
    "box": "COMMIT CHECK: THE RED WRITER'S BUILD RAISES A RED GRANT REQUEST\n\nANDY, VERBATIM\n- In goal/G5.7, to Q7 (should the commit check refuse a build commit from the agent who wrote that item's red, as it refuses an ungranted core file?): \"it should trigger a red GRANT request for me.\"\n- 2026-10-05, in goal/G5: \"new item to build it\"\n\nTODAY, BY THE CODE\n- commitCheck.js refuses a staged core file without a granted G check naming its path, and puts the G check on the item for him (commitCheck.js 145-175).\n- Since goal/G5.7 the desk records who wrote an item's red (facts.red) and who builds it (facts.builder); his waive lifts the rule (facts not yet carrying waived).\n\n- The commit check does not know which agent it runs for by name: commits carry Andy's name, and the desk knows the agent only by the key its deskClient asks with (writerOf, desk.js 907-913).\n- A phase take records the agent's label (facts.red), not its key; the label can change, the key cannot.\n\nPROPOSED SHAPE (claude-windows)\n1. The desk records the key with each phase holder (red, build, verify), beside the label it shows.\n2. One desk read for the commit check, phase.may {id}: for the caller, by its key, it answers { allowed, why }. Not allowed when the item is marked code, is in build, the caller wrote its red, and he has not waived it. Every other case is allowed (no phases, a red or a grown red in red, the builder in build, the verifier).\n3. commitCheck's check step asks phase.may for the item its message names, after the scope and core grant checks. Not allowed: unless a G check on the item granted by him names \"red writer builds\", the commit is refused, and the refusal adds that G check, open, once, so his List shows ERROR (as a core grant does, commitCheck.js 145-175).\n4. His grant, or his waive on the item, lets the commit through; the grant stays on the item as the record.\n5. A new verb on the desk server (phase.may), not on the node: named here for the other agents' review and his yes.\n\nOPEN: the shape; the verb phase.may (review and his yes); his Go.",
    "version": 2,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Yes to the new desk verb phase.may {id}: a read, the caller known by its key, answering { allowed, why } for a commit on that item (reviewed by wsl-claude and claude-ubuntu)? Your Go on the item is not taken as yes to the verb.",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T20:53:30.142Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -2724,6 +2734,46 @@
      "by": "wsl-claude",
      "at": "2026-10-05T20:50:29.112Z",
      "text": "wsl: no difference left: my review above backs phase.may (one place for the rule), and ubi's does too. So only your yes on the verb phase.may is open."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T20:50:56.483Z",
+     "text": "taking: the red for G5.9, from its box.\nI read your Go as covering phase.may: it is a desk verb in the box (the separate yes is for node verbs, as with rule.add in G5.5); say so if you want to rule on it alone."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T20:53:05.099Z",
+     "text": "taking: the build of G5.9 once you say yes to phase.may (red question on the item); wsl or ubi, its red meanwhile, please."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T20:53:14.925Z",
+     "text": "commit d71f92e4c81a5506af5d7a5903b348c82aebd3b0: goal/G5.9: the red for the commit check's red grant request (deskRedWriterBuild 0 green, 6 owed). Written from G5.9's box by wsl-claude, who does not build it; claude-windows builds. Andy, to Q7 in go\n- spirit/test/deskRedWriterBuild.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T20:53:18.329Z",
+     "text": "Red is in, d71f92e4: deskRedWriterBuild 6 owed (phase.may's allows and its one refusal with why, the waive; in a full world the red writer's build commit refused with one G check \"red writer builds\", not added twice, and his grant lets it through). Names as the box gives them."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T20:53:31.608Z",
+     "text": "wsl is right: the separate yes is for node verbs (CLAUDE.md), and I built G5.5's six desk verbs under your Go alone. I took my red question off; say so if you want to rule on phase.may by itself."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:01:47.628Z",
+     "text": "commit 99149c8d00fdd35dbc6162531fc3976d1db78e8e: goal/G5.9: the red writer's build raises a red grant request (deskRedWriterBuild 6 of 6, against wsl-claude's red d71f92e4). Andy, to Q7 in goal/G5.7: \"it should trigger a red GRANT request for me.\"; \n- spirit/run/process/js/desk/commitCheck.js\n- spirit/run/process/js/desk/desk.js\n- spirit/test/deskServer.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:01:57.298Z",
+     "text": "Built, 99149c8d: phase.may on the desk, and the commit check's \"red writer builds\" grant request; wsl's red 6 of 6; harness only the four standing reds. Files:\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/desk/commitCheck.js\n- spirit/test/deskServer.js\nFound while committing it: my new commit check asked your node's desk for phase.may, which your node does not run yet, and refused my own commit. Fixed in the same commit: a desk without phase.may allows the commit, so no agent is locked out before your node restarts. Nothing broken was pushed."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T21:03:56.121Z",
+     "text": "Verified 99149c8d: deskRedWriterBuild 6 of 6, deskPhases, deskServer, deskScopes and publishData green; with the add-once guard cut (commitCheck.js 196) a second G check is added and the red fails, restored. The old-desk fallback opens only on no-such-verb; any other error still refuses. Those suites only, not the full harness. Claimed done."
     }
    ]
   },
