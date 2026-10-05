@@ -143,7 +143,11 @@ pending = pending.then(function () {
 
   test.subHeading('4. desk and deskDetails move onto it, their own copies gone');
   [['desk', read(DESK) || '', 'deskBarTop'], ['deskDetails', read(DETAILS) || '', 'ddBarTop']].forEach(function (a) {
-    const name = a[0]; const s = a[1]; const old = a[2];
+    const name = a[0]; const old = a[2];
+    // COMMENTS DO NOT COUNT (found by claude-windows building it): a comment naming createAppHeader() passed this
+    // before desk called anything. Line and block comments are cut first, so both the call and the leftovers are
+    // looked for in code only (a comment recalling deskBarTop is no leftover).
+    const s = a[1].replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"\\])\/\/.*$/gm, '$1');
     const uses = /createAppHeader\s*\(/.test(s);
     const left = [old, '--desk-bar-top', "getElementById('app-header')"].filter(function (k) { return s.indexOf(k) !== -1; });
     if (uses && !left.length) test.check(name + ' builds its header area with createAppHeader(), and its own measuring is gone');
