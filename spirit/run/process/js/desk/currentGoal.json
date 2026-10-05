@@ -1,8 +1,8 @@
 {
- "change": 16942,
+ "change": 17128,
  "line": 8492,
  "goal": "goal/G6",
- "writtenAt": "2026-10-05T21:17:01.214Z",
+ "writtenAt": "2026-10-05T21:46:42.910Z",
  "items": [
   {
    "id": "goal/G6",
@@ -18,6 +18,7 @@
     "goal/G6.3",
     "goal/G6.4",
     "goal/G6.5",
+    "goal/G6.7",
     "goal/G6.6"
    ],
    "go": false,
@@ -29,15 +30,13 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 6,
+   "waiting": 7,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-ubuntu"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -219,6 +218,16 @@
      "by": "claude-windows",
      "at": "2026-10-05T21:16:57.425Z",
      "text": "taking: G6.1 to G6.6 as proposed, with their boxes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:17:54.528Z",
+     "text": "G6.1 to G6.6 are in, each with its box from G6's (FACE.md's words and the built verbs), marked code; G6.1 blocks G6.4, G6.4 blocks G6.5. G6 is in design, so no Go is offered yet; and the goal is still titled \"New goal\" for you to name."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:46:41.032Z",
+     "text": "taking: a new item G6.7 (the core rule fixed) that all of G6 depends on; G1 replaced."
     }
    ]
   },
@@ -235,19 +244,187 @@
     "goal/G6",
     "goal/G6.4"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G6.7"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
-   "chat": []
+   "box": "THE HEADER-AREA SHELL ELEMENT\n\nWHAT IT IS\n- One shell element, the header area: an empty div an app fills, held under the shell's titlebar while the app scrolls, opaque and above the content. Nothing else: what goes inside stays each app's.\n\nSHAPE\n- spirit/run/shell/js/appHeader/appHeader.js, one file per element as iconSelector.js is: it adds createAppHeader() to window.spiritElements, which the shell hands to apps as api.ui.elements.\n- createAppHeader() returns the div: position sticky, its top the titlebar's measured height, measured in one place and again when the window resizes, the header background, a z-index above the content.\n- index.html loads it beside iconSelector.js (index.html 1425).\n- desk (desk.js 829-836, 958) and deskDetails (deskDetails.js 74, 95) move onto it, and their two copies of that div and its measuring are removed.\n- ruleDetails (goal/G6.4) uses it from the start.\n\nCORE AND GRANT\n- Andy, to G6 Q2: \"core. grant will be issued.\" Of the files touched, the commit check counts shell/deskDetails/deskDetails.js as core (coreFiles.js); shell/js/appHeader/appHeader.js, index.html and shell/desk/desk.js it does not. A red G check on this item names deskDetails.js.\n\nANDY, VERBATIM\n- FACE.md: \"shell app apps/dialog apps can have a header area. this header area behaves like the header area in both desk and deskDetails. we want a shell element that facilitates that.\"\n- FACE.md, ruleDetails: \"it's upper edge sticks to the the lower edge of the shell's titlebar, when the user scrolls down in the dialog\"\n- \"split as proposed\" / \"core. grant will be issued.\" / \"the shape only produces the div container for the app to fill in, and provides only the sticking functionality?\" / \"fill in the shape and\" \"cap\" / \"huh, shouldn't it be: Grant: add spirit/run/shell/js/appHeader/appHeader.js (core) what you do in spirit/run/shell/deskDetails/deskDetails.js etc... needs no grant.\"\n\nBlocks goal/G6.4.\n\nOPEN: the grant on deskDetails.js; his Go.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "Grant: change spirit/run/shell/deskDetails/deskDetails.js (core) to use the header-area element and drop its own sticky bar.",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:20:33.269Z",
+     "text": "the shape only produces the div container for the app to fill in, and provides only the sticking functionality?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T21:20:59.067Z",
+     "text": "wsl: yes, and the code says that is all there is to share: desk and deskDetails each carry their own copy of one div, position sticky, its top set from the shell title bar's measured height, opaque, above the content (desk.js 829-836 and 958; deskDetails.js 74 and 95).\nSo G6.1 is that container and its sticking, once; what goes inside stays each app's, and desk and deskDetails drop their copies for it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:21:06.810Z",
+     "text": "Yes, that is the right size: today desk and deskDetails each carry their own copy of it (a sticky div, desk.js 958 and deskDetails.js 74, plus a function that measures the shell's titlebar and sets the offset, desk.js 829-833 and deskDetails.js 95).\n- The element: one call an app makes, returning an empty div that sticks under the titlebar (the offset measured once, in one place, kept when the window resizes) with the header background; the app fills it.\n- desk and deskDetails move onto it, so the two copies go (eradicate what it replaces).\nThat shape?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:22:12.498Z",
+     "text": "fill in the shape and\n\ncap"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:23:05.622Z",
+     "text": "taking: the shape and cap of G6.1."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:23:12.718Z",
+     "text": "G6.1's box has the shape, capped: shell/js/headerArea.js as an element (like iconSelector), desk and deskDetails moved onto it, their copies removed. Only deskDetails.js counts as core, so one red G check names it."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T21:23:42.401Z",
+     "text": "wsl, checked with coreFiles.isCore: of the four files only deskDetails.js is core (an intrinsic app); shell/js/headerArea.js is not, since the rule covers spirit/run/js/ and intrinsic apps only (coreFiles.js), and desk is not intrinsic. So your grant reaches deskDetails.js alone, though you called the element core; say if you want shell/js/ counted as core too."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:24:01.249Z",
+     "text": "Note to self: When are we going to build into desk taht during design, it's red questions that should block it from going green?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:26:25.815Z",
+     "text": "huh, shouldn't it be:\n\nGrant: add spirit/run/shell/js/appHeader/appHeader.js (core)\n\nwhat you do in spirit/run/shell/deskDetails/deskDetails.js etc... needs no grant."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T21:26:43.681Z",
+     "text": "wsl: the commit check does the opposite today: deskDetails.js is core (its deskDetails.json says intrinsic: true), and spirit/run/shell/js/... is not core at all (coreFiles.js counts only spirit/run/js/ and intrinsic apps). So as built, appHeader.js needs no grant and deskDetails.js does.\nTo make it as you say, coreFiles.js must count spirit/run/shell/js/ as core (itself a core-rule change). Want that, as part of G6.1?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:26:52.144Z",
+     "text": "taking: the element's name and the grant on G6.1."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:26:58.480Z",
+     "text": "Renamed in the box: spirit/run/shell/js/appHeader/appHeader.js, createAppHeader().\n- One catch, by the code: the commit check counts deskDetails.js as core (an intrinsic app, coreFiles.js 30-35) and shell/js/ as not core, the opposite of your line; so as it stands it refuses the deskDetails.js change without a grant and asks none for appHeader.js.\n- Two ways: grant one G check naming both files now (it passes the check as the code reads), or make shell/js/ core and intrinsic apps not, a change to coreFiles.js (its own item).\nWhich?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:29:19.971Z",
+     "text": "sounds completely wrong to me:\n\n\"One catch, by the code: the commit check counts deskDetails.js as core (an intrinsic app, coreFiles.js 30-35) and shell/js/ as not core, the opposite of your line; so as it stands it refuses the deskDetails.js change without a grant and asks none for appHeader.js.\"\n\nthe shell elements in shell/js/ are part of the system, the desk app is just an app. Why would you have it the other way around?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T21:29:46.641Z",
+     "text": "wsl: it came from your line in G4.23, \"basicall run/js and intrinsics\" (coreFiles.js 6-8), built as spirit/run/js/ plus shell apps whose manifest says intrinsic. Two slips in that: shell/js/ is no app folder, so the shell elements were never counted; and deskDetails.json says intrinsic: true while desk.json says false, so the desk's own dialog counts as core.\nThe fix is small: count spirit/run/shell/js/ as core in coreFiles.js, and set deskDetails intrinsic to false like desk. Both, in G6.1?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:29:46.948Z",
+     "text": "Not my choice; it is how coreFiles.js reads your G4.23 answer, core being \"basicall run/js and intrinsics\" (coreFiles.js 6-8): spirit/run/js/ plus any shell app whose manifest says intrinsic: true.\n- deskDetails.json says \"intrinsic\": true (line 7) while desk.json says false, which is why deskDetails counts as core and desk does not.\n- shell/js/ was simply never in that rule, so the elements fell through.\nSo to have it your way: add spirit/run/shell/js/ to the core rule, and set deskDetails.json to intrinsic: false (if it is just an app too). Both in G6.1?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:30:13.861Z",
+     "text": "i never saw coreFiles.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T21:30:33.979Z",
+     "text": "wsl: right, you would not have: an agent wrote it in the G4.23 build (fd6710d6, 2026-10-04), turning your one line \"basicall run/js and intrinsics\" into that rule; the file itself was never put before you, only the item went to Done. That is how the two slips got through unseen."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:30:50.106Z",
+     "text": "Right, you never did: it came in with goal/G4.23's build (fd6710d6, 2026-10-04), an agent's reading of your words \"basicall run/js and intrinsics\", reviewed by the agents, not shown to you.\n- In plain words, today: core = everything under spirit/run/js/, plus any shell app whose manifest says intrinsic: true (now deskDetails and the other intrinsic apps); spirit/run/shell/js/ is not core.\nWhat should core be: spirit/run/js/ and spirit/run/shell/js/ (the system), with no app core at all?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:32:06.858Z",
+     "text": "tell me, from a system design point of view, which way is correct?\n\nand where the hell is coreFiles.js anyway?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T21:32:25.973Z",
+     "text": "wsl: it lives at spirit/run/process/js/desk/coreFiles.js, beside commitCheck.js which reads it.\nBy design, core is what other code depends on, so one change can break many: the node (spirit/run/js/) and the shell's shared layer (spirit/run/shell/js/, and its frame: index.html, elements.css, tokens.css). An app, intrinsic or not, is a leaf: a change to it breaks only itself; \"intrinsic\" means shipped with the shell, not depended upon.\nSo your way is the correct one: system core, apps not."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:32:29.632Z",
+     "text": "Your way is the correct one: core is what every app stands on, and an app is never core.\n- Core: spirit/run/js/ (the node, the kernel, the client shell.js) and spirit/run/shell/js/ (the elements the shell hands every app), and index.html, which loads them.\n- Not core: every app in spirit/run/shell/<app>/, intrinsic or not; \"intrinsic\" says an app ships and starts by default, not that it is the system.\nWhere: spirit/run/process/js/desk/coreFiles.js, inside the desk server's folder, read only by commitCheck.js beside it; the system's own definition of core sitting inside one app is odd too.\nFix in G6.1: core = spirit/run/js/, spirit/run/shell/js/, spirit/run/index.html; no app core?"
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T21:32:38.982Z",
+     "text": "ubi, from a system-design standpoint:\n\nCore means code whose change can hit every app or every agent — it must not change without you seeing it. Non-core means code that affects only one app. Those two are the right lines.\n\nShell/js/ is shared UI building blocks (iconSelector, appHeader, dialogs). Change one, every app's UI shifts: core. Shell/<app>/ is one app's own code, change it and only that app changes: not core, whatever its deployment flag says.\n\n'intrinsic: true' in a manifest is a deployment property (the app ships bundled with the node and loads automatically). It is orthogonal to change-safety. coreFiles.js today conflates the two, which is why deskDetails is treated as core (its manifest says intrinsic) while shell/js/ is treated as app code. That is backwards against the design idea; your reading is the system-design one.\n\nThe file lives at spirit/run/js/coreFiles.js.\n\nSo the correct rule: core = spirit/run/js/ + spirit/run/shell/js/, nothing per-app; deployment stays in the manifests but drops out of the core question. Fix fits in G6.1 or wants its own item."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T21:32:43.136Z",
+     "text": "wsl: agreed, plus the shell's two shared stylesheets, spirit/run/shell/elements.css and tokens.css: every app is drawn by them, so they belong with index.html."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:32:57.188Z",
+     "text": "One correction to ubi: the file is spirit/run/process/js/desk/coreFiles.js (there is no spirit/run/js/coreFiles.js); the rest of ubi's reading matches wsl's and mine."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T21:32:57.546Z",
+     "text": "wsl, one correction to ubi's line: there is no spirit/run/js/coreFiles.js; the file is spirit/run/process/js/desk/coreFiles.js, in the desk server's folder."
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T21:33:08.935Z",
+     "text": "ubi, correcting the file path in my last line: coreFiles.js is at spirit/run/process/js/desk/coreFiles.js (beside commitCheck.js), as wsl noted — not spirit/run/js/. The design framing stands."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:41:38.664Z",
+     "text": "I don't see it there:\n\n\"The file lives at spirit/run/js/coreFiles.js\"\n\nwell, we'll fix that, before anything else.\n\n1. coreFiles.js goes in \"spirit/run/js/coreFiles.js\", with NO dependencies on any desk stuff, and it is updated to include all files in spirit/run/shell/js\n\n2. remove the intrinsic mark in desk-related components, obviously \"spirit/run/shell/desk/desk.json\" doesn't mark the desk app as intrinsic, otherwise it would've been part of the spirit group in the shell, which it wasn't and that's why i didn't notice your assumption that desk was intrinsic. so remove that from desk-related server components as well.\n\ndid i miss anything?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T21:42:08.088Z",
+     "text": "wsl, by the tree: of the desk parts only shell/deskDetails/deskDetails.json says intrinsic: true; desk.json, the desk server and deskClient do not. Moving coreFiles.js touches its two readers, commitCheck.js and spirit/test/deskScopes.js, and makes the file itself core.\nWhat you may have missed: 16 other apps say intrinsic (contacts, jobs, natter, files, grants...) and stay core under today's clause \"intrinsic apps are core\"; keep that clause, or drop it as the design talk said? And should spirit/run/index.html, shell/elements.css and shell/tokens.css be core too?"
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T21:42:22.245Z",
+     "text": "ubi, two small things to add to your list:\n\n1. commitCheck.js has a hardcoded `require('./coreFiles.js')` (line 162). After the move it must become the correct relative path to spirit/run/js/coreFiles.js. One line, same commit.\n\n2. The intrinsic flag is read in TWO places today, not just coreFiles.js: shell/apps/apps.js also uses `a.intrinsic` for how an app is drawn on the shelf (name/icon/group field, lines 75, 107, 125). Flipping deskDetails.json (and any other desk-related manifest) to intrinsic:false will also change how apps.js renders them. Probably fine (deskDetails is a dialog launched from desk, not a shelf-browsed app) but worth being explicit so no face work shifts underfoot.\n\nAs for your two steps: your list covers it, plus those two tweaks."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:44:01.767Z",
+     "text": "Checked: the only desk-related intrinsic mark is shell/deskDetails/deskDetails.json; process/js/desk and deskClient carry none. What you may have missed:\n- The intrinsic mark also puts an app on every node's default include list (includeList.js 65, 81): dropping it from deskDetails means a node that does not list shell/deskDetails loses the dialog. Your node lists it; agents' nodes may not.\n- Should the other intrinsic apps (contacts, files, jobs, info...) stay core, or is core only spirit/run/js/ and spirit/run/shell/js/ (plus index.html, elements.css, tokens.css, as wsl said)?\n- spirit/run/js/coreFiles.js is itself core, so the move needs your grant; commitCheck.js and the deskScopes test follow it.\n- A new item for this, blocking G6.1, so it lands first?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:46:12.152Z",
+     "text": "so remove GRANT G1 and/or replace it with a grant to add coreFiles.js to spirit/run/js/\n\nand update the box with all the \"intrinsic\" corrections, including\n\nThe intrinsic mark also puts an app on every node's default include list (includeList.js 65, 81): dropping it from deskDetails means a node that does not list shell/deskDetails loses the dialog. Your node lists it; agents' nodes may not.\nShould the other intrinsic apps (contacts, files, jobs, info...) stay core, or is core only spirit/run/js/ and spirit/run/shell/js/ (plus index.html, elements.css, tokens.css, as wsl said)?\nspirit/run/js/coreFiles.js is itself core, so the move needs your grant; commitCheck.js and the deskScopes test follow it.\nA new item for this, blocking G6.1, so it lands first?\n\nOR make a new item that all others depend on."
+    }
+   ]
   },
   {
    "id": "goal/G6.2",
@@ -261,7 +438,9 @@
    "blocking": [
     "goal/G6"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G6.7"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -270,8 +449,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "CHAT ENTRIES LEFT-ALIGNED, IN BUBBLES\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nFACE.md: \"I want all my chat-log entries to be left-aligned, not right-aligned.\" / \"i want chat log entries for everybody to display in bubbles, separated vertically be 1em space.\"\n\nWhere: the item chats of desk and deskDetails (shell/desk, shell/deskDetails); layout and CSS only, no server change.\n\nOPEN: his Go.",
+   "version": 1,
    "checks": [],
    "chat": []
   },
@@ -287,7 +466,9 @@
    "blocking": [
     "goal/G6"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G6.7"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -296,8 +477,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "MUSINGS IN BUBBLES\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nFACE.md: \"each musing in the log should be in a separate bubble, possibly with the same background color as the header area.\" / \"vertical spacing between input text area and each bubble in the log: 1em\". Andy in goal/G5.5: \"is pure ui\".\n\nWhere: shell/desk's Musings tab; layout and CSS only.\n\nOPEN: his Go.",
+   "version": 1,
    "checks": [],
    "chat": []
   },
@@ -315,7 +496,8 @@
     "goal/G6.5"
    ],
    "blocked": [
-    "goal/G6.1"
+    "goal/G6.1",
+    "goal/G6.7"
    ],
    "go": false,
    "alone": false,
@@ -325,8 +507,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "ruleDetails, THE NEW DIALOG APP\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\n- The header area (goal/G6.1), its top edge held under the titlebar: title key and label; buttons: the version button, his alone (rule.version {key, text, status}: \"i prefer to negotiate, and create an updated version with one button/verb that belongs to me.\"), activate (armable) and delete, each one quick version with that status.\n- The textbox of the rule, edited by him, saved as his draft (rule.draft; rule.get reads it back) until the version button.\n- No older versions shown (Andy, to G6 Q1: \"No. the agents know it, and can bring it up, if neccessary.\").\n- The chat area, styled like deskDetails': chat.add and item.chat under rule/N; \"this box does NOT have triggers like cap and split, because the text is edited by the user.\"\n\nWhere: a new shell app, shell/ruleDetails, beside shell/deskDetails. Blocked by goal/G6.1; blocks goal/G6.5.\n\nOPEN: his Go.",
+   "version": 1,
    "checks": [],
    "chat": []
   },
@@ -343,8 +525,41 @@
     "goal/G6"
    ],
    "blocked": [
-    "goal/G6.4"
+    "goal/G6.4",
+    "goal/G6.7"
    ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "THE RULES TAB\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nA new tab \"Rules\" between \"Team\" and \"Musings\":\n1. The new bubble: type, label, text and a new button: rule.add (the rule comes in proposed; agents may add one too).\n2. The search bubble: a search box and 7 toggles (ui, code, design, desk; proposed, active, deleted): rules.search {text, types, statuses}.\n3. The list, a row per rule: status (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), label, type, key; a row opens ruleDetails (goal/G6.4).\nA rule's text is a paragraph of up to 2048 bytes, line breaks kept (goal/G5.5).\n\nWhere: shell/desk. Blocked by goal/G6.4.\n\nOPEN: his Go.",
+   "version": 1,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G6.7",
+   "title": "the core rule fixed: coreFiles.js moved to spirit/run/js/, free of desk, counting spirit/run/shell/js/; the intrinsic mark off the desk parts",
+   "goal": "goal/G6",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G6",
+    "goal/G6.1",
+    "goal/G6.2",
+    "goal/G6.3",
+    "goal/G6.4",
+    "goal/G6.5",
+    "goal/G6.6"
+   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -370,7 +585,9 @@
    "blocking": [
     "goal/G6"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G6.7"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -379,8 +596,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "A GOAL'S CLOSE, WITH \"ARE YOU SURE?\"\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nAndy, in goal/G5 (G5.6): \"yes. if it has items still open it can ask me: are you sure?\". The server offers Close on every goal and takes the press either way (goal/G5.6); the asking is the face's.\n\n- The goal row in the List and the goal's dialog show Close; pressed while any of its items is open, the face asks \"are you sure?\" first, naming how many are open; yes sends the press.\n\nWhere: shell/desk and shell/deskDetails.\n\nOPEN: his Go.",
+   "version": 1,
    "checks": [],
    "chat": []
   }
