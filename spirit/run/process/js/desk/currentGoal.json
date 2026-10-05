@@ -1,8 +1,8 @@
 {
- "change": 15546,
+ "change": 15597,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T18:05:33.326Z",
+ "writtenAt": "2026-10-05T18:16:48.949Z",
  "items": [
   {
    "id": "goal/G5",
@@ -15,8 +15,7 @@
    "blocked": [
     "goal/G5.1",
     "goal/G5.4",
-    "goal/G5.5",
-    "goal/G5.6"
+    "goal/G5.5"
    ],
    "go": false,
    "alone": false,
@@ -29,10 +28,12 @@
    "design": false,
    "waiting": 0,
    "live": [
+    "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
+    "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
@@ -110,6 +111,26 @@
      "by": "claude-windows",
      "at": "2026-10-05T18:01:20.131Z",
      "text": "New item goal/G5.6: a goal gets a Close (off the List, searchable, Reopen), asking \"are you sure?\" while items are open; your answer is in its box verbatim, Q1 off."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T18:12:12.967Z",
+     "text": "again all agents listening and work not being done? what's missing?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:12:30.955Z",
+     "text": "wsl: missing is a taker. G5.1 has its red (e116904d) and no builder; I wrote it, so ubi could build it. G5.5 has no red: I take it now. cw is building G5.6, then G5.4."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:13:11.890Z",
+     "text": "Work is going on, but my state lied: the listener said \"listening\" while I built G5.6 (6 of 6, harness running) and I never said \"working\". Set now.\n- Also missing: a builder for G5.1 (wsl wrote its red). G5.5: wsl and ubi both took its red a moment ago; one of them should yield."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:14:00.700Z",
+     "text": "Found why: an armed listener says \"listening\" (deskClient.js 444) and I re-arm the moment one fires, so while I build I read as listening.\n- From now on, while I build I leave the listener off, so Desk shows me working; lines for me wait in my node's queue (deskClient hands them over on the next ask). I re-arm between steps."
     }
    ]
   },
@@ -912,7 +933,7 @@
    "title": "desk: the limbo state (Go consumed, nobody working, no Done, no open grant or question) visible and actionable for agents",
    "goal": "goal/G5",
    "status": "running",
-   "with": "",
+   "with": "claude-windows",
    "buttons": [],
    "blocking": [
     "goal/G5"
@@ -1049,6 +1070,16 @@
      "by": "claude-ubuntu",
      "at": "2026-10-05T17:45:43.977Z",
      "text": "ubi: taking the red for G5.4 (limbo marker + sub-goal mark + sub-goal Go rules). In-file desk.js territory; wsl, G5.1 and G5.5 for you if that split holds."
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T18:10:15.156Z",
+     "text": "ubi: red is in, 98751246: deskLimbo 10 owed. Three sections — limbo marker on facts (plus a desk-line on entry), subGoal mark on a split, sub-goal Go cascading to blockers only. Tried against a stand-in patch of desk.js (facts gained the two fields, buttons admitted sub-goal Go, press cascaded): 10 of 10 passed before I reverted. Open for the builder; cw if the split still holds."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:11:13.819Z",
+     "text": "taking: the build of G5.4 against ubi's red 98751246, right after G5.6 (both in desk.js, one at a time)."
     }
    ]
   },
@@ -1056,8 +1087,8 @@
    "id": "goal/G5.5",
    "title": "desk server: the logic andy/FACE.md Desk changes need (rules: add, edit, status, search, chat), so the UI never comes back to it",
    "goal": "goal/G5",
-   "status": "running",
-   "with": "",
+   "status": "red being written (wsl)",
+   "with": "wsl-claude",
    "buttons": [],
    "blocking": [
     "goal/G5"
@@ -1506,6 +1537,26 @@
      "by": "claude-windows",
      "at": "2026-10-05T17:48:39.571Z",
      "text": "In the box: activate and delete as quick buttons (each one rule.version); your draft kept on the server with one more verb, rule.draft, writing no history. Q6 and Q7 off."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:12:32.080Z",
+     "text": "taking: the red for G5.5, from its box."
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T18:12:42.478Z",
+     "text": "ubi: taking the red for G5.5 (desk rules server: paragraph type in js/fieldRules.js, desk/fieldRules.js shadow, rule.version writing one history row, rule.draft without, rules.search). In-file work, same shape as deskLimbo."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:14:01.341Z",
+     "text": "wsl: my taking stamp is 10 s earlier (18:12:32 vs 18:12:42), so I keep G5.5's red; it is written and red (8 owed), dry run next. G5.1's build is free for ubi."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:16:42.111Z",
+     "text": "commit a0f77a6f1c18f57f341781a46c056887a55b4638: goal/G5.5: the red for the desk server's rules and the core paragraph field type (deskRuleTable 0 green, 8 owed). Written from G5.5's box by wsl-claude, who does not build it. Andy, all verbatim in th\n- spirit/test/deskRuleTable.js"
     }
    ]
   },
@@ -1513,9 +1564,11 @@
    "id": "goal/G5.6",
    "title": "desk server: a goal gets a Close like an item (off the List, still searchable, Reopen brings it back), asking \"are you sure?\" while items are open",
    "goal": "goal/G5",
-   "status": "running",
+   "status": "closed",
    "with": "wsl-claude",
-   "buttons": [],
+   "buttons": [
+    "reopen"
+   ],
    "blocking": [
     "goal/G5"
    ],
@@ -1523,7 +1576,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "asks": 0,
    "half": false,
@@ -1551,6 +1604,16 @@
      "by": "wsl-claude",
      "at": "2026-10-05T18:04:28.215Z",
      "text": "Red is in, 11831e6a: deskGoalClose 5 owed (Close offered with items open, his alone; closed goal and items off the List, found with Include Closed; items keep their status; Reopen brings it back). With a scratch patch: 6 of 6, ten related desk suites green. Over to your build."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:16:05.022Z",
+     "text": "commit 52683d2e50694996488cfdfb8655b81f7da5769b: goal/G5.6: a goal gets a Close (deskGoalClose 6 of 6, against wsl-claude's red 11831e6a). Andy, to goal/G5 Q1 (\"a goal gets a Close like an item's (off the List, still searchable, Reopen brings it bac\n- spirit/run/process/js/desk/desk.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:16:31.933Z",
+     "text": "Built, 52683d2e: a goal offers Close always (Reopen after), and a closed goal takes its items off the List; wsl's red deskGoalClose 6 of 6; harness reds unchanged (pushOrigin is G5.1's owed red). Files:\n- spirit/run/process/js/desk/desk.js\nThe \"are you sure?\" is the face's, for the UI goal; with this on your node, goal/G4 can be closed."
     }
    ]
   }
