@@ -243,12 +243,14 @@ function ddLineHtml(text) {
 function ddChatHtml() {
   if (!ddChat.length) return '<div class="job-manifest-note">Nothing said here yet.</div>';
   var older = ddChatMore ? '<div class="job-manifest-note">Older lines are not shown.</div>' : '';
+  // EVERY LINE A BUBBLE, LEFT-ALIGNED, 1em APART (goal/G6.2). Andy, FACE.md: "I want all my chat-log entries to be
+  // left-aligned, not right-aligned." / "i want chat log entries for everybody to display in bubbles, separated
+  // vertically be 1em space." Same shape as desk.js' deskGroupChat (goal/G6.2): change both or neither.
   return ddChat.slice().reverse().map(function (l) {
     var his = l.by === 'andy';
-    // His lines black and full width, the agents' plain: "similar in the details chat."
     var look = his
-      ? ' style="text-align:right;background:#000;color:#fff;padding:4px 8px;margin:4px 0"'
-      : ' style="border-left:3px solid currentColor;padding-left:8px;margin:4px 0"';
+      ? ' style="margin:1em 0;padding:6px 10px;background:#000;color:#fff;border-radius:var(--spirit-radius,8px)"'
+      : ' style="margin:1em 0;padding:6px 10px;background:rgba(255,255,255,0.08);border-radius:var(--spirit-radius,8px)"';
     return '<div' + look + '><b>' + ddEsc(his ? 'you' : l.by) + '</b> <span class="job-manifest-note">' + ddTime(l.at) + '</span> ' +
       ddLineHtml(l.text) + '</div>';
   }).join('') + older;

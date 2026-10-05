@@ -725,11 +725,14 @@ function deskAskGroup() {
 function deskGroupChat() {
   if (deskGroup === null) return '<div class="job-manifest-note">The group chat has not been read yet.</div>';
   if (!deskGroup.length) return '<div class="job-manifest-note">Nothing said yet. What you write here is read by every agent.</div>';
+  // EVERY LINE A BUBBLE, LEFT-ALIGNED, 1em APART (goal/G6.2). Andy, FACE.md: "I want all my chat-log entries to be
+  // left-aligned, not right-aligned." / "i want chat log entries for everybody to display in bubbles, separated
+  // vertically be 1em space." His bubble black on white; everybody else's a filled bubble with the shell's radius.
   return deskGroup.slice().reverse().map(function (l) {
     var mine = l.by === 'andy';
     var look = mine
-      ? ' style="text-align:right;background:#000;color:#fff;padding:4px 8px;margin:4px 0"'
-      : ' style="border-left:3px solid currentColor;padding-left:8px;margin:4px 0"';
+      ? ' style="margin:1em 0;padding:6px 10px;background:#000;color:#fff;border-radius:var(--spirit-radius,8px)"'
+      : ' style="margin:1em 0;padding:6px 10px;background:rgba(255,255,255,0.08);border-radius:var(--spirit-radius,8px)"';
     return '<div' + look + '><b>' + deskEsc(mine ? 'you' : l.by) + '</b> <span class="job-manifest-note">' +
       deskTime(l.at) + '</span> ' + deskLineHtml({ text: l.text }) + '</div>';
   }).join('');
