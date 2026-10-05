@@ -1,22 +1,22 @@
 {
- "change": 16762,
+ "change": 16774,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T21:04:38.800Z",
+ "writtenAt": "2026-10-05T21:05:14.995Z",
  "items": [
   {
    "id": "goal/G5",
    "title": "No-face modifications and improvements",
    "goal": "",
-   "status": "",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
    "go": false,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -24,7 +24,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 0,
    "live": [
     "claude-ubuntu",
     "claude-windows",
