@@ -676,8 +676,12 @@ function deskLineHtml(m) {
 function deskMusings() {
   var lines = deskMessages.filter(function (m) { return m.dir === 'out' && m.kind === 'musing'; });
   if (!lines.length) return '<div class="job-manifest-note">Nothing logged yet. What you write here waits for close time; nobody answers it now.</div>';
+  // EACH MUSING A BUBBLE (goal/G6.3). Andy, FACE.md: "each musing in the log should be in a separate bubble, possibly
+  // with the same background color as the header area." and "vertical spacing between input text area and each bubble
+  // in the log: 1em". The header area's background is #desk-bars' (#1a1a2e); 1em above every bubble.
   return lines.slice().reverse().map(function (m) {
-    return '<div><span class="job-manifest-note">' + deskTime(m.at) + '</span> ' + deskLineHtml(m) + '</div>';
+    return '<div style="margin-top:1em;padding:6px 10px;background:#1a1a2e;border-radius:var(--spirit-radius,8px)">' +
+      '<span class="job-manifest-note">' + deskTime(m.at) + '</span> ' + deskLineHtml(m) + '</div>';
   }).join('');
 }
 
