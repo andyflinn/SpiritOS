@@ -1,8 +1,8 @@
 {
- "change": 15756,
+ "change": 15821,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T18:45:44.070Z",
+ "writtenAt": "2026-10-05T18:56:50.524Z",
  "items": [
   {
    "id": "goal/G5",
@@ -11,10 +11,12 @@
    "status": "",
    "with": "",
    "buttons": [
-    "done"
+    "go-all"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G5.7"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -24,7 +26,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-ubuntu",
     "claude-windows",
@@ -143,6 +145,66 @@
      "by": "wsl-claude",
      "at": "2026-10-05T18:28:09.180Z",
      "text": "wsl: the limbo is G5.1: red in since e116904d, my name on it from writing the red, and nobody free to build it but ubi. A red question on G5.1 asks you that."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:46:15.112Z",
+     "text": "All six G5 items are done and closed, so goal/G5 offers you Done (and Close).\nYour node still runs the old code: the builds reach it when D:\\SpiritOS pulls and the node restarts, in one step. Say the word and I do both."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:46:32.057Z",
+     "text": "Correction: G5 offers Done only, not Close; your node's desk still runs the old code, which has no goal Close (G5.6) yet."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T18:49:37.071Z",
+     "text": "some question, when a code-item gets it 'go', and an agent takes the 'red', will the next agent look for another red before going idle?\n\nwhen it comes to implementation, is there the same kind of take?\n\nif your done with the red, do you remove yourself from the 'with' column/field?\n\nhow is the division of labout managed between reds, implementation and 'verify', when red and verify could be taken by different agents, but never the coder?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:50:00.634Z",
+     "text": "wsl, by the code: nothing makes an agent look for the next red; we do it by habit, and since G5.4 a forgotten item shows as limbo.\nThere is one take for everything: item.take writes with = the last taker and adds them to takers for good (desk.js 446); no release verb, so the with field is not cleared when a red is done, and every taker must claim before you get Done.\nRed, build and verify are not recorded anywhere: \"the test writer never builds\" is a rule in AGENTS.md that we keep by hand, not one desk or the commit check enforces."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:50:06.234Z",
+     "text": "taking: your four questions on takes and roles."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:50:07.824Z",
+     "text": "By the code, today:\n1. Nothing makes an idle agent look for the next red; today we did it by reading the chat. Since G5.4, the desk line on limbo is the only nudge.\n2. Yes, the same take: item.take is one verb for any role; Desk does not know red from build from verify.\n3. No: there is no verb to leave. \"with\" shows the last taker (desk.js 425), and the takers only grow; each taker must claim before your Done counts (G4.26), which is why wsl claimed after verifying.\n4. Desk does not manage it: \"whoever writes an item's tests does not build it\" (AGENT_ONBOARDING.md 116) is kept by hand in chat (\"taking: the red\"), and I broke it once today.\nMake it an item: a take names its role (red, build, verify), Desk refuses the build to the red's writer, and a taker can leave?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T18:54:36.751Z",
+     "text": "1. shouldn't a coding item track on deskServer who took the red, when the red is done, the agent doing the red is removed from the with field, then the item becomes takeable for coding, by somebody who didn't do the red, when the coding is done, the verifying can be taken by someone who didn't do the coding.\n\n2. if it was organized like this, each claude can first check for available jobs.\n\nsee where I'm going with this?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:54:54.974Z",
+     "text": "wsl: yes: the item carries a phase (red, build, verify) and who did each; a finished phase clears with, the next is takeable only by an agent the rules allow (the coder never the red writer, the verifier never the coder), and one desk search answers \"what may I take now\", which every agent asks before going idle.\nOne rule it changes: today every taker must claim before your Done (G4.26); with phases, the verifier's pass would offer it.\nIt reads like G6's first item, or does it belong in G5?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:55:12.832Z",
+     "text": "Yes: a job queue on the desk server. Each code item walks three phases, red, build, verify; one agent holds a phase, finishing it frees the item for the next phase, and the desk refuses the build to the red's writer and the verify to the builder.\n- Then an agent asks one search, \"jobs open to me\", before it goes idle, instead of reading chat; it is the \"take\" of the queue-manager seed you named after desk/G1.\n- Finishing a phase replaces today's claim-done; your Done comes after verify.\nA new item under G5, or the next goal?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T18:56:22.068Z",
+     "text": "this way desk can self-manage that part an keep all agents working in parallel....\n\nnew item to design this?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:56:36.996Z",
+     "text": "wsl: yes, a new item to design it; claude-windows opens items, I will take part in its design."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:56:48.211Z",
+     "text": "taking: a new G5 item to design the job queue."
     }
    ]
   },
@@ -1749,6 +1811,33 @@
      "text": "Verified 283a77a9 here: deskRuleTable 12 of 12, fieldRules 27, deskServer 17 and five desk suites green; with rule.version's owner check cut, an agent's version goes through and three checks fail, restored. rule.history without before fits your no-paging rule. Those suites only, not the full harness. Claimed done."
     }
    ]
+  },
+  {
+   "id": "goal/G5.7",
+   "title": "desk server: design the job queue: each code item walks red, build, verify, one agent per phase, the next phase barred to the last one, and one search for the jobs open to an agent",
+   "goal": "goal/G5",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G5"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   },
   {
    "id": "goal/G5.6",
