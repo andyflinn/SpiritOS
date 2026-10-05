@@ -1,8 +1,8 @@
 {
- "change": 18028,
+ "change": 18032,
  "line": 8493,
  "goal": "goal/G6",
- "writtenAt": "2026-10-05T23:51:29.067Z",
+ "writtenAt": "2026-10-05T23:51:33.969Z",
  "items": [
   {
    "id": "goal/G6",
@@ -11,7 +11,6 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -36,13 +35,17 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-ubuntu",
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1237,17 +1240,14 @@
    "id": "goal/G6.5",
    "title": "the Rules tab: the new bubble, the search bubble with 7 toggles, the list; a row opens ruleDetails",
    "goal": "goal/G6",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G6"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -1256,7 +1256,7 @@
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
