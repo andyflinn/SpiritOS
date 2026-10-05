@@ -832,15 +832,7 @@ function deskMuse() {
 // erased his typing on every arrival ("also my typing gets erased,
 // everytime somebody sends something"). The table holds no input, so a
 // repaint on arrival costs him nothing.
-// The title bar's height, as it is on this screen: the offset the pinned bars stick at (goal/G2.1 note 4).
-function deskBarTop() {
-  var header = document.getElementById('app-header');
-  var bars = document.getElementById('desk-bars');
-  var h = header && Number(header.offsetHeight);
-  if (bars && bars.style && h > 0) bars.style.setProperty('--desk-bar-top', h + 'px');
-}
 function deskDraw() {
-  deskBarTop();
   deskDrawGoAll();
   var el = document.getElementById('desk-top');
   if (!el) return;
@@ -932,6 +924,19 @@ function deskBackupHtml() {
     (stale ? '; something was closed since the last check' : '') + '</div>';
 }
 
+// THE HEADER AREA IS THE SHELL'S (goal/G6.1): the block written as #desk-bars moves into the app header, which sticks it
+// under the titlebar, and takes its id.
+function deskHeader(api) {
+  var old = document.getElementById('desk-bars');
+  var els = api && api.ui && api.ui.elements;
+  if (!old || !els || typeof els.createAppHeader !== 'function') return;
+  var head = els.createAppHeader();
+  head.id = 'desk-bars';
+  head.style.paddingBottom = '4px';
+  while (old.firstChild) head.appendChild(old.firstChild);
+  old.parentNode.replaceChild(head, old);
+}
+
 spirit.shell.activateApp({
   mount: function (container, api) {
     deskApi = api;
@@ -957,12 +962,13 @@ spirit.shell.activateApp({
       // top the top like the title bar", then "they should leave the app or dialog visible, and stay
       // sticky below those title bars". ONE sticky block holding both rows (claude-windows' review):
       // two rows each stuck at top 0 slid the agent row under the main one. The shell's #app-header is
-      // sticky at the top of the same scroll, so this block sticks at its height (deskBarTop), never at 0
-      // where it covered Back and Home. Opaque, in the shell's own background.
+      // sticky at the top of the same scroll, so this block sticks at its height, never at 0 where it covered Back and
+      // Home. Opaque, in the shell's own background. SINCE goal/G6.1 the shell's app header does the sticking: the
+      // block is moved into the shell's app header right after this markup lands (deskHeader).
       // THE BLINK, DECLARED ONCE (goal/G2.4): a working agent's tab border blinks; the mark is data-working.
       '<style>@keyframes desk-blink { 50% { border-color: transparent; } } ' +
         '#desk-tabs [data-bubble][data-working="1"] { animation: desk-blink 1s step-start infinite; }</style>' +
-      '<div id="desk-bars" style="position:sticky;top:var(--desk-bar-top,52px);z-index:2;background:#1a1a2e;padding-bottom:4px">' +
+      '<div id="desk-bars" style="padding-bottom:4px">' +
         // The goal line is pinned with the tabs (desk/G1.12). Andy: "this part
         // of the list page should be attached below the title bar, and not
         // scroll away."
@@ -1007,6 +1013,7 @@ spirit.shell.activateApp({
           '<div class="stat-tile wide"><div class="label">Add a folder</div><div id="desk-agent-picker"></div></div>' +
         '</div>' +
       '</div>';
+    deskHeader(api);
     function show(tab) {
       var pane = tab.indexOf('agent:') === 0 ? 'agent' : tab;
       Array.prototype.forEach.call(container.querySelectorAll('[data-pane]'), function (p) {

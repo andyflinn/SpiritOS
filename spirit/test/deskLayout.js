@@ -117,25 +117,29 @@ settle().then(function () {
   // two rows each stuck at top 0 slid the agent row under the main one. So
   // exactly one sticky tag, and both rows follow it, before any pane. It sticks BELOW the title bar, never at
   // top 0 (goal/G2.1 note 4; Andy: "stay sticky below those title bars"): the shell's #app-header is sticky at
-  // the top of the same scroll.
+  // the top of the same scroll. SINCE goal/G6.1 the sticking is the shell's app header (spirit/test/appHeader.js
+  // proves the element): the block is #desk-bars, desk.js moves it into createAppHeader(), and no tag of its own
+  // markup sticks any more.
   const stickies = shell.match(/<div[^>]*position:\s*sticky[^>]*>/g) || [];
-  const at = stickies.length === 1 && /top:/.test(stickies[0]) && !/top:\s*0\b/.test(stickies[0]) ? shell.indexOf(stickies[0]) : -1;
+  const deskCode = fs.readFileSync(DESK, 'utf8');
+  const viaHeader = /createAppHeader/.test(deskCode) && stickies.length === 0;
+  const at = viaHeader ? shell.indexOf('id="desk-bars"') : -1;
   const tabsAt = shell.indexOf('id="desk-tabs"');
   // ONE ROW SINCE goal/G3.12: the agent row inside Team went; the bubbles ride in #desk-tabs.
   const paneAt = shell.indexOf('data-pane=');
   const pinned = at !== -1 && at < tabsAt && tabsAt < paneAt && shell.indexOf('id="desk-agent-tabs"') === -1;
   const buttons = tabs.innerHTML.match(/<button[^>]*>/g) || [];
   const last = buttons[buttons.length - 1] || '';
-  if (pinned && /desk-(end|start)-design/.test(last)) test.check('one sticky block below the title bar holds the tab row, no agent row, and the design button closes the row');
+  if (pinned && /desk-(end|start)-design/.test(last)) test.check('one block, pinned by the app header, holds the tab row, no agent row, and the design button closes the row');
   else test.fail(OWED + 'sticky tags ' + JSON.stringify(stickies) + ', row inside it ' + pinned + ', last button ' + last);
 
   // Andy: "this part of the list page should be attached below the title
   // bar, and not scroll away. Upgrading Desk ... (desk/G1) List (1) Team
   // Musings": the goal line rides in the same pinned block as the tabs.
   test.subHeading('T12: the goal line is pinned with the tabs, in one sticky block');
-  const barsAt = shell.search(/<div[^>]*id="desk-bars"[^>]*position:\s*sticky/);
+  const barsAt = at;
   const goalAt = shell.indexOf('id="desk-goal"');
-  if (barsAt !== -1 && goalAt > barsAt && goalAt < tabsAt) test.check('#desk-goal sits inside the sticky #desk-bars, above the tabs');
+  if (barsAt !== -1 && goalAt > barsAt && goalAt < tabsAt) test.check('#desk-goal sits inside the pinned #desk-bars, above the tabs');
   else test.fail(OWED + 'sticky block at ' + barsAt + ', goal line at ' + goalAt + ', tabs at ' + tabsAt);
 
   // Andy: "this button row on the main screen [All] [claude-windows (lead)]
@@ -242,13 +246,14 @@ settle().then(function () {
     else test.fail(OWED + 'box ' + box.slice(0, 120) + ' | Blocked by shown ' + /Blocked by/.test(links));
 
     test.subHeading('T13: in a dialog, his buttons and the check line are pinned in one sticky block');
-    const stickyTag = (body.match(/<div[^>]*position:\s*sticky[^>]*>/) || [''])[0];
-    const stickyAt = stickyTag ? body.indexOf(stickyTag) : -1;
+    // SINCE goal/G6.1 the app header pins it, as the List's bars: the block is #dd-bars, deskDetails.js moves it into
+    // createAppHeader(), and no tag of its own markup sticks.
+    const ownSticky = /<div[^>]*position:\s*sticky[^>]*>/.test(body);
+    const stickyAt = !ownSticky && /createAppHeader/.test(fs.readFileSync(DETAILS, 'utf8')) ? at('dd-bars') : -1;
     const closeAt = body.indexOf('</div>', at('dd-strip') + 1);
-    // Below the title bar, never at top 0 (goal/G2.1 note 4), as the List's bars.
-    if (stickyAt !== -1 && /top:/.test(stickyTag) && !/top:\s*0\b/.test(stickyTag) && stickyAt < at('dd-name-row') && at('dd-name-row') < at('dd-strip') &&
+    if (stickyAt !== -1 && stickyAt < at('dd-name-row') && at('dd-name-row') < at('dd-strip') &&
         at('dd-strip') < at('dd-box') && closeAt < at('dd-box')) {
-      test.check('one sticky block below the title bar holds the button row and the check line, above the box');
+      test.check('one block, pinned by the app header, holds the button row and the check line, above the box');
     } else test.fail(OWED + 'sticky at ' + stickyAt + ', buttons at ' + at('dd-name-row') + ', strip at ' + at('dd-strip') + ', box at ' + at('dd-box'));
 
     test.subHeading('T10 and T15: the title line is title-sized');

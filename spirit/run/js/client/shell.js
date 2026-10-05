@@ -1342,6 +1342,8 @@
           createApiBranchSelector: spiritElements.createApiBranchSelector,
           // A file or folder from the shell's one tree (goal/G4.23, shell/js/pathSelector.js).
           createPathSelector: spiritElements.createPathSelector,
+          // The header area an app fills, sticky under the titlebar (goal/G6.1, shell/js/appHeader/appHeader.js).
+          createAppHeader: spiritElements.createAppHeader,
         },
       },
 

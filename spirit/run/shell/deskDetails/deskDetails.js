@@ -68,10 +68,9 @@ function ddFrame() {
   if (!el) return;
   el.innerHTML =
     // His buttons and the strip stay pinned BELOW the title bar while the
-    // rest scrolls (desk/G1.12; goal/G2.1 note 4). The shell's #app-header is
-    // sticky at the top of the same scroll, so this block sticks at its
-    // height, measured below, never at 0 where it would cover Back and Close.
-    '<div id="dd-bars" style="position:sticky;top:var(--desk-bar-top,52px);z-index:2;background:#1a1a2e;padding-bottom:2px">' +
+    // rest scrolls (desk/G1.12; goal/G2.1 note 4). SINCE goal/G6.1 the shell's
+    // app header does the sticking: ddHeader moves this block into it.
+    '<div id="dd-bars" style="padding-bottom:2px">' +
       '<div id="dd-head" style="font-size:1.25em;font-weight:bold"></div>' +
       '<div class="start-job-form card" id="dd-name-row"></div>' +
       '<div id="dd-strip"></div>' +
@@ -85,14 +84,19 @@ function ddFrame() {
       '<button type="button" id="dd-say-send">Send</button></div>' +
     '<div id="dd-error" class="job-start-error"></div>' +
     '<div class="stat-tile wide"><div class="label">Chat, newest first</div><div id="dd-chat"></div></div>';
-  ddBarTop();
+  ddHeader();
 }
-// The title bar's height, as it is on this screen: the offset the pinned block sticks at.
-function ddBarTop() {
-  var header = document.getElementById('app-header');
-  var bars = document.getElementById('dd-bars');
-  var h = header && Number(header.offsetHeight);
-  if (bars && bars.style && h > 0) bars.style.setProperty('--desk-bar-top', h + 'px');
+// THE HEADER AREA IS THE SHELL'S (goal/G6.1): the block written as #dd-bars moves into the app header, which sticks it
+// under the titlebar, and takes its id.
+function ddHeader() {
+  var old = document.getElementById('dd-bars');
+  var els = ddApi && ddApi.ui && ddApi.ui.elements;
+  if (!old || !els || typeof els.createAppHeader !== 'function') return;
+  var head = els.createAppHeader();
+  head.id = 'dd-bars';
+  head.style.paddingBottom = '2px';
+  while (old.firstChild) head.appendChild(old.firstChild);
+  old.parentNode.replaceChild(head, old);
 }
 
 var DD_LABELS = { go: 'Go!', done: 'Done', close: 'Close', reopen: 'Reopen' };
