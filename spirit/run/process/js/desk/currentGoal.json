@@ -1,8 +1,8 @@
 {
- "change": 14260,
+ "change": 14263,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T16:03:39.464Z",
+ "writtenAt": "2026-10-05T16:03:43.053Z",
  "items": [
   {
    "id": "goal/G5",
@@ -34,8 +34,7 @@
     "wsl-claude"
    ],
    "working": [
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
