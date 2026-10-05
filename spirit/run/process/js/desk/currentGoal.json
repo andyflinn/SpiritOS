@@ -1,8 +1,8 @@
 {
- "change": 16761,
+ "change": 16762,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T21:04:36.621Z",
+ "writtenAt": "2026-10-05T21:04:38.800Z",
  "items": [
   {
    "id": "goal/G5",
@@ -24,7 +24,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-ubuntu",
     "claude-windows",
@@ -2663,10 +2663,9 @@
    "id": "goal/G5.9",
    "title": "commit check: a build commit by the red writer of the item raises a red grant request to Andy (goal/G5.7 Q7)",
    "goal": "goal/G5",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
