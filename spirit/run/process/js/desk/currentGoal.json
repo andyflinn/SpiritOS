@@ -1,8 +1,8 @@
 {
- "change": 14195,
+ "change": 14199,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T15:59:57.253Z",
+ "writtenAt": "2026-10-05T16:00:00.697Z",
  "items": [
   {
    "id": "goal/G5",
@@ -33,7 +33,9 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
