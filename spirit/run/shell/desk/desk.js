@@ -445,6 +445,7 @@ function deskDrawTabs() {
   strip.innerHTML =
     deskTabButton('data-tab="list"', deskTab === 'list', 'List' + (waiting ? ' (' + waiting + ')' : '')) +
     deskTabButton('data-tab="team"', deskTab === 'team', 'Team') +
+    deskTabButton('data-tab="rules"', deskTab === 'rules', 'Rules') +
     deskTabButton('data-tab="musings"', deskTab === 'musings', 'Musings') +
     deskBubblesHtml() +
     // AT THE END OF THE TAB ROW, ONLY ON TEAM, AND LOOMING. Andy: "put the
@@ -512,6 +513,8 @@ function deskSearchItems() {
 var deskLastChange = 0;
 function deskOnPublished(obj) {
   if (!obj || typeof obj !== 'object') return;
+  // A RULE CHANGED (goal/G6.5): the desk server publishes {rule: key}; the Rules tab, if shown, asks again.
+  if (obj.rule && !obj.item && !obj.verb) { if (deskTab === 'rules') deskRulesSearch(); return; }
   // AN UPDATE TOO LARGE TO PUBLISH was dropped, and said: ask again for what is shown.
   if (obj.dropped) { deskSearchItems(); return; }
   var change = Number(obj.change) || 0;
@@ -880,6 +883,78 @@ function deskDraw() {
     deskTable();
 }
 
+// ── THE RULES TAB (goal/G6.5) ─────────────────────────────────────────
+//
+//   The box: "A new tab "Rules" between "Team" and "Musings": 1. The new bubble: type, label, text and a new button:
+//   rule.add (the rule comes in proposed; agents may add one too). 2. The search bubble: a search box and 7 toggles
+//   (ui, code, design, desk; proposed, active, deleted): rules.search {text, types, statuses}. 3. The list, a row per
+//   rule: status (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), label, type, key; a row opens ruleDetails
+//   (goal/G6.4)."
+//
+// The server does the searching and the filtering, as for the List. A toggle that is on narrows to its value; with
+// none on in a group, that group is not narrowed (rules.search reads an empty list as all).
+var DESK_RULE_TYPES = ['ui', 'code', 'design', 'desk'];
+var DESK_RULE_STATUSES = ['proposed', 'active', 'deleted'];
+var DESK_RULE_ICON = { proposed: 'EDIT', active: 'LOCK', deleted: 'DEAD' };
+var deskRuleFilter = { text: '', types: [], statuses: [] };
+var deskRules = [];
+var deskRulesNote = '';
+function deskRulesSearch() {
+  var f = deskRuleFilter;
+  return deskAsk('rules.search', { text: f.text, types: f.types.slice(), statuses: f.statuses.slice() }).then(function (r) {
+    deskRules = (r.items || []).map(function (p) {
+      var l = {};
+      try { l = JSON.parse(p.label); } catch (e) { l = {}; }
+      return { key: String(p.key), label: String(l.label || ''), type: String(l.type || ''), status: String(l.status || '') };
+    });
+    deskRulesNote = r.more ? 'More rules match than are shown: narrow the search.' : '';
+    deskDrawRules();
+  }, function (e) { deskRulesNote = 'Not searched: ' + e.message; deskDrawRules(); });
+}
+function deskDrawRules() {
+  var toggles = document.getElementById('desk-rule-toggles');
+  if (toggles) {
+    toggles.innerHTML = DESK_RULE_TYPES.map(function (v) { return [v, 'types']; }).concat(DESK_RULE_STATUSES.map(function (v) { return [v, 'statuses']; }))
+      .map(function (p) {
+        var on = deskRuleFilter[p[1]].indexOf(p[0]) !== -1;
+        return '<button type="button" data-rule-toggle="' + p[0] + '" style="font-weight:' + (on ? 'bold' : 'normal') + '">' + p[0] + (on ? ' ✓' : '') + '</button>';
+      }).join(' ');
+  }
+  var note = document.getElementById('desk-rule-error');
+  if (note) note.textContent = deskRulesNote;
+  var list = document.getElementById('desk-rule-list');
+  if (!list) return;
+  if (!deskRules.length) { list.innerHTML = '<div class="job-manifest-note">No rule matches.</div>'; return; }
+  list.innerHTML = '<table class="jobs-table"><thead><tr><th></th><th>Label</th><th>Type</th><th>Key</th></tr></thead><tbody>' +
+    deskRules.map(function (r) {
+      return '<tr data-rule="' + deskEsc(r.key) + '" style="cursor:pointer"><td title="' + deskEsc(r.status) + '">' + deskIcon(DESK_RULE_ICON[r.status] || '') + '</td>' +
+        '<td>' + deskEsc(r.label) + '</td><td>' + deskEsc(r.type) + '</td><td>' + deskEsc(r.key) + '</td></tr>';
+    }).join('') + '</tbody></table>';
+}
+function deskRuleToggle(v) {
+  var group = DESK_RULE_TYPES.indexOf(v) !== -1 ? 'types' : DESK_RULE_STATUSES.indexOf(v) !== -1 ? 'statuses' : '';
+  if (!group) return;
+  var on = deskRuleFilter[group];
+  var i = on.indexOf(v);
+  if (i === -1) on.push(v); else on.splice(i, 1);
+  deskDrawRules();
+  deskRulesSearch();
+}
+// The text as he typed it: a rule is a paragraph with its line breaks (goal/G5.5); the server normalizes and limits it.
+function deskRuleAdd() {
+  var val = function (id) { var el = document.getElementById(id); return el ? String(el.value || '') : ''; };
+  var type = val('desk-rule-type');
+  var label = val('desk-rule-label');
+  var text = val('desk-rule-text');
+  if (!label.trim() || !text.trim()) { deskRulesNote = 'A rule needs a label and a text.'; deskDrawRules(); return; }
+  deskAsk('rule.add', { type: type, label: label, text: text }).then(function () {
+    ['desk-rule-label', 'desk-rule-text'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
+    deskRulesNote = '';
+    deskRulesSearch();
+  }, function (e) { deskRulesNote = 'Not added: ' + e.message; deskDrawRules(); });
+}
+function deskOpenRule(key) { deskApi.callDialog('shell/ruleDetails', { key: key }).then(function () { deskRulesSearch(); }, function () {}); }
+
 // ONE ROW'S DIALOG, from the List or from the Team bubble. Andy: "i want to
 // be able to click on items in the bubble in team and see the details".
 function deskOpenRow(id) {
@@ -1020,6 +1095,18 @@ spirit.shell.activateApp({
           '<div id="desk-team-error" class="job-start-error"></div>' +
           '<div class="stat-tile wide"><div class="label" id="desk-team-label">Team: you and every agent, newest first</div><div id="desk-team"></div></div>' +
         '</div>' +
+        // THE RULES TAB (goal/G6.5): the new bubble, the search bubble, the list. #desk-rules takes every click and input.
+        '<div data-pane="rules" hidden><div id="desk-rules">' +
+          '<div class="start-job-form card">' +
+            '<label class="field-label">Type<select id="desk-rule-type">' +
+              DESK_RULE_TYPES.map(function (v) { return '<option value="' + v + '">' + v + '</option>'; }).join('') + '</select></label>' +
+            '<label class="field-label grow">Label<input id="desk-rule-label" placeholder="the rule in a few words"></label>' +
+            '<label class="field-label grow">Text<textarea id="desk-rule-text" rows="3" placeholder="the rule; up to 2048 bytes, line breaks kept"></textarea></label>' +
+            '<button type="button" id="desk-rule-add">New</button></div>' +
+          '<div class="start-job-form card"><input id="desk-rule-search" placeholder="search rules"><span id="desk-rule-toggles"></span></div>' +
+          '<div id="desk-rule-error" class="job-start-error"></div>' +
+          '<div id="desk-rule-list"></div>' +
+        '</div></div>' +
         '<div data-pane="musings" hidden>' +
           '<div class="start-job-form card"><label class="field-label grow">Muse' +
             '<textarea id="desk-muse" rows="3" placeholder="a thought for later; nobody answers it now"></textarea></label>' +
@@ -1045,6 +1132,7 @@ spirit.shell.activateApp({
       deskTab = tab;
       deskDrawGoAll();
       if (tab === 'team') deskMarkTeamSeen();
+      if (tab === 'rules') deskRulesSearch();
       deskDrawTabs();
     }
     // The strips are redrawn, so one listener on each, and the click may
@@ -1100,6 +1188,21 @@ spirit.shell.activateApp({
       deskSearchItems();
     });
     deskDrawToggles();
+    document.getElementById('desk-rules').addEventListener('click', function (e) {
+      var t = e && e.target;
+      if (!t) return;
+      var toggle = t.closest && t.closest('[data-rule-toggle]');
+      if (toggle) { deskRuleToggle(toggle.getAttribute('data-rule-toggle')); return; }
+      if (t.id === 'desk-rule-add') { deskRuleAdd(); return; }
+      var row = t.closest && t.closest('[data-rule]');
+      if (row) deskOpenRule(row.getAttribute('data-rule'));
+    });
+    document.getElementById('desk-rules').addEventListener('input', function (e) {
+      if (!e || !e.target || e.target.id !== 'desk-rule-search') return;
+      var el = document.getElementById('desk-rule-search');
+      deskRuleFilter.text = String((el && el.value) || e.target.value || '');
+      deskRulesSearch();
+    });
     document.getElementById('desk-go-all').addEventListener('click', function () { deskArmOrFire('desk-go-all', deskGoAll); });
     document.getElementById('desk-muse-send').addEventListener('click', deskMuse);
     document.getElementById('desk-team-send').addEventListener('click', deskGroupSay);
