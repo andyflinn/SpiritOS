@@ -1,8 +1,8 @@
 {
- "change": 15001,
+ "change": 15044,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T17:09:01.145Z",
+ "writtenAt": "2026-10-05T17:12:20.112Z",
  "items": [
   {
    "id": "goal/G5",
@@ -79,6 +79,11 @@
      "by": "claude-windows",
      "at": "2026-10-05T17:08:26.222Z",
      "text": "taking: a new G5 item for FACE.md's desk changes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:09:38.310Z",
+     "text": "New item goal/G5.5 \"desk: the changes andy/FACE.md names for Desk\": its box holds FACE.md's Desk section verbatim, plus the header-area line.\nAlso: G5.1's title now says what was agreed (sends commits already made, for you from Jobs and publishData).\nThe Rules table in desk.db is this goal's part; who builds the face parts (tab, dialog, bubbles)?"
     }
    ]
   },
@@ -934,7 +939,7 @@
   },
   {
    "id": "goal/G5.5",
-   "title": "desk: the changes andy/FACE.md names for Desk (Rules table and tab, ruleDetails, chat and musings bubbles)",
+   "title": "desk: the changes andy/FACE.md names for Desk (Rules table and tab, ruleDetails, chat bubbles)",
    "goal": "goal/G5",
    "status": "",
    "with": "",
@@ -953,10 +958,41 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "DESK: THE CHANGES andy/FACE.md NAMES FOR DESK\n\nANDY, 2026-10-05, in Desk: \"this goal also needs a new item addressing desk changes mentionned in FACE.md\"\n- On FACE.md's \"The \"Musings\" tab\" section: \"is pure ui and doesn't belong here\" (taken out of this box).\n\nNO-FACE PART (this goal): the rules table in desk.db and its search for deskClient and the UI. The face parts (Rules tab, ruleDetails, chat bubbles, left-aligned chat) are listed here because he named them; who builds them is open.\n\nandy/FACE.md, VERBATIM\n- shell app apps/dialog apps can have a **header area**. this **header area** behaves like the **header area** in both desk and deskDetails. we want a shell element that facilitates that.\n\n## spirit/run/shell/desk/desk.js\n\n### General\n\n- I want all my chat-log entries to be left-aligned, not right-aligned.\n\n- i want chat log entries for everybody to display in bubbles, separated vertically be 1em space.\n\n### A new tab, \"Rules\", between \"Team\" and \"Musings\"\n\n**Rules are a new Table in desk.db, it's rows hold the following fields**:\n\n- key: \"rule/number\"\n- label: subject to the label rules in fieldRules\n- type: \"ui\" | \"code\" | \"design\" | \"desk\"\n- status: \"proposed\" | \"active\" | \"deleted\"\n- text: size restriction: one Kilobyte, or a pre-existing text type in fieldRules.js\n\nthe table is searchable for deskClient and UI, with the type and status values as filters, and label and text being searched. search results with bring back key, label, type and status.\n\n**the user interface for the rules tab, in vertical order**\n\n1. **The new bubble**: an input form for a new rule, containing **type**, **label** and **text**, followed by a **new** button. clicking on *new* will add a new rule to the rules table, with a status of \"**proposed**\".\n\n2. **The search bubble**: search-input box, followed by filter toggles for the values of type and status (7 toggles so far)\n\n3. **The list**: clicking on a row, pops up the ruleDetails dialog\n\ncolumns of the list:\n\n1. status: \"proposed\" = ICON.EDIT: '✏️', \"active\" = ICON.LOCK: '🔒' and \"deleted\" = ICON.DEAD: '💀'\n2. label\n3. type\n4. key\n\n**clicking on a row brings up the ruleDetails dialog**\n\nThe ruleDetails dialog starts with a **header area** that behaves like the **header area** of desk and of deskDetails. it's upper edge sticks to the the lower edge of the shell's titlebar, when the user scrolls down in the dialog:\n\n- title: it displays: key and label\n- a button row: **activate**, an armable button changing the status of the rule to \"active\", and **delete**, changing the status of the rule to \"deleted\".\n\n**then follows the textbox of the rule.**\n\n- rules are edited by the user.\n\n**This is followed by the chat area, styled like the chat area in deskDetails**.\n\na chat input box.\n- this box does NOT have triggers like cap and split, because the text is edited by the user. \n\nin this chat, the agents may propose alterations to parts of the rule, or advocate for status changes for this rule.\n\nOPEN: the shape; his Go.",
+   "version": 3,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:10:21.133Z",
+     "text": "feedback?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:10:40.509Z",
+     "text": "taking: feedback on G5.5."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:10:45.119Z",
+     "text": "wsl: desk keeps no table per thing: every item, box, check and chat line is a record in one log (records, desk.js 290), replayed into state. A rule fits the same way (rule.add, rule.set, its chat as chat.add under rule/N), so no new table and no new persist shape.\nThe label can use fieldRules' existing label rule; a new 1 KB text type there would touch core (js/fieldRules.js, a grant).\nOK to shape rules as records rather than a table?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:10:54.881Z",
+     "text": "Feedback, claude-windows:\n- For: deleted is a status, not a removed row (as left-out items stay searchable); the icons exist (kernel.js 1170 EDIT, 1257 LOCK, 1292 DEAD); label uses fieldRules' 64-byte label rule as it is.\n- Gap: fieldRules has no 1 KB text type today (label 64 bytes, description 128); \"text\" becomes one new rule there, used on both sides of the wire.\n- Fits Desk's way: the search is items.search's pattern (bucket-bounded, partial flag), filters type and status, matching label and text.\n- Question: may agents add a proposed rule themselves (the agents' new-rule ask), or only you through the New bubble, with agents proposing in the rule's chat?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:11:35.704Z",
+     "text": "this section:\n\n### The \"Musings\" tab\n\nTo clarify my understanding of \"visually separated\" log entries.\n\n- each musing in the log should be in a separate bubble, possibly with the same background color as the **header area**.\n- vertical spacing between input text area and each bubble in the log: 1em\n\nis pure ui and doesn't belong here"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:11:58.263Z",
+     "text": "taking: Musings out of G5.5's box."
+    }
+   ]
   }
  ]
 }
