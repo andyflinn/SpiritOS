@@ -20,8 +20,11 @@
 //   5  FROM JOBS: started as a job on a node that lists process/js/pushOrigin, with its arguments as ONE JSON string
 //      after the script (index.html 1559; wordpressScanner.js 85 reads them the same way), it pushes.
 //   6  publishData loads it in place of its own pull-and-push loop (publishData.js 183-192 today).
-// LEFT OPEN, not asserted: "tries again if someone pushed meanwhile" needs a push racing inside the run, which a test
-// cannot stage reliably; how many tries.
+//   4b A RACE: someone pushes after the rebase and before the push lands; pushOrigin itself tries again and its
+//      commit lands on top. Andy, to Q7 (move the retry into pushOrigin itself, as the box says): "yes". Staged with a
+//      pre-push hook in the clone that, on its first run only, pushes another clone's commit to origin, so the first
+//      push is refused for certain. Found checking 1e973fc7: the retry sat only in publishData.
+// LEFT OPEN, not asserted: how many tries.
 
 const fs = require('fs');
 const os = require('os');
@@ -154,6 +157,21 @@ test.startTest('goal/G5.1: pushOrigin sends commits already made, even when the 
     else test.fail(OWED + 'after the clash: rebase in progress ' + midRebase + ', same HEAD ' + same + ', shared.txt ' + short(ourText));
     if (originLog(c.bare, 1)[0] === before) test.check('origin is unchanged by the clash');
     else test.fail('origin moved during a clash: ' + short(originLog(c.bare, 2)));
+
+    test.subHeading('4b. a push raced in during the run: pushOrigin tries again');
+    const x = world();
+    commitFile(x.ours, 'ours.txt', 'ours\n', 'ours, raced');
+    // The hook runs inside our push, after our rebase: the first time it advances origin from the other clone, so this
+    // push is refused; it leaves a mark, and every later run does nothing.
+    const mark = path.join(path.dirname(x.ours), 'raced.mark');
+    const hook = path.join(x.ours, '.git', 'hooks', 'pre-push');
+    fs.writeFileSync(hook, '#!/bin/sh\nif [ ! -f "' + mark + '" ]; then\n  touch "' + mark + '"\n' +
+      '  cd "' + x.theirs + '" && echo raced > raced.txt && git add raced.txt && git -c user.email=o@example -c user.name=other commit -q -m "theirs, raced in during the push" && git push -q origin master\nfi\nexit 0\n');
+    fs.chmodSync(hook, 0o755);
+    const rx = await run(fn, x.ours);
+    const xlog = originLog(x.bare, 2);
+    if (fs.existsSync(mark) && rx.ok === true && xlog[0] === 'ours, raced' && xlog[1] === 'theirs, raced in during the push') test.check('a push refused by a race is tried again inside pushOrigin, and lands on top');
+    else test.fail(OWED + 'with a push raced in, pushOrigin answered ' + short(rx) + '; origin reads ' + short(xlog) + '; race staged ' + fs.existsSync(mark));
   }
 
   test.subHeading('5. from Jobs: one JSON string of arguments, on a node that lists the process');
