@@ -1,8 +1,8 @@
 {
- "change": 14003,
+ "change": 14058,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T15:42:08.269Z",
+ "writtenAt": "2026-10-05T15:44:35.704Z",
  "items": [
   {
    "id": "goal/G5",
@@ -10,7 +10,9 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "go-all"
+   ],
    "blocking": [],
    "blocked": [
     "goal/G5.1",
@@ -23,11 +25,11 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
-   "design": true,
-   "waiting": 4,
+   "design": false,
+   "waiting": 3,
    "live": [
     "claude-ubuntu",
     "claude-windows",
@@ -35,7 +37,8 @@
    ],
    "working": [
     "claude-ubuntu",
-    "claude-windows"
+    "claude-windows",
+    "wsl-claude"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -43,25 +46,44 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "",
-   "version": 0,
-   "checks": [],
-   "chat": []
+   "box": "NO-FACE MODIFICATIONS AND IMPROVEMENTS\n\nANDY, 2026-10-05: \"keep those in mind, we'll close goal 4, then start a goal on the NOFACE.md issues.\"; \"New goal: no-face modifications and improvements.\"\nSource: andy/NOFACE.md (1818d97f). Rulings live verbatim in the item they decide.\n\nTOPICS\n- G5.1 pushOrigin\n- G5.2 fileServer: one label per hash\n- G5.3 fileServer: node-reserved slots\n- G5.4 desk: the limbo state\n\nLEFT IN goal/G4: G4.4 and G4.12 (chatter's objects), deferred until file transfer.",
+   "version": 1,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Add G5.5: a goal gets a Close like an item's (off the List, still searchable, Reopen brings it back), so goal/G4 can close with its two deferred items still open? (claude-windows)",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T15:42:52.486Z",
+     "text": "Opened goal/G5, No-face modifications and improvements, in design mode: pushOrigin (G5.1), fileServer one label per hash (G5.2), node-reserved slots (G5.3), the desk's limbo state (G5.4). Your NOFACE.md words are verbatim in each box, with what we found. goal/G4 stays as it is, its two deferred items still open."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T15:43:26.370Z",
+     "text": "Right, by the code: a goal offers Done only when every item is done or closed, and never Close (desk.js buttons()). So goal/G4, holding two deferred items, has no way out but Abandon, which hides its items from every search.\nA fix for goal/G5: a goal's Close, as an item's (a visibility press: off the List, still searchable, Reopen brings it back), its open items kept. Add it as G5.5?"
+    }
+   ]
   },
   {
    "id": "goal/G5.1",
    "title": "pushOrigin: one process that pushes when the clone is behind origin, for publishData and goalShare",
    "goal": "goal/G5",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G5"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -69,8 +91,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "PUSHORIGIN: ONE PROCESS THAT PUSHES WHEN THE CLONE IS BEHIND ORIGIN\n\nANDY, andy/NOFACE.md, VERBATIM\n- \"during the creation of spirit/run/process/js/deskClient/publishData.js, when that script was run simultaneously on three platforms, by three instances of claude, conflicts arose when trying to push new measurment documents to github.\"\n- \"A fix was applied to publishData.js that fixed the problem automatically\"\n- \"That fix would be extremely useful for deskServer as well. I propose to isolate that fixed section and make it available as spirit/run/process/js/deskClient/publishData.js so desk can use it when updating in goalShare.js, which mabe already carries the fix (duplicated) as well.\"\n- The stub (1818d97f), spirit/run/process/js/pushOrigin/pushOrigin.js: \"This is where we put the SpiritOS process for pushing changes to github when out commit livel is behind the remote origin.\"\n\nFOUND\n- wsl-claude: line 9's path reads publishData.js where pushOrigin.js is meant; goalShare.js already retries its own way (fetch the tip, commit onto it, push, 5 tries; goalShare.js 52-74).\n- claude-windows: a process under process/js/<name>/ starts only on a node that lists that folder (jobs.js), so process/js/pushOrigin/ must be listed on each node using it; it fits goal/G4.34's removeWhenDone.\n\nOPEN: the shape; his Go.",
+   "version": 1,
    "checks": [],
    "chat": []
   },
@@ -78,16 +100,14 @@
    "id": "goal/G5.2",
    "title": "fileServer: one label per hash, no label arbitration",
    "goal": "goal/G5",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G5"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -95,8 +115,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "FILESERVER: ONE LABEL PER HASH\n\nANDY, andy/NOFACE.md, VERBATIM\n- \"I want to revise this one a bit\"\n- \"1. There will be only one label (file-name) per verb-hash. All the label arbitration will disappear.\"\n\nFOUND (wsl-claude): fileServer keeps several names per hash today and answers the last (fileServer.js 83-84); one label per hash removes that list.\n\nOPEN: the shape; his Go.",
+   "version": 1,
    "checks": [],
    "chat": []
   },
@@ -107,6 +127,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
@@ -121,8 +142,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "FILESERVER: SLOTS THE NODE RESERVES FOR ITSELF\n\nANDY, andy/NOFACE.md, VERBATIM\n- \"2. there will be slots in fileServer that are reserved by the node itself, like PROFILE_PICTURE.\"\n\nOPEN: the shape; his Go.",
+   "version": 1,
    "checks": [],
    "chat": []
   },
@@ -133,6 +154,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
@@ -147,8 +169,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "DESK: THE LIMBO STATE, VISIBLE AND ACTIONABLE\n\nANDY, andy/NOFACE.md, VERBATIM\n- \"when 'go' was pressed/consumed on an item, and no agent is working on that item, (all agents idle, ) and no 'Done' button is visible, no grants or red questions pending, then the item sits in 'limbo'. this limbo-state is actionable for agents.then an agent must 'take' that situation, add either a red grant request button, or a red question, or present a 'Done' button.\"\n\nFOUND (claude-windows): every condition is already in an item's facts (go, done, claims, open G and Q checks, working agents), so limbo can be one more fact the List and the agents both read.\n\nOPEN: the shape; his Go.",
+   "version": 1,
    "checks": [],
    "chat": []
   }
