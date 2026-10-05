@@ -1,8 +1,8 @@
 {
- "change": 15044,
+ "change": 15064,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T17:12:20.112Z",
+ "writtenAt": "2026-10-05T17:14:52.675Z",
  "items": [
   {
    "id": "goal/G5",
@@ -939,7 +939,7 @@
   },
   {
    "id": "goal/G5.5",
-   "title": "desk: the changes andy/FACE.md names for Desk (Rules table and tab, ruleDetails, chat bubbles)",
+   "title": "desk server: the logic andy/FACE.md Desk changes need (rules: add, edit, status, search, chat), so the UI never comes back to it",
    "goal": "goal/G5",
    "status": "",
    "with": "",
@@ -958,8 +958,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "DESK: THE CHANGES andy/FACE.md NAMES FOR DESK\n\nANDY, 2026-10-05, in Desk: \"this goal also needs a new item addressing desk changes mentionned in FACE.md\"\n- On FACE.md's \"The \"Musings\" tab\" section: \"is pure ui and doesn't belong here\" (taken out of this box).\n\nNO-FACE PART (this goal): the rules table in desk.db and its search for deskClient and the UI. The face parts (Rules tab, ruleDetails, chat bubbles, left-aligned chat) are listed here because he named them; who builds them is open.\n\nandy/FACE.md, VERBATIM\n- shell app apps/dialog apps can have a **header area**. this **header area** behaves like the **header area** in both desk and deskDetails. we want a shell element that facilitates that.\n\n## spirit/run/shell/desk/desk.js\n\n### General\n\n- I want all my chat-log entries to be left-aligned, not right-aligned.\n\n- i want chat log entries for everybody to display in bubbles, separated vertically be 1em space.\n\n### A new tab, \"Rules\", between \"Team\" and \"Musings\"\n\n**Rules are a new Table in desk.db, it's rows hold the following fields**:\n\n- key: \"rule/number\"\n- label: subject to the label rules in fieldRules\n- type: \"ui\" | \"code\" | \"design\" | \"desk\"\n- status: \"proposed\" | \"active\" | \"deleted\"\n- text: size restriction: one Kilobyte, or a pre-existing text type in fieldRules.js\n\nthe table is searchable for deskClient and UI, with the type and status values as filters, and label and text being searched. search results with bring back key, label, type and status.\n\n**the user interface for the rules tab, in vertical order**\n\n1. **The new bubble**: an input form for a new rule, containing **type**, **label** and **text**, followed by a **new** button. clicking on *new* will add a new rule to the rules table, with a status of \"**proposed**\".\n\n2. **The search bubble**: search-input box, followed by filter toggles for the values of type and status (7 toggles so far)\n\n3. **The list**: clicking on a row, pops up the ruleDetails dialog\n\ncolumns of the list:\n\n1. status: \"proposed\" = ICON.EDIT: '✏️', \"active\" = ICON.LOCK: '🔒' and \"deleted\" = ICON.DEAD: '💀'\n2. label\n3. type\n4. key\n\n**clicking on a row brings up the ruleDetails dialog**\n\nThe ruleDetails dialog starts with a **header area** that behaves like the **header area** of desk and of deskDetails. it's upper edge sticks to the the lower edge of the shell's titlebar, when the user scrolls down in the dialog:\n\n- title: it displays: key and label\n- a button row: **activate**, an armable button changing the status of the rule to \"active\", and **delete**, changing the status of the rule to \"deleted\".\n\n**then follows the textbox of the rule.**\n\n- rules are edited by the user.\n\n**This is followed by the chat area, styled like the chat area in deskDetails**.\n\na chat input box.\n- this box does NOT have triggers like cap and split, because the text is edited by the user. \n\nin this chat, the agents may propose alterations to parts of the rule, or advocate for status changes for this rule.\n\nOPEN: the shape; his Go.",
-   "version": 3,
+   "box": "DESK SERVER: WHAT andy/FACE.md'S DESK CHANGES NEED FROM THE FACELESS SIDE, SO THE UI NEVER COMES BACK TO IT\n\nANDY, VERBATIM\n- 2026-10-05: \"this goal also needs a new item addressing desk changes mentionned in FACE.md\"\n- 2026-10-05: \"what this item is supposed to contain: only changes/upgrades in the faceless parts, so that the UI doesn't have to come back to the faceless parts. and is the desk server logic that i mean\"\n- 2026-10-05, on FACE.md's Musings section: \"is pure ui and doesn't belong here\"\n- andy/FACE.md, the data:\n**Rules are a new Table in desk.db, it's rows hold the following fields**:\n\n- key: \"rule/number\"\n- label: subject to the label rules in fieldRules\n- type: \"ui\" | \"code\" | \"design\" | \"desk\"\n- status: \"proposed\" | \"active\" | \"deleted\"\n- text: size restriction: one Kilobyte, or a pre-existing text type in fieldRules.js\n\nthe table is searchable for deskClient and UI, with the type and status values as filters, and label and text being searched. search results with bring back key, label, type and status.\n\nWHAT THE DESK SERVER GAINS (proposed, claude-windows)\n- rule.add {type, label, text}: a new rule/N, status proposed (the New bubble).\n- rule.text {key, text}: the rule's text, edited by him (\"rules are edited by the user\").\n- rule.status {key, status}: active or deleted, his alone (activate, an armed button, and delete).\n- rules.search {text, types, statuses}: bucket-bounded with the partial flag, matching label and text, answering key, label, type, status (the list, its 7 toggles; deskClient asks the same).\n- rule.get {key}: one rule's facts and text (ruleDetails).\n- A rule's chat: chat.add and item.chat under rule/N as for items; no cap or split triggers on it.\n- Checked at the door: type one of ui, code, design, desk; status one of proposed, active, deleted; label by fieldRules' label rule (64 bytes); text at most 1 KB.\n\nNOT HERE (face only, no server change): left-aligned chat, chat bubbles, Musings, the header area element, the tab and dialog themselves. Chat lines already carry who and when.\n\nOPEN\n- A table, as FACE.md says, or records in desk's one log like items (wsl-claude's question): the verbs above are the same either way.\n- The 1 KB text: a new type in fieldRules.js (core, needs your grant), or a desk-local limit.\n- May agents add a proposed rule themselves, or only you through the New bubble?\n- His Go.",
+   "version": 4,
    "checks": [],
    "chat": [
     {
@@ -991,6 +991,21 @@
      "by": "claude-windows",
      "at": "2026-10-05T17:11:58.263Z",
      "text": "taking: Musings out of G5.5's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:12:21.531Z",
+     "text": "Musings is out of G5.5's box and title; your line is in.\nFACE.md's \"General\" part (left-aligned chat, bubbles for everybody) is pure UI too: out as well?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:14:04.638Z",
+     "text": "what this item is supposed to contain:\n\nonly changes/upgrades in the faceless parts, so that the UI doesn't have to come back to the faceless parts. and is the desk server logic that i mean"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:14:35.867Z",
+     "text": "taking: G5.5's box down to the desk server logic."
     }
    ]
   }
