@@ -394,17 +394,6 @@ function apply(s, r, b, item, goalOf) {
       goalItem.title = String(sess.goal.title || goalItem.title);
       goalItem.at = r.at;
       const ids = [];
-      // A SPLIT MAKES A SUB-GOAL (goal/G5.4). Andy: "when i say split, that becomes implicit/obvious and the item
-      // should be marked as sub-goal". A split is a session that keeps an item and adds new items blocking it: that
-      // item is marked, and the mark stays.
-      const isNew = function (x) { return !s.items[String(x.id || '')]; };
-      (sess.items || []).forEach(function (x) {
-        if (!isNew(x)) return;
-        (Array.isArray(x.blocks) ? x.blocks : [x.blocks || gid]).map(String).forEach(function (b) {
-          const parent = s.items[b];
-          if (parent && !parent.goal && b !== gid) parent.subGoal = true;
-        });
-      });
       (sess.items || []).forEach(function (x) {
         const id = String(x.id || '');
         if (!id) return;
@@ -416,7 +405,8 @@ function apply(s, r, b, item, goalOf) {
         one.leftOut = false;
         // AN ITEM MARKED CODE (goal/G5.7) walks the phases. Andy: "an item marked code is the only one i see this for
         // right now."
-        if (x.code === true) one.code = true;
+        // A sub-goal is never a code item (goal/G6.8): a later session's code: true does not bring the mark back.
+        if (x.code === true && !one.subGoal) one.code = true;
         ids.push(id);
       });
       // LEFT OUT IS CLOSED, NEVER DELETED (goal/G4.24). Andy: "1. sounds dumb that the \"archive\" is not
@@ -424,6 +414,13 @@ function apply(s, r, b, item, goalOf) {
       // session leaves out stays a member, after the session's own, closed, with its box, checks and chat, so
       // [Include Closed] finds it; the records replay to the same, so items left out before this come back too.
       // It blocks nothing any more (blockers skips it), as it blocked nothing while it was deleted.
+      // ONLY HIS SPLIT MAKES A SUB-GOAL (goal/G6.8). Andy: "an item becomes a sub-goal only when i say split, the box of
+      // that item must then only contain references to it's blockers, and it can no longer be marked as a coding item."
+      // The session names the item split; a new blocking item alone marks nothing (goal/G5.4 had inferred it).
+      (Array.isArray(sess.split) ? sess.split : []).map(String).forEach(function (id) {
+        const it = s.items[id];
+        if (it && !it.goal) { it.subGoal = true; it.code = false; }
+      });
       const kept = g.members.filter(function (id) { return ids.indexOf(id) === -1 && s.items[id]; });
       kept.forEach(function (id) { s.items[id].closed = true; s.items[id].leftOut = true; });
       g.members = ids.concat(kept);
@@ -697,6 +694,13 @@ function rulesForGo(s, id, what) {
   return out;
 }
 
+// AN OPEN RED QUESTION (goal/G6.8). Andy: "i want mechanical tracking of design-greens. Yes i want opens to light up my
+// list with ERROR icons." An item is design-green when none is open; his End design and a Go wait for green.
+function openQ(it) { return !!it && it.checks.some(function (c) { return c.kind === 'Q' && c.state === 'open'; }); }
+function notGreen(s, ids) {
+  return ids.filter(function (id) { const m = s.items[id]; return m && !m.closed && !m.done && openQ(m); });
+}
+
 // LIMBO (goal/G5.4). Andy (andy/NOFACE.md): "when 'go' was pressed/consumed on an item, and no agent is working on
 // that item, (all agents idle, ) and no 'Done' button is visible, no grants or red questions pending, then the item
 // sits in 'limbo'. this limbo-state is actionable for agents.", and "limbo, when detected must be taken by an
@@ -725,6 +729,8 @@ function facts(s, it) {
     boxTaken: it.boxTakenBy || '',
     // goal/G5.4: in limbo, and marked a sub-goal by a split.
     limbo: limboOf(s, it), subGoal: it.subGoal === true,
+    // DESIGN-GREEN (goal/G6.8): no open red question on it.
+    green: !openQ(it),
     // goal/G5.7: the phase it is in, and who did each.
     code: it.code === true, phase: it.phase || '', red: it.red || '', builder: it.builder || '', verifier: it.verifier || '',
     // goal/G5.8: the rules in force at his Go, each { key, version }.
@@ -1269,6 +1275,9 @@ appServer.serve({
       // A box that could not come back whole in item.box is refused here, as chat.add refuses such a line.
       const boxBytes = Buffer.byteLength(JSON.stringify({ box: String(a.text), version: 0 }), 'utf8');
       if (boxBytes > ANSWER_ROOM) throw tooLarge(boxBytes, ANSWER_ROOM);
+      // AN OPEN POINT IS A RED QUESTION, NEVER BOX TEXT (goal/G6.8). Andy: "in design mode as well, OPEN is help in
+      // red-questions". A line starting with OPEN in capitals is refused, his own too.
+      if (/^OPEN(?:\b|:)/m.test(String(a.text))) throw refused('bad-request');
       const s = write('box.write', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
         // ONLY THE TAKER WRITES while a box take stands (goal/G4.20 point 9); his writes are never refused.
         if (it.boxTakenBy && w.by !== it.boxTakenBy && w.by !== 'andy') throw refused('taken');
@@ -1598,6 +1607,12 @@ appServer.serve({
         const offered = buttons(st, it);
         if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen') && offered.indexOf(a.what) === -1) throw refused('not-offered');
         if (a.what === 'bring-back' && !it.closed) throw refused('not-offered');
+        // DESIGN-GREEN GATES THEM (goal/G6.8): his End design while any item of the goal has an open red question, a Go
+        // on an item with one, a go-all while any item of the goal has one: refused.
+        const gOf = st.goals[it.goal ? it.id : it.goalId];
+        const members = gOf ? gOf.members : [];
+        if ((a.what === 'end-design' || a.what === 'go-all') && notGreen(st, members.concat(it.goal ? [it.id] : [])).length) throw refused('not-offered');
+        if (a.what === 'go' && openQ(it)) throw refused('not-offered');
         // NO CLAIM BEFORE HIS GO (goal/G3.9). Andy, 2026-10-03: "yes, the desk may refuse a claim-done, on an item
         // without 'go' on record", "the actual contract is consumed between 'go' and 'done'". It replaces
         // goal/G2.13's "a claim consumes the Go" for that case. A goal takes the press as before (goal/G2.10).
