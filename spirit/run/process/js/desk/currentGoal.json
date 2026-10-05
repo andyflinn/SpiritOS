@@ -1,8 +1,8 @@
 {
- "change": 16637,
+ "change": 16639,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T20:45:42.026Z",
+ "writtenAt": "2026-10-05T20:45:43.544Z",
  "items": [
   {
    "id": "goal/G5",
@@ -24,13 +24,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -2346,10 +2348,9 @@
    "id": "goal/G5.8",
    "title": "deskEar upgrades: arming the ear hands the agent an open job at once (work.open first), else it waits for lines as now",
    "goal": "goal/G5",
-   "status": "done",
+   "status": "closed",
    "with": "wsl-claude",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
