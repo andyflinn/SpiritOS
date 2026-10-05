@@ -1,100 +1,187 @@
 'use strict';
 
-// goal/G5.6: the desk server, a goal gets a Close. Red on today's tree; wsl-claude wrote it from G5.6's box and does
-// not build it (claude-windows builds).
-//   Andy, 2026-10-05, to goal/G5 Q1 ("a goal gets a Close like an item's (off the List, still searchable, Reopen brings
-//   it back), so goal/G4 can close with its two deferred items still open?"): "yes. if it has items still open it can
-//   ask me: are you sure?"; his Go on goal/G5.6.
-//   In the tree: a goal offers Done only when every item is done or closed, and never Close (desk.js buttons(),
-//   498-517).
-//
-// THE SHAPES (G5.6's box):
-//   1  a goal offers Close always, even with items open; his press alone (an agent's is refused).
-//   2  pressed, the goal is closed and offers Reopen; it leaves the List with its items, and Include Closed finds both.
-//   3  its open items stay as they are (not closed, not done).
-//   4  Reopen brings it back to the List, offering Close again.
-// NOT HERE: the "are you sure?" while items are open is the face's (the box: "the server takes the press either way").
+// goal/G6.6: a goal's Close in the List and the dialog, asking "are you sure?" while items are open (the face of G5.6).
+//   Andy, in goal/G5 (G5.6): "yes. if it has items still open it can ask me: are you sure?"
+//   The box: "The goal row in the List and the goal's dialog show Close; pressed while any of its items is open, the
+//   face asks "are you sure?" first, naming how many are open; yes sends the press."
+// The server offers Close on every goal and takes the press either way (goal/G5.6); the asking is the face's.
+// The contract the builder follows (claude-windows's picks where the box names no shape):
+//   - The question reads "are you sure?" (any case) and carries the number of open items, as a digit.
+//   - The yes is a button whose text starts with "Yes", or, failing one, the same Close pressed again (the arm the
+//     shell's apps already use). Either way no press goes before the yes.
+//   - Open means not done and not closed: the List counts the goal's rows; the dialog may count the goal's blocked
+//     list or its items, the fakes agree on both (two open, one done).
+//   - With no item open, one Close sends the press at once.
 
 const fs = require('fs');
-const os = require('os');
 const path = require('path');
-const { spawn } = require('child_process');
 const test = require('./testSupport.js');
-const appClient = require('../run/js/appClient.js');
+const kernel = require('../run/js/kernel.js');
 
-const OWED = 'OWED by goal/G5.6: ';
-const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
-const CW = { key: 'MCowBQYDK2VwAyEAdeskGoalCloseTestCWAAAAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
-const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskGoalCloseTestOwnerAAAAAAAAAAAAAAAAA=', label: 'andy' };
+const OWED = 'OWED by goal/G6.6: ';
+const DESK = path.join(__dirname, '..', 'run', 'shell', 'desk', 'desk.js');
+const DETAILS = path.join(__dirname, '..', 'run', 'shell', 'deskDetails', 'deskDetails.js');
 
-function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
-function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 260); }
+function settle() { return new Promise(function (r) { setImmediate(r); }); }
+async function settled() { for (let i = 0; i < 8; i++) await settle(); }
 
-test.startTest('goal/G5.6: a goal gets a Close');
-
-const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskgoalclose-'));
-const state = path.join(scratch, 'state');
-fs.mkdirSync(state, { recursive: true });
-const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'desk', 'win32', 'process') : path.join(scratch, 'door.sock');
-const client = appClient.createAppClient({ rootDir: scratch });
-client.register('desk', pipe);
-const call = function (verb, args, caller) { const q = {}; q[verb] = args; return client.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
-let kid = null;
-
-async function facts(id) {
-  const r = await call('item.get', { id: id }, ANDY);
-  try { return JSON.parse(r.body.item); } catch (e) { return {}; }
+function fakeElement(id) {
+  let html = '';
+  const el = {
+    id: id, value: '', textContent: '', hidden: false, disabled: false, style: {}, listeners: {}, placeholder: '',
+    addEventListener: function (type, fn) { (el.listeners[type] = el.listeners[type] || []).push(fn); },
+    fire: function (type, event) { (el.listeners[type] || []).forEach(function (fn) { fn(event || {}); }); },
+    querySelectorAll: function () { return []; }, querySelector: function () { return null; },
+    getAttribute: function () { return null; }, setAttribute: function () {}, focus: function () {},
+    appendChild: function () {}, removeChild: function () {}, replaceChild: function () {},
+  };
+  Object.defineProperty(el, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); }, enumerable: true });
+  return el;
 }
-async function listed(includeClosed) {
-  const r = await call('items.search', { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: includeClosed }, ANDY);
-  return ((r.body && r.body.items) || []).map(function (i) { return i.key; });
+function fakeDocument() {
+  const byId = {};
+  return { byId: byId, getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
 }
+function load(script, doc) {
+  let b = null;
+  new Function('spirit', 'document', 'window', fs.readFileSync(script, 'utf8'))(
+    { shell: { activateApp: function (x) { b = x; } }, core: kernel.core }, doc, { addEventListener: function () {} });
+  return b;
+}
+
+// Every button painted anywhere, with its attributes, its text and the element it was painted into.
+function buttons(doc) {
+  const out = [];
+  Object.keys(doc.byId).forEach(function (k) {
+    const el = doc.byId[k];
+    const re = /<button([^>]*)>([\s\S]*?)<\/button>/g;
+    let m;
+    while ((m = re.exec(el.innerHTML))) {
+      const attrs = {};
+      m[1].replace(/([\w-]+)="([^"]*)"/g, function (_, n, v) { attrs[n] = v; return ''; });
+      out.push({ attrs: attrs, text: m[2].replace(/<[^>]*>/g, '').trim(), el: el });
+    }
+  });
+  return out;
+}
+// A click bubbles: it reaches the first of the button's element and the screen's containers that listens.
+function click(b, doc, roots) {
+  const target = {
+    id: b.attrs.id || '', getAttribute: function (n) { return Object.prototype.hasOwnProperty.call(b.attrs, n) ? b.attrs[n] : null; },
+    closest: function (sel) { const n = (/^\[([\w-]+)\]$/.exec(sel) || [])[1]; return n && Object.prototype.hasOwnProperty.call(b.attrs, n) ? target : null; },
+    parentNode: null,
+  };
+  const el = [b.el].concat(roots.map(function (id) { return doc.getElementById(id); })).filter(function (e) { return (e.listeners.click || []).length; })[0] || b.el;
+  el.fire('click', { target: target, currentTarget: el, stopPropagation: function () {}, preventDefault: function () {} });
+}
+// The text everywhere on the screen, tags stripped: where the question is painted is the builder's.
+function screen(doc) {
+  return Object.keys(doc.byId).map(function (k) { return doc.byId[k].innerHTML + ' ' + doc.byId[k].textContent; }).join(' ').replace(/<[^>]*>/g, ' ');
+}
+async function sayYes(f) {
+  const doc = f.doc, close = f.close;
+  const yes = buttons(doc).filter(function (b) { return /^yes\b/i.test(b.text); })[0];
+  if (yes) click(yes, doc, f.roots);
+  else { const again = buttons(doc).filter(close)[0]; if (again) click(again, doc, f.roots); }
+  await settled();
+}
+
+const label = function (o) { return Object.assign({ goal: 't/G1', status: '', with: '', buttons: [], blocking: [], blocked: [], star: false, asks: 0 }, o); };
+function goalItems(open) {
+  const items = [label({ id: 't/G1.3', title: 'Third', status: 'done', buttons: ['close', 'reopen'] })];
+  if (open) {
+    items.unshift(label({ id: 't/G1.1', title: 'First', status: 'running', with: 'claude-windows' }),
+      label({ id: 't/G1.2', title: 'Second', status: 'blocked', blocked: ['t/G1.1'] }));
+  }
+  return items;
+}
+
+function list(open) {
+  const fake = require('./deskFake.js').create([]);
+  fake.items = [label({ id: 't/G1', title: 'Goal', goal: '', status: 'running', buttons: ['close'], blocked: open ? ['t/G1.1', 't/G1.2'] : [] })].concat(goalItems(open));
+  const doc = fakeDocument();
+  load(DESK, doc).mount(fakeElement('container'), {
+    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
+    escapeHtml: kernel.core.util.escapeHtml, verb: fake.verb,
+    onPublished: function () { return function () {}; }, onPacket: function () { return function () {}; },
+    peerPost: function () { return Promise.resolve({ ok: true, status: 200 }); },
+    callDialog: function () { return new Promise(function () {}); }, armUntilElsewhere: function () {},
+  });
+  const presses = function () { return fake.calls.filter(function (c) { return c.verb === 'press' && c.args && c.args.what === 'close'; }); };
+  const close = function (b) { return b.attrs['data-press'] === 'close' && b.attrs['data-id'] === 't/G1'; };
+  return { doc: doc, presses: presses, close: close, roots: ['desk-top'] };
+}
+
+function dialog(open) {
+  const doc = fakeDocument();
+  const dd = load(DETAILS, doc);
+  const calls = [];
+  const items = goalItems(open);
+  dd.mount(fakeElement('dd'), {
+    escapeHtml: kernel.core.util.escapeHtml,
+    verb: function (name, body) {
+      const ask = body && body.ask && body.ask.desk;
+      const v = ask && Object.keys(ask)[0];
+      calls.push({ verb: v, args: ask && ask[v] });
+      if (v === 'item.get') {
+        return Promise.resolve({ status: 200, body: { item: JSON.stringify(label({ id: 't/G1', title: 'Goal', goal: '', status: 'running', buttons: ['close'],
+          blocked: open ? ['t/G1.1', 't/G1.2'] : [] })), box: 'GOAL-BOX', version: 1, change: 3, chatMore: false, checks: [], chat: [] } });
+      }
+      if (v === 'items.search') {
+        return Promise.resolve({ status: 200, body: { items: items.map(function (i) { return { key: i.id, label: JSON.stringify(i) }; }), more: false } });
+      }
+      return Promise.resolve({ status: 200, body: { change: 1 } });
+    },
+    onPublished: function () { return function () {}; }, onPacket: function () { return function () {}; },
+    setScreenTitle: function () {}, setDialogResult: function () {}, closeDialog: function () {},
+    peerPost: function () { return Promise.resolve({ ok: true }); }, armUntilElsewhere: function () {},
+    fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
+  });
+  dd.open({ id: 't/G1', agents: {} });
+  const presses = function () { return calls.filter(function (c) { return c.verb === 'press' && c.args && c.args.what === 'close'; }); };
+  const close = function (b) { return b.attrs.id === 'dd-close'; };
+  return { doc: doc, presses: presses, close: close, roots: ['dd-body'] };
+}
+
+async function asks(where, f) {
+  await settled();
+  const btn = buttons(f.doc).filter(f.close)[0];
+  if (btn) test.check(where + ': the goal shows Close while two of its items are open');
+  else { test.fail(OWED + where + ': no Close on the goal while items are open'); return; }
+  click(btn, f.doc, f.roots);
+  await settled();
+  const text = screen(f.doc);
+  const question = /are you sure\?/i.test(text);
+  if (question && /\b2\b/.test((text.match(/[^.]{0,120}are you sure\?[^.]{0,120}/i) || [''])[0]) && f.presses().length === 0) {
+    test.check(where + ': Close asks "are you sure?", naming the 2 open items, and sends nothing yet');
+  } else test.fail(OWED + where + ': after Close, question shown ' + question + ', presses sent ' + f.presses().length);
+  await sayYes(f);
+  const sent = f.presses();
+  if (question && sent.length === 1 && sent[0].args.id === 't/G1') test.check(where + ': yes sends press {id: t/G1, what: close}');
+  else test.fail(OWED + where + ': after yes, ' + sent.length + ' close presses ' + JSON.stringify(sent.map(function (c) { return c.args; })));
+}
+
+async function straight(where, f) {
+  await settled();
+  const btn = buttons(f.doc).filter(f.close)[0];
+  if (!btn) { test.fail(OWED + where + ': no Close on a goal with nothing open'); return; }
+  click(btn, f.doc, f.roots);
+  await settled();
+  const sent = f.presses();
+  if (sent.length === 1 && sent[0].args.id === 't/G1' && !/are you sure\?/i.test(screen(f.doc))) test.check(where + ': with nothing open, one Close sends the press at once, no question');
+  else test.fail(OWED + where + ': with nothing open, one Close sent ' + sent.length + ' presses');
+}
+
+test.startTest('goal/G6.6: a goal Close asking "are you sure?" while items are open');
 
 (async function () {
-  kid = spawn(process.execPath, [SERVER, '{}', '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
-  for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await client.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
-  await call('session.set', { json: JSON.stringify({ goal: { id: 'c/G1', title: 'Closable' }, items: [
-    { id: 'c/G1.1', title: 'Still open', blocks: ['c/G1'] },
-    { id: 'c/G1.2', title: 'Also open', blocks: ['c/G1'] },
-  ] }) }, CW);
-  const g0 = await facts('c/G1');
-  if (!g0.id) { test.fail('the world: the goal c/G1 was not made: ' + short(g0)); return; }
-
-  test.subHeading('1. a goal with open items offers Close, his alone');
-  if ((g0.buttons || []).indexOf('close') !== -1) test.check('the goal offers Close while its items are open');
-  else test.fail(OWED + 'the goal with open items offers ' + short(g0.buttons));
-  const byAgent = await call('press', { id: 'c/G1', what: 'close' }, CW);
-  const stillOpen = await facts('c/G1');
-  if (byAgent.status !== 200 && stillOpen.status !== 'closed') test.check('an agent\'s Close on the goal is refused (' + short(byAgent.body && byAgent.body.code) + ')');
-  else test.fail('an agent closed the goal: ' + byAgent.status + ' ' + short(byAgent.body));
-
-  test.subHeading('2. pressed, the goal is closed and leaves the List');
-  const item0 = await facts('c/G1.1');
-  const pressed = await call('press', { id: 'c/G1', what: 'close' }, ANDY);
-  const g1 = await facts('c/G1');
-  if (pressed.status === 200 && g1.status === 'closed' && JSON.stringify(g1.buttons) === JSON.stringify(['reopen'])) test.check('his Close closes the goal, which then offers Reopen alone');
-  else test.fail(OWED + 'his Close answered ' + pressed.status + ' ' + short(pressed.body) + '; the goal reads ' + short({ status: g1.status, buttons: g1.buttons }));
-  const plain = await listed(false);
-  const all = await listed(true);
-  if (pressed.status === 200 && plain.indexOf('c/G1') === -1 && plain.indexOf('c/G1.1') === -1 && all.indexOf('c/G1') !== -1 && all.indexOf('c/G1.1') !== -1) test.check('the closed goal and its items are off the List, and Include Closed finds both');
-  else test.fail(OWED + 'after Close the List holds ' + short(plain) + '; with Include Closed ' + short(all));
-
-  test.subHeading('3. its open items stay as they are');
-  const item1 = await facts('c/G1.1');
-  if (pressed.status === 200 && item1.status === item0.status && item1.status !== 'closed' && item1.status !== 'done') test.check('c/G1.1 keeps its status (' + short(item1.status) + ')');
-  else test.fail(OWED + 'c/G1.1 went from ' + short(item0.status) + ' to ' + short(item1.status));
-
-  test.subHeading('4. Reopen brings it back');
-  const back = await call('press', { id: 'c/G1', what: 'reopen' }, ANDY);
-  const g2 = await facts('c/G1');
-  const again = await listed(false);
-  if (pressed.status === 200 && back.status === 200 && g2.status !== 'closed' && (g2.buttons || []).indexOf('close') !== -1 && again.indexOf('c/G1') !== -1) test.check('Reopen puts the goal back on the List, offering Close again');
-  else test.fail(OWED + 'Reopen answered ' + back.status + ' ' + short(back.body) + '; the goal reads ' + short({ status: g2.status, buttons: g2.buttons }) + '; listed ' + (again.indexOf('c/G1') !== -1));
-})().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
-  try { kid && kid.kill(); } catch (e) { /* gone */ }
-  setTimeout(function () {
-    try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ }
-    test.reportSuccessFailureCount();
-    process.exit(0);
-  }, 300);
+  test.subHeading('1. the List: the goal row');
+  await asks('List', list(true));
+  await straight('List', list(false));
+  test.subHeading('2. the goal\'s dialog');
+  await asks('dialog', dialog(true));
+  await straight('dialog', dialog(false));
+})().catch(function (e) { test.fail('the suite died: ' + (e && e.stack || e)); }).then(function () {
+  test.reportSuccessFailureCount();
+  process.exit(0);
 });
