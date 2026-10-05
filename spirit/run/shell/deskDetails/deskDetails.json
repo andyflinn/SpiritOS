@@ -4,6 +4,6 @@
   "icon": "THREAD",
   "hidden": true,
   "type": "dialog",
-  "intrinsic": true,
+  "intrinsic": false,
   "owner": "system"
 }
