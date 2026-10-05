@@ -1,8 +1,8 @@
 {
- "change": 15064,
+ "change": 15407,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T17:14:52.675Z",
+ "writtenAt": "2026-10-05T17:44:19.700Z",
  "items": [
   {
    "id": "goal/G5",
@@ -27,14 +27,18 @@
    "asks": 1,
    "half": false,
    "full": false,
-   "design": true,
-   "waiting": 2,
+   "design": false,
+   "waiting": 1,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-ubuntu",
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -941,16 +945,14 @@
    "id": "goal/G5.5",
    "title": "desk server: the logic andy/FACE.md Desk changes need (rules: add, edit, status, search, chat), so the UI never comes back to it",
    "goal": "goal/G5",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G5"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -958,9 +960,73 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "DESK SERVER: WHAT andy/FACE.md'S DESK CHANGES NEED FROM THE FACELESS SIDE, SO THE UI NEVER COMES BACK TO IT\n\nANDY, VERBATIM\n- 2026-10-05: \"this goal also needs a new item addressing desk changes mentionned in FACE.md\"\n- 2026-10-05: \"what this item is supposed to contain: only changes/upgrades in the faceless parts, so that the UI doesn't have to come back to the faceless parts. and is the desk server logic that i mean\"\n- 2026-10-05, on FACE.md's Musings section: \"is pure ui and doesn't belong here\"\n- andy/FACE.md, the data:\n**Rules are a new Table in desk.db, it's rows hold the following fields**:\n\n- key: \"rule/number\"\n- label: subject to the label rules in fieldRules\n- type: \"ui\" | \"code\" | \"design\" | \"desk\"\n- status: \"proposed\" | \"active\" | \"deleted\"\n- text: size restriction: one Kilobyte, or a pre-existing text type in fieldRules.js\n\nthe table is searchable for deskClient and UI, with the type and status values as filters, and label and text being searched. search results with bring back key, label, type and status.\n\nWHAT THE DESK SERVER GAINS (proposed, claude-windows)\n- rule.add {type, label, text}: a new rule/N, status proposed (the New bubble).\n- rule.text {key, text}: the rule's text, edited by him (\"rules are edited by the user\").\n- rule.status {key, status}: active or deleted, his alone (activate, an armed button, and delete).\n- rules.search {text, types, statuses}: bucket-bounded with the partial flag, matching label and text, answering key, label, type, status (the list, its 7 toggles; deskClient asks the same).\n- rule.get {key}: one rule's facts and text (ruleDetails).\n- A rule's chat: chat.add and item.chat under rule/N as for items; no cap or split triggers on it.\n- Checked at the door: type one of ui, code, design, desk; status one of proposed, active, deleted; label by fieldRules' label rule (64 bytes); text at most 1 KB.\n\nNOT HERE (face only, no server change): left-aligned chat, chat bubbles, Musings, the header area element, the tab and dialog themselves. Chat lines already carry who and when.\n\nOPEN\n- A table, as FACE.md says, or records in desk's one log like items (wsl-claude's question): the verbs above are the same either way.\n- The 1 KB text: a new type in fieldRules.js (core, needs your grant), or a desk-local limit.\n- May agents add a proposed rule themselves, or only you through the New bubble?\n- His Go.",
-   "version": 4,
-   "checks": [],
+   "box": "DESK SERVER: THE RULES, SO THE UI OF andy/FACE.md NEVER COMES BACK TO THE FACELESS SIDE\n\nTHE RULES TABLE (desk.db, apart from goals and items)\n- A rule: key rule/N, label, type (ui, code, design, desk), status (proposed, active, deleted), text.\n- History: a new version is a new row (who, when, text, status), never overwritten; the newest row is the rule, the older ones its proof. Changes are negotiated in the rule's chat first, so one version carries all of them.\n- No goal's replay, close or abandon touches a rule.\n\nTHE VERBS\n- rule.add {type, label, text}: a new rule/N, proposed; Andy and the agents alike.\n- rule.version {key, text, status}: one new version with the text and status he settled on, his one button, Andy alone.\n- rules.search {text, types, statuses}: label and text matched, the newest row per rule, answering key, label, type, status; bucket-bounded with the partial flag. The UI and deskClient ask the same.\n- rule.get {key}: one rule, newest row, with its text.\n- rule.history {key, before}: its older rows, bucket-bounded with the partial flag.\n- A rule's chat: chat.add and item.chat under rule/N, with no cap or split triggers.\n- Checked at the door: type and status from their lists; label by fieldRules' label rule (64 bytes); text a paragraph.\n\nTHE PARAGRAPH FIELD TYPE (core, js/fieldRules.js, grant G2)\n- Beside label (64) and description (128): a textarea field, at most 2048 bytes.\n- NFC like the label, but line breaks, tabs and spaces kept as typed (CRLF stored as LF); every other control or invisible character refused as the label refuses it. Its own normalize, since the label's collapses whitespace (fieldRules.js 113-116).\n\nNOT HERE (face only): the Rules tab, ruleDetails, chat and musings bubbles, left-aligned chat, the header-area element.\n\nANDY, VERBATIM\n- \"this goal also needs a new item addressing desk changes mentionned in FACE.md\"\n- \"what this item is supposed to contain: only changes/upgrades in the faceless parts, so that the UI doesn't have to come back to the faceless parts. and is the desk server logic that i mean\"\n- On Musings: \"is pure ui and doesn't belong here\"\n- Table: \"rules remain static and apply to all items. This concept has been mentioned before, without shape. this is my proposed shape. so rules don't worry about items, items need to worry about rules.\"\n- Field rules: \"what are the current sizes available?\", \"Does the desk have fieldRules ?\", \"don't applications have a app-scoped set of fielRules of their own? shouldn't they?\", \"it's a design pattern\", \"desk can \"slave\" field rules to node scope rules...\", \"or not\"\n- Paragraph: \"core needs a new field type: \"paragraph\", that would kind of fit the 1024 or 2048 byte size, and be useful to others.\" / \"if agreed upon i will issue a grant for fieldRules.js\" / \"paragraph field type in fieldRules.js, same characters allowed as label, Byte limit is 1024,\" / \"change in fieldRules.js is granted.\" / \"2048\" / \"the field belongs to textarea kind of fields, which newlines and formatting preserved....\" / \"2048 for now.\" / \"change the grant request G1 to 2048 bytes\"\n- History: \"might be a good idea to have a history of legal standards, it's a form of proof, too.\" / \"add the history mechanism to box\"\n- Agents adding rules: \"why not?\"\n- Versions: \"the current shape might generate 15 history records in one rule-detail-chat. i prefer to negotiate, and create an updated version with one button/verb that belongs to me.\"\n- andy/FACE.md: \"Rules are a new Table in desk.db\" with key, label, type, status, text; \"the table is searchable for deskClient and UI, with the type and status values as filters, and label and text being searched. search results with bring back key, label, type and status.\"\n\nOPEN: grant G2; his Go.",
+   "version": 16,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Rules as a table in desk.db (as FACE.md says), or as records in desk's one log like items (wsl-claude)? The verbs are the same either way.",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T17:17:33.883Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "The 1 KB rule text: a new type in fieldRules.js (core, needs your grant), or a limit inside desk only?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T17:27:28.000Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "May agents add a proposed rule themselves, or only you through the New bubble (agents proposing in the rule chat)?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T17:24:26.829Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "The paragraph field type: 1024 or 2048 bytes?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T17:29:27.488Z"
+    },
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "Grant: change spirit/run/js/fieldRules.js to add the paragraph field type (label characters, 1024 bytes).",
+     "test": "",
+     "state": "failed",
+     "by": "claude-windows",
+     "at": "2026-10-05T17:36:07.134Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Rule history: every edit and status change kept as a row (who, when, what it set), never overwritten, with rule.history to search them: yes?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T17:36:09.336Z"
+    },
+    {
+     "number": "G2",
+     "kind": "G",
+     "words": "Grant: change spirit/run/js/fieldRules.js to add the paragraph field type (a textarea field, 2048 bytes).",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-05T17:42:59.761Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -1006,6 +1072,281 @@
      "by": "claude-windows",
      "at": "2026-10-05T17:14:35.867Z",
      "text": "taking: G5.5's box down to the desk server logic."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:14:54.132Z",
+     "text": "G5.5 is now only the desk server logic (box and title): rule.add, rule.text, rule.status, rules.search, rule.get, a rule's chat, and the checks at the door; the face-only parts are listed as not here.\nThree questions in its box: table or records, where the 1 KB text limit lives, and whether agents may add proposed rules."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:17:05.049Z",
+     "text": "Q1: Rules as a table in desk.db (as FACE.md says), or as records in desk's one log like items (wsl-claude)? The verbs are the same either way.\n\nrules remain static and apply to all items. This concept has been mentioned before, without shape. this is my proposed shape. so rules don't worry about items, items need to worry about rules."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:17:21.671Z",
+     "text": "wsl: understood, a table then, as FACE.md says; I withdraw records. It also keeps rules out of the item log desk replays on every read (walkState), so they stay quick to read on their own."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:17:27.978Z",
+     "text": "taking: Q1's answer into G5.5's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:17:35.445Z",
+     "text": "In the box: rules are their own table, apart from goals and items; Q1 off.\n- For: a rule outlives every goal, and agents can read the active rules each sitting the way they read AGENTS today.\n- Against: a row edited in place forgets its old text, where items keep every change.\nKeep each rule's earlier texts, or only the current one?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:18:13.891Z",
+     "text": "Q2: The 1 KB rule text: a new type in fieldRules.js (core, needs your grant), or a limit inside desk only?\n\nwhat are the current sizes available?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:18:29.028Z",
+     "text": "wsl: fieldRules.js has two sizes today, both in bytes: a label, 64 (line 60), and a description, 128 (line 200). Nothing larger.\nSo a 1 KB rule text is a new size either way: a third type there (core, your grant) or desk's own limit."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:19:55.228Z",
+     "text": "The question is:\n\nDoes the desk have fieldRules ?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:20:10.808Z",
+     "text": "wsl: yes, the desk server already loads fieldRules: profile.set checks an agent's name with fieldRules.problem (desk.js 1172).\nIts other limits are its own: a chat line or box must fit one answer (appClient.ANSWER_MAX, desk.js 86-112), not a fieldRules size."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:20:12.348Z",
+     "text": "taking: does desk use fieldRules."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:20:23.720Z",
+     "text": "Barely: desk checks one field with fieldRules today, an agent's profile name (desk.js 1172). Its other sizes are its own, measured against one answer: chat lines (CHAT_ROOM, desk.js 112) and the box (half and full of ANSWER_MAX, desk.js 562-566).\nSo a desk-only 1 KB limit would be a third desk-owned size; a fieldRules type would put it beside label and description for every app."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:21:11.114Z",
+     "text": "don't applications have a app-scoped set of fielRules of their own? shouldn't they?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:21:30.101Z",
+     "text": "wsl: not today: fieldRules.js is one core file for everybody (core, shell and desk use it); no app declares fields of its own, and no manifest has field sizes.\nIf they should: desk.json could declare its fields as it declares its args ({name, maxBytes}), checked by one generic byte check in fieldRules, a single core change, after which no app needs core for a new size.\nThat is a shape for you to choose; I would not build it inside G5.5 without your yes."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:21:35.431Z",
+     "text": "it's a design pattern"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:21:47.709Z",
+     "text": "wsl: to be sure I read you: apps declare their own field sizes in their .json (desk.json: rule text 1 KB), and fieldRules gets one generic check for them (one core change, your grant).\nIs that the pattern, and inside G5.5 or as its own item?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:22:32.978Z",
+     "text": "taking: app-scoped fieldRules."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:22:36.396Z",
+     "text": "Not today: there is one fieldRules.js, in core (js/fieldRules.js), and no app has its own.\n- They should, I think: desk's own fieldRules.js beside desk.js holds desk's sizes (rule text 1 KB, later others), and takes label and description from core's, so a label means the same everywhere.\n- That keeps core untouched (no grant) and each app's sizes in one place of its own.\nShall G5.5 shape it that way (process/js/desk/fieldRules.js)?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:23:02.405Z",
+     "text": "desk can \"slave\" field rules to node scope rules..."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:23:09.870Z",
+     "text": "or not"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:23:24.775Z",
+     "text": "taking: the fieldRules pattern into G5.5's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:23:35.715Z",
+     "text": "In the box: desk's own fieldRules (process/js/desk/fieldRules.js), slaved to the node's: label and description from core unchanged, the 1 KB rule text added by desk. Q2 off."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:23:48.591Z",
+     "text": "wsl: your last word on it was \"or not\", and Q2 is now off with desk's own fieldRules in the box; is that settled, or still open?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:23:55.027Z",
+     "text": "Too fast of me: the box now marks desk's own fieldRules as proposed, not decided, and Q2 is red again. Slaved to the node's (label and description shared), or standing alone?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:23:58.879Z",
+     "text": "Q3: May agents add a proposed rule themselves, or only you through the New bubble (agents proposing in the rule chat)?\n\nwhy not?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:24:21.009Z",
+     "text": "taking: Q3's answer into G5.5's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:24:28.345Z",
+     "text": "In the box: agents may add proposed rules too; editing the text, activate and delete stay yours. Q3 off."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:26:49.745Z",
+     "text": "Q2: The 1 KB rule text: a new type in fieldRules.js (core, needs your grant), or a limit inside desk only?\n\ncore needs a new field type: \"paragraph\", that would kind of fit the 1024 or 2048 byte size, and be useful to others.\n\nif agreed upon i will issue a grant for fieldRules.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:27:13.474Z",
+     "text": "wsl agrees: one core \"paragraph\" type beside label (64) and description (128), useful to others too.\nSize: one answer holds 8,377 bytes (appClient.ANSWER_MAX), and rule.get sends the text in one; both fit, but JSON escaping can grow a text, so 1024 leaves more room. I would take 1024."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:27:21.438Z",
+     "text": "taking: the paragraph type."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:27:29.551Z",
+     "text": "claude-windows agrees: a paragraph type in core fits beside label and description, and chat or notes elsewhere can use it. Either size fits easily in one answer (about 8 KB); rules.search answers no text at all, only rule.get does.\n- I'd take 1024, FACE.md's \"one Kilobyte\"; 2048 if you want room.\nWhich size? Then a red grant on js/fieldRules.js goes on this item for you."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:28:43.832Z",
+     "text": "paragraph field type in fieldRules.js, same characters allowed as label, Byte limit is 1024,\n\nchange in fieldRules.js is granted."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:29:02.855Z",
+     "text": "wsl: one consequence of \"same characters as label\": a label collapses every run of whitespace, line breaks included, to one space (fieldRules.js 116), so a paragraph is one line of text, no line breaks. Intended?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:29:13.050Z",
+     "text": "taking: your paragraph ruling and grant into G5.5."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:29:28.940Z",
+     "text": "In the box: paragraph, the label's characters, 1024 bytes; Q4 off. A red G for js/fieldRules.js is on the item for your press (the commit check reads grants from it).\n- One catch: the label's rule turns every line break into a space (fieldRules.js 113-116), so a rule text would be one long line.\nParagraph without line breaks, or keep line breaks?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:29:47.124Z",
+     "text": "Q4: The paragraph field type: 1024 or 2048 bytes?\n\n2048"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:30:11.317Z",
+     "text": "Your two words differ (\"Byte limit is 1024\", then \"2048\" on Q4); the box now takes the later, 2048. The red G still reads 1024 in its words: press it as covering 2048, or say 1024 stays."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:30:55.114Z",
+     "text": "the field belongs to textarea kind of fields, which newlines and formatting preserved...."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:31:15.061Z",
+     "text": "wsl: then paragraph keeps the label's character checks but not its whitespace rule: no collapsing (fieldRules.js 116), and line break (U+000A) and tab let through, which the label's invisible-character check refuses today (fieldRules.js 81-83, U+0000-001F)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:31:19.413Z",
+     "text": "taking: textarea ruling into G5.5's box."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:31:32.126Z",
+     "text": "2048 for now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:31:33.315Z",
+     "text": "In the box: paragraph is a textarea field, 2048 bytes, line breaks, tabs and spaces kept as typed, other control characters refused. Left on G5.5: does a rule keep its earlier texts, and your Go (plus the red G)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:32:37.914Z",
+     "text": "might be a good idea to have a history of legal standards, it's a form of proof, too."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:32:53.241Z",
+     "text": "wsl: one way that keeps it to the rules table: never overwrite a text, add a row per change (key, version, text, status, at, by); the newest row is the rule, the older ones its proof.\nrules.search reads only the newest per key."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:33:04.304Z",
+     "text": "taking: rule history into G5.5's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:33:10.894Z",
+     "text": "In the box (proposed): every edit and status change of a rule kept as a row, never overwritten, the rule showing the newest; one more verb, rule.history, searches them.\nKeep the history that way, yes?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:35:31.409Z",
+     "text": "change the grant request G1 to 2048 bytes\n\nadd the history mechanism to box\n\ncap"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:35:49.447Z",
+     "text": "taking: G1 to 2048, history into the box, cap of G5.5."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:36:39.421Z",
+     "text": "Done: G1 retired (it read 1024) and G2 asks for fieldRules.js at 2048; history is in the box; the box is capped. Q5 off. Left: G2 and your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:37:58.014Z",
+     "text": "in rule details, i get a button, that accepts the new changes in text and status, to push the previous state into history?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:38:12.130Z",
+     "text": "wsl: yes, and the server side is already in the shape: that button sends rule.text or rule.status, and the server writes a new row, so the previous state is history by itself; nothing more server-side.\nThe button itself is the face part, for the UI goal."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:38:17.344Z",
+     "text": "Yes, as shaped: your save of the text (rule.text) and your activate or delete (rule.status) each add a new row; the server does that, so the previous state lands in history with no extra step.\nOne button for text and status together, or the save plus FACE.md's armed activate and delete?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T17:40:42.411Z",
+     "text": "the current shape might generate 15 history records in one rule-detail-chat. i prefer to negotiate, and create an updated version with one button/verb that belongs to me."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T17:40:58.450Z",
+     "text": "wsl: so one owner-only verb, say rule.accept {key, text, status}, writes one new row with both; rule.text and rule.status go, and history is one row per accept.\nOne question: your draft between accepts, kept on the server (it survives a reload, and agents can read it), or only in your textbox until you accept?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:41:14.783Z",
+     "text": "taking: one version verb into G5.5's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T17:41:22.258Z",
+     "text": "In the box: rule.text and rule.status are gone; one verb, rule.version {key, text, status}, yours alone, writes one new version after the chat has settled it.\nFACE.md's armed activate and delete: folded into that one button, or kept as quick ways to set the status?"
     }
    ]
   }
