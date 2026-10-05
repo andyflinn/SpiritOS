@@ -1,8 +1,8 @@
 {
- "change": 17366,
+ "change": 17506,
  "line": 8492,
  "goal": "goal/G6",
- "writtenAt": "2026-10-05T22:13:56.669Z",
+ "writtenAt": "2026-10-05T22:23:05.304Z",
  "items": [
   {
    "id": "goal/G6",
@@ -30,25 +30,22 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
-   "waiting": 8,
+   "design": false,
+   "waiting": 6,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-ubuntu",
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "GOAL/G6: THE DESK PORTION OF andy/FACE.md, IN LINE WITH goal/G5\n\nANDY, VERBATIM\n- 2026-10-05: \"prime goal with desk-portion of FACE.md\"\n- 2026-10-05: \"adapt box to be in line with G5 changes\"\n- To Q1 (ruleDetails shows older versions?): \"No. the agents know it, and can bring it up, if neccessary.\"\n- To Q2 (the header-area element: part of G6 or its own item?): \"core. grant will be issued.\"\n\nThe source is andy/FACE.md, section \"spirit/run/shell/desk/desk.js\"; below it is read with his goal/G5 rulings, which win where they differ. The server side is built (goal/G5.5, G5.6, G5.7); this goal is the face.\n\nGENERAL (FACE.md)\n- All my chat-log entries left-aligned, not right-aligned.\n- Chat log entries for everybody in bubbles, separated vertically by 1em.\n- The header area, as in desk and deskDetails, a shell element every app can use: core, his grant to be issued on the files it touches.\n\nA NEW TAB, \"Rules\", BETWEEN \"Team\" AND \"Musings\"\n- The data is the desk server's rules table (goal/G5.5): key rule/N, label (the label rule, 64 bytes), type ui | code | design | desk, status proposed | active | deleted, text a paragraph of up to 2048 bytes with line breaks kept (G5.5: \"2048 for now.\", in place of FACE.md's one Kilobyte).\n- 1. The new bubble: type, label and text, then a new button: rule.add, the rule comes in proposed. Agents may add one too (G5.5: \"why not?\").\n- 2. The search bubble: a search box and 7 toggles (4 types, 3 statuses): rules.search {text, types, statuses}, the newest version of each rule, answering key, label, type, status.\n- 3. The list, a row per rule: status (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), label, type, key. A row opens ruleDetails.\n\nTHE ruleDetails DIALOG (a new dialog app beside deskDetails)\n- The header area, its top edge held under the shell's titlebar while the dialog scrolls: title key and label; buttons:\n  - the version button, his alone: rule.version {key, text, status} makes the draft one new version (G5.5: \"i prefer to negotiate, and create an updated version with one button/verb that belongs to me.\");\n  - activate (armable) and delete, each one quick version with that status (G5.5 Q6).\n- The textbox of the rule, edited by him; what he types is saved as his draft (rule.draft, on the server, read back by rule.get; it writes no history), until the version button (G5.5 Q7).\n- No older versions in the dialog: the agents know rule.history and bring a version up when needed.\n- The chat area, styled like deskDetails': chat.add and item.chat under rule/N; no cap or split triggers. \"in this chat, the agents may propose alterations to parts of the rule, or advocate for status changes for this rule.\"\n\nTHE \"Musings\" TAB (FACE.md; G5.5: \"is pure ui\")\n- Each musing in its own bubble, maybe with the header area's background colour.\n- 1em between the input textarea and each bubble.\n\nWHAT THE FACE NEEDS TO KNOW BESIDES\n- Every rule change is pushed: rules.md in the repo, and a desk line in the group chat (goal/G5.8).\n- A goal now offers Close (goal/G5.6); the \"are you sure?\" while its items are open is the face's.\n\nOPEN\n- His Go per item.",
-   "version": 4,
+   "box": "GOAL/G6: THE DESK PORTION OF andy/FACE.md, IN LINE WITH goal/G5\n\nANDY, VERBATIM\n- 2026-10-05: \"prime goal with desk-portion of FACE.md\"\n- 2026-10-05: \"adapt box to be in line with G5 changes\"\n- To Q1 (ruleDetails shows older versions?): \"No. the agents know it, and can bring it up, if neccessary.\"\n- To Q2 (the header-area element: part of G6 or its own item?): \"core. grant will be issued.\"\n\nThe source is andy/FACE.md, section \"spirit/run/shell/desk/desk.js\"; below it is read with his goal/G5 rulings, which win where they differ. The server side is built (goal/G5.5, G5.6, G5.7); this goal is the face.\n\nGENERAL (FACE.md)\n- All my chat-log entries left-aligned, not right-aligned.\n- Chat log entries for everybody in bubbles, separated vertically by 1em.\n- The header area, as in desk and deskDetails, a shell element every app can use: core, his grant to be issued on the files it touches.\n\nA NEW TAB, \"Rules\", BETWEEN \"Team\" AND \"Musings\"\n- The data is the desk server's rules table (goal/G5.5): key rule/N, label (the label rule, 64 bytes), type ui | code | design | desk, status proposed | active | deleted, text a paragraph of up to 2048 bytes with line breaks kept (G5.5: \"2048 for now.\", in place of FACE.md's one Kilobyte).\n- 1. The new bubble: type, label and text, then a new button: rule.add, the rule comes in proposed. Agents may add one too (G5.5: \"why not?\").\n- 2. The search bubble: a search box and 7 toggles (4 types, 3 statuses): rules.search {text, types, statuses}, the newest version of each rule, answering key, label, type, status.\n- 3. The list, a row per rule: status (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), label, type, key. A row opens ruleDetails.\n\nTHE ruleDetails DIALOG (a new dialog app beside deskDetails)\n- The header area, its top edge held under the shell's titlebar while the dialog scrolls: title key and label; buttons:\n  - the version button, his alone: rule.version {key, text, status} makes the draft one new version (G5.5: \"i prefer to negotiate, and create an updated version with one button/verb that belongs to me.\");\n  - activate (armable) and delete, each one quick version with that status (G5.5 Q6).\n- The textbox of the rule, edited by him; what he types is saved as his draft (rule.draft, on the server, read back by rule.get; it writes no history), until the version button (G5.5 Q7).\n- No older versions in the dialog: the agents know rule.history and bring a version up when needed.\n- The chat area, styled like deskDetails': chat.add and item.chat under rule/N; no cap or split triggers. \"in this chat, the agents may propose alterations to parts of the rule, or advocate for status changes for this rule.\"\n\nTHE \"Musings\" TAB (FACE.md; G5.5: \"is pure ui\")\n- Each musing in its own bubble, maybe with the header area's background colour.\n- 1em between the input textarea and each bubble.\n\nWHAT THE FACE NEEDS TO KNOW BESIDES\n- Every rule change is pushed: rules.md in the repo, and a desk line in the group chat (goal/G5.8).\n- A goal now offers Close (goal/G5.6); the \"are you sure?\" while its items are open is the face's.\n\nWaiting: his Go (no open question).\n- His Go per item.",
+   "version": 5,
    "checks": [
     {
      "number": "Q1",
@@ -297,6 +294,41 @@
      "by": "claude-windows",
      "at": "2026-10-05T22:13:54.823Z",
      "text": "taking: a new item G6.8 for your split ruling."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T22:14:07.308Z",
+     "text": "New item goal/G6.8: a sub-goal only by your split, its box only references to its blockers, never a code item; your line verbatim and a proposed shape (split: [id] in session.set)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T22:14:16.900Z",
+     "text": "this will cause changes in deskServer, correct?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T22:14:32.629Z",
+     "text": "wsl: yes, in the desk server (desk.js): the line that marks a sub-goal today (around line 405) changes, and session.set takes the split.\ndesk.js is not core, so no grant is needed."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T22:14:39.529Z",
+     "text": "Yes: G6.8 changes the desk server (desk.js: session.set takes split, the sub-goal mark and the code mark follow it) and its test deskLimbo; G6.7 changes coreFiles.js and commitCheck.js. The other G6 items are shell only (the face)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T22:19:23.444Z",
+     "text": "all green now?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T22:20:19.075Z",
+     "text": "taking: the OPEN lines left in G6's boxes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T22:21:03.731Z",
+     "text": "Yes, all green: no open question or grant on G6 or G6.1 to G6.8, and the leftover OPEN lines in the boxes now read \"Waiting: his Go\".\nG6 is in design, so nothing is built and no red is due until your End design and Go; I am writing none."
     }
    ]
   },
@@ -324,8 +356,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "THE HEADER-AREA SHELL ELEMENT\n\nWHAT IT IS\n- One shell element, the header area: an empty div an app fills, held under the shell's titlebar while the app scrolls, opaque and above the content. Nothing else: what goes inside stays each app's.\n\nSHAPE\n- spirit/run/shell/js/appHeader/appHeader.js, one file per element as iconSelector.js is: it adds createAppHeader() to window.spiritElements, which the shell hands to apps as api.ui.elements.\n- createAppHeader() returns the div: position sticky, its top the titlebar's measured height, measured in one place and again when the window resizes, the header background, a z-index above the content.\n- index.html loads it beside iconSelector.js (index.html 1425).\n- desk (desk.js 829-836, 958) and deskDetails (deskDetails.js 74, 95) move onto it, and their two copies of that div and its measuring are removed.\n- ruleDetails (goal/G6.4) uses it from the start.\n\nCORE AND GRANT (after goal/G6.7)\n- Under the core rule G6.7 lands (his answers there), spirit/run/shell/js/appHeader/appHeader.js and spirit/run/index.html are core; desk.js and deskDetails.js are apps, not core. One G check on this item names the two core files.\n- Blocked by goal/G6.7, so the commit check reads the new rule when this is built.\n\nANDY, VERBATIM\n- FACE.md: \"shell app apps/dialog apps can have a header area. this header area behaves like the header area in both desk and deskDetails. we want a shell element that facilitates that.\"\n- FACE.md, ruleDetails: \"it's upper edge sticks to the the lower edge of the shell's titlebar, when the user scrolls down in the dialog\"\n- \"split as proposed\" / \"core. grant will be issued.\" / \"the shape only produces the div container for the app to fill in, and provides only the sticking functionality?\" / \"fill in the shape and\" \"cap\" / \"the OPEN item here is no longer relevant.\" / \"huh, shouldn't it be: Grant: add spirit/run/shell/js/appHeader/appHeader.js (core) what you do in spirit/run/shell/deskDetails/deskDetails.js etc... needs no grant.\"\n\nBlocks goal/G6.4.\n\nOPEN: his grant on the two core files; his Go.",
-   "version": 4,
+   "box": "THE HEADER-AREA SHELL ELEMENT\n\nWHAT IT IS\n- One shell element, the header area: an empty div an app fills, held under the shell's titlebar while the app scrolls, opaque and above the content. Nothing else: what goes inside stays each app's.\n\nSHAPE\n- spirit/run/shell/js/appHeader/appHeader.js, one file per element as iconSelector.js is: it adds createAppHeader() to window.spiritElements, which the shell hands to apps as api.ui.elements.\n- createAppHeader() returns the div: position sticky, its top the titlebar's measured height, measured in one place and again when the window resizes, the header background, a z-index above the content.\n- index.html loads it beside iconSelector.js (index.html 1425).\n- desk (desk.js 829-836, 958) and deskDetails (deskDetails.js 74, 95) move onto it, and their two copies of that div and its measuring are removed.\n- ruleDetails (goal/G6.4) uses it from the start.\n\nCORE AND GRANT (after goal/G6.7)\n- Under the core rule G6.7 lands (his answers there), spirit/run/shell/js/appHeader/appHeader.js and spirit/run/index.html are core; desk.js and deskDetails.js are apps, not core. One G check on this item names the two core files.\n- Blocked by goal/G6.7, so the commit check reads the new rule when this is built.\n\nANDY, VERBATIM\n- FACE.md: \"shell app apps/dialog apps can have a header area. this header area behaves like the header area in both desk and deskDetails. we want a shell element that facilitates that.\"\n- FACE.md, ruleDetails: \"it's upper edge sticks to the the lower edge of the shell's titlebar, when the user scrolls down in the dialog\"\n- \"split as proposed\" / \"core. grant will be issued.\" / \"the shape only produces the div container for the app to fill in, and provides only the sticking functionality?\" / \"fill in the shape and\" \"cap\" / \"the OPEN item here is no longer relevant.\" / \"huh, shouldn't it be: Grant: add spirit/run/shell/js/appHeader/appHeader.js (core) what you do in spirit/run/shell/deskDetails/deskDetails.js etc... needs no grant.\"\n\nBlocks goal/G6.4.\n\nWaiting: his Go (no open question).",
+   "version": 5,
    "checks": [
     {
      "number": "G1",
@@ -627,8 +659,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "CHAT ENTRIES LEFT-ALIGNED, IN BUBBLES\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nFACE.md: \"I want all my chat-log entries to be left-aligned, not right-aligned.\" / \"i want chat log entries for everybody to display in bubbles, separated vertically be 1em space.\"\n\nWhere: the item chats of desk and deskDetails (shell/desk, shell/deskDetails); layout and CSS only, no server change.\n\nOPEN: his Go.",
-   "version": 1,
+   "box": "CHAT ENTRIES LEFT-ALIGNED, IN BUBBLES\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nFACE.md: \"I want all my chat-log entries to be left-aligned, not right-aligned.\" / \"i want chat log entries for everybody to display in bubbles, separated vertically be 1em space.\"\n\nWhere: the item chats of desk and deskDetails (shell/desk, shell/deskDetails); layout and CSS only, no server change.\n\nWaiting: his Go (no open question).",
+   "version": 2,
    "checks": [],
    "chat": []
   },
@@ -655,8 +687,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "MUSINGS IN BUBBLES\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nFACE.md: \"each musing in the log should be in a separate bubble, possibly with the same background color as the header area.\" / \"vertical spacing between input text area and each bubble in the log: 1em\". Andy in goal/G5.5: \"is pure ui\".\n\nWhere: shell/desk's Musings tab; layout and CSS only.\n\nOPEN: his Go.",
-   "version": 1,
+   "box": "MUSINGS IN BUBBLES\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nFACE.md: \"each musing in the log should be in a separate bubble, possibly with the same background color as the header area.\" / \"vertical spacing between input text area and each bubble in the log: 1em\". Andy in goal/G5.5: \"is pure ui\".\n\nWhere: shell/desk's Musings tab; layout and CSS only.\n\nWaiting: his Go (no open question).",
+   "version": 2,
    "checks": [],
    "chat": []
   },
@@ -685,8 +717,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "ruleDetails, THE NEW DIALOG APP\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\n- The header area (goal/G6.1), its top edge held under the titlebar: title key and label; buttons: the version button, his alone (rule.version {key, text, status}: \"i prefer to negotiate, and create an updated version with one button/verb that belongs to me.\"), activate (armable) and delete, each one quick version with that status.\n- The textbox of the rule, edited by him, saved as his draft (rule.draft; rule.get reads it back) until the version button.\n- No older versions shown (Andy, to G6 Q1: \"No. the agents know it, and can bring it up, if neccessary.\").\n- The chat area, styled like deskDetails': chat.add and item.chat under rule/N; \"this box does NOT have triggers like cap and split, because the text is edited by the user.\"\n\nWhere: a new shell app, shell/ruleDetails, beside shell/deskDetails. Blocked by goal/G6.1; blocks goal/G6.5.\n\nOPEN: his Go.",
-   "version": 1,
+   "box": "ruleDetails, THE NEW DIALOG APP\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\n- The header area (goal/G6.1), its top edge held under the titlebar: title key and label; buttons: the version button, his alone (rule.version {key, text, status}: \"i prefer to negotiate, and create an updated version with one button/verb that belongs to me.\"), activate (armable) and delete, each one quick version with that status.\n- The textbox of the rule, edited by him, saved as his draft (rule.draft; rule.get reads it back) until the version button.\n- No older versions shown (Andy, to G6 Q1: \"No. the agents know it, and can bring it up, if neccessary.\").\n- The chat area, styled like deskDetails': chat.add and item.chat under rule/N; \"this box does NOT have triggers like cap and split, because the text is edited by the user.\"\n\nWhere: a new shell app, shell/ruleDetails, beside shell/deskDetails. Blocked by goal/G6.1; blocks goal/G6.5.\n\nWaiting: his Go (no open question).",
+   "version": 2,
    "checks": [],
    "chat": []
   },
@@ -714,8 +746,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "THE RULES TAB\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nA new tab \"Rules\" between \"Team\" and \"Musings\":\n1. The new bubble: type, label, text and a new button: rule.add (the rule comes in proposed; agents may add one too).\n2. The search bubble: a search box and 7 toggles (ui, code, design, desk; proposed, active, deleted): rules.search {text, types, statuses}.\n3. The list, a row per rule: status (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), label, type, key; a row opens ruleDetails (goal/G6.4).\nA rule's text is a paragraph of up to 2048 bytes, line breaks kept (goal/G5.5).\n\nWhere: shell/desk. Blocked by goal/G6.4.\n\nOPEN: his Go.",
-   "version": 1,
+   "box": "THE RULES TAB\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nA new tab \"Rules\" between \"Team\" and \"Musings\":\n1. The new bubble: type, label, text and a new button: rule.add (the rule comes in proposed; agents may add one too).\n2. The search bubble: a search box and 7 toggles (ui, code, design, desk; proposed, active, deleted): rules.search {text, types, statuses}.\n3. The list, a row per rule: status (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), label, type, key; a row opens ruleDetails (goal/G6.4).\nA rule's text is a paragraph of up to 2048 bytes, line breaks kept (goal/G5.5).\n\nWhere: shell/desk. Blocked by goal/G6.4.\n\nWaiting: his Go (no open question).",
+   "version": 2,
    "checks": [],
    "chat": []
   },
@@ -723,11 +755,9 @@
    "id": "goal/G6.7",
    "title": "the core rule fixed: coreFiles.js moved to spirit/run/js/, free of desk, counting spirit/run/shell/js/; the intrinsic mark off the desk parts",
    "goal": "goal/G6",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G6",
     "goal/G6.1",
@@ -738,7 +768,7 @@
     "goal/G6.6"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -746,8 +776,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "THE CORE RULE FIXED (before anything else in G6)\n\nANDY, VERBATIM (under goal/G6.1, 2026-10-05)\n- \"i never saw coreFiles.js\" / \"tell me, from a system design point of view, which way is correct?\"\n- \"well, we'll fix that, before anything else.\"\n- \"1. coreFiles.js goes in \"spirit/run/js/coreFiles.js\", with NO dependencies on any desk stuff, and it is updated to include all files in spirit/run/shell/js\"\n- \"2. remove the intrinsic mark in desk-related components, obviously \"spirit/run/shell/desk/desk.json\" doesn't mark the desk app as intrinsic, otherwise it would've been part of the spirit group in the shell, which it wasn't and that's why i didn't notice your assumption that desk was intrinsic. so remove that from desk-related server components as well.\"\n- To Q1 (the other intrinsic apps): \"apps in spirit/run/shell/<appname>/   are intrinsic (core) if the manifest says so.\"\n- To Q2 (index.html, elements.css, tokens.css core?): \"yes.\"\n- To Q3 (agents' include lists): \"leave it to each node, and correct AGENT_ONBOARDING accordingly.\"\n- \"so remove GRANT G1 and/or replace it with a grant to add coreFiles.js to spirit/run/js/\" / \"OR make a new item that all others depend on.\"\n\nWHERE IT COMES FROM\n- coreFiles.js was written in the goal/G4.23 build (fd6710d6, 2026-10-04) from his line \"basicall run/js and intrinsics\"; it was never shown to him. It lives at spirit/run/process/js/desk/coreFiles.js, read by commitCheck.js (line 162, require('./coreFiles.js')) and spirit/test/deskScopes.js.\n- Today: core = spirit/run/js/ plus every shell app whose manifest says intrinsic: true; spirit/run/shell/js/ is not core. By design it is the other way: core is what every app stands on (spirit/run/js/, spirit/run/shell/js/), an app is never core; intrinsic is a deployment mark, not a core mark.\n\nWHAT CHANGES\n1. coreFiles.js moves to spirit/run/js/coreFiles.js, with no require of anything desk; commitCheck.js and deskScopes.js require it there; the old file is removed.\n2. Core is: every file under spirit/run/js/ and spirit/run/shell/js/, spirit/run/index.html, spirit/run/shell/elements.css and spirit/run/shell/tokens.css, and every app in spirit/run/shell/<app>/ whose manifest says intrinsic: true (Q1, Q2).\n3. DONE by Andy (6698275a, \"i just flipped it myself, and pushed.\"): the intrinsic mark is off deskDetails.json, so deskDetails is no longer core. The desk parts: of them only spirit/run/shell/deskDetails/deskDetails.json carries it (desk.json, process/js/desk and deskClient do not).\n\nWHAT THE INTRINSIC MARK ALSO DOES (so nothing shifts unseen)\n- It puts an app on every node's default include list (includeList.js, intrinsicShell and intrinsicServers): dropping it from deskDetails means a node that does not list shell/deskDetails loses the dialog. His node lists it; agents' nodes may not. Left to each node (Q3); AGENT_ONBOARDING.md says so, and how an agent's node lists shell/deskDetails if it wants the dialog.\n- The apps shelf reads it for how an app is drawn (shell/apps/apps.js 75, 107, 125; claude-ubuntu).\n\nGRANT\n- spirit/run/js/coreFiles.js is itself core: the G check on this item asks for it.\n\nBLOCKS every other item of goal/G6.\n\nOPEN: his grant; his Go.",
-   "version": 3,
+   "box": "THE CORE RULE FIXED (before anything else in G6)\n\nANDY, VERBATIM (under goal/G6.1, 2026-10-05)\n- \"i never saw coreFiles.js\" / \"tell me, from a system design point of view, which way is correct?\"\n- \"well, we'll fix that, before anything else.\"\n- \"1. coreFiles.js goes in \"spirit/run/js/coreFiles.js\", with NO dependencies on any desk stuff, and it is updated to include all files in spirit/run/shell/js\"\n- \"2. remove the intrinsic mark in desk-related components, obviously \"spirit/run/shell/desk/desk.json\" doesn't mark the desk app as intrinsic, otherwise it would've been part of the spirit group in the shell, which it wasn't and that's why i didn't notice your assumption that desk was intrinsic. so remove that from desk-related server components as well.\"\n- To Q1 (the other intrinsic apps): \"apps in spirit/run/shell/<appname>/   are intrinsic (core) if the manifest says so.\"\n- To Q2 (index.html, elements.css, tokens.css core?): \"yes.\"\n- To Q3 (agents' include lists): \"leave it to each node, and correct AGENT_ONBOARDING accordingly.\"\n- \"so remove GRANT G1 and/or replace it with a grant to add coreFiles.js to spirit/run/js/\" / \"OR make a new item that all others depend on.\"\n\nWHERE IT COMES FROM\n- coreFiles.js was written in the goal/G4.23 build (fd6710d6, 2026-10-04) from his line \"basicall run/js and intrinsics\"; it was never shown to him. It lives at spirit/run/process/js/desk/coreFiles.js, read by commitCheck.js (line 162, require('./coreFiles.js')) and spirit/test/deskScopes.js.\n- Today: core = spirit/run/js/ plus every shell app whose manifest says intrinsic: true; spirit/run/shell/js/ is not core. By design it is the other way: core is what every app stands on (spirit/run/js/, spirit/run/shell/js/), an app is never core; intrinsic is a deployment mark, not a core mark.\n\nWHAT CHANGES\n1. coreFiles.js moves to spirit/run/js/coreFiles.js, with no require of anything desk; commitCheck.js and deskScopes.js require it there; the old file is removed.\n2. Core is: every file under spirit/run/js/ and spirit/run/shell/js/, spirit/run/index.html, spirit/run/shell/elements.css and spirit/run/shell/tokens.css, and every app in spirit/run/shell/<app>/ whose manifest says intrinsic: true (Q1, Q2).\n3. DONE by Andy (6698275a, \"i just flipped it myself, and pushed.\"): the intrinsic mark is off deskDetails.json, so deskDetails is no longer core. The desk parts: of them only spirit/run/shell/deskDetails/deskDetails.json carries it (desk.json, process/js/desk and deskClient do not).\n\nWHAT THE INTRINSIC MARK ALSO DOES (so nothing shifts unseen)\n- It puts an app on every node's default include list (includeList.js, intrinsicShell and intrinsicServers): dropping it from deskDetails means a node that does not list shell/deskDetails loses the dialog. His node lists it; agents' nodes may not. Left to each node (Q3); AGENT_ONBOARDING.md says so, and how an agent's node lists shell/deskDetails if it wants the dialog.\n- The apps shelf reads it for how an app is drawn (shell/apps/apps.js 75, 107, 125; claude-ubuntu).\n\nGRANT\n- spirit/run/js/coreFiles.js is itself core: the G check on this item asks for it.\n\nBLOCKS every other item of goal/G6.\n\nWaiting: his Go (no open question).",
+   "version": 4,
    "checks": [
     {
      "number": "G1",
@@ -808,16 +838,14 @@
    "id": "goal/G6.8",
    "title": "desk server: an item becomes a sub-goal only when Andy says split; its box then holds only references to its blockers, and it is no longer a code item",
    "goal": "goal/G6",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G6"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -825,10 +853,76 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
-   "chat": []
+   "box": "DESK SERVER: A SUB-GOAL ONLY BY HIS SPLIT\n\nANDY, VERBATIM\n- In goal/G5.4: \"when i say split, that becomes implicit/obvious and the item should be marked as sub-goal\"\n- 2026-10-06, in goal/G6: \"an item becomes a sub-goal only when i say split, the box of that item must then only contain references to it's blockers, and it can no longer be marked as a coding item.\"\n\n- 2026-10-06: \"while you're in DeskServer: can you also make sure that in design mode as well, OPEN is help in red-questions?\" / \"i want mechanical tracking of design-greens. Yes i want opens to light up my list with ERROR icons.\"\n\nTHE DIVERGENCE (found by claude-windows adding goal/G6.7)\n- goal/G5.4 as built marks an item sub-goal whenever a session adds a new item blocking it (desk.js session.set; claude-ubuntu's red deskLimbo section 2 asserted that). Adding G6.7 in front of G6.1 to G6.6 would make all six sub-goals, though he never said split.\n\nTHE SHAPE (claude-windows; Andy: \"accepted.\")\n- session.set takes split: [id] naming the item he split; only that item is marked sub-goal; a new blocking item alone marks nothing.\n- A sub-goal is not a code item: the split clears its code mark, and a session cannot mark it code again.\n- Its box holds only references to its blockers: the agent writing the split rewrites the box to that list; the desk does not police the text.\n- deskLimbo's section 2 changes to the explicit split.\n\nDESIGN-GREEN, TRACKED BY THE DESK\n- An open point is a red question, never box text: a box.write with an OPEN section is refused.\n- An item is design-green when it has no open red question; its facts say so (green), and an open question lights his ERROR in the List, as asks do today.\n- His End design, and a Go, are refused while any item in that scope is not design-green.\n- Gap for the face: the List draws no icon on a goal's own row (shell/desk/desk.js 589), so a question on a goal stays dark; that row needs the same ERROR.\n\nWaiting: his Go.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Today the desk server ignores an OPEN section in a box (box.write stores any text). Which do you want: A) box.write refuses a box with an OPEN section, so open points can only be Q checks; or B) end-design is refused while a box in the goal still has an OPEN section? (wsl-claude)",
+     "test": "",
+     "state": "passed",
+     "by": "wsl-claude",
+     "at": "2026-10-05T22:17:44.827Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T22:14:19.058Z",
+     "text": "taking: the red for G6.8. I write it once Andy has agreed the shape (split: [id] in session.set)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T22:15:50.092Z",
+     "text": "while you're in DeskServer: can you also make sure that in design mode as well, OPEN is help in red-questions?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T22:16:13.041Z",
+     "text": "Yes, into G6.8. Two ways the desk server can hold it, and I'd do both:\n- Your End design (and a Go) is refused while any item of that scope has an open red question, so open points block going green (your note to self on G6.1).\n- A box.write with an \"OPEN\" section is refused, so open points can only live as red questions, never as box text.\nBoth, or only the first?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T22:16:13.626Z",
+     "text": "wsl: today the desk server does nothing with OPEN, a box is free text. I added a Q check: refuse a box with OPEN in it, or refuse end-design while one remains?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T22:16:27.405Z",
+     "text": "wsl: same question as my Q check, with a better first option (an open red question blocks End design and Go). One answer covers both; I mark my Q check from it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T22:17:28.649Z",
+     "text": "i want mechanical tracking of design-greens. Yes i want opens to light up my list with ERROR icons."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T22:17:43.805Z",
+     "text": "wsl: I read that as both: an open red question blocks End design and Go, and a box with an OPEN section is refused, so every open point shows as an error on your List.\nI mark my Q check answered on that reading; say so if it is wrong."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T22:18:05.683Z",
+     "text": "taking: your design-green line into G6.8's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T22:18:13.222Z",
+     "text": "In G6.8's box: open points only as red questions (a box with OPEN refused), an item design-green when none is open, End design and Go refused until green, ERROR on open questions; plus the goal row, which draws no ERROR today (shell/desk/desk.js 589), for the face."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T22:18:52.573Z",
+     "text": "accepted."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T22:21:13.491Z",
+     "text": "wsl: the red is written (deskSplitGreen.js, 9 checks, all red on today's code for the right reasons; deskLimbo moved to the explicit split).\nThe commit check refuses it until your Go on G6.8, so it waits here uncommitted."
+    }
+   ]
   },
   {
    "id": "goal/G6.6",
@@ -853,8 +947,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "A GOAL'S CLOSE, WITH \"ARE YOU SURE?\"\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nAndy, in goal/G5 (G5.6): \"yes. if it has items still open it can ask me: are you sure?\". The server offers Close on every goal and takes the press either way (goal/G5.6); the asking is the face's.\n\n- The goal row in the List and the goal's dialog show Close; pressed while any of its items is open, the face asks \"are you sure?\" first, naming how many are open; yes sends the press.\n\nWhere: shell/desk and shell/deskDetails.\n\nOPEN: his Go.",
-   "version": 1,
+   "box": "A GOAL'S CLOSE, WITH \"ARE YOU SURE?\"\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nAndy, in goal/G5 (G5.6): \"yes. if it has items still open it can ask me: are you sure?\". The server offers Close on every goal and takes the press either way (goal/G5.6); the asking is the face's.\n\n- The goal row in the List and the goal's dialog show Close; pressed while any of its items is open, the face asks \"are you sure?\" first, naming how many are open; yes sends the press.\n\nWhere: shell/desk and shell/deskDetails.\n\nWaiting: his Go (no open question).",
+   "version": 2,
    "checks": [],
    "chat": []
   }
