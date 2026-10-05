@@ -1,0 +1,9 @@
+{
+  "name": "Desk rule",
+  "description": "One rule of the desk: its text, his draft and version buttons, and its chat.",
+  "icon": "BOOK",
+  "hidden": true,
+  "type": "dialog",
+  "intrinsic": false,
+  "owner": "system"
+}
