@@ -48,6 +48,13 @@ const ID_RE = /^verb-[A-Za-z0-9_-]{43}$/;
 const BLOB = 'complete.blob';
 const STATUS = 'fileStatus.json';
 
+// SLOTS THE NODE RESERVES FOR ITSELF (goal/G5.3). Andy: "there will be slots in fileServer that are reserved by
+// the node itself, like PROFILE_PICTURE.", "reserved labels can be updated with any file, the label stays.", "the
+// reserved label is protected, the use cannot name a file PROFILE_PICTURE and add it to the pool...". Only fill puts
+// a file into a slot; the file it replaces is deleted ("deleted.") and its grants move to the new one ("move the
+// grants to the new file.").
+const RESERVED = ['PROFILE_PICTURE'];
+
 function refused(code, why) { const e = new Error(code); e.refusal = code; if (why) e.extra = { why: why }; return e; }
 function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
 
@@ -253,9 +260,12 @@ const server = appServer.serve({
       try { bytes = fs.readFileSync(a.path); } catch (e) { throw refused('bad-request', 'cannot read ' + a.path); }
       const id = idOf(bytes);
       const name = path.basename(a.path);
-      // The same bytes already held: no new folder, the new name replaces the label (goal/G5.2).
+      if (RESERVED.indexOf(name) !== -1) throw refused('bad-request', name + ' is a reserved label; fill puts a file into it');
+      // The same bytes already held: no new folder, the new name replaces the label (goal/G5.2), unless the file
+      // fills a slot: a slot's label stays (goal/G5.3).
       if (isHeld(id)) {
         const old = readStatus(id) || {};
+        if (RESERVED.indexOf(nameOf(old)) !== -1) return { hash: id };
         writeStatus(id, { hash: id, bytes: bytes.length, mime: mimeOf(name), name: name, at: old.at || new Date().toISOString() });
         return { hash: id };
       }
@@ -268,6 +278,36 @@ const server = appServer.serve({
       writeStatus(id, { hash: id, bytes: bytes.length, mime: mimeOf(name), name: name, at: new Date().toISOString() });
       server.addVerb(id, hashVerb(id));
       return { hash: id };
+    },
+  },
+  // fill puts a file into a reserved slot (goal/G5.3): the new file takes the slot's label, its verb is served, the
+  // grants on the file it replaces move to it, and that file is deleted.
+  fill: {
+    request: { slot: '', path: '' }, reply: { hash: '' },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      if (RESERVED.indexOf(a.slot) === -1) throw refused('bad-request', JSON.stringify(a.slot) + ' is not a reserved slot');
+      let bytes = null;
+      try { bytes = fs.readFileSync(a.path); } catch (e) { throw refused('bad-request', 'cannot read ' + a.path); }
+      const id = idOf(bytes);
+      const old = held().filter(function (h) { return h !== id && nameOf(readStatus(h)) === a.slot; })[0] || '';
+      if (!isHeld(id)) {
+        if (held().length >= CAP) throw refused('pool-full');
+        const dir = path.join(STORE, id);
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(path.join(dir, BLOB + '.part'), bytes);
+        fs.renameSync(path.join(dir, BLOB + '.part'), path.join(dir, BLOB));
+      }
+      writeStatus(id, { hash: id, bytes: bytes.length, mime: mimeOf(a.path), name: a.slot, at: new Date().toISOString() });
+      try { server.addVerb(id, hashVerb(id)); } catch (e) { /* already served */ }
+      if (!old) return { hash: id };
+      // The new verb is served before its grant, or the node refuses it unknown-path (apiAuth.js 90).
+      return moveGrants(old, id).then(function () {
+        delete transfers[old];
+        fs.rmSync(path.join(STORE, old), { recursive: true, force: true });
+        try { server.dropVerb(old); } catch (e) { /* never served */ }
+        return { hash: id };
+      });
     },
   },
   // fetch answers at once; the transfer runs on after it (goal/G1.2). A folder already there is a
@@ -333,6 +373,24 @@ const server = appServer.serve({
     },
   },
 });
+
+// Every grant on fileServer.<from> becomes one on fileServer.<to>, through the node's own loopback auth verbs
+// (server.js jobs.authSearch, jobs.authGrant, jobs.authRevoke); no auth verb of its own. Run outside a node (no
+// SPIRIT_CALLBACK_URL), there are no grants to move.
+function moveGrants(from, to) {
+  const url = process.env.SPIRIT_CALLBACK_URL;
+  if (!url) return Promise.resolve();
+  const base = new URL(url).origin;
+  const ask = function (verb, args) { return require('../../../js/kernel.js').core.ask(verb, args, base).then(function (r) { return (r && r.body) || {}; }); };
+  const fromPath = 'fileServer.' + from, toPath = 'fileServer.' + to;
+  return ask('jobs.authSearch', { text: from }).then(function (found) {
+    const rows = (found.records || []).filter(function (r) { return r.path === fromPath; });
+    return rows.reduce(function (p, r) {
+      return p.then(function () { return ask('jobs.authGrant', { key: r.key, path: toPath }); })
+        .then(function () { return ask('jobs.authRevoke', { key: r.key, path: fromPath }); });
+    }, Promise.resolve());
+  }).catch(function (e) { console.error('fileServer: grants on ' + from + ' were not moved: ' + ((e && e.message) || e)); });
+}
 
 function mimeOf(name) { return MIME_TYPES[path.extname(name).toLowerCase()] || 'application/octet-stream'; }
 
