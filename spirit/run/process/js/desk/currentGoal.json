@@ -1,8 +1,8 @@
 {
- "change": 17864,
+ "change": 17974,
  "line": 8493,
  "goal": "goal/G6",
- "writtenAt": "2026-10-05T23:35:41.424Z",
+ "writtenAt": "2026-10-05T23:42:26.713Z",
  "items": [
   {
    "id": "goal/G6",
@@ -16,8 +16,7 @@
    "blocking": [],
    "blocked": [
     "goal/G6.4",
-    "goal/G6.5",
-    "goal/G6.6"
+    "goal/G6.5"
    ],
    "go": false,
    "alone": false,
@@ -44,7 +43,7 @@
     "wsl-claude"
    ],
    "working": [
-    "claude-ubuntu"
+    "wsl-claude"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -436,6 +435,66 @@
      "by": "claude-windows",
      "at": "2026-10-05T23:31:31.234Z",
      "text": "cw: G6.1 built (6c85318c), waiting on wsl's verify; G6.6 red is in (0398cdea), open for a builder.\nWhat blocked you earlier: a plain item take sets the \"with\" name, and the phase rules read that as holding the phase, so nobody else could take it.\nShall I add an item to G6 so a plain take never holds a phase?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T23:39:29.878Z",
+     "text": "Why does this have a close button on my list?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T23:39:43.923Z",
+     "text": "wsl: that is G6.6, just built: a goal's Close in the List, from your G5.6 yes (\"a goal gets a Close like an item's ... if it has items still open it can ask me: are you sure?\"). With items open it asks \"are you sure? N open\" before closing.\nIf you want it elsewhere or gone, say so before your Done on G6.6."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:39:49.468Z",
+     "text": "cw: that is G6.6, just built: a goal's row now shows Close in the List, as its box says (\"The goal row in the List and the goal's dialog show Close\").\nPressed while items are open, it asks \"are you sure? N open\" first; nothing goes until the second press."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T23:40:28.509Z",
+     "text": "when blocking items still block it?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:40:43.586Z",
+     "text": "taking: the answer to \"when blocking items still block it?\""
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:40:51.312Z",
+     "text": "cw: yes, by your G5.6 answer: a goal offers Close always, open or blocking items or not (\"yes. if it has items still open it can ask me: are you sure?\").\nClosing it while items are open asks \"are you sure? N open\" first; the items keep their state, and Reopen brings the goal back.\nShould Close hide while items still block the goal instead?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T23:40:56.943Z",
+     "text": "wsl: yes, by your G5.6 answer: a goal offers Close always, open items or not; you said \"yes. if it has items still open it can ask me: are you sure?\" (desk.js 596). So it shows now and asks \"are you sure? N open\" first.\nIf you want Close only once nothing blocks it, that is a change to G5.6's rule: say so and it becomes an item."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T23:41:13.754Z",
+     "text": "does it re-arm?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:41:37.135Z",
+     "text": "taking: \"does it re-arm?\""
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:41:38.801Z",
+     "text": "cw: yes. The armed \"are you sure? N open\" drops back to plain Close the moment you click anywhere else (the shell's armUntilElsewhere, as Go all does).\nSo every first press asks again; only a second press in a row closes."
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T23:41:39.098Z",
+     "text": "ubi: yes — one click arms (\"are you sure? N open\"), a click anywhere else disarms it (shell's armUntilElsewhere, same as Go-all and End design), the next click re-arms. The second click on the same button is what fires close."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T23:41:55.576Z",
+     "text": "ok then"
     }
    ]
   },
@@ -1030,7 +1089,7 @@
    "title": "ruleDetails, the new dialog app: header area, version, activate and delete, the textbox as draft, the rule chat",
    "goal": "goal/G6",
    "status": "running",
-   "with": "",
+   "with": "wsl-claude",
    "buttons": [],
    "blocking": [
     "goal/G6",
@@ -1042,26 +1101,71 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "green": true,
+   "green": false,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
    "verifier": "",
    "rules": [],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "ruleDetails, THE NEW DIALOG APP\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\n- The header area (goal/G6.1), its top edge held under the titlebar: title key and label; buttons: the version button, his alone (rule.version {key, text, status}: \"i prefer to negotiate, and create an updated version with one button/verb that belongs to me.\"), activate (armable) and delete, each one quick version with that status.\n- The textbox of the rule, edited by him, saved as his draft (rule.draft; rule.get reads it back) until the version button.\n- No older versions shown (Andy, to G6 Q1: \"No. the agents know it, and can bring it up, if neccessary.\").\n- The chat area, styled like deskDetails': chat.add and item.chat under rule/N; \"this box does NOT have triggers like cap and split, because the text is edited by the user.\"\n\nWhere: a new shell app, shell/ruleDetails, beside shell/deskDetails. Blocked by goal/G6.1; blocks goal/G6.5.\n\nWaiting: his Go (no open question).",
    "version": 2,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Delete: armed like Activate (press twice), or one press? The box says \"activate (armable) and delete\"; the red accepts either.",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    }
+   ],
    "chat": [
     {
      "by": "desk",
      "at": "2026-10-05T23:35:41.195Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-05T23:35:49.386Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-05T23:36:02.137Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:36:09.254Z",
+     "text": "taking: the red for G6.4 (ruleDetails). The build goes to wsl or ubi."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:38:22.210Z",
+     "text": "commit 84737b07a3276eddf5a0be6124909db5c78d6d4d: goal/G6.4 red: ruleDetails, the rule's dialog (header, version, activate, delete, draft textbox, rule chat)\n- spirit/test/ruleDetails.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-05T23:38:33.622Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:38:56.259Z",
+     "text": "cw: red in, 84737b07: spirit/test/ruleDetails.js, 12 checks (a dialog app, the header with key and label, Version, armed Activate, Delete, the textbox as draft, no older versions, no cap border, the rule chat).\nRed recorded; the build is open for wsl or ubi, not me."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T23:39:24.432Z",
+     "text": "wsl: build of G6.4 taken (phase.take), against claude-windows' red 84737b07."
     }
    ]
   },
@@ -1410,28 +1514,30 @@
    "id": "goal/G6.6",
    "title": "a goal Close in the List and the dialog, asking are you sure while items are open (the face of G5.6)",
    "goal": "goal/G6",
-   "status": "running",
+   "status": "closed",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "reopen"
+   ],
    "blocking": [
     "goal/G6"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "green": false,
+   "green": true,
    "code": true,
-   "phase": "verify",
+   "phase": "",
    "red": "",
    "builder": "claude-ubuntu",
-   "verifier": "",
+   "verifier": "wsl-claude",
    "rules": [],
-   "asks": 2,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "A GOAL'S CLOSE, WITH \"ARE YOU SURE?\"\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nAndy, in goal/G5 (G5.6): \"yes. if it has items still open it can ask me: are you sure?\". The server offers Close on every goal and takes the press either way (goal/G5.6); the asking is the face's.\n\n- The goal row in the List and the goal's dialog show Close; pressed while any of its items is open, the face asks \"are you sure?\" first, naming how many are open; yes sends the press.\n\nWhere: shell/desk and shell/deskDetails.\n\nWaiting: his Go (no open question).",
@@ -1442,18 +1548,27 @@
      "kind": "Q",
      "words": "stale: claude-windows holds the red of this item and has said nothing for 10 minutes. Free the phase, or wait?",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T23:38:50.080Z"
     },
     {
      "number": "Q2",
      "kind": "Q",
      "words": "stale: claude-windows holds the red of this item and has said nothing for 10 minutes. Free the phase, or wait?",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T23:38:51.225Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "a goal shows Close even while items block it (your G5.6 yes); keep that, or hide Close until nothing blocks the goal?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T23:42:11.785Z"
     }
    ],
    "chat": [
@@ -1476,6 +1591,31 @@
      "by": "claude-ubuntu",
      "at": "2026-10-05T23:35:39.131Z",
      "text": "ubi: built, ec5dcd17: the goal's Close in the List and the dialog asks \"are you sure? N open\" while any item is open, nothing open sends at once. The List row paints the arm'd Close as \"are you sure? N open\" with data-armed, same arm pattern as desk-end-design; the dialog arms with the same text (N from f.blocked.length), a non-goal item keeps the \"Close: sure?\" arm (desk/G3.9). deskGoalClose 8 of 8, 15 related desk suites green beside (deskLayout, deskDialog, deskDialogClose, deskArchive, deskMusing, deskMusingBubbles, deskChatBubbles, deskChatFormat, deskFold, armedButtons, deskIssues, deskSplitGreen, deskLimbo, deskPhases, deskWorking). phase.done build recorded; open for verify by wsl (not me as builder, not cw as red writer)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T23:38:02.132Z",
+     "text": "red Q1 and Q2 here"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-05T23:38:02.449Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T23:38:44.665Z",
+     "text": "ubi: Q1 and Q2 were the desk's stale-holder questions about cw sitting on the red phase (take-bug). Red is in (0398cdea), build is in (ec5dcd17), both moot now — marked answered. Open for verify."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:38:52.998Z",
+     "text": "cw: Q1 and Q2 were the desk's own \"stale holder\" questions, raised while the take bug left me holding the red here. Moot now: red and build are both recorded, so I cleared them.\nG6.6 waits on wsl's verify of ubi's build (ec5dcd17); my red passes 8 of 8 against it."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T23:39:05.169Z",
+     "text": "wsl verify of ec5dcd17: deskGoalClose 8 of 8; each of 6 mutations caught (no goal Close in the List, closing at once while items are open, no count, the dialog not asking); every desk suite and armedButtons green. Desk suites only, not the full harness.\nVerify pass recorded; G6.6 is ready for your Done."
     }
    ]
   }
