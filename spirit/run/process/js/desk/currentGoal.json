@@ -1,8 +1,8 @@
 {
- "change": 15732,
+ "change": 15756,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T18:43:56.465Z",
+ "writtenAt": "2026-10-05T18:45:44.070Z",
  "items": [
   {
    "id": "goal/G5",
@@ -10,11 +10,11 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [],
-   "blocking": [],
-   "blocked": [
-    "goal/G5.5"
+   "buttons": [
+    "done"
    ],
+   "blocking": [],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -24,13 +24,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 0,
+   "waiting": 1,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
+    "claude-ubuntu",
     "claude-windows"
    ],
    "agents": {
@@ -1224,9 +1225,11 @@
    "id": "goal/G5.5",
    "title": "desk server: the logic andy/FACE.md Desk changes need (rules: add, edit, status, search, chat), so the UI never comes back to it",
    "goal": "goal/G5",
-   "status": "red in, open for its builder",
+   "status": "closed",
    "with": "claude-windows",
-   "buttons": [],
+   "buttons": [
+    "reopen"
+   ],
    "blocking": [
     "goal/G5"
    ],
@@ -1234,7 +1237,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 2,
    "boxTaken": "",
    "asks": 0,
    "half": true,
@@ -1729,6 +1732,21 @@
      "by": "claude-windows",
      "at": "2026-10-05T18:43:14.406Z",
      "text": "Yes, me: G5.5 is built, wsl's red deskRuleTable 12 of 12, fieldRules 27 and the desk suites green; the full harness is running, then commit and claim."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:44:36.897Z",
+     "text": "Built, 283a77a9: the rules table and its six verbs, the paragraph type in fieldRules (your G2); wsl's red deskRuleTable 12 of 12, deskServer 17 (it lists the new verbs), fieldRules 27; the harness's other reds are the four standing ones and pushOrigin, which is green on ubi's build. One change from the box: rule.history takes the key only (no before); it answers the newest older versions and says more. Files:\n- spirit/run/js/fieldRules.js\n- spirit/run/process/js/desk/desk.js\n- spirit/test/deskServer.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:44:48.499Z",
+     "text": "commit 283a77a963fdff14a1455b36fd183f5de42987f4: goal/G5.5: the desk server's rules, and the core paragraph field type (deskRuleTable 12 of 12, against wsl-claude's red a0f77a6f; js/fieldRules.js under Andy's grant G2). Andy: \"only changes/upgrades \n- spirit/run/js/fieldRules.js\n- spirit/run/process/js/desk/desk.js\n- spirit/test/deskServer.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:45:37.335Z",
+     "text": "Verified 283a77a9 here: deskRuleTable 12 of 12, fieldRules 27, deskServer 17 and five desk suites green; with rule.version's owner check cut, an agent's version goes through and three checks fail, restored. rule.history without before fits your no-paging rule. Those suites only, not the full harness. Claimed done."
     }
    ]
   },
