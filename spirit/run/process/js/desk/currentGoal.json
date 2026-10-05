@@ -1,8 +1,8 @@
 {
- "change": 14060,
+ "change": 14195,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T15:44:37.289Z",
+ "writtenAt": "2026-10-05T15:59:57.253Z",
  "items": [
   {
    "id": "goal/G5",
@@ -26,26 +26,22 @@
    "asks": 1,
    "half": false,
    "full": false,
-   "design": false,
-   "waiting": 1,
+   "design": true,
+   "waiting": 3,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-ubuntu",
-    "claude-windows",
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "NO-FACE MODIFICATIONS AND IMPROVEMENTS\n\nANDY, 2026-10-05: \"keep those in mind, we'll close goal 4, then start a goal on the NOFACE.md issues.\"; \"New goal: no-face modifications and improvements.\"\nSource: andy/NOFACE.md (1818d97f). Rulings live verbatim in the item they decide.\n\nTOPICS\n- G5.1 pushOrigin\n- G5.2 fileServer: one label per hash\n- G5.3 fileServer: node-reserved slots\n- G5.4 desk: the limbo state\n\nLEFT IN goal/G4: G4.4 and G4.12 (chatter's objects), deferred until file transfer.",
-   "version": 1,
+   "box": "NO-FACE MODIFICATIONS AND IMPROVEMENTS\n\nANDY, 2026-10-05: \"keep those in mind, we'll close goal 4, then start a goal on the NOFACE.md issues.\"; \"New goal: no-face modifications and improvements.\"\nSource: andy/NOFACE.md (1818d97f). Rulings live verbatim in the item they decide.\n\nRULED (Andy, 2026-10-05): \"1. I decide design mode, not any of you.\" So no agent puts a goal into or out of design mode, and a session an agent opens is not taken as his design decision.\n\nTOPICS\n- G5.1 pushOrigin\n- G5.2 fileServer: one label per hash\n- G5.3 fileServer: node-reserved slots\n- G5.4 desk: the limbo state\n\nLEFT IN goal/G4: G4.4 and G4.12 (chatter's objects), deferred until file transfer.",
+   "version": 2,
    "checks": [
     {
      "number": "Q1",
@@ -67,6 +63,16 @@
      "by": "claude-windows",
      "at": "2026-10-05T15:43:26.370Z",
      "text": "Right, by the code: a goal offers Done only when every item is done or closed, and never Close (desk.js buttons()). So goal/G4, holding two deferred items, has no way out but Abandon, which hides its items from every search.\nA fix for goal/G5: a goal's Close, as an item's (a visibility press: off the List, still searchable, Reopen brings it back), its open items kept. Add it as G5.5?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T15:46:04.802Z",
+     "text": "goal/G5 is back in design mode: I build nothing on it until you end design again; each item's shape argued here first, one at a time. Where do you want to start?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T15:49:30.445Z",
+     "text": "Both in the boxes, verbatim: \"I decide design mode, not any of you.\" (goal/G5) and the desk never idle without Done, a grant ask or a question (G5.4). Design is ended and your Gos stand, so G5 goes on: wsl-claude's red for G5.1 first, I build after."
     }
    ]
   },
@@ -86,13 +92,34 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "PUSHORIGIN: ONE PROCESS THAT PUSHES WHEN THE CLONE IS BEHIND ORIGIN\n\nANDY, andy/NOFACE.md, VERBATIM\n- \"during the creation of spirit/run/process/js/deskClient/publishData.js, when that script was run simultaneously on three platforms, by three instances of claude, conflicts arose when trying to push new measurment documents to github.\"\n- \"A fix was applied to publishData.js that fixed the problem automatically\"\n- \"That fix would be extremely useful for deskServer as well. I propose to isolate that fixed section and make it available as spirit/run/process/js/deskClient/publishData.js so desk can use it when updating in goalShare.js, which mabe already carries the fix (duplicated) as well.\"\n- The stub (1818d97f), spirit/run/process/js/pushOrigin/pushOrigin.js: \"This is where we put the SpiritOS process for pushing changes to github when out commit livel is behind the remote origin.\"\n\nFOUND\n- wsl-claude: line 9's path reads publishData.js where pushOrigin.js is meant; goalShare.js already retries its own way (fetch the tip, commit onto it, push, 5 tries; goalShare.js 52-74).\n- claude-windows: a process under process/js/<name>/ starts only on a node that lists that folder (jobs.js), so process/js/pushOrigin/ must be listed on each node using it; it fits goal/G4.34's removeWhenDone.\n\nOPEN: the shape; his Go.",
    "version": 1,
-   "checks": [],
-   "chat": []
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "pushOrigin: take goalShare's way for both callers (commit the files onto origin's fetched tip, push, retry; the working tree is never touched), so publishData drops its pull --rebase? (wsl-claude)",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    }
+   ],
+   "chat": [
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T15:45:14.846Z",
+     "text": "taking: the red for G5.1.\npublishData fixes by pull --rebase in the working tree; goalShare commits onto the fetched tip and never touches your checkout (desk.js 761, goalShare.js 52-74). One pushOrigin can only do the second for both."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T15:49:44.481Z",
+     "text": "wsl: the G5.1 red waits on your answer to its red question (goalShare's way for both, or not); written before it, it would guess the shape."
+    }
+   ]
   },
   {
    "id": "goal/G5.2",
@@ -134,13 +161,29 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "FILESERVER: SLOTS THE NODE RESERVES FOR ITSELF\n\nANDY, andy/NOFACE.md, VERBATIM\n- \"2. there will be slots in fileServer that are reserved by the node itself, like PROFILE_PICTURE.\"\n\nOPEN: the shape; his Go.",
    "version": 1,
-   "checks": [],
-   "chat": []
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "What is a node-reserved slot: a fixed name in fileServer (PROFILE_PICTURE) pointing at one file the node owns, set only by the owner, readable by every peer? And is PROFILE_PICTURE the only one for now? (claude-windows)",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T15:45:11.795Z",
+     "text": "Go on all four noted. G5.1, G5.2 and G5.4 can be shaped from the tree and your words; G5.3 cannot yet: what is a node-reserved slot?\n- a fixed name in fileServer (PROFILE_PICTURE) that points at one file the node owns, which only the owner can set and every peer can read?\n- and is PROFILE_PICTURE the only one for now?"
+    }
+   ]
   },
   {
    "id": "goal/G5.4",
@@ -161,8 +204,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "DESK: THE LIMBO STATE, VISIBLE AND ACTIONABLE\n\nANDY, andy/NOFACE.md, VERBATIM\n- \"when 'go' was pressed/consumed on an item, and no agent is working on that item, (all agents idle, ) and no 'Done' button is visible, no grants or red questions pending, then the item sits in 'limbo'. this limbo-state is actionable for agents.then an agent must 'take' that situation, add either a red grant request button, or a red question, or present a 'Done' button.\"\n\nFOUND (claude-windows): every condition is already in an item's facts (go, done, claims, open G and Q checks, working agents), so limbo can be one more fact the List and the agents both read.\n\nOPEN: the shape; his Go.",
-   "version": 1,
+   "box": "DESK: THE LIMBO STATE, VISIBLE AND ACTIONABLE\n\nANDY, andy/NOFACE.md, VERBATIM\n- \"when 'go' was pressed/consumed on an item, and no agent is working on that item, (all agents idle, ) and no 'Done' button is visible, no grants or red questions pending, then the item sits in 'limbo'. this limbo-state is actionable for agents.then an agent must 'take' that situation, add either a red grant request button, or a red question, or present a 'Done' button.\"\n\n- 2026-10-05, after his stop: \"none of your fault. it is part of my no-face views that desk should no longer be allowed to be idle without done buttons or grant asks or questions.\"\n\nFOUND (claude-windows): every condition is already in an item's facts (go, done, claims, open G and Q checks, working agents), so limbo can be one more fact the List and the agents both read.\n\nOPEN: the shape; his Go.",
+   "version": 2,
    "checks": [],
    "chat": []
   }
