@@ -20,7 +20,8 @@
 //     {key, text}.
 //   - Version sends rule.version {key, text: the textbox as it stands, status: the rule's status as it is}.
 //   - Activate is armed: the first press sends nothing, the second sends rule.version with status active.
-//   - Delete ends in one rule.version with status deleted (whether it is armed too is his to say: a Q check).
+//   - Delete is armed as Activate is: the first press sends nothing, the second sends rule.version with status deleted.
+//     Andy, to G6.4 Q1 ("Delete: armed like Activate (press twice), or one press?"): "armed."
 
 const fs = require('fs');
 const path = require('path');
@@ -145,7 +146,7 @@ test.startTest('goal/G6.4: ruleDetails, the rule\'s dialog');
   if (v.length === 1 && v[0].args.key === 'rule/3' && v[0].args.text === 'EDITED' && v[0].args.status === 'proposed') test.check('Version sends rule.version {key, text, status: proposed}');
   else test.fail(OWED + 'Version sent ' + JSON.stringify(v.map(function (c) { return c.args; })));
 
-  test.subHeading('5. Activate is armed; Delete versions it deleted');
+  test.subHeading('5. Activate and Delete are armed');
   const b = dialog('DRAFT-TEXT');
   await b.opened;
   await settled();
@@ -162,10 +163,12 @@ test.startTest('goal/G6.4: ruleDetails, the rule\'s dialog');
   await settled();
   c.fire('click', 'rd-delete');
   await settled();
-  if (c.sent('rule.version').length === 0) { c.fire('click', 'rd-delete'); await settled(); }
+  const delArmed = c.sent('rule.version').length === 0;
+  c.fire('click', 'rd-delete');
+  await settled();
   const del = c.sent('rule.version');
-  if (del.length === 1 && del[0].args.status === 'deleted' && del[0].args.key === 'rule/3') test.check('Delete ends in one rule.version with status deleted');
-  else test.fail(OWED + 'Delete sent ' + JSON.stringify(del.map(function (x) { return x.args; })));
+  if (delArmed && del.length === 1 && del[0].args.status === 'deleted' && del[0].args.key === 'rule/3') test.check('the first Delete sends nothing, the second sends rule.version with status deleted');
+  else test.fail(OWED + 'Delete: nothing after the first press ' + delArmed + ', then ' + JSON.stringify(del.map(function (x) { return x.args; })));
 
   test.subHeading('6. no older versions, no cap and no split');
   const d = dialog('');
