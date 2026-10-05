@@ -1,8 +1,8 @@
 {
- "change": 17855,
+ "change": 17856,
  "line": 8493,
  "goal": "goal/G6",
- "writtenAt": "2026-10-05T23:34:49.625Z",
+ "writtenAt": "2026-10-05T23:34:51.164Z",
  "items": [
   {
    "id": "goal/G6",
@@ -38,7 +38,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "live": [
     "claude-ubuntu",
     "claude-windows",
@@ -444,10 +444,9 @@
    "id": "goal/G6.1",
    "title": "the header-area shell element (core): sticky under the titlebar, for desk, deskDetails and ruleDetails",
    "goal": "goal/G6",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
