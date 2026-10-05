@@ -151,6 +151,28 @@ test.startTest('goal/G5.4: limbo marker, sub-goal mark on split, sub-goal Go cas
     const sibling = await factsOf('S/G1.4');
     if (b1Scope.go === true && b2Scope.go === true && sibling.go === false) test.check('sub-goal Go reaches the two blockers and nothing else (S/G1.4 untouched)');
     else test.fail(OWED + 'sub-goal Go scope: ' + short({ 'S/G1.2.go': b1Scope.go, 'S/G1.3.go': b2Scope.go, 'S/G1.4.go': sibling.go }));
+
+    test.subHeading('4. sub-goal offers Done once every blocker is done or closed');
+    // Andy, 2026-10-05: "items that are no-code branches, they really are sub-goals, and must offer 'Done' when it's
+    // blockers are done." Walk S/G1.2 and S/G1.3 through claim-done and done so the parent sub-goal unblocks.
+    await call('item.take', { id: 'S/G1.2' }, CW);
+    await call('press', { id: 'S/G1.2', what: 'claim-done' }, CW);
+    await call('press', { id: 'S/G1.2', what: 'done' }, ANDY);
+    await call('item.take', { id: 'S/G1.3' }, CW);
+    await call('press', { id: 'S/G1.3', what: 'claim-done' }, CW);
+    await call('press', { id: 'S/G1.3', what: 'done' }, ANDY);
+
+    const subUnblocked = await factsOf('S/G1.1');
+    const doneOffered = subUnblocked.buttons && subUnblocked.buttons.indexOf('done') !== -1;
+    if (doneOffered) test.check('S/G1.1 sub-goal offers `done` once every blocker is done');
+    else test.fail(OWED + 'S/G1.1 sub-goal with both blockers done: ' + short({ buttons: subUnblocked.buttons, blocked: subUnblocked.blocked }));
+
+    // Signal only once Done is actually offered: Andy's press done bypasses the offered gate today,
+    // so this would pass vacuously on the pre-build tree without the guard.
+    const donePressed = await call('press', { id: 'S/G1.1', what: 'done' }, ANDY);
+    const subDone = await factsOf('S/G1.1');
+    if (doneOffered && donePressed.status === 200 && subDone.status === 'done') test.check('press done on sub-goal S/G1.1 is accepted and the item is done');
+    else test.fail(OWED + 'press done on sub-goal S/G1.1 (needs Done to be offered first): ' + short({ offered: doneOffered, pressStatus: donePressed.status, factStatus: subDone.status }));
   } catch (e) {
     test.fail('the suite threw: ' + (e && e.stack || e));
   } finally {
