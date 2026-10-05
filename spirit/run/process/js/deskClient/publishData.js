@@ -180,16 +180,16 @@ async function main() {
   git(['add', '--', rel], clone);
   const c = git(['commit', '-q', '-m', 'publish: ' + agent + ' at ' + commit + ' (agents/' + agent + '/, the standing grant of goal/G4.33)'], clone);
   if (c.status !== 0) end(1, 'publishData: the commit was refused: ' + (c.stderr || c.stdout).trim());
-  // PULL BEFORE PUSH (goal/G4.33 reopened; Andy, to Q15: "done"): the first publish's push was refused because others
-  // had pushed meanwhile. Rebased onto origin first, and once more if the push is still refused.
-  let p = null;
+  // PUSH THROUGH pushOrigin (goal/G5.1): one shared place that rebases onto origin's newest, pushes, stops on a
+  // clash. One retry here covers the race where another push lands while we were rebasing (Andy's "tries again if
+  // someone pushed meanwhile", noted in G5.1's box as unproven by a test).
+  const { pushOrigin } = require('../pushOrigin/pushOrigin.js');
+  let pushed = null;
   for (let i = 0; i < 2; i++) {
-    const pulled = git(['pull', '-q', '--rebase'], clone);
-    if (pulled.status !== 0) end(1, 'publishData: the pull before the push failed: ' + (pulled.stderr || pulled.stdout).trim());
-    p = git(['push', '-q'], clone);
-    if (p.status === 0) break;
+    pushed = await pushOrigin({ repo: clone });
+    if (pushed && pushed.ok) break;
   }
-  if (p.status !== 0) end(1, 'publishData: the push failed: ' + (p.stderr || p.stdout).trim());
+  if (!pushed || !pushed.ok) end(1, 'publishData: the push failed: ' + ((pushed && pushed.reason) || 'unknown'));
   await desk('chat.add', { id: 'desk/G0.0', text: 'published ' + agent + ' at ' + commit + ': wait ' + packets.waitMs.median + '/' + packets.waitMs.max + ' ms, flight ' + packets.flight.median + '/' + packets.flight.max + ' ms over ' + packets.posts + ' posts; agents/' + agent + '/' });
   end(0, 'publishData: published agents/' + agent + '/');
 }

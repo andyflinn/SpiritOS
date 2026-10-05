@@ -1,0 +1,7 @@
+{
+  "label": "Push origin",
+  "description": "Sends the clone's commits to origin, re-stacking them on origin's newest if needed; stops on a clash and leaves everything as it was.",
+  "args": [
+    { "name": "repo", "type": "string", "label": "Repo path (clone to push)", "default": "" }
+  ]
+}
