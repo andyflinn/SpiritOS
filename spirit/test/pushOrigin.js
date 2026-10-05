@@ -71,6 +71,10 @@ function commitFile(dir, file, text, msg) {
 function originLog(bare, n) { return git(['--git-dir', bare, 'log', '--format=%s', '-' + n, 'master']).stdout.trim().split('\n'); }
 
 // A world: a bare origin with one commit holding shared.txt, a clone (ours), and another clone that pushes first.
+// LINE ENDINGS STAY AS WRITTEN: each clone is made with core.autocrlf false in its own config, so git's settings on the
+// box (core.autocrlf true by default on Windows) cannot turn the clash in section 4 into a clean merge. Found by
+// claude-windows (8 of 10 on Windows, 10 of 10 with autocrlf off), diagnosed by claude-ubuntu.
+const CLONE = ['clone', '-q', '-c', 'core.autocrlf=false'];
 let worlds = 0;
 function world() {
   worlds += 1;
@@ -79,15 +83,15 @@ function world() {
   const bare = path.join(base, 'origin.git');
   git(['init', '-q', '--bare', '--initial-branch=master', bare]);
   const seed = path.join(base, 'seed');
-  git(['clone', '-q', bare, seed]);
+  git(CLONE.concat([bare, seed]));
   who(seed);
   git(['checkout', '-q', '-b', 'master'], seed);
   commitFile(seed, 'shared.txt', 'line one\nline two\n', 'seed');
   git(['push', '-q', 'origin', 'master'], seed);
   const ours = path.join(base, 'ours');
   const theirs = path.join(base, 'theirs');
-  git(['clone', '-q', bare, ours]);
-  git(['clone', '-q', bare, theirs]);
+  git(CLONE.concat([bare, ours]));
+  git(CLONE.concat([bare, theirs]));
   who(ours);
   who(theirs);
   return { bare: bare, ours: ours, theirs: theirs };
