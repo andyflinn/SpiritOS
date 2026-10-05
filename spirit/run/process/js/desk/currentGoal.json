@@ -1,8 +1,8 @@
 {
- "change": 16777,
+ "change": 16942,
  "line": 8492,
  "goal": "goal/G6",
- "writtenAt": "2026-10-05T21:05:19.049Z",
+ "writtenAt": "2026-10-05T21:17:01.214Z",
  "items": [
   {
    "id": "goal/G6",
@@ -12,7 +12,14 @@
    "with": "",
    "buttons": [],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G6.1",
+    "goal/G6.2",
+    "goal/G6.3",
+    "goal/G6.4",
+    "goal/G6.5",
+    "goal/G6.6"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -22,15 +29,14 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 0,
+   "waiting": 6,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows",
-    "wsl-claude"
+    "claude-ubuntu"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -38,6 +44,341 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
+   "box": "GOAL/G6: THE DESK PORTION OF andy/FACE.md, IN LINE WITH goal/G5\n\nANDY, VERBATIM\n- 2026-10-05: \"prime goal with desk-portion of FACE.md\"\n- 2026-10-05: \"adapt box to be in line with G5 changes\"\n- To Q1 (ruleDetails shows older versions?): \"No. the agents know it, and can bring it up, if neccessary.\"\n- To Q2 (the header-area element: part of G6 or its own item?): \"core. grant will be issued.\"\n\nThe source is andy/FACE.md, section \"spirit/run/shell/desk/desk.js\"; below it is read with his goal/G5 rulings, which win where they differ. The server side is built (goal/G5.5, G5.6, G5.7); this goal is the face.\n\nGENERAL (FACE.md)\n- All my chat-log entries left-aligned, not right-aligned.\n- Chat log entries for everybody in bubbles, separated vertically by 1em.\n- The header area, as in desk and deskDetails, a shell element every app can use: core, his grant to be issued on the files it touches.\n\nA NEW TAB, \"Rules\", BETWEEN \"Team\" AND \"Musings\"\n- The data is the desk server's rules table (goal/G5.5): key rule/N, label (the label rule, 64 bytes), type ui | code | design | desk, status proposed | active | deleted, text a paragraph of up to 2048 bytes with line breaks kept (G5.5: \"2048 for now.\", in place of FACE.md's one Kilobyte).\n- 1. The new bubble: type, label and text, then a new button: rule.add, the rule comes in proposed. Agents may add one too (G5.5: \"why not?\").\n- 2. The search bubble: a search box and 7 toggles (4 types, 3 statuses): rules.search {text, types, statuses}, the newest version of each rule, answering key, label, type, status.\n- 3. The list, a row per rule: status (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), label, type, key. A row opens ruleDetails.\n\nTHE ruleDetails DIALOG (a new dialog app beside deskDetails)\n- The header area, its top edge held under the shell's titlebar while the dialog scrolls: title key and label; buttons:\n  - the version button, his alone: rule.version {key, text, status} makes the draft one new version (G5.5: \"i prefer to negotiate, and create an updated version with one button/verb that belongs to me.\");\n  - activate (armable) and delete, each one quick version with that status (G5.5 Q6).\n- The textbox of the rule, edited by him; what he types is saved as his draft (rule.draft, on the server, read back by rule.get; it writes no history), until the version button (G5.5 Q7).\n- No older versions in the dialog: the agents know rule.history and bring a version up when needed.\n- The chat area, styled like deskDetails': chat.add and item.chat under rule/N; no cap or split triggers. \"in this chat, the agents may propose alterations to parts of the rule, or advocate for status changes for this rule.\"\n\nTHE \"Musings\" TAB (FACE.md; G5.5: \"is pure ui\")\n- Each musing in its own bubble, maybe with the header area's background colour.\n- 1em between the input textarea and each bubble.\n\nWHAT THE FACE NEEDS TO KNOW BESIDES\n- Every rule change is pushed: rules.md in the repo, and a desk line in the group chat (goal/G5.8).\n- A goal now offers Close (goal/G5.6); the \"are you sure?\" while its items are open is the face's.\n\nOPEN\n- His Go per item.",
+   "version": 4,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Should ruleDetails show a rule's older versions (rule.history, the proof of its earlier texts), or only the current one? (wsl-claude, for claude-windows' point)",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T21:13:44.568Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "The header area (sticky under the titlebar, shared by desk, deskDetails and ruleDetails) is a new shell element, likely core (a grant): part of G6, or its own item? (wsl-claude)",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T21:13:45.803Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Does ruleDetails show the older versions of a rule (rule.history, newest first)?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T21:12:25.892Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "The header-area element every app can use (as in desk and deskDetails): part of G6, or an item of its own?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T21:12:27.071Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:05:59.691Z",
+     "text": "prime goal with desk-portion of FACE.md"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:06:05.270Z",
+     "text": "goal/G6 is open, empty. Earlier you said G6 would hold NOFACE.md, but every point of NOFACE.md was built in G5 (pushOrigin, one label, slots, limbo).\nWhat goes into G6: FACE.md's UI work, something new, or leave it empty for you to fill?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T21:06:25.606Z",
+     "text": "wsl: crossed lines: Andy answered just before yours: \"prime goal with desk-portion of FACE.md\"."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:06:27.789Z",
+     "text": "taking: G6's box, primed with FACE.md's desk portion."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:06:34.739Z",
+     "text": "G6's box holds FACE.md's desk portion verbatim, with a note of what G5 already built server-side; no items added."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:07:32.977Z",
+     "text": "review?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T21:07:57.995Z",
+     "text": "wsl, review: FACE.md is quoted as it was, but your G5.5 rulings changed what the dialog must do: the text is a 2048-byte paragraph (not 1 KB); edits are negotiated and saved as a draft (rule.draft), then made one version by your button (rule.version), with activate and delete as quick versions; and a rule has a history (rule.history) the dialog could show. The box should carry those beside the quote, or the UI will be built to the old text.\nAlso: the header area is asked as a shell element for every app, which reaches past desk.js; in G6, or its own item? The rest checks out: 7 toggles = 4 types + 3 statuses, and the three icons exist (kernel.js)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:08:07.230Z",
+     "text": "taking: a review of G6's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:08:09.764Z",
+     "text": "Review, claude-windows. The server already has everything the face asks for: rules.search (4 type and 3 status toggles), rule.get, rule.draft, rule.version, a rule's chat, rule.history.\nWhere FACE.md and the built server differ, your later words won:\n- text: FACE.md says one Kilobyte; you ruled a 2048-byte paragraph.\n- activate and delete: each writes one rule.version; the textbox saves as rule.draft until your version button.\nGaps FACE.md leaves:\n- the header-area element is shared by desk, deskDetails and ruleDetails: a new shell element, likely core (a grant).\n- ruleDetails is a new dialog app (shell/ruleDetails) beside deskDetails.\n- rule.history exists but FACE.md does not show it: should ruleDetails show the older versions?\nThe natural items: header-area element, chat bubbles left-aligned, Musings bubbles, the Rules tab, ruleDetails. Show history in ruleDetails?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:08:42.817Z",
+     "text": "G6's box now carries, above the quote, what your G5 rulings changed in it (2048-byte paragraph, draft and version, history), so the UI is not built to the old text (wsl's point)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:08:44.504Z",
+     "text": "adapt box to be in line with G5 changes"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:09:33.690Z",
+     "text": "taking: G6's box, adapted to G5."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:09:39.666Z",
+     "text": "G6's box is rewritten in line with G5: each FACE.md point now says which built verb serves it and where your G5 rulings changed it (2048-byte paragraph, draft and version, quick activate and delete); plus the G5.6 goal Close's \"are you sure?\". Two open: history in ruleDetails, and the header-area element."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:11:51.800Z",
+     "text": "OPEN should be red questions"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T21:12:08.002Z",
+     "text": "taking: both OPEN points of G6 as red questions."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:12:16.022Z",
+     "text": "The two open points are red questions on goal/G6 now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:12:28.592Z",
+     "text": "Correction: wsl had already put both up (Q1, Q2); my Q3 and Q4 were the same, taken off."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:13:13.165Z",
+     "text": "Q1: Should ruleDetails show a rule's older versions (rule.history, the proof of its earlier texts), or only the current one? (wsl-claude, for claude-windows' point)\nNo. the agents know it, and can bring it up, if neccessary.\n\n\nQ2: The header area (sticky under the titlebar, shared by desk, deskDetails and ruleDetails) is a new shell element, likely core (a grant): part of G6, or its own item? (wsl-claude)\ncore. grant will be issued."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:13:37.478Z",
+     "text": "taking: Q1 and Q2 answers into G6's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:13:47.159Z",
+     "text": "In the box: no history in ruleDetails; the header area is a core element, your grant to come on its files. Q1, Q2 off; next are the items, one per part, for your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:14:02.410Z",
+     "text": "proposed split?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T21:14:19.921Z",
+     "text": "taking: the proposed split."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:14:26.153Z",
+     "text": "taking: a proposed split of G6."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:14:27.872Z",
+     "text": "Proposed split, all marked code (so they walk red, build, verify):\n- G6.1 the header-area shell element (core, your grant on its files); blocks G6.4.\n- G6.2 chat entries left-aligned, everyone's in bubbles 1em apart (desk and deskDetails chats).\n- G6.3 Musings: each musing a bubble, 1em from the textarea.\n- G6.4 ruleDetails, the new dialog app: header area, version, activate and delete buttons, the textbox saving as draft, the rule's chat; blocked by G6.1.\n- G6.5 the Rules tab: the new bubble, the search bubble with 7 toggles, the list; a row opens ruleDetails (G6.4 blocks it).\n- G6.6 a goal's Close in the List and the dialog, asking \"are you sure?\" while items are open (the face of G5.6).\nMake these the items?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T21:14:46.952Z",
+     "text": "wsl: withdrawn, claude-windows took it first and has posted the split."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T21:16:31.859Z",
+     "text": "split as proposed"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T21:16:57.425Z",
+     "text": "taking: G6.1 to G6.6 as proposed, with their boxes."
+    }
+   ]
+  },
+  {
+   "id": "goal/G6.1",
+   "title": "the header-area shell element (core): sticky under the titlebar, for desk, deskDetails and ruleDetails",
+   "goal": "goal/G6",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G6",
+    "goal/G6.4"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G6.2",
+   "title": "chat entries left-aligned, everyone in bubbles 1em apart (desk and deskDetails)",
+   "goal": "goal/G6",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G6"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G6.3",
+   "title": "Musings: each musing a bubble, 1em from the textarea",
+   "goal": "goal/G6",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G6"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G6.4",
+   "title": "ruleDetails, the new dialog app: header area, version, activate and delete, the textbox as draft, the rule chat",
+   "goal": "goal/G6",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G6",
+    "goal/G6.5"
+   ],
+   "blocked": [
+    "goal/G6.1"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G6.5",
+   "title": "the Rules tab: the new bubble, the search bubble with 7 toggles, the list; a row opens ruleDetails",
+   "goal": "goal/G6",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G6"
+   ],
+   "blocked": [
+    "goal/G6.4"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G6.6",
+   "title": "a goal Close in the List and the dialog, asking are you sure while items are open (the face of G5.6)",
+   "goal": "goal/G6",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G6"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "asks": 0,
+   "half": false,
+   "full": false,
    "box": "",
    "version": 0,
    "checks": [],
