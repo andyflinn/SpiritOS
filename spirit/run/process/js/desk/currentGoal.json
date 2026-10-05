@@ -1,8 +1,8 @@
 {
- "change": 17774,
+ "change": 17778,
  "line": 8492,
  "goal": "goal/G6",
- "writtenAt": "2026-10-05T23:18:15.978Z",
+ "writtenAt": "2026-10-05T23:18:21.262Z",
  "items": [
   {
    "id": "goal/G6",
@@ -16,7 +16,6 @@
    "blocking": [],
    "blocked": [
     "goal/G6.1",
-    "goal/G6.3",
     "goal/G6.4",
     "goal/G6.5",
     "goal/G6.6"
@@ -39,12 +38,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
+   "waiting": 5,
    "live": [
     "claude-ubuntu",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-ubuntu",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -876,10 +878,10 @@
    "id": "goal/G6.3",
    "title": "Musings: each musing a bubble, 1em from the textarea",
    "goal": "goal/G6",
-   "status": "running",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [
     "goal/G6"
@@ -899,7 +901,7 @@
    "builder": "wsl-claude",
    "verifier": "claude-ubuntu",
    "rules": [],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "MUSINGS IN BUBBLES\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nFACE.md: \"each musing in the log should be in a separate bubble, possibly with the same background color as the header area.\" / \"vertical spacing between input text area and each bubble in the log: 1em\". Andy in goal/G5.5: \"is pure ui\".\n\nWhere: shell/desk's Musings tab; layout and CSS only.\n\nWaiting: his Go (no open question).",
