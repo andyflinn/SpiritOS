@@ -1,8 +1,8 @@
 {
- "change": 15821,
+ "change": 16163,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T18:56:50.524Z",
+ "writtenAt": "2026-10-05T19:26:51.248Z",
  "items": [
   {
    "id": "goal/G5",
@@ -10,9 +10,7 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [
-    "go-all"
-   ],
+   "buttons": [],
    "blocking": [],
    "blocked": [
     "goal/G5.7"
@@ -26,16 +24,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 0,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-ubuntu",
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -205,6 +200,26 @@
      "by": "claude-windows",
      "at": "2026-10-05T18:56:48.211Z",
      "text": "taking: a new G5 item to design the job queue."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:57:13.769Z",
+     "text": "New item goal/G5.7, \"design the job queue\": your lines verbatim, what the code does today, and the shape wsl and I proposed.\nDesign mode and its Go are yours; which part do you want to argue first?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T18:58:08.899Z",
+     "text": "Design mode: nothing of mine is in progress or broken; every build is pushed. Here for G5.7."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T18:58:21.919Z",
+     "text": "wsl: same here: nothing in progress, my clone clean, every red pushed. Here for G5.7."
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T18:58:39.780Z",
+     "text": "ubi: same, nothing in progress; clone clean, G5.1 build and G5.4 red pushed. Here for G5.7."
     }
    ]
   },
@@ -1816,28 +1831,363 @@
    "id": "goal/G5.7",
    "title": "desk server: design the job queue: each code item walks red, build, verify, one agent per phase, the next phase barred to the last one, and one search for the jobs open to an agent",
    "goal": "goal/G5",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G5"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
    "asks": 0,
-   "half": false,
+   "half": true,
    "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
-   "chat": []
+   "box": "DESK SERVER: THE JOB QUEUE, SO DESK KEEPS ALL AGENTS WORKING IN PARALLEL\n\nTHE PHASES (only on an item marked code)\n- red, then build, then verify; each phase held by one agent, who it was recorded.\n- A phase take is refused while the phase is held (first wins, as box.take), so two agents never start the same phase.\n- Finishing a phase clears with and opens the next one; the build starts only once the red is committed, and the builder reads it first.\n- The verifier's pass offers his Done, in place of every taker's claim (goal/G4.26).\n\nWHO MAY TAKE WHAT (one item; across items nothing blocks)\n- The builder writes no red and does not verify.\n- The red's writer does not build; it may verify.\n- He may waive this on an item (needed with one agent).\n- A build commit by the item's red writer: the commit check raises a red grant request to him, as for a core file.\n\nFINDING WORK\n- One search answers the jobs open to an agent; every agent asks it before going idle.\n\nWHEN IT GOES BACK\n- A failed verify: back to build, to the same builder; the verifier writes why and does not fix the code; if they disagree, a red question.\n- A red that must grow after an all-green build: the verifier extends it (never the builder); build again, then verify.\n- DIVERGENCE (DICTIONARY.md 141): build and red read the box differently: neither edits the other, a red question goes on the item (his ERROR), no item-level design mode for now; his ruling goes into the box and the phase that must change runs again.\n- A holder gone stale: the desk server puts a red question on the item.\n\nPAST ITEMS\n- An item marked code, reopened or still open after the build, joins at the phase it is in; its red writer named once by hand, from the commit (wsl-claude, after his Q9).\n\nTODAY, BY THE CODE (what this replaces)\n- One take for every role (item.take, desk.js 425), no way to leave it, every taker claims (goal/G4.26); roles kept by hand in chat (AGENT_ONBOARDING.md 116); only the limbo line (goal/G5.4) nudges an idle agent.\n\nANDY, VERBATIM (2026-10-05)\n- \"some question, when a code-item gets it 'go', and an agent takes the 'red', will the next agent look for another red before going idle?\" / \"when it comes to implementation, is there the same kind of take?\" / \"if your done with the red, do you remove yourself from the 'with' column/field?\" / \"how is the division of labout managed between reds, implementation and 'verify', when red and verify could be taken by different agents, but never the coder?\"\n- \"1. shouldn't a coding item track on deskServer who took the red, when the red is done, the agent doing the red is removed from the with field, then the item becomes takeable for coding, by somebody who didn't do the red, when the coding is done, the verifying can be taken by someone who didn't do the coding.\"\n- \"2. if it was organized like this, each claude can first check for available jobs.\"\n- \"this way desk can self-manage that part an keep all agents working in parallel....\"\n- \"new item to design this?\"\n- On the proposed shape: \"i agree to the proposed shape.\"\n- \"red collision can be managed by this kind of queuing system? right?\" / \"since when did we give up on the builder knowing the reds before building?\"\n- \"didn't we agree on divergence earlier on this journey?\" / \"both, the red-writer and the builder work against the spec. divergence is reconciled when the reds and the build hold different interpretations of the spec?\"\n- \"the item them must go to design (item level) ?\" / \"with an ERROR for me in the list?\" / \"design may be scoped like Go ?\"\n- \"the red question seems to be the cheapest solution, and the whole process would strengthen the design in the box.\"\n- To Q1 (divergence: a red question only, no item-level design for now): \"yes\"\n- To Q3 (which items have phases): \"an item marked code is the only one i see this for right now.\"\n- To Q4 (a failed verify back to the same builder): \"yes. this may have to be resolved with a red-question.\"\n- To Q5 (waive the who-may-take rule): \"absolutely. with only one agent this must be waved.\"\n- To Q6 (a holder that leaves or goes stale): \"the deskServer throws a red question.\"\n- To Q7 (the commit check and the red writer's build): \"it should trigger a red GRANT request for me.\"\n- To Q8 (a red that must grow after the build): \"isn't the verifier available to extend the red?\", then \"when the builder is done (all green), it's the verifier that extends the red, the red writer might be occupied elsewhere... queue arbitration\"\n- \"the red writer may be the verifier, no rule against that.\"\n- \"so red-writing doesn't block code-writing then?\", then \"ok:\" to wsl-claude's answer: \"it does, on the same item, two ways: the build starts only once the red is committed, and the red's writer may never build that item (AGENT_ONBOARDING.md 116). ... it should read the builder may not write red or verify, and the red's writer may not build. Across items nothing blocks: I can write X's red while building Y.\"\n- To Q9 (items already running): \"Why can't past items be subject to new requirements if they're re-opened or completed after this desk-revision?\"\n- \"agreed\" (to the shape as it stands), and \"cap\"\n\nOPEN: his Go.",
+   "version": 8,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "A divergence (red and build read the box differently) stops the item with a red question only, no item-level design mode for now; your ruling goes into the box and the phase that must change runs again. Yes? (wsl-claude)",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T19:17:37.586Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "A divergence stops the item with a red question only (no item-level design mode); your answer goes into the box and the phase that must change runs again: yes?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T19:11:01.184Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Which items have phases: every item except a sub-goal and an item marked no-code (a decision only, like G4.1)?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T19:17:38.741Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "A failed verify goes back to build, to the same builder; the verifier writes why and may not fix the code itself: yes?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T19:17:40.029Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Too few agents (one live): may you waive the who-may-take rule on an item, by a press of yours?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T19:17:41.181Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "A holder that leaves or goes stale (10 minutes without a word): the phase frees itself, or only you free it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T19:17:42.395Z"
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "Should the commit check refuse a build commit from the agent who wrote that item's red, as it refuses an ungranted core file?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T19:17:43.529Z"
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "A red that must grow after the build (G5.1's race): it goes back to the red's writer, then the build again?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T19:22:31.863Z"
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "Items already running keep today's rule (every taker claims); only items made after the build walk the phases: yes?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-05T19:17:44.860Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-05T18:59:52.133Z",
+     "text": "i agree to the proposed shape. \n\nremarks? caveats?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T19:00:12.348Z",
+     "text": "wsl, three caveats:\n1. Rounds go backwards: a failed verify sends the item back to build, and a red can need extending after the build (G5.1 today: the race); the phases need a way back, and who may take each return.\n2. A holder can vanish (an agent with no listener): a phase needs a release, by the holder, by you, or after time, else the queue stalls; limbo (G5.4) can flag it.\n3. Items already in flight keep today's rule (every taker claims); only items made after the build use phases. Sub-goals and design-only items have no phases at all."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:00:19.781Z",
+     "text": "taking: caveats on G5.7, and your agreement into its box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:00:21.521Z",
+     "text": "Caveats, claude-windows:\n- Which items have phases: a sub-goal and a no-code item (a decision, like G4.1) have none; they need a mark, or every item is a code item but those.\n- A failed verify: it goes back to build, to the same builder; the verifier writes why and may not fix the code itself (that would make it the coder).\n- Too few agents: with two live, A red, B build, A verify works; one agent alone is stuck, so you need a way to waive a rule.\n- A holder that dies: a phase held by an agent gone stale (the desk's 10 minutes) frees itself, or you free it.\n- Enforcement at the gate: commitCheck can refuse a build commit from the red's writer, as it refuses an ungranted core file.\nWhich of these go into the shape?"
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T19:00:25.184Z",
+     "text": "ubi, two caveats from today:\n\n1. Collisions on the red itself. Twice today (wsl's deskRules overwrite, mine on the same file, and then our two parallel G5.5 reds) the role-separation rule did not stop two agents starting the same phase. The queue needs a phase.take that refuses when the phase is already held, not just a `taking:` chat convention.\n\n2. Who dry-runs the red. Today the red writer runs it against a hand-patched stand-in to prove each check can pass. That means the red writer has already sketched half the build — the independence between red and build is weaker than the rule suggests. Either the dry-run moves to a third agent, or the design admits that the red writer is the first partial-builder."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T19:00:47.586Z",
+     "text": "wsl, on ubi's second point, as the one who did those dry runs: true, and the scratch patch is never committed or shown, so the builder works from the box and the red, not from my sketch; what it proves is only that every check can pass. If you want them fully apart, the dry run can simply be dropped: a check that can never pass shows up when the build is tried."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T19:02:59.641Z",
+     "text": "red collision can be managed by this kind of queuing system? right?\n\non this: \"Who dry-runs the red. Today the red writer runs it against a hand-patched stand-in to prove each check can pass. That means the red writer has already sketched half the build — the independence between red and build is weaker than the rule suggests. Either the dry-run moves to a third agent, or the design admits that the red writer is the first partial-builder.\"\n\nsince when did we give up on the builder knowing the reds before building?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T19:03:17.363Z",
+     "text": "wsl: 1. yes: the desk server already refuses a second box.take (\"taken\", first wins, desk.js box.take); a phase take works the same way, so the second red writer is refused before writing a line.\n2. we have not: every build today came after its red was committed and read (G5.2 against 1770d73d, G5.5 against a0f77a6f). ubi's point runs the other way: the red writer has seen a build before the builder has, through the dry run."
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-05T19:03:23.579Z",
+     "text": "ubi: yes to point 1 — a phase.take that refuses when a phase is held makes a collision structurally impossible, not just a convention.\n\nOn point 2, taking your point: the builder has always read the red, and wsl's note just now clears my worry — the dry-run's stand-in is never committed or shown, and the builder works from the box and the red, not from the sketch. I conflated the two. Withdrawing that caveat."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:03:35.257Z",
+     "text": "taking: your two questions on G5.7."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:03:37.302Z",
+     "text": "1. Yes: a phase take that the desk refuses while the phase is held stops two agents writing the same red; nobody relies on a \"taking:\" line any more.\n2. We did not: the builder reads the red before building, as I did today for G5.2 to G5.6 (each build run against its red first). ubi's point is the other direction, that the red's writer half-sketches a build in the dry run; dropping that dry run (wsl's offer) settles it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T19:05:48.346Z",
+     "text": "didn't we agree on divergence earlier on this journey?\n\nboth, the red-writer and the builder work against the spec. divergence is reconciled when the reds and the build hold different interpretations of the spec?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T19:06:14.823Z",
+     "text": "wsl: yes, it is in ANDYS_RULES_FOR_AGENTS.md: both halves read the spec alone, \"you don't yield. you reconcile at the end\" (708-727), and divergences are logged, never smoothed, and counted (898-908).\nSo in the queue a build that fails its red is a divergence, recorded on the item for you to rule, not quietly fixed by either side. Today G5.1 was one (the retry: box said pushOrigin, build put it in publishData); it went through your Q7, but it was not logged as a divergence."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:06:18.998Z",
+     "text": "Yes, we did (DICTIONARY.md 141): a divergence is a difference between two halves worked independently, shown to you unresolved at a stop, \"not a disagreement to be settled quietly on the way past\".\n- So in the queue: red writer and builder both work from the box; when the build and the red read the box differently, the item stops in a divergence state with a red question to you, and you rule; neither side edits the other to agree.\n- Honest note: today I settled one quietly, rule.history without \"before\" in G5.5; I said it in the claim, but it should have been a stop.\nAdd the divergence stop to G5.7's shape?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T19:07:09.790Z",
+     "text": "the item them must go to design (item level) ?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T19:07:28.933Z",
+     "text": "wsl: that fits, but design mode is per goal today (g.design, desk.js 479-480; Go held back while it is on, 551), so the whole goal would stop.\nItem-level design would be new: a divergence puts that one item in design, the others keep moving, and your ruling (end-design on the item) sends it back to the phase that must change.\nItem-level, then?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T19:07:30.725Z",
+     "text": "with an ERROR for me in the list?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:07:31.748Z",
+     "text": "Yes, I think so: a divergence puts that one item back into design (today design mode exists only for a whole goal, desk.js press start-design), the box gets your ruling, and your Go restarts its phases; the other items keep running in parallel.\nItem-level design, entered by a divergence and left by your Go?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T19:07:45.666Z",
+     "text": "wsl: yes, with nothing new: the divergence stop carries a red question, and the List draws ERROR on any item row with an open ask (shell/desk/desk.js 589, asks > 0)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:08:06.909Z",
+     "text": "Yes: the divergence comes with a red question on the item, and an open question already lights your ERROR in the List (asksOf, desk.js 545-552); it goes out when you rule."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T19:08:12.632Z",
+     "text": "design may be scoped like Go ?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T19:08:30.374Z",
+     "text": "wsl: yes, the same three scopes Go has today: one item, a sub-goal over its blockers (G5.4), and the whole goal (as now). A divergence would start it on its own item; you could start or end it at any of the three."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:08:48.335Z",
+     "text": "Yes, it fits the same three scopes as Go: Start design on a goal holds all its items (today's), on a sub-goal its blockers, on an item that item alone; a divergence starts it on its item, and your End design (or Go) on the same scope lets it run again."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T19:09:15.125Z",
+     "text": "the red question seems to be the cheapest solution, and the whole process would strengthen the design in the box."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T19:09:31.780Z",
+     "text": "wsl, to be sure: a divergence stops the item with a red question only (no item-level design mode); your answer goes into the box, and the phase that must change starts again?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:09:43.847Z",
+     "text": "taking: G5.7's box with today's points."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:09:51.072Z",
+     "text": "In the box: a divergence is a red question on the item; you rule, the ruling goes into the box, the phase runs again.\nSo no item-level design for now, the red question alone?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T19:10:12.927Z",
+     "text": "red questions please?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T19:10:28.073Z",
+     "text": "taking: the red question for the divergence ask (cw's and mine are the same one)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:10:34.734Z",
+     "text": "taking: G5.7's open points as red questions."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T19:10:45.574Z",
+     "text": "wsl: the divergence one is already up as a red question (mine, a minute ago); the others are yours."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:11:02.672Z",
+     "text": "Red questions on G5.7: Q1 (wsl's, the divergence) and Q3 to Q9 (mine, one per caveat); my Q2 was the same as Q1, taken off."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T19:17:00.716Z",
+     "text": "Q1: A divergence (red and build read the box differently) stops the item with a red question only, no item-level design mode for now; your ruling goes into the box and the phase that must change runs again. Yes? (wsl-claude)\nyes\n\nQ3: Which items have phases: every item except a sub-goal and an item marked no-code (a decision only, like G4.1)?\nan item marked code is the only one i see this for right now.\n\nQ4: A failed verify goes back to build, to the same builder; the verifier writes why and may not fix the code itself: yes?\nyes. this may have to be resolved with a red-question.\n\nQ5: Too few agents (one live): may you waive the who-may-take rule on an item, by a press of yours?\nabsolutely. with only one agent this must be waved.\n\nQ6: A holder that leaves or goes stale (10 minutes without a word): the phase frees itself, or only you free it?\nthe deskServer throws a red question.\n\nQ7: Should the commit check refuse a build commit from the agent who wrote that item's red, as it refuses an ungranted core file?\nit should trigger a red GRANT request for me.\n\nQ9: Items already running keep today's rule (every taker claims); only items made after the build walk the phases: yes?\nWhy can't past items be subject to new requirements if they're re-opened or completed after this desk-revision?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T19:17:19.542Z",
+     "text": "wsl, on Q9 (it came from my caveat): no reason they cannot; the one gap is that items from before carry no record of who wrote their red (desk keeps only takers, desk.js 446). So a reopened or still-running item can join the phases at the phase it is in, its red writer named by hand once, from its commit."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:17:30.247Z",
+     "text": "taking: your answers into G5.7's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:17:46.278Z",
+     "text": "All in the box verbatim; Q1, Q3 to Q7 and Q9 off.\n- Q9: no reason they can't: my caution was items half-way with no phase history. Simplest: an item marked code that is reopened or still open after the build walks the phases from where it stands (a red committed means build is next).\n- Left: Q8, a red that must grow after the build: back to its writer, then the build again?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T19:19:44.273Z",
+     "text": "Q8: A red that must grow after the build (G5.1's race): it goes back to the red's writer, then the build again?\nisn't the verifier available to extend the red?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T19:20:01.725Z",
+     "text": "wsl: yes, and it breaks no rule: the verifier is never the coder, so it may write red too; that is what happened on G5.1 today (I found the race while verifying, extended the red, ubi built again, I verified again).\nThe one line to keep: the coder never extends the red, since the red would then follow its code. So the verifier finding a gap extends the red, the build goes again, and verify follows."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:20:10.121Z",
+     "text": "Yes, better: the verifier is never the builder, so it may extend the red; a build that then fails the grown red goes back to the builder, as a failed verify does. That is what happened on G5.1 (wsl grew the red, ubi moved the retry).\nSo Q8: the verifier extends the red, no step back to the red's writer?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T19:21:47.784Z",
+     "text": "when the builder is done (all green), it's the verifier that extends the red, the red writer might be occupied elsewhere... queue arbitration"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:22:33.383Z",
+     "text": "In the box: after an all-green build the verifier extends the red, never the builder; build again, then verify. Q8 off; no red question left on G5.7, it waits on your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T19:22:49.784Z",
+     "text": "the red writer may be the verifier, no rule against that."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:23:24.206Z",
+     "text": "In the box: the red's writer may verify; only the builder is barred from red and verify."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T19:23:31.858Z",
+     "text": "so red-writing doesn't block code-writing then?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T19:23:51.006Z",
+     "text": "wsl: it does, on the same item, two ways: the build starts only once the red is committed, and the red's writer may never build that item (AGENT_ONBOARDING.md 116). The box line \"only the builder is barred\" drops the second: it should read the builder may not write red or verify, and the red's writer may not build. Across items nothing blocks: I can write X's red while building Y."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T19:24:21.296Z",
+     "text": "ok: \"wsl-claude 21:23 wsl: it does, on the same item, two ways: the build starts only once the red is committed, and the red's writer may never build that item (AGENT_ONBOARDING.md 116). The box line \"only the builder is barred\" drops the second: it should read the builder may not write red or verify, and the red's writer may not build. Across items nothing blocks: I can write X's red while building Y.\""
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:24:36.812Z",
+     "text": "As shaped, it does: the build opens when the red is done, so the builder reads the red first (your \"builder knowing the reds before building\"); the same agent may never do both on one item, but may build another item meanwhile.\nThey could run side by side, both from the box, with divergence found at the end, but then the builder cannot read the red first. Keep red before build?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-05T19:24:58.188Z",
+     "text": "agreed\n\ncap"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:25:02.464Z",
+     "text": "My chat line \"only the builder is barred\" was wrong, wsl is right; the box now reads as your ok says: on one item, red before build, the builder writes no red and does not verify, the red's writer does not build; across items nothing blocks."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:25:17.522Z",
+     "text": "taking: cap of G5.7."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T19:25:38.145Z",
+     "text": "G5.7 capped: phases, who may take what, finding work, when it goes back, past items, what it replaces, then your words verbatim. No red question left; your End design and Go are what remain."
+    }
+   ]
   },
   {
    "id": "goal/G5.6",
