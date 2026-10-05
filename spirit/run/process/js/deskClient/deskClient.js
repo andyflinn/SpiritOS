@@ -228,6 +228,23 @@ function publishOn(body) {
 }
 
 // What one answer of changes holds for this agent, in the order the desk gave it, each with the place after it.
+// THE PULL (goal/G5.8): the clone this deskClient runs from, fast-forwarded onto its origin only when it holds no
+// unsaved edit; with one, nothing is touched and the agent is told. A rebase that clashes is undone. '' when pulled
+// or already there.
+function pullClone(hash) {
+  const cp = require('child_process');
+  const run = function (args, cwd) { const r = cp.spawnSync('git', args, { cwd: cwd, encoding: 'utf8', timeout: 60000, windowsHide: true }); return { status: r.status, out: String(r.stdout || '').trim(), err: String(r.stderr || '').trim() }; };
+  const top = run(['rev-parse', '--show-toplevel'], __dirname);
+  if (top.status !== 0 || !top.out) return '';
+  const root = top.out;
+  if (run(['cat-file', '-e', hash + '^{commit}'], root).status === 0 && run(['merge-base', '--is-ancestor', hash, 'HEAD'], root).status === 0) return '';
+  if (run(['status', '--porcelain', '--untracked-files=no'], root).out) return 'commit ' + hash + ' landed; your clone has unsaved edits, so it was not pulled.';
+  const pulled = run(['pull', '-q', '--rebase'], root);
+  if (pulled.status === 0) return '';
+  run(['rebase', '--abort'], root);
+  return 'commit ' + hash + ' landed; the pull clashed and was undone, so your clone was not pulled: ' + (pulled.err || pulled.out).slice(0, 300);
+}
+
 function meantForAgent(got, from) {
   const out = [];
   const cur = { n: from.n, line: from.line };
@@ -242,9 +259,18 @@ function meantForAgent(got, from) {
       if (r.verb === 'press' && /"what":"seen"/.test(r.body)) return;
       if (r.verb === 'chat.add') publishOn(r.body);
       out.push({ text: 'DESK andy ' + r.verb + ' ' + String(r.body).slice(0, 4000), n: cur.n, line: cur.line });
-    } else if (r.by && !mine && r.by !== 'desk' && r.verb === 'chat.add') {
-      // The desk's own busy replies are for Andy; they wake no agent (Andy: "it won't bother you").
+    } else if (r.by && !mine && r.verb === 'chat.add') {
+      // The desk's own busy replies are for Andy; they wake no agent (Andy: "it won't bother you"). Its other lines do
+      // (goal/G5.8): an item entering limbo (goal/G5.4) and a rule change are written for the agents to hear.
+      if (r.by === 'desk' && /"text":"message delivered, /.test(String(r.body))) return;
       out.push({ text: 'DESK ' + r.by + ' chat.add ' + String(r.body).slice(0, 4000), n: cur.n, line: cur.line });
+      // A COMMIT LANDING PULLS THIS AGENT'S CLONE (goal/G5.8). Andy: "when the reds  landed, why doesn't deskClient
+      // pull the changes automatically?", "or when the code lands?". Read here, inside next, so only while the agent
+      // listens.
+      let said = '';
+      try { said = String(JSON.parse(r.body).text || ''); } catch (e) { said = ''; }
+      const m = /^commit ([0-9a-f]{7,40})\b/.exec(said);
+      if (m) { const told = pullClone(m[1]); if (told) out.push({ text: told, n: cur.n, line: cur.line }); }
     }
   });
   got.lines.forEach(function (l) {
@@ -442,6 +468,22 @@ appServer.serve({
       const t0 = Date.now();
       const deadline = t0 + HOLD_MS;
       if (said !== 'listening') say(to, 'listening');
+      // A JOB AT ONCE (goal/G5.8). Andy: "will the deskEar return immediately with a job to do if one is available?"
+      // One read first, so lines waiting are handed before a job; then a job open to this agent comes back as a JOB
+      // line, with the rules recorded on its item at his Go; else the wait goes on as before.
+      function firstJob() {
+        return countedAsk(to, 'work.open', {}).answer.then(function (got) {
+          const jobs = ((got && got.items) || []).map(function (x) { try { return JSON.parse(x.label); } catch (e) { return null; } }).filter(Boolean);
+          if (!jobs.length) return '';
+          const j = jobs[0];
+          return countedAsk(to, 'item.get', { id: j.id }).answer.then(function (g) {
+            let fx = {};
+            try { fx = JSON.parse(g.item); } catch (e) { fx = {}; }
+            const keys = (Array.isArray(fx.rules) ? fx.rules : []).map(function (r) { return r.key + '@' + r.version; });
+            return 'JOB ' + j.id + ' ' + j.phase + (keys.length ? ' rules: ' + keys.join(' ') : '');
+          });
+        }).catch(function () { return ''; });
+      }
       // The wait ends, with lines or with none, only once every other agent is blocked here (goal/G3.9).
       function ending(answer) {
         return unblockedOther().then(function (bad) {
@@ -463,7 +505,13 @@ appServer.serve({
           return wait();
         });
       }
-      return wait();
+      return within(poll(to), Math.max(0, deadline - Date.now())).then(function () {
+        if (waiting.length) return wait();
+        return within(firstJob(), Math.max(0, deadline - Date.now())).then(function (job) {
+          if (!job) return wait();
+          return ending(function () { return within(say(to, 'working'), Math.min(SAY_MS, t0 + LEAVE_BY_MS - Date.now())).then(function () { return { lines: [job] }; }); });
+        });
+      });
     },
   },
   // THE DESK'S NUDGE (goal/G3.5): something changed there. The desk's alone, by the key setDesk named. It asks

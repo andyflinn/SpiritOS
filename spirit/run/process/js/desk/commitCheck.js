@@ -131,7 +131,7 @@ function checkItems(ids) {
         if (current.indexOf(f.goal) === -1) { reasons.push('- ' + id + ': not an item of the current goal'); return one(i + 1); }
         if (f.status === 'done' || f.status === 'closed') { reasons.push('- ' + id + ': ' + f.status + ' already; nothing is owed on it'); return one(i + 1); }
         if (f.go !== true) { reasons.push('- ' + id + ': Andy has not pressed Go on it'); return one(i + 1); }
-        return scopeAndGrants(id).then(function () {
+        return scopeAndGrants(id).then(function () { return redWriterBuilds(id); }).then(function () {
           fs.writeFileSync(path.join(gitDir(), 'commitCheck.item'), id);
           end(0, 'commitCheck: ' + id + ' has his Go; the commit is taken');
         });
@@ -174,6 +174,27 @@ function scopeAndGrants(id) {
         end(1, 'commitCheck: REFUSED (grant): core files Andy has not granted under ' + id + ' (a grant request is under the item):\n' +
           ungranted.map(function (f) { return '- ' + f; }).join('\n'));
       });
+    });
+  });
+}
+
+// ── the red writer's build (goal/G5.9) ─────────────────────────────
+// Andy, to Q7: "it should trigger a red GRANT request for me." The desk says whether this agent may commit on the
+// item (phase.may, by the key it asks with); not allowed, the commit is refused unless a G check "red writer builds"
+// on the item is granted, and the refusal puts that G check there, open, once, so his List shows it.
+function redWriterBuilds(id) {
+  // A desk that does not know phase.may yet (a node still running the code from before goal/G5.9) allows the commit,
+  // so no agent is locked out between this build landing and his node's restart.
+  return desk('phase.may', { id: id }).catch(function (e) {
+    if (/no-such-verb/.test(String(e && e.message))) return { allowed: true, why: '' };
+    throw e;
+  }).then(function (may) {
+    if (may.allowed !== false) return null;
+    return desk('item.checks', { id: id }).then(function (got) {
+      const mine = (Array.isArray(got.checks) ? got.checks : []).filter(function (c) { return c.kind === 'G' && /red writer builds/i.test(String(c.words)); });
+      if (mine.some(function (c) { return c.state === 'granted'; })) return null;
+      const ask = mine.length ? Promise.resolve() : desk('check.add', { id: id, kind: 'G', words: 'red writer builds: ' + String(may.why || ''), test: '' });
+      return ask.then(function () { end(1, 'commitCheck: REFUSED (red writer): ' + String(may.why || '') + ' (a grant request is under the item)'); });
     });
   });
 }

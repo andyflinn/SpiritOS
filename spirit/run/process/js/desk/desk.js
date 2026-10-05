@@ -317,6 +317,24 @@ const ruleRows = db.prepare('SELECT n, key, at, by, type, label, status, text FR
 const getDraft = db.prepare('SELECT text FROM rule_drafts WHERE key = ?');
 const putDraft = db.prepare('INSERT INTO rule_drafts (key, at, text) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET at = excluded.at, text = excluded.text');
 const ruleChatRows = db.prepare("SELECT at, by, body FROM records WHERE verb = 'rule.chat' ORDER BY n");
+
+// EVERY RULE CHANGE IS PUSHED, BOTH WAYS (goal/G5.8). Andy: "then lets have deskServer push active rules upon every
+// rule-change.", and to a repo file, an ear line, or both: "both". The active rules, grouped by type, are written to
+// rules.md in this server's state and shared into the repo as currentGoal.json is; one line by desk in the group chat
+// names the rule, so every agent's ear hears it.
+const RULES_STATE_FILE = path.join(STATE, 'rules.md');
+const RULES_PATH = 'spirit/run/process/js/desk/rules.md';
+function rulesChanged(key, what) {
+  const active = newestRules.all().filter(function (r) { return r.status === 'active'; });
+  const text = ['# Desk rules, active (written by the desk server on every rule change, goal/G5.8)', ''].concat(
+    RULE_TYPES.map(function (type) {
+      const mine = active.filter(function (r) { return r.type === type; });
+      return mine.length ? ['## ' + type, ''].concat(mine.map(function (r) { return '### ' + r.key + ' (version ' + r.n + '): ' + r.label + '\n\n' + r.text + '\n'; })).join('\n') : '';
+    }).filter(Boolean)).join('\n') + '\n';
+  try { fs.writeFileSync(RULES_STATE_FILE, text); } catch (e) { console.error('desk: the rules file was not written: ' + ((e && e.message) || e)); }
+  if (GOAL_SHARED && GOAL_REPO) shareFile(RULES_PATH, RULES_STATE_FILE, 'rules.md, shared by the desk (goal/G5.8)');
+  try { write('chat.add', { id: GROUP_CHAT, text: 'rule ' + key + ' ' + what + '; the active rules are in ' + RULES_PATH, by: 'desk', key: '' }); } catch (e) { /* no group chat yet */ }
+}
 const allRecords = db.prepare('SELECT n, at, verb, by, key, body FROM records ORDER BY n');
 
 // An agent counts as live for ten minutes after its last write (Andy: "fine.").
@@ -396,6 +414,9 @@ function apply(s, r, b, item, goalOf) {
         one.blocks = (Array.isArray(x.blocks) ? x.blocks : [x.blocks || gid]).map(String);
         one.at = r.at;
         one.leftOut = false;
+        // AN ITEM MARKED CODE (goal/G5.7) walks the phases. Andy: "an item marked code is the only one i see this for
+        // right now."
+        if (x.code === true) one.code = true;
         ids.push(id);
       });
       // LEFT OUT IS CLOSED, NEVER DELETED (goal/G4.24). Andy: "1. sounds dumb that the \"archive\" is not
@@ -444,10 +465,24 @@ function apply(s, r, b, item, goalOf) {
     case 'item.rename': it.title = String(b.title); return;
     case 'item.status': it.status = String(b.word); return;
     case 'item.take': it.with = r.by; it.takers[r.by] = true; return;
+    // THE PHASES (goal/G5.7): the handler checked who may; the replay records it.
+    case 'phase.take':
+      it.with = r.by; it.takers[r.by] = true; it.verified = false;
+      // The key beside the label (goal/G5.9): a label he may rename, a key that stays.
+      if (b.phase === 'red') { it.red = r.by; it.redKey = String(r.key || ''); it.phase = 'red'; }
+      else if (b.phase === 'build') { it.builder = r.by; it.builderKey = String(r.key || ''); }
+      else if (b.phase === 'verify') { it.verifier = r.by; it.verifierKey = String(r.key || ''); }
+      return;
+    case 'phase.done':
+      it.with = '';
+      if (b.phase === 'red') it.phase = 'build';
+      else if (b.phase === 'build') it.phase = 'verify';
+      else if (b.phase === 'verify') { if (b.pass === true) { it.verified = true; it.phase = ''; } else it.phase = 'build'; }
+      return;
     // TAKING THE BOX (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
     // is red. cap also." The handler refuses a take while another stands, so what reaches here always lands.
     case 'box.take': it.boxTakenBy = r.by; it.takers[r.by] = true; return;
-    case 'press': press(s, it, String(b.what), r, goalOf); return;
+    case 'press': press(s, it, String(b.what), r, goalOf, b); return;
     // THE LISTENER'S WORD (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
     // stops when the agent goes back to listening. the listening script can toggle those two?"
     case 'agent.state': s.agentWord[r.by] = String(b.word); return;
@@ -474,7 +509,10 @@ function apply(s, r, b, item, goalOf) {
   }
 }
 
-function press(s, it, what, r, goalOf) {
+function press(s, it, what, r, goalOf, b) {
+  // THE RULES IN FORCE AT HIS GO (goal/G5.8), recorded in the press itself, so a rule changed later never moves under
+  // work already running.
+  const rulesAtGo = function (m) { if (b && b.rules && Array.isArray(b.rules[m.id])) m.rules = b.rules[m.id]; };
   const g = goalOf(it.id);
   if (what === 'start-design' && g) g.design = true;
   else if (what === 'end-design' && g) g.design = false;
@@ -483,9 +521,11 @@ function press(s, it, what, r, goalOf) {
   // HIS GO IS ON RECORD (goal/G3.9): `go` is set by his go and go-all alone and by nothing else; `went` stays the
   // state of the item, which older records set in other ways.
   // His Go on a sub-goal is a go-all over its blockers (goal/G5.4); the sub-goal itself carries no Go.
-  else if (what === 'go' && it.subGoal && !it.goal) subGoalGoable(s, it).forEach(function (m) { m.went = true; m.go = true; m.status = 'running'; });
-  else if (what === 'go') { it.went = true; it.go = true; it.status = 'running'; }
-  else if (what === 'go-all' && g) goable(s, g).forEach(function (m) { m.went = true; m.go = true; m.status = 'running'; });
+  else if (what === 'go' && it.subGoal && !it.goal) subGoalGoable(s, it).forEach(function (m) { m.went = true; m.go = true; m.status = 'running'; rulesAtGo(m); });
+  else if (what === 'go') { it.went = true; it.go = true; it.status = 'running'; if (it.code && !it.phase) it.phase = 'red'; rulesAtGo(it); }
+  else if (what === 'go-all' && g) goable(s, g).forEach(function (m) { m.went = true; m.go = true; m.status = 'running'; if (m.code && !m.phase) m.phase = 'red'; rulesAtGo(m); });
+  // HIS WAIVE (goal/G5.7). Andy: "absolutely. with only one agent this must be waved." One agent may take every phase.
+  else if (what === 'waive') it.waived = true;
   // A CLAIM CONSUMES THE GO (goal/G2.13). Andy: "When Done is offered, Go will be considered pressed/consumed",
   // and "ok, too." to a Reopen without a Go: an item claimed before his Go counts as gone, as his Go would make it.
   // SINCE goal/G3.9 NO SUCH CLAIM IS TAKEN: the press refuses a claim-done on an item without his Go (Andy,
@@ -556,7 +596,8 @@ function buttons(s, it) {
   if (it.goal) {
     const allDone = g && g.members.length > 0 && g.members.every(function (id) { const m = s.items[id]; return m && (m.done || m.closed); });
     if (allDone) out.push('done');
-  } else if (Object.keys(it.claims).length) out.push('done');
+  // A CODE ITEM OFFERS DONE ON THE VERIFIER'S PASS ALONE (goal/G5.7), no claims needed.
+  } else if (it.code ? it.verified === true : Object.keys(it.claims).length) out.push('done');
   if (it.goal && g && goable(s, g).length) out.push('go-all');
   if (!it.goal && !it.went && !claimed) out.push('close');
   // A GOAL OFFERS CLOSE ALWAYS (goal/G5.6), open items or not. Andy, to "a goal gets a Close like an item's (off the
@@ -602,9 +643,58 @@ function asksOf(s, it) {
   const open = it.checks.filter(function (c) {
     return c.state === 'open' && (c.kind === 'G' || c.kind === 'Q' || (c.kind === 'C' && doneOffered));
   }).length;
-  const allClaimed = !it.goal && doneOffered && Object.keys(it.claims).length > 0 &&
-    Object.keys(it.takers).every(function (t) { return it.claims[t]; });
+  const allClaimed = !it.goal && doneOffered && (it.code ? it.verified === true : Object.keys(it.claims).length > 0 &&
+    Object.keys(it.takers).every(function (t) { return it.claims[t]; }));
   return open + (allClaimed ? 1 : 0);
+}
+
+// WHO MAY TAKE A PHASE (goal/G5.7), '' when the agent may, else the refusal. Andy: the red's writer may not build ("ok:"
+// to wsl-claude's line), the builder writes no red and does not verify, "the red writer may be the verifier", a failed
+// verify goes back to the same builder, after an all-green build "it's the verifier that extends the red", and his
+// waive lifts all of it ("with only one agent this must be waved").
+function mayTake(s, it, phase, who) {
+  if (!it || it.goal || !it.code || it.go !== true || it.done || it.closed) return 'not-offered';
+  if (it.with) return 'taken';
+  const w = it.waived === true;
+  if (phase === 'red') {
+    if (it.phase === 'red') return w || who !== it.builder ? '' : 'not-offered';
+    if (it.phase === 'verify' && it.verifier && who === it.verifier) return w || who !== it.builder ? '' : 'not-offered';
+    return 'not-offered';
+  }
+  if (phase === 'build') {
+    if (it.phase !== 'build') return 'not-offered';
+    if (!w && who === it.red) return 'not-offered';
+    if (!w && it.builder && who !== it.builder) return 'not-offered';
+    return '';
+  }
+  if (phase === 'verify') return it.phase === 'verify' && (w || who !== it.builder) ? '' : 'not-offered';
+  return 'bad-request';
+}
+
+// WHICH RULES APPLY (goal/G5.8). Andy: "if a job involves ui, there are rules of that type to considered", "is there a
+// mechanical way to attach applicable rules to an item before or when it's given a go?". The desk rules always, plus
+// the types the item's box names paths of: spirit/run/js/ and process/js/ are code, spirit/run/shell/ is ui.
+function typesOf(it) {
+  const box = String(it.box || '');
+  const types = ['desk'];
+  if (/spirit\/run\/js\/|process\/js\//.test(box)) types.push('code');
+  if (/spirit\/run\/shell\//.test(box)) types.push('ui');
+  return types;
+}
+function rulesFor(it) {
+  const types = typesOf(it);
+  return newestRules.all().filter(function (r) { return r.status === 'active' && types.indexOf(r.type) !== -1; })
+    .map(function (r) { return { key: r.key, version: r.n }; });
+}
+// The items his Go starts, each with its rules, as the press records them.
+function rulesForGo(s, id, what) {
+  const it = s.items[String(id)];
+  if (!it) return {};
+  const g = s.goals[it.goal ? it.id : it.goalId];
+  const going = what === 'go-all' ? (g ? goable(s, g) : []) : it.subGoal && !it.goal ? subGoalGoable(s, it) : [it];
+  const out = {};
+  going.forEach(function (m) { out[m.id] = rulesFor(m); });
+  return out;
 }
 
 // LIMBO (goal/G5.4). Andy (andy/NOFACE.md): "when 'go' was pressed/consumed on an item, and no agent is working on
@@ -634,7 +724,11 @@ function facts(s, it) {
     // WHO HOLDS THE BOX (goal/G4.20 point 9), '' when nobody.
     boxTaken: it.boxTakenBy || '',
     // goal/G5.4: in limbo, and marked a sub-goal by a split.
-    limbo: limboOf(s, it), subGoal: it.subGoal === true };
+    limbo: limboOf(s, it), subGoal: it.subGoal === true,
+    // goal/G5.7: the phase it is in, and who did each.
+    code: it.code === true, phase: it.phase || '', red: it.red || '', builder: it.builder || '', verifier: it.verifier || '',
+    // goal/G5.8: the rules in force at his Go, each { key, version }.
+    rules: Array.isArray(it.rules) ? it.rules : [] };
   f.asks = asksOf(s, it);
   // THE BOX CAP (goal/G2.2 note 1). Andy: "there will be no second box per item. absolutely not.", "orange at 50%,
   // red at 75%". The box measured as its one answer against appClient.ANSWER_MAX: half from 50%, full from 75%;
@@ -820,6 +914,17 @@ function write(verb, a, check) {
       saidLimbo = true;
     }
   });
+  // A HOLDER GONE STALE (goal/G5.7). Andy: "the deskServer throws a red question." Once per hold: a holder silent past
+  // LIVE_MS gets one open red question on its item.
+  if (gW) gW.members.forEach(function (id) {
+    const m = after.items[id];
+    if (!m || !m.code || !m.with || m.closed || m.done) return;
+    const at = after.agentsAt[m.with];
+    if (at && Date.now() - Date.parse(at) < LIVE_MS) return;
+    if (m.checks.some(function (c) { return c.kind === 'Q' && c.state === 'open' && String(c.words).indexOf('stale:') === 0; })) return;
+    write('check.add', { id: id, kind: 'Q', words: 'stale: ' + m.with + ' holds the ' + m.phase + ' of this item and has said nothing for 10 minutes. Free the phase, or wait?', test: '', by: 'desk', key: '' });
+    saidLimbo = true;
+  });
   // Said before this write publishes and writes the goal file, so both carry the line and the newest cursor.
   if (saidLimbo) after = walkState();
   const now = it ? after.items[it.id] : null;
@@ -867,18 +972,18 @@ function writeGoalFile(s, verb, a, change) {
   });
   const doc = { change: change, line: Number(newestLine.get().rid) || 0, goal: s.current, writtenAt: new Date().toISOString(), items: items };
   try { fs.writeFileSync(GOAL_STATE_FILE, JSON.stringify(doc, null, 1) + '\n'); } catch (e) { console.error('desk: the goal file was not written: ' + ((e && e.message) || e)); return; }
-  shareGoalFile();
+  shareFile(GOAL_PATH, GOAL_STATE_FILE, 'currentGoal.json, shared by the desk (goal/G4.21)');
 }
 // The node runs goalShare.js as a job: asked at the node's door, SPIRIT_CALLBACK_URL (the one every spawned process
 // speaks through), through the kernel as the nudge is (goal/G3.5), with the verb the shell's Start Job uses.
-function shareGoalFile() {
+function shareFile(repoPath, fromFile, message) {
   const url = process.env.SPIRIT_CALLBACK_URL;
   if (!url) { console.error('desk: no SPIRIT_CALLBACK_URL, so the goal file is not shared'); return; }
   let base = '';
   try { base = new URL(url).origin; } catch (e) { console.error('desk: SPIRIT_CALLBACK_URL is no URL: ' + url); return; }
   Promise.resolve().then(function () {
     return require('../../../js/kernel.js').core.ask('jobs.create', { command: process.execPath,
-      args: [path.join(__dirname, 'goalShare.js'), '--repo', GOAL_REPO, '--path', GOAL_PATH, '--from', GOAL_STATE_FILE],
+      args: [path.join(__dirname, 'goalShare.js'), '--repo', GOAL_REPO, '--path', repoPath, '--from', fromFile, '--message', message],
       // A UTILITY PROCESS (goal/G4.34): its job leaves Jobs once it exited cleanly; a failed share stays, to be seen.
       removeWhenDone: true }, base);
   }).then(function (r) {
@@ -912,11 +1017,11 @@ function newGoal(w) {
   return write('session.set', { session: { goal: { id: id, title: 'New goal' }, items: [] }, by: w.by, key: w.key });
 }
 
-const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen'];
+const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen', 'waive'];
 // Andy's alone (G2.1 review). His presses carry the owner's caller (the
 // mark the door forwards, apiAuth/G1.13); a member's are refused. The
 // agents keep claim-done, design-complete and bring-back.
-const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen'];
+const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen', 'waive'];
 function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
 
 // WHO WRITES (apiAuth/G1.13): the caller appServer hands the handler,
@@ -1239,6 +1344,71 @@ appServer.serve({
   // THE LISTENER'S WORD (goal/G2.3): listening when its ear arms, working when the ear hands a line over. From
   // the caller the door hands over, never an argument; any other word is refused. The write publishes the goal
   // row with its working list, so the Team tab paints from the publish (goal/G2.4).
+  // ── THE JOB QUEUE (goal/G5.7) ────────────────────────────────────
+  // Andy: "shouldn't a coding item track on deskServer who took the red, when the red is done, the agent doing the red
+  // is removed from the with field, then the item becomes takeable for coding, by somebody who didn't do the red, when
+  // the coding is done, the verifying can be taken by someone who didn't do the coding.", "each claude can first check
+  // for available jobs." One holder per phase (first wins, as box.take); finishing clears with and opens the next.
+  'phase.take': {
+    request: { id: '', phase: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      return { change: write('phase.take', { id: a.id, phase: String(a.phase), by: w.by, key: w.key }, function (st, it) {
+        const why = mayTake(st, it, String(a.phase), w.by);
+        if (why) throw refused(why);
+      }).change };
+    },
+  },
+  // pass and why only for verify; a failed verify goes back to build, to the same builder, its why a line by desk.
+  'phase.done': {
+    request: { id: '', phase: '', pass: false, why: '' }, reply: { change: 0 },
+    // pass and why may be left out (red and build send neither).
+    accepts: function (x) {
+      if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
+      const known = ['id', 'phase', 'pass', 'why'];
+      return Object.keys(x).every(function (k) { return known.indexOf(k) !== -1; }) && typeof x.id === 'string' && typeof x.phase === 'string' &&
+        (x.pass === undefined || typeof x.pass === 'boolean') && (x.why === undefined || typeof x.why === 'string');
+    },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      const change = write('phase.done', { id: a.id, phase: String(a.phase), pass: a.pass === true, by: w.by, key: w.key }, function (st, it) {
+        if (!it || !it.code || it.with !== w.by || it.phase !== String(a.phase)) throw refused('not-offered');
+      }).change;
+      if (a.phase === 'verify' && a.pass !== true && a.why) write('chat.add', { id: a.id, text: 'verify failed (' + w.by + '): ' + String(a.why), by: 'desk', key: '' });
+      return { change: change };
+    },
+  },
+  // MAY THE CALLER COMMIT ON THIS ITEM (goal/G5.9), for the commit check. Andy, to Q7: "it should trigger a red GRANT
+  // request for me." The caller by its key at the door, never a name it sends; not allowed only when the item is marked
+  // code, is in build, the caller wrote its red, and he has not waived it. A refusal says why.
+  'phase.may': {
+    request: { id: '' }, reply: { allowed: true, why: '' },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      const it = walkState().items[String(a.id)];
+      if (!it) throw refused('no-such-item');
+      if (!it.code || it.phase !== 'build' || it.waived === true) return { allowed: true, why: '' };
+      const wrote = it.redKey ? it.redKey === w.key : it.red === w.by;
+      return wrote ? { allowed: false, why: 'red writer: ' + w.by + ' wrote the red of ' + it.id + ', which is in build' } : { allowed: true, why: '' };
+    },
+  },
+  // THE JOBS OPEN TO THE CALLER: every open phase of an item marked code it may take now, as { id, phase }.
+  'work.open': {
+    request: {}, reply: { items: [{ key: '', label: '' }], more: false },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      const s = walkState();
+      const jobs = [];
+      Object.keys(s.goals).forEach(function (gid) {
+        const g = s.goals[gid];
+        if (g.abandoned || (s.items[gid] && s.items[gid].closed)) return;
+        g.members.forEach(function (id) {
+          ['red', 'build', 'verify'].forEach(function (p) { if (!mayTake(s, s.items[id], p, w.by)) jobs.push({ id: id, phase: p }); });
+        });
+      });
+      return walked(jobs, function (j) { return { key: j.id + ':' + j.phase, label: JSON.stringify(j) }; });
+    },
+  },
   // ── THE RULES' VERBS (goal/G5.5) ─────────────────────────────────
   // Andy: "only changes/upgrades in the faceless parts, so that the UI doesn't have to come back to the faceless
   // parts." Anyone may add a rule, proposed ("why not?"); a new version is his one button ("i prefer to negotiate,
@@ -1253,6 +1423,7 @@ appServer.serve({
       const key = 'rule/' + (Number(ruleCount.get().c) + 1);
       addRuleRow.run(key, new Date().toISOString(), w.by, a.type, fr.normalize(a.label), 'proposed', fr.normalizeParagraph(a.text));
       appServer.publish({ rule: key });
+      rulesChanged(key, 'added, proposed');
       return { key: key };
     },
   },
@@ -1287,6 +1458,7 @@ appServer.serve({
       if (RULE_STATUSES.indexOf(a.status) === -1 || fr.paragraphProblem(a.text)) throw refused('bad-request');
       addRuleRow.run(r.key, new Date().toISOString(), 'andy', r.type, r.label, a.status, fr.normalizeParagraph(a.text));
       appServer.publish({ rule: r.key });
+      rulesChanged(r.key, 'versioned, ' + a.status);
       return { key: r.key };
     },
   },
@@ -1420,7 +1592,9 @@ appServer.serve({
       // START DESIGN WITH NOTHING OPEN STARTS A NEW GOAL (desk/G3.1). Andy: "start design mode should start a new
       // project if nothing is in the list". It arrives in design mode; he names it.
       if (a.what === 'start-design' && a.id === '') return { change: newGoal(w).change };
-      return { change: write('press', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
+      const body = Object.assign({}, a, { by: w.by, key: w.key });
+      if (a.what === 'go' || a.what === 'go-all') body.rules = rulesForGo(walkState(), a.id, a.what);
+      return { change: write('press', body, function (st, it) {
         const offered = buttons(st, it);
         if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen') && offered.indexOf(a.what) === -1) throw refused('not-offered');
         if (a.what === 'bring-back' && !it.closed) throw refused('not-offered');

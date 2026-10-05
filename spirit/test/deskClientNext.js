@@ -236,10 +236,12 @@ async function main() {
     function (l) { return l.indexOf('DESK wsl-claude chat.add ') === 0 && said('chat of the other agent')(l); },
     function (l) { return l.indexOf('LINE andy note') === 0 && /: line of andy for me$/.test(l); },
     function (l) { return l.indexOf('LINE wsl-claude note') === 0 && /: line of the other agent$/.test(l); },
+    // The desk's limbo line on his Go reaches the agents since goal/G5.8 (goal/G5.4: "every agent's listener hears it").
+    function (l) { return l.indexOf('DESK desk chat.add ') === 0 && said('limbo:')(l); },
   ];
   const missing = wanted.filter(function (fits) { return !got.some(fits); }).length;
   const unwanted = ['"seen"', 'chat of my own', 'line of andy for the other agent', 'line of my own', 'new chat one'].filter(function (t) { return got.some(said(t)); });
-  if (got.length === 5 && !missing && !unwanted.length) test.check('two presses of Andy\'s, the other agent\'s chat and two kept lines came out; his seen press, my own chat and line, and his line to the other agent did not');
+  if (got.length === 6 && !missing && !unwanted.length) test.check('two presses of Andy\'s, the desk\'s limbo line, the other agent\'s chat and two kept lines came out; his seen press, my own chat and line, and his line to the other agent did not');
   else test.fail(OWED + 'next handed over ' + got.length + ' line(s), ' + missing + ' wanted missing, unwanted ' + JSON.stringify(unwanted) + ': ' + JSON.stringify(got).slice(0, 400));
 
   test.subHeading('6. once, across a restart: nothing missed, nothing repeated');

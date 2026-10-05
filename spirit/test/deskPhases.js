@@ -83,7 +83,12 @@ async function open(caller) {
     { id: 'q/G1.3', title: 'One agent alone', blocks: ['q/G1'], code: true },
     { id: 'q/G1.4', title: 'Goes stale', blocks: ['q/G1'], code: true },
   ] }) }, CW);
-  for (const id of ['q/G1.1', 'q/G1.2', 'q/G1.3', 'q/G1.4']) await call('press', { id: id, what: 'go' }, ANDY);
+  // A GOAL A session.set MAKES STARTS IN DESIGN (desk.js session.set), and Go is held back while it is on: end it first,
+  // as deskLimbo does. Found by claude-windows building against e4bd1acb.
+  const ended = await call('press', { id: 'q/G1', what: 'end-design' }, ANDY);
+  const gos = [];
+  for (const id of ['q/G1.1', 'q/G1.2', 'q/G1.3', 'q/G1.4']) gos.push((await call('press', { id: id, what: 'go' }, ANDY)).status);
+  if (ended.status !== 200 || gos.some(function (s) { return s !== 200; })) { test.fail('the world: end-design answered ' + ended.status + ', his Gos ' + short(gos)); return; }
 
   test.subHeading('1. only an item marked code has phases');
   const a0 = await facts('q/G1.1');
