@@ -224,6 +224,33 @@ function describeRemaining(text) {
   return DESCRIPTION_MAX_BYTES - byteLength(normalize(text));
 }
 
+// THE PARAGRAPH (goal/G5.5), a textarea field. Andy: "core needs a new
+// field type: "paragraph", that would kind of fit the 1024 or 2048 byte
+// size, and be useful to others.", "the field belongs to textarea kind of
+// fields, which newlines and formatting preserved....", "2048 for now."
+// So: NFC like a label, but line breaks, tabs and spaces stay as typed
+// (CRLF stored as LF), and every other control or invisible character is
+// refused as the label refuses it. Required, and refused, never cut, when
+// too long.
+var PARAGRAPH_MAX_BYTES = 2048;
+var PARAGRAPH_INVISIBLE_RE = new RegExp(
+  '[\\u0000-\\u0008\\u000B-\\u001F\\u007F-\\u009F\\u00AD\\u200B-\\u200F' +
+  '\\u2028\\u2029\\u202A-\\u202E\\u2060-\\u2064\\u2066-\\u206F\\uFEFF]');
+
+function normalizeParagraph(text) {
+  if (typeof text !== 'string') return '';
+  var s = text.normalize ? text.normalize('NFC') : text;
+  return s.replace(/\r\n/g, '\n');
+}
+
+function paragraphProblem(text) {
+  var n = normalizeParagraph(text);
+  if (!n.trim()) return 'text required';
+  if (PARAGRAPH_INVISIBLE_RE.test(n)) return 'text has invisible or control characters';
+  if (byteLength(n) > PARAGRAPH_MAX_BYTES) return 'text too long';
+  return '';
+}
+
 // Node gets everything; the browser gets the rules and nothing that would
 // need a filesystem. Same split, and the same reason, as ownerBadge.js.
 var RULE = {
@@ -233,6 +260,9 @@ var RULE = {
   problem: problem,
   describeProblem: describeProblem,
   describeRemaining: describeRemaining,
+  PARAGRAPH_MAX_BYTES: PARAGRAPH_MAX_BYTES,
+  normalizeParagraph: normalizeParagraph,
+  paragraphProblem: paragraphProblem,
   spokenOk: spokenOk,
   leverOk: leverOk,
   byteLength: byteLength,

@@ -296,6 +296,27 @@ if (!db.prepare('PRAGMA table_info(records)').all().some(function (c) { return c
   db.exec("ALTER TABLE records ADD COLUMN key TEXT NOT NULL DEFAULT ''");
 }
 const addRecord = db.prepare('INSERT INTO records (at, verb, by, key, body) VALUES (?, ?, ?, ?, ?)');
+
+// ── THE RULES, A TABLE OF THEIR OWN (goal/G5.5) ─────────────────────
+//
+//   Andy: "rules remain static and apply to all items. ... so rules don't worry about items, items need to worry
+//   about rules.", and on keeping the old texts: "might be a good idea to have a history of legal standards, it's a
+//   form of proof, too." So no goal's replay touches them: every version is a row of `rules`, never overwritten,
+//   the newest row per key is the rule and the older ones its history; his draft between versions is one row per
+//   rule in `rule_drafts`, which writes no history. A rule's chat lines are records ('rule.chat'), so the changes
+//   carry them to the agents; walkState passes them by.
+db.exec('CREATE TABLE IF NOT EXISTS rules (n INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT NOT NULL, at TEXT NOT NULL, by TEXT NOT NULL, type TEXT NOT NULL, label TEXT NOT NULL, status TEXT NOT NULL, text TEXT NOT NULL);' +
+  'CREATE TABLE IF NOT EXISTS rule_drafts (key TEXT PRIMARY KEY, at TEXT NOT NULL, text TEXT NOT NULL);');
+const RULE_TYPES = ['ui', 'code', 'design', 'desk'];
+const RULE_STATUSES = ['proposed', 'active', 'deleted'];
+const addRuleRow = db.prepare('INSERT INTO rules (key, at, by, type, label, status, text) VALUES (?, ?, ?, ?, ?, ?, ?)');
+const ruleCount = db.prepare('SELECT COUNT(DISTINCT key) AS c FROM rules');
+const newestRule = db.prepare('SELECT n, key, at, by, type, label, status, text FROM rules WHERE key = ? ORDER BY n DESC LIMIT 1');
+const newestRules = db.prepare('SELECT n, key, at, by, type, label, status, text FROM rules WHERE n IN (SELECT MAX(n) FROM rules GROUP BY key) ORDER BY n DESC');
+const ruleRows = db.prepare('SELECT n, key, at, by, type, label, status, text FROM rules WHERE key = ? ORDER BY n DESC');
+const getDraft = db.prepare('SELECT text FROM rule_drafts WHERE key = ?');
+const putDraft = db.prepare('INSERT INTO rule_drafts (key, at, text) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET at = excluded.at, text = excluded.text');
+const ruleChatRows = db.prepare("SELECT at, by, body FROM records WHERE verb = 'rule.chat' ORDER BY n");
 const allRecords = db.prepare('SELECT n, at, verb, by, key, body FROM records ORDER BY n');
 
 // An agent counts as live for ten minutes after its last write (Andy: "fine.").
@@ -1061,7 +1082,12 @@ appServer.serve({
   'item.chat': {
     request: { id: '' }, reply: { chat: [{ by: '', at: '', text: '', taken: '' }], chatMore: false },
     handler: function (a) {
-      const it = walkState().items[String(a.id)];
+      let it = walkState().items[String(a.id)];
+      // A rule's chat (goal/G5.5) is read the same way, from its records.
+      if (!it && /^rule\/\d+$/.test(String(a.id)) && newestRule.get(String(a.id))) {
+        const lines = ruleChatRows.all().map(function (r) { const b = JSON.parse(r.body); return b.rule === String(a.id) ? { by: r.by, at: r.at, text: String(b.text), taken: '' } : null; }).filter(Boolean);
+        it = { chat: lines };
+      }
       if (!it) throw refused('no-such-item');
       const room = CHAT_ROOM;
       const bucket = searchBucket.createSearch({
@@ -1175,6 +1201,14 @@ appServer.serve({
     request: { id: '', text: '' }, reply: { change: 0 },
     handler: function (a, caller) {
       const w = writerOf(caller);
+      // A RULE'S CHAT (goal/G5.5): Andy: "in this chat, the agents may propose alterations to parts of the rule, or
+      // advocate for status changes for this rule." A record of its own, no item.
+      if (/^rule\/\d+$/.test(String(a.id))) {
+        if (!newestRule.get(String(a.id))) throw refused('no-such-item');
+        const lineBytes = chatLineBytes(0, { by: w.by, at: new Date().toISOString(), text: String(a.text), taken: '' });
+        if (lineBytes > CHAT_ROOM) throw tooLarge(lineBytes, CHAT_ROOM);
+        return { change: write('rule.chat', { rule: String(a.id), text: String(a.text), by: w.by, key: w.key }).change };
+      }
       // MAX_PAYLOAD AT THE DOOR (desk/G3.3). Andy: "in the db yes, but in the sent messages ther MUST be a MAX_PAYLOAD".
       // A line that could not come back whole in one answer is refused here, as log.add refuses one; the sender slices it.
       const it0 = walkState().items[String(a.id)];
@@ -1205,6 +1239,85 @@ appServer.serve({
   // THE LISTENER'S WORD (goal/G2.3): listening when its ear arms, working when the ear hands a line over. From
   // the caller the door hands over, never an argument; any other word is refused. The write publishes the goal
   // row with its working list, so the Team tab paints from the publish (goal/G2.4).
+  // ── THE RULES' VERBS (goal/G5.5) ─────────────────────────────────
+  // Andy: "only changes/upgrades in the faceless parts, so that the UI doesn't have to come back to the faceless
+  // parts." Anyone may add a rule, proposed ("why not?"); a new version is his one button ("i prefer to negotiate,
+  // and create an updated version with one button/verb that belongs to me."), activate and delete being versions
+  // too; his draft is kept here ("yes to all of it").
+  'rule.add': {
+    request: { type: '', label: '', text: '' }, reply: { key: '' },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      const fr = require('../../../js/fieldRules.js');
+      if (RULE_TYPES.indexOf(a.type) === -1 || fr.problem(a.label) || fr.paragraphProblem(a.text)) throw refused('bad-request');
+      const key = 'rule/' + (Number(ruleCount.get().c) + 1);
+      addRuleRow.run(key, new Date().toISOString(), w.by, a.type, fr.normalize(a.label), 'proposed', fr.normalizeParagraph(a.text));
+      appServer.publish({ rule: key });
+      return { key: key };
+    },
+  },
+  'rule.get': {
+    request: { key: '' }, reply: { key: '', label: '', type: '', status: '', text: '', draft: '', at: '', by: '' },
+    handler: function (a) {
+      const r = newestRule.get(String(a.key));
+      if (!r) throw refused('no-such-item');
+      const d = getDraft.get(r.key);
+      return { key: r.key, label: r.label, type: r.type, status: r.status, text: r.text, draft: d ? d.text : '', at: r.at, by: r.by };
+    },
+  },
+  'rule.draft': {
+    request: { key: '', text: '' }, reply: { key: '' },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      const fr = require('../../../js/fieldRules.js');
+      if (!newestRule.get(String(a.key))) throw refused('no-such-item');
+      if (fr.paragraphProblem(a.text)) throw refused('bad-request');
+      putDraft.run(String(a.key), new Date().toISOString(), fr.normalizeParagraph(a.text));
+      appServer.publish({ rule: String(a.key) });
+      return { key: String(a.key) };
+    },
+  },
+  'rule.version': {
+    request: { key: '', text: '', status: '' }, reply: { key: '' },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      const fr = require('../../../js/fieldRules.js');
+      const r = newestRule.get(String(a.key));
+      if (!r) throw refused('no-such-item');
+      if (RULE_STATUSES.indexOf(a.status) === -1 || fr.paragraphProblem(a.text)) throw refused('bad-request');
+      addRuleRow.run(r.key, new Date().toISOString(), 'andy', r.type, r.label, a.status, fr.normalizeParagraph(a.text));
+      appServer.publish({ rule: r.key });
+      return { key: r.key };
+    },
+  },
+  // Its older versions, newest first, through the bucket; more says there were more, nothing pages.
+  'rule.history': {
+    request: { key: '' }, reply: { items: [{ key: '', label: '' }], more: false },
+    handler: function (a) {
+      const rows = ruleRows.all(String(a.key));
+      if (!rows.length) throw refused('no-such-item');
+      const older = rows.slice(1);
+      return walked(older, function (r) {
+        return { key: String(r.n), label: JSON.stringify({ at: r.at, by: r.by, type: r.type, label: r.label, status: r.status, text: r.text }) };
+      });
+    },
+  },
+  // THE LIST'S SEARCH (FACE.md): "searchable for deskClient and UI, with the type and status values as filters,
+  // and label and text being searched. search results with bring back key, label, type and status."
+  'rules.search': {
+    request: { text: '', types: [''], statuses: [''] }, reply: { items: [{ key: '', label: '' }], more: false },
+    handler: function (a) {
+      const text = String(a.text || '').toLowerCase();
+      const types = (Array.isArray(a.types) ? a.types : []).filter(Boolean);
+      const statuses = (Array.isArray(a.statuses) ? a.statuses : []).filter(Boolean);
+      const hits = newestRules.all().filter(function (r) {
+        if (types.length && types.indexOf(r.type) === -1) return false;
+        if (statuses.length && statuses.indexOf(r.status) === -1) return false;
+        return !text || (r.label + '\n' + r.text).toLowerCase().indexOf(text) !== -1;
+      });
+      return walked(hits, function (r) { return { key: r.key, label: JSON.stringify({ label: r.label, type: r.type, status: r.status }) }; });
+    },
+  },
   'agent.state': {
     request: { word: '' }, reply: { change: 0 },
     handler: function (a, caller) {
