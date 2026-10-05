@@ -1,8 +1,8 @@
 {
- "change": 17607,
+ "change": 17613,
  "line": 8492,
  "goal": "goal/G6",
- "writtenAt": "2026-10-05T22:44:31.882Z",
+ "writtenAt": "2026-10-05T22:44:54.887Z",
  "items": [
   {
    "id": "goal/G6",
@@ -10,9 +10,7 @@
    "goal": "",
    "status": "",
    "with": "",
-   "buttons": [
-    "go-all"
-   ],
+   "buttons": [],
    "blocking": [],
    "blocked": [
     "goal/G6.1",
@@ -31,13 +29,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 2,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -341,18 +341,15 @@
    "id": "goal/G6.1",
    "title": "the header-area shell element (core): sticky under the titlebar, for desk, deskDetails and ruleDetails",
    "goal": "goal/G6",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G6",
     "goal/G6.4"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -644,17 +641,14 @@
    "id": "goal/G6.2",
    "title": "chat entries left-aligned, everyone in bubbles 1em apart (desk and deskDetails)",
    "goal": "goal/G6",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G6"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -671,17 +665,14 @@
    "id": "goal/G6.3",
    "title": "Musings: each musing a bubble, 1em from the textarea",
    "goal": "goal/G6",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G6"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
@@ -1041,17 +1032,14 @@
    "id": "goal/G6.6",
    "title": "a goal Close in the List and the dialog, asking are you sure while items are open (the face of G5.6)",
    "goal": "goal/G6",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G6"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
