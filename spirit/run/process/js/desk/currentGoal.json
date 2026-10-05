@@ -1,8 +1,8 @@
 {
- "change": 15727,
+ "change": 15732,
  "line": 8492,
  "goal": "goal/G5",
- "writtenAt": "2026-10-05T18:43:34.610Z",
+ "writtenAt": "2026-10-05T18:43:56.465Z",
  "items": [
   {
    "id": "goal/G5",
@@ -24,7 +24,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 0,
    "live": [
     "claude-ubuntu",
     "claude-windows",
@@ -149,10 +149,9 @@
    "id": "goal/G5.1",
    "title": "pushOrigin: one process that sends commits already made when the clone is behind origin, for Andy (from Jobs) and publishData",
    "goal": "goal/G5",
-   "status": "done",
+   "status": "closed",
    "with": "wsl-claude",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
