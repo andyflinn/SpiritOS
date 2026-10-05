@@ -13,10 +13,10 @@
 //   1. pull { hash, path } answers { copied: true }; the same bytes already at the path answer
 //      { copied: false, already: true } — said, not an error; a DIFFERENT file there is refused
 //      already-exists (a catalogue code this red names) and the file at the path is untouched.
-//   2. status { hash } answers fileStatus.json's dataset { hash, bytes, mime, names, at };
+//   2. status { hash } answers fileStatus.json's dataset { hash, bytes, mime, name, at } (one name since goal/G5.2);
 //      a hash not held is refused no-such-file. Owner-only, like push, pull and delete.
 //   3. The hash-verb answers { command: 'info', data } with data the JSON text { bytes, mime, name },
-//      name one of the file's names — to any caller the door let through: the grant is apiAuth's
+//      name the file's one name — to any caller the door let through: the grant is apiAuth's
 //      business, not this server's. Any other command stays refused by name.
 
 const fs = require('fs');
@@ -95,8 +95,8 @@ async function main() {
   const st = await call('status', { hash: id }, ANDY);
   const b = st.body || {};
   if (st.status === 200 && b.hash === id && b.bytes === fs.statSync(source).size
-    && typeof b.mime === 'string' && Array.isArray(b.names) && b.names.indexOf('notes.txt') !== -1 && b.at) {
-    test.check('status answers { hash, bytes, mime, names, at } as fileStatus.json holds them');
+    && typeof b.mime === 'string' && b.name === 'notes.txt' && b.names === undefined && b.at) {
+    test.check('status answers { hash, bytes, mime, name, at } as fileStatus.json holds them');
   } else test.fail(OWED + 'status answered ' + st.status + ' ' + JSON.stringify(b));
 
   const none = await call('status', { hash: 'verb-' + 'B'.repeat(43) }, ANDY);

@@ -165,7 +165,7 @@ async function main() {
     test.check('the file arrived whole, bytes for bytes, renamed to complete.blob');
   } else test.fail(OWED + 'the transfer never completed (' + posts.length + ' asks made)');
   const st = ((await recv('status', { hash: idA }, ANDY)).body) || {};
-  if (st.bytes === 20000 && Array.isArray(st.names) && st.names.indexOf('alpha.bin') !== -1) {
+  if (st.bytes === 20000 && st.name === 'alpha.bin') {
     test.check('the info-call\'s answer landed in the receiver\'s fileStatus.json');
   } else test.fail(OWED + 'the receiver\'s status says ' + JSON.stringify(st));
   const chunkAsks = posts.filter(function (p) { return p.command === 'chunk'; });
@@ -188,7 +188,7 @@ async function main() {
   const cDir = path.join(receiverState, idC);
   fs.mkdirSync(cDir, { recursive: true });
   fs.writeFileSync(path.join(cDir, '0-6000.blob'), bytesOf(13, 12000).slice(0, 6000));
-  fs.writeFileSync(path.join(cDir, 'fileStatus.json'), JSON.stringify({ hash: idC, bytes: 12000, mime: 'application/octet-stream', names: ['gamma.bin'], at: new Date().toISOString() }));
+  fs.writeFileSync(path.join(cDir, 'fileStatus.json'), JSON.stringify({ hash: idC, bytes: 12000, mime: 'application/octet-stream', name: 'gamma.bin', at: new Date().toISOString() }));
   const seen = posts.length;
   await recv('fetch', { id: idC, from: PROVIDER_KEY }, ANDY);
   const doneC = await until(function () { return fs.existsSync(path.join(cDir, 'complete.blob')); }, 30000);

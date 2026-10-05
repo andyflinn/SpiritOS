@@ -13,7 +13,13 @@
 // ONE FOLDER PER FILE, NAMED BY ITS ID (goal/G1.1, goal/G1.3 THE FILE ID). The id is 'verb-' and
 // the file's sha256 in base64url: 48 characters, one string for the folder, the verb that serves
 // the file, the grant path and fileStatus.json's hash. Inside: complete.blob, the whole file and
-// only a whole file, and fileStatus.json { hash, bytes, mime, names, at }.
+// only a whole file, and fileStatus.json { hash, bytes, mime, name, at }.
+//
+// ONE LABEL PER HASH (goal/G5.2). Andy: "There will be only one label (file-name) per verb-hash. All
+// the label arbitration will disappear.", "ah the same file added under a new name just replaces the
+// labe.", "same is determined by hash." So the same bytes pushed again take the new name; other bytes
+// under the same name are another file. A folder written before this with a names list reads as its
+// last name, the one it was shared under.
 //
 // AT MOST 32 FILES, COMPLETE OR PARTIAL (goal/G1.5). Andy: "make the limit 32. that's enough.
 // we'll find a method later to clean up that folder." The bound keeps every file's verb inside
@@ -59,6 +65,12 @@ function isHeld(id) { return ID_RE.test(id) && fs.existsSync(path.join(STORE, id
 function readStatus(id) {
   try { return JSON.parse(fs.readFileSync(path.join(STORE, id, STATUS), 'utf8')); } catch (e) { return null; }
 }
+// The file's one label; an older fileStatus.json's names list gives its last.
+function nameOf(s) {
+  if (!s) return '';
+  if (typeof s.name === 'string') return s.name;
+  return Array.isArray(s.names) && s.names.length ? String(s.names[s.names.length - 1]) : '';
+}
 function writeStatus(id, status) {
   const file = path.join(STORE, id, STATUS);
   fs.writeFileSync(file + '.part', JSON.stringify(status));
@@ -67,8 +79,7 @@ function writeStatus(id, status) {
 
 // A file's own verb: the shape every hash-verb answers in (goal/G1.1, THE HASH-VERB'S SHAPE).
 // Andy: "the provider delivers the info, and the chunks, nothing else". Who may ask is apiAuth's
-// business at the door, not this server's. info answers one name, the one being shared (the
-// newest), never the owner's list. chunk answers the asked bytes of complete.blob, base64.
+// business at the door, not this server's. info answers the file's one name. chunk answers the asked bytes of complete.blob, base64.
 // Every answer is marked no-rush (Andy: "same for responses."). pause and resume are the
 // receiver's own, the owner's alone, on a file it is fetching.
 function hashVerb(id) {
@@ -80,8 +91,7 @@ function hashVerb(id) {
       if (a.command === 'info') {
         const s = readStatus(id);
         if (!s) throw refused('no-such-file');
-        const names = Array.isArray(s.names) ? s.names : [];
-        return { command: 'info', data: JSON.stringify({ bytes: s.bytes, mime: s.mime, name: names.length ? names[names.length - 1] : '' }) };
+        return { command: 'info', data: JSON.stringify({ bytes: s.bytes, mime: s.mime, name: nameOf(s) }) };
       }
       if (a.command === 'chunk') {
         let d = null;
@@ -148,9 +158,8 @@ function progress(id) {
   const t = transfers[id];
   const s = readStatus(id);
   if (!t || !s) return;
-  const names = s && Array.isArray(s.names) ? s.names : [];
   appServer.publish({ transfer: {
-    id: id, name: names.length ? names[names.length - 1] : '',
+    id: id, name: nameOf(s),
     held: t.state === 'complete' ? (s ? s.bytes : 0) : heldBytes(id), bytes: s ? s.bytes : 0, state: t.state,
   } });
 }
@@ -210,7 +219,7 @@ function attempt(id) {
       let d = null;
       try { d = r && r.command === 'info' ? JSON.parse(r.data) : null; } catch (e) { d = null; }
       if (!d || !(d.bytes >= 0)) return false;
-      writeStatus(id, { hash: id, bytes: d.bytes, mime: String(d.mime || ''), names: d.name ? [String(d.name)] : [], at: new Date().toISOString() });
+      writeStatus(id, { hash: id, bytes: d.bytes, mime: String(d.mime || ''), name: String(d.name || ''), at: new Date().toISOString() });
       progress(id);
       return true;
     });
@@ -244,12 +253,10 @@ const server = appServer.serve({
       try { bytes = fs.readFileSync(a.path); } catch (e) { throw refused('bad-request', 'cannot read ' + a.path); }
       const id = idOf(bytes);
       const name = path.basename(a.path);
-      // The same bytes already held: no new folder, the name joins the list (Andy: "add the
-      // filename to the names.").
+      // The same bytes already held: no new folder, the new name replaces the label (goal/G5.2).
       if (isHeld(id)) {
-        const status = readStatus(id) || { hash: id, bytes: bytes.length, mime: mimeOf(name), names: [] };
-        if (status.names.indexOf(name) === -1) status.names.push(name);
-        writeStatus(id, status);
+        const old = readStatus(id) || {};
+        writeStatus(id, { hash: id, bytes: bytes.length, mime: mimeOf(name), name: name, at: old.at || new Date().toISOString() });
         return { hash: id };
       }
       if (held().length >= CAP) throw refused('pool-full');
@@ -258,7 +265,7 @@ const server = appServer.serve({
       // Written under another name, then one rename: a partial never looks whole.
       fs.writeFileSync(path.join(dir, BLOB + '.part'), bytes);
       fs.renameSync(path.join(dir, BLOB + '.part'), path.join(dir, BLOB));
-      writeStatus(id, { hash: id, bytes: bytes.length, mime: mimeOf(name), names: [name], at: new Date().toISOString() });
+      writeStatus(id, { hash: id, bytes: bytes.length, mime: mimeOf(name), name: name, at: new Date().toISOString() });
       server.addVerb(id, hashVerb(id));
       return { hash: id };
     },
@@ -305,12 +312,13 @@ const server = appServer.serve({
     },
   },
   status: {
-    request: { hash: '' }, reply: { hash: '', bytes: 0, mime: '', names: [''], at: '' },
+    // name, one string, in place of the names list: Andy's yes on the verb change (goal/G5.2 Q2).
+    request: { hash: '' }, reply: { hash: '', bytes: 0, mime: '', name: '', at: '' },
     handler: function (a, caller) {
       ownerOnly(caller);
       const s = isHeld(a.hash) ? readStatus(a.hash) : null;
       if (!s) throw refused('no-such-file');
-      return { hash: s.hash, bytes: s.bytes, mime: s.mime, names: s.names, at: String(s.at || '') };
+      return { hash: s.hash, bytes: s.bytes, mime: s.mime, name: nameOf(s), at: String(s.at || '') };
     },
   },
   delete: {
