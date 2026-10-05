@@ -515,6 +515,10 @@ function buttons(s, it) {
   } else if (Object.keys(it.claims).length) out.push('done');
   if (it.goal && g && goable(s, g).length) out.push('go-all');
   if (!it.goal && !it.went && !claimed) out.push('close');
+  // A GOAL OFFERS CLOSE ALWAYS (goal/G5.6), open items or not. Andy, to "a goal gets a Close like an item's (off the
+  // List, still searchable, Reopen brings it back)": "yes. if it has items still open it can ask me: are you sure?"
+  // The asking is the face's; the press is taken either way, and the items keep their state.
+  if (it.goal) out.push('close');
   return out;
 }
 // The items of a goal that offer Go!, decided by the same rule as their own button.
@@ -526,7 +530,9 @@ function goable(s, g) {
 
 function listed(s, it) {
   const g = s.goals[it.goal ? it.id : it.goalId];
-  return !!g && !g.abandoned && !it.closed;
+  // A closed goal takes its items off the List with it (goal/G5.6); Include Closed still finds them.
+  const goalItem = g && !it.goal ? s.items[g.id] : null;
+  return !!g && !g.abandoned && !it.closed && !(goalItem && goalItem.closed);
 }
 
 // WHAT WAITS ON HIM (goal/G4.20 points 10-11): open grants, open questions, and open checks of his while Done is
