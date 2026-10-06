@@ -141,6 +141,11 @@ function ddButtonsHtml() {
     html += '<button type="button" id="dd-waive"' + (ddArmed === 'dd-waive' ? ' data-armed="1"' : '') + '>' +
       (ddArmed === 'dd-waive' ? 'Waive: sure?' : 'Waive') + '</button>';
   }
+  // MAKE CURRENT (goal/G2.19). Andy: "on any open goal i want a button \"make current goal\"". The server offers it on
+  // an open goal that is not current; it presses at once, since switching goals undoes nothing.
+  if ((f.buttons || []).indexOf('make-current') !== -1) {
+    html += '<button type="button" id="dd-make-current">Make current goal</button>';
+  }
   if (f.goal === '') {
     html += '<button type="button" id="dd-abandon"' + (ddArmed === 'dd-abandon' ? ' data-armed="1"' : '') +
       ' style="margin-left:auto;background:#b00020;color:#fff">' +
@@ -400,6 +405,8 @@ spirit.shell.activateApp({
       var armedClose = id === 'dd-close' && ddEarlyClose(f) && (f.goal !== '' || (f.blocked || []).length > 0);
       if (id === 'dd-close' && !armedClose) { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
       if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen') { ddPress(id.slice(3)); return; }
+      // goal/G2.19: Make current goal presses at once, like Go and Reopen; it closes nothing and takes nothing back.
+      if (id === 'dd-make-current') { ddPress('make-current'); return; }
       if (id === 'dd-abandon' || id === 'dd-go-all' || id === 'dd-waive' || armedClose) {
         if (ddArmed !== id) {
           ddArmed = id;

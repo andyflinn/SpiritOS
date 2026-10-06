@@ -437,7 +437,10 @@ function apply(s, r, b, item, goalOf) {
     case 'check.add': {
       const kind = String(b.kind);
       const number = kind + (it.checks.filter(function (c) { return c.kind === kind; }).length + 1);
-      it.checks.push({ number: number, kind: kind, words: String(b.words), test: String(b.test || ''), state: 'open', by: '', at: '' });
+      it.checks.push({ number: number, kind: kind, words: String(b.words), test: String(b.test || ''), state: 'open', by: String(b.asked || ''), at: String(b.asked ? r.at : '') });
+      // A QUESTION RAISED BY A CHAT LINE (goal/G2.21) marks that line with this number, so the chat shows which line
+      // the red question came from while the line's own text stays exactly as the agent wrote it.
+      if (typeof b.forLine === 'number' && it.chat[b.forLine]) it.chat[b.forLine].q = number;
       return;
     }
     case 'check.set': {
@@ -520,6 +523,11 @@ function press(s, it, what, r, goalOf, b) {
   if (what === 'start-design' && g) g.design = true;
   else if (what === 'end-design' && g) g.design = false;
   else if (what === 'abandon' && g) g.abandoned = true;
+  // MAKE CURRENT (goal/G2.19). Andy, 2026-10-06: "i want to switch between goals at will, so the goals detail should
+  // give me re-open and and on any open goal i want a button \"make current goal\"". Until now the current goal moved
+  // for one reason only, a session.set, so switching meant an agent writing a session for him. It moves the goal and
+  // nothing else: no item's state, neither goal's design mode, nothing closed or opened.
+  else if (what === 'make-current' && it.goal) s.current = it.id;
   else if (what === 'design-complete') { it.designComplete = true; it.status = 'ready'; }
   // HIS GO IS ON RECORD (goal/G3.9): `go` is set by his go and go-all alone and by nothing else; `went` stays the
   // state of the item, which older records set in other ways.
@@ -613,6 +621,10 @@ function buttons(s, it) {
   // List, still searchable, Reopen brings it back)": "yes. if it has items still open it can ask me: are you sure?"
   // The asking is the face's; the press is taken either way, and the items keep their state.
   if (it.goal) out.push('close');
+  // MAKE CURRENT (goal/G2.19): on an open goal that is not the current one, so the dialog draws it as it draws every
+  // button. Never on an item, which has no List of its own, and never on an abandoned goal, which is invisible. A
+  // closed goal returns above with Reopen alone, which is the order his words give: "re-open and ... make current goal".
+  if (it.goal && g && !g.abandoned && s.current !== it.id) out.push('make-current');
   return out;
 }
 // The items that block a sub-goal (its split), closed or done ones included; and those of them offering Go!.
@@ -997,7 +1009,9 @@ const newestLine = db.prepare('SELECT COALESCE(MAX(rowid), 0) AS rid FROM lines'
 const GOAL_STATE_FILE = path.join(STATE, 'currentGoal.json');
 function writeGoalFile(s, verb, a, change) {
   if (!GOAL_SHARED || !GOAL_REPO || !s.current || !s.goals[s.current]) return;
-  const his = verb === 'press' && ['go', 'go-all', 'done', 'reopen', 'close'].indexOf(a.what) !== -1;
+  // goal/G2.19 adds make-current: the file names the current goal in `goal` and carries that goal's items alone, so a
+  // switch that did not rewrite it would leave every reader, the agents and the brain, on the goal he just left.
+  const his = verb === 'press' && ['go', 'go-all', 'done', 'reopen', 'close', 'make-current'].indexOf(a.what) !== -1;
   if (!his && verb !== 'session.set') return;
   const g = s.goals[s.current];
   const items = [s.current].concat(g.members).map(function (id) { return s.items[id]; }).filter(Boolean).map(function (it) {
@@ -1051,11 +1065,11 @@ function newGoal(w) {
   return write('session.set', { session: { goal: { id: id, title: 'New goal' }, items: [] }, by: w.by, key: w.key });
 }
 
-const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen', 'waive'];
+const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen', 'waive', 'make-current'];
 // Andy's alone (G2.1 review). His presses carry the owner's caller (the
 // mark the door forwards, apiAuth/G1.13); a member's are refused. The
 // agents keep claim-done, design-complete and bring-back.
-const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen', 'waive'];
+const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen', 'waive', 'make-current'];
 function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
 
 // WHO WRITES (apiAuth/G1.13): the caller appServer hands the handler,
@@ -1373,6 +1387,18 @@ appServer.serve({
           write('chat.add', { id: a.id, text: 'message delivered, ' + taker + ' busy', by: 'desk', key: '' });
         }
       }
+      // A QUESTION NEVER HIDES IN CHAT (goal/G2.21). Andy, 2026-10-06: "i want mechanical support in deskServer to
+      // make agents add red-question to the design", after his own "i see no Q's and it really bugs me." when an
+      // agent's question sat in chat and lit nothing: his List lights from open checks alone (asksOf), so an agent's
+      // line that ENDS in a question mark raises one, with the line's own words and by that agent.
+      // HIS OWN LINES AND THE DESK'S ARE NEVER CONVERTED: a check is what waits on HIM, not on us.
+      // THE GROUP CHAT IS LEFT ALONE: it is closed, so the List never shows it, and a check there would be a red
+      // nothing opens. A question for him that belongs to no item still belongs in a post under one.
+      const asker = after.items[String(a.id)];
+      if (asker && w.by !== 'andy' && w.by !== 'desk' && String(a.id) !== GROUP_CHAT && /\?[\s]*$/.test(String(a.text))) {
+        write('check.add', { id: a.id, kind: 'Q', words: String(a.text), test: '', asked: w.by,
+          forLine: asker.chat.length - 1, by: w.by, key: w.key });
+      }
       return { change: after.change };
     },
   },
@@ -1646,7 +1672,8 @@ appServer.serve({
       if (a.what === 'go' || a.what === 'go-all') body.rules = rulesForGo(walkState(), a.id, a.what);
       return { change: write('press', body, function (st, it) {
         const offered = buttons(st, it);
-        if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen') && offered.indexOf(a.what) === -1) throw refused('not-offered');
+        // goal/G2.19 puts make-current on the same leash: offered or refused, so a closed goal takes Reopen first.
+        if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen' || a.what === 'make-current') && offered.indexOf(a.what) === -1) throw refused('not-offered');
         if (a.what === 'bring-back' && !it.closed) throw refused('not-offered');
         // DESIGN-GREEN GATES THEM (goal/G6.8): his End design while any item of the goal has an open red question, a Go
         // on an item with one, a go-all while any item of the goal has one: refused.
