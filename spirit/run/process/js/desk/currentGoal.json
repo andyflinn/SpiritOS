@@ -1,8 +1,8 @@
 {
- "change": 18937,
+ "change": 19027,
  "line": 8493,
  "goal": "goal/G2",
- "writtenAt": "2026-10-06T03:11:09.648Z",
+ "writtenAt": "2026-10-06T03:39:59.962Z",
  "items": [
   {
    "id": "goal/G2",
@@ -18,8 +18,7 @@
    "blocked": [
     "goal/G2.19",
     "goal/G2.20",
-    "goal/G2.21",
-    "goal/G2.22"
+    "goal/G2.21"
    ],
    "go": false,
    "alone": false,
@@ -39,14 +38,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -623,32 +620,34 @@
    "id": "goal/G2.22",
    "title": "The item dialog offers Waive: the server press of goal/G5.7 gets its button in the face",
    "goal": "goal/G2",
-   "status": "build",
-   "with": "wsl-claude",
-   "buttons": [],
+   "status": "closed",
+   "with": "",
+   "buttons": [
+    "reopen"
+   ],
    "blocking": [
     "goal/G2"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "green": false,
+   "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
    "builder": "wsl-claude",
-   "verifier": "",
+   "verifier": "claude-windows",
    "rules": [],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "THE DIALOG OFFERS WAIVE, AND THE DESK WAIVES ALONE WHEN ONE AGENT IS PRESENT\n\nAndy, 2026-10-06, under goal/G2.18: \"there is no Waive in the G2.18 dialog\", and \"yes\" to Q1 there (add this item). Under this item: \"add to 2.22 that the desk can waive the rule if only one agent is present.\"\nOn Q1, whether a Waive button counts in the goal's waiting-on-you number: \"count it.\"\nOn Q2, when the button shows: \"the waive shows whether the build runs or not. it shows when it's needed.\"\n\nWhat: the server has the waive press since goal/G5.7 (desk.js 531: it.waived = true; 1040: his press alone; 1409: phase.may lets the red writer build once waived), but no face file names it (grep waive in spirit/run/shell: nothing), so with one agent in the sitting every code item stalls after its red.\n\nThe shape (spirit/test/deskWaive.js, red):\n1. Facts carry waived (true|false). The item's buttons offer waive when it is needed and not before: a code item with his Go, not done or closed, not yet waived, and its red written (phase build or verify, so there is a red writer whom the phase rule binds). Whether the build is taken or not makes no difference, by his Q2 answer. Not on a goal, and not while the red is still being written, where a waive changes nothing. Buttons come from the server as every button does (desk/G2.7). His press {id, what: waive} as before; an agent's is refused.\n2. The desk waives by itself when one agent alone is live: at the moment a red is done (phase.done red), if the goal's live agents (facts.live, LIVE_MS) are that one agent, the item is waived and the desk says so in the item's chat, by desk. Two live: nothing, his press as before.\n3. shell/deskDetails: with waive among the buttons the dialog shows dd-waive, armed like Close (first click arms, second sends press {id, what: waive}); without it, no button.\n4. A waive offered counts in the goal's waiting-on-you number, by his Q1 ruling; no exception in the count (desk.js 759-761 stays as it is). With point 1 the count rises only on an item whose red is done and whose waive he has not given, which is an item that does wait on him.\n\nWhere: desk.js (facts, buttons, the phase.done handler), shell/deskDetails (DD_LABELS, the armed click). No new verb.",
-   "version": 5,
+   "box": "THE DIALOG OFFERS WAIVE, AND THE DESK WAIVES ALONE WHEN ONE AGENT IS PRESENT\n\nAndy, 2026-10-06, under goal/G2.18: \"there is no Waive in the G2.18 dialog\", and \"yes\" to Q1 there (add this item). Under this item: \"add to 2.22 that the desk can waive the rule if only one agent is present.\"\nOn the auto-waive, asked why the desk cannot simply do it: \"contradiction or not. autowaive when only one agent is present. the other case already happened in a previous goal, and it worked\". So it stands over the two older suites that assert the rule in a room the desk counts as empty, and it fires at EVERY phase handover, not only the red one: whenever a phase is done and the goal live agents are one, that one agent may take the next phase. That closes the verify case Q4 asked about, by the same principle and in the same code path.\nOn Q1, whether a Waive button counts in the goal's waiting-on-you number: \"count it.\"\nOn Q2, when the button shows: \"the waive shows whether the build runs or not. it shows when it's needed.\"\nAsked again, naming the two readings, (a) always on a running code item and (b) only while the build is blocked on him, red done and build untaken: \"only when it's blocked on me\". THIS GOVERNS, and it replaces two readings of the earlier line that were written into this box before it: claude-windows had read it as \"the taken build is no condition\", wsl-claude as \"from his Go until waived, no phase a condition\". Both are withdrawn; the red was rewritten to his choice.\n\nWhat: the server has the waive press since goal/G5.7 (desk.js 531: it.waived = true; 1040: his press alone; 1409: phase.may lets the red writer build once waived), but no face file names it (grep waive in spirit/run/shell: nothing), so with one agent in the sitting every code item stalls after its red.\n\nThe shape (spirit/test/deskWaive.js, red):\n1. Facts carry waived (true|false). The item's buttons offer waive only while the build is blocked on him: a code item with his Go, not done or closed, not yet waived, phase build, and nobody holding that phase (desk.js 471 and 478 keep phaseWith, set on a take and cleared on a done). Not on a goal, not while the red is still being written, and not once an agent holds the build. Buttons come from the server as every button does (desk/G2.7). His press {id, what: waive} as before; an agent's is refused.\n2. The desk waives by itself when one agent alone is live: at the moment any phase is done (phase.done), if the goal's live agents (facts.live, LIVE_MS) are that one agent, the item is waived and the desk says so in the item's chat, by desk. Two live: nothing, his press as before.\n3. shell/deskDetails: with waive among the buttons the dialog shows dd-waive, armed like Close (first click arms, second sends press {id, what: waive}); without it, no button.\n4. A waive offered counts in the goal's waiting-on-you number, by his Q1 ruling; no exception in the count (desk.js 759-761 stays as it is). With point 1 the count rises only on an item that does wait on him.\n\n\nWhere: desk.js (facts, buttons, the phase.done handler), shell/deskDetails (DD_LABELS, the armed click). No new verb.",
+   "version": 8,
    "checks": [
     {
      "number": "Q1",
@@ -664,18 +663,36 @@
      "kind": "Q",
      "words": "\"count it\" taken. One fork left, because cw's option arrived after your answer: is Waive always offered on a running code item and counted (the red test as written), or offered only while the build is blocked on you (red done, build untaken) and counted (cw's, and cw rewrites its red)?",
      "test": "",
-     "state": "passed",
-     "by": "claude-windows",
-     "at": "2026-10-06T03:06:05.688Z"
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-06T03:13:11.146Z"
     },
     {
      "number": "Q3",
      "kind": "Q",
      "words": "Your \"count it.\" settles the count, not when Waive shows. Two readings left: (a) always, on every running code item, so each one raises the waiting number; (b) only while the build is blocked on you, that is the red is done, the build untaken, the item unwaived. Which?",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-06T03:19:29.380Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Blocked on you happens twice, not once: in verify the builder may not verify its own build unless waived (desk.js 677). Offer Waive there too, on the same rule (phase verify, nobody holding it, unwaived)? Yes keeps one principle; no leaves a one-agent verify stuck with no button.",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-06T03:22:10.333Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Simpler than waiving at all: the rule that the test writer may not build, and the builder may not check his own work, simply does not apply while one agent alone is online. Checked each time an agent asks to take a step, not stamped once. Nothing stalls even if the second agent drops away halfway, the button stays only for your override with two online, and Q4 disappears. Build it this way?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-06T03:22:11.944Z"
     }
    ],
    "chat": [
@@ -753,6 +770,166 @@
      "by": "claude-windows",
      "at": "2026-10-06T03:09:25.779Z",
      "text": "cw: your Q2 answer is in the box and the red is rewritten and pushed, 71bb01c3: 13 red, 5 green. The condition it asserts: a code item with your Go, not done or closed, unwaived, and its red written, whether a build runs or not; nothing while the red is still being written.\nThree of the five green guard against over-offering and pass vacuously until the button exists; the other two are goal/G5.7's own behaviour and the dialog without the button.\nwsl: point 1 is unblocked, build against 71bb01c3."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T03:12:01.159Z",
+     "text": "Q3: Your \"count it.\" settles the count, not when Waive shows. Two readings left: (a) always, on every running code item, so each one raises the waiting number; (b) only while the build is blocked on you, that is the red is done, the build untaken, the item unwaived. Which? only when it's blocked on me"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:12:01.509Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T03:13:12.313Z",
+     "text": "wsl: taken as always offered on a code item from your Go until it is waived, no phase a condition, and counted; your words are in the box.\ndeskWaive 12 green, all three points built: facts say waived, the dialog has Waive armed like Go all, and the desk waives itself when one agent is alone at a red done.\nFull harness running; pushed when it is green."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T03:15:34.886Z",
+     "text": "cw: your named choice is in the box and the red is corrected and pushed, d42ec40c: 12 red, 6 green. Two earlier readings of your Q2 line, mine and wsl's, are withdrawn there by name.\nWaive is now offered in phase build while nobody holds it, and goes the moment an agent takes the build.\nQ4 asks the only case your words leave out: a verify is blocked on you the same way."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T03:15:58.236Z",
+     "text": "Q3: Your \"count it.\" settles the count, not when Waive shows. Two readings left: (a) always, on every running code item, so each one raises the waiting number; (b) only while the build is blocked on you, that is the red is done, the build untaken, the item unwaived. Which?\n\nexplain this in english please."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:15:58.539Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T03:16:26.895Z",
+     "text": "cw: in plain english. A coding item moves in three steps: one agent writes the failing test, a second builds it, one of them checks the result. Whoever wrote the test may not build it, so with one agent around the work just stops. Waive is you lifting that rule for one item.\nThe question was only when you see the button: (a) on every coding item that is running, which puts one more thing on your list each time, or (b) only when the work has actually stopped and your waive is the one thing that can restart it. You said only when it's blocked on you, which is (b), and that is what is built.\nThe one thing left, Q4: the same stall happens one step later, at the checking step, because whoever built it may not check his own work. Show the button there too?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T03:18:30.319Z",
+     "text": "when only one agent is present, why can't the desk auto-waive it, that what i don't get. It's stupid for the desk to insist another agent must do a task when no other agent is online..."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:18:30.558Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T03:19:05.653Z",
+     "text": "cw: it does, by your own ruling in this item: when one agent alone is online, the desk waives the item itself the moment the failing test is done, and says so. The button is only for the other case, two agents online and you want the test writer to build it anyway.\nBut your question points at something simpler that I would rather build: drop the stamping altogether and have the rule simply not apply while one agent is online, checked each time an agent asks to take the work. Then nothing can stall even if the second agent drops away halfway, and Q4 disappears with it.\nQ5 asks that."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T03:19:34.802Z",
+     "text": "wsl: it can, and that is built and green already: when you are down to one agent, the desk waives the item itself the moment the red is done and says so under the item. Nobody waits for you.\nThe button is only for the case where a second agent IS online and you want the rule lifted anyway.\nOne honest consequence: your auto-waive contradicts two older suites that assert the rule with a single agent (deskPhases, deskRedWriterBuild). I change them to put a second agent in the room, which is what they meant to test."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T03:20:42.511Z",
+     "text": "cw: checked wsl's two suites myself and the finding holds. In deskPhases the second agent only ever makes a refused take and a read, neither of which the desk counts as being online, so the suite was asserting the rule in a room that is empty by the desk's own reckoning.\nPutting a real second agent in there makes it assert what it always meant, so that is a strengthening, not a weakening. The same change is needed whichever way you answer Q5, so wsl is safe to make it now.\nwsl's build is not on the remote yet, so I have not seen the green myself; I verify it when it lands."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T03:20:49.810Z",
+     "text": "contradiction or not. autowaive when only one agent is present. the other case already happened in a previous goal, and it worked"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:20:50.009Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T03:22:17.686Z",
+     "text": "and i still have a million red Q's that i don't get."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:22:17.954Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T03:23:15.654Z",
+     "text": "wsl: all three points built against your corrected red d42ec40c, deskWaive 18 green. Waive now shows only on a build nobody holds, and goes the moment an agent takes it.\nYour auto-waive did make two older suites red, since both asserted the rule in rooms where only one agent ever wrote: deskPhases and deskRedWriterBuild now put a second agent in the room, which is what they meant to test. Both green.\ncw: that is a change to goal/G5.7 and goal/G5.9 tests, so look at it in the verify."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T03:23:16.533Z",
+     "text": "cw: your ruling is in the box and the red follows it, pushed as c509aa51: the auto-waive fires at every handover, not only after the failing test, so a one-agent item never stalls anywhere. Q4 and Q5 are both answered by it and the item is green again, nothing waiting on you.\nThe test now asserts the behaviour instead of the machinery: alone, one agent takes all three steps and Done is offered without a press of yours anywhere.\nwsl: one more case to build, the handover after the build; the two older suites are yours to fix as you said."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:23:19.675Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T03:25:29.273Z",
+     "text": "cw: I went looking and the desk has no open question left anywhere: all twelve open items on both goals report none, and walking every goal including the closed ones turns up none either. The red icon on your list is drawn from that count alone, so nothing of yours should be red.\nIf your screen still shows red, the screen is stale, not the desk: reload it once. That is the same class of fault as the rule dialog you caught, and if a reload does not clear it I open an item for it rather than guess.\nMy share of the fault is that I wrote questions you had to decode. From here each one is a single plain sentence or it does not go on an item at all."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T03:25:31.142Z",
+     "text": "cw: you built against d42ec40c, and the red moved on since: c509aa51 adds his ruling that the auto-waive fires at every handover, not only after the failing test, so a one-agent item does not stall at the build either.\nThat is one more case in deskWaive, 19 assertions now, not 18. Pull and build it, then I verify the lot.\nYour two suite fixes I have already checked and agree with, so they are not what is holding this up."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T03:25:42.007Z",
+     "text": "wsl: on the red Q's: I checked every item the desk lists, open and closed, and not one carries an open question right now. Nothing waits on you.\nSo the problem is not how many, it is that ours were written in agent-speak. Mine will be in your words from now on, or they are not questions you can answer.\nYour every-handover ruling is built, 19 green, and the two older suites with it; full run going."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:25:43.784Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:25:59.625Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T03:28:53.050Z",
+     "text": "why is this not moving?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T03:29:07.572Z",
+     "text": "wsl: it is moving. The code is written and all 19 of its tests pass, including your every-handover ruling.\nWhat is left is the full test run of all 325 suites, which takes about twenty minutes and is three minutes in. I push the moment it is clean, and cw checks it after.\nI do not push without that run, because this touches the rules every coding item goes through."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T03:29:18.125Z",
+     "text": "cw: it is moving, on wsl's machine. The code is written and the item's own suite is green there; what is left is the full harness run it does before pushing, which takes several minutes. Nothing waits on you, and the remote still ends at my test.\nThe one thing that would make it faster is me building it instead, and I may not: I wrote the failing test and wsl is online, which is exactly the rule this item exists to soften.\nI verify it the moment it lands and tell you here."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:29:20.782Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T03:30:31.336Z",
+     "text": "cw: baseline taken here while you run, so the verify can tell your change apart from anything already broken: deskPhases 9 green, deskRedWriterBuild 6 green on c509aa51, both without your edits.\nAfter your push I want the same counts or higher from both, with the second agent genuinely writing, not merely named.\nI am not running a full harness alongside yours, so we do not fight over the same ports."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T03:31:18.716Z",
+     "text": "wsl: in and pushed, 9ece24a8. Waive is in the dialog, and when you are the only one with one agent online the desk now lifts the rule itself at every step, so nothing stalls waiting for a second agent.\nFull run: 325 suites, 4702 green, and the nine reds are the same nine that were red before I started, none of them desk.\ncw: verify is yours; both older suites run 9 and 6 green here with the second agent really writing."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:31:20.170Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T03:35:43.850Z",
+     "text": "cw: verify passed, Done is offered. deskWaive 19 green against wsl's build, the two older suites 9 and 6 green exactly as my baseline, the three other suites that touch the phases green, and the whole desk set 65 suites 619 green with nothing red. The suite edits are one added line each, no assertion touched.\nBut none of it is running for you yet: your node still serves the old desk, which is why its answers carry no waived field at all. Your checkout is already at 9ece24a8, so only the process is behind. One line restarts it, with no gap for wsl's relay to take the port:\ncd /d D:\\SpiritOS\\spirit\\run && taskkill /PID <the node on 65432> /F && node js\\server.js --port 65432\nFiles the item's commits changed:\n- spirit/test/deskWaive.js (c509aa51 and before, the red)\n- spirit/run/process/js/desk/desk.js, spirit/run/shell/deskDetails/deskDetails.js, spirit/test/deskPhases.js, spirit/test/deskRedWriterBuild.js (9ece24a8, the build)"
     }
    ]
   },
