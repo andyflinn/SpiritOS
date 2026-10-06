@@ -1,8 +1,8 @@
 {
- "change": 19027,
+ "change": 19035,
  "line": 8493,
  "goal": "goal/G2",
- "writtenAt": "2026-10-06T03:39:59.962Z",
+ "writtenAt": "2026-10-06T03:42:01.224Z",
  "items": [
   {
    "id": "goal/G2",
@@ -11,7 +11,6 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -38,7 +37,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -486,26 +485,23 @@
    "id": "goal/G2.19",
    "title": "Make current: a press on any open goal makes it the current goal, from the goal dialog",
    "goal": "goal/G2",
-   "status": "ready",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G2"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -516,32 +512,35 @@
    "box": "MAKE CURRENT\n\nAndy, 2026-10-06, under goal/G2.18: \"i want to switch between goals at will, so the goals detail should give me re-open and and on any open goal i want a button \\\"make current goal\\\"\"\n\nWhat: today the current goal is set by one thing only, the newest session.set (process/js/desk/desk.js 427: s.current = gid), and nothing else moves it; Reopen on a closed goal exists (desk.js 577) but leaves the current goal where it was. A new press, make-current, on any open goal sets s.current to it; the goal dialog shows the button when the goal is open and not current.\n\nWhere: desk.js (PRESSES, OWNER_PRESSES, apply, buttons) and shell/deskDetails (the button label). A press value, not a node verb.\n\nTest first, red on today code: press {id: goal/X, what: make-current} by the owner makes goal/X current; items.search with currentGoalOnly then lists goal/X first; an agent press is refused.",
    "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:42:00.492Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G2.20",
    "title": "A Go in a reopened goal carries the rules active today: the test that proves it",
    "goal": "goal/G2",
-   "status": "ready",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G2"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -577,6 +576,11 @@
      "by": "andy",
      "at": "2026-10-06T03:00:32.575Z",
      "text": "Q1: a rule of type design attaches to nothing today (typesOf yields desk, code, ui only). Should a design rule attach to every item, or only while its goal is in design mode?\n\nevery item"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:42:00.789Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -584,26 +588,23 @@
    "id": "goal/G2.21",
    "title": "A question never hides in chat: an agent line ending in a question mark becomes a Q check by the desk",
    "goal": "goal/G2",
-   "status": "ready",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G2"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -614,7 +615,13 @@
    "box": "A QUESTION NEVER HIDES IN CHAT\n\nAndy, 2026-10-06, under goal/G2.18: \"i want mechanical support in deskServer to make agents add red-question to the design\", and \"add G2.21\" to the shape below. Enforces rule/3 where the desk can (goal/G3.9 precedent).\n\nWhat: an agent chat line under an item whose text ends in a question mark is stored as it came AND the desk adds a Q check on that item with the same words, by that agent (check.add, desk.js 439-440 path), so the List lights red and his answer goes through check.set as for any Q. The line stays in chat, marked with its Q number. His own lines and the desk lines are never converted; a line without a question mark passes as before.\n\nWhere: desk.js chat.add handler (1324-1359), server only, no new verb. Nothing changes for rule chat (rule/N has no checks).\n\nTest first, red on today code: an agent chat.add ending in ? under an item adds one open Q check with those words; a line without ? adds none; his own line with ? adds none.",
    "version": 1,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:42:00.998Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G2.22",
