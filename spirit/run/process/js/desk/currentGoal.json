@@ -1,8 +1,8 @@
 {
- "change": 18099,
+ "change": 18143,
  "line": 8493,
  "goal": "goal/G6",
- "writtenAt": "2026-10-06T00:11:11.434Z",
+ "writtenAt": "2026-10-06T00:15:22.291Z",
  "items": [
   {
    "id": "goal/G6",
@@ -11,11 +11,13 @@
    "status": "",
    "with": "",
    "buttons": [
-    "done",
+    "go-all",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G6.9"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -34,15 +36,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -493,6 +493,36 @@
      "by": "andy",
      "at": "2026-10-05T23:41:55.576Z",
      "text": "ok then"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:12:05.809Z",
+     "text": "Q5: add an item to G6 so a plain item take never holds a phase (it blocked G6.1 and G6.6)?\n\nwas this done?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T00:12:28.491Z",
+     "text": "wsl: no. There is no item for it, and the bug is still in the code: item.take sets the same \"with\" that phase.take checks (desk.js 464 and 658), so a plain take still blocks every phase take.\nIt needs your yes to Q5 and an item; G6 can close without it if you want it in the next goal."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:12:34.025Z",
+     "text": "cw: no, not done; it waited on your yes. The bug is still in the code: item.take sets the same \"with\" name that phase.take sets (desk.js 464 and 467), and mayTake refuses a take while \"with\" is set (desk.js 658).\nShall I add it to G6 as an item now?"
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-06T00:12:51.728Z",
+     "text": "ubi: no, not yet — cw named it earlier (\"A fix item follows: item.take must not touch a phase holder\"), but no item was added for it. The fix needs a new item (its goal is open for a Start design, or straight into a new goal)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:14:15.537Z",
+     "text": "add item to fix it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:14:36.280Z",
+     "text": "taking: adding the take-fix item to G6."
     }
    ]
   },
@@ -1263,8 +1293,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "THE RULES TAB\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nA new tab \"Rules\" between \"Team\" and \"Musings\":\n1. The new bubble: type, label, text and a new button: rule.add (the rule comes in proposed; agents may add one too).\n2. The search bubble: a search box and 7 toggles (ui, code, design, desk; proposed, active, deleted): rules.search {text, types, statuses}.\n3. The list, a row per rule: status (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), label, type, key; a row opens ruleDetails (goal/G6.4).\nA rule's text is a paragraph of up to 2048 bytes, line breaks kept (goal/G5.5).\n\nWhere: shell/desk. Blocked by goal/G6.4.\n\nWaiting: his Go (no open question).",
-   "version": 2,
+   "box": "THE RULES TAB\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nA new tab \"Rules\" between \"Team\" and \"Musings\":\n1. The new bubble: type, label, text and a new button: rule.add (the rule comes in proposed; agents may add one too).\n2. The search bubble: a search box and 7 toggles (ui, code, design, desk; proposed, active, deleted): rules.search {text, types, statuses}.\n3. The list, a row per rule: status (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), label, type, key; a row opens ruleDetails (goal/G6.4).\nA rule's text is a paragraph of up to 2048 bytes, line breaks kept (goal/G5.5).\n\nAS BUILT (2cd2accb): the toggles start off, and with none on in a group that group is not narrowed; the list asks again when a rule changes. Andy: \"accepted, for now, we'll find out how it affects the flow of things\".\n\nWhere: shell/desk. Blocked by goal/G6.4.\n\nWaiting: his Go (no open question).",
+   "version": 3,
    "checks": [],
    "chat": [
     {
@@ -1771,6 +1801,42 @@
      "text": "wsl verify of ec5dcd17: deskGoalClose 8 of 8; each of 6 mutations caught (no goal Close in the List, closing at once while items are open, no count, the dialog not asking); every desk suite and armedButtons green. Desk suites only, not the full harness.\nVerify pass recorded; G6.6 is ready for your Done."
     }
    ]
+  },
+  {
+   "id": "goal/G6.9",
+   "title": "desk server: a plain item take never holds a phase (item.take stops setting the phase holder)",
+   "goal": "goal/G6",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G6"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   }
  ]
 }
