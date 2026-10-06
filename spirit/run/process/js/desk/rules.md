@@ -1,5 +1,11 @@
 # Desk rules, active (written by the desk server on every rule change, goal/G5.8)
 
+## ui
+
+### rule/1 (version 11): Horizonal Spacing in UI Rows
+
+horizontal spacing of inline elements: Items in a (button/info) row: each item carries a spacing of 1em after itself.
+
 ## design
 
 ### rule/5 (version 10): The plainest mechanism, and the cost stated not hidden
