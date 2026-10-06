@@ -25,7 +25,9 @@ const test = require('./testSupport.js');
 const appClient = require('../run/js/appClient.js');
 
 const OWED = 'OWED by goal/G2.19: ';
-const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'desk', 'desk.js');
+const DESK_DIR = path.join(__dirname, '..', 'run', 'process', 'js', 'desk');
+const SERVER = path.join(DESK_DIR, 'desk.js');
+const MANIFEST = path.join(DESK_DIR, 'desk.json');
 const CW = { key: 'MCowBQYDK2VwAyEAdeskMakeCurrentTestCWAAAAAAAAAAAAAAAAAA=', label: 'claude-windows' };
 const ANDY = { owner: true, key: 'MCowBQYDK2VwAyEAdeskMakeCurrentTestOwnerAAAAAAAAAAAAA=', label: 'andy' };
 
@@ -110,6 +112,52 @@ async function currentGoal() {
   const afterReopen = await call('press', { id: 'mc/G2', what: 'make-current' }, ANDY);
   if (took(afterReopen) && await currentGoal() === 'mc/G2') test.check('reopened, it takes make-current and becomes current');
   else test.fail(OWED + 'after Reopen make-current answered ' + afterReopen.status + ' ' + short(afterReopen.body) + '; current ' + short(await currentGoal()));
+
+  // GROWN IN THE VERIFY (goal/G5.7: "after an all-green build it's the verifier that extends the red"). The build
+  // rewrote currentGoal.json on a make-current and claude-windows said so itself, the red never having asked for it;
+  // removing that rewrite left this suite wholly green, so it was behaviour nobody held. It matters because the file
+  // names the current goal and carries THAT goal's items alone (desk.js writeGoalFile), so the agents and the brain
+  // would go on reading the goal he had just left.
+  test.subHeading('5. the switch rewrites currentGoal.json, which every other reader goes by');
+  const defaults = (function () {
+    const m = (function () { try { return JSON.parse(fs.readFileSync(MANIFEST, 'utf8')); } catch (e) { return {}; } })();
+    const out = {};
+    (Array.isArray(m.args) ? m.args : []).forEach(function (x) { if (x && x.name) out[x.name] = x.default; });
+    return out;
+  }());
+  // Sharing is on only when the argument naming the file is given (desk.js GOAL_SHARED), as deskGoalFile has it.
+  const fileArg = Object.keys(defaults).filter(function (k) { return /currentGoal\.json$/.test(String(defaults[k])); })[0] || '';
+  const shared = Object.assign({}, defaults);
+  if (fileArg) shared[fileArg] = 'spirit/run/process/js/desk/currentGoal.json';
+  const two = path.join(scratch, 'shared');
+  const twoState = path.join(two, 'state');
+  fs.mkdirSync(twoState, { recursive: true });
+  const twoPipe = process.platform === 'win32' ? appClient.pipePathFor(two, 'desk', 'win32', 'process') : path.join(two, 'door.sock');
+  const twoClient = appClient.createAppClient({ rootDir: two });
+  twoClient.register('desk', twoPipe);
+  const kid2 = spawn(process.execPath, [SERVER, JSON.stringify(shared), '--pipe', twoPipe, '--state', twoState], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  for (let i = 0; i < 60; i++) { await sleep(150); try { const r = await twoClient.ask('api'); if (r.body && r.body.desk && r.body.desk.ok !== false) break; } catch (e) { /* not yet */ } }
+  const ask = function (verb, args, caller) { const q = {}; q[verb] = args; return twoClient.ask({ desk: q }, caller).then(function (r) { return r || {}; }, function () { return {}; }); };
+  const goalFile = path.join(twoState, 'currentGoal.json');
+  const readFile = function () { try { return JSON.parse(fs.readFileSync(goalFile, 'utf8')); } catch (e) { return null; } };
+  try {
+    await ask('session.set', { json: JSON.stringify({ goal: { id: 'sh/G1', title: 'First' }, items: [{ id: 'sh/G1.1', title: 'One', blocks: ['sh/G1'] }] }) }, CW);
+    await ask('session.set', { json: JSON.stringify({ goal: { id: 'sh/G2', title: 'Second' }, items: [{ id: 'sh/G2.1', title: 'Two', blocks: ['sh/G2'] }] }) }, CW);
+    await sleep(300);
+    const before = readFile();
+    if (before && before.goal === 'sh/G2') test.check('the file names the goal written last, sh/G2');
+    else { test.fail('the world: the shared desk wrote ' + short(before)); throw new Error('no file'); }
+    const press = await ask('press', { id: 'sh/G1', what: 'make-current' }, ANDY);
+    await sleep(300);
+    const after = readFile();
+    if (!took(press)) test.fail(OWED + 'make-current on the sharing desk answered ' + press.status + ' ' + short(press.body));
+    else if (after && after.goal === 'sh/G1') test.check('after the switch the file names sh/G1, not the goal he left');
+    else test.fail(OWED + 'after make-current the file still says ' + short(after && after.goal) + ': ' + short(after));
+    const ids = after && Array.isArray(after.items) ? after.items.map(function (x) { return x.id; }) : [];
+    if (ids.indexOf('sh/G1.1') !== -1 && ids.indexOf('sh/G2.1') === -1) test.check('and it carries sh/G1\'s items alone');
+    else test.fail(OWED + 'the file carries ' + short(ids));
+  } catch (e) { if (!/no file/.test(String(e && e.message))) test.fail('the sharing desk threw: ' + (e && e.stack || e)); }
+  await new Promise(function (r) { if (!kid2) return r(); kid2.once('exit', r); kid2.kill(); setTimeout(r, 3000); });
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(async function () {
   await stop();
   setTimeout(function () {
