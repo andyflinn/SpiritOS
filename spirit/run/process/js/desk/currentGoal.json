@@ -1,12 +1,12 @@
 {
- "change": 18242,
+ "change": 18626,
  "line": 8493,
  "goal": "goal/G7",
- "writtenAt": "2026-10-06T00:35:58.802Z",
+ "writtenAt": "2026-10-06T01:18:24.517Z",
  "items": [
   {
    "id": "goal/G7",
-   "title": "New goal",
+   "title": "chatter: rethinking the chatter user interface",
    "goal": "",
    "status": "",
    "with": "",
@@ -14,7 +14,14 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G7.1",
+    "goal/G7.2",
+    "goal/G7.3",
+    "goal/G7.4",
+    "goal/G7.5",
+    "goal/G7.6"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -30,10 +37,10 @@
    "verifier": "",
    "rules": [],
    "asks": 0,
-   "half": false,
+   "half": true,
    "full": false,
    "design": true,
-   "waiting": 1,
+   "waiting": 7,
    "live": [
     "claude-ubuntu",
     "claude-windows",
@@ -46,6 +53,579 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
+   "box": "GOAL/G7: CHATTER — RETHINKING THE CHATTER USER INTERFACE\n\nTHE VISION (Andy, 2026-10-06, verbatim)\n\"Right now: The left and right panes of chatter, both are collapsible toward the side-edges of the windows, where the space along the window-side below the fold/unfold buttons remains blank and un-usable.\"\n\"What i want: i want the the portion adjacent to the window edge to act like a tab-control strip, like the left pane in vscode: If an icon is clicked and it's contents is already shown in the left pane of chatter, the left pane collapses. If the icon is clicked, and the left pane is collapsed or shows content associated with another icon, the left pane will show the content of the clicked icon.\"\nThe centre panel, top to bottom:\n1. \"the heading strip, exists already, shows the peers label and the plain/bubbles dropdown.\"\n2. \"The plugin section: it shows a graphic interface for the current tab of the left window edge.\"\n3. \"The chat log as it displays now\"\n4. \"the chat input box, as is is now.\"\n\"sections two and three will be separated by a horizontal border that can be moved like the separators of the three main panes.\"\n\"the chat makes section 2 and the separator between 2 and 3 invisible, where tic-tac-toe uses section 2 to display a tic-tac-toe game visually and clickably, and it's left pane is sused to start/configere the game. The game itself rides the chat.\"\n\nFIRST SCOPE\n- The frame (strip, section 2, its separator), the plugin contract and tic-tac-toe first; the right pane (files, keys, grants) after file transfer. Andy, to Q3: \"yes\".\n- tic-tac-toe is the demo of the contract. Andy: \"a ticTacToe plugin implementation would be a simple game-demo, then chess etc...\"\n\nTHE STRIPS\n- The right pane gets its own icon strip, mirroring the left. Andy, to Q2: \"yes, 1) fileServer interface for chat 2) (oos) grant.notifications. etc...\"\n- Fixed icons. Andy: \"fixed on the left: chat and plugin-manager\" / \"fixed on the right: files and plugin-manager\" / \"plugin-manager is the same, just bound to a different tab-set....\"\n\nTHE PLUGIN LINE\n- A JSON line in the chat text; the chat server's verb (line.write {to, text, re}) is unchanged. Andy, to Q1: \"a json line?\", then \"json object { a:pluginName, { ... plugin-specific-data ...} }\".\n- Its shape: {\"pluginName\": \"<name of the plugin>\", \"data\": {...}}. Andy, to Q4: \"the first field: pluginName:name-of plugin  the second  data:{}\".\n- Shown as the plugin decorates it. Andy: \"and chat will know that pluginName can decorate the line to look like \"plugin: click-bottom-left\" while actually sending json\".\n\nTHE PLUGIN FOLDER\n- Plugins get a defined folder structure under chatter, mounted as the shell mounts its apps and elements. Andy: \"let's only do broad strokes here:\" / \"it needs a definition of folder structure below chat for plugins, and maybe the same or similar mount-structure that shell uses for apps or elements\".\n- What a plugin registers: its use of section 2 (optional) and its decorator for its own lines, in and out. Andy: \"the plugin has to register it's use of center section #2 (optional) and it's decorator for incoming-outgoing messages that ar plugin specific...\"\n\nTHE PLUGIN-MANAGER\n- First scope: chatter's own plugins with on/off only. Andy, to Q5: \"yes.\" A plugin in chatter's folder counts as installed (it arrives with a pull, already reviewed); the manager only activates it. Andy: \"worpress has two steps for plugins: install and activate, your idea says: implement activate only at thze beginning...\"\n\nLATER (out of scope until file transfer)\n- Right-side plugins as system utilities. Andy: \"same basic idea with right side plugins, not sure yet if they require a \"game-pane\", running download progress is better of stacked in the file-transfer pane\" / \"i imagined, the right hand side to be system utilites, grants like giving access to my rtx 5060 for batch jobs from my travel-laptop or other wacky ideas.\" / \"yes, like a p2p - auth granting utility, all oos until fileTransfer rocks chat.\"\n- Installing plugins. Andy: \"and installing from elsewhere will prolly start with github.... and our own, approved repos\".",
+   "version": 15,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "a plugin line (a game move) needs a kind beside text on line.write {to, text, re} (chatter.js 329): a change to the chat server verb, which needs peer review and your yes on the verb. Yes to opening that?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-06T00:46:19.006Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "does the right pane get its own icon strip on its edge, mirroring the left (wsl)?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-06T00:44:30.868Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "scope: the frame (strip, section 2, its separator), the plugin contract and tic-tac-toe first; the right pane (files, keys, grants) after file transfer?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-06T00:44:51.959Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "the plugin data needs a key of its own in JSON: {\"a\":\"tictactoe\",\"d\":{...}}, with d for data? And is \"a\" the mark wsl asked for, i.e. a typed message is never read as a move unless its a names a plugin chatter has?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-06T00:47:46.508Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "the plugin-manager: in the first scope as a fixed icon listing chatter's own plugins with on/off only, installing from elsewhere later?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-06T01:03:06.085Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "A chatter without a given plugin (or with it switched off) gets that plugin's lines too: show them as \"<pluginName>: ...\" (a generic line, never the raw JSON), or hide them? The capped box does not say. (wsl-claude)",
+     "test": "",
+     "state": "passed",
+     "by": "wsl-claude",
+     "at": "2026-10-06T01:10:20.398Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:39:29.713Z",
+     "text": "put the concept in here"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:39:48.517Z",
+     "text": "taking: the concept into goal/G7's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:39:59.763Z",
+     "text": "cw: the box was taken before me; I leave it to its taker."
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-06T00:40:08.695Z",
+     "text": "ubi: taking the box of G7, writing your concept in verbatim."
+    },
+    {
+     "by": "claude-ubuntu",
+     "at": "2026-10-06T00:40:54.513Z",
+     "text": "ubi: your concept is in the box verbatim; box take released on the write."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:43:53.641Z",
+     "text": "Q1: a plugin line (a game move) needs a kind beside text on line.write {to, text, re} (chatter.js 329): a change to the chat server verb, which needs peer review and your yes on the verb. Yes to opening that?\n\na json line?\n\nQ2: does the right pane get its own icon strip on its edge, mirroring the left (wsl)?\n\nyes, 1) fileServer interface for chat 2) (oos) grant.notifications. etc..."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:44:14.012Z",
+     "text": "taking: your Q1 and Q2 answers on G7."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T00:44:14.681Z",
+     "text": "wsl: Q2 noted: a right strip too, first the fileServer for chat, grant notifications out of scope.\nOn Q1, a JSON line works with no verb change: the move rides as text, e.g. {\"plugin\":\"tictactoe\",...}, and chatter draws it through the plugin. Two costs: a peer on an older chatter sees the raw JSON, and a typed message that happens to be JSON must not be taken for a move, so the line needs a mark only chatter writes."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:44:15.841Z",
+     "text": "Q3: scope: the frame (strip, section 2, its separator), the plugin contract and tic-tac-toe first; the right pane (files, keys, grants) after file transfer?\n\nyes"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:44:32.469Z",
+     "text": "cw on Q1, \"a json line?\": yes, that works with no verb change: the plugin writes its move as JSON in the text, e.g. {\"plugin\":\"tictactoe\",\"move\":4}, and chatter draws a line that parses as a known plugin's JSON through that plugin, not as raw text.\nThe costs: a peer whose chatter lacks the plugin sees the raw JSON, and a move must fit in one line.\nGo that way (JSON in text, no verb change)?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:45:51.259Z",
+     "text": "json object { a:pluginName, { ... plugin-specific-data ...} }"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T00:46:05.404Z",
+     "text": "wsl: JSON needs a name for the second part too, so as written it would read e.g. {\"a\": \"tictactoe\", \"d\": {...plugin data...}}. Is \"a\" your chosen key for the plugin, and what name for the data, \"d\"?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:46:13.075Z",
+     "text": "taking: your line shape into G7's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:46:21.858Z",
+     "text": "cw: in the box: {a: pluginName, ...data}. One detail as Q4: the data needs its own key in JSON, e.g. {\"a\":\"tictactoe\",\"d\":{...}}; d for data?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:47:14.403Z",
+     "text": "the first field: pluginName:name-of plugin  the second  data:{}"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:47:39.176Z",
+     "text": "taking: the key names into G7's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:47:48.093Z",
+     "text": "cw: in the box: {\"pluginName\": \"<name>\", \"data\": {...}}."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:48:10.315Z",
+     "text": "claude-windows 02:47 cw: in the box: {\"pluginName\": \"<name>\", \"data\": {...}}.\n\nyes"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:49:47.997Z",
+     "text": "and chat will know that pluginName can decorate the line to look like \"plugin: click-bottom-left\" while actually sending json"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T00:50:03.263Z",
+     "text": "wsl: that also fixes the raw-JSON cost: each plugin gives a one-line text for its data (\"tictactoe: click-bottom-left\"), and a chatter without that plugin can still draw any line with a pluginName as \"<pluginName>: ...\" instead of the JSON."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:50:06.337Z",
+     "text": "taking: the line decoration into G7's box."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:54:25.213Z",
+     "text": "same basic idea with right side plugins, not sure yet if they require a \"game-pane\", running download progress is better of stacked in the file-transfer pane\n\ni imagined, the right hand side to be system utilites, grants like giving access to my rtx 5060 for batch jobs from my travel-laptop or other wacky ideas."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T00:54:42.541Z",
+     "text": "wsl: then a right-side plugin is the same contract, drawing in the right pane instead of section 2. Grants already have their verbs (jobs.authSearch, authGrant, authRevoke), so a \"lend my GPU\" utility would be a face on those, offered in chat as a pluginName line the other side accepts. All after the first scope, as Q3 says."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:54:54.821Z",
+     "text": "taking: the right-side vision into G7's box."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:55:46.768Z",
+     "text": "yes, like a p2p - auth granting utility, all oos until fileTransfer rocks chat."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:56:46.114Z",
+     "text": "a ticTacToe plugin implementation would be a simple game-demo, then chess etc..."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:57:24.576Z",
+     "text": "i wonder if a ticTacToe would be a nice example of apps riding chat...."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T00:57:40.557Z",
+     "text": "wsl: yes, I think it is the right first one: tiny rules, but it uses every part (left pane to start, section 2 to play, moves as pluginName lines, turns between two peers). The real test it gives: the board is rebuilt from the chat lines alone after a reload, so the chat is the only state, which is what riding chat should mean."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:57:48.129Z",
+     "text": "cw: yes, I think it is the right first one: nine cells and whose turn, every move one line, and the board is rebuilt by replaying the chat's lines, so the plugin needs no storage of its own and nothing on the wire beyond chat.\nWhat it does not test: a move too big for one line, or state that cannot be replayed from history (chess still can; a file transfer cannot)."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:58:32.599Z",
+     "text": "like vscode, one fixed plugin could be the plugin-manager"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T00:58:51.273Z",
+     "text": "wsl: agreed, and there is a model to reuse: the shell's Apps app (shell/apps) already lists apps with an expand-a-row panel for name, icon and where its tile lives. A plugin manager can be that same table for chatter's plugins: which are on, their icon, their order on the strip.\nFor the first scope I would keep it fixed and small (on/off and order), and leave installing new plugins for later."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:58:51.557Z",
+     "text": "cw: for it: the strip then has two fixed icons, CHAT and the manager, and every other icon is a plugin the manager lists and switches on or off.\nThe cost is what a plugin is on disk: listing the plugins in chatter's folder is cheap, but installing one from a peer is code arriving over the wire, which runs into the shell's install hardening still owed.\nIn the first scope as a list with on/off only, installing later?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:01:01.595Z",
+     "text": "fixed on the left: chat and plugin-manager\nfixed on the right: files and plugin-manager\n\nplugin-manager is the same, just bound to a different tab-set...."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:01:28.035Z",
+     "text": "taking: the fixed icons into G7's box."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:02:40.685Z",
+     "text": "Q5: the plugin-manager: in the first scope as a fixed icon listing chatter's own plugins with on/off only, installing from elsewhere later?\n\nyes.\n\nthe same on both sides?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T01:02:53.928Z",
+     "text": "wsl: yes, one manager, as you said: the same code on both strips, listing only the plugins of the side it was opened from. Each plugin then says which side it belongs to (left: draws in section 2; right: draws in the right pane), so the two lists never mix."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:03:00.304Z",
+     "text": "taking: your Q5 answer."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:03:07.701Z",
+     "text": "cw on \"the same on both sides?\": yes, one plugin-manager, the same code on both strips; on each it lists only that strip's plugins with on/off.\nUntil file transfer, the right strip's list holds only files, so the right one has little to show at first."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:04:17.979Z",
+     "text": "and installing from elsewhere will prolly start with github.... and our own, approved repos"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:05:10.672Z",
+     "text": "worpress has two steps for plugins: install and activate, your idea says: implement activate only at thze beginning..."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T01:05:24.192Z",
+     "text": "wsl: yes, exactly: activate first, install later. In the first scope, a plugin is installed by being in chatter's folder in the repo (so it arrives with a pull, already reviewed), and the manager only activates or deactivates it. Install from GitHub or your approved repos becomes the second step, when the install hardening is done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:05:27.924Z",
+     "text": "cw: yes, exactly: activate (on/off) only at first; the plugins that ship in chatter's folder count as installed, and install comes with the repos later."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:06:18.227Z",
+     "text": "cap"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:06:39.309Z",
+     "text": "taking: cap of G7."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:07:03.111Z",
+     "text": "cw: capped: vision, first scope, strips, plugin line, plugin-manager, later; every ruling kept verbatim."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T01:07:29.296Z",
+     "text": "wsl: checked the capped box against chatter.js (line.write {to, text, re} at 329 holds). One gap left, as a Q check: what a chatter without that plugin shows for its lines, a generic \"<pluginName>: ...\" or nothing."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:10:05.082Z",
+     "text": "Q6: A chatter without a given plugin (or with it switched off) gets that plugin's lines too: show them as \"<pluginName>: ...\" (a generic line, never the raw JSON), or hide them? The capped box does not say. (wsl-claude)\n\nlet's only do broad strokes here:\n\nit needs a definition of folder structure below chat for plugins, and maybe the same or similar mount-structure that shell uses for apps or elements"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T01:10:21.457Z",
+     "text": "wsl: fine, Q6 waits for the details. Broad stroke for the folders, reusing the shell's app shape (shell/<name>/<name>.js + <name>.json, activateApp {mount, open}): shell/chatter/plugins/<name>/<name>.js and <name>.json, the json saying side (left or right), icon and on/off, the js registering its pane view, its section-2 view and its one-line text for a move."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:10:34.037Z",
+     "text": "taking: your plugin folder line into G7's box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:10:40.101Z",
+     "text": "cw, broad strokes: the shell already has the pattern: an app is shell/<name>/<name>.js beside <name>.json and registers with activateApp({mount, open}); an element is shell/js/<name>/<name>.js.\nSo a plugin could be shell/chatter/plugins/<name>/<name>.js beside <name>.json (icon, side), registering with chatter as an app registers with the shell: its left-pane view, its section-2 view, and how it decorates its line."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:13:20.291Z",
+     "text": "the plugin has to register it's use of center section #2 (optional) and it's decorator for incoming-outgoing messages that ar plugin specific..."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:14:25.943Z",
+     "text": "split into know issue/problem groups"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:14:49.695Z",
+     "text": "taking: the split of G7."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:14:51.241Z",
+     "text": "cw, proposed split of G7 (all in shell/chatter):\n- G7.1 the icon strips: left and right edge strips acting as vscode's, fixed icons CHAT + manager (left), files + manager (right; files empty until file transfer).\n- G7.2 section 2 and its movable separator between plugin section and chat log; hidden while CHAT is the tab.\n- G7.3 the plugin folder and registration: shell/chatter/plugins/<name>/<name>.js + .json (icon, side), registering its section-2 use (optional) and its line decorator. Blocks 7.4, 7.5, 7.6.\n- G7.4 the plugin line: {\"pluginName\",\"data\"} as JSON in the text, decorated in and out; Q6 lives here. Blocks 7.6.\n- G7.5 the plugin-manager: chatter's own plugins, on/off, bound to each strip. Blocked by 7.1, 7.3.\n- G7.6 tic-tac-toe, the demo. Blocked by 7.1, 7.2, 7.3, 7.4.\nSplit as proposed?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T01:15:04.771Z",
+     "text": "wsl on the split: sound, two notes. G7.1 replaces today's fold buttons (chatter.js 448, 478), so its box should say they go, and CHAT's left pane is today's peers pane.\nG7.1, 7.2 and 7.5 all edit chatter.js, so their builds should run one after another, not side by side, or they collide in one file."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:17:44.077Z",
+     "text": "wsl: yes, and may as well pick icons for them too. (i still would like a more expansive icon selection in kernel.js\n\nsplit according to claude-windows proposal and add wsl notes where appropriate afterwards."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T01:18:08.313Z",
+     "text": "wsl: icons from kernel.js ICON (164 keys, none for gear or puzzle): CHAT 💬 for chat, PACKAGE 📦 for the plugin-manager (the same on both strips), FOLDER 📁 for files, MONKEY 🐒 for tic-tac-toe as you used it.\nI add these and the two notes to the items once claude-windows has split. A wider icon set in kernel.js is its own item (kernel.js is core), not G7's."
+    }
+   ]
+  },
+  {
+   "id": "goal/G7.1",
+   "title": "the icon strips: left and right edge strips acting as vscode's; fixed icons CHAT + plugin-manager (left), files + plugin-manager (right)",
+   "goal": "goal/G7",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G7",
+    "goal/G7.2",
+    "goal/G7.5",
+    "goal/G7.6"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G7.2",
+   "title": "section 2 and its movable separator between plugin section and chat log; hidden while CHAT is the tab",
+   "goal": "goal/G7",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G7",
+    "goal/G7.5",
+    "goal/G7.6"
+   ],
+   "blocked": [
+    "goal/G7.1"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G7.3",
+   "title": "the plugin folder and registration: shell/chatter/plugins/<name>/, its section-2 use (optional) and its line decorator",
+   "goal": "goal/G7",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G7",
+    "goal/G7.4",
+    "goal/G7.5",
+    "goal/G7.6"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G7.4",
+   "title": "the plugin line: {\"pluginName\",\"data\"} as JSON in the chat text, decorated in and out",
+   "goal": "goal/G7",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G7",
+    "goal/G7.6"
+   ],
+   "blocked": [
+    "goal/G7.3"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G7.5",
+   "title": "the plugin-manager: chatter's own plugins, on/off, bound to each strip",
+   "goal": "goal/G7",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G7"
+   ],
+   "blocked": [
+    "goal/G7.1",
+    "goal/G7.2",
+    "goal/G7.3"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G7.6",
+   "title": "tic-tac-toe, the demo plugin",
+   "goal": "goal/G7",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G7"
+   ],
+   "blocked": [
+    "goal/G7.1",
+    "goal/G7.2",
+    "goal/G7.3",
+    "goal/G7.4"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
    "box": "",
    "version": 0,
    "checks": [],
