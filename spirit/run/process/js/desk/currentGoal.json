@@ -1,8 +1,8 @@
 {
- "change": 18143,
+ "change": 18164,
  "line": 8493,
  "goal": "goal/G6",
- "writtenAt": "2026-10-06T00:15:22.291Z",
+ "writtenAt": "2026-10-06T00:18:01.683Z",
  "items": [
   {
    "id": "goal/G6",
@@ -11,7 +11,6 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -25,24 +24,26 @@
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "green": false,
+   "green": true,
    "code": false,
    "phase": "",
    "red": "",
    "builder": "",
    "verifier": "",
    "rules": [],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-ubuntu",
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-ubuntu"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -93,9 +94,9 @@
      "kind": "Q",
      "words": "add an item to G6 so a plain item take never holds a phase (it blocked G6.1 and G6.6)?",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-06T00:16:00.290Z"
     }
    ],
    "chat": [
@@ -1806,26 +1807,23 @@
    "id": "goal/G6.9",
    "title": "desk server: a plain item take never holds a phase (item.take stops setting the phase holder)",
    "goal": "goal/G6",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G6"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -1833,10 +1831,31 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "A PLAIN TAKE NEVER HOLDS A PHASE\n\nAndy, to G6 Q5 (\"add an item to G6 so a plain item take never holds a phase (it blocked G6.1 and G6.6)?\"): \"add item to fix it.\"\n\nWHAT WENT WRONG\n- item.take sets the item's \"with\" name (desk.js 464), the same name phase.take sets (desk.js 467); mayTake refuses any phase take while \"with\" is set (desk.js 658). So a plain take on a code item blocked every phase take, and the desk raised stale-holder Qs about a phase nobody held (G6.1, G6.6).\n\nTHE FIX\n- On a code item the phase holder is only what phase.take recorded; item.take no longer counts as holding a phase, and the stale-holder Q is raised only for a real phase holder.\n- A test shows a plain take on a code item leaves phase.take open to whoever the phase rules allow.\n- The status shows the phase: while an agent holds a phase, the item's status says which (red, build, verify), set by the desk when it grants the take. Andy: \"add to this item: when an agent is with an item, update its status with the phase that is running at the time. the desk should do it, since it arbitrase phase-taking.\"\n\nWhere: spirit/run/process/js/desk/desk.js.\n\nWaiting: his Go.",
+   "version": 2,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:16:01.997Z",
+     "text": "cw: added, goal/G6.9 \"a plain item take never holds a phase\"; its box says what went wrong and the fix. Waiting: your Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:17:13.570Z",
+     "text": "add to this item: when an agent is with an item, update its status with the phase that is running at the time. the desk should do it, since it arbitrase phase-taking."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:17:52.430Z",
+     "text": "cw: in the box: while an agent holds a phase, the desk sets the item status to that phase (red, build, verify) when it grants the take.\nWaiting: your Go."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T00:18:01.425Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   }
  ]
 }
