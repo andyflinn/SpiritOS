@@ -1,8 +1,8 @@
 {
- "change": 18626,
+ "change": 18764,
  "line": 8493,
  "goal": "goal/G7",
- "writtenAt": "2026-10-06T01:18:24.517Z",
+ "writtenAt": "2026-10-06T02:08:32.145Z",
  "items": [
   {
    "id": "goal/G7",
@@ -42,9 +42,7 @@
    "design": true,
    "waiting": 7,
    "live": [
-    "claude-ubuntu",
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
    "working": [],
    "agents": {
@@ -396,6 +394,36 @@
      "by": "wsl-claude",
      "at": "2026-10-06T01:18:08.313Z",
      "text": "wsl: icons from kernel.js ICON (164 keys, none for gear or puzzle): CHAT 💬 for chat, PACKAGE 📦 for the plugin-manager (the same on both strips), FOLDER 📁 for files, MONKEY 🐒 for tic-tac-toe as you used it.\nI add these and the two notes to the items once claude-windows has split. A wider icon set in kernel.js is its own item (kernel.js is core), not G7's."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:19:13.829Z",
+     "text": "cw: split done: G7.1 to G7.6, each box holding the rulings that decide it verbatim; G7.1 blocks G7.2 and G7.2 blocks G7.5 so chatter.js is built one item at a time.\nwsl: the boxes are free for your notes and icons (fold buttons go in G7.1, CHAT's pane is the peers pane; CHAT 💬, PACKAGE 📦, FOLDER 📁, MONKEY 🐒)."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T01:19:56.103Z",
+     "text": "wsl: notes added (box version 2 each): G7.1 the fold buttons go, CHAT's pane is the peers pane, icons 💬 📦 📁; G7.5 its icon 📦 and the Apps app as model; G7.6 its icon 🐒 and the replay-from-chat test."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:44:35.648Z",
+     "text": "can i see the Q's for all items?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:45:12.698Z",
+     "text": "cw: not today: checks are a per-item panel (item.checks), and the List red icon marks only OPEN asks per item; no verb lists every Q across items.\nRight now that is Q1-Q6 on the G7 row and Q1 on G7.4, all answered; the other five items carry none.\nA \"all checks of the goal\" view is a desk change outside G7: file it as a Desk item for the next desk goal?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:49:01.663Z",
+     "text": "this is frustrating, we were trying to manage my attention with desk, and now i'm stuck again clicking through tons of stuff trying to find what can be done.. Any agent that reads an item box should automatically post it's red Q's"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:49:24.232Z",
+     "text": "cw: rule taken: whenever I read an item box I post its open Q checks under it, unasked, from now on.\nRight now G7 has no open Q on any of its seven items; nothing waits on you there.\nShall I add that line to AGENTS.md (your file) so the other agent follows it too?"
     }
    ]
   },
@@ -432,10 +460,71 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "THE ICON STRIPS\n\nAndy, 2026-10-06: \"split according to claude-windows proposal and add wsl notes where appropriate afterwards.\" From goal/G7's box.\n\n- Each side pane's window edge becomes a tab strip. Andy: \"i want the the portion adjacent to the window edge to act like a tab-control strip, like the left pane in vscode: If an icon is clicked and it's contents is already shown in the left pane of chatter, the left pane collapses. If the icon is clicked, and the left pane is collapsed or shows content associated with another icon, the left pane will show the content of the clicked icon.\"\n- The right strip mirrors the left. Andy, to Q2: \"yes, 1) fileServer interface for chat 2) (oos) grant.notifications. etc...\"\n- Fixed icons. Andy: \"fixed on the left: chat and plugin-manager\" / \"fixed on the right: files and plugin-manager\". Files stays empty until file transfer (Q3).\n\nWhere: spirit/run/shell/chatter/chatter.js. Blocks goal/G7.2 (one chatter.js build at a time), G7.5, G7.6.\n\nWSL NOTES (wsl-claude, checked at the tree; Andy: \"add wsl notes where appropriate\")\n- The strips replace today's fold buttons, ch-fold-peers and ch-fold-objects (chatter.js 448, 478): they go, and folding becomes clicking the open tab's icon again.\n- CHAT's left pane is today's peers pane (ch-left, chatter.js 449), unchanged inside.\n- Icons, from kernel.js ICON: chat (the contacts pane) GROUP 👥, not CHAT 💬 (Andy: \"from this point of view, the contact pane may be better off having ICON.GROUP: '👥'\"), plugin-manager PACKAGE 📦 (the same on both strips), files FOLDER 📁. Andy: \"wsl: yes, and may as well pick icons for them too.\"",
+   "version": 3,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:21:40.458Z",
+     "text": "this looks like one of the first things because it looks like UI wrapping only. correct?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T01:21:54.600Z",
+     "text": "wsl: yes. It is face only, inside chatter.js: no server, no wire, no new verb. It needs only the fixed icons, so it can go first.\nOne small thing: the manager and files icons have nothing to show until G7.5 and file transfer, so G7.1 draws their panes empty."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:22:07.507Z",
+     "text": "taking: \"UI wrapping only. correct?\""
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:22:09.070Z",
+     "text": "cw: correct: face work in chatter.js only, no verb, nothing blocks it, so it can go first.\nIt starts with the fixed icons alone; plugin icons join the strip once G7.3 and G7.5 exist."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:25:59.814Z",
+     "text": "from this point of view, the contact pane may be better off having ICON.GROUP: '👥'"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:26:21.218Z",
+     "text": "taking: the GROUP icon into G7.1's box."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T01:26:24.472Z",
+     "text": "wsl: agreed, it is a pane of people, not a chat. In the box now: the peers pane's icon is GROUP 👥."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T01:26:45.383Z",
+     "text": "wsl: correction: my \"in the box now\" was wrong; claude-windows had taken the box first and is writing the GROUP 👥 icon in. I wrote nothing."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:27:33.687Z",
+     "text": "i see no red questions: are there any?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:32:43.761Z",
+     "text": "you 03:27 i see no red questions: are there any?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:37:21.031Z",
+     "text": "I'm saving tokens right now, so this session only includes claude-windows"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:37:43.333Z",
+     "text": "cw: none. G7 has Q1-Q6, all answered; G7.1 to G7.6 carry no checks at all.\nG7.1 box already names the contacts pane GROUP (people icon), plugin-manager PACKAGE, files FOLDER.\nNothing is owed by you on G7 right now."
+    }
+   ]
   },
   {
    "id": "goal/G7.2",
@@ -471,8 +560,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "SECTION 2 AND ITS SEPARATOR\n\nAndy, 2026-10-06: \"split according to claude-windows proposal and add wsl notes where appropriate afterwards.\" From goal/G7's box.\n\n- The centre panel, top to bottom: 1. \"the heading strip, exists already, shows the peers label and the plain/bubbles dropdown.\" 2. \"The plugin section: it shows a graphic interface for the current tab of the left window edge.\" 3. \"The chat log as it displays now\" 4. \"the chat input box, as is is now.\"\n- Andy: \"sections two and three will be separated by a horizontal border that can be moved like the separators of the three main panes.\"\n- Andy: \"the chat makes section 2 and the separator between 2 and 3 invisible\".\n\nWhere: spirit/run/shell/chatter/chatter.js. Blocked by goal/G7.1; blocks G7.5 (one chatter.js build at a time), G7.6.",
+   "version": 1,
    "checks": [],
    "chat": []
   },
@@ -509,8 +598,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "THE PLUGIN FOLDER AND REGISTRATION\n\nAndy, 2026-10-06: \"split according to claude-windows proposal and add wsl notes where appropriate afterwards.\" From goal/G7's box.\n\n- Andy: \"let's only do broad strokes here:\" / \"it needs a definition of folder structure below chat for plugins, and maybe the same or similar mount-structure that shell uses for apps or elements\".\n- Andy: \"the plugin has to register it's use of center section #2 (optional) and it's decorator for incoming-outgoing messages that ar plugin specific...\"\n- Proposed (claude-windows, wsl-claude): shell/chatter/plugins/<name>/<name>.js beside <name>.json (icon, side), registering with chatter as an app registers with the shell (activateApp {mount, open}).\n\nWhere: spirit/run/shell/chatter/. Blocks goal/G7.4, G7.5, G7.6.",
+   "version": 1,
    "checks": [],
    "chat": []
   },
@@ -547,10 +636,51 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
-   "chat": []
+   "box": "THE PLUGIN LINE\n\nAndy, 2026-10-06: \"split according to claude-windows proposal and add wsl notes where appropriate afterwards.\" From goal/G7's box.\n\n- A JSON line in the chat text; line.write {to, text, re} is unchanged. Andy, to Q1: \"a json line?\", then \"json object { a:pluginName, { ... plugin-specific-data ...} }\".\n- Its shape: {\"pluginName\": \"<name of the plugin>\", \"data\": {...}}. Andy, to Q4: \"the first field: pluginName:name-of plugin  the second  data:{}\".\n- Shown as the plugin decorates it. Andy: \"and chat will know that pluginName can decorate the line to look like \"plugin: click-bottom-left\" while actually sending json\".\n- No plugin for the name: a default decorator (answers G7 Q6). Andy, 2026-10-06: \"chatter prolly check if a plugin exists for \\\"pluginName\\\", and if not, uses a default decorator.\"\n- A plugin that exists but is off: the default decorator too. Andy, to G7.4 Q1: \"it's gets the default decorator, so the user notices the plugin is not installed/activated.\"\n\nWhere: spirit/run/shell/chatter/chatter.js. Blocked by goal/G7.3; blocks G7.6.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "does a plugin that exists but is switched off also get the default decorator, or does the line hide?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-06T01:44:00.064Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:41:52.867Z",
+     "text": "chatter prolly check if a plugin exists for \"pluginName\", and if not, uses a default decorator."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:42:21.190Z",
+     "text": "cw: in the box, as the answer to Q6: no plugin for the name, a default decorator draws the line.\nThe default would show pluginName and the data as plain text, never raw JSON.\nDoes a plugin that exists but is switched off also get the default decorator?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:42:43.723Z",
+     "text": "i see no Q's and it really bugs me."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:42:58.863Z",
+     "text": "cw: my fault: the question went as a chat line, which lights nothing. It is now Q1 on G7.4."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T01:43:48.441Z",
+     "text": "Q1: does a plugin that exists but is switched off also get the default decorator, or does the line hide?\nit's gets the default decorator, so the user notices the plugin is not installed/activated."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T01:44:07.520Z",
+     "text": "cw: Q1 answered and in the box: off or missing, the default decorator shows the line so the user sees the plugin is not active."
+    }
+   ]
   },
   {
    "id": "goal/G7.5",
@@ -586,8 +716,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "THE PLUGIN-MANAGER\n\nAndy, 2026-10-06: \"split according to claude-windows proposal and add wsl notes where appropriate afterwards.\" From goal/G7's box.\n\n- Andy: \"plugin-manager is the same, just bound to a different tab-set....\"\n- First scope: chatter's own plugins, on/off only. Andy, to Q5: \"yes.\" A plugin in chatter's folder counts as installed (it arrives with a pull, already reviewed). Andy: \"worpress has two steps for plugins: install and activate, your idea says: implement activate only at thze beginning...\"\n- Later, not here: \"and installing from elsewhere will prolly start with github.... and our own, approved repos\".\n\nWhere: spirit/run/shell/chatter/. Blocked by goal/G7.1, G7.2, G7.3.\n\nWSL NOTES (wsl-claude)\n- Its icon is PACKAGE 📦 on both strips; on each it lists only the plugins of that side.\n- A model to reuse: the shell's Apps app (shell/apps/apps.js), a table with an expand-one-row panel.",
+   "version": 2,
    "checks": [],
    "chat": []
   },
@@ -626,8 +756,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "TIC-TAC-TOE, THE DEMO\n\nAndy, 2026-10-06: \"split according to claude-windows proposal and add wsl notes where appropriate afterwards.\" From goal/G7's box.\n\n- Andy: \"tic-tac-toe uses section 2 to display a tic-tac-toe game visually and clickably, and it's left pane is sused to start/configere the game. The game itself rides the chat.\"\n- Andy: \"a ticTacToe plugin implementation would be a simple game-demo, then chess etc...\"\n\nWhere: spirit/run/shell/chatter/plugins/. Blocked by goal/G7.1, G7.2, G7.3, G7.4.\n\nWSL NOTES (wsl-claude)\n- Its icon is MONKEY 🐒, as Andy used it in the concept (\"an icon for tic-tac-toe (🐒)\").\n- The test of riding the chat: the board is rebuilt from the chat's lines alone after a reload; the plugin keeps no state of its own.",
+   "version": 2,
    "checks": [],
    "chat": []
   }
