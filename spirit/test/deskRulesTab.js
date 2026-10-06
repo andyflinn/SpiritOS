@@ -105,6 +105,8 @@ test.startTest('goal/G6.5: the Rules tab: new rule, search with seven toggles, t
   const tabsEl = d.doc.getElementById('desk-tabs');
   tabsEl.fire('click', { target: target({ 'data-tab': 'rules' }), currentTarget: tabsEl });
   await settled();
+  // Counted here, before anything else can search (a rule.add may search again: found verifying 2cd2accb).
+  const openedAtTab = d.sent('rules.search').length;
   // The mount container holds the panes; each element the app fetched by id holds what it drew there.
   const all = function () { return [d.root.innerHTML].concat(Object.keys(d.doc.byId).map(function (k) { return d.doc.byId[k].innerHTML; })).join('\n'); };
   if (/data-pane="rules"/.test(all()) && /id="desk-rules"/.test(all())) test.check('a pane data-pane="rules" holds #desk-rules');
@@ -130,8 +132,8 @@ test.startTest('goal/G6.5: the Rules tab: new rule, search with seven toggles, t
   if (all().indexOf('id="desk-rule-search"') !== -1 && !noToggle.length) test.check('#desk-rule-search and the seven toggles are drawn');
   else test.fail(OWED + 'search box ' + (all().indexOf('id="desk-rule-search"') !== -1) + ', toggles missing: ' + noToggle.join(', '));
   const opened = d.sent('rules.search').length;
-  if (opened >= 1) test.check('opening the tab asks rules.search');
-  else test.fail(OWED + 'opening the tab asked rules.search ' + opened + ' times');
+  if (openedAtTab >= 1) test.check('opening the tab asks rules.search');
+  else test.fail(OWED + 'opening the tab asked rules.search ' + openedAtTab + ' times');
   const last = function () { const s = d.sent('rules.search'); return s.length ? s[s.length - 1].args : null; };
   const has = function (args, field, v) { return !!args && Array.isArray(args[field]) && args[field].indexOf(v) !== -1; };
   const before = last();
