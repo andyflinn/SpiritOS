@@ -7,18 +7,19 @@
 //   with only one agent this must be waved"); the face never got the button, so a code item with one agent in the
 //   sitting stalls after its red: the red writer may not build, and nobody can press.
 //
-// WHEN THE BUTTON SHOWS IS HIS, answering Q2 on the item, 2026-10-06: "the waive shows whether the build runs or
-// not. it shows when it's needed." So the build being taken makes no difference, and "needed" is the condition
-// below: a waive before there is a red writer changes nothing, since the phase rule it lifts binds only the red
-// writer and the builder (desk.js mayTake).
+// WHEN THE BUTTON SHOWS IS HIS. Asked which of two readings he meant, 2026-10-06: "only when it's blocked on me",
+// choosing "only while the build is blocked on you, that is the red is done, the build untaken, the item unwaived".
+// That is the condition below, and it replaces an earlier reading of his "the waive shows whether the build runs or
+// not. it shows when it's needed." as "the taken build is no condition": his explicit choice governs.
+// Q4 on the item asks the one case these words leave out, a verify blocked the same way.
 //
 // THE SHAPE (G2.22's box, as settled while this red was written; the builder may argue names in Desk first):
-//   1  item.get's facts carry `waived` (true|false). The item's `buttons` offers 'waive' when it is needed and not
-//      before: a code item that has his Go, is not done or closed, is not yet waived, and whose red is written
-//      (phase 'build' or 'verify'). Taken build or not makes no difference. Never on a goal, and not while the red
-//      is still being written. Buttons come from the server, as every button does (desk/G2.7: "Buttons come from
-//      item.buttons only"). His press {id, what: 'waive'} as before (goal/G5.7, OWNER_PRESSES); an agent's is
-//      refused.
+//   1  item.get's facts carry `waived` (true|false). The item's `buttons` offers 'waive' only while the build is
+//      blocked on him: a code item that has his Go, is not done or closed, is not yet waived, is in phase 'build',
+//      and has nobody holding that phase (desk.js keeps phaseWith, set on a take and cleared on a done). Never on a
+//      goal, not while the red is still being written, and not once an agent holds the build. Buttons come from the
+//      server, as every button does (desk/G2.7: "Buttons come from item.buttons only"). His press {id, what:
+//      'waive'} as before (goal/G5.7, OWNER_PRESSES); an agent's is refused.
 //   2  The desk waives by itself when one agent alone is live: at the moment a red is done (phase.done red), if the
 //      goal's live agents (facts.live, LIVE_MS) are that one agent, the item is waived and the desk says so in the
 //      item's chat, by desk. Two agents live: nothing, his press as before.
@@ -185,19 +186,18 @@ function answerFor(buttons) {
   if (took(build2)) test.check('after his waive the red writer may build');
   else test.fail(OWED + 'after his waive the build take was refused: ' + short(build2.body));
 
-  // HIS Q2 ANSWER: "the waive shows whether the build runs or not. it shows when it's needed."
-  test.subHeading('4. the build running makes no difference, and verify still offers it');
+  // HIS CHOICE: "only when it's blocked on me". A build somebody holds is not blocked on him, so the button goes.
+  test.subHeading('4. a build somebody holds is not blocked on him, so no waive is offered');
   await call('phase.take', { id: 'w/G1.3', phase: 'red' }, CW);
   await call('phase.done', { id: 'w/G1.3', phase: 'red' }, CW);
+  const f3before = await factsOf('w/G1.3');
+  if (f3before.phase === 'build' && (f3before.buttons || []).indexOf('waive') !== -1) test.check('its red done and nobody holding the build, w/G1.3 offers waive');
+  else test.fail(OWED + 'w/G1.3 in phase ' + short(f3before.phase) + ' with nobody building offers ' + short(f3before.buttons));
   const tookBuild = await call('phase.take', { id: 'w/G1.3', phase: 'build' }, WSL);
   const f3 = await factsOf('w/G1.3');
   if (!took(tookBuild)) test.fail('wsl-claude\'s build take on w/G1.3 was refused: ' + short(tookBuild.body));
-  else if (f3.builder === 'wsl-claude' && (f3.buttons || []).indexOf('waive') !== -1) test.check('while wsl-claude builds it, w/G1.3 still offers waive');
+  else if (f3.builder === 'wsl-claude' && (f3.buttons || []).indexOf('waive') === -1) test.check('once wsl-claude holds the build, w/G1.3 offers no waive');
   else test.fail(OWED + 'w/G1.3 with builder ' + short(f3.builder) + ' offers ' + short(f3.buttons));
-  await call('phase.done', { id: 'w/G1.3', phase: 'build' }, WSL);
-  const f3v = await factsOf('w/G1.3');
-  if (f3v.phase === 'verify' && (f3v.buttons || []).indexOf('waive') !== -1) test.check('in verify, w/G1.3 still offers waive');
-  else test.fail(OWED + 'w/G1.3 in phase ' + short(f3v.phase) + ' offers ' + short(f3v.buttons));
 
   test.subHeading('5. the dialog: Waive armed like Close, sent as press {id, what: waive}');
   const d = dialog(answerFor(['waive', 'close']));
