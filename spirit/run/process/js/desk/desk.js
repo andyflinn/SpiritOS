@@ -949,6 +949,9 @@ function write(verb, a, check) {
   // line, a check its item's checks. The page paints from this.
   const out = { change: Number(r.lastInsertRowid), verb: verb, item: now ? facts(after, now) : null };
   if (now) out.listed = listed(after, now);
+  // A line under a rule names its rule, as rule.add, rule.draft and rule.version do: the open rule dialog repaints
+  // on a publish naming its rule (goal/G2.18).
+  if (verb === 'rule.chat') out.rule = String(a.rule);
   if (now && verb === 'box.write') { out.box = now.box; out.version = now.version; }
   if (now && verb === 'chat.add') out.chat = now.chat[now.chat.length - 1];
   if (now && (verb === 'check.add' || verb === 'check.set')) out.checks = now.checks;
