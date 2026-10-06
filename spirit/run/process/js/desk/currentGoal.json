@@ -1,8 +1,8 @@
 {
- "change": 18767,
+ "change": 18776,
  "line": 8493,
  "goal": "goal/G2",
- "writtenAt": "2026-10-06T02:09:34.943Z",
+ "writtenAt": "2026-10-06T02:20:02.080Z",
  "items": [
   {
    "id": "goal/G2",
@@ -15,7 +15,9 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G2.18"
+    "goal/G2.18",
+    "goal/G2.19",
+    "goal/G2.20"
    ],
    "go": false,
    "alone": false,
@@ -35,11 +37,13 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 2,
+   "waiting": 4,
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -250,6 +254,97 @@
   {
    "id": "goal/G2.18",
    "title": "Rule dialog: a rule chat line reaches the open dialog without a reload (the rule.chat publish names its rule)",
+   "goal": "goal/G2",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G2"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "RULE CHAT REACHES THE OPEN DIALOG\n\nAndy, 2026-10-06, in rule/3 chat: \"problem, your answers to this chat only appear after hard-refresh, so this dialog fails to listen to updates, or they are not streamed...\" and \"i need shit fixed fast.\"\n\nWhat: a chat line under a rule (chat.add on rule/N) is stored as a rule.chat record and published as {change, verb: rule.chat, item: null} (process/js/desk/desk.js 950-962); rule.add, rule.draft and rule.version publish {rule: key} instead (desk.js 1444, 1466, 1479). The rule dialog repaints its chat only on a publish naming its rule (shell/ruleDetails/ruleDetails.js 213-218), so a chat line waits for a reload.\n\nFix: the rule.chat publish carries the rule key, as the other rule verbs do. Server only; the face is unchanged.\n\nTest first, red on today code: a rule.chat write publishes an object naming its rule.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T02:09:51.240Z",
+     "text": "cw: added to the reopened G2, which is the current goal now (G7 keeps everything; say the word and I switch back).\nThe box has the cause and the one-line server fix; the red test comes first.\nEnd design on G2 and press Go on this item, and I build it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T02:14:07.800Z",
+     "text": "there's more than that:\n\ni want to switch between goals at will, so the goals detail should give me re-open and and on any open goal i want a button \"make current goal\"\n\nnew added items in a re-opened current goal should consider all decision made in the mean time.\n\npossible?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T02:14:46.685Z",
+     "text": "cw: both possible. 1) \"make current\" is a new press on an open goal (desk.js press + one button in the goal dialog); Reopen a closed goal already exists, and a reopened goal is not current until something makes it so (today: a session write, as I just did).\n2) already holds for rules: his Go stamps the active rules of that moment on the item (desk.js 528, goal/G5.8), so a G2 item added today carries rule/3; decisions that are not rules are not machine-readable, so a decision that must bind later goals becomes a rule.\nAdd 1) as goal/G2.19 (make current), and 2) as goal/G2.20 (a test that a Go in a reopened goal carries today rules)?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T02:19:31.875Z",
+     "text": "add:\n\nAdd 1) as goal/G2.19 (make current), and 2) as goal/G2.20 (a test that a Go in a reopened goal carries today rules)\n\nand i want mechanical support in deskServer to make agents add red-question to the design\n\npossible?"
+    }
+   ]
+  },
+  {
+   "id": "goal/G2.19",
+   "title": "Make current: a press on any open goal makes it the current goal, from the goal dialog",
+   "goal": "goal/G2",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G2"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G2.20",
+   "title": "A Go in a reopened goal carries the rules active today: the test that proves it",
    "goal": "goal/G2",
    "status": "",
    "with": "",
