@@ -1,8 +1,8 @@
 {
- "change": 19130,
+ "change": 19137,
  "line": 8493,
  "goal": "goal/G2",
- "writtenAt": "2026-10-06T05:27:08.958Z",
+ "writtenAt": "2026-10-06T05:27:21.673Z",
  "items": [
   {
    "id": "goal/G2",
@@ -15,7 +15,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G2.20",
     "goal/G2.21"
    ],
    "go": false,
@@ -596,17 +595,18 @@
    "id": "goal/G2.20",
    "title": "A Go in a reopened goal carries the rules active today: the test that proves it",
    "goal": "goal/G2",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G2"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -619,7 +619,7 @@
    "builder": "wsl-claude",
    "verifier": "claude-windows",
    "rules": [],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "A GO IN A REOPENED GOAL CARRIES TODAY RULES\n\nAndy, 2026-10-06, under goal/G2.18: \"new added items in a re-opened current goal should consider all decision made in the mean time.\"\n\nWhat: his Go stamps the rules active at that moment on the item (desk.js 518, 528; goal/G5.8), so an item added to a reopened goal today carries every rule activated since the goal was first opened. A decision that is not a rule is not machine-readable: what must bind later goals becomes a rule.\n\nFOUND WHILE WRITING THIS (checked live, 2026-10-06): the stamp came back empty on his Go on goal/G2.18, although rule/3 was active. The cause is not the reopening: typesOf(it) (desk.js 684-690) yields only desk, code and ui, from the paths the box names, while a rule may be of type design (desk.js 310, RULE_TYPES). A design rule therefore matched no item at all.\n\nHIS RULING on Q1 (what design should mean), 2026-10-06: \"every item\". So a rule of type design applies to every item, as a desk rule does, whatever paths the box names and whether or not the goal is in design mode. This item owns that fix: its test cannot go green without it.\n\nTest: a design rule is active, an item is added and gets his Go: the item's rules name that rule. And: open a goal, close it, activate a rule, reopen the goal, add an item, press Go: the item's rules name that rule.",
