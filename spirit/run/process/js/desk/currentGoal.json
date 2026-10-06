@@ -1,8 +1,8 @@
 {
- "change": 19226,
+ "change": 19336,
  "line": 8493,
  "goal": "goal/G8",
- "writtenAt": "2026-10-06T06:57:03.750Z",
+ "writtenAt": "2026-10-06T07:46:23.473Z",
  "items": [
   {
    "id": "goal/G8",
@@ -15,7 +15,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G8.1"
+    "goal/G8.1",
+    "goal/G8.2"
    ],
    "go": false,
    "alone": false,
@@ -36,7 +37,7 @@
    "half": true,
    "full": false,
    "design": true,
-   "waiting": 2,
+   "waiting": 3,
    "live": [
     "claude-windows"
    ],
@@ -92,6 +93,11 @@
      "by": "andy",
      "at": "2026-10-06T06:56:03.932Z",
      "text": "the first item in this goal is: \"deskVerify: the dataSet\"\n\n deskVerify maintains verify.db, on any node it runs. a table row has the following fields:\n\n1. suite-based-test-ID: This is the main key to the data table.\n2. commit-level\n3. pre-commit-code\n4. status: red | green | unhappy\n5. timestamp.\n\nchanges in any of fields 1-4 result in a new record being written:\n\nsecondary indexes: commit-level, status , and pre-commit-code"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:45:44.801Z",
+     "text": "extract the topic of running modes for deskVerify, and place it in a new item that depends on G8.1"
     }
    ]
   },
@@ -105,9 +111,287 @@
     "close"
    ],
    "blocking": [
-    "goal/G8"
+    "goal/G8",
+    "goal/G8.2"
    ],
    "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskVerify: THE DATASET\n\nAndy's design, 2026-10-06. verify.db on every node deskVerify runs on. A row per test: suite, title, outcome, commit, dirty tree, UTC time. Secondary indexes on commit, outcome and dirty tree.\n\nTHE KEY is the suite plus the title as written in it. A failing assertion carries the same title as its passing one, its runtime detail beside the title and not inside it, or a change of outcome cannot be followed.\n\nTHE DIRTY TREE is the files modified against the commit last pulled, sorted, empty when clean, so a result measured on a dirty tree is never taken for one measured at a commit.\n\nROWS. A record is written when that test has none yet, or when its outcome changes, carrying the commit and time of that change; every run and commit in between is implicit. Runs are not stored at all. An outcome is red or green, nothing else. A test its suite never reached reports nothing, writes nothing, and its last state stands.\n\nWHO SENDS IT is testSupport, the one place every check and fail already passes through. A suite deskVerify launched gets a port as a named argument and posts one record per assertion to deskVerify's loopback api, as it happens; a suite run by hand gets no port, sends nothing, and behaves as today. A record carries suite, title and outcome, since deskVerify launched the run and stamps the commit, dirty tree and time itself. The send is not waited on, those two calls being synchronous, and the suite waits once as it exits so the last records land.\n\nDECIDED, not to be reopened: records are never sent together. Andy, 2026-10-06, after an earlier design had held them back: more complicated, saves little time, and risks overflowing MAX_PAYLOAD eventually. A later session that finds this slow does not get to group them. One record is about 136 bytes against a 22528 limit.\n\nMEASURED IN THE TREE at 9ece24a8, what the above rests on:\n- 362 suites, 4291 titled assertions, one title repeated in the whole harness (natterIntrinsic.js): suite plus title is unique.\n- 4181 of 4780 failure sentences are built from runtime values, so the red and green of one assertion share no key today.\n- The printed number counts passes and failures apart, so it changes when a test flips and cannot be the key.\n- liveRelay.js reads its first positional argument as a relay address, hence a named port.",
+   "version": 17,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "A test has no name today: its number changes when it flips, and its sentence changes when someone rewords it. Should every test be given a short written id of its own, or should the key be the suite name plus a hash of the sentence, accepting that a reword starts a new history?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-06T07:04:15.265Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "What is pre-commit-code? I can read it as the working tree before the commit, as a hash of the uncommitted changes, or as the result of the pre-commit hook, and the three store different things.",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-06T07:12:39.774Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Your first words say a row whenever the commit or the dirty tree changes, which is every test at every commit; your newest say a row only when an outcome switches, which makes the table a history of flips and keeps it small. The second is my recommendation. Which?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-06T07:31:28.213Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T06:57:46.630Z",
+     "text": "cw: goal/G8.1 is in, your five fields and three indexes verbatim, and two red questions on it.\nThe one that decides the item: a test has no name today. Its printed number counts successes and failures separately, so the same assertion is a different number once it goes green, and the only other handle is the sentence someone can reword. A tally of flips needs a key that survives both, and Q1 puts the two ways of getting one to you.\nQ2 is smaller: pre-commit-code reads three ways to me and they store different things."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T06:59:25.698Z",
+     "text": "the individual tests in the harness have titles, don't they?\n\nso suite name/ID plus the title/label of the test should identify tests uniquely? no? would make two fields for the test ID?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:00:56.073Z",
+     "text": "cw: they do have titles, and you are nearly right. I measured the whole harness: 362 suites, 4291 assertions, and a title repeats inside a suite exactly once in all of them. So suite plus title is unique.\nThe catch is that each assertion is written twice, once as the sentence you see when it passes and once as a different sentence when it fails, and 4181 of 4780 failure sentences are built out of runtime values, so they differ from run to run. Keying on the title works while a test is green and breaks the moment it goes red, which is the flip the dataset exists to record.\nTwo ways out, and it is your call on Q1: bind the pair in the source so an assertion has one title and the failure text becomes mere detail, which is right but touches some nine thousand call sites; or key on the passing title alone and accept that a reworded test starts a new history."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:01:04.314Z",
+     "text": "i know you can call a single test out of a suite...."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:01:55.073Z",
+     "text": "cw: not quite: you can call a single suite, which is what the filter does, and I think that is what you are remembering. Inside a suite there is no way to run one test on its own; the file runs top to bottom in one go and nothing selects an assertion.\nIt is also mostly not meaningful. Tests in a suite lean on what came before them: in the one I wrote today the one-agent section has to run before the second agent writes anything, or the whole premise is gone.\nSo the dataset can hold a row per test, which is what you asked for, while the thing that gets re-run stays the suite. That is enough for a tally of flips, since the flips come out of a run rather than out of poking one test."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:02:34.688Z",
+     "text": "anything that generates one single red-or-green has some id, how else could you possibly diagnose a problem otherwise?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:03:12.279Z",
+     "text": "cw: you are right, and the answer is that today the id is a sentence a human reads. That is enough to diagnose one run by eye and useless to a machine keeping a history, which is exactly why I could not name my own eleven reds this morning without running everything again.\nSo the fix is not nine thousand call sites after all: make the harness print the id itself. A failing assertion takes the same title as its passing one, with the runtime detail as a second thing beside it rather than inside it, and every line a run prints then carries a handle both you and deskVerify can hold.\nIt can land without a flag day: a failure that has not been given its title yet still works, and shows up in your dataset as an unidentified test, so the count of those falls as we go instead of blocking everything."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:03:28.340Z",
+     "text": "you don't have to call a single test, every test just has to output a detailed record."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:04:03.320Z",
+     "text": "the text is always the same, so it servers fine as a key"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:05:01.915Z",
+     "text": "Q2: What is pre-commit-code? I can read it as the working tree before the commit, as a hash of the uncommitted changes, or as the result of the pre-commit hook, and the three store different things.\n\nit's modified files at the latest pulls commit level"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:05:24.929Z",
+     "text": "working tree before the commit"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:07:15.525Z",
+     "text": "or just dirty-tree"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:09:00.907Z",
+     "text": "the standard/shared  test-call-count interface just needs to send a a record to deskVerify."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:09:58.959Z",
+     "text": "small change in the test-infrastructure."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:11:38.747Z",
+     "text": "cw: taken, and Q1 is closed by it. Every assertion emits its own record as the run goes, the harness writes the id once where the assertion lives, and deskVerify just stores what it is handed. Nothing is ever run one test at a time.\nWhat that fixes: a failure carries the same title as its pass, with the runtime detail beside the title instead of baked into it. Today it is baked in, which is why the red and the green of one assertion share no key at all. The run supplies the commit and the time; the test supplies suite, title and outcome.\nYour lines stay readable: the record is added for machines, not instead of what you read. Only Q2 is still open, what pre-commit-code holds."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:12:51.808Z",
+     "text": "cw: all six lines are in the box and both questions are closed, so the item is green. The key is the title as written, the third field is the dirty tree, the files modified against the commit last pulled and empty when it is clean, and the change sits in the one place every check and fail already passes through.\nOne thing I decided rather than asked, say the word if it is wrong: the test emits the record and deskVerify collects it, rather than the test speaking to deskVerify while it runs. A suite has to run on its own, which one of our own suites asserts, and the harness runs six at a time, so a live connection would give every suite a server it cannot run without and six writers at once.\nThe item is ready for its failing test when you end design on the goal."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:16:03.231Z",
+     "text": "the harness hierarchy gets passed a call-argument (port) or zero, if deskVerify launches suite-by-suite, it gives the suite a port, and the standalone passes nothing."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:16:59.861Z",
+     "text": "cw: that is better than what I proposed and it is in the box: a suite deskVerify launches gets the port and sends live, a suite run by hand gets nothing and behaves as today, so both ways stand and our run-alone rule keeps holding.\nOne collision I found before agreeing: thirteen suites already read their own arguments, and liveRelay takes the first one as the address of a relay, so a bare port handed to it would be read as a web address. The others take named flags and would ignore a number.\nSo the port goes as a named argument instead of a positional one, and its absence is what standalone means, which costs nothing and needs no zero."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:18:37.268Z",
+     "text": "cap"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:19:43.654Z",
+     "text": "cw: capped, 7225 bytes down to 4103, and the box is yours again.\nEvery word of yours is still there verbatim, gathered in one place instead of scattered through five additions. What went: my own repetitions, the two readings you have since overruled, and the question wording now that both are answered. What stayed beside your words: the seven points of the shape, the four facts from the tree they rest on, and the one reading that is mine and not yours, marked as such."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:20:01.052Z",
+     "text": "the suite can call the loopback api of deskVerify"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:20:44.414Z",
+     "text": "cw: in the box. One mechanical thing I settled rather than asked, since it is cheap to change: the records are queued and flushed rather than sent one at a time and waited for.\nThe reason is in the harness: the two calls every assertion goes through are synchronous and return nothing, so waiting on a round trip would slow every one of about four and a half thousand assertions in a run and would change every call site. Flushing at the end of each subheading and once more as a suite exits means a suite that dies loses at most the group it was in.\nA suite nobody handed a port to queues nothing at all, so running one by hand costs exactly what it costs today."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:21:40.016Z",
+     "text": "the loopback api is subject to MAX_PAYLOAD"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:22:34.450Z",
+     "text": "cw: taken, and measured against the limit rather than assumed. A record of suite, title and outcome runs about 136 bytes, so about 162 fit one payload and a whole run of four and a half thousand needs about 28 of them.\nThat only fits because the commit, the dirty tree and the time belong to the run and not to the test: they ride once in each flush's header instead of in every record, which is also why the dirty tree being a list of paths costs nothing.\nSo a flush goes when a group ends, when the suite exits, or when the next record would not fit, whichever comes first, and it is measured before it is sent like every other payload."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:23:49.476Z",
+     "text": "a table record only gets added if red-green switches."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:24:39.572Z",
+     "text": "cw: that pulls against your first words for the same table, so I put it to you as Q3 rather than choose. You first said a row whenever any of the first four fields changes, and the commit and the dirty tree change constantly while an outcome does not; now you say a row only when red-green switches.\nThe difference is the size and the meaning of the table. The first gives every test a row at every commit, four and a half thousand a run. The second gives a test a row when first seen and then only when it changes, so a suite that stays green is silent and the table simply is the history of flips, which is what you asked the dataset for. That is my recommendation.\nWhat it costs, so it is not a surprise later: it no longer answers what a test did at a given commit, it answers what it last did before that commit, and the state is carried forward from the row before."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:25:39.460Z",
+     "text": "cap\n\nthis time remove redundant information, unnecessary , quotes and just capture the precise essence"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:26:47.629Z",
+     "text": "cw: capped again, 5571 bytes to 2194, box released. The quotes are gone and what each decision was is said plainly instead.\nSix parts left: the table, the key, the dirty tree, when a row is written, who sends it, and the five measurements the rest rests on. One line is marked as my reading rather than yours.\nI kept the numbers, because they are the only reason any of it is costable, and dropped every repetition of them."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:30:57.047Z",
+     "text": "Q3: Your first words say a row whenever the commit or the dirty tree changes, which is every test at every commit; your newest say a row only when an outcome switches, which makes the table a history of flips and keeps it small. The second is my recommendation. Which?\n\ni was imprecise:\nit is when either no record exists for that one test, OR when red/green changes, that a new record is written, capturing/writing the commit-level and UTC timestamp for that change. all in-between runs or commit-levels are already implicit in that information.\n\nruns don't interest deskVerify at all."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:31:42.074Z",
+     "text": "cw: Q3 closed, item green, and the box says it in your words: a record when there is none for that test yet or when its red-green changes, carrying the commit and the UTC time of that change, everything in between implicit.\nThe line that mattered most is the last one, that runs do not interest deskVerify. It means nothing stores a run: the commit and time a batch carries are copied onto the rows that actually change and thrown away otherwise, so there is no run table, no run id and nothing to clean up.\nNothing on this item waits on you now."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:32:23.546Z",
+     "text": "so we forget unhappy and worry just about red/green"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:32:56.325Z",
+     "text": "cw: done, red and green only, and my note about the third word is gone with it.\nIt leaves one thing stated rather than lost: a test whose suite dies before reaching it reports nothing, so it writes no record and its last known state simply stands. Silence means unchanged, which is the same rule as everywhere else in the table."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:34:57.539Z",
+     "text": "and the called suite sends one test-record at the time, no fucking bundling or other complicated stuff, we don't worry about the bit of extra time it takes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:35:44.485Z",
+     "text": "cw: your way, in the box: one record per assertion, no queue, no flush, and no limit to measure, since one record is about 136 bytes against a limit of 22528.\nIt got simpler than either of us had it: a record carries only the suite, the title and the outcome, because deskVerify launched the run and can stamp the commit, the dirty tree and the time itself. Nothing needs a header, and neither side has to remember anything between records.\nThe one mechanical necessity: the send is not waited on, because the two calls it hangs off are synchronous and return nothing, so the suite waits once as it exits to let the last records land."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:36:12.015Z",
+     "text": "what is that thing you call a 'flush'?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:37:02.888Z",
+     "text": "cw: my jargon, and it should not have been there. It meant holding records in memory and sending them in one go later, which is the very thing you just told me not to do, so the word described a design that no longer exists.\nIt is out of the box now, along with the sums that only mattered while records were going in groups. What is left says it plainly: one record per assertion, sent as it happens."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:38:59.769Z",
+     "text": "i already specified that we will NOT bundle multiple test records, it's more complicated, save little time, AND risks an overflow of MAX_PAYLOAD ad some point. that is a decision."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:39:27.119Z",
+     "text": "cw: understood, and it is written into the box as a decision with your three reasons, so a later session that finds it slow does not get to group them.\nIt was already built your way in the box; what I had left behind was only the word and the arithmetic from the version you rejected, and both are gone."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:39:34.594Z",
+     "text": "this shit comes up every single time! that's what got you in trouble with appServer."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:40:18.900Z",
+     "text": "cw: it is the same reflex, and you are right that it recurs: the coalescing in appServer was it, and holding records to send in groups was it again. Both were me protecting a shared path from a cost that was yours to accept or refuse.\nI have written that down where I will read it before the next design, in the same note as the appServer one, as a reflex to catch in my own proposals and not only in shared code. The rule I take from it: propose the plainest thing, state the cost, and let you decide whether it is worth paying."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:42:06.172Z",
+     "text": "go make a design-rule proposal to that effect.\nget rid of all 'flushing' stuff while doing the\ncap\n\nand we move back to the goal."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:43:24.210Z",
+     "text": "cw: all three done. The rule is proposed as rule/5, \"The plainest mechanism, and the cost stated not hidden\": build the plainest thing, hold nothing back for the sake of a cost, state the cost and let you decide, and a measurement is information for that decision rather than a licence to build the complicated version. It carries both times it went wrong, appServer and this.\nThe box is capped to 2337 bytes with that whole vocabulary gone, your decision kept as a decision, and the box released.\nBack to the goal: G8.1 is green and done being argued, so the next topic is yours to pick."
+    }
+   ]
+  },
+  {
+   "id": "goal/G8.2",
+   "title": "deskVerify: the running modes — the desk box, an agent box, a measure-only box, and what each may do",
+   "goal": "goal/G8",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G8"
+   ],
+   "blocked": [
+    "goal/G8.1"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
