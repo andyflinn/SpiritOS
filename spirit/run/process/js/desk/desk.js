@@ -699,9 +699,12 @@ function mayTake(s, it, phase, who) {
 // WHICH RULES APPLY (goal/G5.8). Andy: "if a job involves ui, there are rules of that type to considered", "is there a
 // mechanical way to attach applicable rules to an item before or when it's given a go?". The desk rules always, plus
 // the types the item's box names paths of: spirit/run/js/ and process/js/ are code, spirit/run/shell/ is ui.
+// AND THE DESIGN RULES ALWAYS (goal/G2.20). Asked what the type design should attach to, Andy, 2026-10-06: "every
+// item". Until this, a design rule matched no item at all, whatever its box said, and his Go stamped nothing of it:
+// the kind of rule that governs how the work is done belongs on every item, like a desk rule.
 function typesOf(it) {
   const box = String(it.box || '');
-  const types = ['desk'];
+  const types = ['desk', 'design'];
   if (/spirit\/run\/js\/|process\/js\//.test(box)) types.push('code');
   if (/spirit\/run\/shell\//.test(box)) types.push('ui');
   return types;
