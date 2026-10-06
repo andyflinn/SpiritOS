@@ -1,8 +1,8 @@
 {
- "change": 19396,
+ "change": 19420,
  "line": 8494,
  "goal": "goal/G8",
- "writtenAt": "2026-10-06T09:49:13.173Z",
+ "writtenAt": "2026-10-06T10:25:38.828Z",
  "items": [
   {
    "id": "goal/G8",
@@ -19,7 +19,9 @@
     "goal/G8.2",
     "goal/G8.3",
     "goal/G8.4",
-    "goal/G8.5"
+    "goal/G8.5",
+    "goal/G8.6",
+    "goal/G8.7"
    ],
    "go": false,
    "alone": false,
@@ -40,7 +42,7 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 6,
+   "waiting": 8,
    "live": [
     "claude-windows"
    ],
@@ -106,12 +108,27 @@
      "by": "andy",
      "at": "2026-10-06T08:51:30.434Z",
      "text": "new item: deskVerify: Changes required in desk."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T10:01:52.619Z",
+     "text": "assessment: is this goal's design complete?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T10:02:33.403Z",
+     "text": "cw: no, not yet. Five items are green and buildable, but three of the five topics you listed when the goal opened have no item at all.\nMissing topics: what a verify mechanically is, which is the short loop itself and nobody has said which suites it runs or whether it drives the harness or replaces it; tolerated reds, your own \"only reds, unless a specific red is marked as tolerated\", which nothing holds; and being here and leaving, the sign-off word, which we discussed and never filed.\nTwo concrete things are also unnamed. The verb that receives a record, which needs peer review and your yes on the verb itself. And where verify.db lives: nothing says, and it matters, because relay-state is ignored by git while the agents folder is tracked, so the wrong home either loses the history on every clone or commits a database.\nOpen them one at a time in that order, or tell me which you want first."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T10:24:48.896Z",
+     "text": "deskVerify's listener on the desk generates events that deskVerify filters to trigger event's for it's process, that's the other input it gets next to the test-records it receives with the verb \"record\" that supplies candidates for the database.\n\nfor now, tolerated reds have to be granted as a whole, in order to pop the Done button for the goal, so the final full suite lists the reds outside the goals scope in a red-question for the goal, that blocks the Done button for the goal.\n\nthe short loop is: all the suites of the current goal, between 'Go' pressed and 'Done' pressed, which it knows from the nudges desk gives all agents.\n\nverify.db lives in deskVerify's process folder and is .gitignored"
     }
    ]
   },
   {
    "id": "goal/G8.1",
-   "title": "deskVerify: the dataSet — verify.db, one row per test per commit, and what identifies a test",
+   "title": "deskVerify: the dataSet — verify.db, one row per test, and what identifies a test",
    "goal": "goal/G8",
    "status": "",
    "with": "",
@@ -398,7 +415,8 @@
     "goal/G8",
     "goal/G8.3",
     "goal/G8.4",
-    "goal/G8.5"
+    "goal/G8.5",
+    "goal/G8.6"
    ],
    "blocked": [
     "goal/G8.1"
@@ -421,8 +439,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskVerify: THE RUNNING MODES\n\nAndy's design, 2026-10-06, extracted from the goal at his word. Blocked by goal/G8.1, since what a node records is settled before where it may record it.\n\nTHE THREE CASES. deskVerify runs on every node and keeps the same records in the same shape everywhere; only its standing and its work differ.\n- THE DESK NODE, his work box. Authoritative: it reaches the desk on loopback and the desk takes it for the owner. Only this one has agent standing on the desk, and the agent on that box is the lead, always, so the lead is the machine and not the session. Its standing comes from running on the owner's box, not from any technical limit elsewhere.\n- AN AGENT NODE, wsl or ubuntu. A sub-agent of that node's deskClient. Its work is the short loop for the item in hand, and the full harness before a goal is done or closed and while its agent is idle.\n- ANY OTHER NODE, with neither of them: OUT OF SCOPE by his word, 2026-10-06, and for a reason that decides it rather than defers it: such a node has no assigned agent name, so there is no folder designated to it to drop data into. It had been named a measure-only case earlier in the design; it is not built. So reading the mode has two answers and a third that does nothing.\n\nHOW A MODE IS READ. By what lives on this node: the desk decides it, his words being that \"the existence of desk itself is the deciding factor\", and a deskClient marks the sub-agent case. Nothing is configured and nothing is passed in, since deskVerify asks its own node which servers it runs and the door already answers that.\n\nTHE DESK AND A deskClient DO NOT SHARE A NODE, and the desk is what holds that. A deskClient started there anyway is harmless: the desk refuses any deskClient call arriving under its own node identity. One refusal where the call comes in, and no start-up order for anyone to keep.\n\nWHAT FALLS OUT OF ONE SHAPE EVERYWHERE: an agent gets test history it has never had on its own machine, and no agent spends its own time running tests.\n\nTO BUILD HERE, checked in the tree at 9ece24a8: nothing refuses such a call today, and the desk already knows every caller by its key, so the refusal needs no new verb.\n\nWHAT THE PRIVILEGED MODE MAY DO is goal/G8.3, which this item blocks.",
-   "version": 6,
+   "box": "deskVerify: THE RUNNING MODES\n\nAndy's design, 2026-10-06, extracted from the goal at his word. Blocked by goal/G8.1, since what a node records is settled before where it may record it.\n\nTHE THREE CASES. deskVerify runs on every node and keeps the same records in the same shape everywhere; only its standing and its work differ.\n- THE DESK NODE, his work box. Authoritative: it reaches the desk on loopback and the desk takes it for the owner. Only this one has agent standing on the desk, and the agent on that box is the lead, always, so the lead is the machine and not the session. Its standing comes from running on the owner's box, not from any technical limit elsewhere.\n- AN AGENT NODE, wsl or ubuntu. A sub-agent of that node's deskClient. Its work is the short loop for the item in hand, and the full harness before a goal is done or closed and while its agent is idle.\n- ANY OTHER NODE, with neither of them: OUT OF SCOPE by his word, 2026-10-06, and for a reason that decides it rather than defers it: such a node has no assigned agent name, so there is no folder designated to it to drop data into. It had been named a measure-only case earlier in the design; it is not built. So reading the mode has two answers and a third that does nothing.\n\nHOW A MODE IS READ. By what lives on this node: the desk decides it, his words being that \"the existence of desk itself is the deciding factor\", and a deskClient marks the sub-agent case. Nothing is configured and nothing is passed in, since deskVerify asks its own node which servers it runs and the door already answers that.\n\nTHE DESK AND A deskClient ARE NOT MEANT TO SHARE A NODE, and nothing stops them, by his decision of 2026-10-06: \"Drop the refusal.\" He had asked the desk to refuse a deskClient call arriving under its own identity, then found the flaw himself, that this would also shut out deskVerify on that same node. The desk cannot tell them apart: all it learns of a caller is a key, a name and whether the node vouched for it as the owner, so both arrive as him. Nothing is enforced and nothing needs to be, because reading the mode is unambiguous anyway: the desk decides it, so finding a client beside it changes no answer. A deskClient there is pointless rather than forbidden.\n\nWHAT FALLS OUT OF ONE SHAPE EVERYWHERE: an agent gets test history it has never had on its own machine, and no agent spends its own time running tests.\n\nWHAT THE PRIVILEGED MODE MAY DO is goal/G8.3, which this item blocks.",
+   "version": 7,
    "checks": [
     {
      "number": "Q1",
@@ -623,6 +641,119 @@
    ],
    "blocked": [
     "goal/G8.2"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskVerify: CHANGES REQUIRED IN DESK\n\nNamed by Andy, 2026-10-06: \"new item: deskVerify: Changes required in desk.\" Blocked by goal/G8.2, since what deskVerify is in each mode is settled before what the desk must gain to support it. Everything here is a change to the desk server, so it is this item and not a side effect of the others.\n\nWHAT THE DESIGN SO FAR ALREADY ASKS OF THE DESK, each one checked as absent in the tree at 9ece24a8:\n- Give the deskVerify on its own node agent standing, which no other copy has, and nothing today distinguishes it from any other caller.\n- Deny a step to an agent only while the desk can see that another agent could take it. His words, earlier in this goal: \"the desk can mechanically verify that the verifier is active, and only under those circumstances deny a verify-take to other agents.\" Today the phase rules bind whether or not anyone else is there, which is what goal/G2.22 softened with a waive.\n- Let deskVerify know when an item's status moves, so it can pull by itself rather than asking. The desk already nudges each agent's client over its own node, so this is the same path and not a new one.\n\nNothing here is argued yet beyond being named. Each one becomes a point in this box as it is agreed, and a verb only after peer review and his yes on the verb itself.\n\nONE THING THAT IS NOT HERE, and will not be: refusing a deskClient call that arrives under the desk own identity. He asked for it, then saw that it would shut out deskVerify on that node as well, and ruled on 2026-10-06: \"Drop the refusal.\" The desk learns only a key, a name and whether the node vouched for the owner, so the two are indistinguishable to it; and nothing is lost, since reading the mode is decided by the desk being there.",
+   "version": 2,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "The desk cannot tell a deskClient on your node from deskVerify on your node: both arrive as you. Drop the refusal, since deskVerify reads the mode from what lives on the node and the desk already decides it, or keep the refusal and give the desk a way to know which program is calling?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-06T10:00:45.779Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T09:49:48.277Z",
+     "text": "cw: goal/G8.5 \"deskVerify: Changes required in desk\" is in, blocked by the running modes. Its box gathers the four things the design has already asked of the desk, each one checked as absent today: refusing a client call under the desk's own identity, giving its own deskVerify agent standing, denying a step only while another agent could take it, and telling deskVerify when a status moves so it pulls by itself. None of it is argued beyond being named, and no verb goes in without peer review and your yes on the verb.\nSeparately: your pasted musing from the other tool arrived in the musings, not under an item. I have not acted on it. It is readable to about point 19 and then turns to garbage, including a line with a made-up address in it, so I would not trust the tail of that paste at all. Either way a list of bugs from elsewhere is outside this goal, so it waits for your word."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T09:57:46.988Z",
+     "text": "the complication: if desk refuses deskClient calls with it's own identity, then it also closes the door deskVerify on its own node."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T09:58:57.397Z",
+     "text": "cw: you are right, and it is worse than a complication: the desk cannot tell them apart at all. All it learns about a caller is the key, a name and whether the node vouched for it as the owner, with nothing about how the call arrived or which program made it. A deskClient on your node and deskVerify on your node both present your identity, so a refusal written that way shuts out the one it is meant to privilege.\nThe cheapest way out is to drop the refusal, because your own detection rule does not need it: deskVerify reads the mode from what lives on the node, and you already said the existence of desk is the deciding factor, so finding both is not ambiguous. A deskClient there becomes pointless rather than forbidden, and one of the four desk changes disappears.\nQ1 asks it: drop the refusal, or keep it and give the desk a way to know which program is calling."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T09:59:55.439Z",
+     "text": "Q1: The desk cannot tell a deskClient on your node from deskVerify on your node: both arrive as you. Drop the refusal, since deskVerify reads the mode from what lives on the node and the desk already decides it, or keep the refusal and give the desk a way to know which program is calling?\n\nDrop the refusal."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T10:00:56.782Z",
+     "text": "cw: dropped, in both boxes, with your reason beside it in each so nobody rebuilds it: the desk cannot tell the two apart, and nothing is lost because the desk being there is what decides the mode.\nThat takes the desk changes down from four to three: agent standing for the deskVerify on its own node, denying a step only while another agent could take it, and telling deskVerify when a status moves. The running modes item has nothing left to build in the desk at all.\nQ1 closed, both items green."
+    }
+   ]
+  },
+  {
+   "id": "goal/G8.6",
+   "title": "deskVerify: the short loop — the current goal suites between Go and Done, and the two inputs that drive it",
+   "goal": "goal/G8",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G8",
+    "goal/G8.7"
+   ],
+   "blocked": [
+    "goal/G8.2"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G8.7",
+   "title": "deskVerify: tolerated reds — the goal Done waits on one red question listing the reds outside its scope",
+   "goal": "goal/G8",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G8"
+   ],
+   "blocked": [
+    "goal/G8.6"
    ],
    "go": false,
    "alone": false,
