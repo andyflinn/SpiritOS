@@ -1,17 +1,16 @@
 {
- "change": 18224,
+ "change": 18231,
  "line": 8493,
  "goal": "goal/G6",
- "writtenAt": "2026-10-06T00:30:38.325Z",
+ "writtenAt": "2026-10-06T00:30:46.542Z",
  "items": [
   {
    "id": "goal/G6",
    "title": "Updating the Shell interface for Desk",
    "goal": "",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [],
@@ -34,7 +33,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 0,
    "live": [
     "claude-ubuntu",
     "claude-windows",
