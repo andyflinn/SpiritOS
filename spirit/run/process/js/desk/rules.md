@@ -23,6 +23,10 @@ Build the plainest mechanism that does the job: one thing per message, nothing h
 
 ## desk
 
+### rule/7 (version 16): Agents grants for splitting items
+
+And agent may not autonomously split, create, delete or modify items, unless specifically authorized by the user. 
+
 ### rule/6 (version 14): Dependencies when splitting a desk item
 
 when splitting an item, only the new, explicit blocking relationship is automatically added, the implicit blocking does not need to be specified, it clutters the list display with confusing "blocks" and "waits on", and is not needed for a dependency graph.
