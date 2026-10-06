@@ -1,8 +1,8 @@
 {
- "change": 19355,
+ "change": 19372,
  "line": 8493,
  "goal": "goal/G8",
- "writtenAt": "2026-10-06T08:05:39.333Z",
+ "writtenAt": "2026-10-06T08:22:15.456Z",
  "items": [
   {
    "id": "goal/G8",
@@ -17,7 +17,8 @@
    "blocked": [
     "goal/G8.1",
     "goal/G8.2",
-    "goal/G8.3"
+    "goal/G8.3",
+    "goal/G8.4"
    ],
    "go": false,
    "alone": false,
@@ -38,7 +39,7 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 4,
+   "waiting": 5,
    "live": [
     "claude-windows"
    ],
@@ -389,7 +390,8 @@
    ],
    "blocking": [
     "goal/G8",
-    "goal/G8.3"
+    "goal/G8.3",
+    "goal/G8.4"
    ],
    "blocked": [
     "goal/G8.1"
@@ -412,8 +414,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskVerify: THE RUNNING MODES\n\nHIS FIRST POINT, 2026-10-06: \"the desk(Server) itself will not allow a deskClient ro run on the same node as the desk(Server). deskVerify knows which mode it is in, by checking if a desk(Server) or a deskClient shares lives on the same node.\"\n\nSo the two are mutually exclusive on one node, the desk server enforcing it, and that is what makes the modes readable: a desk server on this node means the authoritative mode, a deskClient means the sub-agent mode, neither means measure-only. Nothing is configured and nothing is passed in; deskVerify asks its own node which app servers it runs, which the door already answers.\n\nExtracted from the goal's box at Andy's word, 2026-10-06: \"extract the topic of running modes for deskVerify, and place it in a new item that depends on G8.1\". Blocked by goal/G8.1, since what a node records is decided before where it is allowed to record it.\n\nHIS RULING, 2026-10-06. deskVerify runs everywhere; what differs is its standing and its work. \"the agent on my work box must be the lead agent. always. i cannot operate the desk from anywhere else, that is the only box that can run the verify-server in agent mode, where it reaches the desk on loopback.\" / \"agents who on a different machine can only operate their deskClient on loopBack\" / \"these are the two distinct operating modes of deskVerify\" / \"deskVerify knows if it's on the same box as the desk, it's not that it couldn't technically run as an agent on other boxes, it's that on the owners box it makes sense and makes it authoritative. from desks point of view, that deskVerify IS the owner, since it uses loopback to connect to the desk.\" / \"desk will not allow deskClient to run on the same node. so deskVerify always knows if it's on the desk box or an agent box or a remote test-and-measure-only box. Only the desk-box's deskVerify is allowed agent-status on desk.\" / \"on an agent only box (wsl/ubuntu), deskVerify serves as a sub-agent to deskClient, and takes over primarily the short-loop for the item at hand, and prior to goal-done/closing and when the agent itself is idle it runs full-harness.\"\n\nTHE THREE CASES.\n- THE DESK BOX, his work box. Authoritative: it reaches the desk on loopback and the desk takes it for the owner. Only this one has agent standing on the desk, and the agent on that box is the lead, always, so the lead is the machine and not the session. Running on the owner's box is what makes it so, not a technical limit.\n- AN AGENT BOX, wsl or ubuntu. A sub-agent of that box's deskClient. Its work is the short loop for the item in hand, and the full harness before a goal is done or closed and while its agent is idle.\n- A MEASURE-ONLY BOX. It measures and nothing more: no standing on the desk at all.\n\nHOW IT KNOWS WHICH IT IS: whether a deskClient runs on this node.\n\nHOW IT IS ENFORCED, his, 2026-10-06, answering Q1: \"the existence of desk itself is the deciding factor for deskVerify’s running mode, the desk can also reject any deskClient call from it’s own ID.\"\n\nSo nothing watches and nothing races. The mode is read from whether the desk is on this node, and a deskClient that runs there anyway is simply harmless: the desk refuses any deskClient call arriving under its own node identity. That is one refusal where the call comes in, rather than a start-up order to keep.\n\nIn the tree at 9ece24a8 the desk already knows every caller by its key and whether it is the owner, so the refusal needs no new verb; and nothing refuses such a call today, so this is what the item builds.",
-   "version": 3,
+   "box": "deskVerify: THE RUNNING MODES\n\nAndy's design, 2026-10-06, extracted from the goal at his word. Blocked by goal/G8.1, since what a node records is settled before where it may record it.\n\nTHE THREE CASES. deskVerify runs on every node and keeps the same records in the same shape everywhere; only its standing and its work differ.\n- THE DESK NODE, his work box. Authoritative: it reaches the desk on loopback and the desk takes it for the owner. Only this one has agent standing on the desk, and the agent on that box is the lead, always, so the lead is the machine and not the session. Its standing comes from running on the owner's box, not from any technical limit elsewhere.\n- AN AGENT NODE, wsl or ubuntu. A sub-agent of that node's deskClient. Its work is the short loop for the item in hand, and the full harness before a goal is done or closed and while its agent is idle.\n- ANY OTHER NODE. It measures and nothing more, with no standing on the desk at all.\n\nHOW A MODE IS READ. By what lives on this node: the desk decides it, his words being that \"the existence of desk itself is the deciding factor\", and a deskClient marks the sub-agent case. Nothing is configured and nothing is passed in, since deskVerify asks its own node which servers it runs and the door already answers that.\n\nTHE DESK AND A deskClient DO NOT SHARE A NODE, and the desk is what holds that. A deskClient started there anyway is harmless: the desk refuses any deskClient call arriving under its own node identity. One refusal where the call comes in, and no start-up order for anyone to keep.\n\nWHAT FALLS OUT OF ONE SHAPE EVERYWHERE: an agent gets test history it has never had on its own machine, and no agent spends its own time running tests.\n\nTO BUILD HERE, checked in the tree at 9ece24a8: nothing refuses such a call today, and the desk already knows every caller by its key, so the refusal needs no new verb.\n\nWHAT THE PRIVILEGED MODE MAY DO is goal/G8.3, which this item blocks.",
+   "version": 5,
    "checks": [
     {
      "number": "Q1",
@@ -455,12 +457,80 @@
      "by": "andy",
      "at": "2026-10-06T08:05:17.659Z",
      "text": "so the ear/client have a local stash of information about tests not available before AND don't have to worry about spending time on tests.\n\nsame is true for the desk.\n\nthe standard information set has the exact same shape in both modes.\n\nthe difference is: on the desk-node, deskVerify becomes a real agent, though a completely mechanical one. that part goes into a new item called \"deskVerify: Agent mode functionality\", which depends on this item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T08:06:20.356Z",
+     "text": "cw: goal/G8.3 \"deskVerify: Agent mode functionality\" is in, blocked by this item, since what tells the modes apart is settled before what the privileged one may do. It holds your earlier lines about taking all verification, the short loop, pulling on status changes and reporting only reds, none of it argued yet.\nYour three lines about one shape are in this box: every node keeps the same records in the same shape, and only what a node may do with its standing differs. The two consequences I would have missed: an agent gets test history it has never had on its own machine, and no agent spends its own time running tests.\nThree items on the goal now, each blocking the next, all green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T08:09:20.587Z",
+     "text": "cap\n\ncomplete and diligent, remove redundancies"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T08:10:21.550Z",
+     "text": "cw: capped, 4171 bytes to 1968, box released, and nothing dropped.\nWhat went was the repetition: detection was written three times over, once as your first point, once as how it knows, once inside the answer about enforcing, and it is now one part. The quote block went too, since the three cases say the same thing in fewer words; I kept your phrase that the existence of desk is the deciding factor, because the wording is the decision.\nWhat stayed: the three cases, how a mode is read, the refusal that keeps the desk and a client apart, what one shape everywhere buys, the one thing to build, and the pointer to G8.3."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T08:19:50.507Z",
+     "text": "we need to decide if deskVerify could to other chores, when it's agent or it's desk have been idle for more than an hour\n\n- updating measurements and documentation in the agent-folder, with a more useful and targeted test-state report\n\nthen when publishing time comes, the existing timestamped data is published, without going through that painful waiting game. and most of info would make it to github without anybody ever worrying about it.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T08:20:38.003Z",
+     "text": "cw: for it, and it earns more than it costs, but as its own item behind the dataset rather than in this one.\nFor: it takes the only slow part out of tagging the tree, since the numbers are already measured and stamped when you want them. And a targeted test-state report becomes possible for the first time: today the run log keeps totals only, so nothing can say which tests turned, while the dataset can say exactly that and when.\nAgainst, and worth deciding before it is built: a mechanical process writing into the agent folder is a commit nobody read. It needs a named list of paths it may write and nothing outside them, and the report has to be derived from the dataset rather than from re-running anything, or the chore becomes another twenty-minute run.\nOne wrinkle in the hour: idle is not the same as finished. An agent holding a step and quiet for an hour looks idle, so the chore should refuse while any item is in a phase that agent holds."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T08:21:48.338Z",
+     "text": "new item: deskVerify: Idle time chores."
     }
    ]
   },
   {
    "id": "goal/G8.3",
    "title": "deskVerify: Agent mode functionality — on the desk node it is a real agent, and a wholly mechanical one",
+   "goal": "goal/G8",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G8"
+   ],
+   "blocked": [
+    "goal/G8.2"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskVerify: AGENT MODE FUNCTIONALITY\n\nNamed by Andy, 2026-10-06, and blocked by goal/G8.2, since what tells the modes apart is settled before what the privileged one may do: \"the difference is: on the desk-node, deskVerify becomes a real agent, though a completely mechanical one. that part goes into a new item called \\\"deskVerify: Agent mode functionality\\\", which depends on this item.\"\n\nSo on the desk node deskVerify is not a reporter but an agent: it holds standing on the desk, which no other copy of it has, and everything it does is mechanical. What that standing is for, from his words earlier in this goal: \"that auto-agent only verifies, it takes all verification, run's a short loop on all active items, pulls automatically on status changes, and delivers, only reds, unless a specific red is marked as tolerated.\" And: \"the desk can mechanically verify that the verifier is active, and only under those circumstances deny a verify-take to other agents.\"\n\nNothing of that is argued yet. This item holds it, one point at a time, once goal/G8.2 is done.",
+   "version": 1,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G8.4",
+   "title": "deskVerify: Idle time chores — measurements and documentation kept current while nobody is working",
    "goal": "goal/G8",
    "status": "",
    "with": "",
