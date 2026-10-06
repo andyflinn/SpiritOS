@@ -1,8 +1,8 @@
 {
- "change": 19208,
+ "change": 19226,
  "line": 8493,
  "goal": "goal/G8",
- "writtenAt": "2026-10-06T06:13:00.171Z",
+ "writtenAt": "2026-10-06T06:57:03.750Z",
  "items": [
   {
    "id": "goal/G8",
@@ -14,7 +14,9 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G8.1"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -31,10 +33,10 @@
    "waived": false,
    "rules": [],
    "asks": 0,
-   "half": false,
+   "half": true,
    "full": false,
    "design": true,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows"
    ],
@@ -47,6 +49,83 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
+   "box": "VERIFICATION AUTOMATION\n\nOpened by Andy, 2026-10-06: \"i want to add a new goal, while keeping this one alive: goal/G8 Verification Automation\". It came out of his review of rule/4 (proposed, not active): \"when closing an item, verify only with the items red. the full harness runs only to get the 'Done' button for the current goal.\"\n\nHIS WORDS, the source for the items this goal will hold, each argued one at a time:\n- \"why is the harness not automated? demonized?\"\n- \"imagine this: an auto-agent, it is a server process, completely mechanical, it does all the verifying on it's own?\"\n- \"that auto-agent only verifies, it takes all verification, run's a short loop on all active items, pulls automatically on status changes, and delivers, only reds, unless a specific red is marked as tolerated.\"\n- \"the desk can mechanically verify that the verifier is active, and only under those circumstances deny a verify-take to other agents.\"\n- \"is there a way an agent could 'signoff' so it wont take 10 minutes?\"\n\nTHE TOPICS, in the order they depend on each other:\n1. Who runs the harness. One runner instead of each agent: today two overlapping full runs reddened five suites by fighting over the same ports, and a twenty-minute run makes the agent running it look absent.\n2. What a verify is, mechanically. Most of it already is: the item's own test plus the suites around what changed; deleting each line the build added to prove a test holds it; widening a fix to see the test refuse it; reading a test diff for weakened assertions. What is left is whether the thing built is the thing he asked for, which needs his words in the box.\n3. Tolerated reds. A run that says nothing unless something is genuinely wrong. Four of the eleven reds reported on 2026-10-06 were old debts explained by hand every time, and those suites already print the goal that owes them, so tolerance can be read off the suite rather than kept in a list that drifts.\n4. Who may take a step. Deny a step only when the desk can see somebody else could take it, his words above. It replaces the self-waiving of goal/G2.22 rather than correcting it, and generalises one step earlier, to the build a test writer may not take.\n5. Being here, and leaving. Ten minutes of silence is how absence is measured now; a word for signing off would make leaving immediate. On 2026-10-06 he ruled that a busy agent counting as gone is wanted, not a fault: \"nope. it's not a flaw. it allows other work to continue. it's a feature.\"\n\nStill in design. Nothing here is an item until it is argued and added.\nRULED, 2026-10-06, the two operating modes of deskVerify. Andy: \"the agent on my work box must be the lead agent. always. i cannot operate the desk from anywhere else, that is the only box that can run the verify-server in agent mode, where it reaches the desk on loopback.\" And: \"agents who on a different machine can only operate their deskClient on loopBack\". And: \"these are the two distinct operating modes of deskVerify\".\n\nSo the component has a name, deskVerify, and two modes decided before anything is built:\n- AGENT MODE, on his work box alone, where the desk itself is on loopback: the verify server reaches the desk directly, and the agent on that box is the lead, always. The lead is the machine, not the session.\n- The other mode, on any other machine: it reaches only its own deskClient on loopback, as the listener already does, and whatever that client cannot do, that machine cannot do.\n\nThis settles topic 1: the one runner of the harness is on his work box, because it is the only box that can be in agent mode.\nMORE GRANULAR, 2026-10-06, and it corrects the reading above. Andy, verbatim: \"deskVerify knows if it's on the same box as the desk, it's not that it couldn't technically run as an agent on other boxes, it's that on the owners box it makes sense and makes it authoritative. from desks point of view, that deskVerify IS the owner, since it uses loopback to connect to the desk.\" / \"desk will not allow deskClient to run on the same node. so deskVerify always knows if it's on the desk box or an agent box or a remote test-and-measure-only box. Only the desk-box's deskVerify is allowed agent-status on desk.\" / \"on an agent only box (wsl/ubuntu), deskVerify serves as a sub-agent to deskClient, and takes over primarily the short-loop for the item at hand, and prior to goal-done/closing and when the agent itself is idle it runs full-harness.\" / \"The beauty of it is, it keeps a running tally of every single test in the suite, when they flip red to green an vice versa, it can verify when corefiles were touched and by whom. it can can generate, on all nodes, a wealth of instantly trackable information.\"\n\nSo deskVerify runs everywhere, and what differs is its standing and its work:\n- THE DESK BOX. Authoritative. It reaches the desk on loopback, and the desk takes it for the owner. Only this one has agent-status on the desk. Running on the owner's box is what makes it so, not a technical limit.\n- AN AGENT BOX (wsl, ubuntu). A sub-agent of that box's deskClient. Its main work is the short loop for the item in hand; it runs the full harness before a goal is done or closed, and while its agent is idle.\n- A REMOTE TEST-AND-MEASURE BOX. It measures and no more: no standing on the desk at all.\nHow it knows which it is: whether a deskClient runs on this node. Andy's rule above, that the desk will not allow one on its own node, is what makes the three cases distinguishable.\n\nWHAT IT KEEPS, and this is the part today's sitting proves is missing: a running tally of every test in the suite, each flip from red to green and back, which core files were touched and by whom. On 2026-10-06 the run log recorded only the totals, so claude-windows could not name the eleven reds of its own full run and had to re-run everything to find them.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "cw: goal/G8 Verification Automation is open and current, in design mode. Its box holds your five lines verbatim and the five topics they fall into, in the order they depend on each other. No items yet: they go in one at a time as we argue them, as you have it.\nG7 is untouched and still open with all seven items; it is just not current, and its Make current goal button brings it straight back.\nStart with topic 1, who runs the harness, or point me at another?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-06T06:23:34.299Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T06:13:31.691Z",
+     "text": "cw: goal/G8 Verification Automation is open and current, in design mode. Its box holds your five lines verbatim and the five topics they fall into, in the order they depend on each other. No items yet: they go in one at a time as we argue them, as you have it.\nG7 is untouched and still open with all seven items; it is just not current, and its Make current goal button brings it straight back.\nStart with topic 1, who runs the harness, or point me at another?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T06:22:37.452Z",
+     "text": "the agent on my work box must be the lead agent. always. i cannot operate the desk from anywhere else, that is the only box that can run the verify-server in agent mode, where it reaches the desk on loopback.\n\nagents who on a different machine can only operate their deskClient on loopBack \n\nthese are the two distinct operating modes of deskVerify"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T06:23:36.032Z",
+     "text": "cw: in the box verbatim, and it settles topic 1 before we argued it: the one harness runner is on your work box, because that is the only box that can be in agent mode, and the lead is the machine rather than the session.\nTwo things follow that I would rather say now than discover later. A remote agent can never verify in that mode, so wsl can write tests and build but cannot be the verifier once deskVerify exists; verification leaves the agents entirely, which is what you said it should.\nAnd the verify server shares your box with your node and your desk, so its runs compete with them for ports rather than with us. That is better, since one runner can be made to wait, and two agents on two machines cannot."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T06:40:54.570Z",
+     "text": "a little more granular:\n\ndeskVerify knows if it's on the same box as the desk, it's not that it couldn't technically run as an agent on other boxes, it's that on the owners box it makes sense and makes it authoritative. from desks point of view, that deskVerify IS the owner, since it uses loopback to connect to the desk.\n\ndesk will not allow deskClient to run on the same node. so deskVerify always knows if it's on the desk box or an agent box or a remote test-and-measure-only-box. Only the desk-box's deskVerify is allowed agent-status on desk.\n\non an agent only box (wsl/ubuntu), deskVerify serves as a sub-agent to deskClient, and takes over primarily the short-loop for the item at hand, and prior to goal-done/closing and when the agent itself is idle it runs full-harness.\n\nThe beauty of it is, it keeps a running tally of every single test in the suite, when they flip red to green an vice versa, it can verify when corefiles were touched and by whom. it can can generate, on all nodes, a wealth of instantly trackable information."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T06:42:04.719Z",
+     "text": "cw: all of it is in the box verbatim, and it corrects me: I had said a remote agent could never verify, and your version is that deskVerify runs everywhere and only its standing differs. Three cases, told apart by whether a deskClient runs on that node.\nOne gap, because it carries the whole scheme: nothing in the desk refuses a deskClient on its own node today. The only coupling is the desk nudging each agent's client by key, which would work just as well pointed at itself, so that rule has to be built rather than relied on.\nYour tally is the part today proves is missing. The run log keeps only the totals, which is why I could not name the eleven reds of my own run and had to run everything again to find them."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T06:56:03.932Z",
+     "text": "the first item in this goal is: \"deskVerify: the dataSet\"\n\n deskVerify maintains verify.db, on any node it runs. a table row has the following fields:\n\n1. suite-based-test-ID: This is the main key to the data table.\n2. commit-level\n3. pre-commit-code\n4. status: red | green | unhappy\n5. timestamp.\n\nchanges in any of fields 1-4 result in a new record being written:\n\nsecondary indexes: commit-level, status , and pre-commit-code"
+    }
+   ]
+  },
+  {
+   "id": "goal/G8.1",
+   "title": "deskVerify: the dataSet — verify.db, one row per test per commit, and what identifies a test",
+   "goal": "goal/G8",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G8"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
    "box": "",
    "version": 0,
    "checks": [],
