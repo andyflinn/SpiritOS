@@ -374,7 +374,7 @@ function walkState() {
 }
 
 function blank(id, title, goalId) {
-  return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '',
+  return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '', phaseWith: '',
     went: false, go: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
     alert: false, takenBy: '', boxTakenBy: '', takers: Object.create(null),
     box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '' };
@@ -463,15 +463,21 @@ function apply(s, r, b, item, goalOf) {
     case 'item.status': it.status = String(b.word); return;
     case 'item.take': it.with = r.by; it.takers[r.by] = true; return;
     // THE PHASES (goal/G5.7): the handler checked who may; the replay records it.
+    // THE PHASE HOLDER IS ITS OWN (goal/G6.9): only phase.take holds a phase; a plain item.take sets "with" and nothing
+    // the phase rules read. Andy, to G6 Q5: "add item to fix it." THE STATUS SAYS THE PHASE while it is held: Andy,
+    // "when an agent is with an item, update its status with the phase that is running at the time. the desk should
+    // do it, since it arbitrase phase-taking."
     case 'phase.take':
-      it.with = r.by; it.takers[r.by] = true; it.verified = false;
+      it.with = r.by; it.phaseWith = r.by; it.status = String(b.phase); it.takers[r.by] = true; it.verified = false;
       // The key beside the label (goal/G5.9): a label he may rename, a key that stays.
       if (b.phase === 'red') { it.red = r.by; it.redKey = String(r.key || ''); it.phase = 'red'; }
       else if (b.phase === 'build') { it.builder = r.by; it.builderKey = String(r.key || ''); }
       else if (b.phase === 'verify') { it.verifier = r.by; it.verifierKey = String(r.key || ''); }
       return;
     case 'phase.done':
-      it.with = '';
+      it.with = ''; it.phaseWith = '';
+      // Nobody holds the next phase yet: the status goes back to what his Go made it.
+      it.status = 'running';
       if (b.phase === 'red') it.phase = 'build';
       else if (b.phase === 'build') it.phase = 'verify';
       else if (b.phase === 'verify') { if (b.pass === true) { it.verified = true; it.phase = ''; } else it.phase = 'build'; }
@@ -655,7 +661,7 @@ function mayTake(s, it, phase, who) {
   // earlier Go does not lift it.
   const gd = s.goals[it.goalId];
   if (gd && gd.design) return 'not-offered';
-  if (it.with) return 'taken';
+  if (it.phaseWith) return 'taken';
   const w = it.waived === true;
   if (phase === 'red') {
     if (it.phase === 'red') return w || who !== it.builder ? '' : 'not-offered';
@@ -928,11 +934,11 @@ function write(verb, a, check) {
   // LIVE_MS gets one open red question on its item.
   if (gW) gW.members.forEach(function (id) {
     const m = after.items[id];
-    if (!m || !m.code || !m.with || m.closed || m.done) return;
-    const at = after.agentsAt[m.with];
+    if (!m || !m.code || !m.phaseWith || m.closed || m.done) return;
+    const at = after.agentsAt[m.phaseWith];
     if (at && Date.now() - Date.parse(at) < LIVE_MS) return;
     if (m.checks.some(function (c) { return c.kind === 'Q' && c.state === 'open' && String(c.words).indexOf('stale:') === 0; })) return;
-    write('check.add', { id: id, kind: 'Q', words: 'stale: ' + m.with + ' holds the ' + m.phase + ' of this item and has said nothing for 10 minutes. Free the phase, or wait?', test: '', by: 'desk', key: '' });
+    write('check.add', { id: id, kind: 'Q', words: 'stale: ' + m.phaseWith + ' holds the ' + m.phase + ' of this item and has said nothing for 10 minutes. Free the phase, or wait?', test: '', by: 'desk', key: '' });
     saidLimbo = true;
   });
   // Said before this write publishes and writes the goal file, so both carry the line and the newest cursor.
@@ -1385,7 +1391,7 @@ appServer.serve({
     handler: function (a, caller) {
       const w = writerOf(caller);
       const change = write('phase.done', { id: a.id, phase: String(a.phase), pass: a.pass === true, by: w.by, key: w.key }, function (st, it) {
-        if (!it || !it.code || it.with !== w.by || it.phase !== String(a.phase)) throw refused('not-offered');
+        if (!it || !it.code || it.phaseWith !== w.by || it.phase !== String(a.phase)) throw refused('not-offered');
       }).change;
       if (a.phase === 'verify' && a.pass !== true && a.why) write('chat.add', { id: a.id, text: 'verify failed (' + w.by + '): ' + String(a.why), by: 'desk', key: '' });
       return { change: change };
