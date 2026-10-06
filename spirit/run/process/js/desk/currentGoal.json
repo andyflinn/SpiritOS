@@ -1,8 +1,8 @@
 {
- "change": 18164,
+ "change": 18221,
  "line": 8493,
  "goal": "goal/G6",
- "writtenAt": "2026-10-06T00:18:01.683Z",
+ "writtenAt": "2026-10-06T00:30:34.013Z",
  "items": [
   {
    "id": "goal/G6",
@@ -11,12 +11,11 @@
    "status": "",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G6.9"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -42,7 +41,7 @@
     "wsl-claude"
    ],
    "working": [
-    "claude-ubuntu"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -1807,26 +1806,28 @@
    "id": "goal/G6.9",
    "title": "desk server: a plain item take never holds a phase (item.take stops setting the phase holder)",
    "goal": "goal/G6",
-   "status": "running",
+   "status": "closed",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "reopen"
+   ],
    "blocking": [
     "goal/G6"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "rules": [],
    "asks": 0,
    "half": false,
@@ -1854,6 +1855,86 @@
      "by": "desk",
      "at": "2026-10-06T00:18:01.425Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T00:18:15.791Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T00:18:24.567Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:18:25.181Z",
+     "text": "cw: the red of G6.9 is open for wsl or ubi; I take the build once it is in (I built the phase rules in G5.7)."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T00:18:30.114Z",
+     "text": "wsl: red of G6.9 taken (phase.take)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T00:18:43.895Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T00:19:40.498Z",
+     "text": "commit 1973bc2213900aaf075863c765301a2080105b44: goal/G6.9 red: a plain take never holds a phase; the status shows the phase\n- spirit/test/deskPlainTake.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T00:19:47.038Z",
+     "text": "wsl: red is in, 1973bc22: spirit/test/deskPlainTake.js, 3 checks all red today: a phase take after a plain take, the status reading the phase (red, build, verify), and no stale question for a plain taker. Status after a phase is done is left open (the box names it only while held).\nRed recorded; the build is open for claude-windows."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T00:19:50.801Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T00:20:02.999Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:20:12.287Z",
+     "text": "taking: the build of G6.9 (against wsl's red 1973bc22)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T00:20:21.145Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:25:14.059Z",
+     "text": "commit 0c08648812692c411da2a1abf3e96606fbf9d09a: goal/G6.9: a plain take never holds a phase; the status says the phase while it is held (against wsl-claude's red 1973bc22)\n- spirit/run/process/js/desk/desk.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:25:14.805Z",
+     "text": "cw: built, 0c086488: the phase holder is its own field, set only by phase.take; a plain take sets \"with\" and nothing the phase rules read (taking, phase.done and the stale question all read the phase holder). While a phase is held the status reads red, build or verify; when it is done it goes back to running.\ndeskPlainTake 3 of 3; deskPhases, deskLimbo, deskSplitGreen, deskWorking green; full harness only the four old reds.\nFiles:\n- spirit/run/process/js/desk/desk.js\nBuild recorded; open for verify by ubi, or wsl as the red writer. Your node needs a restart to run it."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T00:25:29.080Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T00:28:57.709Z",
+     "text": "wsl verify of 0c086488: deskPlainTake 3 of 3; each of 5 mutations caught (taking reads the plain take again, a plain take holding a phase, no phase status, the stale question on a plain taker, a finished phase still held); every desk suite green. Desk suites only, not the full harness.\nVerify pass recorded; G6.9 is ready for your Done. As claude-windows said, your node needs a restart to run it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:30:30.935Z",
+     "text": "can't really check this now"
     }
    ]
   }
