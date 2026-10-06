@@ -69,6 +69,11 @@ async function partA() {
   await call('press', { id: 'm/G1.1', what: 'go' }, ANDY);
   await call('press', { id: 'm/G1.2', what: 'go' }, ANDY);
   const may = async function (id, caller) { const r = await call('phase.may', { id: id }, caller); return { status: r.status, allowed: r.body && r.body.allowed, why: r.body && r.body.why }; };
+  // TWO AGENTS ARE HERE, so the gate below has something to bite on: since goal/G2.22 the desk waives an item itself
+  // the moment its red is done while ONE agent alone is live (Andy, 2026-10-06: "add to 2.22 that the desk can waive
+  // the rule if only one agent is present."), and claude-ubuntu only reads here, which is not a write and so not
+  // liveness.
+  await call('chat.add', { id: 'm/G1.1', text: 'claude-ubuntu: here, so the red writer rule applies.' }, UBI);
 
   const inRed = await may('m/G1.1', CW);
   await call('phase.take', { id: 'm/G1.1', phase: 'red' }, CW);
@@ -115,6 +120,9 @@ async function partB() {
   await deskAsk('session.set', { json: JSON.stringify({ goal: { id: 'b/G1', title: 'Build' }, items: [{ id: 'b/G1.1', title: 'Code', blocks: ['b/G1'], code: true }] }) });
   await deskAsk('press', { id: 'b/G1', what: 'end-design' });
   await deskAsk('press', { id: 'b/G1.1', what: 'go' });
+  // TWO AGENTS ARE HERE, as in part A: since goal/G2.22 the desk waives an item itself the moment its red is done
+  // while one agent alone is live, and then the commit check below has nothing to refuse.
+  await deskPipe.ask({ desk: { 'chat.add': { id: 'b/G1.1', text: 'claude-ubuntu: here, so the red writer rule applies.' } } }, UBI);
 
   const clone = path.join(scratch, 'clone');
   const agentHome = path.join(clone, 'spirit', 'run');

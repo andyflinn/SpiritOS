@@ -90,6 +90,12 @@ async function open(caller) {
   for (const id of ['q/G1.1', 'q/G1.2', 'q/G1.3', 'q/G1.4']) gos.push((await call('press', { id: id, what: 'go' }, ANDY)).status);
   if (ended.status !== 200 || gos.some(function (s) { return s !== 200; })) { test.fail('the world: end-design answered ' + ended.status + ', his Gos ' + short(gos)); return; }
 
+  // TWO AGENTS ARE HERE, so the phase rules below have something to bite on: since goal/G2.22 the desk waives an
+  // item itself the moment its red is done while ONE agent alone is live (Andy, 2026-10-06: "add to 2.22 that the
+  // desk can waive the rule if only one agent is present."), and claude-ubuntu's refused takes are not writes, so
+  // without this line it would never count as live and every rule below would be waived away.
+  await call('chat.add', { id: 'q/G1.1', text: 'claude-ubuntu: here, so the phase rules apply.' }, UBI);
+
   test.subHeading('1. only an item marked code has phases');
   const a0 = await facts('q/G1.1');
   const b0 = await facts('q/G1.2');

@@ -134,6 +134,13 @@ function ddButtonsHtml() {
     html += '<button type="button" id="dd-go-all"' + (ddArmed === 'dd-go-all' ? ' data-armed="1"' : '') + '>' +
       (ddArmed === 'dd-go-all' ? 'Go all: sure?' : 'Go all') + '</button>';
   }
+  // WAIVE (goal/G2.22). Andy: "there is no Waive in the G2.18 dialog" — the server has had the press since
+  // goal/G5.7 and never had a button. Armed like Go all: the first click arms, the second lifts the phase rules on
+  // this item, so one agent can carry it from red to verify.
+  if ((f.buttons || []).indexOf('waive') !== -1) {
+    html += '<button type="button" id="dd-waive"' + (ddArmed === 'dd-waive' ? ' data-armed="1"' : '') + '>' +
+      (ddArmed === 'dd-waive' ? 'Waive: sure?' : 'Waive') + '</button>';
+  }
   if (f.goal === '') {
     html += '<button type="button" id="dd-abandon"' + (ddArmed === 'dd-abandon' ? ' data-armed="1"' : '') +
       ' style="margin-left:auto;background:#b00020;color:#fff">' +
@@ -393,7 +400,7 @@ spirit.shell.activateApp({
       var armedClose = id === 'dd-close' && ddEarlyClose(f) && (f.goal !== '' || (f.blocked || []).length > 0);
       if (id === 'dd-close' && !armedClose) { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
       if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen') { ddPress(id.slice(3)); return; }
-      if (id === 'dd-abandon' || id === 'dd-go-all' || armedClose) {
+      if (id === 'dd-abandon' || id === 'dd-go-all' || id === 'dd-waive' || armedClose) {
         if (ddArmed !== id) {
           ddArmed = id;
           ddPaint();

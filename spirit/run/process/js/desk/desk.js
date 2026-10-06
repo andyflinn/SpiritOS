@@ -601,6 +601,12 @@ function buttons(s, it) {
     if (allDone) out.push('done');
   // A CODE ITEM OFFERS DONE ON THE VERIFIER'S PASS ALONE (goal/G5.7), no claims needed.
   } else if (it.code ? it.verified === true : Object.keys(it.claims).length) out.push('done');
+  // WAIVE (goal/G2.22). Andy, 2026-10-06: "there is no Waive in the G2.18 dialog", the server having had the press
+  // since goal/G5.7 and the face never a button. On when it shows, asked which of two readings he meant: "only when
+  // it's blocked on me" — so only while the build is his to unblock: its red written, nobody holding the build, not
+  // yet waived. A build somebody holds is not blocked on him, and nor is a red still being written. Never a goal: a
+  // goal has no phases. Counted in the waiting number like any button ("count it."), which is why it is this narrow.
+  if (!it.goal && it.code && it.go === true && it.waived !== true && it.phase === 'build' && !it.phaseWith) out.push('waive');
   if (it.goal && g && goable(s, g).length) out.push('go-all');
   if (!it.goal && !it.went && !claimed) out.push('close');
   // A GOAL OFFERS CLOSE ALWAYS (goal/G5.6), open items or not. Andy, to "a goal gets a Close like an item's (off the
@@ -726,6 +732,13 @@ function limboOf(s, it) {
   });
 }
 
+// THE AGENTS HERE NOW: every agent whose last write is inside LIVE_MS, sorted. The goal's facts say it, and the
+// waive of goal/G2.22 is decided by it.
+function liveAgents(s) {
+  const now = Date.now();
+  return Object.keys(s.agentsAt).filter(function (a) { return now - Date.parse(s.agentsAt[a]) < LIVE_MS; }).sort();
+}
+
 function facts(s, it) {
   const f = { id: it.id, title: it.title, goal: it.goal ? '' : it.goalId, status: it.closed ? 'closed' : it.done ? 'done' : it.status,
     with: it.with, buttons: buttons(s, it), blocking: it.blocks.slice(), blocked: blockers(s, it),
@@ -743,6 +756,8 @@ function facts(s, it) {
     green: !openQ(it),
     // goal/G5.7: the phase it is in, and who did each.
     code: it.code === true, phase: it.phase || '', red: it.red || '', builder: it.builder || '', verifier: it.verifier || '',
+    // goal/G2.22: whether the phase rules are lifted on it, so the dialog knows to stop offering Waive.
+    waived: it.waived === true,
     // goal/G5.8: the rules in force at his Go, each { key, version }.
     rules: Array.isArray(it.rules) ? it.rules : [] };
   f.asks = asksOf(s, it);
@@ -759,7 +774,7 @@ function facts(s, it) {
     f.waiting = g.members.map(function (id) { return s.items[id]; }).concat([it]).filter(function (o) {
       return o && listed(s, o) && (buttons(s, o).length > 0 || asksOf(s, o) > 0);
     }).length;
-    f.live = Object.keys(s.agentsAt).filter(function (a) { return now - Date.parse(s.agentsAt[a]) < LIVE_MS; }).sort();
+    f.live = liveAgents(s);
     // WHO IS WORKING (goal/G2.3): the live agents whose last word is working. A stale working clears with
     // liveness, since an ear killed by its limit or a node restart says nothing (Andy: "while an agent is
     // working, i should leave it alone.").
@@ -1397,6 +1412,19 @@ appServer.serve({
         if (!it || !it.code || it.phaseWith !== w.by || it.phase !== String(a.phase)) throw refused('not-offered');
       }).change;
       if (a.phase === 'verify' && a.pass !== true && a.why) write('chat.add', { id: a.id, text: 'verify failed (' + w.by + '): ' + String(a.why), by: 'desk', key: '' });
+      // ONE AGENT ALONE NEEDS NO WAIVE (goal/G2.22). Andy, 2026-10-06: "add to 2.22 that the desk can waive the rule
+      // if only one agent is present.", and asked why the desk cannot simply do it: "contradiction or not. autowaive
+      // when only one agent is present. the other case already happened in a previous goal, and it worked." So at
+      // EVERY handover, not the red's alone: the rules hand each phase to somebody else (mayTake), so alone the item
+      // would stall at whichever one it reached. DECIDED HERE, AT THE WRITE, AND RECORDED AS A PRESS: who is live is
+      // of this moment only, and a walk of the records must not re-decide it later, when everyone reads as stale.
+      const st = walkState();
+      const m = st.items[String(a.id)];
+      const live = liveAgents(st);
+      if (m && !m.done && !m.closed && m.waived !== true && live.length === 1 && live[0] === w.by) {
+        write('press', { id: a.id, what: 'waive', by: 'desk', key: '' });
+        write('chat.add', { id: a.id, text: 'waived: ' + w.by + ' is the only agent here, so it may take the next phase of this item itself.', by: 'desk', key: '' });
+      }
       return { change: change };
     },
   },
