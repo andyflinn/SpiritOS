@@ -1,23 +1,23 @@
 {
- "change": 18221,
+ "change": 18224,
  "line": 8493,
  "goal": "goal/G6",
- "writtenAt": "2026-10-06T00:30:34.013Z",
+ "writtenAt": "2026-10-06T00:30:38.325Z",
  "items": [
   {
    "id": "goal/G6",
    "title": "Updating the Shell interface for Desk",
    "goal": "",
-   "status": "",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done",
-    "close"
+    "close",
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
    "go": false,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -41,7 +41,9 @@
     "wsl-claude"
    ],
    "working": [
-    "claude-windows"
+    "claude-ubuntu",
+    "claude-windows",
+    "wsl-claude"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
