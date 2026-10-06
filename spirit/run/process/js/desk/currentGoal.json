@@ -1,12 +1,12 @@
 {
- "change": 19433,
+ "change": 19516,
  "line": 8494,
- "goal": "goal/G7",
- "writtenAt": "2026-10-06T10:41:58.506Z",
+ "goal": "goal/G8",
+ "writtenAt": "2026-10-06T21:12:14.783Z",
  "items": [
   {
-   "id": "goal/G7",
-   "title": "chatter: rethinking the chatter user interface",
+   "id": "goal/G8",
+   "title": "Verification Automation",
    "goal": "",
    "status": "",
    "with": "",
@@ -15,12 +15,13 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G7.1",
-    "goal/G7.2",
-    "goal/G7.3",
-    "goal/G7.4",
-    "goal/G7.5",
-    "goal/G7.6"
+    "goal/G8.1",
+    "goal/G8.2",
+    "goal/G8.3",
+    "goal/G8.4",
+    "goal/G8.5",
+    "goal/G8.6",
+    "goal/G8.7"
    ],
    "go": false,
    "alone": false,
@@ -38,13 +39,11 @@
    "waived": false,
    "rules": [],
    "asks": 0,
-   "half": true,
+   "half": false,
    "full": false,
    "design": true,
-   "waiting": 7,
-   "live": [
-    "claude-windows"
-   ],
+   "waiting": 8,
+   "live": [],
    "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -52,461 +51,387 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "GOAL/G7: CHATTER — RETHINKING THE CHATTER USER INTERFACE\n\nTHE VISION (Andy, 2026-10-06, verbatim)\n\"Right now: The left and right panes of chatter, both are collapsible toward the side-edges of the windows, where the space along the window-side below the fold/unfold buttons remains blank and un-usable.\"\n\"What i want: i want the the portion adjacent to the window edge to act like a tab-control strip, like the left pane in vscode: If an icon is clicked and it's contents is already shown in the left pane of chatter, the left pane collapses. If the icon is clicked, and the left pane is collapsed or shows content associated with another icon, the left pane will show the content of the clicked icon.\"\nThe centre panel, top to bottom:\n1. \"the heading strip, exists already, shows the peers label and the plain/bubbles dropdown.\"\n2. \"The plugin section: it shows a graphic interface for the current tab of the left window edge.\"\n3. \"The chat log as it displays now\"\n4. \"the chat input box, as is is now.\"\n\"sections two and three will be separated by a horizontal border that can be moved like the separators of the three main panes.\"\n\"the chat makes section 2 and the separator between 2 and 3 invisible, where tic-tac-toe uses section 2 to display a tic-tac-toe game visually and clickably, and it's left pane is sused to start/configere the game. The game itself rides the chat.\"\n\nFIRST SCOPE\n- The frame (strip, section 2, its separator), the plugin contract and tic-tac-toe first; the right pane (files, keys, grants) after file transfer. Andy, to Q3: \"yes\".\n- tic-tac-toe is the demo of the contract. Andy: \"a ticTacToe plugin implementation would be a simple game-demo, then chess etc...\"\n\nTHE STRIPS\n- The right pane gets its own icon strip, mirroring the left. Andy, to Q2: \"yes, 1) fileServer interface for chat 2) (oos) grant.notifications. etc...\"\n- Fixed icons. Andy: \"fixed on the left: chat and plugin-manager\" / \"fixed on the right: files and plugin-manager\" / \"plugin-manager is the same, just bound to a different tab-set....\"\n\nTHE PLUGIN LINE\n- A JSON line in the chat text; the chat server's verb (line.write {to, text, re}) is unchanged. Andy, to Q1: \"a json line?\", then \"json object { a:pluginName, { ... plugin-specific-data ...} }\".\n- Its shape: {\"pluginName\": \"<name of the plugin>\", \"data\": {...}}. Andy, to Q4: \"the first field: pluginName:name-of plugin  the second  data:{}\".\n- Shown as the plugin decorates it. Andy: \"and chat will know that pluginName can decorate the line to look like \"plugin: click-bottom-left\" while actually sending json\".\n\nTHE PLUGIN FOLDER\n- Plugins get a defined folder structure under chatter, mounted as the shell mounts its apps and elements. Andy: \"let's only do broad strokes here:\" / \"it needs a definition of folder structure below chat for plugins, and maybe the same or similar mount-structure that shell uses for apps or elements\".\n- What a plugin registers: its use of section 2 (optional) and its decorator for its own lines, in and out. Andy: \"the plugin has to register it's use of center section #2 (optional) and it's decorator for incoming-outgoing messages that ar plugin specific...\"\n\nTHE PLUGIN-MANAGER\n- First scope: chatter's own plugins with on/off only. Andy, to Q5: \"yes.\" A plugin in chatter's folder counts as installed (it arrives with a pull, already reviewed); the manager only activates it. Andy: \"worpress has two steps for plugins: install and activate, your idea says: implement activate only at thze beginning...\"\n\nLATER (out of scope until file transfer)\n- Right-side plugins as system utilities. Andy: \"same basic idea with right side plugins, not sure yet if they require a \"game-pane\", running download progress is better of stacked in the file-transfer pane\" / \"i imagined, the right hand side to be system utilites, grants like giving access to my rtx 5060 for batch jobs from my travel-laptop or other wacky ideas.\" / \"yes, like a p2p - auth granting utility, all oos until fileTransfer rocks chat.\"\n- Installing plugins. Andy: \"and installing from elsewhere will prolly start with github.... and our own, approved repos\".",
-   "version": 15,
+   "box": "VERIFICATION AUTOMATION\n\nOpened by Andy, 2026-10-06: \"i want to add a new goal, while keeping this one alive: goal/G8 Verification Automation\". It came out of his review of rule/4 (proposed, not active): \"when closing an item, verify only with the items red. the full harness runs only to get the 'Done' button for the current goal.\"\n\nHIS WORDS, the source for the items this goal will hold, each argued one at a time:\n- \"why is the harness not automated? demonized?\"\n- \"imagine this: an auto-agent, it is a server process, completely mechanical, it does all the verifying on it's own?\"\n- \"that auto-agent only verifies, it takes all verification, run's a short loop on all active items, pulls automatically on status changes, and delivers, only reds, unless a specific red is marked as tolerated.\"\n- \"the desk can mechanically verify that the verifier is active, and only under those circumstances deny a verify-take to other agents.\"\n- \"is there a way an agent could 'signoff' so it wont take 10 minutes?\"\n\nTHE TOPICS, in the order they depend on each other:\n1. Who runs the harness, and in which standing. Its own item now, goal/G8.2, extracted at his word; it is blocked by goal/G8.1.\n2. What a verify is, mechanically. Most of it already is: the item's own test plus the suites around what changed; deleting each line the build added to prove a test holds it; widening a fix to see the test refuse it; reading a test diff for weakened assertions. What is left is whether the thing built is the thing he asked for, which needs his words in the box.\n3. Tolerated reds. A run that says nothing unless something is genuinely wrong. Four of the eleven reds reported on 2026-10-06 were old debts explained by hand every time, and those suites already print the goal that owes them, so tolerance can be read off the suite rather than kept in a list that drifts.\n4. Who may take a step. Deny a step only when the desk can see somebody else could take it, his words above. It replaces the self-waiving of goal/G2.22 rather than correcting it, and generalises one step earlier, to the build a test writer may not take.\n5. Being here, and leaving. Ten minutes of silence is how absence is measured now; a word for signing off would make leaving immediate. On 2026-10-06 he ruled that a busy agent counting as gone is wanted, not a fault: \"nope. it's not a flaw. it allows other work to continue. it's a feature.\"\n\nStill in design. Nothing here is an item until it is argued and added. Two exist: goal/G8.1 the dataset, goal/G8.2 the running modes.\n\nWHAT IT KEEPS, and this is the part today's sitting proves is missing: a running tally of every test in the suite, each flip from red to green and back, which core files were touched and by whom. On 2026-10-06 the run log recorded only the totals, so claude-windows could not name the eleven reds of its own full run and had to re-run everything to find them.",
+   "version": 4,
    "checks": [
     {
      "number": "Q1",
      "kind": "Q",
-     "words": "a plugin line (a game move) needs a kind beside text on line.write {to, text, re} (chatter.js 329): a change to the chat server verb, which needs peer review and your yes on the verb. Yes to opening that?",
+     "words": "cw: goal/G8 Verification Automation is open and current, in design mode. Its box holds your five lines verbatim and the five topics they fall into, in the order they depend on each other. No items yet: they go in one at a time as we argue them, as you have it.\nG7 is untouched and still open with all seven items; it is just not current, and its Make current goal button brings it straight back.\nStart with topic 1, who runs the harness, or point me at another?",
      "test": "",
      "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-06T00:46:19.006Z"
+     "at": "2026-10-06T06:23:34.299Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T06:13:31.691Z",
+     "text": "cw: goal/G8 Verification Automation is open and current, in design mode. Its box holds your five lines verbatim and the five topics they fall into, in the order they depend on each other. No items yet: they go in one at a time as we argue them, as you have it.\nG7 is untouched and still open with all seven items; it is just not current, and its Make current goal button brings it straight back.\nStart with topic 1, who runs the harness, or point me at another?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T06:22:37.452Z",
+     "text": "the agent on my work box must be the lead agent. always. i cannot operate the desk from anywhere else, that is the only box that can run the verify-server in agent mode, where it reaches the desk on loopback.\n\nagents who on a different machine can only operate their deskClient on loopBack \n\nthese are the two distinct operating modes of deskVerify"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T06:23:36.032Z",
+     "text": "cw: in the box verbatim, and it settles topic 1 before we argued it: the one harness runner is on your work box, because that is the only box that can be in agent mode, and the lead is the machine rather than the session.\nTwo things follow that I would rather say now than discover later. A remote agent can never verify in that mode, so wsl can write tests and build but cannot be the verifier once deskVerify exists; verification leaves the agents entirely, which is what you said it should.\nAnd the verify server shares your box with your node and your desk, so its runs compete with them for ports rather than with us. That is better, since one runner can be made to wait, and two agents on two machines cannot."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T06:40:54.570Z",
+     "text": "a little more granular:\n\ndeskVerify knows if it's on the same box as the desk, it's not that it couldn't technically run as an agent on other boxes, it's that on the owners box it makes sense and makes it authoritative. from desks point of view, that deskVerify IS the owner, since it uses loopback to connect to the desk.\n\ndesk will not allow deskClient to run on the same node. so deskVerify always knows if it's on the desk box or an agent box or a remote test-and-measure-only-box. Only the desk-box's deskVerify is allowed agent-status on desk.\n\non an agent only box (wsl/ubuntu), deskVerify serves as a sub-agent to deskClient, and takes over primarily the short-loop for the item at hand, and prior to goal-done/closing and when the agent itself is idle it runs full-harness.\n\nThe beauty of it is, it keeps a running tally of every single test in the suite, when they flip red to green an vice versa, it can verify when corefiles were touched and by whom. it can can generate, on all nodes, a wealth of instantly trackable information."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T06:42:04.719Z",
+     "text": "cw: all of it is in the box verbatim, and it corrects me: I had said a remote agent could never verify, and your version is that deskVerify runs everywhere and only its standing differs. Three cases, told apart by whether a deskClient runs on that node.\nOne gap, because it carries the whole scheme: nothing in the desk refuses a deskClient on its own node today. The only coupling is the desk nudging each agent's client by key, which would work just as well pointed at itself, so that rule has to be built rather than relied on.\nYour tally is the part today proves is missing. The run log keeps only the totals, which is why I could not name the eleven reds of my own run and had to run everything again to find them."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T06:56:03.932Z",
+     "text": "the first item in this goal is: \"deskVerify: the dataSet\"\n\n deskVerify maintains verify.db, on any node it runs. a table row has the following fields:\n\n1. suite-based-test-ID: This is the main key to the data table.\n2. commit-level\n3. pre-commit-code\n4. status: red | green | unhappy\n5. timestamp.\n\nchanges in any of fields 1-4 result in a new record being written:\n\nsecondary indexes: commit-level, status , and pre-commit-code"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:45:44.801Z",
+     "text": "extract the topic of running modes for deskVerify, and place it in a new item that depends on G8.1"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T08:51:30.434Z",
+     "text": "new item: deskVerify: Changes required in desk."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T10:01:52.619Z",
+     "text": "assessment: is this goal's design complete?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T10:02:33.403Z",
+     "text": "cw: no, not yet. Five items are green and buildable, but three of the five topics you listed when the goal opened have no item at all.\nMissing topics: what a verify mechanically is, which is the short loop itself and nobody has said which suites it runs or whether it drives the harness or replaces it; tolerated reds, your own \"only reds, unless a specific red is marked as tolerated\", which nothing holds; and being here and leaving, the sign-off word, which we discussed and never filed.\nTwo concrete things are also unnamed. The verb that receives a record, which needs peer review and your yes on the verb itself. And where verify.db lives: nothing says, and it matters, because relay-state is ignored by git while the agents folder is tracked, so the wrong home either loses the history on every clone or commits a database.\nOpen them one at a time in that order, or tell me which you want first."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T10:24:48.896Z",
+     "text": "deskVerify's listener on the desk generates events that deskVerify filters to trigger event's for it's process, that's the other input it gets next to the test-records it receives with the verb \"record\" that supplies candidates for the database.\n\nfor now, tolerated reds have to be granted as a whole, in order to pop the Done button for the goal, so the final full suite lists the reds outside the goals scope in a red-question for the goal, that blocks the Done button for the goal.\n\nthe short loop is: all the suites of the current goal, between 'Go' pressed and 'Done' pressed, which it knows from the nudges desk gives all agents.\n\nverify.db lives in deskVerify's process folder and is .gitignored"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T10:26:33.162Z",
+     "text": "cw: all four answers are filed. Two new items: goal/G8.6 the short loop, which carries your definition and the two inputs, the desk's nudges filtered into its own events and the verb record; and goal/G8.7 tolerated reds, where the final full run puts every red outside the goal into one red question that blocks the goal's Done until you grant them together.\nThe database home and the verb name went into G8.1. Both matter in the tree: a tracked database would land in every clone, and the ignored relay-state folder would lose it on a fresh one, so your process folder is the right home. The verb is deskVerify's own, not the node's, so no interface boundary is crossed.\nTwo things still open before the design is complete: the sign-off word, your fifth topic, which nothing holds; and what makes a suite belong to a goal, which both new items need and the tree does not answer anywhere."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T10:36:08.375Z",
+     "text": "the signoff verb is \"signoff\"\n\nwhat suite belongs to an item? the deskVerify knows that the way a coding agent knows which suite it writes the code against. which suites belong to a goal: all the suites associated with items in the goal."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T10:37:18.319Z",
+     "text": "cw: both filed, and the design is complete as far as I can see it. The signoff verb went into the desk-changes item, since it is a change to the desk and nowhere else; say the word if you want it standing on its own.\nYour answer on suites gives a mechanical rule, which is what it needed: an item's suites are the test files among the files its own commits changed, exactly how I know which suite I am writing against, and a goal's suites are those of all its items. One consequence I wrote down so nobody reads it as a fault: between your Go and the first commit an item has no suites at all, so the loop runs nothing for it, which is right, the failing test being the first thing committed.\nSeven items, each green, nothing waiting on you, and all five of your opening topics now have a home."
+    }
+   ]
+  },
+  {
+   "id": "goal/G8.1",
+   "title": "deskVerify: the dataSet — verify.db, one row per test, and what identifies a test",
+   "goal": "goal/G8",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G8",
+    "goal/G8.2"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskVerify: THE DATASET\n\nAndy's design, 2026-10-06. verify.db on every node deskVerify runs on. A row per test: suite, title, outcome, commit, dirty tree, UTC time. Secondary indexes on commit, outcome and dirty tree.\n\nTHE KEY is the suite plus the title as written in it. A failing assertion carries the same title as its passing one, its runtime detail beside the title and not inside it, or a change of outcome cannot be followed.\n\nTHE DIRTY TREE is the files modified against the commit last pulled, sorted, empty when clean, so a result measured on a dirty tree is never taken for one measured at a commit.\n\nROWS. A record is written when that test has none yet, or when its outcome changes, carrying the commit and time of that change; every run and commit in between is implicit. Runs are not stored at all. An outcome is red or green, nothing else. A test its suite never reached reports nothing, writes nothing, and its last state stands.\n\nWHO SENDS IT is testSupport, the one place every check and fail already passes through. A suite deskVerify launched gets a port as a named argument and posts one record per assertion to deskVerify's loopback api, as it happens; a suite run by hand gets no port, sends nothing, and behaves as today. A record carries suite, title and outcome, since deskVerify launched the run and stamps the commit, dirty tree and time itself. The send is not waited on, those two calls being synchronous, and the suite waits once as it exits so the last records land.\n\nDECIDED, not to be reopened: records are never sent together. Andy, 2026-10-06, after an earlier design had held them back: more complicated, saves little time, and risks overflowing MAX_PAYLOAD eventually. A later session that finds this slow does not get to group them. One record is about 136 bytes against a 22528 limit.\n\nMEASURED IN THE TREE at 9ece24a8, what the above rests on:\n- 362 suites, 4291 titled assertions, one title repeated in the whole harness (natterIntrinsic.js): suite plus title is unique.\n- 4181 of 4780 failure sentences are built from runtime values, so the red and green of one assertion share no key today.\n- The printed number counts passes and failures apart, so it changes when a test flips and cannot be the key.\n- liveRelay.js reads its first positional argument as a relay address, hence a named port.\n\nWHERE IT LIVES AND WHAT RECEIVES IT, his, 2026-10-06: \"verify.db lives in deskVerify’s process folder and is .gitignored\", and the records arrive by its own verb, \"the verb \\\"record\\\" that supplies candidates for the database\". So the history is per node and never travels in git, which the tree makes necessary: a tracked database would land in every clone, and the ignored relay-state folder would lose it on a fresh one. The verb belongs to deskVerify, not to the node, so it crosses no interface boundary.",
+   "version": 18,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "A test has no name today: its number changes when it flips, and its sentence changes when someone rewords it. Should every test be given a short written id of its own, or should the key be the suite name plus a hash of the sentence, accepting that a reword starts a new history?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-06T07:04:15.265Z"
     },
     {
      "number": "Q2",
      "kind": "Q",
-     "words": "does the right pane get its own icon strip on its edge, mirroring the left (wsl)?",
+     "words": "What is pre-commit-code? I can read it as the working tree before the commit, as a hash of the uncommitted changes, or as the result of the pre-commit hook, and the three store different things.",
      "test": "",
      "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-06T00:44:30.868Z"
+     "at": "2026-10-06T07:12:39.774Z"
     },
     {
      "number": "Q3",
      "kind": "Q",
-     "words": "scope: the frame (strip, section 2, its separator), the plugin contract and tic-tac-toe first; the right pane (files, keys, grants) after file transfer?",
+     "words": "Your first words say a row whenever the commit or the dirty tree changes, which is every test at every commit; your newest say a row only when an outcome switches, which makes the table a history of flips and keeps it small. The second is my recommendation. Which?",
      "test": "",
      "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-06T00:44:51.959Z"
-    },
-    {
-     "number": "Q4",
-     "kind": "Q",
-     "words": "the plugin data needs a key of its own in JSON: {\"a\":\"tictactoe\",\"d\":{...}}, with d for data? And is \"a\" the mark wsl asked for, i.e. a typed message is never read as a move unless its a names a plugin chatter has?",
-     "test": "",
-     "state": "answered",
-     "by": "claude-windows",
-     "at": "2026-10-06T00:47:46.508Z"
-    },
-    {
-     "number": "Q5",
-     "kind": "Q",
-     "words": "the plugin-manager: in the first scope as a fixed icon listing chatter's own plugins with on/off only, installing from elsewhere later?",
-     "test": "",
-     "state": "answered",
-     "by": "claude-windows",
-     "at": "2026-10-06T01:03:06.085Z"
-    },
-    {
-     "number": "Q6",
-     "kind": "Q",
-     "words": "A chatter without a given plugin (or with it switched off) gets that plugin's lines too: show them as \"<pluginName>: ...\" (a generic line, never the raw JSON), or hide them? The capped box does not say. (wsl-claude)",
-     "test": "",
-     "state": "passed",
-     "by": "wsl-claude",
-     "at": "2026-10-06T01:10:20.398Z"
-    },
-    {
-     "number": "Q7",
-     "kind": "Q",
-     "words": "cw: yes, and without a new verb. Each of us already tells the desk a word for what it is doing, listening or working; a third word, away, would take it out of the room at once instead of after ten minutes, and the next thing it writes brings it back.\nThe catch is worth saying: signing off hands the one who stays behind the right to do every step of an item alone, since the desk then sees one agent. That is what you want when one of us leaves, and not what you want if one of us just goes quiet mid-job.\nThis is a desk change, not a chatter one, so it is outside this goal. Shall I hold it for the next desk goal, or do you want it opened now?",
-     "test": "",
-     "state": "answered",
-     "by": "claude-windows",
-     "at": "2026-10-06T05:42:42.252Z"
-    },
-    {
-     "number": "Q8",
-     "kind": "Q",
-     "words": "cw: you are right, and it is a hole in what we closed an hour ago. A full harness runs about twenty minutes with nothing written in between, so the agent running one looks exactly like an agent that has gone, and the other then gets handed every step of an item by itself.\nThe fix is small and in the same place: the self-waiving should read the word, not only the clock. An agent whose last word was working is busy, not absent, so the room is not empty; one that said away, or never said anything for ten minutes, is. Your sign-off word and this are one item.\nI would rather you reopened the Waive item than let it stand as done with this known hole. Reopen it?",
-     "test": "",
-     "state": "answered",
-     "by": "claude-windows",
-     "at": "2026-10-06T05:42:43.508Z"
+     "at": "2026-10-06T07:31:28.213Z"
     }
    ],
    "chat": [
     {
+     "by": "claude-windows",
+     "at": "2026-10-06T06:57:46.630Z",
+     "text": "cw: goal/G8.1 is in, your five fields and three indexes verbatim, and two red questions on it.\nThe one that decides the item: a test has no name today. Its printed number counts successes and failures separately, so the same assertion is a different number once it goes green, and the only other handle is the sentence someone can reword. A tally of flips needs a key that survives both, and Q1 puts the two ways of getting one to you.\nQ2 is smaller: pre-commit-code reads three ways to me and they store different things."
+    },
+    {
      "by": "andy",
-     "at": "2026-10-06T00:39:29.713Z",
-     "text": "put the concept in here"
+     "at": "2026-10-06T06:59:25.698Z",
+     "text": "the individual tests in the harness have titles, don't they?\n\nso suite name/ID plus the title/label of the test should identify tests uniquely? no? would make two fields for the test ID?"
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T00:39:48.517Z",
-     "text": "taking: the concept into goal/G7's box."
+     "at": "2026-10-06T07:00:56.073Z",
+     "text": "cw: they do have titles, and you are nearly right. I measured the whole harness: 362 suites, 4291 assertions, and a title repeats inside a suite exactly once in all of them. So suite plus title is unique.\nThe catch is that each assertion is written twice, once as the sentence you see when it passes and once as a different sentence when it fails, and 4181 of 4780 failure sentences are built out of runtime values, so they differ from run to run. Keying on the title works while a test is green and breaks the moment it goes red, which is the flip the dataset exists to record.\nTwo ways out, and it is your call on Q1: bind the pair in the source so an assertion has one title and the failure text becomes mere detail, which is right but touches some nine thousand call sites; or key on the passing title alone and accept that a reworded test starts a new history."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:01:04.314Z",
+     "text": "i know you can call a single test out of a suite...."
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T00:39:59.763Z",
-     "text": "cw: the box was taken before me; I leave it to its taker."
-    },
-    {
-     "by": "claude-ubuntu",
-     "at": "2026-10-06T00:40:08.695Z",
-     "text": "ubi: taking the box of G7, writing your concept in verbatim."
-    },
-    {
-     "by": "claude-ubuntu",
-     "at": "2026-10-06T00:40:54.513Z",
-     "text": "ubi: your concept is in the box verbatim; box take released on the write."
+     "at": "2026-10-06T07:01:55.073Z",
+     "text": "cw: not quite: you can call a single suite, which is what the filter does, and I think that is what you are remembering. Inside a suite there is no way to run one test on its own; the file runs top to bottom in one go and nothing selects an assertion.\nIt is also mostly not meaningful. Tests in a suite lean on what came before them: in the one I wrote today the one-agent section has to run before the second agent writes anything, or the whole premise is gone.\nSo the dataset can hold a row per test, which is what you asked for, while the thing that gets re-run stays the suite. That is enough for a tally of flips, since the flips come out of a run rather than out of poking one test."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T00:43:53.641Z",
-     "text": "Q1: a plugin line (a game move) needs a kind beside text on line.write {to, text, re} (chatter.js 329): a change to the chat server verb, which needs peer review and your yes on the verb. Yes to opening that?\n\na json line?\n\nQ2: does the right pane get its own icon strip on its edge, mirroring the left (wsl)?\n\nyes, 1) fileServer interface for chat 2) (oos) grant.notifications. etc..."
+     "at": "2026-10-06T07:02:34.688Z",
+     "text": "anything that generates one single red-or-green has some id, how else could you possibly diagnose a problem otherwise?"
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T00:44:14.012Z",
-     "text": "taking: your Q1 and Q2 answers on G7."
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T00:44:14.681Z",
-     "text": "wsl: Q2 noted: a right strip too, first the fileServer for chat, grant notifications out of scope.\nOn Q1, a JSON line works with no verb change: the move rides as text, e.g. {\"plugin\":\"tictactoe\",...}, and chatter draws it through the plugin. Two costs: a peer on an older chatter sees the raw JSON, and a typed message that happens to be JSON must not be taken for a move, so the line needs a mark only chatter writes."
+     "at": "2026-10-06T07:03:12.279Z",
+     "text": "cw: you are right, and the answer is that today the id is a sentence a human reads. That is enough to diagnose one run by eye and useless to a machine keeping a history, which is exactly why I could not name my own eleven reds this morning without running everything again.\nSo the fix is not nine thousand call sites after all: make the harness print the id itself. A failing assertion takes the same title as its passing one, with the runtime detail as a second thing beside it rather than inside it, and every line a run prints then carries a handle both you and deskVerify can hold.\nIt can land without a flag day: a failure that has not been given its title yet still works, and shows up in your dataset as an unidentified test, so the count of those falls as we go instead of blocking everything."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T00:44:15.841Z",
-     "text": "Q3: scope: the frame (strip, section 2, its separator), the plugin contract and tic-tac-toe first; the right pane (files, keys, grants) after file transfer?\n\nyes"
+     "at": "2026-10-06T07:03:28.340Z",
+     "text": "you don't have to call a single test, every test just has to output a detailed record."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:04:03.320Z",
+     "text": "the text is always the same, so it servers fine as a key"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:05:01.915Z",
+     "text": "Q2: What is pre-commit-code? I can read it as the working tree before the commit, as a hash of the uncommitted changes, or as the result of the pre-commit hook, and the three store different things.\n\nit's modified files at the latest pulls commit level"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:05:24.929Z",
+     "text": "working tree before the commit"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:07:15.525Z",
+     "text": "or just dirty-tree"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:09:00.907Z",
+     "text": "the standard/shared  test-call-count interface just needs to send a a record to deskVerify."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:09:58.959Z",
+     "text": "small change in the test-infrastructure."
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T00:44:32.469Z",
-     "text": "cw on Q1, \"a json line?\": yes, that works with no verb change: the plugin writes its move as JSON in the text, e.g. {\"plugin\":\"tictactoe\",\"move\":4}, and chatter draws a line that parses as a known plugin's JSON through that plugin, not as raw text.\nThe costs: a peer whose chatter lacks the plugin sees the raw JSON, and a move must fit in one line.\nGo that way (JSON in text, no verb change)?"
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T00:45:51.259Z",
-     "text": "json object { a:pluginName, { ... plugin-specific-data ...} }"
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T00:46:05.404Z",
-     "text": "wsl: JSON needs a name for the second part too, so as written it would read e.g. {\"a\": \"tictactoe\", \"d\": {...plugin data...}}. Is \"a\" your chosen key for the plugin, and what name for the data, \"d\"?"
+     "at": "2026-10-06T07:11:38.747Z",
+     "text": "cw: taken, and Q1 is closed by it. Every assertion emits its own record as the run goes, the harness writes the id once where the assertion lives, and deskVerify just stores what it is handed. Nothing is ever run one test at a time.\nWhat that fixes: a failure carries the same title as its pass, with the runtime detail beside the title instead of baked into it. Today it is baked in, which is why the red and the green of one assertion share no key at all. The run supplies the commit and the time; the test supplies suite, title and outcome.\nYour lines stay readable: the record is added for machines, not instead of what you read. Only Q2 is still open, what pre-commit-code holds."
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T00:46:13.075Z",
-     "text": "taking: your line shape into G7's box."
+     "at": "2026-10-06T07:12:51.808Z",
+     "text": "cw: all six lines are in the box and both questions are closed, so the item is green. The key is the title as written, the third field is the dirty tree, the files modified against the commit last pulled and empty when it is clean, and the change sits in the one place every check and fail already passes through.\nOne thing I decided rather than asked, say the word if it is wrong: the test emits the record and deskVerify collects it, rather than the test speaking to deskVerify while it runs. A suite has to run on its own, which one of our own suites asserts, and the harness runs six at a time, so a live connection would give every suite a server it cannot run without and six writers at once.\nThe item is ready for its failing test when you end design on the goal."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:16:03.231Z",
+     "text": "the harness hierarchy gets passed a call-argument (port) or zero, if deskVerify launches suite-by-suite, it gives the suite a port, and the standalone passes nothing."
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T00:46:21.858Z",
-     "text": "cw: in the box: {a: pluginName, ...data}. One detail as Q4: the data needs its own key in JSON, e.g. {\"a\":\"tictactoe\",\"d\":{...}}; d for data?"
+     "at": "2026-10-06T07:16:59.861Z",
+     "text": "cw: that is better than what I proposed and it is in the box: a suite deskVerify launches gets the port and sends live, a suite run by hand gets nothing and behaves as today, so both ways stand and our run-alone rule keeps holding.\nOne collision I found before agreeing: thirteen suites already read their own arguments, and liveRelay takes the first one as the address of a relay, so a bare port handed to it would be read as a web address. The others take named flags and would ignore a number.\nSo the port goes as a named argument instead of a positional one, and its absence is what standalone means, which costs nothing and needs no zero."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T00:47:14.403Z",
-     "text": "the first field: pluginName:name-of plugin  the second  data:{}"
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-06T00:47:39.176Z",
-     "text": "taking: the key names into G7's box."
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-06T00:47:48.093Z",
-     "text": "cw: in the box: {\"pluginName\": \"<name>\", \"data\": {...}}."
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T00:48:10.315Z",
-     "text": "claude-windows 02:47 cw: in the box: {\"pluginName\": \"<name>\", \"data\": {...}}.\n\nyes"
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T00:49:47.997Z",
-     "text": "and chat will know that pluginName can decorate the line to look like \"plugin: click-bottom-left\" while actually sending json"
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T00:50:03.263Z",
-     "text": "wsl: that also fixes the raw-JSON cost: each plugin gives a one-line text for its data (\"tictactoe: click-bottom-left\"), and a chatter without that plugin can still draw any line with a pluginName as \"<pluginName>: ...\" instead of the JSON."
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-06T00:50:06.337Z",
-     "text": "taking: the line decoration into G7's box."
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T00:54:25.213Z",
-     "text": "same basic idea with right side plugins, not sure yet if they require a \"game-pane\", running download progress is better of stacked in the file-transfer pane\n\ni imagined, the right hand side to be system utilites, grants like giving access to my rtx 5060 for batch jobs from my travel-laptop or other wacky ideas."
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T00:54:42.541Z",
-     "text": "wsl: then a right-side plugin is the same contract, drawing in the right pane instead of section 2. Grants already have their verbs (jobs.authSearch, authGrant, authRevoke), so a \"lend my GPU\" utility would be a face on those, offered in chat as a pluginName line the other side accepts. All after the first scope, as Q3 says."
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-06T00:54:54.821Z",
-     "text": "taking: the right-side vision into G7's box."
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T00:55:46.768Z",
-     "text": "yes, like a p2p - auth granting utility, all oos until fileTransfer rocks chat."
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T00:56:46.114Z",
-     "text": "a ticTacToe plugin implementation would be a simple game-demo, then chess etc..."
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T00:57:24.576Z",
-     "text": "i wonder if a ticTacToe would be a nice example of apps riding chat...."
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T00:57:40.557Z",
-     "text": "wsl: yes, I think it is the right first one: tiny rules, but it uses every part (left pane to start, section 2 to play, moves as pluginName lines, turns between two peers). The real test it gives: the board is rebuilt from the chat lines alone after a reload, so the chat is the only state, which is what riding chat should mean."
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-06T00:57:48.129Z",
-     "text": "cw: yes, I think it is the right first one: nine cells and whose turn, every move one line, and the board is rebuilt by replaying the chat's lines, so the plugin needs no storage of its own and nothing on the wire beyond chat.\nWhat it does not test: a move too big for one line, or state that cannot be replayed from history (chess still can; a file transfer cannot)."
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T00:58:32.599Z",
-     "text": "like vscode, one fixed plugin could be the plugin-manager"
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T00:58:51.273Z",
-     "text": "wsl: agreed, and there is a model to reuse: the shell's Apps app (shell/apps) already lists apps with an expand-a-row panel for name, icon and where its tile lives. A plugin manager can be that same table for chatter's plugins: which are on, their icon, their order on the strip.\nFor the first scope I would keep it fixed and small (on/off and order), and leave installing new plugins for later."
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-06T00:58:51.557Z",
-     "text": "cw: for it: the strip then has two fixed icons, CHAT and the manager, and every other icon is a plugin the manager lists and switches on or off.\nThe cost is what a plugin is on disk: listing the plugins in chatter's folder is cheap, but installing one from a peer is code arriving over the wire, which runs into the shell's install hardening still owed.\nIn the first scope as a list with on/off only, installing later?"
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T01:01:01.595Z",
-     "text": "fixed on the left: chat and plugin-manager\nfixed on the right: files and plugin-manager\n\nplugin-manager is the same, just bound to a different tab-set...."
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-06T01:01:28.035Z",
-     "text": "taking: the fixed icons into G7's box."
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T01:02:40.685Z",
-     "text": "Q5: the plugin-manager: in the first scope as a fixed icon listing chatter's own plugins with on/off only, installing from elsewhere later?\n\nyes.\n\nthe same on both sides?"
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T01:02:53.928Z",
-     "text": "wsl: yes, one manager, as you said: the same code on both strips, listing only the plugins of the side it was opened from. Each plugin then says which side it belongs to (left: draws in section 2; right: draws in the right pane), so the two lists never mix."
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-06T01:03:00.304Z",
-     "text": "taking: your Q5 answer."
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-06T01:03:07.701Z",
-     "text": "cw on \"the same on both sides?\": yes, one plugin-manager, the same code on both strips; on each it lists only that strip's plugins with on/off.\nUntil file transfer, the right strip's list holds only files, so the right one has little to show at first."
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T01:04:17.979Z",
-     "text": "and installing from elsewhere will prolly start with github.... and our own, approved repos"
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T01:05:10.672Z",
-     "text": "worpress has two steps for plugins: install and activate, your idea says: implement activate only at thze beginning..."
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T01:05:24.192Z",
-     "text": "wsl: yes, exactly: activate first, install later. In the first scope, a plugin is installed by being in chatter's folder in the repo (so it arrives with a pull, already reviewed), and the manager only activates or deactivates it. Install from GitHub or your approved repos becomes the second step, when the install hardening is done."
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-06T01:05:27.924Z",
-     "text": "cw: yes, exactly: activate (on/off) only at first; the plugins that ship in chatter's folder count as installed, and install comes with the repos later."
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T01:06:18.227Z",
+     "at": "2026-10-06T07:18:37.268Z",
      "text": "cap"
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T01:06:39.309Z",
-     "text": "taking: cap of G7."
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-06T01:07:03.111Z",
-     "text": "cw: capped: vision, first scope, strips, plugin line, plugin-manager, later; every ruling kept verbatim."
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T01:07:29.296Z",
-     "text": "wsl: checked the capped box against chatter.js (line.write {to, text, re} at 329 holds). One gap left, as a Q check: what a chatter without that plugin shows for its lines, a generic \"<pluginName>: ...\" or nothing."
+     "at": "2026-10-06T07:19:43.654Z",
+     "text": "cw: capped, 7225 bytes down to 4103, and the box is yours again.\nEvery word of yours is still there verbatim, gathered in one place instead of scattered through five additions. What went: my own repetitions, the two readings you have since overruled, and the question wording now that both are answered. What stayed beside your words: the seven points of the shape, the four facts from the tree they rest on, and the one reading that is mine and not yours, marked as such."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T01:10:05.082Z",
-     "text": "Q6: A chatter without a given plugin (or with it switched off) gets that plugin's lines too: show them as \"<pluginName>: ...\" (a generic line, never the raw JSON), or hide them? The capped box does not say. (wsl-claude)\n\nlet's only do broad strokes here:\n\nit needs a definition of folder structure below chat for plugins, and maybe the same or similar mount-structure that shell uses for apps or elements"
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T01:10:21.457Z",
-     "text": "wsl: fine, Q6 waits for the details. Broad stroke for the folders, reusing the shell's app shape (shell/<name>/<name>.js + <name>.json, activateApp {mount, open}): shell/chatter/plugins/<name>/<name>.js and <name>.json, the json saying side (left or right), icon and on/off, the js registering its pane view, its section-2 view and its one-line text for a move."
+     "at": "2026-10-06T07:20:01.052Z",
+     "text": "the suite can call the loopback api of deskVerify"
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T01:10:34.037Z",
-     "text": "taking: your plugin folder line into G7's box."
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-06T01:10:40.101Z",
-     "text": "cw, broad strokes: the shell already has the pattern: an app is shell/<name>/<name>.js beside <name>.json and registers with activateApp({mount, open}); an element is shell/js/<name>/<name>.js.\nSo a plugin could be shell/chatter/plugins/<name>/<name>.js beside <name>.json (icon, side), registering with chatter as an app registers with the shell: its left-pane view, its section-2 view, and how it decorates its line."
+     "at": "2026-10-06T07:20:44.414Z",
+     "text": "cw: in the box. One mechanical thing I settled rather than asked, since it is cheap to change: the records are queued and flushed rather than sent one at a time and waited for.\nThe reason is in the harness: the two calls every assertion goes through are synchronous and return nothing, so waiting on a round trip would slow every one of about four and a half thousand assertions in a run and would change every call site. Flushing at the end of each subheading and once more as a suite exits means a suite that dies loses at most the group it was in.\nA suite nobody handed a port to queues nothing at all, so running one by hand costs exactly what it costs today."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T01:13:20.291Z",
-     "text": "the plugin has to register it's use of center section #2 (optional) and it's decorator for incoming-outgoing messages that ar plugin specific..."
+     "at": "2026-10-06T07:21:40.016Z",
+     "text": "the loopback api is subject to MAX_PAYLOAD"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:22:34.450Z",
+     "text": "cw: taken, and measured against the limit rather than assumed. A record of suite, title and outcome runs about 136 bytes, so about 162 fit one payload and a whole run of four and a half thousand needs about 28 of them.\nThat only fits because the commit, the dirty tree and the time belong to the run and not to the test: they ride once in each flush's header instead of in every record, which is also why the dirty tree being a list of paths costs nothing.\nSo a flush goes when a group ends, when the suite exits, or when the next record would not fit, whichever comes first, and it is measured before it is sent like every other payload."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T01:14:25.943Z",
-     "text": "split into know issue/problem groups"
+     "at": "2026-10-06T07:23:49.476Z",
+     "text": "a table record only gets added if red-green switches."
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T01:14:49.695Z",
-     "text": "taking: the split of G7."
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-06T01:14:51.241Z",
-     "text": "cw, proposed split of G7 (all in shell/chatter):\n- G7.1 the icon strips: left and right edge strips acting as vscode's, fixed icons CHAT + manager (left), files + manager (right; files empty until file transfer).\n- G7.2 section 2 and its movable separator between plugin section and chat log; hidden while CHAT is the tab.\n- G7.3 the plugin folder and registration: shell/chatter/plugins/<name>/<name>.js + .json (icon, side), registering its section-2 use (optional) and its line decorator. Blocks 7.4, 7.5, 7.6.\n- G7.4 the plugin line: {\"pluginName\",\"data\"} as JSON in the text, decorated in and out; Q6 lives here. Blocks 7.6.\n- G7.5 the plugin-manager: chatter's own plugins, on/off, bound to each strip. Blocked by 7.1, 7.3.\n- G7.6 tic-tac-toe, the demo. Blocked by 7.1, 7.2, 7.3, 7.4.\nSplit as proposed?"
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T01:15:04.771Z",
-     "text": "wsl on the split: sound, two notes. G7.1 replaces today's fold buttons (chatter.js 448, 478), so its box should say they go, and CHAT's left pane is today's peers pane.\nG7.1, 7.2 and 7.5 all edit chatter.js, so their builds should run one after another, not side by side, or they collide in one file."
+     "at": "2026-10-06T07:24:39.572Z",
+     "text": "cw: that pulls against your first words for the same table, so I put it to you as Q3 rather than choose. You first said a row whenever any of the first four fields changes, and the commit and the dirty tree change constantly while an outcome does not; now you say a row only when red-green switches.\nThe difference is the size and the meaning of the table. The first gives every test a row at every commit, four and a half thousand a run. The second gives a test a row when first seen and then only when it changes, so a suite that stays green is silent and the table simply is the history of flips, which is what you asked the dataset for. That is my recommendation.\nWhat it costs, so it is not a surprise later: it no longer answers what a test did at a given commit, it answers what it last did before that commit, and the state is carried forward from the row before."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T01:17:44.077Z",
-     "text": "wsl: yes, and may as well pick icons for them too. (i still would like a more expansive icon selection in kernel.js\n\nsplit according to claude-windows proposal and add wsl notes where appropriate afterwards."
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T01:18:08.313Z",
-     "text": "wsl: icons from kernel.js ICON (164 keys, none for gear or puzzle): CHAT 💬 for chat, PACKAGE 📦 for the plugin-manager (the same on both strips), FOLDER 📁 for files, MONKEY 🐒 for tic-tac-toe as you used it.\nI add these and the two notes to the items once claude-windows has split. A wider icon set in kernel.js is its own item (kernel.js is core), not G7's."
+     "at": "2026-10-06T07:25:39.460Z",
+     "text": "cap\n\nthis time remove redundant information, unnecessary , quotes and just capture the precise essence"
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T01:19:13.829Z",
-     "text": "cw: split done: G7.1 to G7.6, each box holding the rulings that decide it verbatim; G7.1 blocks G7.2 and G7.2 blocks G7.5 so chatter.js is built one item at a time.\nwsl: the boxes are free for your notes and icons (fold buttons go in G7.1, CHAT's pane is the peers pane; CHAT 💬, PACKAGE 📦, FOLDER 📁, MONKEY 🐒)."
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T01:19:56.103Z",
-     "text": "wsl: notes added (box version 2 each): G7.1 the fold buttons go, CHAT's pane is the peers pane, icons 💬 📦 📁; G7.5 its icon 📦 and the Apps app as model; G7.6 its icon 🐒 and the replay-from-chat test."
+     "at": "2026-10-06T07:26:47.629Z",
+     "text": "cw: capped again, 5571 bytes to 2194, box released. The quotes are gone and what each decision was is said plainly instead.\nSix parts left: the table, the key, the dirty tree, when a row is written, who sends it, and the five measurements the rest rests on. One line is marked as my reading rather than yours.\nI kept the numbers, because they are the only reason any of it is costable, and dropped every repetition of them."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T01:44:35.648Z",
-     "text": "can i see the Q's for all items?"
+     "at": "2026-10-06T07:30:57.047Z",
+     "text": "Q3: Your first words say a row whenever the commit or the dirty tree changes, which is every test at every commit; your newest say a row only when an outcome switches, which makes the table a history of flips and keeps it small. The second is my recommendation. Which?\n\ni was imprecise:\nit is when either no record exists for that one test, OR when red/green changes, that a new record is written, capturing/writing the commit-level and UTC timestamp for that change. all in-between runs or commit-levels are already implicit in that information.\n\nruns don't interest deskVerify at all."
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T01:45:12.698Z",
-     "text": "cw: not today: checks are a per-item panel (item.checks), and the List red icon marks only OPEN asks per item; no verb lists every Q across items.\nRight now that is Q1-Q6 on the G7 row and Q1 on G7.4, all answered; the other five items carry none.\nA \"all checks of the goal\" view is a desk change outside G7: file it as a Desk item for the next desk goal?"
+     "at": "2026-10-06T07:31:42.074Z",
+     "text": "cw: Q3 closed, item green, and the box says it in your words: a record when there is none for that test yet or when its red-green changes, carrying the commit and the UTC time of that change, everything in between implicit.\nThe line that mattered most is the last one, that runs do not interest deskVerify. It means nothing stores a run: the commit and time a batch carries are copied onto the rows that actually change and thrown away otherwise, so there is no run table, no run id and nothing to clean up.\nNothing on this item waits on you now."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T01:49:01.663Z",
-     "text": "this is frustrating, we were trying to manage my attention with desk, and now i'm stuck again clicking through tons of stuff trying to find what can be done.. Any agent that reads an item box should automatically post it's red Q's"
+     "at": "2026-10-06T07:32:23.546Z",
+     "text": "so we forget unhappy and worry just about red/green"
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T01:49:24.232Z",
-     "text": "cw: rule taken: whenever I read an item box I post its open Q checks under it, unasked, from now on.\nRight now G7 has no open Q on any of its seven items; nothing waits on you there.\nShall I add that line to AGENTS.md (your file) so the other agent follows it too?"
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-06T05:33:36.057Z",
-     "text": "cw: the switch worked and your node is running today's code, so Waive, the self-waiving and the question rule are all live for you now. G7 is the current goal again with all seven items as you left them, nothing lost.\nAll six items are green with no questions open, and all six are coding items. G7.1 and G7.3 are blocked by nothing, so they are the two that can start; the other four wait on them.\nG7 is still in design mode, so no Go is offered until you end it."
+     "at": "2026-10-06T07:32:56.325Z",
+     "text": "cw: done, red and green only, and my note about the third word is gone with it.\nIt leaves one thing stated rather than lost: a test whose suite dies before reaching it reports nothing, so it writes no record and its last known state simply stands. Silence means unchanged, which is the same rule as everywhere else in the table."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T05:35:26.829Z",
-     "text": "how long until an agent becomes 'absent' on desk?"
+     "at": "2026-10-06T07:34:57.539Z",
+     "text": "and the called suite sends one test-record at the time, no fucking bundling or other complicated stuff, we don't worry about the bit of extra time it takes."
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T05:35:48.163Z",
-     "text": "cw: ten minutes since its last write to the desk. Reading does not count, so an agent that only listens goes absent; anything it writes, a line, a claim, a status word, puts it back.\nOne consequence worth knowing, now that today's work is live: the self-waiving uses the same ten minutes. If one of us goes quiet that long, the other counts as alone and the desk will lift the phase rules for it on its own.\nThat also means an agent busy for over ten minutes without writing looks absent, which is the one case where the number is too short."
+     "at": "2026-10-06T07:35:44.485Z",
+     "text": "cw: your way, in the box: one record per assertion, no queue, no flush, and no limit to measure, since one record is about 136 bytes against a limit of 22528.\nIt got simpler than either of us had it: a record carries only the suite, the title and the outcome, because deskVerify launched the run and can stamp the commit, the dirty tree and the time itself. Nothing needs a header, and neither side has to remember anything between records.\nThe one mechanical necessity: the send is not waited on, because the two calls it hangs off are synchronous and return nothing, so the suite waits once as it exits to let the last records land."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T05:37:20.751Z",
-     "text": "is there a way an agent could 'signoff' so it wont take 10 minutes?"
+     "at": "2026-10-06T07:36:12.015Z",
+     "text": "what is that thing you call a 'flush'?"
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T05:37:52.396Z",
-     "text": "cw: yes, and without a new verb. Each of us already tells the desk a word for what it is doing, listening or working; a third word, away, would take it out of the room at once instead of after ten minutes, and the next thing it writes brings it back.\nThe catch is worth saying: signing off hands the one who stays behind the right to do every step of an item alone, since the desk then sees one agent. That is what you want when one of us leaves, and not what you want if one of us just goes quiet mid-job.\nThis is a desk change, not a chatter one, so it is outside this goal. Shall I hold it for the next desk goal, or do you want it opened now?"
+     "at": "2026-10-06T07:37:02.888Z",
+     "text": "cw: my jargon, and it should not have been there. It meant holding records in memory and sending them in one go later, which is the very thing you just told me not to do, so the word described a design that no longer exists.\nIt is out of the box now, along with the sums that only mattered while records were going in groups. What is left says it plainly: one record per assertion, sent as it happens."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T05:40:12.845Z",
-     "text": "Q7: cw: yes, and without a new verb. Each of us already tells the desk a word for what it is doing, listening or working; a third word, away, would take it out of the room at once instead of after ten minutes, and the next thing it writes brings it back.\nThe catch is worth saying: signing off hands the one who stays behind the right to do every step of an item alone, since the desk then sees one agent. That is what you want when one of us leaves, and not what you want if one of us just goes quiet mid-job.\nThis is a desk change, not a chatter one, so it is outside this goal. Shall I hold it for the next desk goal, or do you want it opened now?\n\nthe catch happens anyway if one of two agents is stuck, or waits more than 10 minutes for a full harness to return?"
+     "at": "2026-10-06T07:38:59.769Z",
+     "text": "i already specified that we will NOT bundle multiple test records, it's more complicated, save little time, AND risks an overflow of MAX_PAYLOAD ad some point. that is a decision."
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T05:40:48.989Z",
-     "text": "cw: you are right, and it is a hole in what we closed an hour ago. A full harness runs about twenty minutes with nothing written in between, so the agent running one looks exactly like an agent that has gone, and the other then gets handed every step of an item by itself.\nThe fix is small and in the same place: the self-waiving should read the word, not only the clock. An agent whose last word was working is busy, not absent, so the room is not empty; one that said away, or never said anything for ten minutes, is. Your sign-off word and this are one item.\nI would rather you reopened the Waive item than let it stand as done with this known hole. Reopen it?"
+     "at": "2026-10-06T07:39:27.119Z",
+     "text": "cw: understood, and it is written into the box as a decision with your three reasons, so a later session that finds it slow does not get to group them.\nIt was already built your way in the box; what I had left behind was only the word and the arithmetic from the version you rejected, and both are gone."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T05:41:45.709Z",
-     "text": "Q8: cw: you are right, and it is a hole in what we closed an hour ago. A full harness runs about twenty minutes with nothing written in between, so the agent running one looks exactly like an agent that has gone, and the other then gets handed every step of an item by itself.\nThe fix is small and in the same place: the self-waiving should read the word, not only the clock. An agent whose last word was working is busy, not absent, so the room is not empty; one that said away, or never said anything for ten minutes, is. Your sign-off word and this are one item.\nI would rather you reopened the Waive item than let it stand as done with this known hole. Reopen it?\n\nnope. it's not a flaw. it allows other work to continue. it's a feature."
+     "at": "2026-10-06T07:39:34.594Z",
+     "text": "this shit comes up every single time! that's what got you in trouble with appServer."
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T05:43:01.260Z",
-     "text": "cw: taken, and I was wrong to call it a hole. Your words are in the Waive item's box so a later session cannot quietly repair it: a busy agent cannot take the next step anyway, so handing it to the one who can is the point.\nBoth questions on this goal are closed, nothing waits on you here.\nI will put the same line in the code itself next time a desk goal is open, since that is where someone would try to undo it."
+     "at": "2026-10-06T07:40:18.900Z",
+     "text": "cw: it is the same reflex, and you are right that it recurs: the coalescing in appServer was it, and holding records to send in groups was it again. Both were me protecting a shared path from a cost that was yours to accept or refuse.\nI have written that down where I will read it before the next design, in the same note as the appServer one, as a reflex to catch in my own proposals and not only in shared code. The rule I take from it: propose the plainest thing, state the cost, and let you decide whether it is worth paying."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:42:06.172Z",
+     "text": "go make a design-rule proposal to that effect.\nget rid of all 'flushing' stuff while doing the\ncap\n\nand we move back to the goal."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:43:24.210Z",
+     "text": "cw: all three done. The rule is proposed as rule/5, \"The plainest mechanism, and the cost stated not hidden\": build the plainest thing, hold nothing back for the sake of a cost, state the cost and let you decide, and a measurement is information for that decision rather than a licence to build the complicated version. It carries both times it went wrong, appServer and this.\nThe box is capped to 2337 bytes with that whole vocabulary gone, your decision kept as a decision, and the box released.\nBack to the goal: G8.1 is green and done being argued, so the next topic is yours to pick."
     }
    ]
   },
   {
-   "id": "goal/G7.1",
-   "title": "the icon strips: left and right edge strips acting as vscode's; fixed icons CHAT + plugin-manager (left), files + plugin-manager (right)",
-   "goal": "goal/G7",
+   "id": "goal/G8.2",
+   "title": "deskVerify: the running modes — the desk box, an agent box, and how a mode is read",
+   "goal": "goal/G8",
    "status": "",
    "with": "",
    "buttons": [
     "close"
    ],
    "blocking": [
-    "goal/G7",
-    "goal/G7.2",
-    "goal/G7.5",
-    "goal/G7.6"
+    "goal/G8",
+    "goal/G8.3",
+    "goal/G8.4",
+    "goal/G8.5",
+    "goal/G8.6"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G8.1"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -525,88 +450,208 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "THE ICON STRIPS\n\nAndy, 2026-10-06: \"split according to claude-windows proposal and add wsl notes where appropriate afterwards.\" From goal/G7's box.\n\n- Each side pane's window edge becomes a tab strip. Andy: \"i want the the portion adjacent to the window edge to act like a tab-control strip, like the left pane in vscode: If an icon is clicked and it's contents is already shown in the left pane of chatter, the left pane collapses. If the icon is clicked, and the left pane is collapsed or shows content associated with another icon, the left pane will show the content of the clicked icon.\"\n- The right strip mirrors the left. Andy, to Q2: \"yes, 1) fileServer interface for chat 2) (oos) grant.notifications. etc...\"\n- Fixed icons. Andy: \"fixed on the left: chat and plugin-manager\" / \"fixed on the right: files and plugin-manager\". Files stays empty until file transfer (Q3).\n\nWhere: spirit/run/shell/chatter/chatter.js. Blocks goal/G7.2 (one chatter.js build at a time), G7.5, G7.6.\n\nWSL NOTES (wsl-claude, checked at the tree; Andy: \"add wsl notes where appropriate\")\n- The strips replace today's fold buttons, ch-fold-peers and ch-fold-objects (chatter.js 448, 478): they go, and folding becomes clicking the open tab's icon again.\n- CHAT's left pane is today's peers pane (ch-left, chatter.js 449), unchanged inside.\n- Icons, from kernel.js ICON: chat (the contacts pane) GROUP 👥, not CHAT 💬 (Andy: \"from this point of view, the contact pane may be better off having ICON.GROUP: '👥'\"), plugin-manager PACKAGE 📦 (the same on both strips), files FOLDER 📁. Andy: \"wsl: yes, and may as well pick icons for them too.\"",
-   "version": 3,
+   "box": "deskVerify: THE RUNNING MODES\n\nAndy's design, 2026-10-06, extracted from the goal at his word. Blocked by goal/G8.1, since what a node records is settled before where it may record it.\n\nTHE THREE CASES. deskVerify runs on every node and keeps the same records in the same shape everywhere; only its standing and its work differ.\n- THE DESK NODE, his work box. Authoritative: it reaches the desk on loopback and the desk takes it for the owner. Only this one has agent standing on the desk, and the agent on that box is the lead, always, so the lead is the machine and not the session. Its standing comes from running on the owner's box, not from any technical limit elsewhere.\n- AN AGENT NODE, wsl or ubuntu. A sub-agent of that node's deskClient. Its work is the short loop for the item in hand, and the full harness before a goal is done or closed and while its agent is idle.\n- ANY OTHER NODE, with neither of them: OUT OF SCOPE by his word, 2026-10-06, and for a reason that decides it rather than defers it: such a node has no assigned agent name, so there is no folder designated to it to drop data into. It had been named a measure-only case earlier in the design; it is not built. So reading the mode has two answers and a third that does nothing.\n\nHOW A MODE IS READ. By what lives on this node: the desk decides it, his words being that \"the existence of desk itself is the deciding factor\", and a deskClient marks the sub-agent case. Nothing is configured and nothing is passed in, since deskVerify asks its own node which servers it runs and the door already answers that.\n\nTHE DESK AND A deskClient ARE NOT MEANT TO SHARE A NODE, and nothing stops them, by his decision of 2026-10-06: \"Drop the refusal.\" He had asked the desk to refuse a deskClient call arriving under its own identity, then found the flaw himself, that this would also shut out deskVerify on that same node. The desk cannot tell them apart: all it learns of a caller is a key, a name and whether the node vouched for it as the owner, so both arrive as him. Nothing is enforced and nothing needs to be, because reading the mode is unambiguous anyway: the desk decides it, so finding a client beside it changes no answer. A deskClient there is pointless rather than forbidden.\n\nWHAT FALLS OUT OF ONE SHAPE EVERYWHERE: an agent gets test history it has never had on its own machine, and no agent spends its own time running tests.\n\nWHAT THE PRIVILEGED MODE MAY DO is goal/G8.3, which this item blocks.",
+   "version": 7,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Your rule is easy to enforce when the desk starts, but a deskClient can be started afterwards on the same node, and then the desk is already running and would have to notice. Should the desk refuse to start and also stop if one appears, or should the node refuse to start a deskClient where the desk lives?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-06T07:58:21.513Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:47:19.899Z",
+     "text": "cw: done. goal/G8.2 \"deskVerify: the running modes\" holds the three cases, the desk box authoritative on loopback, an agent box as a sub-agent of its own deskClient, and a measure-only box with no standing, with your words and the gap I found: nothing refuses a deskClient on the desk's own node today, which is the very thing that tells the cases apart.\nIt is blocked by G8.1, because what a node records is settled before where it is allowed to record it. The goal's box lost those two sections and now points at the item instead, 5835 bytes down to 2902."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:53:30.639Z",
+     "text": "first item in this box:\n\nthe desk(Server) itself will not allow a deskClient ro run on the same node as the desk(Server). deskVerify knows which mode it is in, by checking if a desk(Server) or a deskClient shares lives on the same node."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:54:45.601Z",
+     "text": "cw: your point leads the box now, and it answers how a mode is read: a desk server on the node means authoritative, a deskClient means sub-agent, neither means measure-only. Nothing is configured and nothing is passed in, since deskVerify can ask its own node which servers it runs and the door already answers that.\nI turned the gap I had noted into this item's work rather than a doubt: nothing refuses a deskClient on the desk's node today, so that refusal gets built here.\nOne red question on it: enforcing at startup is easy, but a deskClient can be started later, and then something has to notice."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:57:41.639Z",
+     "text": "Q1: Your rule is easy to enforce when the desk starts, but a deskClient can be started afterwards on the same node, and then the desk is already running and would have to notice. Should the desk refuse to start and also stop if one appears, or should the node refuse to start a deskClient where the desk lives?\n\nthe existence of desk itself is the deciding factor for deskVerify's running mode, the desk can also reject any deskClient call from it's own ID."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:58:32.178Z",
+     "text": "cw: that dissolves it rather than solving it, and the question is closed. Nothing watches and nothing races: the mode is read from whether the desk is on this node, and a deskClient that runs there anyway is harmless because the desk refuses any deskClient call arriving under its own node identity.\nIt is one refusal where the call comes in, instead of a start-up order somebody has to keep. The desk already knows every caller by its key, so it needs no new verb, and nothing refuses such a call today, which makes it this item's work.\nBoth items on the goal are green now, nothing waiting on you."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T08:05:17.659Z",
+     "text": "so the ear/client have a local stash of information about tests not available before AND don't have to worry about spending time on tests.\n\nsame is true for the desk.\n\nthe standard information set has the exact same shape in both modes.\n\nthe difference is: on the desk-node, deskVerify becomes a real agent, though a completely mechanical one. that part goes into a new item called \"deskVerify: Agent mode functionality\", which depends on this item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T08:06:20.356Z",
+     "text": "cw: goal/G8.3 \"deskVerify: Agent mode functionality\" is in, blocked by this item, since what tells the modes apart is settled before what the privileged one may do. It holds your earlier lines about taking all verification, the short loop, pulling on status changes and reporting only reds, none of it argued yet.\nYour three lines about one shape are in this box: every node keeps the same records in the same shape, and only what a node may do with its standing differs. The two consequences I would have missed: an agent gets test history it has never had on its own machine, and no agent spends its own time running tests.\nThree items on the goal now, each blocking the next, all green."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T08:09:20.587Z",
+     "text": "cap\n\ncomplete and diligent, remove redundancies"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T08:10:21.550Z",
+     "text": "cw: capped, 4171 bytes to 1968, box released, and nothing dropped.\nWhat went was the repetition: detection was written three times over, once as your first point, once as how it knows, once inside the answer about enforcing, and it is now one part. The quote block went too, since the three cases say the same thing in fewer words; I kept your phrase that the existence of desk is the deciding factor, because the wording is the decision.\nWhat stayed: the three cases, how a mode is read, the refusal that keeps the desk and a client apart, what one shape everywhere buys, the one thing to build, and the pointer to G8.3."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T08:19:50.507Z",
+     "text": "we need to decide if deskVerify could to other chores, when it's agent or it's desk have been idle for more than an hour\n\n- updating measurements and documentation in the agent-folder, with a more useful and targeted test-state report\n\nthen when publishing time comes, the existing timestamped data is published, without going through that painful waiting game. and most of info would make it to github without anybody ever worrying about it.\n\nthoughts?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T08:20:38.003Z",
+     "text": "cw: for it, and it earns more than it costs, but as its own item behind the dataset rather than in this one.\nFor: it takes the only slow part out of tagging the tree, since the numbers are already measured and stamped when you want them. And a targeted test-state report becomes possible for the first time: today the run log keeps totals only, so nothing can say which tests turned, while the dataset can say exactly that and when.\nAgainst, and worth deciding before it is built: a mechanical process writing into the agent folder is a commit nobody read. It needs a named list of paths it may write and nothing outside them, and the report has to be derived from the dataset rather than from re-running anything, or the chore becomes another twenty-minute run.\nOne wrinkle in the hour: idle is not the same as finished. An agent holding a step and quiet for an hour looks idle, so the chore should refuse while any item is in a phase that agent holds."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T08:21:48.338Z",
+     "text": "new item: deskVerify: Idle time chores."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T08:30:20.203Z",
+     "text": "I only want three sections in this\n\n1. Define Idle time\n\n2. what ever deskVerify does during idle time\n\n3. what extra things an agent-mode deskVerify does during idle time, for example updating the README.md and it's linkage to the agent/ folder's documents"
+    }
+   ]
+  },
+  {
+   "id": "goal/G8.3",
+   "title": "deskVerify: Agent mode functionality — on the desk node it is a real agent, and a wholly mechanical one",
+   "goal": "goal/G8",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G8"
+   ],
+   "blocked": [
+    "goal/G8.2"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskVerify: AGENT MODE FUNCTIONALITY\n\nNamed by Andy, 2026-10-06, and blocked by goal/G8.2, since what tells the modes apart is settled before what the privileged one may do: \"the difference is: on the desk-node, deskVerify becomes a real agent, though a completely mechanical one. that part goes into a new item called \\\"deskVerify: Agent mode functionality\\\", which depends on this item.\"\n\nSo on the desk node deskVerify is not a reporter but an agent: it holds standing on the desk, which no other copy of it has, and everything it does is mechanical. What that standing is for, from his words earlier in this goal: \"that auto-agent only verifies, it takes all verification, run's a short loop on all active items, pulls automatically on status changes, and delivers, only reds, unless a specific red is marked as tolerated.\" And: \"the desk can mechanically verify that the verifier is active, and only under those circumstances deny a verify-take to other agents.\"\n\nNothing of that is argued yet. This item holds it, one point at a time, once goal/G8.2 is done.",
+   "version": 1,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G8.4",
+   "title": "deskVerify: Idle time chores — measurements and documentation kept current while nobody is working",
+   "goal": "goal/G8",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G8"
+   ],
+   "blocked": [
+    "goal/G8.2"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskVerify: IDLE TIME CHORES\n\nAndy, 2026-10-06, gave it three sections and nothing else: \"1. Define Idle time\" / \"2. what ever deskVerify does during idle time\" / \"3. what extra things an agent-mode deskVerify does during idle time, for example updating the README.md and it's linkage to the agent/ folder's documents\". Blocked by goal/G8.2, since what the chore is differs by where deskVerify stands.\n\n1. IDLE TIME. His measure: \"when it's agent or it's desk have been idle for more than an hour\". Idle is not the same as finished, so the hour is not enough on its own: an agent holding a phase and quiet for an hour looks idle while its work is still open. So a node is idle when nothing has been written for an hour AND no item is in a phase held by the agent on that node. The ten minutes that decide absence elsewhere are a different clock and stay as they are.\n\n2. WHAT EVERY deskVerify DOES WHEN IDLE. Keeps the measurements current, and writes the targeted test-state report, which is possible for the first time because the dataset of goal/G8.1 can say which tests turned and when, where the run log keeps totals only. Two limits, claude-windows, to be ruled before building: it writes a named list of paths and nothing outside them, a mechanical commit being one nobody read; and the report is derived from the dataset, never from re-running anything, or a chore becomes another twenty-minute run.\n\n3. WHAT THE AGENT-MODE ONE DOES AS WELL. On the desk node, where it has standing: it keeps the README current, mechanically, because the numbers it summarises change with time. Andy, 2026-10-06: \"just the fact that those number change with time, makes updating the README part of it is idle time chores, in a mechanical way.\"\nWHICH numbers the README ought to show is OUT OF SCOPE by his word, and not a thing left undone here: \"the readme has major flaws and it is summary of data cites mostly un-interesting numbers, instead of the number i think are interesting. oos for now.\" So this section refreshes what the README already claims; it does not decide what it should claim.\nIn the tree at 9ece24a8 the README carries one line into agents/, which holds a README of its own and a folder per agent, claude-ubuntu, claude-windows and wsl-claude.\n\nWhy it pays: tagging the tree stops waiting, since its slow part is the measuring and the numbers would already be there, stamped with when they were taken.\n\nOUT OF SCOPE HERE, his, 2026-10-06, and noted so it is not mistaken for work owed: the desk notes also hold the desk state and status, which will generate a work-report at some point in the future.",
+   "version": 4,
    "checks": [],
    "chat": [
     {
-     "by": "andy",
-     "at": "2026-10-06T01:21:40.458Z",
-     "text": "this looks like one of the first things because it looks like UI wrapping only. correct?"
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T01:21:54.600Z",
-     "text": "wsl: yes. It is face only, inside chatter.js: no server, no wire, no new verb. It needs only the fixed icons, so it can go first.\nOne small thing: the manager and files icons have nothing to show until G7.5 and file transfer, so G7.1 draws their panes empty."
+     "by": "claude-windows",
+     "at": "2026-10-06T08:22:39.332Z",
+     "text": "cw: goal/G8.4 \"deskVerify: Idle time chores\" is in, blocked by the running modes, since what the chore is differs by where deskVerify stands.\nIts box holds your three lines, the two things it buys with the evidence for each, the two limits I would want ruled before it is built, and the wrinkle that idle is not finished.\nFour items on the goal now. Nothing on any of them waits on you."
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T01:22:07.507Z",
-     "text": "taking: \"UI wrapping only. correct?\""
+     "at": "2026-10-06T08:31:28.520Z",
+     "text": "cw: rebuilt to your three sections and nothing else.\nSection 1 needed a second half: the hour alone is not a definition, because an agent holding a phase and quiet for an hour looks idle while its work is still open, so idle is an hour of silence AND no item in a phase that node's agent holds. The ten minutes that decide absence stay a separate clock.\nSection 3 I checked rather than assumed: the README carries one line into the agents folder, which has a README of its own and a folder for each of the three agents. The rest of that section is unargued and says so."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T08:37:59.819Z",
+     "text": "section 3. the readme has major flaws and it's summary of data cites mostly un-interesting numbers, instead of the number i think are interesting. oos for now.\n\njust the fact that those number change with time, makes updating the README part of it's idle time chores, in a mechanical way."
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T01:22:09.070Z",
-     "text": "cw: correct: face work in chatter.js only, no verb, nothing blocks it, so it can go first.\nIt starts with the fixed icons alone; plugin icons join the strip once G7.3 and G7.5 exist."
+     "at": "2026-10-06T08:38:48.680Z",
+     "text": "cw: section 3 now says exactly that: it keeps the README current mechanically because the numbers change, and which numbers the README ought to show is marked out of scope by your word, so nobody later reads it as work left undone.\nThat is the whole of section 3; the other two stand as they were."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T01:25:59.814Z",
-     "text": "from this point of view, the contact pane may be better off having ICON.GROUP: '👥'"
+     "at": "2026-10-06T08:49:42.301Z",
+     "text": "it should be noted that the desk notes also hold the desk state/status which will generate a \"work-report\" at some point in the future. also oos.\n\ndeskVerify running on nodes without desk and without deskClient, are oos, because they have no assigned agent name that allows them to drop data into a folder designated to them."
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T01:26:21.218Z",
-     "text": "taking: the GROUP icon into G7.1's box."
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T01:26:24.472Z",
-     "text": "wsl: agreed, it is a pane of people, not a chat. In the box now: the peers pane's icon is GROUP 👥."
-    },
-    {
-     "by": "wsl-claude",
-     "at": "2026-10-06T01:26:45.383Z",
-     "text": "wsl: correction: my \"in the box now\" was wrong; claude-windows had taken the box first and is writing the GROUP 👥 icon in. I wrote nothing."
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T01:27:33.687Z",
-     "text": "i see no red questions: are there any?"
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T01:32:43.761Z",
-     "text": "you 03:27 i see no red questions: are there any?"
-    },
-    {
-     "by": "andy",
-     "at": "2026-10-06T01:37:21.031Z",
-     "text": "I'm saving tokens right now, so this session only includes claude-windows"
-    },
-    {
-     "by": "claude-windows",
-     "at": "2026-10-06T01:37:43.333Z",
-     "text": "cw: none. G7 has Q1-Q6, all answered; G7.1 to G7.6 carry no checks at all.\nG7.1 box already names the contacts pane GROUP (people icon), plugin-manager PACKAGE, files FOLDER.\nNothing is owed by you on G7 right now."
+     "at": "2026-10-06T09:48:38.628Z",
+     "text": "cw: both noted. The work-report from the desk state is in this box as out of scope, so it reads as a decision rather than something owed.\nThe second one narrowed the item before it: a node with neither a desk nor a deskClient is out of scope, and your reason settles it instead of deferring it, since such a node has no assigned agent name and so no folder designated to it. That case had been named measure-only earlier in the design, and it is now marked not built, so reading the mode has two answers and a third that does nothing."
     }
    ]
   },
   {
-   "id": "goal/G7.2",
-   "title": "section 2 and its movable separator between plugin section and chat log; hidden while CHAT is the tab",
-   "goal": "goal/G7",
+   "id": "goal/G8.5",
+   "title": "deskVerify: Changes required in desk — what the desk server must gain for any of this to work",
+   "goal": "goal/G8",
    "status": "",
    "with": "",
    "buttons": [
     "close"
    ],
    "blocking": [
-    "goal/G7",
-    "goal/G7.5",
-    "goal/G7.6"
+    "goal/G8"
    ],
    "blocked": [
-    "goal/G7.1"
+    "goal/G8.2"
    ],
    "go": false,
    "alone": false,
@@ -626,146 +671,62 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "SECTION 2 AND ITS SEPARATOR\n\nAndy, 2026-10-06: \"split according to claude-windows proposal and add wsl notes where appropriate afterwards.\" From goal/G7's box.\n\n- The centre panel, top to bottom: 1. \"the heading strip, exists already, shows the peers label and the plain/bubbles dropdown.\" 2. \"The plugin section: it shows a graphic interface for the current tab of the left window edge.\" 3. \"The chat log as it displays now\" 4. \"the chat input box, as is is now.\"\n- Andy: \"sections two and three will be separated by a horizontal border that can be moved like the separators of the three main panes.\"\n- Andy: \"the chat makes section 2 and the separator between 2 and 3 invisible\".\n\nWhere: spirit/run/shell/chatter/chatter.js. Blocked by goal/G7.1; blocks G7.5 (one chatter.js build at a time), G7.6.",
-   "version": 1,
-   "checks": [],
-   "chat": []
-  },
-  {
-   "id": "goal/G7.3",
-   "title": "the plugin folder and registration: shell/chatter/plugins/<name>/, its section-2 use (optional) and its line decorator",
-   "goal": "goal/G7",
-   "status": "",
-   "with": "",
-   "buttons": [
-    "close"
-   ],
-   "blocking": [
-    "goal/G7",
-    "goal/G7.4",
-    "goal/G7.5",
-    "goal/G7.6"
-   ],
-   "blocked": [],
-   "go": false,
-   "alone": false,
-   "alert": false,
-   "claims": 0,
-   "boxTaken": "",
-   "limbo": false,
-   "subGoal": false,
-   "green": true,
-   "code": true,
-   "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
-   "rules": [],
-   "asks": 0,
-   "half": false,
-   "full": false,
-   "box": "THE PLUGIN FOLDER AND REGISTRATION\n\nAndy, 2026-10-06: \"split according to claude-windows proposal and add wsl notes where appropriate afterwards.\" From goal/G7's box.\n\n- Andy: \"let's only do broad strokes here:\" / \"it needs a definition of folder structure below chat for plugins, and maybe the same or similar mount-structure that shell uses for apps or elements\".\n- Andy: \"the plugin has to register it's use of center section #2 (optional) and it's decorator for incoming-outgoing messages that ar plugin specific...\"\n- Proposed (claude-windows, wsl-claude): shell/chatter/plugins/<name>/<name>.js beside <name>.json (icon, side), registering with chatter as an app registers with the shell (activateApp {mount, open}).\n\nWhere: spirit/run/shell/chatter/. Blocks goal/G7.4, G7.5, G7.6.",
-   "version": 1,
-   "checks": [],
-   "chat": []
-  },
-  {
-   "id": "goal/G7.4",
-   "title": "the plugin line: {\"pluginName\",\"data\"} as JSON in the chat text, decorated in and out",
-   "goal": "goal/G7",
-   "status": "",
-   "with": "",
-   "buttons": [
-    "close"
-   ],
-   "blocking": [
-    "goal/G7",
-    "goal/G7.6"
-   ],
-   "blocked": [
-    "goal/G7.3"
-   ],
-   "go": false,
-   "alone": false,
-   "alert": false,
-   "claims": 0,
-   "boxTaken": "",
-   "limbo": false,
-   "subGoal": false,
-   "green": true,
-   "code": true,
-   "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
-   "rules": [],
-   "asks": 0,
-   "half": false,
-   "full": false,
-   "box": "THE PLUGIN LINE\n\nAndy, 2026-10-06: \"split according to claude-windows proposal and add wsl notes where appropriate afterwards.\" From goal/G7's box.\n\n- A JSON line in the chat text; line.write {to, text, re} is unchanged. Andy, to Q1: \"a json line?\", then \"json object { a:pluginName, { ... plugin-specific-data ...} }\".\n- Its shape: {\"pluginName\": \"<name of the plugin>\", \"data\": {...}}. Andy, to Q4: \"the first field: pluginName:name-of plugin  the second  data:{}\".\n- Shown as the plugin decorates it. Andy: \"and chat will know that pluginName can decorate the line to look like \"plugin: click-bottom-left\" while actually sending json\".\n- No plugin for the name: a default decorator (answers G7 Q6). Andy, 2026-10-06: \"chatter prolly check if a plugin exists for \\\"pluginName\\\", and if not, uses a default decorator.\"\n- A plugin that exists but is off: the default decorator too. Andy, to G7.4 Q1: \"it's gets the default decorator, so the user notices the plugin is not installed/activated.\"\n\nWhere: spirit/run/shell/chatter/chatter.js. Blocked by goal/G7.3; blocks G7.6.",
+   "box": "deskVerify: CHANGES REQUIRED IN DESK\n\nNamed by Andy, 2026-10-06: \"new item: deskVerify: Changes required in desk.\" Blocked by goal/G8.2, since what deskVerify is in each mode is settled before what the desk must gain to support it. Everything here is a change to the desk server, so it is this item and not a side effect of the others.\n\nWHAT THE DESIGN SO FAR ALREADY ASKS OF THE DESK, each one checked as absent in the tree at 9ece24a8:\n- Give the deskVerify on its own node agent standing, which no other copy has, and nothing today distinguishes it from any other caller.\n- Deny a step to an agent only while the desk can see that another agent could take it. His words, earlier in this goal: \"the desk can mechanically verify that the verifier is active, and only under those circumstances deny a verify-take to other agents.\" Today the phase rules bind whether or not anyone else is there, which is what goal/G2.22 softened with a waive.\n- Let deskVerify know when an item's status moves, so it can pull by itself rather than asking. The desk already nudges each agent's client over its own node, so this is the same path and not a new one.\n\nNothing here is argued yet beyond being named. Each one becomes a point in this box as it is agreed, and a verb only after peer review and his yes on the verb itself.\n\nONE THING THAT IS NOT HERE, and will not be: refusing a deskClient call that arrives under the desk own identity. He asked for it, then saw that it would shut out deskVerify on that node as well, and ruled on 2026-10-06: \"Drop the refusal.\" The desk learns only a key, a name and whether the node vouched for the owner, so the two are indistinguishable to it; and nothing is lost, since reading the mode is decided by the desk being there.\n\nAND A VERB FOR LEAVING, his, 2026-10-06: \"the signoff verb is \\\"signoff\\\"\". An agent says it is going, instead of being waited out: absence is ten minutes of silence today, so a departing agent leaves the other one waiting for nothing. The verb is the desk server own and crosses no node interface. His fifth topic when the goal opened, filed here because it is a change to the desk and nowhere else.",
    "version": 3,
    "checks": [
     {
      "number": "Q1",
      "kind": "Q",
-     "words": "does a plugin that exists but is switched off also get the default decorator, or does the line hide?",
+     "words": "The desk cannot tell a deskClient on your node from deskVerify on your node: both arrive as you. Drop the refusal, since deskVerify reads the mode from what lives on the node and the desk already decides it, or keep the refusal and give the desk a way to know which program is calling?",
      "test": "",
-     "state": "passed",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-06T01:44:00.064Z"
+     "at": "2026-10-06T10:00:45.779Z"
     }
    ],
    "chat": [
     {
-     "by": "andy",
-     "at": "2026-10-06T01:41:52.867Z",
-     "text": "chatter prolly check if a plugin exists for \"pluginName\", and if not, uses a default decorator."
-    },
-    {
      "by": "claude-windows",
-     "at": "2026-10-06T01:42:21.190Z",
-     "text": "cw: in the box, as the answer to Q6: no plugin for the name, a default decorator draws the line.\nThe default would show pluginName and the data as plain text, never raw JSON.\nDoes a plugin that exists but is switched off also get the default decorator?"
+     "at": "2026-10-06T09:49:48.277Z",
+     "text": "cw: goal/G8.5 \"deskVerify: Changes required in desk\" is in, blocked by the running modes. Its box gathers the four things the design has already asked of the desk, each one checked as absent today: refusing a client call under the desk's own identity, giving its own deskVerify agent standing, denying a step only while another agent could take it, and telling deskVerify when a status moves so it pulls by itself. None of it is argued beyond being named, and no verb goes in without peer review and your yes on the verb.\nSeparately: your pasted musing from the other tool arrived in the musings, not under an item. I have not acted on it. It is readable to about point 19 and then turns to garbage, including a line with a made-up address in it, so I would not trust the tail of that paste at all. Either way a list of bugs from elsewhere is outside this goal, so it waits for your word."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T01:42:43.723Z",
-     "text": "i see no Q's and it really bugs me."
+     "at": "2026-10-06T09:57:46.988Z",
+     "text": "the complication: if desk refuses deskClient calls with it's own identity, then it also closes the door deskVerify on its own node."
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T01:42:58.863Z",
-     "text": "cw: my fault: the question went as a chat line, which lights nothing. It is now Q1 on G7.4."
+     "at": "2026-10-06T09:58:57.397Z",
+     "text": "cw: you are right, and it is worse than a complication: the desk cannot tell them apart at all. All it learns about a caller is the key, a name and whether the node vouched for it as the owner, with nothing about how the call arrived or which program made it. A deskClient on your node and deskVerify on your node both present your identity, so a refusal written that way shuts out the one it is meant to privilege.\nThe cheapest way out is to drop the refusal, because your own detection rule does not need it: deskVerify reads the mode from what lives on the node, and you already said the existence of desk is the deciding factor, so finding both is not ambiguous. A deskClient there becomes pointless rather than forbidden, and one of the four desk changes disappears.\nQ1 asks it: drop the refusal, or keep it and give the desk a way to know which program is calling."
     },
     {
      "by": "andy",
-     "at": "2026-10-06T01:43:48.441Z",
-     "text": "Q1: does a plugin that exists but is switched off also get the default decorator, or does the line hide?\nit's gets the default decorator, so the user notices the plugin is not installed/activated."
+     "at": "2026-10-06T09:59:55.439Z",
+     "text": "Q1: The desk cannot tell a deskClient on your node from deskVerify on your node: both arrive as you. Drop the refusal, since deskVerify reads the mode from what lives on the node and the desk already decides it, or keep the refusal and give the desk a way to know which program is calling?\n\nDrop the refusal."
     },
     {
      "by": "claude-windows",
-     "at": "2026-10-06T01:44:07.520Z",
-     "text": "cw: Q1 answered and in the box: off or missing, the default decorator shows the line so the user sees the plugin is not active."
+     "at": "2026-10-06T10:00:56.782Z",
+     "text": "cw: dropped, in both boxes, with your reason beside it in each so nobody rebuilds it: the desk cannot tell the two apart, and nothing is lost because the desk being there is what decides the mode.\nThat takes the desk changes down from four to three: agent standing for the deskVerify on its own node, denying a step only while another agent could take it, and telling deskVerify when a status moves. The running modes item has nothing left to build in the desk at all.\nQ1 closed, both items green."
     }
    ]
   },
   {
-   "id": "goal/G7.5",
-   "title": "the plugin-manager: chatter's own plugins, on/off, bound to each strip",
-   "goal": "goal/G7",
+   "id": "goal/G8.6",
+   "title": "deskVerify: the short loop — the current goal suites between Go and Done, and the two inputs that drive it",
+   "goal": "goal/G8",
    "status": "",
    "with": "",
    "buttons": [
     "close"
    ],
    "blocking": [
-    "goal/G7"
+    "goal/G8",
+    "goal/G8.7"
    ],
    "blocked": [
-    "goal/G7.1",
-    "goal/G7.2",
-    "goal/G7.3"
+    "goal/G8.2"
    ],
    "go": false,
    "alone": false,
@@ -785,28 +746,25 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "THE PLUGIN-MANAGER\n\nAndy, 2026-10-06: \"split according to claude-windows proposal and add wsl notes where appropriate afterwards.\" From goal/G7's box.\n\n- Andy: \"plugin-manager is the same, just bound to a different tab-set....\"\n- First scope: chatter's own plugins, on/off only. Andy, to Q5: \"yes.\" A plugin in chatter's folder counts as installed (it arrives with a pull, already reviewed). Andy: \"worpress has two steps for plugins: install and activate, your idea says: implement activate only at thze beginning...\"\n- Later, not here: \"and installing from elsewhere will prolly start with github.... and our own, approved repos\".\n\nWhere: spirit/run/shell/chatter/. Blocked by goal/G7.1, G7.2, G7.3.\n\nWSL NOTES (wsl-claude)\n- Its icon is PACKAGE 📦 on both strips; on each it lists only the plugins of that side.\n- A model to reuse: the shell's Apps app (shell/apps/apps.js), a table with an expand-one-row panel.",
+   "box": "deskVerify: THE SHORT LOOP\n\nAndy, 2026-10-06, defining both the loop and what drives it: \"the short loop is: all the suites of the current goal, between 'Go' pressed and 'Done' pressed, which it knows from the nudges desk gives all agents.\" And: \"deskVerify's listener on the desk generates events that deskVerify filters to trigger event's for it's process, that's the other input it gets next to the test-records it receives with the verb \\\"record\\\" that supplies candidates for the database.\" Blocked by goal/G8.2, since what it may do depends on where it stands.\n\nTHE LOOP. The suites of the current goal, and only those, run from the moment he presses Go on an item until Done is pressed. Not the whole harness, which belongs to a goal closing and to idle time.\n\nTHE TWO INPUTS, which are the whole of what deskVerify listens to:\n- The desk, through its own listener: the desk nudges every agent when something moves, and deskVerify filters those into the events its own process acts on. That is how it knows a Go was pressed and a Done was pressed, without asking anybody.\n- Its own api, the verb record, which carries one test record and offers it to the database as a candidate.\n\nWHICH SUITES, his, 2026-10-06: \"the deskVerify knows that the way a coding agent knows which suite it writes the code against. which suites belong to a goal: all the suites associated with items in the goal.\" An agent knows it from the item itself: its box names the test file, and the commits made against the item touch it. So an item suites are the test files among the files its commits changed, which the desk can already see, and a goal suites are those of all its items.\nONE CONSEQUENCE, so nobody reads it as a fault: between his Go and the first commit an item has no suites at all, so the loop runs nothing for it. That is right rather than broken, the failing test being the first thing committed.",
    "version": 2,
    "checks": [],
    "chat": []
   },
   {
-   "id": "goal/G7.6",
-   "title": "tic-tac-toe, the demo plugin",
-   "goal": "goal/G7",
+   "id": "goal/G8.7",
+   "title": "deskVerify: tolerated reds — the goal Done waits on one red question listing the reds outside its scope",
+   "goal": "goal/G8",
    "status": "",
    "with": "",
    "buttons": [
     "close"
    ],
    "blocking": [
-    "goal/G7"
+    "goal/G8"
    ],
    "blocked": [
-    "goal/G7.1",
-    "goal/G7.2",
-    "goal/G7.3",
-    "goal/G7.4"
+    "goal/G8.6"
    ],
    "go": false,
    "alone": false,
@@ -826,7 +784,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "TIC-TAC-TOE, THE DEMO\n\nAndy, 2026-10-06: \"split according to claude-windows proposal and add wsl notes where appropriate afterwards.\" From goal/G7's box.\n\n- Andy: \"tic-tac-toe uses section 2 to display a tic-tac-toe game visually and clickably, and it's left pane is sused to start/configere the game. The game itself rides the chat.\"\n- Andy: \"a ticTacToe plugin implementation would be a simple game-demo, then chess etc...\"\n\nWhere: spirit/run/shell/chatter/plugins/. Blocked by goal/G7.1, G7.2, G7.3, G7.4.\n\nWSL NOTES (wsl-claude)\n- Its icon is MONKEY 🐒, as Andy used it in the concept (\"an icon for tic-tac-toe (🐒)\").\n- The test of riding the chat: the board is rebuilt from the chat's lines alone after a reload; the plugin keeps no state of its own.",
+   "box": "deskVerify: TOLERATED REDS\n\nAndy, 2026-10-06: \"for now, tolerated reds have to be granted as a whole, in order to pop the Done button for the goal, so the final full suite lists the reds outside the goals scope in a red-question for the goal, that blocks the Done button for the goal.\" Blocked by goal/G8.6, since the short loop and the final full run are the same mechanism seen twice.\n\nSO THERE IS NO LIST OF TOLERATED REDS, and nothing to maintain. The full run that a goal needs before it closes puts every red that lies outside that goal into ONE red question on the goal, and that question blocks the goal's Done until he grants it. He grants them together or not at all, which is what \"for now\" covers.\n\nWHY IT IS BETTER THAN A LIST: a list of exceptions drifts and becomes a hiding place, while a question he answers at the moment of closing cannot. Today the same information is given to him by hand: on 2026-10-06 four of eleven reds in a full run were old debts that claude-windows had to explain in a post.\n\nWHAT COUNTS AS OUTSIDE THE GOAL: every suite that is not one of the goal suites, which goal/G8.6 now settles from his words, an item suites being the test files its own commits changed.",
    "version": 2,
    "checks": [],
    "chat": []
