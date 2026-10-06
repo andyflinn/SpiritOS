@@ -1,18 +1,17 @@
 {
- "change": 19146,
+ "change": 19152,
  "line": 8493,
  "goal": "goal/G2",
- "writtenAt": "2026-10-06T05:27:27.269Z",
+ "writtenAt": "2026-10-06T05:27:32.236Z",
  "items": [
   {
    "id": "goal/G2",
    "title": "Desk UI fixes, and clearing issues in the shell",
    "goal": "",
-   "status": "",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done",
-    "close"
+    "reopen"
    ],
    "blocking": [],
    "blocked": [],
@@ -34,7 +33,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 0,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -722,10 +721,9 @@
    "id": "goal/G2.21",
    "title": "A question never hides in chat: an agent line ending in a question mark becomes a Q check by the desk",
    "goal": "goal/G2",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
