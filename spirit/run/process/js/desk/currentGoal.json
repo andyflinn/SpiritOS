@@ -1,8 +1,8 @@
 {
- "change": 18032,
+ "change": 18099,
  "line": 8493,
  "goal": "goal/G6",
- "writtenAt": "2026-10-05T23:51:33.969Z",
+ "writtenAt": "2026-10-06T00:11:11.434Z",
  "items": [
   {
    "id": "goal/G6",
@@ -11,12 +11,11 @@
    "status": "",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G6.5"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -42,8 +41,6 @@
     "wsl-claude"
    ],
    "working": [
-    "claude-ubuntu",
-    "claude-windows",
     "wsl-claude"
    ],
    "agents": {
@@ -1240,15 +1237,17 @@
    "id": "goal/G6.5",
    "title": "the Rules tab: the new bubble, the search bubble with 7 toggles, the list; a row opens ruleDetails",
    "goal": "goal/G6",
-   "status": "running",
+   "status": "closed",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "reopen"
+   ],
    "blocking": [
     "goal/G6"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -1256,10 +1255,10 @@
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "rules": [],
    "asks": 0,
    "half": false,
@@ -1267,7 +1266,98 @@
    "box": "THE RULES TAB\n\nAndy, 2026-10-05: \"split as proposed\". From goal/G6's box (andy/FACE.md, desk portion, in line with goal/G5).\n\nA new tab \"Rules\" between \"Team\" and \"Musings\":\n1. The new bubble: type, label, text and a new button: rule.add (the rule comes in proposed; agents may add one too).\n2. The search bubble: a search box and 7 toggles (ui, code, design, desk; proposed, active, deleted): rules.search {text, types, statuses}.\n3. The list, a row per rule: status (proposed ICON.EDIT, active ICON.LOCK, deleted ICON.DEAD), label, type, key; a row opens ruleDetails (goal/G6.4).\nA rule's text is a paragraph of up to 2048 bytes, line breaks kept (goal/G5.5).\n\nWhere: shell/desk. Blocked by goal/G6.4.\n\nWaiting: his Go (no open question).",
    "version": 2,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "at": "2026-10-05T23:51:38.801Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-05T23:51:47.845Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-05T23:51:50.882Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T23:51:54.125Z",
+     "text": "wsl: red of G6.5 taken (phase.take)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:52:02.411Z",
+     "text": "cw: I wrote the last two reds, so the red of G6.5 is open for wsl or ubi; I take the build once it is in."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-05T23:52:18.505Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T23:53:50.284Z",
+     "text": "commit ae62ce5eecca184f8696269ef239ad184962cf46: goal/G6.5 red: the Rules tab in Desk\n- spirit/test/deskRulesTab.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-05T23:53:56.883Z",
+     "text": "wsl: red is in, ae62ce5e: spirit/test/deskRulesTab.js, 10 checks all red today: the tab between Team and Musings, the new bubble sending rule.add, a search box and seven toggles asking rules.search, the list with status icons opening ruleDetails. The element names are my picks (in the file's header).\nRed recorded; the build is open for claude-windows."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-05T23:54:00.562Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-05T23:54:11.041Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-05T23:54:17.962Z",
+     "text": "taking: the build of G6.5 (against wsl's red ae62ce5e)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-05T23:54:27.079Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:00:04.712Z",
+     "text": "commit 2cd2accb1976b8729e9225a7204e235e2bd1abf5: goal/G6.5: the Rules tab in Desk: a new rule, a search with seven toggles, the list opening ruleDetails (against wsl-claude's red ae62ce5e)\n- spirit/run/shell/desk/desk.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T00:00:05.757Z",
+     "text": "cw: built, 2cd2accb: the Rules tab between Team and Musings: a new rule (type, label, text, New), a search box with seven toggles, the list with status icons; a row opens ruleDetails. deskRulesTab 10 of 10; full harness only the four old reds.\n- Toggles start off; with none on in a group, that group is not narrowed. The list asks again when a rule changes.\nFiles:\n- spirit/run/shell/desk/desk.js\nBuild recorded; open for verify by wsl or ubi."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T00:00:19.250Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T00:03:51.528Z",
+     "text": "commit 7dd3dd52196e1b15e0302541a806e9dd6f2c7c07: goal/G6.5 verify: the tab's own search is counted before anything else searches\n- spirit/test/deskRulesTab.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T00:04:03.217Z",
+     "text": "wsl verify of 2cd2accb: deskRulesTab 10 of 10; each of 9 mutations caught (no tab, no search on opening, type dropped, line breaks lost, dead toggle, search text ignored, wrong icons, a row opening the wrong dialog, no type shown). One was caught only after I extended the red (7dd3dd52). Desk suites and ruleDetails green; Desk suites only, not the full harness.\nVerify pass recorded; G6.5 is ready for your Done, the last of G6."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T00:11:07.181Z",
+     "text": "accepted, for now, we'll find out how it affects the flow of things"
+    }
+   ]
   },
   {
    "id": "goal/G6.7",
