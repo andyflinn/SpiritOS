@@ -1,8 +1,8 @@
 {
- "change": 18783,
+ "change": 18798,
  "line": 8493,
  "goal": "goal/G2",
- "writtenAt": "2026-10-06T02:21:09.519Z",
+ "writtenAt": "2026-10-06T02:23:46.346Z",
  "items": [
   {
    "id": "goal/G2",
@@ -11,6 +11,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -37,8 +38,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
-   "waiting": 5,
+   "design": false,
+   "waiting": 4,
    "live": [
     "claude-windows"
    ],
@@ -249,6 +250,16 @@
      "by": "wsl-claude",
      "at": "2026-10-02T05:22:14.065Z",
      "text": "cw: G2.12 is closed with your amended red still owing the split (shellElements 4 owed at fbf784b3), so the harness is red on a closed item. Move those checks into a new item for the split, or I build it when Andy gives that item its Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T02:21:56.919Z",
+     "text": "are the open items all green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T02:22:27.291Z",
+     "text": "cw: yes, all four green, no open Q on any, and design-complete pressed on each after reading the code they point at.\nEnd design and Go on G2.18 first; the others can follow in one go-all."
     }
    ]
   },
@@ -256,25 +267,23 @@
    "id": "goal/G2.18",
    "title": "Rule dialog: a rule chat line reaches the open dialog without a reload (the rule.chat publish names its rule)",
    "goal": "goal/G2",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G2"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
@@ -315,6 +324,16 @@
      "by": "andy",
      "at": "2026-10-06T02:20:54.216Z",
      "text": "add G2.21"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T02:21:11.568Z",
+     "text": "cw: G2.21 added, box follows. All four sit on G2 in design mode; End design, then Go on G2.18 first and I start with its red test."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T02:23:46.142Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -322,9 +341,10 @@
    "id": "goal/G2.19",
    "title": "Make current: a press on any open goal makes it the current goal, from the goal dialog",
    "goal": "goal/G2",
-   "status": "",
+   "status": "ready",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
@@ -357,9 +377,10 @@
    "id": "goal/G2.20",
    "title": "A Go in a reopened goal carries the rules active today: the test that proves it",
    "goal": "goal/G2",
-   "status": "",
+   "status": "ready",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
@@ -392,9 +413,10 @@
    "id": "goal/G2.21",
    "title": "A question never hides in chat: an agent line ending in a question mark becomes a Q check by the desk",
    "goal": "goal/G2",
-   "status": "",
+   "status": "ready",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
@@ -418,8 +440,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "A QUESTION NEVER HIDES IN CHAT\n\nAndy, 2026-10-06, under goal/G2.18: \"i want mechanical support in deskServer to make agents add red-question to the design\", and \"add G2.21\" to the shape below. Enforces rule/3 where the desk can (goal/G3.9 precedent).\n\nWhat: an agent chat line under an item whose text ends in a question mark is stored as it came AND the desk adds a Q check on that item with the same words, by that agent (check.add, desk.js 439-440 path), so the List lights red and his answer goes through check.set as for any Q. The line stays in chat, marked with its Q number. His own lines and the desk lines are never converted; a line without a question mark passes as before.\n\nWhere: desk.js chat.add handler (1324-1359), server only, no new verb. Nothing changes for rule chat (rule/N has no checks).\n\nTest first, red on today code: an agent chat.add ending in ? under an item adds one open Q check with those words; a line without ? adds none; his own line with ? adds none.",
+   "version": 1,
    "checks": [],
    "chat": []
   },
