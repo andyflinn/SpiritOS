@@ -1,8 +1,8 @@
 {
- "change": 18936,
+ "change": 18937,
  "line": 8493,
  "goal": "goal/G2",
- "writtenAt": "2026-10-06T03:11:06.278Z",
+ "writtenAt": "2026-10-06T03:11:09.648Z",
  "items": [
   {
    "id": "goal/G2",
@@ -39,7 +39,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
+   "waiting": 5,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -268,10 +268,9 @@
    "id": "goal/G2.18",
    "title": "Rule dialog: a rule chat line reaches the open dialog without a reload (the rule.chat publish names its rule)",
    "goal": "goal/G2",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
