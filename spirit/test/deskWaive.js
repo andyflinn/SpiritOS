@@ -20,9 +20,13 @@
 //      goal, not while the red is still being written, and not once an agent holds the build. Buttons come from the
 //      server, as every button does (desk/G2.7: "Buttons come from item.buttons only"). His press {id, what:
 //      'waive'} as before (goal/G5.7, OWNER_PRESSES); an agent's is refused.
-//   2  The desk waives by itself when one agent alone is live: at the moment a red is done (phase.done red), if the
-//      goal's live agents (facts.live, LIVE_MS) are that one agent, the item is waived and the desk says so in the
-//      item's chat, by desk. Two agents live: nothing, his press as before.
+//   2  The desk waives by itself when one agent alone is live, at EVERY phase handover and not only the red's
+//      (Andy, asked why the desk cannot simply do it: "contradiction or not. autowaive when only one agent is
+//      present. the other case already happened in a previous goal, and it worked"): whenever a phase is done and
+//      the goal's live agents (facts.live, LIVE_MS) are that one agent, the item is waived and the desk says so in
+//      the item's chat, by desk, so that one agent may take the next phase. Two agents live: nothing, his press as
+//      before. This stands over two older suites, deskPhases and deskRedWriterBuild, which assert the rule in a
+//      room the desk counts as empty, their second agent never writing; their own builder puts an agent in it.
 //   3  shell/deskDetails: with 'waive' among the buttons the dialog shows #dd-waive, armed like Close (the first
 //      click arms, the second sends press {id, what: 'waive'}); without it, no such button.
 //
@@ -158,6 +162,15 @@ function answerFor(buttons) {
   const build1 = await call('phase.take', { id: 'w/G1.1', phase: 'build' }, CW);
   if (took(build1)) test.check('the red writer may take the build now');
   else test.fail(OWED + 'the red writer\'s build take on w/G1.1 was refused: ' + short(build1.body));
+  // HIS RULING, asked why the desk cannot simply do it: "contradiction or not. autowaive when only one agent is
+  // present." So no handover stalls while one agent is alone, the build's as little as the red's: one agent takes
+  // every phase of the item and its Done is offered at the end, without a press of his anywhere.
+  await call('phase.done', { id: 'w/G1.1', phase: 'build' }, CW);
+  const verify1 = await call('phase.take', { id: 'w/G1.1', phase: 'verify' }, CW);
+  const passed1 = took(verify1) ? await call('phase.done', { id: 'w/G1.1', phase: 'verify', pass: true }, CW) : {};
+  const f1end = await factsOf('w/G1.1');
+  if (took(verify1) && took(passed1) && (f1end.buttons || []).indexOf('done') !== -1) test.check('alone, one agent takes red, build and verify, and Done is offered without a press of his');
+  else test.fail(OWED + 'alone, the verify take answered ' + short(verify1.status) + ' and the item ends offering ' + short(f1end.buttons));
 
   // FROM HERE ON BOTH AGENTS ARE LIVE, so nothing is waived but by his press.
   await call('chat.add', { id: 'w/G1.2', text: 'wsl: here.' }, WSL);
