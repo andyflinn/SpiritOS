@@ -1,8 +1,8 @@
 {
- "change": 18855,
+ "change": 18936,
  "line": 8493,
  "goal": "goal/G2",
- "writtenAt": "2026-10-06T02:47:53.451Z",
+ "writtenAt": "2026-10-06T03:11:06.278Z",
  "items": [
   {
    "id": "goal/G2",
@@ -16,7 +16,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G2.18",
     "goal/G2.19",
     "goal/G2.20",
     "goal/G2.21",
@@ -40,13 +39,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 6,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows"
+    "wsl-claude"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -269,15 +268,18 @@
    "id": "goal/G2.18",
    "title": "Rule dialog: a rule chat line reaches the open dialog without a reload (the rule.chat publish names its rule)",
    "goal": "goal/G2",
-   "status": "building",
-   "with": "wsl-claude",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G2"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -285,10 +287,10 @@
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
    "builder": "wsl-claude",
-   "verifier": "",
+   "verifier": "claude-windows",
    "rules": [],
    "asks": 0,
    "half": false,
@@ -421,6 +423,66 @@
      "by": "desk",
      "at": "2026-10-06T02:47:40.707Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T02:48:00.539Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T02:48:23.679Z",
+     "text": "cw: pushed; the red is ed8e8c6a on origin/master now (rebased over a desk share, same content)."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T02:56:17.469Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T02:56:32.324Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T02:56:49.195Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:00:11.970Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:01:28.451Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:02:48.273Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:03:11.978Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T03:03:19.355Z",
+     "text": "wsl: green and pushed, 7e7c6217; deskRuleChatPublish 4 green inside the full run (324 suites, 4683 green).\nThe 9 red are none of them desk: two are declared debts of appPair/G1.1 and goal/G4.23, four are ports and timeouts of this machine (partnerWire: 48742 in use).\ncw, the verify is yours; your rule dialog should now take a chat line without a reload."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T03:04:38.017Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T03:07:10.729Z",
+     "text": "cw: verify passed, Done is offered to you. wsl's build is three lines in desk.js, exactly the shape the red named, and the face is untouched.\nEvidence: deskRuleChatPublish 4 green, ruleDetails 12 green, and every desk suite run here, 65 suites 602 green; the only red is my own unbuilt G2.22 red in deskWaive.\nFiles the item's two commits changed:\n- spirit/test/deskRuleChatPublish.js (ed8e8c6a, the red)\n- spirit/run/process/js/desk/desk.js (7e7c6217, the build)"
     }
    ]
   },
@@ -491,14 +553,34 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "A GO IN A REOPENED GOAL CARRIES TODAY RULES\n\nAndy, 2026-10-06, under goal/G2.18: \"new added items in a re-opened current goal should consider all decision made in the mean time.\"\n\nWhat: his Go stamps the rules active at that moment on the item (desk.js 518, 528; goal/G5.8), so an item added to a reopened goal today carries rule/3 and every rule activated since the goal was first opened. This item is the test that proves it, nothing more. A decision that is not a rule is not machine-readable: what must bind later goals becomes a rule.\n\nTest: open a goal, close it, activate a rule, reopen the goal, add an item, press Go: the item rules name that rule.",
-   "version": 1,
-   "checks": [],
+   "box": "A GO IN A REOPENED GOAL CARRIES TODAY RULES\n\nAndy, 2026-10-06, under goal/G2.18: \"new added items in a re-opened current goal should consider all decision made in the mean time.\"\n\nWhat: his Go stamps the rules active at that moment on the item (desk.js 518, 528; goal/G5.8), so an item added to a reopened goal today carries every rule activated since the goal was first opened. A decision that is not a rule is not machine-readable: what must bind later goals becomes a rule.\n\nFOUND WHILE WRITING THIS (checked live, 2026-10-06): the stamp came back empty on his Go on goal/G2.18, although rule/3 was active. The cause is not the reopening: typesOf(it) (desk.js 684-690) yields only desk, code and ui, from the paths the box names, while a rule may be of type design (desk.js 310, RULE_TYPES). A design rule therefore matched no item at all.\n\nHIS RULING on Q1 (what design should mean), 2026-10-06: \"every item\". So a rule of type design applies to every item, as a desk rule does, whatever paths the box names and whether or not the goal is in design mode. This item owns that fix: its test cannot go green without it.\n\nTest: a design rule is active, an item is added and gets his Go: the item's rules name that rule. And: open a goal, close it, activate a rule, reopen the goal, add an item, press Go: the item's rules name that rule.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "a rule of type design attaches to nothing today (typesOf yields desk, code, ui only). Should a design rule attach to every item, or only while its goal is in design mode?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-06T03:02:10.065Z"
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
      "at": "2026-10-06T02:24:18.921Z",
      "text": "cw: evidence for this item already: your Go on G2.18 arrived as press {rules: {goal/G2.18: []}}, no rule stamped although rule/3 is active.\nThe stamp is computed by the Desk face and sent with the press, so the face is where this fails; in the box when I take this item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T02:59:48.434Z",
+     "text": "cw: correcting myself: the stamp is the server's, not the face's (desk.js 1615 calls rulesForGo on a go press). My earlier line here was wrong.\nThe real cause: typesOf(it) yields only desk, code and ui (desk.js 684-690), while a rule may be of type design (desk.js 310). rule/3 is design, so it matches no item and your Go on G2.18 recorded an empty rule set.\nQ1 on this item asks what design should mean."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T03:00:32.575Z",
+     "text": "Q1: a rule of type design attaches to nothing today (typesOf yields desk, code, ui only). Should a design rule attach to every item, or only while its goal is in design mode?\n\nevery item"
     }
    ]
   },
@@ -542,8 +624,8 @@
    "id": "goal/G2.22",
    "title": "The item dialog offers Waive: the server press of goal/G5.7 gets its button in the face",
    "goal": "goal/G2",
-   "status": "running",
-   "with": "",
+   "status": "build",
+   "with": "wsl-claude",
    "buttons": [],
    "blocking": [
     "goal/G2"
@@ -554,21 +636,49 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "green": true,
+   "green": false,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
    "verifier": "",
    "rules": [],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
-   "box": "THE DIALOG OFFERS WAIVE, AND THE DESK WAIVES ALONE WHEN ONE AGENT IS PRESENT\n\nAndy, 2026-10-06, under goal/G2.18: \"there is no Waive in the G2.18 dialog\", and \"yes\" to Q1 there (add this item). Under this item: \"add to 2.22 that the desk can waive the rule if only one agent is present.\"\n\nWhat: the server has the waive press since goal/G5.7 (process/js/desk/desk.js 531: it.waived = true; 1040: his press alone; 1409: phase.may allows the red writer to build once waived), but no face file names it (grep waive in spirit/run/shell: nothing), so with one agent in the sitting every code item stalls after its red.\n\n1. The item dialog (shell/deskDetails) shows a Waive button on a code item that has his Go and is not yet waived, armed like Close; the press goes as press {id, what: waive}. The dialog needs to know waived, so item.get says waived: true|false (a field on facts, desk.js 729-747; no new verb).\n2. The desk waives by itself when one agent alone is present: at the moment a red is done (phase.done red), if the live agents of the goal (facts live, desk.js LIVE_MS ten minutes) are that one agent, the desk sets waived on the item and says so in its chat, by desk. Two agents live: his press as before.\n\nTest first, red on today code: facts carry waived; after his press {what: waive} they say true; the dialog shows the button on a code item with Go and hides it once waived; the press sent is press {id, what: waive}; a red done while one agent is live leaves the item waived with a desk line, while two live leave it unwaived.",
-   "version": 2,
-   "checks": [],
+   "box": "THE DIALOG OFFERS WAIVE, AND THE DESK WAIVES ALONE WHEN ONE AGENT IS PRESENT\n\nAndy, 2026-10-06, under goal/G2.18: \"there is no Waive in the G2.18 dialog\", and \"yes\" to Q1 there (add this item). Under this item: \"add to 2.22 that the desk can waive the rule if only one agent is present.\"\nOn Q1, whether a Waive button counts in the goal's waiting-on-you number: \"count it.\"\nOn Q2, when the button shows: \"the waive shows whether the build runs or not. it shows when it's needed.\"\n\nWhat: the server has the waive press since goal/G5.7 (desk.js 531: it.waived = true; 1040: his press alone; 1409: phase.may lets the red writer build once waived), but no face file names it (grep waive in spirit/run/shell: nothing), so with one agent in the sitting every code item stalls after its red.\n\nThe shape (spirit/test/deskWaive.js, red):\n1. Facts carry waived (true|false). The item's buttons offer waive when it is needed and not before: a code item with his Go, not done or closed, not yet waived, and its red written (phase build or verify, so there is a red writer whom the phase rule binds). Whether the build is taken or not makes no difference, by his Q2 answer. Not on a goal, and not while the red is still being written, where a waive changes nothing. Buttons come from the server as every button does (desk/G2.7). His press {id, what: waive} as before; an agent's is refused.\n2. The desk waives by itself when one agent alone is live: at the moment a red is done (phase.done red), if the goal's live agents (facts.live, LIVE_MS) are that one agent, the item is waived and the desk says so in the item's chat, by desk. Two live: nothing, his press as before.\n3. shell/deskDetails: with waive among the buttons the dialog shows dd-waive, armed like Close (first click arms, second sends press {id, what: waive}); without it, no button.\n4. A waive offered counts in the goal's waiting-on-you number, by his Q1 ruling; no exception in the count (desk.js 759-761 stays as it is). With point 1 the count rises only on an item whose red is done and whose waive he has not given, which is an item that does wait on him.\n\nWhere: desk.js (facts, buttons, the phase.done handler), shell/deskDetails (DD_LABELS, the armed click). No new verb.",
+   "version": 5,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Waive offered on every running code item makes each one count in the goal's waiting-on-you number. Keep waive out of that count (my recommendation), or let it count?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-06T03:02:27.477Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "\"count it\" taken. One fork left, because cw's option arrived after your answer: is Waive always offered on a running code item and counted (the red test as written), or offered only while the build is blocked on you (red done, build untaken) and counted (cw's, and cw rewrites its red)?",
+     "test": "",
+     "state": "passed",
+     "by": "claude-windows",
+     "at": "2026-10-06T03:06:05.688Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Your \"count it.\" settles the count, not when Waive shows. Two readings left: (a) always, on every running code item, so each one raises the waiting number; (b) only while the build is blocked on you, that is the red is done, the build untaken, the item unwaived. Which?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -584,6 +694,66 @@
      "by": "desk",
      "at": "2026-10-06T02:47:53.195Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T02:48:43.949Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T02:51:05.760Z",
+     "text": "cw: red is in and pushed, commit 37ab4b0c, spirit/test/deskWaive.js: 10 red, 2 green contrasts (the goal never offers waive; no button without it).\nShape in the box: buttons offer waive (server, like every button), facts say waived, the desk waives alone on a red done with one agent live and says so by a desk line, the dialog arms it like Close.\nwsl may build it; I wrote its red."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T02:56:29.940Z",
+     "text": "wsl: taking the G2.22 build; I start once the G2.18 harness run is green and pushed."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T02:56:32.577Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-06T02:56:49.421Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T03:00:17.965Z",
+     "text": "wsl: one open Q on this item: Waive offered on every running code item would make each one count in the goal's waiting-on-you number.\nI'd keep waive out of that count, so the number stays what needs you; say the word if it should count.\nBuilding the rest meanwhile; the G2.18 harness run is still going."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T03:01:24.953Z",
+     "text": "Q1: Waive offered on every running code item makes each one count in the goal's waiting-on-you number. Keep waive out of that count (my recommendation), or let it count?\ncount it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T03:01:25.364Z",
+     "text": "cw: a third option for Q1, so no exception is needed: offer Waive only while the build is actually blocked on you, that is the red is done, the build is untaken and the item is unwaived. Then the item truly waits on you and the count is right.\nToday a running code item has no buttons at all (desk.js 605: close goes at your Go), so wsl is right that an always-on Waive would make every one of them count.\nYour Q1 answer decides between: always offered and not counted (wsl), or offered only while blocked and counted (mine)."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-06T03:02:09.258Z",
+     "text": "wsl: \"count it\" taken, Q1 answered. cw's option landed after your answer, so Q2 is the one fork left and it is on the item.\nAlways offered and counted (cw's red test as written), or offered only while the build is blocked on you and counted (cw's, which needs cw to rewrite its red).\nI build the rest either way; this decides two lines."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T03:02:41.835Z",
+     "text": "cw: both rulings are in the boxes verbatim. G2.20: a design rule applies to every item, and that item owns the fix, since its test cannot go green without it.\nG2.22: the count stays as it is, no exception; Q2 asks the part your answer left open, always offered or only while the build is blocked on you.\nwsl: hold point 1 of G2.22 until Q2 is answered; points 2 and 3 are unaffected."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T03:04:29.558Z",
+     "text": "Q2: \"count it\" taken. One fork left, because cw's option arrived after your answer: is Waive always offered on a running code item and counted (the red test as written), or offered only while the build is blocked on you (red done, build untaken) and counted (cw's, and cw rewrites its red)?\n\nthe waive shows whether the build runs or not. it shows when it's needed."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T03:09:25.779Z",
+     "text": "cw: your Q2 answer is in the box and the red is rewritten and pushed, 71bb01c3: 13 red, 5 green. The condition it asserts: a code item with your Go, not done or closed, unwaived, and its red written, whether a build runs or not; nothing while the red is still being written.\nThree of the five green guard against over-offering and pass vacuously until the button exists; the other two are goal/G5.7's own behaviour and the dialog without the button.\nwsl: point 1 is unblocked, build against 71bb01c3."
     }
    ]
   },
