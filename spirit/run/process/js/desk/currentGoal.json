@@ -1,8 +1,8 @@
 {
- "change": 19372,
- "line": 8493,
+ "change": 19396,
+ "line": 8494,
  "goal": "goal/G8",
- "writtenAt": "2026-10-06T08:22:15.456Z",
+ "writtenAt": "2026-10-06T09:49:13.173Z",
  "items": [
   {
    "id": "goal/G8",
@@ -18,7 +18,8 @@
     "goal/G8.1",
     "goal/G8.2",
     "goal/G8.3",
-    "goal/G8.4"
+    "goal/G8.4",
+    "goal/G8.5"
    ],
    "go": false,
    "alone": false,
@@ -39,7 +40,7 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 5,
+   "waiting": 6,
    "live": [
     "claude-windows"
    ],
@@ -100,6 +101,11 @@
      "by": "andy",
      "at": "2026-10-06T07:45:44.801Z",
      "text": "extract the topic of running modes for deskVerify, and place it in a new item that depends on G8.1"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T08:51:30.434Z",
+     "text": "new item: deskVerify: Changes required in desk."
     }
    ]
   },
@@ -381,7 +387,7 @@
   },
   {
    "id": "goal/G8.2",
-   "title": "deskVerify: the running modes — the desk box, an agent box, a measure-only box, and what each may do",
+   "title": "deskVerify: the running modes — the desk box, an agent box, and how a mode is read",
    "goal": "goal/G8",
    "status": "",
    "with": "",
@@ -391,7 +397,8 @@
    "blocking": [
     "goal/G8",
     "goal/G8.3",
-    "goal/G8.4"
+    "goal/G8.4",
+    "goal/G8.5"
    ],
    "blocked": [
     "goal/G8.1"
@@ -414,8 +421,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskVerify: THE RUNNING MODES\n\nAndy's design, 2026-10-06, extracted from the goal at his word. Blocked by goal/G8.1, since what a node records is settled before where it may record it.\n\nTHE THREE CASES. deskVerify runs on every node and keeps the same records in the same shape everywhere; only its standing and its work differ.\n- THE DESK NODE, his work box. Authoritative: it reaches the desk on loopback and the desk takes it for the owner. Only this one has agent standing on the desk, and the agent on that box is the lead, always, so the lead is the machine and not the session. Its standing comes from running on the owner's box, not from any technical limit elsewhere.\n- AN AGENT NODE, wsl or ubuntu. A sub-agent of that node's deskClient. Its work is the short loop for the item in hand, and the full harness before a goal is done or closed and while its agent is idle.\n- ANY OTHER NODE. It measures and nothing more, with no standing on the desk at all.\n\nHOW A MODE IS READ. By what lives on this node: the desk decides it, his words being that \"the existence of desk itself is the deciding factor\", and a deskClient marks the sub-agent case. Nothing is configured and nothing is passed in, since deskVerify asks its own node which servers it runs and the door already answers that.\n\nTHE DESK AND A deskClient DO NOT SHARE A NODE, and the desk is what holds that. A deskClient started there anyway is harmless: the desk refuses any deskClient call arriving under its own node identity. One refusal where the call comes in, and no start-up order for anyone to keep.\n\nWHAT FALLS OUT OF ONE SHAPE EVERYWHERE: an agent gets test history it has never had on its own machine, and no agent spends its own time running tests.\n\nTO BUILD HERE, checked in the tree at 9ece24a8: nothing refuses such a call today, and the desk already knows every caller by its key, so the refusal needs no new verb.\n\nWHAT THE PRIVILEGED MODE MAY DO is goal/G8.3, which this item blocks.",
-   "version": 5,
+   "box": "deskVerify: THE RUNNING MODES\n\nAndy's design, 2026-10-06, extracted from the goal at his word. Blocked by goal/G8.1, since what a node records is settled before where it may record it.\n\nTHE THREE CASES. deskVerify runs on every node and keeps the same records in the same shape everywhere; only its standing and its work differ.\n- THE DESK NODE, his work box. Authoritative: it reaches the desk on loopback and the desk takes it for the owner. Only this one has agent standing on the desk, and the agent on that box is the lead, always, so the lead is the machine and not the session. Its standing comes from running on the owner's box, not from any technical limit elsewhere.\n- AN AGENT NODE, wsl or ubuntu. A sub-agent of that node's deskClient. Its work is the short loop for the item in hand, and the full harness before a goal is done or closed and while its agent is idle.\n- ANY OTHER NODE, with neither of them: OUT OF SCOPE by his word, 2026-10-06, and for a reason that decides it rather than defers it: such a node has no assigned agent name, so there is no folder designated to it to drop data into. It had been named a measure-only case earlier in the design; it is not built. So reading the mode has two answers and a third that does nothing.\n\nHOW A MODE IS READ. By what lives on this node: the desk decides it, his words being that \"the existence of desk itself is the deciding factor\", and a deskClient marks the sub-agent case. Nothing is configured and nothing is passed in, since deskVerify asks its own node which servers it runs and the door already answers that.\n\nTHE DESK AND A deskClient DO NOT SHARE A NODE, and the desk is what holds that. A deskClient started there anyway is harmless: the desk refuses any deskClient call arriving under its own node identity. One refusal where the call comes in, and no start-up order for anyone to keep.\n\nWHAT FALLS OUT OF ONE SHAPE EVERYWHERE: an agent gets test history it has never had on its own machine, and no agent spends its own time running tests.\n\nTO BUILD HERE, checked in the tree at 9ece24a8: nothing refuses such a call today, and the desk already knows every caller by its key, so the refusal needs no new verb.\n\nWHAT THE PRIVILEGED MODE MAY DO is goal/G8.3, which this item blocks.",
+   "version": 6,
    "checks": [
     {
      "number": "Q1",
@@ -487,6 +494,11 @@
      "by": "andy",
      "at": "2026-10-06T08:21:48.338Z",
      "text": "new item: deskVerify: Idle time chores."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T08:30:20.203Z",
+     "text": "I only want three sections in this\n\n1. Define Idle time\n\n2. what ever deskVerify does during idle time\n\n3. what extra things an agent-mode deskVerify does during idle time, for example updating the README.md and it's linkage to the agent/ folder's documents"
     }
    ]
   },
@@ -531,6 +543,75 @@
   {
    "id": "goal/G8.4",
    "title": "deskVerify: Idle time chores — measurements and documentation kept current while nobody is working",
+   "goal": "goal/G8",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G8"
+   ],
+   "blocked": [
+    "goal/G8.2"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskVerify: IDLE TIME CHORES\n\nAndy, 2026-10-06, gave it three sections and nothing else: \"1. Define Idle time\" / \"2. what ever deskVerify does during idle time\" / \"3. what extra things an agent-mode deskVerify does during idle time, for example updating the README.md and it's linkage to the agent/ folder's documents\". Blocked by goal/G8.2, since what the chore is differs by where deskVerify stands.\n\n1. IDLE TIME. His measure: \"when it's agent or it's desk have been idle for more than an hour\". Idle is not the same as finished, so the hour is not enough on its own: an agent holding a phase and quiet for an hour looks idle while its work is still open. So a node is idle when nothing has been written for an hour AND no item is in a phase held by the agent on that node. The ten minutes that decide absence elsewhere are a different clock and stay as they are.\n\n2. WHAT EVERY deskVerify DOES WHEN IDLE. Keeps the measurements current, and writes the targeted test-state report, which is possible for the first time because the dataset of goal/G8.1 can say which tests turned and when, where the run log keeps totals only. Two limits, claude-windows, to be ruled before building: it writes a named list of paths and nothing outside them, a mechanical commit being one nobody read; and the report is derived from the dataset, never from re-running anything, or a chore becomes another twenty-minute run.\n\n3. WHAT THE AGENT-MODE ONE DOES AS WELL. On the desk node, where it has standing: it keeps the README current, mechanically, because the numbers it summarises change with time. Andy, 2026-10-06: \"just the fact that those number change with time, makes updating the README part of it is idle time chores, in a mechanical way.\"\nWHICH numbers the README ought to show is OUT OF SCOPE by his word, and not a thing left undone here: \"the readme has major flaws and it is summary of data cites mostly un-interesting numbers, instead of the number i think are interesting. oos for now.\" So this section refreshes what the README already claims; it does not decide what it should claim.\nIn the tree at 9ece24a8 the README carries one line into agents/, which holds a README of its own and a folder per agent, claude-ubuntu, claude-windows and wsl-claude.\n\nWhy it pays: tagging the tree stops waiting, since its slow part is the measuring and the numbers would already be there, stamped with when they were taken.\n\nOUT OF SCOPE HERE, his, 2026-10-06, and noted so it is not mistaken for work owed: the desk notes also hold the desk state and status, which will generate a work-report at some point in the future.",
+   "version": 4,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T08:22:39.332Z",
+     "text": "cw: goal/G8.4 \"deskVerify: Idle time chores\" is in, blocked by the running modes, since what the chore is differs by where deskVerify stands.\nIts box holds your three lines, the two things it buys with the evidence for each, the two limits I would want ruled before it is built, and the wrinkle that idle is not finished.\nFour items on the goal now. Nothing on any of them waits on you."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T08:31:28.520Z",
+     "text": "cw: rebuilt to your three sections and nothing else.\nSection 1 needed a second half: the hour alone is not a definition, because an agent holding a phase and quiet for an hour looks idle while its work is still open, so idle is an hour of silence AND no item in a phase that node's agent holds. The ten minutes that decide absence stay a separate clock.\nSection 3 I checked rather than assumed: the README carries one line into the agents folder, which has a README of its own and a folder for each of the three agents. The rest of that section is unargued and says so."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T08:37:59.819Z",
+     "text": "section 3. the readme has major flaws and it's summary of data cites mostly un-interesting numbers, instead of the number i think are interesting. oos for now.\n\njust the fact that those number change with time, makes updating the README part of it's idle time chores, in a mechanical way."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T08:38:48.680Z",
+     "text": "cw: section 3 now says exactly that: it keeps the README current mechanically because the numbers change, and which numbers the README ought to show is marked out of scope by your word, so nobody later reads it as work left undone.\nThat is the whole of section 3; the other two stand as they were."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T08:49:42.301Z",
+     "text": "it should be noted that the desk notes also hold the desk state/status which will generate a \"work-report\" at some point in the future. also oos.\n\ndeskVerify running on nodes without desk and without deskClient, are oos, because they have no assigned agent name that allows them to drop data into a folder designated to them."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T09:48:38.628Z",
+     "text": "cw: both noted. The work-report from the desk state is in this box as out of scope, so it reads as a decision rather than something owed.\nThe second one narrowed the item before it: a node with neither a desk nor a deskClient is out of scope, and your reason settles it instead of deferring it, since such a node has no assigned agent name and so no folder designated to it. That case had been named measure-only earlier in the design, and it is now marked not built, so reading the mode has two answers and a third that does nothing."
+    }
+   ]
+  },
+  {
+   "id": "goal/G8.5",
+   "title": "deskVerify: Changes required in desk — what the desk server must gain for any of this to work",
    "goal": "goal/G8",
    "status": "",
    "with": "",
