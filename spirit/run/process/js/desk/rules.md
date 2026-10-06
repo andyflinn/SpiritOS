@@ -2,6 +2,11 @@
 
 ## ui
 
+### rule/2 (version 12): Vertical spacing of block elements
+
+vertical spacing: every div/block carries with itself a leading vertical space of 1em. Exceptions to this rule will be specified.
+
+
 ### rule/1 (version 11): Horizonal Spacing in UI Rows
 
 horizontal spacing of inline elements: Items in a (button/info) row: each item carries a spacing of 1em after itself.
