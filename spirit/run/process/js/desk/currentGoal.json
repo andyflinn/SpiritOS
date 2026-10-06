@@ -1,8 +1,8 @@
 {
- "change": 18776,
+ "change": 18783,
  "line": 8493,
  "goal": "goal/G2",
- "writtenAt": "2026-10-06T02:20:02.080Z",
+ "writtenAt": "2026-10-06T02:21:09.519Z",
  "items": [
   {
    "id": "goal/G2",
@@ -17,7 +17,8 @@
    "blocked": [
     "goal/G2.18",
     "goal/G2.19",
-    "goal/G2.20"
+    "goal/G2.20",
+    "goal/G2.21"
    ],
    "go": false,
    "alone": false,
@@ -37,7 +38,7 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 4,
+   "waiting": 5,
    "live": [
     "claude-windows"
    ],
@@ -304,6 +305,16 @@
      "by": "andy",
      "at": "2026-10-06T02:19:31.875Z",
      "text": "add:\n\nAdd 1) as goal/G2.19 (make current), and 2) as goal/G2.20 (a test that a Go in a reopened goal carries today rules)\n\nand i want mechanical support in deskServer to make agents add red-question to the design\n\npossible?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T02:20:05.280Z",
+     "text": "cw: G2.19 and G2.20 added. The third is possible, and plainest without a new verb: an agent chat line under an item that ends in a question mark is turned into a Q check by the desk itself (same words, by that agent), so a question can never hide in chat.\nThe line stays in chat too, marked with its Q number; a line without a question mark passes as before.\nAdd it as goal/G2.21?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T02:20:54.216Z",
+     "text": "add G2.21"
     }
    ]
   },
@@ -337,14 +348,49 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "MAKE CURRENT\n\nAndy, 2026-10-06, under goal/G2.18: \"i want to switch between goals at will, so the goals detail should give me re-open and and on any open goal i want a button \\\"make current goal\\\"\"\n\nWhat: today the current goal is set by one thing only, the newest session.set (process/js/desk/desk.js 427: s.current = gid), and nothing else moves it; Reopen on a closed goal exists (desk.js 577) but leaves the current goal where it was. A new press, make-current, on any open goal sets s.current to it; the goal dialog shows the button when the goal is open and not current.\n\nWhere: desk.js (PRESSES, OWNER_PRESSES, apply, buttons) and shell/deskDetails (the button label). A press value, not a node verb.\n\nTest first, red on today code: press {id: goal/X, what: make-current} by the owner makes goal/X current; items.search with currentGoalOnly then lists goal/X first; an agent press is refused.",
+   "version": 1,
    "checks": [],
    "chat": []
   },
   {
    "id": "goal/G2.20",
    "title": "A Go in a reopened goal carries the rules active today: the test that proves it",
+   "goal": "goal/G2",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G2"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "A GO IN A REOPENED GOAL CARRIES TODAY RULES\n\nAndy, 2026-10-06, under goal/G2.18: \"new added items in a re-opened current goal should consider all decision made in the mean time.\"\n\nWhat: his Go stamps the rules active at that moment on the item (desk.js 518, 528; goal/G5.8), so an item added to a reopened goal today carries rule/3 and every rule activated since the goal was first opened. This item is the test that proves it, nothing more. A decision that is not a rule is not machine-readable: what must bind later goals becomes a rule.\n\nTest: open a goal, close it, activate a rule, reopen the goal, add an item, press Go: the item rules name that rule.",
+   "version": 1,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G2.21",
+   "title": "A question never hides in chat: an agent line ending in a question mark becomes a Q check by the desk",
    "goal": "goal/G2",
    "status": "",
    "with": "",
