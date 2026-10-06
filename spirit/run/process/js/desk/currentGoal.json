@@ -1,8 +1,8 @@
 {
- "change": 19336,
+ "change": 19355,
  "line": 8493,
  "goal": "goal/G8",
- "writtenAt": "2026-10-06T07:46:23.473Z",
+ "writtenAt": "2026-10-06T08:05:39.333Z",
  "items": [
   {
    "id": "goal/G8",
@@ -16,7 +16,8 @@
    "blocking": [],
    "blocked": [
     "goal/G8.1",
-    "goal/G8.2"
+    "goal/G8.2",
+    "goal/G8.3"
    ],
    "go": false,
    "alone": false,
@@ -34,10 +35,10 @@
    "waived": false,
    "rules": [],
    "asks": 0,
-   "half": true,
+   "half": false,
    "full": false,
    "design": true,
-   "waiting": 3,
+   "waiting": 4,
    "live": [
     "claude-windows"
    ],
@@ -50,8 +51,8 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "VERIFICATION AUTOMATION\n\nOpened by Andy, 2026-10-06: \"i want to add a new goal, while keeping this one alive: goal/G8 Verification Automation\". It came out of his review of rule/4 (proposed, not active): \"when closing an item, verify only with the items red. the full harness runs only to get the 'Done' button for the current goal.\"\n\nHIS WORDS, the source for the items this goal will hold, each argued one at a time:\n- \"why is the harness not automated? demonized?\"\n- \"imagine this: an auto-agent, it is a server process, completely mechanical, it does all the verifying on it's own?\"\n- \"that auto-agent only verifies, it takes all verification, run's a short loop on all active items, pulls automatically on status changes, and delivers, only reds, unless a specific red is marked as tolerated.\"\n- \"the desk can mechanically verify that the verifier is active, and only under those circumstances deny a verify-take to other agents.\"\n- \"is there a way an agent could 'signoff' so it wont take 10 minutes?\"\n\nTHE TOPICS, in the order they depend on each other:\n1. Who runs the harness. One runner instead of each agent: today two overlapping full runs reddened five suites by fighting over the same ports, and a twenty-minute run makes the agent running it look absent.\n2. What a verify is, mechanically. Most of it already is: the item's own test plus the suites around what changed; deleting each line the build added to prove a test holds it; widening a fix to see the test refuse it; reading a test diff for weakened assertions. What is left is whether the thing built is the thing he asked for, which needs his words in the box.\n3. Tolerated reds. A run that says nothing unless something is genuinely wrong. Four of the eleven reds reported on 2026-10-06 were old debts explained by hand every time, and those suites already print the goal that owes them, so tolerance can be read off the suite rather than kept in a list that drifts.\n4. Who may take a step. Deny a step only when the desk can see somebody else could take it, his words above. It replaces the self-waiving of goal/G2.22 rather than correcting it, and generalises one step earlier, to the build a test writer may not take.\n5. Being here, and leaving. Ten minutes of silence is how absence is measured now; a word for signing off would make leaving immediate. On 2026-10-06 he ruled that a busy agent counting as gone is wanted, not a fault: \"nope. it's not a flaw. it allows other work to continue. it's a feature.\"\n\nStill in design. Nothing here is an item until it is argued and added.\nRULED, 2026-10-06, the two operating modes of deskVerify. Andy: \"the agent on my work box must be the lead agent. always. i cannot operate the desk from anywhere else, that is the only box that can run the verify-server in agent mode, where it reaches the desk on loopback.\" And: \"agents who on a different machine can only operate their deskClient on loopBack\". And: \"these are the two distinct operating modes of deskVerify\".\n\nSo the component has a name, deskVerify, and two modes decided before anything is built:\n- AGENT MODE, on his work box alone, where the desk itself is on loopback: the verify server reaches the desk directly, and the agent on that box is the lead, always. The lead is the machine, not the session.\n- The other mode, on any other machine: it reaches only its own deskClient on loopback, as the listener already does, and whatever that client cannot do, that machine cannot do.\n\nThis settles topic 1: the one runner of the harness is on his work box, because it is the only box that can be in agent mode.\nMORE GRANULAR, 2026-10-06, and it corrects the reading above. Andy, verbatim: \"deskVerify knows if it's on the same box as the desk, it's not that it couldn't technically run as an agent on other boxes, it's that on the owners box it makes sense and makes it authoritative. from desks point of view, that deskVerify IS the owner, since it uses loopback to connect to the desk.\" / \"desk will not allow deskClient to run on the same node. so deskVerify always knows if it's on the desk box or an agent box or a remote test-and-measure-only box. Only the desk-box's deskVerify is allowed agent-status on desk.\" / \"on an agent only box (wsl/ubuntu), deskVerify serves as a sub-agent to deskClient, and takes over primarily the short-loop for the item at hand, and prior to goal-done/closing and when the agent itself is idle it runs full-harness.\" / \"The beauty of it is, it keeps a running tally of every single test in the suite, when they flip red to green an vice versa, it can verify when corefiles were touched and by whom. it can can generate, on all nodes, a wealth of instantly trackable information.\"\n\nSo deskVerify runs everywhere, and what differs is its standing and its work:\n- THE DESK BOX. Authoritative. It reaches the desk on loopback, and the desk takes it for the owner. Only this one has agent-status on the desk. Running on the owner's box is what makes it so, not a technical limit.\n- AN AGENT BOX (wsl, ubuntu). A sub-agent of that box's deskClient. Its main work is the short loop for the item in hand; it runs the full harness before a goal is done or closed, and while its agent is idle.\n- A REMOTE TEST-AND-MEASURE BOX. It measures and no more: no standing on the desk at all.\nHow it knows which it is: whether a deskClient runs on this node. Andy's rule above, that the desk will not allow one on its own node, is what makes the three cases distinguishable.\n\nWHAT IT KEEPS, and this is the part today's sitting proves is missing: a running tally of every test in the suite, each flip from red to green and back, which core files were touched and by whom. On 2026-10-06 the run log recorded only the totals, so claude-windows could not name the eleven reds of its own full run and had to re-run everything to find them.",
-   "version": 3,
+   "box": "VERIFICATION AUTOMATION\n\nOpened by Andy, 2026-10-06: \"i want to add a new goal, while keeping this one alive: goal/G8 Verification Automation\". It came out of his review of rule/4 (proposed, not active): \"when closing an item, verify only with the items red. the full harness runs only to get the 'Done' button for the current goal.\"\n\nHIS WORDS, the source for the items this goal will hold, each argued one at a time:\n- \"why is the harness not automated? demonized?\"\n- \"imagine this: an auto-agent, it is a server process, completely mechanical, it does all the verifying on it's own?\"\n- \"that auto-agent only verifies, it takes all verification, run's a short loop on all active items, pulls automatically on status changes, and delivers, only reds, unless a specific red is marked as tolerated.\"\n- \"the desk can mechanically verify that the verifier is active, and only under those circumstances deny a verify-take to other agents.\"\n- \"is there a way an agent could 'signoff' so it wont take 10 minutes?\"\n\nTHE TOPICS, in the order they depend on each other:\n1. Who runs the harness, and in which standing. Its own item now, goal/G8.2, extracted at his word; it is blocked by goal/G8.1.\n2. What a verify is, mechanically. Most of it already is: the item's own test plus the suites around what changed; deleting each line the build added to prove a test holds it; widening a fix to see the test refuse it; reading a test diff for weakened assertions. What is left is whether the thing built is the thing he asked for, which needs his words in the box.\n3. Tolerated reds. A run that says nothing unless something is genuinely wrong. Four of the eleven reds reported on 2026-10-06 were old debts explained by hand every time, and those suites already print the goal that owes them, so tolerance can be read off the suite rather than kept in a list that drifts.\n4. Who may take a step. Deny a step only when the desk can see somebody else could take it, his words above. It replaces the self-waiving of goal/G2.22 rather than correcting it, and generalises one step earlier, to the build a test writer may not take.\n5. Being here, and leaving. Ten minutes of silence is how absence is measured now; a word for signing off would make leaving immediate. On 2026-10-06 he ruled that a busy agent counting as gone is wanted, not a fault: \"nope. it's not a flaw. it allows other work to continue. it's a feature.\"\n\nStill in design. Nothing here is an item until it is argued and added. Two exist: goal/G8.1 the dataset, goal/G8.2 the running modes.\n\nWHAT IT KEEPS, and this is the part today's sitting proves is missing: a running tally of every test in the suite, each flip from red to green and back, which core files were touched and by whom. On 2026-10-06 the run log recorded only the totals, so claude-windows could not name the eleven reds of its own full run and had to re-run everything to find them.",
+   "version": 4,
    "checks": [
     {
      "number": "Q1",
@@ -387,10 +388,90 @@
     "close"
    ],
    "blocking": [
-    "goal/G8"
+    "goal/G8",
+    "goal/G8.3"
    ],
    "blocked": [
     "goal/G8.1"
+   ],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskVerify: THE RUNNING MODES\n\nHIS FIRST POINT, 2026-10-06: \"the desk(Server) itself will not allow a deskClient ro run on the same node as the desk(Server). deskVerify knows which mode it is in, by checking if a desk(Server) or a deskClient shares lives on the same node.\"\n\nSo the two are mutually exclusive on one node, the desk server enforcing it, and that is what makes the modes readable: a desk server on this node means the authoritative mode, a deskClient means the sub-agent mode, neither means measure-only. Nothing is configured and nothing is passed in; deskVerify asks its own node which app servers it runs, which the door already answers.\n\nExtracted from the goal's box at Andy's word, 2026-10-06: \"extract the topic of running modes for deskVerify, and place it in a new item that depends on G8.1\". Blocked by goal/G8.1, since what a node records is decided before where it is allowed to record it.\n\nHIS RULING, 2026-10-06. deskVerify runs everywhere; what differs is its standing and its work. \"the agent on my work box must be the lead agent. always. i cannot operate the desk from anywhere else, that is the only box that can run the verify-server in agent mode, where it reaches the desk on loopback.\" / \"agents who on a different machine can only operate their deskClient on loopBack\" / \"these are the two distinct operating modes of deskVerify\" / \"deskVerify knows if it's on the same box as the desk, it's not that it couldn't technically run as an agent on other boxes, it's that on the owners box it makes sense and makes it authoritative. from desks point of view, that deskVerify IS the owner, since it uses loopback to connect to the desk.\" / \"desk will not allow deskClient to run on the same node. so deskVerify always knows if it's on the desk box or an agent box or a remote test-and-measure-only box. Only the desk-box's deskVerify is allowed agent-status on desk.\" / \"on an agent only box (wsl/ubuntu), deskVerify serves as a sub-agent to deskClient, and takes over primarily the short-loop for the item at hand, and prior to goal-done/closing and when the agent itself is idle it runs full-harness.\"\n\nTHE THREE CASES.\n- THE DESK BOX, his work box. Authoritative: it reaches the desk on loopback and the desk takes it for the owner. Only this one has agent standing on the desk, and the agent on that box is the lead, always, so the lead is the machine and not the session. Running on the owner's box is what makes it so, not a technical limit.\n- AN AGENT BOX, wsl or ubuntu. A sub-agent of that box's deskClient. Its work is the short loop for the item in hand, and the full harness before a goal is done or closed and while its agent is idle.\n- A MEASURE-ONLY BOX. It measures and nothing more: no standing on the desk at all.\n\nHOW IT KNOWS WHICH IT IS: whether a deskClient runs on this node.\n\nHOW IT IS ENFORCED, his, 2026-10-06, answering Q1: \"the existence of desk itself is the deciding factor for deskVerify’s running mode, the desk can also reject any deskClient call from it’s own ID.\"\n\nSo nothing watches and nothing races. The mode is read from whether the desk is on this node, and a deskClient that runs there anyway is simply harmless: the desk refuses any deskClient call arriving under its own node identity. That is one refusal where the call comes in, rather than a start-up order to keep.\n\nIn the tree at 9ece24a8 the desk already knows every caller by its key and whether it is the owner, so the refusal needs no new verb; and nothing refuses such a call today, so this is what the item builds.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Your rule is easy to enforce when the desk starts, but a deskClient can be started afterwards on the same node, and then the desk is already running and would have to notice. Should the desk refuse to start and also stop if one appears, or should the node refuse to start a deskClient where the desk lives?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-06T07:58:21.513Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:47:19.899Z",
+     "text": "cw: done. goal/G8.2 \"deskVerify: the running modes\" holds the three cases, the desk box authoritative on loopback, an agent box as a sub-agent of its own deskClient, and a measure-only box with no standing, with your words and the gap I found: nothing refuses a deskClient on the desk's own node today, which is the very thing that tells the cases apart.\nIt is blocked by G8.1, because what a node records is settled before where it is allowed to record it. The goal's box lost those two sections and now points at the item instead, 5835 bytes down to 2902."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:53:30.639Z",
+     "text": "first item in this box:\n\nthe desk(Server) itself will not allow a deskClient ro run on the same node as the desk(Server). deskVerify knows which mode it is in, by checking if a desk(Server) or a deskClient shares lives on the same node."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:54:45.601Z",
+     "text": "cw: your point leads the box now, and it answers how a mode is read: a desk server on the node means authoritative, a deskClient means sub-agent, neither means measure-only. Nothing is configured and nothing is passed in, since deskVerify can ask its own node which servers it runs and the door already answers that.\nI turned the gap I had noted into this item's work rather than a doubt: nothing refuses a deskClient on the desk's node today, so that refusal gets built here.\nOne red question on it: enforcing at startup is easy, but a deskClient can be started later, and then something has to notice."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T07:57:41.639Z",
+     "text": "Q1: Your rule is easy to enforce when the desk starts, but a deskClient can be started afterwards on the same node, and then the desk is already running and would have to notice. Should the desk refuse to start and also stop if one appears, or should the node refuse to start a deskClient where the desk lives?\n\nthe existence of desk itself is the deciding factor for deskVerify's running mode, the desk can also reject any deskClient call from it's own ID."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-06T07:58:32.178Z",
+     "text": "cw: that dissolves it rather than solving it, and the question is closed. Nothing watches and nothing races: the mode is read from whether the desk is on this node, and a deskClient that runs there anyway is harmless because the desk refuses any deskClient call arriving under its own node identity.\nIt is one refusal where the call comes in, instead of a start-up order somebody has to keep. The desk already knows every caller by its key, so it needs no new verb, and nothing refuses such a call today, which makes it this item's work.\nBoth items on the goal are green now, nothing waiting on you."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-06T08:05:17.659Z",
+     "text": "so the ear/client have a local stash of information about tests not available before AND don't have to worry about spending time on tests.\n\nsame is true for the desk.\n\nthe standard information set has the exact same shape in both modes.\n\nthe difference is: on the desk-node, deskVerify becomes a real agent, though a completely mechanical one. that part goes into a new item called \"deskVerify: Agent mode functionality\", which depends on this item."
+    }
+   ]
+  },
+  {
+   "id": "goal/G8.3",
+   "title": "deskVerify: Agent mode functionality — on the desk node it is a real agent, and a wholly mechanical one",
+   "goal": "goal/G8",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G8"
+   ],
+   "blocked": [
+    "goal/G8.2"
    ],
    "go": false,
    "alone": false,
