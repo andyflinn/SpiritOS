@@ -1,0 +1,8 @@
+{
+  "name": "localEar",
+  "description": "Listen to Andy's Desk in real-time, appear as live agent 'localEar', participate in conversations via chat.add",
+  "path": "/process/js/desk/localEar.js",
+  "command": "node localEar.js [port] [agent-name]",
+  "intrinsic": true,
+  "owner": "system"
+}

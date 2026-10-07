@@ -12,5 +12,8 @@
     // panel is the door he uses.
     "git.scanRepositories": [
         "spirit/run/brains"
+    ],
+    "cSpell.words": [
+        "localAgent"
     ]
 }
