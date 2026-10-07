@@ -41,6 +41,7 @@ node_modules
 # itself unsaveable, and silently — an ignored path shows in `git status` as
 # nothing at all.
 /CYCLE-*.md
+sandbox
 media
 published
 release
