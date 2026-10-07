@@ -2,6 +2,10 @@
 
 ## ui
 
+### rule/8 (version 18): Shell and Application Elements
+
+Shell and application elements, should bring their subscriptions with them, so that they're automatically subscribed to the events that update them
+
 ### rule/2 (version 12): Vertical spacing of block elements
 
 vertical spacing: every div/block carries with itself a leading vertical space of 1em. Exceptions to this rule will be specified.
