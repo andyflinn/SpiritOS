@@ -1,10 +1,11 @@
-// spirit/run/process/js/desk/loop.js
+PORT// spirit/run/process/js/desk/loop.js
 'use strict';
 
 const APP_SERVER_NAME = 'deskUnsloth';
 const APP_SERVER_PATH = 'process/js/deskUnsloth/';
 
 const appServer = require('../../../js/appServer');
+const spirit = appServer.spirit;
 
 // ADD THIS BEFORE THE END:
 appServer.serve({
@@ -18,12 +19,10 @@ appServer.serve({
 }, { dependencies: [] });
 
 
-const spirit = require('../../../js/spirit.js');
-spirit.core.node.ensureEnvironment();
 
 const http = require('http');
 
-const PORT = appServer.port;
+const PORT = spirit.core.node.const.SPIRIT_PORT;
 console.log('[loop.js] Using PORT: ' + PORT);
 const WAIT_MS = 250;
 

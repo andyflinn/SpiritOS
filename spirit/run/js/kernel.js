@@ -31,7 +31,6 @@ const spirit = {
       AUTHOR:AUTHOR,
       COPYRIGHT:COPYRIGHT,
       VERSION:VERSION,
-      SPIRIT_ENVIRONMENT_FILE:SPIRIT_ENVIRONMENT_FILE,
       IS_NODE:isNode(),
       IS_BROWSER:isBrowser(),
     },
@@ -167,6 +166,7 @@ if (isNode()) {
       ROOT_DIR:ROOT_DIR,
       DEFAULT_SPIRIT_PORT:DEFAULT_SPIRIT_PORT,
       SPIRIT_PORT:SPIRIT_PORT,
+      SPIRIT_ENVIRONMENT_FILE:SPIRIT_ENVIRONMENT_FILE,
     },
     util:{
 
@@ -186,18 +186,19 @@ if (isNode()) {
     return joined;
   };
 
-  let loadFile = spirit.core.fs.loadFile =
-  function(filePath){
-
-    if (!fileServable(filePath)) return null;
-
+  let loadFileInternal = function(filePath) {
     filePath = fsPath(ROOT_DIR,filePath);
-
     try {
       return fs.readFileSync(filePath, { encoding: 'utf8', flag: 'r' });
     } catch (err) {
       return null;
     }
+ };
+
+  let loadFile = spirit.core.fs.loadFile =
+  function(filePath){
+    if (!fileServable(filePath)) return null;
+    return loadFileInternal(filePath);
   };
 
   // Read-only, same boundary as loadFile (anywhere under ROOT_DIR, not just
@@ -367,9 +368,8 @@ if (isNode()) {
   spirit.core.fs.fileWritable = fileWritable;
   spirit.core.fs.fileServable = fileServable;
 
-  let saveFile = spirit.core.fs.saveFile = function(filePath, content){
+  let saveFileInternal = function(filePath, content){
     const resolved = fsPath(ROOT_DIR, filePath);
-    if (!fileWritable(filePath)) return { ok: false, reason: 'forbidden' };
     try {
       fs.mkdirSync(path.dirname(resolved), { recursive: true });
       fs.writeFileSync(resolved, content, 'utf8');
@@ -378,7 +378,35 @@ if (isNode()) {
       error(err);
       return { ok: false, reason: 'error' };
     }
+  }
+
+  let saveFile = spirit.core.fs.saveFile = function(filePath, content){
+    if (!fileWritable(filePath)) return { ok: false, reason: 'forbidden' };
+    return saveFileInternal(filePath,content);
   };
+
+  let loadJsonValue = spirit.core.fs.loadJsonValue = function(filePath){
+    console.log('inside loadJsonValue(' + filePath + ')');  
+    let file = spirit.core.fs.loadFile(filePath);
+    if (file === null) return null;
+    try {
+      return JSON.parse(file);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  let saveJsonValue = spirit.core.fs.saveJsonValue = function(filePath, value){
+    console.log('inside saveJsonValue(' + filePath + ', ' + JSON.stringify(value) + ')');  
+    try {
+      let jsonString = JSON.stringify(value, null, 2);
+      return spirit.core.fs.saveFile(filePath, jsonString);
+    } catch (e) {
+      console.log('inside saveJsonValue(' + filePath + ', ' + JSON.stringify(value) + ') failed: ' + e.message);  
+      return Promise.reject(new Error('failed to save JSON value: ' + e.message));
+    }
+  }
+
 
   // The one deliberate exception to saveFile's entry-script guard above —
   // App Builder's whole purpose is writing an app's own app/<name>/<name>.js,
@@ -1149,32 +1177,6 @@ let fileExists = spirit.core.fs.fileExists = function(filePath){
   else return true;
 };
 
-let loadJsonValue = spirit.core.fs.loadJsonValue = function(filePath){  
-  let file = spirit.core.fs.loadFile(filePath);
-  if (file === null) return null;
-  try {
-    return JSON.parse(file);
-  } catch (e) {
-    return null;
-  }
-}
-let saveJsonValue = spirit.core.fs.saveJsonValue = function(filePath, value){
-  try {
-    let jsonString = JSON.stringify(value, null, 2);
-    return spirit.core.fs.saveFile(filePath, jsonString);
-  } catch (e) {
-    return Promise.reject(new Error('failed to save JSON value: ' + e.message));
-  }
-}
-
-if (isNode()){
-  spirit.core.node.ensureEnvironment = function(){
-    let env = spirit.core.fs.loadJsonvalue(SPIRIT_ENVIRONMENT_FILE);
-    if (env){
-      spirit.core.node.const.SPIRIT_PORT = env.PORT;
-    }
-  }
-}
 
 const ICON = spirit.core.const.ICON = {
     ANGRY: '😠',

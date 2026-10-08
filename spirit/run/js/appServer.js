@@ -411,7 +411,15 @@ function serve(verbs, opts) {
   return s;
 }
 
-spirit.core.node.ensureEnvironment();
+let file = null;
+
+try {
+  rile = fs.readFileSync(spirit.core.node.const.SPIRIT_ENVIRONMENT_FILE, { encoding: 'utf8', flag: 'r' });
+  try {
+    let env = JSON.parse(file);
+    spirit.core.node.const.SPIRIT_PORT = Number(env.PORT || spirit.core.node.const.DEFAULT_SPIRIT_PORT);
+  } catch (e) {}
+} catch (e) {}
 
 module.exports = {
   spirit:spirit,

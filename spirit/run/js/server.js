@@ -102,9 +102,23 @@ const hub =require('./hub').createHub(ROOT_DIR);
 
 const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.core.node.const.DEFAULT_SPIRIT_PORT;
 {
-  let environment = spirit.core.fs.loadJsonValue(spirit.core.const.SPIRIT_ENVIRONMENT_FILE);
-  if (environment === null) environment = { PORT:port }
-  spirit.core.fs.saveJsonValue(spirit.core.const.SPIRIT_ENVIRONMENT_FILE, environment);
+  const fs = require('fs');
+  let environment = null;
+  try {
+    let file = fs.readFileSync(spirit.core.node.const.SPIRIT_ENVIRONMENT_FILE, { encoding: 'utf8', flag: 'r' });
+      try {
+      let environment = JSON.parse(file);
+      spirit.core.node.const.SPIRIT_PORT = Number(env.PORT);
+      } catch (e) { environment = null; }
+  } catch (e) {
+    environment = null;
+  }
+  
+  if (environment === null) {
+    environment = { PORT:port }
+  }
+  
+  fs.writeFileSync(spirit.core.node.const.SPIRIT_ENVIRONMENT_FILE, JSON.stringify(environment, null, 2), 'utf8');
 }
 
 // The desktop shell. A relay's brochure (relay.html) is served by
