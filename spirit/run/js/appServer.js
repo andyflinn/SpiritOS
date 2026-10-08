@@ -414,7 +414,7 @@ function serve(verbs, opts) {
 let file = null;
 
 try {
-  rile = fs.readFileSync(spirit.core.node.const.SPIRIT_ENVIRONMENT_FILE, { encoding: 'utf8', flag: 'r' });
+  file = fs.readFileSync(spirit.core.node.const.SPIRIT_ENVIRONMENT_FILE, { encoding: 'utf8', flag: 'r' });
   try {
     let env = JSON.parse(file);
     spirit.core.node.const.SPIRIT_PORT = Number(env.PORT);
