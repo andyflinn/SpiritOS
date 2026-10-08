@@ -39,8 +39,8 @@ const http = require('http');
 // For the proxy's outbound calls (handleGenericProxy) — with no 300-second
 // cut of its own, which Node's fetch has.
 const https = require('https');
-const fs = require('fs');
 const path = require('path');
+
 const spirit = require('./kernel');
 // The helpers this node shares with the relay's startup module — body
 // reading, file sending, the 413 and malformed-path guards, /api/version.
@@ -101,6 +101,11 @@ require('./shellMove').moveAppState(ROOT_DIR);
 const hub =require('./hub').createHub(ROOT_DIR);
 
 const port = common.portFromArgs(process.argv.slice(2)) || process.env.PORT || spirit.core.node.const.DEFAULT_SPIRIT_PORT;
+{
+  let environment = spirit.core.fs.loadJsonValue(spirit.core.const.SPIRIT_ENVIRONMENT_FILE);
+  if (environment === null) environment = { PORT:port }
+  spirit.core.fs.saveJsonValue(spirit.core.const.SPIRIT_ENVIRONMENT_FILE, environment);
+}
 
 // The desktop shell. A relay's brochure (relay.html) is served by
 // relayServer.js; this node serves it only by its literal path, as a

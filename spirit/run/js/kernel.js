@@ -16,6 +16,7 @@ const AUTHOR = 'Andy Flinn, from AndyFlinn.com';
 const COPYRIGHT = 'Copyright (c) 2024 Andy Flinn, from AndyFlinn.com';
 const VERSION = '0.0.1';
 const SPIRIT_NAME = 'SpiritOS';
+const SPIRIT_ENVIRONMENT_FILE = './relay-state/environment.json';
 
 // constants
 // DEBUG (desk/G2.5): one switch per process, off at start, never persisted. Andy: "DEBUG is
@@ -30,6 +31,7 @@ const spirit = {
       AUTHOR:AUTHOR,
       COPYRIGHT:COPYRIGHT,
       VERSION:VERSION,
+      SPIRIT_ENVIRONMENT_FILE:SPIRIT_ENVIRONMENT_FILE,
       IS_NODE:isNode(),
       IS_BROWSER:isBrowser(),
     },
@@ -158,11 +160,13 @@ if (isNode()) {
   // anywhere but spirit/run/ itself, with no error pointing at why.
   const ROOT_DIR = path.join(__dirname, '..');
   const DEFAULT_SPIRIT_PORT = 65432;
+  const SPIRIT_PORT = DEFAULT_SPIRIT_PORT;
   
   spirit.core.node = {
     const:{
       ROOT_DIR:ROOT_DIR,
       DEFAULT_SPIRIT_PORT:DEFAULT_SPIRIT_PORT,
+      SPIRIT_PORT:SPIRIT_PORT,
     },
     util:{
 
@@ -1138,6 +1142,39 @@ if (isNode()) {
 
  // ******************************************************************
  // functions that depend on environment specific other functions
+
+let fileExists = spirit.core.fs.fileExists = function(filePath){
+  if (spirit.core.fs.statFile === null ) 
+    return false;
+  else return true;
+};
+
+let loadJsonValue = spirit.core.fs.loadJsonValue = function(filePath){  
+  let file = spirit.core.fs.loadFile(filePath);
+  if (file === null) return null;
+  try {
+    return JSON.parse(file);
+  } catch (e) {
+    return null;
+  }
+}
+let saveJsonValue = spirit.core.fs.saveJsonValue = function(filePath, value){
+  try {
+    let jsonString = JSON.stringify(value, null, 2);
+    return spirit.core.fs.saveFile(filePath, jsonString);
+  } catch (e) {
+    return Promise.reject(new Error('failed to save JSON value: ' + e.message));
+  }
+}
+
+if (isNode()){
+  spirit.core.node.ensureEnvironment = function(){
+    let env = spirit.core.fs.loadJsonvalue(SPIRIT_ENVIRONMENT_FILE);
+    if (env){
+      spirit.core.node.const.SPIRIT_PORT = env.PORT;
+    }
+  }
+}
 
 const ICON = spirit.core.const.ICON = {
     ANGRY: '😠',

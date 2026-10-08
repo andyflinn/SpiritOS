@@ -1,7 +1,11 @@
 // spirit/run/process/js/desk/loop.js
 'use strict';
 
+const APP_SERVER_NAME = 'deskUnsloth';
+const APP_SERVER_PATH = 'process/js/deskUnsloth/';
+
 const appServer = require('../../../js/appServer');
+
 // ADD THIS BEFORE THE END:
 appServer.serve({
   alive: {
@@ -14,13 +18,12 @@ appServer.serve({
 }, { dependencies: [] });
 
 
-const kernel = require('../../../js/kernel.js');
-const path = require('path');
-const fs = require('fs');
+const spirit = require('../../../js/spirit.js');
+spirit.core.node.ensureEnvironment();
+
 const http = require('http');
 
-const CONFIG_PATH = 'process/js/deskUnsloth/loop.json';
-const PORT = '11111';
+const PORT = appServer.port;
 console.log('[loop.js] Using PORT: ' + PORT);
 const WAIT_MS = 250;
 
@@ -32,12 +35,12 @@ function createOpenAIProcessor() {
   
   function loadConfig() {
     try {
-      const configPath = path.resolve(CONFIG_PATH);
-      if (!fs.existsSync(configPath)) {
+      const configPath = APP_SERVER_PATH + 'loop.json';
+      if (!spirit.core.fs.fileExists(configPath)) {
         say('[openai] Config file not found: ' + configPath);
         process.exit(1);
       }
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      const config = JSON.parse(spirit.core.fs.readFile(configPath, 'utf8'));
       if (!config.OpenAI) {
         say('[openai] No OpenAI section in config');
         process.exit(1);
@@ -208,7 +211,7 @@ function fetchAndReply(itemId) {
   const one = {};
   one.deskClient = { desk: { verb: 'item.chat', json: JSON.stringify({ id: itemId }) } };
   
-  kernel.core.ask('jobs.api', { ask: one }, 'http://127.0.0.1:' + PORT)
+  spirit.core.ask('jobs.api', { ask: one }, 'http://127.0.0.1:' + PORT)
     .then(function (r) {
       const result = r.body || {};
       if (result.chat && Array.isArray(result.chat)) {
@@ -238,7 +241,7 @@ function waitNext() {
   const one = {};
   one.deskClient = { next: {} };
   
-  kernel.core.ask('jobs.api', { ask: one }, 'http://127.0.0.1:' + PORT)
+  spirit.core.ask('jobs.api', { ask: one }, 'http://127.0.0.1:' + PORT)
     .then(function (r) {
       const result = r.body || {};
       if (Array.isArray(result.lines)) {
@@ -279,7 +282,7 @@ function waitNext() {
 function addChat(itemId, text) {
   const one = {};
   one.deskClient = { desk: { verb: 'chat.add', json: JSON.stringify({ id: itemId, text: text }) } };
-  return kernel.core.ask('jobs.api', { ask: one }, 'http://127.0.0.1:' + PORT)
+  return spirit.core.ask('jobs.api', { ask: one }, 'http://127.0.0.1:' + PORT)
     .then(function (r) {
       try {
         const result = JSON.parse(r.text);

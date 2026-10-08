@@ -35,6 +35,8 @@
 //   The app never names its pipe. The node names it (appClient.pipePathFor)
 //   and hands it over as --pipe; serve() reads it (D15).
 
+const spirit = require('./kernel.js');
+
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
@@ -272,7 +274,7 @@ function shape(v) {
 // One limit for everything a payload passes (Andy: "the shared layer MUST instantly reject a payload"): MAX_PAYLOAD.
 const PUBLISH_MAX = limits.PAYLOAD_MAX;
 function send(obj) {
-  Promise.resolve(require('./kernel.js').core.jobs.report({ app: obj })).catch(function () { /* not started by a node */ });
+  Promise.resolve(spirit.core.jobs.report({ app: obj })).catch(function () { /* not started by a node */ });
 }
 function publish(obj) {
   if (!isPlain(obj)) return false;
@@ -409,10 +411,14 @@ function serve(verbs, opts) {
   return s;
 }
 
+spirit.core.node.ensureEnvironment();
+
 module.exports = {
+  spirit:spirit,
   createAppServer: createAppServer,
   serve: serve,
   publish: publish,
   matches: matches,
   RESERVED: RESERVED,
 };
+
