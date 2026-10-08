@@ -4,6 +4,7 @@
 const APP_SERVER_NAME = 'deskUnsloth';
 const APP_SERVER_PATH = 'process/js/deskUnsloth/';
 
+const fs = require('fs');
 const appServer = require('../../../js/appServer');
 const spirit = appServer.spirit;
 
@@ -39,7 +40,7 @@ function createOpenAIProcessor() {
         say('[openai] Config file not found: ' + configPath);
         process.exit(1);
       }
-      const config = spirit.core.fs.loadJsonValue(configPath, 'utf8');
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
       if (!config.OpenAI) {
         say('[openai] No OpenAI section in config');
         process.exit(1);
