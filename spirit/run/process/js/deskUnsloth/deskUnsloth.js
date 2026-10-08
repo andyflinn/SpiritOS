@@ -1,12 +1,25 @@
-﻿// spirit/run/process/js/desk/loop.js
+// spirit/run/process/js/desk/loop.js
 'use strict';
 
-const kernel = require('./spirit/run/js/kernel.js');
+const appServer = require('../../../js/appServer');
+// ADD THIS BEFORE THE END:
+appServer.serve({
+  alive: {
+    request: {},
+    reply: { alive: true },
+    handler: function() {
+      return { alive: true };
+    }
+  }
+}, { dependencies: [] });
+
+
+const kernel = require('../../../js/kernel.js');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
 
-const CONFIG_PATH = 'loop.json';
+const CONFIG_PATH = 'process/js/deskUnsloth/loop.json';
 const PORT = '11111';
 const WAIT_MS = 250;
 
