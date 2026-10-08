@@ -19,31 +19,22 @@ function createOpenAIProcessor() {
   function loadConfig() {
     try {
       const configPath = path.resolve(CONFIG_PATH);
-      if (!fs.existsSync(configPath)) {
-        say('[openai] Config file not found: ' + configPath);
-        process.exit(1);
+      if (fs.existsSync(configPath)) {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        if (config.OpenAI) {
+          if (config.OpenAI.API_KEY) {
+            process.env.OPENAI_API_KEY = config.OpenAI.API_KEY;
+            say('[openai] Loaded API_KEY from config');
+          }
+          if (config.OpenAI.URL) {
+            process.env.OPENAI_URL = config.OpenAI.URL;
+            OPENAI_CONFIG = config.OpenAI;
+            say('[openai] Loaded URL: ' + config.OpenAI.URL);
+          }
+        }
       }
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-      if (!config.OpenAI) {
-        say('[openai] No OpenAI section in config');
-        process.exit(1);
-      }
-      if (!config.OpenAI.API_KEY) {
-        say('[openai] Missing API_KEY in config');
-        process.exit(1);
-      }
-      process.env.OPENAI_API_KEY = config.OpenAI.API_KEY;
-      say('[openai] Loaded API_KEY from config');
-      if (!config.OpenAI.URL) {
-        say('[openai] Missing URL in config');
-        process.exit(1);
-      }
-      process.env.OPENAI_URL = config.OpenAI.URL;
-      OPENAI_CONFIG = config.OpenAI;
-      say('[openai] Loaded URL: ' + config.OpenAI.URL);
     } catch (e) {
       say('[openai] Config error: ' + e.message);
-      process.exit(1);
     }
   }
   
@@ -68,12 +59,9 @@ function createOpenAIProcessor() {
       return;
     }
     
-    // Extract just the path from the base URL (e.g., "/v1" from "http://127.0.0.1:8888/v1")
-    const baseUrlPath = OPENAI_CONFIG.URL.match(/^https?:\/\/[^\/]+/)[0] ? OPENAI_CONFIG.URL.replace(/^https?:\/\/[^\/]+/, '') : OPENAI_CONFIG.URL;
-    const url = baseUrlPath + '/chat/completions';
-    say('[openai] Constructed URL path: ' + url);
+    const url = OPENAI_CONFIG.URL + '/chat/completions';
     const data = JSON.stringify({
-      model: 'unsloth/Qwen3.5-9B-GGUF',
+      model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: 'You are a helpful assistant. Reply concisely and clearly.' },
         { role: 'user', content: userMessage }
@@ -99,10 +87,8 @@ function createOpenAIProcessor() {
       res.on('data', function (chunk) { body += chunk; });
       res.on('end', function () {
         say('[openai] Response received');
-        say('[openai] Full response: ' + body.substring(0, 500));
         try {
           const result = JSON.parse(body);
-          say('[openai] Parsed result keys: ' + Object.keys(result).join(','));
           if (result.choices && result.choices.length > 0) {
             say('[openai] Got choice, calling callback');
             callback(result.choices[0].message.content);
