@@ -20,7 +20,9 @@ const fs = require('fs');
 const http = require('http');
 
 const CONFIG_PATH = 'process/js/deskUnsloth/loop.json';
-const PORT = '11111';
+//const PORT = '11111';
+PORT = kernel.PORT;
+console.log('[loop.js] Using PORT: ' + PORT);
 const WAIT_MS = 250;
 
 function createOpenAIProcessor() {
