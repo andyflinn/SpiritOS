@@ -20,8 +20,7 @@ const fs = require('fs');
 const http = require('http');
 
 const CONFIG_PATH = 'process/js/deskUnsloth/loop.json';
-//const PORT = '11111';
-PORT = kernel.PORT;
+const PORT = '11111';
 console.log('[loop.js] Using PORT: ' + PORT);
 const WAIT_MS = 250;
 
