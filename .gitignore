@@ -91,6 +91,8 @@ relay-state/
 # Unanchored, to match the file wherever an app folder ends up.
 session.json
 
+loop.json
+
 # Relay Chat's remembered view (chat 6): who was selected, which filter,
 # and how far each conversation had been read. Same class as
 # session.json above — this node's state about itself, never product
@@ -237,3 +239,6 @@ app-state/
 # files in app/ until its first start moves them (js/shellMove.js); until
 # then none of them is anyone else's business, nor a test fixture's.
 spirit/run/app/
+console.log(JSON.parse(r.text)))
+console.log(JSON.stringify(JSON.parse(r.text)
+{console.log(Response
