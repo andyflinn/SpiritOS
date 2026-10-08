@@ -39,7 +39,7 @@ function createOpenAIProcessor() {
         say('[openai] Config file not found: ' + configPath);
         process.exit(1);
       }
-      const config = JSON.parse(spirit.core.fs.readFile(configPath, 'utf8'));
+      const config = spirit.core.fs.loadJsonValue(configPath, 'utf8');
       if (!config.OpenAI) {
         say('[openai] No OpenAI section in config');
         process.exit(1);
