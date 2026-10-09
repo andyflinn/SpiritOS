@@ -1,8 +1,8 @@
 {
- "change": 20026,
+ "change": 20296,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T05:42:57.988Z",
+ "writtenAt": "2026-10-09T06:06:32.113Z",
  "items": [
   {
    "id": "goal/G9",
@@ -16,7 +16,6 @@
    "blocking": [],
    "blocked": [
     "goal/G9.1",
-    "goal/G9.2",
     "goal/G9.3",
     "goal/G9.4",
     "goal/G9.5",
@@ -47,12 +46,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 11,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -121,6 +123,21 @@
      "by": "claude-windows",
      "at": "2026-10-09T05:42:16.468Z",
      "text": "cw: all green. The three red questions are cleared: two were answered by your G9.13 order, and wsl's was its own summary.\nWhat remains open is only the rule/8 C checks on nine items, which belong to the build and are not questions.\nDropped with them: whether G9.13 should also cover the same call closing items it leaves out; say so if you want it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:44:08.359Z",
+     "text": "cw: taking red on G9.1, G9.2, G9.3, G9.4, G9.9 and G9.13.\nwsl: red on G9.5, G9.6, G9.7, G9.8 and G9.12 is yours; each of us then builds the other's.\nIf wsl is not here, the desk waives and I take them all in turn."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:44:32.956Z",
+     "text": "cw: correction, G9.2 is wsl's, it took it first; cw holds red on G9.1, G9.3, G9.4, G9.9 and G9.13."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:54:05.039Z",
+     "text": "cw: builds of G9.1, G9.9 and G9.13 are wsl's, as cw wrote their reds; each shows Waive until it is taken.\ncw holds the builds of G9.6 and G9.8 and is writing the last red, G9.3."
     }
    ]
   },
@@ -128,9 +145,11 @@
    "id": "goal/G9.1",
    "title": "Sword icon marks make-current in the List; the button lives in the goal's Details",
    "goal": "goal/G9",
-   "status": "running",
+   "status": "verified",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G9"
    ],
@@ -140,14 +159,14 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
+   "verifier": "claude-windows",
    "waived": false,
    "rules": [
     {
@@ -175,7 +194,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 2,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"the [make-current] button will not be displayed in the List, only in the goals Details. in the list, an item that has a [make-current] button, the item will be marked with an ICON.SWORD (⚔️), indicating: \\\"There is a battle to be fought\\\".\"\n\nShape: UI only, in the desk shell. The List row draws the sword where buttons contains make-current; the press stays in the goal's Details. No desk server change.",
@@ -196,6 +215,81 @@
      "by": "desk",
      "at": "2026-10-09T05:42:54.959Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:45:46.250Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:47:22.018Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:48:41.418Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:51:51.587Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:53:11.597Z",
+     "text": "cw: red done, 9a79d543: spirit/test/deskSword.js, 2 owed failures on today's code.\nA row offering make-current carries the sword and no make-current button; other rows carry none; the Details keeps Make current goal. ICON.SWORD already exists in the kernel.\nBuild is free; I wrote the red, so I do not build it."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:53:15.313Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:53:49.954Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:54:06.862Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T05:54:18.622Z",
+     "text": "get rid of the waive somehow"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:55:30.086Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:55:49.488Z",
+     "text": "wsl: Waive is gone - I hold the builds of G9.1, G9.9 and G9.13 now, which is what the button was waiting for.\nG9.1 first, then G9.9, then G9.13, one at a time."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:55:49.981Z",
+     "text": "cw: Waive shows because the build is free and only wsl may build it, cw having written the red; it goes the moment wsl takes the build.\nwsl has just finished G9.4: wsl, take G9.1, G9.9 and G9.13 next.\nIf you want Waive never to show while another agent is here and free, that is a desk change and a new item."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:58:52.655Z",
+     "text": "commit dabaf80fb48f792eda794ec4b5e235caeb0604f0: goal/G9.1: the sword in the List, the make-current press only in the Details\n- spirit/run/shell/desk/desk.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:59:01.063Z",
+     "text": "wsl: built and pushed, dabaf80f. cw's red (deskSword.js) is 8 of 8 green.\nmake-current joined DESK_NOT_IN_ROW and a row whose buttons hold it draws the sword in the marks cell, your words as its title; the press in the Details is untouched.\nFiles touched: spirit/run/shell/desk/desk.js. Verify is free; G9.9 is next on my side."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:04:55.722Z",
+     "text": "cw: verified dabaf80f. deskSword.js 8 of 8; with make-current put back in the row, or the sword taken out, it goes red each time, so the red holds both halves.\nNo test was weakened; the change is desk.js alone, as the box says."
     }
    ]
   },
@@ -203,26 +297,29 @@
    "id": "goal/G9.2",
    "title": "Current Goal Only and Goals Only are exclusive toggles",
    "goal": "goal/G9",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "waived": false,
    "rules": [
     {
@@ -271,6 +368,46 @@
      "by": "desk",
      "at": "2026-10-09T05:42:55.168Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:43:47.742Z",
+     "text": "wsl: taking, writing the red for the two toggles."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:45:27.184Z",
+     "text": "commit fcfe28fbbf7f17525a931de4fd31381f87188068: goal/G9.2: the red for the exclusive toggles - the shell sends both as true today\n- spirit/test/deskExclusiveToggles.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:45:38.071Z",
+     "text": "wsl: the red is in and pushed, fcfe28fb - spirit/test/deskExclusiveToggles.js, 6 red and 1 green on today's code.\nWhat it asserts: a click on either toggle turns the other off before items.search goes, the chip loses its mark, and no search of the session carries both as true. Both off stays allowed, Include Closed untouched.\nBuild is free for the other agent; I wrote the red, so I do not build it."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:45:42.493Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T05:46:05.079Z",
+     "text": "why waive what?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:48:36.517Z",
+     "text": "cw: no waive needed. The button showed because the build was free and only wsl, who wrote the red, had touched it.\ncw takes the build now; G9.1 and G9.3 reds follow."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:51:46.369Z",
+     "text": "cw: built, b05404e0; deskExclusiveToggles.js 7 green, and every suite that loads the desk page is green.\nFiles: spirit/run/shell/desk/desk.js, spirit/test/deskList.js (its toggle check held the old both-on behaviour).\nVerify is free."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:05:50.275Z",
+     "text": "wsl: verified, pass. deskExclusiveToggles.js 7 of 7 on cw's build, and deskList 22, deskLayout 14, deskDialog 22 green beside it.\nMutated to be sure it bites: dropping the one line that de-selects the other toggle takes the suite to 6 red, so it is not passing vacuously."
     }
    ]
   },
@@ -278,8 +415,8 @@
    "id": "goal/G9.3",
    "title": "The user takes the text box on focus, releases on blur or close",
    "goal": "goal/G9",
-   "status": "running",
-   "with": "",
+   "status": "queued for build",
+   "with": "wsl-claude",
    "buttons": [],
    "blocking": [
     "goal/G9"
@@ -290,13 +427,13 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
    "verifier": "",
    "waived": false,
    "rules": [
@@ -360,6 +497,111 @@
      "by": "desk",
      "at": "2026-10-09T05:42:55.476Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:45:46.602Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:47:22.250Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:48:41.667Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:51:51.838Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:53:15.579Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:53:50.244Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:54:07.155Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:55:26.427Z",
+     "text": "cw: red done, da282cae: spirit/test/deskBoxTake.js, 11 owed failures on today's code.\nServer: his box.take accepted, box.release frees the holder's take without a write, a standing take refuses every other writer, him too. Dialog: the box is a textarea dd-box-input; focus takes, blur releases, or writes when changed; opening takes nothing.\nThe dialog cannot hear the shell's Back, so blur is the release on close; build is free."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:55:30.309Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:55:44.005Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:56:01.593Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T05:56:02.150Z",
+     "text": "get rid of the waive here as well."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:56:15.262Z",
+     "text": "cw: same cause, cw wrote this red, so the build is wsl's; wsl, take G9.3 too and the button goes.\nThis is the last red from cw, so no further Waive comes from cw's side."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:56:17.093Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:56:32.563Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:56:50.677Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:57:07.235Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:57:26.457Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:58:08.593Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:58:23.609Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:59:24.155Z",
+     "text": "wsl: taken, Waive is gone here too. I hold the builds of G9.1 (done), G9.3, G9.9 and G9.13.\nOrder: G9.9, G9.13, G9.3. My two remaining reds, G9.5 and G9.7, come after, so cw has something to build."
     }
    ]
   },
@@ -367,9 +609,11 @@
    "id": "goal/G9.4",
    "title": "A split adds only the explicit blocking relation",
    "goal": "goal/G9",
-   "status": "running",
+   "status": "verified",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G9"
    ],
@@ -379,14 +623,14 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
+   "verifier": "claude-windows",
    "waived": false,
    "rules": [
     {
@@ -414,7 +658,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"when splitting an item, only the new explicit blocking relationship is automatically added, the implicit blocking will not need to be specified, it clutters the list display with confusing \\\"blocks\\\" and \\\"waits on\\\" columns, and is not needed for a dependency graph.\"\n\nToday: blocks come from the session json an agent sends; on 2026-10-03 Andy ruled the new items block the parent. Andy, 2026-10-07, on Q1 (which relation is the explicit one): \"the new split-items always block the item from which they were split, items blocked by the current item are still blocked by the newly split item, because if theyre blocked by me, they are implicitly blocked by the newly created/split item.\"\nShape: a split writes one relation per new item, new item blocks parent, and nothing else; what the parent blocks stays the parent's and reaches the new item through it. The 2026-10-03 ruling stands, this names what is NOT written.",
@@ -440,6 +684,51 @@
      "by": "desk",
      "at": "2026-10-09T05:42:55.764Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:45:46.896Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:47:02.697Z",
+     "text": "cw: red done, f3085c87: spirit/test/deskSplitRelation.js, 5 owed failures on today's code.\nA new item of a split blocks the parent alone, whether the session named the parent, nothing, or the implicit ones too; the parent keeps its own blocks.\nBuild is free; I wrote the red, so I do not build it."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:47:22.536Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:48:41.873Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:51:52.088Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:51:57.333Z",
+     "text": "wsl: taking the build on cw's red."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:55:09.890Z",
+     "text": "commit bd1b672bcde49162bff0831301e742bb295513fa: goal/G9.4: a split adds only the explicit blocking relation\n- spirit/run/process/js/desk/desk.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:55:18.968Z",
+     "text": "wsl: built and pushed, bd1b672b - one change in session.set, desk.js. cw's red is 9 of 9 green.\nIn a session that names a split, an item new in that session blocks the parent alone: the split it named, else the only split there is. The parent keeps its own blocks.\nFiles touched: spirit/run/process/js/desk/desk.js. Verify is free."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:05:41.404Z",
+     "text": "cw: verified bd1b672b. deskSplitRelation.js 9 of 9 and deskSplitGreen.js 10 of 10; with the rewrite switched off it goes 5 red, and with old items rewritten too it goes 3 red.\nThe snapshot of what existed is taken before the loop makes new items, so a replay of the records decides the same."
     }
    ]
   },
@@ -447,8 +736,8 @@
    "id": "goal/G9.5",
    "title": "Code toggle in the item Details button bar",
    "goal": "goal/G9",
-   "status": "running",
-   "with": "",
+   "status": "writing red",
+   "with": "wsl-claude",
    "buttons": [],
    "blocking": [
     "goal/G9"
@@ -459,12 +748,12 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "green": true,
    "code": true,
    "phase": "red",
-   "red": "",
+   "red": "wsl-claude",
    "builder": "",
    "verifier": "",
    "waived": false,
@@ -524,7 +813,9 @@
    "goal": "goal/G9",
    "status": "running",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G9"
    ],
@@ -534,14 +825,14 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "waived": false,
    "rules": [
     {
@@ -569,11 +860,11 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 2,
    "half": false,
    "full": false,
-   "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"the header area in both desk and desk detail can do without the title-bubble, because the desk is only about the current goal, and the deskDetail has the title already in the shells title bar, so that the header area can be smoothly joined with the shell's title bar at all times. It should never be moving during vertical scroll operations.\" and \"the header area should not contain rounded corners. and its container should have no margins and no padding.\"\n\nShape: UI only, CSS and layout in the desk shell.",
-   "version": 1,
+   "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"the header area in both desk and desk detail can do without the title-bubble, because the desk is only about the current goal, and the deskDetail has the title already in the shells title bar, so that the header area can be smoothly joined with the shell's title bar at all times. It should never be moving during vertical scroll operations.\" and \"the header area should not contain rounded corners. and its container should have no margins and no padding.\"\n\nShape: UI only, CSS and layout in the desk shell.\n\nAndy, 2026-10-09, on Q1 (how the goal is opened once the bubble goes): \"I'm talking about the title bubble in the \"header area\", not in the list\"\nSo only the header bubbles go (#desk-goal, #dd-head); the List keeps its goal row, and that row is how the goal is opened.",
+   "version": 2,
    "checks": [
     {
      "number": "C1",
@@ -583,6 +874,15 @@
      "state": "open",
      "by": "",
      "at": ""
+    },
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "With the title bubble gone, how do you open the goal item? Today #desk-goal is the only click that opens it; the List row under Goals Only would be the other way.",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:51:34.902Z"
     }
    ],
    "chat": [
@@ -590,6 +890,56 @@
      "by": "desk",
      "at": "2026-10-09T05:42:56.264Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:46:23.806Z",
+     "text": "wsl: taking, writing the red for the header area."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:48:55.604Z",
+     "text": "commit b6f34da46facf0079b34c2093e75b5d865844ba5: goal/G9.6: the red for the header area - bubble, padding and rounding all still there\n- spirit/test/deskHeaderArea.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:49:06.852Z",
+     "text": "wsl: the red is in and pushed, b6f34da4 - spirit/test/deskHeaderArea.js, 6 red and 2 green.\nIt asserts both shells: the title bubbles (#desk-goal, #dd-head) gone, no padding or margin on the header container, nothing rounded inside it, and createAppHeader still sticking it under the bar.\nOne question on the item: with the bubble gone, the only click that opens the goal today goes with it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T05:50:23.287Z",
+     "text": "Q1: With the title bubble gone, how do you open the goal item? Today #desk-goal is the only click that opens it; the List row under Goals Only would be the other way.\n\nI'm talking about the title bubble in the \"header area\", not in the list"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:51:35.974Z",
+     "text": "wsl: taken - only the header bubbles go, the List keeps its goal row and that is how the goal opens. Your words are in the box, Q1 closed.\nThe red needs no change: it asserts #desk-goal and #dd-head in the header areas only."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:51:40.219Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T05:52:48.090Z",
+     "text": "get rid of the waive button"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:53:33.673Z",
+     "text": "cw: Waive is gone; cw took the build, which is what it was waiting for."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:01:02.722Z",
+     "text": "cw: built, 586bfb60, rebased on wsl's G9.1; deskHeaderArea.js 8 of 8, and the desk page and dialog suites are green on the combined tree.\nFiles: spirit/run/shell/desk/desk.js, spirit/run/shell/deskDetails/deskDetails.js, spirit/test/deskLayout.js, spirit/test/deskDialog.js. The dialog's status now rides in the title bar, as #dd-head carried it.\nVerify is free."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:05:52.354Z",
+     "text": "wsl: verified, pass. deskHeaderArea.js 8 of 8 on cw's build; the dialog and page suites are green with the status moved into the title bar.\nMutated: putting the 4px padding back on #desk-bars goes red at once."
     }
    ]
   },
@@ -688,7 +1038,9 @@
    "goal": "goal/G9",
    "status": "running",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G9"
    ],
@@ -698,14 +1050,14 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "waived": false,
    "rules": [
     {
@@ -733,7 +1085,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 2,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"The [Start/End design] buttons should be displayed always, not only when the team tab is active, and it should be placed right after the [Musings] tab header in desks header area\" and \"get rid of the yellow bubble that says \\\"Design mode. Nothing is built until it ends, and it ends only in the Team tab.\\\". it is useless.\"\n\nShape: UI only, in the desk shell.",
@@ -754,6 +1106,41 @@
      "by": "desk",
      "at": "2026-10-09T05:42:56.742Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:49:51.290Z",
+     "text": "wsl: taking, writing the red for the design buttons and the yellow bubble."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:50:43.778Z",
+     "text": "commit 762005a8dd1d0573d2493acd5162228c8e75fabc: goal/G9.8: the red for the design button and the yellow bubble\n- spirit/test/deskDesignButtons.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:50:54.736Z",
+     "text": "wsl: the red is in and pushed, 762005a8 - spirit/test/deskDesignButtons.js, 7 red and 2 green.\nIt asserts a design button unhidden on all four tabs, after the Musings tab and before the bubbles, End while design is on and Start while it is off, and no #desk-design nor its words on the page.\nBuild is free; I wrote the red, so I do not build it."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:50:59.182Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:51:40.484Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:04:21.729Z",
+     "text": "cw: built, bd89b276; deskDesignButtons.js 9 of 9, and every desk page suite is green.\nFiles: spirit/run/shell/desk/desk.js, spirit/test/deskDesignButtons.js. One test fix, named for wsl: the design-off check changed the fake and only clicked a tab, which asks the server nothing; it now searches again and asserts the same.\nVerify is free."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:05:54.542Z",
+     "text": "wsl: verified, pass. deskDesignButtons.js 9 of 9 on cw's build.\nMutated: hiding the button again unless the Team tab is open takes it to 4 red. cw's fix to my design-off check is right - my version changed the fake without asking the server again, so it proved nothing."
     }
    ]
   },
@@ -763,7 +1150,9 @@
    "goal": "goal/G9",
    "status": "running",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G9.10",
     "goal/G9.11"
@@ -774,14 +1163,14 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
+   "verifier": "claude-windows",
    "waived": false,
    "rules": [
     {
@@ -809,7 +1198,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"the desk owns (is in charge of) goal and item ID's.\"\n\nToday: ids are named by the agent inside the session.set json (goal/G9.1 and so on). Shape: the desk mints the next id itself for anything added through goal.add and item.add (G9.10, G9.11); Andy, 2026-10-07, on Q1 (do agents keep naming ids in session.set): \"why should the agents need to, they can use the same api's the user needs to create them.\"\nShape: nobody names an id; goal.add and item.add mint it and answer it, for agents and for Andy alike. session.set is then the old way of creating, and goes (replaced is eradicated); what it still does beyond creating - a split's marking, blocks other than new-blocks-parent - needs a home, see Q2.\nAndy, 2026-10-07, on Q2 (does the bulk create-everything call go): \"that's a pretty cool call, and useful. it should be ordered by me explicitly, but it's handy... lets try regulating that by rules\"\nShape: the bulk call stays, and the desk names its ids too (Q1). Its use is rule/9, activated by Andy 2026-10-07 (\"done. activated rule/9\"): an agent makes it only on his explicit order for that goal.",
@@ -888,6 +1277,61 @@
      "by": "desk",
      "at": "2026-10-09T05:42:57.057Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:45:47.183Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:47:22.821Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:48:18.128Z",
+     "text": "cw: red done, 01c37f4f: spirit/test/deskIds.js, 11 owed failures on today's code.\nShape held: goal.add {title} and item.add {goal, title} answer the minted id, the next goal/G<n> and <goal>.<n> with closed members counted; an id argument is refused; adds keep the current goal.\nThese are desk verbs, not node verbs; whether session.set mints too is left out, as the box leaves it to rule/9."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:48:42.079Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:51:52.402Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:53:15.904Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:53:50.496Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:54:07.425Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:55:30.599Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:04:20.933Z",
+     "text": "commit 53b4de832e330940c9ee1ed92424c7ec87a11bcf: goal/G9.9 and goal/G9.13: the desk names the ids, and an add leaves the current goal alone\n- spirit/run/process/js/desk/desk.js\n- spirit/test/deskServer.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:04:36.447Z",
+     "text": "wsl: built and pushed, 53b4de83. cw's red (deskIds.js) is 12 of 12 green.\ngoal.add {title} and item.add {goal, title} answer the minted id; it is minted inside the write and kept in the record, so a walk never mints again, and the door refuses a sent id.\nFiles touched: spirit/run/process/js/desk/desk.js, spirit/test/deskServer.js (its verb list). Verify is free."
     }
    ]
   },
@@ -1003,9 +1447,9 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "green": true,
+   "green": false,
    "code": true,
    "phase": "red",
    "red": "",
@@ -1038,7 +1482,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"Please note that the desk ui will get much more stable if all its elements follow rule/8.\"\n\nrule/8 (Shell and Application Elements): elements bring their subscriptions with them, so they are automatically subscribed to the events that update them. Shape: every element the fixes above touch is built that way; Andy, 2026-10-07, on Q1: \"on every item of this goals. that's where the \"not-subscribed-to-obdates\" problems came from in the rules and ruleDetails.\"\nSo this is no item of its own: every UI item of G9 carries a C check for rule/8 instead, and this one is Andy's to close.",
@@ -1052,6 +1496,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-07T12:18:36.403Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "G9.12 carries nothing of its own: rule/8 became a C check on each UI item, so there is nothing to build here. Close it?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
     }
    ],
    "chat": [
@@ -1076,8 +1529,8 @@
    "id": "goal/G9.13",
    "title": "Adding an item never changes the current goal",
    "goal": "goal/G9",
-   "status": "running",
-   "with": "",
+   "status": "verify",
+   "with": "claude-windows",
    "buttons": [],
    "blocking": [
     "goal/G9"
@@ -1088,14 +1541,14 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "green": true,
+   "green": false,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "verify",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
+   "verifier": "claude-windows",
    "waived": false,
    "rules": [
     {
@@ -1123,7 +1576,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "ADDING AN ITEM NEVER CHANGES THE CURRENT GOAL\n\nAndy, 2026-10-09, under goal/G9: \"An item added to another goal should NOT change a goal.\" and \"cw: Add an item to this goal to that effect.\"\n\nWHY: on 2026-10-09 cw added goal/G8.8 through session.set, and session.set also sets the current goal to the goal it names (desk.js line 427, s.current = gid), so his current goal moved from G9 to G8 without any press of his. He put it back with Make current.\n\nREQUIRED, his: adding an item to a goal leaves the current goal where it is. Only his Make current press moves it.",
@@ -1137,6 +1590,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-09T05:42:08.751Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Should a brand-new goal still become current when it is set up? Today after this build: session.set on a goal the desk has never seen makes it current, goal.add never does. Both are green; only one can be your rule.",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
     }
    ],
    "chat": [
@@ -1149,6 +1611,61 @@
      "by": "desk",
      "at": "2026-10-09T05:42:57.772Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:45:40.580Z",
+     "text": "cw: red done, a396eb18: spirit/test/deskAddKeepsCurrent.js, 2 owed failures on today's code.\nFor the builder: deskMakeCurrent.js opens on session.set making the last goal current, and that world line moves with this build."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:45:47.469Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:47:23.095Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:48:42.330Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:51:52.652Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:53:16.197Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:53:50.847Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:54:07.756Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:55:30.900Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:55:44.276Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:04:39.557Z",
+     "text": "wsl: built in the same commit, 53b4de83. cw's red (deskAddKeepsCurrent.js) is 5 of 5 green.\nOne call I made rather than guessed: a session into a goal the desk already holds no longer moves the current goal, but setting up a goal it has never seen still does - that is what deskMakeCurrent.js reads, and the red does not speak to it.\nIt leaves goal.add and session.set unlike each other, so I raised it as a question."
     }
    ]
   }
