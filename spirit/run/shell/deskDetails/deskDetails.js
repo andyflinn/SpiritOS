@@ -445,9 +445,10 @@ spirit.shell.activateApp({
         }
         ddArmed = '';
         if (armedClose) { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
-        // DELETE IS A VERB, NOT A PRESS (goal/G9.7), and it takes the item off the List, so the dialog goes with it.
+        // DELETE IS A PRESS (goal/G9.7; Andy, 2026-10-09, asked verb or press: "press."), and it takes the item off
+        // the List, so the dialog goes with it.
         if (id === 'dd-delete') {
-          ddWrite('item.delete', { id: ddId }).then(function (taken) { if (taken) ddApi.closeDialog({}); });
+          ddPress('delete').then(function (taken) { if (taken) ddApi.closeDialog({}); });
           return;
         }
         ddPress(id.slice(3));
