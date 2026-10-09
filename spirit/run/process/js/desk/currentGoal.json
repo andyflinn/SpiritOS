@@ -1,8 +1,8 @@
 {
- "change": 20324,
+ "change": 20326,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:08:39.996Z",
+ "writtenAt": "2026-10-09T06:08:47.043Z",
  "items": [
   {
    "id": "goal/G9",
@@ -15,7 +15,6 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G9.1",
     "goal/G9.3",
     "goal/G9.5",
     "goal/G9.7",
@@ -43,7 +42,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -152,17 +151,18 @@
    "id": "goal/G9.1",
    "title": "Sword icon marks make-current in the List; the button lives in the goal's Details",
    "goal": "goal/G9",
-   "status": "verified",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -201,7 +201,7 @@
      "version": 6
     }
    ],
-   "asks": 2,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"the [make-current] button will not be displayed in the List, only in the goals Details. in the list, an item that has a [make-current] button, the item will be marked with an ICON.SWORD (⚔️), indicating: \\\"There is a battle to be fought\\\".\"\n\nShape: UI only, in the desk shell. The List row draws the sword where buttons contains make-current; the press stays in the goal's Details. No desk server change.",
@@ -615,10 +615,9 @@
    "id": "goal/G9.4",
    "title": "A split adds only the explicit blocking relation",
    "goal": "goal/G9",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
