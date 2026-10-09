@@ -1,8 +1,8 @@
 {
- "change": 21551,
+ "change": 21615,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T08:37:59.945Z",
+ "writtenAt": "2026-10-09T08:52:14.482Z",
  "items": [
   {
    "id": "goal/G8",
@@ -11,6 +11,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -39,7 +40,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 8,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -471,26 +472,29 @@
    "id": "goal/G8.1",
    "title": "deskVerify: the dataSet — verify.db, one row per test, and what identifies a test",
    "goal": "goal/G8",
-   "status": "building",
-   "with": "wsl-claude",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G8.2"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "green": true,
+   "green": false,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
    "builder": "wsl-claude",
-   "verifier": "",
+   "verifier": "claude-windows",
    "waived": false,
    "rules": [
     {
@@ -522,11 +526,11 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
-   "box": "deskVerify: THE DATASET\n\nAndy's design, 2026-10-06. verify.db on every node deskVerify runs on. A row per test: suite, title, outcome, commit, dirty tree, UTC time. Secondary indexes on commit, outcome and dirty tree.\n\nTHE KEY is the suite plus the title as written in it. A failing assertion carries the same title as its passing one, its runtime detail beside the title and not inside it, or a change of outcome cannot be followed.\n\nTHE DIRTY TREE is the files modified against the commit last pulled, sorted, empty when clean, so a result measured on a dirty tree is never taken for one measured at a commit.\n\nROWS. A record is written when that test has none yet, or when its outcome changes, carrying the commit and time of that change; every run and commit in between is implicit. Runs are not stored at all. An outcome is red or green, nothing else. A test its suite never reached reports nothing, writes nothing, and its last state stands.\n\nWHO SENDS IT is testSupport, the one place every check and fail already passes through. A suite deskVerify launched gets a port as a named argument and posts one record per assertion to deskVerify's loopback api, as it happens; a suite run by hand gets no port, sends nothing, and behaves as today. A record carries suite, title and outcome, since deskVerify launched the run and stamps the commit, dirty tree and time itself. The send is not waited on, those two calls being synchronous, and the suite waits once as it exits so the last records land.\n\nDECIDED, not to be reopened: records are never sent together. Andy, 2026-10-06, after an earlier design had held them back: more complicated, saves little time, and risks overflowing MAX_PAYLOAD eventually. A later session that finds this slow does not get to group them. One record is about 136 bytes against a 22528 limit.\n\nMEASURED IN THE TREE at 9ece24a8, what the above rests on:\n- 362 suites, 4291 titled assertions, one title repeated in the whole harness (natterIntrinsic.js): suite plus title is unique.\n- 4181 of 4780 failure sentences are built from runtime values, so the red and green of one assertion share no key today.\n- The printed number counts passes and failures apart, so it changes when a test flips and cannot be the key.\n- liveRelay.js reads its first positional argument as a relay address, hence a named port.\n\nWHERE IT LIVES AND WHAT RECEIVES IT, his, 2026-10-06: \"verify.db lives in deskVerify’s process folder and is .gitignored\", and the records arrive by its own verb, \"the verb \\\"record\\\" that supplies candidates for the database\". So the history is per node and never travels in git, which the tree makes necessary: a tracked database would land in every clone, and the ignored relay-state folder would lose it on a fresh one. The verb belongs to deskVerify, not to the node, so it crosses no interface boundary.",
-   "version": 18,
+   "box": "deskVerify: THE DATASET\n\nAndy's design, 2026-10-06. verify.db on every node deskVerify runs on. A row per test: suite, title, outcome, commit, dirty tree, UTC time. Secondary indexes on commit, outcome and dirty tree.\n\nTHE KEY is the suite plus the title as written in it. A failing assertion carries the same title as its passing one, its runtime detail beside the title and not inside it, or a change of outcome cannot be followed.\n\nTHE DIRTY TREE is the files modified against the commit last pulled, sorted, empty when clean, so a result measured on a dirty tree is never taken for one measured at a commit.\n\nROWS. A record is written when that test has none yet, or when its outcome changes, carrying the commit and time of that change; every run and commit in between is implicit. Runs are not stored at all. An outcome is red or green, nothing else. A test its suite never reached reports nothing, writes nothing, and its last state stands.\n\nWHO SENDS IT is testSupport, the one place every check and fail already passes through. A suite deskVerify launched gets a port as a named argument and posts one record per assertion to deskVerify's loopback api, as it happens; a suite run by hand gets no port, sends nothing, and behaves as today. A record carries suite, title and outcome, since deskVerify launched the run and stamps the commit, dirty tree and time itself. The send is not waited on, those two calls being synchronous, and the suite waits once as it exits so the last records land.\n\nDECIDED, not to be reopened: records are never sent together. Andy, 2026-10-06, after an earlier design had held them back: more complicated, saves little time, and risks overflowing MAX_PAYLOAD eventually. A later session that finds this slow does not get to group them. One record is about 136 bytes against a 22528 limit.\n\nMEASURED IN THE TREE at 9ece24a8, what the above rests on:\n- 362 suites, 4291 titled assertions, one title repeated in the whole harness (natterIntrinsic.js): suite plus title is unique.\n- 4181 of 4780 failure sentences are built from runtime values, so the red and green of one assertion share no key today.\n- The printed number counts passes and failures apart, so it changes when a test flips and cannot be the key.\n- liveRelay.js reads its first positional argument as a relay address, hence a named port.\n\nWHERE IT LIVES AND WHAT RECEIVES IT, his, 2026-10-06: \"verify.db lives in deskVerify’s process folder and is .gitignored\", and the records arrive by its own verb, \"the verb \\\"record\\\" that supplies candidates for the database\". So the history is per node and never travels in git, which the tree makes necessary: a tracked database would land in every clone, and the ignored relay-state folder would lose it on a fresh one. The verb belongs to deskVerify, not to the node, so it crosses no interface boundary.\n\nTHE NODE'S PORT, his, 2026-10-09: \"THE hosting nodes port is automatically delivered to EVERY appServer automatically!!!!!!!! DO NOT RE-INVENT this mechanism!!!!\" It is spirit.core.node.const.SPIRIT_PORT, which js/appServer.js sets from the node's relay-state/environment.json, and process/js/deskUnsloth reads. So deskVerify learns its node's port from that constant and nothing else; a suite it launches is not an app server and is told the same value as --verify-port, so a suite run by hand still posts nothing.",
+   "version": 19,
    "checks": [
     {
      "number": "Q1",
@@ -554,6 +558,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-06T07:31:28.213Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "stale: wsl-claude holds the build of this item and has said nothing for 10 minutes. Free the phase, or wait?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
     }
    ],
    "chat": [
@@ -931,6 +944,51 @@
      "by": "claude-windows",
      "at": "2026-10-09T08:36:52.170Z",
      "text": "cw: red done, 2451add2: spirit/test/deskVerifyDataset.js, 4 owed failures today, the fifth check (no port, no post) green and to stay so.\nShape, names mine to argue: process/js/deskVerify, its db argument defaulting to verify.db in its folder, git-ignored; table results (suite, title, outcome, commit, dirty, at); record {suite, title, outcome} answers written, a row only on a first record or a flip; outcome red or green only. testSupport takes fail(title, detail), and with --verify-port posts one record per assertion to that node's jobs.api, landing even when the suite exits at once.\nNot asserted: retitling the existing ~9,000 assertions, which is its own work. Build is wsl's."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T08:47:45.739Z",
+     "text": "commit c393555890873bbe701649f4ab63639a063332a2: goal/G8.1: deskVerify's dataset - a row per test, a flip at a time\n- .gitignore\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/run/process/js/deskVerify/deskVerify.json\n- spirit/test/runAll.js\n- spirit/test/testSupport.js\n- spirit/test/verifyPost.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T08:47:57.311Z",
+     "text": "wsl: built and pushed, c3935558. cw's red is 13 of 13 green: the server keeps a row only for a test's first sighting or a flip and stamps the commit, dirty tree and time itself; testSupport's check and fail now take a title plus a detail, post one record each with --verify-port, and nothing without it.\nIt touches testSupport, so I ran the full harness: 344 suites, 4812 green, 27 red. Two of those were mine and are green now - authWorld refused while deskVerify's files were untracked, and verify.db's WAL companions needed the ignore - and peerPost's 504 is green alone.\nFiles touched: process/js/deskVerify/deskVerify.js and .json, spirit/test/testSupport.js, spirit/test/verifyPost.js, spirit/test/runAll.js, .gitignore. Verify is free."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T08:48:51.566Z",
+     "text": "verify failed (claude-windows): c3935558 posts {ask: {deskVerify: {record}}} to /api/spirit with no verb; a real node answers that 'no such verb' (tried on claude-windows' node), so no record would ever reach deskVerify. The red now requires verb jobs.api, as kernel.core.ask sends it (d98baf7b)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T08:48:52.183Z",
+     "text": "commit d98baf7b749eb3b19c5b5d944243d1bb135ac19e: goal/G8.1 verify: the red counts a record only as a real node takes it, with verb jobs.api\n- spirit/test/deskVerifyDataset.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T08:48:53.202Z",
+     "text": "cw: verify failed, back to wsl. 13 of 13 held, but only because cw's red let its fake node take any body: testSupport and verifyPost post with no verb, and a real node answers that with no such verb, so in a real run no record lands.\nThe red now counts a record only with verb jobs.api (d98baf7b); the fix is that field in both posts. The rest read well: one post each, the detail kept out, the last records waited for."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T08:50:16.445Z",
+     "text": "commit fb6933c3bee150048ea369ac01667009418698d1: goal/G8.1: the record posts with verb jobs.api, as a real node needs\n- spirit/test/testSupport.js\n- spirit/test/verifyPost.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T08:50:26.361Z",
+     "text": "wsl: cw was right and the fix is pushed, fb6933c3 - both posts now carry verb jobs.api, the shape kernel.core.ask builds, and his enlarged red is 13 of 13 through the harness.\nI proved it against a real node rather than a fake: with the verb my node answers app-not-served naming deskVerify, without it \"no such verb\". So a record now reaches a node that runs the server.\nFiles touched: spirit/test/testSupport.js, spirit/test/verifyPost.js. Verify is free."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T08:51:44.909Z",
+     "text": "commit b4a9eaff75452b93e037e19af604bd54846d9e3b: goal/G8.1 verify: the red grows - a suite that lingers lands its own posts, each with verb jobs.api\n- spirit/test/deskVerifyDataset.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T08:51:47.113Z",
+     "text": "cw: verified fb6933c3, after growing the red once more (b4a9eaff): the quick test suite exits before its own posts land, so dropping the verb from testSupport went unseen; a suite that lingers now lands its posts, and without the verb it goes red.\ndeskVerifyDataset.js 14 of 14; not waiting for the last records also goes red."
     }
    ]
   },
@@ -941,6 +999,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
@@ -949,9 +1008,7 @@
     "goal/G8.5",
     "goal/G8.6"
    ],
-   "blocked": [
-    "goal/G8.1"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -1736,7 +1793,18 @@
    "box": "deskVerify: TOLERATED REDS\n\nAndy, 2026-10-06: \"for now, tolerated reds have to be granted as a whole, in order to pop the Done button for the goal, so the final full suite lists the reds outside the goals scope in a red-question for the goal, that blocks the Done button for the goal.\" Blocked by goal/G8.6, since the short loop and the final full run are the same mechanism seen twice.\n\nSO THERE IS NO LIST OF TOLERATED REDS, and nothing to maintain. The full run that a goal needs before it closes puts every red that lies outside that goal into ONE red question on the goal, and that question blocks the goal's Done until he grants it. He grants them together or not at all, which is what \"for now\" covers.\n\nWHY IT IS BETTER THAN A LIST: a list of exceptions drifts and becomes a hiding place, while a question he answers at the moment of closing cannot. Today the same information is given to him by hand: on 2026-10-06 four of eleven reds in a full run were old debts that claude-windows had to explain in a post.\n\nWHAT COUNTS AS OUTSIDE THE GOAL: every suite that is not one of the goal suites, which goal/G8.6 now settles from his words, an item suites being the test files its own commits changed.",
    "version": 2,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-09T08:43:12.668Z",
+     "text": "any takers?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T08:43:33.688Z",
+     "text": "cw: not yet: it has no Go, and it waits on G8.6, which waits on G8.2, which waits on G8.1, now in wsl's build.\ncw takes its red the moment that chain clears and you press Go."
+    }
+   ]
   },
   {
    "id": "goal/G8.8",
