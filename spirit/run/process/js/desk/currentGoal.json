@@ -1,8 +1,8 @@
 {
- "change": 21413,
+ "change": 21546,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T08:19:05.005Z",
+ "writtenAt": "2026-10-09T08:37:53.324Z",
  "items": [
   {
    "id": "goal/G8",
@@ -39,12 +39,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 8,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -457,6 +459,11 @@
      "by": "wsl-claude",
      "at": "2026-10-09T08:18:35.298Z",
      "text": "wsl: yes, still all ten green, nothing waiting on you - checked again just now, including the questions you answered on G8.3 since the last time.\nThe only thing left before a Go is your End design."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T08:19:53.937Z",
+     "text": "cw: taking the red of G8.8, so wsl builds it with the Delete fix it offered to carry; wsl holds G8.9's red, which cw then builds.\nG8.1's red is free for whichever of us finishes first; cw now works in its own clone, D:/lab/claude-windows, with commitCheck installed."
     }
    ]
   },
@@ -464,8 +471,8 @@
    "id": "goal/G8.1",
    "title": "deskVerify: the dataSet — verify.db, one row per test, and what identifies a test",
    "goal": "goal/G8",
-   "status": "running",
-   "with": "",
+   "status": "building",
+   "with": "wsl-claude",
    "buttons": [],
    "blocking": [
     "goal/G8.2"
@@ -476,13 +483,13 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
+   "phase": "build",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
    "verifier": "",
    "waived": false,
    "rules": [
@@ -909,6 +916,21 @@
      "by": "desk",
      "at": "2026-10-09T08:19:04.098Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T08:36:48.735Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T08:36:49.419Z",
+     "text": "commit 2451add2a75c271b955a618094f51e0454ddc745: goal/G8.1 red: deskVerify's dataset - a row per test on first record or a flip, stamped by deskVerify, sent by testSupport\n- spirit/test/deskVerifyDataset.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T08:36:52.170Z",
+     "text": "cw: red done, 2451add2: spirit/test/deskVerifyDataset.js, 4 owed failures today, the fifth check (no port, no post) green and to stay so.\nShape, names mine to argue: process/js/deskVerify, its db argument defaulting to verify.db in its folder, git-ignored; table results (suite, title, outcome, commit, dirty, at); record {suite, title, outcome} answers written, a row only on a first record or a flip; outcome red or green only. testSupport takes fail(title, detail), and with --verify-port posts one record per assertion to that node's jobs.api, landing even when the suite exits at once.\nNot asserted: retitling the existing ~9,000 assertions, which is its own work. Build is wsl's."
     }
    ]
   },
@@ -1382,8 +1404,7 @@
     "goal/G8"
    ],
    "blocked": [
-    "goal/G8.2",
-    "goal/G8.9"
+    "goal/G8.2"
    ],
    "go": false,
    "alone": false,
@@ -1655,8 +1676,7 @@
    ],
    "blocked": [
     "goal/G8.2",
-    "goal/G8.8",
-    "goal/G8.9"
+    "goal/G8.8"
    ],
    "go": false,
    "alone": false,
@@ -1723,9 +1743,11 @@
    "id": "goal/G8.8",
    "title": "Files touched per item — the list of files an item's commits changed, kept by the desk and approved by Andy",
    "goal": "goal/G8",
-   "status": "running",
+   "status": "verified",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G8.6"
    ],
@@ -1735,14 +1757,14 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
+   "verifier": "claude-windows",
    "waived": false,
    "rules": [
     {
@@ -1774,7 +1796,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "FILES TOUCHED PER ITEM\n\nWHY. Andy, 2026-10-09: \"Yes. cw: add it to the appropriate goal, and make sure that the file list needs my approval\". It replaces the list an agent writes by hand in the item chat at claim-done; the desk holds no such list today.\n\nWHO WRITES IT. \"ideally written by the claiming agent. the coding agent and the testing agent should be adding files they test/touch in a list that can be fetched per item.\" and \"the list should be owned by the item. so updates to it are available to all participants.\"\nSo the list belongs to the item: the builder adds the files it touches, the red writer and the verifier the files they test. commitCheck.js already posts each pushed commit's files as chat text in agent clones; a source to copy from, not the list.\n\nTHE VERB. \"i may require verbs.\" Proposed by wsl-claude, reviewed by claude-windows; asked for his yes, he ruled 2026-10-09: \"doesn't need my grant, until i rule this app 'intrinsic'\". So: one desk verb, item.files.add {id, paths}, each call carrying that agent's whole list and replacing its own entries only; the list comes back in item.get, so nothing new reads it.\n\nIN THE DESK UI. \"and that file list should be visible in desk ui per item, core files market as requiring grants.\" The Details draws the list; which files are core is coreFiles.isCore (js/coreFiles.js), the function commitCheck already uses, never a second list.\n\nTHE APPROVAL. \"i think it's a G check on the item.\" and \"all files that need a grant should get one 'grant' button together.\" One G check covers every file on the list that needs a grant; it replaces commitCheck's one grant per core file. PROPOSED by both agents: a file added after the grant turns that grant red again, since what he granted was a list.\n\"'Done' needs all grants approved.\" A desk change reaching every item, built in goal/G8.5, where the ruling is kept as well.\n\nALSO HERE, his, 2026-10-09, under goal/G8: \"oh, and the Delete button never should show in the list. only in the detals.\" and \"ad this to the item that draws the file list for this goal.\" Today the List draws every button an item offers except go-all, reopen and make-current (shell/desk/desk.js DESK_NOT_IN_ROW), so delete, which goal/G9.7 added to an item's buttons in design mode, shows in every row. The fix is delete joining that list; the Details keeps its armed Delete.",
@@ -2005,6 +2027,76 @@
      "by": "desk",
      "at": "2026-10-09T08:19:04.389Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T08:21:32.172Z",
+     "text": "commit b0105dacf082620904759ff89be86228c29baaee: goal/G8.8 red: files touched per item, kept by the desk, one grant for the core ones, no Delete in the List\n- spirit/test/deskFilesTouched.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T08:21:37.762Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T08:21:42.081Z",
+     "text": "cw: red done, b0105dac, from cw's own clone through commitCheck: spirit/test/deskFilesTouched.js, 11 owed failures on today's code.\nShape held: item.files.add {id, paths} replaces the caller's own entries; item.get carries files as [{path, by, core}], core from coreFiles.isCore; one G check for all core files; the Details draws #dd-files with core marked; the List never draws Delete.\nLeft out on purpose: a file added after the grant (not ruled), and Done waiting on grants (G8.5). Build is wsl's."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T08:26:48.892Z",
+     "text": "commit e4818ee92c2a62de288da688c832ec0119d826b0: goal/G8.8: the files an item touched, kept by the desk, one grant for the core ones\n- spirit/run/process/js/desk/desk.js\n- spirit/run/shell/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/test/deskServer.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T08:27:06.383Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T08:27:09.293Z",
+     "text": "wsl: built and pushed, e4818ee9. cw's red is 12 of 12 green and the desk sweep is 777 green with the two old onboard reds.\nThe list is the item's: each agent writes its own whole list and replaces only its own entries, item.get carries them with the core mark from coreFiles.isCore, one grant names every core file and is rewritten when that set changes. The Details draws them in #dd-files, and Delete is out of the List - the miss you caught.\nFiles touched: desk.js (server), shell/desk/desk.js, shell/deskDetails/deskDetails.js, spirit/test/deskServer.js. I tried to record that with the new verb instead of this line, and your desk refused it - it runs the older code until it restarts."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T08:34:31.252Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T08:34:31.601Z",
+     "text": "verify failed (claude-windows): e4818ee9 raises a fresh open grant when a list Andy already granted is sent again unchanged, and every call re-sends the whole list; the red now holds it (26064cbd): only a changed set of core files should ask him again."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T08:34:32.069Z",
+     "text": "commit 26064cbdb43a9b84fae883aec470cbea94ef13c8: goal/G8.8 verify: the red grows - a granted list sent again unchanged raises no new grant\n- spirit/test/deskFilesTouched.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T08:34:33.966Z",
+     "text": "cw: verify failed, back to wsl. 12 of 12 held, and mutations aside the one gap is the grant: after Andy grants, the same list re-sent raises G2, open, for the files he just granted (probed, then added to the red as 26064cbd).\nEach agent re-sends its whole list as it works, so he would re-grant the same files over and over; the grant should go red again only when the set of core files changes."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T08:35:36.049Z",
+     "text": "commit 6f896a7eb4c34f2e2bc06943115042abd4a0f695: goal/G8.8: a granted list sent again asks for nothing new\n- spirit/run/process/js/desk/desk.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T08:35:44.284Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T08:35:47.054Z",
+     "text": "wsl: cw's verify was right and the fix is pushed, 6f896a7e - his enlarged red is 13 of 13 green.\nA core grant you have settled now stands for that set of files: re-sending the same list raises nothing, a changed set rewrites the open grant, and the ones you granted stay on the record.\nFiles touched: spirit/run/process/js/desk/desk.js. Verify is free."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T08:37:36.941Z",
+     "text": "cw: verified 6f896a7e. deskFilesTouched.js 13 of 13; it goes red when a granted set is ignored, when a writer's list is appended instead of replaced, and when Delete is let back into the List.\nOne thing for your node: the verb and the list only exist there once your node runs this code; wsl's attempt to record its files with item.files.add was refused by your older desk."
     }
    ]
   },
@@ -2012,27 +2104,29 @@
    "id": "goal/G8.9",
    "title": "Test runs that cannot collide — free ports for the suites that hard-code one, and one full run at a time per host",
    "goal": "goal/G8",
-   "status": "running",
+   "status": "closed",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "reopen"
+   ],
    "blocking": [
     "goal/G8.4",
     "goal/G8.6"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "waived": false,
    "rules": [
     {
@@ -2075,6 +2169,46 @@
      "by": "desk",
      "at": "2026-10-09T08:19:04.652Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T08:19:23.941Z",
+     "text": "wsl: taking the red here - the ports and the run lock are what I measured, so this one is mine. cw, G8.1 and G8.8 are yours."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T08:21:38.500Z",
+     "text": "commit de674431f2d3020925015ed02a4cb1cc6eb6b30e: goal/G8.9: the red for runs that cannot collide - a per-run port base and one run per host\n- spirit/test/labRunLock.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T08:21:46.316Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T08:21:49.104Z",
+     "text": "wsl: the red is in and pushed, de674431 - spirit/test/labRunLock.js, 6 red and 2 world checks green.\nIt asserts three things: no suite holds a literal lab port any more, labPaths offers a base read from LAB_PORT_BASE that moves the whole range, and labMaster grants one run lock, refuses the second and frees it on the holder's word. hintWire's pair goes to the OS.\nThe three names are mine and the suite says so, so the builder may argue them. Build is free; I wrote the red, so I do not build it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T08:33:10.611Z",
+     "text": "commit baa0248be758e667cf958340e40d637d533b7de3: goal/G8.9: test runs that cannot collide - a lab port base, hintWire on OS ports, one run lock per host (against wsl-claude's red de674431)\n- spirit/test/agentNodeRows.js\n- spirit/test/appServerWorlds.js\n- spirit/test/hintWire.js\n- spirit/test/identityPerception.js\n- spirit/test/labHome.js\n- spirit/test/labLifecycle.js\n- spirit/test/labMaster/labMaster.js\n- spirit/test/labMaster/labPaths.js\n- spirit/test/labPanel.js\n- spirit/test/labPersistence.js\n- spirit/test/labRefusals.js\n- spirit/test/labRelaySurface.js\n- spirit/test/labServableStatic.js\n- spirit/test/labWorld.js\n- spirit/test/liveFrontDoor.js\n- spirit/test/liveRelay.js\n- spirit/test/natterBind.js\n- spirit/test/natterDetails.js\n- spirit/test/natterLast.js\n- spirit/test/runAll.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T08:33:18.154Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T08:33:21.490Z",
+     "text": "cw: built, baa0248b, from cw's clone through commitCheck; labRunLock.js 10 of 10 and hintWire 10 of 10 against a harness labMaster on 45420; of the 16 suites changed, every one green but labLifecycle, labServableStatic and liveRelay, which fail exactly as in this morning's full run.\nFiles: labPaths.js and labMaster.js (portBase, the range, /api/run/lock), hintWire.js (OS ports), runAll.js, and the suites holding lab ports. Five of those only held the numbers as URL text in fake data, binding nothing; their numbers moved out of the range rather than reading the base.\nNot changed, named for you: the labMaster panel's port field still limits a hand-made node to 65400-65429. Verify is free."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T08:34:32.421Z",
+     "text": "wsl: verified baa0248b, pass. labRunLock.js is 10 of 10 through the harness, and the lab family is 143 green with 2 red - labLifecycle and labServableStatic, both red with the same avatar-fixture messages in my full run before this build, so they are not his.\nMutated twice: a lock that always grants goes red, and a base that ignores LAB_PORT_BASE goes red.\nNo test was weakened: the suites that held literal lab ports now ask labPaths for them, which is the item."
     }
    ]
   }
