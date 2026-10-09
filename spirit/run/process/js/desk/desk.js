@@ -394,6 +394,17 @@ function apply(s, r, b, item, goalOf) {
       goalItem.title = String(sess.goal.title || goalItem.title);
       goalItem.at = r.at;
       const ids = [];
+      // A SPLIT ADDS ONLY THE EXPLICIT RELATION (goal/G9.4). Andy, 2026-10-07: "when splitting an item, only the new
+      // explicit blocking relationship is automatically added, the implicit blocking will not need to be specified, it
+      // clutters the list display with confusing \"blocks\" and \"waits on\" columns, and is not needed for a dependency
+      // graph.", and "the new split-items always block the item from which they were split, items blocked by the current
+      // item are still blocked by the newly split item, because if theyre blocked by me, they are implicitly blocked by
+      // the newly created/split item." So in a session that names a split, an item NEW in that session blocks the parent
+      // and nothing else, whatever the session sent for it; the parent keeps its own blocks, and what the parent blocks
+      // hears of the new ones through the parent alone. Decided by Andy, not by this code: do not widen it back.
+      const splits = (Array.isArray(sess.split) ? sess.split : []).map(String);
+      const existed = {};
+      Object.keys(s.items).forEach(function (k) { existed[k] = true; });
       (sess.items || []).forEach(function (x) {
         const id = String(x.id || '');
         if (!id) return;
@@ -401,6 +412,13 @@ function apply(s, r, b, item, goalOf) {
         one.title = String(x.title || one.title);
         one.goalId = gid;
         one.blocks = (Array.isArray(x.blocks) ? x.blocks : [x.blocks || gid]).map(String);
+        if (splits.length && !existed[id]) {
+          // Which parent: the split one this item named, else the only split there is. With several splits named and
+          // none of them this item's, the session's own blocks stand, because nothing says which parent it came from.
+          const named = one.blocks.filter(function (bk) { return splits.indexOf(bk) !== -1; });
+          const parent = named.length ? named[0] : (splits.length === 1 ? splits[0] : '');
+          if (parent) one.blocks = [parent];
+        }
         one.at = r.at;
         one.leftOut = false;
         // AN ITEM MARKED CODE (goal/G5.7) walks the phases. Andy: "an item marked code is the only one i see this for
