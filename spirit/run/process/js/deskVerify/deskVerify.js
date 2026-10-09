@@ -29,6 +29,27 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../js/appServer.js');
+const appClient = require('../../../js/appClient.js');
+const searchBucket = require('../../../js/searchBucket.js');
+
+// ONE ANSWER, ONE PACKET (slim/G1.2), as the desk measures it: a search answers what fits in one answer and says
+// `more`. A row too large to travel alone is skipped rather than stalling the read with nothing in it.
+const ANSWER_ROOM = appClient.ANSWER_MAX - 512;
+function walked(rows, pairOf) {
+  const bucket = searchBucket.createSearch({
+    query: '**', maxBytes: ANSWER_ROOM,
+    getLabelStringFromIncomingObject: function (pair) { return pair.label; },
+    extractKeyAndLabelFromRow: function (pair) { return pair; },
+  });
+  let skipped = false;
+  for (const row of rows) {
+    const pair = pairOf(row);
+    if (Buffer.byteLength(JSON.stringify({ items: [pair], more: false }), 'utf8') > ANSWER_ROOM) { skipped = true; continue; }
+    if (!bucket.offer(pair)) break;
+  }
+  const r = bucket.getResult();
+  return { items: r.items, more: r.more || skipped };
+}
 
 const argv = process.argv;
 const at = argv.indexOf('--state');
@@ -58,6 +79,8 @@ db.exec('CREATE TABLE IF NOT EXISTS results (rowid INTEGER PRIMARY KEY AUTOINCRE
   'CREATE INDEX IF NOT EXISTS results_dirty ON results (dirty);' +
   'CREATE INDEX IF NOT EXISTS results_test ON results (suite, title);');
 const newest = db.prepare('SELECT outcome FROM results WHERE suite = ? AND title = ? ORDER BY rowid DESC LIMIT 1');
+// EVERY ROW, NEWEST FIRST (goal/G8.11), for the verifier tab's records.search: the rowid is the order they were kept.
+const newestRows = db.prepare('SELECT rowid, suite, title, outcome, "commit", dirty, at FROM results ORDER BY rowid DESC');
 const addRow = db.prepare('INSERT INTO results (suite, title, outcome, "commit", dirty, at) VALUES (?, ?, ?, ?, ?, ?)');
 
 // THE TREE IT MEASURED. Read once per call and cached for a moment: a run posts thousands of records and the commit
@@ -110,17 +133,38 @@ function mode() {
 // a hung suite prints no FAILURE line, so without this it read as all green and brought the Done button. Andy's gate
 // has two guards and this is the second. The manifest's `suiteMs` names it; a suite hands a short one.
 const SUITE_MS = Number(values.suiteMs) > 0 ? Number(values.suiteMs) : 600000;
+// WHAT IT IS DOING, FOR THE VERIFIER TAB (goal/G8.11). Andy, 2026-10-09: "shouldn't i have, if the desk verifier is
+// mounted and running, a verifier tab in desk, right after [musings], that allows me to monitor a) status and progress
+// of the running verifier, and if/when necessary, allow intervention?" Nothing outside this server could see the run,
+// so: the item and suite running now, since when, and what waits behind it. One run at a time, so one record of it.
+let running = { id: '', suite: '', since: '' };
+let runningKid = null;
+let stopped = false;
 function runSuite(file, port) {
   return new Promise(function (resolve) {
     const out = [];
     let timedOut = false;
     const kid = spawn(process.execPath, [file, '--verify-port', String(port)], { cwd: REPO, stdio: ['ignore', 'pipe', 'pipe'] });
+    runningKid = kid;
     const stop = setTimeout(function () { timedOut = true; try { kid.kill(); } catch (e) { /* gone */ } }, SUITE_MS);
+    const over = function (code) {
+      clearTimeout(stop);
+      if (runningKid === kid) runningKid = null;
+      resolve({ code: code, said: out.join(''), timedOut: timedOut, stopped: stopped });
+    };
     kid.stdout.on('data', function (d) { out.push(String(d)); });
     kid.stderr.on('data', function (d) { out.push(String(d)); });
-    kid.on('exit', function (code) { clearTimeout(stop); resolve({ code: code, said: out.join(''), timedOut: timedOut }); });
-    kid.on('error', function () { clearTimeout(stop); resolve({ code: 1, said: '', timedOut: timedOut }); });
+    kid.on('exit', over);
+    kid.on('error', function () { over(1); });
   });
+}
+// HIS INTERVENTION (goal/G8.11): the suite running now is ended, and the claim it belonged to is rejected saying so.
+// A stopped run is never a pass - the same rule as the time limit, for the same reason: nothing was measured.
+function stopRun() {
+  if (!runningKid) return { stopped: false };
+  stopped = true;
+  try { runningKid.kill(); } catch (e) { /* already gone */ }
+  return { stopped: true };
 }
 
 // THE SHORT LOOP'S SUITES (goal/G8.6). Andy, 2026-10-06: "the short loop is: all the suites of the current goal,
@@ -190,8 +234,15 @@ function suitesOf(id) {
 // the reds. All green and it says nothing to the desk. It presses nothing, ever.
 // Each suite is spawned and awaited, as the loop does, so this server keeps answering while it runs - its own records
 // arrive through the node's door while a suite is still going (goal/G8.6).
+// The tab reads `running` while this runs, so it is cleared however the check ends (goal/G8.11).
 function claimCheck(id) {
+  const idle = function () { running = { id: '', suite: '', since: '' }; stopped = false; };
+  return claimCheckRun(id).then(function (r) { idle(); return r; }, function (e) { idle(); throw e; });
+}
+function claimCheckRun(id) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  stopped = false;
+  running = { id: String(id), suite: '', since: new Date().toISOString() };
   return suitesOf(id).then(async function (list) {
     const reds = [];
     // NOTHING TO RUN IS NOT A PASS (goal/G8.10, grown from rule/11 point 2): an item with no test file on its list had
@@ -201,8 +252,11 @@ function claimCheck(id) {
     for (const rel of list) {
       const file = path.join(REPO, rel);
       if (!fs.existsSync(file)) { reds.push({ suite: rel, failures: ['the listed test file is missing from this checkout'] }); continue; }
+      running = { id: String(id), suite: rel, since: new Date().toISOString() };
       const run = await runSuite(file, port);
       const said = run.said;
+      // STOPPED BY HAND (goal/G8.11): the rest of the list is not run either - he stopped the check, not one suite.
+      if (run.stopped) { reds.push({ suite: rel, failures: ['stopped by hand from the verifier tab, so nothing was measured'] }); break; }
       // Stopped at the time limit: red, whatever it printed. Its own lines still come, so a suite that failed and then
       // hung names both.
       if (run.timedOut) reds.push({ suite: rel, failures: ['stopped at the time limit of ' + SUITE_MS + 'ms, so it counts as red'] });
@@ -403,6 +457,34 @@ appServer.serve({
   'goal.check': {
     request: {}, reply: { goal: '', outside: [''], asked: false },
     handler: function () { return goalCheck(); },
+  },
+  // THE VERIFIER TAB'S THREE VERBS (goal/G8.11), deskVerify's own; Andy, 2026-10-09, on an app's verbs: they need no
+  // grant of his until he rules the app intrinsic. Desk draws its tab from `now` and shows nothing where no deskVerify
+  // answers.
+  //   now            what runs, for which item, since when, and what waits
+  //   records.search the dataset's rows, newest first, one bucket, as every search in this tree answers
+  //   stop           his intervention: the run ends and its claim is rejected saying so, never passed
+  now: {
+    request: {}, reply: { running: { id: '', suite: '', since: '' }, queued: [''] },
+    handler: function () {
+      return { running: { id: running.id, suite: running.suite, since: running.since }, queued: watchQueue.slice() };
+    },
+  },
+  'records.search': {
+    request: { text: '' }, reply: { items: [{ key: '', label: '' }], more: false },
+    handler: function (a) {
+      const text = String(a.text || '');
+      const rows = newestRows.all().filter(function (r) {
+        return !text || String(r.suite).indexOf(text) !== -1 || String(r.title).indexOf(text) !== -1;
+      });
+      return walked(rows, function (r) {
+        return { key: String(r.rowid), label: JSON.stringify({ suite: r.suite, title: r.title, outcome: r.outcome, commit: r.commit, dirty: r.dirty, at: r.at }) };
+      });
+    },
+  },
+  stop: {
+    request: {}, reply: { stopped: false },
+    handler: function () { return stopRun(); },
   },
   'claim.check': {
     request: { id: '' }, reply: { rejected: false, reds: [''] },

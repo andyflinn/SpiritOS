@@ -447,6 +447,9 @@ function deskDrawTabs() {
     deskTabButton('data-tab="team"', deskTab === 'team', 'Team') +
     deskTabButton('data-tab="rules"', deskTab === 'rules', 'Rules') +
     deskTabButton('data-tab="musings"', deskTab === 'musings', 'Musings') +
+    // RIGHT AFTER MUSINGS, AND ONLY WHERE ONE RUNS (goal/G8.11): his words were "right after [musings]", and the tab
+    // is absent on a node with no deskVerify, as the backup bubble is.
+    (deskVerifier ? deskTabButton('data-tab="verifier"', deskTab === 'verifier', 'Verifier') : '') +
     // ON EVERY TAB, RIGHT AFTER MUSINGS (goal/G9.8). Andy: "The [Start/End design] buttons should be displayed always,
     // not only when the team tab is active, and it should be placed right after the [Musings] tab header". Still its
     // own colour, so it looms (Andy, earlier: "so it loooms over the proceedings").
@@ -1030,6 +1033,84 @@ function deskBackupHtml() {
     (stale ? '; something was closed since the last check' : '') + '</div>';
 }
 
+// ── THE VERIFIER TAB (goal/G8.11) ────────────────────────────────────
+//
+//   Andy, 2026-10-09: "shouldn't i have, if the desk verifier is mounted
+//   and running, a verifier tab in desk, right after [musings], that
+//   allows me to monitor a) status and progress of the running verifier,
+//   and if/when necessary, allow intervention?", then "add it".
+//
+// Drawn only where a deskVerify answers, as backup's status is: on a node
+// without one the tab is not there at all. Monitoring is `now` (what runs,
+// for which item, since when, what waits) and the dataset's newest rows;
+// intervention is Stop, which ends the run and has its claim rejected
+// saying so, and a re-verify, which asks the DESK for verify.again and lets
+// deskVerify's watcher pick it up (goal/G8.10). The tab presses nothing on
+// his behalf and brings no Done.
+var deskVerifier = null;
+var deskVerifyRows = [];
+var deskVerifyLast = '';
+var deskVerifyNote = '';
+function deskVerifyAsk(verb, args) {
+  var ask = { deskVerify: {} };
+  ask.deskVerify[verb] = args || {};
+  return Promise.resolve(deskApi.verb('jobs.api', { ask: ask })).then(function (r) {
+    if (!r || r.status !== 200 || !r.body || r.body.ok === false) throw new Error('deskVerify did not answer');
+    return r.body;
+  });
+}
+// Asked once at mount and on every open of the tab: a node either runs one or does not.
+function deskAskVerifier() {
+  return deskVerifyAsk('now', {}).then(function (body) {
+    deskVerifier = body;
+    if (body.running && body.running.id) deskVerifyLast = String(body.running.id);
+    deskDrawTabs();
+    deskDrawVerifier();
+  }, function () { deskVerifier = null; deskDrawTabs(); });
+}
+function deskVerifyRefresh() {
+  return deskAskVerifier().then(function () {
+    if (!deskVerifier) return null;
+    return deskVerifyAsk('records.search', { text: '' }).then(function (body) {
+      deskVerifyRows = Array.isArray(body.items) ? body.items.map(function (i) {
+        try { return JSON.parse(i.label); } catch (e) { return null; }
+      }).filter(Boolean) : [];
+      deskVerifyNote = body.more ? 'the newest that fit in one answer' : '';
+      deskDrawVerifier();
+    }, function () { deskVerifyRows = []; deskDrawVerifier(); });
+  });
+}
+function deskVerifyHtml() {
+  if (!deskVerifier) return '<div class="job-manifest-note">No verifier runs on this node.</div>';
+  var run = deskVerifier.running || { id: '', suite: '', since: '' };
+  var queued = Array.isArray(deskVerifier.queued) ? deskVerifier.queued : [];
+  var item = run.id || deskVerifyLast;
+  var out = '<div class="stat-tile wide"><div class="label">Running now</div><div>' +
+    (run.id
+      ? 'Item ' + deskEsc(run.id) + ' · suite ' + deskEsc(run.suite || '(choosing)') +
+        (run.since ? ' · since ' + deskTime(run.since) : '')
+      : 'Idle' + (deskVerifyLast ? '; last checked ' + deskEsc(deskVerifyLast) : '')) +
+    '</div><div>' + (queued.length ? 'Waiting: ' + queued.map(deskEsc).join(', ') : 'Nothing waiting') + '</div>' +
+    '<div><button type="button" id="desk-verify-stop"' + (run.id ? '' : ' disabled') + '>Stop the run</button>' +
+    (item ? ' <button type="button" data-reverify="' + deskEsc(item) + '">Verify ' + deskEsc(item) + ' again</button>' : '') +
+    '</div></div>';
+  out += '<div class="stat-tile wide"><div class="label">Records, newest first' +
+    (deskVerifyNote ? ' (' + deskEsc(deskVerifyNote) + ')' : '') + '</div><div>';
+  if (!deskVerifyRows.length) out += '<div class="job-manifest-note">No records yet.</div>';
+  else {
+    out += deskVerifyRows.map(function (r) {
+      return '<div>' + deskEsc(r.outcome) + ' · ' + deskEsc(r.suite) + ' · ' + deskEsc(r.title) +
+        (r.commit ? ' · ' + deskEsc(String(r.commit).slice(0, 8)) : '') +
+        (r.at ? ' · ' + deskTime(r.at) : '') + '</div>';
+    }).join('');
+  }
+  return out + '</div></div>';
+}
+function deskDrawVerifier() {
+  var box = document.getElementById('desk-verifier');
+  if (box) box.innerHTML = deskVerifyHtml();
+}
+
 // THE HEADER AREA IS THE SHELL'S (goal/G6.1): the block written as #desk-bars moves into the app header, which sticks it
 // under the titlebar, and takes its id.
 function deskHeader(api) {
@@ -1125,6 +1206,8 @@ spirit.shell.activateApp({
           '<div id="desk-muse-error" class="job-start-error"></div>' +
           '<div class="stat-tile wide"><div class="label">Musings, for close time, newest first</div><div id="desk-musings"></div></div>' +
         '</div>' +
+        // THE VERIFIER TAB'S PANE (goal/G8.11): #desk-verifier takes the whole body and every click in it.
+        '<div data-pane="verifier" hidden><div id="desk-verifier"></div></div>' +
         // AN AGENT'S SCOPE (goal/G4.23), opened from its bubble.
         '<div data-pane="agent" hidden>' +
           '<div class="stat-tile wide"><div class="label" id="desk-agent-label"></div><div id="desk-agent"></div></div>' +
@@ -1144,6 +1227,8 @@ spirit.shell.activateApp({
       deskDrawGoAll();
       if (tab === 'team') deskMarkTeamSeen();
       if (tab === 'rules') deskRulesSearch();
+      // goal/G8.11: opening the tab reads what runs and the newest records; it is not pulled while it is closed.
+      if (tab === 'verifier') deskVerifyRefresh();
       deskDrawTabs();
     }
     // The strips are redrawn, so one listener on each, and the click may
@@ -1218,6 +1303,19 @@ spirit.shell.activateApp({
       deskRuleFilter.text = String((el && el.value) || e.target.value || '');
       deskRulesSearch();
     });
+    // ONE LISTENER ON THE VERIFIER'S BODY (goal/G8.11), which is repainted: Stop, and a re-verify per item.
+    document.getElementById('desk-verifier').addEventListener('click', function (e) {
+      var t = e && e.target;
+      if (!t) return;
+      if (t.id === 'desk-verify-stop') {
+        deskVerifyAsk('stop', {}).then(function () { return deskVerifyRefresh(); }, function () { return deskVerifyRefresh(); });
+        return;
+      }
+      var again = t.getAttribute && t.getAttribute('data-reverify');
+      // THE RE-VERIFY GOES TO THE DESK, not to deskVerify (goal/G8.10): the record is the word its watcher reads, so
+      // his node's verifier picks it up wherever it runs.
+      if (again) deskAsk('verify.again', { id: again }).then(function () { return deskVerifyRefresh(); }, function () {});
+    });
     document.getElementById('desk-go-all').addEventListener('click', function () { deskArmOrFire('desk-go-all', deskGoAll); });
     document.getElementById('desk-muse-send').addEventListener('click', deskMuse);
     document.getElementById('desk-team-send').addEventListener('click', deskGroupSay);
@@ -1243,5 +1341,7 @@ spirit.shell.activateApp({
     deskDraw();
     deskSearchItems();
     deskLoad();
+    // goal/G8.11: whether a verifier runs here decides whether the tab exists at all, so it is asked at mount.
+    deskAskVerifier();
   },
 });
