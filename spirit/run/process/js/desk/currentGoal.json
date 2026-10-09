@@ -1,8 +1,8 @@
 {
- "change": 21550,
+ "change": 21551,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T08:37:58.563Z",
+ "writtenAt": "2026-10-09T08:37:59.945Z",
  "items": [
   {
    "id": "goal/G8",
@@ -39,7 +39,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 8,
+   "waiting": 7,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -1742,10 +1742,9 @@
    "id": "goal/G8.8",
    "title": "Files touched per item — the list of files an item's commits changed, kept by the desk and approved by Andy",
    "goal": "goal/G8",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
