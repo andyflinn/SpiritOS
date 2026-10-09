@@ -143,6 +143,13 @@ function ddButtonsHtml() {
     html += '<button type="button" id="dd-waive"' + (ddArmed === 'dd-waive' ? ' data-armed="1"' : '') + '>' +
       (ddArmed === 'dd-waive' ? 'Waive: sure?' : 'Waive') + '</button>';
   }
+  // DELETE (goal/G9.7). Andy: "the button bar of items will offer an arm-able [delete] while in design mode." The
+  // server offers it only then (buttons), so the bar draws it from the facts and arms like Waive: the first click arms,
+  // the second deletes. His decision that it closes rather than erases is the server's (goal/G9.7, goal/G4.24).
+  if ((f.buttons || []).indexOf('delete') !== -1) {
+    html += '<button type="button" id="dd-delete"' + (ddArmed === 'dd-delete' ? ' data-armed="1"' : '') + '>' +
+      (ddArmed === 'dd-delete' ? 'Delete: sure?' : 'Delete') + '</button>';
+  }
   // CODE ✓ (goal/G9.5). Andy: "the item Detail dialog has a check/toggle button, [Code✓], in it's button bar, where the
   // user can set the Code-state of an item". Items only: a goal has no code state, and the server refuses a sub-goal.
   if (f.goal !== '') {
@@ -429,7 +436,7 @@ spirit.shell.activateApp({
       // goal/G2.19: Make current goal presses at once, like Go and Reopen; it closes nothing and takes nothing back.
       if (id === 'dd-make-current') { ddPress('make-current'); return; }
       if (id === 'dd-code') { ddPress('code'); return; }
-      if (id === 'dd-abandon' || id === 'dd-go-all' || id === 'dd-waive' || armedClose) {
+      if (id === 'dd-abandon' || id === 'dd-go-all' || id === 'dd-waive' || id === 'dd-delete' || armedClose) {
         if (ddArmed !== id) {
           ddArmed = id;
           ddPaint();
@@ -438,6 +445,11 @@ spirit.shell.activateApp({
         }
         ddArmed = '';
         if (armedClose) { ddPress('close').then(function (taken) { if (taken) ddApi.closeDialog({}); }); return; }
+        // DELETE IS A VERB, NOT A PRESS (goal/G9.7), and it takes the item off the List, so the dialog goes with it.
+        if (id === 'dd-delete') {
+          ddWrite('item.delete', { id: ddId }).then(function (taken) { if (taken) ddApi.closeDialog({}); });
+          return;
+        }
         ddPress(id.slice(3));
         return;
       }

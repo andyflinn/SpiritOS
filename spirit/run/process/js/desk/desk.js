@@ -540,6 +540,16 @@ function apply(s, r, b, item, goalOf) {
       if (g.members.indexOf(id) === -1) g.members.push(id);
       return;
     }
+    // HIS DELETE CLOSES IT AS A LEFT-OUT ONE IS CLOSED (goal/G9.7). Andy, 2026-10-07: "the button bar of items will
+    // offer an arm-able [delete] while in design mode.", and on whether it erases: "close is enough. that essentially
+    // leaves them as \"musings\" on the record." So the item keeps its box, checks and chat, Include Closed finds it,
+    // and it blocks nothing (blockers skips a left-out one), exactly as goal/G4.24 decided for a session's leavings.
+    case 'item.delete': {
+      if (!it || it.goal) return;
+      it.closed = true;
+      it.leftOut = true;
+      return;
+    }
     case 'press': press(s, it, String(b.what), r, goalOf, b); return;
     // THE LISTENER'S WORD (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
     // stops when the agent goes back to listening. the listening script can toggle those two?"
@@ -681,6 +691,10 @@ function buttons(s, it) {
   // button. Never on an item, which has no List of its own, and never on an abandoned goal, which is invisible. A
   // closed goal returns above with Reopen alone, which is the order his words give: "re-open and ... make current goal".
   if (it.goal && g && !g.abandoned && s.current !== it.id) out.push('make-current');
+  // DELETE WHILE IN DESIGN (goal/G9.7). Andy, 2026-10-07: "the button bar of items will offer an arm-able [delete]
+  // while in design mode." An item of a goal in design mode, never a goal itself; the dialog draws it from here, as it
+  // draws every button of his.
+  if (!it.goal && g && g.design) out.push('delete');
   return out;
 }
 // The items that block a sub-goal (its split), closed or done ones included; and those of them offering Go!.
@@ -1535,6 +1549,19 @@ appServer.serve({
   },
   // "rename (you)": Andy's alone.
   'item.rename': { request: { id: '', title: '' }, reply: { change: 0 }, handler: function (a, caller) { ownerOnly(caller); const w = writerOf(caller); return { change: write('item.rename', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
+  // HIS DELETE (goal/G9.7): his alone, an item of a goal in design mode, never a goal. It is offered in the item's
+  // buttons, so the refusal and the button cannot drift apart. The verb was named in the item's box during design and
+  // went in on his Go, as goal.add and item.add did (goal/G9.9).
+  'item.delete': {
+    request: { id: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      const w = writerOf(caller);
+      return { change: write('item.delete', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
+        if (buttons(st, it).indexOf('delete') === -1) throw refused('not-offered');
+      }).change };
+    },
+  },
   // THE LISTENER'S WORD (goal/G2.3): listening when its ear arms, working when the ear hands a line over. From
   // the caller the door hands over, never an argument; any other word is refused. The write publishes the goal
   // row with its working list, so the Team tab paints from the publish (goal/G2.4).
