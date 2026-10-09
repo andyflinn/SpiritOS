@@ -27,9 +27,9 @@ Build the plainest mechanism that does the job: one thing per message, nothing h
 
 ## desk
 
-### rule/6 (version 24): Dependencies when splitting a desk item
+### rule/6 (version 25): Dependencies when splitting a desk item
 
-whenever an item is added or split, only the new, explicit blocking relationships are automatically added, the implicit blocking ones do not need to be specified, it clutters the list display with confusing \"blocks\" and \"waits on\", and is not needed for a dependency graph.
+whenever an item is added or split, only the new, explicit blocking relationships are automatically added, the implicit blocking ones do not need to be specified, it clutters the list display with confusing "blocks" and "waits on", and is not needed for a dependency graph.
 
 ### rule/10 (version 23): full harness only runs for goal completion
 
