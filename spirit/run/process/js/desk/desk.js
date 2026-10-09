@@ -521,7 +521,7 @@ function apply(s, r, b, item, goalOf) {
     // the agent's verify still records verified, and this is deskVerify's own word on top of it. A rejection, a new
     // build or a new red takes it away again, since what it was given for is gone.
     case 'verify.pass':
-      if (!it || !it.code) return;
+      if (!it || !it.code || it.done || it.closed) return;
       it.checked = true;
       return;
     // A VERIFY TAKEN BACK (goal/G8.3). Andy, 2026-10-09: "deskVerify only reject a done claim. this should prompt an
@@ -529,8 +529,12 @@ function apply(s, r, b, item, goalOf) {
     // node, and it writes as him; a rejected item goes back to build with the builder it had, so the agent who built
     // it picks it up, and Done is no longer offered. It presses nothing: "deskVerify will NOT press done or closed on
     // my behalf". The line naming the reds is written beside this record by the verb.
+    // NOT A WORD ON A DONE OR CLOSED ITEM (goal/G8.10, found by claude-windows on the flood of 2026-10-09): a settled
+    // item is nobody's to re-open from the verifier's side. The guard is here as well as at the verb, and it is
+    // time-correct on a replay: a record written while the item was open still applies, and the thirty-four rejects
+    // that hit already-closed items apply to nothing, which takes their stray phase off his desk.
     case 'verify.reject':
-      if (!it || !it.code || it.verified !== true) return;
+      if (!it || !it.code || it.verified !== true || it.done || it.closed) return;
       it.verified = false;
       it.checked = false;
       it.phase = 'build';
@@ -1903,7 +1907,7 @@ appServer.serve({
       ownerOnly(caller);
       const w = writerOf(caller);
       return { change: write('verify.pass', { id: a.id, by: w.by, key: w.key }, function (st, it) {
-        if (!it || !it.code || it.verified !== true) throw refused('not-offered');
+        if (!it || !it.code || it.verified !== true || it.done || it.closed) throw refused('not-offered');
       }).change };
     },
   },
@@ -1913,7 +1917,9 @@ appServer.serve({
       ownerOnly(caller);
       const w = writerOf(caller);
       const change = write('verify.reject', { id: a.id, by: w.by, key: w.key }, function (st, it) {
-        if (!it || !it.code || it.verified !== true) throw refused('not-offered');
+        // A DONE OR CLOSED ITEM TAKES NO VERIFY WORD (goal/G8.10): the flood of 2026-10-09 rejected thirty-four
+        // settled items, and his desk carried the chat line for each. deskVerify is not the one to unsettle an item.
+        if (!it || !it.code || it.verified !== true || it.done || it.closed) throw refused('not-offered');
       }).change;
       const why = String(a.why || '').trim();
       write('chat.add', { id: a.id, text: 'verify rejected: ' + (why || 'the item\'s suites did not hold'), by: 'desk', key: '' });
@@ -1928,7 +1934,9 @@ appServer.serve({
     handler: function (a, caller) {
       const w = writerOf(caller);
       return { change: write('verify.again', { id: a.id, by: w.by, key: w.key }, function (st, it) {
-        if (!it || !it.code || it.verified !== true) throw refused('not-offered');
+        // Nor on a done or closed item (goal/G8.10): a re-verify of a settled item would only feed the watcher a word
+        // the desk would then refuse.
+        if (!it || !it.code || it.verified !== true || it.done || it.closed) throw refused('not-offered');
       }).change };
     },
   },

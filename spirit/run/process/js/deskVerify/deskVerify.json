@@ -4,6 +4,8 @@
   "kind": "server",
   "operated": "node",
   "args": [
-    { "name": "db", "default": "", "description": "The database file. Empty: verify.db beside this server, which git ignores. Every suite hands a temp path, so a test never touches the measurements of a real run." }
+    { "name": "db", "default": "", "description": "The database file. Empty: verify.db beside this server, which git ignores. Every suite hands a temp path, so a test never touches the measurements of a real run." },
+    { "name": "watchMs", "default": "5000", "description": "How often the watcher reads the desk's changes (goal/G8.10). A verifier's pass or an agent's verify.again starts that item's claim check; what was on the record before it started triggers nothing." },
+    { "name": "suiteMs", "default": "600000", "description": "How long one suite may run before it is stopped and counted red (goal/G8.10). A hung suite prints no failure line, so without a limit it read as all green." }
   ]
 }
