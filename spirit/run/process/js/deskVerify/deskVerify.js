@@ -36,6 +36,12 @@ const STATE = at !== -1 ? argv[at + 1] : '';
 // THE MANIFEST'S VALUES, as the node hands them (jobs.js: one JSON object, name -> value, as the first argument).
 let values = {};
 try { values = JSON.parse(argv[2] || '{}') || {}; } catch (e) { values = {}; }
+// WHOSE NODE THIS IS: the --node {name, publicKey} every node already hands the servers it starts (jobs.js), never a
+// value of deskVerify's own. On an agent's node the name is that agent's.
+const NODE_NAME = (function () {
+  const i = argv.indexOf('--node');
+  try { return i !== -1 ? String((JSON.parse(argv[i + 1]) || {}).name || '') : ''; } catch (e) { return ''; }
+}());
 // verify.db beside this file unless `db` names another: a suite hands it a temp path, so the measurements of a real
 // run are never touched by a test.
 const DB_PATH = values.db ? path.resolve(String(values.db)) : path.join(__dirname, 'verify.db');
@@ -203,6 +209,47 @@ function claimCheck(id) {
   });
 }
 
+// IDLE TIME (goal/G8.4). Andy, 2026-10-06: "when it's agent or it's desk have been idle for more than an hour". The box
+// adds what the hour alone misses: a node whose agent holds a phase is busy however long the silence. So idle is an
+// hour since the newest write the desk holds AND no open item taken by this node's agent (--node's name).
+// The newest write is read with the desk's own `changes`, from a cursor kept here, so after the first read only what is
+// new is asked for. The first read walks every record once, page by page; that is its cost, stated, not hidden.
+const IDLE_MS = 60 * 60 * 1000;
+let cursor = { n: 0, at: '' };
+function desk(verb, args) {
+  const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  const one = {}; one[verb] = args;
+  return spirit.core.ask('jobs.api', { ask: { desk: one } }, 'http://127.0.0.1:' + port)
+    .then(function (r) { return r && r.status === 200 && r.body ? r.body : {}; }, function () { return {}; });
+}
+async function newestWrite() {
+  for (let i = 0; i < 10000; i++) {
+    const page = await desk('changes', { n: cursor.n, line: 0 });
+    const recs = Array.isArray(page.records) ? page.records : [];
+    // Records come in the order they were written, so the last one is the newest; a page with nothing new keeps it.
+    if (recs.length) cursor.at = String(recs[recs.length - 1].at || cursor.at);
+    if (Number(page.n) > cursor.n) cursor.n = Number(page.n);
+    if (!page.more || !recs.length) break;
+  }
+  return cursor.at;
+}
+async function idle() {
+  const since = await newestWrite();
+  const found = await desk('items.search', { text: '', currentGoalOnly: false, goalsOnly: false, includeClosed: false });
+  const items = (Array.isArray(found.items) ? found.items : []).map(function (i) { try { return JSON.parse(i.label); } catch (e) { return null; } }).filter(Boolean);
+  const holding = NODE_NAME ? items.filter(function (it) { return it.with === NODE_NAME; }).map(function (it) { return String(it.id); }) : [];
+  const quiet = !!since && Date.now() - Date.parse(since) >= IDLE_MS;
+  return { idle: quiet && !holding.length, since: since, holding: holding };
+}
+// A PASS OF THE CHORES. Busy, it does nothing. Idle, it still runs no suite: the box's limit, the report comes from
+// the dataset and never from a run. What the chores are - which paths one may write, what the report holds - is his to
+// rule first (the red question on goal/G8.4), so until then a pass names nothing done.
+async function choreOnce() {
+  const state = await idle();
+  if (!state.idle) return { did: [] };
+  return { did: [] };
+}
+
 // A ROW IS WRITTEN for a test's first record or a change of outcome, and nothing else.
 function keep(suite, title, outcome) {
   const last = newest.get(suite, title);
@@ -225,6 +272,15 @@ appServer.serve({
   'loop.once': {
     request: {}, reply: { ran: [''] },
     handler: function () { return loopOnce(); },
+  },
+  // IDLE TIME (goal/G8.4): whether this node is idle, and one pass of the chores.
+  idle: {
+    request: {}, reply: { idle: true, since: '', holding: [''] },
+    handler: function () { return idle(); },
+  },
+  'chore.once': {
+    request: {}, reply: { did: [''] },
+    handler: function () { return choreOnce(); },
   },
   // THE ONE THING IT MAY DO ON HIS NODE (goal/G8.3): run one item's suites and ask the desk to take a verify back.
   'claim.check': {

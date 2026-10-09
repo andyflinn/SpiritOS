@@ -95,7 +95,8 @@ const item = function (o) { return Object.assign({ id: 'id/G1.1', goal: 'id/G1',
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(root, 'deskVerify', 'win32', 'process') : path.join(root, 'door.sock');
   const client = appClient.createAppClient({ rootDir: root });
   client.register('deskVerify', pipe);
-  const kid = spawn(process.execPath, [SERVER, JSON.stringify({ db: path.join(root, 'verify.db'), agent: 'wsl-claude' }), '--pipe', pipe, '--state', state], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  // TEST FIX (claude-windows, building): the agent's name comes the way the node hands it to every server, --node {name}.
+  const kid = spawn(process.execPath, [SERVER, JSON.stringify({ db: path.join(root, 'verify.db') }), '--pipe', pipe, '--state', state, '--node', JSON.stringify({ name: 'wsl-claude', publicKey: 'x' })], { cwd: root, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
   const ask = function (verb, args) {
     const q = {}; q[verb] = args || {};
     return client.ask({ deskVerify: q }, { owner: true, key: 'MCowBQYDK2VwAyEAdeskVerifyIdleOwnerAAAAAAAAAAAAAAAAAA=', label: 'andy' }).then(function (r) { return r || {}; }, function () { return {}; });
