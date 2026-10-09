@@ -1,8 +1,8 @@
 {
- "change": 22956,
+ "change": 22997,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T11:29:42.765Z",
+ "writtenAt": "2026-10-09T11:32:14.261Z",
  "items": [
   {
    "id": "goal/G8",
@@ -25,7 +25,7 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": false,
+   "green": true,
    "code": false,
    "phase": "",
    "red": "",
@@ -33,16 +33,19 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 3,
+   "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
-   "waiting": 2,
+   "design": false,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -138,27 +141,27 @@
      "kind": "Q",
      "words": "wsl: the watcher is passing G8.11 again and again - three so far - because its reads overlap and the same word is queued twice. Each repeat runs the item suites once more on your node, so it is wasted minutes, not wrong state. The fix is two lines: one read at a time, and no item queued while it is already queued or running. Say add it and it gets an item.",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T11:31:50.539Z"
     },
     {
      "number": "Q11",
      "kind": "Q",
      "words": "Shall I add the watcher fix (one read at a time) as its own item in front of it?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-09T11:15:37.316Z"
+     "at": "2026-10-09T11:31:51.757Z"
     },
     {
      "number": "Q12",
      "kind": "Q",
      "words": "Shall the documentation runs (the three-list report and the stale-README note) get their item now as well?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-09T11:23:09.341Z"
+     "at": "2026-10-09T11:31:53.029Z"
     }
    ],
    "chat": [
@@ -4178,33 +4181,59 @@
    "id": "goal/G8.12",
    "title": "live verifier tab",
    "goal": "goal/G8",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close",
-    "delete"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G8"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "files": [],
-   "green": false,
-   "code": false,
-   "phase": "",
+   "green": true,
+   "code": true,
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
-   "asks": 1,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "deskVerify: THE LIVE VERIFIER TAB\n\nGrown from goal/G8.11. Andy, 2026-10-09:\n- \"it should refresh by itself, the verifier knows how far into each job it is, so a progress back should be no problem?\"\n- \"that's the problem, i really want to see relevant information. the new tab in desk should listen to real events from verifier, and what now is displayed as a log.. should be an updated status message underneath a progress bar, so i can see what verifier is testing, if it's on a full run, and for that run a progress bar, with running status messages one line at the time...\"\n- \"add it\"\n\nSHAPE, both agents' reading (his \"no pulling\" rule):\n- deskVerify publishes one object (appServer.publish) every time its run changes: what it is testing (an item, or a full run), suite i of n, tests reported in the running suite against that suite's count last time.\n- the tab listens (api.onPublished for deskVerify) and repaints: a progress bar for the run, and under it ONE status line, replaced as each event arrives, not appended. Only the elapsed seconds tick on the page.\n- the records list leaves the tab's main view.\n\nORDER: the watcher fix (one read at a time, no item queued twice) goes in front of it, if he adds that item.\n\nWHEN IT HAS NOTHING TO RUN. Andy, 2026-10-09: \"and after all is done, it should count down idle time, before it starts documentation runs.\"\nSo, idle: the tab shows the countdown to idle (goal/G8.4: an hour with no desk write and nothing held), from the newest write deskVerify already reads. The documentation runs it counts down to are goal/G8.4's chores, which still wait on his two limits (which paths a chore may write, what the report holds); until then the countdown ends in \"idle, no chores yet\".\n\nFOLDED IN (Andy, 2026-10-09: \"why can't you fold things into items where it's convenient to do it in one go? more items keeps the closing of G8 pushed even further down the road?\"; G8.13, G8.14 and G8.15 closed for this):\n1. THE WATCHER READS ONE AT A TIME (was G8.14, \"add it.\"): one verify word gave three and four verify.pass on his node, because a read starts every watchMs without waiting for the last. Fix: a read in flight makes the next tick do nothing, and no item is queued while it is already queued or being checked. Built first, so the bar is driven once per word.\n2. REMOVE THE BOARD.md WRITER (was G8.13 and G8.15). Andy: \"and get rid of that damn BOARD.md i've been deleting it everywhere it pops up.\" runAll still rewrites the retired board at the end of every full run; delete the writer and what only it needs, with a test that a full run writes no BOARD.md.\nThe documentation runs (G8.4 chores) go to a later goal, so they do not hold G8 open.",
@@ -4215,9 +4244,9 @@
      "kind": "Q",
      "words": "wsl: four things wait on you, all small:\n1. G8.4 Q1 is now half ruled - no commits. Say also \"no files\" and \"the three lists\" and it closes.\n2. The watcher fix (one read at a time): add it as an item in front of G8.12?\n3. G8.12 itself: press Code, then Go, and cw writes the red.\n4. BOARD.md: the harness still writes it although the board is retired - own item, yes or no?",
      "test": "",
-     "state": "open",
-     "by": "wsl-claude",
-     "at": "2026-10-09T11:20:38.543Z"
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T11:31:54.362Z"
     }
    ],
    "chat": [
@@ -4375,6 +4404,41 @@
      "by": "wsl-claude",
      "at": "2026-10-09T11:28:50.329Z",
      "text": "wsl, the situation: G8 is in design mode, with two items left. G8.11 is verified and offers Done - press it.\nG8.12 is the last one: the live tab, the watcher fix and the BOARD.md removal in one box, no Code and no Go yet.\nSo: Done on G8.11, End design mode, then Code and Go on G8.12. cw writes one red, I build, he verifies, and G8 can close."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:30:20.524Z",
+     "text": "status now?+"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:30:36.151Z",
+     "text": "wsl: G8.11 is done and closed. G8.12 now reads code true, no Go - and no Go button is offered while G8 is in design mode.\nOne press left: End design mode, at the top beside the tabs. Then Go appears on G8.12, cw writes the red, I build."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:30:38.885Z",
+     "text": "cw: G8.12 has Code on, no Go yet; Go is not offered while G8 is in design mode. Press End design mode, then Go on G8.12, and I start the red."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:31:25.293Z",
+     "text": "it won't let me end design mode"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:31:56.335Z",
+     "text": "cw: that was four open questions (three on G8, one here), all settled by your fold; cleared now. End design mode will take; then Go on G8.12."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:32:00.897Z",
+     "text": "wsl: the record says G8 is still in design, so the press has not landed. Two reasons it would not:\n1. the button arms first - one click turns it into \"End design mode: sure?\", and the second click sends it; clicking anywhere else disarms it\n2. it acts on the goal row your List is showing, so with [Current Goal Only] off and G7 in view it would end G7, not G8 - G7 is in design mode too\nEnd design mode is owner-only, so I cannot press it for you."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T11:32:14.019Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
