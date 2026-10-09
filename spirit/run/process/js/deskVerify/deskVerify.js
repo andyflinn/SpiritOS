@@ -265,13 +265,17 @@ async function watchOnce() {
   if (m.mode !== 'desk') return { read: 0, queued: [] };
   const queued = [];
   let read = 0;
+  // THE WHOLE FIRST WALK IS HISTORY (goal/G8.10, found on his node at b5ea0779): the flag is read once, before the
+  // walk, not per page. Judged inside the loop it was true for page one only, so every later page of his record - years
+  // of verify passes - triggered a check, and items of goal/G6 were rejected for having no suites. A restart must
+  // trigger nothing at all.
+  const history = watchAt < 0;
   for (let i = 0; i < 10000; i++) {
     const page = await desk('changes', { n: Math.max(watchAt, 0), line: 0 });
     const recs = Array.isArray(page.records) ? page.records : [];
     const n = Number(page.n);
     read += recs.length;
-    // The first read only moves the cursor to the end: the history is not re-checked.
-    if (watchAt >= 0) recs.forEach(function (r) { const id = watched(r); if (id) queued.push(id); });
+    if (!history) recs.forEach(function (r) { const id = watched(r); if (id) queued.push(id); });
     if (n > watchAt) watchAt = n;
     if (!page.more || !recs.length) break;
   }
