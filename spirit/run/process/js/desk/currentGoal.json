@@ -1,8 +1,8 @@
 {
- "change": 20846,
+ "change": 20975,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T07:21:52.720Z",
+ "writtenAt": "2026-10-09T07:37:50.506Z",
  "items": [
   {
    "id": "goal/G8",
@@ -15,14 +15,10 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G8.1",
-    "goal/G8.2",
     "goal/G8.3",
     "goal/G8.4",
     "goal/G8.5",
-    "goal/G8.6",
-    "goal/G8.7",
-    "goal/G8.8"
+    "goal/G8.7"
    ],
    "go": false,
    "alone": false,
@@ -49,8 +45,7 @@
     "wsl-claude"
    ],
    "working": [
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -335,6 +330,31 @@
      "by": "andy",
      "at": "2026-10-09T07:21:29.889Z",
      "text": "hmmm, i was thinking, just before opening this goal:\n\nthe rule doesn't exactly state only ONE blocking item, that's just what my UI creates.\n\nwhat is intended is this:\n\nand add item must only add explicit blocks, NOT implicit ones. Do i have to modify a rule for that?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:22:03.144Z",
+     "text": "wsl: the behaviour you want is already built, and in more places than the rule covers. A split adds the parent and nothing else (desk.js session.set, goal/G9.4); item.add blocks its goal, or the one item you name in blocks, and nothing implicit (goal/G9.9, G9.10). Your UI makes one blocking item at a time because the form does, not because anything limits the count - several means several adds.\nOne gap a rule would close: a session.set WITHOUT a split still writes whatever blocks the caller sends, so an agent could put implicit ones there. rule/6 says \"when splitting an item\", so it does not reach that path.\nSo: no rule change is needed for the code to behave; one line widening rule/6 from \"when splitting\" to \"whenever an item is added\" would close the one path where an agent could still do it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T07:22:09.521Z",
+     "text": "cw: yes: rule/6 opens \"when splitting an item\", so it does not cover an add; changing it to \"when splitting or adding an item\" does, and the rest of its wording already says explicit only. It is your edit in the Rules tab.\nBy that intent cw had G8.9 wrong: it now blocks only G8.4 and G8.6, as G8.7 waits through G8.6 and the goal through both; its box says so."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T07:22:54.807Z",
+     "text": "tell me which rule i must clarify."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T07:23:05.666Z",
+     "text": "cw: rule/6, \"Dependencies when splitting a desk item\". Its first words, \"when splitting an item\", become \"whenever an item is added or split\"; the rest can stay as it is."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:23:09.994Z",
+     "text": "wsl: rule/6, \"Dependencies when splitting a desk item\" - the only one that speaks to this, and the only word to change is its opening.\nYour text to paste, your own wording with two words widened: \"when splitting or adding an item, only the new, explicit blocking relationship is automatically added, the implicit blocking does not need to be specified, it clutters the list display with confusing \\\"blocks\\\" and \\\"waits on\\\", and is not needed for a dependency graph.\"\nNothing else needs a change: rule/7 already keeps an agent from splitting or adding without you, and the code adds only explicit blocks on every path but a session.set with no split."
     }
    ]
   },
@@ -349,7 +369,6 @@
     "delete"
    ],
    "blocking": [
-    "goal/G8",
     "goal/G8.2"
    ],
    "blocked": [],
@@ -771,7 +790,6 @@
     "delete"
    ],
    "blocking": [
-    "goal/G8",
     "goal/G8.3",
     "goal/G8.4",
     "goal/G8.5",
@@ -1110,11 +1128,11 @@
     "delete"
    ],
    "blocking": [
-    "goal/G8",
     "goal/G8.7"
    ],
    "blocked": [
     "goal/G8.2",
+    "goal/G8.8",
     "goal/G8.9"
    ],
    "go": false,
@@ -1190,7 +1208,7 @@
     "delete"
    ],
    "blocking": [
-    "goal/G8"
+    "goal/G8.6"
    ],
    "blocked": [],
    "go": false,
@@ -1211,17 +1229,17 @@
    "asks": 3,
    "half": false,
    "full": false,
-   "box": "FILES TOUCHED PER ITEM\n\nAndy, 2026-10-09, in desk/G0.0, answering cw's question \"make files-touched an explicit field in G8.1, replacing the hand-written list at claim-done?\": \"Yes. cw: add it to the appropriate goal, and make sure that the file list needs my approval\"\n\nWHAT IT REPLACES: the list an agent writes by hand in the item chat at claim-done (Andy, 2026-10-03). desk.js holds no files-touched field today.\n\nWHY ITS OWN ITEM AND NOT goal/G8.1: G8.1 keeps one row per test; this is one list per item. The goal box names it under WHAT IT KEEPS: \"which core files were touched and by whom\".\n\nREQUIRED, his: the file list needs his approval.\n\nThe questions still to argue are its red Q checks.",
-   "version": 1,
+   "box": "FILES TOUCHED PER ITEM\n\nAndy, 2026-10-09, in desk/G0.0, answering cw's question \"make files-touched an explicit field in G8.1, replacing the hand-written list at claim-done?\": \"Yes. cw: add it to the appropriate goal, and make sure that the file list needs my approval\"\n\nWHAT IT REPLACES: the list an agent writes by hand in the item chat at claim-done (Andy, 2026-10-03). desk.js holds no files-touched field today.\n\nWHY ITS OWN ITEM AND NOT goal/G8.1: G8.1 keeps one row per test; this is one list per item. The goal box names it under WHAT IT KEEPS: \"which core files were touched and by whom\".\n\nREQUIRED, his: the file list needs his approval.\n\nThe questions still to argue are its red Q checks.\n\nRULED, his, 2026-10-09, on Q1 (read mechanically from the commits, or written by the claiming agent): \"ideally written by the claiming agent. the coding agent and the testing agent should be adding files they test/touch in a list that can be fetched per item.\"\nAndy, the same day: \"the list should be owned by the item. so updates to it are available to all participants.\"\nSo the list belongs to the item, not to any agent: the builder adds the files it touches, the red writer and the verifier the files they test, and every update is there for everyone working on the item to fetch.\nIN THE TREE TODAY, for whoever builds it: commitCheck.js (process/js/desk) already reads each pushed commit's files and posts them under the item as chat text, in agent clones only; that is a source the agents can copy from, not a replacement for their list.\n\nVERBS, his: \"i may require verbs.\" It does: the desk holds nothing per item for files today, so at least one desk verb to add files to an item's list and one to read it. Desk verbs, not node verbs; still each is named here first, reviewed by the other agent, and built only on his yes to the verb itself.\n\nTHE VERB, PROPOSED by wsl-claude, reviewed by claude-windows, awaiting his yes: one desk verb, item.files.add {id, paths}, appending paths to the item's list; the list comes back in the item's own facts (item.get), so no read verb is needed. Two writers append, nothing deletes, and his approval gates the list itself.\nREVIEW, cw: the plainest shape that does his words, one verb instead of two. One consequence to know, not a fault: with no delete, a wrong path stays on the list, and his approval is where it is caught.\n\nIN THE DESK UI, his, 2026-10-09: \"and that file list should be visible in desk ui per item, core files market as requiring grants.\"\nSo the item Details draws the list, and marks each core file as needing his grant. Which files are core is decided in one place already, js/coreFiles.js, the same list commitCheck.js locks behind a grant; the mark reads that, never a second list.",
+   "version": 6,
    "checks": [
     {
      "number": "Q1",
      "kind": "Q",
      "words": "Should the file list be read mechanically from the item's commits, or written by the claiming agent?",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T07:32:37.138Z"
     },
     {
      "number": "Q2",
@@ -1240,6 +1258,15 @@
      "state": "open",
      "by": "",
      "at": ""
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "cw: reviewed and in the box as proposed: item.files.add {id, paths}, the list read back from item.get, one verb instead of two.\nOne consequence: with no delete, a wrong path stays on the list until your approval catches it.\nIs item.files.add the verb you want?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-09T07:34:33.598Z"
     }
    ],
    "chat": [
@@ -1247,6 +1274,76 @@
      "by": "claude-windows",
      "at": "2026-10-09T05:30:04.972Z",
      "text": "cw: added as its own item, goal/G8.8, under goal/G8 Verification Automation; G8.1 keeps one row per test, this is one list per item.\nYour ruling is in the box verbatim, with your approval of the list as a requirement.\nTwo red Q checks are on it: where the list comes from, and what form your approval takes."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T07:32:16.479Z",
+     "text": "Q1: Should the file list be read mechanically from the item's commits, or written by the claiming agent?\n\nideally written by the claiming agent. the coding agent and the testing agent should be adding files they test/touch in a list that can be fetched per item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T07:32:38.494Z",
+     "text": "cw: your answer is in the box verbatim: the list is the agents' own, builder and tester each adding the files they touch or test, fetchable per item. Q1 is cleared."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T07:33:23.647Z",
+     "text": "the list should be owned by the item. so updates to it are available to all participants."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T07:33:40.480Z",
+     "text": "cw: in the box verbatim: the list belongs to the item, and every update is there for everyone working on it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T07:33:52.209Z",
+     "text": "i may require verbs."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T07:34:10.713Z",
+     "text": "cw: it will: at least two desk verbs, one adding files to the item's list and one reading it; noted in the box, each to be named, reviewed by wsl and built only on your yes."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:34:11.192Z",
+     "text": "wsl: then the smallest pair that does what you said is item.files.add {id, paths} and the list coming back in the item's own facts, so nothing new is needed to read it - item.get already carries what the dialog draws.\nI am the peer for that review and I have read the shape: two writers appending to one list owned by the item, no deletes, your approval the gate on the list itself. Name the verbs in G8.8's box and I will review them there before anything is built."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T07:34:33.293Z",
+     "text": "cw: reviewed and in the box as proposed: item.files.add {id, paths}, the list read back from item.get, one verb instead of two.\nOne consequence: with no delete, a wrong path stays on the list until your approval catches it.\nIs item.files.add the verb you want?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:34:53.498Z",
+     "text": "wsl, peer review of the verb: approved as shaped - item.files.add {id, paths}, the list read back through item.get, one verb, no new read path, and the item owns the list so both agents see every update. It crosses no boundary beyond the desk's own api.\nOn the wrong-path consequence, the plainest repair needs no delete verb: let the same verb carry that agent's whole list, replacing its own entries and leaving the other agent's alone. One verb still, nothing to remove by hand.\nYour yes on the verb is the last thing missing; I have none to add beyond that."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T07:35:08.648Z",
+     "text": "and that file list should be visible in desk ui per item, core files market as requiring grants."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T07:35:27.929Z",
+     "text": "cw: in the box verbatim: the Details draws the list per item and marks core files as needing your grant, reading which files are core from js/coreFiles.js, the list commitCheck already locks."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:35:29.322Z",
+     "text": "wsl: that needs nothing invented - which files are core is already one function, coreFiles.isCore (spirit/run/js/coreFiles.js), and commitCheck uses it to raise your G check \"core grant: <path>\" per file (commitCheck.js:162-172).\nSo the UI marks a path by asking the same function, and the mark can carry the state you already have: granted, asked, or not asked yet.\nThat also means the list and the grants cannot disagree, which they would if the mark had its own idea of core."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T07:37:26.577Z",
+     "text": "Q3: Should this item be finished before the short loop (G8.6), since the loop needs each item's list of changed test files?\n\nthe dependencies are up to you, you just need to avoid implicit dependencies, the desk can actually check that."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:37:45.366Z",
+     "text": "wsl: it can, and cheaply: the desk already walks every item's blocks, so an edge A to C is implicit exactly when A reaches C through another item, and that is the same walk blockers does today.\nSo the check is a few lines wherever an item is added or split - refuse the edge, or take it and say so. That is rule/6 made mechanical rather than remembered.\nIt is not this item's work; it wants a line in a desk goal, and I would not slip it into G8."
     }
    ]
   },
@@ -1283,8 +1380,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "TEST RUNS THAT CANNOT COLLIDE\n\nAndy, 2026-10-09, under goal/G8, of the risk that two full runs on one machine share localhost: \"This one is REAL. would it mean that: labMaster needs an upgrade, where multiple desk nodes must be able to have their very own range of ports and test-world-instances?\", then \"so this goal needs an item that cleans up those specific suites that cause problems, before the rest of this goal becomes clearer?\", and \"ok. cw. create that new item which appropriately blocks, get rid of the red questions here, and we finish the discussion on the new item there.\"\n\nWHAT THE TREE SAYS: most suites already take a port from the OS (listen(0)). About a dozen hard-code one: the lab-world suites on 65410-65428 (labWorld, liveFrontDoor and their neighbours), hintWire on 48761-48762, and the relay default 65430. Two full runs on one host collide on exactly those; WSL forwards its ports onto Windows localhost, so the host is the machine, not the OS.\nEVIDENCE, 2026-10-09: during the two full runs he asked for, wsl-claude's reported \"port 48762 is already in use\" while claude-windows's ran on Windows. Every other red of that day failed alone as well, so it was not a collision.\n\nSHAPE, as both agents proposed it: those suites take an OS-assigned port or a per-run base; and labMaster holds one full run at a time per host. Test worlds need nothing new, each run already living in its own scratch folder.\n\nWHY IT BLOCKS G8.4, G8.6 AND G8.7: those are the items where deskVerify runs suites while somebody else may be running them. G8.1, the dataset, does not wait on it.",
-   "version": 1,
+   "box": "TEST RUNS THAT CANNOT COLLIDE\n\nAndy, 2026-10-09, under goal/G8, of the risk that two full runs on one machine share localhost: \"This one is REAL. would it mean that: labMaster needs an upgrade, where multiple desk nodes must be able to have their very own range of ports and test-world-instances?\", then \"so this goal needs an item that cleans up those specific suites that cause problems, before the rest of this goal becomes clearer?\", and \"ok. cw. create that new item which appropriately blocks, get rid of the red questions here, and we finish the discussion on the new item there.\"\n\nWHAT THE TREE SAYS: most suites already take a port from the OS (listen(0)). About a dozen hard-code one: the lab-world suites on 65410-65428 (labWorld, liveFrontDoor and their neighbours), hintWire on 48761-48762, and the relay default 65430. Two full runs on one host collide on exactly those; WSL forwards its ports onto Windows localhost, so the host is the machine, not the OS.\nEVIDENCE, 2026-10-09: during the two full runs he asked for, wsl-claude's reported \"port 48762 is already in use\" while claude-windows's ran on Windows. Every other red of that day failed alone as well, so it was not a collision.\n\nSHAPE, as both agents proposed it: those suites take an OS-assigned port or a per-run base; and labMaster holds one full run at a time per host. Test worlds need nothing new, each run already living in its own scratch folder.\n\nWHAT IT BLOCKS, explicit only: G8.4 and G8.6, where deskVerify runs suites while somebody else may be running them. G8.7 waits on it through G8.6, and the goal through both, so neither is written. Andy, 2026-10-09: \"and add item must only add explicit blocks, NOT implicit ones.\" G8.1, the dataset, does not wait on it.",
+   "version": 2,
    "checks": [],
    "chat": []
   }
