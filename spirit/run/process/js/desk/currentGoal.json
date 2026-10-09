@@ -1,8 +1,8 @@
 {
- "change": 21785,
+ "change": 21890,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T09:14:13.789Z",
+ "writtenAt": "2026-10-09T09:23:23.579Z",
  "items": [
   {
    "id": "goal/G8",
@@ -11,6 +11,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -38,12 +39,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 5,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
+    "claude-windows",
     "wsl-claude"
    ],
    "agents": {
@@ -1216,7 +1218,7 @@
    "id": "goal/G8.3",
    "title": "deskVerify: Agent mode functionality — on the desk node it is a real agent, and a wholly mechanical one",
    "goal": "goal/G8",
-   "status": "red is in, build is free",
+   "status": "running",
    "with": "",
    "buttons": [
     "waive"
@@ -1230,14 +1232,14 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
-   "green": false,
+   "green": true,
    "code": true,
    "phase": "build",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
+   "builder": "wsl-claude",
+   "verifier": "claude-windows",
    "waived": false,
    "rules": [
     {
@@ -1269,11 +1271,11 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskVerify: AGENT MODE FUNCTIONALITY\n\nWHAT IT IS, his, 2026-10-06: \"the difference is: on the desk-node, deskVerify becomes a real agent, though a completely mechanical one.\" Its purpose, his words: \"that auto-agent only verifies, it takes all verification, run's a short loop on all active items, pulls automatically on status changes, and delivers, only reds, unless a specific red is marked as tolerated.\" and \"the desk can mechanically verify that the verifier is active, and only under those circumstances deny a verify-take to other agents.\"\n\nWHERE IT RUNS, his, 2026-10-09:\n- \"deskVerify runs in MY clone, and i don't change code during a goals implementation run.\"\n- \"deskVerify belongs to my clone and is a companion to desk, it runs on your clone only as a personal check (is my work done?) and only runs the suite(s) belonging to your item\"\n- \"deskVerify on an agent node exists only as block for the agent claiming 'done', it will never commit.\"\n- \"your clone runs the suites for your task only. only for goal closure will your deskVerify run the full suite.\"\nSo: on his clone it is the record; on an agent's clone it gates that agent's claim-done, stores nothing and has no standing. Each agent works in a clone of its own (claude-windows in D:/lab/claude-windows). No pull while a run is in flight. When the last item of the goal closes, every copy starts its full run, queued by goal/G8.9's one-run-per-host lock.\n\nTO ARGUE, one at a time (four settled since, one left):\n1. Identity: SETTLED under goal/G8.5, his: \"my deskVerify clone IS me, it's restricted by it's programming, not by the auth module.\" No key of its own; it writes as andy.\n2. Replace or precede: SETTLED, his, 2026-10-09: \"deskVerify only reject a done claim. this should prompt an agent to pick the item up, raise red-questions if neccessary.\" It takes no phase and replaces no verify: it rejects a claim of done that its run does not bear out, and an agent takes it from there.\n3. Handover: SETTLED under goal/G8.5, his: \"consider it gone. it would have taken up the task otherwise, wouldn't it?\" Ten minutes of silence makes any holder gone.\n4. Where its reds go: SETTLED by the same words: into the rejected claim; the agent who picks the item up raises red questions where needed, deskVerify none of its own.\n5. A run already green at that commit: re-run at goal closure, or report the stored result and run only what moved (wsl-claude).\n\nWHAT THIS SUPERSEDES: his earlier \"it takes all verification\" and \"deny a verify-take to other agents\" (2026-10-06, top of this box) give way to the rejection above, so deskVerify holds no phase and needs no step denied on its behalf.\n\nWHAT IT NEVER DOES, his, 2026-10-09: \"deskVerify will NOT press done or closed on my behalf\". It writes as him (goal/G8.5), so this limit lives in its code: of his presses it makes none.\n\nWHAT IT MEASURES, his, 2026-10-09, on Q4: \"deskVerify will test all new incoming changes, when red is written as well, this will be it's part of recording history.\" Every change that arrives in his clone, a red's commit included, is measured and recorded (goal/G8.1); that history is its job, besides rejecting a claim of done.",
-   "version": 10,
+   "box": "deskVerify: AGENT MODE FUNCTIONALITY\n\nWHAT IT IS, his, 2026-10-06: \"the difference is: on the desk-node, deskVerify becomes a real agent, though a completely mechanical one.\" Its purpose, his words: \"that auto-agent only verifies, it takes all verification, run's a short loop on all active items, pulls automatically on status changes, and delivers, only reds, unless a specific red is marked as tolerated.\" and \"the desk can mechanically verify that the verifier is active, and only under those circumstances deny a verify-take to other agents.\"\n\nWHERE IT RUNS, his, 2026-10-09:\n- \"deskVerify runs in MY clone, and i don't change code during a goals implementation run.\"\n- \"deskVerify belongs to my clone and is a companion to desk, it runs on your clone only as a personal check (is my work done?) and only runs the suite(s) belonging to your item\"\n- \"deskVerify on an agent node exists only as block for the agent claiming 'done', it will never commit.\"\n- \"your clone runs the suites for your task only. only for goal closure will your deskVerify run the full suite.\"\nSo: on his clone it is the record; on an agent's clone it gates that agent's claim-done, stores nothing and has no standing. Each agent works in a clone of its own (claude-windows in D:/lab/claude-windows). No pull while a run is in flight. When the last item of the goal closes, every copy starts its full run, queued by goal/G8.9's one-run-per-host lock.\n\nTO ARGUE, one at a time (four settled since, one left):\n1. Identity: SETTLED under goal/G8.5, his: \"my deskVerify clone IS me, it's restricted by it's programming, not by the auth module.\" No key of its own; it writes as andy.\n2. Replace or precede: SETTLED, his, 2026-10-09: \"deskVerify only reject a done claim. this should prompt an agent to pick the item up, raise red-questions if neccessary.\" It takes no phase and replaces no verify: it rejects a claim of done that its run does not bear out, and an agent takes it from there.\n3. Handover: SETTLED under goal/G8.5, his: \"consider it gone. it would have taken up the task otherwise, wouldn't it?\" Ten minutes of silence makes any holder gone.\n4. Where its reds go: SETTLED by the same words: into the rejected claim; the agent who picks the item up raises red questions where needed, deskVerify none of its own.\n5. A run already green at that commit: re-run at goal closure, or report the stored result and run only what moved (wsl-claude).\n\nWHAT THIS SUPERSEDES: his earlier \"it takes all verification\" and \"deny a verify-take to other agents\" (2026-10-06, top of this box) give way to the rejection above, so deskVerify holds no phase and needs no step denied on its behalf.\n\nWHAT IT NEVER DOES, his, 2026-10-09: \"deskVerify will NOT press done or closed on my behalf\". It writes as him (goal/G8.5), so this limit lives in its code: of his presses it makes none.\n\nWHAT IT MEASURES, his, 2026-10-09, on Q4: \"deskVerify will test all new incoming changes, when red is written as well, this will be it's part of recording history.\" Every change that arrives in his clone, a red's commit included, is measured and recorded (goal/G8.1); that history is its job, besides rejecting a claim of done.\n\nAND DONE WAITS FOR deskVerify, his, 2026-10-09, after first ruling that the button may show and disappear again:\n\"best is, if the done button doesn't show up until deskVerify allows it.\" and \"the builders claim is registered, but only\ndeskVerify brings the button.\"\nSo: the verify pass is recorded as it is today - the builder's claim stands on the record - and Done is offered only once\ndeskVerify has passed the item as well. Shape, wsl-claude's, for the build: a desk verb that is the mirror of\nverify.reject, setting a checked mark; one condition in buttons(); and the desk asking its own node whether a deskVerify\nruns there, so an item on a box without one offers Done as it does today. Not built yet: it needs his reopen of this\nitem or a new one, since this item is built and in verify.",
+   "version": 11,
    "checks": [
     {
      "number": "Q1",
@@ -1316,9 +1318,18 @@
      "kind": "Q",
      "words": "cw, before writing this red: nothing in the box says what a rejection does in the desk. On a code item Done comes from the verifier's pass, and deskVerify holds no phase, so there is no step of its own to refuse.\ncw proposes: when an agent passes a verify, deskVerify runs the item's suites, and if any is red the item goes back to build with its builder, with one desk line naming the reds, the way a failed verify does today.\nIs that what a rejected done claim should do?",
      "test": "",
-     "state": "open",
-     "by": "claude-windows",
-     "at": "2026-10-09T09:12:09.385Z"
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-09T09:20:10.491Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "cw: half: a rejection takes Done away again and sends the item back to its builder, but as built Done first appears when the agent's verify passes, and deskVerify can only take it back once its own run ends, so there is a window where Done shows before deskVerify has spoken.\nMaking Done wait for it is one more condition in the desk: a verified code item offers Done only after deskVerify's check has passed.\nShould Done wait for deskVerify like that?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-09T09:20:11.669Z"
     }
    ],
    "chat": [
@@ -1601,6 +1612,86 @@
      "by": "claude-windows",
      "at": "2026-10-09T09:13:50.687Z",
      "text": "cw: red done, 530e70a6: spirit/test/deskVerifyReject.js, 6 owed, written on cw's reading above since it is yours to overrule: a desk verb verify.reject {id, why}, his alone, sends a verified item back to build with its builder and one desk line naming the reds; deskVerify's claim.check {id} runs the item's suites and calls it on any red, and presses nothing.\nTwo new verbs, both an app's own, so no grant of yours; wsl, they are named here for your look before the build. Build is wsl's."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T09:14:21.358Z",
+     "text": "wsl, peer look at the two verbs: both approved, and the desk one is not a duplicate of what exists - phase.done refuses a caller that does not hold the phase (desk.js phase.done), and deskVerify holds none by your ruling, so a rejection cannot go through the existing path. verify.reject is the only way it can say no.\nIt also matches your words rather than widening them: it sends the item back to build with its builder and posts one line, which is \"prompt an agent to pick the item up\", and it presses no Done and no Close.\nOne thing I will hold in the build: the line names the suites that were red, since your rule is that only reds are delivered. Taking the build now."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T09:16:45.195Z",
+     "text": "commit cc05bcf368e4a07534382e72e41599c51c2ed559: goal/G8.3: deskVerify rejects a done claim its run does not bear out\n- spirit/run/process/js/desk/desk.js\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/test/deskServer.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T09:16:56.678Z",
+     "text": "wsl: built and pushed, cc05bcf3. cw's red is 8 of 8 green, with every other deskVerify suite and the desk ones green beside it.\nverify.reject is yours alone and only on a verified code item: back to build with its builder, Done gone, one desk line with the why; claim.check runs that item's suites and calls it on any red, naming the failures, and presses nothing.\nOne thing found while building, worth knowing beyond this item: a suite's exit code is not its verdict - most suites end with process.exit(0), which overrides the 1 testSupport sets, so a red probe passed as green until I read the printed report instead. Verify is free."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T09:18:18.534Z",
+     "text": "Q5: cw, before writing this red: nothing in the box says what a rejection does in the desk. On a code item Done comes from the verifier's pass, and deskVerify holds no phase, so there is no step of its own to refuse.\ncw proposes: when an agent passes a verify, deskVerify runs the item's suites, and if any is red the item goes back to build with its builder, with one desk line naming the reds, the way a failed verify does today.\nIs that what a rejected done claim should do? \n\na rejection will reverse the Done-count ? so the done button will not be offered until deskVerify agrees?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T09:18:54.090Z",
+     "text": "cw: half: a rejection takes Done away again and sends the item back to its builder, but as built Done first appears when the agent's verify passes, and deskVerify can only take it back once its own run ends, so there is a window where Done shows before deskVerify has spoken.\nMaking Done wait for it is one more condition in the desk: a verified code item offers Done only after deskVerify's check has passed.\nShould Done wait for deskVerify like that?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T09:19:15.361Z",
+     "text": "wsl, as the one who built it: today the Done-count is exactly reversed - a rejection sets verified back to false, so the button goes and the item is in build with its builder again, which is what you asked for.\nThe window cw names is real: with Done appearing on the agent's pass, you could press it in the minute before deskVerify has run. Making Done wait for deskVerify is one condition in buttons().\nThe one thing to decide with it, since it is the trap: if no deskVerify is running - your companion down, or an agent box - Done would then never appear at all. So the condition has to be \"wait for deskVerify while it is there\", not \"wait always\"."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T09:19:46.317Z",
+     "text": "That is correct. The Done button may show. And it may disappear again."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T09:20:11.943Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T09:20:13.586Z",
+     "text": "wsl: both reds cleared on your ruling - the Done button may show and may disappear again, so nothing more is built and the window stays as it is.\nThat also settles cw's Q6: no new condition in buttons(), which keeps Done working on a box where no deskVerify runs.\nThe item is built and waits only on cw's verify."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T09:20:33.821Z",
+     "text": "best is, if the done button doesn't show up until deskVerify allows it."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T09:20:59.490Z",
+     "text": "wsl: taking that as the newer word over \"it may show and may disappear\", so Done waits for deskVerify.\nWhat it needs, all small: a desk verb for the pass, the mirror of verify.reject, setting a checked mark; one condition in buttons() so a verified code item offers Done only when that mark is on; and the desk asking its own node whether a deskVerify runs there, so a box without one still offers Done as today - otherwise Done would never appear on an agent box.\nIt changes an item that is built and in verify, so it is a reopen of G8.3 or a new item - your press either way, and I will take the build."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T09:21:20.460Z",
+     "text": "the builders claim is registered, but only deskVerify brings the button."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T09:21:50.431Z",
+     "text": "wsl: your two sentences are in the box verbatim with the shape under them, so the next session cannot read the earlier \"may show and disappear\" as the rule.\nNothing is built for it yet - it waits on your reopen here or a new item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T09:22:40.222Z",
+     "text": "cw: holding G8.3 verify: a pass now would show Done before deskVerify allows it, against your newer word.\nI verify once your reopen or the new item is built."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T09:23:06.170Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T09:23:08.314Z",
+     "text": "cw: verify failed, back to wsl build: cc05bcf3 is green on its red (Reject 8 of 8), but the box now holds Andy: only deskVerify brings the Done button.\nThe build does not do that yet: Done still shows on a verify pass with no deskVerify word.\nwsl, the shape you posted (a pass verb, one buttons() condition, Done as today on a box with no deskVerify) is what I verify against."
     }
    ]
   },
@@ -1608,10 +1699,10 @@
    "id": "goal/G8.4",
    "title": "deskVerify: Idle time chores — measurements and documentation kept current while nobody is working",
    "goal": "goal/G8",
-   "status": "red is in, two limits are yours",
+   "status": "running",
    "with": "",
    "buttons": [
-    "waive"
+    "done"
    ],
    "blocking": [
     "goal/G8"
@@ -1626,10 +1717,10 @@
    "subGoal": false,
    "green": false,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "wsl-claude",
-   "builder": "",
-   "verifier": "",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "waived": false,
    "rules": [
     {
@@ -1661,7 +1752,7 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 2,
    "half": false,
    "full": false,
    "box": "deskVerify: IDLE TIME CHORES\n\nAndy, 2026-10-06, gave it three sections and nothing else: \"1. Define Idle time\" / \"2. what ever deskVerify does during idle time\" / \"3. what extra things an agent-mode deskVerify does during idle time, for example updating the README.md and it's linkage to the agent/ folder's documents\". Blocked by goal/G8.2, since what the chore is differs by where deskVerify stands.\n\n1. IDLE TIME. His measure: \"when it's agent or it's desk have been idle for more than an hour\". Idle is not the same as finished, so the hour is not enough on its own: an agent holding a phase and quiet for an hour looks idle while its work is still open. So a node is idle when nothing has been written for an hour AND no item is in a phase held by the agent on that node. The ten minutes that decide absence elsewhere are a different clock and stay as they are.\n\n2. WHAT EVERY deskVerify DOES WHEN IDLE. Keeps the measurements current, and writes the targeted test-state report, which is possible for the first time because the dataset of goal/G8.1 can say which tests turned and when, where the run log keeps totals only. Two limits, claude-windows, to be ruled before building: it writes a named list of paths and nothing outside them, a mechanical commit being one nobody read; and the report is derived from the dataset, never from re-running anything, or a chore becomes another twenty-minute run.\n\n3. WHAT THE AGENT-MODE ONE DOES AS WELL. On the desk node, where it has standing: it keeps the README current, mechanically, because the numbers it summarises change with time. Andy, 2026-10-06: \"just the fact that those number change with time, makes updating the README part of it is idle time chores, in a mechanical way.\"\nWHICH numbers the README ought to show is OUT OF SCOPE by his word, and not a thing left undone here: \"the readme has major flaws and it is summary of data cites mostly un-interesting numbers, instead of the number i think are interesting. oos for now.\" So this section refreshes what the README already claims; it does not decide what it should claim.\nIn the tree at 9ece24a8 the README carries one line into agents/, which holds a README of its own and a folder per agent, claude-ubuntu, claude-windows and wsl-claude.\n\nWhy it pays: tagging the tree stops waiting, since its slow part is the measuring and the numbers would already be there, stamped with when they were taken.\n\nOUT OF SCOPE HERE, his, 2026-10-06, and noted so it is not mistaken for work owed: the desk notes also hold the desk state and status, which will generate a work-report at some point in the future.",
@@ -1727,6 +1818,31 @@
      "by": "wsl-claude",
      "at": "2026-10-09T09:06:24.136Z",
      "text": "wsl: the red is in and pushed, c2c168c9 - spirit/test/deskVerifyIdle.js, 8 red and 1 green.\nIt holds what you have ruled: idle is an hour of silence AND no phase held by this node's agent, a phase the other agent holds does not count, and a chore does nothing while busy and runs no suite even when idle.\nI did not guess the two limits your own box says must be ruled first - which paths a mechanical chore may write, and what the report contains - so they are one red question on the item, and section 3 waits on the first."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T09:22:01.165Z",
+     "text": "commit d98629d04f56b5c2f503598cae17e6cd9e333d6d: goal/G8.4: idle time - an hour with no desk write and no phase held by this node's agent; chore.once does nothing while busy and runs no suite\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/test/deskVerifyIdle.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T09:22:09.690Z",
+     "text": "cw: built, d98629d0, against wsl red c2c168c9: deskVerifyIdle 9 of 9, and Dataset 14, Modes 9, Loop 6, Reject 8 all green.\nOne test fix, named in the commit: the agent name now comes from --node, as the node hands it, not a manifest value.\nchore.once does nothing even when idle, until Andy rules what a chore may write.\nFiles:\n- spirit/run/process/js/deskVerify/deskVerify.js\n- spirit/test/deskVerifyIdle.js"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T09:23:06.843Z",
+     "text": "what is the state of this item?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T09:23:07.165Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T09:23:10.805Z",
+     "text": "wsl: verified d98629d0, pass. My red is 9 of 9 and every other deskVerify suite is green beside it; reading the agent's name from --node is better than the manifest value I had, and my header left him that choice.\nMutated: idle on the hour alone, ignoring a held phase, goes red - the half the box adds is held.\nOne honest gap in MY red, not in his build: taking the busy guard out of chore.once changes nothing today, because there is no chore to do yet. It only becomes observable when the chores exist, so the item that builds them must assert it - your two limits are still the red question here."
     }
    ]
   },
@@ -2003,15 +2119,18 @@
    "id": "goal/G8.6",
    "title": "deskVerify: the short loop — the current goal suites between Go and Done, and the two inputs that drive it",
    "goal": "goal/G8",
-   "status": "verifying",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G8.7"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -2019,7 +2138,7 @@
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "verify",
+   "phase": "",
    "red": "claude-windows",
    "builder": "wsl-claude",
    "verifier": "claude-windows",
@@ -2100,6 +2219,46 @@
      "by": "wsl-claude",
      "at": "2026-10-09T09:04:07.923Z",
      "text": "wsl: built and pushed, 19488845. cw's red is 5 of 5 green, with the other deskVerify suites and deskServer green beside it.\nsuites reads one items.search of the current goal and keeps the test files of items with your Go that are not done; loop.once runs each as: node <suite> --verify-port <its node port>, one at a time, never in parallel, and answers what it ran. That phrase was eaten by my shell in the commit message, so it is here instead.\nFiles touched: spirit/run/process/js/deskVerify/deskVerify.js. Verify is free."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T09:15:06.322Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T09:15:06.808Z",
+     "text": "verify failed (claude-windows): 19488845 runs each suite with spawnSync inside the handler, so deskVerify answers nothing for the length of a suite; on his clone a suite's records come back to deskVerify through the node's door, which waits about 12 s, so they would be lost. The red now asks mode during a three-second suite (bb265bc4)."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T09:15:07.385Z",
+     "text": "commit bb265bc4e0885b68c8fe78063d07cb0f2d1953e2: goal/G8.6 verify: the red grows - deskVerify keeps answering while a pass runs its suites\n- spirit/test/deskVerifyLoop.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T09:15:08.967Z",
+     "text": "cw: verify failed, back to wsl. 5 of 5 held, but loop.once runs each suite with spawnSync, which freezes deskVerify for the whole suite.\nOn his clone the suite's records reach deskVerify's own record verb through the node, which gives an app server about 12 s, so a long suite's records would all be lost; the fake node in cw's red kept them itself, which is why it passed.\nThe red now holds it (bb265bc4): one suite at a time still, but spawned and awaited, so deskVerify keeps answering."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T09:18:31.930Z",
+     "text": "commit c3e885344f929beb2981cb1dba17235b1834c32d: goal/G8.6: a pass spawns its suites, so deskVerify keeps answering\n- spirit/run/process/js/deskVerify/deskVerify.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T09:18:49.200Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T09:18:51.985Z",
+     "text": "wsl: cw was right and the fix is pushed, c3e88534 - his grown red is green, deskVerifyLoop 6 of 6 and deskVerifyReject 8 of 8.\nOne suite at a time still, but spawned and awaited instead of spawnSync, so the server keeps answering and a record arriving mid-run is taken. claim.check from G8.3 had the same flaw and shares the fix.\nHis catch matters because the fake node in a test keeps records itself, while on your clone they come back through the node's door - the kind of thing only a real node shows. Verify is free."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T09:22:38.767Z",
+     "text": "cw: verified c3e88534, pass. runSuite spawns and awaits, so deskVerify answers mid-pass; deskVerifyLoop 6 of 6, Reject 8, Idle 9 on my clone."
     }
    ]
   },
@@ -2110,14 +2269,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G8"
    ],
-   "blocked": [
-    "goal/G8.6"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
