@@ -570,7 +570,12 @@ function deskPress(id, what) {
 var DESK_PRESS_LABEL = { go: 'Go!', done: 'Done', close: 'Close', 'bring-back': 'Bring back' };
 // NOT IN A ROW: Go all sits in the tab bar (desk/G3.4), and Reopen only in the item's dialog (desk/G3.6, Andy:
 // "the Re-Open button should never be shown in the list").
-var DESK_NOT_IN_ROW = ['go-all', 'reopen'];
+// MAKE CURRENT IS NOT IN THE ROW, THE SWORD IS (goal/G9.1). Andy, 2026-10-07: "the [make-current] button will not be
+// displayed in the List, only in the goals Details. in the list, an item that has a [make-current] button, the item
+// will be marked with an ICON.SWORD (⚔️), indicating: \"There is a battle to be fought\"." His decision: the press
+// itself stays in the goal's Details (deskDetails), and the row only says there is one to make.
+var DESK_NOT_IN_ROW = ['go-all', 'reopen', 'make-current'];
+var DESK_SWORD = '<span title="There is a battle to be fought: make it the current goal in its Details">' + deskIcon('SWORD') + '</span>';
 // CLOSE BEFORE HIS GO IS THE DIALOG'S ALONE (goal/G3.9). Andy, 2026-10-03: "the close-with arm is only visible on
 // the item detail". A done row keeps its Close as before.
 // THE GOAL ROW KEEPS ITS CLOSE (goal/G6.6): the goal's Close appears in the List too, and asks "are you sure?" first
@@ -595,7 +600,7 @@ function deskRowHtml(row) {
     // THE BROUGHT-BACK MARK, THEN THE TYPE (desk/G1.12): the server says both. ICON.ERROR EXACTLY WHILE SOMETHING
     // WAITS ON HIM (goal/G4.20 points 10-11). Andy: "if those two things would match at all times, id know exactly
     // where i need to navigate to."
-    '<td>' + (row.alert ? DESK_ALERT : '') + '</td>' +
+    '<td>' + (row.alert ? DESK_ALERT : '') + ((row.buttons || []).indexOf('make-current') !== -1 ? DESK_SWORD : '') + '</td>' +
     '<td>' + (goal ? '' : deskIcon(Number(row.asks) > 0 ? 'ERROR' : 'CODE')) + '</td>' +
     '<td title="' + deskEsc(row.title) + '">' + deskEsc(row.title) + ' <span class="job-manifest-note">(' + deskEsc(row.id) + ')</span></td>' +
     '<td>' + deskEsc(row.with || '') + '</td>' +
