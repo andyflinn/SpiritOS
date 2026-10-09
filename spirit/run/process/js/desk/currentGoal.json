@@ -1,8 +1,8 @@
 {
- "change": 20644,
+ "change": 20645,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:29:16.637Z",
+ "writtenAt": "2026-10-09T06:29:19.272Z",
  "items": [
   {
    "id": "goal/G9",
@@ -36,7 +36,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -1818,10 +1818,9 @@
    "id": "goal/G9.12",
    "title": "Every desk element brings its subscriptions (rule/8)",
    "goal": "goal/G9",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
