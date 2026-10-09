@@ -540,6 +540,16 @@ function apply(s, r, b, item, goalOf) {
       if (g.members.indexOf(id) === -1) g.members.push(id);
       return;
     }
+    // HIS DELETE CLOSES IT AS A LEFT-OUT ONE IS CLOSED (goal/G9.7). Andy, 2026-10-07: "the button bar of items will
+    // offer an arm-able [delete] while in design mode.", and on whether it erases: "close is enough. that essentially
+    // leaves them as \"musings\" on the record." So the item keeps its box, checks and chat, Include Closed finds it,
+    // and it blocks nothing (blockers skips a left-out one), exactly as goal/G4.24 decided for a session's leavings.
+    case 'item.delete': {
+      if (!it || it.goal) return;
+      it.closed = true;
+      it.leftOut = true;
+      return;
+    }
     case 'press': press(s, it, String(b.what), r, goalOf, b); return;
     // THE LISTENER'S WORD (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
     // stops when the agent goes back to listening. the listening script can toggle those two?"
@@ -584,11 +594,6 @@ function press(s, it, what, r, goalOf, b) {
   // button bar, where the user can set the Code-state of an item". Never on a goal, never on a sub-goal (goal/G6.8:
   // "it can no longer be marked as a coding item"); the handler refuses both, and the walk holds it too.
   else if (what === 'code' && !it.goal && !it.subGoal) it.code = !it.code;
-  // HIS DELETE CLOSES IT AS A LEFT-OUT ONE IS CLOSED (goal/G9.7). Andy, 2026-10-07: "the button bar of items will offer
-  // an arm-able [delete] while in design mode.", and on close or erase: "close is enough. that essentially leaves them
-  // as \"musings\" on the record." So it keeps its box, checks and chat, Include Closed finds it, and it blocks nothing,
-  // exactly as goal/G4.24 decided for a session's leavings. A press of his, by his word of 2026-10-09: "press."
-  else if (what === 'delete' && !it.goal) { it.closed = true; it.leftOut = true; }
   else if (what === 'design-complete') { it.designComplete = true; it.status = 'ready'; }
   // HIS GO IS ON RECORD (goal/G3.9): `go` is set by his go and go-all alone and by nothing else; `went` stays the
   // state of the item, which older records set in other ways.
@@ -1133,11 +1138,11 @@ function newGoal(w) {
   return write('session.set', { session: { goal: { id: id, title: 'New goal' }, items: [] }, by: w.by, key: w.key });
 }
 
-const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen', 'waive', 'make-current', 'code', 'delete'];
+const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen', 'waive', 'make-current', 'code'];
 // Andy's alone (G2.1 review). His presses carry the owner's caller (the
 // mark the door forwards, apiAuth/G1.13); a member's are refused. The
 // agents keep claim-done, design-complete and bring-back.
-const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen', 'waive', 'make-current', 'code', 'delete'];
+const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen', 'waive', 'make-current', 'code'];
 function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
 
 // THE NEXT ID THE DESK HANDS OUT (goal/G9.9), minted inside the write, from the state the write walked.
@@ -1544,8 +1549,21 @@ appServer.serve({
   },
   // "rename (you)": Andy's alone.
   'item.rename': { request: { id: '', title: '' }, reply: { change: 0 }, handler: function (a, caller) { ownerOnly(caller); const w = writerOf(caller); return { change: write('item.rename', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
-  // HIS DELETE IS A PRESS, NOT A VERB (goal/G9.7). Andy, 2026-10-09, asked which: "press." So it goes through the one
-  // press verb with his other buttons, below in PRESSES, and no verb of its own was kept.
+  // HIS DELETE (goal/G9.7): his alone, an item of a goal in design mode, never a goal. It is offered in the item's
+  // buttons, so the refusal and the button cannot drift apart.
+  // A VERB AND NOT A PRESS, BY HIS WORD. Asked which, Andy answered "press." on 2026-10-09 and then, on the same
+  // question: "make it a verb, plus the arm able delete button." The later word is the one in force; it was built as a
+  // press in between (417f150c) and reverted. Do not turn it back into a press without asking him again.
+  'item.delete': {
+    request: { id: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      const w = writerOf(caller);
+      return { change: write('item.delete', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
+        if (buttons(st, it).indexOf('delete') === -1) throw refused('not-offered');
+      }).change };
+    },
+  },
   // THE LISTENER'S WORD (goal/G2.3): listening when its ear arms, working when the ear hands a line over. From
   // the caller the door hands over, never an argument; any other word is refused. The write publishes the goal
   // row with its working list, so the Team tab paints from the publish (goal/G2.4).
@@ -1818,8 +1836,6 @@ appServer.serve({
         if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen' || a.what === 'make-current') && offered.indexOf(a.what) === -1) throw refused('not-offered');
         if (a.what === 'bring-back' && !it.closed) throw refused('not-offered');
         if (a.what === 'code' && (it.goal || it.subGoal)) throw refused('not-offered');
-        // goal/G9.7: delete only where it is offered, which is an item of a goal in design mode.
-        if (a.what === 'delete' && offered.indexOf('delete') === -1) throw refused('not-offered');
         // DESIGN-GREEN GATES THEM (goal/G6.8): his End design while any item of the goal has an open red question, a Go
         // on an item with one, a go-all while any item of the goal has one: refused.
         const gOf = st.goals[it.goal ? it.id : it.goalId];
