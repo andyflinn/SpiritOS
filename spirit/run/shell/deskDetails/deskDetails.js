@@ -79,6 +79,8 @@ function ddFrame() {
     '<div class="stat-tile wide" id="dd-box"></div>' +
     '<div id="dd-waiting"></div>' +
     '<div id="dd-links"></div>' +
+    // The files touched (goal/G8.8), under the links and above his add-blocking form.
+    '<div id="dd-files"></div>' +
     // ADD BLOCKING ITEM (goal/G9.10). Andy, 2026-10-07: "there will be a new section bubble, immediately following the
     // \"Blocked by/Blocking\" section, and right before the users chat input... \"Title\" [Title String, subject to
     // label rules] [add-button]. When the user presses the [add-button], The desk will add a blocking item with the
@@ -266,6 +268,19 @@ function ddLinksHtml() {
     (blocking ? '<div><span class="label">Blocking</span> ' + blocking + '</div>' : '') + '</div>';
 }
 
+// THE FILES TOUCHED (goal/G8.8). Andy, 2026-10-09: "that file list should be visible in desk ui per item, core files
+// market as requiring grants." One line per path with the agent that wrote it; a core path is marked data-core="1"
+// and says it needs his grant. The server decides which is core (js/coreFiles.js), never this page.
+function ddFilesHtml() {
+  var files = (ddFacts && Array.isArray(ddFacts.files)) ? ddFacts.files : [];
+  if (!files.length) return '';
+  return '<div class="stat-tile wide"><div class="label">Files touched</div>' + files.map(function (e) {
+    var core = e && e.core === true;
+    return '<div data-file="' + ddEsc(e.path) + '"' + (core ? ' data-core="1" title="a core file: it needs your grant"' : '') + '>' +
+      (core ? '🔒 ' : '') + ddEsc(e.path) + ' <span class="job-manifest-note">(' + ddEsc(e.by || '') + ')</span></div>';
+  }).join('') + '</div>';
+}
+
 // CHAT LINES DRAWN READABLY (desk/G1.10): line breaks kept, short times
 // (05:49), '- ' lines as a list, backquoted text as code. Still escaped.
 function ddTime(at) {
@@ -316,6 +331,7 @@ function ddPaint() {
   if (!ddBoxFocused) ddSet('dd-box', ddBoxHtml());
   ddSet('dd-waiting', ddWaitingHtml());
   ddSet('dd-links', ddLinksHtml());
+  ddSet('dd-files', ddFilesHtml());
   ddSet('dd-chat', ddChatHtml());
   var err = document.getElementById('dd-error');
   if (err) err.textContent = ddNote;

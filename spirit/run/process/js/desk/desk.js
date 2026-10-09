@@ -377,7 +377,11 @@ function blank(id, title, goalId) {
   return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '', phaseWith: '',
     went: false, go: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
     alert: false, takenBy: '', boxTakenBy: '', takers: Object.create(null),
-    box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '' };
+    box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '',
+    // FILES TOUCHED, PER ITEM (goal/G8.8). Andy, 2026-10-09: "the list should be owned by the item. so updates to it
+    // are available to all participants." Each writer's own paths, by its name, so one agent's list never touches
+    // another's: { '<agent>': ['<path>', ...] }.
+    files: Object.create(null) };
 }
 
 // One record applied to the state. A record that no longer fits (an item gone
@@ -550,6 +554,29 @@ function apply(s, r, b, item, goalOf) {
       if (!it || it.goal) return;
       it.closed = true;
       it.leftOut = true;
+      return;
+    }
+    // FILES TOUCHED (goal/G8.8). Andy, 2026-10-09: "ideally written by the claiming agent. the coding agent and the
+    // testing agent should be adding files they test/touch in a list that can be fetched per item." A write carries
+    // that agent's WHOLE list for the item and replaces its own entries, leaving every other agent's alone, so a
+    // wrong path is corrected by writing the list again and nothing has to be deleted.
+    case 'item.files.add': {
+      if (!it) return;
+      if (!it.files) it.files = Object.create(null);
+      it.files[r.by] = (Array.isArray(b.paths) ? b.paths : []).map(String);
+      // ONE GRANT FOR ALL THE CORE FILES (goal/G8.8). Andy, 2026-10-09: "all files that need a grant should get one
+      // 'grant' button together." So there is at most one open core grant on an item: its words are rewritten when the
+      // core set changes, and it goes when no core file is left. commitCheck raised one grant per file until today.
+      const core = filesOf(it).filter(function (e) { return e.core; }).map(function (e) { return e.path; });
+      const mine = function (c) { return c.kind === 'G' && c.state === 'open' && String(c.words).indexOf('core grant: ') === 0; };
+      const open = it.checks.filter(mine);
+      if (core.length) {
+        const words = 'core grant: ' + core.join(', ');
+        if (open.length) { open.forEach(function (c, i) { if (i === 0) { c.words = words; c.at = r.at; } }); it.checks = it.checks.filter(function (c) { return !mine(c) || c === open[0]; }); }
+        else it.checks.push({ number: 'G' + (it.checks.filter(function (c) { return c.kind === 'G'; }).length + 1), kind: 'G', words: words, test: '', state: 'open', by: 'desk', at: r.at });
+      } else if (open.length) {
+        it.checks = it.checks.filter(function (c) { return !mine(c); });
+      }
       return;
     }
     case 'press': press(s, it, String(b.what), r, goalOf, b); return;
@@ -834,6 +861,20 @@ function liveAgents(s) {
   return Object.keys(s.agentsAt).filter(function (a) { return now - Date.parse(s.agentsAt[a]) < LIVE_MS; }).sort();
 }
 
+// THE ITEM'S FILE LIST, FLATTENED (goal/G8.8): every writer's paths as one list of { path, by, core }, sorted by path
+// so the Details draws it the same way twice. core is coreFiles.isCore, never a second list of its own.
+function filesOf(it) {
+  const core = require('../../../js/coreFiles.js');
+  const held = it.files || {};
+  const out = [];
+  Object.keys(held).forEach(function (by) {
+    (Array.isArray(held[by]) ? held[by] : []).forEach(function (p) {
+      out.push({ path: String(p), by: by, core: core.isCore(String(p)) === true });
+    });
+  });
+  return out.sort(function (a, b) { return a.path < b.path ? -1 : a.path > b.path ? 1 : (a.by < b.by ? -1 : 1); });
+}
+
 function facts(s, it) {
   const f = { id: it.id, title: it.title, goal: it.goal ? '' : it.goalId, status: it.closed ? 'closed' : it.done ? 'done' : it.status,
     with: it.with, buttons: buttons(s, it), blocking: it.blocks.slice(), blocked: blockers(s, it),
@@ -847,6 +888,10 @@ function facts(s, it) {
     boxTaken: it.boxTakenBy || '',
     // goal/G5.4: in limbo, and marked a sub-goal by a split.
     limbo: limboOf(s, it), subGoal: it.subGoal === true,
+    // THE FILES TOUCHED (goal/G8.8), the whole item's, every writer's together: { path, by, core }. Andy: "that file
+    // list should be visible in desk ui per item, core files market as requiring grants." Which paths are core is read
+    // from js/coreFiles.js, the one list commitCheck already locks, so the mark and the grants cannot disagree.
+    files: filesOf(it),
     // DESIGN-GREEN (goal/G6.8): no open red question on it.
     green: !openQ(it),
     // goal/G5.7: the phase it is in, and who did each.
@@ -1810,6 +1855,24 @@ appServer.serve({
       if (!it) throw refused('no-such-item');
       if (it.boxTakenBy && it.boxTakenBy !== w.by) throw refused('taken');
       return { change: write('box.take', { id: a.id, by: w.by, key: w.key }).change };
+    },
+  },
+  // THE FILES AN AGENT TOUCHED (goal/G8.8). Andy, 2026-10-09: "ideally written by the claiming agent. the coding agent
+  // and the testing agent should be adding files they test/touch in a list that can be fetched per item.", "the list
+  // should be owned by the item. so updates to it are available to all participants.", and "all files that need a
+  // grant should get one 'grant' button together." So: the caller's whole list, replacing its own entries; the list
+  // comes back in item.get; and if it holds core files, ONE open grant names them all. A desk verb, and his ruling of
+  // 2026-10-09 is that a desk verb needs no grant of his "until i rule this app 'intrinsic'".
+  'item.files.add': {
+    request: { id: '', paths: [''] }, reply: { change: 0 },
+    accepts: function (x) {
+      return !!x && typeof x === 'object' && !Array.isArray(x) && Object.keys(x).length === 2 &&
+        typeof x.id === 'string' && Array.isArray(x.paths) && x.paths.every(function (p) { return typeof p === 'string' && p; });
+    },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      // The grant is raised in the walk, beside the list it describes, so a replay of the records decides the same.
+      return { change: write('item.files.add', { id: a.id, paths: a.paths.map(String), by: w.by, key: w.key }).change };
     },
   },
   // LETTING IT GO WITHOUT A WRITE (goal/G9.3). Andy, 2026-10-07: "When the user clicks outside of that text box, and

@@ -573,7 +573,9 @@ var DESK_PRESS_LABEL = { go: 'Go!', done: 'Done', close: 'Close', 'bring-back': 
 // displayed in the List, only in the goals Details. in the list, an item that has a [make-current] button, the item
 // will be marked with an ICON.SWORD (⚔️), indicating: \"There is a battle to be fought\"." His decision: the press
 // itself stays in the goal's Details (deskDetails), and the row only says there is one to make.
-var DESK_NOT_IN_ROW = ['go-all', 'reopen', 'make-current'];
+// DELETE IS NEVER IN THE ROW (goal/G8.8). Andy, 2026-10-09: "oh, and the Delete button never should show in the
+// list. only in the detals." It was drawn in every row of a goal in design mode until then, which was G9.7's miss.
+var DESK_NOT_IN_ROW = ['go-all', 'reopen', 'make-current', 'delete'];
 var DESK_SWORD = '<span title="There is a battle to be fought: make it the current goal in its Details">' + deskIcon('SWORD') + '</span>';
 // CLOSE BEFORE HIS GO IS THE DIALOG'S ALONE (goal/G3.9). Andy, 2026-10-03: "the close-with arm is only visible on
 // the item detail". A done row keeps its Close as before.
