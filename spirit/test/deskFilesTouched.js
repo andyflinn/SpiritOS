@@ -99,6 +99,15 @@ async function server() {
   const g = await openGrants('ft/G1.1');
   if (g.length === 1 && g[0].words.indexOf(CORE) !== -1 && g[0].words.indexOf(CORE2) !== -1) test.check('one open G check names both core files');
   else test.fail(OWED + 'the open grants read ' + short(g.map(function (c) { return c.words; })));
+  // GROWN IN THE VERIFY (claude-windows): a list he has granted, sent again unchanged, asks him nothing new. Each call
+  // carries the writer's whole list, so agents re-send it as they work; a fresh red grant for files he already granted
+  // would make him grant the same list over and over.
+  const g1 = g[0] && g[0].number;
+  await call('check.set', { id: 'ft/G1.1', check: g1, state: 'granted' }, ANDY);
+  await call('item.files.add', { id: 'ft/G1.1', paths: [CORE, CORE2] }, CW);
+  const again = await openGrants('ft/G1.1');
+  if (g1 && !again.length) test.check('the same list sent again after his grant raises no new grant');
+  else test.fail(OWED + 'after his grant, the unchanged list raised ' + short(again.map(function (c) { return c.number + ' ' + c.words; })));
   await call('item.files.add', { id: 'ft/G1.2', paths: [PLAIN] }, CW);
   const none = await openGrants('ft/G1.2');
   if (!none.length && listOf(await facts('ft/G1.2')).length === 1) test.check('a list with no core file raises no grant');
