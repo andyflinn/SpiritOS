@@ -1077,15 +1077,39 @@ function deskVerifyRefresh() {
 // has no total, so it shows its count and the bar stands on the suites alone - a guessed percentage would be a lie.
 var deskVerifyRun = null;
 var DESK_IDLE_MIN = 60; // the idle hour (goal/G8.4), which the countdown counts down.
+// THE BAR IS ALWAYS THERE (goal/G8.12). Andy, 2026-10-09: "just gray out the progress bar so i can see the layout,
+// and the progress bar can show the countdown live, and only go gray when that's done. but the progress bar stays
+// visible." So one bar, three states:
+//   a run      how far through the item or the full run: suites done plus the tests of the one running
+//   idle       the idle hour filling, live, from the newest desk write deskVerify published
+//   spent      the hour reached, or nothing known yet: grey, and it says why
+// A suite never measured before has no total, so the bar stands on the suites alone - a guessed percentage is a lie.
+function deskVerifyIdlePct(since) {
+  var ms = Date.now() - Date.parse(since);
+  if (isNaN(ms)) return null;
+  return Math.max(0, Math.min(100, Math.round((ms / 60000) / DESK_IDLE_MIN * 100)));
+}
+function deskVerifyBarHtml(pct, grey) {
+  // Grey is the shell's muted look, not a hidden bar: it stays in the layout so the tab never changes shape.
+  return '<div><progress id="desk-verify-bar" max="100" value="' + pct + '" style="width:100%' +
+    (grey ? ';filter:grayscale(1);opacity:0.45' : '') + '"' + (grey ? ' data-grey="1"' : '') + '></progress></div>';
+}
 function deskVerifyBar() {
   var r = deskVerifyRun;
-  if (!r || r.doing === 'idle') return '';
+  if (!r) return deskVerifyBarHtml(0, true) + '<div>Nothing measured yet on this node.</div>';
+  if (r.doing === 'idle') {
+    var pct = deskVerifyIdlePct(r.since);
+    if (pct === null) return deskVerifyBarHtml(0, true) + '<div>Idle; no desk write to count the hour from.</div>';
+    return deskVerifyBarHtml(pct, pct >= 100) +
+      '<div>' + (pct >= 100 ? 'Idle time reached; no chores are ruled yet, so nothing runs.'
+        : 'Idle, the hour filling: ' + pct + '%') + '</div>';
+  }
   var of = Number(r.of) || 0;
   var index = Number(r.index) || 0;
   var done = of ? (index - 1) / of : 0;
   var inOne = (of && Number(r.expected) > 0) ? Math.min(1, (Number(r.tests) || 0) / Number(r.expected)) / of : 0;
-  var pct = Math.max(0, Math.min(100, Math.round((done + inOne) * 100)));
-  return '<div><progress id="desk-verify-bar" max="100" value="' + pct + '" style="width:100%"></progress></div>' +
+  var runPct = Math.max(0, Math.min(100, Math.round((done + inOne) * 100)));
+  return deskVerifyBarHtml(runPct, false) +
     '<div>' + (r.doing === 'full' ? 'Full run' : 'Item ' + deskEsc(r.id)) +
     (of ? ' · suite ' + index + ' of ' + of : '') + (r.suite ? ' · ' + deskEsc(r.suite) : '') + '</div>';
 }
@@ -1127,6 +1151,22 @@ function deskVerifyHtml() {
 function deskDrawVerifier() {
   var box = document.getElementById('desk-verifier');
   if (box) box.innerHTML = deskVerifyHtml();
+}
+// THE COUNTDOWN MOVES ON ITS OWN (goal/G8.12). Andy: "the progress bar can show the countdown live". Nothing is asked
+// of anybody for this - the clock is local, which is the one thing a page may read without pulling; it repaints only
+// while the tab is open and the verifier is idle, so a running verifier's bar is only ever what it published.
+var deskVerifyTick = null;
+function deskVerifyTicking(on) {
+  if (!on) {
+    if (deskVerifyTick && typeof clearInterval === 'function') clearInterval(deskVerifyTick);
+    deskVerifyTick = null;
+    return;
+  }
+  if (deskVerifyTick || typeof setInterval !== 'function') return;
+  deskVerifyTick = setInterval(function () {
+    if (deskTab !== 'verifier' || !deskVerifyRun || deskVerifyRun.doing !== 'idle') return;
+    deskDrawVerifier();
+  }, 15000);
 }
 // WHAT DESKVERIFY PUBLISHES (goal/G8.12), subscribed at mount: each object replaces the last and repaints. A run that
 // starts while the tab is closed is still the newest object when he opens it, so he sees where it stands, not nothing.
@@ -1256,7 +1296,7 @@ spirit.shell.activateApp({
       if (tab === 'team') deskMarkTeamSeen();
       if (tab === 'rules') deskRulesSearch();
       // goal/G8.11: opening the tab reads what runs and the newest records; it is not pulled while it is closed.
-      if (tab === 'verifier') deskVerifyRefresh();
+      if (tab === 'verifier') { deskVerifyRefresh(); deskVerifyTicking(true); } else deskVerifyTicking(false);
       deskDrawTabs();
     }
     // The strips are redrawn, so one listener on each, and the click may
