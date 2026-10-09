@@ -21,7 +21,12 @@
 //   4. a claimed namespace carries the family: fs.AGENTS, fs.AGENTS.introspect, fs.AGENTS.<verb>, added by
 //      introSpector and not by the module.
 //   5. a verb with no file is not listed to an agent, and the owner keeps it.
-//   6. over the relay a member is refused the family, whatever its grants say.
+//   6. (withdrawn) who may ask the family is NOT this item's. Andy, 2026-10-09, answering the red question this
+//      suite raised: point 6 of the box "is indeed stale wording, it is already the case that when an appServer is
+//      called via loopback, the appClient inserts the public key of the local node as 'caller', and thus as
+//      \"allowed\" everything. now because the agent is gated by deskUnsloth, it's deskUnsloth.js that configures
+//      access to endpoints by configuration, which is not supposed to be in this item." So the gating belongs to
+//      deskUnsloth and the tools goal; one world line stands here in its place and nothing is owed.
 //
 // THE ONE THING DELIBERATELY NOT GUESSED: the item's box names the family twice and not alike - point 2 as named
 // verbs (AGENTS.introspect), point 6 as the asks {introspect} and {verb}, which is the older argument shape from the
@@ -94,24 +99,16 @@ test.startTest('goal/G10.5: the AGENTS family on the node, and who may ask it');
     }
   }
 
-  test.subHeading('6. over the relay a member is refused the family, whatever its grants say');
-  // The gate alone, driven as the node drives it: a fake app behind it, a member whose grants name the whole app.
+  test.subHeading('6. the world: a loopback caller is allowed everything, so nothing here gates the family');
+  // Andy's ruling of 2026-10-09 (quoted in the header) took the gating out of this item: a loopback caller arrives
+  // as the node's own key and reaches every verb, and what an agent may call is deskUnsloth's configuration, a later
+  // goal's. This stays as one world line so the next reader knows the hole is a decision and not an oversight.
   const asked = [];
   const servers = { ask: function (ask, who) { asked.push({ ask: ask, who: who }); return { status: 200, body: { ok: true } }; } };
-  const member = { owner: false, key: 'MCowBQYDK2VwAyEAintroSpectorNodeMemberAAAAAAAAAAAAA=', auth: { pathsOf: function () { return ['probe']; }, labelOf: function () { return 'a member'; } } };
-  const open = await apiDoor.answer(servers, { probe: { 'item.add': { title: 'x' } } }, member);
-  if (open.status === 200) test.check('the world: a member granted the app reaches an ordinary verb of it');
-  else { test.fail('the world: a granted member was refused an ordinary verb: ' + short(open)); return; }
-  const family = await apiDoor.answer(servers, { probe: { 'AGENTS.introspect': {} } }, member);
-  if (family.body && family.body.ok === false) test.check('a member is refused AGENTS.introspect although its grant names the app');
-  else test.fail(OWED + 'a member reached AGENTS.introspect through its app grant: ' + short(family));
-  const perVerb = { owner: false, key: member.key, auth: { pathsOf: function () { return ['probe.AGENTS.introspect']; }, labelOf: function () { return 'a member'; } } };
-  const granted = await apiDoor.answer(servers, { probe: { 'AGENTS.introspect': {} } }, perVerb);
-  if (granted.body && granted.body.ok === false) test.check('and refused it even where the grant names that very verb');
-  else test.fail(OWED + 'a grant naming AGENTS.introspect let a member through: ' + short(granted));
   const owner = await apiDoor.answer(servers, { probe: { 'AGENTS.introspect': {} } }, { owner: true, key: 'own', label: 'andy' });
-  if (owner.status === 200) test.check('the owner keeps it, as he keeps every verb');
-  else test.fail(OWED + 'the owner was refused AGENTS.introspect: ' + short(owner));
+  if (owner.status === 200 && asked.length === 1 && asked[0].who && asked[0].who.owner === true) test.check('the world: the owner\'s own ask reaches the family, the caller riding on as the owner (apiDoor.js answer)');
+  else test.fail('the world: the owner was refused AGENTS.introspect: ' + short(owner));
+
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
   test.reportSuccessFailureCount();
   process.exit(0);
