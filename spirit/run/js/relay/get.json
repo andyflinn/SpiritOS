@@ -1,0 +1,3 @@
+{
+  "description": "One relay by its url (key): its probe row {url, label, status, owned, claimed, ...} and the last report it sent of itself (report, or null); 404 when it is not configured."
+}

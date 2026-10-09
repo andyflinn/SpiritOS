@@ -1,0 +1,4 @@
+{
+  "description": "Who matches a text (q) across every configured relay and its partners, plus matches remembered here: {q, matches: [{publicKey, publicLabel, tail, atKey, relay, relayLabel, present, via, viaPartner, acquiredVia}], more, asked, remembered, silent: [relays that did not answer]}.",
+  "parameters": "q is optional."
+}

@@ -192,6 +192,10 @@ let peerRouter = null;
 //
 // A relay has no such door and does not load this module (relayServer.js).
 const loopbackVerbs = require('./verbTable').createVerbTable();
+// THE DECLARATION FORM (goal/G10.5): a namespace is claimed through introSpector with
+// {request, reply, handler} per verb, the handler the (req, res) function it always was,
+// and the folder js/<namespace>/ adds the AGENTS family for agents. Routing is untouched.
+const introSpector = require('./introSpector');
 // `pinnedRelayKey` STOOD HERE, DELETED 2026-09-17 — assigned at boot and
 // read by nothing.
 //
@@ -1769,8 +1773,11 @@ contactBook.syncMarks(ROOT_DIR);
   //
   // Inside the personal-node branch on purpose: a relay claims nothing,
   // because a relay does not serve this door.
-  loopbackVerbs.claim('net', 'server.js', {
-    'net.fetch': handleGenericProxy,
+  // THE SHAPES BELOW ARE WRITTEN BY HAND FROM EACH HANDLER (goal/G10.5, point 4 of the box): a prototype
+  // cannot say which keys are optional, so a verb's file in js/<namespace>/ carries that in words.
+  introSpector.claim(loopbackVerbs, 'net', 'server.js', {
+    // The target's own body and status come back, whatever they are.
+    'net.fetch': { request: { url: '', method: '', headers: {}, body: '', timeoutMs: 0 }, reply: {}, handler: handleGenericProxy },
     // WIRE: it reaches the internet, so being offline fails it.
   }, { wire: true });
 
@@ -1807,16 +1814,17 @@ contactBook.syncMarks(ROOT_DIR);
       });
     };
   }
-  loopbackVerbs.claim('proxy', 'server.js', {
+  const LIST = { ok: true, items: [{ key: '', label: '' }], more: false };
+  introSpector.claim(loopbackVerbs, 'proxy', 'server.js', {
     // proxy.list is gone: a list is a search (puppets/G2). Andy, 2026-09-27:
     // "the verb changes changing list fetches to a search(labe) and
     // geKey(key) pair are approved", and "get is fine".
-    'proxy.search': proxyVerb(function (b) { return proxyList.search(ROOT_DIR, b); }),
-    'proxy.get': proxyVerb(function (b) { return proxyList.get(ROOT_DIR, b); }),
-    'proxy.allow': proxyVerb(function (b) { return proxyList.allow(ROOT_DIR, b); }),
-    'proxy.remove': proxyVerb(function (b) { return proxyList.remove(ROOT_DIR, b); }),
-    'proxy.close': proxyVerb(function (b) { return proxyList.close(ROOT_DIR, b); }),
-    'proxy.open': proxyVerb(function (b) { return proxyList.open(ROOT_DIR, b); }),
+    'proxy.search': { request: { q: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false, open: true }, handler: proxyVerb(function (b) { return proxyList.search(ROOT_DIR, b); }) },
+    'proxy.get': { request: { key: '' }, reply: { ok: true, key: '', entry: {} }, handler: proxyVerb(function (b) { return proxyList.get(ROOT_DIR, b); }) },
+    'proxy.allow': { request: { host: '', key: '', methods: [''], open: true }, reply: { ok: true, entry: {} }, handler: proxyVerb(function (b) { return proxyList.allow(ROOT_DIR, b); }) },
+    'proxy.remove': { request: { host: '', key: '' }, reply: { ok: true, removed: {} }, handler: proxyVerb(function (b) { return proxyList.remove(ROOT_DIR, b); }) },
+    'proxy.close': { request: { key: '', host: '' }, reply: { ok: true, open: false, changed: 0 }, handler: proxyVerb(function (b) { return proxyList.close(ROOT_DIR, b); }) },
+    'proxy.open': { request: { key: '', host: '' }, reply: { ok: true, open: true, changed: 0 }, handler: proxyVerb(function (b) { return proxyList.open(ROOT_DIR, b); }) },
     // LOCAL: the owner's own list, on this node's disk.
   }, { wire: false });
 
@@ -1847,25 +1855,28 @@ contactBook.syncMarks(ROOT_DIR);
       }, function () { refusal('store-unavailable'); });
     };
   }
-  loopbackVerbs.claim('jobs', 'server.js', {
-    'jobs.authQuery': authVerb(apiAuth.query),
-    'jobs.authSearch': authVerb(apiAuth.search),
-    'jobs.authPeer': authVerb(apiAuth.peer),
-    'jobs.authGrant': authVerb(apiAuth.grant),
-    'jobs.authRevoke': authVerb(apiAuth.revoke),
-    'jobs.authRelabel': authVerb(apiAuth.relabel),
-    'jobs.search': proxyVerb(function (b) { return nodeSearches.jobsSearch(b); }),
-    'jobs.get': proxyVerb(function (b) { return nodeSearches.jobsGet(b); }),
-    'jobs.create': handleCreateJob,
-    'jobs.update': handleJobUpdate,
-    'jobs.cancel': handleCancelJob,
-    'jobs.delete': handleDeleteJob,
+  const JOB = { id: '', kind: '', type: '', status: '' };
+  const GRANT = { key: '', label: '', path: '' };
+  introSpector.claim(loopbackVerbs, 'jobs', 'server.js', {
+    'jobs.authQuery': { request: { key: '', path: '' }, reply: { allowed: false }, handler: authVerb(apiAuth.query) },
+    'jobs.authSearch': { request: { text: '' }, reply: { records: [GRANT], more: false }, handler: authVerb(apiAuth.search) },
+    'jobs.authPeer': { request: { key: '' }, reply: { records: [GRANT] }, handler: authVerb(apiAuth.peer) },
+    'jobs.authGrant': { request: { key: '', path: '' }, reply: GRANT, handler: authVerb(apiAuth.grant) },
+    'jobs.authRevoke': { request: { key: '', path: '' }, reply: { revoked: true }, handler: authVerb(apiAuth.revoke) },
+    'jobs.authRelabel': { request: { key: '', label: '' }, reply: { key: '', label: '' }, handler: authVerb(apiAuth.relabel) },
+    'jobs.search': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) { return nodeSearches.jobsSearch(b); }) },
+    'jobs.get': { request: { key: '' }, reply: { ok: true, key: '', job: JOB }, handler: proxyVerb(function (b) { return nodeSearches.jobsGet(b); }) },
+    'jobs.create': { request: { command: '', args: [''], type: '', removeWhenDone: false }, reply: JOB, handler: handleCreateJob },
+    'jobs.update': { request: { id: '', status: '', data: {}, logMessage: '', app: {} }, reply: JOB, handler: handleJobUpdate },
+    'jobs.cancel': { request: { id: '' }, reply: JOB, handler: handleCancelJob },
+    // 204, no body.
+    'jobs.delete': { request: { id: '' }, reply: {}, handler: handleDeleteJob },
     // THE LOCAL WAY TO A SERVER PROCESS (desk/G1 D4, Andy: "it goes into
     // jobs(.api) for me, that's settled", "because procceses provide dynamic
     // api"): {verb: 'jobs.api', ask}, ask being 'api' or {name: {verb: args}}.
     // It answers exactly as a member's packet is answered, through the one
     // function they share (apiDoor.answer), and the reply is flat (D11).
-    'jobs.api': function (rq, rs) {
+    'jobs.api': { request: { ask: {} }, reply: {}, handler: function (rq, rs) {
       readJsonBody(rq).then(function (body) {
         // The owner is never gated (apiAuth/G1.2, Andy: "a call from your
         // own machine counts as you"); the loopback door says so by name.
@@ -1884,7 +1895,7 @@ contactBook.syncMarks(ROOT_DIR);
         rs.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
         rs.end(JSON.stringify({ ok: false, code: 'bad-request', error: 'Invalid JSON body' }));
       });
-    },
+    } },
     // LOCAL: a job is this machine's, whether or not anything is reachable.
   }, { wire: false });
 
@@ -1895,15 +1906,15 @@ contactBook.syncMarks(ROOT_DIR);
   //   similar verbs"), reviewed by wsl-claude and claude-windows.
   // LOCAL, and loopback only: they say what this node runs. The list itself
   // is includeList.js's (relay-state/include.json), read nowhere else.
-  loopbackVerbs.claim('config', 'server.js', {
+  introSpector.claim(loopbackVerbs, 'config', 'server.js', {
     // A search, as every list is: {query} -> {items: [{key: path, label}], more}.
-    'config.searchModules': proxyVerb(function (b) {
+    'config.searchModules': { request: { query: '' }, reply: LIST, handler: proxyVerb(function (b) {
       const r = require('./includeList').search(ROOT_DIR, b.query);
       return { ok: true, items: r.items, more: r.more };
-    }),
+    }) },
     // {path, on}: on lists it and starts a process now; off takes it off the
     // list, and it stops at the next start. An intrinsic app stays included.
-    'config.setModules': proxyVerb(function (b) {
+    'config.setModules': { request: { path: '', on: false }, reply: { ok: true, path: '', on: false }, handler: proxyVerb(function (b) {
       const includeList = require('./includeList');
       const p = String((b && b.path) || '');
       if (!includeList.isPath(p)) return { ok: false, status: 400, code: 'bad-request', error: 'a module is process/js/<name> or shell/<name>' };
@@ -1913,7 +1924,7 @@ contactBook.syncMarks(ROOT_DIR);
         if (!was && p.indexOf('process/js/') === 0) jobs.startNodeServers(ROOT_DIR, appClient, p.slice('process/js/'.length));
       } else includeList.remove(ROOT_DIR, p);
       return { ok: true, path: p, on: includeList.includes(ROOT_DIR, p) };
-    }),
+    }) },
   }, { wire: false });
 
   // THE GATE IS NOT IN HERE, and that is the point of this namespace.
@@ -1922,14 +1933,16 @@ contactBook.syncMarks(ROOT_DIR);
   // moved where a path COMES FROM and changed nothing about what may be
   // reached with it. serverSurface's traversal checks are untouched and
   // still red-green the same way.
-  loopbackVerbs.claim('fs', 'server.js', {
+  introSpector.claim(loopbackVerbs, 'fs', 'server.js', {
     // The node's files by path (puppets/G2). fs.stat stays the "get".
-    'fs.search': proxyVerb(function (b) { return nodeSearches.fsSearch(b); }),
-    'fs.stat': handleFsStat,
-    'fs.annotations': handleFsAnnotations,
-    'fs.save': handleFsSave,
-    'fs.delete': handleFsDelete,
-    'fs.annotate': handleFsAnnotate,
+    'fs.search': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) { return nodeSearches.fsSearch(b); }) },
+    'fs.stat': { request: { path: '' }, reply: { size: 0, mtimeMs: 0, birthtimeMs: 0 }, handler: handleFsStat },
+    // The sidecar as it is, every bucket; {} when there is none.
+    'fs.annotations': { request: { path: '' }, reply: {}, handler: handleFsAnnotations },
+    // The three writes answer 204, no body.
+    'fs.save': { request: { path: '', content: '' }, reply: {}, handler: handleFsSave },
+    'fs.delete': { request: { path: '' }, reply: {}, handler: handleFsDelete },
+    'fs.annotate': { request: { path: '', payload: {} }, reply: {}, handler: handleFsAnnotate },
     // LOCAL: this node's own disk.
   }, { wire: false });
 
@@ -1951,9 +1964,9 @@ contactBook.syncMarks(ROOT_DIR);
   // It is waiting for named work, not forgotten by accident. Worth the
   // distinction — a verb nobody remembered and a verb ahead of its own
   // UI look identical from a grep, and only one of them is a defect.
-  loopbackVerbs.claim('device', 'hub.js', {
-    'device.info': function (rq, rs) { hub.handleDevice(rq, rs); },
-    'device.rotate': function (rq, rs) { hub.handleRotatePassword(rq, rs, readJsonBody); },
+  introSpector.claim(loopbackVerbs, 'device', 'hub.js', {
+    'device.info': { request: {}, reply: { password: '', publicKey: '', devicePublicKey: '' }, handler: function (rq, rs) { hub.handleDevice(rq, rs); } },
+    'device.rotate': { request: {}, reply: { ok: true, password: '', devicesDetached: false, devicePublicKey: '' }, handler: function (rq, rs) { hub.handleRotatePassword(rq, rs, readJsonBody); } },
   }, { wire: false });
 
   // ── node (2026-09-16) ──────────────────────────────────────────────
@@ -1974,19 +1987,19 @@ contactBook.syncMarks(ROOT_DIR);
   //
   // "More to come" is Andy's, and is why this is a namespace rather than
   // two verbs bolted onto `device`.
-  loopbackVerbs.claim('node', 'hub.js', {
-    'node.card': function (rq, rs) { hub.handleNodeCard(rq, rs); },
+  introSpector.claim(loopbackVerbs, 'node', 'hub.js', {
+    'node.card': { request: {}, reply: { ok: true, name: '', description: '', publicKey: '', descriptionMax: 0 }, handler: function (rq, rs) { hub.handleNodeCard(rq, rs); } },
     // THE NODE'S OWN DEBUG (desk/G2.5), shaped like relay.debug: {debug: {}} reads,
     // {debug: {on}} sets; both answer the state that resulted. "node.debug: yes."
     // RAM only, off at every start (kernel.js).
-    'node.debug': proxyVerb(function (b) {
+    'node.debug': { request: { debug: { on: false } }, reply: { ok: true, debug: false }, handler: proxyVerb(function (b) {
       const d = b && b.debug;
       return { ok: true, debug: spirit.core.util.debug(d && typeof d.on === 'boolean' ? d.on : undefined) };
-    }),
-    'node.setName': function (rq, rs) { hub.handleNodeName(rq, rs, readJsonBody); },
-    'node.setDescription': function (rq, rs) {
+    }) },
+    'node.setName': { request: { name: '' }, reply: { ok: true, status: 0, name: '' }, handler: function (rq, rs) { hub.handleNodeName(rq, rs, readJsonBody); } },
+    'node.setDescription': { request: { description: '' }, reply: { ok: true, status: 0, description: '' }, handler: function (rq, rs) {
       hub.handleNodeDescription(rq, rs, readJsonBody);
-    },
+    } },
     // THE OWNER'S RECORD, read a page at a time — trafficLog.history says
     // what is in it, what never is, and why it pages by position. Local:
     // the log is on this disk.
@@ -1995,7 +2008,7 @@ contactBook.syncMarks(ROOT_DIR);
     // to every relay at once, and the owner is told in his own record, as
     // an owner row he can read back. Reached from Info's rotate-key dialog,
     // behind the shell's two-press button.
-    'node.rotateCipher': function (rq, rs) {
+    'node.rotateCipher': { request: {}, reply: { relays: 0, ok: true, at: 0 }, handler: function (rq, rs) {
       readJsonBody(rq).then(function () {
         const said = require('./nodeCard').rotate(ROOT_DIR);
         let relays = 0;
@@ -2011,7 +2024,7 @@ contactBook.syncMarks(ROOT_DIR);
         rs.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
         rs.end(JSON.stringify({ ok: false, error: 'Invalid JSON body' }));
       });
-    },
+    } },
   }, { wire: false });
 
   // ── owner.command: A COMMAND FOR ONE OF THIS NODE'S PUPPETS (puppets/G4)
@@ -2020,22 +2033,23 @@ contactBook.syncMarks(ROOT_DIR);
   // call locally ("It's a remote control"); peerOwnerPost signs, sends and
   // waits for the one answer with that command's hash. WIRE, because the
   // puppet can be unreachable, and a wire verb says so (verbTable.js).
-  loopbackVerbs.claim('owner', 'ownerPost.js', {
+  introSpector.claim(loopbackVerbs, 'owner', 'ownerPost.js', {
     // WHAT HIS BOXES CARRY, grouped by box, on demand (G10). Andy: "that
     // must be visible-on-demand in a UI", and over-committed is a warning.
     // owner.boxes is gone: a list is a search (puppets/G2, boxes.js).
-    'owner.boxSearch': proxyVerb(function (b) {
+    'owner.boxSearch': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) {
       const r = boxes ? boxes.search(b && b.q) : { items: [], more: false };
       return { ok: true, status: 200, items: r.items, more: r.more };
-    }),
-    'owner.boxGet': proxyVerb(function (b) {
+    }) },
+    'owner.boxGet': { request: { key: '' }, reply: { ok: true, key: '', box: {} }, handler: proxyVerb(function (b) {
       const key = String((b && b.key) || '');
       if (!key) return { ok: false, status: 400, error: 'key required' };
       const box = boxes ? boxes.get(key) : null;
       if (!box) return { ok: false, status: 404, error: 'no such box' };
       return require('./searchBucket').boundedGet({ ok: true, status: 200, key: key, box: box });
-    }),
-    'owner.command': function (rq, rs) {
+    }) },
+    // The puppet's answer as it came, its hash beside it.
+    'owner.command': { request: { to: '', command: '', body: {} }, reply: { hash: '' }, handler: function (rq, rs) {
       readJsonBody(rq).then(function (body) {
         if (!peerOwnerPost) {
           rs.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -2052,7 +2066,7 @@ contactBook.syncMarks(ROOT_DIR);
         rs.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
         rs.end(JSON.stringify({ ok: false, error: 'Invalid JSON body' }));
       });
-    },
+    } },
   }, { wire: true });
 
   // ── STAGE 4b — relay (2026-09-15) ──────────────────────────────────
@@ -2075,35 +2089,36 @@ contactBook.syncMarks(ROOT_DIR);
   // What a relay verb is NOT: a way to talk to the relay's owner. That
   // goes through peer.post like anybody else's — the relay names itself
   // on its own roster precisely so it has an ordinary address.
-  loopbackVerbs.claim('relay', 'hub.js', {
+  introSpector.claim(loopbackVerbs, 'relay', 'hub.js', {
     // PRESENCE IS HANDED IN so a claim can connect the node it just
     // enrolled. A brand-new node has no key at boot, so presence bailed
     // and never tried again — see handleClaim.
-    'relay.claim': function (rq, rs) {
+    // The relay's own claim answer comes back, `mine` beside it.
+    'relay.claim': { request: { url: '', name: '', invite: '', inviteLabel: '' }, reply: { mine: false }, handler: function (rq, rs) {
       hub.handleClaim(rq, rs, readJsonBody, {
         presence: presence,
         probe: require('./hub').relayRequest,
       });
-    },
+    } },
     // Eligibility, read-only: does this peer own the relay at that url?
     // Answered off a PUBLIC roll, so it grants nothing — the promotion
     // itself is an owner verb posted to the relay like any other.
-    'relay.partnerCheck': function (rq, rs) { hub.handlePartnerCheck(rq, rs, readJsonBody); },
+    'relay.partnerCheck': { request: { publicKey: '', url: '' }, reply: { ok: true, url: '', relayKey: '', relayLabel: '', ownerLabel: '' }, handler: function (rq, rs) { hub.handlePartnerCheck(rq, rs, readJsonBody); } },
     // `relay.roster` STOOD HERE — the public roll of a relay this node
     // is not on, "what a partnership makes visible". Deleted 2026-09-17
     // with the only screen that drew it; see the tombstone in hub.js.
     // relay.status is gone: a list is a search (puppets/G2). One probe
     // serves a search and the gets that follow it (hub.js, PROBE_FRESH_MS).
-    'relay.search': proxyVerb(function (b) { return hub.relaySearch(b); }),
-    'relay.get': proxyVerb(function (b) { return hub.relayGet(b, { presence: presence }); }),
+    'relay.search': { request: { q: '', name: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false, mustPick: false, name: '' }, handler: proxyVerb(function (b) { return hub.relaySearch(b); }) },
+    'relay.get': { request: { key: '' }, reply: { ok: true, key: '', relay: {}, report: {} }, handler: proxyVerb(function (b) { return hub.relayGet(b, { presence: presence }); }) },
     // WHAT A RELAY HAS SAID OVER TIME, beside what it says now —
     // cycle 11's R6. `relay.status` probes; this reads what was already
     // written as the reports arrived, so it reaches no network at all —
     // which is why it is here and not marked `wire: true` like its
     // neighbours.
-    'relay.record': function (rq, rs) {
+    'relay.record': { request: { relay: '', from: 0, to: 0 }, reply: { ok: true, relay: '', from: 0, to: 0, series: [{}], more: false }, handler: function (rq, rs) {
       hub.handleRecord(rq, rs, readJsonBody, { rootDir: ROOT_DIR });
-    },
+    } },
   }, { wire: true });
 
   // ── STAGE 4c — contact (2026-09-15) ────────────────────────────────
@@ -2123,20 +2138,21 @@ contactBook.syncMarks(ROOT_DIR);
   // and hub.js dispatched it by hand beside a dispatch the door already
   // does. The if-chain is gone: an unknown verb is now refused by a
   // table that knows every verb this node answers.
-  loopbackVerbs.claim('contact', 'hub.js', {
+  const STANDING = { publicKey: '', acquiredVia: '', blocked: false, held: false };
+  introSpector.claim(loopbackVerbs, 'contact', 'hub.js', {
     // The book, searched: peer.list is gone (puppets/G2). Never asks a
     // relay; that is peer.search's job.
-    'contact.search': proxyVerb(function (b) { return hub.contactSearch(b); }),
-    'contact.get': proxyVerb(function (b) { return hub.contactGet(b); }),
-    'contact.block': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'block'); },
-    'contact.unblock': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'unblock'); },
-    'contact.accept': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'accept'); },
-    'contact.label': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'label'); },
-    'contact.forget': function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'forget'); },
+    'contact.search': { request: { q: '' }, reply: { ok: true, items: [{ key: '', label: '' }], more: false, selfTail: '' }, handler: proxyVerb(function (b) { return hub.contactSearch(b); }) },
+    'contact.get': { request: { key: '' }, reply: { ok: true, key: '', person: {} }, handler: proxyVerb(function (b) { return hub.contactGet(b); }) },
+    'contact.block': { request: { publicKey: '', publicLabel: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'block'); } },
+    'contact.unblock': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'unblock'); } },
+    'contact.accept': { request: { publicKey: '' }, reply: STANDING, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'accept'); } },
+    'contact.label': { request: { publicKey: '', myLabel: '' }, reply: { publicKey: '', myLabel: '', caption: '' }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'label'); } },
+    'contact.forget': { request: { publicKey: '' }, reply: { publicKey: '', forgotten: true, stillBlocked: false }, handler: function (rq, rs) { hub.handlePeer(rq, rs, readJsonBody, 'forget'); } },
     // Read and write, told apart by name rather than by an HTTP method
     // that no longer varies. See handleSendersRead.
-    'contact.senders': function (rq, rs) { hub.handleSendersRead(rq, rs); },
-    'contact.setSenders': function (rq, rs) { hub.handleUnknownSenders(rq, rs, readJsonBody); },
+    'contact.senders': { request: {}, reply: { ok: true, policy: '' }, handler: function (rq, rs) { hub.handleSendersRead(rq, rs); } },
+    'contact.setSenders': { request: { policy: '' }, reply: { ok: true, policy: '' }, handler: function (rq, rs) { hub.handleUnknownSenders(rq, rs, readJsonBody); } },
   }, { wire: false });
 
   // ── STAGE 4d — peer (2026-09-15), and the fold is done ─────────────
@@ -2167,20 +2183,20 @@ contactBook.syncMarks(ROOT_DIR);
   // cannot see created. That is not pedantry — /api/hub/invite was given
   // a name out of scope on 2026-09-13 and the first real mint killed the
   // node with every suite green.
-  loopbackVerbs.claim('peer', 'hub.js', {
-    'peer.post': function (rq, rs) {
+  introSpector.claim(loopbackVerbs, 'peer', 'hub.js', {
+    'peer.post': { request: { to: '', text: '', via: '', patienceMs: 0, kind: '' }, reply: { ok: true, status: 0, hash: '', from: '', text: '', sig: '', receipt: false }, handler: function (rq, rs) {
       hub.handlePost(rq, rs, readJsonBody, { router: peerRouter, presence: presence });
-    },
-    'peer.acquire': function (rq, rs) { hub.handleContact(rq, rs, readJsonBody); },
+    } },
+    'peer.acquire': { request: { publicKey: '', publicLabel: '', url: '', via: '' }, reply: { publicKey: '', publicLabel: '', acquiredVia: '' }, handler: function (rq, rs) { hub.handleContact(rq, rs, readJsonBody); } },
     // Ask every relay who matches, rather than downloading every
     // roll to find out. See hub.handleSearch.
     //
     // `peer.candidates` STOOD BESIDE THIS and answered the same question
     // by downloading every roll on every relay and partner. Deleted
     // 2026-09-17 with no caller — see the tombstone in hub.js.
-    'peer.search': function (rq, rs) {
+    'peer.search': { request: { q: '' }, reply: { q: '', matches: [{}], more: false, asked: 0, remembered: 0, silent: [''] }, handler: function (rq, rs) {
       hub.handleSearch(rq, rs, readJsonBody, { router: peerRouter, presence: presence });
-    },
+    } },
   }, { wire: true });
 }
 

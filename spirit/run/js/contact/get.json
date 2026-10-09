@@ -1,0 +1,3 @@
+{
+  "description": "One person of the address book by public key (key): {ok, key, person: {publicKey, tail, publicLabel, caption, myLabel, acquiredVia, held, blocked, bytesHeld, unansweredInbound, inboundPerDay, outboundPerDay}}; 404 when there is none."
+}

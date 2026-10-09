@@ -1,0 +1,4 @@
+{
+  "description": "The owner's proxy list, searched by text (q; empty means everything), as a bounded list of {key, label} where a key is \"host\" or \"host|KEYNAME\"; `open` says whether the gate is open.",
+  "parameters": "q is optional."
+}

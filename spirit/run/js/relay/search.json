@@ -1,0 +1,4 @@
+{
+  "description": "This node's configured relays, probed once and searched by text (q; empty means everything), as a bounded list of {key: url, label: \"name, yours/member/not joined, online/offline\"}; mustPick says a relay must be chosen.",
+  "parameters": "q is optional; name is optional and comes back unchanged."
+}

@@ -1,0 +1,4 @@
+{
+  "description": "The modules this node includes (process/js/<name> or shell/<name>), searched by text (query; empty means everything), as a bounded list of {key: path, label: path}.",
+  "parameters": "query is optional."
+}

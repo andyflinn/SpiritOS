@@ -1,0 +1,3 @@
+{
+  "description": "Size and timestamps of one file the node will serve, by its path under the run folder; 404 when there is no such file."
+}

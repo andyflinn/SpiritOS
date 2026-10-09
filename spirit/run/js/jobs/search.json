@@ -1,0 +1,4 @@
+{
+  "description": "This node's jobs, searched by type, status and kind (q; empty means everything), as a bounded list of {key: job id, label: \"type (status)\"}.",
+  "parameters": "q is optional."
+}

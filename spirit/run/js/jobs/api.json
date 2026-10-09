@@ -1,0 +1,3 @@
+{
+  "description": "The way to this node's server processes: ask is 'api' for the tree of every server's verbs ({server: {verb: {request, reply}}}), or {server: {verb: args}} for one call, whose answer comes back flat, exactly as the server gave it. The desk is reached this way: {deskClient: {desk: {verb, json}}}."
+}

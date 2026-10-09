@@ -353,24 +353,23 @@ function withDependencies(verbs, paths) {
   return all;
 }
 
+// THE WHOLE FAMILY SINCE goal/G10.5 (introSpector.js): AGENTS, AGENTS.introspect
+// and one AGENTS.<verb> per verb file beside the script, all read on every
+// ask. No AGENTS.md, no family. A verb file naming a verb this server never
+// declared is said at boot. A server that declares a name itself keeps its own.
 function withAgents(verbs, script) {
-  const file = path.join(path.dirname(path.resolve(String(script || ''))), AGENTS_FILE);
-  if (Object.prototype.hasOwnProperty.call(verbs, 'AGENTS') || !fs.existsSync(file)) return verbs;
+  const resolved = path.resolve(String(script || ''));
+  const made = require('./introSpector').family(path.dirname(resolved), {
+    declared: Object.keys(verbs),
+    manifest: path.basename(resolved, '.js') + '.json',
+  });
+  made.stale.forEach(function (file) {
+    console.error('appServer: ' + file + ' names a verb this server does not declare');
+  });
   const all = Object.assign({}, verbs);
-  all.AGENTS = {
-    request: {}, reply: { text: '' },
-    handler: function () {
-      const text = fs.readFileSync(file, 'utf8');
-      // The bound appClient holds every answer to (read at the ask: appClient
-      // itself requires this file's neighbours).
-      if (Buffer.byteLength(JSON.stringify({ text: text }), 'utf8') > require('./appClient').ANSWER_MAX) {
-        const e = new Error(AGENTS_FILE + ' is too large for one answer');
-        e.refusal = 'answer-too-large';
-        throw e;
-      }
-      return { text: text };
-    },
-  };
+  Object.keys(made.verbs).forEach(function (name) {
+    if (!Object.prototype.hasOwnProperty.call(all, name)) all[name] = made.verbs[name];
+  });
   return all;
 }
 

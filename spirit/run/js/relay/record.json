@@ -1,0 +1,4 @@
+{
+  "description": "The newest stored reports of one relay (relay: its url) within a time window, read from this node's record and never from the network: {ok, relay, from, to, series: [rows, oldest first], more}.",
+  "parameters": "from and to are optional milliseconds; the window is the last 24 hours when they are left out."
+}

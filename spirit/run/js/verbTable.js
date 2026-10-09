@@ -129,6 +129,42 @@ function createVerbTable() {
     return true;
   }
 
+  // ── THE UPPERCASE SET IS THE SYSTEM'S (goal/G10.5) ──────────────────
+  //
+  //   Andy, 2026-10-09: "so the introSpector could still insist on
+  //   lower-case verbs to be registered, and then STILL add the uppercase
+  //   set"; "that is a decision. make it so."
+  //
+  // claim() above refuses an uppercase verb from a module (VERB_RE), and
+  // that is now the rule's reason: an uppercase verb is always the system's,
+  // told apart by the name alone. This is the one way such a verb reaches
+  // the table, and only the AGENTS family of a namespace already claimed:
+  // ns.AGENTS, ns.AGENTS.introspect, ns.AGENTS.<verb>. introSpector.js calls
+  // it; a module has no business to.
+  var FAMILY_RE = /^[a-z][a-z0-9]*\.AGENTS(\.[a-z_][A-Za-z0-9_-]*)?$/;
+  function reserve(namespace, group) {
+    var ns = String(namespace || '');
+    if (!owner[ns]) {
+      throw new Error('verbTable: ' + ns + ' is not claimed, so it carries no family');
+    }
+    if (!group || typeof group !== 'object') {
+      throw new Error('verbTable: ' + ns + ' reserved nothing');
+    }
+    Object.keys(group).forEach(function (verb) {
+      if (!FAMILY_RE.test(verb) || verb.slice(0, ns.length + 1) !== ns + '.') {
+        throw new Error('verbTable: ' + verb + ' is not of the AGENTS family of ' + ns);
+      }
+      if (typeof group[verb] !== 'function') {
+        throw new Error('verbTable: ' + verb + ' is not a function');
+      }
+      if (answer[verb]) {
+        throw new Error('verbTable: ' + verb + ' already answered');
+      }
+      answer[verb] = group[verb];
+    });
+    return true;
+  }
+
   // Null for anything unclaimed, so the door reports "no such verb"
   // rather than this deciding what a refusal looks like. A table says
   // who answers; it does not speak HTTP.
@@ -160,6 +196,7 @@ function createVerbTable() {
 
   return {
     claim: claim,
+    reserve: reserve,
     handlerFor: handlerFor,
     verbs: verbs,
     needsWire: needsWire,

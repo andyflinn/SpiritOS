@@ -1,0 +1,4 @@
+{
+  "description": "The boxes the owner's servers have reported, grouped by box and searched by text (q; empty means everything), as a bounded list of {key: fingerprint, label}; an over-committed box says so in its label.",
+  "parameters": "q is optional."
+}

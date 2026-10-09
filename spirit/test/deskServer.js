@@ -57,7 +57,9 @@ const SCRIPT = path.join(DIR, 'desk.js');
 // goal/G9.9 added goal.add and item.add: the desk names every goal and item id, and the same two verbs serve him and
 // the agents (Andy, 2026-10-07: "the desk owns (is in charge of) goal and item ID's.").
 // goal/G8.5 added signoff: a leaving agent is gone at once and its phases are freed.
-const VERBS = ['AGENTS', 'DEBUG', 'DEPENDENCIES', 'agent.state', 'box.release', 'box.take', 'box.write', 'changes', 'chat.add', 'chat.search', 'check.add', 'check.set', 'goal.add', 'item.add', 'item.box', 'item.chat', 'item.checks', 'item.delete', 'item.files.add', 'item.get', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'log.add', 'log.search', 'pending.get', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.history', 'rule.version', 'rules.search', 'scope.get', 'scope.set', 'seen.get', 'seen.set', 'session.set', 'signoff', 'state.get', 'state.set', 'verify.again', 'verify.pass', 'verify.reject', 'work.open'];
+// goal/G10.5 added AGENTS.introspect beside AGENTS: the family every server with an AGENTS.md carries (introSpector.js);
+// the desk has no verb files yet, so no AGENTS.<verb> is listed.
+const VERBS = ['AGENTS', 'AGENTS.introspect', 'DEBUG', 'DEPENDENCIES', 'agent.state', 'box.release', 'box.take', 'box.write', 'changes', 'chat.add', 'chat.search', 'check.add', 'check.set', 'goal.add', 'item.add', 'item.box', 'item.chat', 'item.checks', 'item.delete', 'item.files.add', 'item.get', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'log.add', 'log.search', 'pending.get', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.history', 'rule.version', 'rules.search', 'scope.get', 'scope.set', 'seen.get', 'seen.set', 'session.set', 'signoff', 'state.get', 'state.set', 'verify.again', 'verify.pass', 'verify.reject', 'work.open'];
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskserver-'));
 const state = path.join(scratch, 'state');

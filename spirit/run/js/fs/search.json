@@ -1,0 +1,3 @@
+{
+  "description": "The files and folders the node will serve, matched by a path pattern (q; empty means everything), as a bounded list of {key: path, label: path}; a folder's path ends in a slash."
+}

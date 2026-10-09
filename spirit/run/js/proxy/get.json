@@ -1,0 +1,3 @@
+{
+  "description": "One entry of the proxy list by its key (\"host\" or \"host|KEYNAME\"): {host, key?, methods?, open?}; 404 when there is none."
+}

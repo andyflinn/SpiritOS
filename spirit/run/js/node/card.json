@@ -1,0 +1,3 @@
+{
+  "description": "What this node tells strangers about itself: {ok, name, description, publicKey, descriptionMax}; 409 when the node has no key yet."
+}

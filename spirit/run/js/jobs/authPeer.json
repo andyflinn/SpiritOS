@@ -1,0 +1,3 @@
+{
+  "description": "Every grant one member's key holds: {records: [{key, label, path}]}."
+}

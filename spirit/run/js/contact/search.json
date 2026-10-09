@@ -1,0 +1,4 @@
+{
+  "description": "This node's address book, searched by text (q; empty means everything), as a bounded list of {key: publicKey, label}; selfTail is the tail of this node's own key, or null.",
+  "parameters": "q is optional."
+}

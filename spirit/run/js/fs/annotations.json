@@ -1,0 +1,3 @@
+{
+  "description": "The sidecar annotations of one served file, every bucket in full; an empty object when the file has none or is not served."
+}
