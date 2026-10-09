@@ -27,9 +27,9 @@ Build the plainest mechanism that does the job: one thing per message, nothing h
 
 ## desk
 
-### rule/10 (version 22): full harness only runs for goal completion
+### rule/10 (version 23): full harness only runs for goal completion
 
-full harness only runs for goal completion. it is too time consuming to run the full harness for getting an item 'done'
+full harness only runs for goal completion. it is too time consuming to run the full harness for getting an item 'done'. verify still must be done with the suite for the item.
 
 ### rule/9 (version 20): Bulk goal creation on order only
 
