@@ -1,8 +1,8 @@
 {
- "change": 25211,
+ "change": 25337,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T20:03:50.807Z",
+ "writtenAt": "2026-10-09T20:15:02.338Z",
  "items": [
   {
    "id": "goal/G9",
@@ -25,7 +25,7 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": false,
+   "green": true,
    "code": false,
    "phase": "",
    "red": "",
@@ -33,16 +33,17 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
-   "waiting": 2,
+   "design": false,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
+    "claude-windows",
     "wsl-claude"
    ],
    "agents": {
@@ -77,9 +78,9 @@
      "kind": "Q",
      "words": "cw: every G9 item is done or closed, and the goal offers you Done.\nThe full harness (rule/10) has run once, wsl's: 765 green, 2 red, both onboard relay suites red before today's work.\nShould cw also run it on Windows before your Done?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-09T06:33:39.515Z"
+     "at": "2026-10-09T20:14:24.967Z"
     }
    ],
    "chat": [
@@ -217,6 +218,16 @@
      "by": "ollama agent node",
      "at": "2026-10-09T14:21:05.618Z",
      "text": "[loop.js] CW: Takes over the red of G9.7 from WSL.  \nWSL: Writes G9.11 after G9.3, then builds G9.7 (potentially holding Waive briefly before CW grabs the red).  \nCW: Builds G9.11 once WSL is done with it.  \n\n**Result:** No idle time during the G9.3 → G9.7 → G9.11 pipeline."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T20:07:51.927Z",
+     "text": "WHY THE FUCK are there TWO new ITEMS here!"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T20:08:08.472Z",
+     "text": "cw: goal/G9.17 is the one you said add it to, and it already holds both fixes; goal/G9.18 is wsl's, added after your one-item rule, the same fold again. Delete goal/G9.18, your press; nothing is lost."
     }
    ]
   },
@@ -3506,11 +3517,129 @@
    "id": "goal/G9.17",
    "title": "A closed item blocks nothing",
    "goal": "goal/G9",
-   "status": "",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G9"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "red",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/11",
+     "version": 27
+    },
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "WHAT, change 1: a closed item blocks nothing. Today the desk drops an item out of the blockers it reports only when it is done or left out of a session; one that was merely closed still counts, so an item reads blocked by a closed one, and the Go rule (offered only on an item nothing open blocks) would hold back a Go behind a closed blocker. The fix: a closed item leaves the blockers as a done one does, in the facts (blocked, blocking) and in the Go rule alike.\n\nWHAT, change 2 (wsl-claude's finding of 2026-10-09, folded in at Andy's rule that this item takes every desk change from here and none is added after it): the box textarea opens one row tall on every open (ddFolded true at each open; rows 1 or 12), so a long box shows one line and there is nowhere to lay anything out; RULED, Andy (2026-10-09, here): \"it always should open so all text is visible.\" So a box opens sized to all the text it holds, every open, and the arrow only shrinks it afterwards.\n\nWHY: found by wsl-claude's review of goal/G10 on 2026-10-09: the goal read blocked by Configuration manager (goal/G10.4) after Andy had closed it. Andy: \"fine. add it.\"\n\nWHERE (512e59d3): the blocker walk in process/js/desk/desk.js (blockers: an item counts while not done and not left out), and the two places that read it, the facts an item answers with and the Go rule.\n\nTESTS FIRST, red on today's desk: the dialog opens a box with text as a textarea tall enough for all of it, never one row (deskEmptyBox's harness); an item blocked by another that is then closed reads blocked by nothing and offers Go once design ends; a done blocker behaves as before; a reopened blocker blocks again. The agent who writes the test never builds it.",
+   "version": 3,
+   "checks": [],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-09T20:09:06.438Z",
+     "text": "and what is this \"folding\" business about anyways?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T20:09:26.195Z",
+     "text": "cw: the box in the details dialog opens one row tall every time, folded, and the small arrow beside it unfolds it to twelve rows; that fold dates from desk/G2.7, when you asked for the text bubble to fold again, and it survived the box becoming a textarea. So a long box shows you one line until you press the arrow, and it refolds on the next open. Change two here opens the box at its full height and keeps the arrow only to shrink it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T20:10:01.765Z",
+     "text": "it always should open so all text is visible."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T20:10:18.762Z",
+     "text": "cw: ruled and in the box: the box always opens with all of its text visible, sized to what it holds; the arrow only shrinks it afterwards."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T20:11:33.820Z",
+     "text": "unable to end design mode"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T20:12:19.002Z",
+     "text": "cw: End design was refused because this item was not yet design-complete, and the desk ends design only when every open item is green. I pressed design-complete on it now, its box being the full design of both changes; End design should be offered on G9 again."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T20:12:51.619Z",
+     "text": "wsl: my duplicate is gone, your delete landed, and your ruling that the box opens with all its text visible is in this box.\nI am caught up to now and free: after your End design and Go here I take the red on this item, cw builds, so the turns alternate instead of being waived.\nNothing else is owed by me."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T20:13:51.866Z",
+     "text": "Not pressed: not-offered (that press is not offered for this item now)\n\nand it doesn't tell me why either."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T20:14:28.940Z",
+     "text": "cw: found it: the desk ends design only when every open item and the goal itself are green, and goal/G9 carried one stale red question of mine from the day it closed (Q3, about its Done), so the goal was not green and the press was refused without saying which. I closed that question; G9 reads green now, so End design should take. The missing why in the refusal is worth folding into this item's box as change three if you want it."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T20:15:02.024Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
+  },
+  {
+   "id": "goal/G9.18",
+   "title": "Box opens folded",
+   "goal": "goal/G9",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "reopen"
    ],
    "blocking": [
     "goal/G9"
@@ -3525,7 +3654,7 @@
    "subGoal": false,
    "files": [],
    "green": true,
-   "code": true,
+   "code": false,
    "phase": "",
    "red": "",
    "builder": "",
@@ -3535,7 +3664,7 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "WHAT: a closed item blocks nothing. Today the desk drops an item out of the blockers it reports only when it is done or left out of a session; one that was merely closed still counts, so an item reads blocked by a closed one, and the Go rule (offered only on an item nothing open blocks) would hold back a Go behind a closed blocker. The fix: a closed item leaves the blockers as a done one does, in the facts (blocked, blocking) and in the Go rule alike.\n\nWHY: found by wsl-claude's review of goal/G10 on 2026-10-09: the goal read blocked by Configuration manager (goal/G10.4) after Andy had closed it. Andy: \"fine. add it.\"\n\nWHERE (512e59d3): the blocker walk in process/js/desk/desk.js (blockers: an item counts while not done and not left out), and the two places that read it, the facts an item answers with and the Go rule.\n\nTESTS FIRST, red on today's desk: an item blocked by another that is then closed reads blocked by nothing and offers Go once design ends; a done blocker behaves as before; a reopened blocker blocks again. The agent who writes the test never builds it.",
+   "box": "THE DETAILS BOX OPENS FOLDED TO ONE ROW. A bug fix, put here by Andy on 2026-10-09: \"lets just add an item elsewhere, maybe, under G9, that is for bug fixes, and then continue here.\" Facts at d6e9df7d.\n\nWHAT HE HIT (his words, 2026-10-09, under goal/G10): \"First Thing: I dont get to edit the box here so i cant lay out a first cut design\".\n\nTODAY: the box is always drawn as a textarea since goal/G9.15 (spirit/run/shell/deskDetails/deskDetails.js:217), but ddFolded starts true on every open (:201) and the textarea is one row tall while folded (:229), so a goal box of several thousand characters shows one line. The only way in is the small arrow (:460), and the fold returns on the next open (:549). The server refuses nothing: his focus takes the box and his blur writes it (:404, :411).\n\nWHAT IS WANTED: the box ready to edit at a usable height when it is opened, the fold kept as his choice. The height and whether the fold should remember his last choice are his to decide.\n\nTESTS FIRST: a suite red on today s code: the dialog opened on an item with a long box draws the textarea at more than one row, the arrow still folds and unfolds, and a repaint while he is in the box leaves his text alone. The builder never writes its own tests.",
    "version": 1,
    "checks": [],
    "chat": []
