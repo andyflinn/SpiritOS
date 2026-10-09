@@ -191,7 +191,9 @@ test.startTest('desk/G2.6: the List paints only what the desk server says');
   l.click('desk-current-goal', { id: 'desk-current-goal' });
   await settled();
   const current = l.searches().slice(-1)[0] || { args: {} };
-  if (current.args.currentGoalOnly === false) test.check('Current Goal Only toggles off');
+  // Since goal/G9.2 the two are exclusive: Goals Only above turned Current Goal Only off, so this click turns it back
+  // on and Goals Only off (deskExclusiveToggles.js holds the rule itself).
+  if (current.args.currentGoalOnly === true && current.args.goalsOnly === false) test.check('Current Goal Only toggles back on, and Goals Only off');
   else test.fail(OWED + 'Current Goal Only asked ' + JSON.stringify(current));
 
   // desk/G3.4, Andy: "i should have a go-all button for fixing rounds", "the go all should be on the right side of

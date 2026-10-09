@@ -1174,11 +1174,14 @@ spirit.shell.activateApp({
     });
     document.getElementById('desk-current-goal').addEventListener('click', function () {
       deskFilter.currentGoalOnly = !deskFilter.currentGoalOnly;
+      // EXCLUSIVE, goal/G9.2. Andy: "only one of the two buttons ... may be selected at the same time."
+      if (deskFilter.currentGoalOnly) deskFilter.goalsOnly = false;
       deskDrawToggles();
       deskSearchItems();
     });
     document.getElementById('desk-goals-only').addEventListener('click', function () {
       deskFilter.goalsOnly = !deskFilter.goalsOnly;
+      if (deskFilter.goalsOnly) deskFilter.currentGoalOnly = false;
       deskDrawToggles();
       deskSearchItems();
     });
