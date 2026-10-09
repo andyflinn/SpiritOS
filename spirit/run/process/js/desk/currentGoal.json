@@ -1,8 +1,8 @@
 {
- "change": 21546,
+ "change": 21550,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T08:37:53.324Z",
+ "writtenAt": "2026-10-09T08:37:58.563Z",
  "items": [
   {
    "id": "goal/G8",
@@ -1675,8 +1675,7 @@
     "goal/G8.7"
    ],
    "blocked": [
-    "goal/G8.2",
-    "goal/G8.8"
+    "goal/G8.2"
    ],
    "go": false,
    "alone": false,
@@ -1743,17 +1742,18 @@
    "id": "goal/G8.8",
    "title": "Files touched per item — the list of files an item's commits changed, kept by the desk and approved by Andy",
    "goal": "goal/G8",
-   "status": "verified",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G8.6"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -1796,7 +1796,7 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "FILES TOUCHED PER ITEM\n\nWHY. Andy, 2026-10-09: \"Yes. cw: add it to the appropriate goal, and make sure that the file list needs my approval\". It replaces the list an agent writes by hand in the item chat at claim-done; the desk holds no such list today.\n\nWHO WRITES IT. \"ideally written by the claiming agent. the coding agent and the testing agent should be adding files they test/touch in a list that can be fetched per item.\" and \"the list should be owned by the item. so updates to it are available to all participants.\"\nSo the list belongs to the item: the builder adds the files it touches, the red writer and the verifier the files they test. commitCheck.js already posts each pushed commit's files as chat text in agent clones; a source to copy from, not the list.\n\nTHE VERB. \"i may require verbs.\" Proposed by wsl-claude, reviewed by claude-windows; asked for his yes, he ruled 2026-10-09: \"doesn't need my grant, until i rule this app 'intrinsic'\". So: one desk verb, item.files.add {id, paths}, each call carrying that agent's whole list and replacing its own entries only; the list comes back in item.get, so nothing new reads it.\n\nIN THE DESK UI. \"and that file list should be visible in desk ui per item, core files market as requiring grants.\" The Details draws the list; which files are core is coreFiles.isCore (js/coreFiles.js), the function commitCheck already uses, never a second list.\n\nTHE APPROVAL. \"i think it's a G check on the item.\" and \"all files that need a grant should get one 'grant' button together.\" One G check covers every file on the list that needs a grant; it replaces commitCheck's one grant per core file. PROPOSED by both agents: a file added after the grant turns that grant red again, since what he granted was a list.\n\"'Done' needs all grants approved.\" A desk change reaching every item, built in goal/G8.5, where the ruling is kept as well.\n\nALSO HERE, his, 2026-10-09, under goal/G8: \"oh, and the Delete button never should show in the list. only in the detals.\" and \"ad this to the item that draws the file list for this goal.\" Today the List draws every button an item offers except go-all, reopen and make-current (shell/desk/desk.js DESK_NOT_IN_ROW), so delete, which goal/G9.7 added to an item's buttons in design mode, shows in every row. The fix is delete joining that list; the Details keeps its armed Delete.",
