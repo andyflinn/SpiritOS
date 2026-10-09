@@ -1,0 +1,10 @@
+{
+    "SpiritOS":{
+        "PORT": "11111"
+    },
+    "OpenAI":{
+        "URL":"http://127.0.0.1:8888/v1",
+        "API_KEY":"sk-unsloth-a2dfacc5572665831e57326b78a62440"
+    }
+}
+
