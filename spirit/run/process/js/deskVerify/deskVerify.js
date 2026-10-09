@@ -441,10 +441,23 @@ if (watcher.unref) watcher.unref();
 // ONE line in the goal's chat naming the reds, the tolerated-reds grant through goal.check (goal/G8.7), and
 // verify.pass on the goal, which is what brings the goal its Done. One pass per goal; the watcher holds that.
 const SUITES_DIR = path.resolve(REPO, String(values.suites || 'spirit/test'));
+// A SUITE IS WHAT THE HARNESS CALLS ONE (goal/G8.12, found by claude-windows verifying 4c7fcb76): a file that calls
+// startTest( and is not on the harness's own list of helpers. Taking every .js ran testSupport.js, deskFake.js and
+// runAll.js itself - a second harness nested inside this run. The list is spirit/test/notASuite.js, which runAll reads
+// too, so the two cannot drift; where it cannot be read, the few names that would do real damage still stand.
+const NOT_A_SUITE = (function () {
+  try { return require(path.join(REPO, 'spirit', 'test', 'notASuite.js')); } catch (e) {
+    return ['runAll.js', 'testSupport.js', 'verifyPost.js', 'notASuite.js'];
+  }
+}());
 function suiteFiles() {
-  try {
-    return fs.readdirSync(SUITES_DIR).filter(function (f) { return /\.js$/.test(f); }).sort();
-  } catch (e) { return []; }
+  let names = [];
+  try { names = fs.readdirSync(SUITES_DIR); } catch (e) { return []; }
+  return names.filter(function (f) {
+    if (!/\.js$/.test(f)) return false;
+    if (f === 'notASuite.js' || NOT_A_SUITE.indexOf(f) !== -1) return false;
+    try { return /startTest\s*\(/.test(fs.readFileSync(path.join(SUITES_DIR, f), 'utf8')); } catch (e) { return false; }
+  }).sort();
 }
 async function fullRun(goalId) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
