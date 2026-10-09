@@ -61,6 +61,7 @@ function dialog(answer) {
   const asked = [];
   const published = [];
   const servers = [];
+  const titles = [];
   dd.mount(fakeElement('dd'), {
     escapeHtml: kernel.core.util.escapeHtml,
     verb: function (name, body) {
@@ -75,11 +76,12 @@ function dialog(answer) {
     },
     onPublished: function (fn, server) { published.push(fn); servers.push(server); return function () {}; },
     onPacket: function () { return function () {}; },
-    setScreenTitle: function () {}, setDialogResult: function () {}, closeDialog: function () {},
+    setScreenTitle: function (t) { titles.push(String(t)); }, setDialogResult: function () {}, closeDialog: function () {},
     peerPost: function () { return Promise.resolve({ ok: true }); },
     fs: { loadFile: function () { return null; }, saveFile: function () { return Promise.resolve(); } },
   });
-  const page = function () { return Object.keys(doc.all).map(function (k) { return doc.all[k].innerHTML; }).join('\n'); };
+  // The title bar counts as the page: since goal/G9.6 the title is drawn there and nowhere else.
+  const page = function () { return Object.keys(doc.all).map(function (k) { return doc.all[k].innerHTML; }).concat(titles.slice(-1)).join('\n'); };
   const click = function (id, attrs) { doc.getElementById('dd-body').fire('click', { target: target(id, attrs), preventDefault: function () {} }); };
   const publish = function (obj) { published.forEach(function (fn) { fn(obj); }); };
   return { dd: dd, asked: asked, page: page, click: click, publish: publish, published: published, servers: servers };

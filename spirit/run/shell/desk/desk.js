@@ -872,12 +872,6 @@ function deskDraw() {
   if (team) team.innerHTML = deskGroupChat();
   var bubble = document.getElementById('desk-session');
   if (bubble) bubble.innerHTML = deskSessionBubble();
-  var goal = document.getElementById('desk-goal');
-  if (goal) {
-    var g = deskGoalRow();
-    goal.hidden = !g;
-    goal.textContent = g ? g.title + ' (' + g.id + ')' : '';
-  }
   var design = deskDesignOn();
   var banner = document.getElementById('desk-design');
   if (banner) banner.hidden = !design;
@@ -1032,7 +1026,6 @@ function deskHeader(api) {
   if (!old || !els || typeof els.createAppHeader !== 'function') return;
   var head = els.createAppHeader();
   head.id = 'desk-bars';
-  head.style.paddingBottom = '4px';
   while (old.firstChild) head.appendChild(old.firstChild);
   old.parentNode.replaceChild(head, old);
 }
@@ -1068,14 +1061,13 @@ spirit.shell.activateApp({
       // THE BLINK, DECLARED ONCE (goal/G2.4): a working agent's tab border blinks; the mark is data-working.
       '<style>@keyframes desk-blink { 50% { border-color: transparent; } } ' +
         '#desk-tabs [data-bubble][data-working="1"] { animation: desk-blink 1s step-start infinite; }</style>' +
-      '<div id="desk-bars" style="padding-bottom:4px">' +
-        // The goal line is pinned with the tabs (desk/G1.12). Andy: "this part
-        // of the list page should be attached below the title bar, and not
-        // scroll away."
-        '<div id="desk-goal" class="stat-tile wide" style="font-size:1.25em;font-weight:bold;cursor:pointer" title="Open the goal: talk about it under its own id" hidden></div>' +
+      // FLAT AND JOINED TO THE TITLE BAR (goal/G9.6). Andy: "the header area should not contain rounded corners. and
+      // its container should have no margins and no padding." No goal bubble either: the List's goal row opens the
+      // goal (his answer to G9.6 Q1).
+      '<div id="desk-bars">' +
         // GO ALL at the right of the tab bar, on the List tab only, as the design
         // buttons are on Team's (desk/G3.4, Andy: "same as design buttons when team is active").
-        '<div style="display:flex;align-items:center"><div class="start-job-form card" id="desk-tabs" style="flex:1"></div>' +
+        '<div style="display:flex;align-items:center"><div id="desk-tabs" style="flex:1;display:flex;gap:12px;flex-wrap:wrap;align-items:center"></div>' +
           '<button type="button" id="desk-go-all" hidden>Go all</button></div>' +
       '</div>' +
       '<div id="desk-root">' +
@@ -1220,13 +1212,6 @@ spirit.shell.activateApp({
       while (el && el !== e.currentTarget && !(el.getAttribute && el.getAttribute('data-open'))) el = el.parentNode;
       var id = el && el.getAttribute && el.getAttribute('data-open');
       if (id) deskOpenRow(id);
-    });
-    // THE TITLE LINE OPENS THE GOAL. Andy: "if i could also click on the
-    // title to move the discussion to the detail of the requirement, then
-    // our discussion would be logged under that requirement".
-    document.getElementById('desk-goal').addEventListener('click', function () {
-      var g = deskGoalRow();
-      if (g) deskOpenRow(g.id);
     });
     // Its own log first, then every arrival into it. Subscribed once, at
     // mount, and kept while Desk is hidden behind its dialog, so what

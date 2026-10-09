@@ -136,10 +136,12 @@ settle().then(function () {
   // Andy: "this part of the list page should be attached below the title
   // bar, and not scroll away. Upgrading Desk ... (desk/G1) List (1) Team
   // Musings": the goal line rides in the same pinned block as the tabs.
-  test.subHeading('T12: the goal line is pinned with the tabs, in one sticky block');
+  // SINCE goal/G9.6 there is no goal line in the header: "the desk is only about the current goal", and the List's
+  // goal row opens it. What stays of T12 is the pinned block holding the tabs (deskHeaderArea.js holds the rest).
+  test.subHeading('T12: the pinned block holds the tabs, and no goal line any more');
   const barsAt = at;
   const goalAt = shell.indexOf('id="desk-goal"');
-  if (barsAt !== -1 && goalAt > barsAt && goalAt < tabsAt) test.check('#desk-goal sits inside the pinned #desk-bars, above the tabs');
+  if (barsAt !== -1 && goalAt === -1 && tabsAt > barsAt) test.check('#desk-bars holds the tabs and no #desk-goal');
   else test.fail(OWED + 'sticky block at ' + barsAt + ', goal line at ' + goalAt + ', tabs at ' + tabsAt);
 
   // Andy: "this button row on the main screen [All] [claude-windows (lead)]
@@ -208,7 +210,7 @@ settle().then(function () {
 }).then(function () {
   // ── The dialog ──────────────────────────────────────────────────────
   // Since desk/G2.7 the dialog paints the desk server's item.get: the rulings below stand, on the new parts
-  // (#dd-head, #dd-name-row, #dd-strip, #dd-box, #dd-links).
+  // (#dd-name-row, #dd-strip, #dd-box, #dd-links).
   const ddDoc = fakeDocument();
   const dd = load(DETAILS, ddDoc);
   let screenTitle = '';
@@ -256,11 +258,11 @@ settle().then(function () {
       test.check('one block, pinned by the app header, holds the button row and the check line, above the box');
     } else test.fail(OWED + 'sticky at ' + stickyAt + ', buttons at ' + at('dd-name-row') + ', strip at ' + at('dd-strip') + ', box at ' + at('dd-box'));
 
-    test.subHeading('T10 and T15: the title line is title-sized');
-    const headTag = (body.match(/<div[^>]*id="dd-head"[^>]*>/) || [''])[0];
-    const headSize = Number((headTag.match(/font-size:\s*([\d.]+)em/) || [0, 0])[1]);
-    if (headSize >= 1.2 && /Second/.test(ddDoc.getElementById('dd-head').innerHTML)) test.check('the title line reads at ' + headSize + 'em');
-    else test.fail(OWED + 'the title line (#dd-head) is ' + headSize + 'em: ' + headTag);
+    // SINCE goal/G9.6 the title line is the shell's title bar itself ("the deskDetail has the title already in the
+    // shells title bar"); #dd-head is gone, and the status it carried rides in the title.
+    test.subHeading('T10 and T15: the title is the title bar, with the status, and no #dd-head');
+    if (!/id="dd-head"/.test(body) && /Second/.test(screenTitle) && /running/.test(screenTitle)) test.check('the title bar reads ' + JSON.stringify(screenTitle) + ', and no #dd-head is drawn');
+    else test.fail(OWED + 'the title bar reads ' + JSON.stringify(screenTitle) + '; #dd-head drawn ' + /id="dd-head"/.test(body));
 
     test.subHeading('T11: the yellow check stands apart, with clear space around it');
     const tag = (strip.match(/<div[^>]*background:#fff3c4[^>]*>/) || [''])[0];

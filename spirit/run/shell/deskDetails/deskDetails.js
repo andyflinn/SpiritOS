@@ -70,9 +70,10 @@ function ddFrame() {
     // His buttons and the strip stay pinned BELOW the title bar while the
     // rest scrolls (desk/G1.12; goal/G2.1 note 4). SINCE goal/G6.1 the shell's
     // app header does the sticking: ddHeader moves this block into it.
-    '<div id="dd-bars" style="padding-bottom:2px">' +
-      '<div id="dd-head" style="font-size:1.25em;font-weight:bold"></div>' +
-      '<div class="start-job-form card" id="dd-name-row"></div>' +
+    // FLAT, NO TITLE BUBBLE (goal/G9.6). Andy: "the deskDetail has the title already in the shells title bar", and
+    // "no rounded corners", "no margins and no padding". The status the bubble carried rides in the title bar.
+    '<div id="dd-bars">' +
+      '<div id="dd-name-row" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center"></div>' +
       '<div id="dd-strip"></div>' +
     '</div>' +
     '<div class="stat-tile wide" id="dd-box"></div>' +
@@ -94,19 +95,12 @@ function ddHeader() {
   if (!old || !els || typeof els.createAppHeader !== 'function') return;
   var head = els.createAppHeader();
   head.id = 'dd-bars';
-  head.style.paddingBottom = '2px';
   while (old.firstChild) head.appendChild(old.firstChild);
   old.parentNode.replaceChild(head, old);
 }
 
 var DD_LABELS = { go: 'Go!', done: 'Done', close: 'Close', reopen: 'Reopen' };
 
-function ddHeadHtml() {
-  var f = ddFacts || {};
-  // THE ID FIRST (desk/G1.12): "the title bar should show the G1.2 tags before the title".
-  return ddEsc(ddId) + ' — ' + ddEsc(f.title || '') +
-    (f.status ? ' <span class="job-manifest-note">(' + ddEsc(f.status) + ')</span>' : '');
-}
 
 // CLOSE BEFORE HIS GO IS ARMED, AT THE RIGHT EDGE (goal/G3.9). Andy, 2026-10-03: "A close - with arm-button is
 // available on the right edge of the button bar, before an item has received a 'go' or a 'done'", "the close-with
@@ -283,7 +277,6 @@ function ddSet(id, html) { var el = document.getElementById(id); if (el) el.inne
 // Repaints every part between the inputs; a name he is typing survives it.
 function ddPaint() {
   var typed = ddRenaming ? ddValue('dd-name') : '';
-  ddSet('dd-head', ddHeadHtml());
   ddSet('dd-name-row', ddButtonsHtml());
   var box = ddRenaming && typed && document.getElementById('dd-name');
   if (box) box.value = typed;
@@ -294,7 +287,7 @@ function ddPaint() {
   ddSet('dd-chat', ddChatHtml());
   var err = document.getElementById('dd-error');
   if (err) err.textContent = ddNote;
-  if (ddFacts && typeof ddApi.setScreenTitle === 'function') ddApi.setScreenTitle(ddId + ' — ' + (ddFacts.title || ''));
+  if (ddFacts && typeof ddApi.setScreenTitle === 'function') ddApi.setScreenTitle(ddId + ' — ' + (ddFacts.title || '') + (ddFacts.status ? ' (' + ddFacts.status + ')' : ''));
 }
 
 function ddValue(id) {
