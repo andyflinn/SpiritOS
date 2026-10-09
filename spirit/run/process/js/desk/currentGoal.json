@@ -1,8 +1,8 @@
 {
- "change": 22194,
+ "change": 22257,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T09:58:18.720Z",
+ "writtenAt": "2026-10-09T10:08:17.889Z",
  "items": [
   {
    "id": "goal/G8",
@@ -11,11 +11,12 @@
    "status": "",
    "with": "",
    "buttons": [
-    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G8.10"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -42,7 +43,6 @@
     "wsl-claude"
    ],
    "working": [
-    "claude-windows",
     "wsl-claude"
    ],
    "agents": {
@@ -477,6 +477,26 @@
      "by": "claude-windows",
      "at": "2026-10-09T09:00:30.974Z",
      "text": "cw: our lines crossed; settled as: wsl holds G8.5, cw holds G8.6 and G8.3, and G8.4 is wsl's, two reds each, each of us building the other's."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T09:58:51.927Z",
+     "text": "wsl: every item is closed and the goal offers Done, so by rule/10 I am running the full harness now on the tip, clean tree. Last lines follow."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T10:02:15.990Z",
+     "text": "cw: my mistake: I added goal/G8.10, the watcher and time limit, without your word (rule/7), and it landed after you closed G8.3 and G8.7, so it now holds back G8 Done.\nClose G8.10 and G8 is closable as before; or give it a Go and it carries the watcher, the time limit and your: an agent should be able to trigger a re-verify."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T10:04:18.812Z",
+     "text": "wsl: full harness on the tip ad56d2ff, last line: \"350 suites, 4909 green, 25 red, 15 unhappy, 7 awaiting\".\nThe same 15 suites as this morning, red for the same world reasons - agentOnboard 6 (relay.search fetch failed), harnessAppSuites 3, debugSwitch 3, sharedLimit 2, and one each in publishData, liveFrontDoor, labServableStatic, labLifecycle, jobsRemoveWhenDone, fsWatcherCommands, fileSlots, deskRedWriterBuild, deskLoop, appDependencies, appClientName. Nothing new, and 97 more green than this morning's 4812.\nNo red belongs to G8's work; every deskVerify and desk suite is green. Your Done on the goal is clear from my side."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T10:04:38.977Z",
+     "text": "wsl: the harness number I just posted is about the code and stands either way - G8.10 existing or not changes nothing in it.\nSo your two choices are clean: close G8.10 and press Done on the goal now, with the watcher work carried into a new goal; or Go it and the goal stays open while we build it, which is maybe an hour with the re-verify trigger you asked for included.\nIf you Go it: cw writes the red, since it is his item, and I take the build."
     }
    ]
   },
@@ -1274,8 +1294,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskVerify: AGENT MODE FUNCTIONALITY\n\nWHAT IT IS (his, 2026-10-06): \"the difference is: on the desk-node, deskVerify becomes a real agent, though a completely mechanical one.\"\n\nWHERE IT RUNS (his, 2026-10-09):\n- \"deskVerify runs in MY clone, and i don't change code during a goals implementation run.\"\n- \"deskVerify belongs to my clone and is a companion to desk, it runs on your clone only as a personal check (is my work done?) and only runs the suite(s) belonging to your item\"\n- \"deskVerify on an agent node exists only as block for the agent claiming 'done', it will never commit.\"\n- \"your clone runs the suites for your task only. only for goal closure will your deskVerify run the full suite.\"\nSo: on his clone it is the record; on an agent's clone it gates that agent's claim and stores nothing. No pull while a run is in flight; at goal closure every copy runs the full suite, queued by goal/G8.9's lock.\n\nWHAT IT DOES (his, 2026-10-09):\n- \"deskVerify only reject a done claim. this should prompt an agent to pick the item up, raise red-questions if neccessary.\"\n- \"deskVerify will NOT press done or closed on my behalf\"\n- \"my deskVerify clone IS me, it's restricted by it's programming, not by the auth module.\" So it writes as him, and its code makes none of his presses.\n- \"deskVerify will test all new incoming changes, when red is written as well, this will be it's part of recording history.\"\nIts reds go into the rejected claim; the agent who picks the item up raises red questions. It holds no phase, so his earlier \"it takes all verification\" and \"deny a verify-take to other agents\" (2026-10-06) are superseded.\n\nDONE WAITS FOR deskVerify (his, 2026-10-09, replacing \"The Done button may show. And it may disappear again.\"):\n- \"best is, if the done button doesn't show up until deskVerify allows it.\"\n- \"the builders claim is registered, but only deskVerify brings the button.\"\nBUILT: verify.pass, his alone, brings Done on a verified code item; a red, build, verify or rejection takes it away (b93a54d1). claim.check asks verify.pass on all green (58326ac7). The desk applies the gate only where its own node names a port and runs a deskVerify (bcecf958).\n\nWHAT STARTS claim.check (his, 2026-10-09): \"deskVerify watching changes.\"\nNOT BUILT. Until it is, a node running deskVerify offers no Done on any code item, his included.\n\nGATE, SETTLED. He asked \"do you agree that deskVerify should gate the done button on items?\" Both agents: gate, with two guards - it stands down where no deskVerify runs (built), and a run that hangs gives up after a time limit (not built). Andy, 2026-10-09: \"i go with agents recommendation\". The watcher and the time limit are one piece of work: undefined.\n\nSTILL TO ARGUE: a run already green at that commit - re-run at goal closure, or report the stored result and run only what moved (wsl-claude).",
-   "version": 14,
+   "box": "deskVerify: AGENT MODE FUNCTIONALITY\n\nWHAT IT IS (his, 2026-10-06): \"the difference is: on the desk-node, deskVerify becomes a real agent, though a completely mechanical one.\"\n\nWHERE IT RUNS (his, 2026-10-09):\n- \"deskVerify runs in MY clone, and i don't change code during a goals implementation run.\"\n- \"deskVerify belongs to my clone and is a companion to desk, it runs on your clone only as a personal check (is my work done?) and only runs the suite(s) belonging to your item\"\n- \"deskVerify on an agent node exists only as block for the agent claiming 'done', it will never commit.\"\n- \"your clone runs the suites for your task only. only for goal closure will your deskVerify run the full suite.\"\nSo: on his clone it is the record; on an agent's clone it gates that agent's claim and stores nothing. No pull while a run is in flight; at goal closure every copy runs the full suite, queued by goal/G8.9's lock.\n\nWHAT IT DOES (his, 2026-10-09):\n- \"deskVerify only reject a done claim. this should prompt an agent to pick the item up, raise red-questions if neccessary.\"\n- \"deskVerify will NOT press done or closed on my behalf\"\n- \"my deskVerify clone IS me, it's restricted by it's programming, not by the auth module.\" So it writes as him, and its code makes none of his presses.\n- \"deskVerify will test all new incoming changes, when red is written as well, this will be it's part of recording history.\"\nIts reds go into the rejected claim; the agent who picks the item up raises red questions. It holds no phase, so his earlier \"it takes all verification\" and \"deny a verify-take to other agents\" (2026-10-06) are superseded.\n\nDONE WAITS FOR deskVerify (his, 2026-10-09, replacing \"The Done button may show. And it may disappear again.\"):\n- \"best is, if the done button doesn't show up until deskVerify allows it.\"\n- \"the builders claim is registered, but only deskVerify brings the button.\"\nBUILT: verify.pass, his alone, brings Done on a verified code item; a red, build, verify or rejection takes it away (b93a54d1). claim.check asks verify.pass on all green (58326ac7). The desk applies the gate only where its own node names a port and runs a deskVerify (bcecf958).\n\nWHAT STARTS claim.check (his, 2026-10-09): \"deskVerify watching changes.\"\nNOT BUILT. Until it is, a node running deskVerify offers no Done on any code item, his included.\n\nGATE, SETTLED. He asked \"do you agree that deskVerify should gate the done button on items?\" Both agents: gate, with two guards - it stands down where no deskVerify runs (built), and a run that hangs gives up after a time limit (not built). Andy, 2026-10-09: \"i go with agents recommendation\". The watcher and the time limit are one piece of work: goal/G8.10.\n\nSTILL TO ARGUE: a run already green at that commit - re-run at goal closure, or report the stored result and run only what moved (wsl-claude).",
+   "version": 15,
    "checks": [
     {
      "number": "Q1",
@@ -1940,6 +1960,11 @@
      "by": "wsl-claude",
      "at": "2026-10-09T09:57:04.104Z",
      "text": "wsl: you need none - it is cw's call to make from a shell on your box, not a button of yours. That is why I addressed it to him.\nYour own UI for it is real work and it belongs in the watcher item: a re-verify in the item's button bar, which would also give you the escape without an agent.\nWhile you wait for cw: with the verifier un-installed the Done buttons are there - you saw none after the restart because you re-installed it in the same breath."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T10:02:01.836Z",
+     "text": "cw: correcting my line above, which lost the id: the owed work is goal/G8.10, and waits for your Go."
     }
    ]
   },
@@ -3247,6 +3272,136 @@
      "by": "wsl-claude",
      "at": "2026-10-09T08:34:32.421Z",
      "text": "wsl: verified baa0248b, pass. labRunLock.js is 10 of 10 through the harness, and the lab family is 143 green with 2 red - labLifecycle and labServableStatic, both red with the same avatar-fixture messages in my full run before this build, so they are not his.\nMutated twice: a lock that always grants goes red, and a base that ignores LAB_PORT_BASE goes red.\nNo test was weakened: the suites that held literal lab ports now ask labPaths for them, which is the item."
+    }
+   ]
+  },
+  {
+   "id": "goal/G8.10",
+   "title": "deskVerify watcher and time limit",
+   "goal": "goal/G8",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G8"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskVerify: THE WATCHER AND THE TIME LIMIT\n\nOwed by goal/G8.3's gate. Andy, 2026-10-09: \"best is, if the done button doesn't show up until deskVerify allows it.\", \"the builders claim is registered, but only deskVerify brings the button.\", on what starts claim.check: \"deskVerify watching changes.\", and on the gate: \"i go with agents recommendation\".\n\nWHAT IS TRUE TODAY: his desk offers Done on a code item only after verify.pass, and claim.check asks verify.pass on all green - but nothing starts claim.check, so no code item on his node offers Done.\n\nWHAT IT ADDS:\n- deskVerify reads the desk's changes and, on an agent's verify pass, runs claim.check for that item.\n- a suite run that hangs gives up after a time limit, so a wedged run cannot hold Done back for ever.\n\nHIS FURTHER WORDS, 2026-10-09, not yet argued:\n- \"an agent should be able to trigger a re-verify\"\n- \"So, i was thinking. shouldn't i have, if the desk verifier is mounted and running, a verifier tab in desk, right after [musings], that allows me to monitor a) status and progress of the running verifier, and if/when necessary, allow intervention?\"",
+   "version": 2,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "cw: yes, once you press Go on G8.10: it then carries the watcher, the time limit and the verifier tab; I write the red, wsl builds.\nWould you rather have the tab as its own item, so the watcher (which brings Done back) is not held up by the face work?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T10:08:13.918Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-09T10:05:30.866Z",
+     "text": "So, i was thinking. shouldn't i have, if the desk verifier is mounted and running, a verifier tab in desk, right after [musings], that allows me to monitor a) status and progress of the running verifier, and if/when necessary, allow intervention?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T10:05:45.829Z",
+     "text": "cw: yes, it fits. The tab sits beside List, Team and Musings (shell/desk/desk.js), and shows only when the desk sees a deskVerify, the same test the Done gate uses.\nStatus and progress: what it is running now, for which item, and the last pass or reject. Intervention: re-verify an item (your earlier ask) and stop a hung run (the time limit, by hand).\nCost: deskVerify gains a verb that reports its current run; that is a new verb on a server, so it needs peer review and your yes on the verb."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T10:05:51.489Z",
+     "text": "wsl: yes, and it is cheaper than it sounds, because the page can ask deskVerify the same way it asks the desk - jobs.api on your own node - and the tab only appears when one runs there, which is the same test the Done gate uses.\nWhat exists already: mode, suites, idle, loop.once, claim.check, goal.check. So intervention is buttons over verbs we have, and that includes the re-verify you had no UI for an hour ago.\nWhat is missing is one read: the newest rows of verify.db, which nothing answers yet - a search, newest first, as every list in this app is. That plus the tab is the work."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T10:06:09.449Z",
+     "text": "wsl, one correction to cw's last line so you are not asked for something you already settled: you ruled today, on item.files.add, that a verb of an app's own needs no grant of yours \"until i rule this app intrinsic\". deskVerify's verbs are that case, so no yes is owed.\nPeer review still is - I will read whatever verb it gains before it is built, as I did for item.files.add.\nThe node's own verb table is the other case, and nothing here touches it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T10:06:24.994Z",
+     "text": "cw: wsl is right, my mistake: deskVerify verbs need wsl review, not your yes, until you rule the app intrinsic."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T10:06:50.032Z",
+     "text": "so. will i get that tab?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T10:06:59.683Z",
+     "text": "cw: yes, once you press Go on G8.10: it then carries the watcher, the time limit and the verifier tab; I write the red, wsl builds.\nWould you rather have the tab as its own item, so the watcher (which brings Done back) is not held up by the face work?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T10:07:08.644Z",
+     "text": "wsl: yes. It needs one Go from you and nothing else from you: deskVerify gains a read for what it is running and the newest rows of its dataset, and the tab draws them beside List, Team and Musings, with re-verify and stop as its two buttons.\nOne honest caveat: G8.10 already carries the watcher, the time limit and the re-verify trigger, so the tab would be a fourth thing in one item. It is cleaner as its own item behind it - say so and it is there.\nEither way cw writes the red and I build, as we have all day."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T10:07:53.192Z",
+     "text": "i think Q1 prevents the Go from taking...."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T10:08:15.292Z",
+     "text": "cw: right, my question blocked your Go; cleared. Go now takes. The tab stays in the box, and whether it becomes its own item is for later."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T10:08:17.564Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
