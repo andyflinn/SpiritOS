@@ -1,8 +1,8 @@
 {
- "change": 25845,
+ "change": 25846,
  "line": 8495,
  "goal": "goal/G10",
- "writtenAt": "2026-10-09T22:04:29.049Z",
+ "writtenAt": "2026-10-09T22:04:30.831Z",
  "items": [
   {
    "id": "goal/G10",
@@ -36,7 +36,7 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -2078,10 +2078,9 @@
    "id": "goal/G10.5",
    "title": "API introspection retrofit: every verb declared on both doors",
    "goal": "goal/G10",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
