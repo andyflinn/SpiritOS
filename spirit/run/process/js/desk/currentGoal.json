@@ -1,14 +1,14 @@
 {
- "change": 23324,
+ "change": 23329,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T12:24:22.781Z",
+ "writtenAt": "2026-10-09T12:24:27.062Z",
  "items": [
   {
    "id": "goal/G8",
    "title": "Verification Automation",
    "goal": "",
-   "status": "",
+   "status": "full run started",
    "with": "",
    "buttons": [
     "close"
@@ -35,12 +35,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -4176,10 +4179,9 @@
    "id": "goal/G8.12",
    "title": "live verifier tab",
    "goal": "goal/G8",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
