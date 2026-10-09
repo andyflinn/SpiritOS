@@ -176,7 +176,8 @@ async function faceHalf() {
   fake.items = [{ id: 'lv/G1', title: 'Live', goal: '', design: false, status: '', with: '', buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 }];
   fake.verifier = {
     now: function () { return { running: { id: '', suite: '', since: '' }, queued: [] }; },
-    'records.search': function () { return { items: [], more: false }; },
+    // A record the tab must NOT show (Andy: "i want that damn log display gone. and only show the latest status.").
+    'records.search': function () { return { items: [{ key: '1', label: JSON.stringify({ suite: 'zzLogRow.js', title: 'a logged title', outcome: 'red', commit: 'abc1234', at: new Date().toISOString() }) }], more: false }; },
     stop: function () { return { stopped: false }; },
   };
   const handlers = {};
@@ -211,6 +212,11 @@ async function faceHalf() {
   else test.fail(OWED + 'the status lines in #desk-verifier: ' + short(b));
   if (/lv\/G1\.1/.test(b) && /zzLiveA\.js/.test(b)) test.check('it says what it is testing');
   else test.fail(OWED + 'no item or suite in #desk-verifier: ' + short(b));
+  // GROWN AFTER HIS LOOK (claude-windows): "i want that damn log display gone. and only show the latest status."
+  if (!/zzLogRow\.js|a logged title|Records, newest first/.test(b)) test.check('no records list: the log display is gone');
+  else test.fail(OWED + 'the tab still draws the records list: ' + short(b.slice(b.indexOf('Records'))));
+  if (!fake.calls.some(function (c) { return c.server === 'deskVerify' && c.verb === 'records.search'; })) test.check('and the tab asks for no records at all');
+  else test.fail(OWED + 'the tab asked deskVerify records.search');
   await send({ doing: 'idle', id: '', suite: '', index: 0, of: 0, tests: 0, expected: 0, line: 'idle', since: new Date(Date.now() - 18 * 60 * 1000).toISOString() });
   const idle = body.innerHTML;
   if (/4[12]\s*min/.test(idle)) test.check('idle, it counts down to idle time: about 42 minutes left of the hour');
