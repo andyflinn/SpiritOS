@@ -106,15 +106,20 @@ function mode() {
 // deskVerify for the whole suite, and a suite posts its records to this very server through the node's door, which
 // waits about twelve seconds - so a long suite's records were all lost. Spawned and awaited instead: still one suite
 // at a time, and the event loop keeps turning, so every record that arrives mid-run is taken.
+// THE TIME LIMIT (goal/G8.10). A suite still running after SUITE_MS is stopped, and being stopped is a red of its own:
+// a hung suite prints no FAILURE line, so without this it read as all green and brought the Done button. Andy's gate
+// has two guards and this is the second. The manifest's `suiteMs` names it; a suite hands a short one.
+const SUITE_MS = Number(values.suiteMs) > 0 ? Number(values.suiteMs) : 600000;
 function runSuite(file, port) {
   return new Promise(function (resolve) {
     const out = [];
+    let timedOut = false;
     const kid = spawn(process.execPath, [file, '--verify-port', String(port)], { cwd: REPO, stdio: ['ignore', 'pipe', 'pipe'] });
-    const stop = setTimeout(function () { try { kid.kill(); } catch (e) { /* gone */ } }, 600000);
+    const stop = setTimeout(function () { timedOut = true; try { kid.kill(); } catch (e) { /* gone */ } }, SUITE_MS);
     kid.stdout.on('data', function (d) { out.push(String(d)); });
     kid.stderr.on('data', function (d) { out.push(String(d)); });
-    kid.on('exit', function (code) { clearTimeout(stop); resolve({ code: code, said: out.join('') }); });
-    kid.on('error', function () { clearTimeout(stop); resolve({ code: 1, said: '' }); });
+    kid.on('exit', function (code) { clearTimeout(stop); resolve({ code: code, said: out.join(''), timedOut: timedOut }); });
+    kid.on('error', function () { clearTimeout(stop); resolve({ code: 1, said: '', timedOut: timedOut }); });
   });
 }
 
@@ -189,10 +194,18 @@ function claimCheck(id) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
   return suitesOf(id).then(async function (list) {
     const reds = [];
+    // NOTHING TO RUN IS NOT A PASS (goal/G8.10, grown from rule/11 point 2): an item with no test file on its list had
+    // no reds, and no reds asked verify.pass - so it took the Done button without one assertion having run. A list with
+    // nothing on it, and a listed file that is gone, are both rejections now, and the missing file is named.
+    if (!list.length) reds.push({ suite: '(no test file on the item\'s list)', failures: ['nothing to run, so nothing passed'] });
     for (const rel of list) {
       const file = path.join(REPO, rel);
-      if (!fs.existsSync(file)) continue;
-      const said = (await runSuite(file, port)).said;
+      if (!fs.existsSync(file)) { reds.push({ suite: rel, failures: ['the listed test file is missing from this checkout'] }); continue; }
+      const run = await runSuite(file, port);
+      const said = run.said;
+      // Stopped at the time limit: red, whatever it printed. Its own lines still come, so a suite that failed and then
+      // hung names both.
+      if (run.timedOut) reds.push({ suite: rel, failures: ['stopped at the time limit of ' + SUITE_MS + 'ms, so it counts as red'] });
       // The failures as the suite printed them, so the why names what went red rather than only which file did.
       // THE PRINTED LINES ARE THE VERDICT, not the exit code: testSupport sets exitCode 1 on a failure, but a suite
       // that ends with process.exit(0) - most of them do - overrides it, and runAll reads the printed report for the
@@ -213,6 +226,61 @@ function claimCheck(id) {
         function () { return { rejected: true, reds: reds.map(function (x) { return x.suite; }) }; });
   });
 }
+
+// THE WATCHER (goal/G8.10). Andy, 2026-10-09, on what starts the check: "deskVerify watching changes.", and "an agent
+// should be able to trigger a re-verify". Until now claim.check was a verb nobody called, so no code item on his node
+// ever got its Done button. This reads the desk's own `changes` from a cursor of its own - the idle cursor is another
+// reader and the two must not eat each other's pages - and runs the check on two words and no others:
+//   a verifier's pass   phase.done, phase verify, pass true
+//   an agent's re-verify  verify.again
+// What is already on the record when it starts triggers nothing (a restart would re-run the whole history), each record
+// triggers once, and one check runs at a time: two suite runs on one host fight over the lab ports (goal/G8.9).
+// A failed verify is not watched: it went back to build by itself, and there is nothing to pass.
+// ON HIS NODE ONLY: an agent's deskVerify is a personal check (goal/G8.3, "it will never commit"), so it watches
+// nothing and speaks to no desk; mode() says which node this is.
+const WATCH_MS = Number(values.watchMs) > 0 ? Number(values.watchMs) : 5000;
+let watchAt = -1;
+let checking = false;
+const watchQueue = [];
+function watched(r) {
+  let b = null;
+  try { b = JSON.parse(r && r.body || 'null'); } catch (e) { b = null; }
+  if (!b || !b.id) return '';
+  if (r.verb === 'verify.again') return String(b.id);
+  if (r.verb === 'phase.done' && String(b.phase) === 'verify' && b.pass === true) return String(b.id);
+  return '';
+}
+async function drainQueue() {
+  if (checking) return;
+  checking = true;
+  try {
+    while (watchQueue.length) {
+      const id = watchQueue.shift();
+      try { await claimCheck(id); } catch (e) { /* the desk is the record; a failed check is asked again by its next word */ }
+    }
+  } finally { checking = false; }
+}
+async function watchOnce() {
+  const m = await mode();
+  if (m.mode !== 'desk') return { read: 0, queued: [] };
+  const queued = [];
+  let read = 0;
+  for (let i = 0; i < 10000; i++) {
+    const page = await desk('changes', { n: Math.max(watchAt, 0), line: 0 });
+    const recs = Array.isArray(page.records) ? page.records : [];
+    const n = Number(page.n);
+    read += recs.length;
+    // The first read only moves the cursor to the end: the history is not re-checked.
+    if (watchAt >= 0) recs.forEach(function (r) { const id = watched(r); if (id) queued.push(id); });
+    if (n > watchAt) watchAt = n;
+    if (!page.more || !recs.length) break;
+  }
+  queued.forEach(function (id) { watchQueue.push(id); });
+  if (queued.length) drainQueue();
+  return { read: read, queued: queued };
+}
+const watcher = setInterval(function () { watchOnce().catch(function () { /* next tick */ }); }, WATCH_MS);
+if (watcher.unref) watcher.unref();
 
 // IDLE TIME (goal/G8.4). Andy, 2026-10-06: "when it's agent or it's desk have been idle for more than an hour". The box
 // adds what the hour alone misses: a node whose agent holds a phase is busy however long the silence. So idle is an

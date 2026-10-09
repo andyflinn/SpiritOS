@@ -538,6 +538,10 @@ function apply(s, r, b, item, goalOf) {
       it.with = '';
       it.status = 'running';
       return;
+    // AN AGENT'S RE-VERIFY (goal/G8.10). Andy, 2026-10-09: "an agent should be able to trigger a re-verify." It changes
+    // nothing of the item - not its phase, not its verified mark, not its buttons: the record itself is the word, and
+    // deskVerify's watcher reads it and runs the item's suites again.
+    case 'verify.again': return;
     // TAKING THE BOX (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
     // is red. cap also." The handler refuses a take while another stands, so what reaches here always lands.
     case 'box.take': it.boxTakenBy = r.by; it.takers[r.by] = true; return;
@@ -1914,6 +1918,18 @@ appServer.serve({
       const why = String(a.why || '').trim();
       write('chat.add', { id: a.id, text: 'verify rejected: ' + (why || 'the item\'s suites did not hold'), by: 'desk', key: '' });
       return { change: change };
+    },
+  },
+  // AN AGENT'S RE-VERIFY (goal/G8.10). Andy, 2026-10-09: "an agent should be able to trigger a re-verify." Any agent,
+  // not his alone, and only on a verified code item - before a verify there is nothing to redo, and the refusal keeps a
+  // stray call from sitting on the record as a trigger. It writes the record and touches no field of the item.
+  'verify.again': {
+    request: { id: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      return { change: write('verify.again', { id: a.id, by: w.by, key: w.key }, function (st, it) {
+        if (!it || !it.code || it.verified !== true) throw refused('not-offered');
+      }).change };
     },
   },
   'item.status': { request: { id: '', word: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.status', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
