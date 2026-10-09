@@ -389,6 +389,7 @@ function apply(s, r, b, item, goalOf) {
     case 'session.set': {
       const sess = b.session;
       const gid = String(sess.goal.id);
+      const fresh = !s.goals[gid];
       const g = s.goals[gid] || (s.goals[gid] = { id: gid, design: true, abandoned: false, members: [] });
       const goalItem = s.items[gid] || (s.items[gid] = blank(gid, '', ''));
       goalItem.title = String(sess.goal.title || goalItem.title);
@@ -442,7 +443,12 @@ function apply(s, r, b, item, goalOf) {
       const kept = g.members.filter(function (id) { return ids.indexOf(id) === -1 && s.items[id]; });
       kept.forEach(function (id) { s.items[id].closed = true; s.items[id].leftOut = true; });
       g.members = ids.concat(kept);
-      s.current = gid;
+      // AN ADD NEVER MOVES THE CURRENT GOAL (goal/G9.13). Andy, 2026-10-09: "An item added to another goal should NOT
+      // change a goal.", after cw's add to goal/G8 moved his current goal off goal/G9. So a session that writes into a
+      // goal the desk already holds leaves the current goal alone; setting up a goal the desk has never seen still
+      // makes it current, as it always did (deskMakeCurrent.js), and his make-current press is the only other way it
+      // moves. His decision: do not widen this back so a bulk write lands where its writer expects.
+      if (fresh || !s.current || !s.items[s.current]) s.current = gid;
       return;
     }
     case 'box.write':
@@ -506,6 +512,33 @@ function apply(s, r, b, item, goalOf) {
     // TAKING THE BOX (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
     // is red. cap also." The handler refuses a take while another stands, so what reaches here always lands.
     case 'box.take': it.boxTakenBy = r.by; it.takers[r.by] = true; return;
+    // THE DESK OWNS THE IDS (goal/G9.9). Andy, 2026-10-07: "the desk owns (is in charge of) goal and item ID's.", and
+    // on who uses the verbs: "why should the agents need to, they can use the same api's the user needs to create
+    // them." The id is minted at the write and kept in the record as `minted`, so a walk of the records never mints
+    // again. Neither add moves the current goal (goal/G9.13).
+    case 'goal.add': {
+      const gid = String(b.minted || '');
+      if (!gid) return;
+      if (!s.goals[gid]) s.goals[gid] = { id: gid, design: true, abandoned: false, members: [] };
+      const gi = s.items[gid] || (s.items[gid] = blank(gid, '', ''));
+      gi.title = String(b.title || gi.title);
+      gi.at = r.at;
+      return;
+    }
+    case 'item.add': {
+      const gid = String(b.goal || '');
+      const id = String(b.minted || '');
+      const g = s.goals[gid];
+      if (!id || !g) return;
+      const one = s.items[id] || (s.items[id] = blank(id, '', gid));
+      one.title = String(b.title || one.title);
+      one.goalId = gid;
+      // A plain add blocks its goal, as a session's item with no blocks does; G9.10's form adds the other relation.
+      one.blocks = [gid];
+      one.at = r.at;
+      if (g.members.indexOf(id) === -1) g.members.push(id);
+      return;
+    }
     case 'press': press(s, it, String(b.what), r, goalOf, b); return;
     // THE LISTENER'S WORD (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
     // stops when the agent goes back to listening. the listening script can toggle those two?"
@@ -1093,6 +1126,31 @@ const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring
 const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen', 'waive', 'make-current'];
 function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
 
+// THE NEXT ID THE DESK HANDS OUT (goal/G9.9), minted inside the write, from the state the write walked.
+// A goal: one past the highest G<n> of the current goal's area, so an add in `goal/` never counts `other/`; with no
+// current goal, the area is `goal`. An item: one past the highest <goal>.<n> the desk holds, closed and left-out ones
+// counted, so an id is never handed out twice.
+function areaOf(id) { const at = String(id).indexOf('/'); return at > 0 ? String(id).slice(0, at) : ''; }
+function nextGoalId(s) {
+  const area = areaOf(s.current) || 'goal';
+  let top = 0;
+  Object.keys(s.goals).forEach(function (id) {
+    const m = /^([^/]+)\/G(\d+)$/.exec(id);
+    if (m && m[1] === area) top = Math.max(top, Number(m[2]));
+  });
+  return area + '/G' + (top + 1);
+}
+function nextItemId(s, gid) {
+  const head = String(gid) + '.';
+  let top = 0;
+  Object.keys(s.items).forEach(function (id) {
+    if (id.indexOf(head) !== 0) return;
+    const tail = id.slice(head.length);
+    if (/^\d+$/.test(tail)) top = Math.max(top, Number(tail));
+  });
+  return head + (top + 1);
+}
+
 // WHO WRITES (apiAuth/G1.13): the caller appServer hands the handler,
 // never an argument — Andy: "yes. the label will only be used for
 // labeling in chat, and for referencing members, internally desk server
@@ -1326,6 +1384,37 @@ appServer.serve({
       const sess = parsed(a.json);
       if (!sess.goal || !sess.goal.id || !Array.isArray(sess.items)) throw new Error('a session needs its goal and items');
       return { change: write('session.set', { session: sess, by: w.by, key: w.key }).change };
+    },
+  },
+  // ONE GOAL, ONE ITEM, AND THE DESK NAMES IT (goal/G9.9). Andy, 2026-10-07: "the desk owns (is in charge of) goal and
+  // item ID's.", and "why should the agents need to, they can use the same api's the user needs to create them." So the
+  // same two verbs serve him and the agents, the id comes back in the answer, and nobody sends one: an `id` argument is
+  // refused by the door as no-such-argument. Decided by Andy; rule/9 governs when the bulk session.set may be used
+  // instead. An add never moves the current goal (goal/G9.13).
+  'goal.add': {
+    request: { title: '' }, reply: { id: '', change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      const title = String(a.title || '').trim();
+      if (!title) throw refused('bad-request');
+      const args = { title: title, by: w.by, key: w.key };
+      const r = write('goal.add', args, function (st) { args.minted = nextGoalId(st); });
+      return { id: args.minted, change: r.change };
+    },
+  },
+  'item.add': {
+    request: { goal: '', title: '' }, reply: { id: '', change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      const gid = String(a.goal || '');
+      const title = String(a.title || '').trim();
+      if (!title) throw refused('bad-request');
+      const args = { goal: gid, title: title, by: w.by, key: w.key };
+      const r = write('item.add', args, function (st) {
+        if (!st.goals[gid] || !st.items[gid]) throw refused('no-such-item');
+        args.minted = nextItemId(st, gid);
+      });
+      return { id: args.minted, change: r.change };
     },
   },
   // Andy: "the FIRST text wins, all subsequent actions are alterations and
