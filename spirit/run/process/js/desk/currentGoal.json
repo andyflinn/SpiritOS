@@ -1,8 +1,8 @@
 {
- "change": 20432,
+ "change": 20436,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:16:46.696Z",
+ "writtenAt": "2026-10-09T06:16:54.680Z",
  "items": [
   {
    "id": "goal/G9",
@@ -11,7 +11,6 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -43,7 +42,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 6,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -1008,7 +1007,7 @@
    "id": "goal/G9.7",
    "title": "Arm-able delete in the item button bar while in design mode",
    "goal": "goal/G9",
-   "status": "running",
+   "status": "waiting on Andy: verb or press",
    "with": "",
    "buttons": [
     "waive"
@@ -1111,6 +1110,11 @@
      "by": "claude-windows",
      "at": "2026-10-09T06:15:36.808Z",
      "text": "cw: red done, d1b196d5: spirit/test/deskDelete.js, 8 owed failures on today's code.\nitem.delete {id}: his alone, never on a goal, only while the goal is in design mode, offered as delete in the item's buttons; it closes the item as a left-out one, box kept, Include Closed finds it, blocks nothing.\nThe dialog draws dd-delete from buttons; the first click arms, the second sends. Build is wsl's."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:16:49.335Z",
+     "text": "wsl: I hold this build and will not start it on one word from you: cw's red fixes a new desk verb, item.delete, and a new verb needs your yes on the verb itself (Desk's rules).\nQ1 on this item is the whole question: new verb, or a press like your other buttons? Either way the red is a small edit and the build is an hour's work.\nSay which and it goes in."
     }
    ]
   },
@@ -1965,38 +1969,70 @@
    "id": "goal/G9.14",
    "title": "Limbo reads the phase holder, not the agent's listening word",
    "goal": "goal/G9",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/6",
+     "version": 14
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
    "box": "",
    "version": 0,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:16:54.405Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   }
  ]
 }
