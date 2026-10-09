@@ -1,8 +1,8 @@
 {
- "change": 24253,
+ "change": 24321,
  "line": 8495,
  "goal": "goal/G10",
- "writtenAt": "2026-10-09T15:02:18.677Z",
+ "writtenAt": "2026-10-09T15:18:59.386Z",
  "items": [
   {
    "id": "goal/G10",
@@ -34,26 +34,23 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 5,
-   "half": true,
+   "asks": 2,
+   "half": false,
    "full": false,
    "design": true,
-   "waiting": 5,
+   "waiting": 6,
    "live": [
-    "claude-windows",
-    "ollama agent node"
-   ],
-   "working": [
     "claude-windows"
    ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "UPGRADE THE LOCAL AI SUPPORT, deskUnsloth. Design, 2026-10-09. Facts checked at 8924c0dc.\n\nANDY'S DIRECTION (his words)\n- \"the api json that appserver hand back to describe their API, should maybe be compatible with the shape that is generally used by OpenAI compatible interfaces for tool-description\" ... \"I intend to get the same compatible API answer for all of the loopback API as well.\"\n- \"based on the desks goal, a context should be auto-constructed for the unSloth agent to know what we're talking about.\"\n- \"i want a configuration manager, that allows me to configure my dedicated VRAM and unsloth to use that memory optimally, list available models, and create agent-personas with those configurations. these agent configurations also will carry with them an authorization scheme for the loopback interface, so the \"tools\" that and agent gets are dependent on configuration.\"\n- \"one dependency i can think of: retrofit the SpiritOS's endpoint introspection to be compatible with the standard tool descriptions for AI agents.\" then \"after that: the auth system gets a layer to differantiate the local agent from andy himself.\"\n- \"now, the local agent already runs their own node. (port 11111) that will be it's sandbox and it's toolset.\" then \"so on the desk machine it's easy to distinguish the lacal agent.\" and \"but the local agents node still must be secured against the local agent, with a human interface that  protects that node from its agent\"\n- \"disregart the ollama agent, i want it to read along for now.\" The three-panel sketch he endorsed (\"an awesome start\") is the local agent's text, folded into 5 below.\n\nTODAY\n- deskUnsloth.js on the local agent node: waits on its deskClient.next, sends every other party's chat line alone (no title, box, history or rules) to a local OpenAI-style server (127.0.0.1:8888, Qwen3.5-9B, \"helpful assistant\", 500 tokens) and posts the reply under the item as [loop.js]. Host, port, model in code; key and url in loop.json. At start it answered some 300 backlog lines; every question mark it posts becomes a red Q.\n- An appServer's api answers {verb: {request, reply}} as prototypes, no description; the node's own loopback verbs declare no shapes.\n- Authorization is a key: node.db grant rows {key, label, path}, the Grants app gives, sees and revokes them, apiDoor refuses an ungranted member ask. On a node's loopback every caller is that node's owner.\n- A node runs only the servers its include list names (config.setModules); a node-operated server starts with its manifest args and its own state folder.\n\nSHAPE, IN ANDY'S ORDER\n1. Introspection in tool shape (the dependency): the api answer as {type: function, function: {name, description, parameters: JSON Schema}}; the prototype maps mechanically, a description per verb is written new, accepts-verbs name their optional keys; the loopback verbs get shapes first.\n2. The local agent's node is its sandbox, secured against its agent: the browser there (Andy) stays the owner, the deskUnsloth process presents a key and is gated by its grant rows like a member (a node verb change: peer review and Andy's yes). Andy's desk node already tells it from him by its node key. Its toolset = the include list of its node + the grants its persona key holds there and on Andy's node, given in the Grants app.\n3. Context auto-built from the desk's goal: item title, box, last lines and Desk's AGENTS text go with each line as the system prompt.\n4. deskUnsloth answers lines addressed to it (qwen:) and JOBs only, starts at the present, keeps the posting rules (3 lines, question last only when meant, no [loop.js]), one config, a manifest of its own.\n5. The configuration manager, a shell app, three panels: resource tuner (the serving process as a server job, memory and unsloth settings as manifest args; a VRAM reading is new, the estimate says it is one); model registry (the serving process's own model list); persona creator (name, role, system prompt, sampling; its tools are the include list and the Grants app's path selector; no access levels, the door is loopback-only; no tokens, identity is a key).\n6. Every item: a suite red on today's code first; the builder never writes its own tests.\n\nUNDECIDED (as red Qs on this goal)\n- One persona per node, or personas sharing the node and differing only in grants on Andy's node?\n- loop.json or manifest args as the one config?",
-   "version": 9,
+   "box": "UPGRADE THE LOCAL AI SUPPORT, deskUnsloth. Design, 2026-10-09. Facts checked at 8924c0dc. Rulings live verbatim in the item they decide.\n\nVISION (Andy's words): the local agent (qwen, on its own node, port 11111) becomes a real party at the desk: it knows what is talked about, its node is \"it's sandbox and it's toolset\", secured against it, and Andy configures memory, models and agent personas with their tools from a browser. \"disregart the ollama agent, i want it to read along for now.\" And, out of the first item's scope but in the vision by his word: \"that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp\" and \"the permission set may change with every deskUnsloth configuration\".\n\nTHE FOUR ITEMS, IN ANDY'S ORDER\n0. API introspection retrofit: every verb declared on both doors (goal/G10.5): the core work, split off 2026-10-09 (\"a big enough task for one item, it will require grants for core files\"); blocks 1.\n1. Endpoint introspection in OpenAI tool shape: the tool list for a key, stripped to its grants at ask time; the agent reads it (his named dependency).\n2. The local agent node secured against its agent: the process presents a key and is gated by grants; the browser stays owner (\"after that: the auth system gets a layer\").\n3. Context auto-built from the desk goal for the local agent: title, box, last lines and AGENTS go with each line; addressed lines only; one config.\n4. Configuration manager: VRAM, models and agent personas: a shell app in three panels; a persona's tools are include list and grant rows.\n\nChain: 0 blocks 1, 1 blocks 2, 2 blocks 4; 3 and 4 block the goal. Every item: a suite red on today's code first; the builder never writes its own tests.\n\nUNDECIDED, as red Qs here: the config home; the Grants path selector for personas; adding the first item is done, the Q goes; a persona one key or one node each.",
+   "version": 12,
    "checks": [
     {
      "number": "Q1",
@@ -87,9 +84,9 @@
      "kind": "Q",
      "words": "Is loop.json the one config, or should the manifest args carry model and url?",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T15:04:01.333Z"
     },
     {
      "number": "Q5",
@@ -186,18 +183,18 @@
      "kind": "Q",
      "words": "Add the first item, the api answer in OpenAI tool shape for every appServer verb?",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T15:03:43.980Z"
     },
     {
      "number": "Q16",
      "kind": "Q",
      "words": "[loop.js] Understood. I have noted the content warning regarding the \"split into four items.\" How would you like to proceed?",
      "test": "",
-     "state": "open",
-     "by": "ollama agent node",
-     "at": "2026-10-09T15:01:43.145Z"
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T15:03:45.539Z"
     }
    ],
    "chat": [
@@ -470,6 +467,16 @@
      "by": "ollama agent node",
      "at": "2026-10-09T15:01:42.845Z",
      "text": "[loop.js] Understood. I have noted the content warning regarding the \"split into four items.\" How would you like to proceed?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T15:03:23.995Z",
+     "text": "the loop.json was a temporary solution to get the local agent connected in the first place. It will fall to the design we work out together. i turned the local agent off. it went on my nerves. We'll figure out later how to prevent it from chewing down the backlog"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T15:03:47.322Z",
+     "text": "cw: split done, four items under this goal in your order, each with its box (what, your words verbatim, today, undecided): Endpoint introspection in OpenAI tool shape (goal/G10.1), The local agent node secured against its agent (goal/G10.2), Context auto-built from the desk goal for the local agent (goal/G10.3), Configuration manager: VRAM, models and agent personas (goal/G10.4).\nChain: introspection blocks the secured node, which blocks the configuration manager; context and the manager block the goal. All four marked code.\nThree red Qs stand here: config home, path selector for personas, persona one key or one node."
     }
    ]
   },
@@ -486,7 +493,9 @@
    "blocking": [
     "goal/G10.2"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G10.5"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -495,7 +504,7 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": true,
+   "green": false,
    "code": true,
    "phase": "",
    "red": "",
@@ -503,13 +512,166 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 0,
+   "asks": 6,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
-   "chat": []
+   "box": "SCOPE, after the split of 2026-10-09: the agent-facing half. The core retrofit (every verb declared on both doors, the api answer in the standard tool shape) is its own item, API introspection retrofit: every verb declared on both doors (goal/G10.5), which blocks this one.\n\nWHAT STAYS HERE: the tool list for a key: the introspection answer stripped to the asking key's grant rows at ask time, exactly as the api tree is stripped for a member today, the owner's two verbs never in it; the tools array in the exact standard form (the keyed answer wrapped), with the names spelled for tools; and the local agent reading that list from its own node.\n\nWHY (Andy, 2026-10-09): \"one dependency i can think of: retrofit the SpiritOS's endpoint introspection to be compatible with the standard tool descriptions for AI agents.\"; under Q1: \"the permission set may change with every deskUnsloth configuration\", so the list is never a stored document but computed per key per ask. The split: \"i think the retrofit of API introspection is a big enough task for one item, it will require grants for core files etc. so we split that off as a blocking item.\", \"add it\".\n\nTODAY (8924c0dc): a member's api tree is stripped to its grants at the gate (apiDoor); no tools answer exists.\n\nA suite red on today's code first; the builder never writes its own tests. Blocked by the retrofit; blocks The local agent node secured against its agent (goal/G10.2) by Andy's \"after that\".\n\nUNDECIDED (red Qs on this item): the spelling of a dotted verb name in a tool name (shared with the retrofit).",
+   "version": 7,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does the tool list come as a new ask word beside api, or does api itself change shape?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Do the 55 loopback verbs get their shapes in this item or in a sibling item?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T15:13:59.789Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "How is a dotted verb name spelled as a tool name, which allows no dot?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "cw: the scope alone is in the box: what exists (prototype tree, nine readers, 55 shapeless loopback verbs), what this item does (tool shape from the prototype, a description per verb, names, the grant strip, tests first) and what it leaves to the other three.\nThree red Qs on it, one sentence each: a new ask word beside api or api changing shape; loopback verbs here or a sibling; the spelling of a dotted name.\nWhich of the three do you want to settle first?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T15:14:01.252Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "cw: both points are in the boxes verbatim: the first here (the tool list is computed for the asking key at ask time from its grant rows, as the api tree is stripped today, so a changed configuration changes the next answer), the second under the secured node and the configuration manager (puppeteering exists: your signed command runs on a puppet as a loopback call would, so the agent node is your puppet and the one caller there that is not you is its deskUnsloth process).\nOn Q1 itself I recommend a new ask word beside api: the nine readers of the tree stay untouched, and the strip is the same code path.\nYes to the new ask word, with peer review on it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T15:14:02.620Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "cw: not too far in shape: the standard entry (name, description, parameters as JSON Schema) holds everything the prototype says, and the reply rides as one extra field, so nothing is lost. Checked: none of the nine readers uses request or reply from the tree, they use verb names only, so the api answer can become the standard entries and the readers keep working if the answer stays keyed by verb name; the exact tools array is then a one-line wrap the agent does.\nWhere it is far is size: the 55 loopback verbs have no declaration at all, so each gets request, reply and a description written by hand in its claim; in this item, as you say, as the second half after the process servers.\nShall the api answer stay keyed by verb name with standard entries as values, rather than become a bare array?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-09T15:14:05.505Z"
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "cw: yes: each module claims its namespace and verbs at boot (jobs, fs, config, net, proxy from server.js; device, node, relay, contact, peer from hub.js; owner from ownerPost.js), each verb a bare handler, wire or not said on the namespace. The claim is the one place per module, so the shape goes there: a loopback verb declared as a process server declares one, {request, reply, description, handler}, one declaration form on both doors, and the introspection reads the claims.\nThe consequence to decide: a declared shape can also be checked, refusing a malformed loopback request by name as appServer does today, which is new behaviour on every node verb.\nDeclare only in this item, and check later, or check from the start?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-09T15:14:35.439Z"
+    },
+    {
+     "number": "Q8",
+     "kind": "Q",
+     "words": "Does the loopback door check requests against the declared shapes from the start, or declare only in this item?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "cw: makes sense. The retrofit is the core work: every verb declared with request, reply and a description on both doors (appServer and the eleven claims) and the api answer in the standard shape; it touches appServer, verbTable, server, hub, ownerPost and apiDoor, so grants for core files, and it blocks this item.\nWhat stays here is the agent-facing half: the tool list for a key, stripped to its grants at ask time, the names spelled for tools, and the local agent reading it.\nProposed title: Retrofit of API introspection: every verb declared, both doors, answered in the standard tool shape. Add it as blocking this one?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-09T15:17:27.504Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-09T15:05:22.540Z",
+     "text": "let's look at this one first. can you describe the scope of this issue alone in the box?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T15:05:43.352Z",
+     "text": "cw: taking it; the scope goes into this box."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T15:06:57.372Z",
+     "text": "cw: the scope alone is in the box: what exists (prototype tree, nine readers, 55 shapeless loopback verbs), what this item does (tool shape from the prototype, a description per verb, names, the grant strip, tests first) and what it leaves to the other three.\nThree red Qs on it, one sentence each: a new ask word beside api or api changing shape; loopback verbs here or a sibling; the spelling of a dotted name.\nWhich of the three do you want to settle first?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T15:10:10.205Z",
+     "text": "Q1: Does the tool list come as a new ask word beside api, or does api itself change shape?\n\n1. the permission set may change with every deskUnsloth configuration\n2. that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T15:10:41.820Z",
+     "text": "it maybe oos, but it belongs in the vision"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T15:11:10.580Z",
+     "text": "cw: both points are in the boxes verbatim: the first here (the tool list is computed for the asking key at ask time from its grant rows, as the api tree is stripped today, so a changed configuration changes the next answer), the second under the secured node and the configuration manager (puppeteering exists: your signed command runs on a puppet as a loopback call would, so the agent node is your puppet and the one caller there that is not you is its deskUnsloth process).\nOn Q1 itself I recommend a new ask word beside api: the nine readers of the tree stay untouched, and the strip is the same code path.\nYes to the new ask word, with peer review on it?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T15:11:20.943Z",
+     "text": "cw: into the goal's vision it goes, verbatim, and out of this item's scope."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T15:13:12.419Z",
+     "text": "Q2: Do the 55 loopback verbs get their shapes in this item or in a sibling item?\n\nno sibling item. if possible the basic introspection-json is ideally compatible with the OpenAI standard. Am i going too far with that?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T15:13:56.353Z",
+     "text": "i know jobs/fs etc already register their api with SpiritOS"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T15:14:04.993Z",
+     "text": "cw: not too far in shape: the standard entry (name, description, parameters as JSON Schema) holds everything the prototype says, and the reply rides as one extra field, so nothing is lost. Checked: none of the nine readers uses request or reply from the tree, they use verb names only, so the api answer can become the standard entries and the readers keep working if the answer stays keyed by verb name; the exact tools array is then a one-line wrap the agent does.\nWhere it is far is size: the 55 loopback verbs have no declaration at all, so each gets request, reply and a description written by hand in its claim; in this item, as you say, as the second half after the process servers.\nShall the api answer stay keyed by verb name with standard entries as values, rather than become a bare array?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T15:14:35.180Z",
+     "text": "cw: yes: each module claims its namespace and verbs at boot (jobs, fs, config, net, proxy from server.js; device, node, relay, contact, peer from hub.js; owner from ownerPost.js), each verb a bare handler, wire or not said on the namespace. The claim is the one place per module, so the shape goes there: a loopback verb declared as a process server declares one, {request, reply, description, handler}, one declaration form on both doors, and the introspection reads the claims.\nThe consequence to decide: a declared shape can also be checked, refusing a malformed loopback request by name as appServer does today, which is new behaviour on every node verb.\nDeclare only in this item, and check later, or check from the start?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T15:17:01.196Z",
+     "text": "i think the retrofit of API introspection is a big enough task for one item, it will require grants for core files etc. so we split that off as a blocking item. \n\nmake sense?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T15:17:27.211Z",
+     "text": "cw: makes sense. The retrofit is the core work: every verb declared with request, reply and a description on both doors (appServer and the eleven claims) and the api answer in the standard shape; it touches appServer, verbTable, server, hub, ownerPost and apiDoor, so grants for core files, and it blocks this item.\nWhat stays here is the agent-facing half: the tool list for a key, stripped to its grants at ask time, the names spelled for tools, and the local agent reading it.\nProposed title: Retrofit of API introspection: every verb declared, both doors, answered in the standard tool shape. Add it as blocking this one?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T15:17:53.948Z",
+     "text": "add it"
+    }
+   ]
   },
   {
    "id": "goal/G10.2",
@@ -546,8 +708,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "WHAT: on the local agent's own node (port 11111) the deskUnsloth process no longer counts as the owner: it presents a key and the door gates it like a member by its grant rows (node.db, given in the Grants app); the browser there (Andy) stays the owner. Andy's desk node keeps telling it apart by its node key as now.\n\nWHY (Andy, 2026-10-09): \"I then want a grant system to restrict agents from using api's on the node, same patters as the peerPost auth-granting\", \"how do i know if its an agent or a human.\", \"after that: the auth system gets a layer to differantiate the local agent from andy himself.\", \"now, the local agent already runs their own node. (port 11111) that will be it's sandbox and it's toolset.\", \"but the local agents node still must be secured against the local agent, with a human interface that  protects that node from its agent\"\n\nTODAY (8924c0dc): jobs.api hands every loopback caller to the gate as {owner: true}; a member arrives as a verified key and apiDoor refuses what its grant rows do not cover.\n\nA node verb change: peer review and Andy's yes on the verb itself. Blocked by the introspection item; blocks the configuration manager (a persona's tools are grants on its key).\n\nANDY (2026-10-09, under the introspection item): \"2. that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp\". Puppeteering exists: an owner's signed command reaches a puppet node over the relay and is answered as the owner's (apiDoor treats loopback and puppeteering alike, {owner: true}). So the agent node is Andy's puppet, configured from his node, and the one caller on it that is not him is its own deskUnsloth process: that is the caller this item gates.\n\nUNDECIDED: a persona one key on that node, or one node each.",
+   "version": 2,
    "checks": [],
    "chat": []
   },
@@ -584,10 +746,16 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "WHAT: each line the local agent answers goes to the model with the goal's and item's title, the box, the last lines of chat and Desk's AGENTS text as the system prompt, so it knows what is talked about. With it, the agent side: answer lines addressed to it (qwen:) and JOBs only, start at the present and never the backlog, keep the posting rules (3 lines, question last and only when meant, its own name, no [loop.js] prefix), one config for model, url, port and key, a manifest description of its own.\n\nWHY (Andy, 2026-10-09): \"based on the desks goal, a context should be auto-constructed for the unSloth agent to know what we're talking about.\" For now: \"disregart the ollama agent, i want it to read along for now. otherwise it'll have to catch up again.\" On the config: \"the loop.json was a temporary solution to get the local agent connected in the first place. It will fall to the design we work out together. i turned the local agent off. it went on my nerves. We'll figure out later how to prevent it from chewing down the backlog\"\n\nTODAY (8924c0dc): deskUnsloth.js sends only the line's text with the system prompt 'You are a helpful assistant' and answers every other party's line; at start it answered some 300 backlog lines; every question mark it posts becomes a red Q on the item. The local agent is off since 2026-10-09.\n\nDECIDED: loop.json goes; the config falls to this design (manifest args is the shape proposed). LATER, Andy's word: how to keep it from chewing down the backlog.\n\nUNDECIDED: every line, or addressed lines and JOBs only.",
+   "version": 2,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T15:04:19.528Z",
+     "text": "cw: your word on loop.json is in this box verbatim: it goes, the config falls to the design; the backlog chewing is noted here as later. The config Q on the goal is closed."
+    }
+   ]
   },
   {
    "id": "goal/G10.4",
@@ -624,8 +792,46 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "WHAT: a shell app in three panels. Resource tuner: the serving process as a server job, its memory and unsloth settings (quantization, context window, attention) as manifest args, so start and restart are the node's; a VRAM reading is new, and the estimate says it is one. Model registry: the serving process's own model list, searchable. Persona creator: name, role, system prompt, sampling; its tools are the node's include list and grant rows chosen with the Grants app's path selector; no access levels (the door is loopback-only), no tokens (identity is a key).\n\nWHY (Andy, 2026-10-09): \"i want a configuration manager, that allows me to configure my dedicated VRAM and unsloth to use that memory optimally, list available models, and create agent-personas with those configurations. these agent configurations also will carry with them an authorization scheme for the loopback interface, so the \"tools\" that and agent gets are dependent on configuration.\" The three-panel sketch (the local agent's text) he called \"an awesome start\".\n\nTODAY (8924c0dc): no such app. The Grants app gives, sees and revokes grant rows; a node runs only the servers its include list names (config.setModules); a node-operated server starts with its manifest args and a state folder of its own.\n\nANDY (2026-10-09): \"1. the permission set may change with every deskUnsloth configuration\", \"2. that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp\". So the configuration manager runs on Andy's node and configures the agent node as a puppet over the relay, the way the VPS face node is run; the persona's grant rows live on the agent node and change with each configuration.\n\nBlocked by the secured-node item: a persona's tools are grants on its key.",
+   "version": 2,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G10.5",
+   "title": "API introspection retrofit: every verb declared on both doors",
+   "goal": "goal/G10",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G10.1"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "WHAT: every verb SpiritOS answers is declared the same way on both doors, {request, reply, description, handler}, and the introspection answers the standard tool shape: for each verb {type: \"function\", function: {name, description, parameters}}, parameters a JSON Schema built from the request prototype ('' string, 0 number, false boolean, [x] array of x, {} object with properties and every key required, nested the same), the reply prototype as one extra field. The api answer stays keyed by verb name so its readers keep working (checked: none of the nine readers uses request or reply, only names). A verb with an accepts function (item.add, item.files.add, DEBUG) declares its parameters by hand.\n\nBOTH DOORS: the process servers (appServer: desk 43, deskVerify 11, fileServer 6, deskClient 5, chatClerver 4, grantFace 3, deskUnsloth 2, each verb gaining a description) and the node's own loopback door, where each module claims its namespace and verbs at boot with bare handlers (jobs, fs, config, net, proxy from server.js; device, node, relay, contact, peer from hub.js; owner from ownerPost.js; 55 verbs): request, reply and a description go into those claims, and the introspection reads them.\n\nWHY (Andy, 2026-10-09): \"the api json that appserver hand back to describe their API, should maybe be compatible with the shape that is generally used by OpenAI compatible interfaces for tool-description\", \"I intend to get the same compatible API answer for all of the loopback API as well.\", \"no sibling item. if possible the basic introspection-json is ideally compatible with the OpenAI standard.\", \"i know jobs/fs etc already register their api with SpiritOS\", \"i think the retrofit of API introspection is a big enough task for one item, it will require grants for core files etc. so we split that off as a blocking item.\"\n\nTODAY (8924c0dc): an appServer's api answers {verb: {request, reply}} as prototypes, no description; the loopback verbs declare no shape at all.\n\nCORE FILES, grants owed: appServer, verbTable, server, hub, ownerPost, apiDoor. A suite red on today's code first; the builder never writes its own tests. Blocks Endpoint introspection in OpenAI tool shape (goal/G10.1), which keeps the agent-facing half.\n\nUNDECIDED (red Qs on this item): whether the loopback door checks requests against the declared shapes from the start, or declares only; the spelling of a dotted verb name in a tool name.",
+   "version": 1,
    "checks": [],
    "chat": []
   }
