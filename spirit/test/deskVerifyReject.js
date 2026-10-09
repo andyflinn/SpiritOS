@@ -94,6 +94,59 @@ async function deskHalf() {
   } finally { await d.stop(); }
 }
 
+// GROWN IN THE VERIFY (claude-windows). Andy, 2026-10-09: "best is, if the done button doesn't show up until deskVerify
+// allows it.", and "the builders claim is registered, but only deskVerify brings the button." The desk learns whether a
+// deskVerify runs from its own node (the port appServer hands it); this node says one does.
+async function deskOnNode() {
+  test.subHeading('3. on a node that runs deskVerify, only its verify.pass brings Done');
+  const node = await new Promise(function (resolve) {
+    const s = http.createServer(function (req, res) {
+      let b = '';
+      req.on('data', function (c) { b += c; });
+      req.on('end', function () {
+        let j = null; try { j = JSON.parse(b || '{}'); } catch (e) { j = null; }
+        const out = j && j.ask === 'api' ? { desk: {}, deskVerify: {} } : {};
+        res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
+      });
+    }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
+  });
+  const root = path.join(scratch, 'deskOnNode');
+  fs.mkdirSync(path.join(root, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
+  const d = server(DESK, 'deskOnNode');
+  try {
+    if (!await d.up()) { test.fail('the desk server did not start'); return; }
+    await sleep(500);
+    await d.call('session.set', { json: JSON.stringify({ goal: { id: 'rn/G1', title: 'On a node' }, items: [{ id: 'rn/G1.1', title: 'Built', blocks: ['rn/G1'], code: true }] }) }, CW);
+    await d.call('press', { id: 'rn/G1', what: 'end-design' }, ANDY);
+    await d.call('press', { id: 'rn/G1.1', what: 'go' }, ANDY);
+    const round = async function () {
+      await d.call('phase.take', { id: 'rn/G1.1', phase: 'build' }, WSL); await d.call('phase.done', { id: 'rn/G1.1', phase: 'build' }, WSL);
+      await d.call('phase.take', { id: 'rn/G1.1', phase: 'verify' }, CW); await d.call('phase.done', { id: 'rn/G1.1', phase: 'verify', pass: true }, CW);
+    };
+    await d.call('phase.take', { id: 'rn/G1.1', phase: 'red' }, CW); await d.call('phase.done', { id: 'rn/G1.1', phase: 'red' }, CW);
+    await round();
+    const facts = async function () { return parse((await d.call('item.get', { id: 'rn/G1.1' }, ANDY)).body.item) || {}; };
+    const f0 = await facts();
+    if (f0.verified === true || f0.phase === '' || f0.phase === undefined) {
+      if ((f0.buttons || []).indexOf('done') === -1) test.check('verified by the agent, and no Done yet: deskVerify has not spoken');
+      else test.fail(OWED + 'Done is offered on the agent\'s pass alone, with a deskVerify on the node: ' + short(f0.buttons));
+    } else test.fail('the world: rn/G1.1 did not reach a verifier\'s pass: ' + short({ phase: f0.phase, buttons: f0.buttons }));
+    const agent = await d.call('verify.pass', { id: 'rn/G1.1' }, CW);
+    if (refusedByVerb(agent)) test.check('an agent\'s verify.pass is refused: deskVerify writes as him');
+    else test.fail(OWED + 'an agent\'s verify.pass answered ' + agent.status + ' ' + short(agent.body));
+    const pass = await d.call('verify.pass', { id: 'rn/G1.1' }, ANDY);
+    const f1 = await facts();
+    if (took(pass) && (f1.buttons || []).indexOf('done') !== -1) test.check('his verify.pass brings Done');
+    else test.fail(OWED + 'verify.pass answered ' + pass.status + ' ' + short(pass.body) + '; buttons ' + short(f1.buttons));
+    await d.call('verify.reject', { id: 'rn/G1.1', why: 'red after all' }, ANDY);
+    await round();
+    const f2 = await facts();
+    if ((f2.buttons || []).indexOf('done') === -1) test.check('after a rejection and a fresh verify, Done waits for deskVerify again');
+    else test.fail(OWED + 'Done came back without a new verify.pass: ' + short(f2.buttons));
+  } finally { await d.stop(); node.close(); }
+}
+
 async function verifyHalf() {
   test.subHeading('2. deskVerify: claim.check runs the item\'s suites and rejects on a red, pressing nothing');
   fs.writeFileSync(PROBE_PATH, [
@@ -135,14 +188,22 @@ async function verifyHalf() {
     if (took(r1) && r1.body.rejected === true && rejects.length === 1 && rejects[0].args.id === 'rj/G1.1' && /it is still red/.test(rejects[0].args.why)) {
       test.check('a red suite: it answers rejected and asks the desk verify.reject, naming the red');
     } else test.fail(OWED + 'claim.check answered ' + r1.status + ' ' + short(r1.body) + '; the desk was asked ' + short(asks));
+    const passOnRed = asks.filter(function (a) { return a.verb === 'verify.pass'; }).length;
     // The probe turns green the way a fix lands: its file changes. deskVerify started before this line, so a variable
     // set here would never reach the suites it runs.
     fs.writeFileSync(PROBE_PATH, fs.readFileSync(PROBE_PATH, 'utf8').replace("process.env.PROBE_GREEN === '1'", 'true'));
     const before = asks.filter(function (a) { return a.verb === 'verify.reject'; }).length;
     const r2 = await v.call('claim.check', { id: 'rj/G1.1' }, ANDY);
     const after = asks.filter(function (a) { return a.verb === 'verify.reject'; }).length;
-    if (took(r2) && r2.body.rejected === false && after === before) test.check('all green: it answers not rejected and asks nothing of the desk');
+    if (took(r2) && r2.body.rejected === false && after === before) test.check('all green: it answers not rejected and asks for no rejection');
     else test.fail(OWED + 'with the probe green, claim.check answered ' + short(r2.body) + ' and asked verify.reject ' + (after - before) + ' time(s)');
+    // GROWN IN THE VERIFY (claude-windows), Andy's newer word: "only deskVerify brings the button". So on all green it
+    // gives the desk its own word, verify.pass, once - without it, the desk on his node would never offer Done.
+    const passes = asks.filter(function (a) { return a.verb === 'verify.pass'; });
+    if (passes.length === 1 && passes[0].args.id === 'rj/G1.1') test.check('all green: it asks the desk verify.pass for the item, once - its word brings Done');
+    else test.fail(OWED + 'with the probe green, verify.pass was asked ' + short(passes));
+    if (passOnRed === 0) test.check('and never on the red run');
+    else test.fail(OWED + 'verify.pass was asked ' + passOnRed + ' time(s) on the red run');
     const pressed = asks.filter(function (a) { return a.verb === 'press'; });
     if (!pressed.length) test.check('it pressed nothing on his behalf: no done, no close');
     else test.fail(OWED + 'deskVerify pressed ' + short(pressed));
@@ -155,6 +216,7 @@ async function verifyHalf() {
 (async function () {
   await deskHalf();
   await verifyHalf();
+  await deskOnNode();
 })().catch(function (e) { test.fail('the suite threw: ' + (e && e.stack || e)); }).then(function () {
   try { fs.unlinkSync(PROBE_PATH); } catch (e) { /* gone */ }
   try { fs.rmSync(scratch, { recursive: true, force: true }); } catch (e) { /* scratch */ }
