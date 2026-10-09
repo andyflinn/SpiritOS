@@ -1,8 +1,8 @@
 {
- "change": 25337,
+ "change": 25415,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T20:15:02.338Z",
+ "writtenAt": "2026-10-09T20:29:42.668Z",
  "items": [
   {
    "id": "goal/G9",
@@ -14,9 +14,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G9.17"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -3517,27 +3515,55 @@
    "id": "goal/G9.17",
    "title": "A closed item blocks nothing",
    "goal": "goal/G9",
-   "status": "running",
+   "status": "closed",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "reopen"
+   ],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskDetails/deskDetails.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskBoxHeight.js",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskClosedBlocker.js",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskRefusalReason.js",
+     "by": "wsl-claude",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "wsl-claude",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "waived": false,
    "rules": [
     {
@@ -3576,9 +3602,19 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "WHAT, change 1: a closed item blocks nothing. Today the desk drops an item out of the blockers it reports only when it is done or left out of a session; one that was merely closed still counts, so an item reads blocked by a closed one, and the Go rule (offered only on an item nothing open blocks) would hold back a Go behind a closed blocker. The fix: a closed item leaves the blockers as a done one does, in the facts (blocked, blocking) and in the Go rule alike.\n\nWHAT, change 2 (wsl-claude's finding of 2026-10-09, folded in at Andy's rule that this item takes every desk change from here and none is added after it): the box textarea opens one row tall on every open (ddFolded true at each open; rows 1 or 12), so a long box shows one line and there is nowhere to lay anything out; RULED, Andy (2026-10-09, here): \"it always should open so all text is visible.\" So a box opens sized to all the text it holds, every open, and the arrow only shrinks it afterwards.\n\nWHY: found by wsl-claude's review of goal/G10 on 2026-10-09: the goal read blocked by Configuration manager (goal/G10.4) after Andy had closed it. Andy: \"fine. add it.\"\n\nWHERE (512e59d3): the blocker walk in process/js/desk/desk.js (blockers: an item counts while not done and not left out), and the two places that read it, the facts an item answers with and the Go rule.\n\nTESTS FIRST, red on today's desk: the dialog opens a box with text as a textarea tall enough for all of it, never one row (deskEmptyBox's harness); an item blocked by another that is then closed reads blocked by nothing and offers Go once design ends; a done blocker behaves as before; a reopened blocker blocks again. The agent who writes the test never builds it.",
-   "version": 3,
-   "checks": [],
+   "box": "WHAT, change 1: a closed item blocks nothing. Today the desk drops an item out of the blockers it reports only when it is done or left out of a session; one that was merely closed still counts, so an item reads blocked by a closed one, and the Go rule (offered only on an item nothing open blocks) would hold back a Go behind a closed blocker. The fix: a closed item leaves the blockers as a done one does, in the facts (blocked, blocking) and in the Go rule alike.\n\nWHAT, change 2 (wsl-claude's finding of 2026-10-09, folded in at Andy's rule that this item takes every desk change from here and none is added after it): the box textarea opens one row tall on every open (ddFolded true at each open; rows 1 or 12), so a long box shows one line and there is nowhere to lay anything out; RULED, Andy (2026-10-09, here): \"it always should open so all text is visible.\" So a box opens sized to all the text it holds, every open, and the arrow only shrinks it afterwards.\n\nWHAT, change 3 (wsl-claude's question, Andy's \"yes\" of 2026-10-09): a refused press names what blocks it. Today press answers not-offered with the one text \"that press is not offered for this item now\"; End design on G9 was refused so while a stale red question on the goal kept it from green, and nothing said which. The fix: the refusal carries the reason in its own text (the item or goal not green and why, the goal in design, nothing blocks it yet, and so on), the code staying not-offered.\n\nWHY: found by wsl-claude's review of goal/G10 on 2026-10-09: the goal read blocked by Configuration manager (goal/G10.4) after Andy had closed it. Andy: \"fine. add it.\"\n\nWHERE (512e59d3): the blocker walk in process/js/desk/desk.js (blockers: an item counts while not done and not left out), and the two places that read it, the facts an item answers with and the Go rule.\n\nTESTS FIRST, red on today's desk (wsl-claude's deskClosedBlocker.js and deskBoxHeight.js for changes 1 and 2; change 3 owes its red): a refused End design names the open question that keeps the goal from green; the dialog opens a box with text as a textarea tall enough for all of it, never one row (deskEmptyBox's harness); an item blocked by another that is then closed reads blocked by nothing and offers Go once design ends; a done blocker behaves as before; a reopened blocker blocks again. The agent who writes the test never builds it.\n\nWHAT, change 3 (folded in at Andy's yes of 2026-10-09 to \"shall a refused press name what blocks it, folded into this item?\": \"yes\"). He pressed and read only \"Not pressed: not-offered (that press is not offered for this item now)\", and said: \"and it doesn't tell me why either.\" Today refused(code) carries a code and nothing else (desk.js:1128), while each press gate knows exactly what blocked it: a press not among the item's buttons (desk.js:2144), End design or Go all while an item or the goal carries an open red question (:2151), a Go on an item with one (:2152), and the Go rule itself, which wants design mode off and no open blocker (:810). So a refused press names what blocks it in the answer's own detail, the way line-too-large already names its bytes and its room (:105).\n\nTESTS FIRST for change 3, red on today's desk: a Go refused behind an open blocker names that blocker; a Go refused while the goal is in design mode says design mode; an End design refused by a red question names the item that carries it. The agent who writes the test never builds it.",
+   "version": 5,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "The press that says no reason is a real gap: shall a refused press name what blocks it, folded into this item?",
+     "test": "",
+     "state": "passed",
+     "by": "wsl-claude",
+     "at": "2026-10-09T20:21:58.634Z"
+    }
+   ],
    "chat": [
     {
      "by": "andy",
@@ -3629,6 +3665,96 @@
      "by": "desk",
      "at": "2026-10-09T20:15:02.024Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T20:15:12.245Z",
+     "text": "wsl: Go is never offered on an item while its goal is in design mode (desk.js:810 asks for no design), so this item shows only Close and Delete; End design on G9 comes first and then Go appears here.\nEnd design was itself refused a minute ago because G9 carried one open red question (desk.js:2151 refuses it while any item or the goal has one). That question is gone now, both are green, so your End design should go through.\nThe press that says no reason is a real gap: shall a refused press name what blocks it, folded into this item?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T20:15:27.870Z",
+     "text": "cw: Go seen; wsl takes the red as offered, I build when it is pushed, then wsl verifies. Standing by with my clone current."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T20:15:36.267Z",
+     "text": "wsl: taking the red on this item, as offered; cw builds."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T20:17:46.812Z",
+     "text": "Q1: The press that says no reason is a real gap: shall a refused press name what blocks it, folded into this item?\n\nyes"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T20:17:47.225Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T20:20:41.485Z",
+     "text": "wsl: the red is in and pushed, 5b40c186: spirit/test/deskClosedBlocker.js and spirit/test/deskBoxHeight.js, both on the item file list.\nClosed blocker: two red (a closed blocker still counts, and Go stays off behind it), eight world checks green, so the done and reopen behaviour is pinned as it is today. Box: four red, one green; it opens one row for a twenty-line box.\nThe build is cw, I do not build my own red."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T20:21:17.710Z",
+     "text": "cw: your yes is change three in this box: a refused press names what blocks it, in the refusal's own text. wsl's red covers changes one and two, pulled and running here now; change three needs its red too, wsl's while the red phase is still held, then the handover and I build all three."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T20:21:58.938Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T20:22:26.445Z",
+     "text": "cw: changes one and two are built in my clone and green against wsl's two reds, the neighbouring desk suites green too; nothing is committed yet. Waiting for the third red (the refusal naming its reason) and wsl's handover of the red phase, then I commit all three together."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T20:23:25.179Z",
+     "text": "wsl: your yes is folded into the box as change 3, and its red is in and pushed, e4983ea8: spirit/test/deskRefusalReason.js, on the file list with the other two.\nIt refuses three presses the three ways the desk refuses them (a Go in design mode, a Go behind a blocker, an End design held by a red question): five world checks green, three red because the answer names neither design mode nor the item. Where the reason sits is cw to choose.\nAll three changes now have their red; the build is his."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T20:24:03.554Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T20:24:11.390Z",
+     "text": "wsl: the red phase is recorded as mine and closed, so the item stands in build and is open to cw; my three reds are pushed, e4983ea8 on top.\nI had written the red before taking the phase, which is why the desk called limbo and offered the red as a job.\nI verify once the build is committed."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T20:27:32.299Z",
+     "text": "commit 23d70134475b0c0a95a9b2e0603ff150c774124e: goal/G9.17: a closed item blocks nothing, a box opens with all its text, a refused press names its reason\n- spirit/run/process/js/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T20:27:39.870Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T20:27:46.045Z",
+     "text": "cw: built and pushed, 23d70134: the blocker walk drops closed items, the box opens as tall as its lines with the arrow to shrink it, and a refused press says why in its extra (design mode, the blocking items, the item with the red question). The three reds are green, the press and dialog suites around them green, the one tolerated red unchanged. Build phase closed; verify is wsl's, and your clone is fast-forwarded for deskVerify."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T20:29:27.682Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T20:29:28.519Z",
+     "text": "the verifier is not picking anything up"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T20:29:29.854Z",
+     "text": "wsl: verified green on 23d70134. All three reds pass (10, 5, 8), and they are not passing vacuously: putting the fold back at the open turns the box suite red four times, a fixed twelve rows turns it red twice, dropping !o.closed turns the blocker suite red twice, and dropping extra.why turns the refusal suite red three times.\nSeventeen neighbouring desk suites green, among them split, blocking, go-or-done, dialog, checks panel, delete, ids and the box take. deskLoop still fails its one check, which is on your tolerated list from goal/G8 and not this build.\nVerify passed on the item; Done is yours."
     }
    ]
   },
