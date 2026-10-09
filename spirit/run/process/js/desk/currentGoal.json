@@ -1,8 +1,8 @@
 {
- "change": 24575,
+ "change": 24628,
  "line": 8495,
  "goal": "goal/G10",
- "writtenAt": "2026-10-09T16:41:11.438Z",
+ "writtenAt": "2026-10-09T16:59:27.721Z",
  "items": [
   {
    "id": "goal/G10",
@@ -42,7 +42,9 @@
    "live": [
     "claude-windows"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -1495,6 +1497,41 @@
      "by": "claude-windows",
      "at": "2026-10-09T16:39:48.572Z",
      "text": "cw: added at your word: Answered checks leave the panel, a Q keeps one sentence (goal/G9.16). No reopen of G9 should be needed: Go depends on the item and on G9 not being in design, which it is not; what you need is G9 on your List, so press make-current on G9, Go on the item, and if the item does not show, Reopen G9 first.\nThen the fix is built and verified under G9, you press Done, pull and restart your node, and press make-current on G10 to return here.\nI write the item's box now and mark it code so it walks the phases."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T16:41:22.785Z",
+     "text": "cw: Answered checks leave the panel, a Q keeps one sentence (goal/G9.16) has its box, is marked code and already offers Go, as does the dialog fix (goal/G9.15); nothing blocks either, and the closed G9 items stayed closed. Press make-current on G9 and Go on whichever you want first."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T16:41:59.191Z",
+     "text": "i see no G9.16"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T16:42:11.373Z",
+     "text": "add it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T16:43:11.459Z",
+     "text": "cw: it is added (goal/G9.16), but the List hides every item of a closed goal unless the Closed toggle is on. So: Closed on, Current Goal Only off, type answered in the search, and the row Answered checks leave the panel, a Q keeps one sentence appears with its Go. Typing without agents the same way shows the G9 goal with Reopen and make-current, if you want it current while it is built."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T16:45:26.834Z",
+     "text": "nope. i'll have to temporarily switch goals-"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T16:47:44.558Z",
+     "text": "i cannot ever get G9 to show up anymore. even with 'include closed'"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T16:48:03.898Z",
+     "text": "cw: with an empty search the List shows only its first bucket, and G9 lies beyond it (the answer says more); it never pages, by your rule. Type a word of its title into the search, without or agents, with Closed on and Goals Only on: I just asked the desk that exact search from my node and it answered goal/G9 with Reopen. The same with answered and Goals Only off answers goal/G9.16 with Go."
     }
    ]
   }
