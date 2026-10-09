@@ -1,8 +1,8 @@
 {
- "change": 20494,
+ "change": 20495,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:21:26.558Z",
+ "writtenAt": "2026-10-09T06:21:30.981Z",
  "items": [
   {
    "id": "goal/G9",
@@ -41,7 +41,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -760,10 +760,9 @@
    "id": "goal/G9.5",
    "title": "Code toggle in the item Details button bar",
    "goal": "goal/G9",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
