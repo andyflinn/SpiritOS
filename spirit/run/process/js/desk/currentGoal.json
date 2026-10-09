@@ -1,8 +1,8 @@
 {
- "change": 26171,
+ "change": 26211,
  "line": 8495,
  "goal": "goal/G10",
- "writtenAt": "2026-10-09T22:50:36.717Z",
+ "writtenAt": "2026-10-09T22:54:34.280Z",
  "items": [
   {
    "id": "goal/G10",
@@ -11,7 +11,6 @@
    "status": "full run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -36,14 +35,14 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "ollama agent node",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows"
+    "wsl-claude"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -766,11 +765,10 @@
    "id": "goal/G10.1",
    "title": "Endpoint introspection in OpenAI tool shape",
    "goal": "goal/G10",
-   "status": "ready",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "go",
-    "close"
+    "reopen"
    ],
    "blocking": [
     "goal/G10.2"
@@ -1322,6 +1320,16 @@
      "by": "claude-windows",
      "at": "2026-10-09T22:50:21.333Z",
      "text": "cw: if you mean Levant not answering your 22:36 line: by the context item's rule it starts at the present and never answers the backlog, and it came up only after the two files landed, so that line is history to it. Address it again now, on this reopened item, and it should answer; if it stays silent then, the model string is the next suspect."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T22:50:43.784Z",
+     "text": "this one?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T22:51:04.847Z",
+     "text": "wsl: that line it will not take: addressing is the name first, \"levant: ...\" or \"Levant, ...\", and \"this one?\" carries no address, so it reads it and stays quiet. Your ruling in the context item box, point 7.\nSo put the name in front of the question and it answers under this item.\nIf it is still silent with the name there, the model string in configuration.json is the next thing to look at."
     }
    ]
   },
@@ -1337,9 +1345,7 @@
    "blocking": [
     "goal/G10.4"
    ],
-   "blocked": [
-    "goal/G10.1"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -2176,7 +2182,7 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": true,
+   "green": false,
    "code": true,
    "phase": "",
    "red": "",
@@ -2184,12 +2190,22 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "OUT OF SCOPE OF goal/G10 (Andy, 2026-10-09, under the context item: \"oos\"). The first configuration is two hand-edited files, built by the context item (goal/G10.3); this screen is for a later goal. The item waits for his Close or Delete. What follows is the shape as argued, for that later goal.\n\nWHAT: a shell app in three panels. Resource tuner: the serving process as a server job, its memory and unsloth settings (quantization, context window, attention) as manifest args, so start and restart are the node's; a VRAM reading is new, and the estimate says it is one. Model registry: the serving process's own model list, searchable. Persona creator: name, role, system prompt, sampling; its tools are the node's include list and grant rows chosen with the Grants app's path selector; no access levels (the door is loopback-only), no tokens (identity is a key).\n\nWHY (Andy, 2026-10-09): \"i want a configuration manager, that allows me to configure my dedicated VRAM and unsloth to use that memory optimally, list available models, and create agent-personas with those configurations. these agent configurations also will carry with them an authorization scheme for the loopback interface, so the \"tools\" that and agent gets are dependent on configuration.\" The three-panel sketch (the local agent's text) he called \"an awesome start\".\n\nTODAY (8924c0dc): no such app. The Grants app gives, sees and revokes grant rows; a node runs only the servers its include list names (config.setModules); a node-operated server starts with its manifest args and a state folder of its own.\n\nANDY (2026-10-09): \"1. the permission set may change with every deskUnsloth configuration\", \"2. that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp\". So the configuration manager runs on Andy's node and configures the agent node as a puppet over the relay, the way the VPS face node is run; the persona's grant rows live on the agent node and change with each configuration.\n\nRULED, Andy (2026-10-09, under the secured node): \"and the configuration UI should sit on the owner node, not the puppet node, that way i could buy the biggest Apple M5-6 type box and use the whole thing as a headless agent-puppet....\" So the manager is a shell app on the owner node, configuring the puppet over the owner door; the puppet carries no screen of its own.\n\nRULED, Andy (2026-10-09, under the context item): \"and for starters a configuration has 1. agent persona, 1 preamble,  1 model, 1 context limit, all simple and safe, for my RTX 5060, this way we get off the ground quicker.\" So the first configuration is four fields, one each: agent persona, preamble, model, context limit, chosen safe for his RTX 5060; the manager's first cut is a form of those four on the owner node, written to the puppet over the owner door; the VRAM tuner and the model registry come after.\nTHEN (his, 2026-10-09): \"and for starters, we have just one configuration file, and one connection file with the contents of loop.json, so i don't have to keep regenerating keys in unsloth. no UI yet.\" So the configuration is a file first, edited by hand, and this screen comes after the flow runs. The first persona (his, 2026-10-09): Levant, preamble \"you are 'Levant' (a genius i knew when i was a lead engineer at ATI technologies, later absorbed by AMD)\", the model id, a context limit for the RTX 5060.\n\nBlocked by the secured-node item: a persona's tools are grants on its key.",
    "version": 7,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Shall I take that one stale line out of the box, and is that what you meant?",
+     "test": "",
+     "state": "open",
+     "by": "wsl-claude",
+     "at": "2026-10-09T22:51:57.574Z"
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
@@ -2205,6 +2221,26 @@
      "by": "claude-windows",
      "at": "2026-10-09T19:49:22.432Z",
      "text": "cw: yes, out of scope for now by your word under the context item; the box says so and keeps the shape for a later goal. It still blocks this goal until your Close or Delete here."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T22:51:30.050Z",
+     "text": "is this the one you messed up?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T22:51:57.159Z",
+     "text": "wsl: one thing on this item is stale rather than wrong: its box still says \"The item waits for his Close or Delete\" though you closed it hours ago, and that is the only line here that does not match the state. The design below it is as you argued it, for the configuration goal you have now put first.\nThe other thing that was wrong here was the desk, not the item: this goal read blocked by this closed item, which is the bug goal/G9.17 fixed tonight.\nShall I take that one stale line out of the box, and is that what you meant?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T22:53:04.501Z",
+     "text": "i want the FUCKING connection.json working, i don't give a shit about anything else."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T22:54:33.739Z",
+     "text": "wsl: the wire is right, checked against the real code and not only the test: deskClient.desk takes {verb, json} and hands the desk answer back flat, which is exactly what the build sends and reads (deskClient.js:430), and deskClient hands over every line of yours whatever nick it names (meantForAgent, :258), so nothing is filtering your Levant lines away.\nThat leaves that node. If its job window has gone quiet since the two files landed, the next thing it prints on a failed answer is \"deskUnsloth: the answer for <item> failed: <reason>\", and the reason names it; if it prints nothing at all, the job never restarted on the new code.\nAnd the model leg can be proved without us: on that box POST to http://127.0.0.1:8888/v1/chat/completions with Authorization: Bearer <the key> and {\"model\": \"<the string in configuration.json>\", \"messages\": [{\"role\": \"user\", \"content\": \"hi\"}]}. A 200 with choices means the fault is ours and I will find it; anything else means the server or the model string."
     }
    ]
   },
