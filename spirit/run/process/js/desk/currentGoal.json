@@ -1,8 +1,8 @@
 {
- "change": 25107,
+ "change": 25116,
  "line": 8495,
  "goal": "goal/G10",
- "writtenAt": "2026-10-09T19:49:46.616Z",
+ "writtenAt": "2026-10-09T19:51:46.480Z",
  "items": [
   {
    "id": "goal/G10",
@@ -38,7 +38,7 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 5,
+   "waiting": 4,
    "live": [
     "claude-windows"
    ],
@@ -49,8 +49,8 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "UPGRADE THE LOCAL AI SUPPORT, deskUnsloth. Design, 2026-10-09. Facts checked at 8924c0dc. Rulings live verbatim in the item they decide.\n\nVISION (Andy's words): the local agent (qwen, on its own node, port 11111) becomes a real party at the desk: it knows what is talked about, its node is \"it's sandbox and it's toolset\", secured against it, and Andy configures memory, models and agent personas with their tools from a browser. \"disregart the ollama agent, i want it to read along for now.\" And, out of the first item's scope but in the vision by his word: \"that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp\" and \"the permission set may change with every deskUnsloth configuration\". And where it goes (his, 2026-10-09): \"picture this: a whole goal, designed for one agent persona, with its model configuration paired with it's tool-access-configuration, will tackle the same goal, while i sleep, event descending the dependency tree of that process....\" Agents with standing orders, tied to one standing item with its own verification, come after this goal. His purpose for this goal (2026-10-09): \"My goal would be, it can help me sketch a design while i wait for the day i get more tokens for claude.\" So the first achievement is the context item's first slice: one document, the box, discussed at length.\n\nTHE ITEMS, IN ANDY'S ORDER\n0. API introspection retrofit: every verb declared on both doors (goal/G10.5): the core work, split off 2026-10-09 (\"a big enough task for one item, it will require grants for core files\"); blocks 1.\n1. Endpoint introspection in OpenAI tool shape: the tool list for a key, stripped to its grants at ask time; the agent reads it (his named dependency).\n2. The local agent node secured against its agent: out of scope for now by his word of 2026-10-09 (the restriction per persona is its configured tool set; the agent node is expendable while the flow is built); the keyed loopback caller stays the later door change.\n3. Context auto-built from the desk goal for the local agent: title, box, last lines and AGENTS go with each line; addressed lines only; one config.\n4. Configuration manager: VRAM, models and agent personas: out of scope by his word of 2026-10-09 (\"oos\"); the first configuration is two hand-edited files, the context item's; the screen is a later goal's; the item awaits his Close or Delete.\n6. streamClerver: set aside as its own goal, goal/G11, by his word of 2026-10-09; the item here was deleted by him the same day.\n\nChain: 0 blocks 1, 1 blocks 2; 3 blocks the goal (4 out of scope). Four items design-complete on 2026-10-09: 0, 1, 2, 3. Every item: a suite red on today's code first; the builder never writes its own tests.\n\nNo red Q stands on the goal (2026-10-09): a persona is a configuration with a tool set, not a key and not a node; the Grants app is not involved for the local agent.",
-   "version": 19,
+   "box": "UPGRADE THE LOCAL AI SUPPORT, deskUnsloth. Design, 2026-10-09. Facts checked at 8924c0dc. Rulings live verbatim in the item they decide.\n\nVISION (Andy's words): the local agent (qwen, on its own node, port 11111) becomes a real party at the desk: it knows what is talked about, its node is \"it's sandbox and it's toolset\", secured against it, and Andy configures memory, models and agent personas with their tools from a browser. \"disregart the ollama agent, i want it to read along for now.\" And, out of the first item's scope but in the vision by his word: \"that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp\" and \"the permission set may change with every deskUnsloth configuration\". And where it goes (his, 2026-10-09): \"picture this: a whole goal, designed for one agent persona, with its model configuration paired with it's tool-access-configuration, will tackle the same goal, while i sleep, event descending the dependency tree of that process....\" Agents with standing orders, tied to one standing item with its own verification, come after this goal. His purpose for this goal (2026-10-09): \"My goal would be, it can help me sketch a design while i wait for the day i get more tokens for claude.\" So the first achievement is the context item's first slice: one document, the box, discussed at length.\n\nTHE ITEMS, IN ANDY'S ORDER\n0. API introspection retrofit: every verb declared on both doors (goal/G10.5): the core work, split off 2026-10-09 (\"a big enough task for one item, it will require grants for core files\"); blocks 1.\n1. Endpoint introspection in OpenAI tool shape: the tool list for a key, stripped to its grants at ask time; the agent reads it (his named dependency).\n2. The local agent node secured against its agent: out of scope for now by his word of 2026-10-09 (the restriction per persona is its configured tool set; the agent node is expendable while the flow is built); the keyed loopback caller stays the later door change.\n3. Context auto-built from the desk goal for the local agent: title, box, last lines and AGENTS go with each line; addressed lines only; one config.\n4. Configuration manager: VRAM, models and agent personas: out of scope by his word of 2026-10-09 (\"oos\"), closed by him the same day; the first configuration is two hand-edited files, the context item's; the screen is a later goal's.\n6. streamClerver: set aside as its own goal, goal/G11, by his word of 2026-10-09; the item here was deleted by him the same day.\n\nChain: 0 blocks 1, 1 blocks 2; 3 blocks the goal (4 out of scope). Four items design-complete on 2026-10-09: 0, 1, 2, 3; the design of the goal is complete, the gap check done; next his End design and Go on the retrofit, where his core-file grant waits. Every item: a suite red on today's code first; the builder never writes its own tests.\n\nNo red Q stands on the goal (2026-10-09): a persona is a configuration with a tool set, not a key and not a node; the Grants app is not involved for the local agent.",
+   "version": 20,
    "checks": [
     {
      "number": "Q1",
@@ -507,6 +507,11 @@
      "by": "andy",
      "at": "2026-10-09T19:01:42.305Z",
      "text": "sweet, how i can do this myself now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:50:06.820Z",
+     "text": "cw: the design of this goal is complete: four items design-complete (the retrofit, the introspection half, the secured node, the context), the configuration manager closed as out of scope, no red Q anywhere, the gap check done. What remains is yours: End design, then Go on API introspection retrofit: every verb declared on both doors (goal/G10.5), first by the chain, where your core-file grant also waits; wsl-claude being off, the desk waives the handovers to me."
     }
    ]
   },
@@ -901,11 +906,10 @@
    "id": "goal/G10.2",
    "title": "The local agent node secured against its agent",
    "goal": "goal/G10",
-   "status": "ready",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "reopen"
    ],
    "blocking": [
     "goal/G10.4"
@@ -1145,6 +1149,16 @@
      "by": "claude-windows",
      "at": "2026-10-09T18:17:48.353Z",
      "text": "cw: they are under Context auto-built from the desk goal for the local agent (goal/G10.3), the item they are about: what context is, that nothing accumulates on the model side, and that compacting is the client's job and the box already is it. From here on I answer where you ask, so they stay in front of you."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:50:40.322Z",
+     "text": "is this oos for now as well. since we are focusing only on desk?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:51:00.567Z",
+     "text": "cw: it can be, without loss for the first slice: there the agent speaks only to the desk through deskClient and calls no other verb, so the three refusals would bite nothing yet; what they protect against arrives with the second slice, the tools on its own node, and you called that node expendable meanwhile. Deferring costs nothing now and the box keeps the decided shape for when the tools come.\nSo yes, out of scope for now is sound; its design stays complete in the box, your Close takes it off the chain, and the introspection half then blocks nothing."
     }
    ]
   },
