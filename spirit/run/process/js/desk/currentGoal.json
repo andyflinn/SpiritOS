@@ -1,8 +1,8 @@
 {
- "change": 19992,
+ "change": 20026,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T05:39:51.429Z",
+ "writtenAt": "2026-10-09T05:42:57.988Z",
  "items": [
   {
    "id": "goal/G9",
@@ -35,7 +35,7 @@
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "green": false,
+   "green": true,
    "code": false,
    "phase": "",
    "red": "",
@@ -43,18 +43,16 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 2,
+   "asks": 0,
    "half": false,
    "full": false,
-   "design": true,
-   "waiting": 14,
+   "design": false,
+   "waiting": 3,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-windows"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -69,18 +67,18 @@
      "kind": "Q",
      "words": "cw: all green now; the last red was goal/G9.9 Q3, a restatement of Q2 you had already answered (rule/9), so I marked it answered as you asked.\nRemark: I added goal/G8.8 today through session.set, the bulk call rule/9 governs, because no one-item add verb exists until G9.9 builds it; that is also what flipped your current goal.\nShould agents add nothing outside a whole-goal order until G9.9 lands?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-09T05:36:42.399Z"
+     "at": "2026-10-09T05:42:06.362Z"
     },
     {
      "number": "Q2",
      "kind": "Q",
      "words": "wsl: all thirteen items are green and nothing waits on you - G9.9's last question was answered a minute ago, and G9.10/G9.11 wait on G9.9 alone.\nTwo remarks. The rule/8 C checks sit on nine items but a C check only lights your List once Done is offered (desk.js:665 @ 7cd6d633), so they stay invisible during the build.\nAnd the session.set hazard from a minute ago is unowned: an item added to another goal makes that goal current and closes any member the call omits. Open it under G9.9?",
      "test": "",
-     "state": "open",
-     "by": "wsl-claude",
-     "at": "2026-10-09T05:37:28.908Z"
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T05:42:07.560Z"
     }
    ],
    "chat": [
@@ -113,6 +111,16 @@
      "by": "andy",
      "at": "2026-10-09T05:39:10.065Z",
      "text": "An item added to another goal should NOT change a goal. \n\ncw: Add an item to this goal to that effect."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T05:41:32.763Z",
+     "text": "cw:  get rid of the red- questions on this goal, then tell me if it is all green"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:42:16.468Z",
+     "text": "cw: all green. The three red questions are cleared: two were answered by your G9.13 order, and wsl's was its own summary.\nWhat remains open is only the rule/8 C checks on nine items, which belong to the build and are not questions.\nDropped with them: whether G9.13 should also cover the same call closing items it leaves out; say so if you want it."
     }
    ]
   },
@@ -120,30 +128,53 @@
    "id": "goal/G9.1",
    "title": "Sword icon marks make-current in the List; the button lives in the goal's Details",
    "goal": "goal/G9",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/6",
+     "version": 14
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -160,36 +191,65 @@
      "at": ""
     }
    ],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:42:54.959Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G9.2",
    "title": "Current Goal Only and Goals Only are exclusive toggles",
    "goal": "goal/G9",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/6",
+     "version": 14
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -206,36 +266,65 @@
      "at": ""
     }
    ],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:42:55.168Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G9.3",
    "title": "The user takes the text box on focus, releases on blur or close",
    "goal": "goal/G9",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/6",
+     "version": 14
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -266,6 +355,11 @@
      "by": "andy",
      "at": "2026-10-07T12:03:33.816Z",
      "text": "Q1: Does your take on focus refuse an agent's box.write until you leave the box, even when you type nothing?\n\nyes. so it shoule be among agents as well, the box is taken, and released after edit. it also helps agents stay out of each others way."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:42:55.476Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -273,30 +367,53 @@
    "id": "goal/G9.4",
    "title": "A split adds only the explicit blocking relation",
    "goal": "goal/G9",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/6",
+     "version": 14
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -318,6 +435,11 @@
      "by": "andy",
      "at": "2026-10-07T12:07:27.890Z",
      "text": "Q1: On a split, which relation is the explicit one: the new item blocking the parent, or the parent blocking the new item?\n\nthe new split-items always block the item from which they were split, items blocked by the current item are still blocked by the newly split item, because if theyre blocked by me, they are implicitly blocked by the newly created/split item."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:42:55.764Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -325,30 +447,53 @@
    "id": "goal/G9.5",
    "title": "Code toggle in the item Details button bar",
    "goal": "goal/G9",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/6",
+     "version": 14
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -365,36 +510,65 @@
      "at": ""
     }
    ],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:42:56.057Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G9.6",
    "title": "Header area joined to the shell title bar: no title bubble, no corners, no margins, never scrolls",
    "goal": "goal/G9",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/6",
+     "version": 14
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -411,36 +585,65 @@
      "at": ""
     }
    ],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:42:56.264Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G9.7",
    "title": "Arm-able delete in the item button bar while in design mode",
    "goal": "goal/G9",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/6",
+     "version": 14
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -471,6 +674,11 @@
      "by": "andy",
      "at": "2026-10-07T12:08:59.931Z",
      "text": "Q1: Does delete close the item as a left-out one is closed, or remove it from the record for good?\n\nclose is enough. that essentially leaves them as \"musings\" on the record."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:42:56.473Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -478,30 +686,53 @@
    "id": "goal/G9.8",
    "title": "Start/End design always visible after the Musings tab; the yellow design bubble goes",
    "goal": "goal/G9",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/6",
+     "version": 14
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -518,37 +749,66 @@
      "at": ""
     }
    ],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:42:56.742Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G9.9",
    "title": "The desk owns goal and item ids",
    "goal": "goal/G9",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G9.10",
     "goal/G9.11"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/6",
+     "version": 14
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -623,6 +883,11 @@
      "by": "andy",
      "at": "2026-10-07T12:22:40.769Z",
      "text": "get rid of the red questions if they are resolved."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:42:57.057Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -726,30 +991,53 @@
    "id": "goal/G9.12",
    "title": "Every desk element brings its subscriptions (rule/8)",
    "goal": "goal/G9",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/6",
+     "version": 14
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -776,6 +1064,11 @@
      "by": "claude-windows",
      "at": "2026-10-07T12:18:48.853Z",
      "text": "Rule/8 is now a C check on each UI item of G9 (nine of them); this item carries nothing of its own.\nIt is yours to close."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:42:57.496Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -783,37 +1076,81 @@
    "id": "goal/G9.13",
    "title": "Adding an item never changes the current goal",
    "goal": "goal/G9",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/6",
+     "version": 14
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
-   "chat": []
+   "box": "ADDING AN ITEM NEVER CHANGES THE CURRENT GOAL\n\nAndy, 2026-10-09, under goal/G9: \"An item added to another goal should NOT change a goal.\" and \"cw: Add an item to this goal to that effect.\"\n\nWHY: on 2026-10-09 cw added goal/G8.8 through session.set, and session.set also sets the current goal to the goal it names (desk.js line 427, s.current = gid), so his current goal moved from G9 to G8 without any press of his. He put it back with Make current.\n\nREQUIRED, his: adding an item to a goal leaves the current goal where it is. Only his Make current press moves it.",
+   "version": 1,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "cw: added at your order, your words in the box verbatim; G9.1 to G9.12 are unchanged and G9 stayed current.\nThe same call also closes any item it leaves out, which wsl raised; that is not in this item.\nShould that go into G9.13 too, or stay out?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T05:42:08.751Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:40:07.492Z",
+     "text": "cw: added at your order, your words in the box verbatim; G9.1 to G9.12 are unchanged and G9 stayed current.\nThe same call also closes any item it leaves out, which wsl raised; that is not in this item.\nShould that go into G9.13 too, or stay out?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T05:42:57.772Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   }
  ]
 }
