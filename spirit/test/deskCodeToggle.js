@@ -173,7 +173,20 @@ async function item(id) { const r = await call('item.get', { id: id }, ANDY); re
   if (sent.length === 1) test.check('a click sends press {id, what: code} once');
   else test.fail(OWED + 'the dialog sent ' + short(plain.presses));
 
-  test.subHeading('6. a goal has no code state, so its Details draws no toggle');
+  test.subHeading('6. marked code after his Go, the item starts at red (goal/G8.10)');
+  // ct/G1.2 lost its mark in section 1, so his Go lands on a plain item and sets no phase. Marking it code afterwards
+  // used to leave it with no phase at all: nothing to take, no Done, and no Close either. Andy, 2026-10-09: "go".
+  await call('press', { id: 'ct/G1', what: 'end-design' }, ANDY); // a goal starts in design mode, where nothing goes.
+  const went = await call('press', { id: 'ct/G1.2', what: 'go' }, ANDY);
+  const before = await item('ct/G1.2');
+  if (took(went) && before.go === true && !before.phase) test.check('the world: his Go on a plain item, and no phase');
+  else { test.fail('the world: go answered ' + short(went.body) + '; item reads ' + short(before)); return; }
+  const late = await call('press', { id: 'ct/G1.2', what: 'code' }, ANDY);
+  const after = await item('ct/G1.2');
+  if (took(late) && after.code === true && after.phase === 'red') test.check('the code mark starts its red, as his Go would have');
+  else test.fail('OWED by goal/G8.10: press code answered ' + short(late.body) + '; item reads ' + short({ code: after.code, phase: after.phase }));
+
+  test.subHeading('7. a goal has no code state, so its Details draws no toggle');
   const g = await dialogOn(facts({ id: 'ct/G1', title: 'Code toggle', goal: '', buttons: ['close'] }));
   if (!/id="dd-code"/.test(g.html())) test.check('the goal\'s Details draws no #dd-code');
   else test.fail(OWED + 'the goal\'s Details drew a Code toggle');

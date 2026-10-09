@@ -661,7 +661,14 @@ function press(s, it, what, r, goalOf, b) {
   // HIS CODE TOGGLE (goal/G9.5). Andy, 2026-10-07: "the item Detail dialog has a check/toggle button, [Code✓], in it's
   // button bar, where the user can set the Code-state of an item". Never on a goal, never on a sub-goal (goal/G6.8:
   // "it can no longer be marked as a coding item"); the handler refuses both, and the walk holds it too.
-  else if (what === 'code' && !it.goal && !it.subGoal) it.code = !it.code;
+  // CODE MARKED AFTER HIS GO (goal/G8.10). His Go starts the red phase only on an item that is already a coding item,
+  // so an item marked as code afterwards sat with no phase at all: nobody could take it, no Done was offered, and no
+  // Close either (Close is offered before a Go alone), which held its goal's Done as well. Andy, 2026-10-09, "go" to
+  // this line: marking the item starts its red, exactly as his Go would have.
+  else if (what === 'code' && !it.goal && !it.subGoal) {
+    it.code = !it.code;
+    if (it.code && it.go && !it.phase) it.phase = 'red';
+  }
   else if (what === 'design-complete') { it.designComplete = true; it.status = 'ready'; }
   // HIS GO IS ON RECORD (goal/G3.9): `go` is set by his go and go-all alone and by nothing else; `went` stays the
   // state of the item, which older records set in other ways.
