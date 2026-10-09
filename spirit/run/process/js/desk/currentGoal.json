@@ -1,8 +1,8 @@
 {
- "change": 22190,
+ "change": 22194,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T09:58:11.058Z",
+ "writtenAt": "2026-10-09T09:58:18.720Z",
  "items": [
   {
    "id": "goal/G8",
@@ -11,12 +11,11 @@
    "status": "",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G8.7"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -37,13 +36,14 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows"
+    "claude-windows",
+    "wsl-claude"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -1217,10 +1217,9 @@
    "id": "goal/G8.3",
    "title": "deskVerify: Agent mode functionality — on the desk node it is a real agent, and a wholly mechanical one",
    "goal": "goal/G8",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -2527,17 +2526,17 @@
    "id": "goal/G8.7",
    "title": "deskVerify: tolerated reds — the goal Done waits on one red question listing the reds outside its scope",
    "goal": "goal/G8",
-   "status": "running",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [
     "goal/G8"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -2581,7 +2580,7 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "deskVerify: TOLERATED REDS\n\nAndy, 2026-10-06: \"for now, tolerated reds have to be granted as a whole, in order to pop the Done button for the goal, so the final full suite lists the reds outside the goals scope in a red-question for the goal, that blocks the Done button for the goal.\" Blocked by goal/G8.6, since the short loop and the final full run are the same mechanism seen twice.\n\nSO THERE IS NO LIST OF TOLERATED REDS, and nothing to maintain. The full run that a goal needs before it closes puts every red that lies outside that goal into ONE red question on the goal, and that question blocks the goal's Done until he grants it. He grants them together or not at all, which is what \"for now\" covers.\n\nWHY IT IS BETTER THAN A LIST: a list of exceptions drifts and becomes a hiding place, while a question he answers at the moment of closing cannot. Today the same information is given to him by hand: on 2026-10-06 four of eleven reds in a full run were old debts that claude-windows had to explain in a post.\n\nWHAT COUNTS AS OUTSIDE THE GOAL: every suite that is not one of the goal suites, which goal/G8.6 now settles from his words, an item suites being the test files its own commits changed.\n\nWHEN THE REDS CHANGE WHILE THE GRANT IS OPEN. Asked: \"When the reds change while the grant is open, should deskVerify add a fresh grant naming the new list?\" Andy, 2026-10-09: \"yes\". Not in 8785d4b0, which asks for none while its grant is open.\n\nWHERE A FULL RUN REPORTS. Asked: \"Should a full run of all tests send its results to deskVerify, as the short loop already does?\" Andy, 2026-10-09: \"the agents full run should report it to the goals chat.\" Asked next: \"Should the agent's full run report to the goal chat AND send its results to deskVerify, so the grant can name the reds?\" Andy: \"both\". Not built: today runAll sends nothing to deskVerify and posts nothing to the goal chat.",
