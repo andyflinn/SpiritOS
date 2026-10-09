@@ -38,7 +38,7 @@ function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x))
 function fakeElement(id) {
   let html = '';
   const el = {
-    id: id, value: '', textContent: '', hidden: false, disabled: false, style: {}, listeners: {}, placeholder: '',
+    id: id, value: '', textContent: '', disabled: false, style: {}, listeners: {}, placeholder: '',
     addEventListener: function (type, fn) { (el.listeners[type] = el.listeners[type] || []).push(fn); },
     fire: function (type, event) { (el.listeners[type] || []).forEach(function (fn) { fn(event || {}); }); },
     querySelectorAll: function () { return []; }, querySelector: function () { return null; },
@@ -46,6 +46,8 @@ function fakeElement(id) {
     appendChild: function () {}, removeChild: function () {}, replaceChild: function () {},
   };
   Object.defineProperty(el, 'innerHTML', { get: function () { return html; }, set: function (v) { html = String(v); }, enumerable: true });
+  let hid = false;
+  Object.defineProperty(el, 'hidden', { get: function () { return hid; }, set: function (v) { hid = !!v; el.__hiddenSet = true; }, enumerable: true });
   return el;
 }
 function target(attrs) {
@@ -59,7 +61,15 @@ function tagOf(html, id) {
   const to = html.indexOf('>', at);
   return html.slice(from, to === -1 ? html.length : to + 1);
 }
-function shows(html, id) { const t = tagOf(html, id); return !!t && !/\shidden(\s|>|=)/.test(t); }
+// The element's own hidden counts once the page has set it: a shell that toggles a fixed element (as #desk-go-all is)
+// changes the property, never the markup string, so reading the markup alone would see it hidden for ever.
+let liveById = null;
+function shows(html, id) {
+  const t = tagOf(html, id);
+  if (!t) return false;
+  const el = liveById && liveById[id];
+  return el && typeof el.hidden === 'boolean' && el.__hiddenSet ? !el.hidden : !/\shidden(\s|>|=)/.test(t);
+}
 
 test.startTest('goal/G9.11: Add Goal above the List search, while Goals Only is on');
 
@@ -68,6 +78,7 @@ test.startTest('goal/G9.11: Add Goal above the List search, while Goals Only is 
   fake.items = [{ id: 'ag/G1', title: 'The current one', goal: '', design: true, status: '', with: '',
     buttons: [], blocking: [], blocked: [], live: [], working: [], waiting: 0 }];
   const byId = {};
+  liveById = byId;
   const doc = { getElementById: function (id) { return byId[id] || (byId[id] = fakeElement(id)); } };
   let behavior = null;
   new Function('spirit', 'document', 'window', fs.readFileSync(DESK, 'utf8'))(

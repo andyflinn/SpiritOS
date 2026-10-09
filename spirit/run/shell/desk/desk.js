@@ -618,6 +618,20 @@ function deskDrawToggles() {
     b.textContent = t[1] + (t[2] ? ' ✓' : '');
     b.style.fontWeight = t[2] ? 'bold' : 'normal';
   });
+  var add = document.getElementById('desk-add-goal');
+  if (add) add.hidden = !deskFilter.goalsOnly;
+}
+// goal.add, then his make-current on the id the desk answered: an add never moves the current goal (goal/G9.13),
+// and the goal he adds by hand becomes current (goal/G9.11), so the bubble does what he would do by hand.
+function deskAddGoal() {
+  var input = document.getElementById('desk-goal-title');
+  var title = String((input && input.value) || '').trim();
+  if (!title) return Promise.resolve();
+  return deskAsk('goal.add', { title: title }).then(function (r) {
+    if (!r || !r.id) return;
+    input.value = '';
+    return deskPress(r.id, 'make-current');
+  }, function (e) { deskError = 'Goal not added: ' + ((e && e.message) || e); deskDraw(); });
 }
 function deskTable() {
   if (!deskItems.length) return '<div class="job-manifest-note">Nothing to show.</div>';
@@ -1068,6 +1082,12 @@ spirit.shell.activateApp({
         // searching AND the filtering", "When Desk opens: [Current Goal Only] on,
         // [Goals Only] off". Outside the repainted table, so typing survives.
         '<div data-pane="list"><div id="desk-backup"></div>' +
+          // ADD GOAL, DIRECTLY ABOVE THE SEARCH, WHILE GOALS ONLY IS ON (goal/G9.11). Andy: "a new bubble will appear
+          // directly above the search bubble for the list: \"Add Goal\" [Title String, subject to label rules]
+          // [add-button]", and "The new goal will automatically become the current goal." Shown by deskDrawToggles.
+          '<div class="start-job-form card" id="desk-add-goal" hidden><label class="field-label grow">Add Goal' +
+            '<input type="text" id="desk-goal-title" placeholder="title"></label>' +
+            '<button type="button" id="desk-goal-add">Add</button></div>' +
           '<div class="start-job-form card"><input id="desk-search" placeholder="search">' +
           '<button type="button" id="desk-current-goal"></button>' +
           '<button type="button" id="desk-goals-only"></button>' +
@@ -1157,6 +1177,7 @@ spirit.shell.activateApp({
       var row = t && t.closest && t.closest('[data-row]');
       if (row) deskOpenRow(row.getAttribute('data-row'));
     });
+    document.getElementById('desk-goal-add').addEventListener('click', function () { deskAddGoal(); });
     document.getElementById('desk-search').addEventListener('input', function () {
       deskFilter.text = String(document.getElementById('desk-search').value || '');
       deskSearchItems();
