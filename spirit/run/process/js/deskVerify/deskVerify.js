@@ -75,9 +75,44 @@ function tree() {
   return seen;
 }
 
+// WHERE IT RUNS, READ FROM ITS OWN NODE (goal/G8.2). Andy, 2026-10-09: "deskVerify knows where it runs. and only the
+// desk node has the right to commit it's measurements". The node's port is the one appServer hands every app server,
+// spirit.core.node.const.SPIRIT_PORT - Andy: "DO NOT RE-INVENT this mechanism!!!!" - and the node is asked which app
+// servers it runs. A deskClient marks an agent's node even beside a desk (agent nodes run both since goal/G3.7); a desk
+// without one is his clone; neither is out of scope by his word. Kept once read: a node's servers do not change while
+// this one runs. A failed read is not kept, so it is asked again next time.
+const spirit = appServer.spirit;
+let MODE = null;
+function mode() {
+  if (MODE) return Promise.resolve(MODE);
+  const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  if (!port) return Promise.resolve({ mode: 'none', apps: [] });
+  return spirit.core.ask('jobs.api', { ask: 'api' }, 'http://127.0.0.1:' + port).then(function (r) {
+    const body = r && r.status === 200 ? r.body : null;
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return { mode: 'none', apps: [] };
+    const apps = Object.keys(body);
+    MODE = { mode: apps.indexOf('deskClient') !== -1 ? 'agent' : apps.indexOf('desk') !== -1 ? 'desk' : 'none', apps: apps };
+    return MODE;
+  }, function () { return { mode: 'none', apps: [] }; });
+}
+
+// A ROW IS WRITTEN for a test's first record or a change of outcome, and nothing else.
+function keep(suite, title, outcome) {
+  const last = newest.get(suite, title);
+  if (last && last.outcome === outcome) return { written: false };
+  const t = tree();
+  addRow.run(suite, title, outcome, t.commit, t.dirty, new Date().toISOString());
+  return { written: true };
+}
+
 appServer.serve({
+  mode: {
+    request: {}, reply: { mode: '', apps: [''] },
+    handler: function () { return mode(); },
+  },
   // ONE RECORD, AS IT HAPPENS (his words above). The answer says whether it was kept: a repeat of the same outcome is
-  // not, and that is the whole of the de-duplication - the history is the flips.
+  // not, and that is the whole of the de-duplication - the history is the flips. Only his clone keeps anything: on an
+  // agent's node "it will never commit", so a record there is taken and answered, and nothing is stored.
   record: {
     request: { suite: '', title: '', outcome: '' }, reply: { written: true },
     handler: function (a) {
@@ -86,11 +121,7 @@ appServer.serve({
       const outcome = String(a.outcome || '');
       if (!suite || !title) throw new Error('a record needs its suite and its title');
       if (outcome !== 'red' && outcome !== 'green') throw new Error('an outcome is red or green');
-      const last = newest.get(suite, title);
-      if (last && last.outcome === outcome) return { written: false };
-      const t = tree();
-      addRow.run(suite, title, outcome, t.commit, t.dirty, new Date().toISOString());
-      return { written: true };
+      return mode().then(function (m) { return m.mode === 'desk' ? keep(suite, title, outcome) : { written: false }; });
     },
   },
 });

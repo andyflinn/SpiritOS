@@ -56,7 +56,9 @@ function fakeNode(apps) {
         const body = {};
         apps.forEach(function (a) { body[a] = {}; });
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify(ask && ask.ask === 'api' ? { status: 200, body: body } : { status: 200, body: {} }));
+        // A real node answers jobs.api 'api' with the tree itself, app name -> its verbs (asked of claude-windows'
+        // node, 2026-10-09), not wrapped in {status, body}; the builder made the fake answer the same.
+        res.end(JSON.stringify(ask && ask.verb === 'jobs.api' && ask.ask === 'api' ? body : {}));
       });
     }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
   });
@@ -73,9 +75,11 @@ async function start(name, apps) {
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(root, 'deskVerify', 'win32', 'process') : path.join(root, 'door.sock');
   const client = appClient.createAppClient({ rootDir: root });
   client.register('deskVerify', pipe);
+  // In `root`, as a node starts its servers in its own run folder: the kernel reads ./relay-state/environment.json from
+  // the working folder (kernel.js SPIRIT_ENVIRONMENT_FILE), not from any variable, so the folder is what hands the port.
   const kid = spawn(process.execPath, [SERVER, JSON.stringify({ db: db }), '--pipe', pipe, '--state', state], {
+    cwd: root,
     stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
-    env: Object.assign({}, process.env, { SPIRIT_ENVIRONMENT_FILE: path.join(root, 'relay-state', 'environment.json'), SPIRIT_NODE_PORT: String(node.port) }),
   });
   for (let i = 0; i < 60; i++) {
     await sleep(150);

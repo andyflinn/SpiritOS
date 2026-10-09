@@ -63,7 +63,18 @@ async function dataset() {
   const pipe = process.platform === 'win32' ? appClient.pipePathFor(scratch, 'deskVerify', 'win32', 'process') : path.join(scratch, 'door.sock');
   const client = appClient.createAppClient({ rootDir: scratch });
   client.register('deskVerify', pipe);
-  const kid = spawn(process.execPath, [SERVER, JSON.stringify({ db: db }), '--pipe', pipe, '--state', state], { stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  // ON HIS CLONE, where records are kept (goal/G8.2): its own run folder names a node that runs a desk and no
+  // deskClient. Without it, deskVerify falls back to the kernel's default port, 65432, and would ask whatever node is
+  // there, which made this suite's answer depend on the machine it ran on.
+  const deskNode = await new Promise(function (resolve) {
+    const s = http.createServer(function (req, res) { req.resume(); req.on('end', function () { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"desk":{}}'); }); })
+      .listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
+  });
+  const runRoot = path.join(scratch, 'run');
+  fs.mkdirSync(path.join(runRoot, 'relay-state'), { recursive: true });
+  fs.writeFileSync(path.join(runRoot, 'relay-state', 'environment.json'), JSON.stringify({ PORT: deskNode.port }));
+  const kid = spawn(process.execPath, [SERVER, JSON.stringify({ db: db }), '--pipe', pipe, '--state', state], { cwd: runRoot, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });
+  kid.once('exit', function () { deskNode.close(); });
   let up = false;
   for (let i = 0; i < 60 && !up; i++) { await sleep(150); try { const r = await client.ask('api'); up = !!(r.body && r.body.deskVerify && r.body.deskVerify.ok !== false); } catch (e) { /* not yet */ } }
   const record = function (a) { return client.ask({ deskVerify: { record: a } }, CALLER).then(function (r) { return r || {}; }, function () { return {}; }); };
