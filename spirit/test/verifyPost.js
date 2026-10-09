@@ -21,7 +21,7 @@ if (!Number.isInteger(port) || port <= 0 || !Array.isArray(records) || !records.
 
 (async function () {
   for (const r of records) {
-    const body = JSON.stringify({ ask: { deskVerify: { record: { suite: String(r.suite || ''), title: String(r.title || ''), outcome: String(r.outcome || '') } } } });
+    const body = JSON.stringify({ verb: 'jobs.api', ask: { deskVerify: { record: { suite: String(r.suite || ''), title: String(r.title || ''), outcome: String(r.outcome || '') } } } });
     try {
       await fetch('http://127.0.0.1:' + port + '/api/spirit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: body });
     } catch (e) { /* the node is gone; a record nobody could take is not a suite's problem */ }

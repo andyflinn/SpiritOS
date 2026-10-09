@@ -33,7 +33,9 @@ function record(title, outcome) {
   const rec = { suite: SUITE, title: String(title), outcome: outcome };
   pending.add(rec);
   fetch('http://127.0.0.1:' + VERIFY_PORT + '/api/spirit', {
-    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ask: { deskVerify: { record: rec } } }),
+    method: 'POST', headers: { 'content-type': 'application/json' }, // verb AND ask, as kernel.core.ask sends it: a node answers a body with no verb 'no such verb' (found by
+    // claude-windows verifying c3935558, on a real node).
+    body: JSON.stringify({ verb: 'jobs.api', ask: { deskVerify: { record: rec } } }),
   }).then(function () { pending.delete(rec); }, function () { pending.delete(rec); });
 }
 // A suite's last words are its report, and then it exits. Whatever is still in the air is posted by a child this
