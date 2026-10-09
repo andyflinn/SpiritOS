@@ -1,8 +1,8 @@
 {
- "change": 26163,
+ "change": 26171,
  "line": 8495,
  "goal": "goal/G10",
- "writtenAt": "2026-10-09T22:50:24.631Z",
+ "writtenAt": "2026-10-09T22:50:36.717Z",
  "items": [
   {
    "id": "goal/G10",
@@ -11,6 +11,7 @@
    "status": "full run passed",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -35,15 +36,14 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "ollama agent node",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows",
-    "wsl-claude"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -766,10 +766,11 @@
    "id": "goal/G10.1",
    "title": "Endpoint introspection in OpenAI tool shape",
    "goal": "goal/G10",
-   "status": "closed",
+   "status": "ready",
    "with": "",
    "buttons": [
-    "reopen"
+    "go",
+    "close"
    ],
    "blocking": [
     "goal/G10.2"
@@ -1336,7 +1337,9 @@
    "blocking": [
     "goal/G10.4"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G10.1"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
