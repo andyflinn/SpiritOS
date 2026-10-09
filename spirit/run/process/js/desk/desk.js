@@ -521,7 +521,10 @@ function apply(s, r, b, item, goalOf) {
     // the agent's verify still records verified, and this is deskVerify's own word on top of it. A rejection, a new
     // build or a new red takes it away again, since what it was given for is gone.
     case 'verify.pass':
-      if (!it || !it.code || it.done || it.closed) return;
+      // On an item it is deskVerify's word over the verifier's (goal/G8.3); on a GOAL it is the full run's word
+      // (goal/G8.12), which is why a goal takes it although it carries no code mark.
+      if (!it || it.done || it.closed) return;
+      if (!it.goal && !it.code) return;
       it.checked = true;
       return;
     // A VERIFY TAKEN BACK (goal/G8.3). Andy, 2026-10-09: "deskVerify only reject a done claim. this should prompt an
@@ -542,6 +545,15 @@ function apply(s, r, b, item, goalOf) {
       it.with = '';
       it.status = 'running';
       return;
+    // THE GOAL IS EMPTY (goal/G8.12). Andy, 2026-10-09: "why, the run-all should be triggered by: \"no items left in
+    // the goal\", by the desk itself." Ruled already in goal/G8.3's box: "When the last item of the goal closes, every
+    // copy starts its full run." The record is written once per goal, by the press that empties it, and deskVerify's
+    // watcher reads it; the flag here is what makes it once.
+    case 'goal.emptied': {
+      const g = s.goals[String(b.id)];
+      if (g) g.emptied = true;
+      return;
+    }
     // AN AGENT'S RE-VERIFY (goal/G8.10). Andy, 2026-10-09: "an agent should be able to trigger a re-verify." It changes
     // nothing of the item - not its phase, not its verified mark, not its buttons: the record itself is the word, and
     // deskVerify's watcher reads it and runs the item's suites again.
@@ -717,6 +729,23 @@ function blockers(s, it) {
   });
 }
 
+// THE GOAL THAT HAS JUST EMPTIED (goal/G8.12): every item of it done, closed or left out, and no goal.emptied on the
+// record yet. Called after a press lands, so the state it reads is the state his press produced; it writes one record
+// as the desk itself, which is what deskVerify's watcher takes for "run the full harness now".
+function emptiedByPress(a) {
+  const st = walkState();
+  const it = st.items[String(a && a.id)];
+  if (!it) return false;
+  const gid = it.goal ? it.id : it.goalId;
+  const g = st.goals[gid];
+  if (!g || g.emptied || gid === GROUP_CHAT) return false;
+  const members = g.members.filter(function (id) { const m = st.items[id]; return m && !m.leftOut; });
+  if (!members.length) return false;
+  if (!members.every(function (id) { const m = st.items[id]; return m.done || m.closed; })) return false;
+  write('goal.emptied', { id: gid, by: 'desk', key: '' });
+  return true;
+}
+
 // The buttons, decided here once for the List and the dialog alike.
 //   Go!    after design ends (Andy's "end design mode."), not yet gone, nothing open blocks it
 //   Done   on an item once one agent has claimed ("1 agents consent will offer done buttons");
@@ -758,7 +787,11 @@ function buttons(s, it) {
   // pressed against the goal id offers nothing by itself. An item's own rule is unchanged: a claim offers Done.
   if (it.goal) {
     const allDone = g && g.members.length > 0 && g.members.every(function (id) { const m = s.items[id]; return m && (m.done || m.closed); });
-    if (allDone && !grantsOpen) out.push('done');
+    // AND THE GOAL'S DONE WAITS FOR THE FULL RUN WHERE ONE CAN RUN IT (goal/G8.12). Andy, 2026-10-09: "the run-all
+    // should be triggered by: \"no items left in the goal\", by the desk itself." The run is deskVerify's, so where a
+    // deskVerify answers on this node the goal's Done comes with its verify.pass on the goal and not before; where
+    // none runs, nothing changes and the Done comes as it always did.
+    if (allDone && !grantsOpen && (it.checked === true || !hasDeskVerify())) out.push('done');
   // A CODE ITEM OFFERS DONE ON THE VERIFIER'S PASS ALONE (goal/G5.7), no claims needed.
   // AND DONE WAITS FOR deskVerify WHERE ONE RUNS (goal/G8.3). Andy, 2026-10-09: "best is, if the done button doesn't
   // show up until deskVerify allows it.", and "the builders claim is registered, but only deskVerify brings the
@@ -1907,7 +1940,11 @@ appServer.serve({
       ownerOnly(caller);
       const w = writerOf(caller);
       return { change: write('verify.pass', { id: a.id, by: w.by, key: w.key }, function (st, it) {
-        if (!it || !it.code || it.verified !== true || it.done || it.closed) throw refused('not-offered');
+        // A GOAL TAKES IT ONCE IT HAS EMPTIED (goal/G8.12): that is what the full run was started by, and the goal
+        // carries no code mark of its own. An item still needs its verifier's pass first (goal/G8.3).
+        if (!it || it.done || it.closed) throw refused('not-offered');
+        if (it.goal) { if (!(st.goals[it.id] || {}).emptied) throw refused('not-offered'); }
+        else if (!it.code || it.verified !== true) throw refused('not-offered');
       }).change };
     },
   },
@@ -2072,7 +2109,7 @@ appServer.serve({
       if (a.what === 'start-design' && a.id === '') return { change: newGoal(w).change };
       const body = Object.assign({}, a, { by: w.by, key: w.key });
       if (a.what === 'go' || a.what === 'go-all') body.rules = rulesForGo(walkState(), a.id, a.what);
-      return { change: write('press', body, function (st, it) {
+      const landed = write('press', body, function (st, it) {
         const offered = buttons(st, it);
         // goal/G2.19 puts make-current on the same leash: offered or refused, so a closed goal takes Reopen first.
         if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen' || a.what === 'make-current') && offered.indexOf(a.what) === -1) throw refused('not-offered');
@@ -2090,7 +2127,10 @@ appServer.serve({
         if (a.what === 'claim-done' && !it.goal && !it.go) throw refused('not-offered');
         // The group chat's anchor stays closed (goal/G3.10): nobody brings it back onto the List.
         if (a.what === 'bring-back' && it.id === GROUP_CHAT) throw refused('not-offered');
-      }).change };
+      });
+      // THE PRESS THAT EMPTIES THE GOAL WRITES IT (goal/G8.12), once, right after it has landed.
+      emptiedByPress(a);
+      return { change: landed.change };
     },
   },
   'state.get': { request: {}, reply: { json: '' }, handler: function () { return { json: doc('state') }; } },

@@ -362,22 +362,31 @@ let checking = false;
 // and an id already waiting or already being checked is not queued again: the repeat cost whole suite runs.
 let reading = false;
 const watchQueue = [];
-function queuedAlready(id) { return watchQueue.indexOf(id) !== -1 || running.id === id; }
+const goalsRun = Object.create(null);
+function queuedAlready(job) {
+  return watchQueue.some(function (q) { return q.kind === job.kind && q.id === job.id; }) ||
+    (job.kind === 'item' && running.id === job.id);
+}
 function watched(r) {
   let b = null;
   try { b = JSON.parse(r && r.body || 'null'); } catch (e) { b = null; }
-  if (!b || !b.id) return '';
-  if (r.verb === 'verify.again') return String(b.id);
-  if (r.verb === 'phase.done' && String(b.phase) === 'verify' && b.pass === true) return String(b.id);
-  return '';
+  if (!b || !b.id) return null;
+  if (r.verb === 'verify.again') return { kind: 'item', id: String(b.id) };
+  if (r.verb === 'phase.done' && String(b.phase) === 'verify' && b.pass === true) return { kind: 'item', id: String(b.id) };
+  // THE GOAL HAS EMPTIED (goal/G8.12): the desk writes this when its last item goes, and it starts the full run.
+  if (r.verb === 'goal.emptied') return { kind: 'goal', id: String(b.id) };
+  return null;
 }
 async function drainQueue() {
   if (checking) return;
   checking = true;
   try {
     while (watchQueue.length) {
-      const id = watchQueue.shift();
-      try { await claimCheck(id); } catch (e) { /* the desk is the record; a failed check is asked again by its next word */ }
+      const job = watchQueue.shift();
+      try {
+        if (job.kind === 'goal') await fullRun(job.id);
+        else await claimCheck(job.id);
+      } catch (e) { /* the desk is the record; a failed check is asked again by its next word */ }
     }
   } finally { checking = false; }
 }
@@ -404,20 +413,98 @@ async function watchOnce() {
       if (recs.length && recs[recs.length - 1].at) lastWriteAt = String(recs[recs.length - 1].at);
       if (!history) {
         recs.forEach(function (r) {
-          const id = watched(r);
-          if (id && queued.indexOf(id) === -1 && !queuedAlready(id)) queued.push(id);
+          const job = watched(r);
+          if (!job) return;
+          // ONE PASS PER GOAL (goal/G8.12): a second goal.emptied for a goal already run does nothing.
+          if (job.kind === 'goal' && goalsRun[job.id]) return;
+          if (queued.some(function (q) { return q.kind === job.kind && q.id === job.id; })) return;
+          if (queuedAlready(job)) return;
+          if (job.kind === 'goal') goalsRun[job.id] = true;
+          queued.push(job);
         });
       }
       if (n > watchAt) watchAt = n;
       if (!page.more || !recs.length) break;
     }
   } finally { reading = false; }
-  queued.forEach(function (id) { watchQueue.push(id); });
+  queued.forEach(function (job) { watchQueue.push(job); });
   if (queued.length) drainQueue();
   return { read: read, queued: queued };
 }
 const watcher = setInterval(function () { watchOnce().catch(function () { /* next tick */ }); }, WATCH_MS);
 if (watcher.unref) watcher.unref();
+
+// THE FULL RUN WHEN THE GOAL EMPTIES (goal/G8.12). Andy, 2026-10-09: "why, the run-all should be triggered by: \"no
+// items left in the goal\", by the desk itself", and it was already his ruling in goal/G8.3's box ("When the last item
+// of the goal closes, every copy starts its full run"). The desk writes goal.emptied; this runs every suite in its
+// suites folder, one at a time, publishing doing 'full' so the tab's bar moves through it, then says what it found:
+// ONE line in the goal's chat naming the reds, the tolerated-reds grant through goal.check (goal/G8.7), and
+// verify.pass on the goal, which is what brings the goal its Done. One pass per goal; the watcher holds that.
+const SUITES_DIR = path.resolve(REPO, String(values.suites || 'spirit/test'));
+function suiteFiles() {
+  try {
+    return fs.readdirSync(SUITES_DIR).filter(function (f) { return /\.js$/.test(f); }).sort();
+  } catch (e) { return []; }
+}
+async function fullRun(goalId) {
+  const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  const files = suiteFiles();
+  const reds = [];
+  const rel = function (f) { return path.relative(REPO, path.join(SUITES_DIR, f)).split(path.sep).join('/'); };
+  for (const f of files) {
+    const index = files.indexOf(f) + 1;
+    const where = rel(f);
+    const expected = expectedOf(f);
+    running = { id: '', suite: where, since: new Date().toISOString() };
+    const told = function (tests) {
+      say({ doing: 'full', id: String(goalId), suite: where, index: index, of: files.length, tests: tests,
+        expected: expected,
+        line: 'full run: ' + f + ', suite ' + index + ' of ' + files.length +
+          (expected ? ', ' + tests + ' of about ' + expected + ' tests' : ', ' + tests + ' tests'),
+        since: running.since });
+    };
+    told(0);
+    const run = await runSuite(path.join(SUITES_DIR, f), port, told);
+    if (run.stopped) { reds.push(where + ': stopped by hand'); break; }
+    if (run.timedOut) reds.push(where + ': stopped at the time limit of ' + SUITE_MS + 'ms');
+    else if (/FAILURE #/.test(run.said)) reds.push(where);
+  }
+  running = { id: '', suite: '', since: '' };
+  // THE REPORT IS ONE LINE (goal/G8.7, Andy: "both"): what went red, in the goal's own chat, where he reads it.
+  const text = reds.length
+    ? 'full run on ' + files.length + ' suites: red in ' + reds.join(', ')
+    : 'full run on ' + files.length + ' suites: all green';
+  await desk('chat.add', { id: String(goalId), text: text });
+  // THE REDS OUTSIDE THE GOAL BECOME ONE GRANT ON IT (goal/G8.7). Andy, 2026-10-06: "tolerated reds have to be granted
+  // as a whole, in order to pop the Done button for the goal". These are the reds this pass MEASURED, not the
+  // dataset's - the pass is the newer truth, and it is the run he is waiting on. A red whose suite is on an item's own
+  // file list is the goal's own work and is never tolerated; and while such a grant already stands open, none is asked,
+  // because one decision is one button.
+  if (reds.length) {
+    const inside = Object.create(null);
+    const found = await desk('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: true });
+    ((found && found.items) || []).forEach(function (i) {
+      let one = null;
+      try { one = JSON.parse(i.label); } catch (e) { one = null; }
+      ((one && one.files) || []).forEach(function (f) {
+        const q = String((f && f.path) || '');
+        if (/^spirit\/test\/.+\.js$/.test(q)) inside[path.basename(q)] = true;
+      });
+    });
+    const outside = reds.filter(function (r) { return !inside[path.basename(String(r).split(':')[0])]; });
+    const open = await desk('item.checks', { id: String(goalId) }).then(function (c) {
+      return ((c && c.checks) || []).some(function (x) {
+        return x.kind === 'G' && x.state === 'open' && String(x.words).indexOf('tolerated reds:') === 0;
+      });
+    }, function () { return false; });
+    if (outside.length && !open) {
+      await desk('check.add', { id: String(goalId), kind: 'G', words: 'tolerated reds: ' + outside.join(', '), test: '' });
+    }
+  }
+  await desk('verify.pass', { id: String(goalId) });
+  sayIdle();
+  return { ran: files.map(rel), reds: reds };
+}
 
 // IDLE TIME (goal/G8.4). Andy, 2026-10-06: "when it's agent or it's desk have been idle for more than an hour". The box
 // adds what the hour alone misses: a node whose agent holds a phase is busy however long the silence. So idle is an
