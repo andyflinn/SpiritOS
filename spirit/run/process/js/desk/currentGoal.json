@@ -1,8 +1,8 @@
 {
- "change": 20323,
+ "change": 20324,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:08:20.326Z",
+ "writtenAt": "2026-10-09T06:08:39.996Z",
  "items": [
   {
    "id": "goal/G9",
@@ -17,7 +17,6 @@
    "blocked": [
     "goal/G9.1",
     "goal/G9.3",
-    "goal/G9.4",
     "goal/G9.5",
     "goal/G9.7",
     "goal/G9.10",
@@ -616,17 +615,18 @@
    "id": "goal/G9.4",
    "title": "A split adds only the explicit blocking relation",
    "goal": "goal/G9",
-   "status": "verified",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -665,7 +665,7 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"when splitting an item, only the new explicit blocking relationship is automatically added, the implicit blocking will not need to be specified, it clutters the list display with confusing \\\"blocks\\\" and \\\"waits on\\\" columns, and is not needed for a dependency graph.\"\n\nToday: blocks come from the session json an agent sends; on 2026-10-03 Andy ruled the new items block the parent. Andy, 2026-10-07, on Q1 (which relation is the explicit one): \"the new split-items always block the item from which they were split, items blocked by the current item are still blocked by the newly split item, because if theyre blocked by me, they are implicitly blocked by the newly created/split item.\"\nShape: a split writes one relation per new item, new item blocks parent, and nothing else; what the parent blocks stays the parent's and reaches the new item through it. The 2026-10-03 ruling stands, this names what is NOT written.",
