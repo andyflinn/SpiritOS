@@ -1,8 +1,8 @@
 {
- "change": 20314,
+ "change": 20317,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:07:33.983Z",
+ "writtenAt": "2026-10-09T06:07:47.445Z",
  "items": [
   {
    "id": "goal/G9",
@@ -22,7 +22,6 @@
     "goal/G9.5",
     "goal/G9.6",
     "goal/G9.7",
-    "goal/G9.8",
     "goal/G9.10",
     "goal/G9.11",
     "goal/G9.12",
@@ -1046,17 +1045,18 @@
    "id": "goal/G9.8",
    "title": "Start/End design always visible after the Musings tab; the yellow design bubble goes",
    "goal": "goal/G9",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -1095,7 +1095,7 @@
      "version": 6
     }
    ],
-   "asks": 2,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"The [Start/End design] buttons should be displayed always, not only when the team tab is active, and it should be placed right after the [Musings] tab header in desks header area\" and \"get rid of the yellow bubble that says \\\"Design mode. Nothing is built until it ends, and it ends only in the Team tab.\\\". it is useless.\"\n\nShape: UI only, in the desk shell.",
@@ -1354,8 +1354,8 @@
    "id": "goal/G9.10",
    "title": "Add blocking item section in the item Details",
    "goal": "goal/G9",
-   "status": "running",
-   "with": "",
+   "status": "red",
+   "with": "claude-windows",
    "buttons": [],
    "blocking": [
     "goal/G9"
@@ -1366,12 +1366,12 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "green": true,
    "code": true,
    "phase": "red",
-   "red": "",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "waived": false,
