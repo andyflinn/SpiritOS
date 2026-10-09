@@ -26,7 +26,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { spawnSync } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 const { DatabaseSync } = require('node:sqlite');
 const appServer = require('../../../js/appServer.js');
 
@@ -96,6 +96,22 @@ function mode() {
   }, function () { return { mode: 'none', apps: [] }; });
 }
 
+// ONE SUITE, RUN WITHOUT STOPPING THE SERVER (goal/G8.6, found by claude-windows verifying 19488845): spawnSync froze
+// deskVerify for the whole suite, and a suite posts its records to this very server through the node's door, which
+// waits about twelve seconds - so a long suite's records were all lost. Spawned and awaited instead: still one suite
+// at a time, and the event loop keeps turning, so every record that arrives mid-run is taken.
+function runSuite(file, port) {
+  return new Promise(function (resolve) {
+    const out = [];
+    const kid = spawn(process.execPath, [file, '--verify-port', String(port)], { cwd: REPO, stdio: ['ignore', 'pipe', 'pipe'] });
+    const stop = setTimeout(function () { try { kid.kill(); } catch (e) { /* gone */ } }, 600000);
+    kid.stdout.on('data', function (d) { out.push(String(d)); });
+    kid.stderr.on('data', function (d) { out.push(String(d)); });
+    kid.on('exit', function (code) { clearTimeout(stop); resolve({ code: code, said: out.join('') }); });
+    kid.on('error', function () { clearTimeout(stop); resolve({ code: 1, said: '' }); });
+  });
+}
+
 // THE SHORT LOOP'S SUITES (goal/G8.6). Andy, 2026-10-06: "the short loop is: all the suites of the current goal,
 // between 'Go' pressed and 'Done' pressed", and "which suites belong to a goal: all the suites associated with items in
 // the goal", known "the way a coding agent knows which suite it writes the code against" - which is the item's own file
@@ -128,14 +144,14 @@ function suites() {
 // goal/G8.9 moved to a base, and a verifier that collides with itself measures nothing. The answer says what ran.
 function loopOnce() {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
-  return suites().then(function (list) {
+  return suites().then(async function (list) {
     const ran = [];
-    list.forEach(function (rel) {
+    for (const rel of list) {
       const file = path.join(REPO, rel);
-      if (!fs.existsSync(file)) return;
-      spawnSync(process.execPath, [file, '--verify-port', String(port)], { cwd: REPO, stdio: 'ignore', timeout: 600000 });
+      if (!fs.existsSync(file)) continue;
+      await runSuite(file, port);
       ran.push(rel);
-    });
+    }
     return { ran: ran };
   });
 }
@@ -161,16 +177,16 @@ function suitesOf(id) {
 // agent to pick the item up, raise red-questions if neccessary.", and "deskVerify will NOT press done or closed on my
 // behalf". So: run the item's own suites, and if any assertion was red, ask the desk to take the verify back, naming
 // the reds. All green and it says nothing to the desk. It presses nothing, ever.
-// A suite's exit code is the verdict (testSupport sets it 1 on any failure), and its records arrive the usual way.
+// Each suite is spawned and awaited, as the loop does, so this server keeps answering while it runs - its own records
+// arrive through the node's door while a suite is still going (goal/G8.6).
 function claimCheck(id) {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
-  return suitesOf(id).then(function (list) {
+  return suitesOf(id).then(async function (list) {
     const reds = [];
-    list.forEach(function (rel) {
+    for (const rel of list) {
       const file = path.join(REPO, rel);
-      if (!fs.existsSync(file)) return;
-      const r = spawnSync(process.execPath, [file, '--verify-port', String(port)], { cwd: REPO, encoding: 'utf8', timeout: 600000 });
-      const said = String((r && r.stdout) || '');
+      if (!fs.existsSync(file)) continue;
+      const said = (await runSuite(file, port)).said;
       // The failures as the suite printed them, so the why names what went red rather than only which file did.
       // THE PRINTED LINES ARE THE VERDICT, not the exit code: testSupport sets exitCode 1 on a failure, but a suite
       // that ends with process.exit(0) - most of them do - overrides it, and runAll reads the printed report for the
@@ -178,7 +194,7 @@ function claimCheck(id) {
       const lines = said.split('\n').filter(function (l) { return /FAILURE #/.test(l); })
         .map(function (l) { return l.replace(/^\**\s*/, '').replace(/\s*[❌✅]\s*$/, '').trim(); });
       if (lines.length) reds.push({ suite: rel, failures: lines });
-    });
+    }
     if (!reds.length) return { rejected: false, reds: [] };
     const why = reds.map(function (x) { return x.suite + (x.failures.length ? ': ' + x.failures.join('; ') : ''); }).join(' | ');
     return spirit.core.ask('jobs.api', { ask: { desk: { 'verify.reject': { id: String(id), why: why } } } }, 'http://127.0.0.1:' + port)
