@@ -1,8 +1,8 @@
 {
- "change": 25116,
+ "change": 25209,
  "line": 8495,
  "goal": "goal/G10",
- "writtenAt": "2026-10-09T19:51:46.480Z",
+ "writtenAt": "2026-10-09T20:03:31.042Z",
  "items": [
   {
    "id": "goal/G10",
@@ -40,17 +40,20 @@
    "design": true,
    "waiting": 4,
    "live": [
-    "claude-windows"
+    "claude-windows",
+    "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "UPGRADE THE LOCAL AI SUPPORT, deskUnsloth. Design, 2026-10-09. Facts checked at 8924c0dc. Rulings live verbatim in the item they decide.\n\nVISION (Andy's words): the local agent (qwen, on its own node, port 11111) becomes a real party at the desk: it knows what is talked about, its node is \"it's sandbox and it's toolset\", secured against it, and Andy configures memory, models and agent personas with their tools from a browser. \"disregart the ollama agent, i want it to read along for now.\" And, out of the first item's scope but in the vision by his word: \"that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp\" and \"the permission set may change with every deskUnsloth configuration\". And where it goes (his, 2026-10-09): \"picture this: a whole goal, designed for one agent persona, with its model configuration paired with it's tool-access-configuration, will tackle the same goal, while i sleep, event descending the dependency tree of that process....\" Agents with standing orders, tied to one standing item with its own verification, come after this goal. His purpose for this goal (2026-10-09): \"My goal would be, it can help me sketch a design while i wait for the day i get more tokens for claude.\" So the first achievement is the context item's first slice: one document, the box, discussed at length.\n\nTHE ITEMS, IN ANDY'S ORDER\n0. API introspection retrofit: every verb declared on both doors (goal/G10.5): the core work, split off 2026-10-09 (\"a big enough task for one item, it will require grants for core files\"); blocks 1.\n1. Endpoint introspection in OpenAI tool shape: the tool list for a key, stripped to its grants at ask time; the agent reads it (his named dependency).\n2. The local agent node secured against its agent: out of scope for now by his word of 2026-10-09 (the restriction per persona is its configured tool set; the agent node is expendable while the flow is built); the keyed loopback caller stays the later door change.\n3. Context auto-built from the desk goal for the local agent: title, box, last lines and AGENTS go with each line; addressed lines only; one config.\n4. Configuration manager: VRAM, models and agent personas: out of scope by his word of 2026-10-09 (\"oos\"), closed by him the same day; the first configuration is two hand-edited files, the context item's; the screen is a later goal's.\n6. streamClerver: set aside as its own goal, goal/G11, by his word of 2026-10-09; the item here was deleted by him the same day.\n\nChain: 0 blocks 1, 1 blocks 2; 3 blocks the goal (4 out of scope). Four items design-complete on 2026-10-09: 0, 1, 2, 3; the design of the goal is complete, the gap check done; next his End design and Go on the retrofit, where his core-file grant waits. Every item: a suite red on today's code first; the builder never writes its own tests.\n\nNo red Q stands on the goal (2026-10-09): a persona is a configuration with a tool set, not a key and not a node; the Grants app is not involved for the local agent.",
-   "version": 20,
+   "box": "UPGRADE THE LOCAL AI SUPPORT, deskUnsloth. Design, 2026-10-09. Facts checked at 8924c0dc. Rulings live verbatim in the item they decide.\n\nVISION (Andy's words): the local agent (qwen, on its own node, port 11111) becomes a real party at the desk: it knows what is talked about, its node is \"it's sandbox and it's toolset\", secured against it, and Andy configures memory, models and agent personas with their tools from a browser. \"disregart the ollama agent, i want it to read along for now.\" And, out of the first item's scope but in the vision by his word: \"that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp\" and \"the permission set may change with every deskUnsloth configuration\". And where it goes (his, 2026-10-09): \"picture this: a whole goal, designed for one agent persona, with its model configuration paired with it's tool-access-configuration, will tackle the same goal, while i sleep, event descending the dependency tree of that process....\" Agents with standing orders, tied to one standing item with its own verification, come after this goal. His purpose for this goal (2026-10-09): \"My goal would be, it can help me sketch a design while i wait for the day i get more tokens for claude.\" So the first achievement is the context item's first slice: one document, the box, discussed at length.\n\nTHE ITEMS, IN ANDY'S ORDER\n0. API introspection retrofit: every verb declared on both doors (goal/G10.5): the core work, split off 2026-10-09 (\"a big enough task for one item, it will require grants for core files\"); blocks 1.\n1. Endpoint introspection in OpenAI tool shape: the tool list for a key, stripped to its grants at ask time; the agent reads it (his named dependency).\n2. The local agent node secured against its agent: puppet-dom, design-complete, then closed by him on 2026-10-09 as out of scope for now (the first slice speaks only to the desk); its box keeps the design for the tools slice.\n3. Context auto-built from the desk goal for the local agent: title, box, last lines and AGENTS go with each line; addressed lines only; one config.\n4. Configuration manager: VRAM, models and agent personas: out of scope by his word of 2026-10-09 (\"oos\"), closed by him the same day; the first configuration is two hand-edited files, the context item's; the screen is a later goal's.\n6. streamClerver: set aside as its own goal, goal/G11, by his word of 2026-10-09; the item here was deleted by him the same day.\n\nChain: 0 blocks 1; 3 blocks the goal (2 and 4 closed as out of scope for now). Four items design-complete on 2026-10-09: 0, 1, 2, 3; the design of the goal is complete, the gap check done; next his End design and Go on the retrofit, where his core-file grant waits. Every item: a suite red on today's code first; the builder never writes its own tests.\n\nNo red Q stands on the goal (2026-10-09): a persona is a configuration with a tool set, not a key and not a node; the Grants app is not involved for the local agent.",
+   "version": 21,
    "checks": [
     {
      "number": "Q1",
@@ -195,6 +198,33 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-09T15:03:45.539Z"
+    },
+    {
+     "number": "Q17",
+     "kind": "Q",
+     "words": "Go on the retrofit first as planned, or the context item first so the first slice lands?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T20:02:53.893Z"
+    },
+    {
+     "number": "Q18",
+     "kind": "Q",
+     "words": "The chain head (goal/G10.5, goal/G10.1) feeds only the closed items; the goal closes on goal/G10.3 alone. Go on the retrofit first as planned, or the context item first?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T20:02:55.329Z"
+    },
+    {
+     "number": "Q19",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T20:02:56.818Z"
     }
    ],
    "chat": [
@@ -512,6 +542,61 @@
      "by": "claude-windows",
      "at": "2026-10-09T19:50:06.820Z",
      "text": "cw: the design of this goal is complete: four items design-complete (the retrofit, the introspection half, the secured node, the context), the configuration manager closed as out of scope, no red Q anywhere, the gap check done. What remains is yours: End design, then Go on API introspection retrofit: every verb declared on both doors (goal/G10.5), first by the chain, where your core-file grant also waits; wsl-claude being off, the desk waives the handovers to me."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:52:51.557Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:53:05.245Z",
+     "text": "cw: yes, green: the three items left are design-complete, two are closed as out of scope for now, no red Q stands anywhere; your End design and a Go on the retrofit are what is left."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:53:28.255Z",
+     "text": "i'll fetch wsl to move this faster?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:53:44.151Z",
+     "text": "cw: yes, worth it: with two of us the red, build and verify alternate instead of being waived to one, and the retrofit's node verb changes get the peer review they owe; the boxes are capped and current, so wsl can read the three live items and start on the retrofit's red while I take the context item's."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:54:48.587Z",
+     "text": "wsl: please review this goal for gaps, contradictions etc?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:55:50.063Z",
+     "text": "i think he might be reading through the backlog"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T19:56:49.264Z",
+     "text": "wsl: taking the gap and contradiction review of this goal."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T19:58:09.267Z",
+     "text": "wsl: two real gaps. The retrofit (goal/G10.5) and the introspection half (goal/G10.1) feed only the two items you closed; nothing left in scope needs them, and this goal closes on the context item (goal/G10.3) alone. And no live item owns the persona tool-set field that G10.1 narrows by: the manager that was to define it is closed, and the context item puts tools in a second slice.\nTwo stale things: streamClerver is two goals now, goal/G11 and goal/G12, same subject, one should go; and this goal is still listed as blocked by the closed goal/G10.4, which looks like the desk, not your design.\nGo on the retrofit first as planned, or the context item first so the first slice lands?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:59:04.778Z",
+     "text": "cw: on wsl's four points, my position for you to decide. Order: the context item first, so the first slice lands and Levant talks, the retrofit and the introspection half after it for the second slice (or closed for now too, if you want the goal to be the first slice alone). The persona's tool-set field: the plainest home is the configuration file itself, a tools list added in the second slice, no new item; I put it in the context item's box as a proposal.\nStale: goal/G11 is my duplicate, your abandon removes it. And the closed-blocker is a desk bug, confirmed in its code: a closed item still counts as blocking, only done or left-out ones drop out, so this goal reads blocked by the closed manager and a closed blocker would hold back a Go.\nProposed under G9: A closed item blocks nothing. Add it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T20:02:33.484Z",
+     "text": "Proposed under G9: A closed item blocks nothing. Add it?\n\nfine. add it. grrrrrrrrr"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T20:03:20.529Z",
+     "text": "cw: added under G9: A closed item blocks nothing (goal/G9.17), with its box (the blocker walk drops done and left-out items only, the fix drops closed ones too, in the facts and the Go rule; tests first) and marked code, ready for a Go when you switch to G9 for it. Thank you for the grrr; it is the last desk fix I propose tonight."
     }
    ]
   },
@@ -539,7 +624,7 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": true,
+   "green": false,
    "code": true,
    "phase": "",
    "red": "",
@@ -547,7 +632,7 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "ENDPOINT INTROSPECTION IN OPENAI TOOL SHAPE: the agent-facing half, refreshed 2026-10-09 to what the retrofit (goal/G10.5) decided. Facts at 512e59d3.\n\nWHAT: deskUnsloth, on the local agent node, builds the standard tool entries from its own node's AGENTS family, which the retrofit provides: AGENTS.introspect lists the verbs that have a file ({items: [{key, label}], more}), AGENTS.<verb> answers that verb's file (its description and, for a loopback verb, its shape by hand), and the generic api answer gives a process server's shapes. From those it makes {type: \"function\", function: {name, description, parameters}}, parameters a JSON Schema mapped from the prototype ('' string, 0 number, false boolean, [x] array, {} object, every key required), the reply as one extra field, a dotted verb name spelled for a tool name (no dot allowed). Then it hands the model only the verbs the configured task needs (the persona's set, from the configuration manager), never the whole list.\n\nWHY, Andy (2026-10-09): \"one dependency i can think of: retrofit the SpiritOS's endpoint introspection to be compatible with the standard tool descriptions for AI agents.\"; \"the permission set may change with every deskUnsloth configuration\", so the list is built at ask time, never stored; \"so we could use the generic portion of that for the loopback interface, and construct the Open AI compatible version in deskUnsloth?\" (yes); \"It will be deskUnsloth's job to only provide the agent with the verbs needed for that configured task.\"\n\nDEPENDS ON: the retrofit (goal/G10.5), decided and design-complete. BLOCKS: The local agent node secured against its agent (goal/G10.2), by his \"after that\". What a persona may call is that item's; what it is shown is this one's.\n\nTODAY: deskUnsloth sends a bare line to the model with no tools at all; no AGENTS family exists yet (the retrofit builds it).\n\nTESTS FIRST: a suite red on today's code, with a fake AGENTS family: the mapping prototype to JSON Schema, the name spelling, the reply field, the persona set narrowing the list, and that nothing is stored between asks; the builder never writes its own tests.\n\nOUT OF SCOPE here: the model calling a tool and the answer going back (the context item, goal/G10.3), the persona's grants (goal/G10.2), any screen (goal/G10.4).\n\nDECIDED, Andy (2026-10-09): \"on the name? it must be unique in a flat file of tools, so the whole bath must be in there, separated by '_' ??\" So a tool name is the whole path with underscores, server or namespace first, dots to underscores: desk_item_add, fs_stat; deskUnsloth keeps the table from tool name to {door, verb} it built (Andy: \"so deskUnsloth must carry a mapping between Open_AI_Names and a reliable reference to our node and appServer api's?\", yes), door being the node itself or a process server by name; built for each model call from the introspection, kept only for that call, never stored; a call the model makes is looked up there and asked of that door as deskEar asks today; nothing is parsed back. And: \"no permission prompts to me, every configurations comes with a custom tool set that is pre-approved by virtue of me providing it.\" So a tool call the model makes runs at once; the pre-approval is the configuration itself. Nothing is left to argue on this item (design-complete pressed 2026-10-09).",
@@ -687,6 +772,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-09T17:28:26.067Z"
+    },
+    {
+     "number": "Q16",
+     "kind": "Q",
+     "words": "No live item owns the persona tool-set field this item narrows by: the configuration manager is closed and the context item defers tools to a second slice. Which item defines it?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
     }
    ],
    "chat": [
@@ -936,8 +1030,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "THE LOCAL AGENT NODE SECURED AGAINST ITS AGENT, which is puppet-dom: the agent node is the first puppet to use the design strategy decided 2026-10-09, puppet-dom in the core and the features of one puppet in its appServer. Facts at 512e59d3; Andy's words of that day are in this chat.\n\nDECIDED (Andy, 2026-10-09)\n1. His own node is protected by the peerPost authentication that exists; what this item protects is the agent's node against the agent itself. The agent node is his puppet (relay-state/owner.json naming him); the owner door takes his signed commands and runs them over the whole node surface, as a loopback client would (the group filter went with cleanup/G1.7).\n2. The restriction per persona is its configured tool set, handed to the model by deskUnsloth alone (goal/G10.1, goal/G10.4): a persona is a configuration on the one agent node, not a key and not a node each; the Grants app is not involved for the local agent. The keyed loopback caller is out of scope while the flow is built; the agent node is expendable.\n3. Puppet-dom, the same for every puppet and nothing per puppet, three refusals by name on a puppet node: peer.post to a key outside its contacts; the grant verbs (jobs.authGrant, authRevoke, authRelabel), a puppet authorizing nobody to anything, reads of the grants staying; a contact write (contact.accept, block, unblock, label, forget, setSenders) from its own loopback door, contacts being the owner's to write through the owner door. The owner is always among the contacts; desk traffic is unharmed, the desk being the owner's node.\n4. A feature of one puppet lives in its appServer: the face's routing to face-owners (who are contacts the owner wrote) and deskUnsloth; the face puppet's features may later move into an appServer, an aside for another goal.\n\nTHE HIERARCHY OF ACCESS on the agent node (his, 2026-10-09): first what the node and its servers permit through AGENTS.md and verb files (the retrofit, goal/G10.5); second what the deskUnsloth configuration gives the agent (goal/G10.4 through goal/G10.1); more is out of scope right now.\n\nTODAY: jobs.api hands every loopback caller to the gate as the owner; a member arrives as a verified key and apiDoor refuses what its grant rows do not cover; a puppet node with its own key may peer.post to anyone, grant anything and write its contacts from loopback.\n\nNODE VERB CHANGES: the three refusals touch peer.post, the jobs.auth verbs and the contact verbs; his yes is his rulings of 2026-10-09 in this chat; peer review is owed at build (wsl-claude is signed off; the desk waives alone).\n\nTESTS FIRST: a suite red on today's code with a scratch node whose owner.json names another key: the three refusals, the owner's post and contact write passing, a non-puppet untouched; the builder never writes its own tests. Blocked by Endpoint introspection in OpenAI tool shape (goal/G10.1); blocks Configuration manager: VRAM, models and agent personas (goal/G10.4).\n\nNo red Q stands on this item (2026-10-09).",
-   "version": 13,
+   "box": "OUT OF SCOPE FOR NOW, closed by Andy on 2026-10-09 (\"is this oos for now as well. since we are focusing only on desk?\"): in the first slice the agent speaks only to the desk through deskClient, so the three refusals would bite nothing yet; they return with the tools slice, the agent node being expendable meanwhile. The design below stays complete for that day.\n\nTHE LOCAL AGENT NODE SECURED AGAINST ITS AGENT, which is puppet-dom: the agent node is the first puppet to use the design strategy decided 2026-10-09, puppet-dom in the core and the features of one puppet in its appServer. Facts at 512e59d3; Andy's words of that day are in this chat.\n\nDECIDED (Andy, 2026-10-09)\n1. His own node is protected by the peerPost authentication that exists; what this item protects is the agent's node against the agent itself. The agent node is his puppet (relay-state/owner.json naming him); the owner door takes his signed commands and runs them over the whole node surface, as a loopback client would (the group filter went with cleanup/G1.7).\n2. The restriction per persona is its configured tool set, handed to the model by deskUnsloth alone (goal/G10.1, goal/G10.4): a persona is a configuration on the one agent node, not a key and not a node each; the Grants app is not involved for the local agent. The keyed loopback caller is out of scope while the flow is built; the agent node is expendable.\n3. Puppet-dom, the same for every puppet and nothing per puppet, three refusals by name on a puppet node: peer.post to a key outside its contacts; the grant verbs (jobs.authGrant, authRevoke, authRelabel), a puppet authorizing nobody to anything, reads of the grants staying; a contact write (contact.accept, block, unblock, label, forget, setSenders) from its own loopback door, contacts being the owner's to write through the owner door. The owner is always among the contacts; desk traffic is unharmed, the desk being the owner's node.\n4. A feature of one puppet lives in its appServer: the face's routing to face-owners (who are contacts the owner wrote) and deskUnsloth; the face puppet's features may later move into an appServer, an aside for another goal.\n\nTHE HIERARCHY OF ACCESS on the agent node (his, 2026-10-09): first what the node and its servers permit through AGENTS.md and verb files (the retrofit, goal/G10.5); second what the deskUnsloth configuration gives the agent (goal/G10.4 through goal/G10.1); more is out of scope right now.\n\nTODAY: jobs.api hands every loopback caller to the gate as the owner; a member arrives as a verified key and apiDoor refuses what its grant rows do not cover; a puppet node with its own key may peer.post to anyone, grant anything and write its contacts from loopback.\n\nNODE VERB CHANGES: the three refusals touch peer.post, the jobs.auth verbs and the contact verbs; his yes is his rulings of 2026-10-09 in this chat; peer review is owed at build (wsl-claude is signed off; the desk waives alone).\n\nTESTS FIRST: a suite red on today's code with a scratch node whose owner.json names another key: the three refusals, the owner's post and contact write passing, a non-puppet untouched; the builder never writes its own tests. Blocked by Endpoint introspection in OpenAI tool shape (goal/G10.1); blocks Configuration manager: VRAM, models and agent personas (goal/G10.4).\n\nNo red Q stands on this item (2026-10-09).",
+   "version": 14,
    "checks": [
     {
      "number": "Q1",
@@ -1195,8 +1289,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "CONTEXT AUTO-BUILT FROM THE DESK GOAL FOR THE LOCAL AGENT. Design-complete 2026-10-09; facts at 512e59d3; Andy's words are in this chat.\n\nWHAT: each call deskUnsloth makes to the model is built fresh from the desk, nothing kept between calls. In the window: the system prompt (the desk's AGENTS text and the persona's preamble), the goal's box and the item's box asked of the desk through deskClient, the persona's tools (second slice), and the item's chat as a rolling window of its newest lines, the oldest dropped. The window, in his words: MAX_CONTEXT_LENGTH minus the goal and item boxes, and the two subtractions the call needs, the system prompt and the answer room (answerTokens), the tool list joining in the second slice; sizes in tokens by bytesPerToken from the configuration.\n\nDECIDED (Andy, 2026-10-09)\n1. KISS: deskUnsloth speaks to the desk through the same deskClient server the agents use, in a loop, deskUnsloth the mediator, as today.\n2. The context is the current goal's as the desk says it; a coder agent following the current goal as the claudes do. Standing-order agents are a later goal.\n3. Boxes, not the file: currentGoal.json is the whole goal, 161 KB with every chat, beyond the window and stale on the agent node.\n4. Two files for starters in deskUnsloth's state folder, out of git: the configuration (persona, preamble, model, context limit) and the connection (loop.json's key and url). No UI yet; the configuration manager is out of scope.\n5. The first persona is Levant: preamble \"you are 'Levant' (a genius i knew when i was a lead engineer at ATI technologies, later absorbed by AMD)\", model unsloth/Qwen-AgentWorld-35B-A3B-GGUF (tool use, 12 GB; the DeepSeek R1 8B, a reasoning model without tool use, a possible second persona later), contextLimit 8192 to start, answerTokens 1024, bytesPerToken 4. The file is in this chat.\n6. First slice: one document and a remembered conversation, no tools; he discusses the box at length under its item. Second slice: the persona's tools and the scoped file tools (fs.search, fs.stat through the retrofit's family), bounded by the desk's per-agent scope down to one file.\n7. The agent answers lines addressed to it (its nick) and JOBs only, starts at the present, never the backlog, keeps the posting rules (3 lines, a question only when meant, its own name, no [loop.js]).\n8. The cap bites on packets only: the context never leaves the agent's box; the chat is read in pages (item.chat, chat.search) and a long answer goes back as several lines under the room, split at paragraphs; a file travels as the fileServer's chunks. The streamClerver is Fake-streaming in SpiritOS: The StreamClerver (goal/G12).\n\nTHE CARD: his RTX 5060 has 16 GB. contextLimit is tokens, about four bytes of English each (8192 is roughly 32 KB of text); the card stores per token what the model keeps for the whole conversation, roughly 100 KB per token for this size, so after 12 GB of weights it holds some 30 to 40 thousand tokens; the serving process reports the exact cost, and 32768 is within reach.\n\nLATER, his seeds: mechanical guidance by simple steps checked nightly or scored 0 to 1; standing-order agents; a whole goal run by one persona while he sleeps.\n\nTODAY: deskUnsloth sends a bare line with \"You are a helpful assistant\" and answers every other party's line; off since 2026-10-09.\n\nTESTS FIRST: a suite red on today's code with a fake model: deskUnsloth reads the configuration and the connection from its state folder and refuses to start without them; the call carries system prompt, boxes and the newest lines that fit the computed room; nothing kept between calls; a long answer split into lines under the room; an addressed line answered, an unaddressed one not; the backlog skipped; the builder never writes its own tests. Blocks the goal.",
-   "version": 27,
+   "box": "CONTEXT AUTO-BUILT FROM THE DESK GOAL FOR THE LOCAL AGENT. Design-complete 2026-10-09; facts at 512e59d3; Andy's words are in this chat.\n\nWHAT: each call deskUnsloth makes to the model is built fresh from the desk, nothing kept between calls. In the window: the system prompt (the desk's AGENTS text and the persona's preamble), the goal's box and the item's box asked of the desk through deskClient, the persona's tools (second slice), and the item's chat as a rolling window of its newest lines, the oldest dropped. The window, in his words: MAX_CONTEXT_LENGTH minus the goal and item boxes, and the two subtractions the call needs, the system prompt and the answer room (answerTokens), the tool list joining in the second slice; sizes in tokens by bytesPerToken from the configuration.\n\nDECIDED (Andy, 2026-10-09)\n1. KISS: deskUnsloth speaks to the desk through the same deskClient server the agents use, in a loop, deskUnsloth the mediator, as today.\n2. The context is the current goal's as the desk says it; a coder agent following the current goal as the claudes do. Standing-order agents are a later goal.\n3. Boxes, not the file: currentGoal.json is the whole goal, 161 KB with every chat, beyond the window and stale on the agent node.\n4. Two files for starters in deskUnsloth's state folder, out of git: the configuration (persona, preamble, model, context limit) and the connection (loop.json's key and url). No UI yet; the configuration manager is out of scope.\n5. The first persona is Levant: preamble \"you are 'Levant' (a genius i knew when i was a lead engineer at ATI technologies, later absorbed by AMD)\", model unsloth/Qwen-AgentWorld-35B-A3B-GGUF (tool use, 12 GB; the DeepSeek R1 8B, a reasoning model without tool use, a possible second persona later), contextLimit 8192 to start, answerTokens 1024, bytesPerToken 4. The file is in this chat.\n6. First slice: one document and a remembered conversation, no tools; he discusses the box at length under its item. Second slice: the persona's tools and the scoped file tools (fs.search, fs.stat through the retrofit's family), bounded by the desk's per-agent scope down to one file.\n7. The agent answers lines addressed to it (its nick) and JOBs only, starts at the present, never the backlog, keeps the posting rules (3 lines, a question only when meant, its own name, no [loop.js]).\n8. The cap bites on packets only: the context never leaves the agent's box; the chat is read in pages (item.chat, chat.search) and a long answer goes back as several lines under the room, split at paragraphs; a file travels as the fileServer's chunks. The streamClerver is Fake-streaming in SpiritOS: The StreamClerver (goal/G12).\n\nPROPOSED (wsl's gap of 2026-10-09, awaiting Andy): the persona's tool set, which the introspection half narrows the tool list by, lives in the configuration file as a tools list, added in the second slice; no item of its own, the manager being closed.\n\nTHE CARD: his RTX 5060 has 16 GB. contextLimit is tokens, about four bytes of English each (8192 is roughly 32 KB of text); the card stores per token what the model keeps for the whole conversation, roughly 100 KB per token for this size, so after 12 GB of weights it holds some 30 to 40 thousand tokens; the serving process reports the exact cost, and 32768 is within reach.\n\nLATER, his seeds: mechanical guidance by simple steps checked nightly or scored 0 to 1; standing-order agents; a whole goal run by one persona while he sleeps.\n\nTODAY: deskUnsloth sends a bare line with \"You are a helpful assistant\" and answers every other party's line; off since 2026-10-09.\n\nTESTS FIRST: a suite red on today's code with a fake model: deskUnsloth reads the configuration and the connection from its state folder and refuses to start without them; the call carries system prompt, boxes and the newest lines that fit the computed room; nothing kept between calls; a long answer split into lines under the room; an addressed line answered, an unaddressed one not; the backlog skipped; the builder never writes its own tests. Blocks the goal.",
+   "version": 28,
    "checks": [
     {
      "number": "Q1",
