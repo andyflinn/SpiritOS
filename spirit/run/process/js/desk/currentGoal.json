@@ -1,8 +1,8 @@
 {
- "change": 21674,
+ "change": 21679,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T08:59:28.044Z",
+ "writtenAt": "2026-10-09T08:59:35.023Z",
  "items": [
   {
    "id": "goal/G8",
@@ -11,7 +11,6 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -40,7 +39,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -1204,31 +1203,57 @@
    "id": "goal/G8.3",
    "title": "deskVerify: Agent mode functionality — on the desk node it is a real agent, and a wholly mechanical one",
    "goal": "goal/G8",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G8"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -1517,6 +1542,11 @@
      "by": "wsl-claude",
      "at": "2026-10-09T08:18:07.698Z",
      "text": "wsl: that take and release came through on the record - G9.3 working in your hands: focus took the box as andy, blur gave it back, and nothing was written because you changed nothing."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T08:59:33.658Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -1524,31 +1554,57 @@
    "id": "goal/G8.4",
    "title": "deskVerify: Idle time chores — measurements and documentation kept current while nobody is working",
    "goal": "goal/G8",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G8"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -1585,6 +1641,11 @@
      "by": "claude-windows",
      "at": "2026-10-06T09:48:38.628Z",
      "text": "cw: both noted. The work-report from the desk state is in this box as out of scope, so it reads as a decision rather than something owed.\nThe second one narrowed the item before it: a node with neither a desk nor a deskClient is out of scope, and your reason settles it instead of deferring it, since such a node has no assigned agent name and so no folder designated to it. That case had been named measure-only earlier in the design, and it is now marked not built, so reading the mode has two answers and a third that does nothing."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T08:59:34.072Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -1592,31 +1653,57 @@
    "id": "goal/G8.5",
    "title": "deskVerify: Changes required in desk — what the desk server must gain for any of this to work",
    "goal": "goal/G8",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G8"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -1786,6 +1873,11 @@
      "by": "andy",
      "at": "2026-10-09T08:10:35.110Z",
      "text": "and if coding take a little too long. i will deal with that. (design better next time)"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T08:59:34.392Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -1793,38 +1885,70 @@
    "id": "goal/G8.6",
    "title": "deskVerify: the short loop — the current goal suites between Go and Done, and the two inputs that drive it",
    "goal": "goal/G8",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G8.7"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
    "box": "deskVerify: THE SHORT LOOP\n\nAndy, 2026-10-06, defining both the loop and what drives it: \"the short loop is: all the suites of the current goal, between 'Go' pressed and 'Done' pressed, which it knows from the nudges desk gives all agents.\" And: \"deskVerify's listener on the desk generates events that deskVerify filters to trigger event's for it's process, that's the other input it gets next to the test-records it receives with the verb \\\"record\\\" that supplies candidates for the database.\" Blocked by goal/G8.2, since what it may do depends on where it stands.\n\nTHE LOOP. The suites of the current goal, and only those, run from the moment he presses Go on an item until Done is pressed. Not the whole harness, which belongs to a goal closing and to idle time.\n\nTHE TWO INPUTS, which are the whole of what deskVerify listens to:\n- The desk, through its own listener: the desk nudges every agent when something moves, and deskVerify filters those into the events its own process acts on. That is how it knows a Go was pressed and a Done was pressed, without asking anybody.\n- Its own api, the verb record, which carries one test record and offers it to the database as a candidate.\n\nWHICH SUITES, his, 2026-10-06: \"the deskVerify knows that the way a coding agent knows which suite it writes the code against. which suites belong to a goal: all the suites associated with items in the goal.\" An agent knows it from the item itself: its box names the test file, and the commits made against the item touch it. So an item suites are the test files among the files its commits changed, which the desk can already see, and a goal suites are those of all its items.\nONE CONSEQUENCE, so nobody reads it as a fault: between his Go and the first commit an item has no suites at all, so the loop runs nothing for it. That is right rather than broken, the failing test being the first thing committed.",
    "version": 2,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "at": "2026-10-09T08:59:34.742Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G8.7",
