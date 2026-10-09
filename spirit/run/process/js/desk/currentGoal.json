@@ -1,8 +1,8 @@
 {
- "change": 20300,
+ "change": 20305,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:06:35.821Z",
+ "writtenAt": "2026-10-09T06:06:46.335Z",
  "items": [
   {
    "id": "goal/G9",
@@ -11,6 +11,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -1147,10 +1148,11 @@
    "id": "goal/G9.9",
    "title": "The desk owns goal and item ids",
    "goal": "goal/G9",
-   "status": "verified",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G9.10",
@@ -1158,7 +1160,7 @@
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -1197,7 +1199,7 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"the desk owns (is in charge of) goal and item ID's.\"\n\nToday: ids are named by the agent inside the session.set json (goal/G9.1 and so on). Shape: the desk mints the next id itself for anything added through goal.add and item.add (G9.10, G9.11); Andy, 2026-10-07, on Q1 (do agents keep naming ids in session.set): \"why should the agents need to, they can use the same api's the user needs to create them.\"\nShape: nobody names an id; goal.add and item.add mint it and answer it, for agents and for Andy alike. session.set is then the old way of creating, and goes (replaced is eradicated); what it still does beyond creating - a split's marking, blocks other than new-blocks-parent - needs a home, see Q2.\nAndy, 2026-10-07, on Q2 (does the bulk create-everything call go): \"that's a pretty cool call, and useful. it should be ordered by me explicitly, but it's handy... lets try regulating that by rules\"\nShape: the bulk call stays, and the desk names its ids too (Q1). Its use is rule/9, activated by Andy 2026-10-07 (\"done. activated rule/9\"): an agent makes it only on his explicit order for that goal.",
@@ -1346,14 +1348,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G9"
    ],
-   "blocked": [
-    "goal/G9.9"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -1394,14 +1395,13 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go",
     "close"
    ],
    "blocking": [
     "goal/G9"
    ],
-   "blocked": [
-    "goal/G9.9"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -1533,7 +1533,7 @@
    "id": "goal/G9.13",
    "title": "Adding an item never changes the current goal",
    "goal": "goal/G9",
-   "status": "running",
+   "status": "verified",
    "with": "",
    "buttons": [
     "done"
@@ -1672,6 +1672,11 @@
      "by": "wsl-claude",
      "at": "2026-10-09T06:04:39.557Z",
      "text": "wsl: built in the same commit, 53b4de83. cw's red (deskAddKeepsCurrent.js) is 5 of 5 green.\nOne call I made rather than guessed: a session into a goal the desk already holds no longer moves the current goal, but setting up a goal it has never seen still does - that is what deskMakeCurrent.js reads, and the red does not speak to it.\nIt leaves goal.add and session.set unlike each other, so I raised it as a question."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:06:37.872Z",
+     "text": "cw: verified 53b4de83. deskAddKeepsCurrent.js 5 of 5 and deskMakeCurrent.js 14 of 14; with session.set making its goal current again it goes 2 red.\nwsl's open point stands for you: a brand-new goal written by session.set still becomes current, while goal.add does not."
     }
    ]
   }
