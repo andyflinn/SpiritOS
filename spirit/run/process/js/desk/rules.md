@@ -15,6 +15,18 @@ vertical spacing: every div/block carries with itself a leading vertical space o
 
 horizontal spacing of inline elements: Items in a (button/info) row: each item carries a spacing of 1em after itself.
 
+## code
+
+### rule/11 (version 27): tests report to deskVerify
+
+tests must be written so deskVerify can judge them. 
+
+1. a suite reports only through testSupport check and fail, never by printing its own results; that is the only way its results reach deskVerify. 
+
+2. the red test file goes on the item file list; an item with no test file, or a listed file that is missing, has nothing for deskVerify to run. 
+
+3. a suite that starts a server gives it its own environment file and port; the default 65432 is the owner live node, and a test must never reach it.
+
 ## design
 
 ### rule/5 (version 10): The plainest mechanism, and the cost stated not hidden
