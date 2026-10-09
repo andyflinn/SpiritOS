@@ -107,24 +107,27 @@ async function dataset() {
   }
 }
 
-// A suite of two assertions, run as a real one is: it reports, then exits at once.
-function miniSuite() {
+// A suite of two assertions, run as a real one is: it reports, then exits at once. With `linger`, it waits a second
+// before reporting, as a long suite does between its assertions and its end, so its own posts land before the exit.
+function miniSuite(linger) {
   const f = path.join(scratch, 'mini.js');
-  fs.writeFileSync(f, [
-    "'use strict';",
-    'const test = require(' + JSON.stringify(SUPPORT) + ');',
-    "test.startTest('mini');",
+  const body = [
     "test.check('alpha holds');",
     "test.fail('beta holds', 'detail 42');",
     'test.reportSuccessFailureCount();',
     'process.exit(0);',
-  ].join('\n'));
+  ];
+  fs.writeFileSync(f, [
+    "'use strict';",
+    'const test = require(' + JSON.stringify(SUPPORT) + ');',
+    "test.startTest('mini');",
+  ].concat(linger ? ["test.check('alpha holds');", "test.fail('beta holds', 'detail 42');", 'setTimeout(function () {', 'test.reportSuccessFailureCount();', 'process.exit(0);', '}, 1000);'] : body).join('\n'));
   return f;
 }
-function runMini(args) {
+function runMini(args, linger) {
   return new Promise(function (resolve) {
     const out = [];
-    const kid = spawn(process.execPath, [miniSuite()].concat(args), { stdio: ['ignore', 'pipe', 'pipe'] });
+    const kid = spawn(process.execPath, [miniSuite(linger)].concat(args), { stdio: ['ignore', 'pipe', 'pipe'] });
     kid.stdout.on('data', function (d) { out.push(String(d)); });
     kid.on('exit', function () { resolve(out.join('')); });
   });
@@ -161,6 +164,18 @@ async function sender() {
     if (/beta holds/.test(printed) && /detail 42/.test(printed) && !recs.some(function (r) { return /detail 42/.test(JSON.stringify(r)); })) {
       test.check('the detail is printed beside the title and kept out of the record');
     } else test.fail(OWED + 'printed ' + short(printed.replace(/[*✅❌]+/g, '').replace(/[\r\n]+/g, ' | ').replace(/ {2,}/g, ' ')) + '; records ' + short(recs));
+
+    // GROWN IN THE VERIFY (claude-windows): the quick suite above exits before its own posts land, so only the
+    // helper's re-sends reach the node. A suite that lingers lands its own posts first, and those must carry the verb.
+    test.subHeading('4b. a suite that lingers: its own posts land, each as a real node takes it');
+    const lingerNode = await fakeNode();
+    try {
+      await runMini(['--verify-port', String(lingerNode.port)], true);
+      await sleep(300);
+      const got2 = recordsIn(lingerNode.bodies).map(function (r) { return r.title + ':' + r.outcome; });
+      if (lingerNode.bodies.length >= 2 && JSON.stringify(got2.slice(0, 2)) === JSON.stringify(['alpha holds:green', 'beta holds:red'])) test.check('its two posts arrive while it runs, with verb jobs.api');
+      else test.fail(OWED + 'a lingering suite\'s posts read ' + short(lingerNode.bodies.slice(0, 3)));
+    } finally { lingerNode.close(); }
 
     test.subHeading('5. run by hand, a suite posts nothing');
     const before = node.bodies.length;
