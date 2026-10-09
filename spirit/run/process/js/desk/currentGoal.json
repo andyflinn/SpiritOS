@@ -1,8 +1,8 @@
 {
- "change": 21894,
+ "change": 21898,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T09:23:31.853Z",
+ "writtenAt": "2026-10-09T09:23:37.585Z",
  "items": [
   {
    "id": "goal/G8",
@@ -11,13 +11,11 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
    "blocked": [
     "goal/G8.3",
-    "goal/G8.4",
     "goal/G8.7"
    ],
    "go": false,
@@ -39,7 +37,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -1699,17 +1697,17 @@
    "id": "goal/G8.4",
    "title": "deskVerify: Idle time chores — measurements and documentation kept current while nobody is working",
    "goal": "goal/G8",
-   "status": "running",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [
     "goal/G8"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -1752,7 +1750,7 @@
      "version": 6
     }
    ],
-   "asks": 2,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "deskVerify: IDLE TIME CHORES\n\nAndy, 2026-10-06, gave it three sections and nothing else: \"1. Define Idle time\" / \"2. what ever deskVerify does during idle time\" / \"3. what extra things an agent-mode deskVerify does during idle time, for example updating the README.md and it's linkage to the agent/ folder's documents\". Blocked by goal/G8.2, since what the chore is differs by where deskVerify stands.\n\n1. IDLE TIME. His measure: \"when it's agent or it's desk have been idle for more than an hour\". Idle is not the same as finished, so the hour is not enough on its own: an agent holding a phase and quiet for an hour looks idle while its work is still open. So a node is idle when nothing has been written for an hour AND no item is in a phase held by the agent on that node. The ten minutes that decide absence elsewhere are a different clock and stay as they are.\n\n2. WHAT EVERY deskVerify DOES WHEN IDLE. Keeps the measurements current, and writes the targeted test-state report, which is possible for the first time because the dataset of goal/G8.1 can say which tests turned and when, where the run log keeps totals only. Two limits, claude-windows, to be ruled before building: it writes a named list of paths and nothing outside them, a mechanical commit being one nobody read; and the report is derived from the dataset, never from re-running anything, or a chore becomes another twenty-minute run.\n\n3. WHAT THE AGENT-MODE ONE DOES AS WELL. On the desk node, where it has standing: it keeps the README current, mechanically, because the numbers it summarises change with time. Andy, 2026-10-06: \"just the fact that those number change with time, makes updating the README part of it is idle time chores, in a mechanical way.\"\nWHICH numbers the README ought to show is OUT OF SCOPE by his word, and not a thing left undone here: \"the readme has major flaws and it is summary of data cites mostly un-interesting numbers, instead of the number i think are interesting. oos for now.\" So this section refreshes what the README already claims; it does not decide what it should claim.\nIn the tree at 9ece24a8 the README carries one line into agents/, which holds a README of its own and a folder per agent, claude-ubuntu, claude-windows and wsl-claude.\n\nWhy it pays: tagging the tree stops waiting, since its slow part is the measuring and the numbers would already be there, stamped with when they were taken.\n\nOUT OF SCOPE HERE, his, 2026-10-06, and noted so it is not mistaken for work owed: the desk notes also hold the desk state and status, which will generate a work-report at some point in the future.",
@@ -2270,31 +2268,57 @@
    "id": "goal/G8.7",
    "title": "deskVerify: tolerated reds — the goal Done waits on one red question listing the reds outside its scope",
    "goal": "goal/G8",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G8"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -2311,6 +2335,11 @@
      "by": "claude-windows",
      "at": "2026-10-09T08:43:33.688Z",
      "text": "cw: not yet: it has no Go, and it waits on G8.6, which waits on G8.2, which waits on G8.1, now in wsl's build.\ncw takes its red the moment that chain clears and you press Go."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T09:23:37.353Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
