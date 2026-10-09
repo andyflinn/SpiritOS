@@ -1,8 +1,8 @@
 {
- "change": 20322,
+ "change": 20323,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:08:18.832Z",
+ "writtenAt": "2026-10-09T06:08:20.326Z",
  "items": [
   {
    "id": "goal/G9",
@@ -44,7 +44,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 6,
+   "waiting": 5,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -818,10 +818,9 @@
    "id": "goal/G9.6",
    "title": "Header area joined to the shell title bar: no title bubble, no corners, no margins, never scrolls",
    "goal": "goal/G9",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
