@@ -1254,8 +1254,19 @@ function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused
 // has - a box with none, and every test suite that spawns a desk with no node, is that case for good.
 let VERIFY_SEEN = { at: 0, there: false };
 function hasDeskVerify() { return VERIFY_SEEN.there === true; }
+// ONLY A PORT ITS OWN NODE NAMED (goal/G8.3, found by claude-windows verifying 58326ac7): appServer leaves SPIRIT_PORT
+// at the kernel default, 65432, when no environment file names one - which is Andy node on both our boxes. A desk
+// spawned by a suite would then ask HIS node whether a deskVerify runs, and on his box it does, so the test desk hid
+// Done and two suites went red there while passing here. So the probe happens only when this node named a port.
+function nodeNamedPort() {
+  try {
+    const env = JSON.parse(fs.readFileSync(appServer.spirit.core.node.const.SPIRIT_ENVIRONMENT_FILE, "utf8"));
+    const p = Number(env && env.PORT);
+    return Number.isInteger(p) && p > 0 ? p : 0;
+  } catch (e) { return 0; }
+}
 function lookForDeskVerify() {
-  const port = Number(appServer.spirit.core.node.const.SPIRIT_PORT);
+  const port = nodeNamedPort();
   if (!port) return;
   appServer.spirit.core.ask('jobs.api', { ask: 'api' }, 'http://127.0.0.1:' + port).then(function (r) {
     const body = r && r.status === 200 ? r.body : null;
