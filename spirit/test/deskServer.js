@@ -51,11 +51,12 @@ const SCRIPT = path.join(DIR, 'desk.js');
 // chat.search: goal/G3.11, the search on an item's chat lines (its own suite is deskChatSearch.js).
 // goal/G9.7 added item.delete, his alone, on an item of a goal in design mode.
 // goal/G8.8 added item.files.add: the files an agent touched, kept by the item.
+// goal/G8.3 added verify.reject: deskVerify takes a verify back, his alone.
 // goal/G9.3 added box.release: the holder lets a box go without writing it.
 // goal/G9.9 added goal.add and item.add: the desk names every goal and item id, and the same two verbs serve him and
 // the agents (Andy, 2026-10-07: "the desk owns (is in charge of) goal and item ID's.").
 // goal/G8.5 added signoff: a leaving agent is gone at once and its phases are freed.
-const VERBS = ['AGENTS', 'DEBUG', 'DEPENDENCIES', 'agent.state', 'box.release', 'box.take', 'box.write', 'changes', 'chat.add', 'chat.search', 'check.add', 'check.set', 'goal.add', 'item.add', 'item.box', 'item.chat', 'item.checks', 'item.delete', 'item.files.add',  'item.get', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'log.add', 'log.search', 'pending.get', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.history', 'rule.version', 'rules.search', 'scope.get', 'scope.set', 'seen.get', 'seen.set', 'session.set', 'signoff', 'state.get', 'state.set', 'work.open'];
+const VERBS = ['AGENTS', 'DEBUG', 'DEPENDENCIES', 'agent.state', 'box.release', 'box.take', 'box.write', 'changes', 'chat.add', 'chat.search', 'check.add', 'check.set', 'goal.add', 'item.add', 'item.box', 'item.chat', 'item.checks', 'item.delete', 'item.files.add', 'item.get', 'item.rename', 'item.status', 'item.take', 'items.find', 'items.search', 'line.take', 'log.add', 'log.search', 'pending.get', 'phase.done', 'phase.may', 'phase.take', 'press', 'profile.get', 'profile.set', 'rule.add', 'rule.draft', 'rule.get', 'rule.history', 'rule.version', 'rules.search', 'scope.get', 'scope.set', 'seen.get', 'seen.set', 'session.set', 'signoff', 'state.get', 'state.set', 'verify.reject', 'work.open'];
 
 const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'spirit-deskserver-'));
 const state = path.join(scratch, 'state');

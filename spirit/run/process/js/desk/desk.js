@@ -513,6 +513,19 @@ function apply(s, r, b, item, goalOf) {
       else if (b.phase === 'build') it.phase = 'verify';
       else if (b.phase === 'verify') { if (b.pass === true) { it.verified = true; it.phase = ''; } else it.phase = 'build'; }
       return;
+    // A VERIFY TAKEN BACK (goal/G8.3). Andy, 2026-10-09: "deskVerify only reject a done claim. this should prompt an
+    // agent to pick the item up, raise red-questions if neccessary." It is the one thing deskVerify may do on his
+    // node, and it writes as him; a rejected item goes back to build with the builder it had, so the agent who built
+    // it picks it up, and Done is no longer offered. It presses nothing: "deskVerify will NOT press done or closed on
+    // my behalf". The line naming the reds is written beside this record by the verb.
+    case 'verify.reject':
+      if (!it || !it.code || it.verified !== true) return;
+      it.verified = false;
+      it.phase = 'build';
+      it.phaseWith = '';
+      it.with = '';
+      it.status = 'running';
+      return;
     // TAKING THE BOX (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
     // is red. cap also." The handler refuses a take while another stands, so what reaches here always lands.
     case 'box.take': it.boxTakenBy = r.by; it.takers[r.by] = true; return;
@@ -1815,6 +1828,25 @@ appServer.serve({
     handler: function (a, caller) {
       const w = writerOf(caller);
       return { change: write('signoff', { by: w.by, key: w.key }).change };
+    },
+  },
+  // A VERIFY TAKEN BACK (goal/G8.3). Andy, 2026-10-09: "deskVerify only reject a done claim. this should prompt an
+  // agent to pick the item up, raise red-questions if neccessary." His alone, because deskVerify writes as him; it is
+  // the one thing it may do, and it cannot go through phase.done, which refuses a caller that does not hold the phase
+  // (deskVerify holds none, by his ruling). Only a verified code item: anything else is not-offered, so a second
+  // rejection of the same item changes nothing. The why is kept as one line by desk under the item, which is how a
+  // failed verify already reads, and it names the reds because his rule is that only reds are delivered.
+  'verify.reject': {
+    request: { id: '', why: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      const w = writerOf(caller);
+      const change = write('verify.reject', { id: a.id, by: w.by, key: w.key }, function (st, it) {
+        if (!it || !it.code || it.verified !== true) throw refused('not-offered');
+      }).change;
+      const why = String(a.why || '').trim();
+      write('chat.add', { id: a.id, text: 'verify rejected: ' + (why || 'the item\'s suites did not hold'), by: 'desk', key: '' });
+      return { change: change };
     },
   },
   'item.status': { request: { id: '', word: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.status', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },

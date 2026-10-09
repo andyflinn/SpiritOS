@@ -140,6 +140,53 @@ function loopOnce() {
   });
 }
 
+// ONE ITEM'S SUITES, from the item itself: its file list (goal/G8.8), the test files among them.
+function suitesOf(id) {
+  const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  if (!port) return Promise.resolve([]);
+  return spirit.core.ask('jobs.api', { ask: { desk: { 'item.get': { id: String(id) } } } }, 'http://127.0.0.1:' + port).then(function (r) {
+    let it = null;
+    try { it = JSON.parse((r && r.body && r.body.item) || 'null'); } catch (e) { it = null; }
+    const files = it && Array.isArray(it.files) ? it.files : [];
+    const out = Object.create(null);
+    files.forEach(function (f) {
+      const p = String((f && f.path) || '');
+      if (/^spirit\/test\/.+\.js$/.test(p)) out[p] = true;
+    });
+    return Object.keys(out).sort();
+  }, function () { return []; });
+}
+
+// THE ONE THING IT MAY DO (goal/G8.3). Andy, 2026-10-09: "deskVerify only reject a done claim. this should prompt an
+// agent to pick the item up, raise red-questions if neccessary.", and "deskVerify will NOT press done or closed on my
+// behalf". So: run the item's own suites, and if any assertion was red, ask the desk to take the verify back, naming
+// the reds. All green and it says nothing to the desk. It presses nothing, ever.
+// A suite's exit code is the verdict (testSupport sets it 1 on any failure), and its records arrive the usual way.
+function claimCheck(id) {
+  const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  return suitesOf(id).then(function (list) {
+    const reds = [];
+    list.forEach(function (rel) {
+      const file = path.join(REPO, rel);
+      if (!fs.existsSync(file)) return;
+      const r = spawnSync(process.execPath, [file, '--verify-port', String(port)], { cwd: REPO, encoding: 'utf8', timeout: 600000 });
+      const said = String((r && r.stdout) || '');
+      // The failures as the suite printed them, so the why names what went red rather than only which file did.
+      // THE PRINTED LINES ARE THE VERDICT, not the exit code: testSupport sets exitCode 1 on a failure, but a suite
+      // that ends with process.exit(0) - most of them do - overrides it, and runAll reads the printed report for the
+      // same reason. Found while building this: a red probe exited 0 and would have passed as green.
+      const lines = said.split('\n').filter(function (l) { return /FAILURE #/.test(l); })
+        .map(function (l) { return l.replace(/^\**\s*/, '').replace(/\s*[❌✅]\s*$/, '').trim(); });
+      if (lines.length) reds.push({ suite: rel, failures: lines });
+    });
+    if (!reds.length) return { rejected: false, reds: [] };
+    const why = reds.map(function (x) { return x.suite + (x.failures.length ? ': ' + x.failures.join('; ') : ''); }).join(' | ');
+    return spirit.core.ask('jobs.api', { ask: { desk: { 'verify.reject': { id: String(id), why: why } } } }, 'http://127.0.0.1:' + port)
+      .then(function () { return { rejected: true, reds: reds.map(function (x) { return x.suite; }) }; },
+        function () { return { rejected: true, reds: reds.map(function (x) { return x.suite; }) }; });
+  });
+}
+
 // A ROW IS WRITTEN for a test's first record or a change of outcome, and nothing else.
 function keep(suite, title, outcome) {
   const last = newest.get(suite, title);
@@ -162,6 +209,11 @@ appServer.serve({
   'loop.once': {
     request: {}, reply: { ran: [''] },
     handler: function () { return loopOnce(); },
+  },
+  // THE ONE THING IT MAY DO ON HIS NODE (goal/G8.3): run one item's suites and ask the desk to take a verify back.
+  'claim.check': {
+    request: { id: '' }, reply: { rejected: false, reds: [''] },
+    handler: function (a) { return claimCheck(String(a.id || '')); },
   },
   // ONE RECORD, AS IT HAPPENS (his words above). The answer says whether it was kept: a repeat of the same outcome is
   // not, and that is the whole of the de-duplication - the history is the flips. Only his clone keeps anything: on an
