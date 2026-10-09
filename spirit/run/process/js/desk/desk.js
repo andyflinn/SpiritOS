@@ -588,6 +588,15 @@ function apply(s, r, b, item, goalOf) {
     // THE LISTENER'S WORD (goal/G2.3). Andy: "it starts, when the agent stops listening to do a task, and it
     // stops when the agent goes back to listening. the listening script can toggle those two?"
     case 'agent.state': s.agentWord[r.by] = String(b.word); return;
+    // SIGNOFF (goal/G8.5). Andy, 2026-10-06: "the signoff verb is \"signoff\"", so a leaving agent is not waited out for
+    // ten minutes; and, 2026-10-09, of an agent that is gone: "consider it gone. it would have taken up the task
+    // otherwise, wouldn't it?" So it is gone at once and every phase it holds is freed for the other to take. The write
+    // that carried it counted as liveness above; this takes that back. Its next write makes it live again.
+    case 'signoff':
+      delete s.agentsAt[r.by];
+      delete s.agentWord[r.by];
+      Object.keys(s.items).forEach(function (id) { const m = s.items[id]; if (m.phaseWith === r.by) { m.phaseWith = ''; if (m.with === r.by) m.with = ''; } });
+      return;
     // AN AGENT'S SCOPE (goal/G4.23), by its key, as he set it last; the handler refused anything malformed.
     // AN AGENT'S SCOPE (goal/G4.23), one field, as he set it last: '' nothing, '/' the repo root, else a folder. Records
     // written while it was a list replay to the same meaning: [] is '', [''] (the root) is '/', [f] is f.
@@ -689,6 +698,9 @@ function buttons(s, it) {
   // AND NO ITEM OFFERS GO BESIDE DONE (goal/G2.13). Andy: "when Done is offered, Go may no longer be displayed."
   // A claimed item offers Done, so it offers no Go; the press below refuses a Go that is not offered.
   const claimed = !it.goal && Object.keys(it.claims).length > 0;
+  // DONE WAITS ON EVERY GRANT (goal/G8.5). Andy, 2026-10-09: "'Done' needs all grants approved." On every item and
+  // goal: while any G check is open, no Done is offered, and his red mark on the row says why.
+  const grantsOpen = it.checks.some(function (c) { return c.kind === 'G' && c.state === 'open'; });
   // A SUB-GOAL IS A SCOPED GOAL (goal/G5.4). Andy: "items that are no-code branches, they really are sub-goals, and
   // must offer 'Done' when it's blockers are done.", "pressing 'Go' on a sub-goal presses go on it's blockers, where
   // appropriate.", "it's like a scoped goal." So it offers Go while a blocker offers Go, Done once every item that
@@ -696,7 +708,7 @@ function buttons(s, it) {
   if (it.subGoal && !it.goal) {
     if (g && !g.design && subGoalGoable(s, it).length) out.push('go');
     const under = splitOf(s, it);
-    if (under.length && under.every(function (m) { return m.done || m.closed; })) out.push('done');
+    if (!grantsOpen && under.length && under.every(function (m) { return m.done || m.closed; })) out.push('done');
     return out;
   }
   if (!it.goal && !claimed && g && !g.design && !it.went && !blockers(s, it).length) out.push('go');
@@ -706,9 +718,9 @@ function buttons(s, it) {
   // pressed against the goal id offers nothing by itself. An item's own rule is unchanged: a claim offers Done.
   if (it.goal) {
     const allDone = g && g.members.length > 0 && g.members.every(function (id) { const m = s.items[id]; return m && (m.done || m.closed); });
-    if (allDone) out.push('done');
+    if (allDone && !grantsOpen) out.push('done');
   // A CODE ITEM OFFERS DONE ON THE VERIFIER'S PASS ALONE (goal/G5.7), no claims needed.
-  } else if (it.code ? it.verified === true : Object.keys(it.claims).length) out.push('done');
+  } else if (!grantsOpen && (it.code ? it.verified === true : Object.keys(it.claims).length)) out.push('done');
   // WAIVE (goal/G2.22). Andy, 2026-10-06: "there is no Waive in the G2.18 dialog", the server having had the press
   // since goal/G5.7 and the face never a button. On when it shows, asked which of two readings he meant: "only when
   // it's blocked on me" — so only while the build is his to unblock: its red written, nobody holding the build, not
@@ -1795,6 +1807,14 @@ appServer.serve({
       const w = writerOf(caller);
       if (a.word !== 'listening' && a.word !== 'working') throw refused('bad-request');
       return { change: write('agent.state', { word: a.word, by: w.by, key: w.key }).change };
+    },
+  },
+  // THE AGENT IS GOING (goal/G8.5): gone at once, its phases freed. A desk verb, not a node verb.
+  'signoff': {
+    request: {}, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      return { change: write('signoff', { by: w.by, key: w.key }).change };
     },
   },
   'item.status': { request: { id: '', word: '' }, reply: { change: 0 }, handler: function (a, caller) { const w = writerOf(caller); return { change: write('item.status', Object.assign({}, a, { by: w.by, key: w.key })).change }; } },
