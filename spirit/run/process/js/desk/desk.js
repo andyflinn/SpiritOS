@@ -377,7 +377,7 @@ function blank(id, title, goalId) {
   return { id: id, title: title, goal: !goalId, goalId: goalId || '', blocks: [], status: '', with: '', phaseWith: '',
     went: false, go: false, claims: Object.create(null), done: false, alone: false, closed: false, designComplete: false,
     alert: false, takenBy: '', boxTakenBy: '', takers: Object.create(null),
-    box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '',
+    box: '', version: 0, boxHistory: [], checks: [], chat: [], at: '', checked: false,
     // FILES TOUCHED, PER ITEM (goal/G8.8). Andy, 2026-10-09: "the list should be owned by the item. so updates to it
     // are available to all participants." Each writer's own paths, by its name, so one agent's list never touches
     // another's: { '<agent>': ['<path>', ...] }.
@@ -509,9 +509,20 @@ function apply(s, r, b, item, goalOf) {
       it.with = ''; it.phaseWith = '';
       // Nobody holds the next phase yet: the status goes back to what his Go made it.
       it.status = 'running';
+      // deskVerify's word is about ONE verify (goal/G8.3), so every step that starts the work again takes it away and
+      // Done waits for deskVerify afresh.
+      it.checked = false;
       if (b.phase === 'red') it.phase = 'build';
       else if (b.phase === 'build') it.phase = 'verify';
       else if (b.phase === 'verify') { if (b.pass === true) { it.verified = true; it.phase = ''; } else it.phase = 'build'; }
+      return;
+    // AND ONLY deskVerify BRINGS THE BUTTON (goal/G8.3). Andy, 2026-10-09: "best is, if the done button doesn't show up
+    // until deskVerify allows it.", and "the builders claim is registered, but only deskVerify brings the button." So
+    // the agent's verify still records verified, and this is deskVerify's own word on top of it. A rejection, a new
+    // build or a new red takes it away again, since what it was given for is gone.
+    case 'verify.pass':
+      if (!it || !it.code) return;
+      it.checked = true;
       return;
     // A VERIFY TAKEN BACK (goal/G8.3). Andy, 2026-10-09: "deskVerify only reject a done claim. this should prompt an
     // agent to pick the item up, raise red-questions if neccessary." It is the one thing deskVerify may do on his
@@ -521,6 +532,7 @@ function apply(s, r, b, item, goalOf) {
     case 'verify.reject':
       if (!it || !it.code || it.verified !== true) return;
       it.verified = false;
+      it.checked = false;
       it.phase = 'build';
       it.phaseWith = '';
       it.with = '';
@@ -733,7 +745,12 @@ function buttons(s, it) {
     const allDone = g && g.members.length > 0 && g.members.every(function (id) { const m = s.items[id]; return m && (m.done || m.closed); });
     if (allDone && !grantsOpen) out.push('done');
   // A CODE ITEM OFFERS DONE ON THE VERIFIER'S PASS ALONE (goal/G5.7), no claims needed.
-  } else if (!grantsOpen && (it.code ? it.verified === true : Object.keys(it.claims).length)) out.push('done');
+  // AND DONE WAITS FOR deskVerify WHERE ONE RUNS (goal/G8.3). Andy, 2026-10-09: "best is, if the done button doesn't
+  // show up until deskVerify allows it.", and "the builders claim is registered, but only deskVerify brings the
+  // button." So a code item needs the verifier's pass AND deskVerify's own word (verify.pass) - but only while a
+  // deskVerify runs on this node: on a box without one, Done follows the pass as it always has, or nothing there could
+  // ever be done.
+  } else if (!grantsOpen && (it.code ? (it.verified === true && (it.checked === true || !hasDeskVerify())) : Object.keys(it.claims).length)) out.push('done');
   // WAIVE (goal/G2.22). Andy, 2026-10-06: "there is no Waive in the G2.18 dialog", the server having had the press
   // since goal/G5.7 and the face never a button. On when it shows, asked which of two readings he meant: "only when
   // it's blocked on me" — so only while the build is his to unblock: its red written, nobody holding the build, not
@@ -1229,6 +1246,26 @@ const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring
 // agents keep claim-done, design-complete and bring-back.
 const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen', 'waive', 'make-current', 'code'];
 function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
+
+// IS THERE A deskVerify ON THIS NODE (goal/G8.3), which decides whether Done waits for it. Asked of this node, the
+// port appServer hands every app server (spirit.core.node.const.SPIRIT_PORT; Andy: "DO NOT RE-INVENT this
+// mechanism!!!!"), and kept, because buttons() is synchronous and runs on every read: the answer is refreshed in the
+// background, never awaited. Until the first answer arrives the desk says no deskVerify, so Done behaves as it always
+// has - a box with none, and every test suite that spawns a desk with no node, is that case for good.
+let VERIFY_SEEN = { at: 0, there: false };
+function hasDeskVerify() { return VERIFY_SEEN.there === true; }
+function lookForDeskVerify() {
+  const port = Number(appServer.spirit.core.node.const.SPIRIT_PORT);
+  if (!port) return;
+  appServer.spirit.core.ask('jobs.api', { ask: 'api' }, 'http://127.0.0.1:' + port).then(function (r) {
+    const body = r && r.status === 200 ? r.body : null;
+    const apps = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body) : [];
+    VERIFY_SEEN = { at: Date.now(), there: apps.indexOf('deskVerify') !== -1 };
+  }, function () { /* asked again on the next turn of the clock */ });
+}
+lookForDeskVerify();
+const verifyWatch = setInterval(lookForDeskVerify, 60000);
+if (verifyWatch && typeof verifyWatch.unref === 'function') verifyWatch.unref();
 
 // THE NEXT ID THE DESK HANDS OUT (goal/G9.9), minted inside the write, from the state the write walked.
 // A goal: one past the highest G<n> of the current goal's area, so an add in `goal/` never counts `other/`; with no
@@ -1836,6 +1873,18 @@ appServer.serve({
   // (deskVerify holds none, by his ruling). Only a verified code item: anything else is not-offered, so a second
   // rejection of the same item changes nothing. The why is kept as one line by desk under the item, which is how a
   // failed verify already reads, and it names the reds because his rule is that only reds are delivered.
+  // deskVerify'S OWN WORD ON A VERIFY (goal/G8.3): the mirror of verify.reject, his alone as that is, and only on a
+  // verified code item. It brings the Done button; the builder's claim was already on the record without it.
+  'verify.pass': {
+    request: { id: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      ownerOnly(caller);
+      const w = writerOf(caller);
+      return { change: write('verify.pass', { id: a.id, by: w.by, key: w.key }, function (st, it) {
+        if (!it || !it.code || it.verified !== true) throw refused('not-offered');
+      }).change };
+    },
+  },
   'verify.reject': {
     request: { id: '', why: '' }, reply: { change: 0 },
     handler: function (a, caller) {
