@@ -1,8 +1,8 @@
 {
- "change": 19968,
+ "change": 19992,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T05:34:15.200Z",
+ "writtenAt": "2026-10-09T05:39:51.429Z",
  "items": [
   {
    "id": "goal/G9",
@@ -25,7 +25,8 @@
     "goal/G9.8",
     "goal/G9.10",
     "goal/G9.11",
-    "goal/G9.12"
+    "goal/G9.12",
+    "goal/G9.13"
    ],
    "go": false,
    "alone": false,
@@ -34,7 +35,7 @@
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "green": true,
+   "green": false,
    "code": false,
    "phase": "",
    "red": "",
@@ -42,17 +43,18 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 0,
+   "asks": 2,
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 13,
+   "waiting": 14,
    "live": [
     "claude-windows",
-    "ollama agent node",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -61,12 +63,56 @@
    },
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"I've ran aut of tokens yesterday, again, for three days. And I decided to make sure i can operate the desk usefully without agents present.\"\n\nTopics: little fixes to the List, the Details dialog and the header (G9.1-G9.8, G9.12); the desk minting ids (G9.9); two forms that let Andy add a goal and a blocking item himself (G9.10, G9.11).\nAndy: \"Little fixes to precede all other items\" - the fixes go first; G9.9 blocks the two forms because an item the user adds needs an id the desk hands out.",
    "version": 1,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "cw: all green now; the last red was goal/G9.9 Q3, a restatement of Q2 you had already answered (rule/9), so I marked it answered as you asked.\nRemark: I added goal/G8.8 today through session.set, the bulk call rule/9 governs, because no one-item add verb exists until G9.9 builds it; that is also what flipped your current goal.\nShould agents add nothing outside a whole-goal order until G9.9 lands?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-09T05:36:42.399Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "wsl: all thirteen items are green and nothing waits on you - G9.9's last question was answered a minute ago, and G9.10/G9.11 wait on G9.9 alone.\nTwo remarks. The rule/8 C checks sit on nine items but a C check only lights your List once Done is offered (desk.js:665 @ 7cd6d633), so they stay invisible during the build.\nAnd the session.set hazard from a minute ago is unowned: an item added to another goal makes that goal current and closes any member the call omits. Open it under G9.9?",
+     "test": "",
+     "state": "open",
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:37:28.908Z"
+    }
+   ],
    "chat": [
     {
      "by": "claude-windows",
      "at": "2026-10-07T12:00:06.186Z",
      "text": "Set up from your musing of today: 12 items, your sentences verbatim in each box, the shape under them.\nG9.9 (desk mints ids) blocks the two forms G9.10 and G9.11; the little fixes carry no edges, your Go order sets their precedence.\nFive red questions wait on G9.3, G9.4, G9.7, G9.9 and G9.12."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T05:35:40.933Z",
+     "text": "let's double check. is this goal all green? anything to remark?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:35:52.188Z",
+     "text": "cw: taking."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T05:36:42.171Z",
+     "text": "cw: all green now; the last red was goal/G9.9 Q3, a restatement of Q2 you had already answered (rule/9), so I marked it answered as you asked.\nRemark: I added goal/G8.8 today through session.set, the bulk call rule/9 governs, because no one-item add verb exists until G9.9 builds it; that is also what flipped your current goal.\nShould agents add nothing outside a whole-goal order until G9.9 lands?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T05:37:28.652Z",
+     "text": "wsl: all thirteen items are green and nothing waits on you - G9.9's last question was answered a minute ago, and G9.10/G9.11 wait on G9.9 alone.\nTwo remarks. The rule/8 C checks sit on nine items but a C check only lights your List once Done is offered (desk.js:665 @ 7cd6d633), so they stay invisible during the build.\nAnd the session.set hazard from a minute ago is unowned: an item added to another goal makes that goal current and closes any member the call omits. Open it under G9.9?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T05:39:10.065Z",
+     "text": "An item added to another goal should NOT change a goal. \n\ncw: Add an item to this goal to that effect."
     }
    ]
   },
@@ -495,7 +541,7 @@
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "green": false,
+   "green": true,
    "code": true,
    "phase": "",
    "red": "",
@@ -503,7 +549,7 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"the desk owns (is in charge of) goal and item ID's.\"\n\nToday: ids are named by the agent inside the session.set json (goal/G9.1 and so on). Shape: the desk mints the next id itself for anything added through goal.add and item.add (G9.10, G9.11); Andy, 2026-10-07, on Q1 (do agents keep naming ids in session.set): \"why should the agents need to, they can use the same api's the user needs to create them.\"\nShape: nobody names an id; goal.add and item.add mint it and answer it, for agents and for Andy alike. session.set is then the old way of creating, and goes (replaced is eradicated); what it still does beyond creating - a split's marking, blocks other than new-blocks-parent - needs a home, see Q2.\nAndy, 2026-10-07, on Q2 (does the bulk create-everything call go): \"that's a pretty cool call, and useful. it should be ordered by me explicitly, but it's handy... lets try regulating that by rules\"\nShape: the bulk call stays, and the desk names its ids too (Q1). Its use is rule/9, activated by Andy 2026-10-07 (\"done. activated rule/9\"): an agent makes it only on his explicit order for that goal.",
@@ -532,9 +578,9 @@
      "kind": "Q",
      "words": "In English: it is the one call an agent makes today to create a goal with all its items at once, naming every id itself - I made G9 with it an hour ago. It also makes that goal current, marks which items were split, and closes any item it leaves out.\nMake-current is a separate press and stays.\nSo Q2 asks: once goal.add and item.add exist, does that bulk create-everything call go away, with its split marking moved to a verb of its own?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-07T12:13:14.062Z"
+     "at": "2026-10-09T05:36:40.621Z"
     }
    ],
    "chat": [
@@ -732,6 +778,42 @@
      "text": "Rule/8 is now a C check on each UI item of G9 (nine of them); this item carries nothing of its own.\nIt is yours to close."
     }
    ]
+  },
+  {
+   "id": "goal/G9.13",
+   "title": "Adding an item never changes the current goal",
+   "goal": "goal/G9",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close"
+   ],
+   "blocking": [
+    "goal/G9"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   }
  ]
 }
