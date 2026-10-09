@@ -467,7 +467,7 @@ async function run() {
     // relay, so by the time anything can be posted down it the relay's
     // key must already be pinned — pinned at stream-open, not lazily by
     // the code the door would have blocked.
-    const relayPort = 65425;
+    const relayPort = require('./labMaster/labPaths').labPort(25);
     const said = await hub(relayPort, 'GET', '/api/relay/key');
     const relayKey = said.body && said.body.relayPublicKey;
     let pins = {};
@@ -498,7 +498,7 @@ async function run() {
     // and nobody's actual device is touched.
     {
       const ownerId = W.owner();
-      const relayUrl = 'http://127.0.0.1:65425';
+      const relayUrl = 'http://127.0.0.1:' + require('./labMaster/labPaths').labPort(25);
       const handheld = require('../run/js/relayAuth').generateIdentity('handheld');
       const auth = require('../run/js/relayAuth');
 

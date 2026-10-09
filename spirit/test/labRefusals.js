@@ -38,7 +38,7 @@ const lab = require('./labMaster/ensureMaster.js');
 const { mintOwnerInvite } = require('./ownerClaim');
 const { sealedClaimBody } = require('./labWorld');
 
-const RELAY_PORT = 65415;
+const RELAY_PORT = require('./labMaster/labPaths').labPort(15);
 const RELAY_NAME = 'abuse-relay';
 const ORIGIN = 'http://127.0.0.1:' + RELAY_PORT;
 

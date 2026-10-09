@@ -61,9 +61,9 @@ const PREFIX = 'asb-';
 // holds 65425-65428. Two helpers that shared a port would not fail — the
 // second would find the first's relay answering and test it instead,
 // which is the wrong-green shape this whole harness is built to refuse.
-const PORT_RELAY = 65424;
-const PORT_OTHER_RELAY = 65423;
-const PORT_OWNER_NODE = 65422;
+const PORT_RELAY = labPaths.labPort(24);
+const PORT_OTHER_RELAY = labPaths.labPort(23);
+const PORT_OWNER_NODE = labPaths.labPort(22);
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 

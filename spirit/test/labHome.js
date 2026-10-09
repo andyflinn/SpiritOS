@@ -46,7 +46,7 @@ function isFree(port) {
 async function freePort() {
   const listed = await master('GET', '/api/nodes');
   const held = ((listed.body && listed.body.nodes) || []).map(function (n) { return Number(n.port); });
-  for (let p = 65400; p <= 65409; p++) if (held.indexOf(p) === -1 && await isFree(p)) return p;
+  for (let p = require('./labMaster/labPaths').labPort(0); p <= require('./labMaster/labPaths').labPort(9); p++) if (held.indexOf(p) === -1 && await isFree(p)) return p;
   return 0;
 }
 // THROUGH THE ONE DOOR (oneDoor.js): relayRequest, never fetch.

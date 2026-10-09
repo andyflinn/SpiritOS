@@ -24,8 +24,9 @@ const MASTER_PORT = labPaths.PORT;
 const HARNESS = labPaths.HARNESS;
 const WORK_PORT = 65432;
 const WORK_ID = 'work';
-const LAB_PORT_MIN = 65400;
-const LAB_PORT_MAX = 65429;
+let runLock = ''; // who holds the one-run-per-host lock (goal/G8.9), '' when free
+const LAB_PORT_MIN = labPaths.LAB_PORT_MIN;
+const LAB_PORT_MAX = labPaths.LAB_PORT_MAX;
 
 const REPO_ROOT = path.join(__dirname, '..', '..', '..');
 const WORK_HOME = path.join(REPO_ROOT, 'spirit', 'run');
@@ -1441,6 +1442,27 @@ const server = http.createServer(function (req, res) {
   // before a harness reuses it, so a suite never tests another tree.
   if (req.method === 'GET' && pathname === '/api/root') {
     sendJson(res, 200, { root: path.resolve(REPO_ROOT).replace(/\\/g, '/'), port: MASTER_PORT, harness: HARNESS });
+    return;
+  }
+
+  // ONE FULL RUN AT A TIME PER HOST (goal/G8.9). Andy, 2026-10-09: "This one is REAL." Two runs on one machine
+  // collided on its ports, WSL's included. {claim: name} is granted while nobody else holds the lock; {free: name}
+  // lets the holder go. Held in memory: a restarted labMaster starts free.
+  if (req.method === 'POST' && pathname === '/api/run/lock') {
+    readJsonBody(req).then(function (body) {
+      const b = body || {};
+      if (typeof b.claim === 'string' && b.claim) {
+        if (!runLock || runLock === b.claim) { runLock = b.claim; sendJson(res, 200, { held: true, by: runLock }); }
+        else sendJson(res, 200, { held: false, by: runLock });
+        return;
+      }
+      if (typeof b.free === 'string' && b.free) {
+        if (runLock === b.free) runLock = '';
+        sendJson(res, 200, { held: false, by: runLock });
+        return;
+      }
+      sendJson(res, 400, { error: 'claim or free, with a name' });
+    }).catch(function () { sendJson(res, 400, { error: 'claim or free, with a name' }); });
     return;
   }
 

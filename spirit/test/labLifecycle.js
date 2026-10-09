@@ -40,8 +40,8 @@ const { mintOwnerInvite } = require('./ownerClaim');
 // Inside labMaster's own 65400-65429 range. Distinct from every other
 // lab suite's ports so the harness can run them in the same lane pass —
 // labPersistence takes 65419, labRefusals 65415, labWorld 65425-65428.
-const RELAY_PORT = 65410;
-const AVATAR_PORT = 65411;
+const RELAY_PORT = require('./labMaster/labPaths').labPort(10);
+const AVATAR_PORT = require('./labMaster/labPaths').labPort(11);
 
 // Prefixed so they can never be mistaken for, or delete, a row Andy
 // keeps by hand. This suite touches nothing it did not make.

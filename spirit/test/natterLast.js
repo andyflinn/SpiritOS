@@ -101,13 +101,13 @@ test.startTest('Natter — the last public relay does not come off');
 //
 // A list of two dead loopback lab relays passed the old rule and leaves a
 // node that cannot claim, send, read, or be reached by anybody. Andy's
-// own node was in that shape — two rows, one of them 127.0.0.1:65425 not
+// own node was in that shape — two rows, one of them 127.0.0.1:43425 not
 // running, and sitting FIRST so every /api/hub verb dialled it.
 {
   const LIVE = 'https://spirit.andyflinn.com';
   const OTHER = 'https://relay.example';
-  const LAB = 'http://127.0.0.1:65425';
-  const LAB2 = 'http://localhost:65426';
+  const LAB = 'http://127.0.0.1:43425';
+  const LAB2 = 'http://localhost:43426';
 
   // The case the old rule got wrong, and the reason for the change.
   if (ownerBadge.canRemoveRelay([{ url: LAB }, { url: LAB2 }], LAB) === false) {
@@ -150,7 +150,7 @@ test.startTest('Natter — the last public relay does not come off');
   // here either or the rule would promise something the transport
   // refuses to deliver.
   const publicOnes = ['https://spirit.andyflinn.com', 'https://relay.example:8443'];
-  const notPublic = ['http://127.0.0.1:65425', 'http://localhost:1', 'http://[::1]:2',
+  const notPublic = ['http://127.0.0.1:43425', 'http://localhost:1', 'http://[::1]:2',
     'http://relay.example', 'ftp://relay.example', 'not a url', '', null];
   if (publicOnes.every(ownerBadge.isPublicRelay) &&
       notPublic.every(function (u) { return ownerBadge.isPublicRelay(u) === false; })) {
@@ -188,16 +188,16 @@ test.subHeading('The browser is given the same rule, not a copy of it');
   // two rules that happen to agree — so this asks the browser side the
   // question the node side was just asked, and compares the answers
   // rather than restating an expectation.
-  const list = [{ url: 'https://spirit.andyflinn.com' }, { url: 'http://127.0.0.1:65425' }];
+  const list = [{ url: 'https://spirit.andyflinn.com' }, { url: 'http://127.0.0.1:43425' }];
   const cases = [
-    [list, 'http://127.0.0.1:65425'],
+    [list, 'http://127.0.0.1:43425'],
     [list, 'https://spirit.andyflinn.com'],
-    [[{ url: 'http://127.0.0.1:65425' }], 'http://127.0.0.1:65425'],
+    [[{ url: 'http://127.0.0.1:43425' }], 'http://127.0.0.1:43425'],
   ];
   const agree = cases.every(function (c) {
     return win.spiritOwnerBadge.canRemoveRelay(c[0], c[1]) === ownerBadge.canRemoveRelay(c[0], c[1]);
   });
-  if (agree && win.spiritOwnerBadge.canRemoveRelay(list, 'http://127.0.0.1:65425') === true) {
+  if (agree && win.spiritOwnerBadge.canRemoveRelay(list, 'http://127.0.0.1:43425') === true) {
     test.check('and it answers exactly as the node side does, on the same lists');
   } else {
     test.fail('browser rule disagrees with the node rule');

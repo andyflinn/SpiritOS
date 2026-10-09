@@ -34,7 +34,7 @@ const FAKES = path.join(
   process.env.TEMP || process.env.TMPDIR || '/tmp', 'spiritos-relay-fakes'
 );
 const SUBJECT = path.join(FAKES, 'lw-lab-bella', 'spirit', 'run');
-const LAB = 'http://127.0.0.1:65425';
+const LAB = 'http://127.0.0.1:' + require('./labMaster/labPaths').labPort(25);
 
 const RELAY = process.argv[2] || 'https://spirit.andyflinn.com';
 

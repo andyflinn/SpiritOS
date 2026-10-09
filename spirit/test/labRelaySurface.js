@@ -11,7 +11,7 @@ const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 
 const MASTER = require('./labMaster/labPaths').MASTER;
-const RELAY_PORT = 65418;
+const RELAY_PORT = require('./labMaster/labPaths').labPort(18);
 const RELAY_NAME = 'surface-relay';
 const ORIGIN = 'http://127.0.0.1:' + RELAY_PORT;
 

@@ -336,13 +336,13 @@ function addRefusesAUrlTheWireWouldRefuse() {
       // BUT LOOPBACK IS FINE, because that is a lab relay and the wire
       // allows it. Refusing it would make the lab unaddable.
       el(app, 'natter-label').value = 'lab';
-      el(app, 'natter-url').value = 'http://127.0.0.1:65425';
+      el(app, 'natter-url').value = 'http://127.0.0.1:43425';
       el(app, 'natter-add').fire('click');
 
       return settle().then(function () {
         let after = [];
         try { after = JSON.parse(app.store['relays.json'] || '[]'); } catch (e) { after = []; }
-        if (after.some(function (r) { return r.url === 'http://127.0.0.1:65425'; })) {
+        if (after.some(function (r) { return r.url === 'http://127.0.0.1:43425'; })) {
           test.check('while http to 127.0.0.1 is allowed — that is what a lab relay is');
         } else {
           test.fail('a loopback lab relay was refused: ' + JSON.stringify(after));

@@ -2008,7 +2008,7 @@ function theRedIsExplained() {
 function labRelayIsExplained() {
   test.subHeading('A relay only this machine can reach says so');
 
-  const LAB = 'http://127.0.0.1:65425';
+  const LAB = 'http://127.0.0.1:43425';
 
   // DOWN: two bubbles, and they are about different things — one says
   // nothing answered, the other says it would not have helped.

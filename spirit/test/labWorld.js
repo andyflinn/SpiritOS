@@ -38,12 +38,12 @@ const REPO_ROOT = path.join(__dirname, '..', '..');
 const PREFIX = 'lw-';
 // Ports inside labMaster's own 65400-65429 range, at the top end, away
 // from where hand-made rows tend to land.
-const RELAY_PORT = 65425;
-const PEER_PORTS = [65426, 65427, 65428];
+const RELAY_PORT = require('./labMaster/labPaths').labPort(25);
+const PEER_PORTS = [26, 27, 28].map(require('./labMaster/labPaths').labPort);
 // The owner NODE's port (apiAuth/G1.0). Before the auth world the lab
 // owner was a key with no node; a world whose cases are decided at the
 // owner's gate needs the gate running.
-const OWNER_PORT = 65429;
+const OWNER_PORT = require('./labMaster/labPaths').labPort(29);
 // How long a case waits before its outcome is 'silence'. Long enough for
 // a relay round trip under harness load; a real answer arrives in well
 // under a second.

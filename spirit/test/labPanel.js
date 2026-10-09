@@ -100,8 +100,8 @@ test.subHeading('A node somebody made has three buttons, never five');
 
 panel.render([
   { id: 'work', name: 'work', type: 'avatar', port: 65432, permanent: true, running: true, home: '/repo', commit: '' },
-  { id: 'jazz', name: 'jazz', type: 'avatar', port: 65400, permanent: false, running: true, home: '/lab/jazz', commit: 'abc1234' },
-  { id: 'rock', name: 'rock', type: 'avatar', port: 65405, permanent: false, running: false, home: '/lab/rock', commit: 'abc1234' },
+  { id: 'jazz', name: 'jazz', type: 'avatar', port: 43400, permanent: false, running: true, home: '/lab/jazz', commit: 'abc1234' },
+  { id: 'rock', name: 'rock', type: 'avatar', port: 43405, permanent: false, running: false, home: '/lab/rock', commit: 'abc1234' },
 ]);
 
 const drawn = panel.browser.elements.tbody.innerHTML;
@@ -142,8 +142,8 @@ if (rock.indexOf('restart') !== -1 && rock.length === 3) {
 // says nothing about which nodes are alive.
 // 127.0.0.1, not localhost (2026-09-22): the node's own origin, so a click
 // from the panel is not a request from another site.
-if (/<a href="http:\/\/127\.0\.0\.1:65400"[^>]*>jazz/.test(drawn) &&
-    !/<a href="http:\/\/127\.0\.0\.1:65405"/.test(drawn)) {
+if (/<a href="http:\/\/127\.0\.0\.1:43400"[^>]*>jazz/.test(drawn) &&
+    !/<a href="http:\/\/127\.0\.0\.1:43405"/.test(drawn)) {
   test.check('and a running node is a link to itself, which is how you can tell');
 } else {
   test.fail('running is no longer visible on the row');
@@ -197,11 +197,11 @@ if (drawn.indexOf('<th>Running</th>') === -1 && panel.browser.elements.tbody.inn
 // a node that refused to start with nothing said looks exactly like one
 // nobody has started.
 panel.render([
-  { id: 'jazz', name: 'jazz', type: 'avatar', port: 65400, permanent: false,
-    running: false, home: '/lab/jazz', commit: 'abc1234', lastError: 'EADDRINUSE 65400' },
+  { id: 'jazz', name: 'jazz', type: 'avatar', port: 43400, permanent: false,
+    running: false, home: '/lab/jazz', commit: 'abc1234', lastError: 'EADDRINUSE 43400' },
 ]);
 const failed = panel.browser.elements.tbody.innerHTML;
-if (/EADDRINUSE 65400/.test(failed)) {
+if (/EADDRINUSE 43400/.test(failed)) {
   test.check('but what went wrong is still said, beside the name');
 } else {
   test.fail('the error vanished with the column: ' + failed.slice(0, 200));
@@ -224,7 +224,7 @@ if (onBody) {
 }
 
 panel.render([
-  { id: 'jazz', name: 'jazz', type: 'avatar', port: 65400, permanent: false, running: true, home: '/lab/jazz', commit: 'abc1234' },
+  { id: 'jazz', name: 'jazz', type: 'avatar', port: 43400, permanent: false, running: true, home: '/lab/jazz', commit: 'abc1234' },
 ]);
 
 if (onBody) {

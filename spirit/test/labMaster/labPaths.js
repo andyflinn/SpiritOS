@@ -50,6 +50,12 @@ const os = require('os');
 
 const DEFAULT_PORT = 65420;
 const PORT = Number(process.env.LAB_MASTER_PORT) || DEFAULT_PORT;
+// THE LAB RANGE MOVES AS ONE (goal/G8.9). Andy, 2026-10-09, of two runs on one machine: "This one is REAL." The range
+// is 30 ports from a base, 65400 unless LAB_PORT_BASE names another, so a second run shifts every lab port at once;
+// suites and labMaster read the base here and hold no lab port of their own.
+const DEFAULT_PORT_BASE = 65400;
+const PORT_BASE = Number(process.env.LAB_PORT_BASE) || DEFAULT_PORT_BASE;
+const PORT_SPAN = 30;
 const HARNESS = PORT !== DEFAULT_PORT;
 const SUFFIX = HARNESS ? '-' + PORT : '';
 
@@ -59,6 +65,11 @@ module.exports = {
   DEFAULT_PORT: DEFAULT_PORT,
   PORT: PORT,
   MASTER: 'http://127.0.0.1:' + PORT,
+  portBase: PORT_BASE,
+  // The lab port at an offset from the base, 0 to 29.
+  labPort: function (offset) { return PORT_BASE + Number(offset); },
+  LAB_PORT_MIN: PORT_BASE,
+  LAB_PORT_MAX: PORT_BASE + PORT_SPAN - 1,
   // A harness labMaster: no work row, no live world, its own folders.
   HARNESS: HARNESS,
   REPO_ROOT: REPO_ROOT,

@@ -23,7 +23,7 @@ const { spawn } = require('child_process');
 const test = require('./testSupport.js');
 
 const MASTER = require('./labMaster/labPaths').MASTER;
-const ANDY_PORT = 65421;
+const ANDY_PORT = require('./labMaster/labPaths').labPort(21);
 const ANDY_NAME = 'static-andy';
 const ORIGIN = 'http://127.0.0.1:' + ANDY_PORT;
 

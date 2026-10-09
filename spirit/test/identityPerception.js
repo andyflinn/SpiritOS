@@ -70,9 +70,9 @@ test.startTest('Identity vs perception (sticks and stones)');
     test.fail('after rename: ' + JSON.stringify(afterRename));
   }
 
-  contactBook.addRoute(annie, johnA.publicKey, 'http://127.0.0.1:65410');
+  contactBook.addRoute(annie, johnA.publicKey, 'http://127.0.0.1:43410');
   contactBook.addRoute(annie, johnA.publicKey, 'https://spirit.andyflinn.com');
-  contactBook.addRoute(annie, johnA.publicKey, 'http://127.0.0.1:65410');
+  contactBook.addRoute(annie, johnA.publicKey, 'http://127.0.0.1:43410');
   const routed = contactBook.byPublicKey(annie, johnA.publicKey);
   if (routed.relays && routed.relays.length === 2) {
     test.check('routes append per key and do not duplicate');
@@ -90,7 +90,7 @@ test.startTest('Identity vs perception (sticks and stones)');
   contactBook.acquire(annie, {
     publicKey: johnA.publicKey,
     publicLabel: 'jonathan',
-    relay: 'http://127.0.0.1:65411',
+    relay: 'http://127.0.0.1:43411',
   }, 'handle');
   const afterSeen = contactBook.byPublicKey(annie, johnA.publicKey);
   if (afterSeen.relays.length === 3 && afterSeen.myLabel === 'lovelyJohn') {

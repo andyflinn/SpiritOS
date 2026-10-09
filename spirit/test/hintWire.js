@@ -39,9 +39,16 @@ const plantRun = require('./plantRun');
 const sseClient = require('../run/js/sseClient');
 const { createRelay } = require('../run/js/relay');
 
-// Below 49152, outside Windows' ephemeral range — see partnerWire.js and
-// presenceWire.js:41 for what a port inside it costs.
-const PORTS = [48761, 48762];
+// CHOSEN AT RUN TIME (goal/G8.9), as presenceWire.js does: a fixed pair collided with a second run on the same machine
+// ("port 48762 is already in use", 2026-10-09), and a fixed port inside the ephemeral range is taken by any outbound
+// socket. The OS hands out a port that is free at that moment, and the relay is waited for, never slept at.
+const net = require('net');
+const PORTS = [];
+function freePort() {
+  return new Promise(function (resolve) {
+    const s = net.createServer().listen(0, '127.0.0.1', function () { const p = s.address().port; s.close(function () { resolve(p); }); });
+  });
+}
 
 let kids = [];
 let streams = [];
@@ -152,6 +159,7 @@ async function run() {
     p[0].box.claim(p[2], auth.sign(p[1].privateKey, auth.claimMessage(p[2])),
       p[1].publicKey, 'fx-x-' + p[2], minted.invite.token, p[2]);
   });
+  PORTS.push(await freePort(), await freePort());
   const urlA = 'http://127.0.0.1:' + PORTS[0];
   const urlB = 'http://127.0.0.1:' + PORTS[1];
   const okA = A.box.setPartner(A.owner, B.owner.publicKey, urlB, B.box.relayPublicKey(), 'h1');

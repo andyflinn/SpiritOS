@@ -75,9 +75,9 @@ if (typeof create !== 'function') {
 
   test.subHeading('An agent keeps out of the lab range, so a sweep can never reach it');
 
-  const intruder = create({ name: 'agent-intruder', type: 'avatar', kind: 'agent', port: 65410, home: REAL_HOME });
+  const intruder = create({ name: 'agent-intruder', type: 'avatar', kind: 'agent', port: require('./labMaster/labPaths').labPort(10), home: REAL_HOME });
   if (intruder.status === 400 && /lab range/.test(intruder.error || '')) {
-    test.check('65410 is refused — lab ports belong to nodes that may be wiped');
+    test.check(require('./labMaster/labPaths').labPort(10) + ' is refused — lab ports belong to nodes that may be wiped');
   } else {
     test.fail('an agent took a lab port: ' + JSON.stringify(intruder));
   }
