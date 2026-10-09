@@ -515,6 +515,10 @@ function apply(s, r, b, item, goalOf) {
       if (b.phase === 'red') it.phase = 'build';
       else if (b.phase === 'build') it.phase = 'verify';
       else if (b.phase === 'verify') { if (b.pass === true) { it.verified = true; it.phase = ''; } else it.phase = 'build'; }
+      // THE DESK WRITES THE STATUS WORD ITSELF (goal/G8.12). Andy, 2026-10-09: "the desk should update status in every
+      // change it manages....", and "yes" to its being the word on the List rows. An agent's verify pass does not
+      // finish a code item: it waits for deskVerify, and the row says so instead of reading like any running item.
+      if (b.phase === 'verify' && b.pass === true && it.code && !it.done && !it.closed) it.status = 'waiting for deskVerify';
       return;
     // AND ONLY deskVerify BRINGS THE BUTTON (goal/G8.3). Andy, 2026-10-09: "best is, if the done button doesn't show up
     // until deskVerify allows it.", and "the builders claim is registered, but only deskVerify brings the button." So
@@ -526,6 +530,9 @@ function apply(s, r, b, item, goalOf) {
       if (!it || it.done || it.closed) return;
       if (!it.goal && !it.code) return;
       it.checked = true;
+      // goal/G8.12: the word on the row, written by the desk - on an item deskVerify has passed it, on a goal the full
+      // run has.
+      it.status = it.goal ? 'full run passed' : 'deskVerify passed';
       return;
     // A VERIFY TAKEN BACK (goal/G8.3). Andy, 2026-10-09: "deskVerify only reject a done claim. this should prompt an
     // agent to pick the item up, raise red-questions if neccessary." It is the one thing deskVerify may do on his
@@ -543,7 +550,8 @@ function apply(s, r, b, item, goalOf) {
       it.phase = 'build';
       it.phaseWith = '';
       it.with = '';
-      it.status = 'running';
+      // goal/G8.12: the row says it was rejected, not merely that it runs again.
+      it.status = 'deskVerify rejected it';
       return;
     // THE GOAL IS EMPTY (goal/G8.12). Andy, 2026-10-09: "why, the run-all should be triggered by: \"no items left in
     // the goal\", by the desk itself." Ruled already in goal/G8.3's box: "When the last item of the goal closes, every
@@ -552,6 +560,9 @@ function apply(s, r, b, item, goalOf) {
     case 'goal.emptied': {
       const g = s.goals[String(b.id)];
       if (g) g.emptied = true;
+      // goal/G8.12: and the goal's own row says what it is waiting for, written here and by nobody by hand.
+      const row = s.items[String(b.id)];
+      if (row && !row.done && !row.closed) row.status = 'full run started';
       return;
     }
     // AN AGENT'S RE-VERIFY (goal/G8.10). Andy, 2026-10-09: "an agent should be able to trigger a re-verify." It changes
