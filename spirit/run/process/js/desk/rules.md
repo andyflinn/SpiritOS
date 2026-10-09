@@ -27,6 +27,10 @@ Build the plainest mechanism that does the job: one thing per message, nothing h
 
 ## desk
 
+### rule/10 (version 22): full harness only runs for goal completion
+
+full harness only runs for goal completion. it is too time consuming to run the full harness for getting an item 'done'
+
 ### rule/9 (version 20): Bulk goal creation on order only
 
 An agent creates a goal with all its items in one call only when Andy has ordered it explicitly for that goal. Otherwise goals and items are added one at a time, through the same verbs Andy uses, and the desk names every id.
