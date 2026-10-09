@@ -1,8 +1,8 @@
 {
- "change": 20327,
+ "change": 20331,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:08:48.893Z",
+ "writtenAt": "2026-10-09T06:08:58.821Z",
  "items": [
   {
    "id": "goal/G9",
@@ -20,8 +20,7 @@
     "goal/G9.7",
     "goal/G9.10",
     "goal/G9.11",
-    "goal/G9.12",
-    "goal/G9.13"
+    "goal/G9.12"
    ],
    "go": false,
    "alone": false,
@@ -1421,6 +1420,11 @@
      "by": "desk",
      "at": "2026-10-09T06:07:16.365Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:08:53.283Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -1601,17 +1605,18 @@
    "id": "goal/G9.13",
    "title": "Adding an item never changes the current goal",
    "goal": "goal/G9",
-   "status": "verified",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -1650,7 +1655,7 @@
      "version": 6
     }
    ],
-   "asks": 2,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "ADDING AN ITEM NEVER CHANGES THE CURRENT GOAL\n\nAndy, 2026-10-09, under goal/G9: \"An item added to another goal should NOT change a goal.\" and \"cw: Add an item to this goal to that effect.\"\n\nWHY: on 2026-10-09 cw added goal/G8.8 through session.set, and session.set also sets the current goal to the goal it names (desk.js line 427, s.current = gid), so his current goal moved from G9 to G8 without any press of his. He put it back with Make current.\n\nREQUIRED, his: adding an item to a goal leaves the current goal where it is. Only his Make current press moves it.",
