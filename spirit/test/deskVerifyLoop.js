@@ -31,6 +31,8 @@ const SERVER = path.join(__dirname, '..', 'run', 'process', 'js', 'deskVerify', 
 // A suite of one assertion, written into spirit/test for the length of this run, so the loop has something real to run.
 const PROBE = 'zzLoopProbe.js';
 const PROBE_PATH = path.join(__dirname, PROBE);
+const SLOW = 'zzLoopSlow.js';
+const SLOW_PATH = path.join(__dirname, SLOW);
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function short(x) { return String(typeof x === 'string' ? x : JSON.stringify(x)).slice(0, 300); }
@@ -123,7 +125,27 @@ function fakeNode() {
     const r = node.records.filter(function (x) { return x.suite === PROBE; });
     if (r.length && r[0].title === 'the loop ran me' && r[0].outcome === 'green') test.check('the probe\'s assertion came back as a record to its node: it was run with --verify-port');
     else test.fail(OWED + 'records at the node: ' + short(node.records));
+
+    // GROWN IN THE VERIFY (claude-windows): on his clone a suite's records come back to deskVerify itself, through the
+    // node's door, which waits about twelve seconds for an app server. A pass that holds deskVerify for the length of a
+    // suite leaves every record of that suite unanswered, so it must keep answering while its suites run.
+    test.subHeading('3. while a pass runs, deskVerify still answers');
+    fs.writeFileSync(SLOW_PATH, [
+      "'use strict';",
+      "const test = require('./testSupport.js');",
+      "test.startTest('slow probe');",
+      "setTimeout(function () { test.check('slow and done'); test.reportSuccessFailureCount(); process.exit(0); }, 3000);",
+    ].join('\n'));
+    ITEMS[1].files = [file('spirit/test/' + SLOW)];
+    const pass = ask('loop.once');
+    await sleep(1000);
+    const t0 = Date.now();
+    const m = await Promise.race([ask('mode'), sleep(1500).then(function () { return null; })]);
+    if (m && m.status === 200 && Date.now() - t0 < 1500) test.check('mode answered within a second while a three-second suite ran');
+    else test.fail(OWED + 'while the pass ran, mode ' + (m ? 'answered late: ' + short(m.body) : 'did not answer in 1.5 s'));
+    await pass;
   } finally {
+    try { fs.unlinkSync(SLOW_PATH); } catch (e) { /* gone */ }
     await new Promise(function (res) { kid.once('exit', res); kid.kill(); setTimeout(res, 3000); });
     node.close();
   }
