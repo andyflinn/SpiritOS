@@ -13,11 +13,11 @@
 //      startTest); anything else there is named as skipped, as today.
 //   2  It runs them like any other suite; the filter (the first argument) narrows them as it narrows the others.
 //   3  runAll.js --list [filter] prints the suites it would run, one path per line relative to spirit/test, and runs
-//      nothing: no sweep, no BOARD.md. This test asks that, never a nested run, since a second harness inside the
+//      nothing: no sweep, no record written. This test asks that, never a nested run, since a second harness inside the
 //      harness would sweep the temp folders of suites still running beside it.
 //
-// LEFT OPEN, not asserted: how such a suite finds testSupport.js (a relative require is what this test plants); whether
-// BOARD.md groups them by their folder.
+// LEFT OPEN, not asserted: how such a suite finds testSupport.js (a relative require is what this test plants).
+// The generated board that would have grouped them by folder is gone (goal/G8.12).
 //
 // The test plants two small suites, one per kind of folder, runs the real harness filtered to their names, and
 // removes them again, whatever happens.

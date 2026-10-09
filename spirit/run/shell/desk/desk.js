@@ -1080,16 +1080,49 @@ function deskVerifyRefresh() {
     }, function () { deskVerifyRows = []; deskDrawVerifier(); });
   });
 }
+// THE LIVE RUN (goal/G8.12), as deskVerify publishes it: the newest object only, never a log. Andy, 2026-10-09: "what
+// now is displayed as a log.. should be an updated status message underneath a progress bar", and the bar is suites
+// done plus the tests of the one running, against what that suite reported last time. A suite never measured before
+// has no total, so it shows its count and the bar stands on the suites alone - a guessed percentage would be a lie.
+var deskVerifyRun = null;
+var DESK_IDLE_MIN = 60; // the idle hour (goal/G8.4), which the countdown counts down.
+function deskVerifyBar() {
+  var r = deskVerifyRun;
+  if (!r || r.doing === 'idle') return '';
+  var of = Number(r.of) || 0;
+  var index = Number(r.index) || 0;
+  var done = of ? (index - 1) / of : 0;
+  var inOne = (of && Number(r.expected) > 0) ? Math.min(1, (Number(r.tests) || 0) / Number(r.expected)) / of : 0;
+  var pct = Math.max(0, Math.min(100, Math.round((done + inOne) * 100)));
+  return '<div><progress id="desk-verify-bar" max="100" value="' + pct + '" style="width:100%"></progress></div>' +
+    '<div>' + (r.doing === 'full' ? 'Full run' : 'Item ' + deskEsc(r.id)) +
+    (of ? ' · suite ' + index + ' of ' + of : '') + (r.suite ? ' · ' + deskEsc(r.suite) : '') + '</div>';
+}
+// IDLE, IT COUNTS DOWN (goal/G8.12). Andy: "after all is done, it should count down idle time, before it starts
+// documentation runs." The hour is measured from the newest desk write deskVerify knows, which it publishes as `since`.
+function deskVerifyCountdown(since) {
+  if (!since) return '';
+  var ms = Date.now() - Date.parse(since);
+  if (isNaN(ms)) return '';
+  var left = Math.ceil(DESK_IDLE_MIN - ms / 60000);
+  if (left <= 0) return '<div>Idle time reached; no chores are ruled yet, so nothing runs.</div>';
+  return '<div>Idle in ' + left + ' min of quiet.</div>';
+}
 function deskVerifyHtml() {
   if (!deskVerifier) return '<div class="job-manifest-note">No verifier runs on this node.</div>';
   var run = deskVerifier.running || { id: '', suite: '', since: '' };
   var queued = Array.isArray(deskVerifier.queued) ? deskVerifier.queued : [];
-  var item = run.id || deskVerifyLast;
-  var out = '<div class="stat-tile wide"><div class="label">Running now</div><div>' +
+  var item = (deskVerifyRun && deskVerifyRun.id) || run.id || deskVerifyLast;
+  var live = deskVerifyRun;
+  var out = '<div class="stat-tile wide"><div class="label">Running now</div>' + deskVerifyBar() +
+    // ONE STATUS LINE, REPLACED (goal/G8.12): the newest published line, and nothing kept behind it.
+    (live ? '<div id="desk-verify-line">' + deskEsc(live.line) + '</div>' : '') +
+    (live && live.doing === 'idle' ? deskVerifyCountdown(live.since) : '') +
+    '<div>' +
     (run.id
       ? 'Item ' + deskEsc(run.id) + ' · suite ' + deskEsc(run.suite || '(choosing)') +
         (run.since ? ' · since ' + deskTime(run.since) : '')
-      : 'Idle' + (deskVerifyLast ? '; last checked ' + deskEsc(deskVerifyLast) : '')) +
+      : (live && live.doing !== 'idle' ? '' : 'Idle' + (deskVerifyLast ? '; last checked ' + deskEsc(deskVerifyLast) : ''))) +
     '</div><div>' + (queued.length ? 'Waiting: ' + queued.map(deskEsc).join(', ') : 'Nothing waiting') + '</div>' +
     '<div><button type="button" id="desk-verify-stop"' + (run.id ? '' : ' disabled') + '>Stop the run</button>' +
     (item ? ' <button type="button" data-reverify="' + deskEsc(item) + '">Verify ' + deskEsc(item) + ' again</button>' : '') +
@@ -1109,6 +1142,16 @@ function deskVerifyHtml() {
 function deskDrawVerifier() {
   var box = document.getElementById('desk-verifier');
   if (box) box.innerHTML = deskVerifyHtml();
+}
+// WHAT DESKVERIFY PUBLISHES (goal/G8.12), subscribed at mount: each object replaces the last and repaints. A run that
+// starts while the tab is closed is still the newest object when he opens it, so he sees where it stands, not nothing.
+// The tab also appears on the first object from a verifier that was not yet answering when the page opened.
+function deskVerifyEvent(obj) {
+  if (!obj || typeof obj !== 'object' || typeof obj.doing !== 'string') return;
+  deskVerifyRun = obj;
+  if (obj.id) deskVerifyLast = String(obj.id);
+  if (!deskVerifier) { deskVerifier = { running: { id: '', suite: '', since: '' }, queued: [] }; deskDrawTabs(); }
+  deskDrawVerifier();
 }
 
 // THE HEADER AREA IS THE SHELL'S (goal/G6.1): the block written as #desk-bars moves into the app header, which sticks it
@@ -1342,6 +1385,8 @@ spirit.shell.activateApp({
     deskSearchItems();
     deskLoad();
     // goal/G8.11: whether a verifier runs here decides whether the tab exists at all, so it is asked at mount.
+    // goal/G8.12: and from then on it listens - deskVerify publishes every change of its run, so the tab never pulls.
+    if (typeof deskApi.onPublished === 'function') deskApi.onPublished(deskVerifyEvent, 'deskVerify');
     deskAskVerifier();
   },
 });

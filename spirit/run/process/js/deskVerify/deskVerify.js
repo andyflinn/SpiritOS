@@ -140,24 +140,59 @@ const SUITE_MS = Number(values.suiteMs) > 0 ? Number(values.suiteMs) : 600000;
 let running = { id: '', suite: '', since: '' };
 let runningKid = null;
 let stopped = false;
-function runSuite(file, port) {
+function runSuite(file, port, onTests) {
   return new Promise(function (resolve) {
     const out = [];
     let timedOut = false;
+    let tests = 0;
     const kid = spawn(process.execPath, [file, '--verify-port', String(port)], { cwd: REPO, stdio: ['ignore', 'pipe', 'pipe'] });
     runningKid = kid;
+    // EACH ASSERTION AS IT IS PRINTED (goal/G8.12), so the tab's bar moves while a suite runs rather than once it
+    // ends. The printed lines are what every reader of a suite uses (runAll, claim.check), not the exit code.
+    const count = function (text) {
+      const n = String(text).split('\n').filter(function (l) { return /SUCCESS #|FAILURE #/.test(l); }).length;
+      if (!n || typeof onTests !== 'function') return;
+      tests += n;
+      onTests(tests);
+    };
     const stop = setTimeout(function () { timedOut = true; try { kid.kill(); } catch (e) { /* gone */ } }, SUITE_MS);
     const over = function (code) {
       clearTimeout(stop);
       if (runningKid === kid) runningKid = null;
       resolve({ code: code, said: out.join(''), timedOut: timedOut, stopped: stopped });
     };
-    kid.stdout.on('data', function (d) { out.push(String(d)); });
+    kid.stdout.on('data', function (d) { out.push(String(d)); count(d); });
     kid.stderr.on('data', function (d) { out.push(String(d)); });
     kid.on('exit', over);
     kid.on('error', function () { over(1); });
   });
 }
+// WHAT IT IS DOING, PUBLISHED AS IT HAPPENS (goal/G8.12). Andy, 2026-10-09: "the new tab in desk should listen to real
+// events from verifier, and what now is displayed as a log.. should be an updated status message underneath a progress
+// bar", and "it should refresh by itself". So every change of the run is one object down the stream
+// (appServer.publish, which the page hears with onPublished(fn, 'deskVerify')) - never a log: the tab keeps the newest
+// and replaces it. The page asks nothing, as his no-pulling rule requires.
+//   doing     'item' one item's suites, 'full' the short loop, 'idle' nothing running
+//   index/of  which suite of how many; tests/expected: assertions printed so far, and how many that suite reported
+//             the last time it was measured (0 when it was never seen)
+//   since     idle: the newest desk write this server knows, which is what the tab counts the idle hour from
+const testsSeen = db.prepare('SELECT COUNT(DISTINCT title) AS n FROM results WHERE suite = ?');
+function expectedOf(rel) {
+  try { return Number((testsSeen.get(path.basename(String(rel))) || {}).n) || 0; } catch (e) { return 0; }
+}
+let lastWriteAt = '';
+function say(o) {
+  const one = {
+    doing: String(o.doing || 'idle'), id: String(o.id || ''), suite: String(o.suite || ''),
+    index: Number(o.index) || 0, of: Number(o.of) || 0, tests: Number(o.tests) || 0,
+    expected: Number(o.expected) || 0, line: String(o.line || ''), since: String(o.since || ''),
+  };
+  appServer.publish(one);
+}
+function sayIdle(line) {
+  say({ doing: 'idle', line: line || 'idle, nothing running', since: lastWriteAt || new Date().toISOString() });
+}
+
 // HIS INTERVENTION (goal/G8.11): the suite running now is ended, and the claim it belonged to is rejected saying so.
 // A stopped run is never a pass - the same rule as the time limit, for the same reason: nothing was measured.
 function stopRun() {
@@ -236,7 +271,8 @@ function suitesOf(id) {
 // arrive through the node's door while a suite is still going (goal/G8.6).
 // The tab reads `running` while this runs, so it is cleared however the check ends (goal/G8.11).
 function claimCheck(id) {
-  const idle = function () { running = { id: '', suite: '', since: '' }; stopped = false; };
+  // The tab reads the run from what this publishes, so the end of a check says idle however it ended (goal/G8.12).
+  const idle = function () { running = { id: '', suite: '', since: '' }; stopped = false; sayIdle(); };
   return claimCheckRun(id).then(function (r) { idle(); return r; }, function (e) { idle(); throw e; });
 }
 function claimCheckRun(id) {
@@ -253,7 +289,16 @@ function claimCheckRun(id) {
       const file = path.join(REPO, rel);
       if (!fs.existsSync(file)) { reds.push({ suite: rel, failures: ['the listed test file is missing from this checkout'] }); continue; }
       running = { id: String(id), suite: rel, since: new Date().toISOString() };
-      const run = await runSuite(file, port);
+      const index = list.indexOf(rel) + 1;
+      const expected = expectedOf(rel);
+      const where = path.basename(rel) + ', suite ' + index + ' of ' + list.length;
+      const told = function (tests) {
+        say({ doing: 'item', id: id, suite: rel, index: index, of: list.length, tests: tests, expected: expected,
+          line: 'running ' + where + (expected ? ', ' + tests + ' of about ' + expected + ' tests' : ', ' + tests + ' tests'),
+          since: running.since });
+      };
+      told(0);
+      const run = await runSuite(file, port, told);
       const said = run.said;
       // STOPPED BY HAND (goal/G8.11): the rest of the list is not run either - he stopped the check, not one suite.
       if (run.stopped) { reds.push({ suite: rel, failures: ['stopped by hand from the verifier tab, so nothing was measured'] }); break; }
@@ -295,7 +340,13 @@ function claimCheckRun(id) {
 const WATCH_MS = Number(values.watchMs) > 0 ? Number(values.watchMs) : 5000;
 let watchAt = -1;
 let checking = false;
+// ONE READ AT A TIME, AND ONE WORD IS ONE CHECK (goal/G8.12, found by claude-windows on his node: one verify.again
+// gave four passes). The interval started a read every watchMs without waiting for the last, so while the desk was
+// slow - which it is while a suite runs - two reads saw the same record and queued it twice. `reading` holds the tick,
+// and an id already waiting or already being checked is not queued again: the repeat cost whole suite runs.
+let reading = false;
 const watchQueue = [];
+function queuedAlready(id) { return watchQueue.indexOf(id) !== -1 || running.id === id; }
 function watched(r) {
   let b = null;
   try { b = JSON.parse(r && r.body || 'null'); } catch (e) { b = null; }
@@ -315,24 +366,36 @@ async function drainQueue() {
   } finally { checking = false; }
 }
 async function watchOnce() {
+  // One read at a time: a tick that arrives while the last is still reading does nothing.
+  if (reading) return { read: 0, queued: [] };
   const m = await mode();
   if (m.mode !== 'desk') return { read: 0, queued: [] };
+  reading = true;
   const queued = [];
   let read = 0;
-  // THE WHOLE FIRST WALK IS HISTORY (goal/G8.10, found on his node at b5ea0779): the flag is read once, before the
-  // walk, not per page. Judged inside the loop it was true for page one only, so every later page of his record - years
-  // of verify passes - triggered a check, and items of goal/G6 were rejected for having no suites. A restart must
-  // trigger nothing at all.
-  const history = watchAt < 0;
-  for (let i = 0; i < 10000; i++) {
-    const page = await desk('changes', { n: Math.max(watchAt, 0), line: 0 });
-    const recs = Array.isArray(page.records) ? page.records : [];
-    const n = Number(page.n);
-    read += recs.length;
-    if (!history) recs.forEach(function (r) { const id = watched(r); if (id) queued.push(id); });
-    if (n > watchAt) watchAt = n;
-    if (!page.more || !recs.length) break;
-  }
+  try {
+    // THE WHOLE FIRST WALK IS HISTORY (goal/G8.10, found on his node at b5ea0779): the flag is read once, before the
+    // walk, not per page. Judged inside the loop it was true for page one only, so every later page of his record -
+    // years of verify passes - triggered a check, and items of goal/G6 were rejected for having no suites. A restart
+    // must trigger nothing at all.
+    const history = watchAt < 0;
+    for (let i = 0; i < 10000; i++) {
+      const page = await desk('changes', { n: Math.max(watchAt, 0), line: 0 });
+      const recs = Array.isArray(page.records) ? page.records : [];
+      const n = Number(page.n);
+      read += recs.length;
+      // The newest write is kept either way, so an idle publish can say what the idle hour counts from.
+      if (recs.length && recs[recs.length - 1].at) lastWriteAt = String(recs[recs.length - 1].at);
+      if (!history) {
+        recs.forEach(function (r) {
+          const id = watched(r);
+          if (id && queued.indexOf(id) === -1 && !queuedAlready(id)) queued.push(id);
+        });
+      }
+      if (n > watchAt) watchAt = n;
+      if (!page.more || !recs.length) break;
+    }
+  } finally { reading = false; }
   queued.forEach(function (id) { watchQueue.push(id); });
   if (queued.length) drainQueue();
   return { read: read, queued: queued };
