@@ -204,12 +204,17 @@ var ddFolded = true;  // every open starts folded, as before desk/G2.7
 // so the flag is what keeps one take and one release.
 var ddBoxFocused = false;
 var ddBoxAtFocus = '';
+var ddBoxLoaded = false;  // true once item.box has answered for the open item (goal/G9.15)
 function ddBoxHtml() {
   // A TAKEN BOX IS RED (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
   // is red. cap also." Red until the taker writes it; the taker's name is on it.
   var taker = ddFacts && ddFacts.boxTaken ? String(ddFacts.boxTaken) : '';
   var taken = taker ? ' data-taken="' + ddEsc(taker) + '" title="' + ddEsc(taker) + ' is changing this box"' : '';
-  if (!ddBox) return '<div class="job-manifest-note"' + taken + (taker ? ' style="border:2px solid red;padding:4px"' : '') + '>No text yet: an agent writes it.</div>';
+  // ALWAYS AN INPUT (goal/G9.15). Andy, 2026-10-09: "a goal or item box is always visible and ready to edit by user or
+  // agents." An empty box is the same textarea, so the first text of a goal or item he just made can be his; only
+  // while the box has not yet come back from the server is there nothing to edit, or his typing could overwrite a
+  // text he has not seen.
+  if (!ddBoxLoaded) return '<div class="job-manifest-note"' + taken + '>Reading the box.</div>';
   // THE BOX CAP, SEEN (goal/G2.2 note 1). Andy: "orange at 50%, red at 75%" — the server says half and full; the
   // border is the only automatic part, the split into items is negotiated ("never automated").
   var cap = taker || (ddFacts && ddFacts.full) ? 'border:2px solid red;padding:4px;' : ddFacts && ddFacts.half ? 'border:2px solid orange;padding:4px;' : '';
@@ -362,7 +367,7 @@ function ddTake(obj) {
   ddFacts = obj.item;
   // A CHANGED BOX UNFOLDS (slim/G1.6 D6: "a changed block opens; his fold is his ack"): an agent's write while
   // his dialog is open must not hide behind his fold; he folds it again when he has read it.
-  if (typeof obj.box === 'string') { ddBox = obj.box; ddVersion = Number(obj.version) || ddVersion; ddFolded = false; }
+  if (typeof obj.box === 'string') { ddBox = obj.box; ddVersion = Number(obj.version) || ddVersion; ddBoxLoaded = true; ddFolded = false; }
   if (obj.chat) ddChat.push(obj.chat);
   if (Array.isArray(obj.checks)) ddChecks = obj.checks;
   ddPaint();
@@ -429,7 +434,7 @@ function ddLoad() {
     ddLastChange = Number(got.change) || ddLastChange;
     ddPaint();
     return Promise.all([
-      ddAsk('item.box', { id: id }).then(function (b) { if (ddId !== id) return; ddBox = String(b.box || ''); ddVersion = Number(b.version) || ddVersion; ddPaint(); }),
+      ddAsk('item.box', { id: id }).then(function (b) { if (ddId !== id) return; ddBox = String(b.box || ''); ddVersion = Number(b.version) || ddVersion; ddBoxLoaded = true; ddPaint(); }),
       ddAsk('item.checks', { id: id }).then(function (k) { if (ddId !== id) return; ddChecks = k.checks || []; ddPaint(); }),
       ddAsk('item.chat', { id: id }).then(function (c) { if (ddId !== id) return; ddChat = c.chat || []; ddChatMore = !!c.chatMore; ddPaint(); }),
     ]);
@@ -532,6 +537,7 @@ spirit.shell.activateApp({
     ddId = String((params && params.id) || '');
     ddFacts = null;
     ddBox = '';
+    ddBoxLoaded = false;
     ddVersion = 0;
     ddChecks = [];
     ddChat = [];
