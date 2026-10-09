@@ -1,8 +1,8 @@
 {
- "change": 21783,
+ "change": 21785,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T09:14:11.574Z",
+ "writtenAt": "2026-10-09T09:14:13.789Z",
  "items": [
   {
    "id": "goal/G8",
@@ -38,13 +38,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows",
     "wsl-claude"
    ],
    "agents": {
@@ -1735,10 +1734,9 @@
    "id": "goal/G8.5",
    "title": "deskVerify: Changes required in desk — what the desk server must gain for any of this to work",
    "goal": "goal/G8",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
