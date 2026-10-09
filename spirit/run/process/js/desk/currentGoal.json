@@ -1,8 +1,8 @@
 {
- "change": 22565,
+ "change": 22566,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T10:40:53.396Z",
+ "writtenAt": "2026-10-09T10:40:55.723Z",
  "items": [
   {
    "id": "goal/G8",
@@ -36,7 +36,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -3351,10 +3351,9 @@
    "id": "goal/G8.10",
    "title": "deskVerify watcher and time limit",
    "goal": "goal/G8",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
