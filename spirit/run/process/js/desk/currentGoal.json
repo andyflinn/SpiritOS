@@ -1,8 +1,8 @@
 {
- "change": 20833,
+ "change": 20846,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T07:18:32.928Z",
+ "writtenAt": "2026-10-09T07:21:52.720Z",
  "items": [
   {
    "id": "goal/G8",
@@ -22,8 +22,7 @@
     "goal/G8.5",
     "goal/G8.6",
     "goal/G8.7",
-    "goal/G8.8",
-    "goal/G8.9"
+    "goal/G8.8"
    ],
    "go": false,
    "alone": false,
@@ -32,7 +31,7 @@
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "green": false,
+   "green": true,
    "code": false,
    "phase": "",
    "red": "",
@@ -40,7 +39,7 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 3,
+   "asks": 0,
    "half": false,
    "full": false,
    "design": true,
@@ -50,7 +49,8 @@
     "wsl-claude"
    ],
    "working": [
-    "claude-windows"
+    "claude-windows",
+    "wsl-claude"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -84,9 +84,9 @@
      "kind": "Q",
      "words": "cw, 3 of 3, risks: two full runs on one machine share localhost, so deskVerify must run one at a time per machine; and G8.4's mechanical commits are the riskiest chore, a commit nobody read.\nThe largest open piece is G8.3, a mechanical agent with standing on your desk; nothing of it is argued yet.\nShall cw make G8.8 a blocker of G8.6 and put the commitCheck finding in G8.8's box?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-09T06:57:54.281Z"
+     "at": "2026-10-09T07:19:01.509Z"
     },
     {
      "number": "Q4",
@@ -111,18 +111,18 @@
      "kind": "Q",
      "words": "cw: yes, consistent, and close to G8.2 as written: one deskVerify that knows where it runs; on an agent node it answers only \"is my coding task done\", on the desk node its results are the record.\nIt also settles wsl's price: an agent's red counts for that agent's own Done, the desk node's for the goal.\nG8.1 keeps verify.db out of git, so is your commit the desk node's results counting on the desk, not a git commit?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-09T07:02:54.078Z"
+     "at": "2026-10-09T07:19:02.903Z"
     },
     {
      "number": "Q7",
      "kind": "Q",
      "words": "cw: yes, one item: give the dozen suites that hard-code a port an OS-assigned one, so two runs on one machine stop colliding; wsl's run lock in labMaster is the belt to those braces.\nIt blocks the parts that run suites beside other runs, G8.6 (short loop) and G8.7 (the final full run); G8.1, the dataset, can be designed without it.\nShall cw add it as G8.9, blocking G8.6 and G8.7?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-09T07:16:21.767Z"
+     "at": "2026-10-09T07:19:04.237Z"
     }
    ],
    "chat": [
@@ -325,6 +325,16 @@
      "by": "andy",
      "at": "2026-10-09T07:17:41.784Z",
      "text": "ok. cw. create that new item which appropriately blocks, get rid of the red questions here, and we finish the discussion on the new item there."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T07:19:06.868Z",
+     "text": "cw: G8.9 is open, blocking G8.4, G8.6 and G8.7, with your words and the findings in its box; G8.1 stays free.\nThe goal's red questions are cleared; the one left standing, whether G8.8 comes before G8.6, now lives on G8.8.\nThe discussion goes on under G8.9."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T07:21:29.889Z",
+     "text": "hmmm, i was thinking, just before opening this goal:\n\nthe rule doesn't exactly state only ONE blocking item, that's just what my UI creates.\n\nwhat is intended is this:\n\nand add item must only add explicit blocks, NOT implicit ones. Do i have to modify a rule for that?"
     }
    ]
   },
@@ -1144,8 +1154,7 @@
     "goal/G8"
    ],
    "blocked": [
-    "goal/G8.6",
-    "goal/G8.9"
+    "goal/G8.6"
    ],
    "go": false,
    "alone": false,
@@ -1199,7 +1208,7 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 2,
+   "asks": 3,
    "half": false,
    "full": false,
    "box": "FILES TOUCHED PER ITEM\n\nAndy, 2026-10-09, in desk/G0.0, answering cw's question \"make files-touched an explicit field in G8.1, replacing the hand-written list at claim-done?\": \"Yes. cw: add it to the appropriate goal, and make sure that the file list needs my approval\"\n\nWHAT IT REPLACES: the list an agent writes by hand in the item chat at claim-done (Andy, 2026-10-03). desk.js holds no files-touched field today.\n\nWHY ITS OWN ITEM AND NOT goal/G8.1: G8.1 keeps one row per test; this is one list per item. The goal box names it under WHAT IT KEEPS: \"which core files were touched and by whom\".\n\nREQUIRED, his: the file list needs his approval.\n\nThe questions still to argue are its red Q checks.",
@@ -1218,6 +1227,15 @@
      "number": "Q2",
      "kind": "Q",
      "words": "Is your approval of the file list a G check on the item, or a step inside Done?",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "Should this item be finished before the short loop (G8.6), since the loop needs each item's list of changed test files?",
      "test": "",
      "state": "open",
      "by": "",
@@ -1243,10 +1261,8 @@
     "delete"
    ],
    "blocking": [
-    "goal/G8",
     "goal/G8.4",
-    "goal/G8.6",
-    "goal/G8.7"
+    "goal/G8.6"
    ],
    "blocked": [],
    "go": false,
@@ -1267,8 +1283,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
+   "box": "TEST RUNS THAT CANNOT COLLIDE\n\nAndy, 2026-10-09, under goal/G8, of the risk that two full runs on one machine share localhost: \"This one is REAL. would it mean that: labMaster needs an upgrade, where multiple desk nodes must be able to have their very own range of ports and test-world-instances?\", then \"so this goal needs an item that cleans up those specific suites that cause problems, before the rest of this goal becomes clearer?\", and \"ok. cw. create that new item which appropriately blocks, get rid of the red questions here, and we finish the discussion on the new item there.\"\n\nWHAT THE TREE SAYS: most suites already take a port from the OS (listen(0)). About a dozen hard-code one: the lab-world suites on 65410-65428 (labWorld, liveFrontDoor and their neighbours), hintWire on 48761-48762, and the relay default 65430. Two full runs on one host collide on exactly those; WSL forwards its ports onto Windows localhost, so the host is the machine, not the OS.\nEVIDENCE, 2026-10-09: during the two full runs he asked for, wsl-claude's reported \"port 48762 is already in use\" while claude-windows's ran on Windows. Every other red of that day failed alone as well, so it was not a collision.\n\nSHAPE, as both agents proposed it: those suites take an OS-assigned port or a per-run base; and labMaster holds one full run at a time per host. Test worlds need nothing new, each run already living in its own scratch folder.\n\nWHY IT BLOCKS G8.4, G8.6 AND G8.7: those are the items where deskVerify runs suites while somebody else may be running them. G8.1, the dataset, does not wait on it.",
+   "version": 1,
    "checks": [],
    "chat": []
   }
