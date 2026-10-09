@@ -115,6 +115,12 @@ async function verifyHalf() {
   fs.mkdirSync(PROBES, { recursive: true });
   fs.writeFileSync(path.join(PROBES, 'zzFullGreen.js'), "'use strict';\nconst test = require('../testSupport.js');\ntest.startTest('full probe green');\ntest.check('green one');\ntest.reportSuccessFailureCount();\nprocess.exit(0);\n");
   fs.writeFileSync(path.join(PROBES, 'zzFullRed.js'), "'use strict';\nconst test = require('../testSupport.js');\ntest.startTest('full probe red');\ntest.fail('red one');\ntest.reportSuccessFailureCount();\nprocess.exit(0);\n");
+  // GROWN IN THE VERIFY (claude-windows, at 4c7fcb76): a suite is what runAll calls one - a file that calls startTest(
+  // and is not on runAll's NOT_A_SUITE list. Taking every .js would run testSupport.js, deskFake.js and runAll.js
+  // itself, a whole nested harness inside the full run. Each of these leaves a mark if it is ever run.
+  const MARK = path.join(scratch, 'ran-');
+  fs.writeFileSync(path.join(PROBES, 'zzFullHelper.js'), "'use strict';\nrequire('fs').writeFileSync(" + JSON.stringify(MARK + 'helper') + ", 'x');\nmodule.exports = {};\n");
+  fs.writeFileSync(path.join(PROBES, 'runAll.js'), "'use strict';\n// test.startTest( appears here as runAll's own does\nrequire('fs').writeFileSync(" + JSON.stringify(MARK + 'runAll') + ", 'x');\n");
   const asks = []; const published = []; const records = [];
   const node = await new Promise(function (resolve) {
     const s = http.createServer(function (req, res) {
@@ -160,6 +166,8 @@ async function verifyHalf() {
     const full = published.filter(function (o) { return o && o.doing === 'full'; });
     if (full.length && full.every(function (o) { return o.of === 2; }) && full.some(function (o) { return o.index === 2; })) test.check('it ran every suite of its folder, publishing doing full, suite i of 2');
     else test.fail(OWED + 'published: ' + short(published.slice(0, 4)));
+    if (!fs.existsSync(MARK + 'helper') && !fs.existsSync(MARK + 'runAll')) test.check('it ran suites only: no helper, and never runAll.js itself');
+    else test.fail(OWED + 'the full run ran ' + [fs.existsSync(MARK + 'helper') ? 'a helper (no startTest)' : '', fs.existsSync(MARK + 'runAll') ? 'runAll.js' : ''].filter(Boolean).join(' and '));
     const report = said('chat.add').filter(function (x) { return x.args.id === 'fe/G1'; });
     if (report.length === 1 && /zzFullRed\.js/.test(String(report[0].args.text))) test.check('one report line in the goal chat, naming the red suite');
     else test.fail(OWED + 'the goal chat was asked ' + short(report));
