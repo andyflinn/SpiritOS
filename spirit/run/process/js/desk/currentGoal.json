@@ -1,8 +1,8 @@
 {
- "change": 24650,
+ "change": 24719,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T17:04:55.319Z",
+ "writtenAt": "2026-10-09T17:17:55.908Z",
  "items": [
   {
    "id": "goal/G9",
@@ -15,8 +15,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G9.15",
-    "goal/G9.16"
+    "goal/G9.15"
    ],
    "go": false,
    "alone": false,
@@ -38,7 +37,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 3,
    "live": [
     "claude-windows"
    ],
@@ -3156,9 +3155,11 @@
    "id": "goal/G9.15",
    "title": "Desk dialog: an empty box is an input area for the user too",
    "goal": "goal/G9",
-   "status": "red written; commit waits for G9 current",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "deskVerify passed",
+   "with": "",
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G9"
    ],
@@ -3166,11 +3167,16 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
    "files": [
+    {
+     "path": "spirit/run/shell/deskDetails/deskDetails.js",
+     "by": "claude-windows",
+     "core": false
+    },
     {
      "path": "spirit/test/deskEmptyBox.js",
      "by": "claude-windows",
@@ -3179,11 +3185,11 @@
    ],
    "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/6",
@@ -3214,7 +3220,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "WHAT: the details dialog draws an EMPTY box as the note \"No text yet: an agent writes it.\" with no textarea, so the user cannot write the first text of a goal or item he just made; the textarea appears only once some text exists. The desk server accepts his write (box.write refuses nobody by name; box.take lets him take).\nWHY HERE: Andy, 2026-10-09, under goal/G10: \"First Thing: I don't get to edit the box here so i can't lay out a first cut design\" and \"let's just add an item elsewhere, maybe, under G9, that is for bug fixes, and then continue here.\"\nSHAPE: the empty box is the same textarea as a filled one; a suite red on today's code first (the empty box has no dd-box-input), then the one-line change in the dialog.\nFound by cw; not built, G10 is in design.\n\nWIDENED, Andy (2026-10-09, under goal/G9.16): \"a goal or item box is always visible and ready to edit by user or agents.\" So not only the empty box: every goal and item box is drawn as the textarea, always, ready for the user or an agent; Andy, 2026-10-09: \"we'll do both\", so this item carries the dialog fix and goal/G9.16 the checks.",
@@ -3245,6 +3251,51 @@
      "by": "claude-windows",
      "at": "2026-10-09T16:59:44.236Z",
      "text": "cw: both it is: this item keeps the dialog fix (every box drawn as the textarea, always ready to edit, your words in its box), goal/G9.16 keeps the two checks changes; the superseded mark is gone and both offer Go."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T17:05:46.160Z",
+     "text": "commit 45d50f122cc93e64fe96b8e3f2eb79a818ad51f1: goal/G9.15 red: a goal or item box is always visible and ready to edit\n- spirit/test/deskEmptyBox.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T17:05:57.938Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T17:05:58.717Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T17:11:53.229Z",
+     "text": "commit 512e59d3f28a5c7bfb43f7ba6cce49b051ba6d56: goal/G9.15: a goal or item box is always visible and ready to edit\n- spirit/run/shell/deskDetails/deskDetails.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T17:12:16.082Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T17:12:21.092Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T17:12:23.752Z",
+     "text": "verify rejected: spirit/test/deskEmptyBox.js: the listed test file is missing from this checkout"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T17:13:09.250Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T17:17:41.303Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -3252,9 +3303,12 @@
    "id": "goal/G9.16",
    "title": "Answered checks leave the panel, a Q keeps one sentence",
    "goal": "goal/G9",
-   "status": "red written; commit waits for G9 current",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G9"
    ],
@@ -3262,11 +3316,21 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
    "files": [
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskChatQuestion.js",
+     "by": "claude-windows",
+     "core": false
+    },
     {
      "path": "spirit/test/deskChecksPanel.js",
      "by": "claude-windows",
@@ -3275,11 +3339,11 @@
    ],
    "green": true,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
-   "waived": false,
+   "builder": "claude-windows",
+   "verifier": "claude-windows",
+   "waived": true,
    "rules": [
     {
      "key": "rule/11",
@@ -3385,6 +3449,51 @@
      "by": "claude-windows",
      "at": "2026-10-09T17:04:17.877Z",
      "text": "cw: both red suites are written and red for the owed reasons on today's tree, green on the world: deskChecksPanel (this item) and deskEmptyBox (goal/G9.15), both on their items' file lists.\nThe commit is refused by commitCheck: an item of G9 is not an item of the current goal, which is still G10. Press make-current on G9, I commit and push both reds the same minute, the desk waives the handover since I am the only agent here, and I build; after Done you make G10 current again."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T17:05:44.256Z",
+     "text": "commit f95880aa56435521bee2056977c9be183548e09f: goal/G9.16 red: answered checks leave the panel, a Q keeps one sentence\n- spirit/test/deskChecksPanel.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T17:05:53.865Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T17:05:54.791Z",
+     "text": "waived: claude-windows is the only agent here, so it may take the next phase of this item itself."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T17:11:51.334Z",
+     "text": "commit 4d41a29810adbd7f1259a03130625ba808a69a99: goal/G9.16: answered checks leave the panel, a Q keeps one sentence\n- spirit/run/process/js/desk/desk.js\n- spirit/test/deskChatQuestion.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T17:12:02.873Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T17:12:08.668Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T17:12:13.612Z",
+     "text": "verify rejected: spirit/test/deskChecksPanel.js: the listed test file is missing from this checkout"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T17:13:05.826Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T17:17:37.586Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
