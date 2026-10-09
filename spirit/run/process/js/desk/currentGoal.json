@@ -1,17 +1,16 @@
 {
- "change": 20708,
+ "change": 20711,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:54:30.080Z",
+ "writtenAt": "2026-10-09T06:54:32.838Z",
  "items": [
   {
    "id": "goal/G9",
    "title": "Desk without agents: the user creates goals and items",
    "goal": "",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [],
@@ -35,12 +34,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 0,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
