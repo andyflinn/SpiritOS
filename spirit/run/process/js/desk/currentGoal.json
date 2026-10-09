@@ -1,8 +1,8 @@
 {
- "change": 20319,
+ "change": 20321,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:07:49.622Z",
+ "writtenAt": "2026-10-09T06:08:04.158Z",
  "items": [
   {
    "id": "goal/G9",
@@ -11,7 +11,6 @@
    "status": "",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -46,7 +45,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 6,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -1432,31 +1431,57 @@
    "id": "goal/G9.11",
    "title": "Add Goal bubble above the List search while Goals Only is on",
    "goal": "goal/G9",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/6",
+     "version": 14
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -1473,7 +1498,13 @@
      "at": ""
     }
    ],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:08:03.867Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G9.12",
