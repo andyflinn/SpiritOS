@@ -262,9 +262,17 @@ test.startTest('goal/G4.20: Desk for Andy');
     const other = await call('box.write', { id: 'g/G1.4', text: 'mine', version: 0 }, WSL);
     if (codeOf(second) === 'taken' && codeOf(other) === 'taken') test.check('meanwhile another agent\'s box.take and box.write are refused taken');
     else test.fail(OWED + 'second take ' + short(second.body) + '; other\'s write ' + short(other.body));
+    // SINCE goal/G9.3 HE TAKES THE BOX TOO, where G4.20 point 9 refused him by name. Andy, 2026-10-07: "the text box
+    // in item/goal detail must be an input area for the user. When the user activates that input area, the area is
+    // \"taken\" by the user, and not modifiable for agents." His take of a free box is accepted, and box.release frees
+    // it without a write (deskBoxTake.js holds the whole rule).
     const his = await call('box.take', { id: 'g/G1.1' }, ANDY);
-    if (codeOf(his) === 'bad-request') test.check('Andy takes nothing: bad-request');
-    else test.fail(OWED + 'his box.take answered ' + his.status + ' ' + short(his.body));
+    const hisBox = await factsOf('g/G1.1');
+    if (his.status === 200 && hisBox.boxTaken === 'andy') test.check('his box.take is accepted too (goal/G9.3), and boxTaken names him');
+    else test.fail(OWED + 'his box.take answered ' + his.status + ' ' + short(his.body) + '; boxTaken ' + short(hisBox.boxTaken));
+    const hisRelease = await call('box.release', { id: 'g/G1.1' }, ANDY);
+    if (hisRelease.status === 200 && (await factsOf('g/G1.1')).boxTaken === '') test.check('and his box.release frees it again');
+    else test.fail(OWED + 'his box.release answered ' + hisRelease.status + ' ' + short(hisRelease.body));
     const now = Number(((await call('item.box', { id: 'g/G1.4' }, ANDY)).body || {}).version) || 0;
     const write = await call('box.write', { id: 'g/G1.4', text: 'CAP', version: now }, CW);
     const freed = await factsOf('g/G1.4');

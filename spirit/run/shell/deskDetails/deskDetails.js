@@ -197,6 +197,11 @@ function ddStripHtml() {
 // IT FOLDS AGAIN (goal/G2.1 note 1; the fold was lost in desk/G2.7). Andy: "BIG complaint: the text bubble
 // no longer folds." Folded shows its first line; the state is kept here, so a repaint keeps his fold.
 var ddFolded = true;  // every open starts folded, as before desk/G2.7
+// HIS TAKE OF THE BOX (goal/G9.3): on while he is in the textarea, with the text as it stood when he went in, so a
+// blur that changed nothing releases instead of writing. Focus and blur arrive more than once (the element, the body),
+// so the flag is what keeps one take and one release.
+var ddBoxFocused = false;
+var ddBoxAtFocus = '';
 function ddBoxHtml() {
   // A TAKEN BOX IS RED (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
   // is red. cap also." Red until the taker writes it; the taker's name is on it.
@@ -207,8 +212,14 @@ function ddBoxHtml() {
   // border is the only automatic part, the split into items is negotiated ("never automated").
   var cap = taker || (ddFacts && ddFacts.full) ? 'border:2px solid red;padding:4px;' : ddFacts && ddFacts.half ? 'border:2px solid orange;padding:4px;' : '';
   var toggle = '<button type="button" data-fold="item" title="' + (ddFolded ? 'Unfold' : 'Fold') + '">' + (ddFolded ? '▸' : '▾') + '</button> ';
-  if (ddFolded) return '<div' + taken + ' style="' + cap + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + toggle + ddEsc(ddBox.split('\n')[0]) + '</div>';
-  return '<div' + taken + ' style="' + cap + '"><div>' + toggle + '</div><div style="white-space:pre-wrap">' + ddEsc(ddBox) + '</div></div>';
+  // HIS INPUT AREA (goal/G9.3). Andy, 2026-10-07: "the text box in item/goal detail must be an input area for the
+  // user. When the user activates that input area, the area is \"taken\" by the user, and not modifiable for agents.
+  // When the user clicks outside of that text box, and deactivates the input, also by leaving the details dialog, the
+  // box input is released from the take. When a details dialog is opened, the text box is never taken."
+  // So the box is a textarea holding the whole text; the fold only decides how tall it is, and the take happens on
+  // focus, never on open. It is never repainted while he has it (ddPaint), so his typing cannot be wiped.
+  return '<div' + taken + ' style="' + cap + '"><div>' + toggle + '</div>' +
+    '<textarea id="dd-box-input" rows="' + (ddFolded ? 1 : 12) + '" style="width:100%;white-space:pre-wrap">' + ddEsc(ddBox) + '</textarea></div>';
 }
 
 // WHAT WAITS ON HIM, UNDER THE BOX (goal/G4.20 points 10-11). Andy: "the Grants are red arm-buttons that turn green
@@ -301,7 +312,8 @@ function ddPaint() {
   var box = ddRenaming && typed && document.getElementById('dd-name');
   if (box) box.value = typed;
   ddSet('dd-strip', ddStripHtml());
-  ddSet('dd-box', ddBoxHtml());
+  // NOT WHILE HE IS IN IT (goal/G9.3): a repaint would throw away what he has typed, and he holds the take anyway.
+  if (!ddBoxFocused) ddSet('dd-box', ddBoxHtml());
   ddSet('dd-waiting', ddWaitingHtml());
   ddSet('dd-links', ddLinksHtml());
   ddSet('dd-chat', ddChatHtml());
@@ -364,6 +376,24 @@ function ddAdd() {
     ddClear('dd-add-title');
     ddLoad();
   });
+}
+// HIS FOCUS TAKES THE BOX, HIS BLUR LETS IT GO (goal/G9.3): unchanged, box.release; changed, box.write, which frees
+// the take itself. The version is the one the dialog read, so a box that moved under him is refused box-moved rather
+// than overwritten.
+function ddBoxFocus() {
+  if (ddBoxFocused) return;
+  ddBoxFocused = true;
+  var el = document.getElementById('dd-box-input');
+  ddBoxAtFocus = el ? String(el.value || '') : '';
+  ddWrite('box.take', { id: ddId });
+}
+function ddBoxBlur() {
+  if (!ddBoxFocused) return;
+  ddBoxFocused = false;
+  var el = document.getElementById('dd-box-input');
+  var text = el ? String(el.value || '') : '';
+  if (text !== ddBoxAtFocus) ddWrite('box.write', { id: ddId, text: text, version: ddVersion }).then(function () { ddLoad(); });
+  else ddWrite('box.release', { id: ddId }).then(function () { ddPaint(); });
 }
 function ddRename() {
   var title = ddValue('dd-name');
@@ -463,6 +493,19 @@ spirit.shell.activateApp({
         event.preventDefault();
         ddRename();
       }
+    });
+    // THE BOX'S FOCUS AND BLUR (goal/G9.3), on the body because the textarea is repainted: focus does not bubble, so
+    // focusin and focusout are what the body hears. Leaving the dialog blurs the box first, which is the release on
+    // close - the dialog cannot hear the shell's Back.
+    ['focus', 'focusin'].forEach(function (type) {
+      document.getElementById('dd-body').addEventListener(type, function (event) {
+        if (event && event.target && event.target.id === 'dd-box-input') ddBoxFocus();
+      });
+    });
+    ['blur', 'focusout'].forEach(function (type) {
+      document.getElementById('dd-body').addEventListener(type, function (event) {
+        if (event && event.target && event.target.id === 'dd-box-input') ddBoxBlur();
+      });
     });
     // The desk server's changes, which the shell would otherwise hand only to Desk.
     if (typeof api.onPublished === 'function') api.onPublished(ddTake, 'desk');

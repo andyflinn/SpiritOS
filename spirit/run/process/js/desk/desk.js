@@ -512,6 +512,8 @@ function apply(s, r, b, item, goalOf) {
     // TAKING THE BOX (goal/G4.20 point 9). Andy: "anybody that takes somethings that affects the box, and the box
     // is red. cap also." The handler refuses a take while another stands, so what reaches here always lands.
     case 'box.take': it.boxTakenBy = r.by; it.takers[r.by] = true; return;
+    // goal/G9.3: the holder lets the box go without writing it; the refusals are at the verb, so a replay only clears.
+    case 'box.release': if (it.boxTakenBy === r.by) it.boxTakenBy = ''; return;
     // THE DESK OWNS THE IDS (goal/G9.9). Andy, 2026-10-07: "the desk owns (is in charge of) goal and item ID's.", and
     // on who uses the verbs: "why should the agents need to, they can use the same api's the user needs to create
     // them." The id is minted at the write and kept in the record as `minted`, so a walk of the records never mints
@@ -1474,8 +1476,11 @@ appServer.serve({
       // red-questions". A line starting with OPEN in capitals is refused, his own too.
       if (/^OPEN(?:\b|:)/m.test(String(a.text))) throw refused('bad-request');
       const s = write('box.write', Object.assign({}, a, { by: w.by, key: w.key }), function (st, it) {
-        // ONLY THE TAKER WRITES while a box take stands (goal/G4.20 point 9); his writes are never refused.
-        if (it.boxTakenBy && w.by !== it.boxTakenBy && w.by !== 'andy') throw refused('taken');
+        // ONLY THE TAKER WRITES while a box take stands (goal/G4.20 point 9). ONE RULE FOR EVERYBODY SINCE goal/G9.3:
+        // Andy, 2026-10-07, asked whether his own take refuses an agent until he leaves the box: "yes. so it shoule be
+        // among agents as well, the box is taken, and released after edit. it also helps agents stay out of each others
+        // way." So his write is refused over another's take as an agent's is; he was the exception until then.
+        if (it.boxTakenBy && w.by !== it.boxTakenBy) throw refused('taken');
         if (a.version !== it.version) throw refused('box-moved');
       });
       return { change: s.change, version: s.items[a.id].version };
@@ -1791,17 +1796,35 @@ appServer.serve({
     },
   },
   // TAKING THE BOX (goal/G4.20 point 9): an agent takes the box before a change it will write (cap, split, an
-  // update), and the box is drawn red until its write. First wins; another agent's take is refused taken; Andy
-  // takes nothing, as with line.take. A desk verb, not a node verb.
+  // update), and the box is drawn red until its write. First wins; another agent's take is refused taken.
+  // SINCE goal/G9.3 HE TAKES IT TOO, and a take is freed by box.release as well as by the taker's write.
+  // A desk verb, not a node verb.
   'box.take': {
     request: { id: '' }, reply: { change: 0 },
     handler: function (a, caller) {
       const w = writerOf(caller);
-      if (w.by === 'andy') throw refused('bad-request');
+      // HE TAKES IT TOO (goal/G9.3). Andy, 2026-10-07: "the text box in item/goal detail must be an input area for the
+      // user. When the user activates that input area, the area is \"taken\" by the user, and not modifiable for
+      // agents." Until then box.take refused him by name.
       const it = walkState().items[String(a.id)];
       if (!it) throw refused('no-such-item');
       if (it.boxTakenBy && it.boxTakenBy !== w.by) throw refused('taken');
       return { change: write('box.take', { id: a.id, by: w.by, key: w.key }).change };
+    },
+  },
+  // LETTING IT GO WITHOUT A WRITE (goal/G9.3). Andy, 2026-10-07: "When the user clicks outside of that text box, and
+  // deactivates the input, also by leaving the details dialog, the box input is released from the take." A take was
+  // freed only by its holder's box.write until then, so leaving the box unchanged held it for good. Only the holder
+  // releases: another caller is refused taken, so nobody takes a box out of somebody's hands.
+  'box.release': {
+    request: { id: '' }, reply: { change: 0 },
+    handler: function (a, caller) {
+      const w = writerOf(caller);
+      const it = walkState().items[String(a.id)];
+      if (!it) throw refused('no-such-item');
+      if (!it.boxTakenBy) return { change: walkState().change };
+      if (it.boxTakenBy !== w.by) throw refused('taken');
+      return { change: write('box.release', { id: a.id, by: w.by, key: w.key }).change };
     },
   },
   // TAKING HIS LINE (goal/G2.2 note 2): an agent takes Andy's latest line under an item and is the only one to
