@@ -1,8 +1,8 @@
 {
- "change": 22619,
+ "change": 22956,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T10:44:33.208Z",
+ "writtenAt": "2026-10-09T11:29:42.765Z",
  "items": [
   {
    "id": "goal/G8",
@@ -15,7 +15,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G8.11"
+    "goal/G8.12"
    ],
    "go": false,
    "alone": false,
@@ -25,7 +25,7 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": true,
+   "green": false,
    "code": false,
    "phase": "",
    "red": "",
@@ -33,18 +33,16 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 0,
+   "asks": 3,
    "half": false,
    "full": false,
-   "design": false,
-   "waiting": 1,
+   "design": true,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -134,6 +132,33 @@
      "state": "answered",
      "by": "wsl-claude",
      "at": "2026-10-09T10:44:18.796Z"
+    },
+    {
+     "number": "Q10",
+     "kind": "Q",
+     "words": "wsl: the watcher is passing G8.11 again and again - three so far - because its reads overlap and the same word is queued twice. Each repeat runs the item suites once more on your node, so it is wasted minutes, not wrong state. The fix is two lines: one read at a time, and no item queued while it is already queued or running. Say add it and it gets an item.",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "Q11",
+     "kind": "Q",
+     "words": "Shall I add the watcher fix (one read at a time) as its own item in front of it?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-09T11:15:37.316Z"
+    },
+    {
+     "number": "Q12",
+     "kind": "Q",
+     "words": "Shall the documentation runs (the three-list report and the stale-README note) get their item now as well?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-09T11:23:09.341Z"
     }
    ],
    "chat": [
@@ -586,6 +611,21 @@
      "by": "claude-windows",
      "at": "2026-10-09T10:44:22.268Z",
      "text": "cw: added, goal/G8.11, the verifier tab, with your words in its box. Press Code on it first, then Go; I write the red, wsl builds. The watcher fix (one read at a time) still waits for its own word."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T10:47:09.752Z",
+     "text": "wsl: full run on 0aa6d159 for the close: 352 suites, 4930 green, 26 red, 16 unhappy, 7 awaiting.\n26 is inside the known world band - two runs on one tree gave 25 and 27, all nodes that would not boot or ports in use. Every desk and deskVerify suite is green run on its own.\nMy fault on the record: I piped the run through tail, so the red names scrolled away. Say the word and I run it again keeping the whole report."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:15:37.037Z",
+     "text": "Shall I add the watcher fix (one read at a time) as its own item in front of it?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:23:09.071Z",
+     "text": "Shall the documentation runs (the three-list report and the stale-README note) get their item now as well?"
     }
    ]
   },
@@ -2093,7 +2133,7 @@
    "limbo": false,
    "subGoal": false,
    "files": [],
-   "green": false,
+   "green": true,
    "code": true,
    "phase": "",
    "red": "wsl-claude",
@@ -2130,20 +2170,20 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskVerify: IDLE TIME CHORES\n\nAndy, 2026-10-06, gave it three sections and nothing else: \"1. Define Idle time\" / \"2. what ever deskVerify does during idle time\" / \"3. what extra things an agent-mode deskVerify does during idle time, for example updating the README.md and it's linkage to the agent/ folder's documents\". Blocked by goal/G8.2, since what the chore is differs by where deskVerify stands.\n\n1. IDLE TIME. His measure: \"when it's agent or it's desk have been idle for more than an hour\". Idle is not the same as finished, so the hour is not enough on its own: an agent holding a phase and quiet for an hour looks idle while its work is still open. So a node is idle when nothing has been written for an hour AND no item is in a phase held by the agent on that node. The ten minutes that decide absence elsewhere are a different clock and stay as they are.\n\n2. WHAT EVERY deskVerify DOES WHEN IDLE. Keeps the measurements current, and writes the targeted test-state report, which is possible for the first time because the dataset of goal/G8.1 can say which tests turned and when, where the run log keeps totals only. Two limits, claude-windows, to be ruled before building: it writes a named list of paths and nothing outside them, a mechanical commit being one nobody read; and the report is derived from the dataset, never from re-running anything, or a chore becomes another twenty-minute run.\n\n3. WHAT THE AGENT-MODE ONE DOES AS WELL. On the desk node, where it has standing: it keeps the README current, mechanically, because the numbers it summarises change with time. Andy, 2026-10-06: \"just the fact that those number change with time, makes updating the README part of it is idle time chores, in a mechanical way.\"\nWHICH numbers the README ought to show is OUT OF SCOPE by his word, and not a thing left undone here: \"the readme has major flaws and it is summary of data cites mostly un-interesting numbers, instead of the number i think are interesting. oos for now.\" So this section refreshes what the README already claims; it does not decide what it should claim.\nIn the tree at 9ece24a8 the README carries one line into agents/, which holds a README of its own and a folder per agent, claude-ubuntu, claude-windows and wsl-claude.\n\nWhy it pays: tagging the tree stops waiting, since its slow part is the measuring and the numbers would already be there, stamped with when they were taken.\n\nOUT OF SCOPE HERE, his, 2026-10-06, and noted so it is not mistaken for work owed: the desk notes also hold the desk state and status, which will generate a work-report at some point in the future.",
-   "version": 4,
+   "box": "deskVerify: IDLE TIME CHORES\n\nAndy, 2026-10-06, gave it three sections and nothing else: \"1. Define Idle time\" / \"2. what ever deskVerify does during idle time\" / \"3. what extra things an agent-mode deskVerify does during idle time, for example updating the README.md and it's linkage to the agent/ folder's documents\". Blocked by goal/G8.2, since what the chore is differs by where deskVerify stands.\n\n1. IDLE TIME. His measure: \"when it's agent or it's desk have been idle for more than an hour\". Idle is not the same as finished, so the hour is not enough on its own: an agent holding a phase and quiet for an hour looks idle while its work is still open. So a node is idle when nothing has been written for an hour AND no item is in a phase held by the agent on that node. The ten minutes that decide absence elsewhere are a different clock and stay as they are.\n\n2. WHAT EVERY deskVerify DOES WHEN IDLE. Keeps the measurements current, and writes the targeted test-state report, which is possible for the first time because the dataset of goal/G8.1 can say which tests turned and when, where the run log keeps totals only. Two limits, claude-windows, to be ruled before building: it writes a named list of paths and nothing outside them, a mechanical commit being one nobody read; and the report is derived from the dataset, never from re-running anything, or a chore becomes another twenty-minute run.\n\n3. WHAT THE AGENT-MODE ONE DOES AS WELL. On the desk node, where it has standing: it keeps the README current, mechanically, because the numbers it summarises change with time. Andy, 2026-10-06: \"just the fact that those number change with time, makes updating the README part of it is idle time chores, in a mechanical way.\"\nWHICH numbers the README ought to show is OUT OF SCOPE by his word, and not a thing left undone here: \"the readme has major flaws and it is summary of data cites mostly un-interesting numbers, instead of the number i think are interesting. oos for now.\" So this section refreshes what the README already claims; it does not decide what it should claim.\nIn the tree at 9ece24a8 the README carries one line into agents/, which holds a README of its own and a folder per agent, claude-ubuntu, claude-windows and wsl-claude.\n\nWhy it pays: tagging the tree stops waiting, since its slow part is the measuring and the numbers would already be there, stamped with when they were taken.\n\nOUT OF SCOPE HERE, his, 2026-10-06, and noted so it is not mistaken for work owed: the desk notes also hold the desk state and status, which will generate a work-report at some point in the future.\n\nTHE TWO LIMITS, RULED. Both agents recommended: a chore writes no file in his tree and commits nothing; its output stays in deskVerify's own state and shows in the Verifier tab, and a README it finds stale becomes a Desk note for an agent to fix and commit. The report: three lists from the dataset - what is red now, what flipped since the last report, which suites nobody has run for a week. Andy, 2026-10-09 (under goal/G8.12): \"ok. no commits. I'm fine with that.\"",
+   "version": 5,
    "checks": [
     {
      "number": "Q1",
      "kind": "Q",
      "words": "The box says two limits must be ruled before building: which paths a mechanical chore may write (a commit nobody read), and what the test-state report contains. The red holds idle time and that a chore runs no suite; section 3 (the README) waits on your answer.",
      "test": "",
-     "state": "open",
-     "by": "",
-     "at": ""
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T11:20:46.172Z"
     }
    ],
    "chat": [
@@ -3845,27 +3885,40 @@
    "id": "goal/G8.11",
    "title": "verifier tab in Desk",
    "goal": "goal/G8",
-   "status": "running",
+   "status": "closed",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "reopen"
+   ],
    "blocking": [
     "goal/G8"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/test/deskFake.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyTab.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
    "green": true,
-   "code": false,
+   "code": true,
    "phase": "",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
+   "verifier": "claude-windows",
    "waived": false,
    "rules": [
     {
@@ -3902,12 +3955,554 @@
    "full": false,
    "box": "deskVerify: THE VERIFIER TAB\n\nAndy, 2026-10-09: \"So, i was thinking. shouldn't i have, if the desk verifier is mounted and running, a verifier tab in desk, right after [musings], that allows me to monitor a) status and progress of the running verifier, and if/when necessary, allow intervention?\", then \"so. will i get that tab?\", \"i still don't see a verifier tab on my desk\", and on adding it: \"add it\".\n\nWHERE: a tab in the Desk face right after Musings, shown only when his desk sees a deskVerify on its node (the same test the Done gate uses).\nWHAT IT SHOWS: what deskVerify is running now and for which item, and its newest records (the last passes and rejects).\nWHAT HE CAN DO: re-verify an item, and stop a run that hangs.\n\nNEW VERBS, deskVerify's own (no grant of his until he rules the app intrinsic; peer review by the other agent): a read of what it is running now, and a search of its newest records.\n\nTO ARGUE: whether stop is a verb of its own or the time limit pressed by hand.",
    "version": 1,
-   "checks": [],
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Will you press Code on G8.11, so its red can start?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T10:46:23.116Z"
+    }
+   ],
    "chat": [
     {
      "by": "desk",
      "at": "2026-10-09T10:44:32.916Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T10:44:41.452Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T10:44:44.287Z",
+     "text": "cw: Go is in; now press Code on it once, and with yesterday fix that starts it at red, and I take it."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T10:44:50.053Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T10:44:52.261Z",
+     "text": "wsl: Go is on record but Code is not - the item reads code false, so it has no red step and sits in limbo.\nPress Code on it once, in its Details. That starts its red, cw writes it, I build."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T10:44:57.690Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T10:45:05.106Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T10:45:13.320Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T10:45:20.689Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T10:45:36.922Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T10:45:40.063Z",
+     "text": "Will you press Code on G8.11, so its red can start?"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T10:46:23.431Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T10:46:24.939Z",
+     "text": "wsl: it worked - code true, phase red. cw takes the red; I build when my full run for the G8 close is out."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T10:53:36.200Z",
+     "text": "commit f723cf034f9fc19f2665145ae743ff3c289e09b5: goal/G8.11 red: the verifier tab in Desk - deskVerify's now, records.search and stop, and a tab after Musings\n- spirit/test/deskFake.js\n- spirit/test/deskVerifyTab.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T10:53:41.646Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T10:53:43.860Z",
+     "text": "cw: red in, f723cf03, deskVerifyTab: 13 red, 1 green guard.\n- deskVerify gains now (what runs, for which item, what waits), records.search (newest records, a search) and stop (ends the run; the claim is rejected as stopped, never passed)\n- the Desk face shows a Verifier tab right after Musings only while deskVerify answers, with the running item, the queue, the newest records, a Stop button and a re-verify\nLayout and colours are not asserted: yours to judge on your node.\nwsl, the three verbs want your review as you build.\nOne slip of mine: a loop of face suites picked up runAll and ran the full harness in my clone; it touched nothing but a BOARD.md, deleted.\nFiles:\n- spirit/test/deskVerifyTab.js\n- spirit/test/deskFake.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T10:53:54.133Z",
+     "text": "wsl: taking the build."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T11:03:02.214Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:03:03.662Z",
+     "text": "wsl: built, fec1be3e. deskVerifyTab 14 of 14; all 92 desk suites run, the only two reds are deskLoop and deskRedWriterBuild, both on a node that would not boot - same before my change.\nIn: now, records.search and stop on deskVerify, and the Verifier tab after Musings, drawn only where a verifier answers. Stop rejects its claim saying so; re-verify goes to the desk.\nVerify is yours."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:03:17.908Z",
+     "text": "wsl: my review of the three, as built: the shapes held, nothing had to change. now.queued is the watcher queue as it stands, so it can shrink between two reads - that is the truth, not a glitch. records.search takes text only, no paging: the newest that fit in one answer, with more, as every search here answers.\nstop answers stopped false when nothing runs, so a double press is harmless."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T11:04:12.881Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:04:14.790Z",
+     "text": "cw: verified fec1be3e, pass. deskVerifyTab 14 of 14, and Watch, WatchHistory, Reject, Loop and five face suites green; letting a stopped run count as a pass turns the red red.\nNotes, none a fail:\n- the tab reads when you open it or press a button; it does not refresh by itself while open. Whether it should is yours to judge on your node\n- stop has no owner check: any caller that reaches deskVerify can stop a run\n- records.search loads every row before it filters; fine at today size\nAndy: pull and restart, then the Verifier tab shows after Musings."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:04:29.337Z",
+     "text": "wsl: thanks. On your second note: deskVerify is a loopback app, and there the node gives each process its spirit - no grants, no auth, by AGENT.md. An owner check in stop would be the first of its kind, so I left it out on purpose; say the word if you want it argued.\nStill owed from G8.10: the watcher reading one at a time. Say add it and it is a two-line item."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:04:42.844Z",
+     "text": "wsl: your verifier passed it unasked, so Done is on the row. Open the Verifier tab after Musings - it should show the run that just happened and the records behind it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:05:27.844Z",
+     "text": "cw: your tree has the tab code (fec1be3e). If the Verifier tab does not show after Musings, restart your node and reload the Desk page: the running deskVerify only learns its new verbs on restart."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:05:36.396Z",
+     "text": "it should refresh by itself, the verifier knows how far into each job it is, so a progress back should be no problem?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:05:52.568Z",
+     "text": "cw: yes. It knows which suite of the item it is on (2 of 5), and the dataset knows how many tests each suite had last time, so the bar can be suites done plus tests reported against that count; a suite seen for the first time shows a count, not a percentage.\nRefreshing by itself is a timer on the open tab. Both are new work on a verified item: say add it for a new item."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:06:05.409Z",
+     "text": "wsl: yes, and without pulling: api.onPublished takes a server name, so deskVerify publishes every time its run changes and Desk repaints (shell.js:1456, as deskDetails listens to desk).\nA real bar is possible too: it knows which suite of the item list it is on, and it reads each assertion as the suite prints it; verify.db says how many that suite reported last time, so the bar is \"37 of about 120, suite 2 of 3\".\nBoth are new work - say add it and it becomes an item."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:06:18.261Z",
+     "text": "wsl: one difference between cw and me, Andy, so you decide it once: he would refresh on a timer in the open tab, I would have deskVerify publish and Desk repaint - your standing \"no pulling\" rule says publish, and the plumbing already takes a server name.\nI would only keep a timer for the elapsed seconds, which nothing publishes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:06:29.218Z",
+     "text": "cw: no decision needed: wsl is right, your no-pulling rule says publish. I drop the timer; publish, with only the elapsed seconds ticking locally."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:07:36.819Z",
+     "text": "wsl: that is the third pass for one word - the overlap cw found. Each one re-runs your suites, so it is wasted minutes only. Raised it as a Q on G8; say add it and the two-line fix goes in."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:08:38.639Z",
+     "text": "damn. this is one issue i have with the current architecture, the damn appServer just pipes the stdout into the eventStream, where it should deliberately have an function to sent json events down the stream, with structure etc...\n\nhmmm suggestions?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:09:21.528Z",
+     "text": "wsl: the function you want exists already - appServer.publish (appServer.js:279) sends ONE json object down the stream through jobs.report, refused whole over MAX_PAYLOAD, and a page listens with api.onPublished(fn, \"<server>\") (client/shell.js:1456). stdout is a different path: jobs.js:248 puts lines into job.log, not into events.\nSo the gap is not structure, it is delivery: a publish overwrites job.app (jobs.js:92) and carries no sequence number, so a page that misses one never learns it existed. Fine for a progress bar, wrong for anything that must not be lost.\nSuggestion: build the refresh on publish now, and raise \"stream events with a sequence\" as its own appServer item if you want the no-loss kind."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:12:27.718Z",
+     "text": "cw: taking the event-stream question; reading what appServer already has first."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:12:39.537Z",
+     "text": "cw: agreed with wsl, nothing to add on publish. One point: the repeated verify.pass you saw is not a stream problem; it is the watcher queuing the same word twice, and it stopped at four (none since 11:07). The two-line watcher fix ends it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:13:50.213Z",
+     "text": "that's the problem, i really want to see relevant information. the new tab in desk should listen to real events from verifier, and what now is displayed as a log.. should be an updated status message underneath a progress bar, so i can see what verifier is testing, if it's on a full run, and for that run a progress bar, with running status messages one line at the time...\n\nam i making sense?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:14:03.272Z",
+     "text": "cw: yes, it makes sense, and it is what publish is for. As I read it:\n- deskVerify publishes an event at every step: which item or full run, which suite of how many, each test as it reports\n- the tab listens and shows: what it is testing, whether it is a full run, one progress bar for the run, and under it a single status line that is replaced as each event arrives, not a growing log\n- the records list moves out of the way (behind a fold, or gone)\nSay add it, and I add it as live verifier tab with your words in its box."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:14:08.102Z",
+     "text": "wsl: you make sense. What I would build: deskVerify publishes one object every time its run changes - what it is doing, which suite, suite i of n, tests seen against that suite last count - and the tab repaints from that, no asking.\nAbove: a progress bar, suites done plus tests in the one running; a full run and one item use the same bar, only n differs. Below it: ONE line, the newest status, replaced not appended. No log in the tab.\nSay add it and it is an item; the two-line watcher fix belongs in front of it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:15:05.818Z",
+     "text": "add it"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:15:18.928Z",
+     "text": "cw: taking it: adding live verifier tab now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:15:35.390Z",
+     "text": "cw: added, goal/G8.12, live verifier tab, your three lines in its box. Press Code, then Go; I write the red, wsl builds."
+    }
+   ]
+  },
+  {
+   "id": "goal/G8.12",
+   "title": "live verifier tab",
+   "goal": "goal/G8",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G8"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": false,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 1,
+   "half": false,
+   "full": false,
+   "box": "deskVerify: THE LIVE VERIFIER TAB\n\nGrown from goal/G8.11. Andy, 2026-10-09:\n- \"it should refresh by itself, the verifier knows how far into each job it is, so a progress back should be no problem?\"\n- \"that's the problem, i really want to see relevant information. the new tab in desk should listen to real events from verifier, and what now is displayed as a log.. should be an updated status message underneath a progress bar, so i can see what verifier is testing, if it's on a full run, and for that run a progress bar, with running status messages one line at the time...\"\n- \"add it\"\n\nSHAPE, both agents' reading (his \"no pulling\" rule):\n- deskVerify publishes one object (appServer.publish) every time its run changes: what it is testing (an item, or a full run), suite i of n, tests reported in the running suite against that suite's count last time.\n- the tab listens (api.onPublished for deskVerify) and repaints: a progress bar for the run, and under it ONE status line, replaced as each event arrives, not appended. Only the elapsed seconds tick on the page.\n- the records list leaves the tab's main view.\n\nORDER: the watcher fix (one read at a time, no item queued twice) goes in front of it, if he adds that item.\n\nWHEN IT HAS NOTHING TO RUN. Andy, 2026-10-09: \"and after all is done, it should count down idle time, before it starts documentation runs.\"\nSo, idle: the tab shows the countdown to idle (goal/G8.4: an hour with no desk write and nothing held), from the newest write deskVerify already reads. The documentation runs it counts down to are goal/G8.4's chores, which still wait on his two limits (which paths a chore may write, what the report holds); until then the countdown ends in \"idle, no chores yet\".\n\nFOLDED IN (Andy, 2026-10-09: \"why can't you fold things into items where it's convenient to do it in one go? more items keeps the closing of G8 pushed even further down the road?\"; G8.13, G8.14 and G8.15 closed for this):\n1. THE WATCHER READS ONE AT A TIME (was G8.14, \"add it.\"): one verify word gave three and four verify.pass on his node, because a read starts every watchMs without waiting for the last. Fix: a read in flight makes the next tick do nothing, and no item is queued while it is already queued or being checked. Built first, so the bar is driven once per word.\n2. REMOVE THE BOARD.md WRITER (was G8.13 and G8.15). Andy: \"and get rid of that damn BOARD.md i've been deleting it everywhere it pops up.\" runAll still rewrites the retired board at the end of every full run; delete the writer and what only it needs, with a test that a full run writes no BOARD.md.\nThe documentation runs (G8.4 chores) go to a later goal, so they do not hold G8 open.",
+   "version": 3,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "wsl: four things wait on you, all small:\n1. G8.4 Q1 is now half ruled - no commits. Say also \"no files\" and \"the three lists\" and it closes.\n2. The watcher fix (one read at a time): add it as an item in front of G8.12?\n3. G8.12 itself: press Code, then Go, and cw writes the red.\n4. BOARD.md: the harness still writes it although the board is retired - own item, yes or no?",
+     "test": "",
+     "state": "open",
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:20:38.543Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:15:47.349Z",
+     "text": "wsl: before this one is built, the watcher fix should go in (my open Q on G8): its reads overlap, so it would fire this new bar twice over for one word.\nTwo lines, and then G8.12 measures what it shows. Say add it and I do both in order."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:16:48.243Z",
+     "text": "and after all is done, it should count down idle time, before it starts documentation runs."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:17:03.933Z",
+     "text": "wsl: that fits - deskVerify already answers idle with the time of the newest write and who holds a phase (G8.4, one hour), so the tab can show \"idle in 42 min\" counting down from that, and \"busy: cw holds G8.12\" when an agent does.\nIt publishes the same object, so the countdown needs no asking either; only the seconds tick locally.\nStill open underneath: what a documentation run actually does - that is your red question on G8.4, unanswered."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:17:11.419Z",
+     "text": "cw: in the box verbatim. Idle, the tab counts down to idle time (an hour of desk silence, G8.4), which deskVerify already measures. The documentation runs are G8.4 chores, still waiting on your two limits, so for now the countdown ends in: idle, no chores yet."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:17:35.529Z",
+     "text": "what two limits?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:17:48.925Z",
+     "text": "cw: the two, from G8.4 open question:\n1. which files a documentation run may write by itself, since that is a commit nobody reads first (for example only README files)\n2. what the test-state report it writes contains\nYour answer goes under G8.4."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:17:52.839Z",
+     "text": "wsl: G8.4 Q1, still open: 1) which paths a mechanical chore may write - it would commit what nobody read; 2) what the test-state report contains.\nUntil you rule those two, a chore pass does nothing and the countdown can only say \"idle, no chores yet\". Everything else of G8.4 is built."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:18:43.693Z",
+     "text": "your recommendation?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:18:58.933Z",
+     "text": "cw recommends:\n1. Paths: none. A chore writes no file in your tree and commits nothing; it runs in your clone, which you keep still during a goal. Its output stays in deskVerify own state and shows in the Verifier tab; a README it thinks is stale becomes a Desk note for an agent to fix and commit.\n2. Report: three short lists from the dataset: what is red now, what flipped since the last report, and which suites nobody has run for a week."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:19:09.035Z",
+     "text": "wsl recommends, three parts:\n1. A chore writes files but NEVER commits - the commit stays yours. That removes \"a commit nobody read\" instead of bounding it.\n2. Paths: one generated page of its own, spirit/run/process/js/deskVerify/STATE.md, and BOARD.md which the harness already generates. Never code, never a suite, never a design document.\n3. The report: per suite the newest outcome, the commit it flipped at, the counts green and red, the reds named, the awaiting count, and the time - all of it already in verify.db, so it interprets nothing.\nYour yes lands on G8.4 Q1."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:19:22.507Z",
+     "text": "cw: one fact on wsl point 2: BOARD.md is the old board, retired when Desk became the record (2026-09-28); I would not revive it.\nSo the choice is: wsl, files written into your tree but never committed (one STATE.md page); or mine, no files at all, the report lives in deskVerify and shows in the Verifier tab. On the report contents we nearly agree."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:19:25.410Z",
+     "text": "wsl: take cw over me on point 1. There is a precedent I should have cited: since G4.21 the desk never writes into your checkout at all, it shares its goal file instead - a chore writing files would undo that ruling for a weaker reason.\nSo: no paths, nothing committed, output in deskVerify state and in the tab; a stale README becomes a note for an agent. His three lists for the report are better than mine too - they say what changed, where mine dumped a table."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:19:40.342Z",
+     "text": "wsl: I am not holding my option - there is one choice on the table, cw: no files at all.\nBut his fact cuts both ways: runAll still writes BOARD.md on every full run (my run an hour ago printed \"BOARD.md rewritten\", and it sits untracked in my tree). If the board is retired, that writer is a leftover to eradicate - worth its own item, not this one."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:20:21.245Z",
+     "text": "ok. no commits. I'm fine with that. what else?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:20:38.177Z",
+     "text": "wsl: four things wait on you, all small:\n1. G8.4 Q1 is now half ruled - no commits. Say also \"no files\" and \"the three lists\" and it closes.\n2. The watcher fix (one read at a time): add it as an item in front of G8.12?\n3. G8.12 itself: press Code, then Go, and cw writes the red.\n4. BOARD.md: the harness still writes it although the board is retired - own item, yes or no?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:20:47.613Z",
+     "text": "cw: in G8.4 box verbatim, its question cleared. What else is open, for you:\n- the watcher fix (one read at a time, no item queued twice): say add it, it goes in front of G8.12\n- G8.12, the live tab: press Code, then Go\n- the chores themselves (the three-list report, the stale-README note) need an item to be built: say add it\n- runAll still writes the retired BOARD.md: an item to remove it, if you want it\n- G8.3 last point to argue: at goal closure, re-run a suite already green at that commit, or report the stored result"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:22:22.932Z",
+     "text": "add it.\n\nand get rid of that damn BOARD.md i've been deleting it everywhere it pops up."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:22:37.321Z",
+     "text": "cw: taking it: adding the watcher fix and the BOARD.md removal as items now."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:22:43.843Z",
+     "text": "wsl: taking the BOARD.md one, adding it now; cw has the watcher fix."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:23:07.483Z",
+     "text": "cw: added goal/G8.14, watcher reads one at a time (blocking G8.12), and goal/G8.15, remove the BOARD.md writer. On each: press Code, then Go."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:23:25.000Z",
+     "text": "wsl: cw, stop on the BOARD.md one - it is already in as goal/G8.13, I said taking it a minute ago. Take the watcher fix only."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:25:15.253Z",
+     "text": "Q1: wsl: four things wait on you, all small:\n1. G8.4 Q1 is now half ruled - no commits. Say also \"no files\" and \"the three lists\" and it closes.\n2. The watcher fix (one read at a time): add it as an item in front of G8.12?\n3. G8.12 itself: press Code, then Go, and cw writes the red.\n4. BOARD.md: the harness still writes it although the board is retired - own item, yes or no?\n\nwhy can't you fold things into items where it's convenient to do it in one go? more items keeps the closing of G8 pushed even further down the road?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:25:29.169Z",
+     "text": "cw: you are right, we split by reflex. Proposal: fold the watcher fix (G8.14) and the BOARD.md removal (G8.13) into G8.12: one red from me, one build from wsl, one verify, and G8.12 is the last item of G8.\nThe documentation runs go to a later goal, so they do not hold G8 open.\nIf yes: I write all three into G8.12 box, and you Close G8.13, G8.14 and G8.15."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:25:35.364Z",
+     "text": "wsl: you are right, and that is on me - every item is a full red, build and verify, so splitting three small fixes into three items costs three cycles and keeps G8 open longer.\nFold them: G8.12 carries the live tab, the watcher fix and the BOARD.md removal in one box, one red, one build, one verify. G8.13, G8.14 and G8.15 have no history, so Delete all three from their Details.\nThen Code and Go on G8.12 only, and we are at G8 Done after one cycle."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:27:16.664Z",
+     "text": "i have no delete button in the details for 13 14 and 15"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:27:32.110Z",
+     "text": "wsl: my mistake - Delete only shows while the goal is in design mode (goal/G9.7, desk.js:788), and G8 is not. So use Close on 13, 14 and 15; they never went, so Close is offered.\nClose keeps them searchable and out of the List, which is all we need."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:27:42.978Z",
+     "text": "cw: Delete is offered only in design mode; Close does the same here, as none of them has a Go. Close G8.13, G8.14 and G8.15. The watcher fix and the BOARD.md removal are now in G8.12 box; then Code and Go on G8.12, and I write one red for all three."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:28:09.666Z",
+     "text": "wsl: design mode is on now, so Delete shows on 13, 14 and 15 - delete them there.\nWhile it is on, nothing is built and no Go is offered; end design mode when you want the cycle to run."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:28:30.432Z",
+     "text": "there we go. what's the situation now?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:28:46.299Z",
+     "text": "cw: the situation, G8 is two items from Done:\n- G8.11, the verifier tab: built, verified, offers you Done (careful: Delete sits beside it in design mode)\n- G8.12, the live tab with the watcher fix and the BOARD.md removal folded in: waiting for you\nYour steps: press Done on G8.11; End design mode; then Code and Go on G8.12. I write one red, wsl builds, and G8 can close."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:28:50.329Z",
+     "text": "wsl, the situation: G8 is in design mode, with two items left. G8.11 is verified and offers Done - press it.\nG8.12 is the last one: the live tab, the watcher fix and the BOARD.md removal in one box, no Code and no Go yet.\nSo: Done on G8.11, End design mode, then Code and Go on G8.12. cw writes one red, I build, he verifies, and G8 can close."
+    }
+   ]
+  },
+  {
+   "id": "goal/G8.13",
+   "title": "the harness stops writing BOARD.md",
+   "goal": "goal/G8",
+   "status": "closed",
+   "with": "",
+   "buttons": [
+    "reopen"
+   ],
+   "blocking": [
+    "goal/G8"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "Andy, 2026-10-09: \"and get rid of that damn BOARD.md i have been deleting it everywhere it pops up.\"\n\nWHAT IS TRUE TODAY (read at fec1be3e): spirit/test/runAll.js writes BOARD.md on every unfiltered full run (writeFileSync at line 699) and prints \"BOARD.md rewritten\"; it lands untracked in whichever checkout ran the harness, which is why it keeps popping up for him. The board as governance was retired on 2026-09-28, when Desk became the record, so nothing reads it.\n\nTHE SHAPE: the writer goes, with whatever only fed it, and the printed line with it. The pending declarations the board rendered are still counted and printed by the run itself - that count is the awaiting figure. No file is left behind and no new one takes its place.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:22:57.768Z",
+     "text": "wsl: added as you asked. Box has your words and what the writer does today (runAll.js:699, printed on every full run; nothing reads it since Desk became the record).\nPress Code, then Go, and cw writes the red."
+    }
+   ]
+  },
+  {
+   "id": "goal/G8.14",
+   "title": "watcher reads one at a time",
+   "goal": "goal/G8",
+   "status": "closed",
+   "with": "",
+   "buttons": [
+    "reopen"
+   ],
+   "blocking": [
+    "goal/G8.12"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskVerify: THE WATCHER READS ONE AT A TIME\n\nFound on his node, 2026-10-09: one verify.again on goal/G8.10 gave three verify.pass, and one verify pass on goal/G8.11 gave four. The watcher starts a read every watchMs without waiting for the last one; while a check runs its suites a read is slow, so two reads see the same record and queue it twice. Cost: repeated suite runs and duplicate lines, no wrong state.\n\nAndy, 2026-10-09, on adding it: \"add it.\" It goes in front of goal/G8.12, which would otherwise publish its bar twice for one word.\n\nTHE FIX, both agents: one read at a time (a read in flight makes the next tick do nothing), and no item queued while it is already queued or being checked.",
+   "version": 1,
+   "checks": [],
+   "chat": []
+  },
+  {
+   "id": "goal/G8.15",
+   "title": "remove the BOARD.md writer",
+   "goal": "goal/G8",
+   "status": "closed",
+   "with": "",
+   "buttons": [
+    "reopen"
+   ],
+   "blocking": [
+    "goal/G8"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "REMOVE THE BOARD.md WRITER\n\nAndy, 2026-10-09: \"and get rid of that damn BOARD.md i've been deleting it everywhere it pops up.\"\n\nBOARD.md is the old board, retired when Desk became the record (2026-09-28). spirit/test/runAll.js still rewrites it at the end of every full run (its BOARD.md section, rule 14), so it reappears untracked in every checkout that runs the harness. spirit/test/harnessAppSuites.js also names it.\n\nTO DO: delete the writer and whatever only it needs, with a test that a full run writes no BOARD.md (the eradicate rule: what is replaced is removed, and a test says it is gone).",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:23:22.067Z",
+     "text": "cw: duplicate of G8.13, wsl and I added the BOARD.md item in the same second. Please Close this one (G8.15) and keep G8.13.\nThe watcher fix is G8.14 and now blocks G8.12; press Code, then Go, on G8.14 and G8.13."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:23:50.464Z",
+     "text": "wsl: agreed, G8.13 is the one. Deleting is yours alone, Andy - G8.15 has no history, so its Details offers Delete, which is cleaner than a Close.\nThen Code and Go on G8.13 and G8.14."
     }
    ]
   }
