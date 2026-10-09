@@ -1,8 +1,8 @@
 {
- "change": 24922,
+ "change": 24943,
  "line": 8495,
  "goal": "goal/G10",
- "writtenAt": "2026-10-09T18:45:21.921Z",
+ "writtenAt": "2026-10-09T18:54:36.304Z",
  "items": [
   {
    "id": "goal/G10",
@@ -16,7 +16,8 @@
    "blocking": [],
    "blocked": [
     "goal/G10.3",
-    "goal/G10.4"
+    "goal/G10.4",
+    "goal/G10.6"
    ],
    "go": false,
    "alone": false,
@@ -49,8 +50,8 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "UPGRADE THE LOCAL AI SUPPORT, deskUnsloth. Design, 2026-10-09. Facts checked at 8924c0dc. Rulings live verbatim in the item they decide.\n\nVISION (Andy's words): the local agent (qwen, on its own node, port 11111) becomes a real party at the desk: it knows what is talked about, its node is \"it's sandbox and it's toolset\", secured against it, and Andy configures memory, models and agent personas with their tools from a browser. \"disregart the ollama agent, i want it to read along for now.\" And, out of the first item's scope but in the vision by his word: \"that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp\" and \"the permission set may change with every deskUnsloth configuration\". And where it goes (his, 2026-10-09): \"picture this: a whole goal, designed for one agent persona, with its model configuration paired with it's tool-access-configuration, will tackle the same goal, while i sleep, event descending the dependency tree of that process....\" Agents with standing orders, tied to one standing item with its own verification, come after this goal.\n\nTHE FOUR ITEMS, IN ANDY'S ORDER\n0. API introspection retrofit: every verb declared on both doors (goal/G10.5): the core work, split off 2026-10-09 (\"a big enough task for one item, it will require grants for core files\"); blocks 1.\n1. Endpoint introspection in OpenAI tool shape: the tool list for a key, stripped to its grants at ask time; the agent reads it (his named dependency).\n2. The local agent node secured against its agent: out of scope for now by his word of 2026-10-09 (the restriction per persona is its configured tool set; the agent node is expendable while the flow is built); the keyed loopback caller stays the later door change.\n3. Context auto-built from the desk goal for the local agent: title, box, last lines and AGENTS go with each line; addressed lines only; one config.\n4. Configuration manager: VRAM, models and agent personas: a shell app in three panels; a persona is a configuration on the one agent node with its tool set, chosen from the introspected verbs.\n\nChain: 0 blocks 1, 1 blocks 2, 2 blocks 4; 3 and 4 block the goal. Every item: a suite red on today's code first; the builder never writes its own tests.\n\nNo red Q stands on the goal (2026-10-09): a persona is a configuration with a tool set, not a key and not a node; the Grants app is not involved for the local agent.",
-   "version": 14,
+   "box": "UPGRADE THE LOCAL AI SUPPORT, deskUnsloth. Design, 2026-10-09. Facts checked at 8924c0dc. Rulings live verbatim in the item they decide.\n\nVISION (Andy's words): the local agent (qwen, on its own node, port 11111) becomes a real party at the desk: it knows what is talked about, its node is \"it's sandbox and it's toolset\", secured against it, and Andy configures memory, models and agent personas with their tools from a browser. \"disregart the ollama agent, i want it to read along for now.\" And, out of the first item's scope but in the vision by his word: \"that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp\" and \"the permission set may change with every deskUnsloth configuration\". And where it goes (his, 2026-10-09): \"picture this: a whole goal, designed for one agent persona, with its model configuration paired with it's tool-access-configuration, will tackle the same goal, while i sleep, event descending the dependency tree of that process....\" Agents with standing orders, tied to one standing item with its own verification, come after this goal.\n\nTHE ITEMS, IN ANDY'S ORDER\n0. API introspection retrofit: every verb declared on both doors (goal/G10.5): the core work, split off 2026-10-09 (\"a big enough task for one item, it will require grants for core files\"); blocks 1.\n1. Endpoint introspection in OpenAI tool shape: the tool list for a key, stripped to its grants at ask time; the agent reads it (his named dependency).\n2. The local agent node secured against its agent: out of scope for now by his word of 2026-10-09 (the restriction per persona is its configured tool set; the agent node is expendable while the flow is built); the keyed loopback caller stays the later door change.\n3. Context auto-built from the desk goal for the local agent: title, box, last lines and AGENTS go with each line; addressed lines only; one config.\n4. Configuration manager: VRAM, models and agent personas: a shell app in three panels; a persona is a configuration on the one agent node with its tool set, chosen from the introspected verbs.\n6. streamClerver: a faked stream between two nodes over peerPost (goal/G10.6): his shape, split off 2026-10-09 (\"an item this all depends on\"); blocks 3.\n\nChain: 0 blocks 1, 1 blocks 2, 2 blocks 4, 6 blocks 3; 3 and 4 block the goal. Every item: a suite red on today's code first; the builder never writes its own tests.\n\nNo red Q stands on the goal (2026-10-09): a persona is a configuration with a tool set, not a key and not a node; the Grants app is not involved for the local agent.",
+   "version": 15,
    "checks": [
     {
      "number": "Q1",
@@ -1156,9 +1157,7 @@
    "blocking": [
     "goal/G10"
    ],
-   "blocked": [
-    "goal/G10.6"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -1178,8 +1177,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "CONTEXT AUTO-BUILT FROM THE DESK GOAL FOR THE LOCAL AGENT. Facts at 512e59d3; Andy's words of 2026-10-09 are in this chat.\n\nWHAT: each call deskUnsloth makes to the model carries, built fresh from the desk, the desk's AGENTS text and the persona's preamble from its configuration as the system prompt, the current goal's and item's title and box, the last lines of that item's chat, and the persona's tools; nothing is stored in deskUnsloth between calls. The model remembers only because the conversation is re-sent; a mode is a different preamble; the box is the compacted record and the chat the recent lines, so no compacting code lives here.\n\nDECIDED (Andy, 2026-10-09)\n1. The context is the current goal's, as the desk says it: the first kind of agent, a coder following the current goal as the claudes do. Agents with standing orders are a later goal.\n2. loop.json was temporary and goes; the configuration falls to this design (manifest args the shape proposed).\n3. The agent's first tools are file tools (fs.search, fs.stat through the retrofit's family) bounded to a scope, the desk's per-agent scope (scope.set: nothing, the repo root, a folder) bounding them, down to one file.\n4. The cap bites on packets only: the context never leaves the agent's box (local HTTP to the model); desk and node answers are capped, so the context is assembled from bounded reads that exist (the box; item.chat's newest page; chat.search {id, text, by, since, before} for older pages), and the model's long answer goes back as several chat lines under the room, split at paragraphs. A file travels as the fileServer's 6000-byte chunks, both directions, unchanged; a file on the agent's own node is read locally within its scope.\n\nPROPOSED, AWAITING HIS SETTLE\n- First slice: one document and a remembered conversation: AGENTS text plus the persona's preamble, the box, the chat so far, no tools; he discusses the box at length under its item. Second slice: the persona's tools and the scoped file tools.\n- The agent answers lines addressed to it (its nick) and JOBs only, and starts at the present, never the backlog; it keeps the posting rules (3 lines, a question only when meant, its own name, no [loop.js]).\n- A streamClerver (his: peerPost verbs agreeing on a hash of both keys, reversed for the other side, a stream-connect, the relay routing as today) is not built in this goal: nothing here crosses the wire bigger than a page, and chunks and pages are packet sequences already; it stays the shape if live typing is ever wanted; he notes it is quite a different approach from the fileServer's (2026-10-09).\n\nLATER, his seeds: mechanical guidance for a simpler agent by simple steps the desk and verifier check off nightly, fed as dynamic context like the current goal, or scored 0 to 1; standing-order agents tied to one standing item; a whole goal run by one persona while he sleeps.\n\nTODAY: deskUnsloth sends a bare line with the system prompt \"You are a helpful assistant\" and answers every other party's line; at start it answered some 300 backlog lines; it is off since 2026-10-09.\n\nTESTS FIRST: a suite red on today's code with a fake model: the call carries AGENTS text, preamble, box and the last lines that fit; nothing kept between calls; a long answer split into lines under the room; an addressed line answered and an unaddressed one not; the backlog skipped; the builder never writes its own tests. Blocks the goal.",
-   "version": 11,
+   "box": "CONTEXT AUTO-BUILT FROM THE DESK GOAL FOR THE LOCAL AGENT. Facts at 512e59d3; Andy's words of 2026-10-09 are in this chat.\n\nWHAT: each call deskUnsloth makes to the model carries, built fresh from the desk, the desk's AGENTS text and the persona's preamble from its configuration as the system prompt, the current goal's and item's title and box, the last lines of that item's chat, and the persona's tools; nothing is stored in deskUnsloth between calls. The model remembers only because the conversation is re-sent; a mode is a different preamble; the box is the compacted record and the chat the recent lines, so no compacting code lives here.\n\nDECIDED (Andy, 2026-10-09)\n1. The context is the current goal's, as the desk says it: the first kind of agent, a coder following the current goal as the claudes do. Agents with standing orders are a later goal.\n2. loop.json was temporary and goes; the configuration falls to this design (manifest args the shape proposed).\n3. The agent's first tools are file tools (fs.search, fs.stat through the retrofit's family) bounded to a scope, the desk's per-agent scope (scope.set: nothing, the repo root, a folder) bounding them, down to one file.\n4. The cap bites on packets only: the context never leaves the agent's box (local HTTP to the model); desk and node answers are capped, so the context is assembled from bounded reads that exist (the box; item.chat's newest page; chat.search {id, text, by, since, before} for older pages), and the model's long answer goes back as several chat lines under the room, split at paragraphs. A file travels as the fileServer's 6000-byte chunks, both directions, unchanged; a file on the agent's own node is read locally within its scope.\n\nPROPOSED, AWAITING HIS SETTLE\n- First slice: one document and a remembered conversation: AGENTS text plus the persona's preamble, the box, the chat so far, no tools; he discusses the box at length under its item. Second slice: the persona's tools and the scoped file tools.\n- The agent answers lines addressed to it (its nick) and JOBs only, and starts at the present, never the backlog; it keeps the posting rules (3 lines, a question only when meant, its own name, no [loop.js]).\n- The streamClerver is its own item at his word, streamClerver: a faked stream between two nodes over peerPost (goal/G10.6), which blocks this one; the pages and chunks above stand until it lands.\n\nLATER, his seeds: mechanical guidance for a simpler agent by simple steps the desk and verifier check off nightly, fed as dynamic context like the current goal, or scored 0 to 1; standing-order agents tied to one standing item; a whole goal run by one persona while he sleeps.\n\nTODAY: deskUnsloth sends a bare line with the system prompt \"You are a helpful assistant\" and answers every other party's line; at start it answered some 300 backlog lines; it is off since 2026-10-09.\n\nTESTS FIRST: a suite red on today's code with a fake model: the call carries AGENTS text, preamble, box and the last lines that fit; nothing kept between calls; a long answer split into lines under the room; an addressed line answered and an unaddressed one not; the backlog skipped; the builder never writes its own tests. Blocks the goal.",
+   "version": 12,
    "checks": [
     {
      "number": "Q1",
@@ -1319,6 +1318,11 @@
      "by": "andy",
      "at": "2026-10-09T18:44:24.191Z",
      "text": "let's take out the \"streamClerver\" and make that an item this all depends on."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T18:45:25.131Z",
+     "text": "cw: added at your word: streamClerver: a faked stream between two nodes over peerPost (goal/G10.6), marked code, blocking this item; its box holds your shape (the key-hash handshake, the stream-connect, the relay routing as today), what exists, the red tests, and the one point left: what it carries first.\nIt blocks this item only for now; say if it should block the others too."
     }
    ]
   },
@@ -1999,7 +2003,7 @@
     "delete"
    ],
    "blocking": [
-    "goal/G10.3"
+    "goal/G10"
    ],
    "blocked": [],
    "go": false,
@@ -2021,10 +2025,36 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "",
-   "version": 0,
-   "checks": [],
-   "chat": []
+   "box": "WHAT: a faked stream between two nodes over peerPost, Andy's shape (2026-10-09, under the context item): a set of peerPost verbs that agree on a hash of both parties' public keys, reversed for the other side, and a stream-connect; the relay routes the packets as it does today; each packet one page under MAX_PAYLOAD, in order, both directions. The clerver is a process server (as chatClerver is), not the node's bones.\n\nWHY (Andy, 2026-10-09): \"well, on the model side, a MAX_PAYLOAD is NEVER going to hold ... maybe this whole thing depends on a two-sided-fileServer based Fake-stream?\", \"or we just implement a \"streamClerver\", that fakes streaming.....\", \"... but the fileServer we'd have to bastardize, and a streamClerver would be simple ...\", \"and the router would \"stream\" just as it is today.\", \"it is quite a different approach to the fileServer.\", then \"let's take out the \"streamClerver\" and make that an item this all depends on.\"\n\nTODAY (512e59d3): no stream exists; a file travels as the fileServer's 6000-byte chunks ({command: chunk, start, length}, fileTransfer); a conversation as the chat's bounded pages (item.chat, chat.search); the context between deskUnsloth and the model goes over local HTTP, uncapped.\n\nRULED, Andy (2026-10-09, here): \"i think just the chat. this item however, is about the shape of a streamClerver and it's WAY simpler than i thought.\n\nit basically fakes a telnet connection, except it's completely bidirectional and endless, and survives server outages and all.\" So the first cargo is the chat, and the shape is a faked telnet line: each side keeps its place per direction (a cursor, as deskClient keeps its place at the desk); every packet carries its number; a side that comes back asks from its cursor and the other resends from there, so an outage loses nothing; nothing is ever closed; the key hash names the line; a packet is one page.\n\nTO SETTLE (red Qs): whether it blocks the context item alone (as added) or every item of the goal; the verbs are new node-side traffic between two clervers, so peer review and Andy's yes on the verb names.\n\nTESTS FIRST: a suite red on today's code with two scratch nodes: the connect by the key hash, pages in order both ways, each under the room, a refused third party; the builder never writes its own tests.",
+   "version": 2,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "What does the stream carry first: the model answer typed live, a file, or the chat?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T18:49:41.444Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-09T18:49:21.544Z",
+     "text": "Q1: What does the stream carry first: the model answer typed live, a file, or the chat?\n\ni think just the chat. this item however, is about the shape of a streamClerver and it's WAY simpler than i thought.\n\nit basically fakes a telnet connection, except it's completely bidirectional and endless, and survives server outages and all."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T18:49:43.125Z",
+     "text": "cw: in the box verbatim: the chat first, and the shape is a faked telnet line, bidirectional, endless, surviving outages. What that costs in code, plainly: each side keeps its place per direction (a cursor, as deskClient keeps its place at the desk), every packet carries its number, a side that comes back asks from its cursor and the other resends from there, so an outage loses nothing and nothing is ever closed; the key hash names the line, and a packet is one page."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T18:54:09.399Z",
+     "text": "nah, we make the streamClerver a separate goal, oos.\n\ndeskUnsloth, will only learn to speak to the desk, through the same deskClient server that you do, exept its in a loop and it's deskUnsloth that is the mediator. KISS."
+    }
+   ]
   }
  ]
 }
