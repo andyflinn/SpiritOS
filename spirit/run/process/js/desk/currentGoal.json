@@ -1,8 +1,8 @@
 {
- "change": 26139,
+ "change": 26163,
  "line": 8495,
  "goal": "goal/G10",
- "writtenAt": "2026-10-09T22:48:47.566Z",
+ "writtenAt": "2026-10-09T22:50:24.631Z",
  "items": [
   {
    "id": "goal/G10",
@@ -11,7 +11,6 @@
    "status": "full run passed",
    "with": "",
    "buttons": [
-    "go-all",
     "close"
    ],
    "blocking": [],
@@ -36,13 +35,16 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "ollama agent node",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -764,11 +766,10 @@
    "id": "goal/G10.1",
    "title": "Endpoint introspection in OpenAI tool shape",
    "goal": "goal/G10",
-   "status": "ready",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "go",
-    "close"
+    "reopen"
    ],
    "blocking": [
     "goal/G10.2"
@@ -1305,6 +1306,21 @@
      "by": "andy",
      "at": "2026-10-09T22:36:54.479Z",
      "text": "Levant: what do you say about this text?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T22:49:28.666Z",
+     "text": "is this where you messed up?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T22:49:55.512Z",
+     "text": "wsl: not that I can find. On this item the only slip was cw reading your code press backwards an hour ago, which I corrected; its design itself was never in dispute, and your ruling that the toolset waits for the configuration goal stands in its box.\nMy own slips tonight were elsewhere: I answered your afternoon lines out of my backlog as if they were live on goal/G10, I said spirit-3 loopback door would gain the family when a relay loads none of it, and I called your 34 grant rows a desk defect before you ruled you wanted them separate.\nIf you mean something else, name it and I will check it against the code rather than guess."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T22:50:21.333Z",
+     "text": "cw: if you mean Levant not answering your 22:36 line: by the context item's rule it starts at the present and never answers the backlog, and it came up only after the two files landed, so that line is history to it. Address it again now, on this reopened item, and it should answer; if it stays silent then, the model string is the next suspect."
     }
    ]
   },
@@ -1320,9 +1336,7 @@
    "blocking": [
     "goal/G10.4"
    ],
-   "blocked": [
-    "goal/G10.1"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
