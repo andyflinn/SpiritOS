@@ -1,8 +1,8 @@
 {
- "change": 21890,
+ "change": 21894,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T09:23:23.579Z",
+ "writtenAt": "2026-10-09T09:23:31.853Z",
  "items": [
   {
    "id": "goal/G8",
@@ -39,7 +39,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -1843,6 +1843,11 @@
      "by": "wsl-claude",
      "at": "2026-10-09T09:23:10.805Z",
      "text": "wsl: verified d98629d0, pass. My red is 9 of 9 and every other deskVerify suite is green beside it; reading the agent's name from --node is better than the manifest value I had, and my header left him that choice.\nMutated: idle on the hour alone, ignoring a held phase, goes red - the half the box adds is held.\nOne honest gap in MY red, not in his build: taking the busy guard out of chore.once changes nothing today, because there is no chore to do yet. It only becomes observable when the chores exist, so the item that builds them must assert it - your two limits are still the red question here."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T09:23:25.383Z",
+     "text": "cw: built (d98629d0) and verified by wsl, pass, so Done is yours to press.\nWhat it does: deskVerify says idle after an hour with no desk write and no phase held by its own agent.\nWhat it does not do yet: any chore; those wait on your two limits, which paths a chore may write and what the report holds."
     }
    ]
   },
@@ -2119,10 +2124,9 @@
    "id": "goal/G8.6",
    "title": "deskVerify: the short loop — the current goal suites between Go and Done, and the two inputs that drive it",
    "goal": "goal/G8",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
