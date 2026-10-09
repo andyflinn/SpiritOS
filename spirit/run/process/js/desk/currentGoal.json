@@ -1,8 +1,8 @@
 {
- "change": 20495,
+ "change": 20499,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:21:30.981Z",
+ "writtenAt": "2026-10-09T06:21:40.402Z",
  "items": [
   {
    "id": "goal/G9",
@@ -17,7 +17,6 @@
    "blocked": [
     "goal/G9.3",
     "goal/G9.7",
-    "goal/G9.10",
     "goal/G9.11",
     "goal/G9.12",
     "goal/G9.14"
@@ -41,7 +40,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 4,
+   "waiting": 3,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -1462,17 +1461,17 @@
    "id": "goal/G9.10",
    "title": "Add blocking item section in the item Details",
    "goal": "goal/G9",
-   "status": "verified",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "done"
+    "reopen"
    ],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -1515,7 +1514,7 @@
      "version": 6
     }
    ],
-   "asks": 2,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"In the item/Goals detail dialog, there will be a new section bubble, immediately following the \\\"Blocked by/Blocking\\\" section, and right before the users chat input. the \\\"Add blocking item\\\" form is the following set up items arranged inline as follows: \\\"Title\\\" [Title String, subject to label rules] [add-button]. When the user presses the [add-button], The desk will add a blocking item with the entered title and a blank text box. The blocked-by section will be updated immediately.\"\n\nShape: new desk verb item.add {id, title} -> {id, change}: a new item of the same goal, blocking the item named, title under the label rules, blank box, id minted by the desk (G9.9). The section is UI in the desk shell.",
