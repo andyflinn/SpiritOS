@@ -1089,18 +1089,21 @@ function deskVerifyIdlePct(since) {
   if (isNaN(ms)) return null;
   return Math.max(0, Math.min(100, Math.round((ms / 60000) / DESK_IDLE_MIN * 100)));
 }
-function deskVerifyBarHtml(pct, grey) {
-  // Grey is the shell's muted look, not a hidden bar: it stays in the layout so the tab never changes shape.
-  return '<div><progress id="desk-verify-bar" max="100" value="' + pct + '" style="width:100%' +
-    (grey ? ';filter:grayscale(1);opacity:0.45' : '') + '"' + (grey ? ' data-grey="1"' : '') + '></progress></div>';
+// The phase is on the bar itself, as `data-phase`: run while a check runs, countdown while the idle hour fills, done
+// when it is spent or nothing has been published - which is also when it is grey. Grey is a muted look and not a
+// hidden bar: it stays in the layout, so the tab never changes shape under him.
+function deskVerifyBarHtml(pct, phase) {
+  var grey = phase === 'done';
+  return '<div><progress id="desk-verify-bar" data-phase="' + phase + '" max="100" value="' + pct + '" style="width:100%' +
+    (grey ? ';filter:grayscale(1);opacity:0.45' : '') + '"></progress></div>';
 }
 function deskVerifyBar() {
   var r = deskVerifyRun;
-  if (!r) return deskVerifyBarHtml(0, true) + '<div>Nothing measured yet on this node.</div>';
+  if (!r) return deskVerifyBarHtml(0, 'done') + '<div>Nothing measured yet on this node.</div>';
   if (r.doing === 'idle') {
     var pct = deskVerifyIdlePct(r.since);
-    if (pct === null) return deskVerifyBarHtml(0, true) + '<div>Idle; no desk write to count the hour from.</div>';
-    return deskVerifyBarHtml(pct, pct >= 100) +
+    if (pct === null) return deskVerifyBarHtml(0, 'done') + '<div>Idle; no desk write to count the hour from.</div>';
+    return deskVerifyBarHtml(pct, pct >= 100 ? 'done' : 'countdown') +
       '<div>' + (pct >= 100 ? 'Idle time reached; no chores are ruled yet, so nothing runs.'
         : 'Idle, the hour filling: ' + pct + '%') + '</div>';
   }
@@ -1109,7 +1112,7 @@ function deskVerifyBar() {
   var done = of ? (index - 1) / of : 0;
   var inOne = (of && Number(r.expected) > 0) ? Math.min(1, (Number(r.tests) || 0) / Number(r.expected)) / of : 0;
   var runPct = Math.max(0, Math.min(100, Math.round((done + inOne) * 100)));
-  return deskVerifyBarHtml(runPct, false) +
+  return deskVerifyBarHtml(runPct, 'run') +
     '<div>' + (r.doing === 'full' ? 'Full run' : 'Item ' + deskEsc(r.id)) +
     (of ? ' · suite ' + index + ' of ' + of : '') + (r.suite ? ' · ' + deskEsc(r.suite) : '') + '</div>';
 }
