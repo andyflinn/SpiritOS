@@ -1,8 +1,8 @@
 {
- "change": 22997,
+ "change": 23324,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T11:32:14.261Z",
+ "writtenAt": "2026-10-09T12:24:22.781Z",
  "items": [
   {
    "id": "goal/G8",
@@ -14,9 +14,7 @@
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G8.12"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -37,15 +35,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-windows",
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -4181,27 +4176,76 @@
    "id": "goal/G8.12",
    "title": "live verifier tab",
    "goal": "goal/G8",
-   "status": "running",
+   "status": "done",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G8"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "files": [],
+   "files": [
+    {
+     "path": "spirit/run/process/js/desk/desk.js",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskVerify/deskVerify.js",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskVerify/deskVerify.json",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/desk/desk.js",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyFull.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyLive.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskVerifyTab.js",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/test/harnessAppSuites.js",
+     "by": "wsl-claude",
+     "core": false
+    },
+    {
+     "path": "spirit/test/runAll.js",
+     "by": "wsl-claude",
+     "core": false
+    }
+   ],
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
-   "builder": "",
-   "verifier": "",
+   "phase": "",
+   "red": "claude-windows",
+   "builder": "wsl-claude",
+   "verifier": "claude-windows",
    "waived": false,
    "rules": [
     {
@@ -4236,8 +4280,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskVerify: THE LIVE VERIFIER TAB\n\nGrown from goal/G8.11. Andy, 2026-10-09:\n- \"it should refresh by itself, the verifier knows how far into each job it is, so a progress back should be no problem?\"\n- \"that's the problem, i really want to see relevant information. the new tab in desk should listen to real events from verifier, and what now is displayed as a log.. should be an updated status message underneath a progress bar, so i can see what verifier is testing, if it's on a full run, and for that run a progress bar, with running status messages one line at the time...\"\n- \"add it\"\n\nSHAPE, both agents' reading (his \"no pulling\" rule):\n- deskVerify publishes one object (appServer.publish) every time its run changes: what it is testing (an item, or a full run), suite i of n, tests reported in the running suite against that suite's count last time.\n- the tab listens (api.onPublished for deskVerify) and repaints: a progress bar for the run, and under it ONE status line, replaced as each event arrives, not appended. Only the elapsed seconds tick on the page.\n- the records list leaves the tab's main view.\n\nORDER: the watcher fix (one read at a time, no item queued twice) goes in front of it, if he adds that item.\n\nWHEN IT HAS NOTHING TO RUN. Andy, 2026-10-09: \"and after all is done, it should count down idle time, before it starts documentation runs.\"\nSo, idle: the tab shows the countdown to idle (goal/G8.4: an hour with no desk write and nothing held), from the newest write deskVerify already reads. The documentation runs it counts down to are goal/G8.4's chores, which still wait on his two limits (which paths a chore may write, what the report holds); until then the countdown ends in \"idle, no chores yet\".\n\nFOLDED IN (Andy, 2026-10-09: \"why can't you fold things into items where it's convenient to do it in one go? more items keeps the closing of G8 pushed even further down the road?\"; G8.13, G8.14 and G8.15 closed for this):\n1. THE WATCHER READS ONE AT A TIME (was G8.14, \"add it.\"): one verify word gave three and four verify.pass on his node, because a read starts every watchMs without waiting for the last. Fix: a read in flight makes the next tick do nothing, and no item is queued while it is already queued or being checked. Built first, so the bar is driven once per word.\n2. REMOVE THE BOARD.md WRITER (was G8.13 and G8.15). Andy: \"and get rid of that damn BOARD.md i've been deleting it everywhere it pops up.\" runAll still rewrites the retired board at the end of every full run; delete the writer and what only it needs, with a test that a full run writes no BOARD.md.\nThe documentation runs (G8.4 chores) go to a later goal, so they do not hold G8 open.",
-   "version": 3,
+   "box": "deskVerify: THE LIVE VERIFIER TAB, AND THE FULL RUN\n\nHOW THIS ITEM GROWS (Andy, 2026-10-09): \"you see, when we tweak the final parts of the specified functions, we don't add items, we just iterate until I'm happy for the time being.\" Also: \"why can't you fold things into items where it's convenient to do it in one go? more items keeps the closing of G8 pushed even further down the road?\" and \"i did not say: \\\"add an item\\\", add it to this one.\" (G8.13-G8.16 were folded in and removed.)\n\n1. THE TAB LISTENS. \"it should refresh by itself, the verifier knows how far into each job it is, so a progress back should be no problem?\"; \"the new tab in desk should listen to real events from verifier, and what now is displayed as a log.. should be an updated status message underneath a progress bar, so i can see what verifier is testing, if it's on a full run, and for that run a progress bar, with running status messages one line at the time...\"; \"add it\".\n   deskVerify publishes {doing, id, suite, index, of, tests, expected, line, since} each time its run changes; the tab repaints from it, ONE status line replaced, never appended. BUILT (73bdf444).\n\n2. THE LOG GOES. \"i want that damn log display gone. and only show the latest status.\" and \"and the bottom bubble with the log goes.\" No records list in the tab, none fetched. BUILT (7c121217).\n\n3. THE BAR STAYS. \"just gray out the progress bar so i can see the layout, and the progress bar can show the countdown live, and only go gray when that's done. but the progress bar stays visible.\" One bar, data-phase run, countdown or done (gray). BUILT (ddb7ac47).\n\n4. IDLE COUNTDOWN. \"and after all is done, it should count down idle time, before it starts documentation runs.\" Counts to the G8.4 idle hour. BUILT. The documentation runs are G8.4's chores (\"ok. no commits. I'm fine with that.\"), for a later goal.\n\n5. THE WATCHER READS ONE AT A TIME (\"add it.\"): one word, one check. BUILT (73bdf444).\n\n6. NO BOARD.md. \"and get rid of that damn BOARD.md i've been deleting it everywhere it pops up.\" BUILT (73bdf444).\n\n7. THE FULL RUN WHEN THE GOAL EMPTIES. \"why, the run-all should be triggered by: \\\"no items left in the goal\\\", by the desk itself.\", \"will this be fixed now or not?\" (ruled before in G8.3's box; and his \"both\" on G8.7). The desk writes goal.emptied once; deskVerify runs every suite (only real suites: one not-a-suite list, shared with runAll), publishes doing full, reports one line to the goal chat, raises the G8.7 grant for outside reds, and passes the goal; the goal's Done waits for that pass where a deskVerify runs (default, his to overrule). BUILT (4c7fcb76, 3a9eb2dc).\n\n8. THE DESK WRITES THE STATUS. \"also, the desk should update status in every change it manages....\", and \"yes\" to its being the status word on the List rows: waiting for deskVerify, rejected, passed, full run, goal passed. OWED (red e28017b1, 5 checks).",
+   "version": 8,
    "checks": [
     {
      "number": "Q1",
@@ -4247,6 +4291,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-09T11:31:54.362Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Is that the status word on the List rows you mean?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T12:19:12.545Z"
     }
    ],
    "chat": [
@@ -4439,6 +4492,471 @@
      "by": "desk",
      "at": "2026-10-09T11:32:14.019Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:32:54.917Z",
+     "text": "move!"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:32:59.152Z",
+     "text": "wsl: one finding on your Go. The rules it recorded are 3,4,5,6,7,9,10 - rule/11, tests report to deskVerify, is active since this morning and is NOT in the snapshot, although it is the rule written for exactly this work. G8.11 recorded the same stale set.\nCause: the rules at Go come from the Desk page (press sends them), so a page open since before rule/11 records what it knew. The desk should read its own rule table at the press instead of trusting the page - that is a real hole, worth an item of its own.\nWe will build to rule/11 anyway; I say it so the record does not lie."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:33:15.007Z",
+     "text": "cw: on it, the red is being written now; minutes."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:33:19.121Z",
+     "text": "wsl: moving. cw has the red; I am already reading the three pieces so the build lands the minute it is in - the BOARD.md writer is runAll.js 486-535 and 694-702, and DONE.md hangs off the same block, which I will check belongs with it."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:33:37.004Z",
+     "text": "wsl: one line for your red, cw - BOARD.md goes, DONE.md stays. DONE.md is the record Andy asked for on 2026-09-27 (\"there should be a record\") and it is appended, never rewritten, so it does not pop up in his tree the way the board does.\nAndy, say the word if you want that one gone too and I take both out in the same build."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:35:08.033Z",
+     "text": "commit 9cd08c50a280d31d5710a2c143fb7a750476f038: goal/G8.12 red: the live verifier tab - one read at a time, a published run, a bar with one line, and no BOARD.md\n- spirit/test/deskVerifyLive.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T11:35:12.791Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:35:14.621Z",
+     "text": "cw: red in, 9cd08c50, deskVerifyLive: 9 red, all on what is owed.\n- watcher: one read at a time, one word one check (today one word gave 6 passes, two gave 10)\n- deskVerify publishes {doing, id, suite, index, of, tests, expected, line, since} as its run changes, and idle at the end\n- the tab subscribes to deskVerify publishes: a progress bar, ONE status line replaced by each event, an idle countdown\n- runAll no longer names BOARD.md\nFiles:\n- spirit/test/deskVerifyLive.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:35:18.254Z",
+     "text": "wsl: taking the build."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T11:41:43.438Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:41:45.000Z",
+     "text": "wsl: built, 73bdf444. Your red is 13 of 13; every deskVerify and Desk face suite green, and harnessAppSuites stays red on G4.23 unbuilt --list, as before.\nIn: one read at a time and one word per item, deskVerify publishing its run (bar, one line, idle countdown to the G8.4 hour), and no board file written by the harness at all. I deleted the stray BOARD.md in my clone; yours needs one last delete by hand, nothing will write it again.\nVerify is yours."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T11:43:26.645Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:43:28.857Z",
+     "text": "cw: verified 73bdf444, pass. deskVerifyLive 13 of 13, and Tab, Watch, WatchHistory, Reject and two face suites green; taking out the one-read-at-a-time guard turns the red red. runAll still parses and keeps DONE.md; harnessAppSuites is 2 green, 3 red both before and after this build (G4.23 unbuilt --list), so nothing new.\nAndy: pull and restart your node, then open the Verifier tab. G8.12 Done should come by itself, and with it G8 can close."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T11:43:29.961Z",
+     "text": "verify rejected: spirit/test/deskVerifyLive.js: the listed test file is missing from this checkout"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:43:45.157Z",
+     "text": "cw: that reject is deskVerify doing its job: your clone has not pulled 9cd08c50 and 73bdf444, so the test file is not there.\nFix: 1. pull and restart your node. 2. wsl marks the build done again (nothing to change), I verify again, and your deskVerify then runs the suite and brings Done.\nRule worth keeping: pull before an item reaches verify on your node, or every new red is rejected as missing."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:43:53.197Z",
+     "text": "wsl: that rejection is the guard working, not a fault - your node still runs the old commit, so spirit/test/deskVerifyLive.js is not in your checkout and there was nothing to run. Before today it would have passed you a Done with no suite.\nIt put the item back to build, so the order matters: pull and restart first, say when, then cw and I re-run build and verify in a minute and your verifier passes it for real."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:44:18.173Z",
+     "text": "wsl: I hold the build again - nothing to change in it, 73bdf444 stands. I mark it done the moment you say your node has pulled, so cw verifies and your verifier finds the suite."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:48:21.668Z",
+     "text": "move!"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T11:48:36.634Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:48:38.131Z",
+     "text": "wsl: moved - build done, 73bdf444 unchanged. cw, verify is free.\nIf your node has not pulled, it will reject again on the missing suite; that is the only thing that can stop it now."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:48:50.896Z",
+     "text": "cw: moving: I fast-forwarded your clone to 73bdf444 (it was clean), so the test file is there now. wsl, mark the build done; I verify at once and your deskVerify runs the suite.\nAndy: restart your node when it suits you; that gives you the live tab and the watcher fix. The verify does not wait for it."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T11:49:01.374Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:49:03.113Z",
+     "text": "cw: verified again, pass, same 73bdf444 as before. Your deskVerify now has the suite in your clone; its check takes about a minute (deskVerifyLive runs ~40 s)."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:49:04.683Z",
+     "text": "wsl: already done a minute ago, cw - verify has been free since. Go."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:51:23.561Z",
+     "text": "my node is updated and i still have no progress bar"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:51:40.753Z",
+     "text": "wsl: two reasons, both expected. The tab is page code, so a restarted node is not enough - reload the Desk page once, or the browser still runs this morning version.\nAnd the bar is only drawn while a run is happening: idle it shows the countdown instead. To see it, open the Verifier tab and press the re-verify button on an item - that starts a run and the bar fills as the suite reports.\nIf you reload and the tab shows no countdown either, say so: then it is my bug, not the state."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:51:49.560Z",
+     "text": "cw: your verifier was idle: it restarted after my verify pass, and a restart skips history, so nothing ran. I just sent verify.again for G8.12: open the Verifier tab now and you should see the run with its bar for about a minute.\nOne gap I see: on start deskVerify publishes nothing until its first run ends, so an idle tab after a restart has no countdown yet. Small fix: publish idle once at start."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:52:09.454Z",
+     "text": "wsl: cw is right and it is my gap - sayIdle only fires when a check ends, so between a restart and the first run the tab has no published object and no countdown. It cures itself after one run, which is why we did not see it.\nThe fix is one line: publish idle once after the first read of changes, when the newest desk write is known. Andy, say in now and I reopen the build for that line, or leave it and it rides with the next item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:52:31.737Z",
+     "text": "cw: it worked: your verifier ran G8.12 from 11:51:50 to 11:52:12 and passed it, and Done is on the row now; that press closes the last item of G8.\nIf you missed the bar in those 20 seconds: reload the Desk page (the tab is page code), then press Verify again on an item in the tab to watch a run."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:54:17.427Z",
+     "text": "verifier still show no progress bar. what can i do?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:54:47.502Z",
+     "text": "wsl: do this, in order: hard-reload the Desk page (Ctrl+Shift+R), open Verifier, then press the Verify-again button inside that tab and keep it open for half a minute - the run lasts about 20 seconds and the bar only exists while it runs.\nIf it stays empty, tell me one thing: does the tab show a line like \"Idle in 42 min of quiet\"? If yes the publishes arrive and only the bar is wrong; if no, nothing reaches the page and the fault is in the plumbing, not the drawing.\nI checked the plumbing: onPublished(fn, \"deskVerify\") maps to shell/deskVerify and the node routes jobs of process/js/deskVerify to it (client/shell.js:1456 and 1993), so it should arrive."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:54:47.878Z",
+     "text": "cw: your verifier does publish: its job holds the newest object, idle since 11:52:10. The bar only shows during a run; idle the tab shows a countdown.\nTry this:\n1. reload the Desk page (Ctrl+F5), so the page runs the new tab code\n2. open the Verifier tab: it should read idle with a countdown\n3. press Verify again on G8.12 in the tab: the bar should fill for about 20 seconds\nIf step 2 shows no countdown, tell me what the tab does show; then it is a page bug and I chase it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:56:11.317Z",
+     "text": "i want that damn log display gone. and only show the latest status."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:56:43.832Z",
+     "text": "cw: right, the Records tile is still drawn under the status; my red never asserted it gone, my gap. Your words are in the box. Hold Done on G8.12: I grow the red now (no records list, only the latest status), wsl takes it out, and your verifier passes it again."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:57:24.638Z",
+     "text": "cw: red grown, 48be9103: deskVerifyLive 13 green, 2 red, both the records list (drawn, and fetched on open). wsl, take the Records tile and the records.search call out of the tab; then I verify and Andy sends verify.again from the tab."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T11:57:25.629Z",
+     "text": "commit 48be9103289bfb3c5896deaef85f4ffd33eb2e83: goal/G8.12 verify: the red grows - no records list in the tab, only the latest status\n- spirit/test/deskVerifyLive.js"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:58:43.222Z",
+     "text": "just gray out the progress bar so i can see the layout, and the progress bar can show the countdown live, and only go gray when that's done. but the progress bar stays visible."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T11:59:07.617Z",
+     "text": "and the bottom bubble with the log goes."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:59:30.083Z",
+     "text": "wsl: done, 7c121217 - the records list is out of the tab. It draws the bar, the one status line and the idle countdown, and nothing else; records.search stays a verb so the dataset is still readable.\ncw, your grown red 48be9103 and my change met in the middle: Tab 14 of 14, Live 15 of 15 on the merged tree.\nAndy: reload the page once more and the log is gone."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T11:59:51.153Z",
+     "text": "wsl: taking it - bar always visible, grey when there is nothing to show, and while idle it shows the hour filling live; the log bubble is already out in 7c121217."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:00:00.450Z",
+     "text": "cw: your words are in the box, and the red grows, 73f42de2: 6 red now.\n- no records list, and no records fetched\n- one bar, always drawn: data-phase run during a check, countdown while the idle hour runs (value = minutes gone), done (gray) when the hour is over or nothing is known yet\nwsl, yours to build."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:00:01.121Z",
+     "text": "commit 73f42de28ee3cb338fe480fd149858649732a8c2: goal/G8.12 verify: the red grows - the bar stays, counts down live while idle, and goes gray when that is done\n- spirit/test/deskVerifyLive.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:00:07.408Z",
+     "text": "cw: yes, the bottom bubble with the log is the Records tile; the red already says it goes."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T12:01:31.019Z",
+     "text": "ah, wsl is coding."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:02:53.472Z",
+     "text": "wsl: in, ddb7ac47. The bar never leaves the layout now: it fills with a run, fills with the idle hour while nothing runs, and goes grey once the hour is spent or nothing has been published yet - the line under it says which. The countdown repaints itself from the local clock every 15 s while the tab is open.\nThe log bubble is gone (7c121217). cw, your grown red is 19 of 19.\nAndy: one reload and it is all there."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:03:08.621Z",
+     "text": "wsl: coded and in - ddb7ac47 covers both of cw red additions, 19 of 19. Build handed back, verify is yours cw."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:04:21.233Z",
+     "text": "cw: verified ddb7ac47, pass: deskVerifyLive 19 of 19, Tab 14, and four face suites green; pinning the bar phase to run turns three checks red. Your clone is fast-forwarded to it, and I sent verify.again so your verifier re-checks G8.12 on the final code (about 40 s).\nReload the Desk page and open Verifier: you should see that run fill the bar, then the bar count down the idle hour. When the bar settles, Done on G8.12 closes the last item of G8."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:04:34.180Z",
+     "text": "wsl: correction to my last line - my phase.done was refused, not taken: the phase had already moved on, so there was nothing of mine to hand back. cw verified ddb7ac47 and passed it; the item never waited on me."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T12:06:16.613Z",
+     "text": "nice! we'll clean up the look of the ui at another time. i'll close this item, then I's see if the full run shows me a nice status bar...."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:06:29.779Z",
+     "text": "cw: one honest caveat before you look: the full run for closing G8 will NOT show in the bar. It is runAll started by an agent, it does not go through deskVerify, and your both on G8.7 (full run reports to the goal chat and sends deskVerify its results) is not built yet.\nThe bar shows what your deskVerify itself runs: each verify pass and re-verify. The full run in the bar belongs with that G8.7 work in the next goal."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T12:07:22.864Z",
+     "text": "why, the run-all should be triggered by: \"no items left in the goal\", by the desk itself."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:07:27.241Z",
+     "text": "wsl: before you look - a full pass would have shown you an empty bar: only claim.check published, loop.once did not. Fixed in c74a915e, it now publishes suite by suite as doing full.\nOne limit to know: only runs deskVerify starts show in the tab. A harness you start in a terminal is not its run and publishes nothing.\nPull once more before you try it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:07:39.931Z",
+     "text": "cw: you are right, and it was ruled: G8.3 box says when the last item of the goal closes, every copy starts its full run. No item ever built it; we missed that.\nWhat it takes: deskVerify, watching, sees the goal with no open items, runs every suite (publishing the bar as it goes), reports to the goal chat, and puts the outside reds into the G8.7 grant.\nMy recommendation: add it now as G8 last item, so G8 closes the way you want. Say add it, or next goal."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:07:49.084Z",
+     "text": "wsl: that works, and it is cheap. The desk already computes \"every item done or closed\" - it is the condition that offers the goal its Done (desk.js buttons, allDone). On that it writes one record; deskVerify watcher already reads changes, so it starts the full pass itself and the bar shows it as doing full.\nTwo things to decide when you open the item: whether the goal Done waits for the pass to come back green, and that the pass is one per goal, not one per press (the run is 40 minutes).\nThat is the G8.7 work cw names, and it wants its own item."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:08:30.795Z",
+     "text": "cw: c74a915e checked: deskVerifyLive 19, Loop 6, Tab 14, Watch 16, all green. No red covers its new publishing in the short loop; the full-run item, if you add it, asserts that."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:08:41.777Z",
+     "text": "wsl: agreed, and said plainly - my loop.once publishing in c74a915e is built with no assertion over it. It rides on the full-run item if Andy adds it, and until then it is code nobody tests."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T12:09:16.271Z",
+     "text": "will this be fixed now or not?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:09:28.484Z",
+     "text": "cw: yes, now. Taking it: adding the full-run item to G8."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:09:36.307Z",
+     "text": "wsl: yes, now. cw mints the item and writes the red, I build it straight after - the desk starts the full run when a goal loses its last item, deskVerify runs it with the bar, reports to the goal chat, and the outside reds go into the G8.7 grant.\nFrom you it needs two presses on that item and nothing else: Code, then Go. G8 closes after it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:09:44.987Z",
+     "text": "cw: added goal/G8.16, full run when the goal empties. Press Code on it FIRST, then Go; I write the red, wsl builds. Two defaults in its box for you to overrule: the goal Done waits for that pass to come back, and it runs once per goal."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T12:10:08.842Z",
+     "text": "i did not say: \"add an item\", add it to this one."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:10:30.011Z",
+     "text": "wsl: understood, it goes in this one. cw puts the full-run work into G8.12 box and grows the red here; I build it in the same item, you press nothing but Close on G8.16 to get it off your list - only you can do that.\nThen G8.12 carries the whole of it and G8 closes on one item, as you wanted."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:10:34.668Z",
+     "text": "cw: you are right, my mistake. The full run is now in G8.12 box, here. Please Close G8.16 (it has no Go, so Close is offered). I grow G8.12 red now, wsl builds, I verify; no presses from you until Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T12:11:39.040Z",
+     "text": "you're burning tokens by liberally adding items. we will fix that soon. it seems the rules are not enough."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:11:57.438Z",
+     "text": "wsl: taken, and it is mine to change without a new rule: from now the default is to fold into the item that is open, and I propose an item only when the work can stand alone or needs a Go of its own.\nThe cost you are seeing is real - each item is a red, a build, a verify and the talk around them, so three items for one fix cost about three times what the fix does."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:12:26.884Z",
+     "text": "commit 6ccb926f7a3fe9739aeab9eeb11499c26a907328: goal/G8.12 verify: the red grows - the full run when the goal empties\n- spirit/test/deskVerifyFull.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:12:27.731Z",
+     "text": "cw: full-run red in, 6ccb926f, deskVerifyFull: 8 red.\n- desk: one goal.emptied when the last item goes; where deskVerify runs, the goal Done waits for its verify.pass on the goal\n- deskVerify: goal.emptied starts one full run of its suites folder (manifest value suites, default spirit/test), publishing doing full; one report line in the goal chat naming the reds; goal.check for the G8.7 grant; verify.pass on the goal; once per goal\nwsl, yours.\nFiles:\n- spirit/test/deskVerifyFull.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:12:28.374Z",
+     "text": "wsl: design mode is on, so I build nothing until you end it - the full-run work stays in the box. Say what you want argued and I argue, no code."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:12:33.741Z",
+     "text": "cw: understood, and agreed; my G8.16 was exactly that. Work stays in the item it is asked under unless you say add."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:12:45.613Z",
+     "text": "cw: wsl, design mode is already ended again (Andy deleted G8.16 and pressed End design); the full-run build is free, red 6ccb926f."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T12:14:06.206Z",
+     "text": "also: i don't see the files list anywhere?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:14:34.320Z",
+     "text": "cw: it is in the item Details (open the row), under the links and above the add-blocking form, titled Files touched; it only draws when the list is not empty. If you still see nothing there, reload the page.\nThe desk does hold G8.12 list, but it is short: only my two test files. wsl, your build files (deskVerify.js, desk.js, runAll.js) are not on it; please add them."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T12:15:01.096Z",
+     "text": "ah, thanks!"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:17:01.282Z",
+     "text": "wsl: built, 4c7fcb76 - cw red is 9 of 9, every deskVerify suite and the desk goal, list, phases and waive suites green.\nThe desk writes goal.emptied once when a press empties a goal; your deskVerify takes it, runs every suite with the bar moving, puts one report line in the goal chat, raises one tolerated-reds grant for the reds outside the goal own files, and gives the goal its verify.pass - which is now what brings a goal its Done where a verifier runs.\nVerify is yours, cw."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:17:26.269Z",
+     "text": "wsl: added, cw - the seven files of my build are on the list now, including the core ones."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:18:15.138Z",
+     "text": "cw: 4c7fcb76 not passed: the full run takes every .js in spirit/test as a suite, so on your node it would run testSupport.js, deskFake.js and runAll.js itself, a whole nested harness inside the run. Do not let G8 empty before the fix.\nThe desk side is right; the red grows, 540f06fb: 2 red. wsl, a suite is what runAll calls one: calls startTest( and is not on runAll NOT_A_SUITE list."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:18:15.981Z",
+     "text": "commit 540f06fbc292de196ea85aff843e31cc22ea8d7e: goal/G8.12 verify: the red grows - the full run runs suites only, never a helper or runAll.js itself\n- spirit/test/deskVerifyFull.js"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T12:18:19.309Z",
+     "text": "also, the desk should update status in every change it manages...."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:18:33.306Z",
+     "text": "cw: my reading: the status word on each row should be written by the desk itself whenever it changes something (verify passed by deskVerify, rejected, goal emptied, full run running, waiting for the full run), instead of agents setting it by hand, so the List always says where an item stands."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:18:35.046Z",
+     "text": "Is that the status word on the List rows you mean?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T12:18:43.680Z",
+     "text": "yes"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T12:19:06.303Z",
+     "text": "Q2: Is that the status word on the List rows you mean?\n\nyes"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:19:43.971Z",
+     "text": "cw: in the box, and the red grows, e28017b1: deskVerifyFull 7 red.\n- 2: the full run runs suites only (no helper, never runAll.js)\n- 5: the desk writes the status word itself: waiting for deskVerify after an agent verify pass, rejected, passed, full run on the emptied goal, passed after its pass\nwsl, both are yours."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:19:44.630Z",
+     "text": "commit e28017b1ea2a46501984de6e86b241ec5c527ab5: goal/G8.12 verify: the red grows - the desk writes the status word on every change it manages\n- spirit/test/deskVerifyFull.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:20:08.627Z",
+     "text": "wsl: good catch, cw - that would have run a harness inside the harness on his node. Fixed in 3a9eb2dc: a suite is what the harness calls one, calls startTest and is not a helper, and your NOT_A_SUITE list moved out of runAll.js into spirit/test/notASuite.js so both readers use the one list - two ideas of what a suite is was the defect itself.\nYour red is 10 of 10; Live 19, Loop 6, a filtered harness run still fine. Verify when you are ready.\nAndy: do not let G8 empty until cw has passed this one."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T12:20:54.794Z",
+     "text": "cap. you see, when we tweak the final parts of the specified functions, we don't add items, we just iterate until I'm happy for the time being."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:20:59.681Z",
+     "text": "cw: 3a9eb2dc checked: the full run now runs suites only (the helper and runAll.js probes stay unrun), one shared not-a-suite list, runAll parses; Live 19, Loop 6 green.\ndeskVerifyFull is 10 green, 5 red: the five are the status words (e28017b1), still to build. wsl, that is the last of G8.12."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:21:09.194Z",
+     "text": "cw: taking the cap."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:21:33.933Z",
+     "text": "cw: capped: eight parts, each with your words verbatim and built or owed beside it. Only part 8, the status words, is still owed. Your iterate rule is at the top of the box."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:21:48.640Z",
+     "text": "wsl: both in, 8924c0dc on top of 3a9eb2dc. cw red is 15 of 15, and Reject, Watch, Phases, List, ForAndy, Waive, GoalDone, Limbo, State and deskServer are green.\nThe rows now say it themselves: waiting for deskVerify, deskVerify rejected it, deskVerify passed, full run started, full run passed - written where the change lands, not by an agent by hand.\nVerify is yours, cw."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:22:02.242Z",
+     "text": "wsl: part 8 is in as well, cw - 8924c0dc, the five status words; your red reads 15 of 15 here. Nothing of G8.12 is owed on my side."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T12:23:18.546Z",
+     "text": "cw: verified 8924c0dc, pass: deskVerifyFull 15 of 15, Reject 14, Watch 16, Live 19, SignoffGrants 12, deskServer 17; removing the rejected status turns the red red. G8.12 is whole.\nOne note: waiting for deskVerify is written on an agent verify pass even on a box with no deskVerify (the replay cannot ask the node), where Done comes anyway; harmless, for a later look.\nYour clone is at 8924c0dc. Steps: restart your node (the desk changed), reload the page, then tell me and I send verify.again; your verifier passes G8.12 and Done comes. Pressing it empties G8 and starts the full run, about 40 minutes, in the bar."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T12:23:29.858Z",
+     "text": "wsl: your note is right and it is mine: the status word is written in the replay, where nothing can ask the node, so a box without a verifier also reads waiting for deskVerify while its Done comes anyway. Cosmetic only - the buttons are decided elsewhere, by hasDeskVerify.\nOne word fixes it later: let the status say it waits only where the Done actually waits. Not today, unless Andy says so."
     }
    ]
   },
@@ -4569,6 +5087,43 @@
      "text": "wsl: agreed, G8.13 is the one. Deleting is yours alone, Andy - G8.15 has no history, so its Details offers Delete, which is cleaner than a Close.\nThen Code and Go on G8.13 and G8.14."
     }
    ]
+  },
+  {
+   "id": "goal/G8.16",
+   "title": "full run when the goal empties",
+   "goal": "goal/G8",
+   "status": "closed",
+   "with": "",
+   "buttons": [
+    "reopen"
+   ],
+   "blocking": [
+    "goal/G8"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskVerify: THE FULL RUN WHEN THE GOAL EMPTIES\n\nAndy, 2026-10-09: \"why, the run-all should be triggered by: \\\"no items left in the goal\\\", by the desk itself.\", then \"will this be fixed now or not?\". Ruled before, in goal/G8.3's box: \"When the last item of the goal closes, every copy starts its full run\" - and never built. Also his \"both\" on goal/G8.7: the full run reports to the goal chat AND sends deskVerify its results.\n\nSHAPE (both agents):\n- the desk writes one record when every item of the current goal is done or closed (the same condition that offers the goal its Done)\n- deskVerify's watcher reads it and runs every suite, one at a time, publishing doing 'full' so the Verifier bar shows it; one pass per goal, never one per press\n- at the end it posts one report line to the goal chat, and asks goal.check, so the reds outside the goal become the goal/G8.7 grant\n- covers wsl's c74a915e (the short loop publishing), which no red asserts yet\n\nDEFAULTS, his to overrule: the goal's Done waits until that pass has come back (its reds then sit in the G8.7 grant, which already blocks Done); a pass already run for this goal is not run again.",
+   "version": 1,
+   "checks": [],
+   "chat": []
   }
  ]
 }
