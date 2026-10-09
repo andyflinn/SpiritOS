@@ -201,7 +201,12 @@ function claimCheck(id) {
         .map(function (l) { return l.replace(/^\**\s*/, '').replace(/\s*[❌✅]\s*$/, '').trim(); });
       if (lines.length) reds.push({ suite: rel, failures: lines });
     }
-    if (!reds.length) return { rejected: false, reds: [] };
+    if (!reds.length) {
+      // ALL GREEN IS ITS WORD TOO (goal/G8.3, found by claude-windows verifying b93a54d1): Andy, "only deskVerify brings
+      // the button", so saying nothing would leave Done forever absent on his node. verify.pass is that word.
+      return spirit.core.ask('jobs.api', { ask: { desk: { 'verify.pass': { id: String(id) } } } }, 'http://127.0.0.1:' + port)
+        .then(function () { return { rejected: false, reds: [] }; }, function () { return { rejected: false, reds: [] }; });
+    }
     const why = reds.map(function (x) { return x.suite + (x.failures.length ? ': ' + x.failures.join('; ') : ''); }).join(' | ');
     return spirit.core.ask('jobs.api', { ask: { desk: { 'verify.reject': { id: String(id), why: why } } } }, 'http://127.0.0.1:' + port)
       .then(function () { return { rejected: true, reds: reds.map(function (x) { return x.suite; }) }; },
