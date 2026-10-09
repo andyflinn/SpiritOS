@@ -144,7 +144,18 @@ function start() {
   kid.stderr.on('data', function (c) { out.stderr += c; });
   kid.on('exit', function (code) { out.code = code === null ? 'signal' : code; });
 }
-function stop() { return new Promise(function (r) { if (!kid || out.code !== null) return r(); kid.once('exit', function () { r(); }); try { kid.disconnect(); } catch (e) { /* no channel */ } setTimeout(function () { try { kid.kill(); } catch (e) { /* gone */ } }, 500); setTimeout(r, 3000); }); }
+// The child of THIS stop, bound here: part 6 restarts the agent, and a timer reading the module's kid would kill the
+// new one (wsl-claude, building against this red).
+function stop() {
+  return new Promise(function (r) {
+    const k = kid;
+    if (!k || out.code !== null) return r();
+    k.once('exit', function () { r(); });
+    try { k.disconnect(); } catch (e) { /* no channel */ }
+    setTimeout(function () { try { k.kill(); } catch (e) { /* gone */ } }, 500);
+    setTimeout(r, 3000);
+  });
+}
 function writeFiles(which) {
   ['configuration.json', 'connection.json'].forEach(function (f) { try { fs.unlinkSync(path.join(state, f)); } catch (e) { /* none */ } });
   if (which.indexOf('configuration') !== -1) fs.writeFileSync(path.join(state, 'configuration.json'), JSON.stringify(CONFIGURATION, null, 1));
