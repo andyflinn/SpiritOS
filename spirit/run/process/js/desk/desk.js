@@ -111,10 +111,26 @@ function tooLarge(bytes, max) {
 // The room item.chat fills, measured the way it fills it: so a line chat.add takes always comes back whole.
 const CHAT_ROOM = ANSWER_ROOM - Buffer.byteLength(JSON.stringify({ chatMore: false }), 'utf8');
 function chatLineBytes(index, line) { return oneAnswerBytes(String(index), JSON.stringify(line)); }
+// The sentence a line ends with, for the Q it raises (goal/G9.16): from the last sentence end before the final
+// question mark; a line that is one question is its own sentence.
+function questionOf(text) {
+  const m = /([^.!?\n]*\?)\s*$/.exec(String(text));
+  const one = m ? m[1].trim() : '';
+  return one || String(text).trim();
+}
 // The room chat.search fills (goal/G3.11): half an answer. An agent's deskClient packs the desk's answer once more
 // as text, where every quote and backslash gains one byte, so at most the answer doubles; half the room is what
 // still arrives in one piece. Andy: "what's the problem with having to be brief?", "none of this joing shit."
 const SEARCH_ROOM = Math.floor(ANSWER_ROOM / 2);
+// THE CHECKS AN ITEM ANSWERS WITH (goal/G9.16): an answered question leaves the panel and stays in the record. Andy:
+// "questions are red-text that disappears when you feel i answered usefully"; a grant "turn[s] green and [is] logged",
+// so a granted one stays, with its tick. On 2026-10-09 the retrofit item held fourteen answered questions, each the
+// whole chat line it came from, and the panel measured below outweighed one answer: every write to it was rolled
+// back, and the two open questions could not even be closed. The record keeps every check; the panel is the open and
+// the decided ones, never the answered.
+function shownChecks(it) {
+  return (it.checks || []).filter(function (c) { return c.state !== 'answered'; });
+}
 // Every panel an item answers with, each measured as one answer: its facts (item.get, and its label in a search),
 // its box (item.box) and its checks (item.checks). The largest, against the room.
 function largestPanel(s, id) {
@@ -123,7 +139,7 @@ function largestPanel(s, id) {
   return Math.max(
     oneAnswerBytes(id, JSON.stringify(facts(s, it))),
     Buffer.byteLength(JSON.stringify({ box: it.box, version: it.version }), 'utf8'),
-    Buffer.byteLength(JSON.stringify({ checks: it.checks }), 'utf8'));
+    Buffer.byteLength(JSON.stringify({ checks: shownChecks(it) }), 'utf8'));
 }
 
 // ── THE LINES TOO BIG FOR ONE ANSWER, SPLIT ONCE (slim/G1.2 T3) ──────
@@ -1517,7 +1533,7 @@ appServer.serve({
     handler: function (a) {
       const it = walkState().items[String(a.id)];
       if (!it) throw refused('no-such-item');
-      return { checks: it.checks };
+      return { checks: shownChecks(it) };
     },
   },
   // THE CHAT IS A SEARCH (desk/G3.3). Andy: "why would the server not use bucket to give me the most recent
@@ -1734,9 +1750,11 @@ appServer.serve({
       // HIS OWN LINES AND THE DESK'S ARE NEVER CONVERTED: a check is what waits on HIM, not on us.
       // THE GROUP CHAT IS LEFT ALONE: it is closed, so the List never shows it, and a check there would be a red
       // nothing opens. A question for him that belongs to no item still belongs in a post under one.
+      // ONE SENTENCE, NOT THE LINE (goal/G9.16): the question is the sentence that ends in the question mark; the
+      // line stays whole in the chat. A whole line per Q is what filled the retrofit item's panel on 2026-10-09.
       const asker = after.items[String(a.id)];
       if (asker && w.by !== 'andy' && w.by !== 'desk' && String(a.id) !== GROUP_CHAT && /\?[\s]*$/.test(String(a.text))) {
-        write('check.add', { id: a.id, kind: 'Q', words: String(a.text), test: '', asked: w.by,
+        write('check.add', { id: a.id, kind: 'Q', words: questionOf(a.text), test: '', asked: w.by,
           forLine: asker.chat.length - 1, by: w.by, key: w.key });
       }
       return { change: after.change };

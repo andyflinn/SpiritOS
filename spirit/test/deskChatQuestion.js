@@ -123,9 +123,11 @@ const PLAIN = 'wsl: the keys stay in the owner row for now.';
   const hisQs = await qsOf('cq/G1.4');
   if (took(his) && !hisQs.length) test.check('his own question raises nothing: the checks are what waits on HIM');
   else test.fail(OWED + 'his question answered ' + his.status + ' and raised ' + short(hisQs));
+  // Since goal/G9.16 an answered Q leaves the panel item.checks answers with (it stays in the record), so the item
+  // answers no Q at all once it is answered; before that it was listed with state answered.
   const closed = await call('check.set', { id: 'cq/G1.1', check: 'Q1', state: 'answered' }, WSL);
   const after = await qsOf('cq/G1.1');
-  if (took(closed) && after.length === 1 && after[0].state === 'answered' && await asksOf('cq/G1.1') === 0) test.check('answered through check.set as any Q, and the item stops waiting');
+  if (took(closed) && after.length === 0 && await asksOf('cq/G1.1') === 0) test.check('answered through check.set as any Q, the Q leaves the panel and the item stops waiting');
   else test.fail(OWED + 'check.set answered ' + closed.status + ' ' + short(closed.body) + '; checks ' + short(after));
 
   test.subHeading('6. a rule\'s chat is untouched: a rule has no checks');
