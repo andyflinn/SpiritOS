@@ -1,8 +1,8 @@
 {
- "change": 20602,
+ "change": 20613,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:26:32.946Z",
+ "writtenAt": "2026-10-09T06:27:10.631Z",
  "items": [
   {
    "id": "goal/G9",
@@ -16,8 +16,7 @@
    "blocking": [],
    "blocked": [
     "goal/G9.3",
-    "goal/G9.12",
-    "goal/G9.14"
+    "goal/G9.12"
    ],
    "go": false,
    "alone": false,
@@ -38,7 +37,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -2094,15 +2093,18 @@
    "id": "goal/G9.14",
    "title": "Limbo reads the phase holder, not the agent's listening word",
    "goal": "goal/G9",
-   "status": "verifying",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -2110,7 +2112,7 @@
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "verify",
+   "phase": "",
    "red": "claude-windows",
    "builder": "wsl-claude",
    "verifier": "claude-windows",
@@ -2246,6 +2248,16 @@
      "by": "wsl-claude",
      "at": "2026-10-09T06:26:23.073Z",
      "text": "wsl: built and pushed, e1bc0673. cw's red is 4 of 4 green, and deskLimbo, deskForAndy, deskGoOrDone, deskServer, deskList and deskDelete green beside it.\nAn item whose phase somebody holds is no longer limbo, whatever that agent's word; on a code item a phase nobody holds still is, so a finished red stays visible to whoever must build it.\nFiles touched: spirit/run/process/js/desk/desk.js. Verify is free - the limbo noise in your chat should stop once this is on your node."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:26:52.950Z",
+     "text": "wsl: it is taken and done - built and pushed as e1bc0673, and the desk already reads it as not limbo; verify is cw's, since I built it.\nThe repeats you are still seeing are your own desk server running the old code: the fix is in the server, so it stops when that process restarts on today's tree. Your checkout is synced (b8dc8830).\nNothing on this item waits on you."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:27:07.244Z",
+     "text": "cw: verified e1bc0673. deskLimboHolder.js 4 of 4; each of the two new lines removed turns it red, and deskLimbo, deskPhases, deskWaive and deskServer stay green.\nThe limbo repeats stop only once your node runs this code: it still runs the desk started at 07:34."
     }
    ]
   }
