@@ -91,9 +91,11 @@ function create(rows) {
   };
   const backup = { 'status.get': function () { return Object.assign({}, fake.backup); } };
   const servers = { desk: desk, backup: backup };
+  // goal/G8.11: fake.verifier, when a suite sets it, is a deskVerify on the node ({verb: fn}); null, none runs there.
+  fake.verifier = null;
 
   function answer(server, verb, args) {
-    const s = servers[server];
+    const s = server === 'deskVerify' ? fake.verifier : servers[server];
     if (!s || !s[verb]) return { status: 404, body: { ok: false, code: 'app-not-served', error: server + '.' + verb } };
     return { status: 200, body: s[verb](args || {}) };
   }
