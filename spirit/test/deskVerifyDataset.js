@@ -139,8 +139,10 @@ function fakeNode() {
     }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, bodies: bodies, close: function () { s.close(); } }); });
   });
 }
+// GROWN IN THE VERIFY (claude-windows): a record counts only as a real node would take it, with verb jobs.api, as
+// kernel.core.ask sends it; a node answers a body without a verb "no such verb", so such a record never arrives.
 function recordsIn(bodies) {
-  return bodies.map(function (b) { try { const j = JSON.parse(b); return j && j.ask && j.ask.deskVerify && j.ask.deskVerify.record; } catch (e) { return null; } }).filter(Boolean);
+  return bodies.map(function (b) { try { const j = JSON.parse(b); return j && j.verb === 'jobs.api' && j.ask && j.ask.deskVerify && j.ask.deskVerify.record; } catch (e) { return null; } }).filter(Boolean);
 }
 
 async function sender() {
