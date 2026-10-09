@@ -1048,9 +1048,7 @@ function deskBackupHtml() {
 // deskVerify's watcher pick it up (goal/G8.10). The tab presses nothing on
 // his behalf and brings no Done.
 var deskVerifier = null;
-var deskVerifyRows = [];
 var deskVerifyLast = '';
-var deskVerifyNote = '';
 function deskVerifyAsk(verb, args) {
   var ask = { deskVerify: {} };
   ask.deskVerify[verb] = args || {};
@@ -1068,17 +1066,10 @@ function deskAskVerifier() {
     deskDrawVerifier();
   }, function () { deskVerifier = null; deskDrawTabs(); });
 }
+// goal/G8.12: opening the tab reads what runs; the records list it used to fetch is gone with Andy's "only show the
+// latest status", so nothing here asks for rows any more.
 function deskVerifyRefresh() {
-  return deskAskVerifier().then(function () {
-    if (!deskVerifier) return null;
-    return deskVerifyAsk('records.search', { text: '' }).then(function (body) {
-      deskVerifyRows = Array.isArray(body.items) ? body.items.map(function (i) {
-        try { return JSON.parse(i.label); } catch (e) { return null; }
-      }).filter(Boolean) : [];
-      deskVerifyNote = body.more ? 'the newest that fit in one answer' : '';
-      deskDrawVerifier();
-    }, function () { deskVerifyRows = []; deskDrawVerifier(); });
-  });
+  return deskAskVerifier();
 }
 // THE LIVE RUN (goal/G8.12), as deskVerify publishes it: the newest object only, never a log. Andy, 2026-10-09: "what
 // now is displayed as a log.. should be an updated status message underneath a progress bar", and the bar is suites
@@ -1127,17 +1118,11 @@ function deskVerifyHtml() {
     '<div><button type="button" id="desk-verify-stop"' + (run.id ? '' : ' disabled') + '>Stop the run</button>' +
     (item ? ' <button type="button" data-reverify="' + deskEsc(item) + '">Verify ' + deskEsc(item) + ' again</button>' : '') +
     '</div></div>';
-  out += '<div class="stat-tile wide"><div class="label">Records, newest first' +
-    (deskVerifyNote ? ' (' + deskEsc(deskVerifyNote) + ')' : '') + '</div><div>';
-  if (!deskVerifyRows.length) out += '<div class="job-manifest-note">No records yet.</div>';
-  else {
-    out += deskVerifyRows.map(function (r) {
-      return '<div>' + deskEsc(r.outcome) + ' · ' + deskEsc(r.suite) + ' · ' + deskEsc(r.title) +
-        (r.commit ? ' · ' + deskEsc(String(r.commit).slice(0, 8)) : '') +
-        (r.at ? ' · ' + deskTime(r.at) : '') + '</div>';
-    }).join('');
-  }
-  return out + '</div></div>';
+  // THE RECORDS LIST IS GONE (goal/G8.12). Andy, 2026-10-09: "i want that damn log display gone. and only show the
+  // latest status." It listed the dataset's newest rows, which read as a log beside a live run; the tab now shows the
+  // run and nothing else. records.search stays a verb of deskVerify's - the dataset is still readable - but the tab
+  // does not draw it, so nothing here asks for it either.
+  return out;
 }
 function deskDrawVerifier() {
   var box = document.getElementById('desk-verifier');

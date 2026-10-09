@@ -18,7 +18,8 @@
 //     stop {}                -> {stopped}  ends the suite running now; the claim it belonged to is rejected, its why
 //                               saying it was stopped - never passed
 //   THE FACE: a Verifier tab right after Musings, drawn only while deskVerify answers `now`. Its body, #desk-verifier,
-//   shows what runs now (item and suite) and what waits, and the newest records with their outcome. A Stop button
+//   shows what runs now (item and suite) and what waits. It listed the newest records too until goal/G8.12, when Andy
+//   had that display removed; the assertion below now holds it gone. A Stop button
 //   (#desk-verify-stop) asks deskVerify stop; a re-verify button (data-reverify="<id>") on the item running or last
 //   checked asks the desk verify.again for that item. Clicks are taken on #desk-verifier.
 // NOT ASSERTED: layout, colours and refresh timing - UI that is his to judge on his own node.
@@ -201,8 +202,11 @@ async function faceHalf() {
   const b = body.innerHTML;
   if (/tb\/G1\.2/.test(b) && /zzRunning\.js/.test(b) && /tb\/G1\.3/.test(b)) test.check('the tab shows what runs now, for which item, and what waits');
   else test.fail(OWED + '#desk-verifier reads ' + short(b));
-  if (/zzRecorded\.js/.test(b) && /a record title/.test(b) && /red/.test(b)) test.check('and the newest records with their outcome');
-  else test.fail(OWED + 'no record row in #desk-verifier: ' + short(b));
+  // THE RECORDS LIST WENT (goal/G8.12). Andy, 2026-10-09: "i want that damn log display gone. and only show the
+  // latest status." This section asserted the list until that word; it now asserts its absence, so a session that
+  // brings the log back goes red. The rows are still readable through deskVerify's records.search, asserted above.
+  if (!/zzRecorded\.js/.test(b) && !/a record title/.test(b)) test.check('and no records list: the tab shows the run alone, never a log');
+  else test.fail(OWED + 'the tab still draws the records list: ' + short(b));
   if (/id="desk-verify-stop"/.test(b) && /data-reverify="tb\/G1\.2"/.test(b)) test.check('with a Stop button and a re-verify for the running item');
   else test.fail(OWED + 'the buttons are missing: ' + short(b));
 
