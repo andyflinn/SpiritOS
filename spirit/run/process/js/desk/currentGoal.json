@@ -1,8 +1,8 @@
 {
- "change": 22566,
+ "change": 22619,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T10:40:55.723Z",
+ "writtenAt": "2026-10-09T10:44:33.208Z",
  "items": [
   {
    "id": "goal/G8",
@@ -11,11 +11,12 @@
    "status": "",
    "with": "",
    "buttons": [
-    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G8.11"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -41,7 +42,9 @@
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -122,6 +125,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-09T07:48:05.828Z"
+    },
+    {
+     "number": "Q9",
+     "kind": "Q",
+     "words": "wsl: the verifier tab was deliberately left out of G8.10 - it was still your question in the box, so nobody built it. It needs its own item and your Go. What I would put in it, beside [Musings]: the mode (desk or agent), what the watcher last did and when, the suites of the current goal, and the newest red tests from verify.db with the commit each flipped at. Say add it and name any of that you do not want.",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-09T10:44:18.796Z"
     }
    ],
    "chat": [
@@ -524,6 +536,56 @@
      "by": "claude-windows",
      "at": "2026-10-09T10:23:38.052Z",
      "text": "cw: added as proposed, rule/11, type code: the three points as posted above."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T10:41:20.674Z",
+     "text": "wsl: G8.10 is done, so G8 offers Done and Close, with no grant open.\nI am running the full harness on 0aa6d159 for the close and will paste the last lines. No pulls or edits until it finishes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T10:41:50.776Z",
+     "text": "cw: one leftover from G8.10, small: my single verify.again for G8.10 gave three verify.pass, 20 seconds apart.\nLikely cause: the watcher starts a new read every 5 s without waiting for the last, so under suite load two reads see the same word and queue it twice. Cost: repeated suite runs and duplicate lines, no wrong state.\nFix: one read at a time, and an item already queued is not queued again. If you want it, say add it, titled: watcher reads one at a time."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T10:42:05.159Z",
+     "text": "wsl: cw has it right, and it is my code: the interval starts a read every watchMs with no guard, and the queue takes the same id twice - only the suite runs are serialised.\nTwo lines fix it: one read at a time, and no id queued while it is already in the queue or being checked.\nAndy, say add it and it is in after my harness run; nothing is wrong in the state meanwhile."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T10:43:00.818Z",
+     "text": "i still don't see a verifier tab on my desk"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T10:43:10.577Z",
+     "text": "cw: right, it is not built: G8.10 carried the watcher, time limit and re-verify, and the tab stayed a question in its box. Nobody has built it yet.\nTo get it: say add it, and the tab becomes its own item, titled: verifier tab in Desk; you press Code, then Go."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T10:43:20.673Z",
+     "text": "wsl: right - the tab was never built, it was still your own question in the box, so G8.10 stopped at the machine. Raised it as a Q with what I would show in it; say add it and it gets an item of its own."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T10:43:44.327Z",
+     "text": "add it"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T10:44:00.821Z",
+     "text": "cw: taking it: adding the verifier tab item now."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T10:44:06.684Z",
+     "text": "wsl: Q9 answered. cw mints the item, titled verifier tab in Desk; you press Code then Go.\nI build it once my harness run for the G8 close is finished - I do not touch the tree while it runs."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T10:44:22.268Z",
+     "text": "cw: added, goal/G8.11, the verifier tab, with your words in its box. Press Code on it first, then Go; I write the red, wsl builds. The watcher fix (one read at a time) still waits for its own word."
     }
    ]
   },
@@ -3776,6 +3838,76 @@
      "by": "wsl-claude",
      "at": "2026-10-09T10:40:39.065Z",
      "text": "wsl: press it. G8.10 is done, and with it G8 - the desk now brings its own Done buttons."
+    }
+   ]
+  },
+  {
+   "id": "goal/G8.11",
+   "title": "verifier tab in Desk",
+   "goal": "goal/G8",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G8"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "deskVerify: THE VERIFIER TAB\n\nAndy, 2026-10-09: \"So, i was thinking. shouldn't i have, if the desk verifier is mounted and running, a verifier tab in desk, right after [musings], that allows me to monitor a) status and progress of the running verifier, and if/when necessary, allow intervention?\", then \"so. will i get that tab?\", \"i still don't see a verifier tab on my desk\", and on adding it: \"add it\".\n\nWHERE: a tab in the Desk face right after Musings, shown only when his desk sees a deskVerify on its node (the same test the Done gate uses).\nWHAT IT SHOWS: what deskVerify is running now and for which item, and its newest records (the last passes and rejects).\nWHAT HE CAN DO: re-verify an item, and stop a run that hangs.\n\nNEW VERBS, deskVerify's own (no grant of his until he rules the app intrinsic; peer review by the other agent): a read of what it is running now, and a search of its newest records.\n\nTO ARGUE: whether stop is a verb of its own or the time limit pressed by hand.",
+   "version": 1,
+   "checks": [],
+   "chat": [
+    {
+     "by": "desk",
+     "at": "2026-10-09T10:44:32.916Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   }
