@@ -10,6 +10,46 @@ const ICON = spirit.core.const.ICON;
 let PAD_STARS = ''; for (let i = 0; i < INDENT_LENGTH; i++) { PAD_STARS += '*'; }
 let PAD_SPACES = ''; for (let i = 0; i < INDENT_LENGTH; i++) { PAD_SPACES += ' '; }
 
+// ── EVERY ASSERTION TELLS deskVerify, WHEN IT WAS ASKED TO (goal/G8.1) ────
+//
+// Andy, 2026-10-06: "the standard/shared test-call-count interface just needs to send a a record to deskVerify", and
+// "the called suite sends one test-record at the time, no fucking bundling or other complicated stuff, we don't worry
+// about the bit of extra time it takes." So one post per assertion, never grouped, and never waited on: check and fail
+// are synchronous and return nothing, so holding a run on a round trip would change every call site.
+//
+// ONLY WHEN DESKVERIFY STARTED THE RUN: `--verify-port <port>` names its node. A suite run by hand posts nothing and
+// costs exactly what it costs today, which is what keeps `node spirit/test/<suite>.js` the thing it has always been.
+// The suite's own file name is the other half of a test's key; the record carries no detail and no runtime values.
+const VERIFY_PORT = (function () {
+  const at = process.argv.indexOf('--verify-port');
+  const p = at !== -1 ? Number(process.argv[at + 1]) : 0;
+  return Number.isInteger(p) && p > 0 ? p : 0;
+})();
+const SUITE = require('path').basename(String(process.argv[1] || ''));
+// WHAT HAS NOT COME BACK YET, so a suite that exits right after its report does not take its last records with it.
+const pending = new Set();
+function record(title, outcome) {
+  if (!VERIFY_PORT || !title) return;
+  const rec = { suite: SUITE, title: String(title), outcome: outcome };
+  pending.add(rec);
+  fetch('http://127.0.0.1:' + VERIFY_PORT + '/api/spirit', {
+    method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ask: { deskVerify: { record: rec } } }),
+  }).then(function () { pending.delete(rec); }, function () { pending.delete(rec); });
+}
+// A suite's last words are its report, and then it exits. Whatever is still in the air is posted by a child this
+// waits for (verifyPost.js), once per suite: a duplicate writes nothing, since deskVerify keeps only first sightings
+// and flips. Called by reportSuccessFailureCount below, so no suite has to think about it.
+function settleRecords() {
+  if (!VERIFY_PORT || !pending.size) return;
+  const left = Array.from(pending);
+  pending.clear();
+  try {
+    require('child_process').spawnSync(process.execPath,
+      [require('path').join(__dirname, 'verifyPost.js'), String(VERIFY_PORT), JSON.stringify(left)],
+      { stdio: 'ignore', timeout: 10000 });
+  } catch (e) { /* the records are a record, not the suite's verdict */ }
+}
+
 // ── SUITES CLEAN UP THE HOMES THEY CREATE (cycle R17) ────────────────
 //
 // **160,116 leaked directories were found in %TEMP% on 2026-09-20.** The
@@ -195,6 +235,10 @@ const test = {
         // AND exits 1 is still read as having reported, because `said` is
         // what distinguishes a failure from a crash.
         if (failureCount > 0) process.exitCode = 1;
+        // THE LAST RECORDS LAND (goal/G8.1): a suite reports and exits at once, so the posts still in the air are
+        // waited for here, where every suite already passes through. A suite nobody gave a verify port has nothing
+        // to wait for and this costs it nothing.
+        settleRecords();
     },
 
     // ── STOOD DOWN: THE CONDITION IS THE ENVIRONMENT, NOT THE TREE ───
@@ -240,14 +284,22 @@ const test = {
         this.comment('STOOD DOWN: ' + String(why || '').replace(/\s+/g, ' ').trim() + ' ⏭');
     },
 
-    check: function(str){
+    // THE TITLE IS THE KEY, THE DETAIL IS BESIDE IT (goal/G8.1). Andy, 2026-10-06, asked how a test is identified:
+    // "the individual tests in the harness have titles, don't they? so suite name/ID plus the title/label of the test
+    // should identify tests uniquely?", and "every test just has to output a detailed record."
+    // A failing assertion used to carry its runtime values inside the one sentence it printed, so the red and the
+    // green of one assertion shared no key and no history of flips was possible. So both take an optional second
+    // argument: the title alone identifies the test, the detail is printed after it and never recorded.
+    check: function(str, detail){
         this.successCount++;
-        this.comment('SUCCESS #' + this.counter + '.' + this.successCount + ': ' + str + ' ' + ICON.SUCCESS);
+        this.comment('SUCCESS #' + this.counter + '.' + this.successCount + ': ' + str + (detail ? ' — ' + detail : '') + ' ' + ICON.SUCCESS);
+        record(str, 'green');
     },
 
-    fail: function(str){
+    fail: function(str, detail){
         this.failureCount++;
-        this.comment('FAILURE #' + this.counter + '.' + this.failureCount + ': ' + str + ' ' + ICON.ERROR);
+        this.comment('FAILURE #' + this.counter + '.' + this.failureCount + ': ' + str + (detail ? ' — ' + detail : '') + ' ' + ICON.ERROR);
+        record(str, 'red');
     },
 
     // ── DECLARED, AND NOT BUILT YET ──────────────────────────────────

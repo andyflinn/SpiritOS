@@ -1,0 +1,9 @@
+{
+  "label": "Verifier's dataset",
+  "description": "Keeps verify.db, a row per test for its first sighting and every red/green flip, stamped with the commit, the dirty tree and the UTC time of that change (goal/G8.1). Started by the node; reached by jobs.api on the loopback door. Runs are not stored at all.",
+  "kind": "server",
+  "operated": "node",
+  "args": [
+    { "name": "db", "default": "", "description": "The database file. Empty: verify.db beside this server, which git ignores. Every suite hands a temp path, so a test never touches the measurements of a real run." }
+  ]
+}

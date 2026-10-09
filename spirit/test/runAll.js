@@ -52,6 +52,8 @@ const DIR = __dirname;
 // hand, and a harness that ran them would simply hang.
 const NOT_A_SUITE = [
   'testSupport.js', 'scenario.js', 'world.js', 'runAll.js',
+  // The child testSupport runs to post its last records before a suite exits (goal/G8.1): a helper, not a suite.
+  'verifyPost.js',
   'labWorld.js', 'labPopulate.js', 'labMaster.js', 'setupRelayFakes.js',
   'relayProbe.js', 'startTestAndy.js', 'startTestBert.js', 'startTestRelay.js',
   // A helper, not a suite: reads a relay's roll off its disc for the suites
