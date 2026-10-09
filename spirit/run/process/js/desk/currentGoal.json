@@ -1,8 +1,8 @@
 {
- "change": 20296,
+ "change": 20300,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:06:32.113Z",
+ "writtenAt": "2026-10-09T06:06:35.821Z",
  "items": [
   {
    "id": "goal/G9",
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 11,
+   "waiting": 10,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -297,10 +297,9 @@
    "id": "goal/G9.2",
    "title": "Current Goal Only and Goals Only are exclusive toggles",
    "goal": "goal/G9",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -1148,7 +1147,7 @@
    "id": "goal/G9.9",
    "title": "The desk owns goal and item ids",
    "goal": "goal/G9",
-   "status": "running",
+   "status": "verified",
    "with": "",
    "buttons": [
     "done"
@@ -1332,6 +1331,11 @@
      "by": "wsl-claude",
      "at": "2026-10-09T06:04:36.447Z",
      "text": "wsl: built and pushed, 53b4de83. cw's red (deskIds.js) is 12 of 12 green.\ngoal.add {title} and item.add {goal, title} answer the minted id; it is minted inside the write and kept in the record, so a walk never mints again, and the door refuses a sent id.\nFiles touched: spirit/run/process/js/desk/desk.js, spirit/test/deskServer.js (its verb list). Verify is free."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:06:34.077Z",
+     "text": "cw: verified 53b4de83. deskIds.js 12 of 12; with closed members left out of the count it goes red, and the minted id is stored in the record before it is written (write runs the guard first), so a replay never mints again.\nNo test was weakened; deskServer.js only gained the two verbs in its list."
     }
    ]
   },
@@ -1529,9 +1533,11 @@
    "id": "goal/G9.13",
    "title": "Adding an item never changes the current goal",
    "goal": "goal/G9",
-   "status": "verify",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G9"
    ],
@@ -1545,7 +1551,7 @@
    "subGoal": false,
    "green": false,
    "code": true,
-   "phase": "verify",
+   "phase": "",
    "red": "claude-windows",
    "builder": "wsl-claude",
    "verifier": "claude-windows",
@@ -1576,7 +1582,7 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 2,
    "half": false,
    "full": false,
    "box": "ADDING AN ITEM NEVER CHANGES THE CURRENT GOAL\n\nAndy, 2026-10-09, under goal/G9: \"An item added to another goal should NOT change a goal.\" and \"cw: Add an item to this goal to that effect.\"\n\nWHY: on 2026-10-09 cw added goal/G8.8 through session.set, and session.set also sets the current goal to the goal it names (desk.js line 427, s.current = gid), so his current goal moved from G9 to G8 without any press of his. He put it back with Make current.\n\nREQUIRED, his: adding an item to a goal leaves the current goal where it is. Only his Make current press moves it.",
