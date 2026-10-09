@@ -1,8 +1,8 @@
 {
- "change": 20309,
+ "change": 20314,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:07:16.579Z",
+ "writtenAt": "2026-10-09T06:07:33.983Z",
  "items": [
   {
    "id": "goal/G9",
@@ -47,12 +47,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 9,
+   "waiting": 8,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
+    "claude-windows",
     "wsl-claude"
    ],
    "agents": {
@@ -143,6 +144,11 @@
      "by": "claude-windows",
      "at": "2026-10-09T06:07:13.509Z",
      "text": "cw: verified G9.1, G9.4, G9.9 and G9.13; cw has nothing to build until wsl's reds of G9.5 and G9.7 land, and listens till then.\nThe desk keeps re-posting \"limbo\" under items an agent holds, each time a listener drops between turns: noise in your chat and every agent's ear.\nG9.12 carries nothing of its own since rule/8 went to the items as C checks, so it is yours to close."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:07:26.992Z",
+     "text": "cw: correction, from the code (desk.js limboOf): an item is limbo when none of its takers has the word working, and an agent that goes back to listening has the word listening.\nSo every time an agent arms its listener, the items it holds count as nobody working, and the line comes on the next write; it does not come from a listener dropping, as cw said."
     }
    ]
   },
@@ -1152,10 +1158,9 @@
    "id": "goal/G9.9",
    "title": "The desk owns goal and item ids",
    "goal": "goal/G9",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
