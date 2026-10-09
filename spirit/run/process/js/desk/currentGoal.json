@@ -1,8 +1,8 @@
 {
- "change": 20305,
+ "change": 20309,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:06:46.335Z",
+ "writtenAt": "2026-10-09T06:07:16.579Z",
  "items": [
   {
    "id": "goal/G9",
@@ -47,13 +47,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 10,
+   "waiting": 9,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "claude-windows",
     "wsl-claude"
    ],
    "agents": {
@@ -139,6 +138,11 @@
      "by": "claude-windows",
      "at": "2026-10-09T05:54:05.039Z",
      "text": "cw: builds of G9.1, G9.9 and G9.13 are wsl's, as cw wrote their reds; each shows Waive until it is taken.\ncw holds the builds of G9.6 and G9.8 and is writing the last red, G9.3."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:07:13.509Z",
+     "text": "cw: verified G9.1, G9.4, G9.9 and G9.13; cw has nothing to build until wsl's reds of G9.5 and G9.7 land, and listens till then.\nThe desk keeps re-posting \"limbo\" under items an agent holds, each time a listener drops between turns: noise in your chat and every agent's ear.\nG9.12 carries nothing of its own since rule/8 went to the items as C checks, so it is yours to close."
     }
    ]
   },
@@ -1345,31 +1349,57 @@
    "id": "goal/G9.10",
    "title": "Add blocking item section in the item Details",
    "goal": "goal/G9",
-   "status": "",
+   "status": "running",
    "with": "",
-   "buttons": [
-    "go",
-    "close"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
-   "go": false,
+   "go": true,
    "alone": false,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": false,
+   "limbo": true,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "",
+   "phase": "red",
    "red": "",
    "builder": "",
    "verifier": "",
    "waived": false,
-   "rules": [],
+   "rules": [
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/6",
+     "version": 14
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
    "asks": 0,
    "half": false,
    "full": false,
@@ -1386,7 +1416,13 @@
      "at": ""
     }
    ],
-   "chat": []
+   "chat": [
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:07:16.365Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
   },
   {
    "id": "goal/G9.11",
