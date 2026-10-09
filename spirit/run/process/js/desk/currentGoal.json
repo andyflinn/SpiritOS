@@ -1,8 +1,8 @@
 {
- "change": 21671,
+ "change": 21674,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T08:59:25.090Z",
+ "writtenAt": "2026-10-09T08:59:28.044Z",
  "items": [
   {
    "id": "goal/G8",
@@ -40,12 +40,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 7,
+   "waiting": 6,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -993,10 +996,9 @@
    "id": "goal/G8.2",
    "title": "deskVerify: the running modes — the desk box, an agent box, and how a mode is read",
    "goal": "goal/G8",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
