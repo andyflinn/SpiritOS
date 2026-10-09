@@ -1,8 +1,8 @@
 {
- "change": 20332,
+ "change": 20432,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:09:02.897Z",
+ "writtenAt": "2026-10-09T06:16:46.696Z",
  "items": [
   {
    "id": "goal/G9",
@@ -11,6 +11,7 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
@@ -20,7 +21,8 @@
     "goal/G9.7",
     "goal/G9.10",
     "goal/G9.11",
-    "goal/G9.12"
+    "goal/G9.12",
+    "goal/G9.14"
    ],
    "go": false,
    "alone": false,
@@ -41,7 +43,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 7,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -143,6 +145,16 @@
      "by": "claude-windows",
      "at": "2026-10-09T06:07:26.992Z",
      "text": "cw: correction, from the code (desk.js limboOf): an item is limbo when none of its takers has the word working, and an agent that goes back to listening has the word listening.\nSo every time an agent arms its listener, the items it holds count as nobody working, and the line comes on the next write; it does not come from a listener dropping, as cw said."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:09:36.410Z",
+     "text": "cw: G9.10 shows Waive: its red is cw's, so its build is wsl's; wsl, taking it clears the button.\nTo stop the Waives, cw writes no more reds this goal: wsl builds G9.3 and G9.10 and writes the reds of G9.5, G9.7 and G9.11, and cw builds those three as each red lands.\nG9.12 still carries nothing of its own."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:14:30.311Z",
+     "text": "cw: change of split, so nobody idles while wsl builds G9.3: cw writes the red of G9.7 now; wsl writes G9.11's after G9.3, then builds G9.7, and cw builds G9.11.\nG9.7's build may show Waive between cw's red and wsl taking it."
     }
    ]
   },
@@ -419,7 +431,7 @@
    "id": "goal/G9.3",
    "title": "The user takes the text box on focus, releases on blur or close",
    "goal": "goal/G9",
-   "status": "queued for build",
+   "status": "building",
    "with": "wsl-claude",
    "buttons": [],
    "blocking": [
@@ -606,6 +618,11 @@
      "by": "wsl-claude",
      "at": "2026-10-09T05:59:24.155Z",
      "text": "wsl: taken, Waive is gone here too. I hold the builds of G9.1 (done), G9.3, G9.9 and G9.13.\nOrder: G9.9, G9.13, G9.3. My two remaining reds, G9.5 and G9.7, come after, so cw has something to build."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:10:10.714Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -740,9 +757,11 @@
    "id": "goal/G9.5",
    "title": "Code toggle in the item Details button bar",
    "goal": "goal/G9",
-   "status": "writing red",
-   "with": "wsl-claude",
-   "buttons": [],
+   "status": "running",
+   "with": "",
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G9"
    ],
@@ -754,12 +773,12 @@
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "green": true,
+   "green": false,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "wsl-claude",
-   "builder": "",
-   "verifier": "",
+   "builder": "claude-windows",
+   "verifier": "wsl-claude",
    "waived": false,
    "rules": [
     {
@@ -787,7 +806,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 4,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"the item Detail dialog has a check/toggle button, [Code✓], in it's button bar, where the user can set the Code-state of an item, defining if the item is subject to the coding rules (write reds/code/verify).\"\n\nToday: the code flag is set only by session.set, and a sub-goal never carries it. Shape: press {id, what: code} on the existing press verb toggles it, owner-only; the dialog draws the toggle from item.get's code field.",
@@ -801,6 +820,24 @@
      "state": "open",
      "by": "",
      "at": ""
+    },
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "wsl: the red is in and pushed, ad03e988 - spirit/test/deskCodeToggle.js, 8 red and 3 green controls.\nShape asserted: press {id, what: code} toggles the mark, yours alone, refused on a goal and on a sub-goal (G6.8 stands); the dialog draws #dd-code from the item's code field and a click sends that press.\nOne question for you on the item: may the mark change after your Go?",
+     "test": "",
+     "state": "open",
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:10:03.880Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "May the Code mark be changed after your Go? Your Go already set the phases on a code item, so switching it then either strands the phases or needs them cleared. The red does not assert either way.",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
     }
    ],
    "chat": [
@@ -808,6 +845,26 @@
      "by": "desk",
      "at": "2026-10-09T05:42:56.057Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:09:52.804Z",
+     "text": "commit ad03e988b39eb7cb29c74b8ad9f9371ccfbc1d1c: goal/G9.5: the red for the Code toggle in the item Details\n- spirit/test/deskCodeToggle.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:10:03.572Z",
+     "text": "wsl: the red is in and pushed, ad03e988 - spirit/test/deskCodeToggle.js, 8 red and 3 green controls.\nShape asserted: press {id, what: code} toggles the mark, yours alone, refused on a goal and on a sub-goal (G6.8 stands); the dialog draws #dd-code from the item's code field and a click sends that press.\nOne question for you on the item: may the mark change after your Go?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:13:11.705Z",
+     "text": "cw: built, 05620c37; deskCodeToggle.js 11 of 11, every dialog suite green apart from G9.3's and G9.10's own reds.\nFiles: spirit/run/process/js/desk/desk.js, spirit/run/shell/deskDetails/deskDetails.js, spirit/test/deskCodeToggle.js (its click now bubbles to #dd-body, where the dialog listens; same assertion).\nOnce verified and on your node, Code on G9.12 unmarks it and its Close comes back. Verify is free."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:14:04.337Z",
+     "text": "wsl: verified 05620c37, pass. deskCodeToggle.js 11 of 11, and deskDialog, deskForAndy and deskServer green beside it.\nMutated twice: letting a sub-goal take the mark goes 2 red, dropping the tick from the label goes 1 red.\ncw's change to my suite is right - the dialog listens on #dd-body, so firing the click on the button alone was not what a browser does. Your Code button is live once this is on your node: G9.12 unmarks and its Close comes back."
     }
    ]
   },
@@ -953,7 +1010,9 @@
    "goal": "goal/G9",
    "status": "running",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "waive"
+   ],
    "blocking": [
     "goal/G9"
    ],
@@ -963,12 +1022,12 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
-   "green": true,
+   "green": false,
    "code": true,
-   "phase": "red",
-   "red": "",
+   "phase": "build",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "waived": false,
@@ -998,7 +1057,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 1,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"the button bar of items will offer an arm-able [delete] while in design mode.\"\n\nToday: nothing deletes an item; one a session leaves out is closed, never deleted (goal/G4.24). Shape: item.delete {id}, owner-only, offered only in design mode; Andy, 2026-10-07, on Q1 (close or erase): \"close is enough. that essentially leaves them as \"musings\" on the record.\"\nShape: item.delete {id} closes the item the way a left-out one is closed (goal/G4.24): it stays on the record with its box, checks and chat, found by Include Closed, and blocks nothing.",
@@ -1021,6 +1080,15 @@
      "state": "open",
      "by": "",
      "at": ""
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Delete: a new desk verb item.delete, or a press like every other button of yours (press {id, what: delete})? A press needs no new verb and arms the same way; the box names item.delete. Your yes is needed on either, so I am asking before the red fixes it.",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
     }
    ],
    "chat": [
@@ -1033,6 +1101,16 @@
      "by": "desk",
      "at": "2026-10-09T05:42:56.473Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:14:34.729Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:15:36.808Z",
+     "text": "cw: red done, d1b196d5: spirit/test/deskDelete.js, 8 owed failures on today's code.\nitem.delete {id}: his alone, never on a goal, only while the goal is in design mode, offered as delete in the item's buttons; it closes the item as a left-out one, box kept, Include Closed finds it, blocks nothing.\nThe dialog draws dd-delete from buttons; the first click arms, the second sends. Build is wsl's."
     }
    ]
   },
@@ -1348,9 +1426,11 @@
    "id": "goal/G9.10",
    "title": "Add blocking item section in the item Details",
    "goal": "goal/G9",
-   "status": "writing red",
-   "with": "claude-windows",
-   "buttons": [],
+   "status": "verified",
+   "with": "",
+   "buttons": [
+    "done"
+   ],
    "blocking": [
     "goal/G9"
    ],
@@ -1362,12 +1442,12 @@
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "green": true,
+   "green": false,
    "code": true,
-   "phase": "red",
+   "phase": "",
    "red": "claude-windows",
-   "builder": "",
-   "verifier": "",
+   "builder": "wsl-claude",
+   "verifier": "claude-windows",
    "waived": false,
    "rules": [
     {
@@ -1399,7 +1479,7 @@
      "version": 6
     }
    ],
-   "asks": 0,
+   "asks": 4,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"In the item/Goals detail dialog, there will be a new section bubble, immediately following the \\\"Blocked by/Blocking\\\" section, and right before the users chat input. the \\\"Add blocking item\\\" form is the following set up items arranged inline as follows: \\\"Title\\\" [Title String, subject to label rules] [add-button]. When the user presses the [add-button], The desk will add a blocking item with the entered title and a blank text box. The blocked-by section will be updated immediately.\"\n\nShape: new desk verb item.add {id, title} -> {id, change}: a new item of the same goal, blocking the item named, title under the label rules, blank box, id minted by the desk (G9.9). The section is UI in the desk shell.",
@@ -1409,6 +1489,24 @@
      "number": "C1",
      "kind": "C",
      "words": "Every element this item touches brings its own subscriptions (rule/8)",
+     "test": "",
+     "state": "open",
+     "by": "",
+     "at": ""
+    },
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "wsl: it is out of limbo - I took the build and it is pushed, 4115fbfb, verify is free.\nThe cause of the repeats, from the code: limboOf counts an item as limbo unless one of its takers has the word working (desk.js:792-799), and an agent that arms its listener says listening, so every item it holds falls back into limbo and the line is posted again.\nThe fix is one line of judgement: read the phase holder (phaseWith), not the word. That is a desk change, so it needs an item - open one?",
+     "test": "",
+     "state": "open",
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:13:07.375Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "The limbo line repeats because limboOf reads each taker word (desk.js:792-799) and a listening agent is not working. Open an item to have limbo read the phase holder instead?",
      "test": "",
      "state": "open",
      "by": "",
@@ -1425,6 +1523,71 @@
      "by": "desk",
      "at": "2026-10-09T06:08:53.283Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:09:14.314Z",
+     "text": "cw: red done, 739fab61: spirit/test/deskAddBlocking.js, 5 owed failures on today's code.\nOne call of mine: the box names item.add {id, title}, but G9.9 has since built item.add {goal, title}, so the red adds one optional argument, blocks (the item it blocks; the goal when left out), rather than a second shape of the same verb.\nThe dialog: input dd-add-title and button dd-add after Blocked by, before the chat input; the title obeys the label rules. Build is free."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:09:38.399Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:10:10.925Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:10:30.700Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T06:10:39.420Z",
+     "text": "why is this in limbo? resolve that."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:10:39.708Z",
+     "text": "message delivered, wsl-claude busy"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:11:09.380Z",
+     "text": "cw: limbo because its build is free and nobody holds it; cw wrote the red, so only wsl may build it. wsl: take G9.10 now, before G9.3 if you can.\nEven held, an item reads limbo whenever its holder is listening rather than working (desk.js limboOf), so it will flicker until the build is done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:12:21.012Z",
+     "text": "commit 4115fbfbebf9ff95c386579c6bb75e7071c6c1e3: goal/G9.10: Add blocking item, in the item Details\n- spirit/run/process/js/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:12:29.307Z",
+     "text": "wsl: built and pushed, 4115fbfb. cw's red is 12 of 12 green.\nitem.add gained the optional blocks argument (the goal or one of its items, refused across goals); the dialog's section sits in the frame so a typed title survives a repaint, and a refused title stays in the box.\nFiles touched: spirit/run/process/js/desk/desk.js, spirit/run/shell/deskDetails/deskDetails.js. Verify is free."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:13:07.067Z",
+     "text": "wsl: it is out of limbo - I took the build and it is pushed, 4115fbfb, verify is free.\nThe cause of the repeats, from the code: limboOf counts an item as limbo unless one of its takers has the word working (desk.js:792-799), and an agent that arms its listener says listening, so every item it holds falls back into limbo and the line is posted again.\nThe fix is one line of judgement: read the phase holder (phaseWith), not the word. That is a desk change, so it needs an item - open one?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:13:48.642Z",
+     "text": "cw: verified 4115fbfb. deskAddBlocking.js 12 of 12; it goes red with the cross-goal guard removed, with the label rule removed, and with blocks ignored in the walk.\nNo test was weakened; the change is desk.js and deskDetails.js alone."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T06:15:15.515Z",
+     "text": "Q2: The limbo line repeats because limboOf reads each taker word (desk.js:792-799) and a listening agent is not working. Open an item to have limbo read the phase holder instead?\n\nyes"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:16:01.566Z",
+     "text": "cw: taking, opening it as goal/G9.14."
     }
    ]
   },
@@ -1432,9 +1595,11 @@
    "id": "goal/G9.11",
    "title": "Add Goal bubble above the List search while Goals Only is on",
    "goal": "goal/G9",
-   "status": "running",
+   "status": "red is in, build is free",
    "with": "",
-   "buttons": [],
+   "buttons": [
+    "waive"
+   ],
    "blocking": [
     "goal/G9"
    ],
@@ -1444,12 +1609,12 @@
    "alert": false,
    "claims": 0,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "red",
-   "red": "",
+   "phase": "build",
+   "red": "wsl-claude",
    "builder": "",
    "verifier": "",
    "waived": false,
@@ -1504,6 +1669,21 @@
      "by": "desk",
      "at": "2026-10-09T06:08:03.867Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:16:01.198Z",
+     "text": "commit 1d9675d90b6750aaf519812104acb4618309f616: goal/G9.11: the red for the Add Goal bubble above the List search\n- spirit/test/deskAddGoal.js"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:16:10.311Z",
+     "text": "wsl: the red is in and pushed, 1d9675d9 - spirit/test/deskAddGoal.js, 5 red and 4 green.\nOne reading, because two of your rules met: goal.add must not move the current goal (G9.13), but the goal you add by hand is current - so the bubble does what you would do, goal.add then make-current on the id it answers. No verb changes.\nBuild is free. G9.7 waits on your answer about delete's shape."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:16:14.938Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
@@ -1521,7 +1701,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -1578,9 +1758,18 @@
      "kind": "Q",
      "words": "G9.12 carries nothing of its own: rule/8 became a C check on each UI item, so there is nothing to build here. Close it?",
      "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T06:09:57.182Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "cw: Q2 cleared and claimed done, but you get no Close: after Go a code item reaches Done only through red, build and verify, and there is nothing here to build.\nThe clean way out is unmarking it as code, which is G9.5's toggle, not built yet; walking empty phases would be a fake.\nIt can wait for G9.5, or an agent walks the phases with an empty red: which do you want?",
+     "test": "",
      "state": "open",
-     "by": "",
-     "at": ""
+     "by": "claude-windows",
+     "at": "2026-10-09T06:10:08.798Z"
     }
    ],
    "chat": [
@@ -1598,6 +1787,26 @@
      "by": "desk",
      "at": "2026-10-09T05:42:57.496Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T06:09:36.988Z",
+     "text": "Q2: G9.12 carries nothing of its own: rule/8 became a C check on each UI item, so there is nothing to build here. Close it?\n\nyes"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:09:57.429Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:10:08.591Z",
+     "text": "cw: Q2 cleared and claimed done, but you get no Close: after Go a code item reaches Done only through red, build and verify, and there is nothing here to build.\nThe clean way out is unmarking it as code, which is G9.5's toggle, not built yet; walking empty phases would be a fake.\nIt can wait for G9.5, or an agent walks the phases with an empty red: which do you want?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:10:38.719Z",
+     "text": "wsl: there is a third way, and it needs no fake: the Code toggle's build (G9.5) is cw's, and once it lands you unmark this item and your Close comes back.\nMy red for it is already in, so nothing waits on me for that.\nI would not walk empty phases here - it would put a green verify on the record for work nobody did."
     }
    ]
   },
@@ -1751,6 +1960,43 @@
      "text": "cw: verified 53b4de83. deskAddKeepsCurrent.js 5 of 5 and deskMakeCurrent.js 14 of 14; with session.set making its goal current again it goes 2 red.\nwsl's open point stands for you: a brand-new goal written by session.set still becomes current, while goal.add does not."
     }
    ]
+  },
+  {
+   "id": "goal/G9.14",
+   "title": "Limbo reads the phase holder, not the agent's listening word",
+   "goal": "goal/G9",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G9"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   }
  ]
 }
