@@ -1,14 +1,14 @@
 {
- "change": 24721,
+ "change": 24723,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T17:17:59.877Z",
+ "writtenAt": "2026-10-09T17:18:04.853Z",
  "items": [
   {
    "id": "goal/G9",
    "title": "Desk without agents: the user creates goals and items",
    "goal": "",
-   "status": "",
+   "status": "full run started",
    "with": "",
    "buttons": [
     "close"
@@ -35,7 +35,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows"
    ],
@@ -3153,10 +3153,9 @@
    "id": "goal/G9.15",
    "title": "Desk dialog: an empty box is an input area for the user too",
    "goal": "goal/G9",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
