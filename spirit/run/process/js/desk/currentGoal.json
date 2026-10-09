@@ -1,8 +1,8 @@
 {
- "change": 21615,
+ "change": 21619,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T08:52:14.482Z",
+ "writtenAt": "2026-10-09T08:52:23.908Z",
  "items": [
   {
    "id": "goal/G8",
@@ -40,12 +40,13 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 8,
+   "waiting": 7,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
+    "claude-windows",
     "wsl-claude"
    ],
    "agents": {
@@ -472,10 +473,9 @@
    "id": "goal/G8.1",
    "title": "deskVerify: the dataSet — verify.db, one row per test, and what identifies a test",
    "goal": "goal/G8",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
