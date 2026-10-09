@@ -234,14 +234,30 @@ function suites() {
 // goal/G8.9 moved to a base, and a verifier that collides with itself measures nothing. The answer says what ran.
 function loopOnce() {
   const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  // THE SHORT LOOP PUBLISHES TOO (goal/G8.12): the tab shows a full pass the same way it shows one item, as doing
+  // 'full', or his bar would stay empty through the longest run there is. Only what THIS server runs can be shown; a
+  // harness started in a terminal is not its run and publishes nothing.
   return suites().then(async function (list) {
     const ran = [];
+    running = { id: '', suite: '', since: new Date().toISOString() };
     for (const rel of list) {
       const file = path.join(REPO, rel);
       if (!fs.existsSync(file)) continue;
-      await runSuite(file, port);
+      const index = list.indexOf(rel) + 1;
+      const expected = expectedOf(rel);
+      running = { id: '', suite: rel, since: new Date().toISOString() };
+      const told = function (tests) {
+        say({ doing: 'full', id: '', suite: rel, index: index, of: list.length, tests: tests, expected: expected,
+          line: 'full run: ' + path.basename(rel) + ', suite ' + index + ' of ' + list.length +
+            (expected ? ', ' + tests + ' of about ' + expected + ' tests' : ', ' + tests + ' tests'),
+          since: running.since });
+      };
+      told(0);
+      await runSuite(file, port, told);
       ran.push(rel);
     }
+    running = { id: '', suite: '', since: '' };
+    sayIdle();
     return { ran: ran };
   });
 }
