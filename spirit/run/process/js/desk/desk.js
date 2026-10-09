@@ -580,6 +580,10 @@ function press(s, it, what, r, goalOf, b) {
   // for one reason only, a session.set, so switching meant an agent writing a session for him. It moves the goal and
   // nothing else: no item's state, neither goal's design mode, nothing closed or opened.
   else if (what === 'make-current' && it.goal) s.current = it.id;
+  // HIS CODE TOGGLE (goal/G9.5). Andy, 2026-10-07: "the item Detail dialog has a check/toggle button, [Code✓], in it's
+  // button bar, where the user can set the Code-state of an item". Never on a goal, never on a sub-goal (goal/G6.8:
+  // "it can no longer be marked as a coding item"); the handler refuses both, and the walk holds it too.
+  else if (what === 'code' && !it.goal && !it.subGoal) it.code = !it.code;
   else if (what === 'design-complete') { it.designComplete = true; it.status = 'ready'; }
   // HIS GO IS ON RECORD (goal/G3.9): `go` is set by his go and go-all alone and by nothing else; `went` stays the
   // state of the item, which older records set in other ways.
@@ -1120,11 +1124,11 @@ function newGoal(w) {
   return write('session.set', { session: { goal: { id: id, title: 'New goal' }, items: [] }, by: w.by, key: w.key });
 }
 
-const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen', 'waive', 'make-current'];
+const PRESSES = ['go', 'go-all', 'claim-done', 'done', 'reopen', 'close', 'bring-back', 'abandon', 'start-design', 'end-design', 'design-complete', 'seen', 'waive', 'make-current', 'code'];
 // Andy's alone (G2.1 review). His presses carry the owner's caller (the
 // mark the door forwards, apiAuth/G1.13); a member's are refused. The
 // agents keep claim-done, design-complete and bring-back.
-const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen', 'waive', 'make-current'];
+const OWNER_PRESSES = ['go', 'go-all', 'done', 'reopen', 'close', 'abandon', 'start-design', 'end-design', 'seen', 'waive', 'make-current', 'code'];
 function ownerOnly(caller) { if (!caller || caller.owner !== true) throw refused('not-owner'); }
 
 // THE NEXT ID THE DESK HANDS OUT (goal/G9.9), minted inside the write, from the state the write walked.
@@ -1802,6 +1806,7 @@ appServer.serve({
         // goal/G2.19 puts make-current on the same leash: offered or refused, so a closed goal takes Reopen first.
         if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen' || a.what === 'make-current') && offered.indexOf(a.what) === -1) throw refused('not-offered');
         if (a.what === 'bring-back' && !it.closed) throw refused('not-offered');
+        if (a.what === 'code' && (it.goal || it.subGoal)) throw refused('not-offered');
         // DESIGN-GREEN GATES THEM (goal/G6.8): his End design while any item of the goal has an open red question, a Go
         // on an item with one, a go-all while any item of the goal has one: refused.
         const gOf = st.goals[it.goal ? it.id : it.goalId];

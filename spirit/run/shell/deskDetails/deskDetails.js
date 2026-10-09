@@ -143,6 +143,11 @@ function ddButtonsHtml() {
     html += '<button type="button" id="dd-waive"' + (ddArmed === 'dd-waive' ? ' data-armed="1"' : '') + '>' +
       (ddArmed === 'dd-waive' ? 'Waive: sure?' : 'Waive') + '</button>';
   }
+  // CODE ✓ (goal/G9.5). Andy: "the item Detail dialog has a check/toggle button, [Code✓], in it's button bar, where the
+  // user can set the Code-state of an item". Items only: a goal has no code state, and the server refuses a sub-goal.
+  if (f.goal !== '') {
+    html += '<button type="button" id="dd-code">Code' + (f.code ? ' ✓' : '') + '</button>';
+  }
   // MAKE CURRENT (goal/G2.19). Andy: "on any open goal i want a button \"make current goal\"". The server offers it on
   // an open goal that is not current; it presses at once, since switching goals undoes nothing.
   if ((f.buttons || []).indexOf('make-current') !== -1) {
@@ -423,6 +428,7 @@ spirit.shell.activateApp({
       if (id === 'dd-go' || id === 'dd-done' || id === 'dd-reopen') { ddPress(id.slice(3)); return; }
       // goal/G2.19: Make current goal presses at once, like Go and Reopen; it closes nothing and takes nothing back.
       if (id === 'dd-make-current') { ddPress('make-current'); return; }
+      if (id === 'dd-code') { ddPress('code'); return; }
       if (id === 'dd-abandon' || id === 'dd-go-all' || id === 'dd-waive' || armedClose) {
         if (ddArmed !== id) {
           ddArmed = id;

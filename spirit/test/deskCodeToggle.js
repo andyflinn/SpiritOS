@@ -164,7 +164,10 @@ async function item(id) { const r = await call('item.get', { id: id }, ANDY); re
   else test.fail(OWED + 'the labels read ' + short({ plain: unmarked, code: ticked }));
 
   test.subHeading('5. clicking it sends the press');
-  plain.doc.getElementById('dd-code').fire('click', { target: { id: 'dd-code', getAttribute: function () { return null; }, closest: function () { return null; } } });
+  // A click bubbles: the dialog listens once on #dd-body for every button it draws, as its other buttons are tested.
+  const codeClick = { target: { id: 'dd-code', getAttribute: function () { return null; }, closest: function () { return null; } }, preventDefault: function () {}, stopPropagation: function () {} };
+  plain.doc.getElementById('dd-code').fire('click', codeClick);
+  plain.doc.getElementById('dd-body').fire('click', codeClick);
   await settled();
   const sent = plain.presses.filter(function (p) { return p && p.what === 'code' && p.id === 'ct/G1.1'; });
   if (sent.length === 1) test.check('a click sends press {id, what: code} once');
