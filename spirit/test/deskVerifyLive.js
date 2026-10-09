@@ -202,6 +202,9 @@ async function faceHalf() {
   await settled();
   const send = async function (o) { handlers.deskVerify.forEach(function (fn) { fn(o); }); await settled(); };
   const body = doc.getElementById('desk-verifier');
+  // Before anything is published the bar is already there, gray, so the layout shows.
+  if (/(<progress|role="progressbar")[^>]*data-phase="done"|data-phase="done"[^>]*(<progress|role="progressbar")/.test(body.innerHTML) || /<progress[^>]*data-phase="done"/.test(body.innerHTML)) test.check('with nothing published yet the bar is drawn, gray');
+  else test.fail(OWED + 'before any publish the tab reads ' + short(body.innerHTML));
   const at = new Date().toISOString();
   await send({ doing: 'item', id: 'lv/G1.1', suite: 'spirit/test/zzLiveA.js', index: 1, of: 2, tests: 1, expected: 3, line: 'first status line', since: at });
   await send({ doing: 'item', id: 'lv/G1.1', suite: 'spirit/test/zzLiveA.js', index: 1, of: 2, tests: 2, expected: 3, line: 'second status line', since: at });
@@ -217,10 +220,26 @@ async function faceHalf() {
   else test.fail(OWED + 'the tab still draws the records list: ' + short(b.slice(b.indexOf('Records'))));
   if (!fake.calls.some(function (c) { return c.server === 'deskVerify' && c.verb === 'records.search'; })) test.check('and the tab asks for no records at all');
   else test.fail(OWED + 'the tab asked deskVerify records.search');
+  // GROWN AFTER HIS LOOK (claude-windows). Andy: "just gray out the progress bar so i can see the layout, and the
+  // progress bar can show the countdown live, and only go gray when that's done. but the progress bar stays visible."
+  // So ONE bar, always drawn, its phase readable as data-phase: run (a check running), countdown (idle, the hour not
+  // yet over), done (the hour over, or nothing known yet): gray.
+  const barOf = function (html) { const m = /<progress[^>]*>|<[^>]*role="progressbar"[^>]*>/.exec(html); return m ? m[0] : ''; };
+  if (/data-phase="run"/.test(barOf(b))) test.check('during a run the bar says so: data-phase="run"');
+  else test.fail(OWED + 'the bar during a run reads ' + short(barOf(b) || '(no bar)'));
   await send({ doing: 'idle', id: '', suite: '', index: 0, of: 0, tests: 0, expected: 0, line: 'idle', since: new Date(Date.now() - 18 * 60 * 1000).toISOString() });
   const idle = body.innerHTML;
   if (/4[12]\s*min/.test(idle)) test.check('idle, it counts down to idle time: about 42 minutes left of the hour');
   else test.fail(OWED + 'no countdown when idle: ' + short(idle));
+  const cd = barOf(idle);
+  const val = Number((/value="([\d.]+)"/.exec(cd) || [])[1]);
+  const max = Number((/max="([\d.]+)"/.exec(cd) || [])[1]) || 1;
+  if (/data-phase="countdown"/.test(cd) && val / max > 0.25 && val / max < 0.35) test.check('and the bar itself shows the countdown: phase countdown, about 18 of 60 minutes gone');
+  else test.fail(OWED + 'the bar while counting down reads ' + short(cd || '(no bar)'));
+  await send({ doing: 'idle', id: '', suite: '', index: 0, of: 0, tests: 0, expected: 0, line: 'idle', since: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() });
+  const over = barOf(body.innerHTML);
+  if (/data-phase="done"/.test(over)) test.check('once the hour is over the bar stays, gray: phase done');
+  else test.fail(OWED + 'after the hour the bar reads ' + short(over || '(no bar)'));
 }
 
 function boardHalf() {
