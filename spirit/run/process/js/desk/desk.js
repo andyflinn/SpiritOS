@@ -567,15 +567,20 @@ function apply(s, r, b, item, goalOf) {
       // ONE GRANT FOR ALL THE CORE FILES (goal/G8.8). Andy, 2026-10-09: "all files that need a grant should get one
       // 'grant' button together." So there is at most one open core grant on an item: its words are rewritten when the
       // core set changes, and it goes when no core file is left. commitCheck raised one grant per file until today.
+      // ONLY A CHANGED SET ASKS HIM AGAIN (goal/G8.8, found by claude-windows verifying e4818ee9): every agent re-sends
+      // its whole list as it works, so a grant he has already given must not be asked for twice - a core grant whose
+      // words he granted already stands for that set, and nothing new is raised until the set itself changes.
       const core = filesOf(it).filter(function (e) { return e.core; }).map(function (e) { return e.path; });
-      const mine = function (c) { return c.kind === 'G' && c.state === 'open' && String(c.words).indexOf('core grant: ') === 0; };
-      const open = it.checks.filter(mine);
+      const isCoreGrant = function (c) { return c.kind === 'G' && String(c.words).indexOf('core grant: ') === 0; };
+      const open = it.checks.filter(function (c) { return isCoreGrant(c) && c.state === 'open'; });
       if (core.length) {
         const words = 'core grant: ' + core.join(', ');
-        if (open.length) { open.forEach(function (c, i) { if (i === 0) { c.words = words; c.at = r.at; } }); it.checks = it.checks.filter(function (c) { return !mine(c) || c === open[0]; }); }
+        const settled = it.checks.some(function (c) { return isCoreGrant(c) && c.state !== 'open' && c.words === words; });
+        if (settled) { it.checks = it.checks.filter(function (c) { return !(isCoreGrant(c) && c.state === 'open'); }); return; }
+        if (open.length) { open[0].words = words; open[0].at = r.at; it.checks = it.checks.filter(function (c) { return !(isCoreGrant(c) && c.state === 'open') || c === open[0]; }); }
         else it.checks.push({ number: 'G' + (it.checks.filter(function (c) { return c.kind === 'G'; }).length + 1), kind: 'G', words: words, test: '', state: 'open', by: 'desk', at: r.at });
       } else if (open.length) {
-        it.checks = it.checks.filter(function (c) { return !mine(c); });
+        it.checks = it.checks.filter(function (c) { return !(isCoreGrant(c) && c.state === 'open'); });
       }
       return;
     }
