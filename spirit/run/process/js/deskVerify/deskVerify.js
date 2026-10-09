@@ -250,6 +250,45 @@ async function choreOnce() {
   return { did: [] };
 }
 
+// TOLERATED REDS, ALL AT ONCE (goal/G8.7). Andy, 2026-10-06: "for now, tolerated reds have to be granted as a whole,
+// in order to pop the Done button for the goal, so the final full suite lists the reds outside the goals scope in a
+// red-question for the goal, that blocks the Done button for the goal."
+// So: the newest outcome of every test in the dataset; a red whose suite is on no item's file list of the current goal
+// is OUTSIDE; and if there are any, ONE grant on the goal row names them. A goal's Done already waits on every open
+// grant (goal/G8.5), so nothing else is needed to hold it. A closed item is still the goal's, so its suites are inside.
+// It asks once: while its own grant stands open, it asks for none. It presses nothing and grants nothing - granting is
+// his alone, and "deskVerify will NOT press done or closed on my behalf".
+const newestEach = db.prepare('SELECT suite, title, outcome FROM results WHERE rowid IN (SELECT MAX(rowid) FROM results GROUP BY suite, title)');
+function goalCheck() {
+  const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  if (!port) return Promise.resolve({ goal: '', outside: [], asked: false });
+  const at = function (ask) { return spirit.core.ask('jobs.api', { ask: ask }, 'http://127.0.0.1:' + port); };
+  return at({ desk: { 'items.search': { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: true } } }).then(async function (r) {
+    const items = ((r && r.body && Array.isArray(r.body.items)) ? r.body.items : []).map(function (i) {
+      try { return JSON.parse(i.label); } catch (e) { return null; }
+    }).filter(Boolean);
+    const goal = (items.filter(function (i) { return i.goal === ''; })[0] || {}).id || '';
+    const inside = Object.create(null);
+    items.forEach(function (it) {
+      (Array.isArray(it.files) ? it.files : []).forEach(function (f) {
+        const p = String((f && f.path) || '');
+        if (/^spirit\/test\/.+\.js$/.test(p)) inside[path.basename(p)] = true;
+      });
+    });
+    const reds = Object.create(null);
+    newestEach.all().forEach(function (row) { if (row.outcome === 'red' && !inside[row.suite]) reds[row.suite] = true; });
+    const outside = Object.keys(reds).sort();
+    if (!goal || !outside.length) return { goal: goal, outside: outside, asked: false };
+    // Already asked and not yet granted: his list stands, and asking again would be a second button for one decision.
+    const open = await at({ desk: { 'item.checks': { id: goal } } }).then(function (c) {
+      return ((c && c.body && c.body.checks) || []).some(function (x) { return x.kind === 'G' && x.state === 'open' && String(x.words).indexOf('tolerated reds:') === 0; });
+    }, function () { return false; });
+    if (open) return { goal: goal, outside: outside, asked: false };
+    await at({ desk: { 'check.add': { id: goal, kind: 'G', words: 'tolerated reds: ' + outside.join(', '), test: '' } } });
+    return { goal: goal, outside: outside, asked: true };
+  }, function () { return { goal: '', outside: [], asked: false }; });
+}
+
 // A ROW IS WRITTEN for a test's first record or a change of outcome, and nothing else.
 function keep(suite, title, outcome) {
   const last = newest.get(suite, title);
@@ -283,6 +322,11 @@ appServer.serve({
     handler: function () { return choreOnce(); },
   },
   // THE ONE THING IT MAY DO ON HIS NODE (goal/G8.3): run one item's suites and ask the desk to take a verify back.
+  // TOLERATED REDS (goal/G8.7): the reds outside the current goal, and one grant on the goal naming them.
+  'goal.check': {
+    request: {}, reply: { goal: '', outside: [''], asked: false },
+    handler: function () { return goalCheck(); },
+  },
   'claim.check': {
     request: { id: '' }, reply: { rejected: false, reds: [''] },
     handler: function (a) { return claimCheck(String(a.id || '')); },
