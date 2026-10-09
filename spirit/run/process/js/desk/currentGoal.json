@@ -1,8 +1,8 @@
 {
- "change": 20613,
+ "change": 20614,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:27:10.631Z",
+ "writtenAt": "2026-10-09T06:27:12.871Z",
  "items": [
   {
    "id": "goal/G9",
@@ -37,7 +37,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -2093,10 +2093,9 @@
    "id": "goal/G9.14",
    "title": "Limbo reads the phase holder, not the agent's listening word",
    "goal": "goal/G9",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
