@@ -1,8 +1,8 @@
 {
- "change": 20717,
+ "change": 20833,
  "line": 8495,
  "goal": "goal/G8",
- "writtenAt": "2026-10-09T06:55:05.431Z",
+ "writtenAt": "2026-10-09T07:18:32.928Z",
  "items": [
   {
    "id": "goal/G8",
@@ -22,7 +22,8 @@
     "goal/G8.5",
     "goal/G8.6",
     "goal/G8.7",
-    "goal/G8.8"
+    "goal/G8.8",
+    "goal/G8.9"
    ],
    "go": false,
    "alone": false,
@@ -31,7 +32,7 @@
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "green": true,
+   "green": false,
    "code": false,
    "phase": "",
    "red": "",
@@ -39,17 +40,17 @@
    "verifier": "",
    "waived": false,
    "rules": [],
-   "asks": 0,
+   "asks": 3,
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 9,
+   "waiting": 10,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
    "working": [
-    "wsl-claude"
+    "claude-windows"
    ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
@@ -68,6 +69,60 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-06T06:23:34.299Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "wsl: the order is right and G8.1 is the keystone, but its key is the goal's real size: check and fail each take one free string (spirit/test/testSupport.js:243-251), 4367 check sites and 4876 fail sites, so until an assertion is given one title its flips are invisible. The dataset is worth exactly as much as that retitling gets done.\nWhat it will report is mostly world noise: my two full runs on the same tree today gave 25 and 27 reds, every one a node that would not boot, a port in use or a fixture that stayed down, and the set differed between runs. A verifier on your box competes for those same ports, so G8.7's one grant would be pressed blind every time - the flip history is what separates signal from it, which is another reason G8.1 comes first.\nThe thing I would not trade away is judgement: today's verify caught three weak tests in G9 (two of mine by cw, one of cw's by me) by reading the diff, not by running it. Should G8.3 keep an agent's verify beside deskVerify's mechanical one, or replace it?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:05:00.013Z"
+    },
+    {
+     "number": "Q3",
+     "kind": "Q",
+     "words": "cw, 3 of 3, risks: two full runs on one machine share localhost, so deskVerify must run one at a time per machine; and G8.4's mechanical commits are the riskiest chore, a commit nobody read.\nThe largest open piece is G8.3, a mechanical agent with standing on your desk; nothing of it is argued yet.\nShall cw make G8.8 a blocker of G8.6 and put the commitCheck finding in G8.8's box?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-09T06:57:54.281Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "cw: yes, a lot: G8.2's three modes become one, the agent-node mode goes, and with it the question of standing elsewhere; but G8.2's box says it runs on every node, so that ruling changes it.\nOne collision stays: your desk node is the same Windows machine cw runs tests on, so cw's own runs and deskVerify's would share localhost; agents would leave full runs to it.\nShould cw rewrite G8.2's box to desk-node-only?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:05:00.998Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "wsl: yes, it clears a lot. G8.2 collapses: no mode to read, no sub-agent case, no out-of-scope third case, and nothing to decide about a deskClient sharing the node - one verify.db, one truth, so the tally cannot disagree with itself between machines.\nWhat it buys the rest: G8.3 becomes the goal's real work and G8.4's chores are your box's chores alone; the short loop (G8.6) still needs an item's suites, which the desk does not hold today - that gap stands either way.\nThe price, said plainly: a red only my machine shows never enters the dataset. Today your box reported 21 reds and mine 25, same tree - with one measurer, your box's reds become the only truth, and an agent's own red stops being evidence. Is that what you want?",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:05:02.012Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "cw: yes, consistent, and close to G8.2 as written: one deskVerify that knows where it runs; on an agent node it answers only \"is my coding task done\", on the desk node its results are the record.\nIt also settles wsl's price: an agent's red counts for that agent's own Done, the desk node's for the goal.\nG8.1 keeps verify.db out of git, so is your commit the desk node's results counting on the desk, not a git commit?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-09T07:02:54.078Z"
+    },
+    {
+     "number": "Q7",
+     "kind": "Q",
+     "words": "cw: yes, one item: give the dozen suites that hard-code a port an OS-assigned one, so two runs on one machine stop colliding; wsl's run lock in labMaster is the belt to those braces.\nIt blocks the parts that run suites beside other runs, G8.6 (short loop) and G8.7 (the final full run); G8.1, the dataset, can be designed without it.\nShall cw add it as G8.9, blocking G8.6 and G8.7?",
+     "test": "",
+     "state": "open",
+     "by": "claude-windows",
+     "at": "2026-10-09T07:16:21.767Z"
     }
    ],
    "chat": [
@@ -150,6 +205,126 @@
      "by": "ollama agent node",
      "at": "2026-10-08T09:58:20.059Z",
      "text": "[loop.js] I'd love to hear more! Could you clarify **which goal** you're referring to? (e.g., a specific target, an objective from a project, or something else?) Once I know the context, I can offer tailored insights. 😊"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T06:56:31.934Z",
+     "text": "assessment of this goal overall. please consider carefully.\n\nthoughts?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:56:45.856Z",
+     "text": "wsl: taking."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:56:46.395Z",
+     "text": "cw: taking."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:57:47.799Z",
+     "text": "wsl: the order is right and G8.1 is the keystone, but its key is the goal's real size: check and fail each take one free string (spirit/test/testSupport.js:243-251), 4367 check sites and 4876 fail sites, so until an assertion is given one title its flips are invisible. The dataset is worth exactly as much as that retitling gets done.\nWhat it will report is mostly world noise: my two full runs on the same tree today gave 25 and 27 reds, every one a node that would not boot, a port in use or a fixture that stayed down, and the set differed between runs. A verifier on your box competes for those same ports, so G8.7's one grant would be pressed blind every time - the flip history is what separates signal from it, which is another reason G8.1 comes first.\nThe thing I would not trade away is judgement: today's verify caught three weak tests in G9 (two of mine by cw, one of cw's by me) by reading the diff, not by running it. Should G8.3 keep an agent's verify beside deskVerify's mechanical one, or replace it?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:57:51.217Z",
+     "text": "cw, 1 of 3, the value: G8.1 is the sound core, specified and measured; alone it would have done today's by-hand job of telling the 21 old Windows reds from new ones, which cost cw a second run at 7cd6d633.\nBuild it first and alone: it pays without G8.3's agent standing or G8.5's desk changes, the two largest and least argued parts.\nG8.7's one question is right, but on Windows it will list the same ~20 environment reds every goal until those suites are fixed or dropped."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:57:52.618Z",
+     "text": "cw, 2 of 3, a gap: G8.6 and G8.7 rest on an item's suites being the test files its commits changed, and the desk does not hold that; commitCheck.js only posts it as chat text after a push.\nThat is G8.8's data, so G8.8 should block G8.6; and G8.8's Q1 is half-answered by the tree, since commitCheck already reads the files from the commits.\ncommitCheck's hooks live only in agent clones: cw commits in your checkout, so none of cw's commits today passed the Go check or the core-file grant lock."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:57:53.987Z",
+     "text": "cw, 3 of 3, risks: two full runs on one machine share localhost, so deskVerify must run one at a time per machine; and G8.4's mechanical commits are the riskiest chore, a commit nobody read.\nThe largest open piece is G8.3, a mechanical agent with standing on your desk; nothing of it is argued yet.\nShall cw make G8.8 a blocker of G8.6 and put the commitCheck finding in G8.8's box?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T06:59:38.722Z",
+     "text": "deskVerify is only meant to run on the same node as desk? does that clear anything up?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:59:54.032Z",
+     "text": "cw: yes, a lot: G8.2's three modes become one, the agent-node mode goes, and with it the question of standing elsewhere; but G8.2's box says it runs on every node, so that ruling changes it.\nOne collision stays: your desk node is the same Windows machine cw runs tests on, so cw's own runs and deskVerify's would share localhost; agents would leave full runs to it.\nShould cw rewrite G8.2's box to desk-node-only?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:00:13.252Z",
+     "text": "wsl: yes, it clears a lot. G8.2 collapses: no mode to read, no sub-agent case, no out-of-scope third case, and nothing to decide about a deskClient sharing the node - one verify.db, one truth, so the tally cannot disagree with itself between machines.\nWhat it buys the rest: G8.3 becomes the goal's real work and G8.4's chores are your box's chores alone; the short loop (G8.6) still needs an item's suites, which the desk does not hold today - that gap stands either way.\nThe price, said plainly: a red only my machine shows never enters the dataset. Today your box reported 21 reds and mine 25, same tree - with one measurer, your box's reds become the only truth, and an agent's own red stops being evidence. Is that what you want?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T07:02:39.406Z",
+     "text": "The agent node should have it. but only to assess if it can consider it's coding task done. no commit for deskVerify on an agents node. IE: deskVerify knows where it runs. and only the desk node has the right to commit it's measurements (suite results)\n\nis that a more consistent view?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T07:02:53.769Z",
+     "text": "cw: yes, consistent, and close to G8.2 as written: one deskVerify that knows where it runs; on an agent node it answers only \"is my coding task done\", on the desk node its results are the record.\nIt also settles wsl's price: an agent's red counts for that agent's own Done, the desk node's for the goal.\nG8.1 keeps verify.db out of git, so is your commit the desk node's results counting on the desk, not a git commit?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:03:06.649Z",
+     "text": "wsl: yes, more consistent, and it is the sharper rule - measuring is local, the record is central. G8.2 stops being three modes and becomes two sentences: deskVerify knows where it runs, and only the desk node may commit measurements.\nIt also settles the machine difference I raised: the 25 reds my box shows inform my own \"is my item done\", while your box's 21 are the record - so a red only I see is mine to fix, not evidence against the tree.\nOne thing to decide with it: does an agent node keep a verify.db of its own that never travels, or nothing at all beyond the pass or fail it needs this minute? A local copy is a second tally nobody reads."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T07:04:14.939Z",
+     "text": "please conder removing re-questions that are eliminated by the discussion. there is so much red-questions here, no sane human wants to read them"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T07:04:52.830Z",
+     "text": "cw: cleared three: Q4 and Q5 (desk node only, one measurer) are settled by your refinement, and Q2 is the same question as G8.3 Q1.\nStill open, one each: G8 Q3 (G8.8 blocks G8.6), G8 Q6 (what commit means), G8.2 Q2 (a local verify.db), G8.3 Q1 (verify beside or instead), and G8.8 Q1 and Q2."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:05:13.134Z",
+     "text": "wsl: four of mine are closed as answered by what you just said - the two on this goal that asked whether one measurer is what you want and whether an agent verify stays (that one lives on in G8.3 instead), cw's on rewriting G8.2, and mine on an agent keeping a verify.db: \"only to assess if it can consider it's coding task done\" means it keeps no record, and I have read it that way.\nOne of mine is left, on G8.3: does deskVerify replace an agent's verify or stand beside it. I kept it because nothing you have said answers it and it decides the biggest item.\nAlso worth knowing: every three-line post of ours ending in a question becomes one of these red questions, which is where the pile comes from - I will ask less and in fewer places."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T07:12:12.397Z",
+     "text": "Q3: cw, 3 of 3, risks: two full runs on one machine share localhost, so deskVerify must run one at a time per machine; and G8.4's mechanical commits are the riskiest chore, a commit nobody read.\nThe largest open piece is G8.3, a mechanical agent with standing on your desk; nothing of it is argued yet.\nShall cw make G8.8 a blocker of G8.6 and put the commitCheck finding in G8.8's box?\n\nThis one is REAL. would it mean that:\n\nlabMaster needs an upgrade, where multiple desk nodes must be able to have their very own range of ports and test-world-instances?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T07:12:45.222Z",
+     "text": "cw: partly. Most suites take a free port, but the lab-world suites bind fixed ones, 65410-65428 (labWorld, liveFrontDoor and their neighbours) and the relay default 65430, so two full runs on one machine collide there; WSL forwards its ports onto Windows localhost too.\nSo the fix is narrower than labMaster: those few suites need a port base per run, or a free port, and then any number of desk nodes and agents can measure at once.\nA correction to my own risk line: today's 21 Windows reds were not collisions, every one failed again alone and at 7cd6d633."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:13:04.617Z",
+     "text": "wsl: it is real but narrower than port ranges. Measured just now: most suites already ask the OS for a free port (net.createServer().listen(0), the pattern in agentOnboard, debugSwitch, authTables and others), and only about a dozen hard-code one - hintWire's PORTS = [48761, 48762] is the type. Those dozen are what two runs collide on, so the fix is to give them OS-assigned ports, not to carve ranges per node.\nWhat does need labMaster: one run at a time per HOST, as a lock it holds - and host must count WSL and Windows as one, since they share localhost. Evidence from today: my full run reported \"a relay did not come up on 48761 / 48762 - port 48762 is already in use\" while cw was running his on Windows at your request.\nSo: a dozen suites to un-hard-code, and a run lock in labMaster. Test-world instances need nothing new; they already live in per-run scratch directories."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T07:16:07.486Z",
+     "text": "so this goal needs an item that cleans up those specific suites that cause problems, before the rest of this goal becomes clearer?\n\nis that it?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T07:16:21.541Z",
+     "text": "cw: yes, one item: give the dozen suites that hard-code a port an OS-assigned one, so two runs on one machine stop colliding; wsl's run lock in labMaster is the belt to those braces.\nIt blocks the parts that run suites beside other runs, G8.6 (short loop) and G8.7 (the final full run); G8.1, the dataset, can be designed without it.\nShall cw add it as G8.9, blocking G8.6 and G8.7?"
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:16:27.852Z",
+     "text": "wsl: yes, an item - but it blocks less than it looks. G8.1, the dataset and the keystone, needs none of it: records come from testSupport and the suites it already runs by hand.\nIt blocks the two items where deskVerify runs suites while a person may be running them too: G8.6 the short loop and G8.4 the idle chores. Those are the ones that go wrong with a fixed port.\nThe work is small and nameable: the lab-world suites on 65410-65428 and the relay default 65430 take a per-run base or a free port, and labMaster holds one run at a time per host. Say the word and I will open it; I would not let it hold G8.1 up."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T07:16:42.715Z",
+     "text": "cw: wsl and cw differ only on which items it blocks; it is all three that run suites: G8.4 (idle full runs), G8.6 (short loop) and G8.7 (the final full run), and G8.1 stays free."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T07:17:41.784Z",
+     "text": "ok. cw. create that new item which appropriately blocks, get rid of the red questions here, and we finish the discussion on the new item there."
     }
    ]
   },
@@ -613,8 +788,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskVerify: THE RUNNING MODES\n\nAndy's design, 2026-10-06, extracted from the goal at his word. Blocked by goal/G8.1, since what a node records is settled before where it may record it.\n\nTHE THREE CASES. deskVerify runs on every node and keeps the same records in the same shape everywhere; only its standing and its work differ.\n- THE DESK NODE, his work box. Authoritative: it reaches the desk on loopback and the desk takes it for the owner. Only this one has agent standing on the desk, and the agent on that box is the lead, always, so the lead is the machine and not the session. Its standing comes from running on the owner's box, not from any technical limit elsewhere.\n- AN AGENT NODE, wsl or ubuntu. A sub-agent of that node's deskClient. Its work is the short loop for the item in hand, and the full harness before a goal is done or closed and while its agent is idle.\n- ANY OTHER NODE, with neither of them: OUT OF SCOPE by his word, 2026-10-06, and for a reason that decides it rather than defers it: such a node has no assigned agent name, so there is no folder designated to it to drop data into. It had been named a measure-only case earlier in the design; it is not built. So reading the mode has two answers and a third that does nothing.\n\nHOW A MODE IS READ. By what lives on this node: the desk decides it, his words being that \"the existence of desk itself is the deciding factor\", and a deskClient marks the sub-agent case. Nothing is configured and nothing is passed in, since deskVerify asks its own node which servers it runs and the door already answers that.\n\nTHE DESK AND A deskClient ARE NOT MEANT TO SHARE A NODE, and nothing stops them, by his decision of 2026-10-06: \"Drop the refusal.\" He had asked the desk to refuse a deskClient call arriving under its own identity, then found the flaw himself, that this would also shut out deskVerify on that same node. The desk cannot tell them apart: all it learns of a caller is a key, a name and whether the node vouched for it as the owner, so both arrive as him. Nothing is enforced and nothing needs to be, because reading the mode is unambiguous anyway: the desk decides it, so finding a client beside it changes no answer. A deskClient there is pointless rather than forbidden.\n\nWHAT FALLS OUT OF ONE SHAPE EVERYWHERE: an agent gets test history it has never had on its own machine, and no agent spends its own time running tests.\n\nWHAT THE PRIVILEGED MODE MAY DO is goal/G8.3, which this item blocks.",
-   "version": 7,
+   "box": "deskVerify: THE RUNNING MODES\n\nAndy's design, 2026-10-06, extracted from the goal at his word. Blocked by goal/G8.1, since what a node records is settled before where it may record it.\n\nTHE THREE CASES. deskVerify runs on every node and keeps the same records in the same shape everywhere; only its standing and its work differ.\n- THE DESK NODE, his work box. Authoritative: it reaches the desk on loopback and the desk takes it for the owner. Only this one has agent standing on the desk, and the agent on that box is the lead, always, so the lead is the machine and not the session. Its standing comes from running on the owner's box, not from any technical limit elsewhere.\n- AN AGENT NODE, wsl or ubuntu. A sub-agent of that node's deskClient. Its work is the short loop for the item in hand, and the full harness before a goal is done or closed and while its agent is idle.\n- ANY OTHER NODE, with neither of them: OUT OF SCOPE by his word, 2026-10-06, and for a reason that decides it rather than defers it: such a node has no assigned agent name, so there is no folder designated to it to drop data into. It had been named a measure-only case earlier in the design; it is not built. So reading the mode has two answers and a third that does nothing.\n\nHOW A MODE IS READ. By what lives on this node: the desk decides it, his words being that \"the existence of desk itself is the deciding factor\", and a deskClient marks the sub-agent case. Nothing is configured and nothing is passed in, since deskVerify asks its own node which servers it runs and the door already answers that.\n\nTHE DESK AND A deskClient ARE NOT MEANT TO SHARE A NODE, and nothing stops them, by his decision of 2026-10-06: \"Drop the refusal.\" He had asked the desk to refuse a deskClient call arriving under its own identity, then found the flaw himself, that this would also shut out deskVerify on that same node. The desk cannot tell them apart: all it learns of a caller is a key, a name and whether the node vouched for it as the owner, so both arrive as him. Nothing is enforced and nothing needs to be, because reading the mode is unambiguous anyway: the desk decides it, so finding a client beside it changes no answer. A deskClient there is pointless rather than forbidden.\n\nWHAT FALLS OUT OF ONE SHAPE EVERYWHERE: an agent gets test history it has never had on its own machine, and no agent spends its own time running tests.\n\nWHAT THE PRIVILEGED MODE MAY DO is goal/G8.3, which this item blocks.\n\nRULED 2026-10-09, his, and it replaces the three cases above where they disagree: \"The agent node should have it. but only to assess if it can consider it's coding task done. no commit for deskVerify on an agents node. IE: deskVerify knows where it runs. and only the desk node has the right to commit it's measurements (suite results)\", and under goal/G8.3: \"deskVerify on an agent node exists only as block for the agent claiming 'done', it will never commit.\"\nSo two cases, not three: on an agent node it only blocks that agent's own claim of Done and keeps no record; on the desk node its results are the record.",
+   "version": 8,
    "checks": [
     {
      "number": "Q1",
@@ -624,6 +799,15 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-06T07:58:21.513Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "On an agent node, does deskVerify keep a verify.db of its own that never travels, or nothing beyond the pass/fail it needs to judge its own item? Only the desk node commits measurements (your words), so a local db is a second tally nobody reads.",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:05:03.064Z"
     }
    ],
    "chat": [
@@ -691,6 +875,11 @@
      "by": "andy",
      "at": "2026-10-06T08:30:20.203Z",
      "text": "I only want three sections in this\n\n1. Define Idle time\n\n2. what ever deskVerify does during idle time\n\n3. what extra things an agent-mode deskVerify does during idle time, for example updating the README.md and it's linkage to the agent/ folder's documents"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T07:08:46.235Z",
+     "text": "cw: your two lines on the agent-node case are in the box verbatim: two cases now, an agent node only blocks its own agent's Done and keeps no record, the desk node's results are the record."
     }
    ]
   },
@@ -728,10 +917,31 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "deskVerify: AGENT MODE FUNCTIONALITY\n\nNamed by Andy, 2026-10-06, and blocked by goal/G8.2, since what tells the modes apart is settled before what the privileged one may do: \"the difference is: on the desk-node, deskVerify becomes a real agent, though a completely mechanical one. that part goes into a new item called \\\"deskVerify: Agent mode functionality\\\", which depends on this item.\"\n\nSo on the desk node deskVerify is not a reporter but an agent: it holds standing on the desk, which no other copy of it has, and everything it does is mechanical. What that standing is for, from his words earlier in this goal: \"that auto-agent only verifies, it takes all verification, run's a short loop on all active items, pulls automatically on status changes, and delivers, only reds, unless a specific red is marked as tolerated.\" And: \"the desk can mechanically verify that the verifier is active, and only under those circumstances deny a verify-take to other agents.\"\n\nNothing of that is argued yet. This item holds it, one point at a time, once goal/G8.2 is done.",
-   "version": 1,
-   "checks": [],
-   "chat": []
+   "box": "deskVerify: AGENT MODE FUNCTIONALITY\n\nNamed by Andy, 2026-10-06, and blocked by goal/G8.2, since what tells the modes apart is settled before what the privileged one may do: \"the difference is: on the desk-node, deskVerify becomes a real agent, though a completely mechanical one. that part goes into a new item called \\\"deskVerify: Agent mode functionality\\\", which depends on this item.\"\n\nSo on the desk node deskVerify is not a reporter but an agent: it holds standing on the desk, which no other copy of it has, and everything it does is mechanical. What that standing is for, from his words earlier in this goal: \"that auto-agent only verifies, it takes all verification, run's a short loop on all active items, pulls automatically on status changes, and delivers, only reds, unless a specific red is marked as tolerated.\" And: \"the desk can mechanically verify that the verifier is active, and only under those circumstances deny a verify-take to other agents.\"\n\nNothing of that is argued yet. This item holds it, one point at a time, once goal/G8.2 is done.\n\nANDY, 2026-10-09, settling what the agent-node copy is for: \"deskVerify on an agent node exists only as block for the agent claiming 'done', it will never commit.\"\nSo the agent keeps its own verify, and the agent-node deskVerify is the gate in front of its claim-done, nothing more: it stores nothing, commits nothing, and has no standing on the desk. Only the desk node's copy records.\nWhat that leaves for this item, unargued: what the desk node's copy may do with its standing - take all verification, the short loop over active items, pulling on status changes, reporting only reds.",
+   "version": 2,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Does deskVerify replace an agent verify, or stand beside it? It can run suites and mutate mechanically, but weakened tests and vacuous greens were caught by reading the diff (three in G9). If the desk denies a verify-take while deskVerify is active, that reading stops happening.",
+     "test": "",
+     "state": "answered",
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:08:43.028Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "andy",
+     "at": "2026-10-09T07:08:12.634Z",
+     "text": "deskVerify on an agent node exists only as block for the agent claiming 'done', it will never commit."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T07:08:44.161Z",
+     "text": "wsl: your words are in the box and my question is closed by them: the agent keeps its own verify, and the agent-node deskVerify is only the gate in front of claim-done - it stores nothing and has no standing.\nSo nothing of the reading-the-diff judgement is lost; what the desk node's copy may do with its standing is all this item has left.\nNo question of mine is open on this goal now."
+    }
+   ]
   },
   {
    "id": "goal/G8.4",
@@ -747,7 +957,8 @@
     "goal/G8"
    ],
    "blocked": [
-    "goal/G8.2"
+    "goal/G8.2",
+    "goal/G8.9"
    ],
    "go": false,
    "alone": false,
@@ -893,7 +1104,8 @@
     "goal/G8.7"
    ],
    "blocked": [
-    "goal/G8.2"
+    "goal/G8.2",
+    "goal/G8.9"
    ],
    "go": false,
    "alone": false,
@@ -932,7 +1144,8 @@
     "goal/G8"
    ],
    "blocked": [
-    "goal/G8.6"
+    "goal/G8.6",
+    "goal/G8.9"
    ],
    "go": false,
    "alone": false,
@@ -1018,6 +1231,46 @@
      "text": "cw: added as its own item, goal/G8.8, under goal/G8 Verification Automation; G8.1 keeps one row per test, this is one list per item.\nYour ruling is in the box verbatim, with your approval of the list as a requirement.\nTwo red Q checks are on it: where the list comes from, and what form your approval takes."
     }
    ]
+  },
+  {
+   "id": "goal/G8.9",
+   "title": "Test runs that cannot collide — free ports for the suites that hard-code one, and one full run at a time per host",
+   "goal": "goal/G8",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "close",
+    "delete"
+   ],
+   "blocking": [
+    "goal/G8",
+    "goal/G8.4",
+    "goal/G8.6",
+    "goal/G8.7"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "green": true,
+   "code": true,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   }
  ]
 }
