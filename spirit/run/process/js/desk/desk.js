@@ -750,9 +750,11 @@ function press(s, it, what, r, goalOf, b) {
 function blockers(s, it) {
   const g = s.goals[it.goal ? it.id : it.goalId];
   if (!g) return [];
+  // A CLOSED ITEM BLOCKS NOTHING (goal/G9.17): closed leaves the blockers as done does. Until then goal/G10 read
+  // blocked by its closed Configuration manager, and a Go would have stayed off behind a closed blocker.
   return g.members.filter(function (id) {
     const o = s.items[id];
-    return o && o.id !== it.id && !o.done && !o.leftOut && o.blocks.indexOf(it.id) !== -1;
+    return o && o.id !== it.id && !o.done && !o.closed && !o.leftOut && o.blocks.indexOf(it.id) !== -1;
   });
 }
 
@@ -1126,6 +1128,22 @@ function findItems(a) {
 }
 
 function refused(code) { const e = new Error(code); e.refusal = code; return e; }
+// A REFUSED PRESS NAMES WHAT BLOCKS IT (goal/G9.17, change 3). Andy, 2026-10-09, on "Not pressed: not-offered (that
+// press is not offered for this item now)": "and it doesn't tell me why either." The code stays not-offered; the
+// reason rides in extra.why, as line-too-large carries its bytes and its room.
+function notOffered(why) { const e = refused('not-offered'); e.extra = { why: String(why) }; return e; }
+function whyNotOffered(st, it, what, offered) {
+  const g = st.goals[it.goal ? it.id : it.goalId];
+  if (what === 'go' || what === 'go-all') {
+    if (g && g.design) return 'the goal ' + g.id + ' is in design mode; End design comes first';
+    const held = blockers(st, it);
+    if (held.length) return it.id + ' is blocked by ' + held.join(', ');
+    if (it.went) return 'Go is already on record for ' + it.id;
+    if (!it.goal && Object.keys(it.claims).length) return it.id + ' is claimed, so it offers Done, not Go';
+  }
+  if (what === 'make-current' && it.closed) return it.id + ' is closed; Reopen comes first';
+  return what + ' is not among the buttons of ' + it.id + ' now (' + (offered.length ? offered.join(', ') : 'none') + ')';
+}
 
 // ── THE NUDGE, SERVER TO SERVER (goal/G3.5) ──────────────────────────
 //
@@ -2141,21 +2159,23 @@ appServer.serve({
       const landed = write('press', body, function (st, it) {
         const offered = buttons(st, it);
         // goal/G2.19 puts make-current on the same leash: offered or refused, so a closed goal takes Reopen first.
-        if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen' || a.what === 'make-current') && offered.indexOf(a.what) === -1) throw refused('not-offered');
-        if (a.what === 'bring-back' && !it.closed) throw refused('not-offered');
-        if (a.what === 'code' && (it.goal || it.subGoal)) throw refused('not-offered');
+        // Every refusal below names what blocked it (goal/G9.17, change 3), the code staying not-offered.
+        if ((a.what === 'go' || a.what === 'go-all' || a.what === 'close' || a.what === 'reopen' || a.what === 'make-current') && offered.indexOf(a.what) === -1) throw notOffered(whyNotOffered(st, it, a.what, offered));
+        if (a.what === 'bring-back' && !it.closed) throw notOffered(it.id + ' is not closed, so there is nothing to bring back');
+        if (a.what === 'code' && (it.goal || it.subGoal)) throw notOffered(it.id + ' is a goal, and a goal is never a code item');
         // DESIGN-GREEN GATES THEM (goal/G6.8): his End design while any item of the goal has an open red question, a Go
         // on an item with one, a go-all while any item of the goal has one: refused.
         const gOf = st.goals[it.goal ? it.id : it.goalId];
         const members = gOf ? gOf.members : [];
-        if ((a.what === 'end-design' || a.what === 'go-all') && notGreen(st, members.concat(it.goal ? [it.id] : [])).length) throw refused('not-offered');
-        if (a.what === 'go' && openQ(it)) throw refused('not-offered');
+        const red = (a.what === 'end-design' || a.what === 'go-all') ? notGreen(st, members.concat(it.goal ? [it.id] : [])) : [];
+        if (red.length) throw notOffered(red.join(', ') + (red.length === 1 ? ' carries' : ' carry') + ' an open red question; answer or close it first');
+        if (a.what === 'go' && openQ(it)) throw notOffered(it.id + ' carries an open red question; answer or close it first');
         // NO CLAIM BEFORE HIS GO (goal/G3.9). Andy, 2026-10-03: "yes, the desk may refuse a claim-done, on an item
         // without 'go' on record", "the actual contract is consumed between 'go' and 'done'". It replaces
         // goal/G2.13's "a claim consumes the Go" for that case. A goal takes the press as before (goal/G2.10).
-        if (a.what === 'claim-done' && !it.goal && !it.go) throw refused('not-offered');
+        if (a.what === 'claim-done' && !it.goal && !it.go) throw notOffered('no Go is on record for ' + it.id + ', so nothing is claimable');
         // The group chat's anchor stays closed (goal/G3.10): nobody brings it back onto the List.
-        if (a.what === 'bring-back' && it.id === GROUP_CHAT) throw refused('not-offered');
+        if (a.what === 'bring-back' && it.id === GROUP_CHAT) throw notOffered('the group chat never comes back onto the List');
       });
       // THE PRESS THAT EMPTIES THE GOAL WRITES IT (goal/G8.12), once, right after it has landed.
       emptiedByPress(a);

@@ -198,7 +198,13 @@ function ddStripHtml() {
 // THE ONE BOX. An item with no text yet says so; an agent writes it.
 // IT FOLDS AGAIN (goal/G2.1 note 1; the fold was lost in desk/G2.7). Andy: "BIG complaint: the text bubble
 // no longer folds." Folded shows its first line; the state is kept here, so a repaint keeps his fold.
-var ddFolded = true;  // every open starts folded, as before desk/G2.7
+// ALL OF THE TEXT, ON EVERY OPEN (goal/G9.17). Andy, 2026-10-09: "it always should open so all text is visible." So an
+// open starts unfolded and the textarea is as tall as the lines the box holds; the arrow only shrinks it afterwards.
+var ddFolded = false;
+function ddBoxRows() {
+  var lines = String(ddBox || '').split('\n').length;
+  return ddFolded ? 1 : Math.max(3, lines);
+}
 // HIS TAKE OF THE BOX (goal/G9.3): on while he is in the textarea, with the text as it stood when he went in, so a
 // blur that changed nothing releases instead of writing. Focus and blur arrive more than once (the element, the body),
 // so the flag is what keeps one take and one release.
@@ -226,7 +232,7 @@ function ddBoxHtml() {
   // So the box is a textarea holding the whole text; the fold only decides how tall it is, and the take happens on
   // focus, never on open. It is never repainted while he has it (ddPaint), so his typing cannot be wiped.
   return '<div' + taken + ' style="' + cap + '"><div>' + toggle + '</div>' +
-    '<textarea id="dd-box-input" rows="' + (ddFolded ? 1 : 12) + '" style="width:100%;white-space:pre-wrap">' + ddEsc(ddBox) + '</textarea></div>';
+    '<textarea id="dd-box-input" rows="' + ddBoxRows() + '" style="width:100%;white-space:pre-wrap">' + ddEsc(ddBox) + '</textarea></div>';
 }
 
 // WHAT WAITS ON HIM, UNDER THE BOX (goal/G4.20 points 10-11). Andy: "the Grants are red arm-buttons that turn green
@@ -546,7 +552,7 @@ spirit.shell.activateApp({
     ddRenaming = false;
     ddNote = '';
     ddLastChange = 0;
-    ddFolded = true;
+    ddFolded = false;  // goal/G9.17: every open shows all of the text
     ddFrame();
     ddPaint();
     return ddLoad().then(function () {
