@@ -1,8 +1,8 @@
 {
- "change": 20669,
+ "change": 20672,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:33:22.031Z",
+ "writtenAt": "2026-10-09T06:33:24.633Z",
  "items": [
   {
    "id": "goal/G9",
@@ -35,12 +35,15 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [],
+   "working": [
+    "claude-windows",
+    "wsl-claude"
+   ],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -420,10 +423,9 @@
    "id": "goal/G9.3",
    "title": "The user takes the text box on focus, releases on blur or close",
    "goal": "goal/G9",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
