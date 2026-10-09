@@ -1,8 +1,8 @@
 {
- "change": 25670,
+ "change": 25671,
  "line": 8495,
  "goal": "goal/G10",
- "writtenAt": "2026-10-09T21:09:35.579Z",
+ "writtenAt": "2026-10-09T21:09:37.414Z",
  "items": [
   {
    "id": "goal/G10",
@@ -35,7 +35,7 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -1455,10 +1455,9 @@
    "id": "goal/G10.3",
    "title": "Context auto-built from the desk goal for the local agent",
    "goal": "goal/G10",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
