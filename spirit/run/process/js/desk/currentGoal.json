@@ -1,8 +1,8 @@
 {
- "change": 20331,
+ "change": 20332,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:08:58.821Z",
+ "writtenAt": "2026-10-09T06:09:02.897Z",
  "items": [
   {
    "id": "goal/G9",
@@ -41,7 +41,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -1605,10 +1605,9 @@
    "id": "goal/G9.13",
    "title": "Adding an item never changes the current goal",
    "goal": "goal/G9",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
