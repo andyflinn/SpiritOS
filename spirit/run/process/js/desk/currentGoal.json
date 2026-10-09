@@ -1,8 +1,8 @@
 {
- "change": 24983,
+ "change": 25107,
  "line": 8495,
  "goal": "goal/G10",
- "writtenAt": "2026-10-09T19:01:16.359Z",
+ "writtenAt": "2026-10-09T19:49:46.616Z",
  "items": [
   {
    "id": "goal/G10",
@@ -38,7 +38,7 @@
    "half": false,
    "full": false,
    "design": true,
-   "waiting": 6,
+   "waiting": 5,
    "live": [
     "claude-windows"
    ],
@@ -49,8 +49,8 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "UPGRADE THE LOCAL AI SUPPORT, deskUnsloth. Design, 2026-10-09. Facts checked at 8924c0dc. Rulings live verbatim in the item they decide.\n\nVISION (Andy's words): the local agent (qwen, on its own node, port 11111) becomes a real party at the desk: it knows what is talked about, its node is \"it's sandbox and it's toolset\", secured against it, and Andy configures memory, models and agent personas with their tools from a browser. \"disregart the ollama agent, i want it to read along for now.\" And, out of the first item's scope but in the vision by his word: \"that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp\" and \"the permission set may change with every deskUnsloth configuration\". And where it goes (his, 2026-10-09): \"picture this: a whole goal, designed for one agent persona, with its model configuration paired with it's tool-access-configuration, will tackle the same goal, while i sleep, event descending the dependency tree of that process....\" Agents with standing orders, tied to one standing item with its own verification, come after this goal. His purpose for this goal (2026-10-09): \"My goal would be, it can help me sketch a design while i wait for the day i get more tokens for claude.\" So the first achievement is the context item's first slice: one document, the box, discussed at length.\n\nTHE ITEMS, IN ANDY'S ORDER\n0. API introspection retrofit: every verb declared on both doors (goal/G10.5): the core work, split off 2026-10-09 (\"a big enough task for one item, it will require grants for core files\"); blocks 1.\n1. Endpoint introspection in OpenAI tool shape: the tool list for a key, stripped to its grants at ask time; the agent reads it (his named dependency).\n2. The local agent node secured against its agent: out of scope for now by his word of 2026-10-09 (the restriction per persona is its configured tool set; the agent node is expendable while the flow is built); the keyed loopback caller stays the later door change.\n3. Context auto-built from the desk goal for the local agent: title, box, last lines and AGENTS go with each line; addressed lines only; one config.\n4. Configuration manager: VRAM, models and agent personas: a shell app in three panels; a persona is a configuration on the one agent node with its tool set, chosen from the introspected verbs.\n6. streamClerver: set aside as its own goal, goal/G11, by his word of 2026-10-09; the item here was deleted by him the same day.\n\nChain: 0 blocks 1, 1 blocks 2, 2 blocks 4; 3 and 4 block the goal. Every item: a suite red on today's code first; the builder never writes its own tests.\n\nNo red Q stands on the goal (2026-10-09): a persona is a configuration with a tool set, not a key and not a node; the Grants app is not involved for the local agent.",
-   "version": 18,
+   "box": "UPGRADE THE LOCAL AI SUPPORT, deskUnsloth. Design, 2026-10-09. Facts checked at 8924c0dc. Rulings live verbatim in the item they decide.\n\nVISION (Andy's words): the local agent (qwen, on its own node, port 11111) becomes a real party at the desk: it knows what is talked about, its node is \"it's sandbox and it's toolset\", secured against it, and Andy configures memory, models and agent personas with their tools from a browser. \"disregart the ollama agent, i want it to read along for now.\" And, out of the first item's scope but in the vision by his word: \"that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp\" and \"the permission set may change with every deskUnsloth configuration\". And where it goes (his, 2026-10-09): \"picture this: a whole goal, designed for one agent persona, with its model configuration paired with it's tool-access-configuration, will tackle the same goal, while i sleep, event descending the dependency tree of that process....\" Agents with standing orders, tied to one standing item with its own verification, come after this goal. His purpose for this goal (2026-10-09): \"My goal would be, it can help me sketch a design while i wait for the day i get more tokens for claude.\" So the first achievement is the context item's first slice: one document, the box, discussed at length.\n\nTHE ITEMS, IN ANDY'S ORDER\n0. API introspection retrofit: every verb declared on both doors (goal/G10.5): the core work, split off 2026-10-09 (\"a big enough task for one item, it will require grants for core files\"); blocks 1.\n1. Endpoint introspection in OpenAI tool shape: the tool list for a key, stripped to its grants at ask time; the agent reads it (his named dependency).\n2. The local agent node secured against its agent: out of scope for now by his word of 2026-10-09 (the restriction per persona is its configured tool set; the agent node is expendable while the flow is built); the keyed loopback caller stays the later door change.\n3. Context auto-built from the desk goal for the local agent: title, box, last lines and AGENTS go with each line; addressed lines only; one config.\n4. Configuration manager: VRAM, models and agent personas: out of scope by his word of 2026-10-09 (\"oos\"); the first configuration is two hand-edited files, the context item's; the screen is a later goal's; the item awaits his Close or Delete.\n6. streamClerver: set aside as its own goal, goal/G11, by his word of 2026-10-09; the item here was deleted by him the same day.\n\nChain: 0 blocks 1, 1 blocks 2; 3 blocks the goal (4 out of scope). Four items design-complete on 2026-10-09: 0, 1, 2, 3. Every item: a suite red on today's code first; the builder never writes its own tests.\n\nNo red Q stands on the goal (2026-10-09): a persona is a configuration with a tool set, not a key and not a node; the Grants app is not involved for the local agent.",
+   "version": 19,
    "checks": [
     {
      "number": "Q1",
@@ -502,6 +502,11 @@
      "by": "claude-windows",
      "at": "2026-10-09T18:02:26.921Z",
      "text": "cw: your picture of a whole goal run by one persona while you sleep, model and tool configuration paired, descending the dependency tree, is in this goal's vision verbatim; it is what the four items add up to, and the standing-order agents come after."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:01:42.305Z",
+     "text": "sweet, how i can do this myself now."
     }
    ]
   },
@@ -1147,7 +1152,7 @@
    "id": "goal/G10.3",
    "title": "Context auto-built from the desk goal for the local agent",
    "goal": "goal/G10",
-   "status": "",
+   "status": "ready",
    "with": "",
    "buttons": [
     "close",
@@ -1176,8 +1181,8 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "CONTEXT AUTO-BUILT FROM THE DESK GOAL FOR THE LOCAL AGENT. Facts at 512e59d3; Andy's words of 2026-10-09 are in this chat.\n\nWHAT: each call deskUnsloth makes to the model carries, built fresh from the desk, the desk's AGENTS text and the persona's preamble from its configuration as the system prompt, the current goal's and item's title and box, the last lines of that item's chat, and the persona's tools; nothing is stored in deskUnsloth between calls. The model remembers only because the conversation is re-sent; a mode is a different preamble; the box is the compacted record and the chat the recent lines, so no compacting code lives here.\n\nDECIDED (Andy, 2026-10-09)\n0. KISS: deskUnsloth speaks to the desk through the same deskClient server the agents use, in a loop, deskUnsloth being the mediator; which is what it does today.\n1. The context is the current goal's, as the desk says it: the first kind of agent, a coder following the current goal as the claudes do. Agents with standing orders are a later goal.\n2. loop.json was temporary and goes; the configuration falls to this design (manifest args the shape proposed).\n3. The agent's first tools are file tools (fs.search, fs.stat through the retrofit's family) bounded to a scope, the desk's per-agent scope (scope.set: nothing, the repo root, a folder) bounding them, down to one file.\n4. The cap bites on packets only: the context never leaves the agent's box (local HTTP to the model); desk and node answers are capped, so the context is assembled from bounded reads that exist (the box; item.chat's newest page; chat.search {id, text, by, since, before} for older pages), and the model's long answer goes back as several chat lines under the room, split at paragraphs. A file travels as the fileServer's 6000-byte chunks, both directions, unchanged; a file on the agent's own node is read locally within its scope.\n\nPROPOSED, AWAITING HIS SETTLE\n- First slice: one document and a remembered conversation: AGENTS text plus the persona's preamble, the box, the chat so far, no tools; he discusses the box at length under its item. Second slice: the persona's tools and the scoped file tools.\n- The agent answers lines addressed to it (its nick) and JOBs only, and starts at the present, never the backlog; it keeps the posting rules (3 lines, a question only when meant, its own name, no [loop.js]).\n- The streamClerver is out of scope, a separate goal later (his word, 2026-10-09); the pages and chunks above are the mechanism here.\n\nLATER, his seeds: mechanical guidance for a simpler agent by simple steps the desk and verifier check off nightly, fed as dynamic context like the current goal, or scored 0 to 1; standing-order agents tied to one standing item; a whole goal run by one persona while he sleeps.\n\nTODAY: deskUnsloth sends a bare line with the system prompt \"You are a helpful assistant\" and answers every other party's line; at start it answered some 300 backlog lines; it is off since 2026-10-09.\n\nTESTS FIRST: a suite red on today's code with a fake model: the call carries AGENTS text, preamble, box and the last lines that fit; nothing kept between calls; a long answer split into lines under the room; an addressed line answered and an unaddressed one not; the backlog skipped; the builder never writes its own tests. Blocks the goal.",
-   "version": 13,
+   "box": "CONTEXT AUTO-BUILT FROM THE DESK GOAL FOR THE LOCAL AGENT. Design-complete 2026-10-09; facts at 512e59d3; Andy's words are in this chat.\n\nWHAT: each call deskUnsloth makes to the model is built fresh from the desk, nothing kept between calls. In the window: the system prompt (the desk's AGENTS text and the persona's preamble), the goal's box and the item's box asked of the desk through deskClient, the persona's tools (second slice), and the item's chat as a rolling window of its newest lines, the oldest dropped. The window, in his words: MAX_CONTEXT_LENGTH minus the goal and item boxes, and the two subtractions the call needs, the system prompt and the answer room (answerTokens), the tool list joining in the second slice; sizes in tokens by bytesPerToken from the configuration.\n\nDECIDED (Andy, 2026-10-09)\n1. KISS: deskUnsloth speaks to the desk through the same deskClient server the agents use, in a loop, deskUnsloth the mediator, as today.\n2. The context is the current goal's as the desk says it; a coder agent following the current goal as the claudes do. Standing-order agents are a later goal.\n3. Boxes, not the file: currentGoal.json is the whole goal, 161 KB with every chat, beyond the window and stale on the agent node.\n4. Two files for starters in deskUnsloth's state folder, out of git: the configuration (persona, preamble, model, context limit) and the connection (loop.json's key and url). No UI yet; the configuration manager is out of scope.\n5. The first persona is Levant: preamble \"you are 'Levant' (a genius i knew when i was a lead engineer at ATI technologies, later absorbed by AMD)\", model unsloth/Qwen-AgentWorld-35B-A3B-GGUF (tool use, 12 GB; the DeepSeek R1 8B, a reasoning model without tool use, a possible second persona later), contextLimit 8192 to start, answerTokens 1024, bytesPerToken 4. The file is in this chat.\n6. First slice: one document and a remembered conversation, no tools; he discusses the box at length under its item. Second slice: the persona's tools and the scoped file tools (fs.search, fs.stat through the retrofit's family), bounded by the desk's per-agent scope down to one file.\n7. The agent answers lines addressed to it (its nick) and JOBs only, starts at the present, never the backlog, keeps the posting rules (3 lines, a question only when meant, its own name, no [loop.js]).\n8. The cap bites on packets only: the context never leaves the agent's box; the chat is read in pages (item.chat, chat.search) and a long answer goes back as several lines under the room, split at paragraphs; a file travels as the fileServer's chunks. The streamClerver is Fake-streaming in SpiritOS: The StreamClerver (goal/G12).\n\nTHE CARD: his RTX 5060 has 16 GB. contextLimit is tokens, about four bytes of English each (8192 is roughly 32 KB of text); the card stores per token what the model keeps for the whole conversation, roughly 100 KB per token for this size, so after 12 GB of weights it holds some 30 to 40 thousand tokens; the serving process reports the exact cost, and 32768 is within reach.\n\nLATER, his seeds: mechanical guidance by simple steps checked nightly or scored 0 to 1; standing-order agents; a whole goal run by one persona while he sleeps.\n\nTODAY: deskUnsloth sends a bare line with \"You are a helpful assistant\" and answers every other party's line; off since 2026-10-09.\n\nTESTS FIRST: a suite red on today's code with a fake model: deskUnsloth reads the configuration and the connection from its state folder and refuses to start without them; the call carries system prompt, boxes and the newest lines that fit the computed room; nothing kept between calls; a long answer split into lines under the room; an addressed line answered, an unaddressed one not; the backlog skipped; the builder never writes its own tests. Blocks the goal.",
+   "version": 27,
    "checks": [
     {
      "number": "Q1",
@@ -1205,6 +1210,33 @@
      "state": "answered",
      "by": "claude-windows",
      "at": "2026-10-09T18:43:41.738Z"
+    },
+    {
+     "number": "Q4",
+     "kind": "Q",
+     "words": "Boxes instead of the file, chat as the rolling window, yes?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T19:10:55.037Z"
+    },
+    {
+     "number": "Q5",
+     "kind": "Q",
+     "words": "Keep it in this goal as the screen for later, or take it out of scope now?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T19:28:26.915Z"
+    },
+    {
+     "number": "Q6",
+     "kind": "Q",
+     "words": "Is yours the 16 GB card?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-09T19:45:54.196Z"
     }
    ],
    "chat": [
@@ -1322,6 +1354,196 @@
      "by": "claude-windows",
      "at": "2026-10-09T18:45:25.131Z",
      "text": "cw: added at your word: streamClerver: a faked stream between two nodes over peerPost (goal/G10.6), marked code, blocking this item; its box holds your shape (the key-hash handshake, the stream-connect, the relay routing as today), what exists, the red tests, and the one point left: what it carries first.\nIt blocks this item only for now; say if it should block the others too."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:09:11.966Z",
+     "text": "So lets say this: The Context, for now is CurrentGoal.json, the chat history, and we make the chat history a rolling window so it fits into the context size by calculating CONTEXT_LIMIT (in agent-persona-task-config) minus, sizeOf(currentGoal.json), and that's where we fit in as many recent events of the chat history???"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:09:58.261Z",
+     "text": "cw: that is the right formula with one substitution, measured: currentGoal.json is the complete data set of the current goal, seven items with their boxes, checks and chats, 161 KB today, so it alone outruns a 9B model's window and it already contains the chat; it also reaches the agent node only through git, stale. So the context is the goal's box plus the item's box (asked of the desk through deskClient, as everything else), and the item's chat is the rolling window: CONTEXT_LIMIT from the persona config, minus the system prompt (AGENTS and preamble), minus the tool list, minus the room kept for the answer, minus the two boxes, is what the newest chat lines fill, measured in tokens by a bytes-per-token estimate the config may correct.\nBoxes instead of the file, chat as the rolling window, yes?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:10:40.549Z",
+     "text": "Q4: Boxes instead of the file, chat as the rolling window, yes?\n\nyes."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:11:07.434Z",
+     "text": "cw: decided and in the box. Left to settle on this item: the first slice (one document, the box, no tools) and the addressed-lines rule from the present; both stand in the box as proposals, one line each. Say yes to them and I press design-complete here."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:11:15.959Z",
+     "text": "cap"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:11:30.644Z",
+     "text": "cw: taking the cap."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:11:59.398Z",
+     "text": "cw: capped: what each call carries, six decided points, two proposals for your yes, his seeds, today, tests first; your words stay in this chat; resolved red Qs cleared."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:13:35.784Z",
+     "text": "and for starters a configuration has 1. agent persona, 1 preamble,  1 model, 1 context limit, all simple and safe, for my RTX 5060, this way we get off the ground quicker."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:13:54.061Z",
+     "text": "cw: in both boxes verbatim, this one and the configuration manager's: the first configuration is four fields, one persona, one preamble, one model, one context limit, safe for your RTX 5060; the window formula here reads CONTEXT_LIMIT straight from it, and the manager's first cut is a form of those four, the VRAM tuner and the model registry coming after."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:15:05.258Z",
+     "text": "and for starters, we have just one configuration file, and one connection file with the contents of loop.json, so i don't have to keep regenerating keys in unsloth. no UI yet."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:15:25.002Z",
+     "text": "cw: in the box: two files for starters, both in deskUnsloth's own state folder and out of git as loop.json is: the configuration (persona, preamble, model, context limit) and the connection (loop.json's key and url, kept so you never regenerate keys). So loop.json does not go, it becomes the connection file; and no UI yet, which puts the configuration manager after the flow runs, noted in its box."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:19:30.748Z",
+     "text": "and the other file contains: preamble: \"you are 'Levant' (a genius i knew when i was a lead engineer at ATI technologies, later absorbed by AMD), the model id, basically just the stuff we need to have continuous conversation with a bit of memory, tailored to make MAX use of my rtx 5060"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:19:47.427Z",
+     "text": "cw: in the box verbatim: the first persona is Levant, preamble as you wrote it, the model id beside it, the context limit tuned for the RTX 5060; the configuration file holds exactly what a continuous conversation with a bit of memory needs and nothing else."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:24:25.714Z",
+     "text": "green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:24:40.088Z",
+     "text": "cw: nearly: eight points decided, two still proposals for your yes, the first slice without tools and the addressed-lines rule from the present. Your yes on those and I press design-complete."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:26:38.703Z",
+     "text": "2 proposals accepted."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:27:08.430Z",
+     "text": "cw: both decided in the box, design-complete pressed; this item is green.\nLast of the goal: Configuration manager: VRAM, models and agent personas (goal/G10.4). With your no-UI-yet word its first cut is the two hand-edited files, which the context item already builds; the screen is for after the flow runs.\nKeep it in this goal as the screen for later, or take it out of scope now?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:28:00.092Z",
+     "text": "Q5: Keep it in this goal as the screen for later, or take it out of scope now?\n\noos"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:28:28.636Z",
+     "text": "cw: out of scope then: the configuration manager's box says so and it waits for your Close or Delete; with it gone the goal's four items are all design-complete.\nGap check before I call the design done, walking every ruling against the red it needs: two tests were missing and are now in this box, the window formula (the room computed from CONTEXT_LIMIT minus system prompt, tools, answer and boxes) and the two files (deskUnsloth reads the configuration and the connection from its state folder and refuses to start without them). Every other ruling has its red named in its item."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:29:00.301Z",
+     "text": "you will generate the first configuration.json file for the agent 'Levant'"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:29:33.819Z",
+     "text": "cw: the first configuration.json for Levant, to live beside the connection file in deskUnsloth's state folder on the agent node (relay-state/process/deskUnsloth/), out of git; I cannot reach that node's folder, so here it is to paste:\n{\"persona\": \"Levant\", \"preamble\": \"you are 'Levant' (a genius i knew when i was a lead engineer at ATI technologies, later absorbed by AMD)\", \"model\": \"unsloth/Qwen3.5-9B-GGUF\", \"contextLimit\": 16384, \"answerTokens\": 1024, \"bytesPerToken\": 4}\nYour four fields, plus the two small numbers the window formula needs: the room kept for the answer and the bytes-per-token estimate; 16384 tokens is a safe window for a 9B model on a 16 GB RTX 5060, raise it when the card has room."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:31:35.256Z",
+     "text": "the window formula:\n\nMAX_CONTEXT_LENTH - (goal and item boxes) is the space available for the rolling window.\noldest chat lines are dropped to fit in the newest lines.\n\n?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:31:53.604Z",
+     "text": "cw: yes, with two more subtractions or the call overflows: the system prompt (AGENTS text and the Levant preamble) goes in every call, and the model needs room to answer (answerTokens), so the window is MAX_CONTEXT_LENGTH minus system prompt minus answer room minus the two boxes; the tool list joins the subtractions in the second slice. Then the newest chat lines fill it and the oldest drop, exactly as you say; in the box as your formula with those two lines."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:32:32.012Z",
+     "text": "yes. i trust you know what needs subtracting."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:36:03.099Z",
+     "text": "Qwen-AgentWorld-35B-A3B-GGUF\n\nunsloth\nText Generation\nTool use\nConversational\n\nBase\nQwen/Qwen-AgentWorld-35B-A3B\n\nRun\n3mo ago\nJun 2026\n316.7K\n250\nN/A\nTransformers\n12 GB\napache-2.0"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:36:27.277Z",
+     "text": "cw: a good fit for Levant on paper: 35B knowledge with 3B active per token, so it answers fast, and the tool-use tag is exactly the second slice. The weight file is 12 GB, so on a 16 GB card about 3 to 4 GB stay for the context cache, which means a smaller first window than the 9B's: start contextLimit at 8192 and raise it while the card has room; the configuration changes only the model id and that number.\nOne thing I cannot see from here: the 5060 Ti ships with 8 GB or 16 GB, and 12 GB of weights fits only the 16 GB one.\nIs yours the 16 GB card?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:37:55.758Z",
+     "text": "or\n\nDeepSeek-R1-0528-Qwen3-8B-GGUF\n\nunsloth\nText Generation\nReasoning\nConversational\n\nBase\ndeepseek-ai/DeepSeek-R1-0528-Qwen3-8B\n\nRun\n1y ago\nMay 2025\n93.2K\n462\nN/A\nTransformers\n11 GB\nmit\nLearn how to run DeepSeek-R1-0528 correctly - Read our Guide.\n\nSee our collection for all versions of R1 including GGUF, 4-bit & 16-bit formats.\n\nUnsloth Dynamic 2.0 achieves superior accuracy & outperforms other leading quants."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:38:18.402Z",
+     "text": "cw: the two differ in kind. The DeepSeek R1 8B is a reasoning model: it thinks aloud before it answers, which helps a design discussion at length but costs time and window, since the thinking tokens count against the answer room and must be stripped before a line goes to the desk; it carries no tool-use tag, and R1 distills are weak at calling tools, so it serves the first slice, not the second. The AgentWorld 35B-A3B is the tool-user, fast per token, and serves both slices.\nMy recommendation: AgentWorld as Levant from the start, so the second slice changes nothing; the R1 as a second persona later for reasoning-heavy discussion if you want it. Either fits the configuration file; the open question about the 16 GB card is the same for both."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:41:14.747Z",
+     "text": "you recommend?:\n\n\nQwen-AgentWorld-35B-A3B-GGUF\n\nunsloth\nText Generation\nTool use\nConversational\n\nBase\nQwen/Qwen-AgentWorld-35B-A3B\n\nRun\n3mo ago\nJun 2026\n316.7K\n250\n34.7B\nTransformers\n12 GB\napache-2.0"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:41:29.643Z",
+     "text": "cw: yes, that one, Qwen-AgentWorld-35B-A3B-GGUF, provided the card is the 16 GB 5060 Ti; in the configuration file the model becomes unsloth/Qwen-AgentWorld-35B-A3B-GGUF and contextLimit starts at 8192, the rest unchanged."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:42:57.738Z",
+     "text": "\"contextLimit starts at 8192\", is that word? bytes? and is that all, can't i have a few megabytes of context at least?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:43:17.906Z",
+     "text": "cw: tokens, the model's own unit, about four bytes of English each: 8192 tokens is roughly 32 KB of text, 16384 roughly 64 KB; that is a whole box and a long stretch of chat in one call. Megabytes would be hundreds of thousands of tokens, and a model holds its context in the card's memory at a cost per token, so no 16 GB card holds it, whatever the model claims on paper.\nThe way to a megabyte is what the design already does: the window carries the newest, the box carries the compacted rest, and in the second slice the tools fetch what a question needs when it needs it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:45:23.068Z",
+     "text": "why doesn't a 16GB card hold more that 64 KB of context, that sound illogical....\n\nand yes my card is an RTX 5060 with 16GB of VRAM"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:45:49.509Z",
+     "text": "cw: because the card does not store the text, it stores what the model computes about every token and keeps for the whole conversation: for each token, each of the model's layers keeps two vectors (its key and its value), and for a model of this size that is roughly 100 KB per token, a thousand times the text. So 16384 tokens of text (64 KB) cost about 1.5 GB of card memory, and after the 12 GB of weights the 16 GB card has room for some 30 to 40 thousand tokens, a few hundred KB of text at most, never megabytes. The number is an estimate; the serving process reports the exact cost when it loads the model.\n16 GB confirmed, so the AgentWorld fits: start at 8192, and 32768 is within reach once we see the real figure."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:46:35.566Z",
+     "text": "got it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:47:58.628Z",
+     "text": "cap.\n\ngreen?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:48:14.637Z",
+     "text": "cw: taking the cap; and yes, green: everything decided, design-complete pressed, no red Q."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:48:42.432Z",
+     "text": "cw: capped: what each call carries, eight decided points, the card, his seeds, today, tests first; your words stay in this chat."
     }
    ]
   },
@@ -1329,11 +1551,10 @@
    "id": "goal/G10.4",
    "title": "Configuration manager: VRAM, models and agent personas",
    "goal": "goal/G10",
-   "status": "",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
-    "delete"
+    "reopen"
    ],
    "blocking": [
     "goal/G10"
@@ -1360,14 +1581,24 @@
    "asks": 0,
    "half": false,
    "full": false,
-   "box": "WHAT: a shell app in three panels. Resource tuner: the serving process as a server job, its memory and unsloth settings (quantization, context window, attention) as manifest args, so start and restart are the node's; a VRAM reading is new, and the estimate says it is one. Model registry: the serving process's own model list, searchable. Persona creator: name, role, system prompt, sampling; its tools are the node's include list and grant rows chosen with the Grants app's path selector; no access levels (the door is loopback-only), no tokens (identity is a key).\n\nWHY (Andy, 2026-10-09): \"i want a configuration manager, that allows me to configure my dedicated VRAM and unsloth to use that memory optimally, list available models, and create agent-personas with those configurations. these agent configurations also will carry with them an authorization scheme for the loopback interface, so the \"tools\" that and agent gets are dependent on configuration.\" The three-panel sketch (the local agent's text) he called \"an awesome start\".\n\nTODAY (8924c0dc): no such app. The Grants app gives, sees and revokes grant rows; a node runs only the servers its include list names (config.setModules); a node-operated server starts with its manifest args and a state folder of its own.\n\nANDY (2026-10-09): \"1. the permission set may change with every deskUnsloth configuration\", \"2. that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp\". So the configuration manager runs on Andy's node and configures the agent node as a puppet over the relay, the way the VPS face node is run; the persona's grant rows live on the agent node and change with each configuration.\n\nRULED, Andy (2026-10-09, under the secured node): \"and the configuration UI should sit on the owner node, not the puppet node, that way i could buy the biggest Apple M5-6 type box and use the whole thing as a headless agent-puppet....\" So the manager is a shell app on the owner node, configuring the puppet over the owner door; the puppet carries no screen of its own.\n\nBlocked by the secured-node item: a persona's tools are grants on its key.",
-   "version": 3,
+   "box": "OUT OF SCOPE OF goal/G10 (Andy, 2026-10-09, under the context item: \"oos\"). The first configuration is two hand-edited files, built by the context item (goal/G10.3); this screen is for a later goal. The item waits for his Close or Delete. What follows is the shape as argued, for that later goal.\n\nWHAT: a shell app in three panels. Resource tuner: the serving process as a server job, its memory and unsloth settings (quantization, context window, attention) as manifest args, so start and restart are the node's; a VRAM reading is new, and the estimate says it is one. Model registry: the serving process's own model list, searchable. Persona creator: name, role, system prompt, sampling; its tools are the node's include list and grant rows chosen with the Grants app's path selector; no access levels (the door is loopback-only), no tokens (identity is a key).\n\nWHY (Andy, 2026-10-09): \"i want a configuration manager, that allows me to configure my dedicated VRAM and unsloth to use that memory optimally, list available models, and create agent-personas with those configurations. these agent configurations also will carry with them an authorization scheme for the loopback interface, so the \"tools\" that and agent gets are dependent on configuration.\" The three-panel sketch (the local agent's text) he called \"an awesome start\".\n\nTODAY (8924c0dc): no such app. The Grants app gives, sees and revokes grant rows; a node runs only the servers its include list names (config.setModules); a node-operated server starts with its manifest args and a state folder of its own.\n\nANDY (2026-10-09): \"1. the permission set may change with every deskUnsloth configuration\", \"2. that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp\". So the configuration manager runs on Andy's node and configures the agent node as a puppet over the relay, the way the VPS face node is run; the persona's grant rows live on the agent node and change with each configuration.\n\nRULED, Andy (2026-10-09, under the secured node): \"and the configuration UI should sit on the owner node, not the puppet node, that way i could buy the biggest Apple M5-6 type box and use the whole thing as a headless agent-puppet....\" So the manager is a shell app on the owner node, configuring the puppet over the owner door; the puppet carries no screen of its own.\n\nRULED, Andy (2026-10-09, under the context item): \"and for starters a configuration has 1. agent persona, 1 preamble,  1 model, 1 context limit, all simple and safe, for my RTX 5060, this way we get off the ground quicker.\" So the first configuration is four fields, one each: agent persona, preamble, model, context limit, chosen safe for his RTX 5060; the manager's first cut is a form of those four on the owner node, written to the puppet over the owner door; the VRAM tuner and the model registry come after.\nTHEN (his, 2026-10-09): \"and for starters, we have just one configuration file, and one connection file with the contents of loop.json, so i don't have to keep regenerating keys in unsloth. no UI yet.\" So the configuration is a file first, edited by hand, and this screen comes after the flow runs. The first persona (his, 2026-10-09): Levant, preamble \"you are 'Levant' (a genius i knew when i was a lead engineer at ATI technologies, later absorbed by AMD)\", the model id, a context limit for the RTX 5060.\n\nBlocked by the secured-node item: a persona's tools are grants on its key.",
+   "version": 7,
    "checks": [],
    "chat": [
     {
      "by": "claude-windows",
      "at": "2026-10-09T18:04:37.142Z",
      "text": "cw: your line under the secured node is in this box verbatim: the configuration UI sits on the owner node, never the puppet, so a headless box can be the whole agent-puppet; this item's shape says so already, the manager on your node configuring the puppet over the owner door."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T19:49:08.345Z",
+     "text": "this one oos for now?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T19:49:22.432Z",
+     "text": "cw: yes, out of scope for now by your word under the context item; the box says so and keeps the shape for a later goal. It still blocks this goal until your Close or Delete here."
     }
    ]
   },
