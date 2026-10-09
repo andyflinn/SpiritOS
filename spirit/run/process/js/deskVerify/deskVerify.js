@@ -96,6 +96,50 @@ function mode() {
   }, function () { return { mode: 'none', apps: [] }; });
 }
 
+// THE SHORT LOOP'S SUITES (goal/G8.6). Andy, 2026-10-06: "the short loop is: all the suites of the current goal,
+// between 'Go' pressed and 'Done' pressed", and "which suites belong to a goal: all the suites associated with items in
+// the goal", known "the way a coding agent knows which suite it writes the code against" - which is the item's own file
+// list (goal/G8.8). So: one items.search of the current goal through its own node, the items with his Go and not done,
+// and the test files on their lists, each once, sorted. Nothing is configured: the goal is whichever the desk says.
+function suites() {
+  const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  if (!port) return Promise.resolve([]);
+  const ask = { desk: { 'items.search': { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: false } } };
+  return spirit.core.ask('jobs.api', { ask: ask }, 'http://127.0.0.1:' + port).then(function (r) {
+    const body = r && r.status === 200 ? r.body : null;
+    const items = (body && Array.isArray(body.items) ? body.items : []).map(function (i) {
+      try { return JSON.parse(i.label); } catch (e) { return null; }
+    }).filter(Boolean);
+    const out = Object.create(null);
+    items.forEach(function (it) {
+      // Between his Go and his Done, and never the goal row itself: a goal has no suites of its own.
+      if (it.goal === '' || it.go !== true || it.status === 'done' || it.status === 'closed') return;
+      (Array.isArray(it.files) ? it.files : []).forEach(function (f) {
+        const p = String((f && f.path) || '');
+        if (/^spirit\/test\/.+\.js$/.test(p)) out[p] = true;
+      });
+    });
+    return Object.keys(out).sort();
+  }, function () { return []; });
+}
+
+// ONE PASS (goal/G8.6): each suite run from this checkout with the port of its own node, so every assertion comes back
+// as a record (goal/G8.1). One at a time, never in parallel: two runs on one host fight over the fixed ports that
+// goal/G8.9 moved to a base, and a verifier that collides with itself measures nothing. The answer says what ran.
+function loopOnce() {
+  const port = Number(spirit.core.node.const.SPIRIT_PORT);
+  return suites().then(function (list) {
+    const ran = [];
+    list.forEach(function (rel) {
+      const file = path.join(REPO, rel);
+      if (!fs.existsSync(file)) return;
+      spawnSync(process.execPath, [file, '--verify-port', String(port)], { cwd: REPO, stdio: 'ignore', timeout: 600000 });
+      ran.push(rel);
+    });
+    return { ran: ran };
+  });
+}
+
 // A ROW IS WRITTEN for a test's first record or a change of outcome, and nothing else.
 function keep(suite, title, outcome) {
   const last = newest.get(suite, title);
@@ -109,6 +153,15 @@ appServer.serve({
   mode: {
     request: {}, reply: { mode: '', apps: [''] },
     handler: function () { return mode(); },
+  },
+  // THE SHORT LOOP (goal/G8.6): what it would run, and one pass of it.
+  suites: {
+    request: {}, reply: { suites: [''] },
+    handler: function () { return suites().then(function (list) { return { suites: list }; }); },
+  },
+  'loop.once': {
+    request: {}, reply: { ran: [''] },
+    handler: function () { return loopOnce(); },
   },
   // ONE RECORD, AS IT HAPPENS (his words above). The answer says whether it was kept: a repeat of the same outcome is
   // not, and that is the whole of the de-duplication - the history is the flips. Only his clone keeps anything: on an
