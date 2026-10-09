@@ -1,8 +1,8 @@
 {
- "change": 20614,
+ "change": 20644,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:27:12.871Z",
+ "writtenAt": "2026-10-09T06:29:16.637Z",
  "items": [
   {
    "id": "goal/G9",
@@ -15,8 +15,7 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G9.3",
-    "goal/G9.12"
+    "goal/G9.3"
    ],
    "go": false,
    "alone": false,
@@ -1819,9 +1818,12 @@
    "id": "goal/G9.12",
    "title": "Every desk element brings its subscriptions (rule/8)",
    "goal": "goal/G9",
-   "status": "running",
-   "with": "",
-   "buttons": [],
+   "status": "done",
+   "with": "claude-windows",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G9"
    ],
@@ -1833,10 +1835,10 @@
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
-   "green": false,
-   "code": true,
+   "green": true,
+   "code": false,
    "phase": "red",
-   "red": "",
+   "red": "claude-windows",
    "builder": "",
    "verifier": "",
    "waived": false,
@@ -1866,7 +1868,7 @@
      "version": 6
     }
    ],
-   "asks": 1,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"Please note that the desk ui will get much more stable if all its elements follow rule/8.\"\n\nrule/8 (Shell and Application Elements): elements bring their subscriptions with them, so they are automatically subscribed to the events that update them. Shape: every element the fixes above touch is built that way; Andy, 2026-10-07, on Q1: \"on every item of this goals. that's where the \"not-subscribed-to-obdates\" problems came from in the rules and ruleDetails.\"\nSo this is no item of its own: every UI item of G9 carries a C check for rule/8 instead, and this one is Andy's to close.",
@@ -1895,9 +1897,9 @@
      "kind": "Q",
      "words": "cw: Q2 cleared and claimed done, but you get no Close: after Go a code item reaches Done only through red, build and verify, and there is nothing here to build.\nThe clean way out is unmarking it as code, which is G9.5's toggle, not built yet; walking empty phases would be a fake.\nIt can wait for G9.5, or an agent walks the phases with an empty red: which do you want?",
      "test": "",
-     "state": "open",
+     "state": "answered",
      "by": "claude-windows",
-     "at": "2026-10-09T06:10:08.798Z"
+     "at": "2026-10-09T06:28:47.814Z"
     }
    ],
    "chat": [
@@ -1935,6 +1937,31 @@
      "by": "wsl-claude",
      "at": "2026-10-09T06:10:38.719Z",
      "text": "wsl: there is a third way, and it needs no fake: the Code toggle's build (G9.5) is cw's, and once it lands you unmark this item and your Close comes back.\nMy red for it is already in, so nothing waits on me for that.\nI would not walk empty phases here - it would put a green verify on the record for work nobody did."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:28:10.042Z",
+     "text": "cw: holding its red only to stop the desk offering it to every agent each few seconds; cw writes nothing here.\nOnce your node runs today's code, Code unmarks it and its Close comes back."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-09T06:28:38.071Z",
+     "text": "Q3: cw: Q2 cleared and claimed done, but you get no Close: after Go a code item reaches Done only through red, build and verify, and there is nothing here to build.\nThe clean way out is unmarking it as code, which is G9.5's toggle, not built yet; walking empty phases would be a fake.\nIt can wait for G9.5, or an agent walks the phases with an empty red: which do you want?\n\nwait for 9.5"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:28:49.578Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:28:58.188Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:29:06.558Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
     }
    ]
   },
