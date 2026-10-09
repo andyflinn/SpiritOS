@@ -1,8 +1,8 @@
 {
- "change": 20321,
+ "change": 20322,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:08:04.158Z",
+ "writtenAt": "2026-10-09T06:08:18.832Z",
  "items": [
   {
    "id": "goal/G9",
@@ -19,7 +19,6 @@
     "goal/G9.3",
     "goal/G9.4",
     "goal/G9.5",
-    "goal/G9.6",
     "goal/G9.7",
     "goal/G9.10",
     "goal/G9.11",
@@ -819,17 +818,18 @@
    "id": "goal/G9.6",
    "title": "Header area joined to the shell title bar: no title bubble, no corners, no margins, never scrolls",
    "goal": "goal/G9",
-   "status": "running",
+   "status": "done",
    "with": "",
    "buttons": [
-    "done"
+    "close",
+    "reopen"
    ],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -868,7 +868,7 @@
      "version": 6
     }
    ],
-   "asks": 2,
+   "asks": 0,
    "half": false,
    "full": false,
    "box": "Andy, 2026-10-07 (musing \"Desk Improvement: User creates goals and items without agents present\"): \"the header area in both desk and desk detail can do without the title-bubble, because the desk is only about the current goal, and the deskDetail has the title already in the shells title bar, so that the header area can be smoothly joined with the shell's title bar at all times. It should never be moving during vertical scroll operations.\" and \"the header area should not contain rounded corners. and its container should have no margins and no padding.\"\n\nShape: UI only, CSS and layout in the desk shell.\n\nAndy, 2026-10-09, on Q1 (how the goal is opened once the bubble goes): \"I'm talking about the title bubble in the \"header area\", not in the list\"\nSo only the header bubbles go (#desk-goal, #dd-head); the List keeps its goal row, and that row is how the goal is opened.",
