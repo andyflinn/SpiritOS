@@ -8,10 +8,12 @@
 // WHAT IS TRUE TODAY (read in the tree after 4115fbfb): nothing deletes an item; one a session leaves out is closed,
 // never deleted (goal/G4.24). There is no item.delete and no delete button.
 //
-// THE SHAPE ASSERTED (G9.7's box): item.delete {id}, his alone, taken only while the item's goal is in design mode,
-// never on a goal. It closes the item as a left-out one is closed: it stays on the record with its box, found by
-// Include Closed, and blocks nothing. The server offers `delete` in the item's buttons while it may be taken, so the
-// dialog draws it from buttons as every button (desk/G2.7), id dd-delete; the first click arms it, the second sends.
+// THE SHAPE ASSERTED (G9.7's box, and his answer to Q2, 2026-10-09: "press."): delete is a press like his other
+// buttons, press {id, what: delete}, and no desk verb of its own: there is no item.delete. His alone, taken only while
+// the item's goal is in design mode, never on a goal. It closes the item as a left-out one is closed: it stays on the
+// record with its box, found by Include Closed, and blocks nothing. The server offers  in the item's buttons
+// while it may be taken, so the dialog draws it from buttons as every button (desk/G2.7), id dd-delete; the first
+// click arms it, the second sends the press.
 
 const fs = require('fs');
 const os = require('os');
@@ -48,8 +50,8 @@ async function start() {
 }
 function stop() { return new Promise(function (r) { if (!kid) return r(); kid.once('exit', r); kid.kill(); setTimeout(r, 3000); }); }
 function took(r) { return r.status === 200 && r.body && r.body.ok !== false; }
-// A refusal counts only once the verb exists: today's no-such-verb refuses everything and proves nothing.
-function refusedByVerb(r) { return !took(r) && !(r.body && r.body.code === 'no-such-verb'); }
+// A refusal counts only once the press exists: today's bad-request refuses every unknown press and proves nothing.
+function refusedByVerb(r) { return !took(r) && !(r.body && r.body.code === 'bad-request'); }
 async function facts(id) { const r = await call('item.get', { id: id }, ANDY); return parse(r.body && r.body.item) || {}; }
 async function listed(includeClosed) {
   const r = await call('items.search', { text: '', currentGoalOnly: true, goalsOnly: false, includeClosed: includeClosed }, ANDY);
@@ -74,17 +76,17 @@ async function server() {
   else test.fail(OWED + 'the goal offers delete');
 
   test.subHeading('2. his alone, never on a goal');
-  const agent = await call('item.delete', { id: 'd/G1.1' }, CW);
-  if (refusedByVerb(agent) && (await listed(false)).indexOf('d/G1.1') !== -1) test.check('an agent\'s item.delete is refused and d/G1.1 stays open');
-  else test.fail(OWED + 'an agent\'s item.delete answered ' + agent.status + ' ' + short(agent.body));
-  const onGoal = await call('item.delete', { id: 'd/G1' }, ANDY);
-  if (refusedByVerb(onGoal) && (await facts('d/G1')).status !== 'closed') test.check('item.delete on the goal is refused');
-  else test.fail(OWED + 'item.delete on the goal answered ' + onGoal.status + ' ' + short(onGoal.body));
+  const agent = await call('press', { id: 'd/G1.1', what: 'delete' }, CW);
+  if (refusedByVerb(agent) && (await listed(false)).indexOf('d/G1.1') !== -1) test.check('an agent\'s delete press is refused and d/G1.1 stays open');
+  else test.fail(OWED + 'an agent\'s delete press answered ' + agent.status + ' ' + short(agent.body));
+  const onGoal = await call('press', { id: 'd/G1', what: 'delete' }, ANDY);
+  if (refusedByVerb(onGoal) && (await facts('d/G1')).status !== 'closed') test.check('the delete press on the goal is refused');
+  else test.fail(OWED + 'the delete press on the goal answered ' + onGoal.status + ' ' + short(onGoal.body));
 
   test.subHeading('3. his delete closes the item as a left-out one is closed');
-  const del = await call('item.delete', { id: 'd/G1.1' }, ANDY);
-  if (took(del)) test.check('his item.delete {id: d/G1.1} is taken');
-  else test.fail(OWED + 'his item.delete answered ' + del.status + ' ' + short(del.body));
+  const del = await call('press', { id: 'd/G1.1', what: 'delete' }, ANDY);
+  if (took(del)) test.check('his press {id: d/G1.1, what: delete} is taken');
+  else test.fail(OWED + 'his delete press answered ' + del.status + ' ' + short(del.body));
   const open = await listed(false);
   const all = await listed(true);
   if (open.indexOf('d/G1.1') === -1 && all.indexOf('d/G1.1') !== -1) test.check('d/G1.1 leaves the List and Include Closed still finds it');
@@ -95,15 +97,20 @@ async function server() {
   if (((await facts('d/G1.2')).blocked || []).indexOf('d/G1.1') === -1) test.check('d/G1.2 no longer waits on it');
   else test.fail(OWED + 'd/G1.2 still waits on ' + short((await facts('d/G1.2')).blocked));
 
+  test.subHeading('3b. no verb of its own: delete is a press, as he chose');
+  const verb = await call('item.delete', { id: 'd/G1.3' }, ANDY);
+  if (!took(verb) && verb.body && verb.body.code === 'no-such-verb') test.check('the desk has no item.delete verb');
+  else test.fail(OWED + 'item.delete answered ' + verb.status + ' ' + short(verb.body) + '; his answer to Q2 was "press."');
+
   test.subHeading('4. out of design mode there is no delete');
   await call('press', { id: 'd/G1', what: 'end-design' }, ANDY);
   if ((await facts('d/G1')).design === false) test.check('the world: design mode ended');
   else test.fail('the world: end-design did not take');
   if (((await facts('d/G1.3')).buttons || []).indexOf('delete') === -1) test.check('d/G1.3 offers no delete out of design mode');
   else test.fail(OWED + 'd/G1.3 still offers delete out of design mode');
-  const late = await call('item.delete', { id: 'd/G1.3' }, ANDY);
-  if (refusedByVerb(late) && (await listed(false)).indexOf('d/G1.3') !== -1) test.check('item.delete out of design mode is refused');
-  else test.fail(OWED + 'item.delete out of design mode answered ' + late.status + ' ' + short(late.body));
+  const late = await call('press', { id: 'd/G1.3', what: 'delete' }, ANDY);
+  if (refusedByVerb(late) && (await listed(false)).indexOf('d/G1.3') !== -1) test.check('the delete press out of design mode is refused');
+  else test.fail(OWED + 'the delete press out of design mode answered ' + late.status + ' ' + short(late.body));
 }
 
 // ── THE DIALOG ─────────────────────────────────────────────────────────
@@ -152,7 +159,7 @@ async function dialogOn(buttons) {
     doc.getElementById('dd-body').fire('click', ev);
     await settled();
   };
-  return { html: html, click: click, deletes: function () { return calls.filter(function (c) { return c.verb === 'item.delete'; }); } };
+  return { html: html, click: click, deletes: function () { return calls.filter(function (c) { return c.verb === 'press' && c.args && c.args.what === 'delete'; }); } };
 }
 
 async function dialog() {
@@ -165,7 +172,7 @@ async function dialog() {
   else test.fail(OWED + 'after one click: sent ' + short(on.deletes()) + ', armed ' + /id="dd-delete"[^>]*data-armed/.test(on.html()));
   await on.click();
   const sent = on.deletes();
-  if (sent.length === 1 && sent[0].args.id === 't/G1.2') test.check('the second click sends item.delete {id: t/G1.2}');
+  if (sent.length === 1 && sent[0].args.id === 't/G1.2') test.check('the second click sends press {id: t/G1.2, what: delete}');
   else test.fail(OWED + 'after two clicks the dialog sent ' + short(sent));
   const off = await dialogOn([]);
   if (!/id="dd-delete"/.test(off.html())) test.check('an item not offering delete shows none');
