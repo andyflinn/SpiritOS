@@ -108,6 +108,9 @@ test.startTest('goal/G9.8: the design button is always in the tab row, and the y
     test.check('design mode is on, so End design mode shows and Start does not');
   } else test.fail(OWED + short({ end: tagOf(html, 'desk-end-design'), start: tagOf(html, 'desk-start-design') }));
   fake.items[0].design = false;
+  // The page learns a change from the server, never from a tab click: a new search fetches the goal row again.
+  doc.getElementById('desk-search').fire('input', {});
+  await settled();
   const off = await open('list');
   if (shows(off, 'desk-start-design') && !shows(off, 'desk-end-design')) {
     test.check('with design mode off, Start design mode shows and End does not');

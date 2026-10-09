@@ -447,20 +447,19 @@ function deskDrawTabs() {
     deskTabButton('data-tab="team"', deskTab === 'team', 'Team') +
     deskTabButton('data-tab="rules"', deskTab === 'rules', 'Rules') +
     deskTabButton('data-tab="musings"', deskTab === 'musings', 'Musings') +
-    deskBubblesHtml() +
-    // AT THE END OF THE TAB ROW, ONLY ON TEAM, AND LOOMING. Andy: "put the
-    // end design mode button at the end of the tab-button-row, only
-    // visible while in teh team tab. and make the button a different
-    // color, so it loooms over the proceedings".
-    '<button type="button" id="desk-end-design"' + (design && deskTab === 'team' ? '' : ' hidden') +
+    // ON EVERY TAB, RIGHT AFTER MUSINGS (goal/G9.8). Andy: "The [Start/End design] buttons should be displayed always,
+    // not only when the team tab is active, and it should be placed right after the [Musings] tab header". Still its
+    // own colour, so it looms (Andy, earlier: "so it loooms over the proceedings").
+    '<button type="button" id="desk-end-design"' + (design ? '' : ' hidden') +
       (deskArmed === 'desk-end-design' ? ' data-armed="1"' : '') +
-      ' style="margin-left:auto;background:#c00;color:#fff;font-weight:bold;border:2px solid #600">End design mode' +
+      ' style="background:#c00;color:#fff;font-weight:bold;border:2px solid #600">End design mode' +
       (deskArmed === 'desk-end-design' ? ': sure?' : '') + '</button>' +
     // Its twin, in the same spot while design mode is off.
-    '<button type="button" id="desk-start-design"' + (!design && deskTab === 'team' ? '' : ' hidden') +
+    '<button type="button" id="desk-start-design"' + (!design ? '' : ' hidden') +
       (deskArmed === 'desk-start-design' ? ' data-armed="1"' : '') +
-      ' style="margin-left:auto;background:#1a7f37;color:#fff;font-weight:bold;border:2px solid #0b4a1e">Start design mode' +
-      (deskArmed === 'desk-start-design' ? ': sure?' : '') + '</button>';
+      ' style="background:#1a7f37;color:#fff;font-weight:bold;border:2px solid #0b4a1e">Start design mode' +
+      (deskArmed === 'desk-start-design' ? ': sure?' : '') + '</button>' +
+    deskBubblesHtml();
 }
 
 // THE AGENT TABS INSIDE TEAM STOOD HERE (desk/G1 D2, goal/G2.4) and went with goal/G3.12: one tab per agent, a
@@ -872,9 +871,6 @@ function deskDraw() {
   if (team) team.innerHTML = deskGroupChat();
   var bubble = document.getElementById('desk-session');
   if (bubble) bubble.innerHTML = deskSessionBubble();
-  var design = deskDesignOn();
-  var banner = document.getElementById('desk-design');
-  if (banner) banner.hidden = !design;
   // A chat on screen is being seen as it arrives.
   if (deskTab === 'team') deskMarkTeamSeen();
   deskDrawTabs();
@@ -1043,13 +1039,9 @@ spirit.shell.activateApp({
     // Switching shows one pane and hides the others; nothing is repainted,
     // so a half-typed line in any pane survives a switch. The inputs live
     // outside the repainted parts.
+    // THE YELLOW DESIGN BUBBLE STOOD FIRST HERE, and went with goal/G9.8. Andy: "get rid of the yellow bubble that
+    // says \"Design mode. Nothing is built until it ends, and it ends only in the Team tab.\". it is useless."
     container.innerHTML =
-      // THE GOAL IS DESK'S TITLE. Andy: "the desk title bar should be synced
-      // to the title of the goal, the game being: bring the goal item back up
-      // to be ever closer to the title bar saying the same." Shown while a
-      // design session's goal is open; the shell's own bar is not Desk's.
-      '<div id="desk-design" class="stat-tile wide" style="background:#fff3c4;color:#000" hidden>' +
-        '<b>Design mode.</b> Nothing is built until it ends, and it ends only in the Team tab.</div>' +
       // Drawn by deskDrawTabs.
       // PINNED BELOW THE TITLE BAR (desk/G1.12; goal/G2.1 note 4). Andy: "the tabs should stick
       // top the top like the title bar", then "they should leave the app or dialog visible, and stay
