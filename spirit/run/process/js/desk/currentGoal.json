@@ -1,8 +1,8 @@
 {
- "change": 20317,
+ "change": 20319,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:07:47.445Z",
+ "writtenAt": "2026-10-09T06:07:49.622Z",
  "items": [
   {
    "id": "goal/G9",
@@ -46,7 +46,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 8,
+   "waiting": 7,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -1045,10 +1045,9 @@
    "id": "goal/G9.8",
    "title": "Start/End design always visible after the Musings tab; the yellow design bubble goes",
    "goal": "goal/G9",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
@@ -1354,7 +1353,7 @@
    "id": "goal/G9.10",
    "title": "Add blocking item section in the item Details",
    "goal": "goal/G9",
-   "status": "red",
+   "status": "writing red",
    "with": "claude-windows",
    "buttons": [],
    "blocking": [
