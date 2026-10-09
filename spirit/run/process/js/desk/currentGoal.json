@@ -1,8 +1,8 @@
 {
- "change": 20553,
+ "change": 20554,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:24:26.049Z",
+ "writtenAt": "2026-10-09T06:24:27.998Z",
  "items": [
   {
    "id": "goal/G9",
@@ -39,7 +39,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 5,
+   "waiting": 4,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -1683,10 +1683,9 @@
    "id": "goal/G9.11",
    "title": "Add Goal bubble above the List search while Goals Only is on",
    "goal": "goal/G9",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
