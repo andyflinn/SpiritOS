@@ -90,6 +90,21 @@ async function deskHalf() {
     const ch = (await d.call('changes', { n: 0, line: 0 }, ANDY)).body || {};
     if ((ch.records || []).some(function (r) { return r.verb === 'verify.again' && (parse(r.body) || {}).id === 'wa/G1.1'; })) test.check('the record carries it, verb verify.again with the item id');
     else test.fail(OWED + 'no verify.again record in changes: ' + short((ch.records || []).slice(-2)));
+    // GROWN AFTER THE FIRST RUN ON HIS NODE (claude-windows): the desk took deskVerify's word on 34 closed items. A word
+    // about a verify means nothing once he has pressed Done or Close, so the desk refuses it there.
+    await d.call('press', { id: 'wa/G1.1', what: 'done' }, ANDY);
+    await d.call('press', { id: 'wa/G1.1', what: 'close' }, ANDY);
+    const shut = parse((await d.call('item.get', { id: 'wa/G1.1' }, ANDY)).body.item) || {};
+    if ((shut.buttons || []).join() === 'reopen') {
+      const rj = await d.call('verify.reject', { id: 'wa/G1.1', why: 'late' }, ANDY);
+      const ps = await d.call('verify.pass', { id: 'wa/G1.1' }, ANDY);
+      const ag = await d.call('verify.again', { id: 'wa/G1.1' }, WSL);
+      const after2 = parse((await d.call('item.get', { id: 'wa/G1.1' }, ANDY)).body.item) || {};
+      if (refusedByVerb(rj) && refusedByVerb(ps) && refusedByVerb(ag)) test.check('on a closed item verify.reject, verify.pass and verify.again are all refused');
+      else test.fail(OWED + 'on a closed item: reject ' + rj.status + ', pass ' + ps.status + ', again ' + ag.status + ' ' + short([rj.body, ps.body, ag.body]));
+      if (after2.phase === shut.phase) test.check('and its phase is left as it was');
+      else test.fail(OWED + 'the closed item\'s phase moved from ' + short(shut.phase) + ' to ' + short(after2.phase));
+    } else test.fail('the world: wa/G1.1 did not close: ' + short(shut.buttons));
   } finally { await d.stop(); }
 }
 
@@ -114,9 +129,12 @@ async function verifyHalf() {
           const verb = Object.keys(j.ask.desk)[0];
           const a = j.ask.desk[verb] || {};
           if (verb === 'changes') {
+            // PAGED, as the real desk pages (GROWN AFTER THE FIRST RUN ON HIS NODE, claude-windows): a watcher that
+            // skipped only the first page of history rejected 34 closed items there in 32 seconds.
             const from = Number(a.n) || 0;
-            const recs = records.filter(function (r) { return r.n > from; });
-            out = { records: recs, lines: [], n: records.length, line: 0, more: false };
+            const rest = records.filter(function (r) { return r.n > from; });
+            const recs = rest.slice(0, 2);
+            out = { records: recs, lines: [], n: recs.length ? recs[recs.length - 1].n : from, line: 0, more: rest.length > 2 };
           } else {
             asks.push({ verb: verb, args: a });
             if (verb === 'item.get') out = { item: JSON.stringify({ id: a.id, goal: 'wt/G1', code: true, go: true, files: ITEMS[a.id] || [] }), version: 1, change: 1 };
@@ -127,8 +145,9 @@ async function verifyHalf() {
       });
     }).listen(0, '127.0.0.1', function () { resolve({ port: s.address().port, close: function () { s.close(); } }); });
   });
-  // Already on the record when deskVerify starts: it must not re-check history.
-  rec('phase.done', { id: 'wt/G1.0', phase: 'verify', pass: true });
+  // Already on the record when deskVerify starts, over several pages: it must not re-check any of that history.
+  const HISTORY = ['wt/G1.0', 'wt/G0.1', 'wt/G0.2', 'wt/G0.3', 'wt/G0.4', 'wt/G0.5'];
+  HISTORY.forEach(function (id) { ITEMS[id] = files(GREEN); rec('phase.done', { id: id, phase: 'verify', pass: true }); });
   const run = path.join(scratch, 'verify');
   fs.mkdirSync(path.join(run, 'relay-state'), { recursive: true });
   fs.writeFileSync(path.join(run, 'relay-state', 'environment.json'), JSON.stringify({ PORT: node.port }));
@@ -138,8 +157,9 @@ async function verifyHalf() {
   try {
     if (!await v.up()) { test.fail('deskVerify did not start'); return; }
     await sleep(1500);
-    if (!said('verify.pass', 'wt/G1.0').length && !said('verify.reject', 'wt/G1.0').length) test.check('a verify pass already on the record when it starts triggers nothing');
-    else test.fail(OWED + 'it re-checked history: ' + short(asks.filter(function (x) { return x.args.id === 'wt/G1.0'; })));
+    const old = asks.filter(function (x) { return HISTORY.indexOf(x.args.id) !== -1; });
+    if (!old.length) test.check('verify passes already on the record when it starts, three pages of them, trigger nothing');
+    else test.fail(OWED + 'it re-checked history: ' + short(old));
 
     rec('phase.done', { id: 'wt/G1.1', phase: 'verify', pass: true });
     rec('phase.done', { id: 'wt/G1.2', phase: 'verify', pass: false });
