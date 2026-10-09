@@ -811,6 +811,14 @@ function limboOf(s, it) {
   if (!it || it.goal || it.subGoal || it.go !== true || it.done || it.closed) return false;
   if (buttons(s, it).indexOf('done') !== -1) return false;
   if (it.checks.some(function (c) { return c.state === 'open' && (c.kind === 'G' || c.kind === 'Q'); })) return false;
+  // A HELD PHASE IS NOT LIMBO (goal/G9.14). Andy, 2026-10-09, to "Open an item to have limbo read the phase holder
+  // instead?": "yes". Until this, limbo read each taker's word, and an agent that arms its listener says listening, so
+  // every item it held fell back into limbo and the desk posted the line again on the next write. So the phase holder
+  // decides; a holder gone silent is the desk's stale question (10 minutes), not this.
+  if (it.phaseWith) return false;
+  // On a code item the phase holder is the whole answer: a phase nobody holds is limbo however its earlier takers are
+  // marked, which is what makes a finished red visible to the agent that must build it.
+  if (it.code) return true;
   const now = Date.now();
   return !Object.keys(it.takers).some(function (t) {
     return s.agentWord[t] === 'working' && s.agentsAt[t] && now - Date.parse(s.agentsAt[t]) < LIVE_MS;
