@@ -1,8 +1,8 @@
 {
- "change": 20645,
+ "change": 20669,
  "line": 8495,
  "goal": "goal/G9",
- "writtenAt": "2026-10-09T06:29:19.272Z",
+ "writtenAt": "2026-10-09T06:33:22.031Z",
  "items": [
   {
    "id": "goal/G9",
@@ -11,12 +11,11 @@
    "status": "",
    "with": "",
    "buttons": [
+    "done",
     "close"
    ],
    "blocking": [],
-   "blocked": [
-    "goal/G9.3"
-   ],
+   "blocked": [],
    "go": false,
    "alone": false,
    "alert": false,
@@ -36,15 +35,12 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 1,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "wsl-claude"
    ],
-   "working": [
-    "claude-windows",
-    "wsl-claude"
-   ],
+   "working": [],
    "agents": {
     "claude-ubuntu": "MCowBQYDK2VwAyEABgbS7PCeObwvnXRCUX0sNx7tdAGrRPVCERDNxrkhaNY=",
     "claude-windows": "MCowBQYDK2VwAyEAMP7RU9Q6++SG+UPagCp1uOYQFtJM/kr1b+76Fj+AtJ0=",
@@ -424,15 +420,18 @@
    "id": "goal/G9.3",
    "title": "The user takes the text box on focus, releases on blur or close",
    "goal": "goal/G9",
-   "status": "building",
-   "with": "wsl-claude",
-   "buttons": [],
+   "status": "done",
+   "with": "",
+   "buttons": [
+    "close",
+    "reopen"
+   ],
    "blocking": [
     "goal/G9"
    ],
    "blocked": [],
    "go": true,
-   "alone": false,
+   "alone": true,
    "alert": false,
    "claims": 0,
    "boxTaken": "",
@@ -440,10 +439,10 @@
    "subGoal": false,
    "green": true,
    "code": true,
-   "phase": "build",
+   "phase": "",
    "red": "claude-windows",
    "builder": "wsl-claude",
-   "verifier": "",
+   "verifier": "claude-windows",
    "waived": false,
    "rules": [
     {
@@ -621,6 +620,26 @@
      "by": "desk",
      "at": "2026-10-09T06:17:17.229Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:31:51.707Z",
+     "text": "commit f828586a15e6f211e7523e3979cf040eb04197ed: goal/G9.3: the box is his input area - he takes it on focus, lets it go on blur\n- spirit/run/process/js/desk/desk.js\n- spirit/run/shell/deskDetails/deskDetails.js\n- spirit/test/deskForAndy.js\n- spirit/test/deskServer.js"
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-09T06:32:06.151Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "wsl-claude",
+     "at": "2026-10-09T06:32:08.654Z",
+     "text": "wsl: built and pushed, f828586a. cw's red is 17 of 17, and the desk sweep is 765 green with 2 red - the two onboard relay failures this box had before any of today's work.\nThe box is now a textarea: focus takes it, blur writes it if you changed it or releases it if you did not, and it is never repainted while you are in it. Your take refuses agents, and an agent's take now refuses you as well, which is your own ruling.\nFiles touched: desk.js, deskDetails.js, spirit/test/deskServer.js and deskForAndy.js (its \"Andy takes nothing\" line, the rule this replaces). Verify is free."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-09T06:32:36.987Z",
+     "text": "cw: verified f828586a. deskBoxTake.js 17 of 17; letting your write pass over an agent's take goes red, and so does letting anyone release a take that is not theirs.\nThe deskForAndy.js change only replaces its \"Andy takes nothing\" check, the rule this item ends; nothing else was weakened."
     }
    ]
   },
