@@ -99,6 +99,26 @@ test.startTest('goal/G10.5: the AGENTS family on the node, and who may ask it');
     }
   }
 
+  test.subHeading('5. no AGENTS.md, no family at all');
+  // The folder rule, the half the mutation test caught as unasserted on 2026-10-10: Andy, 2026-10-09, ".. and if
+  // there's no AGENTS.md the verb is closed for the agent, period." A folder with a verb file and no AGENTS.md hands
+  // out nothing: not the file, not the list, not even AGENTS itself.
+  if (fs.existsSync(INTROSPECTOR)) {
+    const introSpector = require(INTROSPECTOR);
+    const dir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'spirit-introspectornode-'));
+    fs.writeFileSync(path.join(dir, 'stat.json'), JSON.stringify({ description: 'A verb file with no rules beside it.' }));
+    const bare = introSpector.family(dir, { declared: ['stat'], prefix: 'fs.', declarations: { 'fs.stat': { request: {}, reply: {} } } });
+    const names = Object.keys((bare && bare.verbs) || {});
+    if (!names.length) test.check('a folder without an AGENTS.md carries no verb of the family, its verb file notwithstanding');
+    else test.fail(OWED + 'a folder with no AGENTS.md still answers ' + short(names));
+    fs.writeFileSync(path.join(dir, introSpector.AGENTS_FILE), '# rules\n');
+    const dressed = introSpector.family(dir, { declared: ['stat'], prefix: 'fs.', declarations: { 'fs.stat': { request: {}, reply: {} } } });
+    const now = Object.keys((dressed && dressed.verbs) || {}).sort();
+    if (now.indexOf('fs.AGENTS') !== -1 && now.indexOf('fs.AGENTS.stat') !== -1) test.check('and the same folder with an AGENTS.md carries it: ' + short(now));
+    else test.fail(OWED + 'with an AGENTS.md the folder answers ' + short(now));
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch (e) { /* scratch */ }
+  }
+
   test.subHeading('6. the world: a loopback caller is allowed everything, so nothing here gates the family');
   // Andy's ruling of 2026-10-09 (quoted in the header) took the gating out of this item: a loopback caller arrives
   // as the node's own key and reaches every verb, and what an agent may call is deskUnsloth's configuration, a later
