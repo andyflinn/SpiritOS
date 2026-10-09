@@ -533,8 +533,9 @@ function apply(s, r, b, item, goalOf) {
       const one = s.items[id] || (s.items[id] = blank(id, '', gid));
       one.title = String(b.title || one.title);
       one.goalId = gid;
-      // A plain add blocks its goal, as a session's item with no blocks does; G9.10's form adds the other relation.
-      one.blocks = [gid];
+      // A plain add blocks its goal, as a session's item with no blocks does; with `blocks` named (goal/G9.10) it
+      // blocks that item alone.
+      one.blocks = [String(b.blocks || gid)];
       one.at = r.at;
       if (g.members.indexOf(id) === -1) g.members.push(id);
       return;
@@ -1402,16 +1403,32 @@ appServer.serve({
       return { id: args.minted, change: r.change };
     },
   },
+  // WHAT IT BLOCKS, NAMED (goal/G9.10). Andy, 2026-10-07: "When the user presses the [add-button], The desk will add a
+  // blocking item with the entered title and a blank text box." So item.add takes one more argument, optional: the id
+  // the new item blocks, the goal itself or an item of that goal, and the goal when it is left out (goal/G9.9's case).
+  // The title obeys the label rules, as every label does (js/fieldRules.js).
   'item.add': {
-    request: { goal: '', title: '' }, reply: { id: '', change: 0 },
+    request: { goal: '', title: '', blocks: '' }, reply: { id: '', change: 0 },
+    accepts: function (x) {
+      if (!x || typeof x !== 'object' || Array.isArray(x)) return false;
+      const known = ['goal', 'title', 'blocks'];
+      return Object.keys(x).every(function (k) { return known.indexOf(k) !== -1; }) &&
+        typeof x.goal === 'string' && typeof x.title === 'string' && (x.blocks === undefined || typeof x.blocks === 'string');
+    },
     handler: function (a, caller) {
       const w = writerOf(caller);
       const gid = String(a.goal || '');
       const title = String(a.title || '').trim();
-      if (!title) throw refused('bad-request');
+      if (!title || require('../../../js/fieldRules.js').problem(title)) throw refused('bad-request');
       const args = { goal: gid, title: title, by: w.by, key: w.key };
+      if (a.blocks !== undefined && String(a.blocks)) args.blocks = String(a.blocks);
       const r = write('item.add', args, function (st) {
         if (!st.goals[gid] || !st.items[gid]) throw refused('no-such-item');
+        if (args.blocks) {
+          const b = st.items[args.blocks];
+          // Its own goal, or one of that goal's items: an item never blocks across goals.
+          if (!b || (args.blocks !== gid && b.goalId !== gid)) throw refused('no-such-item');
+        }
         args.minted = nextItemId(st, gid);
       });
       return { id: args.minted, change: r.change };

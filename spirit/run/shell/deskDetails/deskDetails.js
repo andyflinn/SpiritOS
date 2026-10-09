@@ -79,6 +79,14 @@ function ddFrame() {
     '<div class="stat-tile wide" id="dd-box"></div>' +
     '<div id="dd-waiting"></div>' +
     '<div id="dd-links"></div>' +
+    // ADD BLOCKING ITEM (goal/G9.10). Andy, 2026-10-07: "there will be a new section bubble, immediately following the
+    // \"Blocked by/Blocking\" section, and right before the users chat input... \"Title\" [Title String, subject to
+    // label rules] [add-button]. When the user presses the [add-button], The desk will add a blocking item with the
+    // entered title and a blank text box. The blocked-by section will be updated immediately." It lives in the frame,
+    // so what he has typed survives every repaint, as the chat input does.
+    '<div class="start-job-form card" id="dd-add-row"><label class="field-label grow">Title' +
+      '<input type="text" id="dd-add-title" placeholder="an item this one waits on"></label>' +
+      '<button type="button" id="dd-add">Add blocking item</button></div>' +
     '<div class="start-job-form card"><label class="field-label grow">Say' +
       // Return is a new line; only Send sends (desk/G1.12).
       '<textarea id="dd-say" rows="3" placeholder="under this item"></textarea></label>' +
@@ -330,6 +338,21 @@ function ddSay() {
     if (!ddNote) ddClear('dd-say');
   });
 }
+// ADD BLOCKING ITEM (goal/G9.10): the desk names the id (goal/G9.9), the new item blocks the one on screen, and the
+// dialog reads itself again so Blocked by shows it at once. The title stays in the box if the desk refused it, so a
+// title the label rules turn down is not lost.
+function ddAdd() {
+  var title = ddValue('dd-add-title');
+  var f = ddFacts || {};
+  if (!title || ddSending) return;
+  ddSending = true;
+  ddWrite('item.add', { goal: f.goal === '' ? ddId : String(f.goal), title: title, blocks: ddId }).then(function (taken) {
+    ddSending = false;
+    if (!taken) return;
+    ddClear('dd-add-title');
+    ddLoad();
+  });
+}
 function ddRename() {
   var title = ddValue('dd-name');
   if (!title) return;
@@ -414,6 +437,7 @@ spirit.shell.activateApp({
       }
       if (id === 'dd-rename') { ddRenaming = true; ddPaint(); return; }
       if (id === 'dd-name-save') { ddRename(); return; }
+      if (id === 'dd-add') { ddAdd(); return; }
       if (id === 'dd-say-send') ddSay();
     });
     document.getElementById('dd-body').addEventListener('keydown', function (event) {
