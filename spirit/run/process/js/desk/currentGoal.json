@@ -1,14 +1,14 @@
 {
- "change": 26916,
+ "change": 26918,
  "line": 8495,
  "goal": "goal/G13",
- "writtenAt": "2026-10-10T09:23:37.247Z",
+ "writtenAt": "2026-10-10T09:23:39.898Z",
  "items": [
   {
    "id": "goal/G13",
    "title": "Move the FUCKING appFaceApp into the process folder where it FUCKING belongs",
    "goal": "",
-   "status": "",
+   "status": "full run started",
    "with": "",
    "buttons": [
     "close"
@@ -35,7 +35,7 @@
    "half": true,
    "full": true,
    "design": false,
-   "waiting": 2,
+   "waiting": 1,
    "live": [
     "claude-windows",
     "ollama agent node"
@@ -555,10 +555,9 @@
    "id": "goal/G13.2",
    "title": "appFaceApp as a process; the face machinery leaves the node",
    "goal": "goal/G13",
-   "status": "done",
+   "status": "closed",
    "with": "claude-windows",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
