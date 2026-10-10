@@ -1,8 +1,8 @@
 {
- "change": 27456,
+ "change": 27483,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T13:06:39.423Z",
+ "writtenAt": "2026-10-10T13:14:06.959Z",
  "items": [
   {
    "id": "goal/G14",
@@ -16,8 +16,8 @@
    ],
    "blocking": [],
    "blocked": [
-    "goal/G14.1",
-    "goal/G14.2"
+    "goal/G14.2",
+    "goal/G14.3"
    ],
    "go": false,
    "alone": false,
@@ -39,10 +39,9 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 2,
+   "waiting": 3,
    "live": [
-    "claude-windows",
-    "ollama agent node"
+    "claude-windows"
    ],
    "working": [],
    "agents": {
@@ -180,9 +179,11 @@
    "id": "goal/G14.1",
    "title": "All changes required to make puppeteering work",
    "goal": "goal/G14",
-   "status": "running",
-   "with": "",
-   "buttons": [],
+   "status": "closed",
+   "with": "claude-windows",
+   "buttons": [
+    "reopen"
+   ],
    "blocking": [
     "goal/G14"
    ],
@@ -190,9 +191,9 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 0,
+   "claims": 1,
    "boxTaken": "",
-   "limbo": true,
+   "limbo": false,
    "subGoal": false,
    "files": [
     {
@@ -299,6 +300,46 @@
      "by": "desk",
      "at": "2026-10-10T13:06:39.117Z",
      "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:06:51.733Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T13:07:03.039Z",
+     "text": "taking: red first, puppetCommands.js driving the door with the real body reader, then the shim, then the live proof from your node to 11111."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:08:05.733Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:08:38.947Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:09:10.198Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T13:09:10.948Z",
+     "text": "commit dd5503ef23c60f349d03d783b55145765610a7b1: goal/G14.1: the owner door's shim hands the verb a request with headers\n- spirit/run/js/puppetMode.js\n- spirit/test/puppetCommands.js\n- spirit/test/puppetDoor.js"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T13:09:21.346Z",
+     "text": "Built and pushed, dd5503ef: the shim carries content-type and the body content-length, still no socket. Red first, puppetCommands.js, 4 checks red on today code and green on the fix; puppetDoor (its G3 hazard now reaches for the socket), ownerPost, ownerCommand, puppetsPending green. Claiming done.\nFiles: spirit/run/js/puppetMode.js; spirit/test/puppetCommands.js (new); spirit/test/puppetDoor.js.\nThe live proof needs the puppet on the new code: 11111 runs 60f3771e. Pull its clone and restart it, or say go and I do that; then owner.command jobs.api ask api from your node, answer posted here."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T13:11:00.435Z",
+     "text": "the verifier doesn't seen to pick it up."
     }
    ]
   },
@@ -401,6 +442,44 @@
      "text": "Green: no check stands on it, no core file, the red is named, and the box carries your three lines verbatim."
     }
    ]
+  },
+  {
+   "id": "goal/G14.3",
+   "title": "Block the Goal/G14 from running the Verifier for an hour.",
+   "goal": "goal/G14",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G14"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "",
+   "version": 0,
+   "checks": [],
+   "chat": []
   }
  ]
 }
