@@ -111,6 +111,15 @@ function deskUnslothRemoteLineFor(model) {
   };
 }
 
+// EACH ENTRY OF THE DROPDOWN CARRIES ITS ICONS (Andy, 2026-10-10: "it would mean you can show cached and current
+// model capabilities in the drop-down, as far as you know it. / dropdown list / model1 - capability icons / model2
+// - capability icons...."): the id, the icons the studio or the cache know of it, and the loaded mark.
+function deskUnslothRemoteOptionFor(model) {
+  var m = model || {};
+  var line = deskUnslothRemoteLineFor(m);
+  return [String(m.id || ''), line.icons.join(''), m.loaded ? line.mark : ''].filter(Boolean).join(' ');
+}
+
 // ── THE TARGETS ──────────────────────────────────────────────────────
 function deskUnslothRemoteReadTargets() {
   var targets = [{ kind: 'node', name: 'this node' }];
@@ -178,7 +187,7 @@ function deskUnslothRemoteDrawModels() {
       '<label class="field-label grow">Model' +
         '<select id="dur-model">' +
           models.map(function (m) {
-            return '<option value="' + escape(m.id) + '"' + (m.id === chosen ? ' selected' : '') + '>' + escape(m.id) + (m.loaded ? ' (loaded)' : '') + '</option>';
+            return '<option value="' + escape(m.id) + '"' + (m.id === chosen ? ' selected' : '') + '>' + escape(deskUnslothRemoteOptionFor(m)) + '</option>';
           }).join('') +
         '</select>' +
       '</label>' +

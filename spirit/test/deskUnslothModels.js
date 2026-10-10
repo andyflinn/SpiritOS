@@ -332,6 +332,13 @@ async function suite() {
   else test.fail(OWED + 'the line for a model not loaded: ' + short(L));
   if (R && R.load === false && R.mark === '🟢' && R.icons.join('') === '🤔' && /23\.8 GB/.test(R.small)) test.check('the loaded model gets the running mark ON instead of Load, THINK for reasoning, "23.8 GB"');
   else test.fail(OWED + 'the line for the loaded model: ' + short(R));
+  // Andy, 2026-10-10: "dropdown list / model1 - capability icons / model2 - capability icons....": each entry
+  // carries its icons, as far as the studio or the cache know them, and the running mark when loaded.
+  const optionFor = ctx.deskUnslothRemoteOptionFor;
+  const O1 = optionFor && optionFor({ id: OTHER, loaded: false, quant: 'Q4_1', bytes: 1, task: 'text-generation', vision: true, reasoning: false, audio: true });
+  const O2 = optionFor && optionFor({ id: LOADED, loaded: true, quant: '', bytes: 1, task: 'text-generation', vision: false, reasoning: true, audio: false });
+  if (O1 === OTHER + ' 👁️🎵' && O2 === LOADED + ' 🤔 🟢') test.check('each dropdown entry reads the id, its capability icons and, loaded, the running mark');
+  else test.fail(OWED + 'the dropdown entries read ' + short([O1, O2]));
   const chatAsk = ctx.deskUnslothRemoteChatAskFor;
   const c1 = chatAsk && chatAsk('chat.send', { lines: [] });
   if (c1 && c1.verb === 'jobs.api' && c1.ask.deskUnsloth['chat.send']) test.check('the chat asks its own node only: jobs.api, never owner.command');
