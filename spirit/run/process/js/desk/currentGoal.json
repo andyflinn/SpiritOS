@@ -1,8 +1,8 @@
 {
- "change": 27273,
+ "change": 27456,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T12:24:13.577Z",
+ "writtenAt": "2026-10-10T13:06:39.423Z",
  "items": [
   {
    "id": "goal/G14",
@@ -11,10 +11,14 @@
    "status": "",
    "with": "",
    "buttons": [
+    "go-all",
     "close"
    ],
    "blocking": [],
-   "blocked": [],
+   "blocked": [
+    "goal/G14.1",
+    "goal/G14.2"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
@@ -32,10 +36,10 @@
    "waived": false,
    "rules": [],
    "asks": 0,
-   "half": false,
+   "half": true,
    "full": false,
-   "design": true,
-   "waiting": 1,
+   "design": false,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "ollama agent node"
@@ -47,10 +51,356 @@
     "ollama agent node": "MCowBQYDK2VwAyEAZQ/IHHn57kdPt0Vf1wZsAJoAMivrFUEN3co7yzq9ki0=",
     "wsl-claude": "MCowBQYDK2VwAyEANrNqPPaIac2/NlIHC7C+LoalDe0ub7RvS7U4c6P+lzQ="
    },
-   "box": "",
-   "version": 0,
+   "box": "deskUnslothRemote: A SHELL APP ON ANDY'S NODE THAT RUNS deskUnsloth ON HIS PUPPET. Design, 2026-10-10. Facts checked at 84164a6b. Rulings live verbatim in the item they decide.\n\nVISION (Andy's words): \"no name for this shell app has been designed yet. maybe deskUnslothRemote would be correct.\" \"I am most interested right now in all the info that can be had from the unsloth server, what can we get? list of local models? state of the VRAM cache? all that stuff\". And from goal/G10, 2026-10-09: \"that agent node should be a puppet of mine, where i can configure it's deskUnsloth remotely, sort of like we do with appFaceApp\", \"the permission set may change with every deskUnsloth configuration\", and the manager \"should sit on the owner node, not the puppet node\". Since 2026-10-10 the agent node on 11111 IS his puppet (owner.json names his key), so the remote half has a far end.\n\nDECIDED (Andy, 2026-10-10): \"so here's what we do. we build deskUnsloth and deskUnslothRemote in parallel, so that deskUnslothRemote can run successfully on both, 11111 AND 65432. First we fix the puppet-issue, then we get a hello-world that shows the current configuration, then we build the UI step by step, in this goal without ever closing the goal, so verify doesn't feel the need to run for an hour.\" Then: \"cw: spit off one item for this: all changes required to make puppeteering work. you should be able to make that a green-able box in the first go. all other items will be blocked by it.\" and \"then one item for the hello-world state: I changed my mind on it's feature: it will be a connect/disconnect switch for Levant to be visible in desk.\"\n1. The two halves grow together: deskUnsloth (the process on the agent node) and deskUnslothRemote (the shell app). The app runs on both nodes: on 65432 it reaches deskUnsloth on the puppet through the owner door; on 11111 it reaches the same deskUnsloth on its own node directly. One app, one code path, the target the only difference.\n2. Order: first the puppet issue (goal/G14.1, which blocks every other item), then the switch (goal/G14.2), then the UI step by step.\n3. The goal stays open through the steps; each step is one item, verified by its own suite (rule/4, rule/10); no full run until the goal is closed.\n\nTODAY (84164a6b)\n- The owner door: owner.command on his loopback carries one node verb to a puppet, signed, and hands back the puppet's answer in the same reply. It fails for every verb that reads a body: the shim in puppetMode hands the verb a stream with no headers, and the shared body reader starts by reading content-length off them (reproduced 2026-10-10: jobs.api through the door answers 400 Invalid JSON body). Verbs without a body get through.\n- deskUnsloth (process/js/deskUnsloth on the puppet) reads two files from its state folder, relay-state/process/deskUnsloth: configuration.json (persona, preamble, model, contextLimit, answerTokens, bytesPerToken) and connection.json (url, key). It reads them once at start. It declares no verb of its own. It is at the desk by one loop: every 250 ms it asks its node's deskClient for the next lines, answers lines addressed to its persona and JOB lines by posting through the desk; the desk's live mark for an agent is that deskClient's listening word. The node's fs.save cannot write its files: the write gate covers shell only.\n- A node-operated server is stopped by jobs.cancel (no restart follows a cancel) and started by jobs.create with its script, or by config.setModules on for a path not yet listed. What a process does is its job's log and app object on its own node, read by jobs.get; the puppet's live stream does not cross to the owner's page.\n- The owner's node keeps no list of puppets. A puppet answers its owner's command; a node that is not one stays silent on purpose.\n- A shell app asks its own node with spirit.core.ask and nothing else; to a puppet it asks owner.command with the puppet's key, the verb and the body, same reply shape back.\n- THE UNSLOTH SERVER (read live 2026-10-10): Unsloth UI Backend 2026.10.3 on the puppet's box, 127.0.0.1:8888, bearer key from connection.json, publishes its api as openapi.json, 150 routes. Models: GET v1/models (every model known, quant, context length, loaded flag; 9 today, the Qwen loaded), api/models/local (task, format, audio type), api/models/cached-gguf (source, size, cache state, has_vision), api/models/config/{name}, api/models/check-vision and check-embedding by name, api/models/gguf-variants for a repo (every quantization, size, downloaded); POST api/inference/load and unload, GET api/inference/load-progress. No free search of the hub. Hardware: GET api/train/hardware (per GPU vram used and total, utilization, temperature, power). Activity: GET api/inference/status (engine, context settings, supports_tools, is_vision, is_audio, has_video_input, slots, offloaded layers), api/inference/monitor (the studio's monitor: active model, queue of 4 slots, every api request with its prompt preview), api/inference/active-generations; api/models/kv-cache-estimate, POST api/inference/estimate-memory. One model loaded at a time; a chat request names that one; the routes never change with the model. All of it is loopback on the puppet's box: only a process there can read it.\n\nSHAPE PROPOSED (not decided)\n- The app, shell/deskUnslothRemote: a target picker (own node or a puppet), then for the target: the switch, the studio's facts (models with the loaded one and their flags, VRAM, the monitor's queue and last requests), the deskUnsloth configuration shown and editable, connection beside it, a restart button, and the job's last lines.\n- Every action is owner.command carrying an existing node verb, or the verb itself on the local node. The new things are on deskUnsloth itself: read verbs that pass a studio answer through (models, hardware, status, monitor), and configuration get and set, so the files are written by the process that owns them. No new node verb.\n\nITEMS, in his order: goal/G14.1 All changes required to make puppeteering work (blocks every other item, his rule); goal/G14.2 A connect/disconnect switch for Levant, visible in desk (after G14.1); then the UI step by step, one item at a time (rule/7).",
+   "version": 5,
+   "checks": [
+    {
+     "number": "Q1",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T13:06:14.203Z"
+    },
+    {
+     "number": "Q2",
+     "kind": "Q",
+     "words": "Add it?",
+     "test": "",
+     "state": "answered",
+     "by": "claude-windows",
+     "at": "2026-10-10T13:06:16.069Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T12:24:41.895Z",
+     "text": "taking: gathering the tree facts a remote control of deskUnsloth needs, the owner door, the verbs a shell app can send a puppet, and where deskUnsloth keeps its two files. Your vision first; I write the box after it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T12:25:27.623Z",
+     "text": "Facts in hand for the box, while you write the vision:\n1. The owner door: owner.command on your loopback carries any node verb to a puppet and waits for its answer; today it fails for every verb that reads a body (the shim hands no headers), so that one-line fix in puppetMode is this goal first dependency.\n2. deskUnsloth keeps its two files in its state folder on 11111, relay-state/process/deskUnsloth: configuration.json (persona, preamble, model, limits) and connection.json (url, key). fs.save through the node cannot write there, the write gate covers shell only; so the plain way is two verbs on deskUnsloth itself, read and write its configuration, reached from your shell through owner.command and jobs.api.\n3. A restart after a change: jobs.cancel the deskUnsloth job on the puppet, then jobs.create with its script, both existing verbs; and what it does is readable the same way, jobs.get on its job, log and app object, by asking, since the puppet stream does not cross.\n4. Your node keeps no puppet list; the app finds puppets by one owner.command per contact, or reads a list you keep."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T12:29:35.177Z",
+     "text": "Box written with your line at the top, the tree facts, and a shape marked proposed, not decided: a target picker, then the puppet deskUnsloth configuration shown and editable, a restart, and its job last lines as the monitor; every action an owner.command with an existing verb, and the one new thing two verbs on deskUnsloth itself to read and write its own files.\nFirst item I propose, the dependency everything else rides on: the owner door shim hands the verb a request with headers. Add it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T12:31:28.867Z",
+     "text": "I am most interested right now in all the info that can be had from the unsloth server, what can we get?\n\nlist of local models?\n\nstate of the VRAM cache?\n\nall that stuff"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T12:32:29.634Z",
+     "text": "does model selection affect available api's etc."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T12:32:43.471Z",
+     "text": "Plenty, and all of it read off the live server on this box just now. It is Unsloth UI Backend 2026.10.3 on 127.0.0.1:8888 with your key, and it publishes its whole api (openapi.json, 150 routes). What a remote control wants:\n1. Models: GET v1/models lists every model it knows with quant, context length and loaded true or false (9 today, the Qwen loaded); GET api/models/local and api/models/cached-gguf add source, size in bytes and cache state; api/models/config/{name} the config; POST api/inference/load and unload switch the loaded model; api/inference/load-progress watches it.\n2. VRAM and hardware: GET api/train/hardware: per GPU vram used and total (12.97 of 15.93 GB now), utilization, temperature, power draw and limit.\n3. What it is doing: GET api/inference/status, the engine and context settings of the loaded model; api/inference/monitor, the monitor you see in the studio, with active model, queue (4 slots), and every api request with its prompt preview; api/inference/active-generations; api/models/kv-cache-estimate and api/inference/estimate-memory for the cache question.\n4. Also there: chat threads and settings, training, audio, image; not ours.\nThe one implication: these live on the puppet box only, so the remote app gets them through deskUnsloth, a read verb or two on it that pass the studio answer through, each an owner.command and jobs.api away; no new node verb."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T12:33:47.010Z",
+     "text": "No for the api, yes for what it can do. The routes are the same whatever is loaded; the studio holds one model loaded at a time (status.loaded has one entry) and a chat request has to name that one. What changes with the model is reported by api/inference/status: supports_tools (true for the Qwen now), is_vision, is_audio, has_video_input (all false now), context_length (58880 for the Qwen, native 262144), parallel slots (4), offloaded layers (41). The Ollama models you saw are listed by the studio too, same route, loaded through it.\nSo the picker in the app shows each model with those flags and marks the loaded one; the endpoint never moves. One thing you may want to know: your deskUnsloth configuration says contextLimit 8192 while the loaded Qwen offers 58880."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T12:35:15.293Z",
+     "text": "the model that is running now is a quantized version of AgentWorld, does the unsloth server allow me to search for its remote models?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T12:35:55.695Z",
+     "text": "Not a free search of the hub: no route takes a search text for models. What it does give: for a repo you name, GET api/models/gguf-variants lists every quantization on Hugging Face with size, context length and whether it is downloaded; for your AgentWorld that is BF16 at 69 GB, UD-Q8_K_XL at 38 GB, down to the UD-Q2_K_XL you run at 24 GB. The hub source is huggingface (api/settings/hub). api/providers/model-catalog is the cloud providers list, OpenAI and the like, not the hub.\nSo the app can show the variants of any repo you type and start a download by loading one (gguf-download-progress watches it); finding new repos stays the studio or the hub page."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T12:37:40.464Z",
+     "text": "Does it list capabilities? vision, reason audio etc?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T12:38:16.949Z",
+     "text": "Partly. Per model without loading it: the task (text-generation, text-to-image, text-to-video), the format, the audio type, and two checks by name, api/models/check-vision and check-embedding, each a yes or no; the cached list adds has_vision. For the loaded model, status adds supports_tools, is_audio, has_video_input and the context length. Reasoning is not a flag anywhere for a local model; the cloud catalog carries reasoning and effort levels, the hub models do not.\nSo the picker can show task, vision, embedding and audio for every model, and tools, audio input and context for the loaded one; whether a model reasons you know from its name or by trying it."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T12:43:35.373Z",
+     "text": "so here's what we do.\n\nwe build deskUnsloth and deskUnslothRemote in parallel, so that deskUnslothRemote can run successfully on both, 11111 AND 65432.\n\nFirst we fix the puppet-issue, then we get a hello-world that shows the current configuration, then we build the UI step by step, in this goal without ever closing the goal, so verify doesn't feel the need to run for an hour.\n\nLevant: are you listening?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T12:44:24.580Z",
+     "text": "Recorded verbatim under DECIDED: both halves in parallel, the app running on 11111 and 65432 alike with the target as the only difference; the order puppet issue, hello-world configuration, UI step by step; the goal open throughout, each step its own item with its own suite.\nItem 1 in your order, title: the owner door shim hands the verb a request with headers. Add it?"
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T12:48:48.480Z",
+     "text": "cw: spit off one item for this: all changes required to make puppeteering work. you should be able to make that a green-able box in the first go. all other items will be blocked by it."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T12:49:28.718Z",
+     "text": "taking: the puppeteering item is added, blocking the goal; writing its box green-able in one go, every change named with its test."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T12:52:02.267Z",
+     "text": "then one item for the hello-world state: I changed my mind on it's feature:\n\nit will be a connect/disconnect switch for Levant to be visible in desk."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T12:52:42.703Z",
+     "text": "taking: item 2 added as the switch, after the puppeteering item by your rule; recording the changed feature verbatim and writing its box from how deskUnsloth attaches to the desk today."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T12:54:09.260Z",
+     "text": "this way i can turn it off, so i don't have to waive for you to claim both reds and code."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T13:05:52.556Z",
+     "text": "is this goal green with just two items?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T13:06:18.143Z",
+     "text": "Green for what you asked of it: the puppet fix and the hello world, each with its box, the first granted. The two red Q on the goal were my two add-it asks, both answered by your word; marked so. By your own rule the UI comes step by step, one item at a time, with the goal open, so it is green now and grows later; the goal closes when you say the UI is done."
+    }
+   ]
+  },
+  {
+   "id": "goal/G14.1",
+   "title": "All changes required to make puppeteering work",
+   "goal": "goal/G14",
+   "status": "running",
+   "with": "",
+   "buttons": [],
+   "blocking": [
+    "goal/G14"
+   ],
+   "blocked": [],
+   "go": true,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": true,
+   "subGoal": false,
+   "files": [
+    {
+     "path": "spirit/run/js/puppetMode.js",
+     "by": "claude-windows",
+     "core": true
+    },
+    {
+     "path": "spirit/test/ownerPost.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/puppetCommands.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/puppetDoor.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [
+    {
+     "key": "rule/6",
+     "version": 25
+    },
+    {
+     "key": "rule/10",
+     "version": 23
+    },
+    {
+     "key": "rule/9",
+     "version": 20
+    },
+    {
+     "key": "rule/7",
+     "version": 16
+    },
+    {
+     "key": "rule/5",
+     "version": 10
+    },
+    {
+     "key": "rule/4",
+     "version": 9
+    },
+    {
+     "key": "rule/3",
+     "version": 6
+    }
+   ],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "WHAT: every change that makes puppeteering work, so that an owner command from Andy's node runs any loopback verb on his puppet and brings the answer back. Blocks every other item of goal/G14.\n\nWHERE IT STANDS (read 2026-10-10, 84164a6b)\n- Working: owner.command on his loopback signs a command for a puppet, the puppet's door checks it (puppetMode.ownerCommandIn), runs the verb through the loopback table (puppetMode.puppetDoor's shim) and answers on the command hash; his node hands that answer back in the same reply. Proven live 2026-10-10 from 65432 to 11111: the answer came on the hash.\n- Broken: the shim gives the verb a request with no headers. Every verb reads its body through the one shared reader (serveCommon.readJsonBody), which begins with the content-length header, so it throws before parsing and the verb answers 400 bad-request, Invalid JSON body. Verbs taking no body get through; verbs taking one, which is nearly all of them, jobs.api included, do not. Reproduced here with the reader alone. No verb handler reads headers or the socket itself (checked: none in server.js); the reader is the only consumer.\n- Already true of 11111: it is his puppet (owner.json names his key), it holds him as a contact, his node knows its key. Nothing else is needed on either node for the command to travel.\n\nCHANGES\n1. puppetMode.js, the shim: the request handed to the verb carries headers, content-type application/json and content-length of the body it holds. Still no socket, on purpose (G3: a handler that reaches for one fails alone). One place, a few lines.\n2. The red, spirit/test/puppetCommands.js, written first: drives puppetMode.puppetDoor with the real codec and real keys, as puppetDoor.js does, but with handlers that read their body through the real serveCommon.readJsonBody; a command with a body is answered with what the body held, a command whose body is over BODY_MAX is refused by the reader as today's door refuses it, and a handler with no body still works. Red on today's code at the first check.\n3. puppetDoor.js and ownerPost.js keep passing unchanged; their fake handlers never read a body, which is how this slipped past them, and the new suite is where that is held from now on.\n\nTHE PROOF, after the build: from his node, owner.command to 11111 with jobs.api and ask api answers the puppet's server trees; posted in this chat with the answer's first line.\n\nNOT IN THIS ITEM: a verb to write owner.json on a node (the owner writes it by hand or by an installer, as face-install does); a puppet list on the owner's node; any deskUnsloth verb. Those are later items of this goal or none.\n\nWHY: Andy, 2026-10-10: \"First we fix the puppet-issue\", \"spit off one item for this: all changes required to make puppeteering work. you should be able to make that a green-able box in the first go. all other items will be blocked by it.\"",
+   "version": 1,
+   "checks": [
+    {
+     "number": "G1",
+     "kind": "G",
+     "words": "core grant: spirit/run/js/puppetMode.js",
+     "test": "",
+     "state": "granted",
+     "by": "andy",
+     "at": "2026-10-10T13:01:00.444Z"
+    }
+   ],
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T12:50:27.299Z",
+     "text": "Box written, green-able: where it stands, three changes (the shim carries the two headers the body reader needs, a red suite driving the door with the real body reader, the two old suites untouched), the live proof after the build, and what is not in it. Files are on the item, so the grant for puppetMode.js stands. No Q from me."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T12:59:38.558Z",
+     "text": "ownerPost.js needs a grant, too?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T13:00:00.464Z",
+     "text": "No. The ownerPost on the list is the test suite, spirit/test/ownerPost.js, which stays as it is and is run; the node file ownerPost.js, the sending end, is not touched, since the command already travels and is answered. The one core file is puppetMode.js, the receiving shim, and G1 names exactly that."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T13:00:27.531Z",
+     "text": "this green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T13:00:43.257Z",
+     "text": "Green: no Q stands on it, the box names every change with its test, the only open check is your grant G1 on puppetMode.js."
+    },
+    {
+     "by": "desk",
+     "at": "2026-10-10T13:06:39.117Z",
+     "text": "limbo: Go is on record, nobody is working on it, and no Done, grant or question is offered. An agent takes it and adds a red grant, a red question, or a Done."
+    }
+   ]
+  },
+  {
+   "id": "goal/G14.2",
+   "title": "A connect/disconnect switch for Levant, visible in desk",
+   "goal": "goal/G14",
+   "status": "",
+   "with": "",
+   "buttons": [
+    "go",
+    "close"
+   ],
+   "blocking": [
+    "goal/G14"
+   ],
+   "blocked": [],
+   "go": false,
+   "alone": false,
+   "alert": false,
+   "claims": 0,
+   "boxTaken": "",
+   "limbo": false,
+   "subGoal": false,
+   "files": [
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/process/js/deskUnsloth/deskUnsloth.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.html",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.js",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/run/shell/deskUnslothRemote/deskUnslothRemote.json",
+     "by": "claude-windows",
+     "core": false
+    },
+    {
+     "path": "spirit/test/deskUnslothSwitch.js",
+     "by": "claude-windows",
+     "core": false
+    }
+   ],
+   "green": true,
+   "code": false,
+   "phase": "",
+   "red": "",
+   "builder": "",
+   "verifier": "",
+   "waived": false,
+   "rules": [],
+   "asks": 0,
+   "half": false,
+   "full": false,
+   "box": "WHAT: the hello-world of deskUnslothRemote, the brand new shell app: one switch that connects or disconnects Levant at the desk, with its state visible in the app. The app runs on both nodes at the same time: on 11111 it flips deskUnsloth on its own node; on 65432 it flips the same deskUnsloth on the puppet through the owner door. After goal/G14.1 (Andy: every other item is blocked by it).\n\nWHY (Andy, 2026-10-10): \"then one item for the hello-world state: I changed my mind on it's feature: it will be a connect/disconnect switch for Levant to be visible in desk.\" \"this way i can turn it off, so i don't have to waive for you to claim both reds and code.\" And, correcting the box: \"This will be visible in the brand new deskUnslothRemote shell-app, this is it's hello world and can simultaneously run un the puppet or on my own node.\"\n\nHOW LEVANT IS AT THE DESK TODAY (read 2026-10-10): deskUnsloth loops every 250 ms asking its node's deskClient for the next lines, answers the lines addressed to its persona and JOB lines by posting through the desk, and nothing else; it declares no verb of its own. The desk counts an agent live for ten minutes after its last write (LIVE_MS), and every ask for lines is a write (the ear's listening word); the signoff verb takes an agent off the live list at once (goal/G8.5: \"a leaving agent is not waited out for ten minutes\"), and its next write makes it live again. The waive of a phase is decided by that live list.\n\nSHAPE\n1. deskUnsloth gains two verbs on its pipe: connect {on: true or false} answers {connected}, and state {} answers {connected, persona, model}. Disconnect: the loop stops asking for lines and deskUnsloth says signoff to the desk, so Levant leaves the live list at once, not in ten minutes, and the waive rule sees one agent. Connect: the loop resumes at the present, as it starts today (the backlog read, never answered), and its first ask makes it live again. The process stays up either way; stopping the job is not this switch. It starts connected, as today.\n2. shell/deskUnslothRemote, the hello world: a target picker with two entries, this node and the puppet (the puppet's key from a small list in the app's own folder for now, until a puppets list exists), and the switch showing its state. On this node the app asks jobs.api with deskUnsloth state and connect; on the puppet it asks owner.command carrying that same jobs.api ask. One function with the target as its argument; nothing else differs. The same app opens on both nodes' shells at once, each with its own target.\n3. Visible: the switch and Levant's connected state are shown in deskUnslothRemote itself, read from the state verb each time the app opens or flips; that the desk's live list follows is the effect, seen in its Team tab, not the display this item builds.\n\nTESTS, the red first: a suite that starts deskUnsloth on a pipe against a fake node (as appFaceProcess.js does for the face) and asserts: state answers connected true at start; connect off stops the asks for next lines within a second, sends one signoff, and state says false; connect on resumes the asks; the app's one function builds the local ask and the owner.command ask from the same target. deskUnsloth's existing suite stays green.\n\nFILES: process/js/deskUnsloth/deskUnsloth.js and its manifest; shell/deskUnslothRemote (new: the manifest, the page, the script); the new suite; no core file.\n\nNOT IN THIS ITEM: the configuration view and editor, the studio's facts, the restart, the puppets list on the owner node. Each a later item of this goal.",
+   "version": 3,
    "checks": [],
-   "chat": []
+   "chat": [
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T12:53:56.232Z",
+     "text": "Box written from how Levant sits at the desk today: deskUnsloth gains connect and state on its pipe, disconnected it stops asking the deskClient for lines so the desk live mark drops, connected it resumes at the present; the app first cut is a target picker and the switch, one function with the target as argument, jobs.api on this node and owner.command carrying it on the puppet. The process stays up either way; stopping the job is not this switch. Red first, named in the box; no core file touched."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T12:54:58.832Z",
+     "text": "Your purpose is in the box verbatim, and it sharpened the mechanism: the desk keeps an agent live ten minutes after its last write, and only signoff drops it at once. So disconnect stops the line polling and says signoff, Levant leaves the live list immediately and the waive rule sees one agent; connect resumes the polling and the first ask makes it live again."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T13:03:24.743Z",
+     "text": "false: This will be visible in the brand new deskUnslothRemote shell-app, this is it's hello world and can simultaneously run un the puppet or on my own node."
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T13:04:07.299Z",
+     "text": "Corrected, your line verbatim in the box: visible means in deskUnslothRemote itself, the brand new shell app, its hello world, open on both nodes at once with its own target each; the state is read from the state verb and shown there. The desk live list following is the effect, not the display."
+    },
+    {
+     "by": "andy",
+     "at": "2026-10-10T13:04:27.054Z",
+     "text": "this green?"
+    },
+    {
+     "by": "claude-windows",
+     "at": "2026-10-10T13:04:46.599Z",
+     "text": "Green: no check stands on it, no core file, the red is named, and the box carries your three lines verbatim."
+    }
+   ]
   }
  ]
 }
