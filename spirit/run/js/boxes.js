@@ -3,9 +3,10 @@
 // THE OWNER'S VIEW OF HIS BOXES — public-app-server/G10, the node's half.
 //
 // Each of his app servers reports four facts about the box it sits on
-// (faceServer.boxReport: boxLabel, fingerprint, allottedMB, boxTotalMB) and
-// never an opinion. The arithmetic is here, on the one node that holds
-// every report:
+// (boxLabel, fingerprint, allottedMB, boxTotalMB) and never an opinion. The
+// reporter was faceServer.boxReport, gone with goal/G13.2; no process reports
+// a box today, and the arithmetic waits here, on the one node that would
+// hold every report:
 //
 //   Andy: "the owner must match up servers tht share a box, and allot
 //   resources smartly himself?" — answered: the NODE matches and sums, he

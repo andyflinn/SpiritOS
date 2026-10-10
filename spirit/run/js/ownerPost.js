@@ -16,7 +16,7 @@
 //   the signing. the shell doesn't worry about that."
 //
 //   The puppet answers with a second packet whose `re` is the command's
-//   hash (nodeApps.puppetDoor). THE ANSWER IS TAKEN ONLY IF IT:
+//   hash (puppetMode.puppetDoor). THE ANSWER IS TAKEN ONLY IF IT:
 //     - carries the hash of a command THIS node sent and is still waiting
 //       on ("where a hash must match", transport/R12);
 //     - comes from the puppet the command went to, not a sibling;

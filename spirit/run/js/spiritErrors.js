@@ -612,7 +612,7 @@ define('not-owner', {
 //
 // Answers to a command its owner signed, sent back to the owner only.
 // A stranger gets nothing at all, so none of these tells anyone that a
-// node is a puppet (nodeApps.puppetDoor).
+// node is a puppet (puppetMode.puppetDoor).
 define('rotate-not-saved', {
   status: 500, presence: NONE, retry: 'after', fault: 'node',
   texts: ['the new cipher key could not be saved'],
