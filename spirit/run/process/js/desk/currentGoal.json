@@ -1,8 +1,8 @@
 {
- "change": 30283,
+ "change": 30284,
  "line": 8497,
  "goal": "goal/G16",
- "writtenAt": "2026-10-10T23:06:20.326Z",
+ "writtenAt": "2026-10-10T23:06:24.619Z",
  "items": [
   {
    "id": "goal/G16",
@@ -37,7 +37,7 @@
    "half": false,
    "full": false,
    "design": false,
-   "waiting": 12,
+   "waiting": 11,
    "live": [
     "claude-windows",
     "wsl-claude"
@@ -1447,12 +1447,9 @@
    "id": "goal/G16.5",
    "title": "One decoder in the node layer, and a guard that sees it (N1)",
    "goal": "goal/G16",
-   "status": "done",
+   "status": "waiting on your G2 grant and Q4",
    "with": "wsl-claude",
-   "buttons": [
-    "close",
-    "reopen"
-   ],
+   "buttons": [],
    "blocking": [
     "goal/G16.7",
     "goal/G16.10"
@@ -1463,7 +1460,7 @@
    "go": true,
    "alone": false,
    "alert": false,
-   "claims": 1,
+   "claims": 0,
    "boxTaken": "",
    "limbo": false,
    "subGoal": false,
@@ -2278,6 +2275,7 @@
     "goal/G16.9"
    ],
    "blocked": [
+    "goal/G16.5",
     "goal/G16.1"
    ],
    "go": false,
@@ -2631,7 +2629,9 @@
    "blocking": [
     "goal/G16.9"
    ],
-   "blocked": [],
+   "blocked": [
+    "goal/G16.5"
+   ],
    "go": false,
    "alone": false,
    "alert": false,
