@@ -241,6 +241,12 @@ function askModel(messages, onTool) {
   });
 }
 
+// THE LAST WORD IS THE MODEL'S, NOT A PLACEHOLDER (found live by Andy, 2026-10-10: Levant fetched sources three
+// rounds long and the answer read "the model kept asking for tools after 3 rounds and said nothing"). When the
+// rounds are spent and the model still asks for a tool, it is asked once more WITHOUT tools and told the budget is
+// spent, so it answers with what it has read; only if that too says nothing does the placeholder stand.
+const BUDGET_SPENT = '(the tool budget of this answer is spent: answer now with what you have read)';
+
 function askModelRound(messages, list, round, onTool) {
   const body = { model: MODEL, messages: messages, max_tokens: ANSWER_TOKENS };
   if (list.length) body.tools = list;
@@ -248,6 +254,10 @@ function askModelRound(messages, list, round, onTool) {
     const choice = got && Array.isArray(got.choices) ? got.choices[0] : null;
     const message = choice && choice.message ? choice.message : null;
     const calls = message && Array.isArray(message.tool_calls) ? message.tool_calls : [];
+    if (calls.length && round >= TOOL_ROUNDS && list.length) {
+      messages.push({ role: 'user', content: BUDGET_SPENT });
+      return askModelRound(messages, [], round + 1, onTool);
+    }
     if (calls.length && round < TOOL_ROUNDS) {
       messages.push({ role: 'assistant', content: String(message.content || ''), tool_calls: calls });
       return calls.reduce(function (chain, call) {

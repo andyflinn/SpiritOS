@@ -263,11 +263,15 @@ async function suite() {
   const sawTool = published.some(function (p) { return p.chat && p.chat.tool && p.chat.tool.name === 'net_fetch' && /example\.test/.test(String(p.chat.tool.url || '')); });
   if (sawTool) test.check('the published chat.tool named the fetch while it ran');
   else test.fail(OWED + 'no published object carried chat.tool for the fetch: ' + short(published.map(function (p) { return p.chat; })));
+  // THE ROUNDS ARE SPENT AND THE MODEL STILL ASKS FOR A TOOL (found live by Andy, 2026-10-10: three fetches of
+  // CodeMirror sources and the answer read "the model kept asking for tools after 3 rounds and said nothing"): it
+  // is asked once more without tools, told the budget is spent, and its words are the answer.
   script = [
     { toolCalls: [toolCall('r1', 'net_fetch', { url: 'https://example.test/1' })] },
     { toolCalls: [toolCall('r2', 'net_fetch', { url: 'https://example.test/2' })] },
     { toolCalls: [toolCall('r3', 'net_fetch', { url: 'https://example.test/3' })] },
     { toolCalls: [toolCall('r4', 'net_fetch', { url: 'https://example.test/4' })] },
+    { text: 'With what I have read: three pages of examples.' },
     { text: 'never reached' },
   ];
   studio.chats.length = 0;
@@ -275,8 +279,12 @@ async function suite() {
   let a2 = {};
   for (let i = 0; i < 100; i++) { a2 = await ask('chat.answer', { id: s2.id }); if (a2.done) break; await sleep(100); }
   await sleep(300);
-  if (a2.done === true && studio.chats.length === 4 && script.length === 1) test.check('three rounds at most: four calls to the model (the first and three after tools), then the answer stands as it is');
-  else test.fail(OWED + 'rounds: ' + studio.chats.length + ' calls, script left ' + script.length + ', answer ' + short(a2));
+  const last = studio.chats[studio.chats.length - 1];
+  const lastUser = last && Array.isArray(last.messages) ? last.messages[last.messages.length - 1] : null;
+  const fetchesRun = nodeAsks.filter(function (a) { return a.verb === 'net.fetch' && /example\.test\/[1-4]/.test(String(a.url)); }).map(function (a) { return a.url.slice(-1); });
+  if (a2.done === true && /three pages of examples/.test(a2.text) && studio.chats.length === 5 && script.length === 1 && last && !('tools' in last) && lastUser && lastUser.role === 'user' && /budget/.test(String(lastUser.content)) && fetchesRun.join('') === '123') {
+    test.check('three tool rounds at most: three fetches run, the fourth call for a tool is not run, the model is asked once more without tools and told the budget is spent, and its words are the answer');
+  } else test.fail(OWED + 'rounds: ' + studio.chats.length + ' calls, script left ' + script.length + ', fetches ' + fetchesRun.join('') + ', last call tools ' + (last && 'tools' in last) + ', last message ' + short(lastUser) + ', answer ' + short(a2));
 }
 
 suite().catch(function (e) { test.fail(OWED + 'the red itself tripped: ' + (e && e.stack || e)); }).then(async function () {
