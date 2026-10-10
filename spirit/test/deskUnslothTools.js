@@ -22,7 +22,10 @@
 //      describe never listed.
 //   3. THE LOOP, in the process: the call to the studio carries the tools; a tool_calls answer runs the tool, the
 //      result goes back as a tool message with its id, the model is asked again and its text is posted; three
-//      rounds at most; the published object's chat.tool names the fetch while it runs.
+//      rounds at most; the published object's chat.tool names the tool and what it works on while it runs.
+//      Since goal/G14.8 the process names desk and fs and no longer net ("net_fetch will be removed for Levant."),
+//      so the loop is exercised with fs.load against the fake node, the object (2.) still with net: the loop is
+//      generic, and which namespaces ride is the process's list.
 // rule/11: through testSupport only; its own folders and ports; never 65432.
 
 const fs = require('fs');
@@ -39,6 +42,7 @@ const RUN = path.join(ROOT, 'spirit', 'run');
 const AGENT = path.join(RUN, 'process', 'js', 'deskUnsloth', 'deskUnsloth.js');
 const TOOLS = path.join(RUN, 'process', 'js', 'deskUnsloth', 'tools.js');
 const FETCH_DESCRIPTION = 'Fetch a page from the internet by url: GET unless method says otherwise; the owner proxy list decides which sites and which keys';
+const LOAD_DESCRIPTION = 'The text of one file the node will serve, by its path';
 // contextLimit "auto" (Andy, 2026-10-10: "lets assume "auto" is most appropriate for now"): the limit is the
 // studio's context_length of the loaded model, STUDIO_CONTEXT below, read with the known list; the rooms follow it.
 const STUDIO_CONTEXT = 2000;
@@ -65,6 +69,12 @@ const node = http.createServer(function (req, res) {
     let b = {}; try { b = JSON.parse(raw); } catch (e) { b = {}; }
     nodeAsks.push(b);
     function answer(status, body, type) { res.writeHead(status, { 'Content-Type': type || 'application/json; charset=utf-8' }); res.end(typeof body === 'string' ? body : JSON.stringify(body)); }
+    if (b.verb === 'fs.AGENTS.introspect') return answer(200, { items: [{ key: 'fs.load', label: LOAD_DESCRIPTION }], more: false });
+    if (b.verb === 'fs.AGENTS.load') return answer(200, { description: LOAD_DESCRIPTION, request: { path: '' }, reply: { path: '', text: '' } });
+    if (b.verb === 'fs.load') {
+      if (!b.path) return answer(400, { error: 'path is required' });
+      return answer(200, { path: b.path, text: /big\.test/.test(b.path) ? BIG_PAGE : PAGE });
+    }
     if (b.verb === 'net.AGENTS.introspect') return answer(200, { items: introspectItems, more: false });
     if (b.verb === 'net.AGENTS.fetch') return answer(200, { description: FETCH_DESCRIPTION, request: { url: '', method: '', headers: {}, body: '', timeoutMs: 0 }, reply: {} });
     if (b.verb === 'net.fetch') {
@@ -248,7 +258,7 @@ async function suite() {
   // studio's context_length; then a page over a quarter of (2000 - 100) * 4 bytes comes back cut to that room.
   await ask('models', {});
   await sleep(300);
-  script = [{ toolCalls: [toolCall('room-1', 'net_fetch', { url: 'https://big.test/' })] }, { text: 'seen the big page' }];
+  script = [{ toolCalls: [toolCall('room-1', 'fs_load', { path: 'shell/big.test' })] }, { text: 'seen the big page' }];
   studio.chats.length = 0;
   const sRoom = await ask('chat.send', { lines: [{ role: 'user', text: 'read the big page' }] });
   let aRoom = {};
@@ -259,15 +269,15 @@ async function suite() {
   if (roomTool && roomBytes <= TOOL_ROOM + 200 && roomBytes > TOOL_ROOM / 2 && /cut/.test(String(roomTool.content))) test.check('with contextLimit auto the tool room follows the studio\'s context_length: the big page came back cut to ' + roomBytes + ' bytes of room ' + TOOL_ROOM);
   else test.fail(OWED + 'with contextLimit auto the tool result was ' + roomBytes + ' bytes against a room of ' + TOOL_ROOM + ' (' + short(roomTool && roomTool.content) + ')');
   script = [
-    { toolCalls: [toolCall('call-1', 'net_fetch', { url: 'https://example.test/' })] },
+    { toolCalls: [toolCall('call-1', 'fs_load', { path: 'shell/example.test' })] },
     { text: 'The page says: Example Domain, for use in illustrative examples.' },
   ];
   studio.chats.length = 0; published.length = 0;
-  const s1 = await ask('chat.send', { lines: [{ role: 'user', text: 'what is on https://example.test/' }] });
+  const s1 = await ask('chat.send', { lines: [{ role: 'user', text: 'what is in shell/example.test' }] });
   await until(function () { return studio.chats.length >= 2; }, 10000);
   const c1 = studio.chats[0], c2 = studio.chats[1];
   const sentTools = c1 && Array.isArray(c1.tools) ? c1.tools : [];
-  if (sentTools.length === 1 && sentTools[0].function && sentTools[0].function.name === 'net_fetch' && sentTools[0].function.description === FETCH_DESCRIPTION) test.check('the call to the studio carries the tools from describe(net)');
+  if (sentTools.length === 1 && sentTools[0].function && sentTools[0].function.name === 'fs_load' && sentTools[0].function.description === LOAD_DESCRIPTION) test.check('the call to the studio carries the tools from describe(fs), and no net tool (goal/G14.8)');
   else test.fail(OWED + 'the first call carried tools ' + short(sentTools));
   const toolMsg = c2 && Array.isArray(c2.messages) ? c2.messages.filter(function (m) { return m.role === 'tool'; })[0] : null;
   const assistantMsg = c2 && Array.isArray(c2.messages) ? c2.messages.filter(function (m) { return m.role === 'assistant' && m.tool_calls; })[0] : null;
@@ -277,17 +287,17 @@ async function suite() {
   for (let i = 0; i < 80; i++) { a1 = await ask('chat.answer', { id: s1.id }); if (a1.done) break; await sleep(100); }
   if (a1.done === true && /illustrative examples/.test(a1.text)) test.check('the model\'s text after the tool is the answer');
   else test.fail(OWED + 'chat.answer ended ' + short(a1));
-  const sawTool = published.some(function (p) { return p.chat && p.chat.tool && p.chat.tool.name === 'net_fetch' && /example\.test/.test(String(p.chat.tool.url || '')); });
-  if (sawTool) test.check('the published chat.tool named the fetch while it ran');
-  else test.fail(OWED + 'no published object carried chat.tool for the fetch: ' + short(published.map(function (p) { return p.chat; })));
+  const sawTool = published.some(function (p) { return p.chat && p.chat.tool && p.chat.tool.name === 'fs_load' && /example\.test/.test(String(p.chat.tool.url || '')); });
+  if (sawTool) test.check('the published chat.tool named the tool and its path while it ran');
+  else test.fail(OWED + 'no published object carried chat.tool for the load: ' + short(published.map(function (p) { return p.chat; })));
   // THE ROUNDS ARE SPENT AND THE MODEL STILL ASKS FOR A TOOL (found live by Andy, 2026-10-10: three fetches of
   // CodeMirror sources and the answer read "the model kept asking for tools after 3 rounds and said nothing"): it
   // is asked once more without tools, told the budget is spent, and its words are the answer.
   script = [
-    { toolCalls: [toolCall('r1', 'net_fetch', { url: 'https://example.test/1' })] },
-    { toolCalls: [toolCall('r2', 'net_fetch', { url: 'https://example.test/2' })] },
-    { toolCalls: [toolCall('r3', 'net_fetch', { url: 'https://example.test/3' })] },
-    { toolCalls: [toolCall('r4', 'net_fetch', { url: 'https://example.test/4' })] },
+    { toolCalls: [toolCall('r1', 'fs_load', { path: 'shell/example.test/1' })] },
+    { toolCalls: [toolCall('r2', 'fs_load', { path: 'shell/example.test/2' })] },
+    { toolCalls: [toolCall('r3', 'fs_load', { path: 'shell/example.test/3' })] },
+    { toolCalls: [toolCall('r4', 'fs_load', { path: 'shell/example.test/4' })] },
     { text: 'With what I have read: three pages of examples.' },
     { text: 'never reached' },
   ];
@@ -298,7 +308,7 @@ async function suite() {
   await sleep(300);
   const last = studio.chats[studio.chats.length - 1];
   const lastUser = last && Array.isArray(last.messages) ? last.messages[last.messages.length - 1] : null;
-  const fetchesRun = nodeAsks.filter(function (a) { return a.verb === 'net.fetch' && /example\.test\/[1-4]/.test(String(a.url)); }).map(function (a) { return a.url.slice(-1); });
+  const fetchesRun = nodeAsks.filter(function (a) { return a.verb === 'fs.load' && /example\.test\/[1-4]/.test(String(a.path)); }).map(function (a) { return a.path.slice(-1); });
   if (a2.done === true && /three pages of examples/.test(a2.text) && studio.chats.length === 5 && script.length === 1 && last && !('tools' in last) && lastUser && lastUser.role === 'user' && /budget/.test(String(lastUser.content)) && fetchesRun.join('') === '123') {
     test.check('three tool rounds at most: three fetches run, the fourth call for a tool is not run, the model is asked once more without tools and told the budget is spent, and its words are the answer');
   } else test.fail(OWED + 'rounds: ' + studio.chats.length + ' calls, script left ' + script.length + ', fetches ' + fetchesRun.join('') + ', last call tools ' + (last && 'tools' in last) + ', last message ' + short(lastUser) + ', answer ' + short(a2));

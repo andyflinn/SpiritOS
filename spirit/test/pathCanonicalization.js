@@ -118,23 +118,34 @@ test.subHeading('Node-only js/ modules are unreadable in every spelling');
 test.subHeading('Sidecars are unreadable in every spelling');
 expectEverySpellingUnservable('a media sidecar', 'media/001.jpg.sidecar.json');
 
-// ---- an app's own entry script and manifest stay protected ----
-// kernel.js says these are "protected everywhere, from every tool". That
-// has to hold for every spelling, or the guarantee is only about strings.
-// TWO SPECIMENS, AND THE PAIR IS THE POINT. natter is intrinsic and so
-// carries a second protection of its own (isIntrinsicApp); textEditor
-// carries none. Together they prove the refusal comes from
-// APP_ENTRY_SCRIPT_PATTERN — the path shape — and not from being special.
-//
-// The non-intrinsic half was app/appBuilder/appBuilder.js until
-// 2026-09-13, when decision 0008 deleted that app. The rule outlives any
-// app, so the specimen moved rather than the check.
-test.subHeading('App entry scripts stay unwritable in every spelling');
-expectEverySpellingUnwritable('shell/natter/natter.js (intrinsic)', 'shell/natter/natter.js');
-expectEverySpellingUnwritable('shell/textEditor/textEditor.js (not intrinsic)', 'shell/textEditor/textEditor.js');
+// ---- an app's own entry script and manifest are shell files like any other ----
+// Until goal/G14.8 (2026-10-10) kernel.js refused both shapes for every
+// caller, the App Builder era's guard, and this suite asserted it in every
+// spelling. Andy: "the whole story of protecting app sources came from a
+// time when we had the stupid AI app-builder, which is gone now"; an
+// intrinsic app is fenced by the commit hook (coreFiles.js), not the gate.
+// The verdict is asked, never a write made: these are real files of the
+// checkout. The same two specimens, intrinsic and not, so that no
+// manifest flag has crept back into the gate.
+function expectEverySpellingWritable(label, canonical) {
+  spellings(canonical).forEach(function (variant) {
+    if (!resolvesSameAs(variant, canonical)) {
+      test.fail(label + ' — test bug: ' + JSON.stringify(variant) + ' does not alias ' + JSON.stringify(canonical));
+      return;
+    }
+    if (fileWritable(variant) === true) {
+      test.check(label + ' — writable as ' + JSON.stringify(variant));
+    } else {
+      test.fail(label + ' — REFUSED as ' + JSON.stringify(variant) + ' (goal/G14.8 opened the gate)');
+    }
+  });
+}
+test.subHeading('App entry scripts are writable in every spelling (goal/G14.8)');
+expectEverySpellingWritable('shell/natter/natter.js (intrinsic)', 'shell/natter/natter.js');
+expectEverySpellingWritable('shell/textEditor/textEditor.js (not intrinsic)', 'shell/textEditor/textEditor.js');
 
-test.subHeading('App manifests stay unwritable in every spelling');
-expectEverySpellingUnwritable('shell/natter/natter.json', 'shell/natter/natter.json');
+test.subHeading('App manifests are writable in every spelling (goal/G14.8)');
+expectEverySpellingWritable('shell/natter/natter.json', 'shell/natter/natter.json');
 
 test.subHeading('Sidecars stay unwritable in every spelling');
 expectEverySpellingUnwritable('a media sidecar', 'media/001.jpg.sidecar.json');

@@ -516,14 +516,32 @@ function handleFsSave(req, res) {
   });
 }
 
+// THE READ AS A VERB (goal/G14.8): a file's text by path, through loadFile,
+// so fileServable decides as it does for the static route; 404 by name
+// when there is none. Andy, 2026-10-10, choosing it over the url fetch for
+// the local agent: "i'm more inclined to deny URL fetch, and allow
+// loadFile, it's much narrower."
+function handleFsLoad(req, res) {
+  return readJsonBody(req).then((body) => {
+    const filePath = String((body && body.path) || '');
+    const text = spirit.core.fs.loadFile(filePath);
+    if (text === null) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('Not found');
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ path: filePath, text: text }));
+  }).catch(() => {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Invalid JSON body');
+  });
+}
+
 // handleFsSaveAppScript and handleFsSaveAppManifest stood here until
-// 2026-09-13. They were four-line wrappers over the kernel functions of
-// the same name, kept as their own routes rather than a flag on
-// /api/fs/save so THAT route could keep refusing entry scripts and
-// manifests unconditionally for every other caller.
-//
-// With them gone the refusal has no exceptions at all, which is a
-// stronger guarantee than the one this comment used to describe.
+// 2026-09-13 (decision 0008); the unconditional refusal of an app's own
+// script and manifest that they were the exception to went on 2026-10-10
+// (goal/G14.8, kernel.js fileWritable).
 
 function handleFsDelete(req, res) {
   readJsonBody(req).then((body) => {
@@ -1897,6 +1915,8 @@ contactBook.syncMarks(ROOT_DIR);
     // The node's files by path (puppets/G2). fs.stat stays the "get".
     'fs.search': { request: { q: '' }, reply: LIST, handler: proxyVerb(function (b) { return nodeSearches.fsSearch(b); }) },
     'fs.stat': { request: { path: '' }, reply: { size: 0, mtimeMs: 0, birthtimeMs: 0 }, handler: handleFsStat },
+    // The file's text (goal/G14.8), the same read as the static route.
+    'fs.load': { request: { path: '' }, reply: { path: '', text: '' }, handler: handleFsLoad },
     // The sidecar as it is, every bucket; {} when there is none.
     'fs.annotations': { request: { path: '' }, reply: {}, handler: handleFsAnnotations },
     // The three writes answer 204, no body.

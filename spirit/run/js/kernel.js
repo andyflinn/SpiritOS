@@ -262,28 +262,19 @@ if (isNode()) {
     });
   }
 
-  // Recognizes a dynamically-loaded app's own entry script (app/<name>/<name>.js,
-  // the same shape index.html's discoverDynamicApps uses to find apps to load).
-  // Protected everywhere, from every tool — not just self-protection, nothing
-  // can overwrite ANY app's own script, even though app/ is otherwise a
-  // writable root. Its sibling .json manifest is unaffected — only this one
-  // filename shape is denied.
-  const APP_ENTRY_SCRIPT_PATTERN = /^shell\/([^/]+)\/\1\.js$/;
-
-  // Recognizes a dynamically-loaded app's own manifest (app/<name>/<name>.json).
-  // Like APP_ENTRY_SCRIPT_PATTERN, protected everywhere, from every tool — a
-  // manifest is introspectable (readable) by the app it describes, but never
-  // writable by it: it already carries name/icon (which a Tier-3 app could
-  // otherwise silently change, bypassing checkIdentityAvailable's collision
-  // check) and, as of this change, `owner` — the field recording which
-  // privilege tier produced the app.
-  //
-  // There was ONE deliberate exception until 2026-09-13 — saveAppManifest,
-  // which enforced the `owner` value itself rather than trusting the
-  // caller's content. Decision 0008 removed it with app-building, and the
-  // refusal now has no exceptions at all: `owner` cannot be claimed from a
-  // browser because no browser-reachable path writes a manifest.
-  const MANIFEST_PATTERN = /^shell\/([^/]+)\/\1\.json$/;
+  // AN APP'S OWN ENTRY SCRIPT AND MANIFEST ARE ORDINARY FILES OF THE shell
+  // ROOT since goal/G14.8 (2026-10-10). Two patterns stood here
+  // (APP_ENTRY_SCRIPT_PATTERN, MANIFEST_PATTERN) and fileWritable refused
+  // both shapes for every caller: the guard of the App Builder era, kept
+  // after decision 0008 deleted the builder. Andy, closing it: "the whole
+  // story of protecting app sources came from a time when we had the
+  // stupid AI app-builder, which is gone now", and "we only protect
+  // intrinsic apps, and they are already gated by the commit hooks as
+  // "core"". So the fence for an intrinsic app is the commit hook
+  // (coreFiles.js counts its files as core; a commit without his grant is
+  // refused), not this gate; an agent's fs.save writes its own app's
+  // code (Levant's textEditor.js), and the writable roots, relay-state
+  // and the sidecar rule are what the gate still says.
 
   // The one sidecar per annotated file gets a suffix, never a same-name
   // extension swap — <file>.sidecar.json can never collide with the
@@ -337,8 +328,6 @@ if (isNode()) {
     if (isOwnState(canonical)) return true;
     const resolved = fsPath(ROOT_DIR, filePath);
     if (!resolved || !isWithinWritableRoot(resolved)) return false;
-    if (APP_ENTRY_SCRIPT_PATTERN.test(canonical)) return false;
-    if (MANIFEST_PATTERN.test(canonical)) return false;
     if (canonical.endsWith(SIDECAR_SUFFIX)) return false; // only annotateFile touches a sidecar's own path
     return true;
   }
@@ -408,57 +397,14 @@ if (isNode()) {
   }
 
 
-  // The one deliberate exception to saveFile's entry-script guard above —
-  // App Builder's whole purpose is writing an app's own app/<name>/<name>.js,
-  // which saveFile refuses unconditionally. Kept as a separate, narrowly-
-  // named function rather than a flag on saveFile so that invariant ("saveFile
-  // can never touch an entry script") stays true for every other caller
-  // without exception, and this one path is easy to find and audit. Only
-  // ever reached via a deliberate user gesture (an Apply click) in the UI —
-  // this function itself enforces no more than "the path really is shaped
-  // like an entry script", the same trust boundary already accepted for
-  // /api/jobs's spawn capability (this server only ever talks to your own
-  // browser tab).
-  // An app whose manifest says "intrinsic": true is part of how this node
-  // works rather than something the operator installed — Natter is where a
-  // personal node learns of any public relay, so an App Builder Apply that
-  // overwrote its script, or a manifest write that turned it into a user
-  // app, would take the node's only route to a mailbox with it.
-  //
-  // intrinsicManifestFor and isIntrinsicApp stood here until 2026-09-13.
-  //
-  // They answered one question for one pair of callers: may THIS door
-  // overwrite an app that the node treats as its own? saveAppScript and
-  // saveAppManifest were those callers and they are gone (decision 0008),
-  // which left this exported on spirit.core.fs with nothing in the tree
-  // calling it -- kernel API that looks load-bearing and is not.
-  //
-  // THE FLAG ITSELF STILL MEANS SOMETHING, and this is the distinction
-  // worth keeping: `intrinsic` in a manifest is read by the SHELL
-  // (declareIntrinsicApps) to decide which apps a person may not remove.
-  // What is deleted here is a write-time guard for writers that no longer
-  // exist, not the concept. spirit/test/natterIntrinsic.js asserts the
-  // flag is still on disk and still refused a write, through saveFile.
-
-  // saveAppScript and saveAppManifest stood here until 2026-09-13.
-  //
-  // They were the two named exceptions to fileWritable's refusal — the
-  // only way a browser could write an app's own entry script or its
-  // manifest — and they existed for exactly one caller, App Builder's
-  // Apply. Decision 0008 removed app-building from this repo: production
-  // code is written in VS Code, so nothing generates an app any more.
-  //
-  // What that leaves is STRONGER than what was here. fileWritable already
-  // refused both path shapes for every other caller; with the exceptions
-  // gone the refusal has none at all, and saveAppManifest's forcing of
-  // `owner: "user"` becomes structural rather than enforced — no
-  // browser-reachable path writes a manifest, so none can claim
-  // "owner":"system" (decision 0003).
-  //
-  // APP_ENTRY_SCRIPT_PATTERN and MANIFEST_PATTERN stay. They are how the
-  // system knows what an app's own code IS, and fileWritable is built on
-  // them — deleting them with their callers would have removed the
-  // refusal along with its exceptions.
+  // saveAppScript, saveAppManifest, intrinsicManifestFor and isIntrinsicApp
+  // stood here until 2026-09-13 (decision 0008 deleted the App Builder they
+  // served). The write-time refusal of an app's own script and manifest
+  // that outlived them went on 2026-10-10 (goal/G14.8, see fileWritable).
+  // `intrinsic` in a manifest is still read by the SHELL
+  // (declareIntrinsicApps) to decide which apps a person may not remove,
+  // and by coreFiles.js, which counts an intrinsic app's files as core for
+  // the commit hook.
 
   let deleteFile = spirit.core.fs.deleteFile = function(filePath){
     const resolved = fsPath(ROOT_DIR, filePath);

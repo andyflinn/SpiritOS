@@ -252,7 +252,7 @@ freePort()
 
   // ---- 3. the write gate, through the real route, to real disk ----
   .then(function (port) {
-    test.subHeading('fs.save cannot overwrite an app entry script');
+    test.subHeading('fs.save: the write gate through the real route');
     const before = fs.readFileSync(ENTRY_SCRIPT, 'utf8');
 
     // ── THE SAME VACUITY THIS FILE ALREADY FELL INTO ONCE ───────────
@@ -264,9 +264,13 @@ freePort()
     // proving nothing at all.
     //
     // So it proves the verb is REACHABLE first, with a write that is
-    // supposed to succeed, and only then asks whether the gate refuses
-    // the one that must not. A test about a gate has to know the door
-    // opens.
+    // supposed to succeed, and only then asks the gate. Until goal/G14.8
+    // (2026-10-10) the asked write was the app entry script, which the
+    // gate refused for every caller; the gate is open to it now (Andy:
+    // "we only protect intrinsic apps, and they are already gated by the
+    // commit hooks as "core""), so the non-canonical spelling of the entry
+    // script must LAND, at the canonical place, and the refusal asked for
+    // is a non-canonical spelling that escapes the writable roots.
     return request(port, 'POST', '/api/spirit', {
       verb: 'fs.save',
       path: 'shell/natter/serverSurface-probe.json',
@@ -285,20 +289,28 @@ freePort()
       return request(port, 'POST', '/api/spirit', {
         verb: 'fs.save',
         path: 'shell/./natter/natter.js',
+        content: '// serverSurface.js probe — the fakes\' copy, restored at once',
+      });
+    }).then(function (r) {
+      const after = fs.readFileSync(ENTRY_SCRIPT, 'utf8');
+      if (r.status >= 200 && r.status < 300 && /serverSurface\.js probe/.test(after)) {
+        test.check('fs.save writes an app entry script through a non-canonical spelling, at the canonical place (goal/G14.8)');
+      } else {
+        test.fail('fs.save of the entry script answered HTTP ' + r.status + ', on disk changed ' + (after !== before) + lastWords());
+      }
+      fs.writeFileSync(ENTRY_SCRIPT, before, 'utf8');
+      return request(port, 'POST', '/api/spirit', {
+        verb: 'fs.save',
+        path: 'shell/../js/serverSurface-probe.js',
         content: '// serverSurface.js probe — must never reach disk',
       });
     }).then(function (r) {
-      if (r.status >= 200 && r.status < 300) {
-        test.fail('fs.save ACCEPTED a non-canonical entry-script path (HTTP ' + r.status + ')');
+      const escaped = fs.existsSync(path.join(nodeRoot, 'js', 'serverSurface-probe.js'));
+      if (r.status === 403 && !escaped) {
+        test.check('fs.save refused a non-canonical spelling that leaves the writable roots (HTTP 403)');
       } else {
-        test.check('fs.save refused a non-canonical entry-script path (HTTP ' + r.status + ')');
-      }
-      const after = fs.readFileSync(ENTRY_SCRIPT, 'utf8');
-      if (after === before) {
-        test.check('the app entry script on disk is unchanged');
-      } else {
-        test.fail('the app entry script WAS OVERWRITTEN on disk');
-        fs.writeFileSync(ENTRY_SCRIPT, before, 'utf8'); // restore for a rerun
+        test.fail('fs.save answered HTTP ' + r.status + ' to shell/../js/, on disk ' + escaped);
+        try { fs.unlinkSync(path.join(nodeRoot, 'js', 'serverSurface-probe.js')); } catch (e) { /* none */ }
       }
       return port;
     });
@@ -651,6 +663,7 @@ freePort()
       ['POST', '/api/spirit', { verb: 'config.searchModules', query: '' }],
       ['POST', '/api/spirit', { verb: 'config.setModules' }],
       ['POST', '/api/spirit', { verb: 'fs.stat' }],
+      ['POST', '/api/spirit', { verb: 'fs.load' }],
       ['POST', '/api/spirit', { verb: 'fs.annotations' }],
       ['POST', '/api/spirit', { verb: 'fs.save' }],
       ['POST', '/api/spirit', { verb: 'fs.delete' }],

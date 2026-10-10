@@ -106,49 +106,21 @@ expectForbidden('a random root-level file', '__writableRootsProbe__.txt');
 expectForbidden('process/ (scripts are browser-read-only by design)', 'process/js/__writableRootsProbe__/__writableRootsProbe__.json');
 expectForbidden('js/ (the kernel itself)', 'js/__writableRootsProbe__.js');
 
-// ---- app entry scripts are protected even inside the writable app/ root ----
-expectForbidden(
-  'an app entry script (app/<name>/<name>.js)',
-  'shell/__writableRootsProbeApp__/__writableRootsProbeApp__.js'
-);
-
-// A sibling file in that same (never-created) app folder is NOT an entry
-// script and must still be writable — confirms the protection is scoped to
-// the exact <name>/<name>.js shape, not the whole folder.
-expectWritable('a non-entry-script file in a new app folder', 'shell/__writableRootsProbeApp__/data.json');
-
-// ---- THE EXCEPTIONS ARE GONE, AND THAT IS THE STRONGER STATEMENT ----
+// ---- app entry scripts and manifests are shell files like any other ----
 //
-// saveAppScript and saveAppManifest were tested here as the mirror
-// image of the refusals above: exactly what saveFile refuses, those two
-// existed to allow, for one caller (App Builder). Decision 0008 deleted
-// app-building from this repo on 2026-09-13, and both doors went with
-// it -- kernel side, browser side, and the fs.* verbs.
-//
-// About 40 checks disappeared with them. That must not be read as a
-// smaller world: what those checks proved was that the exception was
-// correctly narrow. The rule they were the exception TO is unchanged
-// and now absolute, which is why the refusals above and below stay,
-// and why the assertion at the end of this file exists -- a suite that
-// merely LOSES checks records less; this one has to say what it now
-// claims instead.
-//
-// One property is worth naming because it did not vanish, it changed
-// form: saveAppManifest forced owner:"user" no matter what the caller
-// claimed. With no browser-reachable path writing a manifest at all,
-// owner can no longer be claimed from a browser in the first place.
-// Decision 0003 is enforced by absence now, not by a function.
-
-// ---- app manifests are protected too, even inside the writable app/ root ----
-expectForbidden(
-  'an app manifest (app/<name>/<name>.json)',
-  'shell/__writableRootsProbeApp__/__writableRootsProbeApp__.json'
-);
-
-// A sibling file in that same folder is NOT a manifest and must still be
-// writable — confirms the protection is scoped to the exact <name>/<name>.json
-// shape, not the whole folder (mirrors the entry-script check above).
-expectWritable('a non-manifest file in a new app folder', 'shell/__writableRootsProbeApp__/data.json');
+// Until goal/G14.8 (2026-10-10) the two shapes <name>/<name>.js and
+// <name>/<name>.json were refused here even inside the writable shell
+// root: the App Builder era's guard, kept after decision 0008 deleted the
+// builder and its two exception doors (saveAppScript, saveAppManifest).
+// Andy closed it: "the whole story of protecting app sources came from a
+// time when we had the stupid AI app-builder, which is gone now"; "we
+// only protect intrinsic apps, and they are already gated by the commit
+// hooks as "core"". So an agent writes its own app's code through
+// saveFile, and an intrinsic app is fenced at the commit (coreFiles.js),
+// not at the gate. A never-created app folder, so nothing real is touched.
+expectWritable('an app entry script (shell/<name>/<name>.js, goal/G14.8)', 'shell/__writableRootsProbeApp__/__writableRootsProbeApp__.js');
+expectWritable('an app manifest (shell/<name>/<name>.json, goal/G14.8)', 'shell/__writableRootsProbeApp__/__writableRootsProbeApp__.json');
+expectWritable('a sibling file in the same app folder', 'shell/__writableRootsProbeApp__/data.json');
 
 
 // deleteFile only removes the file — clean up the now-empty folder it lived

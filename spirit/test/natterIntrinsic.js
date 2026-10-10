@@ -335,45 +335,37 @@ test.subHeading('The doors that could have overwritten it are gone');
 
 // WHAT USED TO BE HERE, AND WHY IT IS NOT.
 //
-// Two sections stood here until 2026-09-13. They proved that
-// saveAppScript and saveAppManifest -- the two exceptions to
-// fileWritable's refusal, which existed for App Builder -- refused an
-// INTRINSIC app while still accepting an ordinary one, and that the
-// guard read the manifest on disk rather than the name "natter".
-//
-// Decision 0008 deleted app-building, and both doors with it. So the
-// attack vector those checks defended against no longer exists.
-//
-// That is NOT the same as the protection being weakened, and the
-// difference is worth stating rather than leaving to be inferred: a
-// door that refuses you is strictly weaker than no door. What used to
-// be enforced by a check inside two functions is now enforced by there
-// being no function -- fileWritable refuses every app entry script and
-// every manifest, for every caller, with no exception to carve out.
-//
-// The checks below are what is left to assert, and they are the
-// stronger claims.
+// Until 2026-09-13 two sections proved that App Builder's doors refused
+// an intrinsic app; decision 0008 deleted the builder and the doors.
+// Until 2026-10-10 the block below proved that saveFile refused the
+// intrinsic entry script and manifest, the guard that outlived them.
+// goal/G14.8 opened the gate: Andy, "we only protect intrinsic apps, and
+// they are already gated by the commit hooks as "core"". The fence for
+// NATter is coreFiles.js, which counts an intrinsic app's files as core
+// so the commit hook refuses them without his grant; the write gate no
+// longer reads the manifest. What is asserted is that fence, the gate's
+// verdict (asked, never written: these are the checkout's own files), and
+// that no door grew back.
 
 {
-  const scriptBefore = readRun(NATTER_SCRIPT);
-  const manifestBefore = readRun(NATTER_MANIFEST);
-
-  // The ordinary guard, unchanged since before any of this: saveFile
-  // never writes an app entry script, intrinsic or not.
-  const viaSaveFile = spirit.core.fs.saveFile(NATTER_SCRIPT, '// pwned\n');
-  if (!viaSaveFile.ok && readRun(NATTER_SCRIPT) === scriptBefore) {
-    test.check('saveFile refuses the intrinsic entry script, as it always did');
+  // The gate's verdict since goal/G14.8: the intrinsic app's files are
+  // writable like any other file of the shell root.
+  if (spirit.core.fs.fileWritable(NATTER_SCRIPT) === true && spirit.core.fs.fileWritable(NATTER_MANIFEST) === true) {
+    test.check('fileWritable says yes to the intrinsic entry script and manifest (goal/G14.8: the gate is not the fence)');
   } else {
-    test.fail('saveFile: ' + JSON.stringify(viaSaveFile));
+    test.fail('fileWritable refuses NATter\'s own files: script ' + spirit.core.fs.fileWritable(NATTER_SCRIPT) + ', manifest ' + spirit.core.fs.fileWritable(NATTER_MANIFEST));
   }
 
-  const manifestWrite = spirit.core.fs.saveFile(NATTER_MANIFEST, JSON.stringify({
-    name: 'NATter', icon: 'GLOBE', hidden: true, intrinsic: false,
-  }));
-  if (!manifestWrite.ok && readRun(NATTER_MANIFEST) === manifestBefore) {
-    test.check('and the manifest, which is how NATter would stop being the node\'s own app');
+  // THE FENCE: the commit hook's core list counts every file of an
+  // intrinsic app, read from the manifest on disk, not from the name.
+  let coreFiles = null;
+  try { coreFiles = require('../run/js/coreFiles.js'); } catch (e) { coreFiles = null; }
+  const inRepo = function (rel) { return 'spirit/run/' + rel; };   // isCore takes a repo path
+  if (coreFiles && typeof coreFiles.isCore === 'function' && coreFiles.isCore(inRepo(NATTER_SCRIPT)) === true && coreFiles.isCore(inRepo(NATTER_MANIFEST)) === true
+      && coreFiles.isCore(inRepo('shell/textEditor/textEditor.js')) === false) {
+    test.check('and coreFiles.js counts both as core (and textEditor\'s not), so a commit of them needs Andy\'s grant at the hook');
   } else {
-    test.fail('saveFile on the manifest: ' + JSON.stringify(manifestWrite));
+    test.fail('coreFiles.js does not count NATter\'s files as core: ' + (coreFiles ? JSON.stringify([coreFiles.isCore(inRepo(NATTER_SCRIPT)), coreFiles.isCore(inRepo(NATTER_MANIFEST))]) : 'no module'));
   }
 
   // AND THERE IS NOTHING ELSE TO TRY. The two functions that could
@@ -383,9 +375,9 @@ test.subHeading('The doors that could have overwritten it are gone');
     return typeof spirit.core.fs[name] === 'function';
   });
   if (!doors.length) {
-    test.check('and no other door exists to try — saveAppScript and saveAppManifest are gone (0008)');
+    test.check('and no other door exists — saveAppScript and saveAppManifest are gone (0008)');
   } else {
-    test.fail('these doors are back and this suite needs its refusals again: ' + doors.join(', '));
+    test.fail('these doors are back: ' + doors.join(', '));
   }
 
   // The flag itself still matters to the SHELL, which reads

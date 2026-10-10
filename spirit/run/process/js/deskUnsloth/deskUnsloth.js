@@ -238,7 +238,11 @@ const TOOL_ROUNDS = 3;
 // bare and the family under AGENTS, as a process server lists it. The desk's answer comes back as the asked body;
 // a refusal of the desk (not granted, no such item, a rule) is a body with ok false, which run hands to the model
 // in the desk's words. Andy: "Levant is restricted by the tools we give him": what has no verb file is no tool.
-const TOOL_NAMESPACES = ['net', 'desk'];
+// THE NAMESPACES (goal/G14.8): desk and fs; net no longer. Andy, 2026-10-10: "i'm more inclined to deny URL fetch,
+// and allow loadFile, it's much narrower." and "net_fetch will be removed for Levant." The fs tools are the verbs
+// js/fs describes (load, save, search, stat, annotations), through the node's loopback door; a tool configurator
+// in deskUnslothRemote is a later item, and this list is its seed.
+const TOOL_NAMESPACES = ['desk', 'fs'];
 const tools = require('./tools').createTools({
   ask: function (verb, args) { return spirit.core.ask(verb, args, NODE_URL); },
   routes: {
@@ -299,7 +303,9 @@ function askModelRound(messages, list, round, onTool) {
       return calls.reduce(function (chain, call) {
         return chain.then(function () {
           const name = String((call.function && call.function.name) || '');
-          const url = String(argumentsOf(call).url || '');
+          // What the tool works on, for the Remote's chat line: a url (net), else a path (fs, goal/G14.8).
+          const given = argumentsOf(call);
+          const url = String(given.url || given.path || '');
           if (onTool) onTool({ name: name, url: url, done: false });
           return tools.run(call).then(function (r) {
             messages.push({ role: 'tool', tool_call_id: r.id, content: r.text });

@@ -1,0 +1,3 @@
+{
+  "description": "Write a file by path under a writable root (shell, media, published), the whole content as given; the path's folders are made; an app's own code and manifest under shell are written like any other file there; 403 outside the roots."
+}

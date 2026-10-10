@@ -65,7 +65,7 @@ the only way a default survives contact with people in a hurry.
 
 ## What can be asked
 
-**55 verbs, in 11 families.** This list is generated from `server.js` and is exhaustive at the commit above.
+**56 verbs, in 11 families.** This list is generated from `server.js` and is exhaustive at the commit above.
 
 **Each verb carries its authority.** Andy, 2026-09-27: *"that's a boundary
 crossed that requires peer review AND my approval"* — and, on his own yes:
@@ -99,6 +99,7 @@ his words, which keeps the harness red until the verb is gone.
 - `fs.annotate` — before the rule (2026-09-27)
 - `fs.annotations` — before the rule (2026-09-27)
 - `fs.delete` — before the rule (2026-09-27)
+- `fs.load` — Andy, 2026-10-10: "i'm more inclined to deny URL fetch, and allow loadFile, it's much narrower." (Desk, goal/G14.8)
 - `fs.save` — before the rule (2026-09-27)
 - `fs.search` — Andy, 2026-09-27: "the verb changes changing list fetches to a search(labe) and geKey(key) pair are approved." (Desk, puppets/G2)
 - `fs.stat` — before the rule (2026-09-27)

@@ -116,14 +116,15 @@ expectLoads('js/peerFile.js', 'js/peerFile.js');
 
 // ---- app code and app data stay open ----
 // An app's entry script and manifest are readable (the shell fetches the
-// script; App Builder and the Apps manager read the manifest) but never
-// writable through the generic route — see writableRoots.js for the
-// saveAppScript/saveAppManifest doors that are the only way in.
+// script; the Apps manager reads the manifest) and, since goal/G14.8
+// (2026-10-10), writable like any other file of the shell root: the
+// App Builder era's refusal is gone, and an intrinsic app is fenced by the
+// commit hook, not the gate. The verdict is asked; nothing is written.
 test.subHeading('App code, manifests and app data');
 expectLoads('shell/natter/natter.js (app entry script)', 'shell/natter/natter.js');
-expectNotWritable('shell/natter/natter.js (app entry script)', 'shell/natter/natter.js');
+expectWritable('shell/natter/natter.js (app entry script, goal/G14.8)', 'shell/natter/natter.js');
 expectLoads('shell/natter/natter.json (manifest)', 'shell/natter/natter.json');
-expectNotWritable('shell/natter/natter.json (manifest)', 'shell/natter/natter.json');
+expectWritable('shell/natter/natter.json (manifest, goal/G14.8)', 'shell/natter/natter.json');
 
 // NATter's address book is ordinary scoped app data, written via
 // api.fs.saveFile('relays.json', …) and read by hub.js to find the relay

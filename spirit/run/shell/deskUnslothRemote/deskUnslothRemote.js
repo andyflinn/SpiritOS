@@ -132,7 +132,8 @@ function deskUnslothRemoteReadTargets() {
   var list = parsed && Array.isArray(parsed.puppets) ? parsed.puppets : [];
   list.forEach(function (p) {
     if (!p || typeof p.key !== 'string' || !p.key) return;
-    targets.push({ kind: 'puppet', name: String(p.name || p.key.slice(-12)), key: p.key });
+    // The label of a key is the kernel's alone (apiAuth/G1.11: "one and the same function across our entire system").
+    targets.push({ kind: 'puppet', name: String(p.name || spirit.keyTail(p.key)), key: p.key });
   });
   return targets;
 }
