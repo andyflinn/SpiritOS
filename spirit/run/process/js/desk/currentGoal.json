@@ -1,8 +1,8 @@
 {
- "change": 28121,
+ "change": 28122,
  "line": 8495,
  "goal": "goal/G14",
- "writtenAt": "2026-10-10T16:44:24.782Z",
+ "writtenAt": "2026-10-10T16:44:26.545Z",
  "items": [
   {
    "id": "goal/G14",
@@ -38,7 +38,7 @@
    "half": true,
    "full": false,
    "design": false,
-   "waiting": 3,
+   "waiting": 2,
    "live": [
     "claude-windows",
     "ollama agent node"
@@ -662,10 +662,9 @@
    "id": "goal/G14.4",
    "title": "The model selector dropdown line.",
    "goal": "goal/G14",
-   "status": "done",
+   "status": "closed",
    "with": "",
    "buttons": [
-    "close",
     "reopen"
    ],
    "blocking": [
